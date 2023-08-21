@@ -124,6 +124,7 @@ function Form(props) {
         _.each(values, (inputValue, inputID) => {
             if (_.isString(inputValue)) {
                 trimmedStringValues[inputID] = inputValue.replace(CONST.INVISIBLE_CHARACTERS, '').trim();
+                // trimmedStringValues[inputID] = inputValue.trim();
             } else {
                 trimmedStringValues[inputID] = inputValue;
             }
@@ -150,6 +151,7 @@ function Form(props) {
             _.each(trimmedStringValues, (inputValue, inputID) => {
                 // Return early if there is no value OR the value is not a string OR there are no HTML characters
                 if (!inputValue || !_.isString(inputValue) || inputValue.search(CONST.VALIDATE_FOR_HTML_TAG_REGEX) === -1) {
+                // if (!inputValue || !_.isString(inputValue) || (inputValue.search(CONST.VALIDATE_FOR_HTML_TAG_REGEX) === -1 && inputValue.search(CONST.INVISIBLE_CHARACTERS) === -1)) {
                     return;
                 }
 
