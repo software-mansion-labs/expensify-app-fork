@@ -1,3 +1,4 @@
+/* eslint-disable no-control-regex */
 import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import lodashGet from 'lodash/get';
 import {Keyboard, ScrollView, StyleSheet} from 'react-native';
@@ -113,19 +114,31 @@ function Form(props) {
     const {validate, onSubmit, children} = props;
 
     /**
+     * This function is used to trim all string values and remove invisible characters before validation and submission
+     *
+     * @param {Object} values - An object containing the value of each inputID, e.g. {inputID1: value1, inputID2: value2}
+     * @returns {Object}
+     */
+    const prepareValues = useCallback((values) => {
+        const trimmedStringValues = {};
+        _.each(values, (inputValue, inputID) => {
+            if (_.isString(inputValue)) {
+                trimmedStringValues[inputID] = inputValue.replace(CONST.INVISIBLE_CHARACTERS, '').trim();
+            } else {
+                trimmedStringValues[inputID] = inputValue;
+            }
+        });
+        return trimmedStringValues;
+    }, []);
+
+    /**
      * @param {Object} values - An object containing the value of each inputID, e.g. {inputID1: value1, inputID2: value2}
      * @returns {Object} - An object containing the errors for each inputID, e.g. {inputID1: error1, inputID2: error2}
      */
     const onValidate = useCallback(
         (values) => {
-            const trimmedStringValues = {};
-            _.each(values, (inputValue, inputID) => {
-                if (_.isString(inputValue)) {
-                    trimmedStringValues[inputID] = inputValue.trim();
-                } else {
-                    trimmedStringValues[inputID] = inputValue;
-                }
-            });
+            // Trim all string values
+            const trimmedStringValues = prepareValues(values);
 
             FormActions.setErrors(props.formID, null);
             FormActions.setErrorFields(props.formID, null);
@@ -156,7 +169,7 @@ function Form(props) {
 
             return touchedInputErrors;
         },
-        [errors, touchedInputs, props.formID, validate],
+        [prepareValues, props.formID, validate, errors],
     );
 
     useEffect(() => {
@@ -193,11 +206,14 @@ function Form(props) {
             return;
         }
 
+        // Trim all string values
+        const trimmedStringValues = prepareValues(inputValues);
+
         // Touches all form inputs so we can validate the entire form
         _.each(inputRefs.current, (inputRef, inputID) => (touchedInputs.current[inputID] = true));
 
         // Validate form and return early if any errors are found
-        if (!_.isEmpty(onValidate(inputValues))) {
+        if (!_.isEmpty(onValidate(trimmedStringValues))) {
             return;
         }
 
@@ -207,8 +223,8 @@ function Form(props) {
         }
 
         // Call submit handler
-        onSubmit(inputValues);
-    }, [props.formState, onSubmit, inputRefs, inputValues, onValidate, touchedInputs, props.network.isOffline, props.enabledWhenOffline]);
+        onSubmit(trimmedStringValues);
+    }, [props.formState.isLoading, props.network.isOffline, props.enabledWhenOffline, prepareValues, inputValues, onValidate, onSubmit]);
 
     /**
      * Loops over Form's children and automatically supplies Form props to them
