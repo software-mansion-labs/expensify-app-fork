@@ -2,6 +2,10 @@ import {Animated, Easing} from 'react-native';
 import useNativeDriver from '../../libs/useNativeDriver';
 
 class SpinningIndicatorAnimation {
+    rotate: Animated.Value;
+
+    scale: Animated.Value;
+
     constructor() {
         this.rotate = new Animated.Value(0);
         this.scale = new Animated.Value(1);
@@ -16,7 +20,7 @@ class SpinningIndicatorAnimation {
      *
      * @memberof AvatarWithImagePicker
      */
-    startRotation() {
+    startRotation(): void {
         this.rotate.setValue(0);
         Animated.loop(
             Animated.timing(this.rotate, {
@@ -36,7 +40,7 @@ class SpinningIndicatorAnimation {
      *
      * @memberof AvatarWithImagePicker
      */
-    start() {
+    start(): void {
         this.startRotation();
         Animated.spring(this.scale, {
             toValue: 1.666,
@@ -51,7 +55,7 @@ class SpinningIndicatorAnimation {
      *
      * @memberof AvatarWithImagePicker
      */
-    stop() {
+    stop(): void {
         Animated.spring(this.scale, {
             toValue: 1,
             tension: 1,
@@ -66,10 +70,8 @@ class SpinningIndicatorAnimation {
 
     /**
      * Get Indicator Styles while animating
-     *
-     * @returns {Object}
      */
-    getSyncingStyles() {
+    getSyncingStyles(): unknown {
         return {
             transform: [
                 {
