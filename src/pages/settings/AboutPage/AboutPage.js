@@ -90,7 +90,7 @@ function AboutPage(props) {
                     />
                     <ScrollView contentContainerStyle={[styles.flexGrow1, styles.flexColumn, styles.justifyContentBetween, safeAreaPaddingBottomStyle]}>
                         <View style={[styles.flex1]}>
-                            <View style={styles.pageWrapper}>
+                            <View style={[styles.alignItemsCenter, styles.w100, styles.ph5, styles.pb5]}>
                                 <View style={[styles.settingsPageBody, styles.mb6, styles.alignItemsCenter]}>
                                     <Logo
                                         height={80}
