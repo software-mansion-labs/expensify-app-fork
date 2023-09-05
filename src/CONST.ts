@@ -235,7 +235,6 @@ const CONST = {
         TASKS: 'tasks',
         THREADS: 'threads',
         CUSTOM_STATUS: 'customStatus',
-        DISTANCE_REQUESTS: 'distanceRequests',
     },
     BUTTON_STATES: {
         DEFAULT: 'default',
@@ -666,6 +665,7 @@ const CONST = {
     TRANSACTION: {
         DEFAULT_MERCHANT: 'Request',
         UNKNOWN_MERCHANT: 'Unknown Merchant',
+        PARTIAL_TRANSACTION_MERCHANT: '(none)',
         TYPE: {
             CUSTOM_UNIT: 'customUnit',
         },
