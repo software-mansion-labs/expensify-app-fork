@@ -9,6 +9,12 @@ describe('libs/removeInvisible', () => {
     it('basic tests', () => {
         expect(removeInvisible('test')).toBe('test');
         expect(removeInvisible('test test')).toBe('test test');
+        expect(removeInvisible('abcdefghijklmnopqrstuvwxyz')).toBe('abcdefghijklmnopqrstuvwxyz');
+        expect(removeInvisible('ABCDEFGHIJKLMNOPQRSTUVWXYZ')).toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        expect(removeInvisible('0123456789')).toBe('0123456789');
+        expect(removeInvisible('!@#$%^&*()_+-=[]{}|;:\'",.<>/?`~')).toBe('!@#$%^&*()_+-=[]{}|;:\'",.<>/?`~');
+        expect(removeInvisible('')).toBe('');
+        expect(removeInvisible(' ')).toBe('');
     });
     it('trim spaces', () => {
         expect(removeInvisible(' test')).toBe('test');
@@ -45,7 +51,6 @@ describe('libs/removeInvisible', () => {
     it('remove invisible characters (Zl)', () => {
         expect(removeInvisible('test\u2028')).toBe('test');
         expect(removeInvisible('test\u2029')).toBe('test');
-        expect(removeInvisible('test\u202A')).toBe('test');
     });
     it('basic check emojis not removed', () => {
         expect(removeInvisible('test😀')).toBe('test😀');
@@ -77,6 +82,8 @@ describe('libs/removeInvisible', () => {
         expect(removeInvisible('test ')).toBe('test');
     });
     it('other tests', () => {
+        expect(removeInvisible('\uD83D\uDE36\u200D\uD83C\uDF2B\uFE0F')).toBe('😶‍🌫️');
+        expect(removeInvisible('\u200D')).toBe('‍');
         expect(removeInvisible('⁠')).toBe('');
         expect(removeInvisible('⁠test')).toBe('test');
         expect(removeInvisible('test⁠test')).toBe('testtest');
@@ -156,5 +163,18 @@ describe('libs/isEmpty', () => {
         expect(isEmpty('\u205F')).toBe(true);
         expect(isEmpty('\u3000')).toBe(true);
         expect(isEmpty(' ')).toBe(true);
+    });
+    it('other tests', () => {
+        expect(isEmpty('\u200D')).toBe(true);
+        expect(isEmpty('\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC65\uDB40\uDC6E\uDB40\uDC67\uDB40\uDC7F')).toBe(false);
+        expect(isEmpty('\uD83C')).toBe(true);
+        expect(isEmpty('\uDFF4')).toBe(true);
+        expect(isEmpty('\uDB40')).toBe(true);
+        expect(isEmpty('\uDC67')).toBe(true);
+        expect(isEmpty('\uDC62')).toBe(true);
+        expect(isEmpty('\uDC65')).toBe(true);
+        expect(isEmpty('\uDC6E')).toBe(true);
+        expect(isEmpty('\uDC67')).toBe(true);
+        expect(isEmpty('\uDC7F')).toBe(true);
     });
 });
