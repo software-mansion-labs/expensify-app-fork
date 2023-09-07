@@ -1,5 +1,5 @@
 import _ from 'underscore';
-import removeInvisible from '../../src/libs/removeInvisible';
+import removeInvisible from '../../src/libs/removeInvisibleCharacters';
 import enEmojis from '../../assets/emojis/en';
 
 describe('libs/removeInvisible', () => {
@@ -36,14 +36,19 @@ describe('libs/removeInvisible', () => {
         expect(removeInvisible('test\u2060')).toBe('test');
     });
     it('check other visible characters (Cs)', () => {
-        expect(removeInvisible('test\uD800')).toBe('test\uD800');
-        expect(removeInvisible('test\uD801')).toBe('test\uD801');
-        expect(removeInvisible('test\uD802')).toBe('test\uD802');
+        expect(removeInvisible('test\uD800')).toBe('test');
+        expect(removeInvisible('test\uD801')).toBe('test');
+        expect(removeInvisible('test\uD802')).toBe('test');
     });
     it('check other visible characters (Co)', () => {
-        expect(removeInvisible('test\uE000')).toBe('test\uE000');
-        expect(removeInvisible('test\uE001')).toBe('test\uE001');
-        expect(removeInvisible('test\uE002')).toBe('test\uE002');
+        expect(removeInvisible('test\uE000')).toBe('test');
+        expect(removeInvisible('test\uE001')).toBe('test');
+        expect(removeInvisible('test\uE002')).toBe('test');
+    });
+    it('remove invisible characters (Cn)', () => {
+        expect(removeInvisible('test\uFFF0')).toBe('test');
+        expect(removeInvisible('test\uFFF1')).toBe('test');
+        expect(removeInvisible('test\uFFF2')).toBe('test');
     });
     it('remove invisible characters (Zl)', () => {
         expect(removeInvisible('test\u2028')).toBe('test');

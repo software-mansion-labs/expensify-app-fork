@@ -19,7 +19,7 @@ import stylePropTypes from '../styles/stylePropTypes';
 import {withNetwork} from './OnyxProvider';
 import networkPropTypes from './networkPropTypes';
 import Visibility from '../libs/Visibility';
-import removeInvisible from '../libs/removeInvisible';
+import removeInvisible from '../libs/removeInvisibleCharacters';
 
 const propTypes = {
     /** A unique Onyx key identifying the form */
