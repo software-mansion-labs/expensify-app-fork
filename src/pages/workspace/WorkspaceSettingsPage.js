@@ -24,7 +24,7 @@ import Avatar from '../../components/Avatar';
 import Navigation from '../../libs/Navigation/Navigation';
 import ROUTES from '../../ROUTES';
 import withWindowDimensions, {windowDimensionsPropTypes} from '../../components/withWindowDimensions';
-import {isEmpty} from '../../libs/removeInvisible';
+import isEmpty from '../../libs/isEmptyString';
 
 const propTypes = {
     // The currency list constant object from Onyx
