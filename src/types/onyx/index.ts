@@ -20,7 +20,7 @@ import BlockedFromConcierge from './BlockedFromConcierge';
 import PlaidData from './PlaidData';
 import UserWallet from './UserWallet';
 import WalletOnfido from './WalletOnfido';
-import WalletAdditionalDetails from './WalletAdditionalDetails';
+import {WalletAdditionalDetails, WalletAdditionalDetailsQuestions} from './WalletAdditionalDetails';
 import WalletTerms from './WalletTerms';
 import BankAccount from './BankAccount';
 import Card from './Card';
@@ -97,4 +97,5 @@ export type {
     OnyxUpdatesFromServer,
     RecentWaypoints,
     RecentlyUsedCategories,
+    WalletAdditionalDetailsQuestions,
 };

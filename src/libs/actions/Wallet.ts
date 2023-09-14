@@ -1,6 +1,10 @@
 import Onyx from 'react-native-onyx';
+import {ValueOf} from 'type-fest';
+import CONST from '../../CONST';
 import ONYXKEYS from '../../ONYXKEYS';
+import * as OnyxCommon from '../../types/onyx/OnyxCommon';
 import * as API from '../API';
+import {WalletAdditionalDetailsQuestions} from '../../types/onyx';
 
 /**
  * Fetch and save locally the Onfido SDK token and applicantID
@@ -45,56 +49,54 @@ function openOnfidoFlow() {
     );
 }
 
-/**
- * @param {Array} questions
- * @param {String} [idNumber]
- */
-function setAdditionalDetailsQuestions(questions, idNumber) {
+function setAdditionalDetailsQuestions(questions: WalletAdditionalDetailsQuestions, idNumber: string) {
     Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {questions, idNumber});
 }
 
-/**
- * @param {Object} errorFields
- */
-function setAdditionalDetailsErrors(errorFields) {
+function setAdditionalDetailsErrors(errorFields: OnyxCommon.ErrorFields) {
     Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {errorFields: null});
     Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {errorFields});
 }
 
-/**
- * @param {String} additionalErrorMessage
- */
-function setAdditionalDetailsErrorMessage(additionalErrorMessage) {
+function setAdditionalDetailsErrorMessage(additionalErrorMessage: string) {
     Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {additionalErrorMessage});
 }
 
 /**
  * Save the ID of the chat whose IOU triggered showing the KYC wall.
- *
- * @param {String} chatReportID
  */
-function setKYCWallSourceChatReportID(chatReportID) {
+function setKYCWallSourceChatReportID(chatReportID: string) {
     Onyx.merge(ONYXKEYS.WALLET_TERMS, {chatReportID});
 }
 
+type PersonalDetails = {
+    phoneNumber?: string;
+    legalFirstName?: string;
+    legalLastName?: string;
+    addressStreet?: string;
+    addressCity?: string;
+    addressState?: string;
+    addressZip?: string;
+    dob?: string;
+    ssn?: string;
+};
+
 /**
  * Validates a user's provided details against a series of checks
- *
- * @param {Object} personalDetails
  */
-function updatePersonalDetails(personalDetails) {
+function updatePersonalDetails(personalDetails: PersonalDetails) {
     if (!personalDetails) {
         return;
     }
-    const firstName = personalDetails.legalFirstName || '';
-    const lastName = personalDetails.legalLastName || '';
-    const dob = personalDetails.dob || '';
-    const addressStreet = personalDetails.addressStreet || '';
-    const addressCity = personalDetails.addressCity || '';
-    const addressState = personalDetails.addressState || '';
-    const addressZip = personalDetails.addressZip || '';
-    const ssn = personalDetails.ssn || '';
-    const phoneNumber = personalDetails.phoneNumber || '';
+    const firstName = personalDetails.legalFirstName ?? '';
+    const lastName = personalDetails.legalLastName ?? '';
+    const dob = personalDetails.dob ?? '';
+    const addressStreet = personalDetails.addressStreet ?? '';
+    const addressCity = personalDetails.addressCity ?? '';
+    const addressState = personalDetails.addressState ?? '';
+    const addressZip = personalDetails.addressZip ?? '';
+    const ssn = personalDetails.ssn ?? '';
+    const phoneNumber = personalDetails.phoneNumber ?? '';
     API.write(
         'UpdatePersonalDetailsForWallet',
         {
@@ -142,16 +144,17 @@ function updatePersonalDetails(personalDetails) {
     );
 }
 
+type IdentityVerification = {
+    onfidoData: string;
+};
+
 /**
  * Creates an identity check by calling Onfido's API with data returned from the SDK
  *
  * The API will always return the updated userWallet in the response as a convenience so we can avoid an additional
  * API request to fetch the userWallet after we call VerifyIdentity
- *
- * @param {Object} parameters
- * @param {String} [parameters.onfidoData] - JSON string
  */
-function verifyIdentity(parameters) {
+function verifyIdentity(parameters: IdentityVerification) {
     const onfidoData = parameters.onfidoData;
 
     API.write(
@@ -202,14 +205,17 @@ function verifyIdentity(parameters) {
     );
 }
 
+type WalletTerms = {
+    hasAcceptedTerms: boolean;
+    chatReportID: number;
+};
+
 /**
  * Complete the "Accept Terms" step of the wallet activation flow.
  *
- * @param {Object} parameters
- * @param {Boolean} parameters.hasAcceptedTerms
- * @param {Number} parameters.chatReportID When accepting the terms of wallet to pay an IOU, indicates the parent chat ID of the IOU
+ * @param parameters.chatReportID When accepting the terms of wallet to pay an IOU, indicates the parent chat ID of the IOU
  */
-function acceptWalletTerms(parameters) {
+function acceptWalletTerms(parameters: WalletTerms) {
     const optimisticData = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -270,18 +276,11 @@ function openEnablePaymentsPage() {
     API.read('OpenEnablePaymentsPage');
 }
 
-/**
- * @param {String} currentStep
- */
-function updateCurrentStep(currentStep) {
+function updateCurrentStep(currentStep: ValueOf<typeof CONST.WALLET.STEP>) {
     Onyx.merge(ONYXKEYS.USER_WALLET, {currentStep});
 }
 
-/**
- * @param {Array} answers
- * @param {String} idNumber
- */
-function answerQuestionsForWallet(answers, idNumber) {
+function answerQuestionsForWallet(answers: unknown[], idNumber: string) {
     const idologyAnswers = JSON.stringify(answers);
     API.write(
         'AnswerQuestionsForWallet',
