@@ -19,7 +19,7 @@ import stylePropTypes from '../styles/stylePropTypes';
 import {withNetwork} from './OnyxProvider';
 import networkPropTypes from './networkPropTypes';
 import Visibility from '../libs/Visibility';
-import removeInvisible from '../libs/removeInvisibleCharacters';
+import removeInvisibleCharacters from '../libs/removeInvisibleCharacters';
 
 const propTypes = {
     /** A unique Onyx key identifying the form */
@@ -124,7 +124,7 @@ function Form(props) {
         const trimmedStringValues = {};
         _.each(values, (inputValue, inputID) => {
             if (_.isString(inputValue)) {
-                trimmedStringValues[inputID] = removeInvisible(inputValue);
+                trimmedStringValues[inputID] = removeInvisibleCharacters(inputValue);
             } else {
                 trimmedStringValues[inputID] = inputValue;
             }

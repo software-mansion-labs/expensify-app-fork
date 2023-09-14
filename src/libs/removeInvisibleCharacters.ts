@@ -1,7 +1,7 @@
 /**
  *  Remove invisible characters from a string except for spaces and format characters for emoji, and trim it.
  */
-function removeInvisible(value: string): string {
+function removeInvisibleCharacters(value: string): string {
     let result = value;
 
     // Remove spaces:
@@ -23,4 +23,4 @@ function removeInvisible(value: string): string {
     return result.trim();
 }
 
-export default removeInvisible;
+export default removeInvisibleCharacters;
