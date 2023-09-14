@@ -1,4 +1,3 @@
-/* eslint-disable no-control-regex */
 import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import lodashGet from 'lodash/get';
 import {Keyboard, ScrollView, StyleSheet} from 'react-native';
@@ -115,10 +114,10 @@ function Form(props) {
     const {validate, onSubmit, children} = props;
 
     /**
-     * This function is used to trim all string values and remove invisible characters before validation and submission
+     * This function is used to remove invisible characters from strings before validation and submission.
      *
      * @param {Object} values - An object containing the value of each inputID, e.g. {inputID1: value1, inputID2: value2}
-     * @returns {Object}
+     * @returns {Object} - An object containing the processed values of each inputID
      */
     const prepareValues = useCallback((values) => {
         const trimmedStringValues = {};

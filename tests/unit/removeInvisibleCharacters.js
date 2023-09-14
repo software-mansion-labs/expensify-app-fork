@@ -13,6 +13,26 @@ describe('libs/removeInvisible', () => {
         expect(removeInvisible('')).toBe('');
         expect(removeInvisible(' ')).toBe('');
     });
+    it('other alphabets, list of all characters', () => {
+        // arabic
+        expect(removeInvisible('أبجدية عربية')).toBe('أبجدية عربية');
+        // chinese
+        expect(removeInvisible('的一是了我不人在他们')).toBe('的一是了我不人在他们');
+        // cyrillic
+        expect(removeInvisible('абвгдезиклмнопр')).toBe('абвгдезиклмнопр');
+        // greek
+        expect(removeInvisible('αβγδεζηθικλμνξοπρ')).toBe('αβγδεζηθικλμνξοπρ');
+        // hebrew
+        expect(removeInvisible('אבגדהוזחטיכלמנ')).toBe('אבגדהוזחטיכלמנ');
+        // hindi
+        expect(removeInvisible('अआइईउऊऋऍऎ')).toBe('अआइईउऊऋऍऎ');
+        // japanese
+        expect(removeInvisible('あいうえおかきくけこ')).toBe('あいうえおかきくけこ');
+        // korean
+        expect(removeInvisible('가나다라마바사아자')).toBe('가나다라마바사아자');
+        // thai
+        expect(removeInvisible('กขคงจฉชซ')).toBe('กขคงจฉชซ');
+    });
     it('trim spaces', () => {
         expect(removeInvisible(' test')).toBe('test');
         expect(removeInvisible('test ')).toBe('test');

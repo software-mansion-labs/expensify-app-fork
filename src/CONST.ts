@@ -1211,6 +1211,8 @@ const CONST = {
         DATE_TIME_FORMAT: /^\d{2}-\d{2} \d{2}:\d{2} [AP]M$/,
         ATTACHMENT_ROUTE: /\/r\/(\d*)\/attachment/,
         ILLEGAL_FILENAME_CHARACTERS: /\/|<|>|\*|"|:|\?|\\|\|/g,
+
+        INVISIBLE_CHARACTERS: /[\p{C}\p{Z}]/gu,
     },
 
     PRONOUNS: {
