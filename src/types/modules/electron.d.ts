@@ -1,4 +1,5 @@
 // TODO: Move this type to desktop/contextBridge.js once it is converted to TS
+// https://github.com/Expensify/App/issues/25333
 type ContextBridgeApi = {
     send: (channel: string, data?: unknown) => void;
     sendSync: (channel: string, data?: unknown) => unknown;
