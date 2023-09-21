@@ -36,8 +36,8 @@ const defaultProps = {
 
 function IllustratedHeaderPageLayout({backgroundColor, children, illustration, footer, overlayContent, ...propsToPassToHeader}) {
     const lottieStyle = {
-        width: _.get(illustration, 'w', '100%'),
-        height: _.get(illustration, 'h', 100),
+        aspectRatio: _.get(illustration, 'w', -1) / _.get(illustration, 'h', -1),
+        ...styles.w100,
     };
 
     return (
@@ -48,7 +48,7 @@ function IllustratedHeaderPageLayout({backgroundColor, children, illustration, f
                 <>
                     <Lottie
                         source={illustration}
-                        style={lottieStyle}
+                        style={typeof illustration === 'object' ? lottieStyle : {aspectRatio: 1.5, ...styles.w100}}
                         autoPlay
                         loop
                     />
