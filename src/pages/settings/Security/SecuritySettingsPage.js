@@ -54,6 +54,7 @@ function SecuritySettingsPage(props) {
             onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS)}
             shouldShowBackButton
             shouldShowCloseButton
+            // illustration={LottieAnimations.Fireworks}
             illustration={LottieAnimations.Safe}
             backgroundColor={themeColors.PAGE_BACKGROUND_COLORS[SCREENS.SETTINGS.SECURITY]}
         >

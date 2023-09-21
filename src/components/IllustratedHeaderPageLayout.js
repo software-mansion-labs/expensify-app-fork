@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Lottie from 'lottie-react-native';
+import _ from 'lodash';
 import headerWithBackButtonPropTypes from './HeaderWithBackButton/headerWithBackButtonPropTypes';
 import styles from '../styles/styles';
 import themeColors from '../styles/themes/default';
@@ -13,7 +14,9 @@ const propTypes = {
     children: PropTypes.node.isRequired,
 
     /** The illustration to display in the header. Can be either an SVG component or a JSON object representing a Lottie animation. */
-    illustration: PropTypes.oneOfType([PropTypes.func, PropTypes.object]).isRequired,
+    // illustration: PropTypes.oneOfType([PropTypes.func, PropTypes.object]).isRequired,
+    // eslint-disable-next-line react/forbid-prop-types
+    illustration: PropTypes.any.isRequired,
 
     /** The background color to apply in the upper half of the screen. */
     backgroundColor: PropTypes.string,
@@ -32,6 +35,11 @@ const defaultProps = {
 };
 
 function IllustratedHeaderPageLayout({backgroundColor, children, illustration, footer, overlayContent, ...propsToPassToHeader}) {
+    const lottieStyle = {
+        width: _.get(illustration, 'w', '100%'),
+        height: _.get(illustration, 'h', 100),
+    };
+
     return (
         <HeaderPageLayout
             backgroundColor={backgroundColor}
@@ -40,7 +48,7 @@ function IllustratedHeaderPageLayout({backgroundColor, children, illustration, f
                 <>
                     <Lottie
                         source={illustration}
-                        style={styles.w100}
+                        style={lottieStyle}
                         autoPlay
                         loop
                     />
