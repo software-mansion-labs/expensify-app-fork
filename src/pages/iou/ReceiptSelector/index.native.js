@@ -10,8 +10,6 @@ import PressableWithFeedback from '../../../components/Pressable/PressableWithFe
 import Icon from '../../../components/Icon';
 import * as Expensicons from '../../../components/Icon/Expensicons';
 import styles from '../../../styles/styles';
-import Shutter from '../../../../assets/images/shutter.svg';
-import Hand from '../../../../assets/images/hand.svg';
 import * as IOU from '../../../libs/actions/IOU';
 import themeColors from '../../../styles/themes/default';
 import reportPropTypes from '../../reportPropTypes';
@@ -229,11 +227,6 @@ function ReceiptSelector({route, report, iou, transactionID}) {
         <View style={styles.flex1}>
             {permissions !== RESULTS.GRANTED && (
                 <View style={[styles.cameraView, styles.permissionView]}>
-                    <Hand
-                        width={CONST.RECEIPT.HAND_ICON_WIDTH}
-                        height={CONST.RECEIPT.HAND_ICON_HEIGHT}
-                        style={[styles.pb5]}
-                    />
                     <Text style={[styles.textReceiptUpload]}>{translate('receipt.takePhoto')}</Text>
                     <Text style={[styles.subTextReceiptUpload]}>{translate('receipt.cameraAccess')}</Text>
                     <PressableWithFeedback
@@ -307,12 +300,7 @@ function ReceiptSelector({route, report, iou, transactionID}) {
                     accessibilityLabel={translate('receipt.shutter')}
                     style={[styles.alignItemsCenter]}
                     onPress={takePhoto}
-                >
-                    <Shutter
-                        width={CONST.RECEIPT.SHUTTER_SIZE}
-                        height={CONST.RECEIPT.SHUTTER_SIZE}
-                    />
-                </PressableWithFeedback>
+                />
                 <PressableWithFeedback
                     accessibilityRole={CONST.ACCESSIBILITY_ROLE.BUTTON}
                     accessibilityLabel={translate('receipt.flash')}

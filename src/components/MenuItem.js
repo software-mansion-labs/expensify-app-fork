@@ -190,6 +190,7 @@ const MenuItem = React.forwardRef((props, ref) => {
                                             ]}
                                         />
                                     )}
+
                                     {Boolean(props.icon) && !_.isArray(props.icon) && (
                                         <View style={[styles.popoverMenuIcon, ...props.iconStyles, StyleUtils.getAvatarWidthStyle(props.avatarSize)]}>
                                             {props.iconType === CONST.ICON_TYPE_ICON && (

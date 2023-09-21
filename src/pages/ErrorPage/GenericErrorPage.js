@@ -6,7 +6,6 @@ import defaultTheme from '../../styles/themes/default';
 import * as Expensicons from '../../components/Icon/Expensicons';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
-import LogoWordmark from '../../../assets/images/expensify-wordmark.svg';
 import withLocalize, {withLocalizePropTypes} from '../../components/withLocalize';
 import * as Session from '../../libs/actions/Session';
 import variables from '../../styles/variables';
@@ -16,6 +15,7 @@ import TextLink from '../../components/TextLink';
 import CONST from '../../CONST';
 import SafeAreaConsumer from '../../components/SafeAreaConsumer';
 import * as StyleUtils from '../../styles/StyleUtils';
+import FastImage from 'react-native-fast-image';
 
 const propTypes = {
     ...withLocalizePropTypes,
@@ -75,13 +75,7 @@ function GenericErrorPage({translate}) {
                         </View>
                     </View>
                     <View styles={styles.alignSelfEnd}>
-                        <View style={[styles.flex1, styles.flexRow, styles.justifyContentCenter]}>
-                            <LogoWordmark
-                                height={30}
-                                width={80}
-                                fill={defaultTheme.textLight}
-                            />
-                        </View>
+                        <View style={[styles.flex1, styles.flexRow, styles.justifyContentCenter]} />
                     </View>
                 </View>
             )}

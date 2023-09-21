@@ -8,7 +8,6 @@ import Text from '../Text';
 import withWindowDimensions, {windowDimensionsPropTypes} from '../withWindowDimensions';
 import compose from '../../libs/compose';
 import variables from '../../styles/variables';
-import ExpensifyWordmark from '../../../assets/images/expensify-wordmark.svg';
 import {qrSharePropTypes, qrShareDefaultProps} from './propTypes';
 import QRCode from '../QRCode';
 
@@ -48,14 +47,6 @@ class QRShare extends Component {
                 style={styles.shareCodeContainer}
                 onLayout={this.onLayout}
             >
-                <View style={styles.expensifyQrLogo}>
-                    <ExpensifyWordmark
-                        fill={defaultTheme.QRLogo}
-                        width="100%"
-                        height="100%"
-                    />
-                </View>
-
                 <QRCode
                     getRef={(svg) => (this.svg = svg)}
                     url={this.props.url}

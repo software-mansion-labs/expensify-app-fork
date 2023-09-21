@@ -13,7 +13,6 @@ import * as StyleUtils from '../../../styles/StyleUtils';
 import scrollViewContentContainerStyles from './signInPageStyles';
 import themeColors from '../../../styles/themes/default';
 import BackgroundImage from './BackgroundImage';
-import SignInGradient from '../../../../assets/images/home-fade-gradient.svg';
 import variables from '../../../styles/variables';
 import usePrevious from '../../../hooks/usePrevious';
 
@@ -123,12 +122,8 @@ function SignInPageLayout(props) {
                                 />
                             </View>
                             <View>
-                                <View style={[styles.t0, styles.l0, styles.h100, styles.pAbsolute, styles.signInPageGradient]}>
-                                    <SignInGradient
-                                        height="100%"
-                                        preserveAspectRatio="none"
-                                    />
-                                </View>
+                                <View style={[styles.t0, styles.l0, styles.h100, styles.pAbsolute, styles.signInPageGradient]} />
+
                                 <View
                                     style={[
                                         styles.alignSelfCenter,

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import {StyleSheet} from 'react-native';
 import Reanimated, {useSharedValue, withTiming, Easing, useAnimatedStyle, runOnJS} from 'react-native-reanimated';
 import BootSplash from '../../libs/BootSplash';
-import Logo from '../../../assets/images/new-expensify-dark.svg';
 import styles from '../../styles/styles';
 
 const propTypes = {
@@ -67,15 +66,7 @@ function SplashScreenHider(props) {
                     marginBottom: -(BootSplash.navigationBarHeight || 0),
                 },
             ]}
-        >
-            <Reanimated.View style={scaleStyle}>
-                <Logo
-                    viewBox="0 0 80 80"
-                    width={100}
-                    height={100}
-                />
-            </Reanimated.View>
-        </Reanimated.View>
+        />
     );
 }
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import MenuItem from '../components/MenuItem';
-import Chase from '../../assets/images/bankicons/chase.svg';
 import variables from '../styles/variables';
+
+const Chase = '../../assets/images/bankicons/chase.svg';
 
 /**
  * We use the Component Story Format for writing stories. Follow the docs here:

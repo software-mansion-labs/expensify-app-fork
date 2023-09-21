@@ -6,8 +6,6 @@ import Icon from '../Icon';
 import * as Expensicons from '../Icon/Expensicons';
 import Popover from '../Popover';
 import MenuItem from '../MenuItem';
-import ZoomIcon from '../../../assets/images/zoom-icon.svg';
-import GoogleMeetIcon from '../../../assets/images/google-meet.svg';
 import CONST from '../../CONST';
 import styles from '../../styles/styles';
 import themeColors from '../../styles/themes/default';
@@ -37,7 +35,7 @@ function BaseVideoChatButtonAndMenu(props) {
 
     const menuItemData = [
         {
-            icon: ZoomIcon,
+            icon: '../../../assets/images/zoom-icon.svg',
             text: props.translate('videoChatButtonAndMenu.zoom'),
             onPress: () => {
                 setIsVideoChatMenuActive(false);
@@ -45,7 +43,7 @@ function BaseVideoChatButtonAndMenu(props) {
             },
         },
         {
-            icon: GoogleMeetIcon,
+            icon: '../../../assets/images/google-meet.svg',
             text: props.translate('videoChatButtonAndMenu.googleMeet'),
             onPress: () => {
                 setIsVideoChatMenuActive(false);

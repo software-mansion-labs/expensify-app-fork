@@ -1,253 +1,126 @@
-import ActiveRoomAvatar from '../../../assets/images/avatars/room.svg';
-import AdminRoomAvatar from '../../../assets/images/avatars/admin-room.svg';
-import Android from '../../../assets/images/android.svg';
-import AnnounceRoomAvatar from '../../../assets/images/avatars/announce-room.svg';
-import Apple from '../../../assets/images/apple.svg';
-import AppleLogo from '../../../assets/images/signIn/apple-logo.svg';
-import ArrowRight from '../../../assets/images/arrow-right.svg';
-import ArrowRightLong from '../../../assets/images/arrow-right-long.svg';
-import ArrowsUpDown from '../../../assets/images/arrows-updown.svg';
-import BackArrow from '../../../assets/images/back-left.svg';
-import Bank from '../../../assets/images/bank.svg';
-import Bill from '../../../assets/images/bill.svg';
-import Bolt from '../../../assets/images/bolt.svg';
-import Briefcase from '../../../assets/images/briefcase.svg';
-import Bug from '../../../assets/images/bug.svg';
-import Building from '../../../assets/images/building.svg';
-import Calendar from '../../../assets/images/calendar.svg';
-import Camera from '../../../assets/images/camera.svg';
-import Car from '../../../assets/images/car.svg';
-import Cash from '../../../assets/images/cash.svg';
-import ChatBubble from '../../../assets/images/chatbubble.svg';
-import Checkmark from '../../../assets/images/checkmark.svg';
-import Chair from '../../../assets/images/chair.svg';
-import Close from '../../../assets/images/close.svg';
-import ClosedSign from '../../../assets/images/closed-sign.svg';
-import Collapse from '../../../assets/images/collapse.svg';
-import Concierge from '../../../assets/images/concierge.svg';
-import ConciergeAvatar from '../../../assets/images/avatars/concierge-avatar.svg';
-import Connect from '../../../assets/images/connect.svg';
-import Copy from '../../../assets/images/copy.svg';
-import CreditCard from '../../../assets/images/creditcard.svg';
-import Document from '../../../assets/images/document.svg';
-import DeletedRoomAvatar from '../../../assets/images/avatars/deleted-room.svg';
-import DomainRoomAvatar from '../../../assets/images/avatars/domain-room.svg';
-import DotIndicator from '../../../assets/images/dot-indicator.svg';
-import DotIndicatorUnfilled from '../../../assets/images/dot-indicator-unfilled.svg';
-import DownArrow from '../../../assets/images/down.svg';
-import Download from '../../../assets/images/download.svg';
-import DragHandles from '../../../assets/images/drag-handles.svg';
-import Emoji from '../../../assets/images/emoji.svg';
-import EmptyStateRoutePending from '../../../assets/images/emptystate__routepending.svg';
-import Exclamation from '../../../assets/images/exclamation.svg';
-import Exit from '../../../assets/images/exit.svg';
-import ExpensifyCard from '../../../assets/images/expensifycard.svg';
-import ExpensifyWordmark from '../../../assets/images/expensify-wordmark.svg';
-import Expand from '../../../assets/images/expand.svg';
-import Eye from '../../../assets/images/eye.svg';
-import EyeDisabled from '../../../assets/images/eye-disabled.svg';
-import Flag from '../../../assets/images/flag.svg';
-import FlagLevelOne from '../../../assets/images/flag_level_01.svg';
-import FlagLevelTwo from '../../../assets/images/flag_level_02.svg';
-import FlagLevelThree from '../../../assets/images/flag_level_03.svg';
-import Gallery from '../../../assets/images/gallery.svg';
-import Gear from '../../../assets/images/gear.svg';
-import Globe from '../../../assets/images/globe.svg';
-import GoogleLogo from '../../../assets/images/signIn/google-logo.svg';
-import Hashtag from '../../../assets/images/hashtag.svg';
-import Heart from '../../../assets/images/heart.svg';
-import History from '../../../assets/images/history.svg';
-import Hourglass from '../../../assets/images/hourglass.svg';
-import ImageCropCircleMask from '../../../assets/images/image-crop-circle-mask.svg';
-import ImageCropSquareMask from '../../../assets/images/image-crop-square-mask.svg';
-import Info from '../../../assets/images/info.svg';
-import Invoice from '../../../assets/images/invoice.svg';
-import Key from '../../../assets/images/key.svg';
-import Keyboard from '../../../assets/images/keyboard.svg';
-import Link from '../../../assets/images/link.svg';
-import LinkCopy from '../../../assets/images/link-copy.svg';
-import Location from '../../../assets/images/location.svg';
-import Lock from '../../../assets/images/lock.svg';
-import LoungeAccess from './svgs/LoungeAccessIcon';
-import Luggage from '../../../assets/images/luggage.svg';
-import MagnifyingGlass from '../../../assets/images/magnifying-glass.svg';
-import Mail from '../../../assets/images/mail.svg';
-import Megaphone from '../../../assets/images/megaphone.svg';
-import Menu from '../../../assets/images/menu.svg';
-import MoneyBag from '../../../assets/images/money-bag.svg';
-import MoneyCircle from '../../../assets/images/money-circle.svg';
-import Monitor from '../../../assets/images/monitor.svg';
-import NewWindow from '../../../assets/images/new-window.svg';
-import NewWorkspace from '../../../assets/images/new-workspace.svg';
-import Offline from '../../../assets/images/offline.svg';
-import OfflineCloud from '../../../assets/images/offline-cloud.svg';
-import Paperclip from '../../../assets/images/paperclip.svg';
-import Paycheck from '../../../assets/images/paycheck.svg';
-import Pencil from '../../../assets/images/pencil.svg';
-import Phone from '../../../assets/images/phone.svg';
-import Pin from '../../../assets/images/pin.svg';
-import Plus from '../../../assets/images/plus.svg';
-import Printer from '../../../assets/images/printer.svg';
-import Profile from '../../../assets/images/profile.svg';
-import QrCode from '../../../assets/images/qrcode.svg';
-import QuestionMark from '../../../assets/images/question-mark-circle.svg';
-import Receipt from '../../../assets/images/receipt.svg';
-import ReceiptSearch from '../../../assets/images/receipt-search.svg';
-import Rotate from '../../../assets/images/rotate-image.svg';
-import RotateLeft from '../../../assets/images/rotate-left.svg';
-import Send from '../../../assets/images/send.svg';
-import Shield from '../../../assets/images/shield.svg';
-import Sync from '../../../assets/images/sync.svg';
-import ThreeDots from '../../../assets/images/three-dots.svg';
-import Transfer from '../../../assets/images/transfer.svg';
-import Trashcan from '../../../assets/images/trashcan.svg';
-import Unlock from '../../../assets/images/unlock.svg';
-import UpArrow from '../../../assets/images/arrow-up.svg';
-import Upload from '../../../assets/images/upload.svg';
-import UploadAlt from '../../../assets/images/upload-alt.svg';
-import User from '../../../assets/images/user.svg';
-import Users from '../../../assets/images/users.svg';
-import Wallet from '../../../assets/images/wallet.svg';
-import Workspace from '../../../assets/images/workspace-default-avatar.svg';
-import Zoom from '../../../assets/images/zoom.svg';
-import FallbackAvatar from '../../../assets/images/avatars/fallback-avatar.svg';
-import FallbackWorkspaceAvatar from '../../../assets/images/avatars/fallback-workspace-avatar.svg';
-import DragAndDrop from '../../../assets/images/drag-and-drop.svg';
-import ExpensifyFooterLogo from '../../../assets/images/expensify-footer-logo.svg';
-import ExpensifyFooterLogoVertical from '../../../assets/images/expensify-footer-logo-vertical.svg';
-import Twitter from '../../../assets/images/social-twitter.svg';
-import Youtube from '../../../assets/images/social-youtube.svg';
-import Facebook from '../../../assets/images/social-facebook.svg';
-import Podcast from '../../../assets/images/social-podcast.svg';
-import Linkedin from '../../../assets/images/social-linkedin.svg';
-import Instagram from '../../../assets/images/social-instagram.svg';
-import AddReaction from '../../../assets/images/add-reaction.svg';
-import Task from '../../../assets/images/task.svg';
-
-export {
-    ActiveRoomAvatar,
-    AddReaction,
-    AdminRoomAvatar,
-    Android,
-    AnnounceRoomAvatar,
-    Apple,
-    AppleLogo,
-    ArrowRight,
-    ArrowRightLong,
-    ArrowsUpDown,
-    BackArrow,
-    Bank,
-    Bill,
-    Bolt,
-    Briefcase,
-    Bug,
-    Building,
-    Calendar,
-    Camera,
-    Car,
-    Cash,
-    ChatBubble,
-    Checkmark,
-    Chair,
-    Close,
-    ClosedSign,
-    Collapse,
-    Concierge,
-    ConciergeAvatar,
-    Connect,
-    Copy,
-    CreditCard,
-    DeletedRoomAvatar,
-    Document,
-    DomainRoomAvatar,
-    DotIndicator,
-    DotIndicatorUnfilled,
-    DownArrow,
-    Download,
-    DragAndDrop,
-    DragHandles,
-    Emoji,
-    EmptyStateRoutePending,
-    Exclamation,
-    Exit,
-    ExpensifyCard,
-    ExpensifyWordmark,
-    ExpensifyFooterLogo,
-    ExpensifyFooterLogoVertical,
-    Expand,
-    Eye,
-    EyeDisabled,
-    FallbackAvatar,
-    FallbackWorkspaceAvatar,
-    Flag,
-    FlagLevelOne,
-    FlagLevelTwo,
-    FlagLevelThree,
-    Gallery,
-    Gear,
-    Globe,
-    GoogleLogo,
-    Hashtag,
-    Heart,
-    History,
-    Hourglass,
-    ImageCropCircleMask,
-    ImageCropSquareMask,
-    Info,
-    Invoice,
-    Key,
-    Keyboard,
-    Link,
-    LinkCopy,
-    Location,
-    Lock,
-    LoungeAccess,
-    Luggage,
-    MagnifyingGlass,
-    Mail,
-    Menu,
-    Megaphone,
-    MoneyBag,
-    MoneyCircle,
-    Monitor,
-    NewWindow,
-    NewWorkspace,
-    Offline,
-    OfflineCloud,
-    Paperclip,
-    Paycheck,
-    Pencil,
-    Phone,
-    Pin,
-    Plus,
-    Printer,
-    Profile,
-    QrCode,
-    QuestionMark,
-    Receipt,
-    ReceiptSearch,
-    Rotate,
-    RotateLeft,
-    Send,
-    Shield,
-    Sync,
-    Task,
-    ThreeDots,
-    Transfer,
-    Trashcan,
-    Unlock,
-    UpArrow,
-    Upload,
-    UploadAlt,
-    User,
-    Users,
-    Wallet,
-    Workspace,
-    Zoom,
-    Twitter,
-    Youtube,
-    Facebook,
-    Podcast,
-    Linkedin,
-    Instagram,
-};
+/* eslint-disable rulesdir/no-inline-named-export */
+export const ActiveRoomAvatar = require('../../../assets/images/avatars/room.svg');
+export const AdminRoomAvatar = require('../../../assets/images/avatars/admin-room.svg');
+export const Android = require('../../../assets/images/android.svg');
+export const AnnounceRoomAvatar = require('../../../assets/images/avatars/announce-room.svg');
+export const Apple = require('../../../assets/images/apple.svg');
+export const AppleLogo = require('../../../assets/images/signIn/apple-logo.svg');
+export const ArrowRight = require('../../../assets/images/arrow-right.svg');
+export const ArrowRightLong = require('../../../assets/images/arrow-right-long.svg');
+export const ArrowsUpDown = require('../../../assets/images/arrows-updown.svg');
+export const BackArrow = require('../../../assets/images/back-left.svg');
+export const Bank = require('../../../assets/images/bank.svg');
+export const Bill = require('../../../assets/images/bill.svg');
+export const Bolt = require('../../../assets/images/bolt.svg');
+export const Briefcase = require('../../../assets/images/briefcase.svg');
+export const Bug = require('../../../assets/images/bug.svg');
+export const Building = require('../../../assets/images/building.svg');
+export const Calendar = require('../../../assets/images/calendar.svg');
+export const Camera = require('../../../assets/images/camera.svg');
+export const Car = require('../../../assets/images/car.svg');
+export const Cash = require('../../../assets/images/cash.svg');
+export const ChatBubble = require('../../../assets/images/chatbubble.svg');
+export const Checkmark = require('../../../assets/images/checkmark.svg');
+export const Chair = require('../../../assets/images/chair.svg');
+export const Close = require('../../../assets/images/close.svg');
+export const ClosedSign = require('../../../assets/images/closed-sign.svg');
+export const Collapse = require('../../../assets/images/collapse.svg');
+export const Concierge = require('../../../assets/images/concierge.svg');
+export const ConciergeAvatar = require('../../../assets/images/avatars/concierge-avatar.svg');
+export const Connect = require('../../../assets/images/connect.svg');
+export const Copy = require('../../../assets/images/copy.svg');
+export const CreditCard = require('../../../assets/images/creditcard.svg');
+export const Document = require('../../../assets/images/document.svg');
+export const DeletedRoomAvatar = require('../../../assets/images/avatars/deleted-room.svg');
+export const DomainRoomAvatar = require('../../../assets/images/avatars/domain-room.svg');
+export const DotIndicator = require('../../../assets/images/dot-indicator.svg');
+export const DotIndicatorUnfilled = require('../../../assets/images/dot-indicator-unfilled.svg');
+export const DownArrow = require('../../../assets/images/down.svg');
+export const Download = require('../../../assets/images/download.svg');
+export const DragHandles = require('../../../assets/images/drag-handles.svg');
+export const Emoji = require('../../../assets/images/emoji.svg');
+export const EmptyStateRoutePending = require('../../../assets/images/emptystate__routepending.svg');
+export const Exclamation = require('../../../assets/images/exclamation.svg');
+export const Exit = require('../../../assets/images/exit.svg');
+export const ExpensifyCard = require('../../../assets/images/expensifycard.svg');
+export const ExpensifyWordmark = require('../../../assets/images/expensify-wordmark.svg');
+export const Expand = require('../../../assets/images/expand.svg');
+export const Eye = require('../../../assets/images/eye.svg');
+export const EyeDisabled = require('../../../assets/images/eye-disabled.svg');
+export const Flag = require('../../../assets/images/flag.svg');
+export const FlagLevelOne = require('../../../assets/images/flag_level_01.svg');
+export const FlagLevelTwo = require('../../../assets/images/flag_level_02.svg');
+export const FlagLevelThree = require('../../../assets/images/flag_level_03.svg');
+export const Gallery = require('../../../assets/images/gallery.svg');
+export const Gear = require('../../../assets/images/gear.svg');
+export const Globe = require('../../../assets/images/globe.svg');
+export const GoogleLogo = require('../../../assets/images/signIn/google-logo.svg');
+export const Hashtag = require('../../../assets/images/hashtag.svg');
+export const Heart = require('../../../assets/images/heart.svg');
+export const History = require('../../../assets/images/history.svg');
+export const Hourglass = require('../../../assets/images/hourglass.svg');
+export const ImageCropCircleMask = require('../../../assets/images/image-crop-circle-mask.svg');
+export const ImageCropSquareMask = require('../../../assets/images/image-crop-square-mask.svg');
+export const Info = require('../../../assets/images/info.svg');
+export const Invoice = require('../../../assets/images/invoice.svg');
+export const Key = require('../../../assets/images/key.svg');
+export const Keyboard = require('../../../assets/images/keyboard.svg');
+export const Link = require('../../../assets/images/link.svg');
+export const LinkCopy = require('../../../assets/images/link-copy.svg');
+export const Location = require('../../../assets/images/location.svg');
+export const Lock = require('../../../assets/images/lock.svg');
+export const LoungeAccess = require('./svgs/LoungeAccessIcon');
+export const Luggage = require('../../../assets/images/luggage.svg');
+export const MagnifyingGlass = require('../../../assets/images/magnifying-glass.svg');
+export const Mail = require('../../../assets/images/mail.svg');
+export const Megaphone = require('../../../assets/images/megaphone.svg');
+export const Menu = require('../../../assets/images/menu.svg');
+export const MoneyBag = require('../../../assets/images/money-bag.svg');
+export const MoneyCircle = require('../../../assets/images/money-circle.svg');
+export const Monitor = require('../../../assets/images/monitor.svg');
+export const NewWindow = require('../../../assets/images/new-window.svg');
+export const NewWorkspace = require('../../../assets/images/new-workspace.svg');
+export const Offline = require('../../../assets/images/offline.svg');
+export const OfflineCloud = require('../../../assets/images/offline-cloud.svg');
+export const Paperclip = require('../../../assets/images/paperclip.svg');
+export const Paycheck = require('../../../assets/images/paycheck.svg');
+export const Pencil = require('../../../assets/images/pencil.svg');
+export const Phone = require('../../../assets/images/phone.svg');
+export const Pin = require('../../../assets/images/pin.svg');
+export const Plus = require('../../../assets/images/plus.svg');
+export const Printer = require('../../../assets/images/printer.svg');
+export const Profile = require('../../../assets/images/profile.svg');
+export const QrCode = require('../../../assets/images/qrcode.svg');
+export const QuestionMark = require('../../../assets/images/question-mark-circle.svg');
+export const Receipt = require('../../../assets/images/receipt.svg');
+export const ReceiptSearch = require('../../../assets/images/receipt-search.svg');
+export const Rotate = require('../../../assets/images/rotate-image.svg');
+export const RotateLeft = require('../../../assets/images/rotate-left.svg');
+export const Send = require('../../../assets/images/send.svg');
+export const Shield = require('../../../assets/images/shield.svg');
+export const Sync = require('../../../assets/images/sync.svg');
+export const ThreeDots = require('../../../assets/images/three-dots.svg');
+export const Transfer = require('../../../assets/images/transfer.svg');
+export const Trashcan = require('../../../assets/images/trashcan.svg');
+export const Unlock = require('../../../assets/images/unlock.svg');
+export const UpArrow = require('../../../assets/images/arrow-up.svg');
+export const Upload = require('../../../assets/images/upload.svg');
+export const UploadAlt = require('../../../assets/images/upload-alt.svg');
+export const User = require('../../../assets/images/user.svg');
+export const Users = require('../../../assets/images/users.svg');
+export const Wallet = require('../../../assets/images/wallet.svg');
+export const Workspace = require('../../../assets/images/workspace-default-avatar.svg');
+export const Zoom = require('../../../assets/images/zoom.svg');
+export const FallbackAvatar = require('../../../assets/images/avatars/fallback-avatar.svg');
+export const FallbackWorkspaceAvatar = require('../../../assets/images/avatars/fallback-workspace-avatar.svg');
+export const DragAndDrop = require('../../../assets/images/drag-and-drop.svg');
+export const ExpensifyFooterLogo = require('../../../assets/images/expensify-footer-logo.svg');
+export const ExpensifyFooterLogoVertical = require('../../../assets/images/expensify-footer-logo-vertical.svg');
+export const Twitter = require('../../../assets/images/social-twitter.svg');
+export const Youtube = require('../../../assets/images/social-youtube.svg');
+export const Facebook = require('../../../assets/images/social-facebook.svg');
+export const Podcast = require('../../../assets/images/social-podcast.svg');
+export const Linkedin = require('../../../assets/images/social-linkedin.svg');
+export const Instagram = require('../../../assets/images/social-instagram.svg');
+export const AddReaction = require('../../../assets/images/add-reaction.svg');
+export const Task = require('../../../assets/images/task.svg');

@@ -186,6 +186,8 @@ function InitialSettingsPage(props) {
 
         const paymentCardList = props.fundList || {};
 
+        console.log('Expensicons', Expensicons);
+
         return [
             {
                 translationKey: 'common.shareCode',

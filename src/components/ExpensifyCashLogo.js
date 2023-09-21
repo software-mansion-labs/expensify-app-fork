@@ -1,9 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ProductionLogo from '../../assets/images/new-expensify.svg';
-import DevLogo from '../../assets/images/new-expensify-dev.svg';
-import StagingLogo from '../../assets/images/new-expensify-stg.svg';
-import AdhocLogo from '../../assets/images/new-expensify-adhoc.svg';
 import CONST from '../CONST';
 import useEnvironment from '../hooks/useEnvironment';
 
@@ -16,10 +12,10 @@ const propTypes = {
 };
 
 const logoComponents = {
-    [CONST.ENVIRONMENT.DEV]: DevLogo,
-    [CONST.ENVIRONMENT.STAGING]: StagingLogo,
-    [CONST.ENVIRONMENT.PRODUCTION]: ProductionLogo,
-    [CONST.ENVIRONMENT.ADHOC]: AdhocLogo,
+    [CONST.ENVIRONMENT.DEV]: '../../assets/images/new-expensify-dev.svg',
+    [CONST.ENVIRONMENT.STAGING]: '../../assets/images/new-expensify-stg.svg',
+    [CONST.ENVIRONMENT.PRODUCTION]: '../../assets/images/new-expensify.svg',
+    [CONST.ENVIRONMENT.ADHOC]: '../../assets/images/new-expensify-adhoc.svg',
 };
 
 function ExpensifyCashLogo(props) {

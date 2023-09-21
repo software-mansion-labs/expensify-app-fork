@@ -6,7 +6,6 @@ import {withOnyx} from 'react-native-onyx';
 import * as IOU from '../../../libs/actions/IOU';
 import reportPropTypes from '../../reportPropTypes';
 import CONST from '../../../CONST';
-import ReceiptUpload from '../../../../assets/images/receipt-upload.svg';
 import PressableWithFeedback from '../../../components/Pressable/PressableWithFeedback';
 import Button from '../../../components/Button';
 import styles from '../../../styles/styles';
@@ -106,12 +105,7 @@ function ReceiptSelector(props) {
                         onLayout={({nativeEvent}) => {
                             setReceiptImageTopPosition(PixelRatio.roundToNearestPixel(nativeEvent.layout.top));
                         }}
-                    >
-                        <ReceiptUpload
-                            width={CONST.RECEIPT.ICON_SIZE}
-                            height={CONST.RECEIPT.ICON_SIZE}
-                        />
-                    </View>
+                    />
                     <Text style={[styles.textReceiptUpload]}>{translate('receipt.upload')}</Text>
                     <Text style={[styles.subTextReceiptUpload]}>
                         {isSmallScreenWidth ? translate('receipt.chooseReceipt') : translate('receipt.dragReceiptBeforeEmail')}

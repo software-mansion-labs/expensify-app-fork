@@ -6,6 +6,7 @@ import variables from '../../styles/variables';
 import styles from '../../styles/styles';
 import * as StyleUtils from '../../styles/StyleUtils';
 import IconWrapperStyles from './IconWrapperStyles';
+import FastImage from 'react-native-fast-image';
 
 const propTypes = {
     /** The asset to render. */
@@ -51,6 +52,7 @@ const defaultProps = {
 // eslint-disable-next-line react/prefer-stateless-function
 class Icon extends PureComponent {
     render() {
+        console.log('this.props.fill: ', this.props.height);
         const width = this.props.small ? variables.iconSizeSmall : this.props.width;
         const height = this.props.small ? variables.iconSizeSmall : this.props.height;
         const iconStyles = [StyleUtils.getWidthAndHeightStyle(width, height), IconWrapperStyles, styles.pAbsolute, ...this.props.additionalStyles];
@@ -58,16 +60,21 @@ class Icon extends PureComponent {
         if (this.props.inline) {
             return (
                 <View
-                    testID={`${this.props.src.name} Icon`}
+                    testID={`${this.props.src} Icon`}
                     style={[StyleUtils.getWidthAndHeightStyle(width, height), styles.bgTransparent, styles.overflowVisible]}
                 >
                     <View style={iconStyles}>
-                        <this.props.src
+                        {/* <this.props.src
                             width={width}
                             height={height}
                             fill={this.props.fill}
                             hovered={this.props.hovered.toString()}
                             pressed={this.props.pressed.toString()}
+                        /> */}
+                        <FastImage
+                            source={require('../../../assets/images/qrcode.svg')}
+                            style={{width: 32, height: 32}}
+                            tintColor={this.props.fill}
                         />
                     </View>
                 </View>
@@ -76,15 +83,20 @@ class Icon extends PureComponent {
 
         return (
             <View
-                testID={`${this.props.src.name} Icon`}
+                testID={`${this.props.src} Icon`}
                 style={this.props.additionalStyles}
             >
-                <this.props.src
+                {/* <this.props.src
                     width={width}
                     height={height}
                     fill={this.props.fill}
                     hovered={this.props.hovered.toString()}
                     pressed={this.props.pressed.toString()}
+                /> */}
+                <FastImage
+                    source={this.props.src}
+                    style={{width: this.props.width, height: this.props.height}}
+                    tintColor={this.props.fill}
                 />
             </View>
         );

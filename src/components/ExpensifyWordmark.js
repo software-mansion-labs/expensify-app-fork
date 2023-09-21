@@ -2,10 +2,6 @@ import React from 'react';
 import {View} from 'react-native';
 import PropTypes from 'prop-types';
 import _ from 'underscore';
-import ProductionLogo from '../../assets/images/expensify-wordmark.svg';
-import DevLogo from '../../assets/images/expensify-logo--dev.svg';
-import StagingLogo from '../../assets/images/expensify-logo--staging.svg';
-import AdHocLogo from '../../assets/images/expensify-logo--adhoc.svg';
 import CONST from '../CONST';
 import withWindowDimensions, {windowDimensionsPropTypes} from './withWindowDimensions';
 import themeColors from '../styles/themes/default';
@@ -26,16 +22,14 @@ const defaultProps = {
 };
 
 const logoComponents = {
-    [CONST.ENVIRONMENT.DEV]: DevLogo,
-    [CONST.ENVIRONMENT.STAGING]: StagingLogo,
-    [CONST.ENVIRONMENT.PRODUCTION]: ProductionLogo,
+    [CONST.ENVIRONMENT.DEV]: '../../assets/images/expensify-logo--dev.svg',
+    [CONST.ENVIRONMENT.STAGING]: '../../assets/images/expensify-logo--staging.svg',
+    [CONST.ENVIRONMENT.PRODUCTION]: '../../assets/images/expensify-wordmark.svg',
 };
 
 function ExpensifyWordmark(props) {
     const {environment} = useEnvironment();
     // PascalCase is required for React components, so capitalize the const here
-
-    const LogoComponent = logoComponents[environment] || AdHocLogo;
     return (
         <>
             <View
@@ -45,9 +39,7 @@ function ExpensifyWordmark(props) {
                     props.isSmallScreenWidth && (environment === CONST.ENVIRONMENT.DEV || environment === CONST.ENVIRONMENT.STAGING) ? styles.ml3 : {},
                     ...(_.isArray(props.style) ? props.style : [props.style]),
                 ]}
-            >
-                <LogoComponent fill={themeColors.success} />
-            </View>
+            />
         </>
     );
 }

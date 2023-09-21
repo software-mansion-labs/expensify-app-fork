@@ -1,9 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import MobileBackgroundImage from '../../../../../assets/images/home-background--mobile.svg';
-import DesktopBackgroundImage from '../../../../../assets/images/home-background--desktop.svg';
+import FastImage from 'react-native-fast-image';
 import styles from '../../../../styles/styles';
 import defaultPropTypes from './propTypes';
+
+const MobileBackgroundImage = require('../../../../../assets/images/home-background--mobile.svg');
+const DesktopBackgroundImage = require('../../../../../assets/images/home-background--desktop.svg');
 
 const defaultProps = {
     isSmallScreen: false,
@@ -17,13 +19,15 @@ const propTypes = {
 };
 function BackgroundImage(props) {
     return props.isSmallScreen ? (
-        <MobileBackgroundImage
+        <FastImage
+            source={MobileBackgroundImage}
             pointerEvents={props.pointerEvents}
             width={props.width}
             style={styles.signInBackground}
         />
     ) : (
-        <DesktopBackgroundImage
+        <FastImage
+            source={DesktopBackgroundImage}
             pointerEvents={props.pointerEvents}
             width={props.width}
             style={styles.signInBackground}

@@ -1,13 +1,3 @@
-import Smiley from '../images/emoji.svg';
-import AnimalsAndNature from '../images/emojiCategoryIcons/plant.svg';
-import FoodAndDrink from '../images/emojiCategoryIcons/hamburger.svg';
-import TravelAndPlaces from '../images/emojiCategoryIcons/plane.svg';
-import Activities from '../images/emojiCategoryIcons/soccer-ball.svg';
-import Objects from '../images/emojiCategoryIcons/light-bulb.svg';
-import Symbols from '../images/emojiCategoryIcons/peace-sign.svg';
-import Flags from '../images/emojiCategoryIcons/flag.svg';
-import FrequentlyUsed from '../images/history.svg';
-
 const skinTones = [
     {
         code: '🖐',
@@ -38,7 +28,7 @@ const skinTones = [
 const emojis = [
     {
         header: true,
-        icon: Smiley,
+        icon: '../images/emoji.svg',
         code: 'smileysAndEmotion',
     },
     {
@@ -2356,7 +2346,7 @@ const emojis = [
     },
     {
         header: true,
-        icon: AnimalsAndNature,
+        icon: '../images/emojiCategoryIcons/plant.svg',
         code: 'animalsAndNature',
     },
     {
@@ -2921,7 +2911,7 @@ const emojis = [
     },
     {
         header: true,
-        icon: FoodAndDrink,
+        icon: '../images/emojiCategoryIcons/hamburger.svg',
         code: 'foodAndDrink',
     },
     {
@@ -3442,7 +3432,7 @@ const emojis = [
     },
     {
         header: true,
-        icon: TravelAndPlaces,
+        icon: '../images/emojiCategoryIcons/plane.svg',
         code: 'travelAndPlaces',
     },
     {
@@ -4307,7 +4297,7 @@ const emojis = [
     },
     {
         header: true,
-        icon: Activities,
+        icon: '../images/emojiCategoryIcons/soccer-ball.svg',
         code: 'activities',
     },
     {
@@ -4648,7 +4638,7 @@ const emojis = [
     },
     {
         header: true,
-        icon: Objects,
+        icon: '../images/emojiCategoryIcons/light-bulb.svg',
         code: 'objects',
     },
     {
@@ -5653,7 +5643,7 @@ const emojis = [
     },
     {
         header: true,
-        icon: Symbols,
+        icon: '../images/emojiCategoryIcons/peace-sign.svg',
         code: 'symbols',
     },
     {
@@ -6538,7 +6528,7 @@ const emojis = [
     },
     {
         header: true,
-        icon: Flags,
+        icon: '../images/emojiCategoryIcons/flag.svg',
         code: 'flags',
     },
     {
@@ -7622,7 +7612,7 @@ const emojis = [
 const categoryFrequentlyUsed = {
     header: true,
     code: 'frequentlyUsed',
-    icon: FrequentlyUsed,
+    icon: '../images/history.svg',
 };
 
 export {skinTones, categoryFrequentlyUsed};

@@ -12,7 +12,7 @@ import Button from '../../../../components/Button';
 import Text from '../../../../components/Text';
 import Navigation from '../../../../libs/Navigation/Navigation';
 import * as User from '../../../../libs/actions/User';
-import MobileBackgroundImage from '../../../../../assets/images/money-stack.svg';
+// import MobileBackgroundImage from '../../../../../assets/images/money-stack.svg';
 import themeColors from '../../../../styles/themes/default';
 import useLocalize from '../../../../hooks/useLocalize';
 import styles from '../../../../styles/styles';
@@ -67,7 +67,6 @@ function StatusPage({draftStatus, currentUserPersonalDetails}) {
             title={localize.translate('statusPage.status')}
             onBackButtonPress={navigateBackToSettingsPage}
             backgroundColor={themeColors.PAGE_BACKGROUND_COLORS[ROUTES.SETTINGS_STATUS]}
-            image={MobileBackgroundImage}
             footer={footerComponent}
         >
             <View style={styles.m5}>

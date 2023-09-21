@@ -1,14 +1,16 @@
 import React from 'react';
-import AndroidBackgroundImage from '../../../../../assets/images/home-background--android.svg';
-import styles from '../../../../styles/styles';
+import FastImage from 'react-native-fast-image';
 import defaultPropTypes from './propTypes';
+import styles from '../../../../styles/styles';
+
+const AndroidBackgroundImage = require('../../../../../assets/images/home-background--android.svg');
 
 function BackgroundImage(props) {
     return (
-        <AndroidBackgroundImage
+        <FastImage
+            source={AndroidBackgroundImage}
             pointerEvents={props.pointerEvents}
-            width={props.width}
-            style={styles.signInBackground}
+            style={[styles.signInBackground, {width: props.width}]}
         />
     );
 }

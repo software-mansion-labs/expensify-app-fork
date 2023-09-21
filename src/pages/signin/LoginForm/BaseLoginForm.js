@@ -33,6 +33,7 @@ import Log from '../../../libs/Log';
 import withNavigationFocus, {withNavigationFocusPropTypes} from '../../../components/withNavigationFocus';
 import usePrevious from '../../../hooks/usePrevious';
 import * as MemoryOnlyKeys from '../../../libs/actions/MemoryOnlyKeys/MemoryOnlyKeys';
+import FastImage from 'react-native-fast-image';
 
 const propTypes = {
     /** Should we dismiss the keyboard when transitioning away from the page? */
@@ -215,6 +216,10 @@ function LoginForm(props) {
                     errorText={formErrorText}
                     hasError={hasError}
                     maxLength={CONST.LOGIN_CHARACTER_LIMIT}
+                />
+                <FastImage
+                    style={{width: 200, height: 200}}
+                    source={require('../../../../assets/images/qrcode.svg')}
                 />
             </View>
             {!_.isEmpty(props.account.success) && <Text style={[styles.formSuccess]}>{props.account.success}</Text>}

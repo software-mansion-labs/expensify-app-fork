@@ -23,7 +23,6 @@ import Header from '../../../components/Header';
 import defaultTheme from '../../../styles/themes/default';
 import OptionsListSkeletonView from '../../../components/OptionsListSkeletonView';
 import variables from '../../../styles/variables';
-import LogoComponent from '../../../../assets/images/expensify-wordmark.svg';
 import PressableWithoutFeedback from '../../../components/Pressable/PressableWithoutFeedback';
 import * as Session from '../../../libs/actions/Session';
 import KeyboardShortcut from '../../../libs/KeyboardShortcut';
@@ -155,13 +154,6 @@ class SidebarLinks extends React.PureComponent {
                     dataSet={{dragArea: true}}
                 >
                     <Header
-                        title={
-                            <LogoComponent
-                                fill={defaultTheme.text}
-                                width={variables.lhnLogoWidth}
-                                height={variables.lhnLogoHeight}
-                            />
-                        }
                         accessibilityRole={CONST.ACCESSIBILITY_ROLE.TEXT}
                         shouldShowEnvironmentBadge
                     />

@@ -6,8 +6,6 @@ import Text from '../../../components/Text';
 import styles from '../../../styles/styles';
 import * as StyleUtils from '../../../styles/StyleUtils';
 import themeColors from '../../../styles/themes/default';
-import variables from '../../../styles/variables';
-import * as Expensicons from '../../../components/Icon/Expensicons';
 import TextLink from '../../../components/TextLink';
 import withLocalize, {withLocalizePropTypes} from '../../../components/withLocalize';
 import withWindowDimensions, {windowDimensionsPropTypes} from '../../../components/withWindowDimensions';
@@ -17,7 +15,6 @@ import Socials from '../Socials';
 import Hoverable from '../../../components/Hoverable';
 import CONST from '../../../CONST';
 import * as Session from '../../../libs/actions/Session';
-import SignInGradient from '../../../../assets/images/home-fade-gradient--mobile.svg';
 
 const propTypes = {
     ...windowDimensionsPropTypes,
@@ -162,11 +159,7 @@ function Footer(props) {
     return (
         <View style={[styles.flex1]}>
             <View style={footerWrapper}>
-                {isVertical ? (
-                    <View style={[styles.signInPageGradientMobile]}>
-                        <SignInGradient height="100%" />
-                    </View>
-                ) : null}
+                {isVertical ? <View style={[styles.signInPageGradientMobile]}>{/* <SignInGradient height="100%" /> */}</View> : null}
                 <View style={pageFooterWrapper}>
                     <View style={footerColumns}>
                         {_.map(columns({scrollPageToTop: props.scrollPageToTop}), (column, i) => (
@@ -205,16 +198,7 @@ function Footer(props) {
                             </View>
                         ))}
                     </View>
-                    <View style={[!isVertical && styles.footerBottomLogo]}>
-                        {!isVertical ? (
-                            <Expensicons.ExpensifyFooterLogo />
-                        ) : (
-                            <Expensicons.ExpensifyFooterLogoVertical
-                                height={variables.verticalLogoHeight}
-                                width={variables.verticalLogoWidth}
-                            />
-                        )}
-                    </View>
+                    <View style={[!isVertical && styles.footerBottomLogo]} />
                 </View>
             </View>
         </View>

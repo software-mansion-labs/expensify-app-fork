@@ -1,77 +1,39 @@
-import Workspace0 from '../../../assets/images/avatars/workspace/default-avatar_0.svg';
-import Workspace1 from '../../../assets/images/avatars/workspace/default-avatar_1.svg';
-import Workspace2 from '../../../assets/images/avatars/workspace/default-avatar_2.svg';
-import Workspace3 from '../../../assets/images/avatars/workspace/default-avatar_3.svg';
-import Workspace4 from '../../../assets/images/avatars/workspace/default-avatar_4.svg';
-import Workspace5 from '../../../assets/images/avatars/workspace/default-avatar_5.svg';
-import Workspace6 from '../../../assets/images/avatars/workspace/default-avatar_6.svg';
-import Workspace7 from '../../../assets/images/avatars/workspace/default-avatar_7.svg';
-import Workspace8 from '../../../assets/images/avatars/workspace/default-avatar_8.svg';
-import Workspace9 from '../../../assets/images/avatars/workspace/default-avatar_9.svg';
-import WorkspaceA from '../../../assets/images/avatars/workspace/default-avatar_a.svg';
-import WorkspaceB from '../../../assets/images/avatars/workspace/default-avatar_b.svg';
-import WorkspaceC from '../../../assets/images/avatars/workspace/default-avatar_c.svg';
-import WorkspaceD from '../../../assets/images/avatars/workspace/default-avatar_d.svg';
-import WorkspaceE from '../../../assets/images/avatars/workspace/default-avatar_e.svg';
-import WorkspaceF from '../../../assets/images/avatars/workspace/default-avatar_f.svg';
-import WorkspaceG from '../../../assets/images/avatars/workspace/default-avatar_g.svg';
-import WorkspaceH from '../../../assets/images/avatars/workspace/default-avatar_h.svg';
-import WorkspaceI from '../../../assets/images/avatars/workspace/default-avatar_i.svg';
-import WorkspaceJ from '../../../assets/images/avatars/workspace/default-avatar_j.svg';
-import WorkspaceK from '../../../assets/images/avatars/workspace/default-avatar_k.svg';
-import WorkspaceL from '../../../assets/images/avatars/workspace/default-avatar_l.svg';
-import WorkspaceM from '../../../assets/images/avatars/workspace/default-avatar_m.svg';
-import WorkspaceN from '../../../assets/images/avatars/workspace/default-avatar_n.svg';
-import WorkspaceO from '../../../assets/images/avatars/workspace/default-avatar_o.svg';
-import WorkspaceP from '../../../assets/images/avatars/workspace/default-avatar_p.svg';
-import WorkspaceQ from '../../../assets/images/avatars/workspace/default-avatar_q.svg';
-import WorkspaceR from '../../../assets/images/avatars/workspace/default-avatar_r.svg';
-import WorkspaceS from '../../../assets/images/avatars/workspace/default-avatar_s.svg';
-import WorkspaceT from '../../../assets/images/avatars/workspace/default-avatar_t.svg';
-import WorkspaceU from '../../../assets/images/avatars/workspace/default-avatar_u.svg';
-import WorkspaceV from '../../../assets/images/avatars/workspace/default-avatar_v.svg';
-import WorkspaceW from '../../../assets/images/avatars/workspace/default-avatar_w.svg';
-import WorkspaceX from '../../../assets/images/avatars/workspace/default-avatar_x.svg';
-import WorkspaceY from '../../../assets/images/avatars/workspace/default-avatar_y.svg';
-import WorkspaceZ from '../../../assets/images/avatars/workspace/default-avatar_z.svg';
-import WorkspaceBuilding from '../../../assets/images/avatars/workspace/default-avatar_building.svg';
-
-export {
-    Workspace0,
-    Workspace1,
-    Workspace2,
-    Workspace3,
-    Workspace4,
-    Workspace5,
-    Workspace6,
-    Workspace7,
-    Workspace8,
-    Workspace9,
-    WorkspaceA,
-    WorkspaceB,
-    WorkspaceC,
-    WorkspaceD,
-    WorkspaceE,
-    WorkspaceF,
-    WorkspaceG,
-    WorkspaceH,
-    WorkspaceI,
-    WorkspaceJ,
-    WorkspaceK,
-    WorkspaceL,
-    WorkspaceM,
-    WorkspaceN,
-    WorkspaceO,
-    WorkspaceP,
-    WorkspaceQ,
-    WorkspaceR,
-    WorkspaceS,
-    WorkspaceT,
-    WorkspaceU,
-    WorkspaceV,
-    WorkspaceW,
-    WorkspaceX,
-    WorkspaceY,
-    WorkspaceZ,
-    WorkspaceBuilding,
+export default {
+    Workspace0: '../../../assets/images/avatars/workspace/default-avatar_0.svg',
+    Workspace1: '../../../assets/images/avatars/workspace/default-avatar_1.svg',
+    Workspace2: '../../../assets/images/avatars/workspace/default-avatar_2.svg',
+    Workspace3: '../../../assets/images/avatars/workspace/default-avatar_3.svg',
+    Workspace4: '../../../assets/images/avatars/workspace/default-avatar_4.svg',
+    Workspace5: '../../../assets/images/avatars/workspace/default-avatar_5.svg',
+    Workspace6: '../../../assets/images/avatars/workspace/default-avatar_6.svg',
+    Workspace7: '../../../assets/images/avatars/workspace/default-avatar_7.svg',
+    Workspace8: '../../../assets/images/avatars/workspace/default-avatar_8.svg',
+    Workspace9: '../../../assets/images/avatars/workspace/default-avatar_9.svg',
+    WorkspaceA: '../../../assets/images/avatars/workspace/default-avatar_a.svg',
+    WorkspaceB: '../../../assets/images/avatars/workspace/default-avatar_b.svg',
+    WorkspaceC: '../../../assets/images/avatars/workspace/default-avatar_c.svg',
+    WorkspaceD: '../../../assets/images/avatars/workspace/default-avatar_d.svg',
+    WorkspaceE: '../../../assets/images/avatars/workspace/default-avatar_e.svg',
+    WorkspaceF: '../../../assets/images/avatars/workspace/default-avatar_f.svg',
+    WorkspaceG: '../../../assets/images/avatars/workspace/default-avatar_g.svg',
+    WorkspaceH: '../../../assets/images/avatars/workspace/default-avatar_h.svg',
+    WorkspaceI: '../../../assets/images/avatars/workspace/default-avatar_i.svg',
+    WorkspaceJ: '../../../assets/images/avatars/workspace/default-avatar_j.svg',
+    WorkspaceK: '../../../assets/images/avatars/workspace/default-avatar_k.svg',
+    WorkspaceL: '../../../assets/images/avatars/workspace/default-avatar_l.svg',
+    WorkspaceM: '../../../assets/images/avatars/workspace/default-avatar_m.svg',
+    WorkspaceN: '../../../assets/images/avatars/workspace/default-avatar_n.svg',
+    WorkspaceO: '../../../assets/images/avatars/workspace/default-avatar_o.svg',
+    WorkspaceP: '../../../assets/images/avatars/workspace/default-avatar_p.svg',
+    WorkspaceQ: '../../../assets/images/avatars/workspace/default-avatar_q.svg',
+    WorkspaceR: '../../../assets/images/avatars/workspace/default-avatar_r.svg',
+    WorkspaceS: '../../../assets/images/avatars/workspace/default-avatar_s.svg',
+    WorkspaceT: '../../../assets/images/avatars/workspace/default-avatar_t.svg',
+    WorkspaceU: '../../../assets/images/avatars/workspace/default-avatar_u.svg',
+    WorkspaceV: '../../../assets/images/avatars/workspace/default-avatar_v.svg',
+    WorkspaceW: '../../../assets/images/avatars/workspace/default-avatar_w.svg',
+    WorkspaceX: '../../../assets/images/avatars/workspace/default-avatar_x.svg',
+    WorkspaceY: '../../../assets/images/avatars/workspace/default-avatar_y.svg',
+    WorkspaceZ: '../../../assets/images/avatars/workspace/default-avatar_z.svg',
+    WorkspaceBuilding: '../../../assets/images/avatars/workspace/default-avatar_building.svg',
 };
