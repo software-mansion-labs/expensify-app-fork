@@ -3,6 +3,8 @@ import React, {useState, useEffect, useMemo} from 'react';
 import {View} from 'react-native';
 import PropTypes from 'prop-types';
 import {withOnyx} from 'react-native-onyx';
+import * as Contacts from 'expo-contacts';
+import {getOptions} from "ajv-cli/src/commands/options";
 import OptionsSelector from '../components/OptionsSelector';
 import * as OptionsListUtils from '../libs/OptionsListUtils';
 import Permissions from '../libs/Permissions';
@@ -20,6 +22,7 @@ import compose from '../libs/compose';
 import personalDetailsPropType from './personalDetailsPropType';
 import reportPropTypes from './reportPropTypes';
 import variables from '../styles/variables';
+import * as UserUtils from "../libs/UserUtils";
 
 const propTypes = {
     /** Beta features list */
@@ -48,6 +51,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate}) 
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredRecentReports, setFilteredRecentReports] = useState([]);
     const [filteredPersonalDetails, setFilteredPersonalDetails] = useState([]);
+    const [filteredPhonebookContacts, setFilteredPhonebookContacts] = useState([]);
     const [filteredUserToInvite, setFilteredUserToInvite] = useState();
     const [selectedOptions, setSelectedOptions] = useState([]);
 
@@ -92,6 +96,14 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate}) 
             indexOffset,
         });
         indexOffset += filteredPersonalDetails.length;
+        console.warn({filteredPhonebookContacts, filteredRecentReports})
+        sectionsList.push({
+            title: 'test',
+            data: filteredPhonebookContacts,
+            shouldShow: !_.isEmpty(filteredPhonebookContacts),
+            indexOffset,
+        });
+        indexOffset += filteredPhonebookContacts.length;
 
         if (filteredUserToInvite) {
             sectionsList.push({
@@ -103,7 +115,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate}) 
         }
 
         return sectionsList;
-    }, [translate, filteredPersonalDetails, filteredRecentReports, filteredUserToInvite, maxParticipantsReached, selectedOptions]);
+    }, [translate, filteredPersonalDetails, filteredRecentReports, filteredUserToInvite, maxParticipantsReached, selectedOptions, filteredPhonebookContacts]);
 
     /**
      * Removes a selected option from list if already selected. If not already selected add this option to the list.
@@ -163,6 +175,36 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate}) 
         setFilteredRecentReports(recentReports);
         setFilteredPersonalDetails(newChatPersonalDetails);
         setFilteredUserToInvite(userToInvite);
+        Contacts.requestPermissionsAsync().then(({status}) => {
+            if (status === 'granted') {
+                Contacts.getContactsAsync({
+                    fields: [Contacts.Fields.Emails, Contacts.Fields.PhoneNumbers, Contacts.Fields.Name, Contacts.Fields.LastName, Contacts.Fields.FirstName],
+                }).then(({data}) => {
+                    if (!data || data.length === 0) {
+                        return
+                    }
+                    setFilteredPhonebookContacts(_.map(data, (it) => {
+                        const optimisticAccountID = UserUtils.generateAccountID(it.phoneNumbers[0].digits);
+                        const actions = {showChatPreviewLine: false, forcePolicyNamePreview: false}
+                        const phoneBookUser = OptionsListUtils.createOption([optimisticAccountID], [{phoneNumber: it.phoneNumbers[0].digits}], null, {}, actions)
+                        phoneBookUser.isOptimisticAccount = true;
+                        phoneBookUser.login = `${it.firstName} ${it.lastName}`;
+                        phoneBookUser.text = phoneBookUser.text || `${it.firstName} ${it.lastName}`;
+                        phoneBookUser.alternateText = phoneBookUser.alternateText || `${it.firstName} ${it.lastName}`;
+
+                        // If user doesn't exist, use a default avatar
+                        phoneBookUser.icons = [
+                            {
+                                source: UserUtils.getAvatar('', optimisticAccountID),
+                                name: `${it.firstName} ${it.lastName}`,
+                                type: CONST.ICON_TYPE_AVATAR,
+                            },
+                        ];
+                        return phoneBookUser;
+                    }))
+                });
+            }
+        });
         // props.betas is not added as dependency since it doesn't change during the component lifecycle
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reports, personalDetails, searchTerm]);

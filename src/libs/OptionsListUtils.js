@@ -427,7 +427,7 @@ function getLastMessageTextForReport(report) {
  * @param {Boolean} [options.forcePolicyNamePreview]
  * @returns {Object}
  */
-function createOption(accountIDs, personalDetails, report, reportActions = {}, {showChatPreviewLine = false, forcePolicyNamePreview = false}) {
+export function createOption(accountIDs, personalDetails, report, reportActions = {}, {showChatPreviewLine = false, forcePolicyNamePreview = false}) {
     const result = {
         text: null,
         alternateText: null,
@@ -512,7 +512,6 @@ function createOption(accountIDs, personalDetails, report, reportActions = {}, {
                 policyName: ReportUtils.getPolicyName(report),
             });
         }
-
         if (result.isChatRoom || result.isPolicyExpenseChat) {
             result.alternateText = showChatPreviewLine && !forcePolicyNamePreview && lastMessageText ? lastMessageText : subtitle;
         } else if (result.isMoneyRequestReport) {
@@ -542,7 +541,6 @@ function createOption(accountIDs, personalDetails, report, reportActions = {}, {
     result.searchText = getSearchText(report, reportName, personalDetailList, result.isChatRoom || result.isPolicyExpenseChat, result.isThread);
     result.icons = ReportUtils.getIcons(report, personalDetails, UserUtils.getAvatar(personalDetail.avatar, personalDetail.accountID), personalDetail.login, personalDetail.accountID);
     result.subtitle = subtitle;
-
     return result;
 }
 

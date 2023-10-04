@@ -73,6 +73,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSContactsUsageDescription</key>
+    <string>Your contacts are used to help you to connect with others</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Your camera is used to create chat attachments, documents, and facial capture.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
