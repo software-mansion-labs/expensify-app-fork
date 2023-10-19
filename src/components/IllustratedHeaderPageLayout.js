@@ -48,7 +48,8 @@ function IllustratedHeaderPageLayout({backgroundColor, children, illustration, f
                 <>
                     <Lottie
                         source={illustration}
-                        style={typeof illustration === 'object' ? lottieStyle : {aspectRatio: 1.5, ...styles.w100}}
+                        style={{aspectRatio: 375 / 240, ...styles.w100}}
+                        webStyle={{backgroundColor: 'red'}}
                         autoPlay
                         loop
                     />
