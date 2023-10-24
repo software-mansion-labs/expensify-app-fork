@@ -18,9 +18,22 @@ function clear() {
 }
 
 function save(requestsToPersist: Request[]) {
+    console.log('save', requestsToPersist);
     let requests: Request[] = [];
+
+    // Remove from requestsToPersist any requests that have the same indepodenceKey as the requestsToPresist
+    const filteredRequestsToPersist = persistedRequests.filter((persistedRequest) => {
+        const index = requestsToPersist.findIndex((requestToPersist) => isEqual(requestToPersist, persistedRequest));
+        if (index === -1) {
+            return true;
+        }
+        requestsToPersist.splice(index, 1);
+        return false;
+    });
+
+
     if (persistedRequests.length) {
-        requests = persistedRequests.concat(requestsToPersist);
+        requests = filteredRequestsToPersist.concat(requestsToPersist);
     } else {
         requests = requestsToPersist;
     }

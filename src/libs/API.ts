@@ -52,7 +52,8 @@ type ApiRequestType = ValueOf<typeof CONST.API_REQUEST_TYPE>;
  * @param [onyxData.failureData] - Onyx instructions that will be passed to Onyx.update() when the response has jsonCode !== 200.
  */
 function write(command: string, apiCommandParameters: Record<string, unknown> = {}, onyxData: OnyxData = {}) {
-    Log.info('Called API write', false, {command, ...apiCommandParameters});
+    Log.info('Called API write', false, {command, ...apiCommandParameters})
+    console.log('write', command, Object.keys(onyxData));
     const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
 
     // Optimistically update Onyx
@@ -115,6 +116,7 @@ function makeRequestWithSideEffects(
     apiRequestType: ApiRequestType = CONST.API_REQUEST_TYPE.MAKE_REQUEST_WITH_SIDE_EFFECTS,
 ): Promise<void | Response> {
     Log.info('Called API makeRequestWithSideEffects', false, {command, ...apiCommandParameters});
+    console.log('makeRequestWithSideEffects', Object.keys(onyxData));
     const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
 
     // Optimistically update Onyx

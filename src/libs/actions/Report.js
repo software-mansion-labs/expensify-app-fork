@@ -521,6 +521,7 @@ function openReport(reportID, participantLoginList = [], newReportObject = {}, p
         optimisticData: optimisticReportData,
         successData: reportSuccessData,
         failureData: reportFailureData,
+        independenceKey: `OpenReport_${reportID}`,
     };
 
     const params = {

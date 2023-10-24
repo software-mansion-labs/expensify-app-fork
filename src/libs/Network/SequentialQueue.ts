@@ -65,6 +65,8 @@ function process(): Promise<void> {
     }
     const requestToProcess = persistedRequests[0];
 
+    console.log('process', requestToProcess);
+
     // Set the current request to a promise awaiting its processing so that getCurrentRequest can be used to take some action after the current request has processed.
     currentRequest = Request.processWithMiddleware(requestToProcess, true)
         .then((response) => {
@@ -99,6 +101,7 @@ function process(): Promise<void> {
 }
 
 function flush() {
+    console.log('flushing the queue');
     // When the queue is paused, return early. This will keep an requests in the queue and they will get flushed again when the queue is unpaused
     if (isQueuePaused) {
         return;
@@ -159,6 +162,7 @@ function isRunning(): boolean {
 NetworkStore.onReconnection(flush);
 
 function push(request: OnyxRequest) {
+    console.log('push', request);
     // Add request to Persisted Requests so that it can be retried if it fails
     PersistedRequests.save([request]);
 
