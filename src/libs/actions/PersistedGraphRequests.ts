@@ -1,13 +1,9 @@
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '../../ONYXKEYS';
 import {Request} from '../../types/onyx';
-import { GraphRequest, GraphRequestStorage } from '../../types/onyx/Request';
+import { GraphRequest, GraphRequestStorage, GraphRequestStorageEntry } from '../../types/onyx/Request';
 
 let persistedGraphRequests: GraphRequestStorage = {};
-
-type LastMessageInChannelStore = Record<string, string>;
-
-let lastChannelStore: LastMessageInChannelStore = {};
 
 Onyx.connect({
     key: ONYXKEYS.PERSISTED_GRAPH_REQUESTS,
@@ -31,53 +27,35 @@ function generateID(): string {
 // returns id of the requests that were saved
 function save(requestsToPersist: GraphRequest[]): string[] {
     const requests: GraphRequestStorage = {};
-    console.log('persistedGraphRequests 0', persistedGraphRequests);
     for (const request of requestsToPersist) {
-        if (!request.graphChannelID)  {
-            // eslint-disable-next-line no-continue
-            continue;
-        }
-        const lastMessageID = lastChannelStore[request.graphChannelID];
-        if (!lastMessageID) {
-            console.log('error! lastMessageID doesn\'t exist', lastMessageID);
-        }
-        const lastMessage = lastMessageID && persistedGraphRequests[lastMessageID];
+        const {parentRequestID} = request;
         const id = generateID();
-        console.log('lastMessage', lastMessage);
-        if (lastMessage) {
-            console.log('persistedGraphRequests 1', persistedGraphRequests);
-            const lastMessage = persistedGraphRequests[lastMessageID];
-            console.log('using old root with lastMessageID', lastMessageID, lastMessage);
-            if (!lastMessage) {
-                console.log('lastMessage didn\'t exist!!!');
-            }
+
+        const parentMessage = parentRequestID && persistedGraphRequests[parentRequestID];
+        console.log('parentMessage', parentMessage, parentRequestID, persistedGraphRequests[parentRequestID])
+        if (parentMessage) {
+            console.log('adding parent message', id);
             requests[id] = {
                 id,
+                request,
+                children: [],
                 isRoot: false,
-                request,
-                children: [],
+                isProcessed: false,
             }
-            requests[lastMessageID] = {
-                ...persistedGraphRequests[lastMessageID],
-                children: [...persistedGraphRequests[lastMessageID].children, id],
-            }
+            parentMessage.children.push(id);
         } else {
-            console.log('creating new root');
             requests[id] = {
                 id,
-                isRoot: true,
                 request,
                 children: [],
+                isRoot: true,
+                isProcessed: false,
             }
         }
-        lastChannelStore[request.graphChannelID] = id;
-        console.log('updated lastChannelStore', lastChannelStore);
     }
+
     persistedGraphRequests = Object.assign(persistedGraphRequests, requests);
-    console.log('persistedGraphRequests 2', persistedGraphRequests);
     Onyx.merge(ONYXKEYS.PERSISTED_GRAPH_REQUESTS, requests);
-    console.log('graph: saved new graph requests', persistedGraphRequests);
-    console.log('returning created keys', Object.keys(requests));
     return Object.keys(requests);
 }
 
@@ -90,7 +68,10 @@ function remove(id: string) {
      */
     console.log('graph: remove', id);
     const toRemove = {
-        [id]: null,
+        [id]: {
+            ...persistedGraphRequests[id],
+            isProcessed: true,
+        },
     };
     persistedGraphRequests = Object.assign(persistedGraphRequests, toRemove);
     console.log('after remove', persistedGraphRequests);
@@ -105,4 +86,54 @@ function getAll(): GraphRequestStorage {
     return persistedGraphRequests;
 }
 
-export {clear, save, getAll, remove, update};
+function getChildrensIDs(parentID: string): string[] {
+    return persistedGraphRequests[parentID]?.children ?? [];
+}
+
+function getChildrens(parentID: string): GraphRequestStorageEntry[] {
+    return getChildrensIDs(parentID).map((id) => persistedGraphRequests[id]);
+}
+
+function getRootNodes(): GraphRequestStorageEntry[] {
+    return Object.values(persistedGraphRequests).filter((request) => request.isRoot);
+}
+
+function canRemoveRootNode(rootNode: GraphRequestStorageEntry): boolean {
+    // using bfs check if all children are processed
+    const queue = [rootNode];
+    while (queue.length) {
+        const node = queue.shift();
+        if (!node) {
+            // eslint-disable-next-line no-continue
+            continue;
+        }
+
+        if (!node.isProcessed) {
+            return false;
+        }
+
+        queue.push(...getChildrens(node.id));
+    }
+    return true;
+}
+
+function clean(id: string) {
+    const toRemove = {
+        [id]: null,
+    };
+
+    persistedGraphRequests = Object.assign(persistedGraphRequests, toRemove);
+
+    Onyx.merge(ONYXKEYS.PERSISTED_GRAPH_REQUESTS, toRemove);
+}
+
+function removeRootNodes() {
+    const rootNodes = getRootNodes();
+    for (const rootNode of rootNodes) {
+        if (canRemoveRootNode(rootNode)) {
+            clean(rootNode.id);
+        }
+    }
+}
+
+export {clear, save, getAll, remove, update, getChildrens, getRootNodes, removeRootNodes};

@@ -24,17 +24,21 @@ type RequestData = {
 type Request = RequestData & OnyxData;
 
 type GraphRequest = Request & {
+    // If parentRequestID is not found it will be generated from the independenceKey
     parentRequestID?: string;
-    graphChannelID?: string;
 }
 
-type GraphRequestStorage = Record<string, {
-        id: string;
-        // TODO: Handle it in different way
-        isRoot: boolean;
-        request: GraphRequest;
-        children: string[];
-    }>
+type GraphRequestID = string;
+
+type GraphRequestStorageEntry = {
+    id: GraphRequestID;
+    request: GraphRequest;
+    children: GraphRequestID[];
+    isRoot: boolean;
+    isProcessed: boolean;
+}
+
+type GraphRequestStorage = Record<string, GraphRequestStorageEntry>
 
 export default Request;
-export type {OnyxData, GraphRequestStorage, GraphRequest};
+export type {OnyxData, GraphRequestStorage, GraphRequest, GraphRequestID, GraphRequestStorageEntry};

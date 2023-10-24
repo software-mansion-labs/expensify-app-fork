@@ -21,6 +21,7 @@ function makeXHR(request: GraphRequest): Promise<Response | void> {
 }
 
 function processWithMiddleware(request: GraphRequest, isFromSequentialQueue = false): Promise<Response | void> {
+    console.log('[REQUEST]', request.command, request.data);
     return middlewares.reduce((last, middleware) => middleware(last, request, isFromSequentialQueue), makeXHR(request));
 }
 

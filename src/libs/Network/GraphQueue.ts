@@ -7,7 +7,7 @@ import * as Request from '../Request';
 import * as RequestThrottle from '../RequestThrottle';
 import CONST from '../../CONST';
 import * as QueuedOnyxUpdates from '../actions/QueuedOnyxUpdates';
-import OnyxRequest, { GraphRequest, GraphRequestStorage } from '../../types/onyx/Request';
+import OnyxRequest, { GraphRequest, GraphRequestStorageEntry } from '../../types/onyx/Request';
 
 let resolveIsReadyPromise: ((args?: unknown[]) => void) | undefined;
 let isReadyPromise = new Promise((resolve) => {
@@ -20,6 +20,10 @@ resolveIsReadyPromise?.();
 let isGraphQueueRunning = false;
 let currentRequest: Promise<void> | null = null;
 let isQueuePaused = false;
+
+type LastMessageInChannelStore = Record<string, string>;
+
+const lastChannelStore: LastMessageInChannelStore = {};
 
 /**
  * Puts the queue into a paused state so that no requests will be processed
@@ -53,28 +57,35 @@ function flushOnyxUpdatesQueue() {
  * time is doubled creating an exponential back off in the frequency of requests hitting the server. Since the initial wait time is random and it increases exponentially, the load of
  * requests to our backend is evenly distributed and it gradually decreases with time, which helps the servers catch up.
  */
-function process(graphRequestsID?: string[]): Promise<void> {
+function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
     // When the queue is paused, return early. This prevents any new requests from happening. The queue will be flushed again when the queue is unpaused.
-    if (isQueuePaused) {
+    if (isQueuePaused || NetworkStore.isOffline()) {
         return Promise.resolve();
     }
 
-    console.log('graph: process');
-
-    const persistedRequests = PersistedGraphRequests.getAll();
-    if (NetworkStore.isOffline()) {
+    if (graphRequests !== undefined && graphRequests.length === 0) {
         return Promise.resolve();
     }
 
-    let toCalculate: string[] = graphRequestsID ?? [];
-    if (!toCalculate) {
-        toCalculate = Object.values(persistedRequests).filter((request) => request.isRoot).map((request) => request.id);
+    if (!graphRequests)  {
+        PersistedGraphRequests.removeRootNodes();
     }
 
-    for (const id of toCalculate) {
-        const requestToProcess = persistedRequests[id];
+    const toCalculate: GraphRequestStorageEntry[] = graphRequests ?? PersistedGraphRequests.getRootNodes();
+
+    console.log('graph processing:', toCalculate.filter((request) => !request.isProcessed).map((request) => request));
+
+    const promisesToResolve = [];
+
+    for (const requestToProcess of toCalculate) {
+        const {id, isProcessed} = requestToProcess;
+        if (isProcessed) {
+            // eslint-disable-next-line no-continue
+            continue;
+        }
+
         // start recursive calls
-        Request.processWithMiddleware(requestToProcess.request, true)
+        const promise = Request.processWithMiddleware(requestToProcess.request, true)
             .then((response) => {
                 // A response might indicate that the queue should be paused. This happens when a gap in onyx updates is detected between the client and the server and
                 // that gap needs resolved before the queue can continue.
@@ -83,7 +94,7 @@ function process(graphRequestsID?: string[]): Promise<void> {
                 }
                 PersistedGraphRequests.remove(id);
                 RequestThrottle.clear();
-                return process();
+                return process(PersistedGraphRequests.getChildrens(id));
             })
             .catch((error) => {
                 // On sign out we cancel any in flight requests from the user. Since that user is no longer signed in their requests should not be retried.
@@ -91,20 +102,22 @@ function process(graphRequestsID?: string[]): Promise<void> {
                 if (error.name === CONST.ERROR.REQUEST_CANCELLED || error.message === CONST.ERROR.DUPLICATE_RECORD) {
                     PersistedGraphRequests.remove(id);
                     RequestThrottle.clear();
-                    return process();
+                    return process([]);
                 }
                 return RequestThrottle.sleep()
-                    .then(process)
+                    .then(() => process(graphRequests))
                     .catch(() => {
                         // Onyx.update(requestToProcess.failureData ?? []);
                         PersistedGraphRequests.remove(id);
                         RequestThrottle.clear();
-                        return process();
+                        return process(PersistedGraphRequests.getChildrens(id));
                     });
             });
+
+            promisesToResolve.push(promise);
         }
 
-    return currentRequest;
+    return Promise.all(promisesToResolve).then(() => {});
 }
 
 function flush() {
@@ -113,13 +126,20 @@ function flush() {
         return;
     }
 
+    console.log('flush: not paused');
+
     if (isGraphQueueRunning) {
         return;
     }
 
+    console.log('flush: not running');
+
     if (!ActiveClientManager.isClientTheLeader()) {
+        console.log('NOT LEADER!!!');
         return;
     }
+
+    console.log('flush: is leader');
 
     isGraphQueueRunning = true;
     isReadyPromise = new Promise((resolve) => {
@@ -154,18 +174,27 @@ function isRunning(): boolean {
 // Flush the queue when the connection resumes
 NetworkStore.onReconnection(flush);
 
-function push(request: GraphRequest) {
-    console.log('push', request);
-    // Add request to Persisted Requests so that it can be retried if it fails
-    PersistedGraphRequests.save([request]);
+function getChannelParentID(request: GraphRequest): string | undefined {
+    return lastChannelStore[request.independenceKey ?? ''];
+}
 
-    if (request.parentRequestID === undefined) {
-        // pass to the global queue
-    } else if (!request.parentRequestID.length) {
-        // create new root
-    } else {
-        // add to the parent
+function updateChannelParentID(request: GraphRequest, id: string) {
+    lastChannelStore[request.independenceKey ?? ''] = id;
+    console.log('lastChannelStore', lastChannelStore);
+}
+
+function push(request: GraphRequest) {
+    let storageRequest: GraphRequest = request;
+    if (!storageRequest.parentRequestID) {
+        storageRequest = {
+            ...storageRequest,
+            parentRequestID: getChannelParentID(request),
+        }
     }
+    // Add request to Persisted Requests so that it can be retried if it fails
+    const ids: string[] = PersistedGraphRequests.save([storageRequest]);
+
+    updateChannelParentID(request, ids.slice(-1)[0]);
 
     // If we are offline we don't need to trigger the queue to empty as it will happen when we come back online
     if (NetworkStore.isOffline()) {
