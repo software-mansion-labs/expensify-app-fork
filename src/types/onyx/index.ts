@@ -1,5 +1,5 @@
 import Account from './Account';
-import Request from './Request';
+import Request, { GraphRequestStorage } from './Request';
 import Credentials from './Credentials';
 import IOU from './IOU';
 import Modal from './Modal';
@@ -51,6 +51,7 @@ import AccountData from './AccountData';
 export type {
     Account,
     Request,
+    GraphRequestStorage,
     Credentials,
     IOU,
     Modal,

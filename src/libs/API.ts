@@ -4,10 +4,11 @@ import Log from './Log';
 import * as Request from './Request';
 import * as Middleware from './Middleware';
 import * as SequentialQueue from './Network/SequentialQueue';
+import * as GraphQueue from './Network/GraphQueue';
 import pkg from '../../package.json';
 import CONST from '../CONST';
 import * as Pusher from './Pusher/pusher';
-import OnyxRequest from '../types/onyx/Request';
+import OnyxRequest, { GraphRequest } from '../types/onyx/Request';
 import Response from '../types/onyx/Response';
 
 // Setup API middlewares. Each request made will pass through a series of middleware functions that will get called in sequence (each one passing the result of the previous to the next).
@@ -86,7 +87,16 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
     };
 
     // Write commands can be saved and retried, so push it to the SequentialQueue
-    SequentialQueue.push(request);
+    if (command === 'OpenReport') {
+        console.log('graph: pushing to queue', request);
+        const graphRequest: GraphRequest = {
+            ...request,
+            graphChannelID: request.independenceKey,
+        }
+        GraphQueue.push(graphRequest);
+    } else {
+        SequentialQueue.push(request);
+    }
 }
 
 /**

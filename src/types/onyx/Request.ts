@@ -5,6 +5,7 @@ type OnyxData = {
     successData?: OnyxUpdate[];
     failureData?: OnyxUpdate[];
     optimisticData?: OnyxUpdate[];
+    independenceKey?: string;
 };
 
 type RequestData = {
@@ -22,5 +23,18 @@ type RequestData = {
 
 type Request = RequestData & OnyxData;
 
+type GraphRequest = Request & {
+    parentRequestID?: string;
+    graphChannelID?: string;
+}
+
+type GraphRequestStorage = Record<string, {
+        id: string;
+        // TODO: Handle it in different way
+        isRoot: boolean;
+        request: GraphRequest;
+        children: string[];
+    }>
+
 export default Request;
-export type {OnyxData};
+export type {OnyxData, GraphRequestStorage, GraphRequest};
