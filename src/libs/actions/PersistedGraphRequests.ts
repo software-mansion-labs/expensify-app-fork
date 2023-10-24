@@ -32,7 +32,7 @@ function save(requestsToPersist: GraphRequest[]): string[] {
         const id = generateID();
 
         const parentMessage = parentRequestID && persistedGraphRequests[parentRequestID];
-        console.log('parentMessage', parentMessage, parentRequestID, persistedGraphRequests[parentRequestID])
+        console.log('parentMessage', parentMessage, parentRequestID);
         if (parentMessage) {
             console.log('adding parent message', id);
             requests[id] = {
@@ -44,6 +44,7 @@ function save(requestsToPersist: GraphRequest[]): string[] {
             }
             parentMessage.children.push(id);
         } else {
+            console.log('adding root message');
             requests[id] = {
                 id,
                 request,
@@ -87,15 +88,37 @@ function getAll(): GraphRequestStorage {
 }
 
 function getChildrensIDs(parentID: string): string[] {
+    console.log('getChildrensIDs', persistedGraphRequests[parentID]?.children ?? []);
     return persistedGraphRequests[parentID]?.children ?? [];
 }
 
 function getChildrens(parentID: string): GraphRequestStorageEntry[] {
-    return getChildrensIDs(parentID).map((id) => persistedGraphRequests[id]);
+    return getChildrensIDs(parentID).map((id) => persistedGraphRequests[id]).filter(Boolean);
 }
 
 function getRootNodes(): GraphRequestStorageEntry[] {
     return Object.values(persistedGraphRequests).filter((request) => request.isRoot);
+}
+
+function getNextNodesToProcess(): GraphRequestStorageEntry[] {
+    const queue = getRootNodes();
+    let result: GraphRequestStorageEntry[] = [];
+    while (queue.length) {
+        const node = queue.shift();
+        if (!node) {
+            // eslint-disable-next-line no-continue
+            continue;
+        }
+
+        if (!node.isProcessed) {
+            result = [...result, node];
+            // eslint-disable-next-line no-continue
+            continue;
+        }
+
+        queue.push(...getChildrens(node.id));
+    }
+    return result;
 }
 
 function canRemoveRootNode(rootNode: GraphRequestStorageEntry): boolean {
@@ -117,10 +140,18 @@ function canRemoveRootNode(rootNode: GraphRequestStorageEntry): boolean {
     return true;
 }
 
+function getAllChildrens(parentID: string): GraphRequestStorageEntry[] {
+    console.log('getAllChildrens', parentID);
+    const childrens = getChildrens(parentID);
+    console.log('childrens', childrens);
+    return childrens.reduce((acc, child) => [...acc, ...getAllChildrens(child.id)], childrens);
+}
+
 function clean(id: string) {
-    const toRemove = {
-        [id]: null,
-    };
+    console.log('clean', id);
+    const childrens = getAllChildrens(id);
+    const toRemove = childrens.reduce((acc, child) => ({...acc, [child.id]: null}), {});
+    console.log('all childrens', childrens);
 
     persistedGraphRequests = Object.assign(persistedGraphRequests, toRemove);
 
@@ -128,12 +159,17 @@ function clean(id: string) {
 }
 
 function removeRootNodes() {
+    console.log('removing root nodes...');
     const rootNodes = getRootNodes();
     for (const rootNode of rootNodes) {
+        console.log('root node', rootNode);
         if (canRemoveRootNode(rootNode)) {
             clean(rootNode.id);
         }
     }
+    console.log('removed rootNodes');
 }
 
-export {clear, save, getAll, remove, update, getChildrens, getRootNodes, removeRootNodes};
+export {clear, save, getAll, remove, update, getChildrens, getRootNodes, removeRootNodes, getNextNodesToProcess};
+
+

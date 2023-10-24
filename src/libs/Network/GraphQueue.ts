@@ -7,7 +7,7 @@ import * as Request from '../Request';
 import * as RequestThrottle from '../RequestThrottle';
 import CONST from '../../CONST';
 import * as QueuedOnyxUpdates from '../actions/QueuedOnyxUpdates';
-import OnyxRequest, { GraphRequest, GraphRequestStorageEntry } from '../../types/onyx/Request';
+import { GraphRequest, GraphRequestStorageEntry } from '../../types/onyx/Request';
 
 let resolveIsReadyPromise: ((args?: unknown[]) => void) | undefined;
 let isReadyPromise = new Promise((resolve) => {
@@ -18,7 +18,6 @@ let isReadyPromise = new Promise((resolve) => {
 resolveIsReadyPromise?.();
 
 let isGraphQueueRunning = false;
-let currentRequest: Promise<void> | null = null;
 let isQueuePaused = false;
 
 type LastMessageInChannelStore = Record<string, string>;
@@ -33,7 +32,7 @@ function pause() {
         return;
     }
 
-    console.debug('[SequentialQueue] Pausing the queue');
+    console.debug('[GraphQueue] Pausing the queue');
     isQueuePaused = true;
 }
 
@@ -58,27 +57,26 @@ function flushOnyxUpdatesQueue() {
  * requests to our backend is evenly distributed and it gradually decreases with time, which helps the servers catch up.
  */
 function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
+    console.log('processing', graphRequests);
     // When the queue is paused, return early. This prevents any new requests from happening. The queue will be flushed again when the queue is unpaused.
     if (isQueuePaused || NetworkStore.isOffline()) {
         return Promise.resolve();
     }
+    console.log('processing 1');
 
     if (graphRequests !== undefined && graphRequests.length === 0) {
         return Promise.resolve();
     }
+    console.log('processing 2');
 
-    if (!graphRequests)  {
-        PersistedGraphRequests.removeRootNodes();
-    }
-
-    const toCalculate: GraphRequestStorageEntry[] = graphRequests ?? PersistedGraphRequests.getRootNodes();
+    const toCalculate: GraphRequestStorageEntry[] = graphRequests ?? PersistedGraphRequests.getNextNodesToProcess();
 
     console.log('graph processing:', toCalculate.filter((request) => !request.isProcessed).map((request) => request));
 
     const promisesToResolve = [];
 
     for (const requestToProcess of toCalculate) {
-        const {id, isProcessed} = requestToProcess;
+        const {id, request, isProcessed} = requestToProcess;
         if (isProcessed) {
             // eslint-disable-next-line no-continue
             continue;
@@ -94,6 +92,7 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
                 }
                 PersistedGraphRequests.remove(id);
                 RequestThrottle.clear();
+                console.log('[promise] prociessing children');
                 return process(PersistedGraphRequests.getChildrens(id));
             })
             .catch((error) => {
@@ -102,12 +101,14 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
                 if (error.name === CONST.ERROR.REQUEST_CANCELLED || error.message === CONST.ERROR.DUPLICATE_RECORD) {
                     PersistedGraphRequests.remove(id);
                     RequestThrottle.clear();
+                    console.log('[promise] error');
                     return process([]);
                 }
                 return RequestThrottle.sleep()
                     .then(() => process(graphRequests))
                     .catch(() => {
-                        // Onyx.update(requestToProcess.failureData ?? []);
+                        console.log('[promise] throttle error');
+                        Onyx.update(request.failureData ?? []);
                         PersistedGraphRequests.remove(id);
                         RequestThrottle.clear();
                         return process(PersistedGraphRequests.getChildrens(id));
@@ -117,7 +118,8 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
             promisesToResolve.push(promise);
         }
 
-    return Promise.all(promisesToResolve).then(() => {});
+    console.log('[promise] allSettled?')
+    return Promise.allSettled(promisesToResolve).then(() => {}).catch(() => {});
 }
 
 function flush() {
@@ -135,13 +137,14 @@ function flush() {
     console.log('flush: not running');
 
     if (!ActiveClientManager.isClientTheLeader()) {
-        console.log('NOT LEADER!!!');
+        console.log('!!!NOT LEADER!!!');
         return;
     }
 
     console.log('flush: is leader');
 
     isGraphQueueRunning = true;
+    console.log('isGraphQueueRunning', isGraphQueueRunning);
     isReadyPromise = new Promise((resolve) => {
         resolveIsReadyPromise = resolve;
     });
@@ -151,9 +154,12 @@ function flush() {
         callback: () => {
             Onyx.disconnect(connectionID);
             process().finally(() => {
+                console.log('completed flush!!!?');
+                PersistedGraphRequests.removeRootNodes();
+                console.log('flush!!!!');
                 isGraphQueueRunning = false;
+                console.log('isGraphQueueRunning', isGraphQueueRunning);
                 resolveIsReadyPromise?.();
-                currentRequest = null;
                 flushOnyxUpdatesQueue();
             });
         },
@@ -164,7 +170,13 @@ function flush() {
  * Unpauses the queue and flushes all the requests that were in it or were added to it while paused
  */
 function unpause() {
-    console.log('graph: unpausing the queue');
+    if (!isQueuePaused) {
+        return;
+    }
+    console.debug(`[GraphQueue] Unpausing the queue and flushing requests`);
+    isQueuePaused = false;
+    flushOnyxUpdatesQueue();
+    flush();
 }
 
 function isRunning(): boolean {
@@ -203,18 +215,12 @@ function push(request: GraphRequest) {
 
     // If the queue is running this request will run once it has finished processing the current batch
     if (isGraphQueueRunning) {
+        console.log('waiting for queue to finish');
         isReadyPromise.then(flush);
         return;
     }
-
+    console.log('flushing, queue not running');
     flush();
-}
-
-function getCurrentRequest(): OnyxRequest | Promise<void> {
-    if (currentRequest === null) {
-        return Promise.resolve();
-    }
-    return currentRequest;
 }
 
 /**
@@ -224,4 +230,4 @@ function waitForIdle(): Promise<unknown> {
     return isReadyPromise;
 }
 
-export {flush, getCurrentRequest, isRunning, push, waitForIdle, pause, unpause};
+export {flush, isRunning, push, waitForIdle, pause, unpause};
