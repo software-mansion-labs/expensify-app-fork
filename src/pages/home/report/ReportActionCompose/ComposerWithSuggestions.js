@@ -161,9 +161,11 @@ function ComposerWithSuggestions({
      * 1. There is a slight delay between onChangeText and onScroll
      * 2. Layout change will trigger onScroll multiple times
      */
-    const debouncedLowerIsScrollLikelyLayoutTriggered = useDebounce(
-        useCallback(() => (isScrollLikelyLayoutTriggered.current = false), []),
-        500,
+    const debouncedLowerIsScrollLikelyLayoutTriggered = useCallback(
+        _.debounce(() => {
+            isScrollLikelyLayoutTriggered.current = false;
+        }, 500),
+        [],
     );
 
     const raiseIsScrollLikelyLayoutTriggered = useCallback(() => {
