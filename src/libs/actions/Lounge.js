@@ -19,6 +19,13 @@ function recordLoungeVisit(checkInsRemaining) {
                     value: {loungeCheckInDetails: {isCheckedIn: true, checkInsRemaining: checkInsRemaining - 1}},
                 },
             ],
+            failureData: [
+                {
+                    onyxMethod: Onyx.METHOD.MERGE,
+                    key: ONYXKEYS.USER,
+                    value: {loungeCheckInDetails: {isCheckedIn: false, checkInsRemaining}},
+                }
+            ]
         },
     );
 }
