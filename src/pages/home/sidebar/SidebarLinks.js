@@ -179,5 +179,5 @@ function SidebarLinks({onLinkClick, insets, optionListItems, isLoading, priority
 SidebarLinks.propTypes = propTypes;
 SidebarLinks.displayName = 'SidebarLinks';
 
-export default SidebarLinks;
+export default React.memo(SidebarLinks);
 export {basePropTypes};
