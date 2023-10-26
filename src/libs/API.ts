@@ -98,9 +98,11 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
         ...onyxDataWithoutOptimisticData,
     };
 
+    const graphRequests = ['OpenReport', 'AddComment']
+
     // Write commands can be saved and retried, so push it to the SequentialQueue
-    if (command === 'OpenReport') {
-        console.log('graph: pushing to queue', request);
+    if (graphRequests.includes(command)) {
+        console.log('graph: pushing', command, 'to queue', request);
         let graphRequest: GraphRequest = request;
         if (!graphRequest.parentRequestID) {
             graphRequest = {
