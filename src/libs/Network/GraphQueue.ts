@@ -48,6 +48,11 @@ function flushOnyxUpdatesQueue() {
     QueuedOnyxUpdates.flushQueue();
 }
 
+function log(message: string, ...args: unknown[]) {
+    // eslint-disable-next-line no-console
+    console.log(`[GraphQueue] ${message}`, ...args);
+}
+
 /**
  * Process any persisted requests, when online, one at a time until the queue is empty.
  *
@@ -57,21 +62,19 @@ function flushOnyxUpdatesQueue() {
  * requests to our backend is evenly distributed and it gradually decreases with time, which helps the servers catch up.
  */
 function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
-    console.log('processing', graphRequests);
     // When the queue is paused, return early. This prevents any new requests from happening. The queue will be flushed again when the queue is unpaused.
     if (isQueuePaused || NetworkStore.isOffline()) {
+        log('! Stopped - queue paused or offline');
         return Promise.resolve();
     }
-    console.log('processing 1');
 
     if (graphRequests !== undefined && graphRequests.length === 0) {
         return Promise.resolve();
     }
-    console.log('processing 2');
 
     const toCalculate: GraphRequestStorageEntry[] = graphRequests ?? PersistedGraphRequests.getNextNodesToProcess();
 
-    console.log('graph processing:', toCalculate.filter((request) => !request.isProcessed).map((request) => request));
+    // log('graph processing:', toCalculate.filter((request) => !request.isProcessed).map((request) => request));
 
     const promisesToResolve = [];
 
@@ -92,8 +95,9 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
                 }
                 PersistedGraphRequests.remove(id);
                 RequestThrottle.clear();
-                console.log('[promise] prociessing children');
-                return process(PersistedGraphRequests.getChildrens(id));
+                const children = PersistedGraphRequests.getChildrens(id);
+                log('Processed request', requestToProcess.id, ' -> ', children.map((v) => v.id).join(', '));
+                return process(children);
             })
             .catch((error) => {
                 // On sign out we cancel any in flight requests from the user. Since that user is no longer signed in their requests should not be retried.
@@ -101,13 +105,13 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
                 if (error.name === CONST.ERROR.REQUEST_CANCELLED || error.message === CONST.ERROR.DUPLICATE_RECORD) {
                     PersistedGraphRequests.remove(id);
                     RequestThrottle.clear();
-                    console.log('[promise] error');
+                    log('[promise] error');
                     return process([]);
                 }
                 return RequestThrottle.sleep()
                     .then(() => process(graphRequests))
                     .catch(() => {
-                        console.log('[promise] throttle error');
+                        log('[promise] throttle error');
                         Onyx.update(request.failureData ?? []);
                         PersistedGraphRequests.remove(id);
                         RequestThrottle.clear();
@@ -118,33 +122,26 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
             promisesToResolve.push(promise);
         }
 
-    console.log('[promise] allSettled?')
     return Promise.allSettled(promisesToResolve).then(() => {}).catch(() => {});
 }
 
 function flush() {
-    console.log('graph: flushing the queue');
     if (isQueuePaused) {
         return;
     }
-
-    console.log('flush: not paused');
 
     if (isGraphQueueRunning) {
         return;
     }
 
-    console.log('flush: not running');
-
     if (!ActiveClientManager.isClientTheLeader()) {
-        console.log('!!!NOT LEADER!!!');
+        log('!!!NOT LEADER!!!');
         return;
     }
 
-    console.log('flush: is leader');
+    log('flush: flusing the queue...');
 
     isGraphQueueRunning = true;
-    console.log('isGraphQueueRunning', isGraphQueueRunning);
     isReadyPromise = new Promise((resolve) => {
         resolveIsReadyPromise = resolve;
     });
@@ -154,11 +151,9 @@ function flush() {
         callback: () => {
             Onyx.disconnect(connectionID);
             process().finally(() => {
-                console.log('completed flush!!!?');
+                log('completed the flush');
                 PersistedGraphRequests.removeRootNodes();
-                console.log('flush!!!!');
                 isGraphQueueRunning = false;
-                console.log('isGraphQueueRunning', isGraphQueueRunning);
                 resolveIsReadyPromise?.();
                 flushOnyxUpdatesQueue();
             });
@@ -173,7 +168,7 @@ function unpause() {
     if (!isQueuePaused) {
         return;
     }
-    console.debug(`[GraphQueue] Unpausing the queue and flushing requests`);
+    log(`[GraphQueue] Unpausing the queue and flushing requests`);
     isQueuePaused = false;
     flushOnyxUpdatesQueue();
     flush();
@@ -192,7 +187,7 @@ function getChannelParentID(request: GraphRequest): string | undefined {
 
 function updateChannelParentID(request: GraphRequest, id: string) {
     lastChannelStore[request.independenceKey ?? ''] = id;
-    console.log('lastChannelStore', lastChannelStore);
+    // log('lastChannelStore', lastChannelStore);
 }
 
 function push(request: GraphRequest) {
@@ -205,7 +200,6 @@ function push(request: GraphRequest) {
     }
     // Add request to Persisted Requests so that it can be retried if it fails
     const ids: string[] = PersistedGraphRequests.save([storageRequest]);
-
     updateChannelParentID(request, ids.slice(-1)[0]);
 
     // If we are offline we don't need to trigger the queue to empty as it will happen when we come back online
@@ -215,11 +209,11 @@ function push(request: GraphRequest) {
 
     // If the queue is running this request will run once it has finished processing the current batch
     if (isGraphQueueRunning) {
-        console.log('waiting for queue to finish');
+        // log('waiting for queue to finish');
         isReadyPromise.then(flush);
         return;
     }
-    console.log('flushing, queue not running');
+    // log('flushing, queue not running');
     flush();
 }
 
@@ -230,4 +224,4 @@ function waitForIdle(): Promise<unknown> {
     return isReadyPromise;
 }
 
-export {flush, isRunning, push, waitForIdle, pause, unpause};
+export {flush, isRunning, push, waitForIdle, pause, unpause, log};

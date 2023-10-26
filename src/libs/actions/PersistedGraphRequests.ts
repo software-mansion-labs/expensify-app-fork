@@ -10,6 +10,11 @@ Onyx.connect({
     callback: (val) => (persistedGraphRequests = val ?? {}),
 });
 
+function log(message: string, ...args: unknown[]) {
+    // eslint-disable-next-line no-console
+    console.log(`[GraphQueue] ${message}`, ...args);
+}
+
 /**
  * This promise is only used by tests. DO NOT USE THIS PROMISE IN THE APPLICATION CODE
  */
@@ -30,28 +35,21 @@ function save(requestsToPersist: GraphRequest[]): string[] {
     for (const request of requestsToPersist) {
         const {parentRequestID} = request;
         const id = generateID();
-
         const parentMessage = parentRequestID && persistedGraphRequests[parentRequestID];
-        console.log('parentMessage', parentMessage, parentRequestID);
+
         if (parentMessage) {
-            console.log('adding parent message', id);
-            requests[id] = {
-                id,
-                request,
-                children: [],
-                isRoot: false,
-                isProcessed: false,
-            }
+            log('Added new request to graph:', id, ' (parent:', parentMessage.id, ')')
             parentMessage.children.push(id);
         } else {
-            console.log('adding root message');
-            requests[id] = {
-                id,
-                request,
-                children: [],
-                isRoot: true,
-                isProcessed: false,
-            }
+            log('Added new request to graph:', id);
+        }
+
+        requests[id] = {
+            id,
+            request,
+            children: [],
+            isRoot: !parentMessage,
+            isProcessed: false,
         }
     }
 
@@ -67,7 +65,6 @@ function remove(id: string) {
      * We only remove the first matching request because the order of requests matters.
      * If we were to remove all matching requests, we can end up with a final state that is different than what the user intended.
      */
-    console.log('graph: remove', id);
     const toRemove = {
         [id]: {
             ...persistedGraphRequests[id],
@@ -75,12 +72,12 @@ function remove(id: string) {
         },
     };
     persistedGraphRequests = Object.assign(persistedGraphRequests, toRemove);
-    console.log('after remove', persistedGraphRequests);
     Onyx.merge(ONYXKEYS.PERSISTED_GRAPH_REQUESTS, toRemove);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function update(oldRequestIndex: number, newRequest: Request) {
-    console.log('graph: update', oldRequestIndex, newRequest);
+    throw new Error('not implemented');
 }
 
 function getAll(): GraphRequestStorage {
@@ -88,7 +85,6 @@ function getAll(): GraphRequestStorage {
 }
 
 function getChildrensIDs(parentID: string): string[] {
-    console.log('getChildrensIDs', persistedGraphRequests[parentID]?.children ?? []);
     return persistedGraphRequests[parentID]?.children ?? [];
 }
 
@@ -141,33 +137,26 @@ function canRemoveRootNode(rootNode: GraphRequestStorageEntry): boolean {
 }
 
 function getAllChildrens(parentID: string): GraphRequestStorageEntry[] {
-    console.log('getAllChildrens', parentID);
     const childrens = getChildrens(parentID);
-    console.log('childrens', childrens);
     return childrens.reduce((acc, child) => [...acc, ...getAllChildrens(child.id)], childrens);
 }
 
 function clean(id: string) {
-    console.log('clean', id);
     const childrens = getAllChildrens(id);
     const toRemove = childrens.reduce((acc, child) => ({...acc, [child.id]: null}), {});
-    console.log('all childrens', childrens);
 
     persistedGraphRequests = Object.assign(persistedGraphRequests, toRemove);
-
     Onyx.merge(ONYXKEYS.PERSISTED_GRAPH_REQUESTS, toRemove);
 }
 
 function removeRootNodes() {
-    console.log('removing root nodes...');
     const rootNodes = getRootNodes();
     for (const rootNode of rootNodes) {
-        console.log('root node', rootNode);
         if (canRemoveRootNode(rootNode)) {
             clean(rootNode.id);
         }
     }
-    console.log('removed rootNodes');
+    log('Cleaned root nodes which were processed');
 }
 
 export {clear, save, getAll, remove, update, getChildrens, getRootNodes, removeRootNodes, getNextNodesToProcess};
