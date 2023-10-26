@@ -8,7 +8,7 @@ import * as GraphQueue from './Network/GraphQueue';
 import pkg from '../../package.json';
 import CONST from '../CONST';
 import * as Pusher from './Pusher/pusher';
-import OnyxRequest from '../types/onyx/Request';
+import OnyxRequest, { GraphRequest } from '../types/onyx/Request';
 import Response from '../types/onyx/Response';
 
 // Setup API middlewares. Each request made will pass through a series of middleware functions that will get called in sequence (each one passing the result of the previous to the next).
@@ -30,6 +30,18 @@ Request.use(Middleware.HandleUnusedOptimisticID);
 // SaveResponseInOnyx - Merges either the successData or failureData into Onyx depending on if the call was successful or not. This needs to be the LAST middleware we use, don't add any
 // middlewares after this, because the SequentialQueue depends on the result of this middleware to pause the queue (if needed) to bring the app to an up-to-date state.
 Request.use(Middleware.SaveResponseInOnyx);
+
+
+type LastMessageInChannelStore = Record<string, string>;
+const lastChannelStore: LastMessageInChannelStore = {};
+
+function getChannelParentID(request: GraphRequest): string | undefined {
+    return lastChannelStore[request.independenceKey ?? ''];
+}
+
+function updateChannelParentID(request: GraphRequest, id: string) {
+    lastChannelStore[request.independenceKey ?? ''] = id;
+}
 
 type OnyxData = {
     optimisticData?: OnyxUpdate[];
@@ -89,7 +101,15 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
     // Write commands can be saved and retried, so push it to the SequentialQueue
     if (command === 'OpenReport') {
         console.log('graph: pushing to queue', request);
-        GraphQueue.push(request);
+        let graphRequest: GraphRequest = request;
+        if (!graphRequest.parentRequestID) {
+            graphRequest = {
+                ...graphRequest,
+                parentRequestID: getChannelParentID(request),
+            }
+        }
+        const pushedID = GraphQueue.push(graphRequest);
+        updateChannelParentID(request, pushedID);
     } else {
         SequentialQueue.push(request);
     }

@@ -7,6 +7,10 @@ import deepReplaceKeysAndValues from '../deepReplaceKeysAndValues';
 
 const handleUnusedOptimisticID: Middleware = (requestResponse, request, isFromSequentialQueue) =>
     requestResponse.then((response) => {
+        // Temporarily do not use this middleware if the request is GraphRequest
+        if (request.independenceKey) {
+            return response;
+        }
         const responseOnyxData = response?.onyxData ?? [];
         responseOnyxData.forEach((onyxData) => {
             const key = onyxData.key;

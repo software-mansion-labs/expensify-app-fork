@@ -20,10 +20,6 @@ resolveIsReadyPromise?.();
 let isGraphQueueRunning = false;
 let isQueuePaused = false;
 
-type LastMessageInChannelStore = Record<string, string>;
-
-const lastChannelStore: LastMessageInChannelStore = {};
-
 /**
  * Puts the queue into a paused state so that no requests will be processed
  */
@@ -73,8 +69,6 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
     }
 
     const toCalculate: GraphRequestStorageEntry[] = graphRequests ?? PersistedGraphRequests.getNextNodesToProcess();
-
-    // log('graph processing:', toCalculate.filter((request) => !request.isProcessed).map((request) => request));
 
     const promisesToResolve = [];
 
@@ -181,40 +175,23 @@ function isRunning(): boolean {
 // Flush the queue when the connection resumes
 NetworkStore.onReconnection(flush);
 
-function getChannelParentID(request: GraphRequest): string | undefined {
-    return lastChannelStore[request.independenceKey ?? ''];
-}
-
-function updateChannelParentID(request: GraphRequest, id: string) {
-    lastChannelStore[request.independenceKey ?? ''] = id;
-    // log('lastChannelStore', lastChannelStore);
-}
-
-function push(request: GraphRequest) {
-    let storageRequest: GraphRequest = request;
-    if (!storageRequest.parentRequestID) {
-        storageRequest = {
-            ...storageRequest,
-            parentRequestID: getChannelParentID(request),
-        }
-    }
+// returns the id of the pushed request
+function push(request: GraphRequest): string {
     // Add request to Persisted Requests so that it can be retried if it fails
-    const ids: string[] = PersistedGraphRequests.save([storageRequest]);
-    updateChannelParentID(request, ids.slice(-1)[0]);
-
+    const requestsIDs: string[] = PersistedGraphRequests.save([request]);
+    const requestID = requestsIDs.slice(-1)[0];
     // If we are offline we don't need to trigger the queue to empty as it will happen when we come back online
     if (NetworkStore.isOffline()) {
-        return;
+        return requestID;
     }
 
     // If the queue is running this request will run once it has finished processing the current batch
     if (isGraphQueueRunning) {
-        // log('waiting for queue to finish');
         isReadyPromise.then(flush);
-        return;
+        return requestID;
     }
-    // log('flushing, queue not running');
     flush();
+    return requestID;
 }
 
 /**
