@@ -422,6 +422,7 @@ function addActions(reportID, text = '', file) {
         optimisticData,
         successData,
         failureData,
+        independenceKey: `OpenReport_${reportID}`,
     });
     notifyNewAction(reportID, lastAction.actorAccountID, lastAction.reportActionID);
 }

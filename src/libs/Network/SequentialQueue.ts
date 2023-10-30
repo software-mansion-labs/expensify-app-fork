@@ -159,7 +159,6 @@ function isRunning(): boolean {
 NetworkStore.onReconnection(flush);
 
 function push(request: OnyxRequest) {
-    console.log('push', request);
     // Add request to Persisted Requests so that it can be retried if it fails
     PersistedRequests.save([request]);
 

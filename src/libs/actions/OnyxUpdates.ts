@@ -26,9 +26,12 @@ function applyHTTPSOnyxUpdates(request: Request, response: Response) {
     // in successData/failureData until after the component has received and API data.
     const onyxDataUpdatePromise = response.onyxData ? updateHandler(response.onyxData) : Promise.resolve();
 
+    console.log('[Graph] Processed Onyx update from request', request.command);
+
     return onyxDataUpdatePromise
         .then(() => {
             // Handle the request's success/failure data (client-side data)
+            // here we apply the successData or failureData to Onyx
             if (response.jsonCode === 200 && request.successData) {
                 return updateHandler(request.successData);
             }

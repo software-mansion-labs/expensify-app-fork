@@ -6,6 +6,7 @@ type ReplaceableValue = Record<string, unknown> | unknown[] | string | number | 
  * @param newVal the replacement value
  */
 function deepReplaceKeysAndValues<T extends ReplaceableValue>(target: T, oldVal: string, newVal: string): T {
+    // why we even need this function?
     if (!target) {
         return target;
     }
