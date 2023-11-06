@@ -7,7 +7,10 @@ let persistedGraphRequests: GraphRequestStorage = {};
 
 Onyx.connect({
     key: ONYXKEYS.PERSISTED_GRAPH_REQUESTS,
-    callback: (val) => (persistedGraphRequests = val ?? {}),
+    callback: (val) => {
+        persistedGraphRequests = val ?? {}
+        console.log('Loaded persisted graph requests from Onyx: ', persistedGraphRequests);
+    },
 });
 
 function log(message: string, ...args: unknown[]) {
@@ -143,20 +146,26 @@ function getAllChildrens(parentID: string): GraphRequestStorageEntry[] {
 
 function clean(id: string) {
     const childrens = getAllChildrens(id);
-    const toRemove = childrens.reduce((acc, child) => ({...acc, [child.id]: null}), {});
-
-    persistedGraphRequests = Object.assign(persistedGraphRequests, toRemove);
+    const toRemove = childrens.reduce((acc, child) => ({...acc, [child.id]: null}), {[id]: null});
+    for (const key in toRemove) {
+        if (Object.hasOwn(toRemove, key)) {
+            delete persistedGraphRequests[key];
+        }
+    }
+    console.log('persistedGraphRequests', persistedGraphRequests, 'toRemove', toRemove);
     Onyx.merge(ONYXKEYS.PERSISTED_GRAPH_REQUESTS, toRemove);
 }
 
 function removeRootNodes() {
     const rootNodes = getRootNodes();
+    const cleanedNodes = [];
     for (const rootNode of rootNodes) {
         if (canRemoveRootNode(rootNode)) {
             clean(rootNode.id);
+            cleanedNodes.push(rootNode.id);
         }
     }
-    log('Cleaned root nodes which were processed');
+    log(`Cleaned ${cleanedNodes.length} root nodes which were processed: ${cleanedNodes.join(', ')}`);
 }
 
 export {clear, save, getAll, remove, update, getChildrens, getRootNodes, removeRootNodes, getNextNodesToProcess};

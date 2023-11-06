@@ -39,6 +39,7 @@ function getChannelParentID(request: GraphRequest): string | undefined {
 }
 
 function updateChannelParentID(request: GraphRequest, id: string) {
+    console.log('updateChannelParentID', request.independenceKey);
     lastChannelStore[request.independenceKey ?? ''] = id;
 }
 
@@ -63,7 +64,7 @@ type ApiRequestType = ValueOf<typeof CONST.API_REQUEST_TYPE>;
  * @param [onyxData.successData] - Onyx instructions that will be passed to Onyx.update() when the response has jsonCode === 200.
  * @param [onyxData.failureData] - Onyx instructions that will be passed to Onyx.update() when the response has jsonCode !== 200.
  */
-function write(command: string, apiCommandParameters: Record<string, unknown> = {}, onyxData: OnyxData = {}) {
+function write(command: string, apiCommandParameters: Record<string, unknown> = {}, onyxData: OnyxData = {}): string | undefined {
     Log.info('Called API write', false, {command, ...apiCommandParameters});
     console.log('write', command, Object.keys(onyxData));
     const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
@@ -98,6 +99,7 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
     };
 
     const graphRequests = ['AddComment'];
+    let pushedRequestID;
 
     // Write commands can be saved and retried, so push it to the SequentialQueue
     if (graphRequests.includes(command)) {
@@ -109,11 +111,12 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
                 parentRequestID: getChannelParentID(request),
             };
         }
-        const pushedID = GraphQueue.push(graphRequest);
-        updateChannelParentID(request, pushedID);
+        pushedRequestID = GraphQueue.push(graphRequest);
+        updateChannelParentID(request, pushedRequestID);
     } else {
         SequentialQueue.push(request);
     }
+    return pushedRequestID;
 }
 
 /**
