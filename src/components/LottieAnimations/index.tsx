@@ -51,6 +51,11 @@ const DotLottieAnimations: Record<string, DotLottieAnimation> = {
         w: 853,
         h: 480,
     },
+    ChatFlow: {
+        file: require('@assets/animations/ChatFlow.lottie'),
+        w: 1920,
+        h: 1573,
+    },
 };
 
 export default DotLottieAnimations;

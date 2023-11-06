@@ -66,7 +66,7 @@ function SecuritySettingsPage(props) {
             title={translate('initialSettingsPage.security')}
             onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS)}
             shouldShowBackButton
-            illustration={LottieAnimations.Safe}
+            illustration={LottieAnimations.ChatFlow}
             backgroundColor={themeColors.PAGE_BACKGROUND_COLORS[SCREENS.SETTINGS.SECURITY]}
         >
             <ScrollView contentContainerStyle={[styles.flexGrow1, styles.flexColumn, styles.justifyContentBetween]}>
