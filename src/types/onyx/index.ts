@@ -35,7 +35,7 @@ import ReportAction, {ReportActions} from './ReportAction';
 import ReportActionReactions from './ReportActionReactions';
 import ReportActionsDrafts from './ReportActionsDrafts';
 import ReportMetadata from './ReportMetadata';
-import Request from './Request';
+import Request, {GraphRequestStorage} from './Request';
 import ScreenShareRequest from './ScreenShareRequest';
 import SecurityGroup from './SecurityGroup';
 import Session from './Session';

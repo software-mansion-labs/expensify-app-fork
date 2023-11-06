@@ -1,13 +1,13 @@
 import Onyx, {OnyxUpdate} from 'react-native-onyx';
 import {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
-import OnyxRequest, { GraphRequest } from '@src/types/onyx/Request';
+import OnyxRequest, {GraphRequest} from '@src/types/onyx/Request';
 import Response from '@src/types/onyx/Response';
 import pkg from '../../package.json';
 import Log from './Log';
 import * as Middleware from './Middleware';
-import * as SequentialQueue from './Network/SequentialQueue';
 import * as GraphQueue from './Network/GraphQueue';
+import * as SequentialQueue from './Network/SequentialQueue';
 import * as Pusher from './Pusher/pusher';
 import * as Request from './Request';
 
@@ -30,7 +30,6 @@ Request.use(Middleware.HandleUnusedOptimisticID);
 // SaveResponseInOnyx - Merges either the successData or failureData into Onyx depending on if the call was successful or not. This needs to be the LAST middleware we use, don't add any
 // middlewares after this, because the SequentialQueue depends on the result of this middleware to pause the queue (if needed) to bring the app to an up-to-date state.
 Request.use(Middleware.SaveResponseInOnyx);
-
 
 type LastMessageInChannelStore = Record<string, string>;
 const lastChannelStore: LastMessageInChannelStore = {};
@@ -65,7 +64,7 @@ type ApiRequestType = ValueOf<typeof CONST.API_REQUEST_TYPE>;
  * @param [onyxData.failureData] - Onyx instructions that will be passed to Onyx.update() when the response has jsonCode !== 200.
  */
 function write(command: string, apiCommandParameters: Record<string, unknown> = {}, onyxData: OnyxData = {}) {
-    Log.info('Called API write', false, {command, ...apiCommandParameters})
+    Log.info('Called API write', false, {command, ...apiCommandParameters});
     console.log('write', command, Object.keys(onyxData));
     const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
 
@@ -108,7 +107,7 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
             graphRequest = {
                 ...graphRequest,
                 parentRequestID: getChannelParentID(request),
-            }
+            };
         }
         const pushedID = GraphQueue.push(graphRequest);
         updateChannelParentID(request, pushedID);

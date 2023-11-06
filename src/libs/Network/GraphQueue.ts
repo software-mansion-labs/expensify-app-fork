@@ -1,13 +1,13 @@
 import Onyx from 'react-native-onyx';
-import * as PersistedGraphRequests from '../actions/PersistedGraphRequests';
+import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
+import {GraphRequest, GraphRequestStorageEntry} from '@src/types/onyx/Request';
+import * as PersistedGraphRequests from '@userActions/PersistedGraphRequests';
+import * as QueuedOnyxUpdates from '@userActions/QueuedOnyxUpdates';
+import * as ActiveClientManager from '@libs/ActiveClientManager';
+import * as Request from '@libs/Request';
+import * as RequestThrottle from '@libs/RequestThrottle';
 import * as NetworkStore from './NetworkStore';
-import ONYXKEYS from '../../ONYXKEYS';
-import * as ActiveClientManager from '../ActiveClientManager';
-import * as Request from '../Request';
-import * as RequestThrottle from '../RequestThrottle';
-import CONST from '../../CONST';
-import * as QueuedOnyxUpdates from '../actions/QueuedOnyxUpdates';
-import { GraphRequest, GraphRequestStorageEntry } from '../../types/onyx/Request';
 
 let resolveIsReadyPromise: ((args?: unknown[]) => void) | undefined;
 let isReadyPromise = new Promise((resolve) => {
@@ -113,10 +113,12 @@ function process(graphRequests?: GraphRequestStorageEntry[]): Promise<void> {
                     });
             });
 
-            promisesToResolve.push(promise);
-        }
+        promisesToResolve.push(promise);
+    }
 
-    return Promise.allSettled(promisesToResolve).then(() => {}).catch(() => {});
+    return Promise.allSettled(promisesToResolve)
+        .then(() => {})
+        .catch(() => {});
 }
 
 function flush() {

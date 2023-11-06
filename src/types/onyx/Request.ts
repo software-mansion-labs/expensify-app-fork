@@ -26,7 +26,7 @@ type Request = RequestData & OnyxData;
 type GraphRequest = Request & {
     // If parentRequestID is not found it will be generated from the independenceKey
     parentRequestID?: string;
-}
+};
 
 type GraphRequestID = string;
 
@@ -36,9 +36,9 @@ type GraphRequestStorageEntry = {
     children: GraphRequestID[];
     isRoot: boolean;
     isProcessed: boolean;
-}
+};
 
-type GraphRequestStorage = Record<string, GraphRequestStorageEntry>
+type GraphRequestStorage = Record<string, GraphRequestStorageEntry>;
 
 export default Request;
 export type {OnyxData, GraphRequestStorage, GraphRequest, GraphRequestID, GraphRequestStorageEntry};

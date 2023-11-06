@@ -1,7 +1,7 @@
+import ONYXKEYS from '@src/ONYXKEYS';
+import {Request} from '@src/types/onyx';
+import {GraphRequest, GraphRequestStorage, GraphRequestStorageEntry} from '@src/types/onyx/Request';
 import Onyx from 'react-native-onyx';
-import ONYXKEYS from '../../ONYXKEYS';
-import {Request} from '../../types/onyx';
-import { GraphRequest, GraphRequestStorage, GraphRequestStorageEntry } from '../../types/onyx/Request';
 
 let persistedGraphRequests: GraphRequestStorage = {};
 
@@ -38,7 +38,7 @@ function save(requestsToPersist: GraphRequest[]): string[] {
         const parentMessage = parentRequestID && persistedGraphRequests[parentRequestID];
 
         if (parentMessage) {
-            log('Added new request to graph:', id, ' (parent:', parentMessage.id, ')')
+            log('Added new request to graph:', id, ' (parent:', parentMessage.id, ')');
             parentMessage.children.push(id);
         } else {
             log('Added new request to graph:', id);
@@ -50,15 +50,13 @@ function save(requestsToPersist: GraphRequest[]): string[] {
             children: [],
             isRoot: !parentMessage,
             isProcessed: false,
-        }
+        };
     }
 
     persistedGraphRequests = Object.assign(persistedGraphRequests, requests);
     Onyx.merge(ONYXKEYS.PERSISTED_GRAPH_REQUESTS, requests);
     return Object.keys(requests);
 }
-
-
 
 function remove(id: string) {
     /**
@@ -89,7 +87,9 @@ function getChildrensIDs(parentID: string): string[] {
 }
 
 function getChildrens(parentID: string): GraphRequestStorageEntry[] {
-    return getChildrensIDs(parentID).map((id) => persistedGraphRequests[id]).filter(Boolean);
+    return getChildrensIDs(parentID)
+        .map((id) => persistedGraphRequests[id])
+        .filter(Boolean);
 }
 
 function getRootNodes(): GraphRequestStorageEntry[] {
@@ -160,5 +160,3 @@ function removeRootNodes() {
 }
 
 export {clear, save, getAll, remove, update, getChildrens, getRootNodes, removeRootNodes, getNextNodesToProcess};
-
-

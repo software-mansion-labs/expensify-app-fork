@@ -30,7 +30,7 @@ const handleUnusedOptimisticID: Middleware = (requestResponse, request, isFromSe
             }
             const oldReportID = request.data?.reportID;
             const offset = isFromSequentialQueue ? 1 : 0;
-            console.log('handleUnusedOptimisticID', oldReportID, preexistingReportID, offset)
+            console.log('handleUnusedOptimisticID', oldReportID, preexistingReportID, offset);
             PersistedRequests.getAll()
                 .slice(offset)
                 .forEach((persistedRequest, index) => {
