@@ -32,14 +32,15 @@ Request.use(Middleware.HandleUnusedOptimisticID);
 Request.use(Middleware.SaveResponseInOnyx);
 
 type LastMessageInChannelStore = Record<string, string>;
+// TODO: persist lastChannelStore to disk
 const lastChannelStore: LastMessageInChannelStore = {};
 
-function getChannelParentID(independenceKey: string): string | undefined {
-    return lastChannelStore[independenceKey];
+function getChannelParentID(channel: string): string | undefined {
+    return lastChannelStore[channel];
 }
 
-function updateChannelParentID(independenceKey: string, id: string) {
-    lastChannelStore[independenceKey] = id;
+function updateChannelParentID(channel: string, id: string) {
+    lastChannelStore[channel] = id;
 }
 
 type OnyxData = {
@@ -96,21 +97,25 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
         ...onyxDataWithoutOptimisticData,
     };
 
-
-    const channel = request.independenceKey ?? 'SequentialQueue';
-    console.log('[Graph]: Pushing', command, 'to queue', channel, request);
     let graphRequest: GraphRequest = request;
-
+    let pushedRequestID;
     // Add the parentRequestID to the request if it doesn't already exist
     if (!graphRequest.parentRequestID) {
+        // If the request is not associated with a channel, it will be considered a sequential request
+        const channel = request.channelID ?? 'SequentialQueue';
         graphRequest = {
             ...graphRequest,
             parentRequestID: getChannelParentID(channel),
         };
+
+        console.log('[Graph]: Pushing', command, 'to queue', channel, request);
+        pushedRequestID = GraphQueue.push(graphRequest);
+        updateChannelParentID(channel, pushedRequestID);
+    } else {
+        console.log('[Graph]: Pushing', command, 'with parentRequestID', graphRequest.parentRequestID);
+        pushedRequestID = GraphQueue.push(graphRequest);
     }
 
-    const pushedRequestID = GraphQueue.push(graphRequest);
-    updateChannelParentID(channel, pushedRequestID);
     return pushedRequestID;
 }
 
@@ -141,7 +146,6 @@ function makeRequestWithSideEffects(
     apiRequestType: ApiRequestType = CONST.API_REQUEST_TYPE.MAKE_REQUEST_WITH_SIDE_EFFECTS,
 ): Promise<void | Response> {
     Log.info('Called API makeRequestWithSideEffects', false, {command, ...apiCommandParameters});
-    console.log('[GraphQueue] makeRequestWithSideEffects', command, Object.keys(onyxData));
     const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
 
     // Optimistically update Onyx

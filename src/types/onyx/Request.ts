@@ -5,7 +5,13 @@ type OnyxData = {
     successData?: OnyxUpdate[];
     failureData?: OnyxUpdate[];
     optimisticData?: OnyxUpdate[];
-    independenceKey?: string;
+
+    // If parentRequestID is not found it will use channelID to find the parent
+    parentRequestID?: string;
+
+    // It is used only if parentRequestID is not found, it will be used to find the parent
+    // If parentRequestID is not found and channelID is not found, it will be considered as a SequentialRequest
+    channelID?: string;
 };
 
 type RequestData = {
@@ -23,10 +29,7 @@ type RequestData = {
 
 type Request = RequestData & OnyxData;
 
-type GraphRequest = Request & {
-    // If parentRequestID is not found it will be generated from the independenceKey
-    parentRequestID?: string;
-};
+type GraphRequest = Request;
 
 type GraphRequestID = string;
 

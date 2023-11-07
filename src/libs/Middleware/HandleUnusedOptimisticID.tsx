@@ -8,8 +8,8 @@ import Report from '@src/types/onyx/Report';
 const handleUnusedOptimisticID: Middleware = (requestResponse, request, isFromSequentialQueue) =>
     requestResponse.then((response) => {
         // Temporarily do not use this middleware if the request is GraphRequest
-        if (request.independenceKey) {
-            console.log('not using the middleware handleUnusedOptimisticID for GraphRequest', request.command);
+        if (request.parentRequestID) {
+            console.log('[Graph] Not using the middleware handleUnusedOptimisticID for GraphRequest', request.command);
             return response;
         }
         const responseOnyxData = response?.onyxData ?? [];

@@ -421,7 +421,7 @@ function addActions(reportID, text = '', file) {
         optimisticData,
         successData,
         failureData,
-        independenceKey: `${commandName}_${reportID}`,
+        channelID: `${commandName}_${reportID}`,
     });
     notifyNewAction(reportID, lastAction.actorAccountID, lastAction.reportActionID);
 }
@@ -522,7 +522,7 @@ function openReport(reportID, participantLoginList = [], newReportObject = {}, p
         optimisticData: optimisticReportData,
         successData: reportSuccessData,
         failureData: reportFailureData,
-        independenceKey: `OpenReport_${reportID}`,
+        channelID: `OpenReport_${reportID}`,
     };
 
     const params = {
