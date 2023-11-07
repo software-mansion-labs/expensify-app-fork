@@ -34,13 +34,12 @@ Request.use(Middleware.SaveResponseInOnyx);
 type LastMessageInChannelStore = Record<string, string>;
 const lastChannelStore: LastMessageInChannelStore = {};
 
-function getChannelParentID(request: GraphRequest): string | undefined {
-    return lastChannelStore[request.independenceKey ?? ''];
+function getChannelParentID(independenceKey: string): string | undefined {
+    return lastChannelStore[independenceKey];
 }
 
-function updateChannelParentID(request: GraphRequest, id: string) {
-    console.log('updateChannelParentID', request.independenceKey);
-    lastChannelStore[request.independenceKey ?? ''] = id;
+function updateChannelParentID(independenceKey: string, id: string) {
+    lastChannelStore[independenceKey] = id;
 }
 
 type OnyxData = {
@@ -66,7 +65,6 @@ type ApiRequestType = ValueOf<typeof CONST.API_REQUEST_TYPE>;
  */
 function write(command: string, apiCommandParameters: Record<string, unknown> = {}, onyxData: OnyxData = {}): string | undefined {
     Log.info('Called API write', false, {command, ...apiCommandParameters});
-    console.log('write', command, Object.keys(onyxData));
     const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
 
     // Optimistically update Onyx
@@ -98,24 +96,21 @@ function write(command: string, apiCommandParameters: Record<string, unknown> = 
         ...onyxDataWithoutOptimisticData,
     };
 
-    const graphRequests = ['AddComment'];
-    let pushedRequestID;
 
-    // Write commands can be saved and retried, so push it to the SequentialQueue
-    if (graphRequests.includes(command)) {
-        console.log('graph: pushing', command, 'to queue', request);
-        let graphRequest: GraphRequest = request;
-        if (!graphRequest.parentRequestID) {
-            graphRequest = {
-                ...graphRequest,
-                parentRequestID: getChannelParentID(request),
-            };
-        }
-        pushedRequestID = GraphQueue.push(graphRequest);
-        updateChannelParentID(request, pushedRequestID);
-    } else {
-        SequentialQueue.push(request);
+    const channel = request.independenceKey ?? 'SequentialQueue';
+    console.log('[Graph]: Pushing', command, 'to queue', channel, request);
+    let graphRequest: GraphRequest = request;
+
+    // Add the parentRequestID to the request if it doesn't already exist
+    if (!graphRequest.parentRequestID) {
+        graphRequest = {
+            ...graphRequest,
+            parentRequestID: getChannelParentID(channel),
+        };
     }
+
+    const pushedRequestID = GraphQueue.push(graphRequest);
+    updateChannelParentID(channel, pushedRequestID);
     return pushedRequestID;
 }
 

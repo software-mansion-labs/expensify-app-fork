@@ -181,6 +181,8 @@ NetworkStore.onReconnection(flush);
 function push(request: GraphRequest): string {
     // Add request to Persisted Requests so that it can be retried if it fails
     const requestsIDs: string[] = PersistedGraphRequests.save([request]);
+
+    // TODO: Support multiple requests IDs
     const requestID = requestsIDs.slice(-1)[0];
     // If we are offline we don't need to trigger the queue to empty as it will happen when we come back online
     if (NetworkStore.isOffline()) {
@@ -203,4 +205,9 @@ function waitForIdle(): Promise<unknown> {
     return isReadyPromise;
 }
 
-export {flush, isRunning, push, waitForIdle, pause, unpause, log};
+// TODO: implement
+function getCurrentRequest(): Promise<void> {
+    return Promise.resolve();
+}
+
+export {flush, getCurrentRequest, isRunning, push, waitForIdle, pause, unpause, log};
