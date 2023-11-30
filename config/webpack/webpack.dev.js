@@ -52,6 +52,10 @@ module.exports = (env = {}) =>
                         cert: path.join(__dirname, 'certificate.pem'),
                     },
                 },
+                headers: {
+                    // cache for 3600 seconds (1 hour)
+                    "Cache-Control": "max-age=3600"
+                }
             },
             plugins: [
                 new DefinePlugin({
