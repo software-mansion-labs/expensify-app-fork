@@ -127,6 +127,10 @@ const darkTheme = {
             backgroundColor: colors.productDark200,
             statusBarStyle: CONST.STATUS_BAR_STYLE.LIGHT_CONTENT,
         },
+        [SCREENS.WORKSPACE_SELECTOR.ROOT]: {
+            backgroundColor: colors.productDark100,
+            statusBarStyle: CONST.STATUS_BAR_STYLE.LIGHT_CONTENT, 
+        }
     },
 
     statusBarStyle: CONST.STATUS_BAR_STYLE.LIGHT_CONTENT,

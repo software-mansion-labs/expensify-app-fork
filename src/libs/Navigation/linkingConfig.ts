@@ -38,7 +38,7 @@ const linkingConfig: LinkingOptions<RootStackParamList> = {
             [SCREENS.NOT_FOUND]: '*',
 
             [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: {
-                screens: {
+                screens: { 
                     [SCREENS.RIGHT_MODAL.SETTINGS]: {
                         screens: {
                             [SCREENS.SETTINGS.ROOT]: {
@@ -257,6 +257,13 @@ const linkingConfig: LinkingOptions<RootStackParamList> = {
                                 path: ROUTES.KEYBOARD_SHORTCUTS,
                             },
                         },
+                    },
+                    [SCREENS.RIGHT_MODAL.WORKSPACE_SELECTOR]: {
+                        screens: {
+                            [SCREENS.WORKSPACE_SELECTOR.ROOT]: {
+                                path: ROUTES.WORKSPACE_SELECTOR
+                            }
+                        }
                     },
                     [SCREENS.RIGHT_MODAL.PRIVATE_NOTES]: {
                         screens: {

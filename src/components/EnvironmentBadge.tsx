@@ -3,8 +3,10 @@ import useEnvironment from '@hooks/useEnvironment';
 import * as Environment from '@libs/Environment/Environment';
 import useThemeStyles from '@styles/useThemeStyles';
 import CONST from '@src/CONST';
-import pkg from '../../package.json';
+import ROUTES from '@src/ROUTES';
+import Navigation from '@libs/Navigation/Navigation';
 import Badge from './Badge';
+import pkg from '../../package.json';
 
 const ENVIRONMENT_SHORT_FORM = {
     [CONST.ENVIRONMENT.DEV]: 'DEV',
@@ -32,6 +34,8 @@ function EnvironmentBadge() {
             badgeStyles={[styles.alignSelfEnd, styles.headerEnvBadge]}
             textStyles={[styles.headerEnvBadgeText]}
             environment={environment}
+            pressable
+            onPress={() => {Navigation.navigate(ROUTES.WORKSPACE_SELECTOR)}}
         />
     );
 }
