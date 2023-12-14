@@ -32,6 +32,7 @@ import * as Localize from './Localize';
 import linkingConfig from './Navigation/linkingConfig';
 import Navigation from './Navigation/Navigation';
 import * as NumberUtils from './NumberUtils';
+import * as OptionsListUtils from './OptionsListUtils';
 import Permissions from './Permissions';
 import * as PolicyUtils from './PolicyUtils';
 import * as ReportActionsUtils from './ReportActionsUtils';
@@ -4314,6 +4315,52 @@ function navigateToPrivateNotes(report: Report, session: Session) {
     Navigation.navigate(ROUTES.PRIVATE_NOTES_LIST.getRoute(report.reportID));
 }
 
+const getBrickRoadForPolicy = (policyReport: Report) => {
+    const policyReportAction = ReportActionsUtils.getAllReportActions(policyReport.reportID);
+    const reportErrors = OptionsListUtils.getAllReportErrors(policyReport, policyReportAction);
+    const brickRoadIndicator = Object.keys(reportErrors ?? {}).length !== 0 ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : '';
+    if (brickRoadIndicator) {
+        return 'redIndicator';
+    }
+    let itemParentReportAction = {};
+    if (policyReport.parentReportID) {
+        const itemParentReportActions = ReportActionsUtils.getAllReportActions(policyReport.parentReportID);
+        itemParentReportAction = policyReport.parentReportActionID ? itemParentReportActions[policyReport.parentReportActionID] : {};
+    }
+    const optionFromPolicyReport = {...policyReport, isUnread: isUnread(policyReport), isUnreadWithMention: isUnreadWithMention(policyReport)};
+    const shouldShowGreenDotIndicator = requiresAttentionFromCurrentUser(optionFromPolicyReport, itemParentReportAction);
+    return shouldShowGreenDotIndicator ? 'greenIndicator' : '';
+};
+
+function getWorkspacesBrickRoads() {
+    if (!allReports) {
+        return {};
+    }
+
+    const workspaceMap: Record<string, string> = {};
+
+    if (!allReports) {
+        return workspaceMap;
+    }
+
+    Object.keys(allReports).forEach((report) => {
+        const policyID = allReports?.[report]?.policyID;
+        const policyReport = allReports ? allReports[report] : null;
+        if (!policyID || workspaceMap[policyID] === 'redIndicator' || !policyReport) {
+            return;
+        }
+        const policyBrickRoad = getBrickRoadForPolicy(policyReport);
+
+        if (!policyBrickRoad) {
+            return;
+        }
+
+        workspaceMap[policyID] = policyBrickRoad;
+    });
+
+    return workspaceMap;
+}
+
 export {
     getReportParticipantsTitle,
     isReportMessageAttachment,
@@ -4485,6 +4532,7 @@ export {
     canEditWriteCapability,
     hasSmartscanError,
     shouldAutoFocusOnKeyPress,
+    getWorkspacesBrickRoads,
 };
 
 export type {OptionData, OptimisticChatReport};
