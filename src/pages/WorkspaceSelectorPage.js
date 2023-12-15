@@ -10,6 +10,7 @@ import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
+import * as BrickRoadsUtils from '@libs/BrickRoadsUtils';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import colors from '@styles/colors';
@@ -69,10 +70,9 @@ function WorkspacesSelectorPage({policies, activeWorkspaceID}) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
-    const workspaceBrickRoads = ReportUtils.getWorkspacesBrickRoads();
+    const workspaceBrickRoads = useMemo(() => BrickRoadsUtils.getWorkspacesBrickRoads(), []);
 
     const getIndicatorTypeForPolicy = useCallback(
-        // TO DO: Wait for missing logic to be implemented in other PR
         (policyId) => {
             if (policyId === activeWorkspaceID) {
                 return 'checkmark';
