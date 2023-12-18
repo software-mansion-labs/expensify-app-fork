@@ -7,18 +7,21 @@ import * as ReportActionsUtils from './ReportActionsUtils';
 import * as ReportUtils from './ReportUtils';
 
 let allReports: OnyxCollection<Report>;
+
+type BrickRoad = 'GBR' | 'RBR' | undefined;
+
 Onyx.connect({
     key: ONYXKEYS.COLLECTION.REPORT,
     waitForCollectionCallback: true,
     callback: (value) => (allReports = value),
 });
 
-const getBrickRoadForPolicy = (policyReport: Report) => {
+const getBrickRoadForPolicy = (policyReport: Report): BrickRoad => {
     const policyReportAction = ReportActionsUtils.getAllReportActions(policyReport.reportID);
     const reportErrors = OptionsListUtils.getAllReportErrors(policyReport, policyReportAction);
     const brickRoadIndicator = Object.keys(reportErrors ?? {}).length !== 0 ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : '';
     if (brickRoadIndicator) {
-        return 'redIndicator';
+        return 'RBR';
     }
     let itemParentReportAction = {};
     if (policyReport.parentReportID) {
@@ -27,24 +30,24 @@ const getBrickRoadForPolicy = (policyReport: Report) => {
     }
     const optionFromPolicyReport = {...policyReport, isUnread: ReportUtils.isUnread(policyReport), isUnreadWithMention: ReportUtils.isUnreadWithMention(policyReport)};
     const shouldShowGreenDotIndicator = ReportUtils.requiresAttentionFromCurrentUser(optionFromPolicyReport, itemParentReportAction);
-    return shouldShowGreenDotIndicator ? 'greenIndicator' : '';
+    return shouldShowGreenDotIndicator ? 'GBR' : undefined;
 };
 
-function getWorkspacesBrickRoads() {
+function getWorkspacesBrickRoads(): Record<string, BrickRoad> {
     if (!allReports) {
         return {};
     }
 
-    const workspaceMap: Record<string, string> = {};
+    const brickRoadsMap: Record<string, BrickRoad> = {};
 
     if (!allReports) {
-        return workspaceMap;
+        return brickRoadsMap;
     }
 
     Object.keys(allReports).forEach((report) => {
         const policyID = allReports?.[report]?.policyID;
         const policyReport = allReports ? allReports[report] : null;
-        if (!policyID || workspaceMap[policyID] === 'redIndicator' || !policyReport) {
+        if (!policyID || !policyReport || brickRoadsMap[policyID] === 'RBR') {
             return;
         }
         const policyBrickRoad = getBrickRoadForPolicy(policyReport);
@@ -53,10 +56,10 @@ function getWorkspacesBrickRoads() {
             return;
         }
 
-        workspaceMap[policyID] = policyBrickRoad;
+        brickRoadsMap[policyID] = policyBrickRoad;
     });
 
-    return workspaceMap;
+    return brickRoadsMap;
 }
 
 export {getBrickRoadForPolicy, getWorkspacesBrickRoads};

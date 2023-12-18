@@ -55,11 +55,11 @@ const INDICATOR_STYLES = {
         icon: Expensicons.Checkmark,
         fill: colors.green,
     },
-    greenIndicator: {
+    GBR: {
         icon: Expensicons.DotIndicator,
         fill: colors.green,
     },
-    redIndicator: {
+    RBR: {
         icon: Expensicons.DotIndicator,
         fill: colors.red,
     },
