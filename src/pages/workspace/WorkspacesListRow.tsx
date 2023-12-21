@@ -49,7 +49,7 @@ const workspaceTypeIcon = (workspaceType: WorkspacesListRowProps['workspaceType'
         case CONST.POLICY.TYPE.TEAM:
             return Illustrations.Mailbox;
         default:
-            throw new Error(`Don't know which icon to serve for workspace type`);
+            return Illustrations.Mailbox;
     }
 };
 
@@ -77,7 +77,7 @@ function WorkspacesListRow({
             case CONST.POLICY.TYPE.TEAM:
                 return translate('workspace.type.collect');
             default:
-                throw new Error(`Don't know a friendly workspace name for this workspace type`);
+                return translate('workspace.type.collect');
         }
     }, [workspaceType, translate]);
 
@@ -166,6 +166,7 @@ function WorkspacesListRow({
                     menuItems={menuItems}
                     anchorPosition={{top: 0, right: 0}}
                     iconStyles={[styles.mr2]}
+                    shouldOverlay
                 />
             )}
         </View>

@@ -86,6 +86,8 @@ function ThreeDotsMenu({iconTooltip, icon, iconFill, iconStyles, onIconPress, me
         setPopupMenuVisible(false);
     };
 
+    console.log(menuItems)
+
     return (
         <>
             <View>
