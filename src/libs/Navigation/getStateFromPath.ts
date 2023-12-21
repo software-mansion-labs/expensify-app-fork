@@ -9,7 +9,8 @@ import linkingConfig from './linkingConfig';
 function getStateFromPath(path: Route): PartialState<NavigationState> {
     const normalizedPath = !path.startsWith('/') ? `/${path}` : path;
 
-    const state = linkingConfig.getStateFromPath ? linkingConfig.getStateFromPath(normalizedPath, linkingConfig.config) : RNGetStateFromPath(normalizedPath, linkingConfig.config);
+    // We want primary and not adapted state
+    const state = RNGetStateFromPath(normalizedPath, linkingConfig.config);
 
     if (!state) {
         throw new Error('Failed to parse the path to a navigation state.');

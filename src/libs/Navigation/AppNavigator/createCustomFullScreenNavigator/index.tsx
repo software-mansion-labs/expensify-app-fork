@@ -48,13 +48,12 @@ function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
     });
 
     const stateToRender = useMemo(() => {
-        const result = reduceReportRoutes(state.routes);
-
-        return {
-            ...state,
-            index: result.length - 1,
-            routes: [...result],
-        };
+        // const result = reduceReportRoutes(state.routes);
+        // return {
+        //     ...state,
+        //     index: result.length - 1,
+        //     routes: [...result],
+        // };
     }, [state]);
 
     return (
@@ -62,7 +61,7 @@ function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
             <StackView
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...props}
-                state={stateToRender}
+                state={state}
                 descriptors={descriptors}
                 navigation={navigation}
             />

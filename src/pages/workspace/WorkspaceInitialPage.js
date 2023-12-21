@@ -233,18 +233,6 @@ function WorkspaceInitialPage(props) {
                     shouldShow={shouldShowNotFoundPage}
                     subtitleKey={_.isEmpty(policy) ? undefined : 'workspace.common.notAuthorized'}
                 >
-                    <HeaderWithBackButton
-                        title={translate('workspace.common.workspace')}
-                        shouldShowThreeDotsButton
-                        shouldShowGetAssistanceButton
-                        singleExecution={singleExecution}
-                        shouldDisableGetAssistanceButton={isExecuting}
-                        shouldDisableThreeDotsButton={isExecuting}
-                        guidesCallTaskID={CONST.GUIDES_CALL_TASK_IDS.WORKSPACE_INITIAL}
-                        threeDotsMenuItems={threeDotsMenuItems}
-                        threeDotsAnchorPosition={styles.threeDotsPopoverOffset(windowWidth)}
-                        onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WORKSPACES)}
-                    />
                     <ScrollView contentContainerStyle={[styles.flexGrow1, styles.flexColumn, styles.justifyContentBetween, safeAreaPaddingBottomStyle]}>
                         <OfflineWithFeedback
                             pendingAction={policy.pendingAction}

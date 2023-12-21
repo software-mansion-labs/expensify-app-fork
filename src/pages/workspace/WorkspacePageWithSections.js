@@ -53,9 +53,6 @@ const propTypes = {
     /** The guides call task ID to associate with the workspace page being shown */
     guidesCallTaskID: PropTypes.string,
 
-    /** The route where we navigate when the user press the back button */
-    backButtonRoute: PropTypes.string,
-
     /** Policy values needed in the component */
     policy: PropTypes.shape({
         name: PropTypes.string,
@@ -84,7 +81,7 @@ function fetchData(skipVBBACal) {
     BankAccounts.openWorkspaceView();
 }
 
-function WorkspacePageWithSections({backButtonRoute, children, footer, guidesCallTaskID, headerText, policy, reimbursementAccount, route, shouldUseScrollView, shouldSkipVBBACall, user}) {
+function WorkspacePageWithSections({children, footer, guidesCallTaskID, headerText, policy, reimbursementAccount, route, shouldUseScrollView, shouldSkipVBBACall, user}) {
     const styles = useThemeStyles();
     useNetwork({onReconnect: () => fetchData(shouldSkipVBBACall)});
 
@@ -115,7 +112,7 @@ function WorkspacePageWithSections({backButtonRoute, children, footer, guidesCal
                     title={headerText}
                     guidesCallTaskID={guidesCallTaskID}
                     shouldShowBackButton={isSmallScreenWidth}
-                    onBackButtonPress={() => Navigation.goBack(backButtonRoute || ROUTES.WORKSPACE_INITIAL.getRoute(policyID))}
+                    onBackButtonPress={() => Navigation.goBack('', false, true)}
                     shouldShowBorderBottom
                 />
                 {shouldUseScrollView ? (
