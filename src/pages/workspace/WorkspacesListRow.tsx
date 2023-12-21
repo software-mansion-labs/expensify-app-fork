@@ -13,6 +13,7 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import {AvatarSource} from '@libs/UserUtils';
+import variables from '@styles/variables';
 import CONST from '@src/CONST';
 
 type WorkspacesListRowProps = WithCurrentUserPersonalDetailsProps & {
@@ -20,7 +21,7 @@ type WorkspacesListRowProps = WithCurrentUserPersonalDetailsProps & {
     title: string;
 
     /** Account ID of the workspace's owner */
-    ownerAccountID: number;
+    ownerAccountID?: number;
 
     /** Type of workspace. Type personal is not valid in this context so it's omitted */
     workspaceType: typeof CONST.POLICY.TYPE.FREE | typeof CONST.POLICY.TYPE.CORPORATE | typeof CONST.POLICY.TYPE.TEAM;
@@ -65,7 +66,7 @@ function WorkspacesListRow({
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
-    const [ownerDetails] = PersonalDetailsUtils.getPersonalDetailsByIDs([ownerAccountID], currentUserPersonalDetails.accountID);
+    const ownerDetails = ownerAccountID && PersonalDetailsUtils.getPersonalDetailsByIDs([ownerAccountID], currentUserPersonalDetails.accountID)[0];
 
     const userFriendlyWorkspaceType = useMemo(() => {
         switch (workspaceType) {
@@ -114,31 +115,35 @@ function WorkspacesListRow({
                 )}
             </View>
             <View style={[styles.flexRow, isWide && styles.flex1, styles.gap2, isNarrow && styles.mr5, styles.alignItemsCenter]}>
-                <Avatar
-                    source={ownerDetails.avatar}
-                    size={CONST.AVATAR_SIZE.SMALL}
-                    containerStyles={styles.workspaceOwnerAvatarWrapper}
-                />
-                <View style={styles.flex1}>
-                    <Text
-                        numberOfLines={1}
-                        style={[styles.labelStrong]}
-                    >
-                        {PersonalDetailsUtils.getDisplayNameOrDefault(ownerDetails.displayName)}
-                    </Text>
-                    <Text
-                        numberOfLines={1}
-                        style={[styles.textMicro, styles.textSupporting]}
-                    >
-                        {ownerDetails.login}
-                    </Text>
-                </View>
+                {ownerDetails && (
+                    <>
+                        <Avatar
+                            source={ownerDetails.avatar}
+                            size={CONST.AVATAR_SIZE.SMALL}
+                            containerStyles={styles.workspaceOwnerAvatarWrapper}
+                        />
+                        <View style={styles.flex1}>
+                            <Text
+                                numberOfLines={1}
+                                style={[styles.labelStrong]}
+                            >
+                                {PersonalDetailsUtils.getDisplayNameOrDefault(ownerDetails.displayName)}
+                            </Text>
+                            <Text
+                                numberOfLines={1}
+                                style={[styles.textMicro, styles.textSupporting]}
+                            >
+                                {ownerDetails.login}
+                            </Text>
+                        </View>
+                    </>
+                )}
             </View>
             <View style={[styles.flexRow, isWide && styles.flex1, styles.gap2, isNarrow && styles.mr5, styles.alignItemsCenter]}>
                 <Icon
                     src={workspaceTypeIcon(workspaceType)}
-                    width={34}
-                    height={34}
+                    width={variables.workspaceTypeIconWidth}
+                    height={variables.workspaceTypeIconWidth}
                     additionalStyles={styles.workspaceTypeWrapper}
                 />
                 <View style={styles.dFlex}>
