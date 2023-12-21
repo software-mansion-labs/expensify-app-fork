@@ -536,6 +536,10 @@ function handleRestrictedEvent(eventName: string) {
     API.write('HandleRestrictedEvent', parameters);
 }
 
+function updateLastVisitedPath(path: string) {
+    Onyx.set(ONYXKEYS.LAST_VISITED_PATH, path)
+}
+
 export {
     setLocale,
     setLocaleAndNavigate,
@@ -553,4 +557,5 @@ export {
     finalReconnectAppAfterActivatingReliableUpdates,
     savePolicyDraftByNewWorkspace,
     createWorkspaceWithPolicyDraftAndNavigateToIt,
+    updateLastVisitedPath,
 };

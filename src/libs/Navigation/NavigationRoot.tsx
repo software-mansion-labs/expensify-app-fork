@@ -5,6 +5,7 @@ import useFlipper from '@hooks/useFlipper';
 import useTheme from '@hooks/useTheme';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import Log from '@libs/Log';
+import { updateLastVisitedPath }  from '@userActions/App';
 import AppNavigator from './AppNavigator';
 import linkingConfig from './linkingConfig';
 import Navigation, {navigationRef} from './Navigation';
@@ -26,6 +27,7 @@ function parseAndLogRoute(state: NavigationState) {
     }
 
     const currentPath = getPathFromState(state, linkingConfig.config);
+    updateLastVisitedPath(currentPath)
 
     // Don't log the route transitions from OldDot because they contain authTokens
     if (currentPath.includes('/transition')) {
