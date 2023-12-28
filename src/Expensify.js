@@ -80,6 +80,9 @@ const propTypes = {
     /** Whether we should display the notification alerting the user that focus mode has been auto-enabled */
     focusModeNotification: PropTypes.bool,
 
+    /** Last visited path in the app */
+    lastVisitedPath: PropTypes.string,
+
     ...withLocalizePropTypes,
 };
 
@@ -93,6 +96,7 @@ const defaultProps = {
     screenShareRequest: null,
     isCheckingPublicRoom: true,
     focusModeNotification: false,
+    lastVisitedPath: undefined,
 };
 
 const SplashScreenHiddenContext = React.createContext({});
@@ -103,6 +107,7 @@ function Expensify(props) {
     const [isOnyxMigrated, setIsOnyxMigrated] = useState(false);
     const [isSplashHidden, setIsSplashHidden] = useState(false);
     const [hasAttemptedToOpenPublicRoom, setAttemptedToOpenPublicRoom] = useState(false);
+    const [initialUrl, setInitialUrl] = useState(null);
 
     useEffect(() => {
         if (props.isCheckingPublicRoom) {
@@ -183,6 +188,7 @@ function Expensify(props) {
 
         // If the app is opened from a deep link, get the reportID (if exists) from the deep link and navigate to the chat report
         Linking.getInitialURL().then((url) => {
+            setInitialUrl(url);
             DemoActions.runDemoByURL(url);
             Report.openReportFromDeepLink(url, isAuthenticated);
         });
@@ -239,7 +245,9 @@ function Expensify(props) {
                 <SplashScreenHiddenContext.Provider value={contextValue}>
                     <NavigationRoot
                         onReady={setNavigationReady}
+                        lastVisitedPath={props.lastVisitedPath}
                         authenticated={isAuthenticated}
+                        initialUrl={initialUrl}
                     />
                 </SplashScreenHiddenContext.Provider>
             )}
@@ -274,6 +282,9 @@ export default compose(
         focusModeNotification: {
             key: ONYXKEYS.FOCUS_MODE_NOTIFICATION,
             initWithStoredValues: false,
+        },
+        lastVisitedPath: {
+            key: ONYXKEYS.LAST_VISITED_PATH,
         },
     }),
 )(Expensify);

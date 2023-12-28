@@ -537,7 +537,7 @@ function handleRestrictedEvent(eventName: string) {
 }
 
 function updateLastVisitedPath(path: string) {
-    Onyx.set(ONYXKEYS.LAST_VISITED_PATH, path)
+    Onyx.set(ONYXKEYS.LAST_VISITED_PATH, path);
 }
 
 export {
