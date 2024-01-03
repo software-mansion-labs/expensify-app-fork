@@ -21,6 +21,10 @@ function BottomTabNavigator() {
                 name={SCREENS.HOME}
                 component={SidebarScreen}
             />
+             <Tab.Screen
+                name={SCREENS.HOME_ROOT}
+                component={SidebarScreen}
+            />
             <Tab.Screen
                 name={SCREENS.ALL_SETTINGS}
                 component={AllSettingsScreen}

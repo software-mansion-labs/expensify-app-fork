@@ -396,6 +396,7 @@ type FullScreenNavigatorParamList = {
 
 type BottomTabNavigatorParamList = {
     [SCREENS.HOME]: undefined;
+    [SCREENS.HOME_ROOT]: undefined;
     [SCREENS.ALL_SETTINGS]: undefined;
     [SCREENS.WORKSPACE.INITIAL]: undefined;
 };
