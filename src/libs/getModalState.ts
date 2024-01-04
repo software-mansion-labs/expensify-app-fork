@@ -1,7 +1,6 @@
-import type {OnyxEntry} from 'react-native-onyx';
-import Onyx from 'react-native-onyx';
+import Onyx, {OnyxEntry} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type Modal from '@src/types/onyx/Modal';
+import Modal from '@src/types/onyx/Modal';
 
 let modalState: OnyxEntry<Modal> = {};
 

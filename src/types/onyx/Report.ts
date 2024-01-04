@@ -1,7 +1,7 @@
-import type {ValueOf} from 'type-fest';
-import type CONST from '@src/CONST';
-import type * as OnyxCommon from './OnyxCommon';
-import type PersonalDetails from './PersonalDetails';
+import {ValueOf} from 'type-fest';
+import CONST from '@src/CONST';
+import * as OnyxCommon from './OnyxCommon';
+import PersonalDetails from './PersonalDetails';
 
 type NotificationPreference = ValueOf<typeof CONST.REPORT.NOTIFICATION_PREFERENCE>;
 
@@ -44,7 +44,7 @@ type Report = {
     /** The time of the last read of the report */
     lastReadCreated?: string;
 
-    /** The time when user read the last message */
+    /** The last time the report was visited */
     lastReadTime?: string;
 
     /** The sequence number of the last report visit */
@@ -153,12 +153,10 @@ type Report = {
     nonReimbursableTotal?: number;
     isHidden?: boolean;
     isChatRoom?: boolean;
-    participantsList?: PersonalDetails[];
+    participantsList?: Array<Partial<PersonalDetails>>;
+    text?: string;
     privateNotes?: Record<number, Note>;
     isLoadingPrivateNotes?: boolean;
-
-    /** If the report contains reportFields, save the field id and its value */
-    reportFields?: Record<string, string>;
 };
 
 export default Report;

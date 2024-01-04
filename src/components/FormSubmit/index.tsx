@@ -1,10 +1,9 @@
-import type {KeyboardEvent} from 'react';
-import React, {useEffect} from 'react';
+import React, {KeyboardEvent, useEffect} from 'react';
 import {View} from 'react-native';
 import * as ComponentUtils from '@libs/ComponentUtils';
 import isEnterWhileComposition from '@libs/KeyboardShortcut/isEnterWhileComposition';
 import CONST from '@src/CONST';
-import type {FormSubmitProps, FormSubmitRef} from './types';
+import {FormSubmitProps, FormSubmitRef} from './types';
 
 function FormSubmit({children, onSubmit, style}: FormSubmitProps, ref: FormSubmitRef) {
     /**

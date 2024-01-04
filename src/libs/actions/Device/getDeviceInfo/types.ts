@@ -1,4 +1,4 @@
-import type {OSAndName} from './getOSAndName/types';
+import {OSAndName} from './getOSAndName/types';
 
 type BaseInfo = {
     appVersion: string;

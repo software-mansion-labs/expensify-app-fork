@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import {ReactNode} from 'react';
 
 type SwipeableViewProps = {
     /** The content to be rendered within the SwipeableView */

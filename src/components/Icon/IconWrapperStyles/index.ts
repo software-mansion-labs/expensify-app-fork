@@ -1,4 +1,4 @@
-import type IconWrapperStyle from './types';
+import IconWrapperStyle from './types';
 
 const style: IconWrapperStyle = {
     top: 2,

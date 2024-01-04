@@ -60,15 +60,11 @@ function BaseHTMLEngineProvider(props) {
             }),
             'mention-user': defaultHTMLElementModels.span.extend({tagName: 'mention-user'}),
             'mention-here': defaultHTMLElementModels.span.extend({tagName: 'mention-here'}),
-            'next-step': defaultHTMLElementModels.span.extend({
-                tagName: 'next-step',
+            'next-steps': defaultHTMLElementModels.span.extend({
+                tagName: 'next-steps',
                 mixedUAStyles: {...styles.textLabelSupporting},
             }),
-            'next-step-email': defaultHTMLElementModels.span.extend({tagName: 'next-step-email'}),
-            video: defaultHTMLElementModels.div.extend({
-                tagName: 'video',
-                mixedUAStyles: {whiteSpace: 'pre'},
-            }),
+            'next-steps-email': defaultHTMLElementModels.span.extend({tagName: 'next-steps-email'}),
         }),
         [styles.colorMuted, styles.formError, styles.mb0, styles.textLabelSupporting],
     );
@@ -76,6 +72,7 @@ function BaseHTMLEngineProvider(props) {
     // We need to memoize this prop to make it referentially stable.
     const defaultTextProps = useMemo(() => ({selectable: props.textSelectable, allowFontScaling: false, textBreakStrategy: 'simple'}), [props.textSelectable]);
     const defaultViewProps = {style: [styles.alignItemsStart, styles.userSelectText]};
+
     return (
         <TRenderEngineProvider
             customHTMLElementModels={customHTMLElementModels}

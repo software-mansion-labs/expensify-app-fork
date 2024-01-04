@@ -1,10 +1,10 @@
-import type {ChannelAuthorizationCallback} from 'pusher-js/with-encryption';
+import {ChannelAuthorizationCallback} from 'pusher-js/with-encryption';
 import CONST from '@src/CONST';
 import * as Session from './actions/Session';
 import Log from './Log';
-import type {SocketEventName} from './Pusher/library/types';
+import {SocketEventName} from './Pusher/library/types';
 import * as Pusher from './Pusher/pusher';
-import type {EventCallbackError, States} from './Pusher/pusher';
+import {EventCallbackError, States} from './Pusher/pusher';
 
 function init() {
     /**

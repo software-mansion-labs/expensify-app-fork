@@ -15,7 +15,6 @@ import * as Expensicons from '@components/Icon/Expensicons';
 import ScreenWrapper from '@components/ScreenWrapper';
 import transactionPropTypes from '@components/transactionPropTypes';
 import useLocalize from '@hooks/useLocalize';
-import useLocationBias from '@hooks/useLocationBias';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -38,15 +37,6 @@ const propTypes = {
     /* Onyx props */
     /** The optimistic transaction for this request */
     transaction: transactionPropTypes,
-
-    /* Current location coordinates of the user */
-    userLocation: PropTypes.shape({
-        /** Latitude of the location */
-        latitude: PropTypes.number,
-
-        /** Longitude of the location */
-        longitude: PropTypes.number,
-    }),
 
     /** Recent waypoints that the user has selected */
     recentWaypoints: PropTypes.arrayOf(
@@ -75,7 +65,6 @@ const propTypes = {
 const defaultProps = {
     recentWaypoints: [],
     transaction: {},
-    userLocation: undefined,
 };
 
 function IOURequestStepWaypoint({
@@ -84,7 +73,6 @@ function IOURequestStepWaypoint({
         params: {iouType, pageIndex, reportID, transactionID},
     },
     transaction,
-    userLocation,
 }) {
     const styles = useThemeStyles();
     const {windowWidth} = useWindowDimensions();
@@ -97,6 +85,7 @@ function IOURequestStepWaypoint({
     const parsedWaypointIndex = parseInt(pageIndex, 10);
     const allWaypoints = lodashGet(transaction, 'comment.waypoints', {});
     const currentWaypoint = lodashGet(allWaypoints, `waypoint${pageIndex}`, {});
+
     const waypointCount = _.size(allWaypoints);
     const filledWaypointCount = _.size(_.filter(allWaypoints, (waypoint) => !_.isEmpty(waypoint)));
 
@@ -111,7 +100,6 @@ function IOURequestStepWaypoint({
         }
     }, [parsedWaypointIndex, waypointCount]);
 
-    const locationBias = useLocationBias(allWaypoints, userLocation);
     const waypointAddress = lodashGet(currentWaypoint, 'address', '');
     // Hide the menu when there is only start and finish waypoint
     const shouldShowThreeDotsButton = waypointCount > 2;
@@ -152,7 +140,7 @@ function IOURequestStepWaypoint({
                 lat: null,
                 lng: null,
                 address: waypointValue,
-                name: values.name || null,
+                name: values.name,
             };
             saveWaypoint(waypoint);
         }
@@ -178,7 +166,7 @@ function IOURequestStepWaypoint({
             lat: values.lat,
             lng: values.lng,
             address: values.address,
-            name: values.name || null,
+            name: values.name,
         };
         Transaction.saveWaypoint(transactionID, pageIndex, waypoint, false);
         Navigation.goBack(ROUTES.MONEY_REQUEST_CREATE_TAB_DISTANCE.getRoute(iouType, transactionID, reportID));
@@ -231,7 +219,6 @@ function IOURequestStepWaypoint({
                     <View>
                         <InputWrapperWithRef
                             InputComponent={AddressSearch}
-                            locationBias={locationBias}
                             canUseCurrentLocation
                             inputID={`waypoint${pageIndex}`}
                             ref={(e) => (textInput.current = e)}
@@ -270,9 +257,6 @@ export default compose(
     withWritableReportOrNotFound,
     withFullTransactionOrNotFound,
     withOnyx({
-        userLocation: {
-            key: ONYXKEYS.USER_LOCATION,
-        },
         recentWaypoints: {
             key: ONYXKEYS.NVP_RECENT_WAYPOINTS,
 

@@ -1,5 +1,4 @@
 import {addDays, format, getDay, getDaysInMonth, startOfMonth} from 'date-fns';
-import DateUtils from '@libs/DateUtils';
 
 /**
  * Generates a matrix representation of a month's calendar given the year and month.
@@ -25,9 +24,6 @@ export default function generateMonthMatrix(year, month) {
         throw new Error('Month cannot be greater than 11');
     }
 
-    // Get the week day for the end of week
-    const weekEndsOn = DateUtils.getWeekEndsOn();
-
     // Get the number of days in the month and the first day of the month
     const firstDayOfMonth = startOfMonth(new Date(year, month, 1));
     const daysInMonth = getDaysInMonth(firstDayOfMonth);
@@ -36,13 +32,18 @@ export default function generateMonthMatrix(year, month) {
     const matrix = [];
     let currentWeek = [];
 
+    // Add null values for days before the first day of the month
+    for (let i = 0; i < getDay(firstDayOfMonth); i++) {
+        currentWeek.push(null);
+    }
+
     // Add calendar days to the matrix
     for (let i = 1; i <= daysInMonth; i++) {
         const currentDate = addDays(firstDayOfMonth, i - 1);
         currentWeek.push(Number(format(currentDate, 'd')));
 
         // Start a new row when the current week is full
-        if (getDay(currentDate) === weekEndsOn) {
+        if (getDay(currentDate) === 6) {
             matrix.push(currentWeek);
             currentWeek = [];
         }
@@ -55,11 +56,5 @@ export default function generateMonthMatrix(year, month) {
         }
         matrix.push(currentWeek);
     }
-
-    // Add null values for days before the first day of the month
-    for (let i = matrix[0].length; i < 7; i++) {
-        matrix[0].unshift(null);
-    }
-
     return matrix;
 }

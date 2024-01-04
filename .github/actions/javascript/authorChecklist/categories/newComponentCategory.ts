@@ -4,7 +4,7 @@ import traverse from '@babel/traverse';
 import CONST from '../../../../libs/CONST';
 import GithubUtils from '../../../../libs/GithubUtils';
 import promiseSome from '../../../../libs/promiseSome';
-import type Category from './Category';
+import Category from './Category';
 
 type SuperClassType = {superClass: {name?: string; object: {name: string}; property: {name: string}} | null; name: string};
 

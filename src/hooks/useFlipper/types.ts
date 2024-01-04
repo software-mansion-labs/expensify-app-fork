@@ -1,5 +1,5 @@
-import type {NavigationContainerRefWithCurrent} from '@react-navigation/core';
-import type {RootStackParamList} from '@libs/Navigation/types';
+import {NavigationContainerRefWithCurrent} from '@react-navigation/core';
+import {RootStackParamList} from '@libs/Navigation/types';
 
 type UseFlipper = (ref: NavigationContainerRefWithCurrent<RootStackParamList>) => void;
 

@@ -1,4 +1,4 @@
-import type UpdateNumberOfLines from './types';
+import UpdateNumberOfLines from './types';
 
 const updateNumberOfLines: UpdateNumberOfLines = () => {};
 

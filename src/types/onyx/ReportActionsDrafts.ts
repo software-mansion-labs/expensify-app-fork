@@ -1,5 +1,3 @@
-import type ReportActionsDraft from './ReportActionsDraft';
-
-type ReportActionsDrafts = Record<string, ReportActionsDraft>;
+type ReportActionsDrafts = Record<string, string>;
 
 export default ReportActionsDrafts;

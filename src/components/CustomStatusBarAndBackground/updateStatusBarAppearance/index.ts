@@ -1,5 +1,5 @@
 import StatusBar from '@libs/StatusBar';
-import type UpdateStatusBarAppearanceProps from './types';
+import UpdateStatusBarAppearanceProps from './types';
 
 export default function updateStatusBarAppearance({backgroundColor, statusBarStyle}: UpdateStatusBarAppearanceProps) {
     if (backgroundColor) {

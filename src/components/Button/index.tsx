@@ -1,8 +1,7 @@
 import {useIsFocused} from '@react-navigation/native';
-import type {ForwardedRef} from 'react';
-import React, {useCallback} from 'react';
-import type {GestureResponderEvent, StyleProp, TextStyle, ViewStyle} from 'react-native';
-import {ActivityIndicator, View} from 'react-native';
+import React, {ForwardedRef, useCallback} from 'react';
+import {ActivityIndicator, GestureResponderEvent, StyleProp, TextStyle, View, ViewStyle} from 'react-native';
+import {SvgProps} from 'react-native-svg';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
@@ -14,8 +13,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import HapticFeedback from '@libs/HapticFeedback';
 import CONST from '@src/CONST';
-import type ChildrenProps from '@src/types/utils/ChildrenProps';
-import type IconAsset from '@src/types/utils/IconAsset';
+import ChildrenProps from '@src/types/utils/ChildrenProps';
 import validateSubmitShortcut from './validateSubmitShortcut';
 
 type ButtonWithText = {
@@ -26,7 +24,7 @@ type ButtonWithText = {
     shouldShowRightIcon?: boolean;
 
     /** The icon asset to display to the left of the text */
-    icon?: IconAsset | null;
+    icon?: React.FC<SvgProps> | null;
 };
 
 type ButtonProps = (ButtonWithText | ChildrenProps) & {
@@ -34,7 +32,7 @@ type ButtonProps = (ButtonWithText | ChildrenProps) & {
     allowBubble?: boolean;
 
     /** The icon asset to display to the right of the text */
-    iconRight?: IconAsset;
+    iconRight?: React.FC<SvgProps>;
 
     /** The fill color to pass into the icon. */
     iconFill?: string;
@@ -205,7 +203,7 @@ function Button(
                     large && styles.buttonLargeText,
                     success && styles.buttonSuccessText,
                     danger && styles.buttonDangerText,
-                    Boolean(icon) && styles.textAlignLeft,
+                    icon && styles.textAlignLeft,
                     textStyles,
                 ]}
                 dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
@@ -223,7 +221,7 @@ function Button(
                             <View style={[styles.mr1, iconStyles]}>
                                 <Icon
                                     src={icon}
-                                    fill={iconFill ?? (success || danger ? theme.textLight : theme.icon)}
+                                    fill={iconFill ?? theme.textLight}
                                     small={small}
                                 />
                             </View>
@@ -234,7 +232,7 @@ function Button(
                         <View style={[styles.justifyContentCenter, styles.ml1, iconRightStyles]}>
                             <Icon
                                 src={iconRight}
-                                fill={iconFill ?? (success || danger ? theme.textLight : theme.icon)}
+                                fill={iconFill ?? theme.textLight}
                                 small={small}
                             />
                         </View>

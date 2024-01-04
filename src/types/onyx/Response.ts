@@ -1,4 +1,4 @@
-import type {OnyxUpdate} from 'react-native-onyx';
+import {OnyxUpdate} from 'react-native-onyx';
 
 type Data = {
     phpCommandName: string;

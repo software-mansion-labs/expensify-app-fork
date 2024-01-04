@@ -1,8 +1,7 @@
 import React, {forwardRef} from 'react';
-import type {Role} from 'react-native';
+import {Role} from 'react-native';
 import GenericPressable from './BaseGenericPressable';
-import type {PressableRef} from './types';
-import type PressableProps from './types';
+import PressableProps, {PressableRef} from './types';
 
 function WebGenericPressable({focusable = true, ...props}: PressableProps, ref: PressableRef) {
     const accessible = props.accessible ?? props.accessible === undefined ? true : props.accessible;

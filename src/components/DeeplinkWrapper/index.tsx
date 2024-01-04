@@ -1,4 +1,4 @@
-import type DeeplinkWrapperProps from './types';
+import DeeplinkWrapperProps from './types';
 
 function DeeplinkWrapper({children}: DeeplinkWrapperProps) {
     return children;

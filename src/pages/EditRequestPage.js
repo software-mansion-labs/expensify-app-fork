@@ -104,7 +104,7 @@ function EditRequestPage({report, route, parentReport, policyCategories, policyT
     // Decides whether to allow or disallow editing a money request
     useEffect(() => {
         // Do not dismiss the modal, when a current user can edit this property of the money request.
-        if (ReportUtils.canEditFieldOfMoneyRequest(parentReportAction, parentReport.reportID, fieldToEdit, transaction)) {
+        if (ReportUtils.canEditFieldOfMoneyRequest(parentReportAction, parentReport.reportID, fieldToEdit)) {
             return;
         }
 
@@ -112,29 +112,13 @@ function EditRequestPage({report, route, parentReport, policyCategories, policyT
         Navigation.isNavigationReady().then(() => {
             Navigation.dismissModal();
         });
-    }, [parentReportAction, parentReport.reportID, fieldToEdit, transaction]);
+    }, [parentReportAction, parentReport.reportID, fieldToEdit]);
 
     // Update the transaction object and close the modal
     function editMoneyRequest(transactionChanges) {
         IOU.editMoneyRequest(transaction, report.reportID, transactionChanges);
         Navigation.dismissModal(report.reportID);
     }
-
-    const saveAmountAndCurrency = useCallback(
-        ({amount, currency: newCurrency}) => {
-            const newAmount = CurrencyUtils.convertToBackendAmount(Number.parseFloat(amount));
-
-            // If the value hasn't changed, don't request to save changes on the server and just close the modal
-            if (newAmount === TransactionUtils.getAmount(transaction) && newCurrency === TransactionUtils.getCurrency(transaction)) {
-                Navigation.dismissModal();
-                return;
-            }
-
-            IOU.updateMoneyRequestAmountAndCurrency(transaction.transactionID, report.reportID, newCurrency, newAmount);
-            Navigation.dismissModal();
-        },
-        [transaction, report],
-    );
 
     const saveCreated = useCallback(
         ({created: newCreated}) => {
@@ -180,7 +164,19 @@ function EditRequestPage({report, route, parentReport, policyCategories, policyT
                 defaultAmount={transactionAmount}
                 defaultCurrency={defaultCurrency}
                 reportID={report.reportID}
-                onSubmit={saveAmountAndCurrency}
+                onSubmit={(transactionChanges) => {
+                    const amount = CurrencyUtils.convertToBackendAmount(Number.parseFloat(transactionChanges));
+                    // In case the amount hasn't been changed, do not make the API request.
+                    if (amount === transactionAmount && transactionCurrency === defaultCurrency) {
+                        Navigation.dismissModal();
+                        return;
+                    }
+                    // Temporarily disabling currency editing and it will be enabled as a quick follow up
+                    editMoneyRequest({
+                        amount,
+                        currency: defaultCurrency,
+                    });
+                }}
                 onNavigateToCurrency={() => {
                     const activeRoute = encodeURIComponent(Navigation.getActiveRouteWithoutParams());
                     Navigation.navigate(ROUTES.EDIT_CURRENCY_REQUEST.getRoute(report.reportID, defaultCurrency, activeRoute));
@@ -193,23 +189,13 @@ function EditRequestPage({report, route, parentReport, policyCategories, policyT
         return (
             <EditRequestMerchantPage
                 defaultMerchant={transactionMerchant}
-                isPolicyExpenseChat={isPolicyExpenseChat}
                 onSubmit={(transactionChanges) => {
-                    const newTrimmedMerchant = transactionChanges.merchant.trim();
-
                     // In case the merchant hasn't been changed, do not make the API request.
-                    // In case the merchant has been set to empty string while current merchant is partial, do nothing too.
-                    if (newTrimmedMerchant === transactionMerchant || (newTrimmedMerchant === '' && transactionMerchant === CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT)) {
+                    if (transactionChanges.merchant.trim() === transactionMerchant) {
                         Navigation.dismissModal();
                         return;
                     }
-
-                    // This is possible only in case of IOU requests.
-                    if (newTrimmedMerchant === '') {
-                        editMoneyRequest({merchant: CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT});
-                        return;
-                    }
-                    editMoneyRequest({merchant: newTrimmedMerchant});
+                    editMoneyRequest({merchant: transactionChanges.merchant.trim()});
                 }}
             />
         );

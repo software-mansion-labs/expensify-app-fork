@@ -1,8 +1,7 @@
 import React from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
-import {View} from 'react-native';
+import {StyleProp, View, ViewStyle} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type ChildrenProps from '@src/types/utils/ChildrenProps';
+import ChildrenProps from '@src/types/utils/ChildrenProps';
 
 type ReportActionItemGroupedProps = ChildrenProps & {
     /** Styles for the outermost View */

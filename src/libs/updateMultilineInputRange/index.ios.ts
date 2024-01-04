@@ -1,4 +1,4 @@
-import type UpdateMultilineInputRange from './types';
+import UpdateMultilineInputRange from './types';
 
 /**
  * Place the cursor at the end of the value (if there is a value in the input).

@@ -1,4 +1,4 @@
-import type {ViewStyle} from 'react-native';
+import {ViewStyle} from 'react-native';
 
 /**
  * All styles should be incremented by units of 4.
@@ -10,10 +10,6 @@ export default {
 
     br2: {
         borderRadius: 8,
-    },
-
-    br3: {
-        borderRadius: 12,
     },
 
     br4: {

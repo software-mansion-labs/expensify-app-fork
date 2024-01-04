@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import Svg, {G, Path, Polygon} from 'react-native-svg';
 import useTheme from '@hooks/useTheme';
 

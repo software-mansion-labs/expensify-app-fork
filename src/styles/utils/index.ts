@@ -1,17 +1,16 @@
-import type {Animated, DimensionValue, ImageStyle, PressableStateCallbackType, StyleProp, TextStyle, ViewStyle} from 'react-native';
-import {StyleSheet} from 'react-native';
-import type {EdgeInsets} from 'react-native-safe-area-context';
-import type {ValueOf} from 'type-fest';
+import {CSSProperties} from 'react';
+import {Animated, DimensionValue, PressableStateCallbackType, StyleProp, StyleSheet, TextStyle, ViewStyle} from 'react-native';
+import {EdgeInsets} from 'react-native-safe-area-context';
+import {ValueOf} from 'type-fest';
 import * as Browser from '@libs/Browser';
 import * as UserUtils from '@libs/UserUtils';
 import {defaultTheme} from '@styles/theme';
 import colors from '@styles/theme/colors';
-import type {ThemeColors} from '@styles/theme/types';
+import {ThemeColors} from '@styles/theme/types';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
-import type {Transaction} from '@src/types/onyx';
-import {defaultStyles} from '..';
-import type {ThemeStyles} from '..';
+import {Transaction} from '@src/types/onyx';
+import {defaultStyles, type ThemeStyles} from '..';
 import containerComposeStyles from './containerComposeStyles';
 import fontFamily from './fontFamily';
 import createModalStyleUtils from './generators/ModalStyleUtils';
@@ -20,7 +19,8 @@ import createTooltipStyleUtils from './generators/TooltipStyleUtils';
 import getContextMenuItemStyles from './getContextMenuItemStyles';
 import {compactContentContainerStyles} from './optionRowStyles';
 import positioning from './positioning';
-import type {
+import spacing from './spacing';
+import {
     AllStyles,
     AvatarSize,
     AvatarSizeName,
@@ -31,7 +31,6 @@ import type {
     EReceiptColorName,
     EreceiptColorStyle,
     ParsableStyle,
-    TextColorStyle,
     WorkspaceColorStyle,
 } from './types';
 
@@ -119,7 +118,7 @@ const avatarFontSizes: Partial<Record<AvatarSizeName, number>> = {
 
 const avatarBorderWidths: Partial<Record<AvatarSizeName, number>> = {
     [CONST.AVATAR_SIZE.DEFAULT]: 3,
-    [CONST.AVATAR_SIZE.SMALL_SUBSCRIPT]: 2,
+    [CONST.AVATAR_SIZE.SMALL_SUBSCRIPT]: 1,
     [CONST.AVATAR_SIZE.MID_SUBSCRIPT]: 2,
     [CONST.AVATAR_SIZE.SUBSCRIPT]: 2,
     [CONST.AVATAR_SIZE.SMALL]: 2,
@@ -384,7 +383,7 @@ function getWidthStyle(width: number): ViewStyle {
 /**
  * Returns a style with backgroundColor and borderColor set to the same color
  */
-function getBackgroundAndBorderStyle(backgroundColor: string | undefined): ViewStyle {
+function getBackgroundAndBorderStyle(backgroundColor: string): ViewStyle {
     return {
         backgroundColor,
         borderColor: backgroundColor,
@@ -403,7 +402,7 @@ function getBackgroundColorStyle(backgroundColor: string): ViewStyle {
 /**
  * Returns a style for text color
  */
-function getTextColorStyle(color: string): TextColorStyle {
+function getTextColorStyle(color: string): TextStyle {
     return {
         color,
     };
@@ -614,7 +613,7 @@ function getMinimumHeight(minHeight: number): ViewStyle {
 /**
  * Get minimum width as style
  */
-function getMinimumWidth(minWidth: number): ViewStyle {
+function getMinimumWidth(minWidth: number): ViewStyle | CSSProperties {
     return {
         minWidth,
     };
@@ -695,7 +694,7 @@ function getHorizontalStackedOverlayAvatarStyle(oneAvatarSize: AvatarSize, oneAv
 /**
  * Gets the correct size for the empty state background image based on screen dimensions
  */
-function getReportWelcomeBackgroundImageStyle(isSmallScreenWidth: boolean, isMoneyReport = false): ImageStyle {
+function getReportWelcomeBackgroundImageStyle(isSmallScreenWidth: boolean, isMoneyReport = false): ViewStyle {
     const emptyStateBackground = isMoneyReport ? CONST.EMPTY_STATE_BACKGROUND.MONEY_REPORT : CONST.EMPTY_STATE_BACKGROUND;
 
     if (isSmallScreenWidth) {
@@ -841,14 +840,15 @@ function displayIfTrue(condition: boolean): ViewStyle {
 /**
  * Gets the correct height for emoji picker list based on screen dimensions
  */
-function getEmojiPickerListHeight(isRenderingShortcutRow: boolean, windowHeight: number): ViewStyle {
+function getEmojiPickerListHeight(hasAdditionalSpace: boolean, windowHeight: number): ViewStyle {
     const style = {
-        height: isRenderingShortcutRow ? CONST.NON_NATIVE_EMOJI_PICKER_LIST_HEIGHT + CONST.CATEGORY_SHORTCUT_BAR_HEIGHT : CONST.NON_NATIVE_EMOJI_PICKER_LIST_HEIGHT,
+        ...spacing.ph4,
+        height: hasAdditionalSpace ? CONST.NON_NATIVE_EMOJI_PICKER_LIST_HEIGHT + CONST.CATEGORY_SHORTCUT_BAR_HEIGHT : CONST.NON_NATIVE_EMOJI_PICKER_LIST_HEIGHT,
     };
 
     if (windowHeight) {
         // dimensions of content above the emoji picker list
-        const dimensions = isRenderingShortcutRow ? CONST.EMOJI_PICKER_TEXT_INPUT_SIZES + CONST.CATEGORY_SHORTCUT_BAR_HEIGHT : CONST.EMOJI_PICKER_TEXT_INPUT_SIZES;
+        const dimensions = hasAdditionalSpace ? CONST.EMOJI_PICKER_TEXT_INPUT_SIZES : CONST.EMOJI_PICKER_TEXT_INPUT_SIZES + CONST.CATEGORY_SHORTCUT_BAR_HEIGHT;
         return {
             ...style,
             maxHeight: windowHeight - dimensions,
@@ -906,7 +906,7 @@ function getMenuItemTextContainerStyle(isSmallAvatarSubscriptMenu: boolean): Vie
 /**
  * Returns color style
  */
-function getColorStyle(color: string): TextColorStyle {
+function getColorStyle(color: string): ViewStyle | CSSProperties {
     return {color};
 }
 
@@ -1301,12 +1301,12 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
      * @param buttonState - One of {'default', 'hovered', 'pressed'}
      * @param isMenuIcon - whether this icon is apart of a list
      */
-    getIconFillColor: (buttonState: ButtonStateName = CONST.BUTTON_STATES.DEFAULT, isMenuIcon = false, isPane = false): string => {
+    getIconFillColor: (buttonState: ButtonStateName = CONST.BUTTON_STATES.DEFAULT, isMenuIcon = false): string => {
         switch (buttonState) {
             case CONST.BUTTON_STATES.ACTIVE:
             case CONST.BUTTON_STATES.PRESSED:
-                if (isPane) {
-                    return theme.iconMenu;
+                if (isMenuIcon) {
+                    return theme.iconMenuHovered;
                 }
                 return theme.iconHovered;
             case CONST.BUTTON_STATES.COMPLETE:
@@ -1314,7 +1314,7 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
             case CONST.BUTTON_STATES.DEFAULT:
             case CONST.BUTTON_STATES.DISABLED:
             default:
-                if (isMenuIcon && !isPane) {
+                if (isMenuIcon) {
                     return theme.iconMenu;
                 }
                 return theme.icon;

@@ -1,4 +1,4 @@
-import type AddViewportResizeListener from './types';
+import AddViewportResizeListener from './types';
 
 /**
  * Add a visual viewport resize listener if available. Return a function to remove the listener.

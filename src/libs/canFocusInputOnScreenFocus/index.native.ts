@@ -1,4 +1,4 @@
-import type CanFocusInputOnScreenFocus from './types';
+import CanFocusInputOnScreenFocus from './types';
 
 const canFocusInputOnScreenFocus: CanFocusInputOnScreenFocus = () => false;
 

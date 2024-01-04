@@ -1,4 +1,4 @@
-import type React from 'react';
+import React from 'react';
 
 declare module 'react' {
     // eslint-disable-next-line @typescript-eslint/ban-types

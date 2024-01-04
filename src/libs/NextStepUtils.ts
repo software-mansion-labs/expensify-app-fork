@@ -1,6 +1,10 @@
 import Str from 'expensify-common/lib/str';
-import type {Message} from '@src/types/onyx/ReportNextStep';
 import EmailUtils from './EmailUtils';
+
+type Message = {
+    text: string;
+    type?: string;
+};
 
 function parseMessage(messages: Message[] | undefined) {
     let nextStepHTML = '';
@@ -12,7 +16,7 @@ function parseMessage(messages: Message[] | undefined) {
         let content = Str.safeEscape(part.text);
 
         if (isEmail) {
-            tagType = 'next-step-email';
+            tagType = 'next-steps-email';
             content = EmailUtils.prefixMailSeparatorsWithBreakOpportunities(content);
         }
 
@@ -24,7 +28,7 @@ function parseMessage(messages: Message[] | undefined) {
         .replace(/%Expenses/g, 'These expenses')
         .replace(/%tobe/g, 'are');
 
-    return `<next-step>${formattedHtml}</next-step>`;
+    return `<next-steps>${formattedHtml}</next-steps>`;
 }
 
 // eslint-disable-next-line import/prefer-default-export

@@ -1,10 +1,10 @@
 import React from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
+import {StyleProp, ViewStyle} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import CONST from '@src/CONST';
-import type {ParentNavigationSummaryParams} from '@src/languages/types';
+import {ParentNavigationSummaryParams} from '@src/languages/types';
 import ROUTES from '@src/ROUTES';
 import PressableWithoutFeedback from './Pressable/PressableWithoutFeedback';
 import Text from './Text';

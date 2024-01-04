@@ -13,7 +13,6 @@ import withCurrentUserPersonalDetails, {withCurrentUserPersonalDetailsDefaultPro
 import withEnvironment from '@components/withEnvironment';
 import withLocalize, {withLocalizePropTypes} from '@components/withLocalize';
 import withThemeStyles, {withThemeStylesPropTypes} from '@components/withThemeStyles';
-import withWindowDimensions, {windowDimensionsPropTypes} from '@components/withWindowDimensions';
 import Clipboard from '@libs/Clipboard';
 import compose from '@libs/compose';
 import getPlatform from '@libs/getPlatform';
@@ -35,7 +34,6 @@ const propTypes = {
     ...withLocalizePropTypes,
     ...withCurrentUserPersonalDetailsPropTypes,
     ...withThemeStylesPropTypes,
-    ...windowDimensionsPropTypes,
 };
 
 const defaultProps = {
@@ -84,7 +82,8 @@ class ShareCodePage extends React.Component {
                 <HeaderWithBackButton
                     title={this.props.translate('common.shareCode')}
                     onBackButtonPress={() => Navigation.goBack(isReport ? ROUTES.REPORT_WITH_ID_DETAILS.getRoute(this.props.report.reportID) : ROUTES.SETTINGS.ROOT)}
-                    shouldShowBackButton={isReport || this.props.isSmallScreenWidth}
+                    shouldUseCentralPaneView
+                    shouldShowBorderBottom
                 />
 
                 <ScrollView style={[this.props.themeStyles.flex1, this.props.themeStyles.mt3]}>
@@ -109,7 +108,6 @@ class ShareCodePage extends React.Component {
                             successIcon={Expensicons.Checkmark}
                             successText={this.props.translate('qrCodes.copied')}
                             onPress={() => Clipboard.setString(url)}
-                            shouldLimitWidth={false}
                         />
 
                         {isNative && (
@@ -138,4 +136,4 @@ ShareCodePage.propTypes = propTypes;
 ShareCodePage.defaultProps = defaultProps;
 ShareCodePage.displayName = 'ShareCodePage';
 
-export default compose(withEnvironment, withLocalize, withCurrentUserPersonalDetails, withThemeStyles, withWindowDimensions)(ShareCodePage);
+export default compose(withEnvironment, withLocalize, withCurrentUserPersonalDetails, withThemeStyles)(ShareCodePage);

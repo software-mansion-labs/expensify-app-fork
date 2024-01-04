@@ -1,7 +1,6 @@
 import React, {createContext, useMemo} from 'react';
-import type {OnyxEntry} from 'react-native-onyx';
-import {withOnyx} from 'react-native-onyx';
-import type {ValueOf} from 'type-fest';
+import {OnyxEntry, withOnyx} from 'react-native-onyx';
+import {ValueOf} from 'type-fest';
 import compose from '@libs/compose';
 import DateUtils from '@libs/DateUtils';
 import * as LocaleDigitUtils from '@libs/LocaleDigitUtils';
@@ -9,10 +8,9 @@ import * as LocalePhoneNumber from '@libs/LocalePhoneNumber';
 import * as Localize from '@libs/Localize';
 import * as NumberFormatUtils from '@libs/NumberFormatUtils';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
+import {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {WithCurrentUserPersonalDetailsProps} from './withCurrentUserPersonalDetails';
-import withCurrentUserPersonalDetails from './withCurrentUserPersonalDetails';
+import withCurrentUserPersonalDetails, {WithCurrentUserPersonalDetailsProps} from './withCurrentUserPersonalDetails';
 
 type Locale = ValueOf<typeof CONST.LOCALES>;
 

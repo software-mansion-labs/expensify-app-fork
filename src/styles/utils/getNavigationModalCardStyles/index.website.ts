@@ -1,5 +1,5 @@
 import positioning from '@styles/utils/positioning';
-import type GetNavigationModalCardStyles from './types';
+import GetNavigationModalCardStyles from './types';
 
 const getNavigationModalCardStyles: GetNavigationModalCardStyles = () => ({
     // position: fixed is set instead of position absolute to workaround Safari known issues of updating heights in DOM.

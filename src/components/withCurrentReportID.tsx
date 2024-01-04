@@ -1,7 +1,6 @@
-import type {NavigationState} from '@react-navigation/native';
+import {NavigationState} from '@react-navigation/native';
 import PropTypes from 'prop-types';
-import type {ComponentType, ForwardedRef, RefAttributes} from 'react';
-import React, {createContext, forwardRef, useCallback, useMemo, useState} from 'react';
+import React, {ComponentType, createContext, ForwardedRef, forwardRef, RefAttributes, useCallback, useMemo, useState} from 'react';
 import getComponentDisplayName from '@libs/getComponentDisplayName';
 import Navigation from '@libs/Navigation/Navigation';
 

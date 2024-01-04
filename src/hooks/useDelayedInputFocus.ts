@@ -1,7 +1,6 @@
 import {useFocusEffect} from '@react-navigation/native';
-import type {MutableRefObject} from 'react';
-import {useCallback, useRef} from 'react';
-import type {TextInput} from 'react-native';
+import {MutableRefObject, useCallback, useRef} from 'react';
+import {TextInput} from 'react-native';
 import CONST from '@src/CONST';
 
 /**

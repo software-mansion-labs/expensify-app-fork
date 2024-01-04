@@ -1,14 +1,15 @@
-import type {ViewStyle} from 'react-native';
-import type {ValueOf} from 'type-fest';
-import type CONST from '@src/CONST';
-import type IconAsset from '@src/types/utils/IconAsset';
+import {CSSProperties} from 'react';
+import {ViewStyle} from 'react-native';
+import {SvgProps} from 'react-native-svg';
+import {ValueOf} from 'type-fest';
+import CONST from '@src/CONST';
 
 type BankIcon = {
-    icon: IconAsset;
+    icon: React.FC<SvgProps>;
     iconSize?: number;
     iconHeight?: number;
     iconWidth?: number;
-    iconStyles?: ViewStyle[];
+    iconStyles?: Array<ViewStyle | CSSProperties>;
 };
 
 type BankName = ValueOf<typeof CONST.BANK_NAMES>;

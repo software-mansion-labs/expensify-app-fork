@@ -1,4 +1,4 @@
-import type {NativeSyntheticEvent, StyleProp, TextInputFocusEventData, TextInputKeyPressEventData, TextInputSelectionChangeEventData, TextStyle} from 'react-native';
+import {NativeSyntheticEvent, StyleProp, TextInputFocusEventData, TextInputKeyPressEventData, TextInputSelectionChangeEventData, TextStyle} from 'react-native';
 
 type TextSelection = {
     start: number;

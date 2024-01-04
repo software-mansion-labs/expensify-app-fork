@@ -1,4 +1,4 @@
-import type GetClickedTargetLocation from './types';
+import GetClickedTargetLocation from './types';
 
 /**
  * We don't need to get the position of the element on native platforms because the popover will be bottom mounted

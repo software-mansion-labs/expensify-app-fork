@@ -16,7 +16,7 @@ import compose from '@libs/compose';
 import * as Session from '@userActions/Session';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ContextMenuActions from './ContextMenuActions';
+import ContextMenuActions, {CONTEXT_MENU_TYPES} from './ContextMenuActions';
 import {defaultProps as GenericReportActionContextMenuDefaultProps, propTypes as genericReportActionContextMenuPropTypes} from './genericReportActionContextMenuPropTypes';
 import {hideContextMenu} from './ReportActionContextMenu';
 
@@ -41,7 +41,7 @@ const propTypes = {
 };
 
 const defaultProps = {
-    type: CONST.CONTEXT_MENU_TYPES.REPORT_ACTION,
+    type: CONTEXT_MENU_TYPES.REPORT_ACTION,
     anchor: null,
     contentRef: null,
     isChronosReport: false,

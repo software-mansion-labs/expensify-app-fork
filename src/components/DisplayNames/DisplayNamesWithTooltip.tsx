@@ -1,11 +1,10 @@
 import React, {Fragment, useCallback, useRef} from 'react';
-import type {Text as RNText} from 'react-native';
-import {View} from 'react-native';
+import {Text as RNText, View} from 'react-native';
 import Text from '@components/Text';
 import Tooltip from '@components/Tooltip';
 import useThemeStyles from '@hooks/useThemeStyles';
 import DisplayNamesTooltipItem from './DisplayNamesTooltipItem';
-import type DisplayNamesProps from './types';
+import DisplayNamesProps from './types';
 
 type HTMLElementWithText = HTMLElement & RNText;
 
@@ -24,13 +23,13 @@ function DisplayNamesWithToolTip({shouldUseFullTitle, fullTitle, displayNamesWit
      * 2. Now we get the tooltip original position.
      * 3. If inline node's right edge is overflowing the container's right edge, we set the tooltip to the center
      * of the distance between the left edge of the inline node and right edge of the container.
-     * @param index Used to get the Ref to the node at the current index
-     * @returns Distance to shift the tooltip horizontally
+     * @param {Number} index Used to get the Ref to the node at the current index
+     * @returns {Number} Distance to shift the tooltip horizontally
      */
     const getTooltipShiftX = useCallback((index: number) => {
         // Only shift the tooltip in case the containerLayout or Refs to the text node are available
         if (!containerRef.current || !childRefs.current[index]) {
-            return 0;
+            return;
         }
         const {width: containerWidth, left: containerLeft} = containerRef.current.getBoundingClientRect();
 

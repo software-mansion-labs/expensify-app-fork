@@ -1,8 +1,6 @@
 import {useFocusEffect} from '@react-navigation/native';
-import type {ForwardedRef} from 'react';
-import React, {forwardRef, useCallback, useContext} from 'react';
-import type {FlatListProps} from 'react-native';
-import {FlatList} from 'react-native';
+import React, {ForwardedRef, forwardRef, useCallback, useContext} from 'react';
+import {FlatList, FlatListProps} from 'react-native';
 import {ActionListContext} from '@pages/home/ReportScreenContext';
 
 // FlatList wrapped with the freeze component will lose its scroll state when frozen (only for Android).

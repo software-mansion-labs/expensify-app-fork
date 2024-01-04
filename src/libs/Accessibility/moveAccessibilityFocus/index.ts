@@ -1,4 +1,4 @@
-import type MoveAccessibilityFocus from './types';
+import MoveAccessibilityFocus from './types';
 
 const moveAccessibilityFocus: MoveAccessibilityFocus = (ref) => {
     if (!ref?.current) {

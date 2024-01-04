@@ -1,8 +1,8 @@
-import type {PushPayload} from '@ua/react-native-airship';
+import {PushPayload} from '@ua/react-native-airship';
 import Log from '@libs/Log';
 import * as ReportActionUtils from '@libs/ReportActionsUtils';
 import * as Report from '@userActions/Report';
-import type {NotificationData} from './NotificationType';
+import {NotificationData} from './NotificationType';
 
 /**
  * Returns whether the given Airship notification should be shown depending on the current state of the app

@@ -1,4 +1,3 @@
-import {parsePhoneNumber} from 'awesome-phonenumber';
 import Str from 'expensify-common/lib/str';
 import lodashGet from 'lodash/get';
 import PropTypes from 'prop-types';
@@ -22,7 +21,7 @@ import UserDetailsTooltip from '@components/UserDetailsTooltip';
 import withLocalize, {withLocalizePropTypes} from '@components/withLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import compose from '@libs/compose';
-import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
+import {parsePhoneNumber} from '@libs/PhoneNumber';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as UserUtils from '@libs/UserUtils';
 import * as Report from '@userActions/Report';
@@ -121,7 +120,6 @@ function DetailsPage(props) {
 
     const phoneNumber = getPhoneNumber(details);
     const phoneOrEmail = isSMSLogin ? getPhoneNumber(details) : details.login;
-    const displayName = PersonalDetailsUtils.getDisplayNameOrDefault(details, '', false);
 
     const isCurrentUser = props.session.accountID === details.accountID;
 
@@ -134,7 +132,7 @@ function DetailsPage(props) {
                         <ScrollView>
                             <View style={styles.avatarSectionWrapper}>
                                 <AttachmentModal
-                                    headerTitle={displayName}
+                                    headerTitle={details.displayName}
                                     source={UserUtils.getFullSizeAvatar(details.avatar, details.accountID)}
                                     isAuthTokenRequired
                                     originalFileName={details.originalFileName}
@@ -148,22 +146,22 @@ function DetailsPage(props) {
                                         >
                                             <OfflineWithFeedback pendingAction={lodashGet(details, 'pendingFields.avatar', null)}>
                                                 <Avatar
-                                                    containerStyles={[styles.avatarXLarge, styles.mb3]}
-                                                    imageStyles={[styles.avatarXLarge]}
+                                                    containerStyles={[styles.avatarLarge, styles.mb3]}
+                                                    imageStyles={[styles.avatarLarge]}
                                                     source={UserUtils.getAvatar(details.avatar, details.accountID)}
-                                                    size={CONST.AVATAR_SIZE.XLARGE}
+                                                    size={CONST.AVATAR_SIZE.LARGE}
                                                     fallbackIcon={details.fallbackIcon}
                                                 />
                                             </OfflineWithFeedback>
                                         </PressableWithoutFocus>
                                     )}
                                 </AttachmentModal>
-                                {Boolean(displayName) && (
+                                {Boolean(details.displayName) && (
                                     <Text
                                         style={[styles.textHeadline, styles.mb6, styles.pre]}
                                         numberOfLines={1}
                                     >
-                                        {displayName}
+                                        {details.displayName}
                                     </Text>
                                 )}
                                 {details.login ? (
@@ -196,7 +194,7 @@ function DetailsPage(props) {
                             </View>
                             {!isCurrentUser && (
                                 <MenuItem
-                                    title={`${props.translate('common.message')}${displayName}`}
+                                    title={`${props.translate('common.message')}${details.displayName}`}
                                     titleStyle={styles.flex1}
                                     icon={Expensicons.ChatBubble}
                                     onPress={() => Report.navigateToAndOpenReport([login])}

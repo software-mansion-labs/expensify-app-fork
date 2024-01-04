@@ -1,4 +1,3 @@
-import Str from 'expensify-common/lib/str';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {View} from 'react-native';
@@ -61,7 +60,7 @@ function ReportActionItemImage({thumbnail, image, enablePreviewModal, transactio
                 <EReceiptThumbnail transactionID={transaction.transactionID} />
             </View>
         );
-    } else if (thumbnail && !isLocalFile && !Str.isPDF(imageSource)) {
+    } else if (thumbnail && !isLocalFile) {
         receiptImageComponent = (
             <ThumbnailImage
                 previewSourceURL={thumbnailSource}

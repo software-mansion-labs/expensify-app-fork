@@ -1,4 +1,4 @@
-import type WhiteSpaceStyles from './types';
+import WhiteSpaceStyles from './types';
 
 const whiteSpace: WhiteSpaceStyles = {
     noWrap: {},

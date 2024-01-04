@@ -1,10 +1,8 @@
 import React from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
-import {View} from 'react-native';
+import {StyleProp, View, ViewStyle} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type * as Localize from '@libs/Localize';
+import * as Localize from '@libs/Localize';
 import CONST from '@src/CONST';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import DotIndicatorMessage from './DotIndicatorMessage';
@@ -31,7 +29,6 @@ type MessagesRowProps = {
 };
 
 function MessagesRow({messages = {}, type, onClose = () => {}, containerStyles, canDismiss = true}: MessagesRowProps) {
-    const theme = useTheme();
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
@@ -54,10 +51,7 @@ function MessagesRow({messages = {}, type, onClose = () => {}, containerStyles, 
                         role={CONST.ROLE.BUTTON}
                         accessibilityLabel={translate('common.close')}
                     >
-                        <Icon
-                            fill={theme.icon}
-                            src={Expensicons.Close}
-                        />
+                        <Icon src={Expensicons.Close} />
                     </PressableWithoutFeedback>
                 </Tooltip>
             )}

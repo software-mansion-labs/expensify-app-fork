@@ -1,9 +1,7 @@
 import React, {useMemo} from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
-import {View} from 'react-native';
+import {StyleProp, View, ViewStyle} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import variables from '@styles/variables';
@@ -20,7 +18,6 @@ type OfflineIndicatorProps = {
 };
 
 function OfflineIndicator({style, containerStyles}: OfflineIndicatorProps) {
-    const theme = useTheme();
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
@@ -41,7 +38,6 @@ function OfflineIndicator({style, containerStyles}: OfflineIndicatorProps) {
     return (
         <View style={[computedStyles, styles.flexRow, styles.alignItemsCenter, style]}>
             <Icon
-                fill={theme.icon}
                 src={Expensicons.OfflineCloud}
                 width={variables.iconSizeSmall}
                 height={variables.iconSizeSmall}

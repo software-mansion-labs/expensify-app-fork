@@ -16,7 +16,7 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 import DateUtils from '@libs/DateUtils';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import CONST from '@src/CONST';
-import setCursorPosition from './setCursorPosition';
+import setSelection from './setSelection';
 
 const propTypes = {
     /** Refs forwarded to the TextInputWithCurrencySymbol */
@@ -42,70 +42,37 @@ const AMOUNT_VIEW_ID = 'amountView';
 const NUM_PAD_CONTAINER_VIEW_ID = 'numPadContainerView';
 const NUM_PAD_VIEW_ID = 'numPadView';
 
-/**
- * Replace the sub-string of the given string with the provided value
- * @param {String} originalString - the string that will be modified
- * @param {String} newSubstring - the replacement string
- * @param {Number} from - the start index of the sub-string to replace
- * @param {Number} to - the end index of the sub-string to replace
- *
- * @returns {String} - the modified string with the range (from, to) replaced with the provided value
- */
-function insertAtPosition(originalString, newSubstring, from, to) {
+function insertAtPosition(originalString, newSubstring, selectionPositionFrom, selectionPositionTo) {
     // Check for invalid positions
-    if (from < 0 || to < 0 || from > originalString.length || to > originalString.length) {
-        return originalString;
+    if (selectionPositionFrom < 0 || selectionPositionTo < 0 || selectionPositionFrom > originalString.length || selectionPositionTo > originalString.length) {
+        return;
     }
 
-    /*
-     If the positions are the same, it means we're inserting at a point.
-     If the insertion point is at the end, simply return the original string.
-    */
-    if (from === to && from === originalString.length) {
-        return originalString;
+    // If the positions are the same, it means we're inserting at a point
+    if (selectionPositionFrom === selectionPositionTo) {
+        if (selectionPositionFrom === originalString.length) {
+            return originalString; // If the insertion point is at the end, simply return the original string
+        }
+        return originalString.slice(0, selectionPositionFrom) + newSubstring + originalString.slice(selectionPositionFrom);
     }
 
     // Replace the selected range
-    return originalString.slice(0, from) + newSubstring + originalString.slice(to);
+    return originalString.slice(0, selectionPositionFrom) + newSubstring + originalString.slice(selectionPositionTo);
 }
 
-/**
- * Replace the sub-string of the given string with zeros
- * @param {String} originalString - the string that will be modified
- * @param {Number} from - the start index of the sub-string to replace
- * @param {Number} to - the end index of the sub-string to replace
- *
- * @returns {String} - the modified string with the range (from, to) replaced with zeros
- */
-function replaceRangeWithZeros(originalString, from, to) {
-    const normalizedFrom = Math.max(from, 0);
-    const normalizedTo = Math.min(to, 2);
-    const replacement = '0'.repeat(normalizedTo - normalizedFrom);
-    return `${originalString.slice(0, normalizedFrom)}${replacement}${originalString.slice(normalizedTo)}`;
-}
-
-/**
- * Clear the value under selection of an input (either hours or minutes) by replacing it with zeros
- * @param {String} value - current value of the input
- * @param {Object} selection - current selection of the input
- * @param {Function} setValue - the function that modifies the value of the input
- * @param {Function} setSelection - the function that modifies the selection of the input
- */
-function clearSelectedValue(value, selection, setValue, setSelection) {
-    let newValue;
-    let newCursorPosition;
-
-    if (selection.start !== selection.end) {
-        newValue = replaceRangeWithZeros(value, selection.start, selection.end);
-        newCursorPosition = selection.start;
-    } else {
-        const positionBeforeSelection = Math.max(selection.start - 1, 0);
-        newValue = replaceRangeWithZeros(value, positionBeforeSelection, selection.start);
-        newCursorPosition = positionBeforeSelection;
+// if we need manually to move selection to the left we need to decrease both selection start and end by one
+function decreaseBothSelectionByOne({start, end}) {
+    if (start === 0) {
+        return {start: 0, end: 0};
     }
+    return {start: start - 1, end: end - 1};
+}
 
-    setValue(newValue);
-    setSelection({start: newCursorPosition, end: newCursorPosition});
+function replaceWithZeroAtPosition(originalString, position) {
+    if (position === 0 || position > 2) {
+        return originalString;
+    }
+    return `${originalString.slice(0, position - 1)}0${originalString.slice(position)}`;
 }
 
 function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
@@ -120,112 +87,93 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
     const [selectionHour, setSelectionHour] = useState({start: 0, end: 0});
     const [selectionMinute, setSelectionMinute] = useState({start: 2, end: 2}); // we focus it by default so need  to have selection on the end
     const [hours, setHours] = useState(() => DateUtils.get12HourTimeObjectFromDate(value).hour);
-    const [minutes, setMinutes] = useState(() => DateUtils.get12HourTimeObjectFromDate(value).minute);
+    const [minute, setMinute] = useState(() => DateUtils.get12HourTimeObjectFromDate(value).minute);
     const [amPmValue, setAmPmValue] = useState(() => DateUtils.get12HourTimeObjectFromDate(value).period);
 
-    const lastPressedKey = useRef('');
     const hourInputRef = useRef(null);
     const minuteInputRef = useRef(null);
 
-    const focusMinuteInputOnFirstCharacter = useCallback(() => setCursorPosition(0, minuteInputRef, setSelectionMinute), []);
-    const focusHourInputOnLastCharacter = useCallback(() => setCursorPosition(2, hourInputRef, setSelectionHour), []);
+    const focusMinuteInputOnFirstCharacter = useCallback(() => {
+        const cleanupTimer = setSelection({start: 0, end: 0}, minuteInputRef, setSelectionMinute);
+        return cleanupTimer;
+    }, []);
+    const focusHourInputOnLastCharacter = useCallback(() => {
+        setSelectionHour({start: 2, end: 2});
+        const timer = setTimeout(() => {
+            hourInputRef.current.focus();
+        }, 10);
+        return () => clearTimeout(timer);
+    }, []);
 
     const validate = useCallback(
         (time) => {
-            const isValid = DateUtils.isTimeAtLeastOneMinuteInFuture({timeString: time || `${hours}:${minutes} ${amPmValue}`, dateTimeString: defaultValue});
+            const isValid = DateUtils.isTimeAtLeastOneMinuteInFuture({timeString: time || `${hours}:${minute} ${amPmValue}`, dateTimeString: defaultValue});
             setError(!isValid);
             return isValid;
         },
-        [hours, minutes, amPmValue, defaultValue],
+        [hours, minute, amPmValue, defaultValue],
     );
-
-    const resetHours = () => {
-        setHours('00');
-        setSelectionHour({start: 0, end: 0});
-    };
-
-    const resetMinutes = () => {
-        setMinutes('00');
-        setSelectionMinute({start: 0, end: 0});
-    };
 
     // This function receive value from hour input and validate it
     // The valid format is HH(from 00 to 12). If the user input 9, it will be 09. If user try to change 09 to 19 it would skip the first character
     const handleHourChange = (text) => {
-        // Replace spaces with 0 to implement the following digit removal by pressing space
-        const trimmedText = text.replace(/ /g, '0');
-        if (_.isEmpty(trimmedText)) {
-            resetHours();
+        const isOnlyNumericValue = /^\d+$/.test(text.trim());
+        // Skip if the user is pasting the text or use non numeric characters.
+        if (selectionHour.start !== selectionHour.end || !isOnlyNumericValue) {
             return;
         }
+        // Remove non-numeric characters.
+        const filteredText = text.replace(/[^0-9]/g, '');
 
-        const isOnlyNumericValue = /^\d+$/.test(trimmedText);
-        if (!isOnlyNumericValue) {
-            return;
-        }
+        let newHour = hours;
+        let newSelection = selectionHour.start;
 
-        let newHour;
-        let newSelection;
+        // Case when the cursor is at the start.
+        if (selectionHour.start === 0) {
+            // Handle cases where the hour would be > 12.
 
-        if (selectionHour.start === 0 && selectionHour.end === 0) {
-            // The cursor is at the start of hours
-            const firstDigit = trimmedText[0];
-            const secondDigit = trimmedText[2] || '0';
-
-            if (trimmedText.length === 1) {
-                // To support the forward-removal using Delete key
-                newHour = `0${firstDigit}`;
-                newSelection = 1;
-            } else if (firstDigit <= 1) {
-                /*
-                 The first entered digit is 0 or 1.
-                 If the first digit is 0, we can safely append the second digit.
-                 If the first digit is 1, we must check the second digit to ensure it is not greater than 2, amd replace it with 0 otherwise.
-                */
-                newHour = `${firstDigit}${firstDigit === '1' && secondDigit > 2 ? 0 : secondDigit}`;
-                newSelection = 1;
-            } else {
-                // The first entered digit is 2-9. We should replace the whole value by prepending 0 to the entered digit.
-                newHour = `0${firstDigit}`;
+            // when you entering text the filteredText would consist of three numbers
+            const formattedText = `${filteredText[0]}${filteredText[2] || 0}`;
+            if (formattedText > 12 && formattedText <= 24) {
+                newHour = String(formattedText - 12).padStart(2, '0');
                 newSelection = 2;
+                setAmPmValue(CONST.TIME_PERIOD.PM);
+            } else if (formattedText > 24) {
+                newHour = `0${formattedText[1]}`;
+                newSelection = 2;
+            } else {
+                newHour = `${formattedText[0]}${formattedText[1]}`;
+                newSelection = 1;
             }
-        } else if (selectionHour.start === 1 && selectionHour.end === 1) {
-            // The cursor is in-between the digits
-            if (trimmedText.length === 1 && lastPressedKey.current === 'Backspace') {
-                // We have removed the first digit. Replace it with 0 and move the cursor to the start.
-                newHour = `0${trimmedText}`;
+        } else if (selectionHour.start === 1) {
+            // Case when the cursor is at the second position.
+            const formattedText = `${filteredText[0]}${filteredText[1]}`;
+
+            if (filteredText.length < 2) {
+                // If we remove a value, prepend 0.
+                newHour = `0${text}`;
                 newSelection = 0;
+                // If the second digit is > 2, replace the hour with 0 and the second digit.
+            } else if (formattedText > 12 && formattedText <= 24) {
+                newHour = String(formattedText - 12).padStart(2, '0');
+                newSelection = 2;
+                setAmPmValue(CONST.TIME_PERIOD.PM);
+            } else if (formattedText > 24) {
+                newHour = `0${text[1]}`;
+                newSelection = 2;
             } else {
-                newHour = `${trimmedText[0]}${trimmedText[1] || 0}`;
+                newHour = `${text[0]}${text[1]}`;
+                setHours(newHour);
                 newSelection = 2;
             }
-        } else if (selectionHour.start === 0 && selectionHour.end === 1) {
-            // There is an active selection of the first digit
-            newHour = trimmedText.substring(0, 2).padStart(2, '0');
-            newSelection = trimmedText.length === 1 ? 0 : 1;
-        } else if (selectionHour.start === 1 && selectionHour.end === 2) {
-            // There is an active selection of the second digit
-            newHour = trimmedText.substring(0, 2).padEnd(2, '0');
-            newSelection = trimmedText.length === 1 ? 1 : 2;
-        } else if (trimmedText.length === 1 && trimmedText <= 1) {
-            /*
-             The trimmed text is either 0 or 1.
-             We are either replacing hours with a single digit, or removing the last digit.
-             In both cases, we should append 0 to the remaining value.
-             Note: we must check the length of the filtered text to avoid incorrectly handling e.g. "01" as "1".
-            */
-            newHour = `${trimmedText}0`;
-            newSelection = 1;
-        } else {
-            newHour = trimmedText.substring(0, 2).padStart(2, '0');
-            newSelection = 2;
-        }
-
-        if (newHour > 24) {
-            newHour = hours;
-        } else if (newHour > 12) {
-            newHour = String(newHour - 12).padStart(2, '0');
-            setAmPmValue(CONST.TIME_PERIOD.PM);
+        } else if (selectionHour.start === 2 && selectionHour.end === 2) {
+            // Case when the cursor is at the end and no text is selected.
+            if (filteredText.length < 2) {
+                newHour = `${text}0`;
+                newSelection = 1;
+            } else {
+                newSelection = 2;
+            }
         }
 
         setHours(newHour);
@@ -235,79 +183,63 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
         }
     };
 
-    /*
-     This function receives value from the minutes input and validates it.
-     The valid format is MM(from 00 to 59). If the user enters 9, it will be prepended to 09. If the user tries to change 09 to 99, it would skip the character
-    */
+    // This function receive value from minute input and validate it
+    // The valid format is MM(from 00 to 59). If the user input 9, it will be 09. If user try to change 09 to 99 it would skip the character
     const handleMinutesChange = (text) => {
-        // Replace spaces with 0 to implement the following digit removal by pressing space
-        const trimmedText = text.replace(/ /g, '0');
-        if (_.isEmpty(trimmedText)) {
-            resetMinutes();
+        const isOnlyNumericValue = /^\d+$/.test(text.trim());
+        // Skip if the user is pasting the text or use non numeric characters.
+        if (selectionMinute.start !== selectionMinute.end || !isOnlyNumericValue) {
             return;
         }
 
-        const isOnlyNumericValue = /^\d+$/.test(trimmedText);
-        if (!isOnlyNumericValue) {
-            return;
-        }
+        // Remove non-numeric characters.
+        const filteredText = text.replace(/[^0-9]/g, '');
 
-        let newMinute;
-        let newSelection;
-
-        if (selectionMinute.start === 0 && selectionMinute.end === 0) {
-            // The cursor is at the start of minutes
-            const firstDigit = trimmedText[0];
-            if (trimmedText.length === 1) {
-                // To support the forward-removal using Delete key
-                newMinute = `0${firstDigit}`;
-                newSelection = 1;
-            } else if (firstDigit <= 5) {
-                // The first entered digit is 0-5, we can safely append the second digit.
-                newMinute = `${firstDigit}${trimmedText[2] || 0}`;
+        let newMinute = minute;
+        let newSelection = selectionMinute.start;
+        // Case when user selects and replaces the text.
+        if (selectionMinute.start !== selectionMinute.end) {
+            // If the first digit is > 5, prepend 0.
+            if (filteredText.length === 1 && filteredText > 5) {
+                newMinute = `0${filteredText}`;
+                newSelection = 2;
+                // If the first digit is <= 5, append 0 at the end.
+            } else if (filteredText.length === 1 && filteredText <= 5) {
+                newMinute = `${filteredText}0`;
                 newSelection = 1;
             } else {
-                // The first entered digit is 6-9. We should replace the whole value by prepending 0 to the entered digit.
-                newMinute = `0${firstDigit}`;
+                newMinute = `${filteredText.slice(0, 2)}`;
                 newSelection = 2;
             }
-        } else if (selectionMinute.start === 1 && selectionMinute.end === 1) {
-            // The cursor is in-between the digits
-            if (trimmedText.length === 1 && lastPressedKey.current === 'Backspace') {
-                // We have removed the first digit. Replace it with 0 and move the cursor to the start.
-                newMinute = `0${trimmedText}`;
+        } else if (selectionMinute.start === 0) {
+            // Case when the cursor is at the start.
+            const formattedText = `${filteredText[0]}${filteredText[2] || 0}`;
+            if (text[0] >= 6) {
+                newMinute = `0${formattedText[1]}`;
+                newSelection = 2;
+            } else {
+                newMinute = `${formattedText[0]}${formattedText[1]}`;
+                newSelection = 1;
+            }
+        } else if (selectionMinute.start === 1) {
+            // Case when the cursor is at the second position.
+            // If we remove a value, prepend 0.
+            if (filteredText.length < 2) {
+                newMinute = `0${text}`;
                 newSelection = 0;
+                setSelectionHour({start: 2, end: 2});
+                hourInputRef.current.focus();
             } else {
-                newMinute = `${trimmedText[0]}${trimmedText[1] || 0}`;
+                newMinute = `${text[0]}${text[1]}`;
                 newSelection = 2;
             }
-        } else if (selectionMinute.start === 0 && selectionMinute.end === 1) {
-            // There is an active selection of the first digit
-            newMinute = trimmedText.substring(0, 2).padStart(2, '0');
-            newSelection = trimmedText.length === 1 ? 0 : 1;
-        } else if (selectionMinute.start === 1 && selectionMinute.end === 2) {
-            // There is an active selection of the second digit
-            newMinute = trimmedText.substring(0, 2).padEnd(2, '0');
-            newSelection = trimmedText.length === 1 ? 1 : 2;
-        } else if (trimmedText.length === 1 && trimmedText <= 5) {
-            /*
-             The trimmed text is from 0 to 5.
-             We are either replacing minutes with a single digit, or removing the last digit.
-             In both cases, we should append 0 to the remaining value.
-             Note: we must check the length of the filtered text to avoid incorrectly handling e.g. "01" as "1"
-            */
-            newMinute = `${trimmedText}0`;
+        } else if (filteredText.length < 2) {
+            // Case when the cursor is at the end and no text is selected.
+            newMinute = `${text}0`;
             newSelection = 1;
-        } else {
-            newMinute = trimmedText.substring(0, 2).padStart(2, '0');
-            newSelection = 2;
         }
 
-        if (newMinute > 59) {
-            newMinute = minutes;
-        }
-
-        setMinutes(newMinute);
+        setMinute(newMinute);
         setSelectionMinute({start: newSelection, end: newSelection});
     };
 
@@ -330,14 +262,17 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
             }
             if (key === '<' || key === 'Backspace') {
                 if (isHourFocused) {
-                    clearSelectedValue(hours, selectionHour, setHours, setSelectionHour);
+                    const newHour = replaceWithZeroAtPosition(hours, selectionHour.start);
+                    setHours(newHour);
+                    setSelectionHour(decreaseBothSelectionByOne(selectionHour));
                 } else if (isMinuteFocused) {
-                    if (selectionMinute.start === 0 && selectionMinute.end === 0) {
+                    if (selectionMinute.start === 0) {
                         focusHourInputOnLastCharacter();
                         return;
                     }
-
-                    clearSelectedValue(minutes, selectionMinute, setMinutes, setSelectionMinute);
+                    const newMinute = replaceWithZeroAtPosition(minute, selectionMinute.start);
+                    setMinute(newMinute);
+                    setSelectionMinute(decreaseBothSelectionByOne(selectionMinute));
                 }
                 return;
             }
@@ -346,11 +281,11 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
             if (isHourFocused) {
                 handleHourChange(insertAtPosition(hours, trimmedKey, selectionHour.start, selectionHour.end));
             } else if (isMinuteFocused) {
-                handleMinutesChange(insertAtPosition(minutes, trimmedKey, selectionMinute.start, selectionMinute.end));
+                handleMinutesChange(insertAtPosition(minute, trimmedKey, selectionMinute.start, selectionMinute.end));
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [minutes, hours, selectionMinute, selectionHour],
+        [minute, hours, selectionHour, selectionMinute],
     );
 
     useEffect(() => {
@@ -366,49 +301,34 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
         [],
     );
 
-    const arrowLeftCallback = useCallback(
-        (e) => {
-            const isMinuteFocused = minuteInputRef.current.isFocused();
-            if (isMinuteFocused && selectionMinute.start === 0) {
-                if (e) {
-                    // Check e to be truthy to avoid crashing on Android (e is undefined there)
-                    e.preventDefault();
-                }
-                focusHourInputOnLastCharacter();
-            }
-        },
+    const arrowLeftCallback = useCallback(() => {
+        const isMinuteFocused = minuteInputRef.current.isFocused();
+        if (isMinuteFocused && selectionMinute.start === 0) {
+            focusHourInputOnLastCharacter();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [selectionHour, selectionMinute],
-    );
-    const arrowRightCallback = useCallback(
-        (e) => {
-            const isHourFocused = hourInputRef.current.isFocused();
+    }, [selectionHour, selectionMinute]);
+    const arrowRightCallback = useCallback(() => {
+        const isHourFocused = hourInputRef.current.isFocused();
 
-            if (isHourFocused && selectionHour.start === 2) {
-                if (e) {
-                    // Check e to be truthy to avoid crashing on Android (e is undefined there)
-                    e.preventDefault();
-                }
-                focusMinuteInputOnFirstCharacter();
-            }
-        },
+        if (isHourFocused && selectionHour.start === 2) {
+            focusMinuteInputOnFirstCharacter();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [selectionHour, selectionMinute],
-    );
+    }, [selectionHour, selectionMinute]);
 
     useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ARROW_LEFT, arrowLeftCallback, arrowConfig);
     useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ARROW_RIGHT, arrowRightCallback, arrowConfig);
 
     const handleFocusOnBackspace = useCallback(
         (e) => {
-            if (selectionMinute.start !== 0 || selectionMinute.end !== 0 || e.key !== 'Backspace') {
+            if (selectionMinute.start !== 0 || e.key !== 'Backspace') {
                 return;
             }
-            e.preventDefault();
-            focusHourInputOnLastCharacter();
+            hourInputRef.current.focus();
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [selectionMinute.start, selectionMinute.end, focusHourInputOnLastCharacter],
+        [selectionMinute.start],
     );
 
     const {styleForAM, styleForPM} = StyleUtils.getStatusAMandPMButtonStyle(amPmValue);
@@ -421,18 +341,18 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
             <BigNumberPad
                 nativeID={NUM_PAD_VIEW_ID}
                 numberPressed={updateAmountNumberPad}
-                isLongPressDisabled
+                isDisabledLongPress
             />
         );
     }, [canUseTouchScreen, updateAmountNumberPad]);
 
     useEffect(() => {
-        onInputChange(`${hours}:${minutes} ${amPmValue}`);
+        onInputChange(`${hours}:${minute} ${amPmValue}`);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hours, minutes, amPmValue]);
+    }, [hours, minute, amPmValue]);
 
     const handleSubmit = () => {
-        const time = `${hours}:${minutes} ${amPmValue}`;
+        const time = `${hours}:${minute} ${amPmValue}`;
         const isValid = validate(time);
 
         if (isValid) {
@@ -451,9 +371,6 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
                         placeholder={numberFormat(0)}
                         maxLength={2}
                         formattedAmount={hours}
-                        onKeyPress={(e) => {
-                            lastPressedKey.current = e.nativeEvent.key;
-                        }}
                         onChangeAmount={handleHourChange}
                         role={CONST.ACCESSIBILITY_ROLE.TEXT}
                         ref={(ref) => {
@@ -477,11 +394,8 @@ function TimePicker({forwardedRef, defaultValue, onSubmit, onInputChange}) {
                     <AmountTextInput
                         placeholder={numberFormat(0)}
                         maxLength={2}
-                        formattedAmount={minutes}
-                        onKeyPress={(e) => {
-                            lastPressedKey.current = e.nativeEvent.key;
-                            handleFocusOnBackspace(e);
-                        }}
+                        formattedAmount={minute}
+                        onKeyPress={handleFocusOnBackspace}
                         onChangeAmount={handleMinutesChange}
                         role={CONST.ACCESSIBILITY_ROLE.TEXT}
                         ref={(ref) => {

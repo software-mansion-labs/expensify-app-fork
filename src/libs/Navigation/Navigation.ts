@@ -1,11 +1,9 @@
 import {findFocusedRoute} from '@react-navigation/core';
-import type {EventArg, NavigationContainerEventMap} from '@react-navigation/native';
-import {CommonActions, getPathFromState, StackActions} from '@react-navigation/native';
+import {CommonActions, EventArg, getPathFromState, NavigationContainerEventMap, StackActions} from '@react-navigation/native';
 import Log from '@libs/Log';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
-import type {Route} from '@src/ROUTES';
-import ROUTES from '@src/ROUTES';
+import ROUTES, {Route} from '@src/ROUTES';
 import {PROTECTED_SCREENS} from '@src/SCREENS';
 import originalDismissModal from './dismissModal';
 import originalGetTopmostReportActionId from './getTopmostReportActionID';
@@ -13,7 +11,7 @@ import originalGetTopmostReportId from './getTopmostReportId';
 import linkingConfig from './linkingConfig';
 import linkTo from './linkTo';
 import navigationRef from './navigationRef';
-import type {State, StateOrRoute} from './types';
+import {State, StateOrRoute} from './types';
 
 let resolveNavigationIsReadyPromise: () => void;
 const navigationIsReadyPromise = new Promise<void>((resolve) => {
@@ -102,10 +100,6 @@ function getActiveRoute(): string {
         return '';
     }
 
-    if (currentRoute?.path) {
-        return currentRoute.path;
-    }
-
     const routeFromState = getPathFromState(navigationRef.getRootState(), linkingConfig.config);
 
     if (routeFromState) {
@@ -125,10 +119,8 @@ function getActiveRoute(): string {
  * @return is active
  */
 function isActiveRoute(routePath: Route): boolean {
-    let activeRoute = getActiveRoute();
-    activeRoute = activeRoute.startsWith('/') ? activeRoute.substring(1) : activeRoute;
-
-    return activeRoute === routePath;
+    // We remove First forward slash from the URL before matching
+    return getActiveRoute().substring(1) === routePath;
 }
 
 /**
@@ -151,7 +143,7 @@ function navigate(route: Route = ROUTES.HOME, type?: string) {
  * @param shouldEnforceFallback - Enforces navigation to fallback route
  * @param shouldPopToTop - Should we navigate to LHN on back press
  */
-function goBack(fallbackRoute: Route = '', shouldEnforceFallback = false, shouldPopToTop = false) {
+function goBack(fallbackRoute: Route, shouldEnforceFallback = false, shouldPopToTop = false) {
     if (!canNavigate('goBack')) {
         return;
     }
@@ -201,14 +193,6 @@ function goBack(fallbackRoute: Route = '', shouldEnforceFallback = false, should
     }
 
     navigationRef.current.goBack();
-}
-
-/**
- * Close the full screen modal.
- */
-function closeFullScreen() {
-    const rootState = navigationRef.getRootState();
-    navigationRef.dispatch({...StackActions.pop(), target: rootState.key});
 }
 
 /**
@@ -323,7 +307,6 @@ export default {
     getRouteNameFromStateEvent,
     getTopmostReportActionId,
     waitForProtectedRoutes,
-    closeFullScreen,
 };
 
 export {navigationRef};

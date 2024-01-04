@@ -1,4 +1,4 @@
-import type * as OnyxCommon from './OnyxCommon';
+import * as OnyxCommon from './OnyxCommon';
 
 type WalletTerms = {
     /** Any error message to show */

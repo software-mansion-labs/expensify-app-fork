@@ -1,7 +1,7 @@
-import type {StackNavigationOptions} from '@react-navigation/stack';
+import {StackNavigationOptions} from '@react-navigation/stack';
 import React from 'react';
 import createCustomBottomTabNavigator from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator';
-import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
+import {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import SignInPage from '@pages/signin/SignInPage';
 import SCREENS from '@src/SCREENS';
 

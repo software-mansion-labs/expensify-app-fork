@@ -1,4 +1,4 @@
-import type {ViewStyle} from 'react-native';
+import {ViewStyle} from 'react-native';
 import overflowAuto from './overflowAuto';
 import overscrollBehaviorContain from './overscrollBehaviorContain';
 

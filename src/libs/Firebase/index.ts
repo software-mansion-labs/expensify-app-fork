@@ -1,4 +1,4 @@
-import type {StartTrace, StopTrace} from './types';
+import {StartTrace, StopTrace} from './types';
 
 /** Web does not use Firebase for performance tracing */
 const startTrace: StartTrace = () => {};

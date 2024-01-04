@@ -1,5 +1,5 @@
 import * as Request from '@libs/Request';
-import type OnyxRequest from '@src/types/onyx/Request';
+import OnyxRequest from '@src/types/onyx/Request';
 import * as NetworkStore from './NetworkStore';
 import * as SequentialQueue from './SequentialQueue';
 

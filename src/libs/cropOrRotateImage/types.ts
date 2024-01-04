@@ -1,4 +1,4 @@
-import type {RNImageManipulatorResult} from '@oguzhnatly/react-native-image-manipulator';
+import {RNImageManipulatorResult} from '@oguzhnatly/react-native-image-manipulator';
 
 type CropOrRotateImageOptions = {
     type: string;

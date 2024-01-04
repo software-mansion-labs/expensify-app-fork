@@ -1,7 +1,7 @@
 import {useEffect} from 'react';
 import DevMenu from 'react-native-dev-menu';
 import toggleTestToolsModal from '@userActions/TestTool';
-import type CustomDevMenuElement from './types';
+import CustomDevMenuElement from './types';
 
 const CustomDevMenu: CustomDevMenuElement = Object.assign(
     () => {

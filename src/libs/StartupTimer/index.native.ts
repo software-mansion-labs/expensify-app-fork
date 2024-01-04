@@ -1,5 +1,5 @@
 import {NativeModules} from 'react-native';
-import type StartupTimer from './types';
+import StartupTimer from './types';
 
 /**
  * Stop the startup trace for the app.

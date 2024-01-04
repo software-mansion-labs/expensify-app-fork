@@ -1,4 +1,4 @@
-import type UpdateGlobalBackgroundColor from './types';
+import UpdateGlobalBackgroundColor from './types';
 
 const updateGlobalBackgroundColor: UpdateGlobalBackgroundColor = (theme) => {
     const htmlElement = document.getElementsByTagName('html')[0];

@@ -1,4 +1,4 @@
-import type GetPlaidDesktopMessage from './types';
+import GetPlaidDesktopMessage from './types';
 
 const getPlaidDesktopMessage: GetPlaidDesktopMessage = () => undefined;
 

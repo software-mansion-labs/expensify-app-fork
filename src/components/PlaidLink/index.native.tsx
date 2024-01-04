@@ -1,9 +1,8 @@
 import {useEffect} from 'react';
-import type {LinkEvent} from 'react-native-plaid-link-sdk';
-import {dismissLink, openLink, usePlaidEmitter} from 'react-native-plaid-link-sdk';
+import {dismissLink, LinkEvent, openLink, usePlaidEmitter} from 'react-native-plaid-link-sdk';
 import Log from '@libs/Log';
 import CONST from '@src/CONST';
-import type PlaidLinkProps from './types';
+import PlaidLinkProps from './types';
 
 function PlaidLink({token, onSuccess = () => {}, onExit = () => {}, onEvent}: PlaidLinkProps) {
     usePlaidEmitter((event: LinkEvent) => {

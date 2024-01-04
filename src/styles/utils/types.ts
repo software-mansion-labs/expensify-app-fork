@@ -1,5 +1,5 @@
-import type {ImageStyle, PressableStateCallbackType, StyleProp, TextStyle, ViewStyle} from 'react-native';
-import type {ValueOf} from 'type-fest';
+import {ImageStyle, PressableStateCallbackType, StyleProp, TextStyle, ViewStyle} from 'react-native';
+import {ValueOf} from 'type-fest';
 import type colors from '@styles/theme/colors';
 import type variables from '@styles/variables';
 import type CONST from '@src/CONST';
@@ -42,7 +42,6 @@ type AvatarSize = {width: number};
 
 type WorkspaceColorStyle = {backgroundColor: ColorValue; fill: ColorValue};
 type EreceiptColorStyle = {backgroundColor: ColorValue; color: ColorValue};
-type TextColorStyle = {color: string};
 
 export type {
     AllStyles,
@@ -57,5 +56,4 @@ export type {
     AvatarSize,
     WorkspaceColorStyle,
     EreceiptColorStyle,
-    TextColorStyle,
 };

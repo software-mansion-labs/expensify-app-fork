@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import {ReactNode} from 'react';
 
 type DragAndDropProviderProps = {
     /** Children to render inside this component. */

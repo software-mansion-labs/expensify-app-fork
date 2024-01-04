@@ -1,4 +1,4 @@
-import type CompactContentContainerStyles from './types';
+import CompactContentContainerStyles from './types';
 
 const compactContentContainerStyles: CompactContentContainerStyles = (styles) => styles.alignItemsBaseline;
 

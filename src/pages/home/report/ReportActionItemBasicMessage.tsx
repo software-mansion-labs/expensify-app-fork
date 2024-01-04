@@ -2,7 +2,7 @@ import React from 'react';
 import {View} from 'react-native';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type ChildrenProps from '@src/types/utils/ChildrenProps';
+import ChildrenProps from '@src/types/utils/ChildrenProps';
 
 type ReportActionItemBasicMessageProps = ChildrenProps & {
     message: string;

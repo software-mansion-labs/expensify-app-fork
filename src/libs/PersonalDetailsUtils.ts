@@ -1,13 +1,12 @@
-import type {OnyxEntry} from 'react-native-onyx';
-import Onyx from 'react-native-onyx';
-import CONST from '@src/CONST';
+import Onyx, {OnyxEntry} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {PersonalDetails, PersonalDetailsList, PrivatePersonalDetails} from '@src/types/onyx';
+import * as OnyxTypes from '@src/types/onyx';
+import {PersonalDetails, PersonalDetailsList} from '@src/types/onyx';
 import * as LocalePhoneNumber from './LocalePhoneNumber';
 import * as Localize from './Localize';
 import * as UserUtils from './UserUtils';
 
-let personalDetails: Array<PersonalDetails | null> = [];
+let personalDetails: Array<OnyxTypes.PersonalDetails | null> = [];
 let allPersonalDetails: OnyxEntry<PersonalDetailsList> = {};
 Onyx.connect({
     key: ONYXKEYS.PERSONAL_DETAILS_LIST,
@@ -17,10 +16,11 @@ Onyx.connect({
     },
 });
 
-function getDisplayNameOrDefault(passedPersonalDetails?: Partial<PersonalDetails> | null, defaultValue = '', shouldFallbackToHidden = true): string {
-    const displayName = passedPersonalDetails?.displayName ? passedPersonalDetails.displayName.replace(CONST.REGEX.MERGED_ACCOUNT_PREFIX, '') : '';
-    const fallbackValue = shouldFallbackToHidden ? Localize.translateLocal('common.hidden') : '';
-    return displayName || defaultValue || fallbackValue;
+/**
+ * @param [defaultValue] optional default display name value
+ */
+function getDisplayNameOrDefault(displayName?: string, defaultValue = ''): string {
+    return displayName ?? defaultValue ?? Localize.translateLocal('common.hidden');
 }
 
 /**
@@ -30,11 +30,11 @@ function getDisplayNameOrDefault(passedPersonalDetails?: Partial<PersonalDetails
  * @param shouldChangeUserDisplayName - It will replace the current user's personal detail object's displayName with 'You'.
  * @returns - Array of personal detail objects
  */
-function getPersonalDetailsByIDs(accountIDs: number[], currentUserAccountID: number, shouldChangeUserDisplayName = false): PersonalDetails[] {
-    const result: PersonalDetails[] = accountIDs
+function getPersonalDetailsByIDs(accountIDs: number[], currentUserAccountID: number, shouldChangeUserDisplayName = false): OnyxTypes.PersonalDetails[] {
+    const result: OnyxTypes.PersonalDetails[] = accountIDs
         .filter((accountID) => !!allPersonalDetails?.[accountID])
         .map((accountID) => {
-            const detail = (allPersonalDetails?.[accountID] ?? {}) as PersonalDetails;
+            const detail = (allPersonalDetails?.[accountID] ?? {}) as OnyxTypes.PersonalDetails;
 
             if (shouldChangeUserDisplayName && currentUserAccountID === detail.accountID) {
                 return {
@@ -76,7 +76,7 @@ function getAccountIDsByLogins(logins: string[]): number[] {
  */
 function getLoginsByAccountIDs(accountIDs: number[]): string[] {
     return accountIDs.reduce((foundLogins: string[], accountID) => {
-        const currentDetail: Partial<PersonalDetails> = personalDetails.find((detail) => Number(detail?.accountID) === Number(accountID)) ?? {};
+        const currentDetail: Partial<OnyxTypes.PersonalDetails> = personalDetails.find((detail) => Number(detail?.accountID) === Number(accountID)) ?? {};
         if (currentDetail.login) {
             foundLogins.push(currentDetail.login);
         }
@@ -176,7 +176,7 @@ function getStreetLines(street = '') {
  * @param privatePersonalDetails - details object
  * @returns - formatted address
  */
-function getFormattedAddress(privatePersonalDetails: PrivatePersonalDetails): string {
+function getFormattedAddress(privatePersonalDetails: OnyxTypes.PrivatePersonalDetails): string {
     const {address} = privatePersonalDetails;
     const [street1, street2] = getStreetLines(address?.street);
     const formattedAddress =

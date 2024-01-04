@@ -1,7 +1,6 @@
 import Onyx from 'react-native-onyx';
 import * as ErrorUtils from '@libs/ErrorUtils';
-import type {OnyxKey} from '@src/ONYXKEYS';
-import ONYXKEYS from '@src/ONYXKEYS';
+import ONYXKEYS, {OnyxKey} from '@src/ONYXKEYS';
 
 let currentIsOffline: boolean | undefined;
 let currentShouldForceOffline: boolean | undefined;

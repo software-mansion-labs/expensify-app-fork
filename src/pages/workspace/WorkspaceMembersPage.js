@@ -365,7 +365,7 @@ function WorkspaceMembersPage(props) {
                     details.login === props.policy.owner ||
                     policyMember.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE ||
                     !_.isEmpty(policyMember.errors),
-                text: props.formatPhoneNumber(PersonalDetailsUtils.getDisplayNameOrDefault(details)),
+                text: props.formatPhoneNumber(details.displayName),
                 alternateText: props.formatPhoneNumber(details.login),
                 rightElement: isAdmin ? (
                     <View style={[styles.badge, styles.peopleBadge]}>
@@ -430,7 +430,7 @@ function WorkspaceMembersPage(props) {
                     title={props.translate('workspace.common.members')}
                     onBackButtonPress={() => {
                         setSearchValue('');
-                        Navigation.goBack();
+                        Navigation.goBack(ROUTES.WORKSPACE_INITIAL.getRoute(policyID));
                     }}
                     shouldShowBackButton={isSmallScreenWidth}
                     guidesCallTaskID={CONST.GUIDES_CALL_TASK_IDS.WORKSPACE_MEMBERS}

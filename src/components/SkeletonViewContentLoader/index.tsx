@@ -1,6 +1,6 @@
 import React from 'react';
 import SkeletonViewContentLoader from 'react-content-loader';
-import type SkeletonViewContentLoaderProps from './types';
+import SkeletonViewContentLoaderProps from './types';
 
 function ContentLoader(props: SkeletonViewContentLoaderProps) {
     // eslint-disable-next-line react/jsx-props-no-spreading

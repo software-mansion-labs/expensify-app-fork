@@ -1,6 +1,6 @@
 import getNumberOfLines from '@libs/ComposerUtils/getNumberOfLines';
 import updateIsFullComposerAvailable from '@libs/ComposerUtils/updateIsFullComposerAvailable';
-import type UpdateNumberOfLines from './types';
+import UpdateNumberOfLines from './types';
 
 /**
  * Check the current scrollHeight of the textarea (minus any padding) and

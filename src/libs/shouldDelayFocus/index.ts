@@ -1,4 +1,4 @@
-import type ShouldDelayFocus from './types';
+import ShouldDelayFocus from './types';
 
 const shouldDelayFocus: ShouldDelayFocus = false;
 

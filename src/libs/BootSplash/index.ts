@@ -1,5 +1,5 @@
 import Log from '@libs/Log';
-import type {VisibilityStatus} from './types';
+import {VisibilityStatus} from './types';
 
 function resolveAfter(delay: number): Promise<void> {
     return new Promise<void>((resolve) => setTimeout(resolve, delay));

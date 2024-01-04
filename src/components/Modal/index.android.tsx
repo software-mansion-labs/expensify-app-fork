@@ -3,7 +3,7 @@ import {AppState} from 'react-native';
 import withWindowDimensions from '@components/withWindowDimensions';
 import ComposerFocusManager from '@libs/ComposerFocusManager';
 import BaseModal from './BaseModal';
-import type BaseModalProps from './types';
+import BaseModalProps from './types';
 
 AppState.addEventListener('focus', () => {
     ComposerFocusManager.setReadyToFocus();

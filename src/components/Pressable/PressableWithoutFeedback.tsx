@@ -1,7 +1,6 @@
 import React from 'react';
 import GenericPressable from './GenericPressable';
-import type {PressableRef} from './GenericPressable/types';
-import type PressableProps from './GenericPressable/types';
+import PressableProps, {PressableRef} from './GenericPressable/types';
 
 function PressableWithoutFeedback(
     {pressStyle, hoverStyle, focusStyle, disabledStyle, screenReaderActiveStyle, shouldUseHapticsOnPress, shouldUseHapticsOnLongPress, ...rest}: PressableProps,

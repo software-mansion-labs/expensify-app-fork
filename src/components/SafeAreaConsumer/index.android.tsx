@@ -3,7 +3,7 @@ import React from 'react';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import useStyleUtils from '@hooks/useStyleUtils';
 import StatusBar from '@libs/StatusBar';
-import type SafeAreaConsumerProps from './types';
+import SafeAreaConsumerProps from './types';
 
 /**
  * This component is a light wrapper around the SafeAreaInsetsContext.Consumer. There are several places where we

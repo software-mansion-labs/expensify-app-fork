@@ -1,13 +1,12 @@
 import React, {useCallback} from 'react';
-import type {ImageStyle, StyleProp, TextStyle, ViewStyle} from 'react-native';
-import {View} from 'react-native';
+import {ImageStyle, StyleProp, TextStyle, View, ViewStyle} from 'react-native';
 import useNetwork from '@hooks/useNetwork';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import shouldRenderOffscreen from '@libs/shouldRenderOffscreen';
 import CONST from '@src/CONST';
-import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
-import type ChildrenProps from '@src/types/utils/ChildrenProps';
+import * as OnyxCommon from '@src/types/onyx/OnyxCommon';
+import ChildrenProps from '@src/types/utils/ChildrenProps';
 import {isNotEmptyObject} from '@src/types/utils/EmptyObject';
 import MessagesRow from './MessagesRow';
 
@@ -19,13 +18,13 @@ import MessagesRow from './MessagesRow';
 
 type OfflineWithFeedbackProps = ChildrenProps & {
     /** The type of action that's pending  */
-    pendingAction?: OnyxCommon.PendingAction;
+    pendingAction: OnyxCommon.PendingAction;
 
     /** Determine whether to hide the component's children if deletion is pending */
     shouldHideOnDelete?: boolean;
 
     /** The errors to display  */
-    errors?: OnyxCommon.Errors | null;
+    errors?: OnyxCommon.Errors;
 
     /** Whether we should show the error messages */
     shouldShowErrorMessages?: boolean;
@@ -57,7 +56,7 @@ type OfflineWithFeedbackProps = ChildrenProps & {
 
 type StrikethroughProps = Partial<ChildrenProps> & {style: Array<ViewStyle | TextStyle | ImageStyle>};
 
-function omitBy<T>(obj: Record<string, T> | undefined | null, predicate: (value: T) => boolean) {
+function omitBy<T>(obj: Record<string, T> | undefined, predicate: (value: T) => boolean) {
     // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unused-vars
     return Object.fromEntries(Object.entries(obj ?? {}).filter(([_, value]) => !predicate(value)));
 }

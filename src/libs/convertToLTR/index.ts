@@ -1,4 +1,4 @@
-import type ConvertToLTR from './types';
+import ConvertToLTR from './types';
 
 const convertToLTR: ConvertToLTR = (text) => text;
 

@@ -1,4 +1,4 @@
-import type AddViewportResizeListener from './types';
+import AddViewportResizeListener from './types';
 
 /**
  * Visual Viewport is not available on native, so return an empty function.

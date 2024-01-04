@@ -1,5 +1,5 @@
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
-import type CanFocusInputOnScreenFocus from './types';
+import CanFocusInputOnScreenFocus from './types';
 
 const canFocusInputOnScreenFocus: CanFocusInputOnScreenFocus = () => !DeviceCapabilities.canUseTouchScreen();
 

@@ -1,4 +1,4 @@
-import type {ViewStyle} from 'react-native';
+import {ViewStyle} from 'react-native';
 
 type GetCardStyles = (screenWidth: number) => ViewStyle;
 

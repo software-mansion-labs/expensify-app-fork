@@ -270,10 +270,6 @@ function buildAnnounceRoomMembersOnyxData(policyID, accountIDs) {
         onyxFailureData: [],
     };
 
-    if (!announceReport) {
-        return announceRoomMembers;
-    }
-
     announceRoomMembers.onyxOptimisticData.push({
         onyxMethod: Onyx.METHOD.MERGE,
         key: `${ONYXKEYS.COLLECTION.REPORT}${announceReport.reportID}`,
@@ -304,10 +300,6 @@ function removeOptimisticAnnounceRoomMembers(policyID, accountIDs) {
         onyxOptimisticData: [],
         onyxFailureData: [],
     };
-
-    if (!announceReport) {
-        return announceRoomMembers;
-    }
 
     const remainUsers = _.difference(announceReport.participantAccountIDs, accountIDs);
     announceRoomMembers.onyxOptimisticData.push({

@@ -1,8 +1,7 @@
 import React, {useCallback, useRef} from 'react';
 import {withOnyx} from 'react-native-onyx';
-import type {WebViewNavigation} from 'react-native-webview';
-import {WebView} from 'react-native-webview';
-import type {ValueOf} from 'type-fest';
+import {WebView, WebViewNavigation} from 'react-native-webview';
+import {ValueOf} from 'type-fest';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import Navigation from '@libs/Navigation/Navigation';
 import * as Report from '@userActions/Report';

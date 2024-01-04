@@ -68,7 +68,6 @@ function WorkspaceOverviewPage({policy, currencyList, windowWidth, route}) {
             headerText={translate('workspace.common.overview')}
             route={route}
             guidesCallTaskID={CONST.GUIDES_CALL_TASK_IDS.WORKSPACE_OVERVIEW}
-            shouldShowLoading={false}
         >
             {(hasVBA) => (
                 <>

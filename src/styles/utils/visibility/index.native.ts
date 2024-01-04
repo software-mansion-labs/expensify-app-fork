@@ -1,4 +1,4 @@
-import type VisibilityStyles from './types';
+import VisibilityStyles from './types';
 
 const visibility: VisibilityStyles = {
     visible: {},

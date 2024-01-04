@@ -1,5 +1,5 @@
 import BaseLocaleListener from './BaseLocaleListener';
-import type {LocaleListener, LocaleListenerConnect} from './types';
+import {LocaleListener, LocaleListenerConnect} from './types';
 
 const localeListenerConnect: LocaleListenerConnect = BaseLocaleListener.connect;
 

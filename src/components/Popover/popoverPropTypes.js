@@ -26,9 +26,6 @@ const propTypes = {
 
     /** The ref of the popover */
     withoutOverlayRef: refPropTypes,
-
-    /** Whether we want to show the popover on the right side of the screen */
-    fromSidebarMediumScreen: PropTypes.bool,
 };
 
 const defaultProps = {

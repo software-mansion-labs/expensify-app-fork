@@ -1,5 +1,5 @@
 import colors from '@styles/theme/colors';
-import type {ThemeColors} from '@styles/theme/types';
+import {type ThemeColors} from '@styles/theme/types';
 import CONST from '@src/CONST';
 import SCREENS from '@src/SCREENS';
 
@@ -12,7 +12,7 @@ const lightTheme = {
     borderLighter: colors.productLight400,
     borderFocus: colors.green400,
     icon: colors.productLight700,
-    iconMenu: colors.green400,
+    iconMenu: colors.productLight700,
     iconHovered: colors.productLight900,
     iconMenuHovered: colors.green400,
     iconSuccessFill: colors.green400,
@@ -45,7 +45,7 @@ const lightTheme = {
     hoverComponentBG: colors.productLight300,
     activeComponentBG: colors.productLight400,
     signInSidebar: colors.green800,
-    sidebar: colors.productLight100,
+    sidebar: colors.productLight200,
     sidebarHover: colors.productLight300,
     heading: colors.productLight900,
     textLight: colors.white,

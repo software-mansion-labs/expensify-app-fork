@@ -1,6 +1,6 @@
 import display from '@styles/utils/display';
 import flex from '@styles/utils/flex';
-import type EditedLabelStyles from './types';
+import EditedLabelStyles from './types';
 
 const editedLabelStyles: EditedLabelStyles = {
     ...display.dInlineFlex,

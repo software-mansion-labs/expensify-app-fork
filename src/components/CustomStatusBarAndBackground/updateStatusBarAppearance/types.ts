@@ -1,4 +1,4 @@
-import type {StatusBarStyle} from '@styles/index';
+import {StatusBarStyle} from '@styles/index';
 
 type UpdateStatusBarAppearanceProps = {
     backgroundColor?: string;

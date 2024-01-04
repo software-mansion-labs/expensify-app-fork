@@ -1,4 +1,4 @@
-import type OptionAlternateTextPlatformStyles from './types';
+import OptionAlternateTextPlatformStyles from './types';
 
 const optionAlternateTextPlatformStyles: OptionAlternateTextPlatformStyles = {
     paddingTop: 1,

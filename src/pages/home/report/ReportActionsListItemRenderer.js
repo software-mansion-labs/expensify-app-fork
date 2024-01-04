@@ -19,8 +19,8 @@ const propTypes = {
     /** Report for this action */
     report: reportPropTypes.isRequired,
 
-    /** Should the comment have the appearance of being grouped with the previous comment? */
-    displayAsGroup: PropTypes.bool.isRequired,
+    /** Sorted actions prepared for display */
+    sortedReportActions: PropTypes.arrayOf(PropTypes.shape(reportActionPropTypes)).isRequired,
 
     /** The ID of the most recent IOU report action connected with the shown report */
     mostRecentIOUReportActionID: PropTypes.string,
@@ -44,7 +44,7 @@ function ReportActionsListItemRenderer({
     reportAction,
     index,
     report,
-    displayAsGroup,
+    sortedReportActions,
     mostRecentIOUReportActionID,
     shouldHideThreadDividerLine,
     shouldDisplayNewMarker,
@@ -68,7 +68,7 @@ function ReportActionsListItemRenderer({
             report={report}
             action={reportAction}
             linkedReportActionID={linkedReportActionID}
-            displayAsGroup={displayAsGroup}
+            displayAsGroup={ReportActionsUtils.isConsecutiveActionMadeByPreviousActor(sortedReportActions, index)}
             shouldDisplayNewMarker={shouldDisplayNewMarker}
             shouldShowSubscriptAvatar={
                 (ReportUtils.isPolicyExpenseChat(report) || ReportUtils.isExpenseReport(report)) &&

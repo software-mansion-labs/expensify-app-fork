@@ -1,4 +1,4 @@
-import type * as OnyxCommon from './OnyxCommon';
+import * as OnyxCommon from './OnyxCommon';
 
 type Form = {
     /** Controls the loading state of the form */

@@ -14,7 +14,6 @@ import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import compose from '@libs/compose';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import Navigation from '@libs/Navigation/Navigation';
@@ -112,7 +111,6 @@ function WorkspacesListPage({policies, allPolicyMembers, reimbursementAccount, u
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
-    const {isSmallScreenWidth} = useWindowDimensions();
 
     /**
      * @param {Boolean} isPaymentItem whether the item being rendered is the payments menu item
@@ -189,7 +187,7 @@ function WorkspacesListPage({policies, allPolicyMembers, reimbursementAccount, u
             illustration={LottieAnimations.WorkspacePlanet}
             onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS.ROOT)}
             title={translate('common.workspaces')}
-            shouldShowBackButton={isSmallScreenWidth}
+            shouldUseCentralPaneView
             footer={
                 <Button
                     accessibilityLabel={translate('workspace.new.newWorkspace')}

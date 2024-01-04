@@ -1,5 +1,5 @@
 import {Linking} from 'react-native';
-import type AsyncOpenURL from './types';
+import AsyncOpenURL from './types';
 
 const asyncOpenURL: AsyncOpenURL = (promise, url) => {
     if (!url) {

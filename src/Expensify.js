@@ -13,6 +13,7 @@ import AppleAuthWrapper from './components/SignInButtons/AppleAuthWrapper';
 import SplashScreenHider from './components/SplashScreenHider';
 import UpdateAppModal from './components/UpdateAppModal';
 import withLocalize, {withLocalizePropTypes} from './components/withLocalize';
+import * as DemoActions from './libs/actions/DemoActions';
 import * as EmojiPickerAction from './libs/actions/EmojiPickerAction';
 import * as Report from './libs/actions/Report';
 import * as User from './libs/actions/User';
@@ -194,6 +195,7 @@ function Expensify(props) {
 
         // Open chat report from a deep link (only mobile native)
         Linking.addEventListener('url', (state) => {
+            DemoActions.runDemoByURL(state.url);
             Report.openReportFromDeepLink(state.url, isAuthenticated);
         });
 

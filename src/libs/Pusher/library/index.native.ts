@@ -3,7 +3,7 @@
  * @see: https://github.com/pusher/pusher-js
  */
 import PusherImplementation from 'pusher-js/react-native';
-import type Pusher from './types';
+import Pusher from './types';
 
 const PusherNative: Pusher = PusherImplementation;
 

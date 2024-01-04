@@ -1,5 +1,5 @@
 import NotificationType from './NotificationType';
-import type PushNotificationType from './types';
+import PushNotificationType from './types';
 
 // Push notifications are only supported on mobile, so we'll just noop here
 const PushNotification: PushNotificationType = {
@@ -10,6 +10,7 @@ const PushNotification: PushNotificationType = {
     onSelected: () => {},
     TYPE: NotificationType,
     clearNotifications: () => {},
+    clearReportNotifications: () => {},
 };
 
 export default PushNotification;

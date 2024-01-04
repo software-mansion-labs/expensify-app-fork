@@ -7,7 +7,6 @@ import {usePersonalDetails} from '@components/OnyxProvider';
 import useArrowKeyFocusManager from '@hooks/useArrowKeyFocusManager';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
-import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import * as SuggestionsUtils from '@libs/SuggestionUtils';
 import * as UserUtils from '@libs/UserUtils';
 import CONST from '@src/CONST';
@@ -150,8 +149,7 @@ function SuggestionMention({
                 if (!detail.login || detail.isOptimisticPersonalDetail) {
                     return false;
                 }
-                const displayName = PersonalDetailsUtils.getDisplayNameOrDefault(detail);
-                const displayText = displayName === formatPhoneNumber(detail.login) ? displayName : `${displayName} ${detail.login}`;
+                const displayText = detail.displayName === formatPhoneNumber(detail.login) ? detail.displayName : `${detail.displayName} ${detail.login}`;
                 if (searchValue && !displayText.toLowerCase().includes(searchValue.toLowerCase())) {
                     return false;
                 }
@@ -161,7 +159,7 @@ function SuggestionMention({
             const sortedPersonalDetails = _.sortBy(filteredPersonalDetails, (detail) => detail.displayName || detail.login);
             _.each(_.first(sortedPersonalDetails, CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS - suggestions.length), (detail) => {
                 suggestions.push({
-                    text: PersonalDetailsUtils.getDisplayNameOrDefault(detail),
+                    text: detail.displayName,
                     alternateText: formatPhoneNumber(detail.login),
                     login: detail.login,
                     icons: [

@@ -16,15 +16,11 @@ import * as CurrencyUtils from '@libs/CurrencyUtils';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import getOperatingSystem from '@libs/getOperatingSystem';
 import * as MoneyRequestUtils from '@libs/MoneyRequestUtils';
-import Navigation from '@libs/Navigation/Navigation';
 import CONST from '@src/CONST';
 
 const propTypes = {
     /** IOU amount saved in Onyx */
     amount: PropTypes.number,
-
-    /** Calculated tax amount based on selected tax rate */
-    taxAmount: PropTypes.number,
 
     /** Currency chosen by user or saved in Onyx */
     currency: PropTypes.string,
@@ -47,7 +43,6 @@ const propTypes = {
 
 const defaultProps = {
     amount: 0,
-    taxAmount: 0,
     currency: CONST.CURRENCY.USD,
     forwardedRef: null,
     isEditing: false,
@@ -68,19 +63,17 @@ const getNewSelection = (oldSelection, prevLength, newLength) => {
 };
 
 const isAmountInvalid = (amount) => !amount.length || parseFloat(amount) < 0.01;
-const isTaxAmountInvalid = (currentAmount, taxAmount, isTaxAmountForm) => isTaxAmountForm && currentAmount > CurrencyUtils.convertToFrontendAmount(taxAmount);
 
 const AMOUNT_VIEW_ID = 'amountView';
 const NUM_PAD_CONTAINER_VIEW_ID = 'numPadContainerView';
 const NUM_PAD_VIEW_ID = 'numPadView';
 
-function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forwardedRef, onCurrencyButtonPress, onSubmitButtonPress, selectedTab}) {
+function MoneyRequestAmountForm({amount, currency, isEditing, forwardedRef, onCurrencyButtonPress, onSubmitButtonPress, selectedTab}) {
     const styles = useThemeStyles();
     const {isExtraSmallScreenHeight} = useWindowDimensions();
     const {translate, toLocaleDigit, numberFormat} = useLocalize();
 
     const textInput = useRef(null);
-    const isTaxAmountForm = Navigation.getActiveRoute().includes('taxAmount');
 
     const decimals = CurrencyUtils.getCurrencyDecimals(currency);
     const selectedAmountAsString = amount ? CurrencyUtils.convertToFrontendAmount(amount).toString() : '';
@@ -95,8 +88,6 @@ function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forward
     });
 
     const forwardDeletePressedRef = useRef(false);
-
-    const formattedTaxAmount = CurrencyUtils.convertToDisplayString(taxAmount, currency);
 
     /**
      * Event occurs when a user presses a mouse button over an DOM element.
@@ -228,12 +219,7 @@ function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forward
      */
     const submitAndNavigateToNextPage = useCallback(() => {
         if (isAmountInvalid(currentAmount)) {
-            setFormError(translate('iou.error.invalidAmount'));
-            return;
-        }
-
-        if (isTaxAmountInvalid(currentAmount, taxAmount, isTaxAmountForm)) {
-            setFormError(translate('iou.error.invalidTaxAmount', {amount: formattedTaxAmount}));
+            setFormError('iou.error.invalidAmount');
             return;
         }
 
@@ -242,8 +228,8 @@ function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forward
         const backendAmount = CurrencyUtils.convertToBackendAmount(Number.parseFloat(currentAmount));
         initializeAmount(backendAmount);
 
-        onSubmitButtonPress({amount: currentAmount, currency});
-    }, [onSubmitButtonPress, currentAmount, taxAmount, currency, isTaxAmountForm, formattedTaxAmount, translate, initializeAmount]);
+        onSubmitButtonPress(currentAmount);
+    }, [onSubmitButtonPress, currentAmount, initializeAmount]);
 
     /**
      * Input handler to check for a forward-delete key (or keyboard shortcut) press.
@@ -274,7 +260,7 @@ function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forward
             <View
                 id={AMOUNT_VIEW_ID}
                 onMouseDown={(event) => onMouseDown(event, [AMOUNT_VIEW_ID])}
-                style={[styles.moneyRequestAmountContainer, styles.flex1, styles.flexRow, styles.w100, styles.alignItemsCenter, styles.justifyContentCenter]}
+                style={[styles.flex1, styles.flexRow, styles.w100, styles.alignItemsCenter, styles.justifyContentCenter]}
             >
                 <TextInputWithCurrencySymbol
                     formattedAmount={formattedAmount}
@@ -304,7 +290,7 @@ function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forward
                     <FormHelpMessage
                         style={[styles.pAbsolute, styles.b0, styles.mb0, styles.ph5, styles.w100]}
                         isError
-                        message={formError}
+                        message={translate(formError)}
                     />
                 )}
             </View>

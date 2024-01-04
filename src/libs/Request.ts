@@ -1,7 +1,7 @@
-import type Request from '@src/types/onyx/Request';
-import type Response from '@src/types/onyx/Response';
+import Request from '@src/types/onyx/Request';
+import Response from '@src/types/onyx/Response';
 import HttpUtils from './HttpUtils';
-import type Middleware from './Middleware/types';
+import Middleware from './Middleware/types';
 import enhanceParameters from './Network/enhanceParameters';
 import * as NetworkStore from './Network/NetworkStore';
 

@@ -1,4 +1,4 @@
-import type OverscrollBehaviorStyles from './types';
+import OverscrollBehaviorStyles from './types';
 
 const overscrollBehaviorContain: OverscrollBehaviorStyles = {
     overscrollBehavior: 'contain',

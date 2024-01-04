@@ -1,5 +1,5 @@
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import type HapticFeedback from './types';
+import HapticFeedback from './types';
 
 const hapticFeedback: HapticFeedback = {
     press: () => {

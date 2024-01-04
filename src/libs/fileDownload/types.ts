@@ -1,4 +1,4 @@
-import type {Asset} from 'react-native-image-picker';
+import {Asset} from 'react-native-image-picker';
 
 type FileDownload = (url: string, fileName: string) => Promise<void>;
 

@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import deepReplaceKeysAndValues from '@libs/deepReplaceKeysAndValues';
-import type {Middleware} from '@libs/Request';
+import {Middleware} from '@libs/Request';
 import * as PersistedRequests from '@userActions/PersistedRequests';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type Report from '@src/types/onyx/Report';
+import Report from '@src/types/onyx/Report';
 
 const handleUnusedOptimisticID: Middleware = (requestResponse, request, isFromSequentialQueue) =>
     requestResponse.then((response) => {

@@ -1,5 +1,5 @@
-import type CONST from '@src/CONST';
-import type {ColorScheme, StatusBarStyle} from '..';
+import CONST from '@src/CONST';
+import {type ColorScheme, type StatusBarStyle} from '..';
 
 type Color = string;
 

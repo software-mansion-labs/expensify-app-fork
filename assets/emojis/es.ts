@@ -1,4 +1,4 @@
-import type {EmojisList} from './types';
+import {EmojisList} from './types';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 const esEmojis: EmojisList = {

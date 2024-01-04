@@ -1,4 +1,4 @@
-import type CursorStyles from './types';
+import CursorStyles from './types';
 
 const cursor: CursorStyles = {
     cursorDefault: {

@@ -41,7 +41,6 @@ function IOURequestStepMerchant({
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {inputCallbackRef} = useAutoFocusInput();
-    const isEmptyMerchant = merchant === '' || merchant === CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT;
 
     const navigateBack = () => {
         Navigation.goBack(backTo || ROUTES.HOME);
@@ -90,7 +89,7 @@ function IOURequestStepMerchant({
                         InputComponent={TextInput}
                         inputID="moneyRequestMerchant"
                         name="moneyRequestMerchant"
-                        defaultValue={isEmptyMerchant ? '' : merchant}
+                        defaultValue={merchant}
                         maxLength={CONST.MERCHANT_NAME_MAX_LENGTH}
                         label={translate('common.merchant')}
                         accessibilityLabel={translate('common.merchant')}

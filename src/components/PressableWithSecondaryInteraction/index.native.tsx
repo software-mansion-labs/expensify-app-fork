@@ -1,10 +1,9 @@
-import type {ReactNode} from 'react';
 import React, {forwardRef} from 'react';
-import type {GestureResponderEvent, TextProps} from 'react-native';
-import type {PressableRef} from '@components/Pressable/GenericPressable/types';
+import {GestureResponderEvent, TextProps} from 'react-native';
+import {PressableRef} from '@components/Pressable/GenericPressable/types';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
-import type PressableWithSecondaryInteractionProps from './types';
+import PressableWithSecondaryInteractionProps from './types';
 
 /** This is a special Pressable that calls onSecondaryInteraction when LongPressed. */
 function PressableWithSecondaryInteraction(
@@ -37,7 +36,7 @@ function PressableWithSecondaryInteraction(
                 suppressHighlighting={suppressHighlighting}
                 onLongPress={onSecondaryInteraction ? executeSecondaryInteraction : undefined}
             >
-                {children as ReactNode}
+                {children}
             </Text>
         );
     }

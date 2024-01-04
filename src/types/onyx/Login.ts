@@ -1,4 +1,4 @@
-import type * as OnyxCommon from './OnyxCommon';
+import * as OnyxCommon from './OnyxCommon';
 
 type Login = {
     /** Phone/Email associated with user */

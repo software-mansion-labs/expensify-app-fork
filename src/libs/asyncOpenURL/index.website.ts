@@ -1,5 +1,5 @@
 import {Linking} from 'react-native';
-import type AsyncOpenURL from './types';
+import AsyncOpenURL from './types';
 
 /**
  * Prevents Safari from blocking pop-up window when opened within async call.

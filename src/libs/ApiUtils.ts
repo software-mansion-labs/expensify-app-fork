@@ -1,9 +1,9 @@
 import Onyx from 'react-native-onyx';
-import type {ValueOf} from 'type-fest';
+import {ValueOf} from 'type-fest';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Request} from '@src/types/onyx';
+import {Request} from '@src/types/onyx';
 import proxyConfig from '../../config/proxyConfig';
 import * as Environment from './Environment/Environment';
 

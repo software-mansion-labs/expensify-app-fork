@@ -109,7 +109,8 @@ function ProfilePage(props) {
             <HeaderWithBackButton
                 title={props.translate('common.profile')}
                 onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS.ROOT)}
-                shouldShowBackButton={props.isSmallScreenWidth}
+                shouldUseCentralPaneView
+                shouldShowBorderBottom
             />
             <ScrollView>
                 <View style={[styles.mt4]}>

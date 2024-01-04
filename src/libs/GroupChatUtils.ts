@@ -1,7 +1,6 @@
-import type {OnyxEntry} from 'react-native-onyx';
-import Onyx from 'react-native-onyx';
+import Onyx, {OnyxEntry} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {PersonalDetailsList, Report} from '@src/types/onyx';
+import {PersonalDetailsList, Report} from '@src/types/onyx';
 import * as OptionsListUtils from './OptionsListUtils';
 import * as ReportUtils from './ReportUtils';
 

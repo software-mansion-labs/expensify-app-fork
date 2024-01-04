@@ -1,5 +1,5 @@
 import variables from '@styles/variables';
-import type GetContextMenuItemStyle from './types';
+import GetContextMenuItemStyle from './types';
 
 const getContextMenuItemStyles: GetContextMenuItemStyle = (styles, windowWidth) => {
     if (windowWidth && windowWidth > variables.mobileResponsiveWidthBreakpoint) {

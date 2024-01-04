@@ -1,4 +1,4 @@
-import type GetSecureEntryKeyboardType from './types';
+import GetSecureEntryKeyboardType from './types';
 
 /**
  * Return keyboardType passed as function parameter on Web/Desktop/iOS

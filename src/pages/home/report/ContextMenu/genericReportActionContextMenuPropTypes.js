@@ -28,7 +28,7 @@ const defaultProps = {
     isMini: false,
     isVisible: false,
     selection: '',
-    draftMessage: undefined,
+    draftMessage: '',
 };
 
 export {propTypes, defaultProps};

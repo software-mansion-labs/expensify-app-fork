@@ -1,4 +1,4 @@
-import type ItalicStyles from './types';
+import ItalicStyles from './types';
 
 const italic: ItalicStyles = 'normal';
 

@@ -1,5 +1,5 @@
 import {singleBold} from './bold';
-import type FontFamilyStyles from './types';
+import FontFamilyStyles from './types';
 
 const fontFamily: FontFamilyStyles = {
     EXP_NEUE_ITALIC: 'ExpensifyNeue-Italic',

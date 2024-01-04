@@ -1,4 +1,4 @@
-import type * as OnyxCommon from './OnyxCommon';
+import * as OnyxCommon from './OnyxCommon';
 
 type WalletAdditionalDetails = {
     /** Questions returned by Idology */

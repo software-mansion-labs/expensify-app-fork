@@ -46,6 +46,7 @@ blockquote {
 
 article,
 aside,
+details,
 figcaption,
 figure,
 footer,
@@ -54,7 +55,8 @@ hgroup,
 main,
 menu,
 nav,
-section {
+section,
+summary {
     display: block;
 }
 
@@ -97,8 +99,7 @@ h2,
 h3,
 h4,
 h5,
-h6, 
-summary {
+h6 {
     color: $color-text;
     font-weight: bold;
     padding-bottom: 12px;
@@ -112,25 +113,7 @@ h6 {
     margin-top: 20px;
 }
 
-#faq::marker {
-    font-size: 1.5em;
-}
-
-details summary { 
-    cursor: pointer;
-    user-select: none;
-}
-
-details > summary {
-    list-style-image: url("/assets/images/arrow-right.svg");
-}
-
-details[open] > summary {
-    list-style-image: url("/assets/images/down.svg");
-}
-
-h1, 
-summary {
+h1 {
     font-family: "ExpensifyNewKansas", "Helvetica Neue", "Helvetica", Arial, sans-serif;
     font-weight: 500;
     font-size: larger;
@@ -415,7 +398,7 @@ button {
             flex-wrap: wrap;
         }
 
-        h1, summary {
+        h1 {
             font-size: 1.5em;
             padding: 20px 0 12px 0;
         }

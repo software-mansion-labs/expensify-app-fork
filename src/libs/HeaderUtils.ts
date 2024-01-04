@@ -1,13 +1,13 @@
-import type {OnyxEntry} from 'react-native-onyx';
+import {OnyxEntry} from 'react-native-onyx';
+import {SvgProps} from 'react-native-svg';
 import * as Expensicons from '@components/Icon/Expensicons';
-import type OnyxReport from '@src/types/onyx/Report';
-import type IconAsset from '@src/types/utils/IconAsset';
+import OnyxReport from '@src/types/onyx/Report';
 import * as Report from './actions/Report';
 import * as Session from './actions/Session';
 import * as Localize from './Localize';
 
 type MenuItem = {
-    icon: string | IconAsset;
+    icon: string | React.FC<SvgProps>;
     text: string;
     onSelected: () => void;
 };

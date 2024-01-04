@@ -2,7 +2,7 @@
  * Web and desktop platforms support the "addOutlineWidth" property, so it
  * can be added to the object
  */
-import type AddOutlineWidth from './types';
+import AddOutlineWidth from './types';
 
 /**
  * Adds the addOutlineWidth property to an object to be used when styling

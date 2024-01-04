@@ -13,7 +13,6 @@ import OfflineIndicator from '@components/OfflineIndicator';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import {usePersonalDetails, withNetwork} from '@components/OnyxProvider';
 import withCurrentUserPersonalDetails, {withCurrentUserPersonalDetailsDefaultProps, withCurrentUserPersonalDetailsPropTypes} from '@components/withCurrentUserPersonalDetails';
-import useDebounce from '@hooks/useDebounce';
 import useHandleExceedMaxCommentLength from '@hooks/useHandleExceedMaxCommentLength';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -127,26 +126,6 @@ function ReportActionCompose({
     });
     const [isFullComposerAvailable, setIsFullComposerAvailable] = useState(isComposerFullSize);
 
-    // A flag to indicate whether the onScroll callback is likely triggered by a layout change (caused by text change) or not
-    const isScrollLikelyLayoutTriggered = useRef(false);
-
-    /**
-     * Reset isScrollLikelyLayoutTriggered to false.
-     *
-     * The function is debounced with a handpicked wait time to address 2 issues:
-     * 1. There is a slight delay between onChangeText and onScroll
-     * 2. Layout change will trigger onScroll multiple times
-     */
-    const debouncedLowerIsScrollLikelyLayoutTriggered = useDebounce(
-        useCallback(() => (isScrollLikelyLayoutTriggered.current = false), []),
-        500,
-    );
-
-    const raiseIsScrollLikelyLayoutTriggered = useCallback(() => {
-        isScrollLikelyLayoutTriggered.current = true;
-        debouncedLowerIsScrollLikelyLayoutTriggered();
-    }, [debouncedLowerIsScrollLikelyLayoutTriggered]);
-
     /**
      * Updates the should clear state of the composer
      */
@@ -221,17 +200,12 @@ function ReportActionCompose({
     }, []);
 
     const containerRef = useRef(null);
-    const measureContainer = useCallback(
-        (callback) => {
-            if (!containerRef.current) {
-                return;
-            }
-            containerRef.current.measureInWindow(callback);
-        },
-        // We added isComposerFullSize in dependencies so that when this value changes, we recalculate the position of the popup
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [isComposerFullSize],
-    );
+    const measureContainer = useCallback((callback) => {
+        if (!containerRef.current) {
+            return;
+        }
+        containerRef.current.measureInWindow(callback);
+    }, []);
 
     const onAddActionPressed = useCallback(() => {
         if (!willBlurTextInputOnTapOutside) {
@@ -395,12 +369,12 @@ function ReportActionCompose({
                                         reportParticipantIDs={reportParticipantIDs}
                                         isFullComposerAvailable={isFullComposerAvailable}
                                         isComposerFullSize={isComposerFullSize}
+                                        updateShouldShowSuggestionMenuToFalse={updateShouldShowSuggestionMenuToFalse}
                                         isBlockedFromConcierge={isBlockedFromConcierge}
                                         disabled={disabled}
                                         setMenuVisibility={setMenuVisibility}
                                         isMenuVisible={isMenuVisible}
                                         onTriggerAttachmentPicker={onTriggerAttachmentPicker}
-                                        raiseIsScrollLikelyLayoutTriggered={raiseIsScrollLikelyLayoutTriggered}
                                         onCanceledAttachmentPicker={() => {
                                             isNextModalWillOpenRef.current = false;
                                             restoreKeyboardState();
@@ -415,8 +389,6 @@ function ReportActionCompose({
                                         animatedRef={animatedRef}
                                         suggestionsRef={suggestionsRef}
                                         isNextModalWillOpenRef={isNextModalWillOpenRef}
-                                        isScrollLikelyLayoutTriggered={isScrollLikelyLayoutTriggered}
-                                        raiseIsScrollLikelyLayoutTriggered={raiseIsScrollLikelyLayoutTriggered}
                                         reportID={reportID}
                                         report={report}
                                         reportActions={reportActions}

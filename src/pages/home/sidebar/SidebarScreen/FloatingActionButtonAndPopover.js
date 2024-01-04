@@ -10,7 +10,6 @@ import withLocalize, {withLocalizePropTypes} from '@components/withLocalize';
 import withNavigation from '@components/withNavigation';
 import withNavigationFocus from '@components/withNavigationFocus';
 import withWindowDimensions from '@components/withWindowDimensions';
-import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
 import useThemeStyles from '@hooks/useThemeStyles';
 import compose from '@libs/compose';
@@ -60,6 +59,13 @@ const propTypes = {
 
     /** Forwarded ref to FloatingActionButtonAndPopover */
     innerRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+
+    /** Information about any currently running demos */
+    demoInfo: PropTypes.shape({
+        money2020: PropTypes.shape({
+            isBeginningDemo: PropTypes.bool,
+        }),
+    }),
 };
 const defaultProps = {
     onHideCreateMenu: () => {},
@@ -67,6 +73,7 @@ const defaultProps = {
     allPolicies: {},
     isLoading: false,
     innerRef: null,
+    demoInfo: {},
 };
 
 /**
@@ -77,10 +84,9 @@ const defaultProps = {
  */
 function FloatingActionButtonAndPopover(props) {
     const styles = useThemeStyles();
-    const {translate} = useLocalize();
     const [isCreateMenuActive, setIsCreateMenuActive] = useState(false);
     const isAnonymousUser = Session.isAnonymousUser();
-    const fabRef = useRef(null);
+    const anchorRef = useRef(null);
 
     const prevIsFocused = usePrevious(props.isFocused);
 
@@ -151,7 +157,9 @@ function FloatingActionButtonAndPopover(props) {
         if (currentRoute && ![NAVIGATORS.CENTRAL_PANE_NAVIGATOR, SCREENS.HOME].includes(currentRoute.name)) {
             return;
         }
-
+        if (lodashGet(props.demoInfo, 'money2020.isBeginningDemo', false)) {
+            return;
+        }
         Welcome.show({routes, showCreateMenu});
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.isLoading]);
@@ -171,16 +179,8 @@ function FloatingActionButtonAndPopover(props) {
         },
     }));
 
-    const toggleCreateMenu = () => {
-        if (isCreateMenuActive) {
-            hideCreateMenu();
-        } else {
-            showCreateMenu();
-        }
-    };
-
     return (
-        <View style={styles.flexGrow1}>
+        <View>
             <PopoverMenu
                 onClose={hideCreateMenu}
                 isVisible={isCreateMenuActive && (!props.isSmallScreenWidth || props.isFocused)}
@@ -225,8 +225,6 @@ function FloatingActionButtonAndPopover(props) {
                     ...(!props.isLoading && !Policy.hasActiveFreePolicy(props.allPolicies)
                         ? [
                               {
-                                  displayInDefaultIconColor: true,
-                                  contentFit: 'contain',
                                   icon: Expensicons.NewWorkspace,
                                   iconWidth: 46,
                                   iconHeight: 40,
@@ -238,14 +236,20 @@ function FloatingActionButtonAndPopover(props) {
                         : []),
                 ]}
                 withoutOverlay
-                anchorRef={fabRef}
+                anchorRef={anchorRef}
             />
             <FloatingActionButton
-                accessibilityLabel={translate('sidebarScreen.fabNewChatExplained')}
+                accessibilityLabel={props.translate('sidebarScreen.fabNewChatExplained')}
                 role={CONST.ROLE.BUTTON}
                 isActive={isCreateMenuActive}
-                ref={fabRef}
-                onPress={toggleCreateMenu}
+                ref={anchorRef}
+                onPress={() => {
+                    if (isCreateMenuActive) {
+                        hideCreateMenu();
+                    } else {
+                        showCreateMenu();
+                    }
+                }}
             />
         </View>
     );
@@ -277,6 +281,9 @@ export default compose(
         },
         isLoading: {
             key: ONYXKEYS.IS_LOADING_APP,
+        },
+        demoInfo: {
+            key: ONYXKEYS.DEMO_INFO,
         },
     }),
 )(FloatingActionButtonAndPopoverWithRef);

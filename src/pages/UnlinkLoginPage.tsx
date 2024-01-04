@@ -1,15 +1,14 @@
-import type {StackScreenProps} from '@react-navigation/stack';
+import {StackScreenProps} from '@react-navigation/stack';
 import React, {useEffect} from 'react';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
+import {type OnyxEntry, withOnyx} from 'react-native-onyx';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import usePrevious from '@hooks/usePrevious';
 import Navigation from '@libs/Navigation/Navigation';
-import type {PublicScreensParamList} from '@navigation/types';
+import {PublicScreensParamList} from '@navigation/types';
 import * as Session from '@userActions/Session';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type SCREENS from '@src/SCREENS';
+import SCREENS from '@src/SCREENS';
 import type {Account} from '@src/types/onyx';
 
 type UnlinkLoginPageOnyxProps = {

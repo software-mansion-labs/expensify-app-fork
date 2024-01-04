@@ -1,5 +1,4 @@
-import type {MetaData} from './TrieNode';
-import TrieNode from './TrieNode';
+import TrieNode, {MetaData} from './TrieNode';
 
 type Word<TMetaData extends MetaData> = {
     name: string;

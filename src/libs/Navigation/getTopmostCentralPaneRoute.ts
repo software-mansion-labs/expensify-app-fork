@@ -1,5 +1,5 @@
 import NAVIGATORS from '@src/NAVIGATORS';
-import type {CentralPaneName, NavigationPartialRoute, RootStackParamList, State} from './types';
+import {CentralPaneName, NavigationPartialRoute, RootStackParamList, State} from './types';
 
 // Get the name of topmost central pane route in the navigation stack.
 function getTopmostCentralPaneRoute(state: State<RootStackParamList>): NavigationPartialRoute<CentralPaneName> | undefined {

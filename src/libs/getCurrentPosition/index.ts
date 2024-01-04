@@ -1,5 +1,4 @@
-import type {GetCurrentPosition} from './getCurrentPosition.types';
-import {GeolocationErrorCode} from './getCurrentPosition.types';
+import {GeolocationErrorCode, GetCurrentPosition} from './getCurrentPosition.types';
 
 const getCurrentPosition: GetCurrentPosition = (success, error, options) => {
     if (navigator === undefined || !('geolocation' in navigator)) {

@@ -1,4 +1,4 @@
-import type GetPlaidOAuthReceivedRedirectURI from './types';
+import GetPlaidOAuthReceivedRedirectURI from './types';
 
 /**
  * After a user authenticates their bank in the Plaid OAuth flow, Plaid returns us to the redirectURI we

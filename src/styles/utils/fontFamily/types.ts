@@ -1,4 +1,4 @@
-import type {TextStyle} from 'react-native';
+import {TextStyle} from 'react-native';
 
 type FontFamilyKeys =
     | 'EXP_NEUE_ITALIC'

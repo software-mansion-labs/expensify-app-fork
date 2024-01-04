@@ -1,4 +1,4 @@
-import type Response from '@src/types/onyx/Response';
+import Response from '@src/types/onyx/Response';
 
 export default (): Response => ({
     jsonCode: 200,

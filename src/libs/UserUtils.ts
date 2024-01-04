@@ -1,20 +1,19 @@
 import Str from 'expensify-common/lib/str';
 import _ from 'lodash';
-import type {OnyxEntry} from 'react-native-onyx';
-import Onyx from 'react-native-onyx';
-import type {ValueOf} from 'type-fest';
+import Onyx, {OnyxEntry} from 'react-native-onyx';
+import {SvgProps} from 'react-native-svg';
+import {ValueOf} from 'type-fest';
 import * as defaultAvatars from '@components/Icon/DefaultAvatars';
 import {ConciergeAvatar, FallbackAvatar} from '@components/Icon/Expensicons';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {PersonalDetailsList} from '@src/types/onyx';
-import type Login from '@src/types/onyx/Login';
-import type IconAsset from '@src/types/utils/IconAsset';
+import {PersonalDetailsList} from '@src/types/onyx';
+import Login from '@src/types/onyx/Login';
 import hashCode from './hashCode';
 
 type AvatarRange = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24;
 
-type AvatarSource = IconAsset | string;
+type AvatarSource = React.FC<SvgProps> | string;
 
 type LoginListIndicator = ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | '';
 
@@ -91,7 +90,7 @@ function generateAccountID(searchValue: string): number {
  * @param [accountID]
  * @returns
  */
-function getDefaultAvatar(accountID = -1, avatarURL?: string): IconAsset {
+function getDefaultAvatar(accountID = -1, avatarURL?: string): React.FC<SvgProps> {
     if (accountID <= 0) {
         return FallbackAvatar;
     }
@@ -106,8 +105,8 @@ function getDefaultAvatar(accountID = -1, avatarURL?: string): IconAsset {
     // But the avatar link still corresponds to the original ID-generated link. So we extract the SVG image number from the backend's link instead of using the user ID directly
     let accountIDHashBucket: AvatarRange;
     if (avatarURL) {
-        const match = avatarURL.match(/(default-avatar_)(\d+)(?=\.)/);
-        const lastDigit = match && parseInt(match[2], 10);
+        const match = avatarURL.match(/(?<=default-avatar_)\d+(?=\.)/);
+        const lastDigit = match && parseInt(match[0], 10);
         accountIDHashBucket = lastDigit as AvatarRange;
     } else {
         accountIDHashBucket = ((accountID % CONST.DEFAULT_AVATAR_COUNT) + 1) as AvatarRange;
@@ -138,7 +137,7 @@ function getDefaultAvatarURL(accountID: string | number = ''): string {
  * Given a user's avatar path, returns true if user doesn't have an avatar or if URL points to a default avatar
  * @param avatarSource - the avatar source from user's personalDetails
  */
-function isDefaultAvatar(avatarSource?: AvatarSource): avatarSource is string | undefined {
+function isDefaultAvatar(avatarSource?: AvatarSource): boolean {
     if (typeof avatarSource === 'string') {
         if (avatarSource.includes('images/avatars/avatar_') || avatarSource.includes('images/avatars/default-avatar_') || avatarSource.includes('images/avatars/user/default')) {
             return true;
@@ -151,7 +150,7 @@ function isDefaultAvatar(avatarSource?: AvatarSource): avatarSource is string | 
     }
 
     if (!avatarSource) {
-        // If source is undefined, we should also use a default avatar
+        // If null source, we should also use a default avatar
         return true;
     }
 
@@ -165,8 +164,8 @@ function isDefaultAvatar(avatarSource?: AvatarSource): avatarSource is string | 
  * @param avatarSource - the avatar source from user's personalDetails
  * @param accountID - the accountID of the user
  */
-function getAvatar(avatarSource?: AvatarSource, accountID?: number): AvatarSource {
-    return isDefaultAvatar(avatarSource) ? getDefaultAvatar(accountID, avatarSource) : avatarSource;
+function getAvatar(avatarSource: AvatarSource, accountID?: number): AvatarSource {
+    return isDefaultAvatar(avatarSource) ? getDefaultAvatar(accountID, avatarSource as string) : avatarSource;
 }
 
 /**
@@ -224,18 +223,18 @@ function getSecondaryPhoneLogin(loginList: Record<string, Login>): string | unde
 }
 
 export {
-    generateAccountID,
-    getAvatar,
-    getAvatarUrl,
-    getDefaultAvatar,
-    getDefaultAvatarURL,
-    getFullSizeAvatar,
-    getLoginListBrickRoadIndicator,
-    getSecondaryPhoneLogin,
-    getSmallSizeAvatar,
+    hashText,
     hasLoginListError,
     hasLoginListInfo,
-    hashText,
+    getLoginListBrickRoadIndicator,
+    getDefaultAvatar,
+    getDefaultAvatarURL,
     isDefaultAvatar,
+    getAvatar,
+    getAvatarUrl,
+    getSmallSizeAvatar,
+    getFullSizeAvatar,
+    generateAccountID,
+    getSecondaryPhoneLogin,
 };
 export type {AvatarSource};

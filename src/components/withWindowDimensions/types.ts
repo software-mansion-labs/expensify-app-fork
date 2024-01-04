@@ -1,4 +1,4 @@
-import type {ScaledSize} from 'react-native';
+import {ScaledSize} from 'react-native';
 
 type WindowDimensionsContextData = {
     windowHeight: number;

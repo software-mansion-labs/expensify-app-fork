@@ -1,4 +1,4 @@
-import type WillBlurTextInputOnTapOutside from './types';
+import WillBlurTextInputOnTapOutside from './types';
 
 const willBlurTextInputOnTapOutside: WillBlurTextInputOnTapOutside = () => true;
 

@@ -1,4 +1,4 @@
-import type {TextInput} from 'react-native';
+import {TextInput} from 'react-native';
 import * as EmojiPickerAction from './actions/EmojiPickerAction';
 import ComposerFocusManager from './ComposerFocusManager';
 

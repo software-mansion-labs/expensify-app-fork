@@ -1,5 +1,5 @@
 import colors from '@styles/theme/colors';
-import type {ThemeColors} from '@styles/theme/types';
+import {type ThemeColors} from '@styles/theme/types';
 import CONST from '@src/CONST';
 import SCREENS from '@src/SCREENS';
 
@@ -12,7 +12,7 @@ const darkTheme = {
     borderLighter: colors.productDark400,
     borderFocus: colors.green400,
     icon: colors.productDark700,
-    iconMenu: colors.green400,
+    iconMenu: colors.productDark700,
     iconHovered: colors.productDark900,
     iconMenuHovered: colors.green400,
     iconSuccessFill: colors.green400,
@@ -45,7 +45,7 @@ const darkTheme = {
     hoverComponentBG: colors.productDark300,
     activeComponentBG: colors.productDark400,
     signInSidebar: colors.green800,
-    sidebar: colors.productDark100,
+    sidebar: colors.productDark200,
     sidebarHover: colors.productDark300,
     heading: colors.productDark900,
     textLight: colors.productDark900,

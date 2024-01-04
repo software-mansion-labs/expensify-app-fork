@@ -1,8 +1,7 @@
-import type {OnyxEntry} from 'react-native-onyx';
-import Onyx from 'react-native-onyx';
+import Onyx, {OnyxEntry} from 'react-native-onyx';
 import Log from '@libs/Log';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {ReportActionsDrafts} from '@src/types/onyx';
+import {ReportActionsDrafts} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 type ReportActionsDraftsKey = `${typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${string}`;

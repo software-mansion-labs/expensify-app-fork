@@ -1,5 +1,5 @@
-import type {OnyxUpdate} from 'react-native-onyx';
-import type Response from './Response';
+import {OnyxUpdate} from 'react-native-onyx';
+import Response from './Response';
 
 type OnyxData = {
     successData?: OnyxUpdate[];

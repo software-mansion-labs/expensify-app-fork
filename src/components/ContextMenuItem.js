@@ -7,18 +7,17 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 import getButtonState from '@libs/getButtonState';
 import BaseMiniContextMenuItem from './BaseMiniContextMenuItem';
 import Icon from './Icon';
-import sourcePropTypes from './Image/sourcePropTypes';
 import MenuItem from './MenuItem';
 
 const propTypes = {
     /** Icon Component */
-    icon: sourcePropTypes.isRequired,
+    icon: PropTypes.elementType.isRequired,
 
     /** Text to display */
     text: PropTypes.string.isRequired,
 
     /** Icon to show when interaction was successful */
-    successIcon: sourcePropTypes,
+    successIcon: PropTypes.elementType,
 
     /** Text to show when interaction was successful */
     successText: PropTypes.string,
@@ -40,9 +39,6 @@ const propTypes = {
 
     /** Forwarded ref to ContextMenuItem */
     innerRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
-
-    /** Should limit width. */
-    shouldLimitWidth: PropTypes.bool,
 };
 
 const defaultProps = {
@@ -53,10 +49,9 @@ const defaultProps = {
     isAnonymousAction: false,
     isFocused: false,
     innerRef: null,
-    shouldLimitWidth: true,
 };
 
-function ContextMenuItem({onPress, successIcon, successText, icon, text, isMini, description, isAnonymousAction, isFocused, innerRef, shouldLimitWidth}) {
+function ContextMenuItem({onPress, successIcon, successText, icon, text, isMini, description, isAnonymousAction, isFocused, innerRef}) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {windowWidth} = useWindowDimensions();
@@ -103,7 +98,7 @@ function ContextMenuItem({onPress, successIcon, successText, icon, text, isMini,
             success={!isThrottledButtonActive}
             description={description}
             descriptionTextStyle={styles.breakWord}
-            style={shouldLimitWidth && StyleUtils.getContextMenuItemStyles(windowWidth)}
+            style={StyleUtils.getContextMenuItemStyles(windowWidth)}
             isAnonymousAction={isAnonymousAction}
             focused={isFocused}
             interactive={isThrottledButtonActive}

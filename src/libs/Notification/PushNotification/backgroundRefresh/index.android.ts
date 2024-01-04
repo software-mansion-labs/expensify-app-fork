@@ -4,7 +4,7 @@ import Visibility from '@libs/Visibility';
 import * as App from '@userActions/App';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type BackgroundRefresh from './types';
+import BackgroundRefresh from './types';
 
 function getLastOnyxUpdateID(): Promise<number | null> {
     return new Promise((resolve) => {

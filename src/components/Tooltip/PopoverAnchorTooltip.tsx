@@ -1,8 +1,8 @@
-import type {BoundsObserver} from '@react-ng/bounds-observer';
+import {BoundsObserver} from '@react-ng/bounds-observer';
 import React, {useContext, useMemo, useRef} from 'react';
 import {PopoverContext} from '@components/PopoverProvider';
 import BaseTooltip from './BaseTooltip';
-import type {TooltipExtendedProps} from './types';
+import {TooltipExtendedProps} from './types';
 
 function PopoverAnchorTooltip({shouldRender = true, children, ...props}: TooltipExtendedProps) {
     const {isOpen, popover} = useContext(PopoverContext);

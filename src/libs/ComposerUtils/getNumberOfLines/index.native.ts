@@ -1,4 +1,4 @@
-import type GetNumberOfLines from './types';
+import GetNumberOfLines from './types';
 
 /**
  * Get the current number of lines in the composer

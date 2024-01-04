@@ -11,7 +11,6 @@ import withLocalize, {withLocalizePropTypes} from '@components/withLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import compose from '@libs/compose';
 import Navigation from '@libs/Navigation/Navigation';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -39,7 +38,6 @@ function SecuritySettingsPage(props) {
     const styles = useThemeStyles();
     const {translate} = props;
     const waitForNavigate = useWaitForNavigation();
-    const {isSmallScreenWidth} = useWindowDimensions();
 
     const menuItems = useMemo(() => {
         const baseMenuItems = [
@@ -69,9 +67,10 @@ function SecuritySettingsPage(props) {
         <IllustratedHeaderPageLayout
             title={translate('initialSettingsPage.security')}
             onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS.ROOT)}
-            shouldShowBackButton={isSmallScreenWidth}
+            shouldShowBackButton
             illustration={LottieAnimations.Safe}
             backgroundColor={theme.PAGE_THEMES[SCREENS.SETTINGS.SECURITY].backgroundColor}
+            shouldUseCentralPaneView
         >
             <ScrollView contentContainerStyle={[styles.flexGrow1, styles.flexColumn, styles.justifyContentBetween]}>
                 <View style={[styles.flex1]}>

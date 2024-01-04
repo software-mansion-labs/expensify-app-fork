@@ -1,4 +1,4 @@
-import type PointerEventsAutoStyles from './types';
+import PointerEventsAutoStyles from './types';
 
 const pointerEventsAuto: PointerEventsAutoStyles = {};
 

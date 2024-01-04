@@ -1,7 +1,6 @@
 import React from 'react';
 import {View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
-import {withOnyx} from 'react-native-onyx';
+import {OnyxEntry, withOnyx} from 'react-native-onyx';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
@@ -13,7 +12,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type * as OnyxTypes from '@src/types/onyx';
+import * as OnyxTypes from '@src/types/onyx';
 
 type DeeplinkRedirectLoadingIndicatorOnyxProps = {
     /** Current user session */
@@ -37,7 +36,6 @@ function DeeplinkRedirectLoadingIndicator({openLinkInBrowser, session}: Deeplink
                     <Icon
                         width={200}
                         height={164}
-                        fill={theme.icon}
                         src={Illustrations.RocketBlue}
                     />
                 </View>

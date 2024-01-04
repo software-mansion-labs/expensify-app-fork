@@ -1,6 +1,5 @@
 import {getActionFromState} from '@react-navigation/core';
-import type {NavigationContainerRef} from '@react-navigation/native';
-import {StackActions} from '@react-navigation/native';
+import {NavigationContainerRef, StackActions} from '@react-navigation/native';
 import {findLastIndex} from 'lodash';
 import Log from '@libs/Log';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -9,7 +8,7 @@ import SCREENS from '@src/SCREENS';
 import getStateFromPath from './getStateFromPath';
 import getTopmostReportId from './getTopmostReportId';
 import linkingConfig from './linkingConfig';
-import type {RootStackParamList, StackNavigationAction} from './types';
+import {RootStackParamList, StackNavigationAction} from './types';
 
 // This function is in a separate file than Navigation.js to avoid cyclic dependency.
 

@@ -1,5 +1,4 @@
-import type {OnyxEntry} from 'react-native-onyx';
-import Onyx from 'react-native-onyx';
+import Onyx, {OnyxEntry} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 const draftCommentMap: Record<string, OnyxEntry<string>> = {};

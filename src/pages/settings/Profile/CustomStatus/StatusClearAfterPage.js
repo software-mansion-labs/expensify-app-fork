@@ -166,7 +166,6 @@ function StatusClearAfterPage({currentUserPersonalDetails, customStatus}) {
                     key={`${index}+${item.value}`}
                     onSelectRow={() => updateMode(item)}
                     showTooltip={false}
-                    isFocused={item.isSelected}
                 />
             )),
         [statusType, updateMode],
@@ -203,7 +202,7 @@ function StatusClearAfterPage({currentUserPersonalDetails, customStatus}) {
                                 containerStyle={styles.pr2}
                                 onPress={() => Navigation.navigate(ROUTES.SETTINGS_STATUS_CLEAR_AFTER_DATE)}
                                 errorText={customDateError}
-                                titleStyle={styles.flex1}
+                                titleTextStyle={styles.flex1}
                                 brickRoadIndicator={redBrickDateIndicator}
                             />
                             <MenuItemWithTopDescription
@@ -213,7 +212,7 @@ function StatusClearAfterPage({currentUserPersonalDetails, customStatus}) {
                                 containerStyle={styles.pr2}
                                 onPress={() => Navigation.navigate(ROUTES.SETTINGS_STATUS_CLEAR_AFTER_TIME)}
                                 errorText={customTimeError}
-                                titleStyle={styles.flex1}
+                                titleTextStyle={styles.flex1}
                                 brickRoadIndicator={redBrickTimeIndicator}
                             />
                         </>

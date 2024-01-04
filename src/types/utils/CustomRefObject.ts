@@ -1,4 +1,4 @@
-import type {RefObject} from 'react';
+import {RefObject} from 'react';
 
 type CustomRefObject<T> = RefObject<T> & {onselectstart: () => boolean};
 

@@ -1,3 +1,3 @@
-import type SafeAreaProps from './types';
+import SafeAreaProps from './types';
 
 export default ({children}: SafeAreaProps) => children;

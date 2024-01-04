@@ -1,4 +1,4 @@
-import type TextUnderlineStyles from './types';
+import TextUnderlineStyles from './types';
 
 const textUnderline: TextUnderlineStyles = {
     textUnderlinePositionUnder: {

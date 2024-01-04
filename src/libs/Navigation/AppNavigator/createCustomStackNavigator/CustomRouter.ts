@@ -1,91 +1,105 @@
-import type {RouterConfigOptions, StackNavigationState} from '@react-navigation/native';
-import {getPathFromState, StackRouter} from '@react-navigation/native';
-import type {ParamListBase} from '@react-navigation/routers';
+import {RouterConfigOptions, StackNavigationState, StackRouter} from '@react-navigation/native';
+import {ParamListBase} from '@react-navigation/routers';
 import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
-import getAdaptedStateFromPath from '@libs/Navigation/getAdaptedStateFromPath';
+import getMatchingCentralPaneRouteForState from '@libs/Navigation/getMatchingCentralPaneRouteForState';
 import getTopmostBottomTabRoute from '@libs/Navigation/getTopmostBottomTabRoute';
 import getTopmostCentralPaneRoute from '@libs/Navigation/getTopmostCentralPaneRoute';
-import linkingConfig from '@libs/Navigation/linkingConfig';
-import type {NavigationPartialRoute, RootStackParamList, State} from '@libs/Navigation/types';
+import TAB_TO_CENTRAL_PANE_MAPPING from '@libs/Navigation/TAB_TO_CENTRAL_PANE_MAPPING';
+import {RootStackParamList, State} from '@libs/Navigation/types';
 import NAVIGATORS from '@src/NAVIGATORS';
+import SCREENS from '@src/SCREENS';
 import type {ResponsiveStackNavigatorRouterOptions} from './types';
 
-function insertRootRoute(state: State<RootStackParamList>, routeToInsert: NavigationPartialRoute) {
-    const nonModalRoutes = state.routes.filter((route) => route.name !== NAVIGATORS.RIGHT_MODAL_NAVIGATOR && route.name !== NAVIGATORS.LEFT_MODAL_NAVIGATOR);
-    const modalRoutes = state.routes.filter((route) => route.name === NAVIGATORS.RIGHT_MODAL_NAVIGATOR || route.name === NAVIGATORS.LEFT_MODAL_NAVIGATOR);
+const isAtLeastOneInState = (state: State, screenName: string): boolean => !!state.routes.find((route) => route.name === screenName);
+
+/**
+ * Adds report route without any specific reportID to the state.
+ * The report screen will self set proper reportID param based on the helper function findLastAccessedReport (look at ReportScreenWrapper for more info)
+ *
+ * @param state - react-navigation state
+ */
+const addCentralPaneNavigatorRoute = (state: State<RootStackParamList>) => {
+    // We only add the route if the bottom tab state is defined therefore matchingCentralPaneRoute will be defined.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const matchingCentralPaneRoute = getMatchingCentralPaneRouteForState(state)!;
+
+    const bottomTabRoute = state.routes.filter((route) => route.name === NAVIGATORS.BOTTOM_TAB_NAVIGATOR);
+    const centralPaneRoutes = state.routes.filter((route) => route.name === NAVIGATORS.CENTRAL_PANE_NAVIGATOR);
+    const fullScreenRoutes = state.routes.filter((route) => route.name === NAVIGATORS.FULL_SCREEN_NAVIGATOR);
+
+    // TODO-IDEAL Both RHP and LHP add condition for the LHP
+    const modalRoutes = state.routes.filter((route) => route.name === NAVIGATORS.RIGHT_MODAL_NAVIGATOR);
+
+    const centralPaneNavigatorRoute = {
+        name: NAVIGATORS.CENTRAL_PANE_NAVIGATOR,
+        params: {
+            screen: matchingCentralPaneRoute.name,
+            params: matchingCentralPaneRoute.params,
+        },
+    };
 
     // @ts-expect-error Updating read only property
     // noinspection JSConstantReassignment
-    state.routes = [...nonModalRoutes, routeToInsert, ...modalRoutes]; // eslint-disable-line
+    state.routes = [...bottomTabRoute, ...centralPaneRoutes, centralPaneNavigatorRoute, ...fullScreenRoutes, ...modalRoutes]; // eslint-disable-line
 
     // @ts-expect-error Updating read only property
     // noinspection JSConstantReassignment
     state.index = state.routes.length - 1; // eslint-disable-line
+};
 
-    // @ts-expect-error Updating read only property
-    // noinspection JSConstantReassignment
-    state.stale = true; // eslint-disable-line
-}
+const mapScreenNameToSettingsScreenName: Record<string, string> = {
+    // [SCREENS.SETTINGS.PROFILE.CONTACT_METHODS]: SCREENS.SETTINGS.PROFILE,
+};
 
-function compareAndAdaptState(state: StackNavigationState<RootStackParamList>) {
-    // If the state of the last path is not defined the getPathFromState won't work correctly.
-    if (!state?.routes.at(-1)?.state) {
+const handleSettingsOpened = (state: State) => {
+    const rhpNav = state.routes.find((route) => route.name === NAVIGATORS.RIGHT_MODAL_NAVIGATOR);
+    if (!rhpNav?.state?.routes[0]) {
+        return;
+    }
+    const screen = rhpNav.state.routes[0];
+    // check if we are on settings screen
+    if (screen.name !== 'Settings') {
+        return;
+    }
+    // check if we already have settings home route
+    if (isAtLeastOneInState(state, NAVIGATORS.FULL_SCREEN_NAVIGATOR)) {
         return;
     }
 
-    // We need to be sure that the bottom tab state is defined.
-    const topmostBottomTabRoute = getTopmostBottomTabRoute(state);
-    const isSmallScreenWidth = getIsSmallScreenWidth();
+    const settingsScreenName = screen?.state?.routes[0].name;
 
-    // This solutions is heurestis and will work for our cases. We may need to improve it in the future if we will have more cases to handle.
-    if (topmostBottomTabRoute && !isSmallScreenWidth) {
-        const fullScreenRoute = state.routes.find((route) => route.name === NAVIGATORS.FULL_SCREEN_NAVIGATOR);
-
-        // If there is fullScreenRoute we don't need to add anything.
-        if (fullScreenRoute) {
-            return;
-        }
-
-        // We will generate a template state and compare the current state with it.
-        // If there is a differences in the screens that should be visible under the overlay, we will add the screen from templateState to the current state.
-        const pathFromCurrentState = getPathFromState(state, linkingConfig.config);
-        const templateState = getAdaptedStateFromPath(pathFromCurrentState, linkingConfig.config);
-
-        if (!templateState) {
-            return;
-        }
-
-        const templateFullScreenRoute = templateState.routes.find((route) => route.name === NAVIGATORS.FULL_SCREEN_NAVIGATOR);
-
-        // If templateFullScreenRoute is defined, and full screen route is not in the state, we need to add it.
-        if (templateFullScreenRoute) {
-            insertRootRoute(state, templateFullScreenRoute);
-            return;
-        }
-
-        const topmostCentralPaneRoute = state.routes.filter((route) => route.name === NAVIGATORS.CENTRAL_PANE_NAVIGATOR).at(-1);
-        const templateCentralPaneRoute = templateState.routes.find((route) => route.name === NAVIGATORS.CENTRAL_PANE_NAVIGATOR);
-
-        const topmostCentralPaneRouteExtracted = getTopmostCentralPaneRoute(state);
-        const templateCentralPaneRouteExtracted = getTopmostCentralPaneRoute(templateState as State<RootStackParamList>);
-
-        // If there is no templateCentralPaneRoute, we don't have anything to add.
-        if (!templateCentralPaneRoute) {
-            return;
-        }
-
-        // If there is no topmostCentralPaneRoute in the state and template state has one, we need to add it.
-        if (!topmostCentralPaneRoute) {
-            insertRootRoute(state, templateCentralPaneRoute);
-            return;
-        }
-
-        // If there is central pane route in state and template state has one, we need to check if they are the same.
-        if (topmostCentralPaneRouteExtracted && templateCentralPaneRouteExtracted && topmostCentralPaneRouteExtracted.name !== templateCentralPaneRouteExtracted.name) {
-            insertRootRoute(state, templateCentralPaneRoute);
-        }
+    if (!settingsScreenName) {
+        return;
     }
-}
+
+    const settingsHomeRouteName = mapScreenNameToSettingsScreenName[settingsScreenName] || SCREENS.SETTINGS.PROFILE.ROOT;
+
+    const fullScreenRoute = {
+        name: NAVIGATORS.FULL_SCREEN_NAVIGATOR,
+        state: {
+            routes: [
+                {
+                    name: SCREENS.SETTINGS.ROOT,
+                },
+                {
+                    name: SCREENS.SETTINGS_CENTRAL_PANE,
+                    state: {
+                        routes: [
+                            {
+                                name: settingsHomeRouteName,
+                            },
+                        ],
+                    },
+                },
+            ],
+        },
+    };
+    state.routes.splice(2, 0, fullScreenRoute);
+    // eslint-disable-next-line no-param-reassign, @typescript-eslint/non-nullable-type-assertion-style
+    (state.index as number) = state.routes.length - 1;
+    // eslint-disable-next-line no-param-reassign, @typescript-eslint/non-nullable-type-assertion-style
+    (state.stale as boolean) = true;
+};
 
 function CustomRouter(options: ResponsiveStackNavigatorRouterOptions) {
     const stackRouter = StackRouter(options);
@@ -93,7 +107,25 @@ function CustomRouter(options: ResponsiveStackNavigatorRouterOptions) {
     return {
         ...stackRouter,
         getRehydratedState(partialState: StackNavigationState<RootStackParamList>, {routeNames, routeParamList, routeGetIdList}: RouterConfigOptions): StackNavigationState<ParamListBase> {
-            compareAndAdaptState(partialState);
+            // Make sure that there is at least one CentralPaneNavigator (ReportScreen by default) in the state if this is a wide layout
+            const topmostBottomTabRoute = getTopmostBottomTabRoute(partialState);
+            const isSmallScreenWidth = getIsSmallScreenWidth();
+
+            // If we log in there is a few rehydrations where the state for the bottomTab doesn't exist yet.
+            // isSmallScreen is checked here to avoid calling check functions for optimazation purposes.
+            if (topmostBottomTabRoute && !isSmallScreenWidth) {
+                const topmostCentralPaneRoute = getTopmostCentralPaneRoute(partialState);
+                const isBottomTabMatchingCentralPane = topmostCentralPaneRoute && TAB_TO_CENTRAL_PANE_MAPPING[topmostBottomTabRoute.name].includes(topmostCentralPaneRoute.name);
+
+                if (!isBottomTabMatchingCentralPane) {
+                    // If we added a route we need to make sure that the state.stale is true to generate new key for this route
+                    // @ts-expect-error Updating read only property
+                    // noinspection JSConstantReassignment
+                    partialState.stale = true; // eslint-disable-line
+                    addCentralPaneNavigatorRoute(partialState);
+                }
+            }
+            handleSettingsOpened(partialState);
             const state = stackRouter.getRehydratedState(partialState, {routeNames, routeParamList, routeGetIdList});
             return state;
         },

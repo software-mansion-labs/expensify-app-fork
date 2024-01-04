@@ -1,7 +1,6 @@
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
-import {withOnyx} from 'react-native-onyx';
+import {OnyxEntry, withOnyx} from 'react-native-onyx';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
@@ -13,7 +12,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
 import * as Session from '@userActions/Session';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Session as SessionType} from '@src/types/onyx';
+import {Session as SessionType} from '@src/types/onyx';
 
 type ValidateCodeModalOnyxProps = {
     /** Session of currently logged in user */
@@ -40,7 +39,6 @@ function ValidateCodeModal({code, accountID, session = {}}: ValidateCodeModalPro
                     <Icon
                         width={variables.modalTopIconWidth}
                         height={variables.modalTopIconHeight}
-                        fill={theme.icon}
                         src={Illustrations.MagicCode}
                     />
                 </View>

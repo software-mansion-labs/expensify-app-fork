@@ -1,5 +1,5 @@
 import CONST from '@src/CONST';
-import type GetPopOverVerticalOffset from './types';
+import GetPopOverVerticalOffset from './types';
 
 /** Adds the header padding with vertical offset on desktop */
 const getPopOverVerticalOffset: GetPopOverVerticalOffset = (vertical) => ({

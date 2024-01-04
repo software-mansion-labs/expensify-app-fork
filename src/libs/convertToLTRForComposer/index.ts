@@ -1,5 +1,5 @@
 import CONST from '@src/CONST';
-import type ConvertToLTRForComposer from './types';
+import ConvertToLTRForComposer from './types';
 
 function hasRTLCharacters(text: string): boolean {
     // Regular expressions to match RTL character ranges.

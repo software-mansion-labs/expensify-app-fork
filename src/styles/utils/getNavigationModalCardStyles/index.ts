@@ -1,4 +1,4 @@
-import type GetNavigationModalCardStyles from './types';
+import GetNavigationModalCardStyles from './types';
 
 const getNavigationModalCardStyles: GetNavigationModalCardStyles = () => ({
     height: '100%',

@@ -1,4 +1,4 @@
-import type DotLottieAnimation from './types';
+import DotLottieAnimation from './types';
 
 const DotLottieAnimations: Record<string, DotLottieAnimation> = {
     ExpensifyLounge: {

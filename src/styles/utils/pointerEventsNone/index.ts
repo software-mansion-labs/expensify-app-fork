@@ -1,4 +1,4 @@
-import type PointerEventsNone from './types';
+import PointerEventsNone from './types';
 
 const pointerEventsNone: PointerEventsNone = {
     pointerEvents: 'none',

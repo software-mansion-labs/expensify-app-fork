@@ -1,4 +1,4 @@
-import type UseFlipper from './types';
+import UseFlipper from './types';
 
 const useFlipper: UseFlipper = () => {};
 

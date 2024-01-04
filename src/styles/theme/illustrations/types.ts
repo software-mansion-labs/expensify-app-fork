@@ -1,4 +1,4 @@
-import type {ImageSourcePropType} from 'react-native';
+import {ImageSourcePropType} from 'react-native';
 
 type IllustrationsType = {
     EmptyStateBackgroundImage: ImageSourcePropType;

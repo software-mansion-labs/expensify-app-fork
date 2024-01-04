@@ -1,4 +1,4 @@
-import type {ViewStyle} from 'react-native';
+import {ViewStyle} from 'react-native';
 
 type VisibilityStyles = Record<'visible' | 'hidden', Pick<ViewStyle, 'visibility'>>;
 

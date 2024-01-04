@@ -1,4 +1,4 @@
-import type {LocalNotificationModule} from './types';
+import {LocalNotificationModule} from './types';
 
 // Local Notifications are not currently supported on mobile so we'll just no-op here.
 const LocalNotification: LocalNotificationModule = {

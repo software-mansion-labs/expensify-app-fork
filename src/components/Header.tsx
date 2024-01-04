@@ -1,17 +1,15 @@
-import type {ReactNode} from 'react';
-import React from 'react';
-import type {StyleProp, TextStyle} from 'react-native';
-import {View} from 'react-native';
+import React, {ReactElement} from 'react';
+import {StyleProp, TextStyle, View} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
 import EnvironmentBadge from './EnvironmentBadge';
 import Text from './Text';
 
 type HeaderProps = {
     /** Title of the Header */
-    title?: ReactNode;
+    title?: string | ReactElement;
 
     /** Subtitle of the header */
-    subtitle?: ReactNode;
+    subtitle?: string | ReactElement;
 
     /** Should we show the environment badge (dev/stg)?  */
     shouldShowEnvironmentBadge?: boolean;

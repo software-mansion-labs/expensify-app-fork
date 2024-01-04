@@ -1,4 +1,4 @@
-import type WordBreakStyles from './types';
+import WordBreakStyles from './types';
 
 const wordBreak: WordBreakStyles = {
     breakWord: {

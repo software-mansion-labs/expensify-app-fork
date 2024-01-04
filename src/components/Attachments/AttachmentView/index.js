@@ -146,7 +146,6 @@ function AttachmentView({
                     onLoadComplete={() => !loadComplete && setLoadComplete(true)}
                     errorLabelStyles={isUsedInAttachmentModal ? [styles.textLabel, styles.textLarge] : [styles.cursorAuto]}
                     style={isUsedInAttachmentModal ? styles.imageModalPDF : styles.flex1}
-                    isUsedInCarousel={isUsedInCarousel}
                 />
             </View>
         );
@@ -185,20 +184,14 @@ function AttachmentView({
     return (
         <View style={[styles.defaultAttachmentView, ...containerStyles]}>
             <View style={styles.mr2}>
-                <Icon
-                    fill={theme.icon}
-                    src={Expensicons.Paperclip}
-                />
+                <Icon src={Expensicons.Paperclip} />
             </View>
 
             <Text style={[styles.textStrong, styles.flexShrink1, styles.breakAll, styles.flexWrap, styles.mw100]}>{file && file.name}</Text>
             {!shouldShowLoadingSpinnerIcon && shouldShowDownloadIcon && (
                 <Tooltip text={translate('common.download')}>
                     <View style={styles.ml2}>
-                        <Icon
-                            fill={theme.icon}
-                            src={Expensicons.Download}
-                        />
+                        <Icon src={Expensicons.Download} />
                     </View>
                 </Tooltip>
             )}

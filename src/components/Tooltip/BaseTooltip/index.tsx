@@ -1,11 +1,10 @@
 import {BoundsObserver} from '@react-ng/bounds-observer';
-import type {ForwardedRef} from 'react';
-import React, {forwardRef, memo, useCallback, useEffect, useRef, useState} from 'react';
+import React, {ForwardedRef, forwardRef, memo, useCallback, useEffect, useRef, useState} from 'react';
 import {Animated} from 'react-native';
 import Hoverable from '@components/Hoverable';
 import TooltipRenderedOnPageBody from '@components/Tooltip/TooltipRenderedOnPageBody';
 import TooltipSense from '@components/Tooltip/TooltipSense';
-import type TooltipProps from '@components/Tooltip/types';
+import TooltipProps from '@components/Tooltip/types';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
 import useWindowDimensions from '@hooks/useWindowDimensions';

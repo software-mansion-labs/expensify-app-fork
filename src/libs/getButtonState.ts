@@ -1,4 +1,4 @@
-import type {ValueOf} from 'type-fest';
+import {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
 
 /**

@@ -20,6 +20,7 @@ import * as ValidationUtils from '@libs/ValidationUtils';
 import * as PaymentMethods from '@userActions/PaymentMethods';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 
 const propTypes = {
     /* Onyx Props */
@@ -106,7 +107,7 @@ function DebitCardPage(props) {
         >
             <HeaderWithBackButton
                 title={translate('addDebitCardPage.addADebitCard')}
-                onBackButtonPress={() => Navigation.goBack()}
+                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WALLET)}
             />
             <FormProvider
                 formID={ONYXKEYS.FORMS.ADD_DEBIT_CARD_FORM}

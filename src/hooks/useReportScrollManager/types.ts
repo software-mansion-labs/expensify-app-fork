@@ -1,4 +1,4 @@
-import type {FlatListRefType} from '@pages/home/ReportScreenContext';
+import {FlatListRefType} from '@pages/home/ReportScreenContext';
 
 type ReportScrollManagerData = {
     ref: FlatListRefType;

@@ -1,13 +1,12 @@
 import PropTypes from 'prop-types';
-import type {ComponentType, ForwardedRef, RefAttributes} from 'react';
-import React, {createContext, useEffect, useMemo, useState} from 'react';
+import React, {ComponentType, createContext, ForwardedRef, RefAttributes, useEffect, useMemo, useState} from 'react';
 import {Dimensions} from 'react-native';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
 import getComponentDisplayName from '@libs/getComponentDisplayName';
 import getWindowHeightAdjustment from '@libs/getWindowHeightAdjustment';
 import variables from '@styles/variables';
-import type ChildrenProps from '@src/types/utils/ChildrenProps';
-import type {NewDimensions, WindowDimensionsContextData, WindowDimensionsProps} from './types';
+import ChildrenProps from '@src/types/utils/ChildrenProps';
+import {NewDimensions, WindowDimensionsContextData, WindowDimensionsProps} from './types';
 
 const WindowDimensionsContext = createContext<WindowDimensionsContextData | null>(null);
 const windowDimensionsPropTypes = {

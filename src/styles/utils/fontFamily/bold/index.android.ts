@@ -1,4 +1,4 @@
-import type FontFamilyBoldStyles from './types';
+import FontFamilyBoldStyles from './types';
 
 const singleBold: FontFamilyBoldStyles = 'ExpensifyNeue-Bold';
 const multiBold: FontFamilyBoldStyles = 'ExpensifyNeue-Bold';

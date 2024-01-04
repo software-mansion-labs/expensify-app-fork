@@ -40,7 +40,6 @@ import SettlementButton from './SettlementButton';
 import ShowMoreButton from './ShowMoreButton';
 import Switch from './Switch';
 import tagPropTypes from './tagPropTypes';
-import taxPropTypes from './taxPropTypes';
 import Text from './Text';
 import transactionPropTypes from './transactionPropTypes';
 import withCurrentUserPersonalDetails, {withCurrentUserPersonalDetailsDefaultProps, withCurrentUserPersonalDetailsPropTypes} from './withCurrentUserPersonalDetails';
@@ -165,10 +164,6 @@ const propTypes = {
     /** Collection of tags attached to a policy */
     policyTags: tagPropTypes,
 
-    /* Onyx Props */
-    /** Collection of tax rates attached to a policy */
-    policyTaxRates: taxPropTypes,
-
     /** Holds data related to Money Request view state, rather than the underlying Money Request data. */
     iou: iouPropTypes,
 };
@@ -205,7 +200,6 @@ const defaultProps = {
     shouldShowSmartScanFields: true,
     isPolicyExpenseChat: false,
     iou: iouDefaultProps,
-    policyTaxRates: {},
 };
 
 function MoneyRequestConfirmationList(props) {
@@ -247,9 +241,6 @@ function MoneyRequestConfirmationList(props) {
     // A flag for showing the tags field
     const shouldShowTags = props.isPolicyExpenseChat && (props.iouTag || OptionsListUtils.hasEnabledOptions(_.values(policyTagList)));
 
-    // A flag for showing tax fields - tax rate and tax amount
-    const shouldShowTax = props.isPolicyExpenseChat && props.policy.isTaxTrackingEnabled;
-
     // A flag for showing the billable field
     const shouldShowBillable = !lodashGet(props.policy, 'disabledFields.defaultBillable', true);
 
@@ -261,11 +252,6 @@ function MoneyRequestConfirmationList(props) {
               shouldCalculateDistanceAmount ? DistanceRequestUtils.getDistanceRequestAmount(distance, unit, rate) : props.iouAmount,
               props.isDistanceRequest ? currency : props.iouCurrencyCode,
           );
-    const formattedTaxAmount = CurrencyUtils.convertToDisplayString(props.transaction.taxAmount, props.iouCurrencyCode);
-
-    const defaultTaxKey = props.policyTaxRates.defaultExternalID;
-    const defaultTaxName = (defaultTaxKey && `${props.policyTaxRates.taxes[defaultTaxKey].name} (${props.policyTaxRates.taxes[defaultTaxKey].value}) • ${translate('common.default')}`) || '';
-    const taxRateTitle = (props.transaction.taxRate && props.transaction.taxRate.text) || defaultTaxName;
 
     const isFocused = useIsFocused();
     const [formError, setFormError] = useState('');
@@ -280,9 +266,6 @@ function MoneyRequestConfirmationList(props) {
 
         return (props.hasSmartScanFailed && TransactionUtils.hasMissingSmartscanFields(transaction)) || (didConfirmSplit && TransactionUtils.areRequiredFieldsEmpty(transaction));
     }, [props.isEditingSplitBill, props.hasSmartScanFailed, transaction, didConfirmSplit]);
-
-    const isMerchantEmpty = !props.iouMerchant || props.iouMerchant === CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT;
-    const shouldDisplayMerchantError = props.isPolicyExpenseChat && !props.isScanRequest && isMerchantEmpty;
 
     useEffect(() => {
         if (shouldDisplayFieldError && props.hasSmartScanFailed) {
@@ -517,7 +500,7 @@ function MoneyRequestConfirmationList(props) {
         }
 
         const shouldShowSettlementButton = props.iouType === CONST.IOU.TYPE.SEND;
-        const shouldDisableButton = selectedParticipants.length === 0 || shouldDisplayMerchantError;
+        const shouldDisableButton = selectedParticipants.length === 0;
 
         const button = shouldShowSettlementButton ? (
             <SettlementButton
@@ -569,7 +552,6 @@ function MoneyRequestConfirmationList(props) {
         props.iouCurrencyCode,
         props.policyID,
         selectedParticipants.length,
-        shouldDisplayMerchantError,
         confirm,
         splitOrRequestOptions,
         formError,
@@ -698,7 +680,7 @@ function MoneyRequestConfirmationList(props) {
                     {shouldShowMerchant && (
                         <MenuItemWithTopDescription
                             shouldShowRightIcon={!props.isReadOnly}
-                            title={isMerchantEmpty ? '' : props.iouMerchant}
+                            title={props.iouMerchant}
                             description={translate('common.merchant')}
                             style={[styles.moneyRequestMenuItem]}
                             titleStyle={styles.flex1}
@@ -712,7 +694,7 @@ function MoneyRequestConfirmationList(props) {
                             disabled={didConfirm}
                             interactive={!props.isReadOnly}
                             brickRoadIndicator={shouldDisplayFieldError && TransactionUtils.isMerchantMissing(transaction) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : ''}
-                            error={shouldDisplayMerchantError || (shouldDisplayFieldError && TransactionUtils.isMerchantMissing(transaction)) ? translate('common.error.enterMerchant') : ''}
+                            error={shouldDisplayFieldError && TransactionUtils.isMerchantMissing(transaction) ? translate('common.error.enterMerchant') : ''}
                         />
                     )}
                     {shouldShowCategories && (
@@ -755,40 +737,6 @@ function MoneyRequestConfirmationList(props) {
                         />
                     )}
 
-                    {shouldShowTax && (
-                        <MenuItemWithTopDescription
-                            shouldShowRightIcon={!props.isReadOnly}
-                            title={taxRateTitle}
-                            description={props.policyTaxRates.name}
-                            style={[styles.moneyRequestMenuItem]}
-                            titleStyle={styles.flex1}
-                            onPress={() =>
-                                Navigation.navigate(
-                                    ROUTES.MONEY_REQUEST_STEP_TAX_RATE.getRoute(props.iouType, props.transaction.transactionID, props.reportID, Navigation.getActiveRouteWithoutParams()),
-                                )
-                            }
-                            disabled={didConfirm}
-                            interactive={!props.isReadOnly}
-                        />
-                    )}
-
-                    {shouldShowTax && (
-                        <MenuItemWithTopDescription
-                            shouldShowRightIcon={!props.isReadOnly}
-                            title={formattedTaxAmount}
-                            description={props.policyTaxRates.name}
-                            style={[styles.moneyRequestMenuItem]}
-                            titleStyle={styles.flex1}
-                            onPress={() =>
-                                Navigation.navigate(
-                                    ROUTES.MONEY_REQUEST_STEP_TAX_AMOUNT.getRoute(props.iouType, props.transaction.transactionID, props.reportID, Navigation.getActiveRouteWithoutParams()),
-                                )
-                            }
-                            disabled={didConfirm}
-                            interactive={!props.isReadOnly}
-                        />
-                    )}
-
                     {shouldShowBillable && (
                         <View style={[styles.flexRow, styles.justifyContentBetween, styles.alignItemsCenter, styles.ml5, styles.mr8, styles.optionRow]}>
                             <Text color={!props.iouIsBillable ? theme.textSupporting : undefined}>{translate('common.billable')}</Text>
@@ -825,14 +773,11 @@ export default compose(
             key: ({policyID}) => `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
             selector: DistanceRequestUtils.getDefaultMileageRate,
         },
-        splitTransactionDraft: {
+        draftTransaction: {
             key: ({transactionID}) => `${ONYXKEYS.COLLECTION.SPLIT_TRANSACTION_DRAFT}${transactionID}`,
         },
         policy: {
             key: ({policyID}) => `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
-        },
-        policyTaxRates: {
-            key: ({policyID}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${policyID}`,
         },
         iou: {
             key: ONYXKEYS.IOU,

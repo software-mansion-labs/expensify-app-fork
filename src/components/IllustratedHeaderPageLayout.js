@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import useTheme from '@hooks/useTheme';
-import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
+import useTheme from '../hooks/useTheme';
+import useThemeStyles from '../hooks/useThemeStyles';
 import HeaderPageLayout from './HeaderPageLayout';
 import headerWithBackButtonPropTypes from './HeaderWithBackButton/headerWithBackButtonPropTypes';
 import Lottie from './Lottie';
@@ -34,7 +35,9 @@ const defaultProps = {
 function IllustratedHeaderPageLayout({backgroundColor, children, illustration, footer, overlayContent, ...propsToPassToHeader}) {
     const theme = useTheme();
     const styles = useThemeStyles();
-    const shouldUseMaxHeight = !propsToPassToHeader.shouldShowBackButton;
+    const {isSmallScreenWidth} = useWindowDimensions();
+
+    const shouldUseMaxHeight = propsToPassToHeader.shouldUseCentralPaneView && !isSmallScreenWidth;
 
     return (
         <HeaderPageLayout

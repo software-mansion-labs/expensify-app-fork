@@ -1,4 +1,4 @@
-import type UpdateUnread from './types';
+import UpdateUnread from './types';
 
 // Android does not yet implement this
 const updateUnread: UpdateUnread = () => {};

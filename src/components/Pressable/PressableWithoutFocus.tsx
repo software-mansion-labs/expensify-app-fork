@@ -1,7 +1,7 @@
 import React, {useRef} from 'react';
-import type {View} from 'react-native';
+import {View} from 'react-native';
 import GenericPressable from './GenericPressable';
-import type PressableProps from './GenericPressable/types';
+import PressableProps from './GenericPressable/types';
 
 /**
  * This component prevents the tapped element from capturing focus.

@@ -1,4 +1,4 @@
-import type SetSelection from './types';
+import SetSelection from './types';
 
 const setSelection: SetSelection = (textInput, start, end) => {
     if (!textInput) {

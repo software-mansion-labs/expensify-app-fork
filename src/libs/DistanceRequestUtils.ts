@@ -1,8 +1,7 @@
-import type {OnyxEntry} from 'react-native-onyx';
+import {OnyxEntry} from 'react-native-onyx';
 import type {LocaleContextProps} from '@components/LocaleContextProvider';
 import CONST from '@src/CONST';
-import type {Unit} from '@src/types/onyx/Policy';
-import type Policy from '@src/types/onyx/Policy';
+import Policy, {Unit} from '@src/types/onyx/Policy';
 import * as CurrencyUtils from './CurrencyUtils';
 import * as PolicyUtils from './PolicyUtils';
 

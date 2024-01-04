@@ -1,6 +1,5 @@
 import React from 'react';
-import type {BreadcrumbsProps} from '@components/Breadcrumbs';
-import Breadcrumbs from '@components/Breadcrumbs';
+import Breadcrumbs, {BreadcrumbsProps} from '@components/Breadcrumbs';
 import CONST from '@src/CONST';
 
 /**
