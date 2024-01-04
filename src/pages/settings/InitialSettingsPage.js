@@ -31,7 +31,7 @@ import getTopmostCentralPaneName from '@libs/Navigation/getTopmostCentralPanePat
 import Navigation from '@libs/Navigation/Navigation';
 import * as UserUtils from '@libs/UserUtils';
 import walletTermsPropTypes from '@pages/EnablePayments/walletTermsPropTypes';
-import {CONTEXT_MENU_TYPES} from '@pages/home/report/ContextMenu/ContextMenuActions';
+import CONTEXT_MENU_TYPES from '@pages/home/report/ContextMenu/ContextMenuActions';
 import * as ReportActionContextMenu from '@pages/home/report/ContextMenu/ReportActionContextMenu';
 import * as Link from '@userActions/Link';
 import * as PaymentMethods from '@userActions/PaymentMethods';
@@ -178,8 +178,6 @@ function InitialSettingsPage(props) {
                     action: () => {
                         Link.openExternalLink(CONST.EXPENSIFY_INBOX_URL);
                     },
-                    shouldShowRightIcon: true,
-                    iconRight: Expensicons.NewWindow,
                     link: CONST.EXPENSIFY_INBOX_URL,
                 },
                 {
@@ -210,8 +208,6 @@ function InitialSettingsPage(props) {
                     action: () => {
                         Link.openExternalLink(CONST.NEWHELP_URL);
                     },
-                    shouldShowRightIcon: true,
-                    iconRight: Expensicons.NewWindow,
                     link: CONST.NEWHELP_URL,
                 },
                 {
@@ -273,6 +269,7 @@ function InitialSettingsPage(props) {
                                     !_.isEmpty(item.link) ? (e) => ReportActionContextMenu.showContextMenu(CONTEXT_MENU_TYPES.LINK, e, item.link, popoverAnchor.current) : undefined
                                 }
                                 focused={activeRoute && activeRoute.startsWith(item.routeName, 1)}
+                                isPaneMenu
                             />
                         );
                     })}
@@ -355,14 +352,12 @@ function InitialSettingsPage(props) {
         </View>
     );
 
-    const navigateBackTo = lodashGet(props.route, 'params.backTo', ROUTES.HOME);
-
     return (
         <HeaderPageLayout
             title={translate('initialSettingsPage.accountSettings')}
             headerContent={headerContent}
             headerContainerStyles={[styles.justifyContentCenter]}
-            onBackButtonPress={() => Navigation.navigate(navigateBackTo)}
+            onBackButtonPress={() => Navigation.closeFullScreen()}
             backgroundColor={theme.PAGE_THEMES[SCREENS.SETTINGS.ROOT].backgroundColor}
             childrenContainerStyles={[styles.m0, styles.p0]}
         >
