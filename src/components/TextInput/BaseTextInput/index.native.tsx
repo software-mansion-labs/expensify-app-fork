@@ -23,6 +23,7 @@ import useNativeDriver from '@libs/useNativeDriver';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import type {BaseTextInputProps, BaseTextInputRef} from './types';
+import { OnPress } from '@components/Pressable/GenericPressable/types';
 
 function BaseTextInput(
     {
@@ -148,7 +149,7 @@ function BaseTextInput(
         setIsFocused(false);
     };
 
-    const onPress = (event?: GestureResponderEvent | KeyboardEvent) => {
+    const onPress: OnPress = (event) => {
         if (!!inputProps.disabled || !event) {
             return;
         }

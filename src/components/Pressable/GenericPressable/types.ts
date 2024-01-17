@@ -1,4 +1,4 @@
-import type {ElementRef, ForwardedRef, RefObject} from 'react';
+import type {ElementRef, ForwardedRef, RefObject, SyntheticEvent} from 'react';
 import type {GestureResponderEvent, HostComponent, PressableStateCallbackType, PressableProps as RNPressableProps, StyleProp, View, ViewStyle} from 'react-native';
 import type {ValueOf} from 'type-fest';
 import type {Shortcut} from '@libs/KeyboardShortcut';
@@ -35,12 +35,14 @@ type RequiredAccessibilityLabel =
           accessibilityLabel?: string;
       };
 
+type PressableOnPress = (event?: GestureResponderEvent | KeyboardEvent | SyntheticEvent<Element, PointerEvent>) => void | Promise<void>;
+
 type PressableProps = RNPressableProps &
     RequiredAccessibilityLabel & {
         /**
          * onPress callback
          */
-        onPress: (event?: GestureResponderEvent | KeyboardEvent) => void | Promise<void>;
+        onPress: PressableOnPress;
 
         /**
          * Specifies keyboard shortcut to trigger onPressHandler
@@ -141,4 +143,4 @@ type PressableProps = RNPressableProps &
 type PressableRef = ForwardedRef<HTMLDivElement | View>;
 
 export default PressableProps;
-export type {PressableRef};
+export type {PressableRef, PressableOnPress as OnPress};

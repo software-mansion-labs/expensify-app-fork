@@ -10,7 +10,7 @@ import Accessibility from '@libs/Accessibility';
 import HapticFeedback from '@libs/HapticFeedback';
 import KeyboardShortcut from '@libs/KeyboardShortcut';
 import CONST from '@src/CONST';
-import type {PressableRef} from './types';
+import type {OnPress, PressableRef} from './types';
 import type PressableProps from './types';
 
 function GenericPressable(
@@ -95,8 +95,8 @@ function GenericPressable(
         [shouldUseHapticsOnLongPress, onLongPress, nextFocusRef, ref, isDisabled],
     );
 
-    const onPressHandler = useCallback(
-        (event?: GestureResponderEvent | KeyboardEvent) => {
+    const onPressHandler: OnPress = useCallback(
+        (event) => {
             if (isDisabled) {
                 return;
             }

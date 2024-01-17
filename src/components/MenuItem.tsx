@@ -30,6 +30,7 @@ import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
 import * as defaultWorkspaceAvatars from './Icon/WorkspaceDefaultAvatars';
 import MultipleAvatars from './MultipleAvatars';
+import type {OnPress} from './Pressable/GenericPressable/types';
 import PressableWithSecondaryInteraction from './PressableWithSecondaryInteraction';
 import RenderHTML from './RenderHTML';
 import SelectCircle from './SelectCircle';
@@ -57,7 +58,7 @@ type NoIcon = {
 
 type MenuItemProps = (IconProps | AvatarProps | NoIcon) & {
     /** Function to fire when component is pressed */
-    onPress?: (event: GestureResponderEvent | KeyboardEvent) => void;
+    onPress?: OnPress;
 
     /** Whether the menu item should be interactive at all */
     interactive?: boolean;
@@ -360,7 +361,7 @@ function MenuItem(
         return title ? convertToLTR(title) : '';
     };
 
-    const onPressAction = (event: GestureResponderEvent | KeyboardEvent | undefined) => {
+    const onPressAction: OnPress = (event) => {
         if (disabled || !interactive) {
             return;
         }

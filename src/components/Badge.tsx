@@ -6,6 +6,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
 import PressableWithoutFeedback from './Pressable/PressableWithoutFeedback';
 import Text from './Text';
+import { OnPress } from './Pressable/GenericPressable/types';
 
 type BadgeProps = {
     /** Is Success type */
@@ -30,7 +31,7 @@ type BadgeProps = {
     textStyles?: StyleProp<TextStyle>;
 
     /** Callback to be called on onPress */
-    onPress?: (event?: GestureResponderEvent | KeyboardEvent) => void;
+    onPress?: OnPress;
 };
 
 function Badge({success = false, error = false, pressable = false, text, environment = CONST.ENVIRONMENT.DEV, badgeStyles, textStyles, onPress = () => {}}: BadgeProps) {

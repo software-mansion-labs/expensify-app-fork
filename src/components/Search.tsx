@@ -1,5 +1,5 @@
 import React from 'react';
-import type {GestureResponderEvent, StyleProp, ViewStyle} from 'react-native';
+import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -8,12 +8,13 @@ import CONST from '@src/CONST';
 import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
 import {PressableWithFeedback} from './Pressable';
+import type {OnPress} from './Pressable/GenericPressable/types';
 import Text from './Text';
 import Tooltip from './Tooltip';
 
 type SearchProps = {
     // Callback fired when component is pressed
-    onPress: (event?: GestureResponderEvent | KeyboardEvent) => void;
+    onPress: OnPress;
 
     // Text explaining what the user can search for
     placeholder?: string;

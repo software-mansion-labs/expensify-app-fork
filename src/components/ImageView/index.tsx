@@ -1,9 +1,11 @@
-import React, {MouseEvent as ReactMouseEvent, useCallback, useEffect, useRef, useState} from 'react';
+import type {MouseEvent as ReactMouseEvent} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import type {GestureResponderEvent, LayoutChangeEvent, NativeSyntheticEvent} from 'react-native';
 import {View} from 'react-native';
 import FullscreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import Image from '@components/Image';
 import RESIZE_MODES from '@components/Image/resizeModes';
+import type {OnPress} from '@components/Pressable/GenericPressable/types';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -112,11 +114,10 @@ function ImageView({isAuthTokenRequired = false, url, fileName, onError}: ImageV
         return {offsetX, offsetY};
     };
 
-    const onContainerPress = (e?: GestureResponderEvent | KeyboardEvent) => {
-        const mouseEvent = e as unknown as ReactMouseEvent;
+    const onContainerPress: OnPress = (event) => {
         if (!isZoomed && !isDragging) {
-            if (mouseEvent.nativeEvent) {
-                const {offsetX, offsetY} = mouseEvent.nativeEvent;
+            if (event && 'nativeEvent' in event && 'offsetX' in event.nativeEvent) {
+                const {offsetX, offsetY} = event.nativeEvent;
 
                 // Dividing clicked positions by the zoom scale to get coordinates
                 // so that once we zoom we will scroll to the clicked location.
@@ -138,10 +139,9 @@ function ImageView({isAuthTokenRequired = false, url, fileName, onError}: ImageV
     };
 
     const trackPointerPosition = useCallback(
-        (e: MouseEvent) => {
-            const mouseEvent = e as unknown as ReactMouseEvent;
+        (event: MouseEvent) => {
             // Whether the pointer is released inside the ImageView
-            const isInsideImageView = scrollableRef.current?.contains(mouseEvent.nativeEvent.target as Node);
+            const isInsideImageView = scrollableRef.current?.contains(event.target as Node);
 
             if (!isInsideImageView && isZoomed && isDragging && isMouseDown) {
                 setIsDragging(false);
@@ -152,15 +152,14 @@ function ImageView({isAuthTokenRequired = false, url, fileName, onError}: ImageV
     );
 
     const trackMovement = useCallback(
-        (e: MouseEvent) => {
-            const mouseEvent = e as unknown as ReactMouseEvent;
+        (event: MouseEvent) => {
             if (!isZoomed) {
                 return;
             }
 
             if (isDragging && isMouseDown && scrollableRef.current) {
-                const x = mouseEvent.nativeEvent.x;
-                const y = mouseEvent.nativeEvent.y;
+                const x = event.x;
+                const y = event.y;
                 const moveX = initialX - x;
                 const moveY = initialY - y;
                 scrollableRef.current.scrollLeft = initialScrollLeft + moveX;

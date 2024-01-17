@@ -1,4 +1,4 @@
-import type {RefObject} from 'react';
+import type {RefObject, SyntheticEvent} from 'react';
 import React, {useEffect, useRef, useState} from 'react';
 import type {GestureResponderEvent, StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
@@ -30,7 +30,7 @@ type ButtonWithDropdownMenuProps = {
     menuHeaderText?: string;
 
     /** Callback to execute when the main button is pressed */
-    onPress: (event: GestureResponderEvent | KeyboardEvent | undefined, value: string) => void;
+    onPress: (event: GestureResponderEvent | KeyboardEvent | SyntheticEvent<Element, PointerEvent> | undefined, value: string) => void;
 
     /** Call the onPress function on main button when Enter key is pressed */
     pressOnEnter?: boolean;

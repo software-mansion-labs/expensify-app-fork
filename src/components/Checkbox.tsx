@@ -9,6 +9,7 @@ import CONST from '@src/CONST';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
+import type {OnPress} from './Pressable/GenericPressable/types';
 import PressableWithFeedback from './Pressable/PressableWithFeedback';
 
 type CheckboxProps = Partial<ChildrenProps> & {
@@ -75,7 +76,7 @@ function Checkbox(
         onPress();
     };
 
-    const firePressHandlerOnClick = (event?: GestureResponderEvent | KeyboardEvent) => {
+    const firePressHandlerOnClick: OnPress = (event) => {
         // Pressable can be triggered with Enter key and by a click. As this is a checkbox,
         // We do not want to toggle it, when Enter key is pressed.
         if (event?.type && event.type !== 'click') {

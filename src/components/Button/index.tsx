@@ -5,6 +5,7 @@ import type {GestureResponderEvent, StyleProp, TextStyle, ViewStyle} from 'react
 import {ActivityIndicator, View} from 'react-native';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
+import type {OnPress} from '@components/Pressable/GenericPressable/types';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
 import withNavigationFallback from '@components/withNavigationFallback';
@@ -61,7 +62,7 @@ type ButtonProps = (ButtonWithText | ChildrenProps) & {
     isDisabled?: boolean;
 
     /** A function that is called when the button is clicked on */
-    onPress?: (event?: GestureResponderEvent | KeyboardEvent) => void;
+    onPress?: OnPress;
 
     /** A function that is called when the button is long pressed */
     onLongPress?: (event?: GestureResponderEvent) => void;
@@ -128,8 +129,8 @@ function KeyboardShortcutComponent({isDisabled = false, isLoading = false, onPre
 
     const shouldDisableEnterShortcut = useMemo(() => accessibilityRoles.includes(activeElementRole ?? '') && activeElementRole !== CONST.ACCESSIBILITY_ROLE.TEXT, [activeElementRole]);
 
-    const keyboardShortcutCallback = useCallback(
-        (event?: GestureResponderEvent | KeyboardEvent) => {
+    const keyboardShortcutCallback: OnPress = useCallback(
+        (event) => {
             if (!validateSubmitShortcut(isDisabled, isLoading, event)) {
                 return;
             }

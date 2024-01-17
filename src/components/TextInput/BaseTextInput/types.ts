@@ -1,6 +1,7 @@
 import type {Component, ForwardedRef} from 'react';
 import type {GestureResponderEvent, StyleProp, TextInputProps, TextStyle, ViewStyle} from 'react-native';
 import type {AnimatedProps} from 'react-native-reanimated';
+import type {OnPress} from '@components/Pressable/GenericPressable/types';
 import type {MaybePhraseKey} from '@libs/Localize';
 import type IconAsset from '@src/types/utils/IconAsset';
 
@@ -102,7 +103,7 @@ type CustomBaseTextInputProps = {
     hasError?: boolean;
 
     /** On Press handler */
-    onPress?: (event: GestureResponderEvent | KeyboardEvent) => void;
+    onPress?: OnPress;
 
     /** Should loading state should be displayed */
     isLoading?: boolean;

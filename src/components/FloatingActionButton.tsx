@@ -1,6 +1,6 @@
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useEffect, useRef} from 'react';
-import type {GestureResponderEvent, Role} from 'react-native';
+import type {Role} from 'react-native';
 import {Platform, View} from 'react-native';
 import Animated, {createAnimatedPropAdapter, Easing, interpolateColor, processColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import Svg, {Path} from 'react-native-svg';
@@ -8,6 +8,7 @@ import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
+import type {OnPress} from './Pressable/GenericPressable/types';
 import PressableWithFeedback from './Pressable/PressableWithFeedback';
 import Tooltip from './Tooltip/PopoverAnchorTooltip';
 
@@ -45,7 +46,7 @@ const adapter = createAnimatedPropAdapter(
 
 type FloatingActionButtonProps = {
     /* Callback to fire on request to toggle the FloatingActionButton */
-    onPress: (event: GestureResponderEvent | KeyboardEvent | undefined) => void;
+    onPress: OnPress;
 
     /* Current state (active or not active) of the component */
     isActive: boolean;

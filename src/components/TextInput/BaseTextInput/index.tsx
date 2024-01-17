@@ -6,6 +6,7 @@ import Checkbox from '@components/Checkbox';
 import FormHelpMessage from '@components/FormHelpMessage';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
+import type {OnPress} from '@components/Pressable/GenericPressable/types';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import type {AnimatedTextInputRef} from '@components/RNTextInput';
 import RNTextInput from '@components/RNTextInput';
@@ -146,7 +147,7 @@ function BaseTextInput(
         setIsFocused(false);
     };
 
-    const onPress = (event?: GestureResponderEvent | KeyboardEvent) => {
+    const onPress: OnPress = (event) => {
         if (!!inputProps.disabled || !event) {
             return;
         }
