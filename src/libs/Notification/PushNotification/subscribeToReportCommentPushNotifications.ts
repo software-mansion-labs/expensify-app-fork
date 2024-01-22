@@ -2,9 +2,24 @@ import Onyx from 'react-native-onyx';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import Visibility from '@libs/Visibility';
+import type { Route } from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
+import ONYXKEYS from '@src/ONYXKEYS';
+import { extractPolicyIDFromPath } from '@libs/PolicyUtils';
+import { getReport } from '@libs/ReportUtils';
 import backgroundRefresh from './backgroundRefresh';
 import PushNotification from './index';
+
+let lastVisitedPath: string | undefined;
+Onyx.connect({
+    key: ONYXKEYS.LAST_VISITED_PATH,
+    callback: (value) => {
+         if (!value) {
+            return;
+        }
+        lastVisitedPath = value;
+    }
+});
 
 /**
  * Setup reportComment push notification callbacks.
@@ -22,6 +37,10 @@ export default function subscribeToReportCommentPushNotifications() {
             Log.warn('[PushNotification] This push notification has no reportID');
         }
 
+        const policyID = lastVisitedPath && extractPolicyIDFromPath(lastVisitedPath);
+        const report = getReport(reportID.toString())
+        const pathPrefix = `w/${policyID === report?.policyID ? policyID : 'global'}/`;
+
         Log.info('[PushNotification] onSelected() - called', false, {reportID, reportActionID});
         Navigation.isNavigationReady()
             .then(Navigation.waitForProtectedRoutes)
@@ -33,6 +52,8 @@ export default function subscribeToReportCommentPushNotifications() {
                     }
 
                     Log.info('[PushNotification] onSelected() - Navigation is ready. Navigating...', false, {reportID, reportActionID});
+                    // TO DO: Change this after unifying workspace related navigation logic
+                    Navigation.navigate(`${pathPrefix}${ROUTES.HOME}` as Route);
                     Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(String(reportID)));
                 } catch (error) {
                     let errorMessage = String(error);
