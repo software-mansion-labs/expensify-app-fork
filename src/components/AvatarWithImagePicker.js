@@ -112,7 +112,7 @@ const defaultProps = {
     previewSource: '',
     originalFileName: '',
     disabled: false,
-    shouldUseDefaultCursorWhenDisabled: false, 
+    shouldUseDefaultCursorWhenDisabled: false,
 };
 
 function AvatarWithImagePicker({
@@ -136,6 +136,7 @@ function AvatarWithImagePicker({
     editorMaskImage,
     avatarStyle,
     disabled,
+    shouldUseDefaultCursorWhenDisabled
 }) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -318,7 +319,7 @@ function AvatarWithImagePicker({
                             accessibilityRole={CONST.ACCESSIBILITY_ROLE.IMAGEBUTTON}
                             accessibilityLabel={translate('avatarWithImagePicker.editImage')}
                             disabled={isAvatarCropModalOpen || disabled}
-                            disabledStyle={true && [styles.cursorDefault]}
+                            disabledStyle={disabled && shouldUseDefaultCursorWhenDisabled && [styles.cursorDefault]}
                             ref={anchorRef}
                         >
                             <View>
