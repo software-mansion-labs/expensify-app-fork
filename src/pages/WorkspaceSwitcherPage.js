@@ -4,13 +4,14 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import _ from 'underscore';
-import HeaderPageLayout from '@components/HeaderPageLayout';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import {MagnifyingGlass} from '@components/Icon/Expensicons';
 import OptionRow from '@components/OptionRow';
 import OptionsSelector from '@components/OptionsSelector';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
+import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import useActiveWorkspace from '@hooks/useActiveWorkspace';
 import useAutoFocusInput from '@hooks/useAutoFocusInput';
@@ -27,6 +28,16 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
 import WorkspaceCardCreateAWorkspace from './workspace/card/WorkspaceCardCreateAWorkspace';
+
+const sortWorkspacesBySelected = (workspace1, workspace2, selectedWorkspaceID) => {
+    if (workspace1.policyID === selectedWorkspaceID) {
+        return -1;
+    }
+    if (workspace2.policyID === selectedWorkspaceID) {
+        return 1;
+    }
+    return workspace1.text.toLowerCase().localeCompare(workspace2.text.toLowerCase());
+};
 
 const propTypes = {
     /** The list of this user's policies */
@@ -53,9 +64,6 @@ const propTypes = {
 const defaultProps = {
     policies: {},
 };
-
-const MINIMUM_WORKSPACES_TO_SHOW_SEARCH = 8;
-const EXPENSIFY_TITLE = 'Expensify';
 
 function WorkspaceSwitcherPage({policies}) {
     const theme = useTheme();
@@ -113,7 +121,7 @@ function WorkspaceSwitcherPage({policies}) {
         setActiveWorkspaceID(policyID);
         Navigation.goBack();
         if (policyID !== activeWorkspaceID) {
-            Navigation.navigateWithSwitchPolicyID(policyID);
+            Navigation.navigateWithSwitchPolicyID({policyID});
         }
     }, []);
 
@@ -140,30 +148,36 @@ function WorkspaceSwitcherPage({policies}) {
                     boldStyle: hasUnreadData(policy.id),
                     keyForList: policy.id,
                 }))
-                .sortBy((policy) => policy.text.toLowerCase())
                 .value(),
         [policies, getIndicatorTypeForPolicy, hasUnreadData],
     );
 
-    const filteredUserWorkspaces = useMemo(() => _.filter(usersWorkspaces, (policy) => policy.text.toLowerCase().includes(searchTerm.toLowerCase())), [searchTerm, usersWorkspaces]);
+    const filteredAndSortedUserWorkspaces = useMemo(
+        () =>
+            _.filter(usersWorkspaces, (policy) => policy.text.toLowerCase().includes(searchTerm.toLowerCase())).sort((policy1, policy2) =>
+                sortWorkspacesBySelected(policy1, policy2, activeWorkspaceID),
+            ),
+        [searchTerm, usersWorkspaces],
+    );
 
     const usersWorkspacesSectionData = useMemo(
         () => ({
-            data: filteredUserWorkspaces,
+            data: filteredAndSortedUserWorkspaces,
             shouldShow: true,
             indexOffset: 0,
         }),
-        [filteredUserWorkspaces],
+        [filteredAndSortedUserWorkspaces],
     );
 
     const everythingSection = useMemo(() => {
         const option = {
-            text: EXPENSIFY_TITLE,
+            text: CONST.WORKSPACE_SWITCHER.NAME,
             icons: [
                 {
                     source: Expensicons.ExpensifyAppIcon,
-                    name: EXPENSIFY_TITLE,
+                    name: CONST.WORKSPACE_SWITCHER.NAME,
                     type: CONST.ICON_TYPE_AVATAR,
+                    displayInDefaultIconColor: true,
                 },
             ],
             brickRoadIndicator: getIndicatorTypeForPolicy(undefined),
@@ -182,17 +196,20 @@ function WorkspaceSwitcherPage({policies}) {
                 </View>
                 <View>
                     <OptionRow
-                        option={{...option, brickRoadIndicator: option.policyID === activeWorkspaceID ? undefined : option.brickRoadIndicator}}
+                        option={{...option, brickRoadIndicator: !activeWorkspaceID ? undefined : option.brickRoadIndicator}}
                         onSelectRow={selectPolicy}
                         showTitleTooltip={false}
                         shouldShowSubscript={false}
                         highlightSelected
-                        isSelected={option.policyID === activeWorkspaceID}
+                        isSelected={!activeWorkspaceID}
+                        optionIsFocused={!activeWorkspaceID}
                     />
                 </View>
             </>
         );
     }, [activeWorkspaceID, getIndicatorTypeForPolicy, hasUnreadData, selectPolicy, styles, theme.textSupporting, translate]);
+
+    const headerMessage = filteredAndSortedUserWorkspaces.length === 0 ? translate('common.noResultsFound') : '';
 
     const workspacesSection = useMemo(
         () => (
@@ -229,15 +246,16 @@ function WorkspaceSwitcherPage({policies}) {
                         ref={inputCallbackRef}
                         sections={[usersWorkspacesSectionData]}
                         value={searchTerm}
-                        shouldShowTextInput={usersWorkspaces.length >= MINIMUM_WORKSPACES_TO_SHOW_SEARCH}
+                        shouldShowTextInput={usersWorkspaces.length >= CONST.WORKSPACE_SWITCHER.MINIMUM_WORKSPACES_TO_SHOW_SEARCH}
                         onChangeText={onChangeText}
                         selectedOptions={selectedOption ? [selectedOption] : []}
                         onSelectRow={selectPolicy}
                         shouldPreventDefaultFocusOnSelectRow
+                        headerMessage={headerMessage}
                         highlightSelectedOptions
                         shouldShowOptions
                         autoFocus={false}
-                        disableFocusOptions
+                        disableFocusOptions={!activeWorkspaceID}
                         canSelectMultipleOptions={false}
                         shouldShowSubscript={false}
                         showTitleTooltip={false}
@@ -261,14 +279,15 @@ function WorkspaceSwitcherPage({policies}) {
     }, [activeWorkspaceID, usersWorkspaces]);
 
     return (
-        <HeaderPageLayout
-            title={translate('workspace.switcher.headerTitle')}
-            backgroundColor={theme.PAGE_THEMES[SCREENS.WORKSPACE_SWITCHER.ROOT].backgroundColor}
-            onBackButtonPress={Navigation.goBack}
-        >
+        <ScreenWrapper>
+            <HeaderWithBackButton
+                title={translate('workspace.switcher.headerTitle')}
+                backgroundColor={theme.PAGE_THEMES[SCREENS.WORKSPACE_SWITCHER.ROOT].backgroundColor}
+                onBackButtonPress={Navigation.goBack}
+            />
             {everythingSection}
             {workspacesSection}
-        </HeaderPageLayout>
+        </ScreenWrapper>
     );
 }
 
