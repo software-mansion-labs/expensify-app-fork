@@ -2,7 +2,6 @@ import Onyx from 'react-native-onyx';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import Visibility from '@libs/Visibility';
-import type { Route } from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import ONYXKEYS from '@src/ONYXKEYS';
 import { extractPolicyIDFromPath } from '@libs/PolicyUtils';
@@ -39,7 +38,7 @@ export default function subscribeToReportCommentPushNotifications() {
 
         const policyID = lastVisitedPath && extractPolicyIDFromPath(lastVisitedPath);
         const report = getReport(reportID.toString())
-        const pathPrefix = `w/${policyID === report?.policyID ? policyID : 'global'}/`;
+        const newPolicyID = policyID === report?.policyID ? policyID : undefined;
 
         Log.info('[PushNotification] onSelected() - called', false, {reportID, reportActionID});
         Navigation.isNavigationReady()
@@ -52,8 +51,7 @@ export default function subscribeToReportCommentPushNotifications() {
                     }
 
                     Log.info('[PushNotification] onSelected() - Navigation is ready. Navigating...', false, {reportID, reportActionID});
-                    // TO DO: Change this after unifying workspace related navigation logic
-                    Navigation.navigate(`${pathPrefix}${ROUTES.HOME}` as Route);
+                    Navigation.navigateWithSwitchPolicyID({policyID: newPolicyID, route: ROUTES.HOME})
                     Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(String(reportID)));
                 } catch (error) {
                     let errorMessage = String(error);
