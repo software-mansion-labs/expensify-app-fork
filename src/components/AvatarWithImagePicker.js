@@ -34,6 +34,9 @@ const propTypes = {
     /** Additional style props */
     style: stylePropTypes,
 
+    /** Additional style props for disabled picker */
+    disabledStyle: stylePropTypes,
+
     /** Executed once an image has been selected */
     onImageSelected: PropTypes.func,
 
@@ -87,10 +90,7 @@ const propTypes = {
     avatarStyle: stylePropTypes.isRequired,
 
     /** Indicates if picker feature should be disabled */
-    disabled: PropTypes.bool,
-
-    /** Should we use default cursor for disabled content */
-    shouldUseDefaultCursorWhenDisabled: PropTypes.bool,
+    disabled: PropTypes.bool, 
 };
 
 const defaultProps = {
@@ -98,6 +98,7 @@ const defaultProps = {
     onImageSelected: () => {},
     onImageRemoved: () => {},
     style: [],
+    disabledStyle: [],
     DefaultAvatar: () => {},
     isUsingDefaultAvatar: false,
     size: CONST.AVATAR_SIZE.DEFAULT,
@@ -112,13 +113,13 @@ const defaultProps = {
     previewSource: '',
     originalFileName: '',
     disabled: false,
-    shouldUseDefaultCursorWhenDisabled: false,
 };
 
 function AvatarWithImagePicker({
     isFocused,
     DefaultAvatar,
     style,
+    disabledStyle,
     pendingAction,
     errors,
     errorRowStyles,
@@ -136,7 +137,6 @@ function AvatarWithImagePicker({
     editorMaskImage,
     avatarStyle,
     disabled,
-    shouldUseDefaultCursorWhenDisabled
 }) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -319,7 +319,7 @@ function AvatarWithImagePicker({
                             accessibilityRole={CONST.ACCESSIBILITY_ROLE.IMAGEBUTTON}
                             accessibilityLabel={translate('avatarWithImagePicker.editImage')}
                             disabled={isAvatarCropModalOpen || disabled}
-                            disabledStyle={disabled && shouldUseDefaultCursorWhenDisabled && [styles.cursorDefault]}
+                            disabledStyle={disabledStyle}
                             ref={anchorRef}
                         >
                             <View>

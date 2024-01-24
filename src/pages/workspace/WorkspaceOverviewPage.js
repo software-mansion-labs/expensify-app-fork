@@ -102,7 +102,7 @@ function WorkspaceOverviewPage({policy, currencyList, route}) {
                         headerTitle={translate('workspace.common.workspaceAvatar')}
                         originalFileName={policy.originalFileName}
                         disabled={readOnly}
-                        shouldUseDefaultCursorWhenDisabled
+                        disabledStyle={styles.cursorDefault}
                     />
                     <OfflineWithFeedback pendingAction={lodashGet(policy, 'pendingFields.generalSettings')}>
                         <MenuItemWithTopDescription
