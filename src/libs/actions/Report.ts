@@ -1885,7 +1885,6 @@ function showReportActionNotification(reportID: string, reportAction: ReportActi
         const policyID = lastVisitedPath && extractPolicyIDFromPath(lastVisitedPath);
         const newPolicyID = policyID === report.policyID ? policyID : undefined;
 
-        // TO DO: Unify workspace-related navigation and extended definition of report that belongs to workspace
         Navigation.navigateWithSwitchPolicyID({policyID: newPolicyID, route: ROUTES.HOME})
         Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(reportID));
     };
