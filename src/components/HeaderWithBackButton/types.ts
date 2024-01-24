@@ -111,6 +111,12 @@ type HeaderWithBackButtonProps = Partial<ChildrenProps> & {
 
     /** Whether we should overlay the 3 dots menu */
     shouldOverlayDots?: boolean;
+
+    /** Whether we should show progress bar */
+    shouldShowProgressBar: boolean;
+
+    /** 0 - 100 number indicating current progress of the progress bar */
+    progressBarPercentage: number;
 };
 
 export type {ThreeDotsMenuItem};

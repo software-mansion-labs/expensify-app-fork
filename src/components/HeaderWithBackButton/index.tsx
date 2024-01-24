@@ -56,6 +56,8 @@ function HeaderWithBackButton({
     shouldOverlay = false,
     singleExecution = (func) => func,
     shouldNavigateToTopMostReport = false,
+    shouldShowProgressBar = false,
+    progressBarPercentage = 50,
 }: HeaderWithBackButtonProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -65,6 +67,8 @@ function HeaderWithBackButton({
     const {isKeyboardShown} = useKeyboardState();
     const waitForNavigate = useWaitForNavigation();
 
+    const progressBarStyle = [{ width: `${progressBarPercentage}%` }, styles.progressBar] 
+
     return (
         <View
             // Hover on some part of close icons will not work on Electron if dragArea is true
@@ -72,6 +76,15 @@ function HeaderWithBackButton({
             dataSet={{dragArea: false}}
             style={[styles.headerBar, shouldShowBorderBottom && styles.borderBottom, shouldShowBackButton && styles.pl2, shouldOverlay && StyleSheet.absoluteFillObject]}
         >
+            {shouldShowProgressBar &&
+                    (
+                        <View style={styles.progressBarWrapper}>
+                          <View
+                            style={progressBarStyle}
+                          />
+                        </View>
+                      )
+            }
             <View style={[styles.dFlex, styles.flexRow, styles.alignItemsCenter, styles.flexGrow1, styles.justifyContentBetween, styles.overflowHidden]}>
                 {shouldShowBackButton && (
                     <Tooltip text={translate('common.back')}>
@@ -98,7 +111,7 @@ function HeaderWithBackButton({
                             />
                         </PressableWithoutFeedback>
                     </Tooltip>
-                )}
+                )} 
                 {shouldShowAvatarWithDisplay ? (
                     <AvatarWithDisplayName
                         report={report}

@@ -99,6 +99,12 @@ const propTypes = {
 
     /** Whether we should overlay the 3 dots menu */
     shouldOverlayDots: PropTypes.bool,
+    
+    /** Whether we should show progress bar */
+    shouldShowProgressBar: PropTypes.bool,
+
+    /** 0 - 100 number indicating current progress of the progress bar */
+    progressBarPercentage: PropTypes.number,
 };
 
 export default propTypes;
