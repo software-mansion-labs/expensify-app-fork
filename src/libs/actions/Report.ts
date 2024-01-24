@@ -20,10 +20,12 @@ import Navigation from '@libs/Navigation/Navigation';
 import LocalNotification from '@libs/Notification/LocalNotification';
 import * as OptionsListUtils from '@libs/OptionsListUtils';
 import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
+import getPolicyMemberAccountIDs from '@libs/PolicyMembersUtils';
 import {extractPolicyIDFromPath} from '@libs/PolicyUtils';
 import * as Pusher from '@libs/Pusher/pusher';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
+import {doesReportBelongToWorkspace} from '@libs/ReportUtils';
 import shouldSkipDeepLinkNavigation from '@libs/shouldSkipDeepLinkNavigation';
 import * as UserUtils from '@libs/UserUtils';
 import Visibility from '@libs/Visibility';
@@ -1883,9 +1885,13 @@ function showReportActionNotification(reportID: string, reportAction: ReportActi
 
     const onClick = () => {
         const policyID = lastVisitedPath && extractPolicyIDFromPath(lastVisitedPath);
-        const newPolicyID = policyID === report.policyID ? policyID : undefined;
+        const policyMembersAccountIDs = policyID ? getPolicyMemberAccountIDs(policyID) : [];
 
-        Navigation.navigateWithSwitchPolicyID({policyID: newPolicyID, route: ROUTES.HOME})
+        const reportBelongsToWorkspace = policyID ? doesReportBelongToWorkspace(report, policyID, policyMembersAccountIDs) : true;
+
+        if (!reportBelongsToWorkspace) {
+            Navigation.navigateWithSwitchPolicyID({policyID: undefined, route: ROUTES.HOME});
+        }
         Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(reportID));
     };
 

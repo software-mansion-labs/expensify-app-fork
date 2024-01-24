@@ -1,11 +1,13 @@
 import Onyx from 'react-native-onyx';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
+import getPolicyMemberAccountIDs from '@libs/PolicyMembersUtils';
+import {extractPolicyIDFromPath} from '@libs/PolicyUtils';
+import {doesReportBelongToWorkspace, getReport} from '@libs/ReportUtils';
 import Visibility from '@libs/Visibility';
-import ROUTES from '@src/ROUTES';
 import ONYXKEYS from '@src/ONYXKEYS';
-import { extractPolicyIDFromPath } from '@libs/PolicyUtils';
-import { getReport } from '@libs/ReportUtils';
+import ROUTES from '@src/ROUTES';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import backgroundRefresh from './backgroundRefresh';
 import PushNotification from './index';
 
@@ -13,11 +15,11 @@ let lastVisitedPath: string | undefined;
 Onyx.connect({
     key: ONYXKEYS.LAST_VISITED_PATH,
     callback: (value) => {
-         if (!value) {
+        if (!value) {
             return;
         }
         lastVisitedPath = value;
-    }
+    },
 });
 
 /**
@@ -37,8 +39,10 @@ export default function subscribeToReportCommentPushNotifications() {
         }
 
         const policyID = lastVisitedPath && extractPolicyIDFromPath(lastVisitedPath);
-        const report = getReport(reportID.toString())
-        const newPolicyID = policyID === report?.policyID ? policyID : undefined;
+        const report = getReport(reportID.toString());
+        const policyMembersAccountIDs = policyID ? getPolicyMemberAccountIDs(policyID) : [];
+
+        const reportBelongsToWorkspace = policyID && !isEmptyObject(report) && doesReportBelongToWorkspace(report, policyID, policyMembersAccountIDs);
 
         Log.info('[PushNotification] onSelected() - called', false, {reportID, reportActionID});
         Navigation.isNavigationReady()
@@ -51,7 +55,9 @@ export default function subscribeToReportCommentPushNotifications() {
                     }
 
                     Log.info('[PushNotification] onSelected() - Navigation is ready. Navigating...', false, {reportID, reportActionID});
-                    Navigation.navigateWithSwitchPolicyID({policyID: newPolicyID, route: ROUTES.HOME})
+                    if (!reportBelongsToWorkspace) {
+                        Navigation.navigateWithSwitchPolicyID({policyID: undefined, route: ROUTES.HOME});
+                    }
                     Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(String(reportID)));
                 } catch (error) {
                     let errorMessage = String(error);
