@@ -91,6 +91,15 @@ const propTypes = {
 
     /** Indicates if picker feature should be disabled */
     disabled: PropTypes.bool,
+    
+    /** Executed once click on view photo option */
+    onViewPhotoPress: PropTypes.func,
+
+    /** Where the popover should be positioned relative to the anchor points. */
+    anchorAlignment: PropTypes.shape({
+        horizontal: PropTypes.oneOf(_.values(CONST.MODAL.ANCHOR_ORIGIN_HORIZONTAL)),
+        vertical: PropTypes.oneOf(_.values(CONST.MODAL.ANCHOR_ORIGIN_VERTICAL)),
+    }),
 };
 
 const defaultProps = {
@@ -113,6 +122,11 @@ const defaultProps = {
     previewSource: '',
     originalFileName: '',
     disabled: false,
+    onViewPhotoPress: undefined,
+    anchorAlignment: {
+        horizontal: CONST.MODAL.ANCHOR_ORIGIN_HORIZONTAL.LEFT,
+        vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.TOP,
+    },
 };
 
 function AvatarWithImagePicker({
@@ -137,6 +151,7 @@ function AvatarWithImagePicker({
     editorMaskImage,
     avatarStyle,
     disabled,
+    onViewPhotoPress,
 }) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -365,7 +380,13 @@ function AvatarWithImagePicker({
                                     menuItems.push({
                                         icon: Expensicons.Eye,
                                         text: translate('avatarWithImagePicker.viewPhoto'),
-                                        onSelected: show,
+                                        onSelected: () => {
+                                            if (typeof onViewPhotoPress !== 'function') {
+                                                show();
+                                                return;
+                                            }
+                                            onViewPhotoPress();
+                                        },
                                     });
                                 }
 

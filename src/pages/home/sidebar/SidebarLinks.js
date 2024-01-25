@@ -10,9 +10,11 @@ import useLocalize from '@hooks/useLocalize';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
+import Timing from '@libs/actions/Timing';
 import KeyboardShortcut from '@libs/KeyboardShortcut';
 import Navigation from '@libs/Navigation/Navigation';
 import onyxSubscribe from '@libs/onyxSubscribe';
+import Performance from '@libs/Performance';
 import SidebarUtils from '@libs/SidebarUtils';
 import * as ReportActionContextMenu from '@pages/home/report/ContextMenu/ReportActionContextMenu';
 import safeAreaInsetPropTypes from '@pages/safeAreaInsetPropTypes';
@@ -105,6 +107,19 @@ function SidebarLinks({onLinkClick, insets, optionListItems, isLoading, priority
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // const showSearchPage = useCallback(() => {
+    //     if (isCreateMenuOpen) {
+    //         // Prevent opening Search page when click Search icon quickly after clicking FAB icon
+    //         return;
+    //     }
+
+    //     // Capture metric for opening the search page
+    //     Timing.start(CONST.TIMING.OPEN_SEARCH);
+    //     Performance.markStart(CONST.TIMING.OPEN_SEARCH);
+
+    //     Navigation.navigate(ROUTES.SEARCH);
+    // }, [isCreateMenuOpen]);
 
     /**
      * Show Report page with selected report id
