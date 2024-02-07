@@ -67,7 +67,27 @@ function HeaderWithBackButton({
     const {isKeyboardShown} = useKeyboardState();
     const waitForNavigate = useWaitForNavigation();
 
-    const progressBarStyle = [{ width: `${progressBarPercentage}%` }, styles.progressBar] 
+    let middleContent = null;
+    if (shouldShowProgressBar) {
+        middleContent = <View>
+            <View style={styles.progressBarWrapper}>
+                <View style={[{ width: `${progressBarPercentage}%` }, styles.progressBar]} />
+            </View>
+        </View>
+    } else if (shouldShowAvatarWithDisplay) {
+        middleContent = <AvatarWithDisplayName
+            report={report}
+            policy={policy}
+            shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
+        />
+    } else {
+        middleContent = <Header
+            title={title}
+            subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
+            textStyles={titleColor ? [StyleUtils.getTextColorStyle(titleColor)] : []}
+        />;
+    }
+
 
     return (
         <View
@@ -76,15 +96,6 @@ function HeaderWithBackButton({
             dataSet={{dragArea: false}}
             style={[styles.headerBar, shouldShowBorderBottom && styles.borderBottom, shouldShowBackButton && styles.pl2, shouldOverlay && StyleSheet.absoluteFillObject]}
         >
-            {shouldShowProgressBar &&
-                    (
-                        <View style={styles.progressBarWrapper}>
-                          <View
-                            style={progressBarStyle}
-                          />
-                        </View>
-                      )
-            }
             <View style={[styles.dFlex, styles.flexRow, styles.alignItemsCenter, styles.flexGrow1, styles.justifyContentBetween, styles.overflowHidden]}>
                 {shouldShowBackButton && (
                     <Tooltip text={translate('common.back')}>
@@ -111,20 +122,8 @@ function HeaderWithBackButton({
                             />
                         </PressableWithoutFeedback>
                     </Tooltip>
-                )} 
-                {shouldShowAvatarWithDisplay ? (
-                    <AvatarWithDisplayName
-                        report={report}
-                        policy={policy}
-                        shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
-                    />
-                ) : (
-                    <Header
-                        title={title}
-                        subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
-                        textStyles={titleColor ? [StyleUtils.getTextColorStyle(titleColor)] : []}
-                    />
                 )}
+                {middleContent}
                 <View style={[styles.reportOptions, styles.flexRow, styles.pr5, styles.alignItemsCenter]}>
                     {children}
                     {shouldShowDownloadButton && (
