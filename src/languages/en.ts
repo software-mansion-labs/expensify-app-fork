@@ -1650,6 +1650,7 @@ export default {
             delete: 'Delete workspace',
             settings: 'Settings',
             reimburse: 'Reimbursements',
+            categories: 'Categories',
             bills: 'Bills',
             invoices: 'Invoices',
             travel: 'Travel',
