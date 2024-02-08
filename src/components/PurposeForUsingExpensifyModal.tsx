@@ -10,7 +10,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as Report from '@userActions/Report';
-import * as Welcome from '@userActions/Welcome';
+import hasCompletedOnboardingFlow from '@userActions/Welcome';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -99,11 +99,12 @@ function PurposeForUsingExpensifyModal({isLoadingApp = false}: PurposeForUsingEx
         const navigationState = navigation.getState();
         const routes = navigationState.routes;
         const currentRoute = routes[navigationState.index];
-        if (currentRoute && NAVIGATORS.BOTTOM_TAB_NAVIGATOR !== currentRoute.name) {
+        if (currentRoute && NAVIGATORS.CENTRAL_PANE_NAVIGATOR !== currentRoute.name) {
             return;
         }
 
-        Welcome.show(routes, () => setIsModalOpen(true));
+        hasCompletedOnboardingFlow({ onNotCompleted: () => setIsModalOpen(true) })
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLoadingApp]);
 
