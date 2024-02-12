@@ -1671,6 +1671,8 @@ export default {
             card: 'Tarjetas',
             workspace: 'Espacio de trabajo',
             edit: 'Editar espacio de trabajo',
+            enabled: 'Activada',
+            disabled: 'Desactivada',
             delete: 'Eliminar espacio de trabajo',
             settings: 'Configuración',
             reimburse: 'Reembolsos',

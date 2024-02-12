@@ -1647,6 +1647,8 @@ export default {
             card: 'Cards',
             workspace: 'Workspace',
             edit: 'Edit workspace',
+            enabled: 'Enabled',
+            disabled: 'Disabled',
             delete: 'Delete workspace',
             settings: 'Settings',
             reimburse: 'Reimbursements',
