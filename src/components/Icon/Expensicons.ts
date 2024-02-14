@@ -66,6 +66,7 @@ import Flag from '@assets/images/flag.svg';
 import FlagLevelOne from '@assets/images/flag_level_01.svg';
 import FlagLevelTwo from '@assets/images/flag_level_02.svg';
 import FlagLevelThree from '@assets/images/flag_level_03.svg';
+import Folder from '@assets/images/folder.svg';
 import Gallery from '@assets/images/gallery.svg';
 import Gear from '@assets/images/gear.svg';
 import Globe from '@assets/images/globe.svg';
@@ -207,6 +208,7 @@ export {
     FlagLevelOne,
     FlagLevelTwo,
     FlagLevelThree,
+    Folder,
     Gallery,
     Gear,
     Globe,

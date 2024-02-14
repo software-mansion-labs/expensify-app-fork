@@ -38,6 +38,7 @@ import ConciergeBubble from '@assets/images/simple-illustrations/simple-illustra
 import ConciergeNew from '@assets/images/simple-illustrations/simple-illustration__concierge.svg';
 import CreditCardsNew from '@assets/images/simple-illustrations/simple-illustration__credit-cards.svg';
 import EmailAddress from '@assets/images/simple-illustrations/simple-illustration__email-address.svg';
+import FolderOpen from '@assets/images/simple-illustrations/simple-illustration__folder-open.svg';
 import Gears from '@assets/images/simple-illustrations/simple-illustration__gears.svg';
 import HandCard from '@assets/images/simple-illustrations/simple-illustration__handcard.svg';
 import HandEarth from '@assets/images/simple-illustrations/simple-illustration__handearth.svg';
@@ -78,6 +79,7 @@ export {
     ConciergeExclamation,
     CreditCardsBlue,
     EmailAddress,
+    FolderOpen,
     HandCard,
     HotDogStand,
     InvoiceOrange,

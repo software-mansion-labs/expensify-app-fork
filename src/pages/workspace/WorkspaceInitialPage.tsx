@@ -144,6 +144,12 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, policyMembers, r
             routeName: SCREENS.WORKSPACE.MEMBERS,
         },
         {
+            translationKey: 'workspace.common.categories',
+            icon: Expensicons.Folder,
+            action: singleExecution(waitForNavigate(() => Navigation.navigate(ROUTES.WORKSPACE_CATEGORIES.getRoute(policyID)))),
+            routeName: SCREENS.WORKSPACE.CATEGORIES,
+        },
+        {
             translationKey: 'workspace.common.bankAccount',
             icon: Expensicons.Bank,
             action: () =>
