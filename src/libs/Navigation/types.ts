@@ -71,6 +71,9 @@ type CentralPaneNavigatorParamList = {
     [SCREENS.WORKSPACE.TRAVEL]: {
         policyID: string;
     };
+    [SCREENS.WORKSPACE.TAXES]: {
+        policyID: string;
+    };
     [SCREENS.WORKSPACE.MEMBERS]: {
         policyID: string;
     };

@@ -1662,6 +1662,7 @@ export default {
             bills: 'Bills',
             invoices: 'Invoices',
             travel: 'Travel',
+            taxes: 'Taxes',
             members: 'Members',
             plan: 'Plan',
             profile: 'Profile',

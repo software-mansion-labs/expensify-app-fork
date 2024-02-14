@@ -131,6 +131,12 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, policyMembers, r
             routeName: SCREENS.WORKSPACE.TRAVEL,
         },
         {
+            translationKey: 'workspace.common.taxes',
+            icon: Expensicons.Luggage,
+            action: singleExecution(waitForNavigate(() => Navigation.navigate(ROUTES.WORKSPACE_TAXES.getRoute(policyID)))),
+            routeName: SCREENS.WORKSPACE.TAXES,
+        },
+        {
             translationKey: 'workspace.common.members',
             icon: Expensicons.Users,
             action: singleExecution(waitForNavigate(() => Navigation.navigate(ROUTES.WORKSPACE_MEMBERS.getRoute(policyID)))),

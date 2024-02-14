@@ -58,6 +58,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
                 [SCREENS.WORKSPACE.TRAVEL]: {
                     path: ROUTES.WORKSPACE_TRAVEL.route,
                 },
+                [SCREENS.WORKSPACE.TAXES]: {
+                    path: ROUTES.WORKSPACE_TAXES.route,
+                },
                 [SCREENS.WORKSPACE.MEMBERS]: {
                     path: ROUTES.WORKSPACE_MEMBERS.route,
                 },
