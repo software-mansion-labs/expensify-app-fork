@@ -22,7 +22,7 @@ const workspaceSettingsScreens = {
     [SCREENS.WORKSPACE.INVOICES]: () => require('../../../../../pages/workspace/invoices/WorkspaceInvoicesPage').default as React.ComponentType,
     [SCREENS.WORKSPACE.TRAVEL]: () => require('../../../../../pages/workspace/travel/WorkspaceTravelPage').default as React.ComponentType,
     [SCREENS.WORKSPACE.MEMBERS]: () => require('../../../../../pages/workspace/WorkspaceMembersPage').default as React.ComponentType,
-    [SCREENS.WORKSPACE.TAXES]: () => require('../../../../../pages/workspace/WorkspaceTaxesPage').default as React.ComponentType,
+    [SCREENS.WORKSPACE.TAXES]: () => require('../../../../../pages/workspace/taxes/WorkspaceTaxesPage').default as React.ComponentType,
     [SCREENS.WORKSPACE.CATEGORIES]: () => require('../../../../../pages/workspace/categories/WorkspaceCategoriesPage').default as React.ComponentType,
 } satisfies Screens;
 

@@ -262,6 +262,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
                             path: ROUTES.KEYBOARD_SHORTCUTS,
                         },
                         [SCREENS.WORKSPACE.NAME]: ROUTES.WORKSPACE_PROFILE_NAME.route,
+                        [SCREENS.WORKSPACE.TAXES_SETTINGS]: {
+                            path: ROUTES.WORKSPACE_TAXES_SETTINGS.route,
+                        },
                     },
                 },
                 [SCREENS.RIGHT_MODAL.PRIVATE_NOTES]: {
