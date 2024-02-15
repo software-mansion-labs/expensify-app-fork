@@ -3,11 +3,11 @@ import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
+import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
-import {PressableWithFeedback} from '@components/Pressable';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import Text from '@components/Text';
@@ -97,24 +97,23 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
                 icon={Illustrations.Coins}
                 shouldShowBackButton={isSmallScreenWidth}
             >
-                <PressableWithFeedback
-                    accessibilityRole="button"
-                    accessible
-                    role="button"
+                <Button
+                    medium
+                    success
+                    icon={Expensicons.Plus}
+                    iconStyles={styles.buttonCTAIcon}
                     onPress={() => {}}
-                    accessibilityLabel="New Tax"
                 >
-                    <Text>New Tax</Text>
-                </PressableWithFeedback>
-                <PressableWithFeedback
-                    accessibilityRole="button"
-                    accessible
-                    role="button"
+                    Add rate
+                </Button>
+                <Button
+                    medium
+                    icon={Expensicons.Gear}
+                    iconStyles={styles.buttonCTAIcon}
                     onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
-                    accessibilityLabel={translate('common.settings')}
                 >
-                    <Text>{translate('common.settings')}</Text>
-                </PressableWithFeedback>
+                    {translate('common.settings')}
+                </Button>
             </HeaderWithBackButton>
             <SelectionList
                 canSelectMultiple
