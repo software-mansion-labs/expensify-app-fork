@@ -4,6 +4,7 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
+import {PressableWithFeedback} from '@components/Pressable';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import Text from '@components/Text';
@@ -103,12 +104,30 @@ function WorkspaceTaxesPage({policy}: Props) {
                 title={translate('workspace.common.taxes')}
                 icon={Illustrations.Coins}
                 shouldShowBackButton={isSmallScreenWidth}
-            />
-            <Text>WorkspaceTaxesPage</Text>
+            >
+                <PressableWithFeedback
+                    accessibilityRole="button"
+                    accessible
+                    role="button"
+                    onPress={() => {}}
+                    accessibilityLabel="New Tax"
+                >
+                    <Text>New Tax</Text>
+                </PressableWithFeedback>
+                <PressableWithFeedback
+                    accessibilityRole="button"
+                    accessible
+                    role="button"
+                    onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
+                    accessibilityLabel={translate('common.settings')}
+                >
+                    <Text>{translate('common.settings')}</Text>
+                </PressableWithFeedback>
+            </HeaderWithBackButton>
             <SelectionList
                 canSelectMultiple
                 sections={[{data: taxesList, indexOffset: 0, isDisabled: false}]}
-                onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? '', tax.value))}
+                onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.value))}
                 onSelectAll={toggleAllTaxes}
                 showScrollIndicator
             />

@@ -168,9 +168,12 @@ type SettingsNavigatorParamList = {
     [SCREENS.SETTINGS.TWO_FACTOR_AUTH]: undefined;
     [SCREENS.SETTINGS.REPORT_CARD_LOST_OR_DAMAGED]: undefined;
     [SCREENS.KEYBOARD_SHORTCUTS]: undefined;
-    [SCREENS.WORKSPACE.TAXES_SETTINGS]: {
+    [SCREENS.WORKSPACE.TAXES_EDIT]: {
         policyID: string;
         taxID: string;
+    };
+    [SCREENS.WORKSPACE.TAXES_SETTINGS]: {
+        policyID: string;
     };
 } & ReimbursementAccountNavigatorParamList;
 

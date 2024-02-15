@@ -205,6 +205,7 @@ const SCREENS = {
         INVOICES: 'Workspace_Invoices',
         TRAVEL: 'Workspace_Travel',
         TAXES: 'Workspace_Taxes',
+        TAXES_EDIT: 'WORKSPACE_TAXES_EDIT',
         TAXES_SETTINGS: 'Workspace_Taxes_Settings',
         MEMBERS: 'Workspace_Members',
         INVITE: 'Workspace_Invite',

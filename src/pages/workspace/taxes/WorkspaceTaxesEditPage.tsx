@@ -25,7 +25,7 @@ function WorkspaceTaxesSettingsPage({
     const {translate} = useLocalize();
     return (
         <View>
-            <HeaderWithBackButton title={translate('common.settings')} />
+            <HeaderWithBackButton title={taxID} />
             <View style={[styles.flexRow, styles.mb4, styles.justifyContentBetween, styles.sectionMenuItemTopDescription]}>
                 <View style={styles.flex4}>
                     <Text>Enable rate</Text>
