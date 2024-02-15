@@ -19,6 +19,9 @@ import type {
     PolicyCategories,
     PolicyCategory,
     PolicyTag,
+    PolicyTaxRate,
+    PolicyTaxRates,
+    PolicyTaxRateWithDefault,
     Report,
     ReportAction,
     ReportActions,
@@ -27,7 +30,6 @@ import type {
 } from '@src/types/onyx';
 import type {Participant} from '@src/types/onyx/IOU';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
-import type {PolicyTaxRate, PolicyTaxRates} from '@src/types/onyx/PolicyTaxRates';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import times from '@src/utils/times';
@@ -1159,14 +1161,6 @@ function getTagListSections(tags: Tag[], recentlyUsedTags: string[], selectedOpt
 
     return tagSections;
 }
-
-type PolicyTaxRateWithDefault = {
-    name: string;
-    defaultExternalID: string;
-    defaultValue: string;
-    foreignTaxDefault: string;
-    taxes: PolicyTaxRates;
-};
 
 /**
  * Transforms tax rates to a new object format - to add codes and new name with concatenated name and value.

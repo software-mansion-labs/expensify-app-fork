@@ -1,3 +1,11 @@
+type PolicyTaxRateWithDefault = {
+    name: string;
+    defaultExternalID: string;
+    defaultValue: string;
+    foreignTaxDefault: string;
+    taxes: PolicyTaxRates;
+};
+
 type PolicyTaxRate = {
     /** The name of the tax rate. */
     name: string;
@@ -17,4 +25,6 @@ type PolicyTaxRate = {
 
 type PolicyTaxRates = Record<string, PolicyTaxRate>;
 
-export type {PolicyTaxRates, PolicyTaxRate};
+type PolicyTaxRatesWithDefault = Record<string, PolicyTaxRateWithDefault>;
+
+export type {PolicyTaxRates, PolicyTaxRate, PolicyTaxRateWithDefault, PolicyTaxRatesWithDefault};

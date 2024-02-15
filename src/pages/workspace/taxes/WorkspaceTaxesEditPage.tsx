@@ -4,7 +4,6 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import Switch from '@components/Switch';
 import Text from '@components/Text';
-import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 type Props = {
@@ -22,7 +21,6 @@ function WorkspaceTaxesSettingsPage({
     },
 }: Props) {
     const styles = useThemeStyles();
-    const {translate} = useLocalize();
     return (
         <View>
             <HeaderWithBackButton title={taxID} />

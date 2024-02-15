@@ -1,5 +1,8 @@
+import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
+import {withOnyx} from 'react-native-onyx';
+import type {OnyxEntry} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
@@ -13,9 +16,13 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import Navigation from '@libs/Navigation/Navigation';
-import type {WithPolicyOnyxProps} from '@pages/workspace/withPolicy';
+import type {CentralPaneNavigatorParamList} from '@libs/Navigation/types';
+import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
+import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
+import type SCREENS from '@src/SCREENS';
+import type * as OnyxTypes from '@src/types/onyx';
 
 type TaxForList = {
     value: string;
@@ -25,28 +32,13 @@ type TaxForList = {
     rightElement: JSX.Element;
 };
 
-const taxesCategories = {
-    VAT: {
-        name: 'VAT',
-        enabled: true,
-    },
-    GST: {
-        name: 'GST',
-        enabled: true,
-    },
-    SalesTax: {
-        name: 'Sales Tax',
-        enabled: false,
-    },
-    Other: {
-        name: 'Other',
-        enabled: true,
-    },
+type WorkspaceTaxesPageOnyxProps = {
+    policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
 };
 
-type Props = WithPolicyOnyxProps;
+type WorkspaceTaxesPageProps = WithPolicyAndFullscreenLoadingProps & WorkspaceTaxesPageOnyxProps & StackScreenProps<CentralPaneNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES>;
 
-function WorkspaceTaxesPage({policy}: Props) {
+function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const theme = useTheme();
@@ -55,7 +47,7 @@ function WorkspaceTaxesPage({policy}: Props) {
 
     const taxesList = useMemo<TaxForList[]>(
         () =>
-            Object.values(taxesCategories ?? {}).map((value) => ({
+            Object.values(policyTaxRates?.taxes ?? {}).map((value) => ({
                 value: value.name,
                 text: value.name,
                 keyForList: value.name,
@@ -63,7 +55,7 @@ function WorkspaceTaxesPage({policy}: Props) {
                 rightElement: (
                     // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
                     <View style={styles.flexRow}>
-                        <Text style={[styles.disabledText, styles.alignSelfCenter]}>{value.enabled ? translate('workspace.common.enabled') : translate('workspace.common.disabled')}</Text>
+                        <Text style={[styles.disabledText, styles.alignSelfCenter]}>{value.isDisabled ? translate('workspace.common.disabled') : translate('workspace.common.enabled')}</Text>
                         <View style={styles.p1}>
                             <Icon
                                 src={Expensicons.ArrowRight}
@@ -73,17 +65,17 @@ function WorkspaceTaxesPage({policy}: Props) {
                     </View>
                 ),
             })),
-        [selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, theme.icon, translate],
+        [policyTaxRates?.taxes, selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, theme.icon, translate],
     );
 
-    const toggleTax = (tax: TaxForList) => {
-        setSelectedTaxes((prev) => {
-            if (prev.includes(tax.value)) {
-                return prev.filter((item) => item !== tax.value);
-            }
-            return [...prev, tax.value];
-        });
-    };
+    // const toggleTax = (tax: TaxForList) => {
+    //     setSelectedTaxes((prev) => {
+    //         if (prev.includes(tax.value)) {
+    //             return prev.filter((item) => item !== tax.value);
+    //         }
+    //         return [...prev, tax.value];
+    //     });
+    // };
 
     const toggleAllTaxes = () => {
         const isAllSelected = taxesList.every((tax) => tax.isSelected);
@@ -137,4 +129,10 @@ function WorkspaceTaxesPage({policy}: Props) {
 
 WorkspaceTaxesPage.displayName = 'WorkspaceTaxesPage';
 
-export default withPolicyAndFullscreenLoading(WorkspaceTaxesPage);
+export default withPolicyAndFullscreenLoading(
+    withOnyx<WorkspaceTaxesPageProps, WorkspaceTaxesPageOnyxProps>({
+        policyTaxRates: {
+            key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${route.params.policyID}`,
+        },
+    })(WorkspaceTaxesPage),
+);
