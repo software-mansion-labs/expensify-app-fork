@@ -10,20 +10,20 @@ type Props = {
     route: {
         params: {
             policyID: number;
-            taxID: string;
+            taxName: string;
         };
     };
 };
 
 function WorkspaceTaxesSettingsPage({
     route: {
-        params: {taxID},
+        params: {taxName},
     },
 }: Props) {
     const styles = useThemeStyles();
     return (
         <View>
-            <HeaderWithBackButton title={taxID} />
+            <HeaderWithBackButton title={taxName} />
             <View style={[styles.flexRow, styles.mb4, styles.justifyContentBetween, styles.sectionMenuItemTopDescription]}>
                 <View style={styles.flex4}>
                     <Text>Enable rate</Text>
@@ -38,14 +38,14 @@ function WorkspaceTaxesSettingsPage({
             </View>
             <MenuItemWithTopDescription
                 shouldShowRightIcon
-                title={taxID}
+                title={taxName}
                 description="Name"
                 style={[styles.moneyRequestMenuItem]}
                 titleStyle={styles.flex1}
             />
             <MenuItemWithTopDescription
                 shouldShowRightIcon
-                title={taxID}
+                title={taxName}
                 description="Value"
                 style={[styles.moneyRequestMenuItem]}
                 titleStyle={styles.flex1}

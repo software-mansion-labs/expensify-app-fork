@@ -170,7 +170,7 @@ type SettingsNavigatorParamList = {
     [SCREENS.KEYBOARD_SHORTCUTS]: undefined;
     [SCREENS.WORKSPACE.TAXES_EDIT]: {
         policyID: string;
-        taxID: string;
+        taxName: string;
     };
     [SCREENS.WORKSPACE.TAXES_SETTINGS]: {
         policyID: string;
