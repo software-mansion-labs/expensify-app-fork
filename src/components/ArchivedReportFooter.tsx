@@ -1,7 +1,8 @@
+/* eslint-disable rulesdir/prefer-actions-set-data */
 import lodashEscape from 'lodash/escape';
 import React from 'react';
 import type {OnyxEntry} from 'react-native-onyx';
-import {withOnyx} from 'react-native-onyx';
+import Onyx, {withOnyx} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
@@ -18,6 +19,8 @@ type ArchivedReportFooterOnyxProps = {
 
     /** Personal details of all users */
     personalDetails: OnyxEntry<PersonalDetailsList>;
+
+    policyID: string;
 };
 
 type ArchivedReportFooterProps = ArchivedReportFooterOnyxProps & {
@@ -25,7 +28,7 @@ type ArchivedReportFooterProps = ArchivedReportFooterOnyxProps & {
     report: Report;
 };
 
-function ArchivedReportFooter({report, reportClosedAction, personalDetails = {}}: ArchivedReportFooterProps) {
+function ArchivedReportFooter({policyID, report, reportClosedAction, personalDetails = {}}: ArchivedReportFooterProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
@@ -65,6 +68,29 @@ function ArchivedReportFooter({report, reportClosedAction, personalDetails = {}}
             text={text}
             shouldRenderHTML={shouldRenderHTML}
             shouldShowIcon
+            shouldShowCloseButton
+            onClose={() => {
+                // Onyx.set(ONYXKEYS.POLICY_ID, policyID === '1576B20B2BA20523' ? '4EB3958A3E59A354' : '1576B20B2BA20523');
+                Onyx.set(ONYXKEYS.POLICY_ID, policyID === '1576B20B2BA20523' ? 'undefined' : '1576B20B2BA20523');
+                // Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {name: Math.random().toString()});
+                // Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, null);
+                // Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {name: policyID === '1576B20B2BA20523' ? '4EB3958A3E59A354' : '1576B20B2BA20523'});
+                // Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${'test2'}`, {
+                //     isFromFullPolicy: false,
+                //     id: 'test2',
+                //     name: '0.6415550731600059',
+                //     role: 'admin',
+                //     type: 'free',
+                //     owner: '0.2669946236723346',
+                //     ownerAccountID: 14357020,
+                //     outputCurrency: 'EUR',
+                //     avatar: '',
+                //     employeeList: [],
+                //     isPolicyExpenseChatEnabled: true,
+                //     chatReportIDAnnounce: 1038301144060652,
+                //     chatReportIDAdmins: 5618866612197321,
+                // });
+            }}
         />
     );
 }
@@ -72,6 +98,10 @@ function ArchivedReportFooter({report, reportClosedAction, personalDetails = {}}
 ArchivedReportFooter.displayName = 'ArchivedReportFooter';
 
 export default withOnyx<ArchivedReportFooterProps, ArchivedReportFooterOnyxProps>({
+    policyID: {
+        key: ONYXKEYS.POLICY_ID,
+        selector: (value) => value ?? '1576B20B2BA20523',
+    },
     personalDetails: {
         key: ONYXKEYS.PERSONAL_DETAILS_LIST,
     },

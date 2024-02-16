@@ -10,6 +10,8 @@ import type DeepValueOf from './types/utils/DeepValueOf';
  * This is a file containing constants for all the top level keys in our store
  */
 const ONYXKEYS = {
+    POLICY_ID: 'policyID',
+
     /** Holds information about the users account that is logging in */
     ACCOUNT: 'account',
 
@@ -467,6 +469,7 @@ type OnyxCollectionValuesMapping = {
 };
 
 type OnyxValuesMapping = {
+    [ONYXKEYS.POLICY_ID]: string;
     [ONYXKEYS.ACCOUNT]: OnyxTypes.Account;
     [ONYXKEYS.ACCOUNT_MANAGER_REPORT_ID]: string;
     [ONYXKEYS.NVP_IS_FIRST_TIME_NEW_EXPENSIFY_USER]: boolean;
