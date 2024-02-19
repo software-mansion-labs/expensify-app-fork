@@ -56,8 +56,7 @@ function HeaderWithBackButton({
     shouldOverlay = false,
     singleExecution = (func) => func,
     shouldNavigateToTopMostReport = false,
-    shouldShowProgressBar = false,
-    progressBarPercentage = 50,
+    progressBarPercentage,
 }: HeaderWithBackButtonProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -68,26 +67,31 @@ function HeaderWithBackButton({
     const waitForNavigate = useWaitForNavigation();
 
     let middleContent = null;
-    if (shouldShowProgressBar) {
-        middleContent = <View>
-            <View style={styles.progressBarWrapper}>
-                <View style={[{ width: `${progressBarPercentage}%` }, styles.progressBar]} />
+    if (progressBarPercentage) {
+        middleContent = (
+            <View>
+                <View style={styles.progressBarWrapper}>
+                    <View style={[{width: `${progressBarPercentage}%`}, styles.progressBar]} />
+                </View>
             </View>
-        </View>
+        );
     } else if (shouldShowAvatarWithDisplay) {
-        middleContent = <AvatarWithDisplayName
-            report={report}
-            policy={policy}
-            shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
-        />
+        middleContent = (
+            <AvatarWithDisplayName
+                report={report}
+                policy={policy}
+                shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
+            />
+        );
     } else {
-        middleContent = <Header
-            title={title}
-            subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
-            textStyles={titleColor ? [StyleUtils.getTextColorStyle(titleColor)] : []}
-        />;
+        middleContent = (
+            <Header
+                title={title}
+                subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
+                textStyles={titleColor ? [StyleUtils.getTextColorStyle(titleColor)] : []}
+            />
+        );
     }
-
 
     return (
         <View

@@ -40,8 +40,7 @@ Profile.args = {
 ProgressBar.args = {
     title: 'ProgressBar',
     shouldShowBackButton: true,
-    shouldShowProgressBar: true,
-    progressBarPercentage: 33
+    progressBarPercentage: 33,
 };
 
 export default story;
