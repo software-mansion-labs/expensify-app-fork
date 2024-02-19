@@ -138,7 +138,6 @@ function HeaderWithBackButton({
                         </PressableWithoutFeedback>
                     </Tooltip>
                 )}
-                {middleContent}
                 {icon && (
                     <Icon
                         src={icon}
@@ -147,19 +146,7 @@ function HeaderWithBackButton({
                         additionalStyles={[styles.mr2]}
                     />
                 )}
-                {shouldShowAvatarWithDisplay ? (
-                    <AvatarWithDisplayName
-                        report={report}
-                        policy={policy}
-                        shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
-                    />
-                ) : (
-                    <Header
-                        title={title}
-                        subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
-                        textStyles={[titleColor ? StyleUtils.getTextColorStyle(titleColor) : {}, isCentralPaneSettings && styles.textHeadlineH1]}
-                    />
-                )}
+                {middleContent}
                 <View style={[styles.reportOptions, styles.flexRow, styles.pr5, styles.alignItemsCenter]}>
                     {children}
                     {shouldShowDownloadButton && (
