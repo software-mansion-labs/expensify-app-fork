@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {Keyboard, StyleSheet, View} from 'react-native';
 import AvatarWithDisplayName from '@components/AvatarWithDisplayName';
 import Header from '@components/Header';
@@ -71,32 +71,35 @@ function HeaderWithBackButton({
     // If the icon is present, the header bar should be taller and use different font.
     const isCentralPaneSettings = !!icon;
 
-    let middleContent = null;
-    if (progressBarPercentage) {
-        middleContent = (
-            <View>
-                <View style={styles.progressBarWrapper}>
-                    <View style={[{width: `${progressBarPercentage}%`}, styles.progressBar]} />
+    const middleContent = useMemo(() => {
+        if (progressBarPercentage) {
+            return (
+                <View>
+                    <View style={styles.progressBarWrapper}>
+                        <View style={[{width: `${progressBarPercentage}%`}, styles.progressBar]} />
+                    </View>
                 </View>
-            </View>
-        );
-    } else if (shouldShowAvatarWithDisplay) {
-        middleContent = (
-            <AvatarWithDisplayName
-                report={report}
-                policy={policy}
-                shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
-            />
-        );
-    } else {
-        middleContent = (
+            );
+        }
+
+        if (shouldShowAvatarWithDisplay) {
+            return (
+                <AvatarWithDisplayName
+                    report={report}
+                    policy={policy}
+                    shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
+                />
+            );
+        }
+
+        return (
             <Header
                 title={title}
                 subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
                 textStyles={titleColor ? [StyleUtils.getTextColorStyle(titleColor)] : []}
             />
         );
-    }
+    }, [StyleUtils, policy, progressBarPercentage, report, shouldEnableDetailPageNavigation, shouldShowAvatarWithDisplay, stepCounter, styles.progressBar, styles.progressBarWrapper, subtitle, title, titleColor, translate]);
 
     return (
         <View
