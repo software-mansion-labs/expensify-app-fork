@@ -8,4 +8,5 @@ export default {
     LEFT_MODAL_NAVIGATOR: 'LeftModalNavigator',
     RIGHT_MODAL_NAVIGATOR: 'RightModalNavigator',
     FULL_SCREEN_NAVIGATOR: 'FullScreenNavigator',
+    SHARE_MODAL_NAVIGATOR: 'ShareModalNavigator',
 } as const;

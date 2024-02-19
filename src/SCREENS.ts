@@ -257,6 +257,11 @@ const SCREENS = {
     GET_ASSISTANCE: 'GetAssistance',
     REFERRAL_DETAILS: 'Referral_Details',
     KEYBOARD_SHORTCUTS: 'KeyboardShortcuts',
+    SHARE: {
+        ROOT: 'Share_Root',
+        MESSAGE: 'Share_Message',
+        SCAN_CONFIRM: 'Share_Scan_Confirm',
+    },
 } as const;
 
 type Screen = DeepValueOf<typeof SCREENS>;

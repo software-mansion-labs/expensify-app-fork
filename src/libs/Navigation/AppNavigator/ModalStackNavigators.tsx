@@ -297,6 +297,12 @@ const ProcessMoneyRequestHoldStackNavigator = createModalStackNavigator({
     [SCREENS.PROCESS_MONEY_REQUEST_HOLD_ROOT]: () => require('../../../pages/ProcessMoneyRequestHoldPage').default as React.ComponentType,
 });
 
+const ShareModalStackNavigator = createModalStackNavigator({
+    [SCREENS.SHARE.ROOT]: () => require('../../../pages/share/ShareRootPage').default as React.ComponentType,
+    [SCREENS.SHARE.MESSAGE]: () => require('../../../pages/share/ShareComposeMessagePage').default as React.ComponentType,
+    [SCREENS.SHARE.SCAN_CONFIRM]: () => require('../../../pages/iou/steps/MoneyRequestConfirmPage').default as React.ComponentType,
+});
+
 export {
     AccountSettingsModalStackNavigator,
     AddPersonalBankAccountModalStackNavigator,
@@ -327,4 +333,5 @@ export {
     TaskModalStackNavigator,
     WalletStatementStackNavigator,
     ProcessMoneyRequestHoldStackNavigator,
+    ShareModalStackNavigator,
 };

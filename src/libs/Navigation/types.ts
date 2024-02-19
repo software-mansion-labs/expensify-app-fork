@@ -458,6 +458,12 @@ type BottomTabNavigatorParamList = {
     [SCREENS.WORKSPACE.INITIAL]: undefined;
 };
 
+type ShareNavigatorParamList = {
+    [SCREENS.SHARE.ROOT]: undefined;
+    [SCREENS.SHARE.MESSAGE]: undefined;
+    [SCREENS.SHARE.SCAN_CONFIRM]: undefined;
+};
+
 type PublicScreensParamList = {
     [NAVIGATORS.BOTTOM_TAB_NAVIGATOR]: NavigatorScreenParams<BottomTabNavigatorParamList>;
     [SCREENS.TRANSITION_BETWEEN_APPS]: {
@@ -513,6 +519,7 @@ type AuthScreensParamList = {
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: NavigatorScreenParams<RightModalNavigatorParamList>;
     [NAVIGATORS.FULL_SCREEN_NAVIGATOR]: NavigatorScreenParams<FullScreenNavigatorParamList>;
     [SCREENS.DESKTOP_SIGN_IN_REDIRECT]: undefined;
+    [NAVIGATORS.SHARE_MODAL_NAVIGATOR]: NavigatorScreenParams<ShareNavigatorParamList>;
 };
 
 type RootStackParamList = PublicScreensParamList & AuthScreensParamList;
@@ -574,5 +581,6 @@ export type {
     State,
     WorkspaceSwitcherNavigatorParamList,
     OnboardEngagementNavigatorParamList,
+    ShareNavigatorParamList,
     SwitchPolicyIDParams,
 };

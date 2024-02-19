@@ -36,6 +36,7 @@ import type {SelectedTimezone, Timezone} from '@src/types/onyx/PersonalDetails';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import defaultScreenOptions from './defaultScreenOptions';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
+import {ShareModalStackNavigator} from './ModalStackNavigators';
 import BottomTabNavigator from './Navigators/BottomTabNavigator';
 import CentralPaneNavigator from './Navigators/CentralPaneNavigator';
 import FullScreenNavigator from './Navigators/FullScreenNavigator';
@@ -355,6 +356,12 @@ function AuthScreens({session, lastOpenedPublicRoomID, isUsingMemoryOnlyKeys = f
                     name={SCREENS.DESKTOP_SIGN_IN_REDIRECT}
                     options={screenOptions.fullScreen}
                     component={DesktopSignInRedirectPage}
+                />
+                <RootStack.Screen
+                    name={NAVIGATORS.SHARE_MODAL_NAVIGATOR}
+                    options={screenOptions.fullScreen}
+                    component={ShareModalStackNavigator}
+                    listeners={modalScreenListeners}
                 />
             </RootStack.Navigator>
         </View>
