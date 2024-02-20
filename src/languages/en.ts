@@ -1874,6 +1874,8 @@ export default {
                 workspaceCurrencyDefault: 'Workspace currency default',
                 foreignCurrencyDefault: 'Foreign currency default',
             },
+            name: 'Name',
+            value: 'Value',
         },
     },
     getAssistancePage: {

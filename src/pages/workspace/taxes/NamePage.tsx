@@ -53,10 +53,7 @@ function NamePage({
             shouldEnableMaxHeight
             testID={NamePage.displayName}
         >
-            <HeaderWithBackButton
-                title={translate('workspace.editor.descriptionInputLabel')}
-                onBackButtonPress={() => Navigation.goBack()}
-            />
+            <HeaderWithBackButton title={translate('workspace.taxes.name')} />
 
             <FormProvider
                 formID={ONYXKEYS.FORMS.WORKSPACE_DESCRIPTION_FORM}

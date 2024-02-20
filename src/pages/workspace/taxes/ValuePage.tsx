@@ -50,10 +50,7 @@ function ValuePage({
             shouldEnableMaxHeight
             testID={ValuePage.displayName}
         >
-            <HeaderWithBackButton
-                title="Value"
-                onBackButtonPress={() => Navigation.goBack()}
-            />
+            <HeaderWithBackButton title={translate('workspace.taxes.value')} />
 
             <FormProvider
                 formID={ONYXKEYS.FORMS.WORKSPACE_DESCRIPTION_FORM}
