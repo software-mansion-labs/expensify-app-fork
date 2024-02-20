@@ -32,6 +32,7 @@ export type {SettingsStatusSetForm} from './SettingsStatusSetForm';
 export type {WaypointForm} from './WaypointForm';
 export type {WorkspaceInviteMessageForm} from './WorkspaceInviteMessageForm';
 export type {WorkspaceRateAndUnitForm} from './WorkspaceRateAndUnitForm';
+export type {WorkspaceTaxForm} from './WorkspaceTaxForm';
 export type {WorkspaceSettingsForm} from './WorkspaceSettingsForm';
 export type {WorkspaceDescriptionForm} from './WorkspaceDescriptionForm';
 export type {WorkspaceProfileDescriptionForm} from './WorkspaceProfileDescriptionForm';

@@ -1571,6 +1571,10 @@ function setTaxPolicyID(policyID: string) {
     Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, {policyID});
 }
 
+function setTaxEnabled(enabled: boolean) {
+    Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, {enabled});
+}
+
 function setTaxName(name: string) {
     Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, {name});
 }
@@ -2165,6 +2169,7 @@ export {
     setWorkspaceInviteMessageDraft,
     updateWorkspaceDescription,
     setTaxPolicyID,
+    setTaxEnabled,
     setTaxValue,
     setTaxName,
     clearOnyxDataTaxEdit,

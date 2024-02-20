@@ -1,13 +1,26 @@
 import React from 'react';
 import {View} from 'react-native';
+import type {OnyxEntry} from 'react-native-onyx';
+import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import Switch from '@components/Switch';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
+import compose from '@libs/compose';
+import Navigation from '@libs/Navigation/Navigation';
+import type {WithPolicyProps} from '@pages/workspace/withPolicy';
+import withPolicy from '@pages/workspace/withPolicy';
 import * as Policy from '@userActions/Policy';
+import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
+import type {WorkspaceTax} from '@src/types/onyx';
 
-type Props = {
+type WorkspaceTaxesSettingsPageOnyxProps = {
+    workspaceTax: OnyxEntry<WorkspaceTax>;
+};
+
+type WorkspaceTaxesSettingsPageBaseProps = WithPolicyProps & {
     route: {
         params: {
             policyID: number;
@@ -16,12 +29,16 @@ type Props = {
     };
 };
 
+type WorkspaceTaxesSettingsPageProps = WorkspaceTaxesSettingsPageBaseProps & WorkspaceTaxesSettingsPageOnyxProps;
+
 function WorkspaceTaxesSettingsPage({
     route: {
-        params: {taxName},
+        params: {policyID, taxName},
     },
-}: Props) {
+    workspaceTax,
+}: WorkspaceTaxesSettingsPageProps) {
     const styles = useThemeStyles();
+
     return (
         <View>
             <HeaderWithBackButton title={taxName} />
@@ -32,11 +49,8 @@ function WorkspaceTaxesSettingsPage({
                 <View style={[styles.flex1, styles.alignItemsEnd]}>
                     <Switch
                         accessibilityLabel="TODO"
-                        isOn={false}
-                        onToggle={() => {
-                            console.log('switched');
-                            Policy.setTaxName('test');
-                        }}
+                        isOn={!!workspaceTax?.enabled}
+                        onToggle={() => Policy.setTaxEnabled(!workspaceTax?.enabled)}
                     />
                 </View>
             </View>
@@ -46,6 +60,7 @@ function WorkspaceTaxesSettingsPage({
                 description="Name"
                 style={[styles.moneyRequestMenuItem]}
                 titleStyle={styles.flex1}
+                onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT_NAME.getRoute(`${policyID}`, taxName))}
             />
             <MenuItemWithTopDescription
                 shouldShowRightIcon
@@ -53,9 +68,19 @@ function WorkspaceTaxesSettingsPage({
                 description="Value"
                 style={[styles.moneyRequestMenuItem]}
                 titleStyle={styles.flex1}
+                onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT_VALUE.getRoute(`${policyID}`, taxName))}
             />
         </View>
     );
 }
 
-export default WorkspaceTaxesSettingsPage;
+WorkspaceTaxesSettingsPage.displayName = 'WorkspaceTaxesSettingsPage';
+
+export default compose(
+    withOnyx<WorkspaceTaxesSettingsPageProps, WorkspaceTaxesSettingsPageOnyxProps>({
+        workspaceTax: {
+            key: ONYXKEYS.WORKSPACE_TAX_EDIT,
+        },
+    }),
+    withPolicy,
+)(WorkspaceTaxesSettingsPage);
