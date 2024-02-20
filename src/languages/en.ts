@@ -1868,6 +1868,13 @@ export default {
             updateCurrencyPrompt: 'It looks like your Workspace is currently set to a different currency than USD. Please click the button below to update your currency to USD now.',
             updateToUSD: 'Update to USD',
         },
+        taxes: {
+            settings: {
+                customTaxName: 'Custom tax name',
+                workspaceCurrencyDefault: 'Workspace currency default',
+                foreignCurrencyDefault: 'Foreign currency default',
+            },
+        },
     },
     getAssistancePage: {
         title: 'Get assistance',

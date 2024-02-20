@@ -1,5 +1,6 @@
 import React from 'react';
-import {View} from 'react-native';
+import {ScrollView, View} from 'react-native';
+import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import Switch from '@components/Switch';
@@ -24,35 +25,41 @@ function WorkspaceTaxesSettingsPage({
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     return (
-        <View>
+        <ScrollView contentContainerStyle={styles.flexGrow1}>
             <HeaderWithBackButton title={translate('common.settings')} />
-            <View style={[styles.flexRow, styles.mb4, styles.justifyContentBetween, styles.sectionMenuItemTopDescription]}>
-                <View style={styles.flex4}>
-                    <Text>Enable rate</Text>
-                </View>
-                <View style={[styles.flex1, styles.alignItemsEnd]}>
-                    <Switch
-                        accessibilityLabel="TODO"
-                        isOn={false}
-                        onToggle={() => {}}
-                    />
-                </View>
+            <View style={styles.flex1}>
+                <MenuItemWithTopDescription
+                    shouldShowRightIcon
+                    title={taxName}
+                    description={translate('workspace.taxes.settings.customTaxName')}
+                    style={[styles.moneyRequestMenuItem]}
+                    titleStyle={styles.flex1}
+                />
+                <MenuItemWithTopDescription
+                    shouldShowRightIcon
+                    title={taxName}
+                    description={translate('workspace.taxes.settings.workspaceCurrencyDefault')}
+                    style={[styles.moneyRequestMenuItem]}
+                    titleStyle={styles.flex1}
+                />
+                <MenuItemWithTopDescription
+                    shouldShowRightIcon
+                    title={taxName}
+                    description={translate('workspace.taxes.settings.foreignCurrencyDefault')}
+                    style={[styles.moneyRequestMenuItem]}
+                    titleStyle={styles.flex1}
+                />
             </View>
-            <MenuItemWithTopDescription
-                shouldShowRightIcon
-                title={taxName}
-                description="Name"
-                style={[styles.moneyRequestMenuItem]}
-                titleStyle={styles.flex1}
-            />
-            <MenuItemWithTopDescription
-                shouldShowRightIcon
-                title={taxName}
-                description="Value"
-                style={[styles.moneyRequestMenuItem]}
-                titleStyle={styles.flex1}
-            />
-        </View>
+            <View style={[styles.flexShrink0]}>
+                <FormAlertWithSubmitButton
+                    onSubmit={() => {}}
+                    enabledWhenOffline
+                    buttonText={translate('common.save')}
+                    containerStyles={[styles.mh0, styles.mt5, styles.flex1, styles.ph5]}
+                    isAlertVisible={false}
+                />
+            </View>
+        </ScrollView>
     );
 }
 
