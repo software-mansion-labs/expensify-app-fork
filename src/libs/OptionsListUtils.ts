@@ -17,8 +17,8 @@ import type {
     PersonalDetailsList,
     Policy,
     PolicyCategories,
-    PolicyCategory,
     PolicyTag,
+    PolicyTagList,
     PolicyTaxRate,
     PolicyTaxRates,
     PolicyTaxRateWithDefault,
@@ -563,7 +563,7 @@ function getLastMessageTextForReport(report: OnyxEntry<Report>, lastActorDetails
     } else if (ReportActionUtils.isReimbursementQueuedAction(lastReportAction)) {
         lastMessageTextFromReport = ReportUtils.getReimbursementQueuedActionMessage(lastReportAction, report);
     } else if (ReportActionUtils.isReimbursementDeQueuedAction(lastReportAction)) {
-        lastMessageTextFromReport = ReportUtils.getReimbursementDeQueuedActionMessage(report);
+        lastMessageTextFromReport = ReportUtils.getReimbursementDeQueuedActionMessage(lastReportAction, report);
     } else if (ReportActionUtils.isDeletedParentAction(lastReportAction) && ReportUtils.isChatReport(report)) {
         lastMessageTextFromReport = ReportUtils.getDeletedParentActionMessageForChatReport(lastReportAction);
     } else if (ReportActionUtils.isPendingRemove(lastReportAction) && ReportActionUtils.isThreadParentMessage(lastReportAction, report?.reportID ?? '')) {
@@ -797,8 +797,8 @@ function getEnabledCategoriesCount(options: PolicyCategories): number {
 /**
  * Verifies that there is at least one enabled option
  */
-function hasEnabledOptions(options: PolicyCategory[] | PolicyTag[]): boolean {
-    return options.some((option) => option.enabled);
+function hasEnabledOptions(options: PolicyCategories | PolicyTag[]): boolean {
+    return Object.values(options).some((option) => option.enabled);
 }
 
 /**
@@ -974,7 +974,7 @@ function getCategoryListSections(
     }
 
     const selectedOptionNames = selectedOptions.map((selectedOption) => selectedOption.name);
-    const enabledAndSelectedCategories = sortedCategories.filter((category) => category.enabled || selectedOptionNames.includes(category.name));
+    const enabledAndSelectedCategories = [...selectedOptions, ...sortedCategories.filter((category) => category.enabled && !selectedOptionNames.includes(category.name))];
     const numberOfVisibleCategories = enabledAndSelectedCategories.length;
 
     if (numberOfVisibleCategories < CONST.CATEGORY_LIST_THRESHOLD) {
@@ -1117,7 +1117,7 @@ function getTagListSections(tags: Tag[], recentlyUsedTags: string[], selectedOpt
         .map((tag) => ({name: tag, enabled: true}));
     const filteredTags = enabledTags.filter((tag) => !selectedOptionNames.includes(tag.name));
 
-    if (selectedOptions) {
+    if (selectedOptions.length) {
         const selectedTagOptions = selectedOptions.map((option) => {
             const tagObject = tags.find((tag) => tag.name === option.name);
             return {
@@ -1163,12 +1163,21 @@ function getTagListSections(tags: Tag[], recentlyUsedTags: string[], selectedOpt
 }
 
 /**
+ * Verifies that there is at least one enabled tag
+ */
+function hasEnabledTags(policyTagList: Array<PolicyTagList[keyof PolicyTagList]>) {
+    const policyTagValueList = policyTagList.map(({tags}) => Object.values(tags)).flat();
+
+    return hasEnabledOptions(policyTagValueList);
+}
+
+/**
  * Transforms tax rates to a new object format - to add codes and new name with concatenated name and value.
  *
  * @param  policyTaxRates - The original tax rates object.
  * @returns The transformed tax rates object.g
  */
-function transformedTaxRates(policyTaxRates: PolicyTaxRateWithDefault | undefined): Record<string, PolicyTaxRate> {
+function transformedTaxRates(policyTaxRates?: PolicyTaxRateWithDefault): Record<string, PolicyTaxRate> {
     const defaultTaxKey = policyTaxRates?.defaultExternalID;
     const getModifiedName = (data: PolicyTaxRate, code: string) => `${data.name} (${data.value})${defaultTaxKey === code ? ` • ${Localize.translateLocal('common.default')}` : ''}`;
     const taxes = Object.fromEntries(Object.entries(policyTaxRates?.taxes ?? {}).map(([code, data]) => [code, {...data, code, modifiedName: getModifiedName(data, code), name: data.name}]));
@@ -1179,8 +1188,8 @@ function transformedTaxRates(policyTaxRates: PolicyTaxRateWithDefault | undefine
  * Sorts tax rates alphabetically by name.
  */
 function sortTaxRates(taxRates: PolicyTaxRates): PolicyTaxRate[] {
-    const sortedtaxRates = lodashSortBy(taxRates, (taxRate) => taxRate.name);
-    return sortedtaxRates;
+    const sortedtaxRates = lodashSortBy(taxRates, (taxRate) => taxRate?.name as string);
+    return sortedtaxRates as PolicyTaxRate[];
 }
 
 /**
@@ -1200,6 +1209,7 @@ function getTaxRatesOptions(taxRates: Array<Partial<PolicyTaxRate>>): Option[] {
 /**
  * Builds the section list for tax rates
  */
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 function getTaxRatesSection(policyTaxRates: PolicyTaxRateWithDefault | undefined, selectedOptions: Category[], searchInputValue: string): CategorySection[] {
     const policyRatesSections = [];
 
@@ -1712,6 +1722,19 @@ function getSearchOptions(reports: Record<string, Report>, personalDetails: Onyx
     return options;
 }
 
+function getShareLogOptions(reports: OnyxCollection<Report>, personalDetails: OnyxEntry<PersonalDetailsList>, searchValue = '', betas: Beta[] = []): GetOptions {
+    return getOptions(reports, personalDetails, {
+        betas,
+        searchInputValue: searchValue.trim(),
+        includeRecentReports: true,
+        includeMultipleParticipantReports: true,
+        sortByReportTypeInSearch: true,
+        includePersonalDetails: true,
+        forcePolicyNamePreview: true,
+        includeOwnedWorkspaceChats: true,
+    });
+}
+
 /**
  * Build the IOUConfirmation options for showing the payee personalDetail
  */
@@ -2006,9 +2029,11 @@ export {
     hasEnabledOptions,
     sortCategories,
     getCategoryOptionTree,
+    hasEnabledTags,
     formatMemberForList,
     formatSectionsFromSearchTerm,
     transformedTaxRates,
+    getShareLogOptions,
 };
 
-export type {MemberForList, CategorySection};
+export type {MemberForList, CategorySection, GetOptions};
