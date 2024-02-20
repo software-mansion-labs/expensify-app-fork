@@ -515,6 +515,18 @@ const ROUTES = {
         route: 'workspace/:policyID/taxes/settings',
         getRoute: (policyID: string) => `workspace/${policyID}/taxes/settings` as const,
     },
+    WORKSPACE_TAXES_SETTINGS_CUSTOM_TAX_NAME: {
+        route: 'workspace/:policyID/taxes/settings/tax-name',
+        getRoute: (policyID: string) => `workspace/${policyID}/taxes/settings/tax-name` as const,
+    },
+    WORKSPACE_TAXES_SETTINGS_WORKSPACE_CURRENCY_DEFAULT: {
+        route: 'workspace/:policyID/taxes/settings/workspace-currency',
+        getRoute: (policyID: string) => `workspace/${policyID}/taxes/settings/workspace-currency` as const,
+    },
+    WORKSPACE_TAXES_SETTINGS_FOREIGN_CURRENCY_DEFAULT: {
+        route: 'workspace/:policyID/taxes/settings/foreign-currency',
+        getRoute: (policyID: string) => `workspace/${policyID}/taxes/settings/foreign-currency` as const,
+    },
     WORKSPACE_TAXES_EDIT: {
         route: 'workspace/:policyID/taxes/:taxName',
         getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${encodeURI(taxName)}` as const,
