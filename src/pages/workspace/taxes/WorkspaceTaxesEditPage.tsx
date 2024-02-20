@@ -5,6 +5,7 @@ import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import Switch from '@components/Switch';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
+import * as Policy from '@userActions/Policy';
 
 type Props = {
     route: {
@@ -32,7 +33,10 @@ function WorkspaceTaxesSettingsPage({
                     <Switch
                         accessibilityLabel="TODO"
                         isOn={false}
-                        onToggle={() => {}}
+                        onToggle={() => {
+                            console.log('switched');
+                            Policy.setTaxName('test');
+                        }}
                     />
                 </View>
             </View>

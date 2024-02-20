@@ -70,6 +70,7 @@ import type WalletStatement from './WalletStatement';
 import type WalletTerms from './WalletTerms';
 import type WalletTransfer from './WalletTransfer';
 import type WorkspaceRateAndUnit from './WorkspaceRateAndUnit';
+import type WorkspaceTax from './WorkspaceTax';
 
 export type {
     Account,
@@ -78,6 +79,7 @@ export type {
     BankAccountList,
     Beta,
     BlockedFromConcierge,
+    WorkspaceTax,
     Card,
     CardList,
     Credentials,

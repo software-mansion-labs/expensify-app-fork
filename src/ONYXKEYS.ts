@@ -73,6 +73,14 @@ const ONYXKEYS = {
      * rates and units for different workspaces at the same time. */
     WORKSPACE_RATE_AND_UNIT: 'workspaceRateAndUnit',
 
+    /**
+     * Contains all the info for Tax Name and Value while editing.
+     *
+     * Note: This is not under the COLLECTION key as we can edit rate and unit
+     * for one workspace only at a time. And we don't need to store
+     * rates and units for different workspaces at the same time. */
+    WORKSPACE_TAX_EDIT: 'workspaceTaxEdit',
+
     /** Contains a list of all currencies available to the user - user can
      * select a currency based on the list */
     CURRENCY_LIST: 'currencyList',
@@ -491,6 +499,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.PRIVATE_PERSONAL_DETAILS]: OnyxTypes.PrivatePersonalDetails;
     [ONYXKEYS.TASK]: OnyxTypes.Task;
     [ONYXKEYS.WORKSPACE_RATE_AND_UNIT]: OnyxTypes.WorkspaceRateAndUnit;
+    [ONYXKEYS.WORKSPACE_TAX_EDIT]: OnyxTypes.WorkspaceTax;
     [ONYXKEYS.CURRENCY_LIST]: Record<string, OnyxTypes.Currency>;
     [ONYXKEYS.UPDATE_AVAILABLE]: boolean;
     [ONYXKEYS.SCREEN_SHARE_REQUEST]: OnyxTypes.ScreenShareRequest;
