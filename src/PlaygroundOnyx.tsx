@@ -60,23 +60,41 @@ type ComponentWithOnyxHookProps = {
 
 function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     const account = useOnyx(ONYXKEYS.ACCOUNT);
+    const {value: accountValue} = account;
+
     const policies = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const {value: policiesValue} = policies;
+
     const policy = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`);
+    const {value: policyValue} = policy;
+
+    const policy2 = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+        selector: (selectedPolicy) => ({
+            id: selectedPolicy?.id,
+            name: selectedPolicy?.name,
+        }),
+    });
+    const {value: policy2Value} = policy2;
+
     const sessionEmail = useOnyx(ONYXKEYS.SESSION, {selector: (value) => value?.email ?? ''});
+    const {value: sessionEmailValue} = sessionEmail;
+
     const policiesWithSelector = useOnyx(ONYXKEYS.COLLECTION.POLICY, {
         selector: (selectedPolicy) => ({
             id: selectedPolicy?.id,
             name: selectedPolicy?.name,
         }),
     });
+    const {value: policiesWithSelectorValue} = policiesWithSelector;
 
     console.group('fabio ComponentWithOnyxHook');
     console.log('fabio ComponentWithOnyxHook policyID', policyID);
     console.log('fabio ComponentWithOnyxHook account', account);
     console.log('fabio ComponentWithOnyxHook policies', policies);
     console.log('fabio ComponentWithOnyxHook policy', policy);
+    console.log('fabio ComponentWithOnyxHook policy2', policy2);
     console.log('fabio ComponentWithOnyxHook sessionEmail', sessionEmail);
-    console.log('fabio ComponentWithOnyxHook policiesWithSelector2', policiesWithSelector);
+    console.log('fabio ComponentWithOnyxHook policiesWithSelector', policiesWithSelector);
     console.groupEnd();
 
     return null;
