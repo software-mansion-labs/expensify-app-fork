@@ -1,3 +1,4 @@
+import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useState} from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
@@ -11,36 +12,34 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
-import * as Policy from '@userActions/Policy';
+import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
+import * as PolicyUtils from '@libs/PolicyUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {WorkspaceTax} from '@src/types/onyx';
+import type SCREENS from '@src/SCREENS';
+import type * as OnyxTypes from '@src/types/onyx';
 
 type ValuePageOnyxProps = {
-    workspaceTax: OnyxEntry<WorkspaceTax>;
+    workspaceTax: OnyxEntry<OnyxTypes.WorkspaceTax>;
+    policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
 };
 
-type ValuePageProps = ValuePageOnyxProps & {
-    route: {
-        params: {
-            policyID: string;
-            taxName: string;
-        };
-    };
-};
+type ValuePageProps = ValuePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_EDIT_VALUE>;
 
 function ValuePage({
     route: {
         params: {policyID, taxName},
     },
     workspaceTax,
+    policyTaxRates,
 }: ValuePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const [value, setValue] = useState(workspaceTax?.value?.toString());
+    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
+    const initialValue = currentTaxRate?.value.replace('%', '') ?? '';
+    const [value, setValue] = useState(initialValue);
 
     const submit = () => {
-        Policy.setTaxValue(Number(value));
         Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxName));
     };
 
@@ -81,5 +80,8 @@ ValuePage.displayName = 'ValuePage';
 export default withOnyx<ValuePageProps, ValuePageOnyxProps>({
     workspaceTax: {
         key: ONYXKEYS.WORKSPACE_TAX_EDIT,
+    },
+    policyTaxRates: {
+        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${route.params.policyID}`,
     },
 })(ValuePage);

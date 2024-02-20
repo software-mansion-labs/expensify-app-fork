@@ -1,3 +1,4 @@
+import type {StackScreenProps} from '@react-navigation/stack';
 import ExpensiMark from 'expensify-common/lib/ExpensiMark';
 import React, {useState} from 'react';
 import {View} from 'react-native';
@@ -11,24 +12,20 @@ import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
-import * as Policy from '@userActions/Policy';
+import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
+import * as PolicyUtils from '@libs/PolicyUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {WorkspaceTax} from '@src/types/onyx';
+import type SCREENS from '@src/SCREENS';
+import type * as OnyxTypes from '@src/types/onyx';
 
 type NamePageOnyxProps = {
-    workspaceTax: OnyxEntry<WorkspaceTax>;
+    workspaceTax: OnyxEntry<OnyxTypes.WorkspaceTax>;
+    policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
 };
 
-type NamePageProps = NamePageOnyxProps & {
-    route: {
-        params: {
-            policyID: string;
-            taxName: string;
-        };
-    };
-};
+type NamePageProps = NamePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_EDIT_VALUE>;
 
 const parser = new ExpensiMark();
 
@@ -37,13 +34,14 @@ function NamePage({
         params: {policyID, taxName},
     },
     workspaceTax,
+    policyTaxRates,
 }: NamePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const [name, setName] = useState(() => parser.htmlToMarkdown(workspaceTax?.name ?? ''));
+    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
+    const [name, setName] = useState(() => parser.htmlToMarkdown(currentTaxRate?.name ?? ''));
 
     const submit = () => {
-        Policy.setTaxName(name);
         Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxName));
     };
 
@@ -89,5 +87,8 @@ NamePage.displayName = 'NamePage';
 export default withOnyx<NamePageProps, NamePageOnyxProps>({
     workspaceTax: {
         key: ONYXKEYS.WORKSPACE_TAX_EDIT,
+    },
+    policyTaxRates: {
+        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${route.params.policyID}`,
     },
 })(NamePage);

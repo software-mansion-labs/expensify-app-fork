@@ -177,6 +177,14 @@ type SettingsNavigatorParamList = {
         policyID: string;
         taxName: string;
     };
+    [SCREENS.WORKSPACE.TAXES_EDIT_NAME]: {
+        policyID: string;
+        taxName: string;
+    };
+    [SCREENS.WORKSPACE.TAXES_EDIT_VALUE]: {
+        policyID: string;
+        taxName: string;
+    };
     [SCREENS.WORKSPACE.TAXES_SETTINGS]: {
         policyID: string;
     };

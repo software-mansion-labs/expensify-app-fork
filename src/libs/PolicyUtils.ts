@@ -3,7 +3,7 @@ import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {PersonalDetailsList, Policy, PolicyMembers, PolicyTagList, PolicyTags} from '@src/types/onyx';
+import type {PersonalDetailsList, Policy, PolicyMembers, PolicyTagList, PolicyTags, PolicyTaxRate, PolicyTaxRateWithDefault} from '@src/types/onyx';
 import type {EmptyObject} from '@src/types/utils/EmptyObject';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
@@ -192,6 +192,11 @@ function getTagList(policyTagList: OnyxEntry<PolicyTagList>, tagIndex: number): 
     );
 }
 
+/** Get a tax with given ID from policy */
+function getTaxByID(policyTaxRates: OnyxEntry<PolicyTaxRateWithDefault>, taxID: string): PolicyTaxRate | undefined {
+    return policyTaxRates?.taxes?.[taxID];
+}
+
 /**
  * Cleans up escaping of colons (used to create multi-level tags, e.g. "Parent: Child") in the tag name we receive from the backend
  */
@@ -273,6 +278,7 @@ export {
     extractPolicyIDFromPath,
     getPathWithoutPolicyID,
     getPolicyMembersByIdWithoutCurrentUser,
+    getTaxByID,
 };
 
 export type {MemberEmailsToAccountIDs};

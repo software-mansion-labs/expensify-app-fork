@@ -2168,9 +2168,4 @@ export {
     createDraftInitialWorkspace,
     setWorkspaceInviteMessageDraft,
     updateWorkspaceDescription,
-    setTaxPolicyID,
-    setTaxEnabled,
-    setTaxValue,
-    setTaxName,
-    clearOnyxDataTaxEdit,
 };

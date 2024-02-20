@@ -28,6 +28,7 @@ type TaxForList = {
     value: string;
     text: string;
     keyForList: string;
+    id: string;
     isSelected: boolean;
     rightElement: JSX.Element;
 };
@@ -47,10 +48,12 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
 
     const taxesList = useMemo<TaxForList[]>(
         () =>
-            Object.values(policyTaxRates?.taxes ?? {}).map((value) => ({
+            Object.entries(policyTaxRates?.taxes ?? {}).map(([key, value]) => ({
+                // TODO: Clean up: check if all properties are needed
                 value: value.name,
                 text: value.name,
-                keyForList: value.name,
+                keyForList: key,
+                id: key,
                 isSelected: selectedTaxes.includes(value.name),
                 rightElement: (
                     // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
@@ -104,7 +107,7 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
                     iconStyles={styles.buttonCTAIcon}
                     onPress={() => {}}
                 >
-                    Add rate
+                    <Text>Add rate</Text>
                 </Button>
                 <Button
                     medium
@@ -112,13 +115,13 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
                     iconStyles={styles.buttonCTAIcon}
                     onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
                 >
-                    {translate('common.settings')}
+                    <Text>{translate('common.settings')}</Text>
                 </Button>
             </HeaderWithBackButton>
             <SelectionList
                 canSelectMultiple
                 sections={[{data: taxesList, indexOffset: 0, isDisabled: false}]}
-                onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.value))}
+                onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
                 onSelectAll={toggleAllTaxes}
                 showScrollIndicator
             />
