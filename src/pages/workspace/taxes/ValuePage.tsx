@@ -7,6 +7,7 @@ import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
+import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
@@ -69,6 +70,8 @@ function ValuePage({
                         inputID="name"
                         value={value}
                         onInputChange={setValue}
+                        hideCurrency
+                        extraSymbol={<Text style={styles.iouAmountText}>%</Text>}
                     />
                 </View>
             </FormProvider>

@@ -1,4 +1,4 @@
-import type {ForwardedRef} from 'react';
+import type {ForwardedRef, ReactNode} from 'react';
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import type {NativeSyntheticEvent, TextInputSelectionChangeEventData} from 'react-native';
@@ -36,6 +36,12 @@ type AmountFormProps = {
 
     /** Whether the currency symbol is pressable */
     isCurrencyPressable?: boolean;
+
+    /** Whether to hide the currency */
+    hideCurrency?: boolean;
+
+    /** Extra symbol to display after the currency symbol */
+    extraSymbol?: ReactNode;
 };
 
 /**
@@ -51,7 +57,17 @@ const NUM_PAD_CONTAINER_VIEW_ID = 'numPadContainerView';
 const NUM_PAD_VIEW_ID = 'numPadView';
 
 function AmountForm(
-    {value: amount, currency = CONST.CURRENCY.USD, extraDecimals = 0, errorText, onInputChange, onCurrencyButtonPress, isCurrencyPressable = true}: AmountFormProps,
+    {
+        value: amount,
+        currency = CONST.CURRENCY.USD,
+        extraDecimals = 0,
+        errorText,
+        onInputChange,
+        onCurrencyButtonPress,
+        isCurrencyPressable = true,
+        hideCurrency = false,
+        extraSymbol,
+    }: AmountFormProps,
     forwardedRef: ForwardedRef<BaseTextInputRef>,
 ) {
     const styles = useThemeStyles();
@@ -214,6 +230,8 @@ function AmountForm(
                     }}
                     onKeyPress={textInputKeyPress}
                     isCurrencyPressable={isCurrencyPressable}
+                    hideCurrencySymbol={hideCurrency}
+                    extraSymbol={extraSymbol}
                 />
                 {!!errorText && (
                     <FormHelpMessage

@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react';
 import type {NativeSyntheticEvent, TextInputSelectionChangeEventData} from 'react-native';
 import type {TextSelection} from '@components/Composer/types';
 
@@ -28,6 +29,12 @@ type TextInputWithCurrencySymbolProps = {
 
     /** Whether the currency symbol is pressable */
     isCurrencyPressable: boolean;
+
+    /** Whether to hide the currency symbol */
+    hideCurrencySymbol?: boolean;
+
+    /** Extra symbol to be shown after the currency symbol */
+    extraSymbol?: ReactNode;
 };
 
 export default TextInputWithCurrencySymbolProps;
