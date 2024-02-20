@@ -10,7 +10,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 type Props = {
     route: {
         params: {
-            policyID: number;
+            policyID: string;
             taxName: string;
         };
     };

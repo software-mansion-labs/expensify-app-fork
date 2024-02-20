@@ -16,32 +16,32 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {WorkspaceTax} from '@src/types/onyx';
 
-type WorkspaceTaxesSettingsPageOnyxProps = {
+type WorkspaceTaxesEditPageOnyxProps = {
     workspaceTax: OnyxEntry<WorkspaceTax>;
 };
 
-type WorkspaceTaxesSettingsPageBaseProps = WithPolicyProps & {
+type WorkspaceTaxesEditPageBaseProps = WithPolicyProps & {
     route: {
         params: {
-            policyID: number;
+            policyID: string;
             taxName: string;
         };
     };
 };
 
-type WorkspaceTaxesSettingsPageProps = WorkspaceTaxesSettingsPageBaseProps & WorkspaceTaxesSettingsPageOnyxProps;
+type WorkspaceTaxesEditPageProps = WorkspaceTaxesEditPageBaseProps & WorkspaceTaxesEditPageOnyxProps;
 
-function WorkspaceTaxesSettingsPage({
+function WorkspaceTaxesEditPage({
     route: {
         params: {policyID, taxName},
     },
     workspaceTax,
-}: WorkspaceTaxesSettingsPageProps) {
+}: WorkspaceTaxesEditPageProps) {
     const styles = useThemeStyles();
 
     return (
         <View>
-            <HeaderWithBackButton title={taxName} />
+            <HeaderWithBackButton title={workspaceTax?.name} />
             <View style={[styles.flexRow, styles.mb4, styles.justifyContentBetween, styles.sectionMenuItemTopDescription]}>
                 <View style={styles.flex4}>
                     <Text>Enable rate</Text>
@@ -56,7 +56,7 @@ function WorkspaceTaxesSettingsPage({
             </View>
             <MenuItemWithTopDescription
                 shouldShowRightIcon
-                title={taxName}
+                title={workspaceTax?.name}
                 description="Name"
                 style={[styles.moneyRequestMenuItem]}
                 titleStyle={styles.flex1}
@@ -64,7 +64,7 @@ function WorkspaceTaxesSettingsPage({
             />
             <MenuItemWithTopDescription
                 shouldShowRightIcon
-                title={taxName}
+                title={workspaceTax?.value?.toString()}
                 description="Value"
                 style={[styles.moneyRequestMenuItem]}
                 titleStyle={styles.flex1}
@@ -74,13 +74,13 @@ function WorkspaceTaxesSettingsPage({
     );
 }
 
-WorkspaceTaxesSettingsPage.displayName = 'WorkspaceTaxesSettingsPage';
+WorkspaceTaxesEditPage.displayName = 'WorkspaceTaxesEditPage';
 
 export default compose(
-    withOnyx<WorkspaceTaxesSettingsPageProps, WorkspaceTaxesSettingsPageOnyxProps>({
+    withOnyx<WorkspaceTaxesEditPageProps, WorkspaceTaxesEditPageOnyxProps>({
         workspaceTax: {
             key: ONYXKEYS.WORKSPACE_TAX_EDIT,
         },
     }),
     withPolicy,
-)(WorkspaceTaxesSettingsPage);
+)(WorkspaceTaxesEditPage);
