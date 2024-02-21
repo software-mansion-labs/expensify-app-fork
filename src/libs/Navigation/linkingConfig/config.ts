@@ -531,6 +531,7 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             screens: {
                 [SCREENS.SHARE.ROOT]: {
                     path: ROUTES.SHARE_ROOT,
+                    exact: true,
                     screens: {
                         share: {
                             path: 'share/root/share',
