@@ -76,6 +76,11 @@ function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     });
     const {value: policy2Value} = policy2;
 
+    const currency = useOnyx(ONYXKEYS.CURRENCY_LIST, {
+        selector: (currencyList) => currencyList?.[policyID === '1576B20B2BA20523' ? 'EUR' : 'USD'],
+    });
+    const {value: currencyValue} = currency;
+
     const sessionEmail = useOnyx(ONYXKEYS.SESSION, {selector: (value) => value?.email ?? ''});
     const {value: sessionEmailValue} = sessionEmail;
 
@@ -93,6 +98,7 @@ function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     console.log('fabio ComponentWithOnyxHook policies', policies);
     console.log('fabio ComponentWithOnyxHook policy', policy);
     console.log('fabio ComponentWithOnyxHook policy2', policy2);
+    console.log('fabio ComponentWithOnyxHook currency', currency);
     console.log('fabio ComponentWithOnyxHook sessionEmail', sessionEmail);
     console.log('fabio ComponentWithOnyxHook policiesWithSelector', policiesWithSelector);
     console.groupEnd();
