@@ -525,10 +525,23 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
         },
 
         [NAVIGATORS.SHARE_MODAL_NAVIGATOR]: {
-            path: ROUTES.SHARE_ROOT,
+            path: ROUTES.SHARE,
             initialRouteName: SCREENS.SHARE.ROOT,
+            exact: true,
             screens: {
-                [SCREENS.SHARE.ROOT]: ROUTES.SHARE_ROOT,
+                [SCREENS.SHARE.ROOT]: {
+                    path: ROUTES.SHARE_ROOT,
+                    screens: {
+                        share: {
+                            path: 'share/root/share',
+                            exact: true,
+                        },
+                        scan: {
+                            path: 'share/root/scan',
+                            exact: true,
+                        },
+                    }
+                },
                 [SCREENS.SHARE.MESSAGE]: ROUTES.SHARE_MESSAGE,
                 [SCREENS.SHARE.SCAN_CONFIRM]: ROUTES.SHARE_SCAN_CONFIRM,
             },

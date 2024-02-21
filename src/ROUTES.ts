@@ -504,6 +504,7 @@ const ROUTES = {
         getRoute: (contentType: string) => `referral/${contentType}` as const,
     },
     PROCESS_MONEY_REQUEST_HOLD: 'hold-request-educational',
+    SHARE: 'share',
     SHARE_ROOT: 'share/root',
     SHARE_MESSAGE: 'share/message',
     SHARE_SCAN_CONFIRM: 'share/scan-confirm',

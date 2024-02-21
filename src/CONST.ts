@@ -3024,8 +3024,8 @@ const CONST = {
         RECEIPT_TAB_ID: 'ReceiptTab',
         IOU_REQUEST_TYPE: 'iouRequestType',
         SHARE_TAB_ID: 'ShareTab',
-        SHARE: 'Share',
-        SCAN: 'Scan',
+        SHARE: 'share',
+        SCAN: 'scan',
     },
     TAB_REQUEST: {
         MANUAL: 'manual',
