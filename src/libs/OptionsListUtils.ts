@@ -80,6 +80,7 @@ type CategorySection = {
 type Category = {
     name: string;
     enabled: boolean;
+    isSelected?: boolean;
 };
 
 type Hierarchy = Record<string, Category & {[key: string]: Hierarchy & Category}>;
@@ -902,6 +903,7 @@ function getCategoryOptionTree(options: Record<string, Category> | Category[], i
                 searchText: option.name,
                 tooltipText: option.name,
                 isDisabled: !option.enabled,
+                isSelected: !!option.isSelected,
             });
 
             return;
@@ -922,6 +924,7 @@ function getCategoryOptionTree(options: Record<string, Category> | Category[], i
                 searchText,
                 tooltipText: optionName,
                 isDisabled: isChild ? !option.enabled : true,
+                isSelected: !!option.isSelected,
             });
         });
     });
@@ -1483,6 +1486,10 @@ function getOptions(
 
         // In case user needs to add credit bank account, don't allow them to request more money from the workspace.
         if (includeOwnedWorkspaceChats && ReportUtils.hasIOUWaitingOnCurrentUserBankAccount(report)) {
+            return;
+        }
+
+        if (!accountIDs || accountIDs.length === 0) {
             return;
         }
 
