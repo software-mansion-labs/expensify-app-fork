@@ -1568,23 +1568,19 @@ function setUnitForReimburseView(unit: Unit) {
 }
 
 function setTaxPolicyID(policyID: string) {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, {policyID});
-}
-
-function setTaxEnabled(enabled: boolean) {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, {enabled});
+    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, {policyID});
 }
 
 function setTaxName(name: string) {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, {name});
+    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, {name});
 }
 
-function setTaxValue(value: number) {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, {value});
+function setTaxValue(value: string) {
+    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, {value});
 }
 
-function clearOnyxDataTaxEdit() {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX_EDIT, null);
+function clearOnyxDataTax() {
+    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, null);
 }
 
 /**
@@ -2168,4 +2164,8 @@ export {
     createDraftInitialWorkspace,
     setWorkspaceInviteMessageDraft,
     updateWorkspaceDescription,
+    setTaxPolicyID,
+    setTaxName,
+    setTaxValue,
+    clearOnyxDataTax,
 };

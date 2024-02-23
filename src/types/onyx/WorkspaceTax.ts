@@ -9,7 +9,7 @@ type WorkspaceTax = {
     name?: string;
 
     /** Tax rate */
-    value?: number;
+    value?: string;
 };
 
 export default WorkspaceTax;

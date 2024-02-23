@@ -11,6 +11,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import * as Policy from '@libs/actions/Policy';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -25,7 +26,7 @@ type NamePageOnyxProps = {
     policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
 };
 
-type NamePageProps = NamePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_EDIT_VALUE>;
+type NamePageProps = NamePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_VALUE>;
 
 const parser = new ExpensiMark();
 
@@ -39,9 +40,15 @@ function NamePage({
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
-    const [name, setName] = useState(() => parser.htmlToMarkdown(currentTaxRate?.name ?? ''));
+    const isEditPage = !!currentTaxRate?.name;
+
+    const [name, setName] = useState(() => parser.htmlToMarkdown((isEditPage ? currentTaxRate?.name : workspaceTax?.name) ?? ''));
 
     const submit = () => {
+        if (!isEditPage) {
+            Policy.setTaxName(name);
+        }
+
         Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxName));
     };
 
@@ -54,7 +61,7 @@ function NamePage({
             <HeaderWithBackButton title={translate('workspace.taxes.name')} />
 
             <FormProvider
-                formID={ONYXKEYS.FORMS.WORKSPACE_DESCRIPTION_FORM}
+                formID={ONYXKEYS.FORMS.WORKSPACE_TAX_FORM}
                 submitButtonText={translate('workspace.editor.save')}
                 style={[styles.flexGrow1, styles.ph5]}
                 scrollContextEnabled
@@ -86,7 +93,7 @@ NamePage.displayName = 'NamePage';
 
 export default withOnyx<NamePageProps, NamePageOnyxProps>({
     workspaceTax: {
-        key: ONYXKEYS.WORKSPACE_TAX_EDIT,
+        key: ONYXKEYS.WORKSPACE_TAX,
     },
     policyTaxRates: {
         key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${route.params.policyID}`,

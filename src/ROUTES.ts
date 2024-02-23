@@ -531,13 +531,17 @@ const ROUTES = {
         route: 'workspace/:policyID/taxes/:taxName',
         getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${encodeURI(taxName)}` as const,
     },
-    WORKSPACE_TAXES_EDIT_NAME: {
-        route: 'workspace/:policyID/taxes/:taxName/name',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${encodeURI(taxName)}/name` as const,
+    WORKSPACE_TAXES_NEW: {
+        route: 'workspace/:policyID/taxes/new',
+        getRoute: (policyID: string) => `workspace/${policyID}/taxes/new` as const,
     },
-    WORKSPACE_TAXES_EDIT_VALUE: {
+    WORKSPACE_TAXES_NAME: {
+        route: 'workspace/:policyID/taxes/:taxName/name',
+        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${taxName ? encodeURI(taxName) : 'new'}/name` as const,
+    },
+    WORKSPACE_TAXES_VALUE: {
         route: 'workspace/:policyID/taxes/:taxName/value',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${encodeURI(taxName)}/value` as const,
+        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${taxName ? encodeURI(taxName) : 'new'}/value` as const,
     },
     // Referral program promotion
     REFERRAL_DETAILS_MODAL: {

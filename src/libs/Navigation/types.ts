@@ -173,15 +173,18 @@ type SettingsNavigatorParamList = {
     [SCREENS.SETTINGS.TWO_FACTOR_AUTH]: undefined;
     [SCREENS.SETTINGS.REPORT_CARD_LOST_OR_DAMAGED]: undefined;
     [SCREENS.KEYBOARD_SHORTCUTS]: undefined;
+    [SCREENS.WORKSPACE.TAXES_NEW]: {
+        policyID: string;
+    };
     [SCREENS.WORKSPACE.TAXES_EDIT]: {
         policyID: string;
         taxName: string;
     };
-    [SCREENS.WORKSPACE.TAXES_EDIT_NAME]: {
+    [SCREENS.WORKSPACE.TAXES_NAME]: {
         policyID: string;
         taxName: string;
     };
-    [SCREENS.WORKSPACE.TAXES_EDIT_VALUE]: {
+    [SCREENS.WORKSPACE.TAXES_VALUE]: {
         policyID: string;
         taxName: string;
     };
