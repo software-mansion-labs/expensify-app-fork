@@ -45,17 +45,13 @@ function ValuePage({
     const {translate} = useLocalize();
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
     const isEditPage = !!currentTaxRate?.name;
-    console.log('Testujemy', currentTaxRate, workspaceTax);
     const [value, setValue] = useState(isEditPage ? currentTaxRate?.value : workspaceTax?.value);
-
-    console.log('Testujemy', isEditPage ? currentTaxRate?.value : workspaceTax?.value);
 
     const validate = useCallback((values: FormOnyxValues<typeof ONYXKEYS.FORMS.WORKSPACE_TAX_FORM>) => {
         const errors = {};
 
         if (Number(values.value) < 0 || Number(values.value) >= 100) {
-            ErrorUtils.addErrorMessage(errors, 'value', 'siema');
-            console.log('Testujemy error', values.value);
+            ErrorUtils.addErrorMessage(errors, 'value', 'test');
         }
 
         return errors;
@@ -65,7 +61,6 @@ function ValuePage({
         (values: FormOnyxValues<typeof ONYXKEYS.FORMS.WORKSPACE_TAX_FORM>) => {
             if (!isEditPage) {
                 Policy.setTaxValue(values.value);
-                console.log('Testujemy', values.value);
             }
             Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxName));
         },
@@ -91,13 +86,12 @@ function ValuePage({
             >
                 <View style={styles.mb4}>
                     <InputWrapper
-                        // This needs to be replaced with new NumberForm with '%' at the end
                         InputComponent={AmountForm}
                         inputID="value"
                         value={value}
                         onInputChange={setValue}
-                        // hideCurrency
-                        // extraSymbol={<Text style={styles.iouAmountText}>%</Text>}
+                        hideCurrency
+                        extraSymbol={<Text style={styles.iouAmountText}>%</Text>}
                     />
                 </View>
             </FormProvider>

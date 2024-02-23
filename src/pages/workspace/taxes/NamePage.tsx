@@ -26,7 +26,7 @@ type NamePageOnyxProps = {
     policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
 };
 
-type NamePageProps = NamePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_VALUE>;
+type NamePageProps = NamePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_NAME>;
 
 const parser = new ExpensiMark();
 
