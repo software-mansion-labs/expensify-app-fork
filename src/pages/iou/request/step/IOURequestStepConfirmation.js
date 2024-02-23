@@ -132,7 +132,7 @@ function IOURequestStepConfirmation({
         if (!transaction.category) {
             return;
         }
-        if (policyCategories && policyCategories[transaction.category] && !policyCategories[transaction.category].enabled) {
+        if (policyCategories[transaction.category] && !policyCategories[transaction.category].enabled) {
             IOU.resetMoneyRequestCategory_temporaryForRefactor(transactionID);
         }
     }, [policyCategories, transaction.category, transactionID]);

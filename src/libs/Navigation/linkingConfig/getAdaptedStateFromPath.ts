@@ -70,16 +70,14 @@ function createCentralPaneNavigator(route: NavigationPartialRoute<CentralPaneNam
     };
 }
 
-function createFullScreenNavigator(route?: NavigationPartialRoute<FullScreenName>): NavigationPartialRoute<typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR> {
+function createFullScreenNavigator(route: NavigationPartialRoute<FullScreenName>): NavigationPartialRoute<typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR> {
     const routes = [];
 
     routes.push({name: SCREENS.SETTINGS.ROOT});
-    if (route) {
-        routes.push({
-            name: SCREENS.SETTINGS_CENTRAL_PANE,
-            state: getRoutesWithIndex([route]),
-        });
-    }
+    routes.push({
+        name: SCREENS.SETTINGS_CENTRAL_PANE,
+        state: getRoutesWithIndex([route]),
+    });
 
     return {
         name: NAVIGATORS.FULL_SCREEN_NAVIGATOR,
@@ -130,11 +128,6 @@ function getMatchingRootRouteForRHPRoute(
         if (RHPNames && RHPNames.includes(route.name)) {
             return createFullScreenNavigator({name: fullScreenName as FullScreenName, params: route.params});
         }
-    }
-
-    // This screen is opened from the LHN of the FullStackNavigator, so in this case we shouldn't push any CentralPane screen
-    if (route.name === SCREENS.SETTINGS.SHARE_CODE) {
-        return createFullScreenNavigator();
     }
 }
 

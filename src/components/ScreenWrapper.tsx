@@ -25,7 +25,7 @@ import SafeAreaConsumer from './SafeAreaConsumer';
 import TestToolsModal from './TestToolsModal';
 
 type ChildrenProps = {
-    insets: EdgeInsets;
+    insets?: EdgeInsets;
     safeAreaPaddingBottomStyle?: {
         paddingBottom?: DimensionValue;
     };
@@ -201,17 +201,7 @@ function ScreenWrapper(
 
     return (
         <SafeAreaConsumer>
-            {({
-                insets = {
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                },
-                paddingTop,
-                paddingBottom,
-                safeAreaPaddingBottomStyle,
-            }) => {
+            {({insets, paddingTop, paddingBottom, safeAreaPaddingBottomStyle}) => {
                 const paddingStyle: StyleProp<ViewStyle> = {};
 
                 if (includePaddingTop) {

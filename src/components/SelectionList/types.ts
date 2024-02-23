@@ -1,14 +1,17 @@
 import type {ReactElement, ReactNode} from 'react';
 import type {GestureResponderEvent, InputModeOptions, LayoutChangeEvent, SectionListData, StyleProp, TextStyle, ViewStyle} from 'react-native';
 import type {Errors, Icon, PendingAction} from '@src/types/onyx/OnyxCommon';
-import type {ReceiptErrors} from '@src/types/onyx/Transaction';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
-import type RadioListItem from './RadioListItem';
-import type UserListItem from './UserListItem';
 
 type CommonListItemProps<TItem> = {
     /** Whether this item is focused (for arrow key controls) */
     isFocused?: boolean;
+
+    /** Style to be applied to Text */
+    textStyles?: StyleProp<TextStyle>;
+
+    /** Style to be applied on the alternate text */
+    alternateTextStyles?: StyleProp<TextStyle>;
 
     /** Whether this item is disabled */
     isDisabled?: boolean;
@@ -27,12 +30,6 @@ type CommonListItemProps<TItem> = {
 
     /** Component to display on the right side */
     rightHandSideComponent?: ((item: TItem) => ReactElement<TItem>) | ReactElement | null;
-
-    /** Styles for the wrapper view */
-    wrapperStyle?: StyleProp<ViewStyle>;
-
-    /** Styles for the checkbox wrapper view if select multiple option is on */
-    selectMultipleStyle?: StyleProp<ViewStyle>;
 };
 
 type ListItem = {
@@ -90,36 +87,13 @@ type ListItemProps = CommonListItemProps<ListItem> & {
 
     /** Is item hovered */
     isHovered?: boolean;
-
-    /** Whether the default focus should be prevented on row selection */
-    shouldPreventDefaultFocusOnSelectRow?: boolean;
-
-    /** Key used internally by React */
-    keyForList?: string;
 };
 
 type BaseListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> & {
     item: TItem;
     shouldPreventDefaultFocusOnSelectRow?: boolean;
     keyForList?: string;
-    errors?: Errors | ReceiptErrors | null;
-    pendingAction?: PendingAction | null;
-    FooterComponent?: ReactElement;
-    children?: ReactElement<ListItemProps> | ((hovered: boolean) => ReactElement<ListItemProps>);
 };
-
-type UserListItemProps = ListItemProps & {
-    /** Errors that this user may contain */
-    errors?: Errors | ReceiptErrors | null;
-
-    /** The type of action that's pending  */
-    pendingAction?: PendingAction | null;
-
-    /** The React element that will be shown as a footer */
-    FooterComponent?: ReactElement;
-};
-
-type RadioListItemProps = ListItemProps;
 
 type Section<TItem extends ListItem> = {
     /** Title of the section */
@@ -142,9 +116,6 @@ type BaseSelectionListProps<TItem extends ListItem> = Partial<ChildrenProps> & {
     /** Sections for the section list */
     sections: Array<SectionListData<TItem, Section<TItem>>>;
 
-    /** Default renderer for every item in the list */
-    ListItem: typeof RadioListItem | typeof UserListItem;
-
     /** Whether this is a multi-select list */
     canSelectMultiple?: boolean;
 
@@ -155,7 +126,7 @@ type BaseSelectionListProps<TItem extends ListItem> = Partial<ChildrenProps> & {
     onSelectAll?: () => void;
 
     /** Callback to fire when an error is dismissed */
-    onDismissError?: (item: TItem) => void;
+    onDismissError?: () => void;
 
     /** Label for the text input */
     textInputLabel?: string;
@@ -239,7 +210,7 @@ type BaseSelectionListProps<TItem extends ListItem> = Partial<ChildrenProps> & {
     shouldDelayFocus?: boolean;
 
     /** Component to display on the right side of each child */
-    rightHandSideComponent?: ((item: ListItem) => ReactElement<ListItem>) | ReactElement | null;
+    rightHandSideComponent?: ((item: TItem) => ReactElement<TItem>) | ReactElement | null;
 
     /** Whether to show the loading indicator for new options */
     isLoadingNewOptions?: boolean;
@@ -270,8 +241,6 @@ export type {
     CommonListItemProps,
     Section,
     BaseListItemProps,
-    UserListItemProps,
-    RadioListItemProps,
     ListItem,
     ListItemProps,
     FlattenedSectionsReturn,

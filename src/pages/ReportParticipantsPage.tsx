@@ -88,7 +88,6 @@ function ReportParticipantsPage({report, personalDetails}: ReportParticipantsPag
             {({safeAreaPaddingBottomStyle}) => (
                 <FullPageNotFoundView shouldShow={!report || ReportUtils.isArchivedRoom(report)}>
                     <HeaderWithBackButton
-                        onBackButtonPress={report ? () => Navigation.goBack(ROUTES.REPORT_WITH_ID_DETAILS.getRoute(report.reportID)) : undefined}
                         title={translate(
                             ReportUtils.isChatRoom(report) ||
                                 ReportUtils.isPolicyExpenseChat(report) ||
@@ -114,7 +113,7 @@ function ReportParticipantsPage({report, personalDetails}: ReportParticipantsPag
                                     if (!option.accountID) {
                                         return;
                                     }
-                                    Navigation.navigate(ROUTES.PROFILE.getRoute(option.accountID, report ? ROUTES.REPORT_PARTICIPANTS.getRoute(report.reportID) : undefined));
+                                    Navigation.navigate(ROUTES.PROFILE.getRoute(option.accountID));
                                 }}
                                 hideSectionHeaders
                                 showTitleTooltip

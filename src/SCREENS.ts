@@ -168,7 +168,6 @@ const SCREENS = {
         ROOM_NAME: 'Report_Settings_Room_Name',
         NOTIFICATION_PREFERENCES: 'Report_Settings_Notification_Preferences',
         WRITE_CAPABILITY: 'Report_Settings_Write_Capability',
-        VISIBILITY: 'Report_Settings_Visibility',
     },
 
     NEW_TASK: {
@@ -220,7 +219,6 @@ const SCREENS = {
         INVITE_MESSAGE: 'Workspace_Invite_Message',
         CURRENCY: 'Workspace_Profile_Currency',
         DESCRIPTION: 'Workspace_Profile_Description',
-        SHARE: 'Workspace_Profile_Share',
         NAME: 'Workspace_Profile_Name',
         CATEGORIES: 'Workspace_Categories',
     },

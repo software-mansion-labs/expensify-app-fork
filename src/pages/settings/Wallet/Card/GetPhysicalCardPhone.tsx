@@ -1,11 +1,12 @@
 import type {StackScreenProps} from '@react-navigation/stack';
+import Str from 'expensify-common/lib/str';
 import React from 'react';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import InputWrapper from '@components/Form/InputWrapper';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
-import * as LoginUtils from '@libs/LoginUtils';
+import {parsePhoneNumber} from '@libs/PhoneNumber';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -41,7 +42,7 @@ function GetPhysicalCardPhone({
 
         const errors: OnValidateResult = {};
 
-        if (!LoginUtils.validateNumber(phoneNumberToValidate)) {
+        if (!(parsePhoneNumber(phoneNumberToValidate).possible && Str.isValidPhone(phoneNumberToValidate))) {
             errors.phoneNumber = 'common.error.phoneNumber';
         } else if (!phoneNumberToValidate) {
             errors.phoneNumber = 'common.error.fieldRequired';

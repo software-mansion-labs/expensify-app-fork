@@ -30,10 +30,7 @@ function getMonthFromExpirationDateString(expirationDateString: string) {
  * @param cardID
  * @returns boolean
  */
-function isExpensifyCard(cardID?: number) {
-    if (!cardID) {
-        return false;
-    }
+function isExpensifyCard(cardID: number) {
     const card = allCards[cardID];
     if (!card) {
         return false;
@@ -53,10 +50,7 @@ function isCorporateCard(cardID: number) {
  * @param cardID
  * @returns string in format %<bank> - <lastFourPAN || Not Activated>%.
  */
-function getCardDescription(cardID?: number) {
-    if (!cardID) {
-        return '';
-    }
+function getCardDescription(cardID: number) {
     const card = allCards[cardID];
     if (!card) {
         return '';

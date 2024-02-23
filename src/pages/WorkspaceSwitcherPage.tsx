@@ -250,6 +250,7 @@ function WorkspaceSwitcherPage({policies}: WorkspaceSwitcherPageProps) {
                         highlightSelectedOptions
                         shouldShowOptions
                         autoFocus={false}
+                        disableFocusOptions={!activeWorkspaceID}
                         canSelectMultipleOptions={false}
                         shouldShowSubscript={false}
                         showTitleTooltip={false}

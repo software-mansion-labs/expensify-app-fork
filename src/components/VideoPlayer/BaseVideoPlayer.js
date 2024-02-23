@@ -13,7 +13,6 @@ import addEncryptedAuthTokenToURL from '@libs/addEncryptedAuthTokenToURL';
 import * as Browser from '@libs/Browser';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import {videoPlayerDefaultProps, videoPlayerPropTypes} from './propTypes';
-import shouldReplayVideo from './shouldReplayVideo';
 import VideoPlayerControls from './VideoPlayerControls';
 
 const isMobileSafari = Browser.isMobileSafari();
@@ -96,9 +95,6 @@ function BaseVideoPlayer({
 
     const handlePlaybackStatusUpdate = useCallback(
         (e) => {
-            if (shouldReplayVideo(e, isPlaying, duration, position)) {
-                videoPlayerRef.current.setStatusAsync({positionMillis: 0, shouldPlay: true});
-            }
             const isVideoPlaying = e.isPlaying || false;
             preventPausingWhenExitingFullscreen(isVideoPlaying);
             setIsPlaying(isVideoPlaying);
@@ -109,7 +105,7 @@ function BaseVideoPlayer({
 
             onPlaybackStatusUpdate(e);
         },
-        [onPlaybackStatusUpdate, preventPausingWhenExitingFullscreen, videoDuration, isPlaying, duration, position],
+        [onPlaybackStatusUpdate, preventPausingWhenExitingFullscreen, videoDuration],
     );
 
     const handleFullscreenUpdate = useCallback(

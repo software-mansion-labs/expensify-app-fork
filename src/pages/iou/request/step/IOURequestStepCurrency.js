@@ -5,7 +5,6 @@ import {Keyboard} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import _ from 'underscore';
 import SelectionList from '@components/SelectionList';
-import RadioListItem from '@components/SelectionList/RadioListItem';
 import transactionPropTypes from '@components/transactionPropTypes';
 import useLocalize from '@hooks/useLocalize';
 import compose from '@libs/compose';
@@ -127,7 +126,6 @@ function IOURequestStepCurrency({
             {({didScreenTransitionEnd}) => (
                 <SelectionList
                     sections={sections}
-                    ListItem={RadioListItem}
                     textInputLabel={translate('common.search')}
                     textInputValue={searchValue}
                     onChangeText={setSearchValue}

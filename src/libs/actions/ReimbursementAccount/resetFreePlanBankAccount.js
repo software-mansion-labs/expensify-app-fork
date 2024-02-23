@@ -9,9 +9,8 @@ import ONYXKEYS from '@src/ONYXKEYS';
  * Reset user's reimbursement account. This will delete the bank account.
  * @param {Number} bankAccountID
  * @param {Object} session
- * @param {String} policyID
  */
-function resetFreePlanBankAccount(bankAccountID, session, policyID) {
+function resetFreePlanBankAccount(bankAccountID, session) {
     if (!bankAccountID) {
         throw new Error('Missing bankAccountID when attempting to reset free plan bank account');
     }
@@ -24,7 +23,6 @@ function resetFreePlanBankAccount(bankAccountID, session, policyID) {
         {
             bankAccountID,
             ownerEmail: session.email,
-            policyID,
         },
         {
             optimisticData: [

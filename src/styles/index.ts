@@ -179,9 +179,10 @@ const webViewStyles = (theme: ThemeColors) =>
 
             pre: {
                 ...baseCodeTagStyles(theme),
-                paddingVertical: 8,
-                paddingHorizontal: 12,
-                fontSize: 13,
+                paddingTop: 12,
+                paddingBottom: 12,
+                paddingRight: 8,
+                paddingLeft: 8,
                 fontFamily: FontUtils.fontFamily.platform.MONOSPACE,
                 marginTop: 0,
                 marginBottom: 0,
@@ -826,8 +827,6 @@ const styles = (theme: ThemeColors) =>
             borderWidth: 1,
             borderRadius: variables.componentBorderRadiusSmall,
             borderColor: theme.border,
-            paddingHorizontal: 12,
-            minHeight: 28,
         },
 
         badgeText: {
@@ -835,10 +834,6 @@ const styles = (theme: ThemeColors) =>
             fontSize: variables.fontSizeSmall,
             ...lineHeightBadge,
             ...whiteSpace.noWrap,
-        },
-
-        activeItemBadge: {
-            borderColor: theme.buttonHoveredBG,
         },
 
         border: {
@@ -3065,20 +3060,6 @@ const styles = (theme: ThemeColors) =>
             position: 'absolute',
             right: -8,
             bottom: -8,
-        },
-
-        primaryMediumIcon: {
-            alignItems: 'center',
-            backgroundColor: theme.buttonDefaultBG,
-            borderRadius: 20,
-            color: theme.textReversed,
-            height: 40,
-            width: 40,
-            justifyContent: 'center',
-        },
-
-        primaryMediumText: {
-            fontSize: variables.iconSizeNormal,
         },
 
         workspaceOwnerAvatarWrapper: {

@@ -98,10 +98,8 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, policyMembers, r
     const hasGeneralSettingsError = !isEmptyObject(policy?.errorFields?.generalSettings ?? {}) || !isEmptyObject(policy?.errorFields?.avatar ?? {});
 
     const shouldShowProtectedItems = PolicyUtils.isPolicyAdmin(policy);
-    const isPaidGroupPolicy = PolicyUtils.isPaidGroupPolicy(policy);
-    const isFreeGroupPolicy = PolicyUtils.isFreeGroupPolicy(policy);
 
-    const protectedFreePolicyMenuItems: WorkspaceMenuItem[] = [
+    const protectedMenuItems: WorkspaceMenuItem[] = [
         {
             translationKey: 'workspace.common.card',
             icon: Expensicons.ExpensifyCard,
@@ -162,16 +160,6 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, policyMembers, r
         },
     ];
 
-    const protectedCollectPolicyMenuItems: WorkspaceMenuItem[] = [
-        {
-            translationKey: 'workspace.common.members',
-            icon: Expensicons.Users,
-            action: singleExecution(waitForNavigate(() => Navigation.navigate(ROUTES.WORKSPACE_MEMBERS.getRoute(policyID)))),
-            brickRoadIndicator: hasMembersError ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
-            routeName: SCREENS.WORKSPACE.MEMBERS,
-        },
-    ];
-
     const menuItems: WorkspaceMenuItem[] = [
         {
             translationKey: 'workspace.common.profile',
@@ -180,8 +168,7 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, policyMembers, r
             brickRoadIndicator: hasGeneralSettingsError ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
             routeName: SCREENS.WORKSPACE.PROFILE,
         },
-        ...(isPaidGroupPolicy && shouldShowProtectedItems ? protectedCollectPolicyMenuItems : []),
-        ...(isFreeGroupPolicy && shouldShowProtectedItems ? protectedFreePolicyMenuItems : []),
+        ...(shouldShowProtectedItems ? protectedMenuItems : []),
     ];
 
     const prevPolicy = usePrevious(policy);

@@ -1,4 +1,5 @@
-import type {Source} from '@components/KYCWall/types';
+import type {ValueOf} from 'type-fest';
+import type CONST from '@src/CONST';
 import type * as OnyxCommon from './OnyxCommon';
 
 type WalletTerms = {
@@ -9,7 +10,7 @@ type WalletTerms = {
     chatReportID?: string;
 
     /** The source that triggered the KYC wall */
-    source?: Source;
+    source?: ValueOf<typeof CONST.KYC_WALL_SOURCE>;
 
     /** Loading state to provide feedback when we are waiting for a request to finish */
     isLoading?: boolean;

@@ -10,6 +10,7 @@ import Text from '@components/Text';
 import UserDetailsTooltip from '@components/UserDetailsTooltip';
 import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalDetails';
 import type {WithCurrentUserPersonalDetailsProps} from '@components/withCurrentUserPersonalDetails';
+import useLocalize from '@hooks/useLocalize';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as LocalePhoneNumber from '@libs/LocalePhoneNumber';
@@ -26,6 +27,7 @@ type MentionUserRendererProps = WithCurrentUserPersonalDetailsProps & CustomRend
 function MentionUserRenderer({style, tnode, TDefaultRenderer, currentUserPersonalDetails, ...defaultRendererProps}: MentionUserRendererProps) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
+    const {translate} = useLocalize();
     const htmlAttribAccountID = tnode.attributes.accountid;
     const personalDetails = usePersonalDetails() || CONST.EMPTY_OBJECT;
 
@@ -37,7 +39,7 @@ function MentionUserRenderer({style, tnode, TDefaultRenderer, currentUserPersona
         const user = personalDetails[htmlAttribAccountID];
         accountID = parseInt(htmlAttribAccountID, 10);
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        displayNameOrLogin = PersonalDetailsUtils.getDisplayNameOrDefault(user, LocalePhoneNumber.formatPhoneNumber(user?.login ?? ''));
+        displayNameOrLogin = LocalePhoneNumber.formatPhoneNumber(user?.login ?? '') || user?.displayName || translate('common.hidden');
         navigationRoute = ROUTES.PROFILE.getRoute(htmlAttribAccountID);
     } else if ('data' in tnode && !isEmptyObject(tnode.data)) {
         // We need to remove the LTR unicode and leading @ from data as it is not part of the login

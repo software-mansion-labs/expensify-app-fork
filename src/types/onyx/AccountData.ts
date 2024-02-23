@@ -51,8 +51,6 @@ type AccountData = {
 
     /** Any error message to show */
     errors?: OnyxCommon.Errors;
-
-    fundID?: number;
 };
 
 export default AccountData;

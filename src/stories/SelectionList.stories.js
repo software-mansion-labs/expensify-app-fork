@@ -2,7 +2,6 @@ import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import _ from 'underscore';
 import SelectionList from '@components/SelectionList';
-import RadioListItem from '@components/SelectionList/RadioListItem';
 import Text from '@components/Text';
 // eslint-disable-next-line no-restricted-imports
 import {defaultStyles} from '@styles/index';
@@ -90,7 +89,6 @@ function Default(args) {
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...args}
             sections={sections}
-            ListItem={RadioListItem}
             onSelectRow={onSelectRow}
         />
     );
@@ -139,7 +137,6 @@ function WithTextInput(args) {
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...args}
             sections={sections}
-            ListItem={RadioListItem}
             textInputValue={searchText}
             onChangeText={setSearchText}
             onSelectRow={onSelectRow}
@@ -263,7 +260,6 @@ function MultipleSelection(args) {
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...args}
             sections={memo.sections}
-            ListItem={RadioListItem}
             onSelectRow={onSelectRow}
             onSelectAll={onSelectAll}
         />
@@ -326,7 +322,6 @@ function WithSectionHeader(args) {
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...args}
             sections={memo.sections}
-            ListItem={RadioListItem}
             onSelectRow={onSelectRow}
             onSelectAll={onSelectAll}
         />
@@ -387,7 +382,6 @@ function WithConfirmButton(args) {
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...args}
             sections={memo.sections}
-            ListItem={RadioListItem}
             onSelectRow={onSelectRow}
             onSelectAll={onSelectAll}
         />

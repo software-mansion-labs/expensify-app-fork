@@ -84,7 +84,7 @@ function HoldReasonPage({route}: HoldReasonPageProps) {
                         valueType="string"
                         name="comment"
                         defaultValue={undefined}
-                        label={translate('iou.reason')}
+                        label="Reason"
                         accessibilityLabel={translate('iou.reason')}
                         autoFocus
                     />

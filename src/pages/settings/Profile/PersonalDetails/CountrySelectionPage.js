@@ -5,7 +5,6 @@ import _ from 'underscore';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
-import RadioListItem from '@components/SelectionList/RadioListItem';
 import useLocalize from '@hooks/useLocalize';
 import Navigation from '@libs/Navigation/Navigation';
 import searchCountryOptions from '@libs/searchCountryOptions';
@@ -94,7 +93,6 @@ function CountrySelectionPage({route, navigation}) {
                 textInputLabel={translate('common.country')}
                 textInputValue={searchValue}
                 sections={[{data: searchResults, indexOffset: 0}]}
-                ListItem={RadioListItem}
                 onSelectRow={selectCountry}
                 onChangeText={setSearchValue}
                 initiallyFocusedOptionKey={currentCountry}

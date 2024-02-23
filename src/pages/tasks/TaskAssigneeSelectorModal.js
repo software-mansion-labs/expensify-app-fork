@@ -11,7 +11,6 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useBetas, usePersonalDetails, useSession} from '@components/OnyxProvider';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
-import UserListItem from '@components/SelectionList/UserListItem';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useDebouncedState from '@hooks/useDebouncedState';
 import useLocalize from '@hooks/useLocalize';
@@ -204,7 +203,6 @@ function TaskAssigneeSelectorModal({reports, task, rootParentReportPolicy}) {
                     <View style={[styles.flex1, styles.w100, styles.pRelative]}>
                         <SelectionList
                             sections={didScreenTransitionEnd && !isLoading ? sections : CONST.EMPTY_ARRAY}
-                            ListItem={UserListItem}
                             onSelectRow={selectReport}
                             onChangeText={onChangeText}
                             textInputValue={searchValue}

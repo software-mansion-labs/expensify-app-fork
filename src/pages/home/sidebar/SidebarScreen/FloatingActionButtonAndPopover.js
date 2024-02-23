@@ -166,11 +166,10 @@ function FloatingActionButtonAndPopover(props) {
                         text: translate('iou.requestMoney'),
                         onSelected: () =>
                             interceptAnonymousUser(() =>
-                                IOU.startMoneyRequest_temporaryForRefactor(
-                                    CONST.IOU.TYPE.REQUEST,
+                                Navigation.navigate(
                                     // When starting to create a money request from the global FAB, there is not an existing report yet. A random optimistic reportID is generated and used
                                     // for all of the routes in the creation flow.
-                                    ReportUtils.generateReportID(),
+                                    ROUTES.MONEY_REQUEST_CREATE.getRoute(CONST.IOU.TYPE.REQUEST, CONST.IOU.OPTIMISTIC_TRANSACTION_ID, ReportUtils.generateReportID()),
                                 ),
                             ),
                     },

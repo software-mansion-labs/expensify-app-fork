@@ -89,10 +89,10 @@ function BankAccountValidationForm({requiresTwoFactorAuth, reimbursementAccount,
             // Send valid amounts to BankAccountAPI::validateBankAccount in Web-Expensify
             const bankAccountID = Number(reimbursementAccount?.achData?.bankAccountID ?? '0');
             if (bankAccountID) {
-                BankAccounts.validateBankAccount(bankAccountID, validateCode, policyID);
+                BankAccounts.validateBankAccount(bankAccountID, validateCode);
             }
         },
-        [reimbursementAccount, policyID],
+        [reimbursementAccount],
     );
     return (
         <FormProvider

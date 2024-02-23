@@ -43,12 +43,11 @@ function PersonalInfo({reimbursementAccount, reimbursementAccountDraft, onBackBu
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
-    const policyID = reimbursementAccount?.achData?.policyID ?? '';
     const values = useMemo(() => getSubstepValues(PERSONAL_INFO_STEP_KEYS, reimbursementAccountDraft, reimbursementAccount), [reimbursementAccount, reimbursementAccountDraft]);
     const bankAccountID = Number(reimbursementAccount?.achData?.bankAccountID ?? '0');
     const submit = useCallback(() => {
-        BankAccounts.updatePersonalInformationForBankAccount(bankAccountID, {...values}, policyID);
-    }, [values, bankAccountID, policyID]);
+        BankAccounts.updatePersonalInformationForBankAccount(bankAccountID, {...values});
+    }, [values, bankAccountID]);
     const startFrom = useMemo(() => getInitialSubstepForPersonalInfo(values), [values]);
 
     const {componentToRender: SubStep, isEditing, screenIndex, nextScreen, prevScreen, moveTo, goToTheLastStep} = useSubStep({bodyContent, startFrom, onFinished: submit});

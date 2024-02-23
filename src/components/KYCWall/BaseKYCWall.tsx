@@ -245,6 +245,7 @@ function KYCWall({
     return (
         <>
             <AddPaymentMethodMenu
+                // @ts-expect-error TODO: Remove this once AddPaymentMethodMenu (https://github.com/Expensify/App/issues/25073) is migrated to TypeScript.
                 isVisible={shouldShowAddPaymentMenu}
                 iouReport={iouReport}
                 onClose={() => setShouldShowAddPaymentMenu(false)}

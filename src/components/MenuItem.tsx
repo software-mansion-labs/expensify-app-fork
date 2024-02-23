@@ -573,12 +573,10 @@ function MenuItem(
                                 {badgeText && (
                                     <Badge
                                         text={badgeText}
-                                        textStyles={styles.textStrong}
                                         badgeStyles={[
                                             styles.alignSelfCenter,
-                                            styles.badgeBordered,
                                             brickRoadIndicator ? styles.mr2 : undefined,
-                                            focused || isHovered || pressed ? styles.activeItemBadge : {},
+                                            focused || isHovered || pressed ? styles.buttonHoveredBG : {},
                                             badgeStyle,
                                         ]}
                                     />

@@ -1,5 +1,8 @@
-import type {CompanyStepProps} from '@src/types/form/ReimbursementAccountForm';
+import type {BankAccountStepProps, CompanyStepProps, ReimbursementAccountProps} from '@src/types/form/ReimbursementAccountForm';
 
-type UpdateCompanyInformationForBankAccountParams = CompanyStepProps & {bankAccountID: number; policyID: string; canUseNewVbbaFlow?: boolean};
+type BankAccountCompanyInformation = BankAccountStepProps & CompanyStepProps & ReimbursementAccountProps;
+
+type UpdateCompanyInformationForBankAccountParams = BankAccountCompanyInformation & {bankAccountID: number; canUseNewVbbaFlow?: boolean};
 
 export default UpdateCompanyInformationForBankAccountParams;
+export type {BankAccountCompanyInformation};

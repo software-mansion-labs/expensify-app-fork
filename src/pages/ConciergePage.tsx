@@ -1,16 +1,11 @@
 import {useFocusEffect} from '@react-navigation/native';
 import type {StackScreenProps} from '@react-navigation/stack';
-import React, {useEffect, useRef} from 'react';
-import {View} from 'react-native';
+import React from 'react';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
-import ReportActionsSkeletonView from '@components/ReportActionsSkeletonView';
-import ReportHeaderSkeletonView from '@components/ReportHeaderSkeletonView';
-import ScreenWrapper from '@components/ScreenWrapper';
-import useThemeStyles from '@hooks/useThemeStyles';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import Navigation from '@libs/Navigation/Navigation';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
-import * as App from '@userActions/App';
 import * as Report from '@userActions/Report';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
@@ -29,39 +24,19 @@ type ConciergePageProps = ConciergePageOnyxProps & StackScreenProps<AuthScreensP
  *     - Else re-route to the login page
  */
 function ConciergePage({session}: ConciergePageProps) {
-    const styles = useThemeStyles();
-    const isUnmounted = useRef(false);
-
     useFocusEffect(() => {
         if (session && 'authToken' in session) {
-            App.confirmReadyToOpenApp();
             // Pop the concierge loading page before opening the concierge report.
             Navigation.isNavigationReady().then(() => {
-                if (isUnmounted.current) {
-                    return;
-                }
-                Report.navigateToConciergeChat(undefined, true, () => !isUnmounted.current);
+                Navigation.goBack();
+                Report.navigateToConciergeChat();
             });
         } else {
             Navigation.navigate();
         }
     });
 
-    useEffect(
-        () => () => {
-            isUnmounted.current = true;
-        },
-        [],
-    );
-
-    return (
-        <ScreenWrapper testID={ConciergePage.displayName}>
-            <View style={[styles.borderBottom]}>
-                <ReportHeaderSkeletonView onBackButtonPress={Navigation.goBack} />
-            </View>
-            <ReportActionsSkeletonView />
-        </ScreenWrapper>
-    );
+    return <FullScreenLoadingIndicator />;
 }
 
 ConciergePage.displayName = 'ConciergePage';

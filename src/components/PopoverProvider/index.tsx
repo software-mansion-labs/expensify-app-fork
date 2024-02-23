@@ -21,15 +21,14 @@ function PopoverContextProvider(props: PopoverContextProps) {
     const [isOpen, setIsOpen] = useState(false);
     const activePopoverRef = useRef<AnchorRef | null>(null);
 
-    const closePopover = useCallback((anchorRef?: RefObject<View | HTMLElement>): boolean => {
+    const closePopover = useCallback((anchorRef?: RefObject<View | HTMLElement>) => {
         if (!activePopoverRef.current || (anchorRef && anchorRef !== activePopoverRef.current.anchorRef)) {
-            return false;
+            return;
         }
 
         activePopoverRef.current.close();
         activePopoverRef.current = null;
         setIsOpen(false);
-        return true;
     }, []);
 
     useEffect(() => {
@@ -64,13 +63,11 @@ function PopoverContextProvider(props: PopoverContextProps) {
             if (e.key !== 'Escape') {
                 return;
             }
-            if (closePopover()) {
-                e.stopImmediatePropagation();
-            }
+            closePopover();
         };
-        document.addEventListener('keyup', listener, true);
+        document.addEventListener('keydown', listener, true);
         return () => {
-            document.removeEventListener('keyup', listener, true);
+            document.removeEventListener('keydown', listener, true);
         };
     }, [closePopover]);
 

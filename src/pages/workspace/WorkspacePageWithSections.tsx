@@ -79,12 +79,12 @@ type WorkspacePageWithSectionsProps = WithPolicyAndFullscreenLoadingProps &
         icon?: IconAsset;
     };
 
-function fetchData(policyID: string, skipVBBACal?: boolean) {
+function fetchData(skipVBBACal?: boolean) {
     if (skipVBBACal) {
         return;
     }
 
-    BankAccounts.openWorkspaceView(policyID);
+    BankAccounts.openWorkspaceView();
 }
 
 function WorkspacePageWithSections({
@@ -107,12 +107,12 @@ function WorkspacePageWithSections({
     icon,
 }: WorkspacePageWithSectionsProps) {
     const styles = useThemeStyles();
-    const policyID = route.params?.policyID ?? '';
-    useNetwork({onReconnect: () => fetchData(policyID, shouldSkipVBBACall)});
+    useNetwork({onReconnect: () => fetchData(shouldSkipVBBACall)});
 
     const isLoading = reimbursementAccount?.isLoading ?? true;
     const achState = reimbursementAccount?.achData?.state ?? '';
     const isUsingECard = user?.isUsingExpensifyCard ?? false;
+    const policyID = route.params?.policyID ?? '';
     const hasVBA = achState === BankAccount.STATE.OPEN;
     const content = children(hasVBA, policyID, isUsingECard);
     const {isSmallScreenWidth} = useWindowDimensions();
@@ -131,8 +131,8 @@ function WorkspacePageWithSections({
     }, []);
 
     useEffect(() => {
-        fetchData(policyID, shouldSkipVBBACall);
-    }, [policyID, shouldSkipVBBACall]);
+        fetchData(shouldSkipVBBACall);
+    }, [shouldSkipVBBACall]);
 
     const shouldShow = useMemo(() => {
         // If the policy object doesn't exist or contains only error data, we shouldn't display it.

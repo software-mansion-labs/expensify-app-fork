@@ -31,8 +31,6 @@ type BankInfoOnyxProps = {
 
     /** The draft values of the bank account being setup */
     reimbursementAccountDraft: OnyxEntry<ReimbursementAccountForm>;
-
-    policyID: string;
 };
 
 type BankInfoProps = BankInfoOnyxProps & {
@@ -45,7 +43,7 @@ const manualSubsteps: Array<React.ComponentType<SubStepProps>> = [Manual, Confir
 const plaidSubsteps: Array<React.ComponentType<SubStepProps>> = [Plaid, Confirmation];
 const receivedRedirectURI = getPlaidOAuthReceivedRedirectURI();
 
-function BankInfo({reimbursementAccount, reimbursementAccountDraft, plaidLinkToken, onBackButtonPress, policyID}: BankInfoProps) {
+function BankInfo({reimbursementAccount, reimbursementAccountDraft, plaidLinkToken, onBackButtonPress}: BankInfoProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
@@ -59,20 +57,15 @@ function BankInfo({reimbursementAccount, reimbursementAccountDraft, plaidLinkTok
         setupType = CONST.BANK_ACCOUNT.SETUP_TYPE.PLAID;
     }
 
+    const policyID = reimbursementAccount?.achData?.policyID ?? '';
     const bankAccountID = Number(reimbursementAccount?.achData?.bankAccountID ?? '0');
     const submit = useCallback(() => {
         if (setupType === CONST.BANK_ACCOUNT.SETUP_TYPE.MANUAL) {
             BankAccounts.connectBankAccountManually(
                 bankAccountID,
-                {
-                    [BANK_INFO_STEP_KEYS.ROUTING_NUMBER]: values[BANK_INFO_STEP_KEYS.ROUTING_NUMBER] ?? '',
-                    [BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER]: values[BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER] ?? '',
-                    [BANK_INFO_STEP_KEYS.BANK_NAME]: values[BANK_INFO_STEP_KEYS.BANK_NAME] ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID]: values[BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID] ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN]: values[BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN] ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_MASK]: values[BANK_INFO_STEP_KEYS.PLAID_MASK] ?? '',
-                    [BANK_INFO_STEP_KEYS.IS_SAVINGS]: values[BANK_INFO_STEP_KEYS.IS_SAVINGS] ?? false,
-                },
+                values[BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER],
+                values[BANK_INFO_STEP_KEYS.ROUTING_NUMBER],
+                values[BANK_INFO_STEP_KEYS.PLAID_MASK],
                 policyID,
             );
         } else if (setupType === CONST.BANK_ACCOUNT.SETUP_TYPE.PLAID) {
@@ -84,8 +77,6 @@ function BankInfo({reimbursementAccount, reimbursementAccountDraft, plaidLinkTok
                     [BANK_INFO_STEP_KEYS.BANK_NAME]: values[BANK_INFO_STEP_KEYS.BANK_NAME] ?? '',
                     [BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID]: values[BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID] ?? '',
                     [BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN]: values[BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN] ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_MASK]: values[BANK_INFO_STEP_KEYS.PLAID_MASK] ?? '',
-                    [BANK_INFO_STEP_KEYS.IS_SAVINGS]: values[BANK_INFO_STEP_KEYS.IS_SAVINGS] ?? false,
                 },
                 policyID,
             );

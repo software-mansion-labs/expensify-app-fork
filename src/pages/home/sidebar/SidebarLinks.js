@@ -51,8 +51,11 @@ function SidebarLinks({onLinkClick, insets, optionListItems, isLoading, priority
     const {isSmallScreenWidth} = useWindowDimensions();
 
     useEffect(() => {
+        if (!isSmallScreenWidth) {
+            return;
+        }
         App.confirmReadyToOpenApp();
-    }, []);
+    }, [isSmallScreenWidth]);
 
     useEffect(() => {
         InteractionManager.runAfterInteractions(() => {

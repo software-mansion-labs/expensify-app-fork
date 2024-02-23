@@ -3,7 +3,8 @@ import * as API from '@libs/API';
 import type {
     AddPersonalBankAccountParams,
     BankAccountHandlePlaidErrorParams,
-    ConnectBankAccountParams,
+    ConnectBankAccountManuallyParams,
+    ConnectBankAccountWithPlaidParams,
     DeletePaymentBankAccountParams,
     OpenReimbursementAccountPageParams,
     ValidateBankAccountWithTransactionsParams,
@@ -151,15 +152,13 @@ function addBusinessWebsiteForDraft(websiteUrl: string) {
  * Submit Bank Account step with Plaid data so php can perform some checks.
  */
 function connectBankAccountWithPlaid(bankAccountID: number, selectedPlaidBankAccount: PlaidBankAccount, policyID: string) {
-    const parameters: ConnectBankAccountParams = {
+    const parameters: ConnectBankAccountWithPlaidParams = {
         bankAccountID,
         routingNumber: selectedPlaidBankAccount.routingNumber,
         accountNumber: selectedPlaidBankAccount.accountNumber,
         bank: selectedPlaidBankAccount.bankName,
         plaidAccountID: selectedPlaidBankAccount.plaidAccountID,
         plaidAccessToken: selectedPlaidBankAccount.plaidAccessToken,
-        plaidMask: selectedPlaidBankAccount.mask,
-        isSavings: selectedPlaidBankAccount.isSavings,
         canUseNewVbbaFlow: true,
         policyID,
     };
@@ -255,24 +254,22 @@ function deletePaymentBankAccount(bankAccountID: number) {
  * @param bankAccountID - ID for bank account
  * @param params - User personal data
  */
-function updatePersonalInformationForBankAccount(bankAccountID: number, params: RequestorStepProps, policyID: string) {
+function updatePersonalInformationForBankAccount(bankAccountID: number, params: RequestorStepProps) {
     API.write(
         WRITE_COMMANDS.UPDATE_PERSONAL_INFORMATION_FOR_BANK_ACCOUNT,
         {
             ...params,
             bankAccountID,
-            policyID,
             canUseNewVbbaFlow: true,
         },
         getVBBADataForOnyx(CONST.BANK_ACCOUNT.STEP.REQUESTOR),
     );
 }
 
-function validateBankAccount(bankAccountID: number, validateCode: string, policyID: string) {
+function validateBankAccount(bankAccountID: number, validateCode: string) {
     const parameters: ValidateBankAccountWithTransactionsParams = {
         bankAccountID,
         validateCode,
-        policyID,
     };
 
     const onyxData: OnyxData = {
@@ -366,13 +363,12 @@ function openReimbursementAccountPage(stepToOpen: ReimbursementAccountStep, subS
  * Updates the bank account in the database with the company step data
  * @param params - Business step form data
  */
-function updateCompanyInformationForBankAccount(bankAccountID: number, params: CompanyStepProps, policyID: string) {
+function updateCompanyInformationForBankAccount(bankAccountID: number, params: CompanyStepProps) {
     API.write(
         WRITE_COMMANDS.UPDATE_COMPANY_INFORMATION_FOR_BANK_ACCOUNT,
         {
             ...params,
             bankAccountID,
-            policyID,
             canUseNewVbbaFlow: true,
         },
         getVBBADataForOnyx(CONST.BANK_ACCOUNT.STEP.COMPANY),
@@ -383,13 +379,12 @@ function updateCompanyInformationForBankAccount(bankAccountID: number, params: C
  * Add beneficial owners for the bank account and verify the accuracy of the information provided
  * @param params - Beneficial Owners step form params
  */
-function updateBeneficialOwnersForBankAccount(bankAccountID: number, params: BeneficialOwnersStepProps, policyID: string) {
+function updateBeneficialOwnersForBankAccount(bankAccountID: number, params: BeneficialOwnersStepProps) {
     API.write(
         WRITE_COMMANDS.UPDATE_BENEFICIAL_OWNERS_FOR_BANK_ACCOUNT,
         {
             ...params,
             bankAccountID,
-            policyID,
             canUseNewVbbaFlow: true,
         },
         getVBBADataForOnyx(),
@@ -400,13 +395,12 @@ function updateBeneficialOwnersForBankAccount(bankAccountID: number, params: Ben
  * Accept the ACH terms and conditions and verify the accuracy of the information provided
  * @param params - Verification step form params
  */
-function acceptACHContractForBankAccount(bankAccountID: number, params: ACHContractStepProps, policyID: string) {
+function acceptACHContractForBankAccount(bankAccountID: number, params: ACHContractStepProps) {
     API.write(
         WRITE_COMMANDS.ACCEPT_ACH_CONTRACT_FOR_BANK_ACCOUNT,
         {
             ...params,
             bankAccountID,
-            policyID,
             canUseNewVbbaFlow: true,
         },
         getVBBADataForOnyx(),
@@ -415,17 +409,14 @@ function acceptACHContractForBankAccount(bankAccountID: number, params: ACHContr
 
 /**
  * Create the bank account with manually entered data.
+ * @param plaidMask - scheme for Plaid account number
  */
-function connectBankAccountManually(bankAccountID: number, bankAccount: PlaidBankAccount, policyID: string) {
-    const parameters: ConnectBankAccountParams = {
+function connectBankAccountManually(bankAccountID: number, accountNumber?: string, routingNumber?: string, plaidMask?: string, policyID?: string) {
+    const parameters: ConnectBankAccountManuallyParams = {
         bankAccountID,
-        routingNumber: bankAccount.routingNumber,
-        accountNumber: bankAccount.accountNumber,
-        bank: bankAccount.bankName,
-        plaidAccountID: bankAccount.plaidAccountID,
-        plaidAccessToken: bankAccount.plaidAccessToken,
-        plaidMask: bankAccount.mask,
-        isSavings: bankAccount.isSavings,
+        accountNumber,
+        routingNumber,
+        plaidMask,
         canUseNewVbbaFlow: true,
         policyID,
     };
@@ -436,23 +427,20 @@ function connectBankAccountManually(bankAccountID: number, bankAccount: PlaidBan
 /**
  * Verify the user's identity via Onfido
  */
-function verifyIdentityForBankAccount(bankAccountID: number, onfidoData: Record<string, unknown>, policyID: string) {
+function verifyIdentityForBankAccount(bankAccountID: number, onfidoData: Record<string, unknown>) {
     const parameters: VerifyIdentityForBankAccountParams = {
         bankAccountID,
         onfidoData: JSON.stringify(onfidoData),
-        policyID,
         canUseNewVbbaFlow: true,
     };
 
     API.write(WRITE_COMMANDS.VERIFY_IDENTITY_FOR_BANK_ACCOUNT, parameters, getVBBADataForOnyx());
 }
 
-function openWorkspaceView(policyID: string) {
+function openWorkspaceView() {
     API.read(
         READ_COMMANDS.OPEN_WORKSPACE_VIEW,
-        {
-            policyID,
-        },
+        {},
         {
             optimisticData: [
                 {

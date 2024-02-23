@@ -16,7 +16,7 @@ export default (command, env = {}) => {
             ...env,
         };
 
-        Logger.note(command);
+        Logger.important(command);
 
         childProcess = exec(
             command,
@@ -33,7 +33,7 @@ export default (command, env = {}) => {
                         reject(error);
                     }
                 } else {
-                    Logger.writeToLogFile(stdout);
+                    Logger.note(stdout);
                     resolve(stdout);
                 }
             },

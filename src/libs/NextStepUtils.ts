@@ -51,7 +51,7 @@ function parseMessage(messages: Message[] | undefined) {
 }
 
 type BuildNextStepParameters = {
-    isPaidWithExpensify?: boolean;
+    isPaidWithWallet?: boolean;
 };
 
 /**
@@ -59,14 +59,10 @@ type BuildNextStepParameters = {
  *
  * @param report
  * @param predictedNextStatus - a next expected status of the report
- * @param parameters.isPaidWithExpensify - Whether a report has been paid with Expensify or outside
+ * @param parameters.isPaidWithWallet - Whether a report has been paid with the wallet or outside of Expensify
  * @returns nextStep
  */
-function buildNextStep(
-    report: Report | EmptyObject,
-    predictedNextStatus: ValueOf<typeof CONST.REPORT.STATUS_NUM>,
-    {isPaidWithExpensify}: BuildNextStepParameters = {},
-): ReportNextStep | null {
+function buildNextStep(report: Report | EmptyObject, predictedNextStatus: ValueOf<typeof CONST.REPORT.STATUS_NUM>, {isPaidWithWallet}: BuildNextStepParameters = {}): ReportNextStep | null {
     if (!ReportUtils.isExpenseReport(report)) {
         return null;
     }
@@ -321,7 +317,7 @@ function buildNextStep(
             };
 
             // Paid outside of Expensify
-            if (isPaidWithExpensify === false) {
+            if (isPaidWithWallet === false) {
                 optimisticNextStep.message?.push({text: ' outside of Expensify'});
             }
 

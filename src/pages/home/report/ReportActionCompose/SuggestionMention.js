@@ -203,8 +203,7 @@ function SuggestionMention({
                 suggestionEndIndex = indexOfFirstSpecialCharOrEmojiAfterTheCursor + selectionEnd;
             }
 
-            const newLineIndex = value.lastIndexOf('\n', selectionEnd - 1);
-            const leftString = value.substring(newLineIndex + 1, suggestionEndIndex);
+            const leftString = value.substring(0, suggestionEndIndex);
             const words = leftString.split(CONST.REGEX.SPACE_OR_EMOJI);
             const lastWord = _.last(words);
             const secondToLastWord = words[words.length - 3];

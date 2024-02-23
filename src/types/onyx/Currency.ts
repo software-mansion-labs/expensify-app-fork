@@ -21,7 +21,4 @@ type Currency = {
     cacheBurst?: number;
 };
 
-type CurrencyList = Record<string, Currency | null>;
-
 export default Currency;
-export type {CurrencyList};

@@ -51,4 +51,3 @@ function getPlaceAutocompleteTerms(addressTerms: AddressTerm[]): GetPlaceAutocom
 }
 
 export {getAddressComponents, getPlaceAutocompleteTerms};
-export type {AddressComponent, FieldsToExtract, AddressTerm};

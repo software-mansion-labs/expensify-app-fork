@@ -34,7 +34,6 @@ type ShowContextMenu = (
     isPinnedChat?: boolean,
     isUnreadChat?: boolean,
     disabledOptions?: ContextMenuAction[],
-    shouldCloseOnTarget?: boolean,
 ) => void;
 
 type ReportActionContextMenu = {
@@ -114,7 +113,6 @@ function showContextMenu(
     isPinnedChat = false,
     isUnreadChat = false,
     disabledActions: ContextMenuAction[] = [],
-    shouldCloseOnTarget = false,
 ) {
     if (!contextMenuRef.current) {
         return;
@@ -142,7 +140,6 @@ function showContextMenu(
         isPinnedChat,
         isUnreadChat,
         disabledActions,
-        shouldCloseOnTarget,
     );
 }
 

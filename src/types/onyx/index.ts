@@ -9,7 +9,6 @@ import type {CardList} from './Card';
 import type Log from './Console';
 import type Credentials from './Credentials';
 import type Currency from './Currency';
-import type {CurrencyList} from './Currency';
 import type CustomStatusDraft from './CustomStatusDraft';
 import type Download from './Download';
 import type FrequentlyUsedEmoji from './FrequentlyUsedEmoji';
@@ -85,7 +84,6 @@ export type {
     CardList,
     Credentials,
     Currency,
-    CurrencyList,
     CustomStatusDraft,
     Download,
     FrequentlyUsedEmoji,

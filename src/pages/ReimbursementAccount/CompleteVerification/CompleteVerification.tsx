@@ -40,19 +40,14 @@ function CompleteVerification({reimbursementAccount, reimbursementAccountDraft, 
     const styles = useThemeStyles();
 
     const values = useMemo(() => getSubstepValues(COMPLETE_VERIFICATION_KEYS, reimbursementAccountDraft, reimbursementAccount), [reimbursementAccount, reimbursementAccountDraft]);
-    const policyID = reimbursementAccount?.achData?.policyID ?? '';
 
     const submit = useCallback(() => {
-        BankAccounts.acceptACHContractForBankAccount(
-            Number(reimbursementAccount?.achData?.bankAccountID ?? '0'),
-            {
-                isAuthorizedToUseBankAccount: values.isAuthorizedToUseBankAccount,
-                certifyTrueInformation: values.certifyTrueInformation,
-                acceptTermsAndConditions: values.acceptTermsAndConditions,
-            },
-            policyID,
-        );
-    }, [reimbursementAccount, values, policyID]);
+        BankAccounts.acceptACHContractForBankAccount(Number(reimbursementAccount?.achData?.bankAccountID ?? '0'), {
+            isAuthorizedToUseBankAccount: values.isAuthorizedToUseBankAccount,
+            certifyTrueInformation: values.certifyTrueInformation,
+            acceptTermsAndConditions: values.acceptTermsAndConditions,
+        });
+    }, [reimbursementAccount, values]);
 
     const {componentToRender: SubStep, isEditing, screenIndex, nextScreen, prevScreen, moveTo, goToTheLastStep} = useSubStep({bodyContent, startFrom: 0, onFinished: submit});
 

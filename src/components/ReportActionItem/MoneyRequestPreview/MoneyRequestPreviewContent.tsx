@@ -4,7 +4,6 @@ import lodashSortBy from 'lodash/sortBy';
 import React from 'react';
 import {View} from 'react-native';
 import type {GestureResponderEvent} from 'react-native';
-import ConfirmedRoute from '@components/ConfirmedRoute';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import MoneyRequestSkeletonView from '@components/MoneyRequestSkeletonView';
@@ -115,9 +114,6 @@ function MoneyRequestPreviewContent({
 
     const receiptImages = hasReceipt ? [ReceiptUtils.getThumbnailAndImageURIs(transaction)] : [];
 
-    const hasPendingWaypoints = transaction?.pendingFields?.waypoints;
-    const showMapAsImage = isDistanceRequest && hasPendingWaypoints;
-
     const getSettledMessage = (): string => {
         if (isCardTransaction) {
             return translate('common.done');
@@ -210,12 +206,7 @@ function MoneyRequestPreviewContent({
                         !onPreviewPressed ? [styles.moneyRequestPreviewBox, containerStyles] : {},
                     ]}
                 >
-                    {showMapAsImage && (
-                        <View style={styles.reportActionItemImages}>
-                            <ConfirmedRoute transaction={transaction} />
-                        </View>
-                    )}
-                    {!showMapAsImage && hasReceipt && (
+                    {hasReceipt && (
                         <ReportActionItemImages
                             images={receiptImages}
                             isHovered={isHovered || isScanning}
