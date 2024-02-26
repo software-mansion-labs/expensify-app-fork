@@ -39,7 +39,8 @@
 		BDB853621F354EBB84E619C2 /* ExpensifyNewKansas-MediumItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = D2AFB39EC1D44BF9B91D3227 /* ExpensifyNewKansas-MediumItalic.otf */; };
 		DD79042B2792E76D004484B4 /* RCTBootSplash.m in Sources */ = {isa = PBXBuildFile; fileRef = DD79042A2792E76D004484B4 /* RCTBootSplash.m */; };
 		DDCB2E57F334C143AC462B43 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D20D83B0E39BA6D21761E72 /* ExpoModulesProvider.swift */; };
-		E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
+		E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		E5647A2C2B88F2000047156F /* RCTShareExtensionHandlerModule.m in Sources */ = {isa = PBXBuildFile; fileRef = E5647A2B2B88F2000047156F /* RCTShareExtensionHandlerModule.m */; };
 		E5CB2F112B7F834000B63003 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CB2F102B7F834000B63003 /* ShareViewController.swift */; };
 		E5CB2F142B7F834000B63003 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E5CB2F122B7F834000B63003 /* MainInterface.storyboard */; };
 		E5CB2F182B7F834000B63003 /* ShareMenuExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E5CB2F0E2B7F834000B63003 /* ShareMenuExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -157,6 +158,8 @@
 		E2C8555C607612465A7473F8 /* Pods-NewExpensify-NewExpensifyTests.releaseadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NewExpensify-NewExpensifyTests.releaseadhoc.xcconfig"; path = "Target Support Files/Pods-NewExpensify-NewExpensifyTests/Pods-NewExpensify-NewExpensifyTests.releaseadhoc.xcconfig"; sourceTree = "<group>"; };
 		E2F1036F70CBFE39E9352674 /* Pods-NewExpensify-NewExpensifyTests.debug development.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NewExpensify-NewExpensifyTests.debug development.xcconfig"; path = "Target Support Files/Pods-NewExpensify-NewExpensifyTests/Pods-NewExpensify-NewExpensifyTests.debug development.xcconfig"; sourceTree = "<group>"; };
 		E2F78D2A9B3DB96F0524690B /* Pods-NewExpensify-NewExpensifyTests.releaseproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NewExpensify-NewExpensifyTests.releaseproduction.xcconfig"; path = "Target Support Files/Pods-NewExpensify-NewExpensifyTests/Pods-NewExpensify-NewExpensifyTests.releaseproduction.xcconfig"; sourceTree = "<group>"; };
+		E5647A2A2B88F1990047156F /* ios:NewExpensify:RCTShareExtensionHandlerModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ios:NewExpensify:RCTShareExtensionHandlerModule.h"; sourceTree = "<group>"; };
+		E5647A2B2B88F2000047156F /* RCTShareExtensionHandlerModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RCTShareExtensionHandlerModule.m; sourceTree = "<group>"; };
 		E5CB2F0E2B7F834000B63003 /* ShareMenuExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareMenuExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E5CB2F102B7F834000B63003 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		E5CB2F132B7F834000B63003 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
@@ -188,9 +191,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */,
+				E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */,
 				976CCB5F8C921482E6AEAE71 /* libPods-NewExpensify.a in Frameworks */,
-				E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */,
+				E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */,
 				EEAE4F8907465429AA5B5520 /* libPods-NewExpensify.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -297,6 +300,8 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				E5647A2B2B88F2000047156F /* RCTShareExtensionHandlerModule.m */,
+				E5647A2A2B88F1990047156F /* ios:NewExpensify:RCTShareExtensionHandlerModule.h */,
 				374FB8D528A133A7000D84EF /* OriginImageRequestHandler.h */,
 				374FB8D628A133FE000D84EF /* OriginImageRequestHandler.mm */,
 				F0C450E92705020500FD2970 /* colors.json */,
@@ -922,6 +927,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18D050E0262400AF000D658B /* BridgingFile.swift in Sources */,
+				E5647A2C2B88F2000047156F /* RCTShareExtensionHandlerModule.m in Sources */,
 				0F5E5350263B73FD004CA14F /* EnvironmentChecker.m in Sources */,
 				374FB8D728A133FE000D84EF /* OriginImageRequestHandler.mm in Sources */,
 				7041848526A8E47D00E09F4D /* RCTStartupTimer.m in Sources */,

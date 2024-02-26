@@ -21,6 +21,9 @@ class ShareViewController: UIViewController {
     let content = extensionContext!.inputItems[0] as! NSExtensionItem
     let contentType = UTType.image.identifier
 
+    // TODO: Remove when app group setup is done
+    self.openMainApp()
+    
     os_log("ShareViewController.viewDidAppear contentType: \(contentType)")
     os_log("ShareViewController.viewDidAppear content: \(content)")
     saveImageToAppGroup(content: content, contentType: contentType) { (error) in
