@@ -137,6 +137,10 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
                         name="ProcessMoneyRequestHold"
                         component={ModalStackNavigators.ProcessMoneyRequestHoldStackNavigator}
                     />
+                    <Stack.Screen
+                        name={SCREENS.RIGHT_MODAL.ONYX_PLAYGROUND}
+                        component={ModalStackNavigators.OnyxPlaygroundModalStackNavigator}
+                    />
                 </Stack.Navigator>
             </View>
         </NoDropZone>

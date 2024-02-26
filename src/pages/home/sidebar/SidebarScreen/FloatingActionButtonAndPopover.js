@@ -190,6 +190,11 @@ function FloatingActionButtonAndPopover(props) {
                         text: translate('sidebarScreen.saveTheWorld'),
                         onSelected: () => interceptAnonymousUser(() => Navigation.navigate(ROUTES.TEACHERS_UNITE)),
                     },
+                    {
+                        icon: Expensicons.Bolt,
+                        text: 'Onyx Playground',
+                        onSelected: () => interceptAnonymousUser(() => Navigation.navigate(ROUTES.ONYX_PLAYGROUND)),
+                    },
                     ...(!props.isLoading && !Policy.hasActiveFreePolicy(props.allPolicies)
                         ? [
                               {

@@ -406,6 +406,10 @@ type PrivateNotesNavigatorParamList = {
     };
 };
 
+type OnyxPlaygroundNavigatorParamList = {
+    [SCREENS.ONYX_PLAYGROUND_ROOT]: undefined;
+};
+
 type LeftModalNavigatorParamList = {
     [SCREENS.LEFT_MODAL.SEARCH]: NavigatorScreenParams<SearchNavigatorParamList>;
     [SCREENS.LEFT_MODAL.WORKSPACE_SWITCHER]: NavigatorScreenParams<WorkspaceSwitcherNavigatorParamList>;
@@ -437,6 +441,7 @@ type RightModalNavigatorParamList = {
     [SCREENS.RIGHT_MODAL.PROCESS_MONEY_REQUEST_HOLD]: NavigatorScreenParams<ProcessMoneyRequestHoldNavigatorParamList>;
     [SCREENS.RIGHT_MODAL.REFERRAL]: NavigatorScreenParams<ReferralDetailsNavigatorParamList>;
     [SCREENS.RIGHT_MODAL.PRIVATE_NOTES]: NavigatorScreenParams<PrivateNotesNavigatorParamList>;
+    [SCREENS.RIGHT_MODAL.ONYX_PLAYGROUND]: NavigatorScreenParams<OnyxPlaygroundNavigatorParamList>;
 };
 
 type SettingsCentralPaneNavigatorParamList = {
@@ -569,6 +574,7 @@ export type {
     FlagCommentNavigatorParamList,
     EditRequestNavigatorParamList,
     PrivateNotesNavigatorParamList,
+    OnyxPlaygroundNavigatorParamList,
     SignInNavigatorParamList,
     ReferralDetailsNavigatorParamList,
     ReimbursementAccountNavigatorParamList,

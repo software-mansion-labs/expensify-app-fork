@@ -506,6 +506,8 @@ const ROUTES = {
         getRoute: (contentType: string) => `referral/${contentType}` as const,
     },
     PROCESS_MONEY_REQUEST_HOLD: 'hold-request-educational',
+
+    ONYX_PLAYGROUND: 'onyx-playground',
 } as const;
 
 /**

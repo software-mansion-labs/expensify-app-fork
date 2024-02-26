@@ -1,9 +1,13 @@
 /* eslint-disable no-console */
-import React from 'react';
+import React, {useState} from 'react';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import {useOnyx, withOnyx} from 'react-native-onyx';
-import ONYXKEYS from './ONYXKEYS';
-import type {Account, Policy} from './types/onyx';
+import * as Expensicons from '@components/Icon/Expensicons';
+import MenuItem from '@components/MenuItem';
+import Text from '@components/Text';
+import useThemeStyles from '@hooks/useThemeStyles';
+import ONYXKEYS from '@src/ONYXKEYS';
+import type {Account, Policy} from '@src/types/onyx';
 
 type PartialPolicy = Pick<Policy, 'id' | 'name'>;
 
@@ -42,13 +46,13 @@ const ComponentWithOnyxHOC = withOnyx<ComponentWithOnyxHOCProps, ComponentWithOn
         selector: (policy) => policy?.name as unknown as OnyxCollection<PartialPolicy>,
     },
 })(({policyID, account, policies, policy, sessionEmail, policiesWithSelector}) => {
-    console.group('fabio ComponentWithOnyxHOC');
-    console.log('fabio ComponentWithOnyxHOC policyID', policyID);
-    console.log('fabio ComponentWithOnyxHOC account', account);
-    console.log('fabio ComponentWithOnyxHOC policies', policies);
-    console.log('fabio ComponentWithOnyxHOC policy', policy);
-    console.log('fabio ComponentWithOnyxHOC sessionEmail', sessionEmail);
-    console.log('fabio ComponentWithOnyxHOC policiesWithSelector', policiesWithSelector);
+    console.group('OnyxPlayground [App] ComponentWithOnyxHOC');
+    console.log('OnyxPlayground [App] ComponentWithOnyxHOC policyID', policyID);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHOC account', account);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHOC policies', policies);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHOC policy', policy);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHOC sessionEmail', sessionEmail);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHOC policiesWithSelector', policiesWithSelector);
     console.groupEnd();
 
     return null;
@@ -92,36 +96,54 @@ function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     });
     const {value: policiesWithSelectorValue} = policiesWithSelector;
 
-    console.group('fabio ComponentWithOnyxHook');
-    console.log('fabio ComponentWithOnyxHook policyID', policyID);
-    console.log('fabio ComponentWithOnyxHook account', account);
-    console.log('fabio ComponentWithOnyxHook policies', policies);
-    console.log('fabio ComponentWithOnyxHook policy', policy);
-    console.log('fabio ComponentWithOnyxHook policy2', policy2);
-    console.log('fabio ComponentWithOnyxHook currency', currency);
-    console.log('fabio ComponentWithOnyxHook sessionEmail', sessionEmail);
-    console.log('fabio ComponentWithOnyxHook policiesWithSelector', policiesWithSelector);
+    console.group('OnyxPlayground [App] ComponentWithOnyxHook');
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook policyID', policyID);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook account', account);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook policies', policies);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook policy', policy);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook policy2', policy2);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook currency', currency);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook sessionEmail', sessionEmail);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook policiesWithSelector', policiesWithSelector);
     console.groupEnd();
 
     return null;
 }
 
-type PlaygroundOnyxProps = {
+type WithOnyxVSuseOnyxProps = {
     policyID: string;
 };
 
-function PlaygroundOnyx({policyID}: PlaygroundOnyxProps) {
+function WithOnyxVSuseOnyx({policyID}: WithOnyxVSuseOnyxProps) {
+    const styles = useThemeStyles();
+    const [shouldRender, setShouldRender] = useState(false);
+
     return (
         <>
-            <ComponentWithOnyxHOC policyID={policyID} />
-            <ComponentWithOnyxHook policyID={policyID} />
+            <Text style={[styles.textHeadline, styles.mb2, styles.ph5]}>withOnyx VS useOnyx</Text>
+            <MenuItem
+                wrapperStyle={styles.mb4}
+                title="Show/Hide WithOnyxVSuseOnyx component"
+                icon={Expensicons.Sync}
+                numberOfLinesTitle={2}
+                onPress={() => {
+                    setShouldRender(!shouldRender);
+                }}
+            />
+            {shouldRender && (
+                <>
+                    <Text>WithOnyxVSuseOnyx</Text>
+                    <ComponentWithOnyxHOC policyID={policyID} />
+                    <ComponentWithOnyxHook policyID={policyID} />
+                </>
+            )}
         </>
     );
 }
 
-export default withOnyx<PlaygroundOnyxProps, PlaygroundOnyxProps>({
+export default withOnyx<WithOnyxVSuseOnyxProps, WithOnyxVSuseOnyxProps>({
     policyID: {
         key: ONYXKEYS.POLICY_ID,
         selector: (value) => value ?? 'undefined',
     },
-})(PlaygroundOnyx);
+})(WithOnyxVSuseOnyx);

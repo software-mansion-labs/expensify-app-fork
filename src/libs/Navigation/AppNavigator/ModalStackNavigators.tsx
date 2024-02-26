@@ -13,6 +13,7 @@ import type {
     NewChatNavigatorParamList,
     NewTaskNavigatorParamList,
     OnboardEngagementNavigatorParamList,
+    OnyxPlaygroundNavigatorParamList,
     ParticipantsNavigatorParamList,
     PrivateNotesNavigatorParamList,
     ProfileNavigatorParamList,
@@ -297,6 +298,10 @@ const ProcessMoneyRequestHoldStackNavigator = createModalStackNavigator({
     [SCREENS.PROCESS_MONEY_REQUEST_HOLD_ROOT]: () => require('../../../pages/ProcessMoneyRequestHoldPage').default as React.ComponentType,
 });
 
+const OnyxPlaygroundModalStackNavigator = createModalStackNavigator<OnyxPlaygroundNavigatorParamList>({
+    [SCREENS.ONYX_PLAYGROUND_ROOT]: () => require('../../../pages/OnyxPlayground/OnyxPlaygroundPage').default as React.ComponentType,
+});
+
 export {
     AccountSettingsModalStackNavigator,
     AddPersonalBankAccountModalStackNavigator,
@@ -327,4 +332,5 @@ export {
     TaskModalStackNavigator,
     WalletStatementStackNavigator,
     ProcessMoneyRequestHoldStackNavigator,
+    OnyxPlaygroundModalStackNavigator,
 };

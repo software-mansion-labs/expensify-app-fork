@@ -487,6 +487,11 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
                         [SCREENS.PROCESS_MONEY_REQUEST_HOLD_ROOT]: ROUTES.PROCESS_MONEY_REQUEST_HOLD,
                     },
                 },
+                [SCREENS.RIGHT_MODAL.ONYX_PLAYGROUND]: {
+                    screens: {
+                        [SCREENS.ONYX_PLAYGROUND_ROOT]: ROUTES.ONYX_PLAYGROUND,
+                    },
+                },
             },
         },
 

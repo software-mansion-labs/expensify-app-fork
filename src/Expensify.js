@@ -37,7 +37,6 @@ import Visibility from './libs/Visibility';
 import ONYXKEYS from './ONYXKEYS';
 import PopoverReportActionContextMenu from './pages/home/report/ContextMenu/PopoverReportActionContextMenu';
 import * as ReportActionContextMenu from './pages/home/report/ContextMenu/ReportActionContextMenu';
-import PlaygroundOnyx from './PlaygroundOnyx';
 
 Onyx.registerLogger(({level, message}) => {
     if (level === 'alert') {
@@ -262,8 +261,6 @@ function Expensify(props) {
             )}
 
             {shouldHideSplash && <SplashScreenHider onHide={onSplashHide} />}
-
-            <PlaygroundOnyx />
         </DeeplinkWrapper>
     );
 }
