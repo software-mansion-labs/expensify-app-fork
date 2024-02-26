@@ -11,6 +11,7 @@
 
 NSString *const ShareExtensionGroupIdentifier = @"group.com.new-expensify";
 NSString *const ShareExtensionFilesKey = @"ShareFiles";
+NSString *const ShareImageFileExtension = @".png";
 
 @implementation RCTShareExtensionHandlerModule
 
