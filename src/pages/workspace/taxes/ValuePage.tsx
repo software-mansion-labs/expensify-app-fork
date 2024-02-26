@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-/* eslint-disable @typescript-eslint/naming-convention */
-
 /* eslint-disable no-console */
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback, useState} from 'react';
@@ -45,13 +41,13 @@ function ValuePage({
     const {translate} = useLocalize();
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
     const isEditPage = !!currentTaxRate?.name;
-    const [value, setValue] = useState(isEditPage ? currentTaxRate?.value : workspaceTax?.value);
+    const [value, setValue] = useState(isEditPage ? currentTaxRate?.value?.replace('%', '') : workspaceTax?.value);
 
     const validate = useCallback((values: FormOnyxValues<typeof ONYXKEYS.FORMS.WORKSPACE_TAX_FORM>) => {
         const errors = {};
 
         if (Number(values.value) < 0 || Number(values.value) >= 100) {
-            ErrorUtils.addErrorMessage(errors, 'value', 'test');
+            ErrorUtils.addErrorMessage(errors, 'value', 'Percentage must be between 0 and 100');
         }
 
         return errors;
