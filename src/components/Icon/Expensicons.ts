@@ -12,6 +12,7 @@ import DeletedRoomAvatar from '@assets/images/avatars/deleted-room.svg';
 import DomainRoomAvatar from '@assets/images/avatars/domain-room.svg';
 import FallbackAvatar from '@assets/images/avatars/fallback-avatar.svg';
 import FallbackWorkspaceAvatar from '@assets/images/avatars/fallback-workspace-avatar.svg';
+import NotificationsAvatar from '@assets/images/avatars/notifications-avatar.svg';
 import ActiveRoomAvatar from '@assets/images/avatars/room.svg';
 import BackArrow from '@assets/images/back-left.svg';
 import Bank from '@assets/images/bank.svg';
@@ -144,6 +145,7 @@ import Users from '@assets/images/users.svg';
 import VolumeHigh from '@assets/images/volume-high.svg';
 import VolumeLow from '@assets/images/volume-low.svg';
 import Wallet from '@assets/images/wallet.svg';
+import Workflows from '@assets/images/workflows.svg';
 import Workspace from '@assets/images/workspace-default-avatar.svg';
 import Wrench from '@assets/images/wrench.svg';
 import Zoom from '@assets/images/zoom.svg';
@@ -249,6 +251,7 @@ export {
     ExpensifyLogoNew,
     NewWindow,
     NewWorkspace,
+    NotificationsAvatar,
     Offline,
     OfflineCloud,
     OldDotWireframe,
@@ -287,6 +290,7 @@ export {
     VolumeHigh,
     VolumeLow,
     Wallet,
+    Workflows,
     Workspace,
     Zoom,
     Twitter,
