@@ -528,20 +528,20 @@ const ROUTES = {
         getRoute: (policyID: string) => `workspace/${policyID}/taxes/settings/foreign-currency` as const,
     },
     WORKSPACE_TAXES_EDIT: {
-        route: 'workspace/:policyID/taxes/:taxName',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${encodeURI(taxName)}` as const,
+        route: 'workspace/:policyID/tax/:taxName',
+        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/tax/${encodeURI(taxName)}` as const,
     },
     WORKSPACE_TAXES_NEW: {
-        route: 'workspace/:policyID/taxes/new',
-        getRoute: (policyID: string) => `workspace/${policyID}/taxes/new` as const,
+        route: 'workspace/:policyID/tax/new',
+        getRoute: (policyID: string) => `workspace/${policyID}/tax/new` as const,
     },
     WORKSPACE_TAXES_NAME: {
-        route: 'workspace/:policyID/taxes/:taxName/name',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${taxName ? encodeURI(taxName) : 'new'}/name` as const,
+        route: 'workspace/:policyID/tax/:taxName/name',
+        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/tax/${taxName ? encodeURI(taxName) : 'new'}/name` as const,
     },
     WORKSPACE_TAXES_VALUE: {
-        route: 'workspace/:policyID/taxes/:taxName/value',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/taxes/${taxName ? encodeURI(taxName) : 'new'}/value` as const,
+        route: 'workspace/:policyID/tax/:taxName/value',
+        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/tax/${taxName ? encodeURI(taxName) : 'new'}/value` as const,
     },
     // Referral program promotion
     REFERRAL_DETAILS_MODAL: {
