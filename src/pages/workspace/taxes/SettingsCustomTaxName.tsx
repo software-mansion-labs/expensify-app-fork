@@ -80,6 +80,6 @@ SettingsCustomTaxName.displayName = 'SettingsCustomTaxName';
 
 export default withOnyx<SettingsCustomTaxNameProps, SettingsCustomTaxNameOnyxProps>({
     policyTaxRates: {
-        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${route.params.policyID}`,
+        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
     },
 })(SettingsCustomTaxName);

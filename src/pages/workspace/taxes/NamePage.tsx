@@ -96,6 +96,6 @@ export default withOnyx<NamePageProps, NamePageOnyxProps>({
         key: ONYXKEYS.WORKSPACE_TAX,
     },
     policyTaxRates: {
-        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${route.params.policyID}`,
+        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
     },
 })(NamePage);

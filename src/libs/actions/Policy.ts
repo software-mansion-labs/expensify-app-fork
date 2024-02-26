@@ -202,7 +202,7 @@ Onyx.connect({
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let allPolicyTaxes: OnyxCollection<PolicyTaxRateWithDefault> = {};
 Onyx.connect({
-    key: ONYXKEYS.COLLECTION.POLICY_TAX_RATE,
+    key: ONYXKEYS.COLLECTION.POLICY_TAX_RATES,
     waitForCollectionCallback: true,
     callback: (value) => {
         if (!value) {

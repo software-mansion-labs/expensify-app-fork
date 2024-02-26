@@ -285,6 +285,7 @@ const ONYXKEYS = {
         POLICY_CATEGORIES: 'policyCategories_',
         POLICY_RECENTLY_USED_CATEGORIES: 'policyRecentlyUsedCategories_',
         POLICY_TAGS: 'policyTags_',
+        POLICY_TAX_RATES: 'policyTaxRates_',
         POLICY_RECENTLY_USED_TAGS: 'policyRecentlyUsedTags_',
         POLICY_REPORT_FIELDS: 'policyReportFields_',
         WORKSPACE_INVITE_MEMBERS_DRAFT: 'workspaceInviteMembersDraft_',
@@ -330,7 +331,7 @@ const ONYXKEYS = {
         WORKSPACE_RATE_AND_UNIT_FORM: 'workspaceRateAndUnitForm',
         WORKSPACE_RATE_AND_UNIT_FORM_DRAFT: 'workspaceRateAndUnitFormDraft',
         WORKSPACE_TAX_FORM: 'workspaceTaxForm',
-        WORKSPACE_TAX_FORM_DRAFT: 'workspaceTaxFormDRAFT',
+        WORKSPACE_TAX_FORM_DRAFT: 'workspaceTaxFormDraft',
         CLOSE_ACCOUNT_FORM: 'closeAccount',
         CLOSE_ACCOUNT_FORM_DRAFT: 'closeAccountDraft',
         PROFILE_SETTINGS_FORM: 'profileSettingsForm',
@@ -455,6 +456,7 @@ type OnyxCollectionValuesMapping = {
     [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
     [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;
     [ONYXKEYS.COLLECTION.POLICY_CATEGORIES]: OnyxTypes.PolicyCategories;
+    [ONYXKEYS.COLLECTION.POLICY_TAX_RATES]: OnyxTypes.PolicyTaxRateWithDefault;
     [ONYXKEYS.COLLECTION.POLICY_TAGS]: OnyxTypes.PolicyTagList;
     [ONYXKEYS.COLLECTION.POLICY_MEMBERS]: OnyxTypes.PolicyMembers;
     [ONYXKEYS.COLLECTION.POLICY_MEMBERS_DRAFTS]: OnyxTypes.PolicyMember;
@@ -482,7 +484,6 @@ type OnyxCollectionValuesMapping = {
     [ONYXKEYS.COLLECTION.SELECTED_TAB]: string;
     [ONYXKEYS.COLLECTION.PRIVATE_NOTES_DRAFT]: string;
     [ONYXKEYS.COLLECTION.NEXT_STEP]: OnyxTypes.ReportNextStep;
-    [ONYXKEYS.COLLECTION.POLICY_TAX_RATE]: OnyxTypes.PolicyTaxRateWithDefault;
 };
 
 type OnyxValuesMapping = {

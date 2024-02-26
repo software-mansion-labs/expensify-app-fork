@@ -134,7 +134,7 @@ WorkspaceTaxesPage.displayName = 'WorkspaceTaxesPage';
 export default withPolicyAndFullscreenLoading(
     withOnyx<WorkspaceTaxesPageProps, WorkspaceTaxesPageOnyxProps>({
         policyTaxRates: {
-            key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATE}${route.params.policyID}`,
+            key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
         },
     })(WorkspaceTaxesPage),
 );
