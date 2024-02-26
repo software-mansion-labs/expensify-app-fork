@@ -45,12 +45,12 @@ import type {
     Policy,
     PolicyMember,
     PolicyTagList,
-    PolicyTaxRateWithDefault,
     RecentlyUsedCategories,
     RecentlyUsedTags,
     ReimbursementAccount,
     Report,
     ReportAction,
+    TaxRatesWithDefault,
     Transaction,
 } from '@src/types/onyx';
 import type {Errors} from '@src/types/onyx/OnyxCommon';
@@ -200,7 +200,7 @@ Onyx.connect({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let allPolicyTaxes: OnyxCollection<PolicyTaxRateWithDefault> = {};
+let allPolicyTaxes: OnyxCollection<TaxRatesWithDefault> = {};
 Onyx.connect({
     key: ONYXKEYS.COLLECTION.POLICY_TAX_RATES,
     waitForCollectionCallback: true,

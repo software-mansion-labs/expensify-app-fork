@@ -210,6 +210,15 @@ type SettingsNavigatorParamList = {
     [SCREENS.WORKSPACE.TAXES_SETTINGS]: {
         policyID: string;
     };
+    [SCREENS.WORKSPACE.TAXES_SETTINGS_CUSTOM_TAX_NAME]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.TAXES_SETTINGS_FOREIGN_CURRENCY_DEFAULT]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.TAXES_SETTINGS_WORKSPACE_CURRENCY_DEFAULT]: {
+        policyID: string;
+    };
 } & ReimbursementAccountNavigatorParamList;
 
 type NewChatNavigatorParamList = {

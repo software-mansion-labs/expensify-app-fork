@@ -23,7 +23,7 @@ import type * as OnyxTypes from '@src/types/onyx';
 
 type NamePageOnyxProps = {
     workspaceTax: OnyxEntry<OnyxTypes.WorkspaceTax>;
-    policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
+    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
 type NamePageProps = NamePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_NAME>;

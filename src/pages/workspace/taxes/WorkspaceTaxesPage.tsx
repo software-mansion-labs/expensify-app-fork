@@ -10,6 +10,7 @@ import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
+import TableListItem from '@components/SelectionList/TableListItem';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -34,7 +35,7 @@ type TaxForList = {
 };
 
 type WorkspaceTaxesPageOnyxProps = {
-    policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
+    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
 type WorkspaceTaxesPageProps = WithPolicyAndFullscreenLoadingProps & WorkspaceTaxesPageOnyxProps & StackScreenProps<CentralPaneNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES>;
@@ -124,6 +125,7 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
                 onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
                 onSelectAll={toggleAllTaxes}
                 showScrollIndicator
+                ListItem={TableListItem}
             />
         </ScreenWrapper>
     );

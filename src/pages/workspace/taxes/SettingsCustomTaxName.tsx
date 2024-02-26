@@ -12,7 +12,6 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
-import * as PolicyUtils from '@libs/PolicyUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -20,14 +19,14 @@ import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 
 type SettingsCustomTaxNameOnyxProps = {
-    policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
+    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
-type SettingsCustomTaxNameProps = SettingsCustomTaxNameOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_EDIT_VALUE>;
+type SettingsCustomTaxNameProps = SettingsCustomTaxNameOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_CUSTOM_TAX_NAME>;
 
 function SettingsCustomTaxName({
     route: {
-        params: {policyID, taxName},
+        params: {policyID},
     },
     policyTaxRates,
 }: SettingsCustomTaxNameProps) {
@@ -36,7 +35,7 @@ function SettingsCustomTaxName({
     const [name, setName] = useState(policyTaxRates?.name ?? '');
 
     const submit = () => {
-        Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxName));
+        Navigation.goBack(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policyID ?? ''));
     };
 
     return (

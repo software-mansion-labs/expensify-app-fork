@@ -4,7 +4,7 @@ import type {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {PersonalDetailsList, Policy, PolicyMembers, PolicyTagList, PolicyTags, PolicyTaxRate, PolicyTaxRateWithDefault} from '@src/types/onyx';
+import type {PersonalDetailsList, Policy, PolicyMembers, PolicyTagList, PolicyTags, TaxRate, TaxRatesWithDefault} from '@src/types/onyx';
 import type {EmptyObject} from '@src/types/utils/EmptyObject';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import Navigation from './Navigation/Navigation';
@@ -200,7 +200,7 @@ function getTagList(policyTagList: OnyxEntry<PolicyTagList>, tagIndex: number): 
 }
 
 /** Get a tax with given ID from policy */
-function getTaxByID(policyTaxRates: OnyxEntry<PolicyTaxRateWithDefault>, taxID: string): PolicyTaxRate | undefined {
+function getTaxByID(policyTaxRates: OnyxEntry<TaxRatesWithDefault>, taxID: string): TaxRate | undefined {
     return policyTaxRates?.taxes?.[taxID];
 }
 

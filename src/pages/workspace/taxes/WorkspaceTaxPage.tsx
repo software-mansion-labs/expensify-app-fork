@@ -24,7 +24,7 @@ import type * as OnyxTypes from '@src/types/onyx';
 
 type WorkspaceTaxPageOnyxProps = {
     workspaceTax: OnyxEntry<OnyxTypes.WorkspaceTax>;
-    policyTaxRates: OnyxEntry<OnyxTypes.PolicyTaxRateWithDefault>;
+    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
 type WorkspaceTaxPageBaseProps = WithPolicyProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_VALUE>;
