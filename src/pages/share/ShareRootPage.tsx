@@ -15,18 +15,15 @@ import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
 import CONST from '@src/CONST';
 import ShareExtensionHandlerModule from '@src/modules/ShareExtensionHandlerModule';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Report} from '@src/types/onyx';
 import ScanTab from './ScanTab';
 
 type ShareRootPageOnyxProps = {
     selectedTab: OnyxEntry<string>;
-
-    iou: OnyxEntry<Report>;
 };
 
 type ShareRootPageProps = ShareRootPageOnyxProps;
 
-function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
+function ShareRootPage({selectedTab}: ShareRootPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const fileIsScannable = false;
@@ -84,7 +81,7 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
                     )}
                 >
                     <TopTab.Screen name={CONST.TAB.SHARE}>{() => <Text>test</Text>}</TopTab.Screen>
-                    <TopTab.Screen name={CONST.TAB.SCAN}>{() => <ScanTab iou={iou} />}</TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SCAN}>{() => <ScanTab />}</TopTab.Screen>
                 </OnyxTabNavigator>
             </View>
         </ScreenWrapper>
@@ -96,9 +93,5 @@ ShareRootPage.displayName = 'ShareRootPage';
 export default withOnyx<ShareRootPageProps, ShareRootPageOnyxProps>({
     selectedTab: {
         key: `${ONYXKEYS.COLLECTION.SELECTED_TAB}${CONST.TAB.RECEIPT_TAB_ID}`,
-    },
-    // @ts-expect-error To fix
-    iou: {
-        key: ONYXKEYS.IOU,
     },
 })(ShareRootPage);
