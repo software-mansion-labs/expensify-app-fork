@@ -3,7 +3,6 @@ import React from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
-import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -23,11 +22,10 @@ import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 
 type WorkspaceEditTaxPageOnyxProps = {
-    workspaceTax: OnyxEntry<OnyxTypes.WorkspaceTax>;
     policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
-type WorkspaceEditTaxPageBaseProps = WithPolicyProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_VALUE>;
+type WorkspaceEditTaxPageBaseProps = WithPolicyProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_EDIT>;
 
 type WorkspaceEditTaxPageProps = WorkspaceEditTaxPageBaseProps & WorkspaceEditTaxPageOnyxProps;
 
@@ -35,16 +33,11 @@ function WorkspaceEditTaxPage({
     route: {
         params: {policyID, taxName},
     },
-    workspaceTax,
     policyTaxRates,
 }: WorkspaceEditTaxPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
-
-    const isEditPage = !!currentTaxRate?.name;
-
-    const title = isEditPage ? currentTaxRate?.name : 'New rate';
 
     return (
         <ScreenWrapper
@@ -53,7 +46,7 @@ function WorkspaceEditTaxPage({
         >
             <View style={[styles.h100, styles.flex1, styles.justifyContentBetween]}>
                 <View>
-                    <HeaderWithBackButton title={title} />
+                    <HeaderWithBackButton title={currentTaxRate?.name} />
                     {taxName ? (
                         <View style={[styles.flexRow, styles.mv4, styles.justifyContentBetween, styles.ph5]}>
                             <View style={styles.flex4}>
@@ -70,31 +63,21 @@ function WorkspaceEditTaxPage({
                     ) : null}
                     <MenuItemWithTopDescription
                         shouldShowRightIcon
-                        title={isEditPage ? currentTaxRate?.name : workspaceTax?.name}
+                        title={currentTaxRate?.name}
                         description={translate('workspace.taxes.name')}
                         style={[styles.moneyRequestMenuItem]}
                         titleStyle={styles.flex1}
-                        rightLabel={!isEditPage ? translate('common.required') : undefined}
                         onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_NAME.getRoute(`${policyID}`, taxName))}
                     />
                     <MenuItemWithTopDescription
                         shouldShowRightIcon
-                        title={`${isEditPage ? currentTaxRate?.value : workspaceTax?.value}%`}
+                        title={`${currentTaxRate?.value}%`}
                         description={translate('workspace.taxes.value')}
                         style={[styles.moneyRequestMenuItem]}
                         titleStyle={styles.flex1}
-                        rightLabel={!isEditPage ? translate('common.required') : undefined}
                         onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_VALUE.getRoute(`${policyID}`, taxName))}
                     />
                 </View>
-                {!isEditPage ? (
-                    <Button
-                        success
-                        text={translate('common.save')}
-                        // Add api call here to add new rate - use workspaceTax as the source of data and clear it at the end
-                        onPress={() => {}}
-                    />
-                ) : null}
             </View>
         </ScreenWrapper>
     );
@@ -104,9 +87,6 @@ WorkspaceEditTaxPage.displayName = 'WorkspaceEditTaxPage';
 
 export default compose(
     withOnyx<WorkspaceEditTaxPageProps, WorkspaceEditTaxPageOnyxProps>({
-        workspaceTax: {
-            key: ONYXKEYS.WORKSPACE_TAX,
-        },
         policyTaxRates: {
             key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params?.policyID}`,
         },
