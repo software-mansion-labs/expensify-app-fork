@@ -18,7 +18,7 @@ class ShareViewController: UIViewController {
           }
           else if let shareURL = url as? URL {
               DispatchQueue.main.async {
-                  let customURL = URL(string: "new-expensify://share/root")
+                  let customURL = URL(string: "new-expensify://share")
                   self?.launchApp(customURL: customURL)
               }
           }

@@ -383,6 +383,8 @@ const ONYXKEYS = {
         REIMBURSEMENT_ACCOUNT_FORM_DRAFT: 'reimbursementAccountDraft',
         PERSONAL_BANK_ACCOUNT: 'personalBankAccountForm',
         PERSONAL_BANK_ACCOUNT_DRAFT: 'personalBankAccountFormDraft',
+        SHARE_COMPOSE_MESSAGE_FORM: 'shareComposeMessageForm',
+        SHARE_COMPOSE_MESSAGE_FORM_DRAFT: 'shareComposeMessageFormDraft',
     },
 } as const;
 
@@ -424,6 +426,7 @@ type OnyxFormValuesMapping = {
     [ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM]: FormTypes.ReimbursementAccountForm;
     [ONYXKEYS.FORMS.PERSONAL_BANK_ACCOUNT]: FormTypes.PersonalBankAccountForm;
     [ONYXKEYS.FORMS.WORKSPACE_DESCRIPTION_FORM]: FormTypes.WorkspaceDescriptionForm;
+    [ONYXKEYS.FORMS.SHARE_COMPOSE_MESSAGE_FORM]: FormTypes.ShareComposeMessageForm;
 };
 
 type OnyxFormDraftValuesMapping = {
