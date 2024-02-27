@@ -525,9 +525,7 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
         },
 
         [NAVIGATORS.SHARE_MODAL_NAVIGATOR]: {
-            path: ROUTES.SHARE,
             initialRouteName: SCREENS.SHARE.ROOT,
-            exact: true,
             screens: {
                 [SCREENS.SHARE.ROOT]: {
                     path: ROUTES.SHARE_ROOT,
@@ -541,10 +539,10 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
                             path: 'share/root/scan',
                             exact: true,
                         },
-                    }
+                    },
                 },
-                [SCREENS.SHARE.MESSAGE]: ROUTES.SHARE_MESSAGE,
-                [SCREENS.SHARE.SCAN_CONFIRM]: ROUTES.SHARE_SCAN_CONFIRM,
+                [SCREENS.SHARE.MESSAGE]: {path: ROUTES.SHARE_MESSAGE},
+                [SCREENS.SHARE.SCAN_CONFIRM]: {path: ROUTES.SHARE_SCAN_CONFIRM.route},
             },
         },
     },

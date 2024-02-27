@@ -300,7 +300,7 @@ const ProcessMoneyRequestHoldStackNavigator = createModalStackNavigator({
 const ShareModalStackNavigator = createModalStackNavigator({
     [SCREENS.SHARE.ROOT]: () => require('../../../pages/share/ShareRootPage').default as React.ComponentType,
     [SCREENS.SHARE.MESSAGE]: () => require('../../../pages/share/ShareComposeMessagePage').default as React.ComponentType,
-    [SCREENS.SHARE.SCAN_CONFIRM]: () => require('../../../pages/iou/steps/MoneyRequestConfirmPage').default as React.ComponentType,
+    [SCREENS.SHARE.SCAN_CONFIRM]: () => require('../../../pages/iou/request/step/IOURequestStepConfirmation').default as React.ComponentType,
 });
 
 export {

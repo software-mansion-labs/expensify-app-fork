@@ -1,22 +1,22 @@
-import React from 'react';
-import HeaderWithBackButton from "@components/HeaderWithBackButton";
-import Navigation from "@navigation/Navigation";
-import * as DeviceCapabilities from "@libs/DeviceCapabilities";
+import React, {useCallback, useRef} from 'react';
+import {View} from 'react-native';
+import type {OnyxEntry} from 'react-native-onyx';
+import {withOnyx} from 'react-native-onyx';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
-import {View} from "react-native";
-import useThemeStyles from "@hooks/useThemeStyles";
-import useLocalize from "@hooks/useLocalize";
-import type {OnyxEntry} from "react-native-onyx";
-import { withOnyx} from "react-native-onyx";
-import ONYXKEYS from "@src/ONYXKEYS";
-import CONST from "@src/CONST";
-import OnyxTabNavigator, {TopTab} from "@navigation/OnyxTabNavigator";
-import TabSelector from "@components/TabSelector/TabSelector";
-import MoneyRequestParticipantsSelector
-    from "@pages/iou/steps/MoneyRequstParticipantsPage/MoneyRequestParticipantsSelector";
-import * as IOU from "@libs/actions/IOU";
-import type {Report} from "@src/types/onyx";
-import ROUTES from "@src/ROUTES";
+import TabSelector from '@components/TabSelector/TabSelector';
+import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
+import * as IOU from '@libs/actions/IOU';
+import * as DeviceCapabilities from '@libs/DeviceCapabilities';
+import * as ReportUtils from '@libs/ReportUtils';
+import Navigation from '@navigation/Navigation';
+import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
+import MoneyRequestParticipantsSelector from '@pages/iou/steps/MoneyRequstParticipantsPage/MoneyRequestParticipantsSelector';
+import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
+import type {Report} from '@src/types/onyx';
 
 type ShareRootPageOnyxProps = {
     selectedTab: OnyxEntry<string>;
@@ -27,19 +27,25 @@ type ShareRootPageOnyxProps = {
 type ShareRootPageProps = ShareRootPageOnyxProps;
 
 function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
+    const transactionID = CONST.IOU.OPTIMISTIC_TRANSACTION_ID;
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const fileIsScannable = false;
+    const optimisticReportID = ReportUtils.generateReportID();
+    const selectedReportID = useRef(optimisticReportID);
 
     const navigateBack = () => {
         Navigation.dismissModal();
     };
 
-    const navigateToConfirmationStep = (moneyRequestType: string) => {
-        IOU.setMoneyRequestId(moneyRequestType);
-        IOU.resetMoneyRequestCategory();
-        Navigation.navigate(ROUTES.MONEY_REQUEST_CONFIRMATION.getRoute(moneyRequestType, reportID));
-    };
+    const goToNextStep = useCallback(() => {
+        // const nextStepIOUType = numberOfParticipants.current === 1 ? CONST.IOU.TYPE.REQUEST : CONST.IOU.TYPE.SPLIT;
+        const nextStepIOUType = CONST.IOU.TYPE.REQUEST;
+        IOU.startMoneyRequest_temporaryForRefactor(optimisticReportID, false, CONST.IOU.REQUEST_TYPE.SCAN);
+        IOU.setMoneyRequestTag(transactionID, '');
+        IOU.resetMoneyRequestCategory_temporaryForRefactor(transactionID);
+        Navigation.navigate(ROUTES.SHARE_SCAN_CONFIRM.getRoute(nextStepIOUType, transactionID, selectedReportID.current || optimisticReportID));
+    }, [transactionID, optimisticReportID]);
 
     return (
         <ScreenWrapper
@@ -67,30 +73,34 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
                         />
                     )}
                 >
-                    <TopTab.Screen
-                        name={CONST.TAB.SHARE}
-                    >{() => (
-                        <MoneyRequestParticipantsSelector
-                            participants={iou?.participants ?? []}
-                            onAddParticipants={IOU.setMoneyRequestParticipants}
-                            navigateToRequest={() => navigateToConfirmationStep(CONST.IOU.TYPE.REQUEST)}
-                            navigateToSplit={() => navigateToConfirmationStep(CONST.IOU.TYPE.SPLIT)}
-                            iouType={CONST.IOU.TYPE.REQUEST}
-                            isScanRequest
-                        />
-                    )}</TopTab.Screen>
-                    <TopTab.Screen
-                        name={CONST.TAB.SCAN}
-                    >{() => (
-                        <MoneyRequestParticipantsSelector
-                            participants={iou?.participants ?? []}
-                            onAddParticipants={IOU.setMoneyRequestParticipants}
-                            navigateToRequest={() => navigateToConfirmationStep(CONST.IOU.TYPE.REQUEST)}
-                            navigateToSplit={() => navigateToConfirmationStep(CONST.IOU.TYPE.SPLIT)}
-                            iouType={CONST.IOU.TYPE.REQUEST}
-                            isScanRequest
-                        />
-                    )}</TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SHARE}>
+                        {() => (
+                            <MoneyRequestParticipantsSelector
+                                participants={iou?.participants ?? []}
+                                onAddParticipants={IOU.setMoneyRequestParticipants}
+                                onFinish={goToNextStep}
+                                navigateToRequest={goToNextStep}
+                                navigateToSplit={goToNextStep}
+                                iouType={CONST.IOU.TYPE.REQUEST}
+                                iouRequestType={CONST.IOU.REQUEST_TYPE.SCAN}
+                                isScanRequest
+                            />
+                        )}
+                    </TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SCAN}>
+                        {() => (
+                            <MoneyRequestParticipantsSelector
+                                participants={iou?.participants ?? []}
+                                onAddParticipants={IOU.setMoneyRequestParticipants}
+                                onFinish={goToNextStep}
+                                navigateToRequest={goToNextStep}
+                                navigateToSplit={goToNextStep}
+                                iouType={CONST.IOU.TYPE.REQUEST}
+                                iouRequestType={CONST.IOU.REQUEST_TYPE.SCAN}
+                                isScanRequest
+                            />
+                        )}
+                    </TopTab.Screen>
                 </OnyxTabNavigator>
             </View>
         </ScreenWrapper>
@@ -100,10 +110,11 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
 ShareRootPage.displayName = 'ShareRootPage';
 
 export default withOnyx<ShareRootPageProps, ShareRootPageOnyxProps>({
-    iou: {
-        key: ONYXKEYS.IOU,
-    },
     selectedTab: {
         key: `${ONYXKEYS.COLLECTION.SELECTED_TAB}${CONST.TAB.RECEIPT_TAB_ID}`,
     },
-})(ShareRootPage);;
+    // @ts-expect-error To fix
+    iou: {
+        key: ONYXKEYS.IOU,
+    },
+})(ShareRootPage);
