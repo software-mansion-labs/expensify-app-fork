@@ -2278,6 +2278,9 @@ export default {
         secondDescription: "Don't worry, Expensify Classic has everything you need.",
         buttonText: 'Take me to Expensify Classic',
     },
+    share: {
+        title: 'Share to Expensify',
+    },
     violations: {
         allTagLevelsRequired: 'All tags required',
         autoReportedRejectedExpense: ({rejectReason, rejectedBy}: ViolationsAutoReportedRejectedExpenseParams) => `${rejectedBy} rejected this expense with the comment "${rejectReason}"`,
