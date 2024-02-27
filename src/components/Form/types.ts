@@ -3,6 +3,7 @@ import type {GestureResponderEvent, NativeSyntheticEvent, StyleProp, TextInputFo
 import type {ValueOf} from 'type-fest';
 import type AddressSearch from '@components/AddressSearch';
 import type AmountForm from '@components/AmountForm';
+import type AmountPicker from '@components/AmountPicker';
 import type AmountTextInput from '@components/AmountTextInput';
 import type CheckboxWithLabel from '@components/CheckboxWithLabel';
 import type CountrySelector from '@components/CountrySelector';
@@ -36,6 +37,7 @@ type ValidInputs =
     | typeof BusinessTypePicker
     | typeof StatePicker
     | typeof ValuePicker
+    | typeof AmountPicker
     | typeof RadioButtons;
 
 type ValueTypeKey = 'string' | 'boolean' | 'date';

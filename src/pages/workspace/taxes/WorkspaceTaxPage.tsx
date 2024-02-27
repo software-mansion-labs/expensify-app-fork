@@ -3,7 +3,10 @@ import React from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
+import AmountPicker from '@components/AmountPicker';
 import Button from '@components/Button';
+import FormProvider from '@components/Form/FormProvider';
+import InputWrapper from '@components/Form/InputWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -20,6 +23,7 @@ import withPolicy from '@pages/workspace/withPolicy';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import INPUT_IDS from '@src/types/form/WorkspaceTaxForm';
 import type * as OnyxTypes from '@src/types/onyx';
 
 type WorkspaceTaxPageOnyxProps = {
@@ -68,6 +72,23 @@ function WorkspaceTaxPage({
                             </View>
                         </View>
                     ) : null}
+                    <FormProvider
+                        style={[styles.flexGrow1, styles.ph5]}
+                        formID={ONYXKEYS.FORMS.WORKSPACE_TAX_FORM}
+                        onSubmit={() => {}}
+                        // validate={() => {}}
+                        submitButtonText={translate('common.save')}
+                        enabledWhenOffline
+                    >
+                        <View style={styles.mb4}>
+                            <InputWrapper
+                                InputComponent={AmountPicker}
+                                inputID={INPUT_IDS.VALUE}
+                                description={translate('workspace.taxes.value')}
+                                rightLabel={translate('common.required')}
+                            />
+                        </View>
+                    </FormProvider>
                     <MenuItemWithTopDescription
                         shouldShowRightIcon
                         title={isEditPage ? currentTaxRate?.name : workspaceTax?.name}
