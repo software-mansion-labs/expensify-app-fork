@@ -40,10 +40,10 @@
 		DD79042B2792E76D004484B4 /* RCTBootSplash.m in Sources */ = {isa = PBXBuildFile; fileRef = DD79042A2792E76D004484B4 /* RCTBootSplash.m */; };
 		DDCB2E57F334C143AC462B43 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D20D83B0E39BA6D21761E72 /* ExpoModulesProvider.swift */; };
 		E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */ = {isa = PBXBuildFile; };
-		E5647A2C2B88F2000047156F /* RCTShareExtensionHandlerModule.m in Sources */ = {isa = PBXBuildFile; fileRef = E5647A2B2B88F2000047156F /* RCTShareExtensionHandlerModule.m */; };
-		E5CB2F112B7F834000B63003 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CB2F102B7F834000B63003 /* ShareViewController.swift */; };
-		E5CB2F142B7F834000B63003 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E5CB2F122B7F834000B63003 /* MainInterface.storyboard */; };
-		E5CB2F182B7F834000B63003 /* ShareMenuExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E5CB2F0E2B7F834000B63003 /* ShareMenuExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E5647A4A2B8E0CE40047156F /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5647A492B8E0CE40047156F /* ShareViewController.swift */; };
+		E5647A4D2B8E0CE40047156F /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E5647A4B2B8E0CE40047156F /* MainInterface.storyboard */; };
+		E5647A512B8E0CE40047156F /* ShareMenuExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E5647A472B8E0CE20047156F /* ShareMenuExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E5CB2F182B7F834000B63003 /* (null) in Embed Foundation Extensions */ = {isa = PBXBuildFile; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E9DF872D2525201700607FDC /* AirshipConfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = E9DF872C2525201700607FDC /* AirshipConfig.plist */; };
 		ED222ED90E074A5481A854FA /* ExpensifyNeue-BoldItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 8B28D84EF339436DBD42A203 /* ExpensifyNeue-BoldItalic.otf */; };
 		F0C450EA2705020500FD2970 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C450E92705020500FD2970 /* colors.json */; };
@@ -65,11 +65,11 @@
 			remoteGlobalIDString = 7FD73C9A2B23CE9500420AF3;
 			remoteInfo = NotificationServiceExtension;
 		};
-		E5CB2F162B7F834000B63003 /* PBXContainerItemProxy */ = {
+		E5647A4F2B8E0CE40047156F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = E5CB2F0D2B7F834000B63003;
+			remoteGlobalIDString = E5647A462B8E0CE20047156F;
 			remoteInfo = ShareMenuExtension;
 		};
 /* End PBXContainerItemProxy section */
@@ -82,7 +82,8 @@
 			dstSubfolderSpec = 13;
 			files = (
 				7FD73CA22B23CE9500420AF3 /* NotificationServiceExtension.appex in Embed Foundation Extensions */,
-				E5CB2F182B7F834000B63003 /* ShareMenuExtension.appex in Embed Foundation Extensions */,
+				E5CB2F182B7F834000B63003 /* (null) in Embed Foundation Extensions */,
+				E5647A512B8E0CE40047156F /* ShareMenuExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -145,6 +146,10 @@
 		DCF33E34FFEC48128CDD41D4 /* ExpensifyMono-Bold.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "ExpensifyMono-Bold.otf"; path = "../assets/fonts/native/ExpensifyMono-Bold.otf"; sourceTree = "<group>"; };
 		DD7904292792E76D004484B4 /* RCTBootSplash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTBootSplash.h; path = NewExpensify/RCTBootSplash.h; sourceTree = "<group>"; };
 		DD79042A2792E76D004484B4 /* RCTBootSplash.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RCTBootSplash.m; path = NewExpensify/RCTBootSplash.m; sourceTree = "<group>"; };
+		E5647A472B8E0CE20047156F /* ShareMenuExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareMenuExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E5647A492B8E0CE40047156F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		E5647A4C2B8E0CE40047156F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
+		E5647A4E2B8E0CE40047156F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E704648954784DDFBAADF568 /* ExpensifyMono-Regular.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "ExpensifyMono-Regular.otf"; path = "../assets/fonts/native/ExpensifyMono-Regular.otf"; sourceTree = "<group>"; };
 		E750C93A45B47BDC5149C5AA /* Pods-NewExpensify-NewExpensifyTests.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NewExpensify-NewExpensifyTests.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-NewExpensify-NewExpensifyTests/Pods-NewExpensify-NewExpensifyTests.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
 		E9DF872C2525201700607FDC /* AirshipConfig.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AirshipConfig.plist; sourceTree = "<group>"; };
@@ -168,8 +173,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */,
-				E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */,
+				E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */,
+				E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */,
 				5B8996A7D8B007ECC41919E1 /* libPods-NewExpensify.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -182,7 +187,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E5CB2F0B2B7F834000B63003 /* Frameworks */ = {
+		E5647A442B8E0CE20047156F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -275,8 +280,6 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				E5647A2B2B88F2000047156F /* RCTShareExtensionHandlerModule.m */,
-				E5647A2A2B88F1990047156F /* ios:NewExpensify:RCTShareExtensionHandlerModule.h */,
 				374FB8D528A133A7000D84EF /* OriginImageRequestHandler.h */,
 				374FB8D628A133FE000D84EF /* OriginImageRequestHandler.mm */,
 				F0C450E92705020500FD2970 /* colors.json */,
@@ -289,7 +292,7 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* NewExpensifyTests */,
 				7FD73C9C2B23CE9500420AF3 /* NotificationServiceExtension */,
-				E5CB2F0F2B7F834000B63003 /* ShareMenuExtension */,
+				E5647A482B8E0CE40047156F /* ShareMenuExtension */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				EC29677F0A49C2946A495A33 /* Pods */,
@@ -307,7 +310,7 @@
 				13B07F961A680F5B00A75B9A /* New Expensify Dev.app */,
 				00E356EE1AD99517003FC87E /* NewExpensifyTests.xctest */,
 				7FD73C9B2B23CE9500420AF3 /* NotificationServiceExtension.appex */,
-				E5CB2F0E2B7F834000B63003 /* ShareMenuExtension.appex */,
+				E5647A472B8E0CE20047156F /* ShareMenuExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -339,12 +342,12 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		E5CB2F0F2B7F834000B63003 /* ShareMenuExtension */ = {
+		E5647A482B8E0CE40047156F /* ShareMenuExtension */ = {
 			isa = PBXGroup;
 			children = (
-				E5CB2F102B7F834000B63003 /* ShareViewController.swift */,
-				E5CB2F122B7F834000B63003 /* MainInterface.storyboard */,
-				E5CB2F152B7F834000B63003 /* Info.plist */,
+				E5647A492B8E0CE40047156F /* ShareViewController.swift */,
+				E5647A4B2B8E0CE40047156F /* MainInterface.storyboard */,
+				E5647A4E2B8E0CE40047156F /* Info.plist */,
 			);
 			path = ShareMenuExtension;
 			sourceTree = "<group>";
@@ -420,7 +423,7 @@
 			);
 			dependencies = (
 				7FD73CA12B23CE9500420AF3 /* PBXTargetDependency */,
-				E5CB2F172B7F834000B63003 /* PBXTargetDependency */,
+				E5647A502B8E0CE40047156F /* PBXTargetDependency */,
 			);
 			name = NewExpensify;
 			productName = NewExpensify;
@@ -445,13 +448,13 @@
 			productReference = 7FD73C9B2B23CE9500420AF3 /* NotificationServiceExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		E5CB2F0D2B7F834000B63003 /* ShareMenuExtension */ = {
+		E5647A462B8E0CE20047156F /* ShareMenuExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E5CB2F1F2B7F834000B63003 /* Build configuration list for PBXNativeTarget "ShareMenuExtension" */;
+			buildConfigurationList = E5647A522B8E0CE70047156F /* Build configuration list for PBXNativeTarget "ShareMenuExtension" */;
 			buildPhases = (
-				E5CB2F0A2B7F834000B63003 /* Sources */,
-				E5CB2F0B2B7F834000B63003 /* Frameworks */,
-				E5CB2F0C2B7F834000B63003 /* Resources */,
+				E5647A432B8E0CE20047156F /* Sources */,
+				E5647A442B8E0CE20047156F /* Frameworks */,
+				E5647A452B8E0CE20047156F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -459,7 +462,7 @@
 			);
 			name = ShareMenuExtension;
 			productName = ShareMenuExtension;
-			productReference = E5CB2F0E2B7F834000B63003 /* ShareMenuExtension.appex */;
+			productReference = E5647A472B8E0CE20047156F /* ShareMenuExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -487,7 +490,7 @@
 						DevelopmentTeam = 368M544MTT;
 						ProvisioningStyle = Manual;
 					};
-					E5CB2F0D2B7F834000B63003 = {
+					E5647A462B8E0CE20047156F = {
 						CreatedOnToolsVersion = 15.2;
 					};
 				};
@@ -508,7 +511,7 @@
 				13B07F861A680F5B00A75B9A /* NewExpensify */,
 				00E356ED1AD99517003FC87E /* NewExpensifyTests */,
 				7FD73C9A2B23CE9500420AF3 /* NotificationServiceExtension */,
-				E5CB2F0D2B7F834000B63003 /* ShareMenuExtension */,
+				E5647A462B8E0CE20047156F /* ShareMenuExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -553,11 +556,11 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E5CB2F0C2B7F834000B63003 /* Resources */ = {
+		E5647A452B8E0CE20047156F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E5CB2F142B7F834000B63003 /* MainInterface.storyboard in Resources */,
+				E5647A4D2B8E0CE40047156F /* MainInterface.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -647,7 +650,9 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/Airship/AirshipExtendedActionsResources.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/Airship/AirshipMessageCenterResources.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/Airship/AirshipPreferenceCenterResources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GTMSessionFetcher/GTMSessionFetcher_Core_Privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleSignIn/GoogleSignIn.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/PromisesObjC/FBLPromises_Privacy.bundle",
 				"${PODS_ROOT}/../../node_modules/@expensify/react-native-live-markdown/parser/react-native-live-markdown-parser.js",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/RCTI18nStrings.bundle",
 			);
@@ -658,7 +663,9 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AirshipExtendedActionsResources.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AirshipMessageCenterResources.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AirshipPreferenceCenterResources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GTMSessionFetcher_Core_Privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleSignIn.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/FBLPromises_Privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/react-native-live-markdown-parser.js",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCTI18nStrings.bundle",
 			);
@@ -794,7 +801,9 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/Airship/AirshipExtendedActionsResources.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/Airship/AirshipMessageCenterResources.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/Airship/AirshipPreferenceCenterResources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GTMSessionFetcher/GTMSessionFetcher_Core_Privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleSignIn/GoogleSignIn.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/PromisesObjC/FBLPromises_Privacy.bundle",
 				"${PODS_ROOT}/../../node_modules/@expensify/react-native-live-markdown/parser/react-native-live-markdown-parser.js",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/RCTI18nStrings.bundle",
 			);
@@ -805,7 +814,9 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AirshipExtendedActionsResources.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AirshipMessageCenterResources.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AirshipPreferenceCenterResources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GTMSessionFetcher_Core_Privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleSignIn.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/FBLPromises_Privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/react-native-live-markdown-parser.js",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCTI18nStrings.bundle",
 			);
@@ -887,7 +898,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				18D050E0262400AF000D658B /* BridgingFile.swift in Sources */,
-				E5647A2C2B88F2000047156F /* RCTShareExtensionHandlerModule.m in Sources */,
 				0F5E5350263B73FD004CA14F /* EnvironmentChecker.m in Sources */,
 				374FB8D728A133FE000D84EF /* OriginImageRequestHandler.mm in Sources */,
 				7041848526A8E47D00E09F4D /* RCTStartupTimer.m in Sources */,
@@ -907,11 +917,11 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E5CB2F0A2B7F834000B63003 /* Sources */ = {
+		E5647A432B8E0CE20047156F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E5CB2F112B7F834000B63003 /* ShareViewController.swift in Sources */,
+				E5647A4A2B8E0CE40047156F /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -928,18 +938,18 @@
 			target = 7FD73C9A2B23CE9500420AF3 /* NotificationServiceExtension */;
 			targetProxy = 7FD73CA02B23CE9500420AF3 /* PBXContainerItemProxy */;
 		};
-		E5CB2F172B7F834000B63003 /* PBXTargetDependency */ = {
+		E5647A502B8E0CE40047156F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = E5CB2F0D2B7F834000B63003 /* ShareMenuExtension */;
-			targetProxy = E5CB2F162B7F834000B63003 /* PBXContainerItemProxy */;
+			target = E5647A462B8E0CE20047156F /* ShareMenuExtension */;
+			targetProxy = E5647A4F2B8E0CE40047156F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		E5CB2F122B7F834000B63003 /* MainInterface.storyboard */ = {
+		E5647A4B2B8E0CE40047156F /* MainInterface.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
-				E5CB2F132B7F834000B63003 /* Base */,
+				E5647A4C2B8E0CE40047156F /* Base */,
 			);
 			name = MainInterface.storyboard;
 			sourceTree = "<group>";
@@ -2269,7 +2279,7 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		E5CB2F192B7F834000B63003 /* DebugDevelopment */ = {
+		E5647A532B8E0CE70047156F /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2341,7 +2351,6 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.expensify.chat.dev.ShareMenuExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2354,7 +2363,7 @@
 			};
 			name = DebugDevelopment;
 		};
-		E5CB2F1A2B7F834000B63003 /* DebugAdHoc */ = {
+		E5647A542B8E0CE70047156F /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2425,7 +2434,6 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.expensify.chat.dev.ShareMenuExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2438,7 +2446,7 @@
 			};
 			name = DebugAdHoc;
 		};
-		E5CB2F1B2B7F834000B63003 /* DebugProduction */ = {
+		E5647A552B8E0CE70047156F /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2509,7 +2517,6 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.expensify.chat.dev.ShareMenuExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2522,7 +2529,7 @@
 			};
 			name = DebugProduction;
 		};
-		E5CB2F1C2B7F834000B63003 /* ReleaseDevelopment */ = {
+		E5647A562B8E0CE70047156F /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2587,7 +2594,6 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.expensify.chat.dev.ShareMenuExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2600,7 +2606,7 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		E5CB2F1D2B7F834000B63003 /* ReleaseAdHoc */ = {
+		E5647A572B8E0CE70047156F /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2664,7 +2670,6 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.expensify.chat.dev.ShareMenuExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2677,7 +2682,7 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		E5CB2F1E2B7F834000B63003 /* ReleaseProduction */ = {
+		E5647A582B8E0CE70047156F /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2741,7 +2746,6 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.expensify.chat.dev.ShareMenuExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2809,15 +2813,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = DebugDevelopment;
 		};
-		E5CB2F1F2B7F834000B63003 /* Build configuration list for PBXNativeTarget "ShareMenuExtension" */ = {
+		E5647A522B8E0CE70047156F /* Build configuration list for PBXNativeTarget "ShareMenuExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E5CB2F192B7F834000B63003 /* DebugDevelopment */,
-				E5CB2F1A2B7F834000B63003 /* DebugAdHoc */,
-				E5CB2F1B2B7F834000B63003 /* DebugProduction */,
-				E5CB2F1C2B7F834000B63003 /* ReleaseDevelopment */,
-				E5CB2F1D2B7F834000B63003 /* ReleaseAdHoc */,
-				E5CB2F1E2B7F834000B63003 /* ReleaseProduction */,
+				E5647A532B8E0CE70047156F /* DebugDevelopment */,
+				E5647A542B8E0CE70047156F /* DebugAdHoc */,
+				E5647A552B8E0CE70047156F /* DebugProduction */,
+				E5647A562B8E0CE70047156F /* ReleaseDevelopment */,
+				E5647A572B8E0CE70047156F /* ReleaseAdHoc */,
+				E5647A582B8E0CE70047156F /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = DebugDevelopment;

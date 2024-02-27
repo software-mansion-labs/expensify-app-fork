@@ -34,9 +34,9 @@ class ShareViewController: UIViewController {
         }
         self.openMainApp()
     }
-      
+
     }
-    
+
     func saveImageToFolder(folder: URL, filename: String, imageData: NSData) -> URL? {
         let filePath = folder.appendingPathComponent(filename)
         do {
@@ -47,8 +47,8 @@ class ShareViewController: UIViewController {
             return nil
         }
     }
-  
-  
+
+
     private func saveImageToAppGroup(content: NSExtensionItem, contentType: String, completion: @escaping (ImageSaveError?) -> Void) {
       guard let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: self.APP_GROUP_ID) else {
           completion(.GroupSharedFolderNotFound)
@@ -56,7 +56,7 @@ class ShareViewController: UIViewController {
           return
       }
       let sharedImageFolder = groupURL.appendingPathComponent("sharedImages", isDirectory: true)
-      
+
       // Try to create folder to share images if it doesn't exist
       do {
           try FileManager.default.createDirectory(atPath: sharedImageFolder.path, withIntermediateDirectories: true, attributes: nil)
@@ -64,7 +64,7 @@ class ShareViewController: UIViewController {
           os_log("Failed to create folder: \(sharedImageFolder.path), error: \(error)")
           return
       }
-      
+
       // Clear any image that was in the folder (in case it already existed)
       do {
           let filePaths = try FileManager.default.contentsOfDirectory(atPath: sharedImageFolder.path)
@@ -75,7 +75,7 @@ class ShareViewController: UIViewController {
           os_log("Could not clear temp folder: \(error)")
           return
       }
-      
+
       // Process shared images and put them in the shared folder
       var imagePaths = [String]()
       let group = DispatchGroup()
@@ -85,11 +85,11 @@ class ShareViewController: UIViewController {
           os_log("ShareViewController.saveImageToAppGroup Could not load")
           return
       }
-      
+
       // This is ran for each image that is selected.
       for attatchment in attachments {
           group.enter()
-          
+
           guard attatchment.hasItemConformingToTypeIdentifier(contentType) else {
               completion(.IncorrectType)
               group.leave()

@@ -39,7 +39,7 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-            ShareExtensionHandlerModule.processFiles((processedFiles) => {
+            ShareExtensionHandlerModule?.processFiles((processedFiles) => {
                 // eslint-disable-next-line no-console
                 console.log('PROCESSED FILES ', processedFiles);
             });
@@ -106,8 +106,7 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
                                 navigateToRequest={goToNextStep}
                                 navigateToSplit={goToNextStep}
                                 iouType={CONST.IOU.TYPE.REQUEST}
-                                iouRequestType={CONST.IOU.REQUEST_TYPE.SCAN}
-                                isScanRequest
+                                iouRequestType={CONST.IOU.REQUEST_TYPE.MANUAL}
                             />
                         )}
                     </TopTab.Screen>
