@@ -18,13 +18,13 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/WorkspaceTaxForm';
 
-type WorkspaceTaxPageProps = StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_NEW>;
+type WorkspaceNewTaxPageProps = StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_NEW>;
 
-function WorkspaceTaxPage({
+function WorkspaceNewTaxPage({
     route: {
         params: {policyID},
     },
-}: WorkspaceTaxPageProps) {
+}: WorkspaceNewTaxPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
@@ -49,7 +49,7 @@ function WorkspaceTaxPage({
 
     return (
         <ScreenWrapper
-            testID={WorkspaceTaxPage.displayName}
+            testID={WorkspaceNewTaxPage.displayName}
             style={styles.mb5}
         >
             <View style={[styles.h100, styles.flex1, styles.justifyContentBetween]}>
@@ -83,6 +83,6 @@ function WorkspaceTaxPage({
     );
 }
 
-WorkspaceTaxPage.displayName = 'WorkspaceTaxPage';
+WorkspaceNewTaxPage.displayName = 'WorkspaceNewTaxPage';
 
-export default WorkspaceTaxPage;
+export default WorkspaceNewTaxPage;
