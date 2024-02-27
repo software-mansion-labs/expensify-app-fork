@@ -2767,6 +2767,9 @@ export default {
         secondDescription: 'No te preocupes, Expensify Classic tiene todo lo que necesitas.',
         buttonText: 'Llévame a Expensify Classic',
     },
+    share: {
+        title: 'Share to Expensify',
+    },
     violations: {
         allTagLevelsRequired: 'Todas las etiquetas son obligatorias',
         autoReportedRejectedExpense: ({rejectedBy, rejectReason}: ViolationsAutoReportedRejectedExpenseParams) => `${rejectedBy} rechazó la solicitud y comentó "${rejectReason}"`,

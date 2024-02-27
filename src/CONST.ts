@@ -3023,6 +3023,9 @@ const CONST = {
         NEW_ROOM: 'room',
         RECEIPT_TAB_ID: 'ReceiptTab',
         IOU_REQUEST_TYPE: 'iouRequestType',
+        SHARE_TAB_ID: 'ShareTab',
+        SHARE: 'share',
+        SCAN: 'scan',
     },
     TAB_REQUEST: {
         MANUAL: 'manual',

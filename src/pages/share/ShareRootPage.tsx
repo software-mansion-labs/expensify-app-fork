@@ -1,12 +1,40 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import type {AppStateStatus} from 'react-native';
 import {AppState, View} from 'react-native';
-import Text from '@components/Text';
+import type {OnyxEntry} from 'react-native-onyx';
+import {withOnyx} from 'react-native-onyx';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import ScreenWrapper from '@components/ScreenWrapper';
+import TabSelector from '@components/TabSelector/TabSelector';
+import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
+import * as IOU from '@libs/actions/IOU';
+import * as DeviceCapabilities from '@libs/DeviceCapabilities';
+import * as ReportUtils from '@libs/ReportUtils';
+import Navigation from '@navigation/Navigation';
+import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
+import MoneyRequestParticipantsSelector from '@pages/iou/steps/MoneyRequstParticipantsPage/MoneyRequestParticipantsSelector';
+import CONST from '@src/CONST';
 import ShareExtensionHandlerModule from '@src/modules/ShareExtensionHandlerModule';
+import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
+import type {Report} from '@src/types/onyx';
 
-// type ShareRootPageProps = {};
+type ShareRootPageOnyxProps = {
+    selectedTab: OnyxEntry<string>;
 
-export default function ShareRootPage() {
+    iou: OnyxEntry<Report>;
+};
+
+type ShareRootPageProps = ShareRootPageOnyxProps;
+
+function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
+    const transactionID = CONST.IOU.OPTIMISTIC_TRANSACTION_ID;
+    const styles = useThemeStyles();
+    const {translate} = useLocalize();
+    const fileIsScannable = false;
+    const optimisticReportID = ReportUtils.generateReportID();
+    const selectedReportID = useRef(optimisticReportID);
     const appState = useRef(AppState.currentState);
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -30,9 +58,87 @@ export default function ShareRootPage() {
         };
     }, []);
 
+    const navigateBack = () => {
+        Navigation.dismissModal();
+    };
+
+    const goToNextStep = useCallback(() => {
+        // const nextStepIOUType = numberOfParticipants.current === 1 ? CONST.IOU.TYPE.REQUEST : CONST.IOU.TYPE.SPLIT;
+        const nextStepIOUType = CONST.IOU.TYPE.REQUEST;
+        IOU.startMoneyRequest_temporaryForRefactor(optimisticReportID, false, CONST.IOU.REQUEST_TYPE.SCAN);
+        IOU.setMoneyRequestTag(transactionID, '');
+        IOU.resetMoneyRequestCategory_temporaryForRefactor(transactionID);
+        Navigation.navigate(ROUTES.SHARE_SCAN_CONFIRM.getRoute(nextStepIOUType, transactionID, selectedReportID.current || optimisticReportID));
+    }, [transactionID, optimisticReportID]);
+
     return (
-        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-            <Text>share root</Text>
-        </View>
+        <ScreenWrapper
+            includeSafeAreaPaddingBottom={false}
+            shouldEnableKeyboardAvoidingView={false}
+            shouldEnableMinHeight={DeviceCapabilities.canUseTouchScreen()}
+            testID={ShareRootPage.displayName}
+        >
+            <View style={[styles.flex1]}>
+                <HeaderWithBackButton
+                    title={translate('share.title')}
+                    onBackButtonPress={navigateBack}
+                />
+                <OnyxTabNavigator
+                    id={CONST.TAB.SHARE_TAB_ID}
+                    // @ts-expect-error I think that OnyxTabNavigator is going to be refactored in terms of types
+                    selectedTab={fileIsScannable && selectedTab ? selectedTab : CONST.TAB.SHARE}
+                    hideTabBar={!fileIsScannable}
+                    // @ts-expect-error I think that OnyxTabNavigator is going to be refactored in terms of types
+                    tabBar={({state, navigation, position}) => (
+                        <TabSelector
+                            state={state}
+                            navigation={navigation}
+                            position={position}
+                        />
+                    )}
+                >
+                    <TopTab.Screen name={CONST.TAB.SHARE}>
+                        {() => (
+                            <MoneyRequestParticipantsSelector
+                                participants={iou?.participants ?? []}
+                                onAddParticipants={IOU.setMoneyRequestParticipants}
+                                onFinish={goToNextStep}
+                                navigateToRequest={goToNextStep}
+                                navigateToSplit={goToNextStep}
+                                iouType={CONST.IOU.TYPE.REQUEST}
+                                iouRequestType={CONST.IOU.REQUEST_TYPE.SCAN}
+                                isScanRequest
+                            />
+                        )}
+                    </TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SCAN}>
+                        {() => (
+                            <MoneyRequestParticipantsSelector
+                                participants={iou?.participants ?? []}
+                                onAddParticipants={IOU.setMoneyRequestParticipants}
+                                onFinish={goToNextStep}
+                                navigateToRequest={goToNextStep}
+                                navigateToSplit={goToNextStep}
+                                iouType={CONST.IOU.TYPE.REQUEST}
+                                iouRequestType={CONST.IOU.REQUEST_TYPE.SCAN}
+                                isScanRequest
+                            />
+                        )}
+                    </TopTab.Screen>
+                </OnyxTabNavigator>
+            </View>
+        </ScreenWrapper>
     );
 }
+
+ShareRootPage.displayName = 'ShareRootPage';
+
+export default withOnyx<ShareRootPageProps, ShareRootPageOnyxProps>({
+    selectedTab: {
+        key: `${ONYXKEYS.COLLECTION.SELECTED_TAB}${CONST.TAB.RECEIPT_TAB_ID}`,
+    },
+    // @ts-expect-error To fix
+    iou: {
+        key: ONYXKEYS.IOU,
+    },
+})(ShareRootPage);
