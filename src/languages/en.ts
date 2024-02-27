@@ -1908,6 +1908,11 @@ export default {
                 workspaceCurrencyDefault: 'Workspace currency default',
                 foreignCurrencyDefault: 'Foreign currency default',
             },
+            errors: {
+                value: {
+                    percentageRange: 'Please enter a valid percentage between 0 and 100',
+                },
+            },
             name: 'Name',
             value: 'Value',
         },

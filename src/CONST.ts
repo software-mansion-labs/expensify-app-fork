@@ -3319,6 +3319,10 @@ const CONST = {
             PREFER_CLASSIC: 'preferClassic',
         },
     },
+
+    TAX_RATES: {
+        NAME_MAX_LENGTH: 50,
+    },
 } as const;
 
 type Country = keyof typeof CONST.ALL_COUNTRIES;
