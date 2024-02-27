@@ -85,6 +85,13 @@ function IOURequestStepConfirmation({
     },
     transaction,
 }) {
+    console.log('%%%%%\n', 'currentUserPersonalDetails', currentUserPersonalDetails);
+    console.log('%%%%%\n', 'personalDetails', personalDetails);
+    console.log('%%%%%\n', 'policy', policy);
+    console.log('%%%%%\n', 'policyTags', policyTags);
+    console.log('%%%%%\n', 'policyCategories', policyCategories);
+    console.log('%%%%%\n', 'report', report);
+    console.log('%%%%%\n', 'transaction', transaction);
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {windowWidth} = useWindowDimensions();
