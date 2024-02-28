@@ -562,6 +562,10 @@ const ROUTES = {
         route: 'workspace/:policyID/tax/:taxName/value',
         getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/tax/${taxName ? encodeURI(taxName) : 'new'}/value` as const,
     },
+    WORKSPACE_CATEGORIES_SETTINGS: {
+        route: 'workspace/:policyID/categories/settings',
+        getRoute: (policyID: string) => `workspace/${policyID}/categories/settings` as const,
+    },
     // Referral program promotion
     REFERRAL_DETAILS_MODAL: {
         route: 'referral/:contentType',
