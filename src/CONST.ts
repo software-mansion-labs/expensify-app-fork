@@ -3322,6 +3322,12 @@ const CONST = {
 
     TAX_RATES: {
         NAME_MAX_LENGTH: 50,
+
+        ACTION_TYPE: {
+            DELETE: 'delete',
+            DISABLE: 'disable',
+            ENABLE: 'enable',
+        },
     },
 } as const;
 
