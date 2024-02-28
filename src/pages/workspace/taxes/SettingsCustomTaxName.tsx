@@ -16,6 +16,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import INPUT_IDS from '@src/types/form/WorkspaceTaxCustomNameForm';
 import type * as OnyxTypes from '@src/types/onyx';
 
 type SettingsCustomTaxNameOnyxProps = {
@@ -47,8 +48,7 @@ function SettingsCustomTaxName({
             <HeaderWithBackButton title={translate('workspace.taxes.settings.customTaxName')} />
 
             <FormProvider
-                // TODO: Change formID
-                formID={ONYXKEYS.FORMS.WORKSPACE_DESCRIPTION_FORM}
+                formID={ONYXKEYS.FORMS.WORKSPACE_TAX_CUSTOM_NAME}
                 submitButtonText={translate('workspace.editor.save')}
                 style={[styles.flexGrow1, styles.ph5]}
                 scrollContextEnabled
@@ -57,17 +57,13 @@ function SettingsCustomTaxName({
                 <View style={styles.mb4}>
                     <InputWrapper
                         InputComponent={TextInput}
-                        role={CONST.ROLE.PRESENTATION}
-                        inputID="name"
+                        inputID={INPUT_IDS.NAME}
                         label={translate('workspace.editor.nameInputLabel')}
                         accessibilityLabel={translate('workspace.editor.nameInputLabel')}
                         value={name}
-                        maxLength={CONST.REPORT_DESCRIPTION.MAX_LENGTH}
-                        spellCheck={false}
+                        maxLength={CONST.TAX_RATES.NAME_MAX_LENGTH}
                         autoFocus
                         onChangeText={setName}
-                        autoGrowHeight
-                        containerStyles={[styles.autoGrowHeightMultilineInput]}
                     />
                 </View>
             </FormProvider>

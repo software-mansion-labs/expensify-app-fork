@@ -35,6 +35,7 @@ export type {WaypointForm} from './WaypointForm';
 export type {WorkspaceInviteMessageForm} from './WorkspaceInviteMessageForm';
 export type {WorkspaceRateAndUnitForm} from './WorkspaceRateAndUnitForm';
 export type {WorkspaceTaxForm} from './WorkspaceTaxForm';
+export type {WorkspaceTaxCustomNameForm} from './WorkspaceTaxCustomNameForm';
 export type {WorkspaceSettingsForm} from './WorkspaceSettingsForm';
 export type {ReportPhysicalCardForm} from './ReportPhysicalCardForm';
 export type {WorkspaceDescriptionForm} from './WorkspaceDescriptionForm';

@@ -32,34 +32,40 @@ function WorkspaceTaxesSettingsPage({
 }: WorkspaceTaxesSettingsPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
+
+    const menuItems = [
+        {
+            title: policyTaxRates?.name,
+            description: translate('workspace.taxes.settings.customTaxName'),
+            action: () => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS_CUSTOM_TAX_NAME.getRoute(policyID)),
+        },
+        {
+            title: policyTaxRates?.taxes[policyTaxRates?.defaultExternalID]?.name,
+            description: translate('workspace.taxes.settings.workspaceCurrencyDefault'),
+            action: () => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS_WORKSPACE_CURRENCY_DEFAULT.getRoute(policyID)),
+        },
+        {
+            title: policyTaxRates?.taxes[policyTaxRates?.foreignTaxDefault]?.name,
+            description: translate('workspace.taxes.settings.foreignCurrencyDefault'),
+            action: () => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS_FOREIGN_CURRENCY_DEFAULT.getRoute(policyID)),
+        },
+    ];
+
     return (
         <ScrollView contentContainerStyle={styles.flexGrow1}>
             <HeaderWithBackButton title={translate('common.settings')} />
             <View style={styles.flex1}>
-                <MenuItemWithTopDescription
-                    shouldShowRightIcon
-                    title={policyTaxRates?.name}
-                    description={translate('workspace.taxes.settings.customTaxName')}
-                    style={[styles.moneyRequestMenuItem]}
-                    titleStyle={styles.flex1}
-                    onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS_CUSTOM_TAX_NAME.getRoute(policyID))}
-                />
-                <MenuItemWithTopDescription
-                    shouldShowRightIcon
-                    title={policyTaxRates?.defaultExternalID}
-                    description={translate('workspace.taxes.settings.workspaceCurrencyDefault')}
-                    style={[styles.moneyRequestMenuItem]}
-                    titleStyle={styles.flex1}
-                    onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS_WORKSPACE_CURRENCY_DEFAULT.getRoute(policyID))}
-                />
-                <MenuItemWithTopDescription
-                    shouldShowRightIcon
-                    title={policyTaxRates?.foreignTaxDefault}
-                    description={translate('workspace.taxes.settings.foreignCurrencyDefault')}
-                    style={[styles.moneyRequestMenuItem]}
-                    titleStyle={styles.flex1}
-                    onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS_FOREIGN_CURRENCY_DEFAULT.getRoute(policyID))}
-                />
+                {menuItems.map((item) => (
+                    <MenuItemWithTopDescription
+                        key={item.title}
+                        shouldShowRightIcon
+                        title={item.title}
+                        description={item.description}
+                        style={[styles.moneyRequestMenuItem]}
+                        titleStyle={styles.flex1}
+                        onPress={item.action}
+                    />
+                ))}
             </View>
         </ScrollView>
     );
