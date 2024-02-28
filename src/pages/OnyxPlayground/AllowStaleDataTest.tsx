@@ -30,7 +30,7 @@ const AllowStaleDataWithOnyx = withOnyx<AllowStaleDataWithOnyxProps, AllowStaleD
 function AllowStaleDataUseOnyx() {
     const policyID = useOnyx(ONYXKEYS.POLICY_ID, {allowStaleData: false});
     console.log(`OnyxPlayground [App] AllowStaleDataUseOnyx policyID`, policyID);
-    return <Text>{policyID.value}</Text>;
+    return <Text>{policyID[0]}</Text>;
 }
 
 function AllowStaleDataTest() {

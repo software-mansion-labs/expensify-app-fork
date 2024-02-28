@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import React, {useState} from 'react';
-import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
+import type {OnyxCollection, OnyxEntry, UseOnyxData} from 'react-native-onyx';
 import {useOnyx, withOnyx} from 'react-native-onyx';
 import * as Expensicons from '@components/Icon/Expensicons';
 import MenuItem from '@components/MenuItem';
@@ -62,15 +62,20 @@ type ComponentWithOnyxHookProps = {
     policyID: string;
 };
 
+function SubRenderTest({policy}: {policy: UseOnyxData<`policy_${string}`, OnyxEntry<Policy>>}) {
+    console.log('OnyxPlayground [App] SubRenderTest policy', policy);
+    return null;
+}
+
 function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     const account = useOnyx(ONYXKEYS.ACCOUNT);
-    const {value: accountValue} = account;
+    const [accountValue] = account;
 
     const policies = useOnyx(ONYXKEYS.COLLECTION.POLICY);
-    const {value: policiesValue} = policies;
+    const [policiesValue] = policies;
 
     const policy = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`);
-    const {value: policyValue} = policy;
+    const [policyValue] = policy;
 
     const policy2 = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         selector: (selectedPolicy) => ({
@@ -78,15 +83,15 @@ function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
             name: selectedPolicy?.name,
         }),
     });
-    const {value: policy2Value} = policy2;
+    const [policy2Value] = policy2;
 
     const currency = useOnyx(ONYXKEYS.CURRENCY_LIST, {
         selector: (currencyList) => currencyList?.[policyID === '1576B20B2BA20523' ? 'EUR' : 'USD'],
     });
-    const {value: currencyValue} = currency;
+    const [currencyValue] = currency;
 
     const sessionEmail = useOnyx(ONYXKEYS.SESSION, {selector: (value) => value?.email ?? ''});
-    const {value: sessionEmailValue} = sessionEmail;
+    const [sessionEmailValue] = sessionEmail;
 
     const policiesWithSelector = useOnyx(ONYXKEYS.COLLECTION.POLICY, {
         selector: (selectedPolicy) => ({
@@ -94,7 +99,7 @@ function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
             name: selectedPolicy?.name,
         }),
     });
-    const {value: policiesWithSelectorValue} = policiesWithSelector;
+    const [policiesWithSelectorValue] = policiesWithSelector;
 
     console.group('OnyxPlayground [App] ComponentWithOnyxHook');
     console.log('OnyxPlayground [App] ComponentWithOnyxHook policyID', policyID);
@@ -107,7 +112,11 @@ function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     console.log('OnyxPlayground [App] ComponentWithOnyxHook policiesWithSelector', policiesWithSelector);
     console.groupEnd();
 
-    return null;
+    return (
+        <>
+            <SubRenderTest policy={policy} />
+        </>
+    );
 }
 
 type WithOnyxVSuseOnyxProps = {
