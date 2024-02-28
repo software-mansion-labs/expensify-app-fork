@@ -1917,6 +1917,9 @@ export default {
             },
             name: 'Name',
             value: 'Value',
+            deleteTaxes: 'Delete taxes',
+            disableTaxes: 'Disable taxes',
+            enableTaxes: 'Enable taxes',
         },
     },
     getAssistancePage: {

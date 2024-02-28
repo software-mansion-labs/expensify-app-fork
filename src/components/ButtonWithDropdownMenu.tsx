@@ -17,7 +17,7 @@ import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
 import PopoverMenu from './PopoverMenu';
 
-type PaymentType = DeepValueOf<typeof CONST.IOU.PAYMENT_TYPE | typeof CONST.IOU.REPORT_ACTION_TYPE>;
+type PaymentType = DeepValueOf<typeof CONST.IOU.PAYMENT_TYPE | typeof CONST.IOU.REPORT_ACTION_TYPE | typeof CONST.TAX_RATES.ACTION_TYPE>;
 
 type DropdownOption = {
     value: PaymentType;
@@ -61,10 +61,14 @@ type ButtonWithDropdownMenuProps = {
     anchorAlignment?: AnchorAlignment;
 
     /* ref for the button */
-    buttonRef: RefObject<View>;
+    buttonRef?: RefObject<View>;
 
     /** The priority to assign the enter key event listener to buttons. 0 is the highest priority. */
     enterKeyEventListenerPriority?: number;
+
+    // TODO: Verify after Categories is merged.
+    /** The text to display on the button. If not passed the currently selected option is displayed. */
+    buttonLabel?: string;
 };
 
 function ButtonWithDropdownMenu({
@@ -83,6 +87,7 @@ function ButtonWithDropdownMenu({
     options,
     onOptionSelected,
     enterKeyEventListenerPriority = 0,
+    buttonLabel,
 }: ButtonWithDropdownMenuProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -125,7 +130,7 @@ function ButtonWithDropdownMenu({
                         pressOnEnter={pressOnEnter}
                         ref={buttonRef}
                         onPress={(event) => onPress(event, selectedItem.value)}
-                        text={selectedItem.text}
+                        text={buttonLabel ?? selectedItem.text}
                         isDisabled={isDisabled}
                         isLoading={isLoading}
                         shouldRemoveRightBorderRadius
@@ -167,7 +172,7 @@ function ButtonWithDropdownMenu({
                     isDisabled={isDisabled}
                     style={[styles.w100, style]}
                     isLoading={isLoading}
-                    text={selectedItem.text}
+                    text={buttonLabel ?? selectedItem.text}
                     onPress={(event) => onPress(event, options[0].value)}
                     large={isButtonSizeLarge}
                     medium={!isButtonSizeLarge}

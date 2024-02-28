@@ -4,6 +4,7 @@ import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import Button from '@components/Button';
+import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
@@ -20,6 +21,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import type {CentralPaneNavigatorParamList} from '@libs/Navigation/types';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -90,6 +92,29 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
         }
     };
 
+    const dropdownMenuOptions = useMemo(
+        () => [
+            {
+                icon: Expensicons.Trashcan,
+                text: translate('workspace.taxes.deleteTaxes'),
+                value: CONST.TAX_RATES.ACTION_TYPE.DELETE,
+            },
+
+            {
+                icon: Expensicons.Document,
+                text: translate('workspace.taxes.disableTaxes'),
+                value: CONST.TAX_RATES.ACTION_TYPE.DISABLE,
+            },
+
+            {
+                icon: Expensicons.Document,
+                text: translate('workspace.taxes.enableTaxes'),
+                value: CONST.TAX_RATES.ACTION_TYPE.ENABLE,
+            },
+        ],
+        [translate],
+    );
+
     return (
         <ScreenWrapper
             includeSafeAreaPaddingBottom={false}
@@ -101,23 +126,34 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
                 icon={Illustrations.Coins}
                 shouldShowBackButton={isSmallScreenWidth}
             >
-                <Button
-                    medium
-                    success
-                    icon={Expensicons.Plus}
-                    iconStyles={styles.buttonCTAIcon}
-                    onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_NEW.getRoute(policy?.id ?? ''))}
-                >
-                    <Text>Add rate</Text>
-                </Button>
-                <Button
-                    medium
-                    icon={Expensicons.Gear}
-                    iconStyles={styles.buttonCTAIcon}
-                    onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
-                >
-                    <Text>{translate('common.settings')}</Text>
-                </Button>
+                {selectedTaxes.length > 0 ? (
+                    <ButtonWithDropdownMenu
+                        onPress={() => {}}
+                        options={dropdownMenuOptions}
+                        buttonSize="medium"
+                        buttonLabel={`${selectedTaxes.length} selected`}
+                    />
+                ) : (
+                    <>
+                        <Button
+                            medium
+                            success
+                            icon={Expensicons.Plus}
+                            iconStyles={styles.buttonCTAIcon}
+                            onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_NEW.getRoute(policy?.id ?? ''))}
+                        >
+                            <Text>Add rate</Text>
+                        </Button>
+                        <Button
+                            medium
+                            icon={Expensicons.Gear}
+                            iconStyles={styles.buttonCTAIcon}
+                            onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
+                        >
+                            <Text>{translate('common.settings')}</Text>
+                        </Button>
+                    </>
+                )}
             </HeaderWithBackButton>
             <SelectionList
                 canSelectMultiple
