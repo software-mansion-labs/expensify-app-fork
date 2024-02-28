@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
@@ -37,20 +37,24 @@ function BaseSettingsTaxSelector({title, policyTaxRates, onTaxSelect}: BaseSetti
     const [searchText, setSearchText] = useState('');
 
     let initiallyFocusedOptionKey;
-    const taxItems: BaseSettingsTaxSelectorPageSectionItem[] = Object.entries(policyTaxRates?.taxes ?? {}).map(([taxId, taxRate]) => {
-        const isSelected = taxId === policyTaxRates?.foreignTaxDefault;
+    const taxItems: BaseSettingsTaxSelectorPageSectionItem[] = useMemo(
+        () =>
+            Object.entries(policyTaxRates?.taxes ?? {}).map(([taxId, taxRate]) => {
+                const isSelected = taxId === policyTaxRates?.foreignTaxDefault;
 
-        if (isSelected) {
-            initiallyFocusedOptionKey = taxId;
-        }
+                if (isSelected) {
+                    initiallyFocusedOptionKey = taxId;
+                }
 
-        return {
-            text: `${taxRate.name} - ${taxRate.value}`,
-            keyForList: taxId,
-            isSelected,
-            taxId,
-        };
-    });
+                return {
+                    text: `${taxRate.name} - ${taxRate.value}`,
+                    keyForList: taxId,
+                    isSelected,
+                    taxId,
+                };
+            }),
+        [policyTaxRates],
+    );
 
     const headerMessage = searchText.trim() && !taxItems.length ? translate('common.noResultsFound') : '';
 
