@@ -12,6 +12,7 @@ import * as Illustrations from '@components/Icon/Illustrations';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/TableListItem';
+import type {ListItem} from '@components/SelectionList/types';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -27,15 +28,6 @@ import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 
-type TaxForList = {
-    value: string;
-    text: string;
-    keyForList: string;
-    id: string;
-    isSelected: boolean;
-    rightElement: JSX.Element;
-};
-
 type WorkspaceTaxesPageOnyxProps = {
     policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
@@ -49,15 +41,13 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
     const {isSmallScreenWidth} = useWindowDimensions();
     const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
 
-    const taxesList = useMemo<TaxForList[]>(
+    const taxesList = useMemo<ListItem[]>(
         () =>
             Object.entries(policyTaxRates?.taxes ?? {}).map(([key, value]) => ({
                 // TODO: Clean up: check if all properties are needed
-                value: value.name,
                 text: value.name,
                 keyForList: key,
-                id: key,
-                isSelected: selectedTaxes.includes(value.name),
+                isSelected: selectedTaxes.includes(key),
                 rightElement: (
                     // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
                     <View style={styles.flexRow}>
@@ -88,7 +78,7 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
         if (isAllSelected) {
             setSelectedTaxes([]);
         } else {
-            setSelectedTaxes(taxesList.map((item) => item.value));
+            setSelectedTaxes(taxesList.map((item) => item.keyForList));
         }
     };
 
@@ -158,7 +148,7 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
             <SelectionList
                 canSelectMultiple
                 sections={[{data: taxesList, indexOffset: 0, isDisabled: false}]}
-                onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
+                onSelectRow={(tax: ListItem) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
                 onSelectAll={toggleAllTaxes}
                 showScrollIndicator
                 ListItem={TableListItem}

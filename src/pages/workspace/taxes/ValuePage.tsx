@@ -80,16 +80,14 @@ function ValuePage({
                 onSubmit={submit}
                 enabledWhenOffline
             >
-                <View style={styles.mb4}>
-                    <InputWrapper
-                        InputComponent={AmountForm}
-                        inputID="value"
-                        value={value}
-                        onInputChange={setValue}
-                        hideCurrency
-                        extraSymbol={<Text style={styles.iouAmountText}>%</Text>}
-                    />
-                </View>
+                <InputWrapper
+                    InputComponent={AmountForm}
+                    inputID="value"
+                    value={value}
+                    onInputChange={(e) => console.log({e})}
+                    hideCurrency
+                    extraSymbol={<Text style={styles.iouAmountText}>%</Text>}
+                />
             </FormProvider>
         </ScreenWrapper>
     );
