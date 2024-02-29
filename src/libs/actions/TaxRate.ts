@@ -1,6 +1,7 @@
 import type {OnyxEntry} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
+import type {SetWorkspaceTaxesDisabledParams} from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -14,7 +15,7 @@ Onyx.connect({
     callback: (taxes) => (allTaxRatesWithDefault = taxes),
 });
 
-function setWorkspaceTaxesEnabled(policyID: string, taxesToUpdate: Record<string, {isDisabled: boolean}>) {
+function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesDisabledParams) {
     const originalTaxes = {...allTaxRatesWithDefault?.taxes};
     const onyxData: OnyxData = {
         optimisticData: [
@@ -46,10 +47,6 @@ function setWorkspaceTaxesEnabled(policyID: string, taxesToUpdate: Record<string
                 onyxMethod: Onyx.METHOD.MERGE,
                 key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
                 value: {
-                    // const originalTaxes: {
-                    //     [x: string]: TaxRate;
-                    // }
-                    // filter taxes that are not updated
                     taxes: Object.keys(originalTaxes).reduce((acc, taxID) => {
                         if (taxesToUpdate[taxID]) {
                             acc[taxID] = {isDisabled: !!originalTaxes[taxID].isDisabled, pendingAction: null};
@@ -63,10 +60,10 @@ function setWorkspaceTaxesEnabled(policyID: string, taxesToUpdate: Record<string
 
     const parameters = {
         policyID,
-        taxes: taxesToUpdate,
+        taxesToUpdate,
     };
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_ENABLED, parameters, onyxData);
+    API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_DISABLED, parameters, onyxData);
 }
 
-export {setWorkspaceTaxesEnabled};
+export {setWorkspaceTaxesDisabled};

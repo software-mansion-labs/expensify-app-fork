@@ -16,7 +16,7 @@ import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import type {WithPolicyProps} from '@pages/workspace/withPolicy';
 import withPolicy from '@pages/workspace/withPolicy';
-import {setWorkspaceTaxesEnabled} from '@userActions/TaxRate';
+import {setWorkspaceTaxesDisabled} from '@userActions/TaxRate';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -41,9 +41,12 @@ function WorkspaceEditTaxPage({
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
 
     const toggle = () => {
-        setWorkspaceTaxesEnabled(policyID, {
-            [taxID]: {
-                isDisabled: !currentTaxRate?.isDisabled,
+        setWorkspaceTaxesDisabled({
+            policyID,
+            taxesToUpdate: {
+                [taxID]: {
+                    isDisabled: !currentTaxRate?.isDisabled,
+                },
             },
         });
     };

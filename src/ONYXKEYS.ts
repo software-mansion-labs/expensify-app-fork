@@ -504,7 +504,6 @@ type OnyxValuesMapping = {
     [ONYXKEYS.PRIVATE_PERSONAL_DETAILS]: OnyxTypes.PrivatePersonalDetails;
     [ONYXKEYS.TASK]: OnyxTypes.Task;
     [ONYXKEYS.WORKSPACE_RATE_AND_UNIT]: OnyxTypes.WorkspaceRateAndUnit;
-    [ONYXKEYS.WORKSPACE_TAX]: OnyxTypes.WorkspaceTax;
     [ONYXKEYS.CURRENCY_LIST]: OnyxTypes.CurrencyList;
     [ONYXKEYS.UPDATE_AVAILABLE]: boolean;
     [ONYXKEYS.SCREEN_SHARE_REQUEST]: OnyxTypes.ScreenShareRequest;

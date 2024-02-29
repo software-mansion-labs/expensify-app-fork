@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback, useState} from 'react';
-import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import AmountForm from '@components/AmountForm';
@@ -13,7 +12,6 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import * as Policy from '@libs/actions/Policy';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
@@ -24,7 +22,6 @@ import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 
 type ValuePageOnyxProps = {
-    workspaceTax: OnyxEntry<OnyxTypes.WorkspaceTax>;
     policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
@@ -34,15 +31,14 @@ function ValuePage({
     route: {
         params: {policyID, taxID},
     },
-    workspaceTax,
     policyTaxRates,
 }: ValuePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
-    const isEditPage = !!currentTaxRate?.name;
-    const [value, setValue] = useState(isEditPage ? currentTaxRate?.value?.replace('%', '') : workspaceTax?.value);
+    const [value, setValue] = useState(currentTaxRate?.value?.replace('%', ''));
 
+    // TODO: Extract it to a separate file, and use it also when creating a new tax
     const validate = useCallback((values: FormOnyxValues<typeof ONYXKEYS.FORMS.WORKSPACE_TAX_FORM>) => {
         const errors = {};
 
@@ -55,12 +51,11 @@ function ValuePage({
 
     const submit = useCallback(
         (values: FormOnyxValues<typeof ONYXKEYS.FORMS.WORKSPACE_TAX_FORM>) => {
-            if (!isEditPage) {
-                Policy.setTaxValue(values.value);
-            }
+            // TODO: Add API call to update tax value
+            console.log({values});
             Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxID));
         },
-        [policyID, taxID, isEditPage],
+        [policyID, taxID],
     );
 
     return (
@@ -84,7 +79,7 @@ function ValuePage({
                     InputComponent={AmountForm}
                     inputID="value"
                     value={value}
-                    onInputChange={(e) => console.log({e})}
+                    onInputChange={setValue}
                     hideCurrency
                     extraSymbol={<Text style={styles.iouAmountText}>%</Text>}
                 />
@@ -96,9 +91,6 @@ function ValuePage({
 ValuePage.displayName = 'ValuePage';
 
 export default withOnyx<ValuePageProps, ValuePageOnyxProps>({
-    workspaceTax: {
-        key: ONYXKEYS.WORKSPACE_TAX,
-    },
     policyTaxRates: {
         key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
     },

@@ -1654,22 +1654,6 @@ function setUnitForReimburseView(unit: Unit) {
     Onyx.merge(ONYXKEYS.WORKSPACE_RATE_AND_UNIT, {unit});
 }
 
-function setTaxPolicyID(policyID: string) {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, {policyID});
-}
-
-function setTaxName(name: string) {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, {name});
-}
-
-function setTaxValue(value: string) {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, {value});
-}
-
-function clearOnyxDataTax() {
-    Onyx.merge(ONYXKEYS.WORKSPACE_TAX, null);
-}
-
 /**
  * Returns the accountIDs of the members of the policy whose data is passed in the parameters
  */
@@ -2307,9 +2291,5 @@ export {
     setWorkspaceAutoReporting,
     setWorkspaceApprovalMode,
     updateWorkspaceDescription,
-    setTaxPolicyID,
-    setTaxName,
-    setTaxValue,
-    clearOnyxDataTax,
     setWorkspaceRequiresCategory,
 };

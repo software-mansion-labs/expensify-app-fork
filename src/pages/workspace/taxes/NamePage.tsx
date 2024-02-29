@@ -11,7 +11,6 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import * as Policy from '@libs/actions/Policy';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -22,7 +21,6 @@ import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 
 type NamePageOnyxProps = {
-    workspaceTax: OnyxEntry<OnyxTypes.WorkspaceTax>;
     policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
@@ -34,21 +32,15 @@ function NamePage({
     route: {
         params: {policyID, taxID},
     },
-    workspaceTax,
     policyTaxRates,
 }: NamePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
-    const isEditPage = !!currentTaxRate?.name;
 
-    const [name, setName] = useState(() => parser.htmlToMarkdown((isEditPage ? currentTaxRate?.name : workspaceTax?.name) ?? ''));
+    const [name, setName] = useState(() => parser.htmlToMarkdown(currentTaxRate?.name ?? ''));
 
     const submit = () => {
-        if (!isEditPage) {
-            Policy.setTaxName(name);
-        }
-
         Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxID));
     };
 
@@ -92,9 +84,6 @@ function NamePage({
 NamePage.displayName = 'NamePage';
 
 export default withOnyx<NamePageProps, NamePageOnyxProps>({
-    workspaceTax: {
-        key: ONYXKEYS.WORKSPACE_TAX,
-    },
     policyTaxRates: {
         key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
     },

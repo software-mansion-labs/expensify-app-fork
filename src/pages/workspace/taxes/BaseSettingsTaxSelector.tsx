@@ -77,7 +77,7 @@ function BaseSettingsTaxSelector({title, policyTaxRates, onTaxSelect}: BaseSetti
                     onChangeText={setSearchText}
                     onSelectRow={({taxId}) => {
                         Navigation.goBack();
-                        onTaxSelect(taxId);
+                        onTaxSelect?.(taxId);
                     }}
                     headerMessage={headerMessage}
                     initiallyFocusedOptionKey={initiallyFocusedOptionKey}
