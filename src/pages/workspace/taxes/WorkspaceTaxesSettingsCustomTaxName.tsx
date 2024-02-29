@@ -1,8 +1,6 @@
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useState} from 'react';
 import {View} from 'react-native';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -12,29 +10,25 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
+import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
+import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/WorkspaceTaxCustomNameForm';
-import type * as OnyxTypes from '@src/types/onyx';
 
-type WorkspaceTaxesSettingsCustomTaxNameOnyxProps = {
-    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
-};
-
-type WorkspaceTaxesSettingsCustomTaxNameProps = WorkspaceTaxesSettingsCustomTaxNameOnyxProps &
-    StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_CUSTOM_TAX_NAME>;
+type WorkspaceTaxesSettingsCustomTaxNameProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_CUSTOM_TAX_NAME>;
 
 function WorkspaceTaxesSettingsCustomTaxName({
     route: {
         params: {policyID},
     },
-    policyTaxRates,
+    policy,
 }: WorkspaceTaxesSettingsCustomTaxNameProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const [name, setName] = useState(policyTaxRates?.name ?? '');
+    const [name, setName] = useState(policy?.taxRates?.name ?? '');
 
     const submit = () => {
         Navigation.goBack(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policyID ?? ''));
@@ -75,8 +69,4 @@ function WorkspaceTaxesSettingsCustomTaxName({
 
 WorkspaceTaxesSettingsCustomTaxName.displayName = 'WorkspaceTaxesSettingsCustomTaxName';
 
-export default withOnyx<WorkspaceTaxesSettingsCustomTaxNameProps, WorkspaceTaxesSettingsCustomTaxNameOnyxProps>({
-    policyTaxRates: {
-        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
-    },
-})(WorkspaceTaxesSettingsCustomTaxName);
+export default withPolicyAndFullscreenLoading(WorkspaceTaxesSettingsCustomTaxName);

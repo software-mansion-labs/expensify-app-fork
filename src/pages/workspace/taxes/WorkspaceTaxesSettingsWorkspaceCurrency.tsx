@@ -1,8 +1,6 @@
 import type {StackScreenProps} from '@react-navigation/stack';
 import React from 'react';
 import {View} from 'react-native';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import TaxPicker from '@components/TaxPicker';
@@ -11,29 +9,25 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {setWorkspaceCurrencyDefault} from '@libs/actions/TaxRate';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
-import ONYXKEYS from '@src/ONYXKEYS';
+import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
+import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import type SCREENS from '@src/SCREENS';
-import type * as OnyxTypes from '@src/types/onyx';
 
-type WorkspaceTaxesSettingsWorkspaceCurrencyOnyxProps = {
-    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
-};
-
-type WorkspaceTaxesSettingsWorkspaceCurrencyProps = WorkspaceTaxesSettingsWorkspaceCurrencyOnyxProps &
+type WorkspaceTaxesSettingsWorkspaceCurrencyProps = WithPolicyAndFullscreenLoadingProps &
     StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_WORKSPACE_CURRENCY_DEFAULT>;
 
 function WorkspaceTaxesSettingsWorkspaceCurrency({
     route: {
         params: {policyID},
     },
-    policyTaxRates,
+    policy,
 }: WorkspaceTaxesSettingsWorkspaceCurrencyProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
     const defaultTaxName =
-        (policyTaxRates?.defaultExternalID &&
-            `${policyTaxRates.taxes[policyTaxRates?.defaultExternalID].name} (${policyTaxRates.taxes[policyTaxRates?.defaultExternalID].value}) • ${translate('common.default')}`) ??
+        (policy?.taxRates?.defaultExternalID &&
+            `${policy?.taxRates.taxes[policy?.taxRates?.defaultExternalID].name} (${policy?.taxRates.taxes[policy?.taxRates?.defaultExternalID].value}) • ${translate('common.default')}`) ??
         '';
     const submit = ({keyForList}: {keyForList: string}) => {
         Navigation.goBack();
@@ -53,7 +47,7 @@ function WorkspaceTaxesSettingsWorkspaceCurrency({
                     <View style={styles.mb4}>
                         <TaxPicker
                             selectedTaxRate={defaultTaxName}
-                            taxRates={policyTaxRates}
+                            taxRates={policy?.taxRates}
                             insets={insets}
                             onSubmit={submit}
                         />
@@ -66,8 +60,4 @@ function WorkspaceTaxesSettingsWorkspaceCurrency({
 
 WorkspaceTaxesSettingsWorkspaceCurrency.displayName = 'WorkspaceTaxesSettingsWorkspaceCurrency';
 
-export default withOnyx<WorkspaceTaxesSettingsWorkspaceCurrencyProps, WorkspaceTaxesSettingsWorkspaceCurrencyOnyxProps>({
-    policyTaxRates: {
-        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route?.params?.policyID || ''}`,
-    },
-})(WorkspaceTaxesSettingsWorkspaceCurrency);
+export default withPolicyAndFullscreenLoading(WorkspaceTaxesSettingsWorkspaceCurrency);

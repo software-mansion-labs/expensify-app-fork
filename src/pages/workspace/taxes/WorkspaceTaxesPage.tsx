@@ -1,8 +1,6 @@
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -23,18 +21,12 @@ import type {CentralPaneNavigatorParamList} from '@libs/Navigation/types';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import type * as OnyxTypes from '@src/types/onyx';
 
-type WorkspaceTaxesPageOnyxProps = {
-    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
-};
+type WorkspaceTaxesPageProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<CentralPaneNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES>;
 
-type WorkspaceTaxesPageProps = WithPolicyAndFullscreenLoadingProps & WorkspaceTaxesPageOnyxProps & StackScreenProps<CentralPaneNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES>;
-
-function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
+function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const theme = useTheme();
@@ -43,7 +35,7 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
 
     const taxesList = useMemo<ListItem[]>(
         () =>
-            Object.entries(policyTaxRates?.taxes ?? {}).map(([key, value]) => ({
+            Object.entries(policy?.taxRates?.taxes ?? {}).map(([key, value]) => ({
                 // TODO: Clean up: check if all properties are needed
                 text: value.name,
                 keyForList: key,
@@ -62,7 +54,7 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
                     </View>
                 ),
             })),
-        [policyTaxRates?.taxes, selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, theme.icon, translate],
+        [policy?.taxRates?.taxes, selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, theme.icon, translate],
     );
 
     // const toggleTax = (tax: TaxForList) => {
@@ -160,10 +152,4 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
 
 WorkspaceTaxesPage.displayName = 'WorkspaceTaxesPage';
 
-export default withPolicyAndFullscreenLoading(
-    withOnyx<WorkspaceTaxesPageProps, WorkspaceTaxesPageOnyxProps>({
-        policyTaxRates: {
-            key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
-        },
-    })(WorkspaceTaxesPage),
-);
+export default withPolicyAndFullscreenLoading(WorkspaceTaxesPage);

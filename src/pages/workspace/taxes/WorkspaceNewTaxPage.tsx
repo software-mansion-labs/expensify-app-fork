@@ -1,14 +1,12 @@
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
-import {satisfies} from 'semver';
 import AmountPicker from '@components/AmountPicker';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import type {FormOnyxValues} from '@components/Form/types';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
-import {taxPropTypes} from '@components/taxPropTypes';
 import TextPicker from '@components/TextPicker';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';

@@ -1,18 +1,19 @@
-import type {OnyxEntry} from 'react-native-onyx';
+import type {OnyxCollection} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import type {CreateWorkspaceTaxParams, SetWorkspaceForeignCurrencyDefaultParams, SetWorkspaceTaxesCurrencyDefaultParams, SetWorkspaceTaxesDisabledParams} from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {TaxRatesWithDefault} from '@src/types/onyx';
+import type {Policy} from '@src/types/onyx';
 import type {PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {OnyxData} from '@src/types/onyx/Request';
 
-let allTaxRatesWithDefault: OnyxEntry<TaxRatesWithDefault> | undefined;
+let allPolicies: OnyxCollection<Policy>;
 Onyx.connect({
-    key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}`,
-    callback: (taxes) => (allTaxRatesWithDefault = taxes),
+    key: ONYXKEYS.COLLECTION.POLICY,
+    waitForCollectionCallback: true,
+    callback: (value) => (allPolicies = value),
 });
 
 function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
@@ -20,10 +21,12 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    taxes: {
-                        [taxRate.code]: {...taxRate, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD},
+                    taxRates: {
+                        taxes: {
+                            [taxRate.code]: {...taxRate, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD},
+                        },
                     },
                 },
             },
@@ -31,10 +34,12 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
         successData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    taxes: {
-                        [taxRate.code]: taxRate,
+                    taxRates: {
+                        taxes: {
+                            [taxRate.code]: taxRate,
+                        },
                     },
                 },
             },
@@ -42,10 +47,12 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
         failureData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    taxes: {
-                        [taxRate.code]: null,
+                    taxRates: {
+                        taxes: {
+                            [taxRate.code]: null,
+                        },
                     },
                 },
             },
@@ -61,32 +68,38 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
 }
 
 function setWorkspaceCurrencyDefault({policyID, defaultExternalID}: SetWorkspaceTaxesCurrencyDefaultParams) {
-    const originalDefaultExternalID = allTaxRatesWithDefault?.defaultExternalID;
+    const originalDefaultExternalID = allPolicies?.policyID?.taxRates?.defaultExternalID;
     const onyxData: OnyxData = {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    defaultExternalID,
+                    taxRates: {
+                        defaultExternalID,
+                    },
                 },
             },
         ],
         successData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    defaultExternalID,
+                    taxRates: {
+                        defaultExternalID,
+                    },
                 },
             },
         ],
         failureData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    defaultExternalID: originalDefaultExternalID,
+                    taxRates: {
+                        defaultExternalID: originalDefaultExternalID,
+                    },
                 },
             },
         ],
@@ -101,32 +114,38 @@ function setWorkspaceCurrencyDefault({policyID, defaultExternalID}: SetWorkspace
 }
 
 function setForeignCurrencyDefault({policyID, foreignTaxDefault}: SetWorkspaceForeignCurrencyDefaultParams) {
-    const originalDefaultForeignCurrencyID = allTaxRatesWithDefault?.foreignTaxDefault;
+    const originalDefaultForeignCurrencyID = allPolicies?.policyID?.taxRates?.foreignTaxDefault;
     const onyxData: OnyxData = {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    foreignTaxDefault,
+                    taxRates: {
+                        foreignTaxDefault,
+                    },
                 },
             },
         ],
         successData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    foreignTaxDefault,
+                    taxRates: {
+                        foreignTaxDefault,
+                    },
                 },
             },
         ],
         failureData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    foreignTaxDefault: originalDefaultForeignCurrencyID,
+                    taxRates: {
+                        foreignTaxDefault: originalDefaultForeignCurrencyID,
+                    },
                 },
             },
         ],
@@ -141,43 +160,49 @@ function setForeignCurrencyDefault({policyID, foreignTaxDefault}: SetWorkspaceFo
 }
 
 function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesDisabledParams) {
-    const originalTaxes = {...allTaxRatesWithDefault?.taxes};
+    const originalTaxes = {...allPolicies?.policyID?.taxRates?.taxes};
     const onyxData: OnyxData = {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    taxes: Object.keys(taxesToUpdate).reduce((acc, taxID) => {
-                        acc[taxID] = {isDisabled: taxesToUpdate[taxID].isDisabled, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE};
-                        return acc;
-                    }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
+                    taxRates: {
+                        taxes: Object.keys(taxesToUpdate).reduce((acc, taxID) => {
+                            acc[taxID] = {isDisabled: taxesToUpdate[taxID].isDisabled, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE};
+                            return acc;
+                        }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
+                    },
                 },
             },
         ],
         successData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    taxes: Object.keys(taxesToUpdate).reduce((acc, taxID) => {
-                        acc[taxID] = {isDisabled: taxesToUpdate[taxID].isDisabled, pendingAction: null};
-                        return acc;
-                    }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
+                    taxRates: {
+                        taxes: Object.keys(taxesToUpdate).reduce((acc, taxID) => {
+                            acc[taxID] = {isDisabled: taxesToUpdate[taxID].isDisabled, pendingAction: null};
+                            return acc;
+                        }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
+                    },
                 },
             },
         ],
         failureData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
-                    taxes: Object.keys(originalTaxes).reduce((acc, taxID) => {
-                        if (taxesToUpdate[taxID]) {
-                            acc[taxID] = {isDisabled: !!originalTaxes[taxID].isDisabled, pendingAction: null};
-                        }
-                        return acc;
-                    }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
+                    taxRates: {
+                        taxes: Object.keys(originalTaxes).reduce((acc, taxID) => {
+                            if (taxesToUpdate[taxID]) {
+                                acc[taxID] = {isDisabled: !!originalTaxes[taxID].isDisabled, pendingAction: null};
+                            }
+                            return acc;
+                        }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
+                    },
                 },
             },
         ],

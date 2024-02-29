@@ -200,8 +200,8 @@ function getTagList(policyTagList: OnyxEntry<PolicyTagList>, tagIndex: number): 
 }
 
 /** Get a tax with given ID from policy */
-function getTaxByID(policyTaxRates: OnyxEntry<TaxRatesWithDefault>, taxID: string): TaxRate | undefined {
-    return policyTaxRates?.taxes?.[taxID];
+function getTaxByID(policy: OnyxEntry<Policy>, taxID: string): TaxRate | undefined {
+    return policy?.taxRates?.taxes?.[taxID ?? ''];
 }
 
 /**

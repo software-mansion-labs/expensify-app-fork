@@ -1,8 +1,6 @@
 /* eslint-disable no-console */
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback, useState} from 'react';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
 import AmountForm from '@components/AmountForm';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -16,27 +14,25 @@ import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
+import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
+import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/WorkspaceTaxValueForm';
 import type * as OnyxTypes from '@src/types/onyx';
 
-type ValuePageOnyxProps = {
-    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
-};
-
-type ValuePageProps = ValuePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_VALUE>;
+type ValuePageProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_VALUE>;
 
 function ValuePage({
     route: {
         params: {policyID, taxID},
     },
-    policyTaxRates,
+    policy,
 }: ValuePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
+    const currentTaxRate = PolicyUtils.getTaxByID(policy, taxID);
     const [value, setValue] = useState(currentTaxRate?.value?.replace('%', ''));
 
     // TODO: Extract it to a separate file, and use it also when creating a new tax
@@ -91,8 +87,4 @@ function ValuePage({
 
 ValuePage.displayName = 'ValuePage';
 
-export default withOnyx<ValuePageProps, ValuePageOnyxProps>({
-    policyTaxRates: {
-        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
-    },
-})(ValuePage);
+export default withPolicyAndFullscreenLoading(ValuePage);

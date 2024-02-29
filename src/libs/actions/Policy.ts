@@ -200,21 +200,6 @@ Onyx.connect({
     callback: (val) => (allRecentlyUsedTags = val),
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let allPolicyTaxes: OnyxCollection<TaxRatesWithDefault> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.POLICY_TAX_RATES,
-    waitForCollectionCallback: true,
-    callback: (value) => {
-        if (!value) {
-            allPolicyTaxes = {};
-            return;
-        }
-
-        allPolicyTaxes = value;
-    },
-});
-
 /**
  * Stores in Onyx the policy ID of the last workspace that was accessed by the user
  */

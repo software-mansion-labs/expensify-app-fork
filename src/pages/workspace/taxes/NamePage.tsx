@@ -2,8 +2,6 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import ExpensiMark from 'expensify-common/lib/ExpensiMark';
 import React, {useState} from 'react';
 import {View} from 'react-native';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -14,6 +12,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
+import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
+import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -21,11 +21,7 @@ import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/WorkspaceTaxNameForm';
 import type * as OnyxTypes from '@src/types/onyx';
 
-type NamePageOnyxProps = {
-    policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
-};
-
-type NamePageProps = NamePageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_NAME>;
+type NamePageProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_NAME>;
 
 const parser = new ExpensiMark();
 
@@ -33,11 +29,11 @@ function NamePage({
     route: {
         params: {policyID, taxID},
     },
-    policyTaxRates,
+    policy,
 }: NamePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
+    const currentTaxRate = PolicyUtils.getTaxByID(policy, taxID);
 
     const [name, setName] = useState(() => parser.htmlToMarkdown(currentTaxRate?.name ?? ''));
 
@@ -84,8 +80,4 @@ function NamePage({
 
 NamePage.displayName = 'NamePage';
 
-export default withOnyx<NamePageProps, NamePageOnyxProps>({
-    policyTaxRates: {
-        key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
-    },
-})(NamePage);
+export default withPolicyAndFullscreenLoading(NamePage);
