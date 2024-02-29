@@ -155,6 +155,7 @@ const WRITE_COMMANDS = {
     SET_WORKSPACE_TAXES_DISABLED: 'SetWorkspaceTaxesEnabled',
     SET_WORKSPACE_TAXES_CURRENCY_DEFAULT: 'SetWorkspaceCurrencyDefault',
     SET_WORKSPACE_TAXES_FOREIGN_CURRENCY_DEFAULT: 'SetWorkspaceForeignCurrencyDefault',
+    CREATE_WORKSPACE_TAX: 'CreateWorkspaceTax',
 } as const;
 
 type WriteCommand = ValueOf<typeof WRITE_COMMANDS>;
@@ -308,6 +309,7 @@ type WriteCommandParameters = {
     [WRITE_COMMANDS.SET_WORKSPACE_TAXES_DISABLED]: Parameters.SetWorkspaceTaxesDisabledParams;
     [WRITE_COMMANDS.SET_WORKSPACE_TAXES_CURRENCY_DEFAULT]: Parameters.SetWorkspaceTaxesCurrencyDefaultParams;
     [WRITE_COMMANDS.SET_WORKSPACE_TAXES_FOREIGN_CURRENCY_DEFAULT]: Parameters.SetWorkspaceForeignCurrencyDefaultParams;
+    [WRITE_COMMANDS.CREATE_WORKSPACE_TAX]: Parameters.CreateWorkspaceTaxParams;
 };
 
 const READ_COMMANDS = {

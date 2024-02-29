@@ -1,7 +1,7 @@
 import type {OnyxEntry} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
-import type {SetWorkspaceForeignCurrencyDefaultParams, SetWorkspaceTaxesCurrencyDefaultParams, SetWorkspaceTaxesDisabledParams} from '@libs/API/parameters';
+import type {CreateWorkspaceTaxParams, SetWorkspaceForeignCurrencyDefaultParams, SetWorkspaceTaxesCurrencyDefaultParams, SetWorkspaceTaxesDisabledParams} from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -14,6 +14,51 @@ Onyx.connect({
     key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}`,
     callback: (taxes) => (allTaxRatesWithDefault = taxes),
 });
+
+function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
+    const onyxData: OnyxData = {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    taxes: {
+                        [taxRate.code]: {...taxRate, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD},
+                    },
+                },
+            },
+        ],
+        successData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    taxes: {
+                        [taxRate.code]: taxRate,
+                    },
+                },
+            },
+        ],
+        failureData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    taxes: {
+                        [taxRate.code]: null,
+                    },
+                },
+            },
+        ],
+    };
+
+    const parameters = {
+        policyID,
+        taxRate,
+    };
+
+    API.write(WRITE_COMMANDS.CREATE_WORKSPACE_TAX, parameters, onyxData);
+}
 
 function setWorkspaceCurrencyDefault({policyID, defaultExternalID}: SetWorkspaceTaxesCurrencyDefaultParams) {
     const originalDefaultExternalID = allTaxRatesWithDefault?.defaultExternalID;
@@ -146,4 +191,4 @@ function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesD
     API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_DISABLED, parameters, onyxData);
 }
 
-export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault};
+export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault, createWorkspaceTax};

@@ -1,15 +1,18 @@
 import type {StackScreenProps} from '@react-navigation/stack';
-import React from 'react';
+import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
+import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import * as Expensicons from '@components/Icon/Expensicons';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import ScreenWrapper from '@components/ScreenWrapper';
 import Switch from '@components/Switch';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import compose from '@libs/compose';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
@@ -39,6 +42,8 @@ function WorkspaceEditTaxPage({
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
+    const {windowWidth} = useWindowDimensions();
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
     const toggle = () => {
         setWorkspaceTaxesDisabled({
@@ -51,6 +56,22 @@ function WorkspaceEditTaxPage({
         });
     };
 
+    const deleteTax = () => {
+        // TODO: Call Onyx action to delete tax
+        setIsDeleteModalVisible(false);
+    };
+
+    const threeDotsMenuItems = useMemo(() => {
+        const menuItems = [
+            {
+                icon: Expensicons.Trashcan,
+                text: translate('common.delete'),
+                onSelected: () => setIsDeleteModalVisible(true),
+            },
+        ];
+        return menuItems;
+    }, [translate]);
+
     return (
         <ScreenWrapper
             testID={WorkspaceEditTaxPage.displayName}
@@ -58,7 +79,12 @@ function WorkspaceEditTaxPage({
         >
             <View style={[styles.h100, styles.flex1, styles.justifyContentBetween]}>
                 <View>
-                    <HeaderWithBackButton title={currentTaxRate?.name} />
+                    <HeaderWithBackButton
+                        title={currentTaxRate?.name}
+                        threeDotsMenuItems={threeDotsMenuItems}
+                        shouldShowThreeDotsButton
+                        threeDotsAnchorPosition={styles.threeDotsPopoverOffsetNoCloseButton(windowWidth)}
+                    />
                     {taxID ? (
                         // TODO: Extract it to a separate component or use a common one
                         <View style={[styles.flexRow, styles.mv4, styles.justifyContentBetween, styles.ph5]}>
@@ -92,6 +118,16 @@ function WorkspaceEditTaxPage({
                     />
                 </View>
             </View>
+            <ConfirmModal
+                title={translate('workspace.taxes.deleteTax')}
+                isVisible={isDeleteModalVisible}
+                onConfirm={deleteTax}
+                onCancel={() => setIsDeleteModalVisible(false)}
+                prompt={translate('workspace.taxes.deleteTaxConfirmation')}
+                confirmText={translate('common.delete')}
+                cancelText={translate('common.cancel')}
+                danger
+            />
         </ScreenWrapper>
     );
 }

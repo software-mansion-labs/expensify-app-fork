@@ -152,3 +152,4 @@ export type {default as SwitchToOldDotParams} from './SwitchToOldDotParams';
 export type {default as SetWorkspaceTaxesDisabledParams} from './SetWorkspaceTaxesDisabledParams';
 export type {default as SetWorkspaceTaxesCurrencyDefaultParams} from './SetWorkspaceTaxesCurrencyDefaultParams';
 export type {default as SetWorkspaceForeignCurrencyDefaultParams} from './SetWorkspaceForeignCurrencyDefaultParams';
+export type {default as CreateWorkspaceTaxParams} from './CreateWorkspaceTaxParams';

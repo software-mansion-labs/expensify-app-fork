@@ -1921,6 +1921,8 @@ export default {
             deleteTaxes: 'Delete taxes',
             disableTaxes: 'Disable taxes',
             enableTaxes: 'Enable taxes',
+            deleteTax: 'Delete tax',
+            deleteTaxConfirmation: 'Are you sure you want to delete this tax rate?',
         },
     },
     getAssistancePage: {
