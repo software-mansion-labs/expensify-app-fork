@@ -464,8 +464,8 @@ function isValidTaxValue(value: string): boolean {
     return Number(value) > 0 && Number(value) <= 100;
 }
 
-function isValidTaxName(name: string): boolean {
-    return !name.match(CONST.REGEX.EMOJIS);
+function isValidTaxName(name: string) {
+    return name.length <= CONST.TAX_RATES.NAME_MAX_LENGTH;
 }
 
 export {
