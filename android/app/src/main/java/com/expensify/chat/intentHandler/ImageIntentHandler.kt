@@ -1,0 +1,75 @@
+package com.expensify.chat.intentHandler
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
+import com.expensify.chat.image.ImageUtils.copyUriToStorage
+
+
+class ImageIntentHandler(private val context: Context) : IntentHandler {
+     override fun handle(intent: Intent?): Boolean {
+         Log.i("ImageIntentHandler", "Handle intent" + intent.toString())
+         if (intent == null) {
+            return false
+        }
+
+        val action: String? = intent.action
+        val type: String = intent.type ?: return false
+
+         if(!type.startsWith("image/")) return false
+
+         when(action) {
+             Intent.ACTION_SEND -> {
+                 Log.i("ImageIntentHandler", "Handle receive single image")
+//                 handleSingleImageIntent(intent, context)
+                 openShareRoot()
+                 return true
+             }
+             Intent.ACTION_SEND_MULTIPLE -> {
+                 handleMultipleImagesIntent(intent, context)
+                 openShareRoot()
+                 return true
+             }
+         }
+         return false
+    }
+
+    private fun handleSingleImageIntent(intent: Intent, context: Context) {
+        (intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))?.let { imageUri ->
+            // Update UI to reflect image being shared
+            if (imageUri == null) {
+                return
+            }
+
+            val resultingImagePaths = ArrayList<String>()
+            val resultingPath: String? = copyUriToStorage(imageUri, context)
+            if (resultingPath != null) {
+                resultingImagePaths.add(resultingPath)
+            }
+        }
+    }
+
+    private fun handleMultipleImagesIntent(intent: Intent, context: Context) {
+
+        val resultingImagePaths = ArrayList<String>()
+
+        (intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM))?.let { imageUris ->
+            for (imageUri in imageUris) {
+                val resultingPath: String? = copyUriToStorage(imageUri, context)
+                if (resultingPath != null) {
+                    resultingImagePaths.add(resultingPath)
+                }
+            }
+        }
+//        Yapl.getInstance().callIntentCallback(resultingImagePaths)
+    }
+
+    private fun openShareRoot() {
+        val uri: Uri = Uri.parse("new-expensify://share/root")
+        val deepLinkIntent = Intent(Intent.ACTION_VIEW, uri)
+        deepLinkIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        context.startActivity(deepLinkIntent)
+    }
+
+}

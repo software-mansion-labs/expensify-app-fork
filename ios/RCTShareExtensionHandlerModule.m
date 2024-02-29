@@ -15,7 +15,6 @@ NSString *const ShareImageFileExtension = @".png";
 
 @implementation RCTShareExtensionHandlerModule
 
-// To export a module named RCTCalendarModule
 RCT_EXPORT_MODULE(RCTShareExtensionHandlerModule);
 
 RCT_EXPORT_METHOD(processFiles:(RCTResponseSenderBlock)callback)
