@@ -65,6 +65,7 @@ function WorkspaceTaxesSettingsCustomTaxName({
                         maxLength={CONST.TAX_RATES.NAME_MAX_LENGTH}
                         autoFocus
                         onChangeText={setName}
+                        autoGrowHeight
                     />
                 </View>
             </FormProvider>
