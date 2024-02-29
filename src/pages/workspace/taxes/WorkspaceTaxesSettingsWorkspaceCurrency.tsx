@@ -5,13 +5,13 @@ import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import BaseSettingsTaxSelector from './BaseSettingsTaxSelector';
 
-type SettingsWorkspaceCurrencyProps = StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_FOREIGN_CURRENCY_DEFAULT>;
+type WorkspaceTaxesSettingsWorkspaceCurrencyProps = StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_FOREIGN_CURRENCY_DEFAULT>;
 
-function SettingsWorkspaceCurrency({
+function WorkspaceTaxesSettingsWorkspaceCurrency({
     route: {
         params: {policyID},
     },
-}: SettingsWorkspaceCurrencyProps) {
+}: WorkspaceTaxesSettingsWorkspaceCurrencyProps) {
     const {translate} = useLocalize();
 
     return (
@@ -23,6 +23,6 @@ function SettingsWorkspaceCurrency({
     );
 }
 
-SettingsWorkspaceCurrency.displayName = 'SettingsWorkspaceCurrency';
+WorkspaceTaxesSettingsWorkspaceCurrency.displayName = 'WorkspaceTaxesSettingsWorkspaceCurrency';
 
-export default SettingsWorkspaceCurrency;
+export default WorkspaceTaxesSettingsWorkspaceCurrency;

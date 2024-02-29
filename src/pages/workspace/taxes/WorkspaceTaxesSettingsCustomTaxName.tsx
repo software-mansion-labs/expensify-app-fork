@@ -19,18 +19,19 @@ import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/WorkspaceTaxCustomNameForm';
 import type * as OnyxTypes from '@src/types/onyx';
 
-type SettingsCustomTaxNameOnyxProps = {
+type WorkspaceTaxesSettingsCustomTaxNameOnyxProps = {
     policyTaxRates: OnyxEntry<OnyxTypes.TaxRatesWithDefault>;
 };
 
-type SettingsCustomTaxNameProps = SettingsCustomTaxNameOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_CUSTOM_TAX_NAME>;
+type WorkspaceTaxesSettingsCustomTaxNameProps = WorkspaceTaxesSettingsCustomTaxNameOnyxProps &
+    StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES_SETTINGS_CUSTOM_TAX_NAME>;
 
-function SettingsCustomTaxName({
+function WorkspaceTaxesSettingsCustomTaxName({
     route: {
         params: {policyID},
     },
     policyTaxRates,
-}: SettingsCustomTaxNameProps) {
+}: WorkspaceTaxesSettingsCustomTaxNameProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const [name, setName] = useState(policyTaxRates?.name ?? '');
@@ -43,7 +44,7 @@ function SettingsCustomTaxName({
         <ScreenWrapper
             includeSafeAreaPaddingBottom={false}
             shouldEnableMaxHeight
-            testID={SettingsCustomTaxName.displayName}
+            testID={WorkspaceTaxesSettingsCustomTaxName.displayName}
         >
             <HeaderWithBackButton title={translate('workspace.taxes.settings.customTaxName')} />
 
@@ -71,10 +72,10 @@ function SettingsCustomTaxName({
     );
 }
 
-SettingsCustomTaxName.displayName = 'SettingsCustomTaxName';
+WorkspaceTaxesSettingsCustomTaxName.displayName = 'WorkspaceTaxesSettingsCustomTaxName';
 
-export default withOnyx<SettingsCustomTaxNameProps, SettingsCustomTaxNameOnyxProps>({
+export default withOnyx<WorkspaceTaxesSettingsCustomTaxNameProps, WorkspaceTaxesSettingsCustomTaxNameOnyxProps>({
     policyTaxRates: {
         key: ({route}) => `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${route.params.policyID}`,
     },
-})(SettingsCustomTaxName);
+})(WorkspaceTaxesSettingsCustomTaxName);
