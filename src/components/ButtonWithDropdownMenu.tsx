@@ -10,33 +10,30 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 import type {AnchorPosition} from '@styles/index';
 import CONST from '@src/CONST';
 import type AnchorAlignment from '@src/types/utils/AnchorAlignment';
-import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import type IconAsset from '@src/types/utils/IconAsset';
 import Button from './Button';
 import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
 import PopoverMenu from './PopoverMenu';
 
-type PaymentType = DeepValueOf<typeof CONST.IOU.PAYMENT_TYPE | typeof CONST.IOU.REPORT_ACTION_TYPE | typeof CONST.TAX_RATES.ACTION_TYPE>;
-
-type DropdownOption = {
-    value: PaymentType;
+type DropdownOption<T> = {
+    value: T;
     text: string;
-    icon: IconAsset;
+    icon?: IconAsset;
     iconWidth?: number;
     iconHeight?: number;
     iconDescription?: string;
 };
 
-type ButtonWithDropdownMenuProps = {
+type ButtonWithDropdownMenuProps<T> = {
     /** Text to display for the menu header */
     menuHeaderText?: string;
 
     /** Callback to execute when the main button is pressed */
-    onPress: (event: GestureResponderEvent | KeyboardEvent | undefined, value: PaymentType) => void;
+    onPress: (event: GestureResponderEvent | KeyboardEvent | undefined, value: T) => void;
 
     /** Callback to execute when a dropdown option is selected */
-    onOptionSelected?: (option: DropdownOption) => void;
+    onOptionSelected?: (option: DropdownOption<T>) => void;
 
     /** Call the onPress function on main button when Enter key is pressed */
     pressOnEnter?: boolean;
@@ -55,7 +52,7 @@ type ButtonWithDropdownMenuProps = {
 
     /** Menu options to display */
     /** e.g. [{text: 'Pay with Expensify', icon: Wallet}] */
-    options: DropdownOption[];
+    options: Array<DropdownOption<T>>;
 
     /** The anchor alignment of the popover menu */
     anchorAlignment?: AnchorAlignment;
@@ -71,7 +68,7 @@ type ButtonWithDropdownMenuProps = {
     buttonLabel?: string;
 };
 
-function ButtonWithDropdownMenu({
+function ButtonWithDropdownMenu<T>({
     isLoading = false,
     isDisabled = false,
     pressOnEnter = false,
@@ -88,7 +85,7 @@ function ButtonWithDropdownMenu({
     onOptionSelected,
     enterKeyEventListenerPriority = 0,
     buttonLabel,
-}: ButtonWithDropdownMenuProps) {
+}: ButtonWithDropdownMenuProps<T>) {
     const theme = useTheme();
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
