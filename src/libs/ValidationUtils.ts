@@ -460,6 +460,14 @@ function prepareValues(values: ValuesType): ValuesType {
     return trimmedStringValues;
 }
 
+function isValidTaxValue(value: string): boolean {
+    return Number(value) > 0 && Number(value) <= 100;
+}
+
+function isValidTaxName(name: string): boolean {
+    return !name.match(CONST.REGEX.EMOJIS);
+}
+
 export {
     meetsMinimumAgeRequirement,
     meetsMaximumAgeRequirement,
