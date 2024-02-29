@@ -32,14 +32,14 @@ type ValuePageProps = ValuePageOnyxProps & StackScreenProps<SettingsNavigatorPar
 
 function ValuePage({
     route: {
-        params: {policyID, taxName},
+        params: {policyID, taxID},
     },
     workspaceTax,
     policyTaxRates,
 }: ValuePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
+    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
     const isEditPage = !!currentTaxRate?.name;
     const [value, setValue] = useState(isEditPage ? currentTaxRate?.value?.replace('%', '') : workspaceTax?.value);
 
@@ -58,9 +58,9 @@ function ValuePage({
             if (!isEditPage) {
                 Policy.setTaxValue(values.value);
             }
-            Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxName));
+            Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxID));
         },
-        [policyID, taxName, isEditPage],
+        [policyID, taxID, isEditPage],
     );
 
     return (

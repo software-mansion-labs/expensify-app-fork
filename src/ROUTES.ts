@@ -547,20 +547,20 @@ const ROUTES = {
         getRoute: (policyID: string) => `workspace/${policyID}/taxes/settings/foreign-currency` as const,
     },
     WORKSPACE_TAXES_EDIT: {
-        route: 'workspace/:policyID/tax/:taxName',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/tax/${encodeURI(taxName)}` as const,
+        route: 'workspace/:policyID/tax/:taxID',
+        getRoute: (policyID: string, taxID: string) => `workspace/${policyID}/tax/${encodeURI(taxID)}` as const,
     },
     WORKSPACE_TAXES_NEW: {
         route: 'workspace/:policyID/taxes/new',
         getRoute: (policyID: string) => `workspace/${policyID}/taxes/new` as const,
     },
     WORKSPACE_TAXES_NAME: {
-        route: 'workspace/:policyID/tax/:taxName/name',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/tax/${encodeURI(taxName)}/name` as const,
+        route: 'workspace/:policyID/tax/:taxID/name',
+        getRoute: (policyID: string, taxID: string) => `workspace/${policyID}/tax/${encodeURI(taxID)}/name` as const,
     },
     WORKSPACE_TAXES_VALUE: {
-        route: 'workspace/:policyID/tax/:taxName/value',
-        getRoute: (policyID: string, taxName: string) => `workspace/${policyID}/tax/${encodeURI(taxName)}/value` as const,
+        route: 'workspace/:policyID/tax/:taxID/value',
+        getRoute: (policyID: string, taxID: string) => `workspace/${policyID}/tax/${encodeURI(taxID)}/value` as const,
     },
     WORKSPACE_CATEGORIES_SETTINGS: {
         route: 'workspace/:policyID/categories/settings',

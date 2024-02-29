@@ -47,6 +47,9 @@ type TaxRate = {
 
     /** Indicates if the tax rate is disabled. */
     isDisabled?: boolean;
+
+    /** Pending action for the tax rate */
+    pendingAction?: OnyxCommon.PendingAction;
 };
 
 type TaxRates = Record<string, TaxRate>;

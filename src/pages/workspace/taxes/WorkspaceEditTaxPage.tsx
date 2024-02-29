@@ -16,6 +16,7 @@ import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import type {WithPolicyProps} from '@pages/workspace/withPolicy';
 import withPolicy from '@pages/workspace/withPolicy';
+import {setWorkspaceTaxesEnabled} from '@userActions/TaxRate';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -31,13 +32,21 @@ type WorkspaceEditTaxPageProps = WorkspaceEditTaxPageBaseProps & WorkspaceEditTa
 
 function WorkspaceEditTaxPage({
     route: {
-        params: {policyID, taxName},
+        params: {policyID, taxID},
     },
     policyTaxRates,
 }: WorkspaceEditTaxPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
+    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
+
+    const toggle = () => {
+        setWorkspaceTaxesEnabled(policyID, {
+            [taxID]: {
+                isDisabled: !currentTaxRate?.isDisabled,
+            },
+        });
+    };
 
     return (
         <ScreenWrapper
@@ -47,7 +56,8 @@ function WorkspaceEditTaxPage({
             <View style={[styles.h100, styles.flex1, styles.justifyContentBetween]}>
                 <View>
                     <HeaderWithBackButton title={currentTaxRate?.name} />
-                    {taxName ? (
+                    {taxID ? (
+                        // TODO: Extract it to a separate component or use a common one
                         <View style={[styles.flexRow, styles.mv4, styles.justifyContentBetween, styles.ph5]}>
                             <View style={styles.flex4}>
                                 <Text>Enable rate</Text>
@@ -56,7 +66,7 @@ function WorkspaceEditTaxPage({
                                 <Switch
                                     accessibilityLabel="TODO"
                                     isOn={!currentTaxRate?.isDisabled}
-                                    onToggle={() => {}}
+                                    onToggle={toggle}
                                 />
                             </View>
                         </View>
@@ -67,7 +77,7 @@ function WorkspaceEditTaxPage({
                         description={translate('workspace.taxes.name')}
                         style={[styles.moneyRequestMenuItem]}
                         titleStyle={styles.flex1}
-                        onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_NAME.getRoute(`${policyID}`, taxName))}
+                        onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_NAME.getRoute(`${policyID}`, taxID))}
                     />
                     <MenuItemWithTopDescription
                         shouldShowRightIcon
@@ -75,7 +85,7 @@ function WorkspaceEditTaxPage({
                         description={translate('workspace.taxes.value')}
                         style={[styles.moneyRequestMenuItem]}
                         titleStyle={styles.flex1}
-                        onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_VALUE.getRoute(`${policyID}`, taxName))}
+                        onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_VALUE.getRoute(`${policyID}`, taxID))}
                     />
                 </View>
             </View>

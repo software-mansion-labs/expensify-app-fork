@@ -32,14 +32,14 @@ const parser = new ExpensiMark();
 
 function NamePage({
     route: {
-        params: {policyID, taxName},
+        params: {policyID, taxID},
     },
     workspaceTax,
     policyTaxRates,
 }: NamePageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxName);
+    const currentTaxRate = PolicyUtils.getTaxByID(policyTaxRates, taxID);
     const isEditPage = !!currentTaxRate?.name;
 
     const [name, setName] = useState(() => parser.htmlToMarkdown((isEditPage ? currentTaxRate?.name : workspaceTax?.name) ?? ''));
@@ -49,7 +49,7 @@ function NamePage({
             Policy.setTaxName(name);
         }
 
-        Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxName));
+        Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxID));
     };
 
     return (

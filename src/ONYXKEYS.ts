@@ -73,9 +73,6 @@ const ONYXKEYS = {
      * rates and units for different workspaces at the same time. */
     WORKSPACE_RATE_AND_UNIT: 'workspaceRateAndUnit',
 
-    /** Contains all the info for Tax Name and Value while creting. */
-    WORKSPACE_TAX: 'workspaceTax',
-
     /** Contains a list of all currencies available to the user - user can
      * select a currency based on the list */
     CURRENCY_LIST: 'currencyList',

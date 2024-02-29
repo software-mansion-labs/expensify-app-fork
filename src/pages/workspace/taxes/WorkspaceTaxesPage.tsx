@@ -48,6 +48,7 @@ function WorkspaceTaxesPage({policy, policyTaxRates}: WorkspaceTaxesPageProps) {
                 text: value.name,
                 keyForList: key,
                 isSelected: selectedTaxes.includes(key),
+                pendingAction: value.pendingAction,
                 rightElement: (
                     // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
                     <View style={styles.flexRow}>
