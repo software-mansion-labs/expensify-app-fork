@@ -41,6 +41,9 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                 keyForList: key,
                 isSelected: selectedTaxes.includes(key),
                 pendingAction: value.pendingAction,
+                errors: value.errors,
+                // TODO: Add dismiss error
+                onDismissError: () => {},
                 rightElement: (
                     // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
                     <View style={styles.flexRow}>

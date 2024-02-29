@@ -50,6 +50,9 @@ type TaxRate = {
 
     /** Pending action for the tax rate */
     pendingAction?: OnyxCommon.PendingAction;
+
+    /** Errors */
+    errors?: OnyxCommon.Errors;
 };
 
 type TaxRates = Record<string, TaxRate>;

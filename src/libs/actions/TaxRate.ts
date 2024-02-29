@@ -4,6 +4,7 @@ import * as API from '@libs/API';
 import type {CreateWorkspaceTaxParams, SetWorkspaceForeignCurrencyDefaultParams, SetWorkspaceTaxesCurrencyDefaultParams, SetWorkspaceTaxesDisabledParams} from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
+import * as ErrorUtils from '@src/libs/ErrorUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Policy} from '@src/types/onyx';
 import type {PendingAction} from '@src/types/onyx/OnyxCommon';
@@ -25,7 +26,11 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
                 value: {
                     taxRates: {
                         taxes: {
-                            [taxRate.code]: {...taxRate, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD},
+                            [taxRate.code]: {
+                                ...taxRate,
+                                pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
+                                errors: null,
+                            },
                         },
                     },
                 },
@@ -38,7 +43,10 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
                 value: {
                     taxRates: {
                         taxes: {
-                            [taxRate.code]: taxRate,
+                            [taxRate.code]: {
+                                pendingAction: null,
+                                errors: null,
+                            },
                         },
                     },
                 },
@@ -51,7 +59,9 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
                 value: {
                     taxRates: {
                         taxes: {
-                            [taxRate.code]: null,
+                            [taxRate.code]: {
+                                errors: ErrorUtils.getMicroSecondOnyxError('workspace.taxes.genericFailureMessage'),
+                            },
                         },
                     },
                 },

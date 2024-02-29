@@ -1923,6 +1923,7 @@ export default {
             enableTaxes: 'Enable taxes',
             deleteTax: 'Delete tax',
             deleteTaxConfirmation: 'Are you sure you want to delete this tax rate?',
+            genericFailureMessage: 'An error occurred updating the tax rates, please try again.',
         },
     },
     getAssistancePage: {
