@@ -57,7 +57,7 @@ function WorkspaceTaxesSettingsPage({
             <View style={styles.flex1}>
                 {menuItems.map((item) => (
                     <MenuItemWithTopDescription
-                        key={item.title}
+                        key={item.description}
                         shouldShowRightIcon
                         title={item.title}
                         description={item.description}

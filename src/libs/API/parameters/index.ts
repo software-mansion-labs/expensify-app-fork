@@ -150,3 +150,5 @@ export type {default as SetWorkspaceAutoReportingParams} from './SetWorkspaceAut
 export type {default as SetWorkspaceApprovalModeParams} from './SetWorkspaceApprovalModeParams';
 export type {default as SwitchToOldDotParams} from './SwitchToOldDotParams';
 export type {default as SetWorkspaceTaxesDisabledParams} from './SetWorkspaceTaxesDisabledParams';
+export type {default as SetWorkspaceTaxesCurrencyDefaultParams} from './SetWorkspaceTaxesCurrencyDefaultParams';
+export type {default as SetWorkspaceForeignCurrencyDefaultParams} from './SetWorkspaceForeignCurrencyDefaultParams';

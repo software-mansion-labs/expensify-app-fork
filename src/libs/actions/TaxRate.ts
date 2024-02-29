@@ -1,7 +1,7 @@
 import type {OnyxEntry} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
-import type {SetWorkspaceTaxesDisabledParams} from '@libs/API/parameters';
+import type {SetWorkspaceForeignCurrencyDefaultParams, SetWorkspaceTaxesCurrencyDefaultParams, SetWorkspaceTaxesDisabledParams} from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -14,6 +14,86 @@ Onyx.connect({
     key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}`,
     callback: (taxes) => (allTaxRatesWithDefault = taxes),
 });
+
+function setWorkspaceCurrencyDefault({policyID, defaultExternalID}: SetWorkspaceTaxesCurrencyDefaultParams) {
+    const originalDefaultExternalID = allTaxRatesWithDefault?.defaultExternalID;
+    const onyxData: OnyxData = {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    defaultExternalID,
+                },
+            },
+        ],
+        successData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    defaultExternalID,
+                },
+            },
+        ],
+        failureData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    defaultExternalID: originalDefaultExternalID,
+                },
+            },
+        ],
+    };
+
+    const parameters = {
+        policyID,
+        defaultExternalID,
+    };
+
+    API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_CURRENCY_DEFAULT, parameters, onyxData);
+}
+
+function setForeignCurrencyDefault({policyID, foreignTaxDefault}: SetWorkspaceForeignCurrencyDefaultParams) {
+    const originalDefaultForeignCurrencyID = allTaxRatesWithDefault?.foreignTaxDefault;
+    const onyxData: OnyxData = {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    foreignTaxDefault,
+                },
+            },
+        ],
+        successData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    foreignTaxDefault,
+                },
+            },
+        ],
+        failureData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY_TAX_RATES}${policyID}`,
+                value: {
+                    foreignTaxDefault: originalDefaultForeignCurrencyID,
+                },
+            },
+        ],
+    };
+
+    const parameters = {
+        policyID,
+        foreignTaxDefault,
+    };
+
+    API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_FOREIGN_CURRENCY_DEFAULT, parameters, onyxData);
+}
 
 function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesDisabledParams) {
     const originalTaxes = {...allTaxRatesWithDefault?.taxes};
@@ -66,4 +146,4 @@ function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesD
     API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_DISABLED, parameters, onyxData);
 }
 
-export {setWorkspaceTaxesDisabled};
+export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault};
