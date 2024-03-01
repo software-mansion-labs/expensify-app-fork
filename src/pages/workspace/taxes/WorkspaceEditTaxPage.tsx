@@ -84,7 +84,7 @@ function WorkspaceEditTaxPage({
                     />
                     <MenuItemWithTopDescription
                         shouldShowRightIcon
-                        title={`${currentTaxRate?.value}%`}
+                        title={currentTaxRate?.value}
                         description={translate('workspace.taxes.value')}
                         style={[styles.moneyRequestMenuItem]}
                         titleStyle={styles.flex1}

@@ -331,8 +331,9 @@ const ONYXKEYS = {
         WORKSPACE_RATE_AND_UNIT_FORM: 'workspaceRateAndUnitForm',
         WORKSPACE_RATE_AND_UNIT_FORM_DRAFT: 'workspaceRateAndUnitFormDraft',
         WORKSPACE_TAX_FORM: 'workspaceTaxForm',
-        WORKSPACE_TAX_FORM_DRAFT: 'workspaceTaxFormDraft',
         WORKSPACE_TAX_CUSTOM_NAME: 'workspaceTaxCustomTaxNameForm',
+        WORKSPACE_TAX_NAME_FORM: 'workspaceTaxNameForm',
+        WORKSPACE_TAX_VALUE_FORM: 'workspaceTaxValueForm',
         CLOSE_ACCOUNT_FORM: 'closeAccount',
         CLOSE_ACCOUNT_FORM_DRAFT: 'closeAccountDraft',
         PROFILE_SETTINGS_FORM: 'profileSettingsForm',
@@ -412,6 +413,8 @@ type OnyxFormValuesMapping = {
     [ONYXKEYS.FORMS.WORKSPACE_RATE_AND_UNIT_FORM]: FormTypes.WorkspaceRateAndUnitForm;
     [ONYXKEYS.FORMS.WORKSPACE_TAX_FORM]: FormTypes.WorkspaceTaxForm;
     [ONYXKEYS.FORMS.WORKSPACE_TAX_CUSTOM_NAME]: FormTypes.WorkspaceTaxCustomNameForm;
+    [ONYXKEYS.FORMS.WORKSPACE_TAX_NAME_FORM]: FormTypes.WorkspaceTaxNameForm;
+    [ONYXKEYS.FORMS.WORKSPACE_TAX_VALUE_FORM]: FormTypes.WorkspaceTaxValueForm;
     [ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM]: FormTypes.CloseAccountForm;
     [ONYXKEYS.FORMS.PROFILE_SETTINGS_FORM]: FormTypes.ProfileSettingsForm;
     [ONYXKEYS.FORMS.DISPLAY_NAME_FORM]: FormTypes.DisplayNameForm;

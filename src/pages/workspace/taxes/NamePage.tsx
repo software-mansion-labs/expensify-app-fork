@@ -18,6 +18,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import INPUT_IDS from '@src/types/form/WorkspaceTaxNameForm';
 import type * as OnyxTypes from '@src/types/onyx';
 
 type NamePageOnyxProps = {
@@ -53,7 +54,7 @@ function NamePage({
             <HeaderWithBackButton title={translate('workspace.taxes.name')} />
 
             <FormProvider
-                formID={ONYXKEYS.FORMS.WORKSPACE_TAX_FORM}
+                formID={ONYXKEYS.FORMS.WORKSPACE_TAX_NAME_FORM}
                 submitButtonText={translate('workspace.editor.save')}
                 style={[styles.flexGrow1, styles.ph5]}
                 scrollContextEnabled
@@ -64,7 +65,7 @@ function NamePage({
                     <InputWrapper
                         InputComponent={TextInput}
                         role={CONST.ROLE.PRESENTATION}
-                        inputID="name"
+                        inputID={INPUT_IDS.NAME}
                         label={translate('workspace.editor.nameInputLabel')}
                         accessibilityLabel={translate('workspace.editor.nameInputLabel')}
                         value={name}
