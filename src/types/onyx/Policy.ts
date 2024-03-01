@@ -17,12 +17,6 @@ type Attributes = {
     unit: Unit;
 };
 
-type MileageRate = {
-    unit: Unit;
-    rate?: number;
-    currency: string;
-};
-
 type CustomUnit = OnyxCommon.OnyxValueWithOfflineFeedback<{
     name: string;
     customUnitID: string;
@@ -256,4 +250,4 @@ type Policy = OnyxCommon.OnyxValueWithOfflineFeedback<
 
 export default Policy;
 
-export type {Unit, CustomUnit, Attributes, Rate, TaxRate, TaxRates, TaxRatesWithDefault, MileageRate};
+export type {Unit, CustomUnit, Attributes, Rate, TaxRate, TaxRates, TaxRatesWithDefault};
