@@ -9,7 +9,7 @@ import android.view.View
 import android.view.WindowInsets
 import com.expensify.chat.bootsplash.BootSplash
 import com.expensify.chat.intentHandler.ImageIntentHandler
-import com.expensify.chat.intentHandler.IntentHandler
+import com.expensify.chat.intentHandler.IntentHandlerFactory
 import com.expensify.reactnativekeycommand.KeyCommandModule
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -18,8 +18,6 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 import expo.modules.ReactActivityDelegateWrapper
 
 class MainActivity : ReactActivity() {
-    private lateinit var imageIntentHandler: IntentHandler
-
     /**
      * Returns the name of the main component registered from JavaScript. This is used to schedule
      * rendering of the component.
@@ -59,20 +57,20 @@ class MainActivity : ReactActivity() {
             )
         }
 
-        imageIntentHandler = ImageIntentHandler(this)
-
         if (intent != null) {
-            imageIntentHandler.handle(intent)
+            handleIntent(intent)
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent) // Must store the new intent unless getIntent() will return the old one
+        handleIntent(intent)
+    }
 
-        if (intent != null) {
-            imageIntentHandler.handle(intent)
-        }
+    private fun handleIntent(intent: Intent) {
+        val intentHandler = IntentHandlerFactory.getIntentHandler(this, intent.type)
+        intentHandler?.handle(intent)
     }
 
     /**

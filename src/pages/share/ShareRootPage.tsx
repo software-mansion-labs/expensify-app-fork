@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef} from 'react';
 import type {AppStateStatus} from 'react-native';
-import {AppState, View} from 'react-native';
+import {AppState, Platform, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -15,7 +15,7 @@ import Navigation from '@navigation/Navigation';
 import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
 import MoneyRequestParticipantsSelector from '@pages/iou/steps/MoneyRequstParticipantsPage/MoneyRequestParticipantsSelector';
 import CONST from '@src/CONST';
-import ShareExtensionHandlerModule from '@src/modules/ShareExtensionHandlerModule';
+// import ShareActionHandlerModule from '@src/modules/ShareActionHandlerModule';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Report} from '@src/types/onyx';
@@ -37,26 +37,41 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
     const selectedReportID = useRef(optimisticReportID);
     const appState = useRef(AppState.currentState);
 
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-        if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-            ShareExtensionHandlerModule?.processFiles((processedFiles) => {
-                // eslint-disable-next-line no-console
-                console.log('PROCESSED FILES ', processedFiles);
-            });
-        }
+    // const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    //     if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+    //         console.log('PROCESSED FILES ATTEMPT');
 
-        appState.current = nextAppState;
-        // eslint-disable-next-line no-console
-        console.log('AppState', appState.current);
-    };
+    //         ShareActionHandlerModule.processFiles((processedFiles) => {
+    //             // eslint-disable-next-line no-console
+    //             console.log('PROCESSED FILES ', processedFiles);
+    //         });
+    //     }
 
-    useEffect(() => {
-        const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+    //     appState.current = nextAppState;
+    //     // eslint-disable-next-line no-console
+    //     console.log('AppState', appState.current);
+    // };
 
-        return () => {
-            appStateSubscription.remove();
-        };
-    }, []);
+    // const handleAppStateFocus = (nextAppState: AppStateStatus) => {
+    //     console.log('PROCESSED FILES ATTEMPT');
+
+    //     ShareActionHandlerModule.processFiles((processedFiles) => {
+    //         // eslint-disable-next-line no-console
+    //         console.log('PROCESSED FILES ', processedFiles);
+    //     });
+
+    //     appState.current = nextAppState;
+    //     // eslint-disable-next-line no-console
+    //     console.log('AppState', appState.current);
+    // };
+
+    // useEffect(() => {
+    //     const changeSubscription = Platform.OS === 'ios' ? AppState.addEventListener('change', handleAppStateChange) : AppState.addEventListener('focus', handleAppStateFocus);
+
+    //     return () => {
+    //         changeSubscription.remove();
+    //     };
+    // }, []);
 
     const navigateBack = () => {
         Navigation.dismissModal();
@@ -131,13 +146,3 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
 }
 
 ShareRootPage.displayName = 'ShareRootPage';
-
-export default withOnyx<ShareRootPageProps, ShareRootPageOnyxProps>({
-    selectedTab: {
-        key: `${ONYXKEYS.COLLECTION.SELECTED_TAB}${CONST.TAB.RECEIPT_TAB_ID}`,
-    },
-    // @ts-expect-error To fix
-    iou: {
-        key: ONYXKEYS.IOU,
-    },
-})(ShareRootPage);

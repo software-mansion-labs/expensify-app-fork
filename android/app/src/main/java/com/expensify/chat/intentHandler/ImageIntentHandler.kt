@@ -7,7 +7,7 @@ import android.util.Log
 import com.expensify.chat.image.ImageUtils.copyUriToStorage
 
 
-class ImageIntentHandler(private val context: Context) : IntentHandler {
+class ImageIntentHandler(private val context: Context) : AbstractIntentHandler() {
      override fun handle(intent: Intent?): Boolean {
          Log.i("ImageIntentHandler", "Handle intent" + intent.toString())
          if (intent == null) {
@@ -22,13 +22,13 @@ class ImageIntentHandler(private val context: Context) : IntentHandler {
          when(action) {
              Intent.ACTION_SEND -> {
                  Log.i("ImageIntentHandler", "Handle receive single image")
-//                 handleSingleImageIntent(intent, context)
-                 openShareRoot()
+                 handleSingleImageIntent(intent, context)
+                 onCompleted()
                  return true
              }
              Intent.ACTION_SEND_MULTIPLE -> {
                  handleMultipleImagesIntent(intent, context)
-                 openShareRoot()
+                 onCompleted()
                  return true
              }
          }
@@ -65,7 +65,7 @@ class ImageIntentHandler(private val context: Context) : IntentHandler {
 //        Yapl.getInstance().callIntentCallback(resultingImagePaths)
     }
 
-    private fun openShareRoot() {
+    override fun onCompleted() {
         val uri: Uri = Uri.parse("new-expensify://share/root")
         val deepLinkIntent = Intent(Intent.ACTION_VIEW, uri)
         deepLinkIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK

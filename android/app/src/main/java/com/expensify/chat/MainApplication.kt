@@ -6,7 +6,6 @@ import android.database.CursorWindow
 import android.os.Process
 import androidx.multidex.MultiDexApplication
 import com.expensify.chat.bootsplash.BootSplashPackage
-import com.expensify.chat.shareExtensionHandler.ShareExtensionHandlerPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeHost
@@ -30,7 +29,7 @@ class MainApplication : MultiDexApplication(), ReactApplication {
             add(BootSplashPackage())
             add(ExpensifyAppPackage())
             add(RNTextInputResetPackage())
-            add(ShareExtensionHandlerPackage())
+//            add(ShareExtensionHandlerPackage())
         }
 
         override fun getJSMainModuleName() = ".expo/.virtual-metro-entry"

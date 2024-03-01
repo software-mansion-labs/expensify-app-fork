@@ -1,21 +1,21 @@
 //
-//  RCTShareExtensionHandlerModule.m
+//  RCTShareActionHandlerModule.m
 //  NewExpensify
 //
-//  Created by Bartek Krasoń on 23/02/2024.
+//  Created by Bartek Krasoń on 01/03/2024.
 //
 
 #import <Foundation/Foundation.h>
-#import "ios:NewExpensify:RCTShareExtensionHandlerModule.h"
+#import "RCTShareActionHandlerModule.h"
 #import <React/RCTLog.h>
 
 NSString *const ShareExtensionGroupIdentifier = @"group.com.new-expensify";
 NSString *const ShareExtensionFilesKey = @"ShareFiles";
 NSString *const ShareImageFileExtension = @".png";
 
-@implementation RCTShareExtensionHandlerModule
+@implementation RCTShareActionHandlerModule
 
-RCT_EXPORT_MODULE(RCTShareExtensionHandlerModule);
+RCT_EXPORT_MODULE(RCTShareActionHandlerModule);
 
 RCT_EXPORT_METHOD(processFiles:(RCTResponseSenderBlock)callback)
 {
@@ -37,10 +37,10 @@ RCT_EXPORT_METHOD(processFiles:(RCTResponseSenderBlock)callback)
   NSArray *imageSrcPath = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:sharedImagesFolderPath error:&error];
 
   if (imageSrcPath.count == 0) {
-      NSLog(@"handleShareExtension Failed to find images in 'sharedImagesFolderPath'");
+      NSLog(@"handleShareAction Failed to find images in 'sharedImagesFolderPath'");
       return;
   }
-  NSLog(@"handleShareExtension shared %lu images", imageSrcPath.count);
+  NSLog(@"handleShareAction shared %lu images", imageSrcPath.count);
 
   NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
   NSString *documentsDirectory = [paths objectAtIndex:0];
@@ -48,14 +48,14 @@ RCT_EXPORT_METHOD(processFiles:(RCTResponseSenderBlock)callback)
 
   for (int i = 0; i < imageSrcPath.count; i++) {
       if (imageSrcPath[i] == NULL) {
-          NSLog(@"handleShareExtension Invalid image in position %d, imageSrcPath[i] is nil", i);
+          NSLog(@"handleShareAction Invalid image in position %d, imageSrcPath[i] is nil", i);
           continue;
       }
-      NSLog(@"handleShareExtension Valid image in position %d", i);
+      NSLog(@"handleShareAction Valid image in position %d", i);
       NSString *srcImageAbsolutePath = [sharedImagesFolderPath stringByAppendingPathComponent:imageSrcPath[i]];
       UIImage *smartScanImage = [[UIImage alloc] initWithContentsOfFile:srcImageAbsolutePath];
       if (smartScanImage == NULL) {
-          NSLog(@"handleShareExtension Failed to load image %@", srcImageAbsolutePath);
+          NSLog(@"handleShareAction Failed to load image %@", srcImageAbsolutePath);
           continue;
       }
       
