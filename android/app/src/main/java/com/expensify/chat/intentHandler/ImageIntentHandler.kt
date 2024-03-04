@@ -7,8 +7,14 @@ import android.util.Log
 import com.expensify.chat.image.ImageUtils.copyUriToStorage
 
 
+object IntentHandlerConstants {
+    const val preferencesFile = "shareActionHandler"
+    const val fileArrayProperty = "filePaths"
+}
+
+
 class ImageIntentHandler(private val context: Context) : AbstractIntentHandler() {
-     override fun handle(intent: Intent?): Boolean {
+    override fun handle(intent: Intent?): Boolean {
          Log.i("ImageIntentHandler", "Handle intent" + intent.toString())
          if (intent == null) {
             return false
@@ -37,15 +43,21 @@ class ImageIntentHandler(private val context: Context) : AbstractIntentHandler()
 
     private fun handleSingleImageIntent(intent: Intent, context: Context) {
         (intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))?.let { imageUri ->
+
+            Log.i("ImageIntentHandler", "handleSingleImageIntent$imageUri")
             // Update UI to reflect image being shared
             if (imageUri == null) {
                 return
             }
 
-            val resultingImagePaths = ArrayList<String>()
+            val fileArrayList: ArrayList<String> = ArrayList()
             val resultingPath: String? = copyUriToStorage(imageUri, context)
             if (resultingPath != null) {
-                resultingImagePaths.add(resultingPath)
+                fileArrayList.add(resultingPath)
+                val sharedPreferences = context.getSharedPreferences(IntentHandlerConstants.preferencesFile, Context.MODE_PRIVATE)
+                val editor = sharedPreferences.edit()
+                editor.putStringSet(IntentHandlerConstants.fileArrayProperty, fileArrayList.toSet())
+                editor.apply()
             }
         }
     }

@@ -1,5 +1,8 @@
 package com.expensify.chat
 
+import android.content.Context
+import android.util.Log
+import com.expensify.chat.intentHandler.IntentHandlerConstants
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
@@ -12,20 +15,18 @@ class ShareActionHandlerModule(reactContext: ReactApplicationContext) : ReactCon
     @ReactMethod
     fun processFiles(callback: Callback) {
         try {
-            //Perform your operation here. For instance, load your files
-
-            val fileArray: ArrayList<String> = ArrayList()
-            // Add your files to "fileArray"
+            val sharedPreferences = reactApplicationContext.getSharedPreferences(IntentHandlerConstants.preferencesFile, Context.MODE_PRIVATE)
+            val fileSet = sharedPreferences.getStringSet(IntentHandlerConstants.fileArrayProperty, setOf())
+            val fileArray: ArrayList<String> = ArrayList(fileSet)
 
             val resultArray = Arguments.createArray()
             for (file in fileArray) {
                 resultArray.pushString(file)
             }
 
-            //invoke the callback with your loaded files
-            callback.invoke(null, resultArray)
-
+            callback.invoke(resultArray)
         } catch (exception: Exception) {
+            Log.e("ImageIntentHandler", exception.toString())
             callback.invoke(exception.toString(), null)
         }
     }

@@ -104,6 +104,8 @@ object ImageUtils {
             val imageFile: File = createImageFile(context)
             saveImageFromMediaProviderUri(uri, imageFile, context)
             resultingPath = imageFile.absolutePath
+            Log.i("ImageIntentHandler", "save image$resultingPath")
+
         } catch (ex: IOException) {
             Log.e(tag, "Couldn't save image from intent", ex)
         }
