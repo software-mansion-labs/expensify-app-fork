@@ -43,12 +43,18 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
 
     const taxesList = useMemo<TaxForList[]>(
         () =>
-            Object.values(policy?.taxRates?.taxes ?? {}).map((value) => ({
+            Object.entries(policy?.taxRates?.taxes ?? {}).map(([key, value]) => ({
+                // TODO: Clean up: check if all properties are needed
                 value: value.name,
                 text: value.name,
-                keyForList: value.name,
+                keyForList: key,
                 isSelected: !!selectedTaxes.includes(value.name),
+                pendingAction: value.pendingAction,
+                errors: value.errors,
+                // TODO: Add dismiss error
+                onDismissError: () => {},
                 rightElement: (
+                    // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
                     <View style={styles.flexRow}>
                         <Text style={[styles.disabledText, styles.alignSelfCenter]}>{value.isDisabled ? translate('workspace.common.disabled') : translate('workspace.common.enabled')}</Text>
                         <View style={[styles.p1, styles.pl2]}>
