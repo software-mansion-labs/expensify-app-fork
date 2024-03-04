@@ -10,7 +10,6 @@ import * as Illustrations from '@components/Icon/Illustrations';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/TableListItem';
-import type {ListItem, TableListItemProps} from '@components/SelectionList/types';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -44,21 +43,15 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
 
     const taxesList = useMemo<TaxForList[]>(
         () =>
-            Object.entries(policy?.taxRates?.taxes ?? {}).map(([key, value]) => ({
-                // TODO: Clean up: check if all properties are needed
+            Object.values(policy?.taxRates?.taxes ?? {}).map((value) => ({
                 value: value.name,
                 text: value.name,
-                keyForList: key,
+                keyForList: value.name,
                 isSelected: !!selectedTaxes.includes(value.name),
-                pendingAction: value.pendingAction,
-                errors: value.errors,
-                // TODO: Add dismiss error
-                onDismissError: () => {},
                 rightElement: (
-                    // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
                     <View style={styles.flexRow}>
                         <Text style={[styles.disabledText, styles.alignSelfCenter]}>{value.isDisabled ? translate('workspace.common.disabled') : translate('workspace.common.enabled')}</Text>
-                        <View style={styles.p1}>
+                        <View style={[styles.p1, styles.pl2]}>
                             <Icon
                                 src={Expensicons.ArrowRight}
                                 fill={theme.icon}
@@ -67,7 +60,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                     </View>
                 ),
             })),
-        [policy?.taxRates?.taxes, selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, theme.icon, translate],
+        [policy?.taxRates?.taxes, selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, styles.pl2, theme.icon, translate],
     );
 
     const toggleTax = (tax: TaxForList) => {
