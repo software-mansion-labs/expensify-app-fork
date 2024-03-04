@@ -1,5 +1,5 @@
 import type {StackScreenProps} from '@react-navigation/stack';
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
@@ -10,7 +10,7 @@ import * as Illustrations from '@components/Icon/Illustrations';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/TableListItem';
-import type {ListItem} from '@components/SelectionList/types';
+import type {ListItem, TableListItemProps} from '@components/SelectionList/types';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -26,20 +26,30 @@ import type SCREENS from '@src/SCREENS';
 
 type WorkspaceTaxesPageProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<CentralPaneNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES>;
 
+type TaxForList = {
+    value: string;
+    text: string;
+    keyForList: string;
+    isSelected: boolean;
+    rightElement: React.ReactNode;
+};
+
 function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const theme = useTheme();
     const {isSmallScreenWidth} = useWindowDimensions();
+    const buttonRef = useRef<View>(null);
     const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
 
-    const taxesList = useMemo<ListItem[]>(
+    const taxesList = useMemo<TaxForList[]>(
         () =>
             Object.entries(policy?.taxRates?.taxes ?? {}).map(([key, value]) => ({
                 // TODO: Clean up: check if all properties are needed
+                value: value.name,
                 text: value.name,
                 keyForList: key,
-                isSelected: selectedTaxes.includes(key),
+                isSelected: !!selectedTaxes.includes(value.name),
                 pendingAction: value.pendingAction,
                 errors: value.errors,
                 // TODO: Add dismiss error
@@ -60,14 +70,14 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
         [policy?.taxRates?.taxes, selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, theme.icon, translate],
     );
 
-    // const toggleTax = (tax: TaxForList) => {
-    //     setSelectedTaxes((prev) => {
-    //         if (prev.includes(tax.value)) {
-    //             return prev.filter((item) => item !== tax.value);
-    //         }
-    //         return [...prev, tax.value];
-    //     });
-    // };
+    const toggleTax = (tax: TaxForList) => {
+        setSelectedTaxes((prev) => {
+            if (prev.includes(tax.value)) {
+                return prev.filter((item) => item !== tax.value);
+            }
+            return [...prev, tax.value];
+        });
+    };
 
     const toggleAllTaxes = () => {
         const isAllSelected = taxesList.every((tax) => tax.isSelected);
@@ -114,10 +124,11 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
             >
                 {selectedTaxes.length > 0 ? (
                     <ButtonWithDropdownMenu
+                        buttonRef={buttonRef}
                         onPress={() => {}}
                         options={dropdownMenuOptions}
                         buttonSize="medium"
-                        buttonLabel={`${selectedTaxes.length} selected`}
+                        customText={`${selectedTaxes.length} selected`}
                     />
                 ) : (
                     <>
@@ -144,10 +155,11 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
             <SelectionList
                 canSelectMultiple
                 sections={[{data: taxesList, indexOffset: 0, isDisabled: false}]}
-                onSelectRow={(tax: ListItem) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
+                onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
                 onSelectAll={toggleAllTaxes}
                 showScrollIndicator
                 ListItem={TableListItem}
+                onCheckboxPress={toggleTax}
             />
         </ScreenWrapper>
     );
