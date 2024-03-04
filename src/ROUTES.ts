@@ -573,6 +573,7 @@ const ROUTES = {
     WORKSPACE_TAXES_VALUE: {
         route: 'workspace/:policyID/tax/:taxID/value',
         getRoute: (policyID: string, taxID: string) => `workspace/${policyID}/tax/${encodeURI(taxID)}/value` as const,
+    },
     WORKSPACE_CATEGORY_SETTINGS: {
         route: 'workspace/:policyID/categories/:categoryName',
         getRoute: (policyID: string, categoryName: string) => `workspace/${policyID}/categories/${encodeURI(categoryName)}` as const,
