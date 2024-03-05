@@ -3,6 +3,7 @@ package com.expensify.chat.intentHandler
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import com.expensify.chat.utils.FileUtils
 
 
@@ -24,7 +25,7 @@ class ApplicationIntentHandler(private val context: Context) : AbstractIntentHan
             if (fileUri == null) {
                 return
             }
-
+            Log.i("AppIntentHandler", "uri: $fileUri")
             val fileArrayList: ArrayList<String> = ArrayList()
 
             val resultingPath: String? = FileUtils.copyUriToStorage(fileUri, context)

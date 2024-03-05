@@ -31,6 +31,7 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+            console.log('PROCESS FILES ATTEMPT');
             ShareActionHandlerModule.processFiles((processedFiles) => {
                 // eslint-disable-next-line no-console
                 console.log('PROCESSED FILES ', processedFiles);

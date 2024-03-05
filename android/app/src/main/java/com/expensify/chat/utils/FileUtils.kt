@@ -34,9 +34,9 @@ object FileUtils {
     /**
      * Synchronous method
      *
-     * @param context
      * @param fileUri
      * @param destinationFile
+     * @param context
      * @throws IOException
      */
     @Throws(IOException::class)
@@ -53,6 +53,7 @@ object FileUtils {
     /**
      * Creates a temporary image file into the internal storage.
      *
+     * @param uri
      * @param context
      * @return
      * @throws IOException
@@ -63,7 +64,7 @@ object FileUtils {
         val mimeTypeMap = MimeTypeMap.getSingleton()
 
         val fileExtension = uri?.let {
-            mimeTypeMap.getExtensionFromMimeType(context.contentResolver.getType(it))
+            ".${mimeTypeMap.getExtensionFromMimeType(context.contentResolver.getType(it))}"
         } ?: throw IllegalArgumentException("URI must not be null")
 
         val file: File = File.createTempFile(
@@ -86,7 +87,7 @@ object FileUtils {
     fun copyUriToStorage(uri: Uri?, context: Context): String? {
         lateinit var resultingPath: String
         try {
-            val imageFile: File = FileUtils.createTemporaryFile(uri, context)
+            val imageFile: File = createTemporaryFile(uri, context)
             saveFileFromProviderUri(uri, imageFile, context)
             resultingPath = imageFile.absolutePath
             Log.i(tag, "save image$resultingPath")

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import com.expensify.chat.utils.FileUtils
 
 class ImageIntentHandler(private val context: Context) : AbstractIntentHandler() {
     override fun handle(intent: Intent): Boolean {
@@ -33,7 +34,7 @@ class ImageIntentHandler(private val context: Context) : AbstractIntentHandler()
             }
 
             val fileArrayList: ArrayList<String> = ArrayList()
-            val resultingPath: String? = copyUriToStorage(imageUri, context)
+            val resultingPath: String? = FileUtils.copyUriToStorage(imageUri, context)
             if (resultingPath != null) {
                 fileArrayList.add(resultingPath)
                 val sharedPreferences = context.getSharedPreferences(IntentHandlerConstants.preferencesFile, Context.MODE_PRIVATE)
@@ -50,7 +51,7 @@ class ImageIntentHandler(private val context: Context) : AbstractIntentHandler()
 
         (intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM))?.let { imageUris ->
             for (imageUri in imageUris) {
-                val resultingPath: String? = copyUriToStorage(imageUri, context)
+                val resultingPath: String? = FileUtils.copyUriToStorage(imageUri, context)
                 if (resultingPath != null) {
                     resultingImagePaths.add(resultingPath)
                 }
