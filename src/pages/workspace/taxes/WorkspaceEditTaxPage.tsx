@@ -16,7 +16,7 @@ import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
-import {setWorkspaceTaxesDisabled} from '@userActions/TaxRate';
+import {deleteWorkspaceTaxes, setWorkspaceTaxesDisabled} from '@userActions/TaxRate';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
@@ -46,7 +46,7 @@ function WorkspaceEditTaxPage({
     };
 
     const deleteTax = () => {
-        // TODO: Call Onyx action to delete tax
+        deleteWorkspaceTaxes({policyID, taxesToDelete: [currentTaxRate?.name]});
         setIsDeleteModalVisible(false);
     };
 

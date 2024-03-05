@@ -3,6 +3,7 @@ import React, {useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
+import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
@@ -20,7 +21,7 @@ import type {CentralPaneNavigatorParamList} from '@libs/Navigation/types';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import CONST from '@src/CONST';
-import {clearTaxRateError} from '@src/libs/actions/TaxRate';
+import {clearTaxRateError, deleteWorkspaceTaxes} from '@src/libs/actions/TaxRate';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
@@ -41,6 +42,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
     const {isSmallScreenWidth} = useWindowDimensions();
     const buttonRef = useRef<View>(null);
     const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
     const taxesList = useMemo<TaxForList[]>(
         () =>
@@ -93,12 +95,18 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
         </View>
     );
 
+    const deleteTaxes = () => {
+        deleteWorkspaceTaxes({policyID: policy?.id ?? '', taxesToDelete: selectedTaxes});
+        setIsDeleteModalVisible(false);
+    };
+
     const dropdownMenuOptions = useMemo(
         () => [
             {
                 icon: Expensicons.Trashcan,
                 text: translate('workspace.taxes.deleteTaxes'),
                 value: CONST.TAX_RATES.ACTION_TYPE.DELETE,
+                onSelected: () => setIsDeleteModalVisible(true),
             },
 
             {
@@ -175,6 +183,17 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                 customListHeader={getCustomListHeader()}
                 listHeaderWrapperStyle={[styles.ph9, styles.pv3, styles.pb5]}
                 onDismissError={(tax: TaxForList) => clearTaxRateError(policy?.id ?? '', tax.keyForList)}
+            />
+
+            <ConfirmModal
+                title={translate('workspace.taxes.deleteTax')}
+                isVisible={isDeleteModalVisible}
+                onConfirm={deleteTaxes}
+                onCancel={() => setIsDeleteModalVisible(false)}
+                prompt={translate('workspace.taxes.deleteTaxConfirmation')}
+                confirmText={translate('common.delete')}
+                cancelText={translate('common.cancel')}
+                danger
             />
         </ScreenWrapper>
     );

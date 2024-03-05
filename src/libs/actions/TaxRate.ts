@@ -3,16 +3,16 @@ import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import type {
     CreateWorkspaceTaxParams,
+    DeleteWorkspaceTaxesParams,
     SetWorkspaceForeignCurrencyDefaultParams,
     SetWorkspaceTaxesCurrencyDefaultParams,
     SetWorkspaceTaxesDisabledParams,
-    UpdatePolicyTaxValueParams,
 } from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
 import * as ErrorUtils from '@src/libs/ErrorUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Policy} from '@src/types/onyx';
+import type {Policy, TaxRates} from '@src/types/onyx';
 import type {PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {OnyxData} from '@src/types/onyx/Request';
 
@@ -374,4 +374,69 @@ function clearTaxRateError(policyID: string, taxID: string) {
     });
 }
 
-export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault, createWorkspaceTax, renamePolicyTax, clearTaxRateError, updatePolicyTaxValue};
+function deleteWorkspaceTaxes({policyID, taxesToDelete}: DeleteWorkspaceTaxesParams) {
+    const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
+    const policyTaxRates = policy?.taxRates?.taxes ?? {};
+
+    const filteredRates: TaxRates = {};
+
+    for (const id in policyTaxRates) {
+        if (!taxesToDelete.includes(policyTaxRates[id].name)) {
+            filteredRates[id] = policyTaxRates[id];
+        }
+    }
+
+    const onyxData: OnyxData = {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
+                value: {
+                    taxRates: {
+                        taxes: {...filteredRates},
+                    },
+                },
+            },
+        ],
+        successData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
+                value: {
+                    taxRates: {
+                        taxes: {...filteredRates},
+                    },
+                },
+            },
+        ],
+        failureData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
+                value: {
+                    taxRates: {
+                        taxes: {...policyTaxRates},
+                    },
+                },
+            },
+        ],
+    };
+
+    const parameters = {
+        policyID,
+        taxesToDelete,
+    };
+
+    API.write(WRITE_COMMANDS.DELETE_WORKSPACE_TAXES, parameters, onyxData);
+}
+
+export {
+    setWorkspaceCurrencyDefault,
+    setWorkspaceTaxesDisabled,
+    setForeignCurrencyDefault,
+    createWorkspaceTax,
+    renamePolicyTax,
+    clearTaxRateError,
+    updatePolicyTaxValue,
+    deleteWorkspaceTaxes,
+};
