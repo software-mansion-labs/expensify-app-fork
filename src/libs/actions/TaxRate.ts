@@ -13,7 +13,7 @@ import CONST from '@src/CONST';
 import * as ErrorUtils from '@src/libs/ErrorUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Policy, TaxRates} from '@src/types/onyx';
-import type {PendingAction} from '@src/types/onyx/OnyxCommon';
+import type {Errors, PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {OnyxData} from '@src/types/onyx/Request';
 
 let allPolicies: OnyxCollection<Policy>;
@@ -417,7 +417,10 @@ function deleteWorkspaceTaxes({policyID, taxesToDelete}: DeleteWorkspaceTaxesPar
                 key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
                     taxRates: {
-                        taxes: {...policyTaxRates},
+                        taxes: taxesToDelete.reduce((acc, taxID) => {
+                            acc[taxID] = {pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE, error: ErrorUtils.getMicroSecondOnyxError('workspace.taxes.genericFailureMessage')};
+                            return acc;
+                        }, {} as Record<string, {pendingAction: PendingAction; error: Errors}>),
                     },
                 },
             },
