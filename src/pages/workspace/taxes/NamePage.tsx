@@ -9,6 +9,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {renamePolicyTax} from '@libs/actions/TaxRate';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -38,6 +39,7 @@ function NamePage({
     const [name, setName] = useState(() => parser.htmlToMarkdown(currentTaxRate?.name ?? ''));
 
     const submit = () => {
+        renamePolicyTax(policyID, taxID, name);
         Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxID));
     };
 

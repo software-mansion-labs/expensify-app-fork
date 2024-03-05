@@ -78,7 +78,8 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
 }
 
 function setWorkspaceCurrencyDefault({policyID, defaultExternalID}: SetWorkspaceTaxesCurrencyDefaultParams) {
-    const originalDefaultExternalID = allPolicies?.policyID?.taxRates?.defaultExternalID;
+    const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
+    const originalDefaultExternalID = policy?.taxRates?.defaultExternalID;
     const onyxData: OnyxData = {
         optimisticData: [
             {
@@ -124,7 +125,8 @@ function setWorkspaceCurrencyDefault({policyID, defaultExternalID}: SetWorkspace
 }
 
 function setForeignCurrencyDefault({policyID, foreignTaxDefault}: SetWorkspaceForeignCurrencyDefaultParams) {
-    const originalDefaultForeignCurrencyID = allPolicies?.policyID?.taxRates?.foreignTaxDefault;
+    const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
+    const originalDefaultForeignCurrencyID = policy?.taxRates?.foreignTaxDefault;
     const onyxData: OnyxData = {
         optimisticData: [
             {
@@ -170,7 +172,8 @@ function setForeignCurrencyDefault({policyID, foreignTaxDefault}: SetWorkspaceFo
 }
 
 function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesDisabledParams) {
-    const originalTaxes = {...allPolicies?.policyID?.taxRates?.taxes};
+    const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
+    const originalTaxes = {...policy?.taxRates?.taxes};
     const onyxData: OnyxData = {
         optimisticData: [
             {
@@ -226,4 +229,62 @@ function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesD
     API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_DISABLED, parameters, onyxData);
 }
 
-export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault, createWorkspaceTax};
+function renamePolicyTax(policyID: string, taxID: string, newName: string) {
+    const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
+    const originalTaxRate = {...policy?.taxRates?.taxes[taxID]};
+    const onyxData: OnyxData = {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
+                value: {
+                    taxRates: {
+                        taxes: {
+                            [taxID]: {name: newName, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE, errors: null},
+                        },
+                    },
+                },
+            },
+        ],
+        successData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
+                value: {
+                    taxRates: {
+                        taxes: {
+                            [taxID]: {name: newName, pendingAction: null, errors: null},
+                        },
+                    },
+                },
+            },
+        ],
+        failureData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
+                value: {
+                    taxRates: {
+                        taxes: {
+                            [taxID]: {name: newName, pendingAction: null, errors: ErrorUtils.getMicroSecondOnyxError('workspace.taxes.genericFailureMessage')},
+                        },
+                    },
+                },
+            },
+        ],
+    };
+
+    if (!originalTaxRate.name) {
+        throw new Error('Tax rate name not found');
+    }
+
+    const parameters = {
+        policyID,
+        oldName: originalTaxRate.name,
+        newName,
+    };
+
+    API.write(WRITE_COMMANDS.RENAME_POLICY_TAX, parameters, onyxData);
+}
+
+export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault, createWorkspaceTax, renamePolicyTax};
