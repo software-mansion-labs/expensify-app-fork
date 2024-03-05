@@ -1941,6 +1941,7 @@ export default {
             updateToUSD: 'Update to USD',
         },
         taxes: {
+            subtitle: 'Add tax names, rates, and set defaults.',
             settings: {
                 customTaxName: 'Custom tax name',
                 workspaceCurrencyDefault: 'Workspace currency default',

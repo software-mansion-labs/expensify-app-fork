@@ -86,6 +86,13 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
             setSelectedTaxes(taxesList.map((item) => item.value));
         }
     };
+    // TODO: may be reused from Categories and Tags
+    const getCustomListHeader = () => (
+        <View style={[styles.flex1, styles.flexRow, styles.justifyContentBetween, styles.pl3, styles.pr9]}>
+            <Text style={styles.searchInputStyle}>{translate('common.name')}</Text>
+            <Text style={[styles.searchInputStyle, styles.textAlignCenter]}>{translate('statusPage.status')}</Text>
+        </View>
+    );
 
     const dropdownMenuOptions = useMemo(
         () => [
@@ -110,6 +117,26 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
         [translate],
     );
 
+    const headerButtons = (
+        <View style={[styles.w100, styles.flexRow, isSmallScreenWidth && styles.mb3]}>
+            <Button
+                medium
+                success
+                onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
+                icon={Expensicons.Plus}
+                text="Add rate"
+                style={[styles.mr3, isSmallScreenWidth && styles.w50]}
+            />
+            <Button
+                medium
+                onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
+                icon={Expensicons.Gear}
+                text={translate('common.settings')}
+                style={[isSmallScreenWidth && styles.w50]}
+            />
+        </View>
+    );
+
     return (
         <ScreenWrapper
             includeSafeAreaPaddingBottom={false}
@@ -130,27 +157,13 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                         customText={`${selectedTaxes.length} selected`}
                     />
                 ) : (
-                    <>
-                        <Button
-                            medium
-                            success
-                            icon={Expensicons.Plus}
-                            iconStyles={styles.buttonCTAIcon}
-                            onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_NEW.getRoute(policy?.id ?? ''))}
-                        >
-                            <Text>Add rate</Text>
-                        </Button>
-                        <Button
-                            medium
-                            icon={Expensicons.Gear}
-                            iconStyles={styles.buttonCTAIcon}
-                            onPress={() => Navigation.navigate(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policy?.id ?? ''))}
-                        >
-                            <Text>{translate('common.settings')}</Text>
-                        </Button>
-                    </>
+                    !isSmallScreenWidth && headerButtons
                 )}
             </HeaderWithBackButton>
+            {isSmallScreenWidth && <View style={[styles.pl5, styles.pr5]}>{headerButtons}</View>}
+            <View style={[styles.ph5, styles.pb5]}>
+                <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.taxes.subtitle')}</Text>
+            </View>
             <SelectionList
                 canSelectMultiple
                 sections={[{data: taxesList, indexOffset: 0, isDisabled: false}]}
@@ -159,6 +172,8 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                 showScrollIndicator
                 ListItem={TableListItem}
                 onCheckboxPress={toggleTax}
+                customListHeader={getCustomListHeader()}
+                listHeaderWrapperStyle={[styles.ph9, styles.pv3, styles.pb5]}
             />
         </ScreenWrapper>
     );
