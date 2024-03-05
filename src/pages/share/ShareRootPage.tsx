@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import type {AppStateStatus} from 'react-native';
 import {AppState, Platform, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
@@ -6,51 +6,37 @@ import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import TabSelector from '@components/TabSelector/TabSelector';
+import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import * as IOU from '@libs/actions/IOU';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
-import * as ReportUtils from '@libs/ReportUtils';
 import Navigation from '@navigation/Navigation';
 import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
-import MoneyRequestParticipantsSelector from '@pages/iou/steps/MoneyRequstParticipantsPage/MoneyRequestParticipantsSelector';
 import CONST from '@src/CONST';
 import ShareActionHandlerModule from '@src/modules/ShareActionHandlerModule';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
-import type {Report} from '@src/types/onyx';
+import ScanTab from './ScanTab';
 
 type ShareRootPageOnyxProps = {
     selectedTab: OnyxEntry<string>;
-
-    iou: OnyxEntry<Report>;
 };
 
 type ShareRootPageProps = ShareRootPageOnyxProps;
 
-function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
-    const transactionID = CONST.IOU.OPTIMISTIC_TRANSACTION_ID;
+function ShareRootPage({selectedTab}: ShareRootPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const fileIsScannable = false;
-    const optimisticReportID = ReportUtils.generateReportID();
-    const selectedReportID = useRef(optimisticReportID);
     const appState = useRef(AppState.currentState);
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-            console.log('PROCESSED FILES ATTEMPT');
-
             ShareActionHandlerModule.processFiles((processedFiles) => {
                 // eslint-disable-next-line no-console
                 console.log('PROCESSED FILES ', processedFiles);
             });
         }
-        console.log('AppState', nextAppState);
-
         appState.current = nextAppState;
-        // eslint-disable-next-line no-console
-        console.log('AppState', appState.current);
     };
 
     useEffect(() => {
@@ -65,16 +51,6 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
         Navigation.dismissModal();
     };
 
-    const goToNextStep = useCallback(() => {
-        // const nextStepIOUType = numberOfParticipants.current === 1 ? CONST.IOU.TYPE.REQUEST : CONST.IOU.TYPE.SPLIT;
-        const nextStepIOUType = CONST.IOU.TYPE.REQUEST;
-        // IOU.startMoneyRequest_temporaryForRefactor(optimisticReportID, false, CONST.IOU.REQUEST_TYPE.SCAN);
-        IOU.setMoneyRequestTag(transactionID, '');
-        // IOU.resetMoneyRequestCategory_temporaryForRefactor(transactionID);
-        Navigation.navigate(ROUTES.SHARE_SCAN_CONFIRM.getRoute(nextStepIOUType, transactionID, selectedReportID.current || optimisticReportID));
-    }, [transactionID, optimisticReportID]);
-
-    console.log('share root page');
     return (
         <ScreenWrapper
             includeSafeAreaPaddingBottom={false}
@@ -101,37 +77,18 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
                         />
                     )}
                 >
-                    <TopTab.Screen name={CONST.TAB.SHARE}>
-                        {() => (
-                            <MoneyRequestParticipantsSelector
-                                participants={iou?.participants ?? []}
-                                onAddParticipants={IOU.setMoneyRequestParticipants}
-                                onFinish={goToNextStep}
-                                navigateToRequest={goToNextStep}
-                                navigateToSplit={goToNextStep}
-                                iouType={CONST.IOU.TYPE.REQUEST}
-                                iouRequestType={CONST.IOU.REQUEST_TYPE.MANUAL}
-                            />
-                        )}
-                    </TopTab.Screen>
-                    <TopTab.Screen name={CONST.TAB.SCAN}>
-                        {() => (
-                            <MoneyRequestParticipantsSelector
-                                participants={iou?.participants ?? []}
-                                onAddParticipants={IOU.setMoneyRequestParticipants}
-                                onFinish={goToNextStep}
-                                navigateToRequest={goToNextStep}
-                                navigateToSplit={goToNextStep}
-                                iouType={CONST.IOU.TYPE.REQUEST}
-                                iouRequestType={CONST.IOU.REQUEST_TYPE.SCAN}
-                                isScanRequest
-                            />
-                        )}
-                    </TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SHARE}>{() => <Text>test</Text>}</TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SCAN}>{() => <ScanTab />}</TopTab.Screen>
                 </OnyxTabNavigator>
             </View>
         </ScreenWrapper>
     );
 }
 
-export default ShareRootPage;
+ShareRootPage.displayName = 'ShareRootPage';
+
+export default withOnyx<ShareRootPageProps, ShareRootPageOnyxProps>({
+    selectedTab: {
+        key: `${ONYXKEYS.COLLECTION.SELECTED_TAB}${CONST.TAB.RECEIPT_TAB_ID}`,
+    },
+})(ShareRootPage);
