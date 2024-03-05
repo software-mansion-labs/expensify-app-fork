@@ -10,6 +10,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {renamePolicyTax, updatePolicyTaxValue} from '@libs/actions/TaxRate';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
@@ -48,8 +49,7 @@ function ValuePage({
 
     const submit = useCallback(
         (values: FormOnyxValues<typeof ONYXKEYS.FORMS.WORKSPACE_TAX_VALUE_FORM>) => {
-            // TODO: Add API call to update tax value
-            console.log({values});
+            updatePolicyTaxValue(policyID, taxID, `${values.value}%`);
             Navigation.goBack(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policyID ?? '', taxID));
         },
         [policyID, taxID],

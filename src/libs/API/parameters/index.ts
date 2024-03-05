@@ -159,3 +159,4 @@ export type {default as SetWorkspaceTaxesCurrencyDefaultParams} from './SetWorks
 export type {default as SetWorkspaceForeignCurrencyDefaultParams} from './SetWorkspaceForeignCurrencyDefaultParams';
 export type {default as CreateWorkspaceTaxParams} from './CreateWorkspaceTaxParams';
 export type {default as RenamePolicyTaxParams} from './RenamePolicyTaxParams';
+export type {default as UpdatePolicyTaxValueParams} from './UpdatePolicyTaxValueParams';
