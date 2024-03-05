@@ -12,7 +12,7 @@ import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
 import * as ErrorUtils from '@src/libs/ErrorUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Policy, TaxRates} from '@src/types/onyx';
+import type {Policy, TaxRate, TaxRates} from '@src/types/onyx';
 import type {Errors, PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {OnyxData} from '@src/types/onyx/Request';
 
@@ -66,6 +66,7 @@ function createWorkspaceTax({policyID, taxRate}: CreateWorkspaceTaxParams) {
                     taxRates: {
                         taxes: {
                             [taxRate.code]: {
+                                pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
                                 errors: ErrorUtils.getMicroSecondOnyxError('workspace.taxes.genericFailureMessage'),
                             },
                         },
@@ -361,15 +362,20 @@ function updatePolicyTaxValue(policyID: string, taxID: string, taxValue: string)
     API.write(WRITE_COMMANDS.UPDATE_POLICY_TAX_VALUE, parameters, onyxData);
 }
 
-function clearTaxRateError(policyID: string, taxID: string) {
+function clearTaxRateError(policyID: string, taxID: string, pendingAction?: PendingAction) {
+    let taxesObject;
+    if (pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
+        taxesObject = {
+            [taxID]: null,
+        };
+    } else {
+        taxesObject = {
+            [taxID]: {pendingAction: null, errors: null},
+        };
+    }
     Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         taxRates: {
-            taxes: {
-                [taxID]: {
-                    pendingAction: null,
-                    errors: null,
-                },
-            },
+            taxes: taxesObject,
         },
     });
 }

@@ -11,6 +11,7 @@ import * as Illustrations from '@components/Icon/Illustrations';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/TableListItem';
+import type {ListItem} from '@components/SelectionList/types';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -27,14 +28,6 @@ import type SCREENS from '@src/SCREENS';
 
 type WorkspaceTaxesPageProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<CentralPaneNavigatorParamList, typeof SCREENS.WORKSPACE.TAXES>;
 
-type TaxForList = {
-    value: string;
-    text: string;
-    keyForList: string;
-    isSelected: boolean;
-    rightElement: React.ReactNode;
-};
-
 function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
@@ -44,7 +37,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
     const [selectedTaxes, setSelectedTaxes] = useState<string[]>([]);
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
-    const taxesList = useMemo<TaxForList[]>(
+    const taxesList = useMemo<ListItem[]>(
         () =>
             Object.entries(policy?.taxRates?.taxes ?? {}).map(([key, value]) => ({
                 // TODO: Clean up: check if all properties are needed
@@ -70,7 +63,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
         [policy?.taxRates?.taxes, selectedTaxes, styles, theme.icon, translate],
     );
 
-    const toggleTax = (tax: TaxForList) => {
+    const toggleTax = (tax: ListItem) => {
         setSelectedTaxes((prev) => {
             if (prev.includes(tax.keyForList)) {
                 return prev.filter((item) => item !== tax.keyForList);
@@ -175,14 +168,14 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
             <SelectionList
                 canSelectMultiple
                 sections={[{data: taxesList, indexOffset: 0, isDisabled: false}]}
-                onSelectRow={(tax: TaxForList) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
+                onSelectRow={(tax: ListItem) => Navigation.navigate(ROUTES.WORKSPACE_TAXES_EDIT.getRoute(policy?.id ?? '', tax.keyForList))}
                 onSelectAll={toggleAllTaxes}
                 showScrollIndicator
                 ListItem={TableListItem}
                 onCheckboxPress={toggleTax}
                 customListHeader={getCustomListHeader()}
                 listHeaderWrapperStyle={[styles.ph9, styles.pv3, styles.pb5]}
-                onDismissError={(tax: TaxForList) => clearTaxRateError(policy?.id ?? '', tax.keyForList)}
+                onDismissError={(tax: ListItem) => clearTaxRateError(policy?.id ?? '', tax.keyForList, tax.pendingAction)}
             />
 
             <ConfirmModal
