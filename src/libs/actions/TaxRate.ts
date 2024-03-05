@@ -240,7 +240,11 @@ function renamePolicyTax(policyID: string, taxID: string, newName: string) {
                 value: {
                     taxRates: {
                         taxes: {
-                            [taxID]: {name: newName, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE, errors: null},
+                            [taxID]: {
+                                name: newName,
+                                pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE,
+                                errors: ErrorUtils.getMicroSecondOnyxError('workspace.taxes.genericFailureMessage'),
+                            },
                         },
                     },
                 },
@@ -253,7 +257,7 @@ function renamePolicyTax(policyID: string, taxID: string, newName: string) {
                 value: {
                     taxRates: {
                         taxes: {
-                            [taxID]: {name: newName, pendingAction: null, errors: null},
+                            [taxID]: {name: newName, pendingAction: null, errors: ErrorUtils.getMicroSecondOnyxError('workspace.taxes.genericFailureMessage')},
                         },
                     },
                 },
@@ -287,4 +291,17 @@ function renamePolicyTax(policyID: string, taxID: string, newName: string) {
     API.write(WRITE_COMMANDS.RENAME_POLICY_TAX, parameters, onyxData);
 }
 
-export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault, createWorkspaceTax, renamePolicyTax};
+function clearTaxRateError(policyID: string, taxID: string) {
+    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+        taxRates: {
+            taxes: {
+                [taxID]: {
+                    pendingAction: null,
+                    errors: null,
+                },
+            },
+        },
+    });
+}
+
+export {setWorkspaceCurrencyDefault, setWorkspaceTaxesDisabled, setForeignCurrencyDefault, createWorkspaceTax, renamePolicyTax, clearTaxRateError};

@@ -20,6 +20,7 @@ import type {CentralPaneNavigatorParamList} from '@libs/Navigation/types';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import CONST from '@src/CONST';
+import {clearTaxRateError} from '@src/libs/actions/TaxRate';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
@@ -51,8 +52,6 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                 isSelected: !!selectedTaxes.includes(value.name),
                 pendingAction: value.pendingAction,
                 errors: value.errors,
-                // TODO: Add dismiss error
-                onDismissError: () => {},
                 rightElement: (
                     // TODO: Extract this into a separate component together with WorkspaceCategoriesPage
                     <View style={styles.flexRow}>
@@ -66,7 +65,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                     </View>
                 ),
             })),
-        [policy?.taxRates?.taxes, selectedTaxes, styles.alignSelfCenter, styles.disabledText, styles.flexRow, styles.p1, styles.pl2, theme.icon, translate],
+        [policy?.taxRates?.taxes, selectedTaxes, styles, theme.icon, translate],
     );
 
     const toggleTax = (tax: TaxForList) => {
@@ -103,6 +102,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
             },
 
             {
+                // TODO: Add correct icons
                 icon: Expensicons.Document,
                 text: translate('workspace.taxes.disableTaxes'),
                 value: CONST.TAX_RATES.ACTION_TYPE.DISABLE,
@@ -174,6 +174,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                 onCheckboxPress={toggleTax}
                 customListHeader={getCustomListHeader()}
                 listHeaderWrapperStyle={[styles.ph9, styles.pv3, styles.pb5]}
+                onDismissError={(tax: TaxForList) => clearTaxRateError(policy?.id ?? '', tax.keyForList)}
             />
         </ScreenWrapper>
     );
