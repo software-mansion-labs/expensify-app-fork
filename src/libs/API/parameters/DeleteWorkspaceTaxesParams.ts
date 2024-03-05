@@ -1,6 +1,8 @@
 type DeleteWorkspaceTaxesParams = {
     policyID: string;
-    taxesToDelete: Array<string | undefined>;
+
+    /** IDs of taxes to delete */
+    taxesToDelete: string[];
 };
 
 export default DeleteWorkspaceTaxesParams;

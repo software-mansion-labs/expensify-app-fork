@@ -51,7 +51,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
                 value: value.name,
                 text: value.name,
                 keyForList: key,
-                isSelected: !!selectedTaxes.includes(value.name),
+                isSelected: !!selectedTaxes.includes(key),
                 pendingAction: value.pendingAction,
                 errors: value.errors,
                 rightElement: (
@@ -72,19 +72,19 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
 
     const toggleTax = (tax: TaxForList) => {
         setSelectedTaxes((prev) => {
-            if (prev.includes(tax.value)) {
-                return prev.filter((item) => item !== tax.value);
+            if (prev.includes(tax.keyForList)) {
+                return prev.filter((item) => item !== tax.keyForList);
             }
-            return [...prev, tax.value];
+            return [...prev, tax.keyForList];
         });
     };
 
     const toggleAllTaxes = () => {
-        const isAllSelected = taxesList.every((tax) => tax.isSelected);
+        const isAllSelected = selectedTaxes.length === taxesList.length;
         if (isAllSelected) {
             setSelectedTaxes([]);
         } else {
-            setSelectedTaxes(taxesList.map((item) => item.value));
+            setSelectedTaxes(taxesList.map((item) => item.keyForList));
         }
     };
     // TODO: may be reused from Categories and Tags

@@ -376,14 +376,10 @@ function clearTaxRateError(policyID: string, taxID: string) {
 
 function deleteWorkspaceTaxes({policyID, taxesToDelete}: DeleteWorkspaceTaxesParams) {
     const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
-    const policyTaxRates = policy?.taxRates?.taxes ?? {};
+    const policyTaxRates = policy?.taxRates?.taxes;
 
-    const filteredRates: TaxRates = {};
-
-    for (const id in policyTaxRates) {
-        if (!taxesToDelete.includes(policyTaxRates[id].name)) {
-            filteredRates[id] = policyTaxRates[id];
-        }
+    if (!policyTaxRates) {
+        throw new Error('Policy or tax rates not found');
     }
 
     const onyxData: OnyxData = {
@@ -393,7 +389,10 @@ function deleteWorkspaceTaxes({policyID, taxesToDelete}: DeleteWorkspaceTaxesPar
                 key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
                     taxRates: {
-                        taxes: {...filteredRates},
+                        taxes: taxesToDelete.reduce((acc, taxID) => {
+                            acc[taxID] = {pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE, error: null};
+                            return acc;
+                        }, {} as Record<string, {pendingAction: PendingAction; error: null}>),
                     },
                 },
             },
@@ -404,7 +403,10 @@ function deleteWorkspaceTaxes({policyID, taxesToDelete}: DeleteWorkspaceTaxesPar
                 key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
                     taxRates: {
-                        taxes: {...filteredRates},
+                        taxes: taxesToDelete.reduce((acc, taxID) => {
+                            acc[taxID] = null;
+                            return acc;
+                        }, {} as Record<string, null>),
                     },
                 },
             },

@@ -46,8 +46,9 @@ function WorkspaceEditTaxPage({
     };
 
     const deleteTax = () => {
-        deleteWorkspaceTaxes({policyID, taxesToDelete: [currentTaxRate?.name]});
+        deleteWorkspaceTaxes({policyID, taxesToDelete: [taxID]});
         setIsDeleteModalVisible(false);
+        Navigation.goBack();
     };
 
     const threeDotsMenuItems = useMemo(() => {
