@@ -94,7 +94,31 @@
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="image/*" />
+
+                <!-- Images -->
+                <data android:mimeType="image/jpg" />
+                <data android:mimeType="image/jpeg" />
+                <data android:mimeType="image/gif" />
+                <data android:mimeType="image/png" />
+                <data android:mimeType="image/tif" />
+                <data android:mimeType="image/tiff" />
+
+                <!-- Documents -->
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/msword" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <data android:mimeType="application/rtf" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="message/rfc822" />
+
+                <!-- Text / HTML -->
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/html" />
+                <data android:mimeType="text/xml" />
+
+                <!-- Other -->
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="video/*" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND_MULTIPLE" />

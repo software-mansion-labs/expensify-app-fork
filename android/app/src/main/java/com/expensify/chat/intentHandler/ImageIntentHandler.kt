@@ -4,28 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import com.expensify.chat.image.ImageUtils.copyUriToStorage
-
-
-object IntentHandlerConstants {
-    const val preferencesFile = "shareActionHandler"
-    const val fileArrayProperty = "filePaths"
-}
-
 
 class ImageIntentHandler(private val context: Context) : AbstractIntentHandler() {
-    override fun handle(intent: Intent?): Boolean {
-         Log.i("ImageIntentHandler", "Handle intent" + intent.toString())
-         if (intent == null) {
-            return false
-        }
-
-        val action: String? = intent.action
-        val type: String = intent.type ?: return false
-
-         if(!type.startsWith("image/")) return false
-
-         when(action) {
+    override fun handle(intent: Intent): Boolean {
+        when(intent.action) {
              Intent.ACTION_SEND -> {
                  Log.i("ImageIntentHandler", "Handle receive single image")
                  handleSingleImageIntent(intent, context)

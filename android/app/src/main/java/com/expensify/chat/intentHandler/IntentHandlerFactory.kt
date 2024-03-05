@@ -7,6 +7,7 @@ object IntentHandlerFactory {
         if (mimeType == null) return null
         return when {
             mimeType.startsWith("image/") -> ImageIntentHandler(context)
+            mimeType.startsWith("application/") -> ApplicationIntentHandler(context)
             // Add other cases like video/*, application/pdf etc.
             else -> null
         }
