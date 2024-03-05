@@ -58,12 +58,6 @@ function AllowStaleDataTest() {
                     setShouldRender(!shouldRender);
                 }}
             />
-            {/* {shouldRender && (
-                <>
-                    <Text>AllowStaleDataWithOnyx - <AllowStaleDataWithOnyx /></Text>s
-                    <Text>AllowStaleDataUseOnyx - <AllowStaleDataUseOnyx /></Text>
-                </>
-            )} */}
             <Text>AllowStaleDataWithOnyx - {shouldRender ? <AllowStaleDataWithOnyx /> : ''}</Text>
             <Text>AllowStaleDataUseOnyx - {shouldRender ? <AllowStaleDataUseOnyx /> : ''}</Text>
         </>

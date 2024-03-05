@@ -11,6 +11,11 @@ import type {Account, Policy} from '@src/types/onyx';
 
 type PartialPolicy = Pick<Policy, 'id' | 'name'>;
 
+function SubRenderTest({policy}: {policy: UseOnyxData<`policy_${string}`, OnyxEntry<Policy>>}) {
+    console.log('OnyxPlayground [App] SubRenderTest policy', policy);
+    return null;
+}
+
 type ComponentWithOnyxHOCOnyxProps = {
     account: OnyxEntry<Account>;
 
@@ -55,17 +60,16 @@ const ComponentWithOnyxHOC = withOnyx<ComponentWithOnyxHOCProps, ComponentWithOn
     console.log('OnyxPlayground [App] ComponentWithOnyxHOC policiesWithSelector', policiesWithSelector);
     console.groupEnd();
 
-    return null;
+    return (
+        <>
+            <SubRenderTest policy={policy} />
+        </>
+    );
 });
 
 type ComponentWithOnyxHookProps = {
     policyID: string;
 };
-
-function SubRenderTest({policy}: {policy: UseOnyxData<`policy_${string}`, OnyxEntry<Policy>>}) {
-    console.log('OnyxPlayground [App] SubRenderTest policy', policy);
-    return null;
-}
 
 function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     const account = useOnyx(ONYXKEYS.ACCOUNT);
@@ -153,6 +157,6 @@ function WithOnyxVSuseOnyx({policyID}: WithOnyxVSuseOnyxProps) {
 export default withOnyx<WithOnyxVSuseOnyxProps, WithOnyxVSuseOnyxProps>({
     policyID: {
         key: ONYXKEYS.POLICY_ID,
-        selector: (value) => value ?? 'undefined',
+        selector: (value) => value ?? 'inexistent1',
     },
 })(WithOnyxVSuseOnyx);

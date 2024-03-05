@@ -31,11 +31,53 @@ function PolicyIDToggle({policyID}: PolicyIDToggleProps) {
             />
             <MenuItem
                 wrapperStyle={styles.mb4}
-                title="Toggle between existing and undefined policies"
+                title="Toggle between existing and inexistent policies"
                 icon={Expensicons.Send}
                 numberOfLinesTitle={2}
                 onPress={() => {
-                    Onyx.merge(ONYXKEYS.POLICY_ID, policyID === '1576B20B2BA20523' ? 'undefined' : '1576B20B2BA20523');
+                    Onyx.merge(ONYXKEYS.POLICY_ID, policyID === '1576B20B2BA20523' ? 'inexistent1' : '1576B20B2BA20523');
+                }}
+            />
+            <MenuItem
+                wrapperStyle={styles.mb4}
+                title="Change policy name"
+                icon={Expensicons.Send}
+                numberOfLinesTitle={2}
+                onPress={() => {
+                    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {name: Math.random().toString()});
+                }}
+            />
+            <MenuItem
+                wrapperStyle={styles.mb4}
+                title="Change policy owner"
+                icon={Expensicons.Send}
+                numberOfLinesTitle={2}
+                onPress={() => {
+                    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {owner: Math.random().toString()});
+                }}
+            />
+            <MenuItem
+                wrapperStyle={styles.mb4}
+                title="Change policy multiple times with MERGE"
+                icon={Expensicons.Send}
+                numberOfLinesTitle={2}
+                onPress={() => {
+                    Onyx.merge(ONYXKEYS.POLICY_ID, '4EB3958A3E59A354');
+                    Onyx.merge(ONYXKEYS.POLICY_ID, 'inexistent1');
+                    Onyx.merge(ONYXKEYS.POLICY_ID, '1576B20B2BA20523');
+                    Onyx.merge(ONYXKEYS.POLICY_ID, 'inexistent2');
+                }}
+            />
+            <MenuItem
+                wrapperStyle={styles.mb4}
+                title="Change policy multiple times with SET"
+                icon={Expensicons.Send}
+                numberOfLinesTitle={2}
+                onPress={() => {
+                    Onyx.set(ONYXKEYS.POLICY_ID, '4EB3958A3E59A354');
+                    Onyx.set(ONYXKEYS.POLICY_ID, 'inexistent1');
+                    Onyx.set(ONYXKEYS.POLICY_ID, '1576B20B2BA20523');
+                    Onyx.set(ONYXKEYS.POLICY_ID, 'inexistent2');
                 }}
             />
         </>
