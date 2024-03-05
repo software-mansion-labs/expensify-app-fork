@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef} from 'react';
 import type {AppStateStatus} from 'react-native';
-import {AppState, View} from 'react-native';
+import {AppState, Platform, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -15,7 +15,7 @@ import Navigation from '@navigation/Navigation';
 import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
 import MoneyRequestParticipantsSelector from '@pages/iou/steps/MoneyRequstParticipantsPage/MoneyRequestParticipantsSelector';
 import CONST from '@src/CONST';
-import ShareExtensionHandlerModule from '@src/modules/ShareExtensionHandlerModule';
+import ShareActionHandlerModule from '@src/modules/ShareActionHandlerModule';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Report} from '@src/types/onyx';
@@ -39,11 +39,14 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-            ShareExtensionHandlerModule?.processFiles((processedFiles) => {
+            console.log('PROCESSED FILES ATTEMPT');
+
+            ShareActionHandlerModule.processFiles((processedFiles) => {
                 // eslint-disable-next-line no-console
                 console.log('PROCESSED FILES ', processedFiles);
             });
         }
+        console.log('AppState', nextAppState);
 
         appState.current = nextAppState;
         // eslint-disable-next-line no-console
@@ -51,10 +54,10 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
     };
 
     useEffect(() => {
-        const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+        const changeSubscription = AppState.addEventListener('change', handleAppStateChange);
 
         return () => {
-            appStateSubscription.remove();
+            changeSubscription.remove();
         };
     }, []);
 
@@ -65,12 +68,13 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
     const goToNextStep = useCallback(() => {
         // const nextStepIOUType = numberOfParticipants.current === 1 ? CONST.IOU.TYPE.REQUEST : CONST.IOU.TYPE.SPLIT;
         const nextStepIOUType = CONST.IOU.TYPE.REQUEST;
-        IOU.startMoneyRequest_temporaryForRefactor(optimisticReportID, false, CONST.IOU.REQUEST_TYPE.SCAN);
+        // IOU.startMoneyRequest_temporaryForRefactor(optimisticReportID, false, CONST.IOU.REQUEST_TYPE.SCAN);
         IOU.setMoneyRequestTag(transactionID, '');
-        IOU.resetMoneyRequestCategory_temporaryForRefactor(transactionID);
+        // IOU.resetMoneyRequestCategory_temporaryForRefactor(transactionID);
         Navigation.navigate(ROUTES.SHARE_SCAN_CONFIRM.getRoute(nextStepIOUType, transactionID, selectedReportID.current || optimisticReportID));
     }, [transactionID, optimisticReportID]);
 
+    console.log('share root page');
     return (
         <ScreenWrapper
             includeSafeAreaPaddingBottom={false}
@@ -130,14 +134,4 @@ function ShareRootPage({selectedTab, iou}: ShareRootPageProps) {
     );
 }
 
-ShareRootPage.displayName = 'ShareRootPage';
-
-export default withOnyx<ShareRootPageProps, ShareRootPageOnyxProps>({
-    selectedTab: {
-        key: `${ONYXKEYS.COLLECTION.SELECTED_TAB}${CONST.TAB.RECEIPT_TAB_ID}`,
-    },
-    // @ts-expect-error To fix
-    iou: {
-        key: ONYXKEYS.IOU,
-    },
-})(ShareRootPage);
+export default ShareRootPage;

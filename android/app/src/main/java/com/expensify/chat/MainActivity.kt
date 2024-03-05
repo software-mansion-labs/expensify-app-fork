@@ -1,18 +1,21 @@
 package com.expensify.chat
 
-import expo.modules.ReactActivityDelegateWrapper
-
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
 import com.expensify.chat.bootsplash.BootSplash
+import com.expensify.chat.intentHandler.ImageIntentHandler
+import com.expensify.chat.intentHandler.IntentHandlerFactory
 import com.expensify.reactnativekeycommand.KeyCommandModule
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import expo.modules.ReactActivityDelegateWrapper
 
 class MainActivity : ReactActivity() {
     /**
@@ -34,6 +37,9 @@ class MainActivity : ReactActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         BootSplash.init(this)
         super.onCreate(null)
+        Log.i("ImageIntentHandler", "On create")
+
+
         if (resources.getBoolean(R.bool.portrait_only)) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
@@ -50,6 +56,21 @@ class MainActivity : ReactActivity() {
                 defaultInsets.systemWindowInsetBottom
             )
         }
+
+        if (intent != null) {
+            handleIntent(intent)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent) // Must store the new intent unless getIntent() will return the old one
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val intentHandler = IntentHandlerFactory.getIntentHandler(this, intent.type)
+        intentHandler?.handle(intent)
     }
 
     /**
