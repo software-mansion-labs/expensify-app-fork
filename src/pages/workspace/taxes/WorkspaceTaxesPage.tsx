@@ -83,7 +83,7 @@ function WorkspaceTaxesPage({policy}: WorkspaceTaxesPageProps) {
         if (isAllSelected) {
             setSelectedTaxes([]);
         } else {
-            setSelectedTaxes(taxesList.map((item) => item.keyForList));
+            setSelectedTaxes(taxesList.map((item) => item.value));
         }
     };
 
