@@ -1,6 +1,6 @@
 import React, {useEffect, useRef} from 'react';
 import type {AppStateStatus} from 'react-native';
-import {AppState, View} from 'react-native';
+import {AppState, Platform, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -13,7 +13,7 @@ import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import Navigation from '@navigation/Navigation';
 import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
 import CONST from '@src/CONST';
-import ShareExtensionHandlerModule from '@src/modules/ShareExtensionHandlerModule';
+import ShareActionHandlerModule from '@src/modules/ShareActionHandlerModule';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ScanTab from './ScanTab';
 
@@ -31,22 +31,19 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-            ShareExtensionHandlerModule?.processFiles((processedFiles) => {
+            ShareActionHandlerModule.processFiles((processedFiles) => {
                 // eslint-disable-next-line no-console
                 console.log('PROCESSED FILES ', processedFiles);
             });
         }
-
         appState.current = nextAppState;
-        // eslint-disable-next-line no-console
-        console.log('AppState', appState.current);
     };
 
     useEffect(() => {
-        const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+        const changeSubscription = AppState.addEventListener('change', handleAppStateChange);
 
         return () => {
-            appStateSubscription.remove();
+            changeSubscription.remove();
         };
     }, []);
 
