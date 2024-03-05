@@ -281,6 +281,7 @@ const ONYXKEYS = {
 
     /** Collection Keys */
     COLLECTION: {
+        INEXISTENT: 'inexistentCollection_',
         DOWNLOAD: 'download_',
         POLICY: 'policy_',
         POLICY_MEMBERS: 'policyMembers_',
@@ -452,6 +453,7 @@ type OnyxFormDraftValuesMapping = {
 };
 
 type OnyxCollectionValuesMapping = {
+    [ONYXKEYS.COLLECTION.INEXISTENT]: {id: string};
     [ONYXKEYS.COLLECTION.DOWNLOAD]: OnyxTypes.Download;
     [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
     [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;

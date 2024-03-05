@@ -19,6 +19,8 @@ function SubRenderTest({policy}: {policy: UseOnyxData<`policy_${string}`, OnyxEn
 type ComponentWithOnyxHOCOnyxProps = {
     account: OnyxEntry<Account>;
 
+    inexistentCollection: OnyxCollection<{id: string}>;
+
     policies: OnyxCollection<Policy>;
 
     policy: OnyxEntry<Policy>;
@@ -36,6 +38,9 @@ const ComponentWithOnyxHOC = withOnyx<ComponentWithOnyxHOCProps, ComponentWithOn
     account: {
         key: ONYXKEYS.ACCOUNT,
     },
+    inexistentCollection: {
+        key: ONYXKEYS.COLLECTION.INEXISTENT,
+    },
     policies: {
         key: ONYXKEYS.COLLECTION.POLICY,
     },
@@ -50,10 +55,11 @@ const ComponentWithOnyxHOC = withOnyx<ComponentWithOnyxHOCProps, ComponentWithOn
         key: ONYXKEYS.COLLECTION.POLICY,
         selector: (policy) => policy?.name as unknown as OnyxCollection<PartialPolicy>,
     },
-})(({policyID, account, policies, policy, sessionEmail, policiesWithSelector}) => {
+})(({policyID, account, inexistentCollection, policies, policy, sessionEmail, policiesWithSelector}) => {
     console.group('OnyxPlayground [App] ComponentWithOnyxHOC');
     console.log('OnyxPlayground [App] ComponentWithOnyxHOC policyID', policyID);
     console.log('OnyxPlayground [App] ComponentWithOnyxHOC account', account);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHOC inexistentCollection', inexistentCollection);
     console.log('OnyxPlayground [App] ComponentWithOnyxHOC policies', policies);
     console.log('OnyxPlayground [App] ComponentWithOnyxHOC policy', policy);
     console.log('OnyxPlayground [App] ComponentWithOnyxHOC sessionEmail', sessionEmail);
@@ -74,6 +80,9 @@ type ComponentWithOnyxHookProps = {
 function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     const account = useOnyx(ONYXKEYS.ACCOUNT);
     const [accountValue] = account;
+
+    const inexistentCollection = useOnyx(ONYXKEYS.COLLECTION.INEXISTENT);
+    const [inexistentCollectionValue] = inexistentCollection;
 
     const policies = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const [policiesValue] = policies;
@@ -108,6 +117,7 @@ function ComponentWithOnyxHook({policyID}: ComponentWithOnyxHookProps) {
     console.group('OnyxPlayground [App] ComponentWithOnyxHook');
     console.log('OnyxPlayground [App] ComponentWithOnyxHook policyID', policyID);
     console.log('OnyxPlayground [App] ComponentWithOnyxHook account', account);
+    console.log('OnyxPlayground [App] ComponentWithOnyxHook inexistentCollection', inexistentCollection);
     console.log('OnyxPlayground [App] ComponentWithOnyxHook policies', policies);
     console.log('OnyxPlayground [App] ComponentWithOnyxHook policy', policy);
     console.log('OnyxPlayground [App] ComponentWithOnyxHook policy2', policy2);
