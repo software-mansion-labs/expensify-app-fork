@@ -30,6 +30,8 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
     const appState = useRef(AppState.currentState);
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
+        console.log('PROCESSED FILES APP STATE ', appState.current);
+
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
             console.log('PROCESS FILES ATTEMPT');
             ShareActionHandlerModule.processFiles((processedFiles) => {
@@ -42,6 +44,11 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
 
     useEffect(() => {
         const changeSubscription = AppState.addEventListener('change', handleAppStateChange);
+
+        ShareActionHandlerModule.processFiles((processedFiles) => {
+            // eslint-disable-next-line no-console
+            console.log('PROCESSED FILES LAUNCH', processedFiles);
+        });
 
         return () => {
             changeSubscription.remove();

@@ -22,6 +22,16 @@ object FileUtils {
         return internalStorageDirectory
     }
 
+    fun clearInternalStorageDirectory(context: Context) {
+        val internalStorageDirectory = File(context.filesDir.absolutePath, directoryName)
+        if (internalStorageDirectory.exists()) {
+            val files = internalStorageDirectory.listFiles()
+            for (file in files) {
+                file.delete()
+            }
+        }
+    }
+
     /**
      * Creates a temporary file in the internal storage.
      *
@@ -51,7 +61,7 @@ object FileUtils {
     }
 
     /**
-     * Creates a temporary image file into the internal storage.
+     * Creates a temporary image file in the internal storage.
      *
      * @param uri
      * @param context

@@ -8,15 +8,11 @@ import com.expensify.chat.utils.FileUtils
 
 class ImageIntentHandler(private val context: Context) : AbstractIntentHandler() {
     override fun handle(intent: Intent): Boolean {
+        super.clearTemporaryFiles(context)
         when(intent.action) {
              Intent.ACTION_SEND -> {
                  Log.i("ImageIntentHandler", "Handle receive single image")
                  handleSingleImageIntent(intent, context)
-                 onCompleted()
-                 return true
-             }
-             Intent.ACTION_SEND_MULTIPLE -> {
-                 handleMultipleImagesIntent(intent, context)
                  onCompleted()
                  return true
              }
@@ -33,31 +29,17 @@ class ImageIntentHandler(private val context: Context) : AbstractIntentHandler()
                 return
             }
 
-            val fileArrayList: ArrayList<String> = ArrayList()
             val resultingPath: String? = FileUtils.copyUriToStorage(imageUri, context)
+
             if (resultingPath != null) {
-                fileArrayList.add(resultingPath)
+                val shareFileObject = ShareFileObject(resultingPath, intent.type)
+
                 val sharedPreferences = context.getSharedPreferences(IntentHandlerConstants.preferencesFile, Context.MODE_PRIVATE)
                 val editor = sharedPreferences.edit()
-                editor.putStringSet(IntentHandlerConstants.fileArrayProperty, fileArrayList.toSet())
+                editor.putString(IntentHandlerConstants.shareObjectProperty, shareFileObject.toString())
                 editor.apply()
             }
         }
-    }
-
-    private fun handleMultipleImagesIntent(intent: Intent, context: Context) {
-
-        val resultingImagePaths = ArrayList<String>()
-
-        (intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM))?.let { imageUris ->
-            for (imageUri in imageUris) {
-                val resultingPath: String? = FileUtils.copyUriToStorage(imageUri, context)
-                if (resultingPath != null) {
-                    resultingImagePaths.add(resultingPath)
-                }
-            }
-        }
-//        Yapl.getInstance().callIntentCallback(resultingImagePaths)
     }
 
     override fun onCompleted() {

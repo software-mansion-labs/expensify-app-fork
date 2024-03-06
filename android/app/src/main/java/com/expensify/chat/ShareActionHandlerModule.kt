@@ -3,7 +3,6 @@ package com.expensify.chat
 import android.content.Context
 import android.util.Log
 import com.expensify.chat.intentHandler.IntentHandlerConstants
-import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -16,15 +15,10 @@ class ShareActionHandlerModule(reactContext: ReactApplicationContext) : ReactCon
     fun processFiles(callback: Callback) {
         try {
             val sharedPreferences = reactApplicationContext.getSharedPreferences(IntentHandlerConstants.preferencesFile, Context.MODE_PRIVATE)
-            val fileSet = sharedPreferences.getStringSet(IntentHandlerConstants.fileArrayProperty, setOf())
-            val fileArray: ArrayList<String> = ArrayList(fileSet)
+            val shareObject = sharedPreferences.getString(IntentHandlerConstants.shareObjectProperty, "{}")
 
-            val resultArray = Arguments.createArray()
-            for (file in fileArray) {
-                resultArray.pushString(file)
-            }
-
-            callback.invoke(resultArray)
+            Log.i("TestLaunchIntent", shareObject.toString())
+            callback.invoke(shareObject)
         } catch (exception: Exception) {
             Log.e("ImageIntentHandler", exception.toString())
             callback.invoke(exception.toString(), null)
