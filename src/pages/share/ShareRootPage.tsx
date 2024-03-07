@@ -29,15 +29,17 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
     const fileIsScannable = false;
     const appState = useRef(AppState.currentState);
 
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-        console.log('PROCESSED FILES APP STATE ', appState.current);
+    const handleProcessFiles = () => {
+        console.log('PROCESS FILES ATTEMPT');
+        ShareActionHandlerModule.processFiles((processedFiles) => {
+            // eslint-disable-next-line no-console
+            console.log('PROCESSED FILES ', processedFiles);
+        });
+    };
 
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-            console.log('PROCESS FILES ATTEMPT');
-            ShareActionHandlerModule.processFiles((processedFiles) => {
-                // eslint-disable-next-line no-console
-                console.log('PROCESSED FILES ', processedFiles);
-            });
+            handleProcessFiles();
         }
         appState.current = nextAppState;
     };
@@ -45,10 +47,7 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
     useEffect(() => {
         const changeSubscription = AppState.addEventListener('change', handleAppStateChange);
 
-        ShareActionHandlerModule.processFiles((processedFiles) => {
-            // eslint-disable-next-line no-console
-            console.log('PROCESSED FILES LAUNCH', processedFiles);
-        });
+        handleProcessFiles();
 
         return () => {
             changeSubscription.remove();

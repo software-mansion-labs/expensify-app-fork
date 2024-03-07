@@ -11,7 +11,7 @@ object IntentHandlerFactory {
             mimeType.startsWith("image/") -> ImageIntentHandler(context)
             mimeType.startsWith("application/") -> ApplicationIntentHandler(context)
             mimeType.startsWith("text/") -> TextIntentHandler(context)
-            // Add other cases like video/*, application/pdf etc.
+            Regex("audio/.*|video/.*").matches(mimeType) -> AudioVideoIntentHandler(context)
             else -> throw UnsupportedOperationException("Unsupported MIME type: $mimeType")
         }
     }
