@@ -8,6 +8,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {setPolicyCustomTaxName} from '@libs/actions/TaxRate';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
@@ -31,6 +32,7 @@ function WorkspaceTaxesSettingsCustomTaxName({
     const [name, setName] = useState(policy?.taxRates?.name ?? '');
 
     const submit = () => {
+        setPolicyCustomTaxName({policyID, customTaxName: name});
         Navigation.goBack(ROUTES.WORKSPACE_TAXES_SETTINGS.getRoute(policyID ?? ''));
     };
 

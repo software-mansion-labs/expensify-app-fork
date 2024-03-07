@@ -161,3 +161,4 @@ export type {default as CreateWorkspaceTaxParams} from './CreateWorkspaceTaxPara
 export type {default as RenamePolicyTaxParams} from './RenamePolicyTaxParams';
 export type {default as UpdatePolicyTaxValueParams} from './UpdatePolicyTaxValueParams';
 export type {default as DeleteWorkspaceTaxesParams} from './DeleteWorkspaceTaxesParams';
+export type {default as SetPolicyCustomTaxNameParams} from './SetPolicyCustomTaxNameParams';

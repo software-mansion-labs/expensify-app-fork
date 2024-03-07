@@ -163,6 +163,7 @@ const WRITE_COMMANDS = {
     RENAME_POLICY_TAX: 'RenamePolicyTax',
     UPDATE_POLICY_TAX_VALUE: 'UpdatePolicyTaxValue',
     DELETE_WORKSPACE_TAXES: 'DeleteWorkspaceTaxes',
+    SET_POLICY_CUSTOM_TAX_NAME: 'SetPolicyCustomTaxName',
 } as const;
 
 type WriteCommand = ValueOf<typeof WRITE_COMMANDS>;
@@ -271,6 +272,7 @@ type WriteCommandParameters = {
     [WRITE_COMMANDS.CREATE_WORKSPACE]: Parameters.CreateWorkspaceParams;
     [WRITE_COMMANDS.RENAME_POLICY_TAX]: Parameters.RenamePolicyTaxParams;
     [WRITE_COMMANDS.DELETE_WORKSPACE_TAXES]: Parameters.DeleteWorkspaceTaxesParams;
+    [WRITE_COMMANDS.SET_POLICY_CUSTOM_TAX_NAME]: Parameters.SetPolicyCustomTaxNameParams;
     [WRITE_COMMANDS.UPDATE_POLICY_TAX_VALUE]: Parameters.UpdatePolicyTaxValueParams;
     [WRITE_COMMANDS.CREATE_WORKSPACE_FROM_IOU_PAYMENT]: Parameters.CreateWorkspaceFromIOUPaymentParams;
     [WRITE_COMMANDS.SET_WORKSPACE_CATEGORIES_ENABLED]: Parameters.SetWorkspaceCategoriesEnabledParams;
