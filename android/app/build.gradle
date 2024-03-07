@@ -215,6 +215,8 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp-urlconnection:4.+"
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
+
+    implementation("com.google.code.gson:gson:2.8.8")
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)

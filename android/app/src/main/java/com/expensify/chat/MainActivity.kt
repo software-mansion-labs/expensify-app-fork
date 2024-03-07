@@ -57,7 +57,9 @@ class MainActivity : ReactActivity() {
             )
         }
 
+        Log.i("TestLaunchIntent", "on create attempt")
         if (intent != null) {
+            Log.i("TestLaunchIntent", "on create handle $intent")
             handleIntent(intent)
         }
     }
@@ -69,8 +71,13 @@ class MainActivity : ReactActivity() {
     }
 
     private fun handleIntent(intent: Intent) {
-        val intentHandler = IntentHandlerFactory.getIntentHandler(this, intent.type)
-        intentHandler?.handle(intent)
+        try {
+            val intentHandler = IntentHandlerFactory.getIntentHandler(this, intent.type)
+            intentHandler?.handle(intent)
+        } catch (exception: Exception) {
+            Log.e("handleIntent", exception.toString())
+        }
+
     }
 
     /**

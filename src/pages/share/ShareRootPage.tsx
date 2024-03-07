@@ -1,6 +1,6 @@
 import React, {useEffect, useRef} from 'react';
 import type {AppStateStatus} from 'react-native';
-import {AppState, Platform, View} from 'react-native';
+import {AppState, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -29,18 +29,25 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
     const fileIsScannable = false;
     const appState = useRef(AppState.currentState);
 
+    const handleProcessFiles = () => {
+        console.log('PROCESS FILES ATTEMPT');
+        ShareActionHandlerModule.processFiles((processedFiles) => {
+            // eslint-disable-next-line no-console
+            console.log('PROCESSED FILES ', processedFiles);
+        });
+    };
+
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-            ShareActionHandlerModule.processFiles((processedFiles) => {
-                // eslint-disable-next-line no-console
-                console.log('PROCESSED FILES ', processedFiles);
-            });
+            handleProcessFiles();
         }
         appState.current = nextAppState;
     };
 
     useEffect(() => {
         const changeSubscription = AppState.addEventListener('change', handleAppStateChange);
+
+        handleProcessFiles();
 
         return () => {
             changeSubscription.remove();
