@@ -1,10 +1,10 @@
-import _ from 'underscore';
 import Onyx from 'react-native-onyx';
+import _ from 'underscore';
+import CONST from '../../src/CONST';
 import * as OptionsListUtils from '../../src/libs/OptionsListUtils';
 import * as ReportUtils from '../../src/libs/ReportUtils';
 import ONYXKEYS from '../../src/ONYXKEYS';
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
-import CONST from '../../src/CONST';
 
 describe('OptionsListUtils', () => {
     // Given a set of reports with both single participants and multiple participants some pinned and some not
@@ -15,8 +15,10 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 1,
             participantAccountIDs: [2, 1],
+            visibleChatMemberAccountIDs: [2, 1],
             reportName: 'Iron Man, Mister Fantastic',
             hasDraft: true,
+            type: CONST.REPORT.TYPE.CHAT,
         },
         2: {
             lastReadTime: '2021-01-14 11:25:39.296',
@@ -24,7 +26,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 2,
             participantAccountIDs: [3],
+            visibleChatMemberAccountIDs: [3],
             reportName: 'Spider-Man',
+            type: CONST.REPORT.TYPE.CHAT,
         },
 
         // This is the only report we are pinning in this test
@@ -34,7 +38,9 @@ describe('OptionsListUtils', () => {
             isPinned: true,
             reportID: 3,
             participantAccountIDs: [1],
+            visibleChatMemberAccountIDs: [1],
             reportName: 'Mister Fantastic',
+            type: CONST.REPORT.TYPE.CHAT,
         },
         4: {
             lastReadTime: '2021-01-14 11:25:39.298',
@@ -42,7 +48,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 4,
             participantAccountIDs: [4],
+            visibleChatMemberAccountIDs: [4],
             reportName: 'Black Panther',
+            type: CONST.REPORT.TYPE.CHAT,
         },
         5: {
             lastReadTime: '2021-01-14 11:25:39.299',
@@ -50,7 +58,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 5,
             participantAccountIDs: [5],
+            visibleChatMemberAccountIDs: [5],
             reportName: 'Invisible Woman',
+            type: CONST.REPORT.TYPE.CHAT,
         },
         6: {
             lastReadTime: '2021-01-14 11:25:39.300',
@@ -58,7 +68,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 6,
             participantAccountIDs: [6],
+            visibleChatMemberAccountIDs: [6],
             reportName: 'Thor',
+            type: CONST.REPORT.TYPE.CHAT,
         },
 
         // Note: This report has the largest lastVisibleActionCreated
@@ -68,7 +80,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 7,
             participantAccountIDs: [7],
+            visibleChatMemberAccountIDs: [7],
             reportName: 'Captain America',
+            type: CONST.REPORT.TYPE.CHAT,
         },
 
         // Note: This report has no lastVisibleActionCreated
@@ -78,7 +92,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 8,
             participantAccountIDs: [12],
+            visibleChatMemberAccountIDs: [12],
             reportName: 'Silver Surfer',
+            type: CONST.REPORT.TYPE.CHAT,
         },
 
         // Note: This report has an IOU
@@ -88,9 +104,10 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 9,
             participantAccountIDs: [8],
+            visibleChatMemberAccountIDs: [8],
             reportName: 'Mister Sinister',
             iouReportID: 100,
-            hasOutstandingIOU: true,
+            type: CONST.REPORT.TYPE.CHAT,
         },
 
         // This report is an archived room – it does not have a name and instead falls back on oldPolicyName
@@ -100,10 +117,12 @@ describe('OptionsListUtils', () => {
             reportID: 10,
             isPinned: false,
             participantAccountIDs: [2, 7],
+            visibleChatMemberAccountIDs: [2, 7],
             reportName: '',
             oldPolicyName: "SHIELD's workspace",
             chatType: CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT,
             isOwnPolicyExpenseChat: true,
+            type: CONST.REPORT.TYPE.CHAT,
 
             // This indicates that the report is archived
             stateNum: 2,
@@ -118,6 +137,7 @@ describe('OptionsListUtils', () => {
             accountID: 1,
             displayName: 'Mister Fantastic',
             login: 'reedrichards@expensify.com',
+            isSelected: true,
         },
         2: {
             accountID: 2,
@@ -177,7 +197,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 11,
             participantAccountIDs: [999],
+            visibleChatMemberAccountIDs: [999],
             reportName: 'Concierge',
+            type: CONST.REPORT.TYPE.CHAT,
         },
     };
 
@@ -189,7 +211,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 12,
             participantAccountIDs: [1000],
+            visibleChatMemberAccountIDs: [1000],
             reportName: 'Chronos',
+            type: CONST.REPORT.TYPE.CHAT,
         },
     };
 
@@ -201,7 +225,9 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 13,
             participantAccountIDs: [1001],
+            visibleChatMemberAccountIDs: [1001],
             reportName: 'Receipts',
+            type: CONST.REPORT.TYPE.CHAT,
         },
     };
 
@@ -213,11 +239,13 @@ describe('OptionsListUtils', () => {
             isPinned: false,
             reportID: 14,
             participantAccountIDs: [1, 10, 3],
+            visibleChatMemberAccountIDs: [1, 10, 3],
             reportName: '',
             oldPolicyName: 'Avengers Room',
             isArchivedRoom: false,
             chatType: CONST.REPORT.CHAT_TYPE.POLICY_ADMINS,
             isOwnPolicyExpenseChat: true,
+            type: CONST.REPORT.TYPE.CHAT,
         },
     };
 
@@ -575,7 +603,7 @@ describe('OptionsListUtils', () => {
         // Filter current REPORTS as we do in the component, before getting share destination options
         const filteredReports = {};
         _.keys(REPORTS).forEach((reportKey) => {
-            if (ReportUtils.shouldDisableWriteActions(REPORTS[reportKey]) || ReportUtils.isExpensifyOnlyParticipantInReport(REPORTS[reportKey])) {
+            if (!ReportUtils.canUserPerformWriteAction(REPORTS[reportKey]) || ReportUtils.isExpensifyOnlyParticipantInReport(REPORTS[reportKey])) {
                 return;
             }
             filteredReports[reportKey] = REPORTS[reportKey];
@@ -602,7 +630,7 @@ describe('OptionsListUtils', () => {
         // Filter current REPORTS_WITH_WORKSPACE_ROOMS as we do in the component, before getting share destination options
         const filteredReportsWithWorkspaceRooms = {};
         _.keys(REPORTS_WITH_WORKSPACE_ROOMS).forEach((reportKey) => {
-            if (ReportUtils.shouldDisableWriteActions(REPORTS_WITH_WORKSPACE_ROOMS[reportKey]) || ReportUtils.isExpensifyOnlyParticipantInReport(REPORTS_WITH_WORKSPACE_ROOMS[reportKey])) {
+            if (!ReportUtils.canUserPerformWriteAction(REPORTS_WITH_WORKSPACE_ROOMS[reportKey]) || ReportUtils.isExpensifyOnlyParticipantInReport(REPORTS_WITH_WORKSPACE_ROOMS[reportKey])) {
                 return;
             }
             filteredReportsWithWorkspaceRooms[reportKey] = REPORTS_WITH_WORKSPACE_ROOMS[reportKey];
@@ -688,25 +716,28 @@ describe('OptionsListUtils', () => {
                 indexOffset: 0,
                 data: [
                     {
-                        text: 'Restaurant',
-                        keyForList: 'Restaurant',
-                        searchText: 'Restaurant',
-                        tooltipText: 'Restaurant',
-                        isDisabled: false,
-                    },
-                    {
                         text: 'Food',
                         keyForList: 'Food',
                         searchText: 'Food',
                         tooltipText: 'Food',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: '    Meat',
-                        keyForList: 'Meat',
+                        keyForList: 'Food: Meat',
                         searchText: 'Food: Meat',
                         tooltipText: 'Meat',
                         isDisabled: false,
+                        isSelected: false,
+                    },
+                    {
+                        text: 'Restaurant',
+                        keyForList: 'Restaurant',
+                        searchText: 'Restaurant',
+                        tooltipText: 'Restaurant',
+                        isDisabled: false,
+                        isSelected: false,
                     },
                 ],
             },
@@ -714,7 +745,7 @@ describe('OptionsListUtils', () => {
         const smallSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [
                     {
@@ -723,6 +754,7 @@ describe('OptionsListUtils', () => {
                         searchText: 'Food',
                         tooltipText: 'Food',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: 'Food: Meat',
@@ -730,6 +762,7 @@ describe('OptionsListUtils', () => {
                         searchText: 'Food: Meat',
                         tooltipText: 'Food: Meat',
                         isDisabled: false,
+                        isSelected: false,
                     },
                 ],
             },
@@ -737,7 +770,7 @@ describe('OptionsListUtils', () => {
         const smallWrongSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [],
             },
@@ -812,6 +845,7 @@ describe('OptionsListUtils', () => {
                         searchText: 'Medical',
                         tooltipText: 'Medical',
                         isDisabled: false,
+                        isSelected: false,
                     },
                 ],
             },
@@ -826,20 +860,38 @@ describe('OptionsListUtils', () => {
                         searchText: 'Restaurant',
                         tooltipText: 'Restaurant',
                         isDisabled: false,
+                        isSelected: false,
                     },
                 ],
             },
             {
                 title: 'All',
                 shouldShow: true,
-                indexOffset: 3,
+                indexOffset: 2,
                 data: [
                     {
-                        text: 'Restaurant',
-                        keyForList: 'Restaurant',
-                        searchText: 'Restaurant',
-                        tooltipText: 'Restaurant',
+                        text: 'Cars',
+                        keyForList: 'Cars',
+                        searchText: 'Cars',
+                        tooltipText: 'Cars',
+                        isDisabled: true,
+                        isSelected: false,
+                    },
+                    {
+                        text: '    Audi',
+                        keyForList: 'Cars: Audi',
+                        searchText: 'Cars: Audi',
+                        tooltipText: 'Audi',
                         isDisabled: false,
+                        isSelected: false,
+                    },
+                    {
+                        text: '    Mercedes-Benz',
+                        keyForList: 'Cars: Mercedes-Benz',
+                        searchText: 'Cars: Mercedes-Benz',
+                        tooltipText: 'Mercedes-Benz',
+                        isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: 'Food',
@@ -847,41 +899,31 @@ describe('OptionsListUtils', () => {
                         searchText: 'Food',
                         tooltipText: 'Food',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: '    Meat',
-                        keyForList: 'Meat',
+                        keyForList: 'Food: Meat',
                         searchText: 'Food: Meat',
                         tooltipText: 'Meat',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: '    Milk',
-                        keyForList: 'Milk',
+                        keyForList: 'Food: Milk',
                         searchText: 'Food: Milk',
                         tooltipText: 'Milk',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
-                        text: 'Cars',
-                        keyForList: 'Cars',
-                        searchText: 'Cars',
-                        tooltipText: 'Cars',
-                        isDisabled: true,
-                    },
-                    {
-                        text: '    Audi',
-                        keyForList: 'Audi',
-                        searchText: 'Cars: Audi',
-                        tooltipText: 'Audi',
+                        text: 'Restaurant',
+                        keyForList: 'Restaurant',
+                        searchText: 'Restaurant',
+                        tooltipText: 'Restaurant',
                         isDisabled: false,
-                    },
-                    {
-                        text: '    Mercedes-Benz',
-                        keyForList: 'Mercedes-Benz',
-                        searchText: 'Cars: Mercedes-Benz',
-                        tooltipText: 'Mercedes-Benz',
-                        isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: 'Travel',
@@ -889,27 +931,31 @@ describe('OptionsListUtils', () => {
                         searchText: 'Travel',
                         tooltipText: 'Travel',
                         isDisabled: true,
+                        isSelected: false,
                     },
                     {
                         text: '    Meals',
-                        keyForList: 'Meals',
+                        keyForList: 'Travel: Meals',
                         searchText: 'Travel: Meals',
                         tooltipText: 'Meals',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: '        Breakfast',
-                        keyForList: 'Breakfast',
+                        keyForList: 'Travel: Meals: Breakfast',
                         searchText: 'Travel: Meals: Breakfast',
                         tooltipText: 'Breakfast',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: '        Lunch',
-                        keyForList: 'Lunch',
+                        keyForList: 'Travel: Meals: Lunch',
                         searchText: 'Travel: Meals: Lunch',
                         tooltipText: 'Lunch',
                         isDisabled: false,
+                        isSelected: false,
                     },
                 ],
             },
@@ -917,7 +963,7 @@ describe('OptionsListUtils', () => {
         const largeSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [
                     {
@@ -926,6 +972,7 @@ describe('OptionsListUtils', () => {
                         searchText: 'Food',
                         tooltipText: 'Food',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: 'Food: Meat',
@@ -933,6 +980,7 @@ describe('OptionsListUtils', () => {
                         searchText: 'Food: Meat',
                         tooltipText: 'Food: Meat',
                         isDisabled: false,
+                        isSelected: false,
                     },
                     {
                         text: 'Food: Milk',
@@ -940,6 +988,7 @@ describe('OptionsListUtils', () => {
                         searchText: 'Food: Milk',
                         tooltipText: 'Food: Milk',
                         isDisabled: false,
+                        isSelected: false,
                     },
                 ],
             },
@@ -947,7 +996,7 @@ describe('OptionsListUtils', () => {
         const largeWrongSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [],
             },
@@ -965,6 +1014,7 @@ describe('OptionsListUtils', () => {
                         searchText: 'Medical',
                         tooltipText: 'Medical',
                         isDisabled: false,
+                        isSelected: false,
                     },
                 ],
             },
@@ -1062,14 +1112,8 @@ describe('OptionsListUtils', () => {
                 title: '',
                 shouldShow: false,
                 indexOffset: 0,
+                // data sorted alphabetically by name
                 data: [
-                    {
-                        text: 'Medical',
-                        keyForList: 'Medical',
-                        searchText: 'Medical',
-                        tooltipText: 'Medical',
-                        isDisabled: false,
-                    },
                     {
                         text: 'Accounting',
                         keyForList: 'Accounting',
@@ -1084,13 +1128,20 @@ describe('OptionsListUtils', () => {
                         tooltipText: 'HR',
                         isDisabled: false,
                     },
+                    {
+                        text: 'Medical',
+                        keyForList: 'Medical',
+                        searchText: 'Medical',
+                        tooltipText: 'Medical',
+                        isDisabled: false,
+                    },
                 ],
             },
         ];
         const smallSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [
                     {
@@ -1106,7 +1157,7 @@ describe('OptionsListUtils', () => {
         const smallWrongSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [],
             },
@@ -1160,7 +1211,7 @@ describe('OptionsListUtils', () => {
         const largeResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [
                     {
@@ -1190,6 +1241,7 @@ describe('OptionsListUtils', () => {
                 title: 'All',
                 shouldShow: true,
                 indexOffset: 2,
+                // data sorted alphabetically by name
                 data: [
                     {
                         text: 'Accounting',
@@ -1199,10 +1251,17 @@ describe('OptionsListUtils', () => {
                         isDisabled: false,
                     },
                     {
-                        text: 'HR',
-                        keyForList: 'HR',
-                        searchText: 'HR',
-                        tooltipText: 'HR',
+                        text: 'Benefits',
+                        keyForList: 'Benefits',
+                        searchText: 'Benefits',
+                        tooltipText: 'Benefits',
+                        isDisabled: false,
+                    },
+                    {
+                        text: 'Cleaning',
+                        keyForList: 'Cleaning',
+                        searchText: 'Cleaning',
+                        tooltipText: 'Cleaning',
                         isDisabled: false,
                     },
                     {
@@ -1213,10 +1272,10 @@ describe('OptionsListUtils', () => {
                         isDisabled: false,
                     },
                     {
-                        text: 'Cleaning',
-                        keyForList: 'Cleaning',
-                        searchText: 'Cleaning',
-                        tooltipText: 'Cleaning',
+                        text: 'HR',
+                        keyForList: 'HR',
+                        searchText: 'HR',
+                        tooltipText: 'HR',
                         isDisabled: false,
                     },
                     {
@@ -1233,20 +1292,13 @@ describe('OptionsListUtils', () => {
                         tooltipText: 'Taxes',
                         isDisabled: false,
                     },
-                    {
-                        text: 'Benefits',
-                        keyForList: 'Benefits',
-                        searchText: 'Benefits',
-                        tooltipText: 'Benefits',
-                        isDisabled: false,
-                    },
                 ],
             },
         ];
         const largeSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [
                     {
@@ -1269,7 +1321,7 @@ describe('OptionsListUtils', () => {
         const largeWrongSearchResultList = [
             {
                 title: '',
-                shouldShow: false,
+                shouldShow: true,
                 indexOffset: 0,
                 data: [],
             },
@@ -1341,9 +1393,9 @@ describe('OptionsListUtils', () => {
 
     it('getCategoryOptionTree()', () => {
         const categories = {
-            Taxi: {
-                enabled: false,
-                name: 'Taxi',
+            Meals: {
+                enabled: true,
+                name: 'Meals',
             },
             Restaurant: {
                 enabled: true,
@@ -1361,25 +1413,13 @@ describe('OptionsListUtils', () => {
                 enabled: true,
                 name: 'Food: Milk',
             },
-            'Food: Vegetables': {
-                enabled: false,
-                name: 'Food: Vegetables',
-            },
             'Cars: Audi': {
                 enabled: true,
                 name: 'Cars: Audi',
             },
-            'Cars: BMW': {
-                enabled: false,
-                name: 'Cars: BMW',
-            },
             'Cars: Mercedes-Benz': {
                 enabled: true,
                 name: 'Cars: Mercedes-Benz',
-            },
-            Medical: {
-                enabled: false,
-                name: 'Medical',
             },
             'Travel: Meals': {
                 enabled: true,
@@ -1389,10 +1429,6 @@ describe('OptionsListUtils', () => {
                 enabled: true,
                 name: 'Travel: Meals: Breakfast',
             },
-            'Travel: Meals: Dinner': {
-                enabled: false,
-                name: 'Travel: Meals: Dinner',
-            },
             'Travel: Meals: Lunch': {
                 enabled: true,
                 name: 'Travel: Meals: Lunch',
@@ -1400,6 +1436,10 @@ describe('OptionsListUtils', () => {
             Plain: {
                 enabled: true,
                 name: 'Plain',
+            },
+            Audi: {
+                enabled: true,
+                name: 'Audi',
             },
             Health: {
                 enabled: true,
@@ -1416,11 +1456,20 @@ describe('OptionsListUtils', () => {
         };
         const result = [
             {
+                text: 'Meals',
+                keyForList: 'Meals',
+                searchText: 'Meals',
+                tooltipText: 'Meals',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
                 text: 'Restaurant',
                 keyForList: 'Restaurant',
                 searchText: 'Restaurant',
                 tooltipText: 'Restaurant',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: 'Food',
@@ -1428,20 +1477,23 @@ describe('OptionsListUtils', () => {
                 searchText: 'Food',
                 tooltipText: 'Food',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: '    Meat',
-                keyForList: 'Meat',
+                keyForList: 'Food: Meat',
                 searchText: 'Food: Meat',
                 tooltipText: 'Meat',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: '    Milk',
-                keyForList: 'Milk',
+                keyForList: 'Food: Milk',
                 searchText: 'Food: Milk',
                 tooltipText: 'Milk',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: 'Cars',
@@ -1449,20 +1501,23 @@ describe('OptionsListUtils', () => {
                 searchText: 'Cars',
                 tooltipText: 'Cars',
                 isDisabled: true,
+                isSelected: false,
             },
             {
                 text: '    Audi',
-                keyForList: 'Audi',
+                keyForList: 'Cars: Audi',
                 searchText: 'Cars: Audi',
                 tooltipText: 'Audi',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: '    Mercedes-Benz',
-                keyForList: 'Mercedes-Benz',
+                keyForList: 'Cars: Mercedes-Benz',
                 searchText: 'Cars: Mercedes-Benz',
                 tooltipText: 'Mercedes-Benz',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: 'Travel',
@@ -1470,27 +1525,31 @@ describe('OptionsListUtils', () => {
                 searchText: 'Travel',
                 tooltipText: 'Travel',
                 isDisabled: true,
+                isSelected: false,
             },
             {
                 text: '    Meals',
-                keyForList: 'Meals',
+                keyForList: 'Travel: Meals',
                 searchText: 'Travel: Meals',
                 tooltipText: 'Meals',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: '        Breakfast',
-                keyForList: 'Breakfast',
+                keyForList: 'Travel: Meals: Breakfast',
                 searchText: 'Travel: Meals: Breakfast',
                 tooltipText: 'Breakfast',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: '        Lunch',
-                keyForList: 'Lunch',
+                keyForList: 'Travel: Meals: Lunch',
                 searchText: 'Travel: Meals: Lunch',
                 tooltipText: 'Lunch',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: 'Plain',
@@ -1498,6 +1557,15 @@ describe('OptionsListUtils', () => {
                 searchText: 'Plain',
                 tooltipText: 'Plain',
                 isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Audi',
+                keyForList: 'Audi',
+                searchText: 'Audi',
+                tooltipText: 'Audi',
+                isDisabled: false,
+                isSelected: false,
             },
             {
                 text: 'Health',
@@ -1505,6 +1573,7 @@ describe('OptionsListUtils', () => {
                 searchText: 'Health',
                 tooltipText: 'Health',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: 'A',
@@ -1512,42 +1581,608 @@ describe('OptionsListUtils', () => {
                 searchText: 'A',
                 tooltipText: 'A',
                 isDisabled: true,
+                isSelected: false,
             },
             {
                 text: '    B',
-                keyForList: 'B',
+                keyForList: 'A: B',
                 searchText: 'A: B',
                 tooltipText: 'B',
                 isDisabled: true,
+                isSelected: false,
             },
             {
                 text: '        C',
-                keyForList: 'C',
+                keyForList: 'A: B: C',
                 searchText: 'A: B: C',
                 tooltipText: 'C',
                 isDisabled: false,
+                isSelected: false,
             },
             {
                 text: '            D',
-                keyForList: 'D',
+                keyForList: 'A: B: C: D',
                 searchText: 'A: B: C: D',
                 tooltipText: 'D',
                 isDisabled: true,
+                isSelected: false,
             },
             {
                 text: '                E',
-                keyForList: 'E',
+                keyForList: 'A: B: C: D: E',
                 searchText: 'A: B: C: D: E',
                 tooltipText: 'E',
                 isDisabled: false,
+                isSelected: false,
+            },
+        ];
+        const resultOneLine = [
+            {
+                text: 'Meals',
+                keyForList: 'Meals',
+                searchText: 'Meals',
+                tooltipText: 'Meals',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Restaurant',
+                keyForList: 'Restaurant',
+                searchText: 'Restaurant',
+                tooltipText: 'Restaurant',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Food',
+                keyForList: 'Food',
+                searchText: 'Food',
+                tooltipText: 'Food',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Food: Meat',
+                keyForList: 'Food: Meat',
+                searchText: 'Food: Meat',
+                tooltipText: 'Food: Meat',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Food: Milk',
+                keyForList: 'Food: Milk',
+                searchText: 'Food: Milk',
+                tooltipText: 'Food: Milk',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Cars: Audi',
+                keyForList: 'Cars: Audi',
+                searchText: 'Cars: Audi',
+                tooltipText: 'Cars: Audi',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Cars: Mercedes-Benz',
+                keyForList: 'Cars: Mercedes-Benz',
+                searchText: 'Cars: Mercedes-Benz',
+                tooltipText: 'Cars: Mercedes-Benz',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Travel: Meals',
+                keyForList: 'Travel: Meals',
+                searchText: 'Travel: Meals',
+                tooltipText: 'Travel: Meals',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Travel: Meals: Breakfast',
+                keyForList: 'Travel: Meals: Breakfast',
+                searchText: 'Travel: Meals: Breakfast',
+                tooltipText: 'Travel: Meals: Breakfast',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Travel: Meals: Lunch',
+                keyForList: 'Travel: Meals: Lunch',
+                searchText: 'Travel: Meals: Lunch',
+                tooltipText: 'Travel: Meals: Lunch',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Plain',
+                keyForList: 'Plain',
+                searchText: 'Plain',
+                tooltipText: 'Plain',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Audi',
+                keyForList: 'Audi',
+                searchText: 'Audi',
+                tooltipText: 'Audi',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'Health',
+                keyForList: 'Health',
+                searchText: 'Health',
+                tooltipText: 'Health',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'A: B: C',
+                keyForList: 'A: B: C',
+                searchText: 'A: B: C',
+                tooltipText: 'A: B: C',
+                isDisabled: false,
+                isSelected: false,
+            },
+            {
+                text: 'A: B: C: D: E',
+                keyForList: 'A: B: C: D: E',
+                searchText: 'A: B: C: D: E',
+                tooltipText: 'A: B: C: D: E',
+                isDisabled: false,
+                isSelected: false,
             },
         ];
 
         expect(OptionsListUtils.getCategoryOptionTree(categories)).toStrictEqual(result);
+        expect(OptionsListUtils.getCategoryOptionTree(categories, true)).toStrictEqual(resultOneLine);
+    });
+
+    it('sortCategories', () => {
+        const categoriesIncorrectOrdering = {
+            Taxi: {
+                name: 'Taxi',
+                enabled: false,
+            },
+            'Test1: Subtest2': {
+                name: 'Test1: Subtest2',
+                enabled: true,
+            },
+            'Test: Test1: Subtest4': {
+                name: 'Test: Test1: Subtest4',
+                enabled: true,
+            },
+            Taxes: {
+                name: 'Taxes',
+                enabled: true,
+            },
+            Test: {
+                name: 'Test',
+                enabled: true,
+            },
+            Test1: {
+                name: 'Test1',
+                enabled: true,
+            },
+            'Travel: Nested-Travel': {
+                name: 'Travel: Nested-Travel',
+                enabled: true,
+            },
+            'Test1: Subtest1': {
+                name: 'Test1: Subtest1',
+                enabled: true,
+            },
+            'Test: Test1': {
+                name: 'Test: Test1',
+                enabled: true,
+            },
+            'Test: Test1: Subtest1': {
+                name: 'Test: Test1: Subtest1',
+                enabled: true,
+            },
+            'Test: Test1: Subtest3': {
+                name: 'Test: Test1: Subtest3',
+                enabled: false,
+            },
+            'Test: Test1: Subtest2': {
+                name: 'Test: Test1: Subtest2',
+                enabled: true,
+            },
+            'Test: Test2': {
+                name: 'Test: Test2',
+                enabled: true,
+            },
+            Travel: {
+                name: 'Travel',
+                enabled: true,
+            },
+            Utilities: {
+                name: 'Utilities',
+                enabled: true,
+            },
+            'Test: Test3: Subtest1': {
+                name: 'Test: Test3: Subtest1',
+                enabled: true,
+            },
+            'Test1: Subtest3': {
+                name: 'Test1: Subtest3',
+                enabled: true,
+            },
+        };
+        const result = [
+            {
+                name: 'Taxes',
+                enabled: true,
+            },
+            {
+                name: 'Taxi',
+                enabled: false,
+            },
+            {
+                name: 'Test',
+                enabled: true,
+            },
+            {
+                name: 'Test: Test1',
+                enabled: true,
+            },
+            {
+                name: 'Test: Test1: Subtest1',
+                enabled: true,
+            },
+            {
+                name: 'Test: Test1: Subtest2',
+                enabled: true,
+            },
+            {
+                name: 'Test: Test1: Subtest3',
+                enabled: false,
+            },
+            {
+                name: 'Test: Test1: Subtest4',
+                enabled: true,
+            },
+            {
+                name: 'Test: Test2',
+                enabled: true,
+            },
+            {
+                name: 'Test: Test3: Subtest1',
+                enabled: true,
+            },
+            {
+                name: 'Test1',
+                enabled: true,
+            },
+            {
+                name: 'Test1: Subtest1',
+                enabled: true,
+            },
+            {
+                name: 'Test1: Subtest2',
+                enabled: true,
+            },
+            {
+                name: 'Test1: Subtest3',
+                enabled: true,
+            },
+            {
+                name: 'Travel',
+                enabled: true,
+            },
+            {
+                name: 'Travel: Nested-Travel',
+                enabled: true,
+            },
+            {
+                name: 'Utilities',
+                enabled: true,
+            },
+        ];
+        const categoriesIncorrectOrdering2 = {
+            'Cars: BMW': {
+                enabled: false,
+                name: 'Cars: BMW',
+            },
+            Medical: {
+                enabled: false,
+                name: 'Medical',
+            },
+            'Travel: Meals: Lunch': {
+                enabled: true,
+                name: 'Travel: Meals: Lunch',
+            },
+            'Cars: Mercedes-Benz': {
+                enabled: true,
+                name: 'Cars: Mercedes-Benz',
+            },
+            Food: {
+                enabled: true,
+                name: 'Food',
+            },
+            'Food: Meat': {
+                enabled: true,
+                name: 'Food: Meat',
+            },
+            'Travel: Meals: Dinner': {
+                enabled: false,
+                name: 'Travel: Meals: Dinner',
+            },
+            'Food: Vegetables': {
+                enabled: false,
+                name: 'Food: Vegetables',
+            },
+            Restaurant: {
+                enabled: true,
+                name: 'Restaurant',
+            },
+            Taxi: {
+                enabled: false,
+                name: 'Taxi',
+            },
+            'Food: Milk': {
+                enabled: true,
+                name: 'Food: Milk',
+            },
+            'Travel: Meals': {
+                enabled: true,
+                name: 'Travel: Meals',
+            },
+            'Travel: Meals: Breakfast': {
+                enabled: true,
+                name: 'Travel: Meals: Breakfast',
+            },
+            'Cars: Audi': {
+                enabled: true,
+                name: 'Cars: Audi',
+            },
+        };
+        const result2 = [
+            {
+                enabled: true,
+                name: 'Cars: Audi',
+            },
+            {
+                enabled: false,
+                name: 'Cars: BMW',
+            },
+            {
+                enabled: true,
+                name: 'Cars: Mercedes-Benz',
+            },
+            {
+                enabled: true,
+                name: 'Food',
+            },
+            {
+                enabled: true,
+                name: 'Food: Meat',
+            },
+            {
+                enabled: true,
+                name: 'Food: Milk',
+            },
+            {
+                enabled: false,
+                name: 'Food: Vegetables',
+            },
+            {
+                enabled: false,
+                name: 'Medical',
+            },
+            {
+                enabled: true,
+                name: 'Restaurant',
+            },
+            {
+                enabled: false,
+                name: 'Taxi',
+            },
+            {
+                enabled: true,
+                name: 'Travel: Meals',
+            },
+            {
+                enabled: true,
+                name: 'Travel: Meals: Breakfast',
+            },
+            {
+                enabled: false,
+                name: 'Travel: Meals: Dinner',
+            },
+            {
+                enabled: true,
+                name: 'Travel: Meals: Lunch',
+            },
+        ];
+        const categoriesIncorrectOrdering3 = {
+            'Movies: Mr. Nobody': {
+                enabled: true,
+                name: 'Movies: Mr. Nobody',
+            },
+            Movies: {
+                enabled: true,
+                name: 'Movies',
+            },
+            'House, M.D.': {
+                enabled: true,
+                name: 'House, M.D.',
+            },
+            'Dr. House': {
+                enabled: true,
+                name: 'Dr. House',
+            },
+            'Many.dots.on.the.way.': {
+                enabled: true,
+                name: 'Many.dots.on.the.way.',
+            },
+            'More.Many.dots.on.the.way.': {
+                enabled: false,
+                name: 'More.Many.dots.on.the.way.',
+            },
+        };
+        const result3 = [
+            {
+                enabled: true,
+                name: 'Dr. House',
+            },
+            {
+                enabled: true,
+                name: 'House, M.D.',
+            },
+            {
+                enabled: true,
+                name: 'Many.dots.on.the.way.',
+            },
+            {
+                enabled: false,
+                name: 'More.Many.dots.on.the.way.',
+            },
+            {
+                enabled: true,
+                name: 'Movies',
+            },
+            {
+                enabled: true,
+                name: 'Movies: Mr. Nobody',
+            },
+        ];
+
+        expect(OptionsListUtils.sortCategories(categoriesIncorrectOrdering)).toStrictEqual(result);
+        expect(OptionsListUtils.sortCategories(categoriesIncorrectOrdering2)).toStrictEqual(result2);
+        expect(OptionsListUtils.sortCategories(categoriesIncorrectOrdering3)).toStrictEqual(result3);
+    });
+
+    it('getFilteredOptions() for taxRate', () => {
+        const search = 'rate';
+        const emptySearch = '';
+        const wrongSearch = 'bla bla';
+
+        const taxRatesWithDefault = {
+            name: 'Tax',
+            defaultExternalID: 'CODE1',
+            defaultValue: '0%',
+            foreignTaxDefault: 'CODE1',
+            taxes: {
+                CODE2: {
+                    name: 'Tax rate 2',
+                    value: '3%',
+                },
+                CODE3: {
+                    name: 'Tax option 3',
+                    value: '5%',
+                },
+                CODE1: {
+                    name: 'Tax exempt 1',
+                    value: '0%',
+                },
+            },
+        };
+
+        const resultList = [
+            {
+                title: '',
+                shouldShow: false,
+                indexOffset: 0,
+                // data sorted alphabetically by name
+                data: [
+                    {
+                        // Adds 'Default' title to default tax.
+                        // Adds value to tax name for more description.
+                        text: 'Tax exempt 1 (0%) • Default',
+                        keyForList: 'CODE1',
+                        searchText: 'Tax exempt 1 (0%) • Default',
+                        tooltipText: 'Tax exempt 1 (0%) • Default',
+                        isDisabled: undefined,
+                        // creates a data option.
+                        data: {
+                            name: 'Tax exempt 1',
+                            code: 'CODE1',
+                            modifiedName: 'Tax exempt 1 (0%) • Default',
+                            value: '0%',
+                        },
+                    },
+                    {
+                        text: 'Tax option 3 (5%)',
+                        keyForList: 'CODE3',
+                        searchText: 'Tax option 3 (5%)',
+                        tooltipText: 'Tax option 3 (5%)',
+                        isDisabled: undefined,
+                        data: {
+                            name: 'Tax option 3',
+                            code: 'CODE3',
+                            modifiedName: 'Tax option 3 (5%)',
+                            value: '5%',
+                        },
+                    },
+                    {
+                        text: 'Tax rate 2 (3%)',
+                        keyForList: 'CODE2',
+                        searchText: 'Tax rate 2 (3%)',
+                        tooltipText: 'Tax rate 2 (3%)',
+                        isDisabled: undefined,
+                        data: {
+                            name: 'Tax rate 2',
+                            code: 'CODE2',
+                            modifiedName: 'Tax rate 2 (3%)',
+                            value: '3%',
+                        },
+                    },
+                ],
+            },
+        ];
+
+        const searchResultList = [
+            {
+                title: '',
+                shouldShow: true,
+                indexOffset: 0,
+                // data sorted alphabetically by name
+                data: [
+                    {
+                        text: 'Tax rate 2 (3%)',
+                        keyForList: 'CODE2',
+                        searchText: 'Tax rate 2 (3%)',
+                        tooltipText: 'Tax rate 2 (3%)',
+                        isDisabled: undefined,
+                        data: {
+                            name: 'Tax rate 2',
+                            code: 'CODE2',
+                            modifiedName: 'Tax rate 2 (3%)',
+                            value: '3%',
+                        },
+                    },
+                ],
+            },
+        ];
+
+        const wrongSearchResultList = [
+            {
+                title: '',
+                shouldShow: true,
+                indexOffset: 0,
+                data: [],
+            },
+        ];
+
+        const result = OptionsListUtils.getFilteredOptions({}, {}, [], emptySearch, [], [], false, false, false, {}, [], false, {}, [], false, false, true, taxRatesWithDefault);
+
+        expect(result.taxRatesOptions).toStrictEqual(resultList);
+
+        const searchResult = OptionsListUtils.getFilteredOptions({}, {}, [], search, [], [], false, false, false, {}, [], false, {}, [], false, false, true, taxRatesWithDefault);
+        expect(searchResult.taxRatesOptions).toStrictEqual(searchResultList);
+
+        const wrongSearchResult = OptionsListUtils.getFilteredOptions({}, {}, [], wrongSearch, [], [], false, false, false, {}, [], false, {}, [], false, false, true, taxRatesWithDefault);
+        expect(wrongSearchResult.taxRatesOptions).toStrictEqual(wrongSearchResultList);
     });
 
     it('formatMemberForList()', () => {
-        const formattedMembers = _.map(PERSONAL_DETAILS, (personalDetail, key) => OptionsListUtils.formatMemberForList(personalDetail, key === '1'));
+        const formattedMembers = _.map(PERSONAL_DETAILS, (personalDetail) => OptionsListUtils.formatMemberForList(personalDetail));
 
         // We're only formatting items inside the array, so the order should be the same as the original PERSONAL_DETAILS array
         expect(formattedMembers[0].text).toBe('Mister Fantastic');
@@ -1562,11 +2197,5 @@ describe('OptionsListUtils', () => {
 
         // `isDisabled` is always false
         expect(_.every(formattedMembers, (personalDetail) => !personalDetail.isDisabled)).toBe(true);
-
-        // `rightElement` is always null
-        expect(_.every(formattedMembers, (personalDetail) => personalDetail.rightElement === null)).toBe(true);
-
-        // The PERSONAL_DETAILS list doesn't specify `participantsList[n].avatar`, so the default one should be used
-        expect(_.every(formattedMembers, (personalDetail) => Boolean(personalDetail.avatar.source))).toBe(true);
     });
 });

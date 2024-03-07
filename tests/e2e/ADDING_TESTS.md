@@ -1,4 +1,6 @@
-# Add E2E Tests
+# Adding new E2E Tests
+
+## Creating a new test
 
 Tests are executed on device, inside the app code.
 
@@ -45,7 +47,7 @@ anything here, like connecting to onyx, calling APIs, navigating.
 
 There are some common actions that are common among different test cases:
 
-- `src/libs/E2E/actions/e2eLogin.js` - Log a user into the app.
+- `src/libs/E2E/actions/e2eLogin.ts` - Log a user into the app.
 
 The test will be called once the app is ready, which mean you can immediately start.
 Your test is expected to default export its test function.
@@ -81,7 +83,7 @@ export default test;
 
 ### Last step: register the test in the e2e react native entry
 
-In `src/lib/E2E/reactNativeLaunchingTest.js` you have to add your newly created
+In `src/lib/E2E/reactNativeLaunchingTest.ts` you have to add your newly created
 test file:
 
 ```diff
@@ -96,7 +98,16 @@ Done! When you now start the test runner, your new test will be executed as well
 
 ## Quickly test your test
 
-To check your new test you can simply run `npm run test:e2e`, which uses the
-`--development` flag. This will run the tests on the branch you are currently on
-and will do fewer iterations.
+> [!TIP]
+> You can only run a specific test by specifying the `--includes` flag:
+> ```sh
+> npm run test:e2e:dev -- --includes "My new test name"
+> ```
+
+It is recommended to run a debug build of the e2e tests first to iterate quickly on your test. Follow the explanation in the [README](./README.md) to create a debug build.
+
+## Debugging your test
+
+You can use regular console statements to debug your test. The output will be visible
+in logcat. I recommend opening the android studio logcat window and filter for `ReactNativeJS` to see the output you'd otherwise typically see in your metro bundler instance.
 

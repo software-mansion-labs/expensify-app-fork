@@ -1,12 +1,12 @@
-import _ from 'underscore';
-import Onyx from 'react-native-onyx';
 import Str from 'expensify-common/lib/str';
+import Onyx from 'react-native-onyx';
+import _ from 'underscore';
 import CONST from '../../src/CONST';
 import * as Session from '../../src/libs/actions/Session';
 import HttpUtils from '../../src/libs/HttpUtils';
+import * as NumberUtils from '../../src/libs/NumberUtils';
 import ONYXKEYS from '../../src/ONYXKEYS';
 import waitForBatchedUpdates from './waitForBatchedUpdates';
-import * as NumberUtils from '../../src/libs/NumberUtils';
 
 /**
  * @param {String} login
@@ -167,7 +167,9 @@ function getGlobalFetchMock() {
         if (!isPaused) {
             return Promise.resolve(getResponse());
         }
-        return new Promise((resolve) => queue.push(resolve));
+        return new Promise((resolve) => {
+            queue.push(resolve);
+        });
     });
 
     mockFetch.pause = () => (isPaused = true);
@@ -212,4 +214,33 @@ function buildTestReportComment(created, actorAccountID, actionID = null) {
     };
 }
 
-export {getGlobalFetchMock, signInWithTestUser, signOutTestUser, setPersonalDetails, buildPersonalDetails, buildTestReportComment};
+function assertFormDataMatchesObject(formData, obj) {
+    expect(_.reduce(Array.from(formData.entries()), (memo, x) => ({...memo, [x[0]]: x[1]}), {})).toEqual(expect.objectContaining(obj));
+}
+
+/**
+ * This is a helper function to create a mock for the addListener function of the react-navigation library.
+ * The reason we need this is because we need to trigger the transitionEnd event in our tests to simulate
+ * the transitionEnd event that is triggered when the screen transition animation is completed.
+ *
+ * @returns {Object} An object with two functions: triggerTransitionEnd and addListener
+ */
+const createAddListenerMock = () => {
+    const transitionEndListeners = [];
+    const triggerTransitionEnd = () => {
+        transitionEndListeners.forEach((transitionEndListener) => transitionEndListener());
+    };
+
+    const addListener = jest.fn().mockImplementation((listener, callback) => {
+        if (listener === 'transitionEnd') {
+            transitionEndListeners.push(callback);
+        }
+        return () => {
+            _.filter(transitionEndListeners, (cb) => cb !== callback);
+        };
+    });
+
+    return {triggerTransitionEnd, addListener};
+};
+
+export {getGlobalFetchMock, signInWithTestUser, signOutTestUser, setPersonalDetails, buildPersonalDetails, buildTestReportComment, assertFormDataMatchesObject, createAddListenerMock};

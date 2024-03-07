@@ -1,6 +1,7 @@
 import Onyx from 'react-native-onyx';
-import ONYXKEYS, {OnyxValues} from '../ONYXKEYS';
-import CONST from '../CONST';
+import CONST from '@src/CONST';
+import type {OnyxValues} from '@src/ONYXKEYS';
+import ONYXKEYS from '@src/ONYXKEYS';
 import BaseLocaleListener from './Localize/LocaleListener/BaseLocaleListener';
 import * as NumberFormatUtils from './NumberFormatUtils';
 
@@ -97,7 +98,7 @@ function convertToFrontendAmount(amountAsInt: number): number {
  * @param amountInCents – should be an integer. Anything after a decimal place will be dropped.
  * @param currency - IOU currency
  */
-function convertToDisplayString(amountInCents: number, currency: string = CONST.CURRENCY.USD): string {
+function convertToDisplayString(amountInCents = 0, currency: string = CONST.CURRENCY.USD): string {
     const convertedAmount = convertToFrontendAmount(amountInCents);
     return NumberFormatUtils.format(BaseLocaleListener.getPreferredLocale(), convertedAmount, {
         style: 'currency',
@@ -106,6 +107,21 @@ function convertToDisplayString(amountInCents: number, currency: string = CONST.
         // We are forcing the number of decimals because we override the default number of decimals in the backend for RSD
         // See: https://github.com/Expensify/PHP-Libs/pull/834
         minimumFractionDigits: currency === 'RSD' ? getCurrencyDecimals(currency) : undefined,
+    });
+}
+
+/**
+ * Given an amount, convert it to a string for display in the UI.
+ *
+ * @param amount – should be a float.
+ * @param currency - IOU currency
+ */
+function convertAmountToDisplayString(amount = 0, currency: string = CONST.CURRENCY.USD): string {
+    const convertedAmount = amount / 100.0;
+    return NumberFormatUtils.format(BaseLocaleListener.getPreferredLocale(), convertedAmount, {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: getCurrencyDecimals(currency) + 1,
     });
 }
 
@@ -126,5 +142,6 @@ export {
     convertToBackendAmount,
     convertToFrontendAmount,
     convertToDisplayString,
+    convertAmountToDisplayString,
     isValidCurrencyCode,
 };
