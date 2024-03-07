@@ -1,8 +1,12 @@
-import {useEffect, useRef} from 'react';
+import _ from 'lodash';
+import {useContext, useEffect, useRef} from 'react';
 // eslint-disable-next-line no-restricted-imports
 import {Dimensions, useWindowDimensions} from 'react-native';
+import {FullScreenContext} from '@components/VideoPlayerContexts/FullScreenContext';
+import {PlaybackContext, PlaybackContextProvider} from '@components/VideoPlayerContexts/PlaybackContext';
 import useDebouncedState from '@hooks/useDebouncedState';
 import * as Browser from '@libs/Browser';
+import {use} from '@libs/Request';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import type WindowDimensions from './types';
@@ -14,6 +18,16 @@ const tagNamesOpenKeyboard = ['INPUT', 'TEXTAREA'];
  * A convenience wrapper around React Native's useWindowDimensions hook that also provides booleans for our breakpoints.
  */
 export default function (useCachedViewportHeight = false): WindowDimensions {
+    const xd = useContext(FullScreenContext);
+    let isFullscreen;
+    let lastWindowDimensions = null;
+    let update = (onj) => {};
+    if (xd) {
+        isFullscreen = xd.isFullscreen;
+        lastWindowDimensions = xd.lastWindowDimensions;
+        update = xd.update;
+    }
+
     const isCachedViewportHeight = useCachedViewportHeight && Browser.isMobileSafari();
     const cachedViewportHeightWithKeyboardRef = useRef(initalViewportHeight);
     const {width: windowWidth, height: windowHeight} = useWindowDimensions();
@@ -82,9 +96,20 @@ export default function (useCachedViewportHeight = false): WindowDimensions {
         cachedViewportHeightWithKeyboardRef.current = windowHeight;
     }, [isCachedViewportHeight, windowHeight]);
 
-    return {
+    // const returnObject = {
+    //     windowWidth: 523,
+    //     windowHeight: 878,
+    //     isExtraSmallScreenHeight: false,
+    //     isSmallScreenWidth: true,
+    //     isMediumScreenWidth: false,
+    //     isLargeScreenWidth: false,
+    //     isExtraSmallScreenWidth: false,
+    //     isSmallScreen: true,
+    // };
+
+    const returnObject = {
         windowWidth,
-        windowHeight: isCachedViewportHeight ? cachedViewportHeight : windowHeight,
+        windowHeight: isCachedViewportHeight ? windowHeight : windowHeight,
         isExtraSmallScreenHeight,
         isSmallScreenWidth,
         isMediumScreenWidth,
@@ -92,4 +117,10 @@ export default function (useCachedViewportHeight = false): WindowDimensions {
         isExtraSmallScreenWidth,
         isSmallScreen,
     };
+
+    if (xd && lastWindowDimensions.current && isFullscreen.current && !_.isEqual(returnObject, lastWindowDimensions.current)) {
+        return lastWindowDimensions.current;
+    }
+    update(returnObject);
+    return returnObject;
 }

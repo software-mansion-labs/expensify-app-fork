@@ -4,6 +4,8 @@ import {withOnyx} from 'react-native-onyx';
 import _ from 'underscore';
 import BlockingView from '@components/BlockingViews/BlockingView';
 import * as Illustrations from '@components/Icon/Illustrations';
+import {useFullScreenContext} from '@components/VideoPlayerContexts/FullScreenContext';
+import {usePlaybackContext} from '@components/VideoPlayerContexts/PlaybackContext';
 import withLocalize from '@components/withLocalize';
 import withWindowDimensions from '@components/withWindowDimensions';
 import useTheme from '@hooks/useTheme';
@@ -32,6 +34,7 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
     const theme = useTheme();
     const styles = useThemeStyles();
     const scrollRef = useRef(null);
+    const {isFullscreen} = useFullScreenContext();
 
     const canUseTouchScreen = DeviceCapabilities.canUseTouchScreen();
 
@@ -44,6 +47,10 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
     const compareImage = useCallback((attachment) => attachment.source === source, [source]);
 
     useEffect(() => {
+        if (isFullscreen.current) {
+            return;
+        }
+
         const parentReportAction = parentReportActions[report.parentReportActionID];
         const attachmentsFromReport = extractAttachmentsFromReport(parentReportAction, reportActions);
 
@@ -52,7 +59,6 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
         if (_.isEqual(attachments, attachmentsFromReport)) {
             return;
         }
-
         // Dismiss the modal when deleting an attachment during its display in preview.
         if (initialPage === -1 && _.find(attachments, compareImage)) {
             Navigation.dismissModal();
@@ -68,7 +74,7 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
                 onNavigate(attachmentsFromReport[initialPage]);
             }
         }
-    }, [attachments, reportActions, parentReportActions, compareImage, report.parentReportActionID, setDownloadButtonVisibility, onNavigate]);
+    }, [attachments, reportActions, parentReportActions, compareImage, report.parentReportActionID, setDownloadButtonVisibility, onNavigate, isFullscreen]);
 
     /**
      * Updates the page state when the user navigates between attachments
@@ -77,6 +83,10 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
      */
     const updatePage = useCallback(
         ({viewableItems}) => {
+            if (isFullscreen.current) {
+                return;
+            }
+
             Keyboard.dismiss();
 
             // Since we can have only one item in view at a time, we can use the first item in the array
@@ -92,7 +102,7 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
 
             onNavigate(entry.item);
         },
-        [onNavigate],
+        [isFullscreen, onNavigate],
     );
 
     /**
@@ -101,6 +111,9 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
      */
     const cycleThroughAttachments = useCallback(
         (deltaSlide) => {
+            if (isFullscreen.current) {
+                return;
+            }
             const nextIndex = page + deltaSlide;
             const nextItem = attachments[nextIndex];
 
@@ -110,7 +123,7 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
 
             scrollRef.current.scrollToIndex({index: nextIndex, animated: canUseTouchScreen});
         },
-        [attachments, canUseTouchScreen, page],
+        [attachments, canUseTouchScreen, isFullscreen, page],
     );
 
     /**
@@ -157,7 +170,12 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
     return (
         <View
             style={[styles.flex1, styles.attachmentCarouselContainer]}
-            onLayout={({nativeEvent}) => setContainerWidth(PixelRatio.roundToNearestPixel(nativeEvent.layout.width))}
+            onLayout={({nativeEvent}) => {
+                if (isFullscreen.current) {
+                    return;
+                }
+                setContainerWidth(PixelRatio.roundToNearestPixel(nativeEvent.layout.width));
+            }}
             onMouseEnter={() => !canUseTouchScreen && setShouldShowArrows(true)}
             onMouseLeave={() => !canUseTouchScreen && setShouldShowArrows(false)}
         >

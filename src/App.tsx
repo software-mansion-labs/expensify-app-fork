@@ -4,6 +4,7 @@ import {LogBox} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {PickerStateProvider} from 'react-native-picker-select';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {FullScreenContextProvider} from '@components/VideoPlayerContexts/FullScreenContext';
 import '../wdyr';
 import ActiveElementRoleProvider from './components/ActiveElementRoleProvider';
 import ActiveWorkspaceContextProvider from './components/ActiveWorkspace/ActiveWorkspaceProvider';
@@ -76,6 +77,7 @@ function App({url}: AppProps) {
                         ActiveElementRoleProvider,
                         ActiveWorkspaceContextProvider,
                         PlaybackContextProvider,
+                        FullScreenContextProvider,
                         VolumeContextProvider,
                         VideoPopoverMenuContextProvider,
                     ]}

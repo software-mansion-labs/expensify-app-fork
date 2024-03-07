@@ -6,6 +6,7 @@ import _ from 'underscore';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import Hoverable from '@components/Hoverable';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
+import {useFullScreenContext} from '@components/VideoPlayerContexts/FullScreenContext';
 import {usePlaybackContext} from '@components/VideoPlayerContexts/PlaybackContext';
 import VideoPopoverMenu from '@components/VideoPopoverMenu';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -44,6 +45,7 @@ function BaseVideoPlayer({
     const styles = useThemeStyles();
     const {pauseVideo, playVideo, currentlyPlayingURL, updateSharedElements, sharedElement, originalParent, shareVideoPlayerElements, currentVideoPlayerRef, updateCurrentlyPlayingURL} =
         usePlaybackContext();
+    const {isFullscreen} = useFullScreenContext();
     const [duration, setDuration] = useState(videoDuration * 1000);
     const [position, setPosition] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -120,21 +122,26 @@ function BaseVideoPlayer({
 
     const handleFullscreenUpdate = useCallback(
         (e) => {
+            if (e.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_DID_PRESENT) {
+                isFullscreen.current = true;
+            } else if (e.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_DID_DISMISS || e.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_DISMISS) {
+                setTimeout(() => {
+                    isFullscreen.current = false;
+                }, 1000);
+            }
+
             onFullscreenUpdate(e);
 
             // fix for iOS native and mWeb: when switching to fullscreen and then exiting
             // the fullscreen mode while playing, the video pauses
-            if (!isPlaying || e.fullscreenUpdate !== VideoFullscreenUpdate.PLAYER_DID_DISMISS) {
+            if (!isMobileSafari || e.fullscreenUpdate !== VideoFullscreenUpdate.PLAYER_DID_DISMISS) {
                 return;
             }
-
-            if (isMobileSafari) {
-                pauseVideo();
-            }
+            pauseVideo();
             playVideo();
             videoResumeTryNumber.current = 3;
         },
-        [isPlaying, onFullscreenUpdate, pauseVideo, playVideo],
+        [isFullscreen, onFullscreenUpdate, pauseVideo, playVideo],
     );
 
     const bindFunctions = useCallback(() => {
@@ -156,21 +163,21 @@ function BaseVideoPlayer({
         currentVideoPlayerRef.current = videoPlayerRef.current;
     }, [url, currentVideoPlayerRef, isUploading]);
 
-    useEffect(() => {
-        shouldUseSharedVideoElementRef.current = shouldUseSharedVideoElement;
-    }, [shouldUseSharedVideoElement]);
+    // useEffect(() => {
+    //     shouldUseSharedVideoElementRef.current = shouldUseSharedVideoElement;
+    // }, [shouldUseSharedVideoElement]);
 
-    useEffect(
-        () => () => {
-            if (shouldUseSharedVideoElementRef.current) {
-                return;
-            }
+    // useEffect(
+    //     () => () => {
+    //         if (shouldUseSharedVideoElementRef.current) {
+    //             return;
+    //         }
 
-            // If it's not a shared video player, clear the video player ref.
-            currentVideoPlayerRef.current = null;
-        },
-        [currentVideoPlayerRef],
-    );
+    //         // If it's not a shared video player, clear the video player ref.
+    //         currentVideoPlayerRef.current = null;
+    //     },
+    //     [currentVideoPlayerRef],
+    // );
 
     // update shared video elements
     useEffect(() => {
