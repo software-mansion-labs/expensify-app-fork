@@ -6,7 +6,6 @@ import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import TabSelector from '@components/TabSelector/TabSelector';
-import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
@@ -16,6 +15,7 @@ import CONST from '@src/CONST';
 import ShareActionHandlerModule from '@src/modules/ShareActionHandlerModule';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ScanTab from './ScanTab';
+import ShareTab from './ShareTab';
 
 type ShareRootPageOnyxProps = {
     selectedTab: OnyxEntry<string>;
@@ -84,7 +84,7 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
                         />
                     )}
                 >
-                    <TopTab.Screen name={CONST.TAB.SHARE}>{() => <Text>test</Text>}</TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SHARE}>{() => <ShareTab />}</TopTab.Screen>
                     <TopTab.Screen name={CONST.TAB.SCAN}>{() => <ScanTab />}</TopTab.Screen>
                 </OnyxTabNavigator>
             </View>

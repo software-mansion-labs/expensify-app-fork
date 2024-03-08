@@ -360,8 +360,8 @@ type CustomIcon = {
 };
 
 type OptionData = {
-    text?: string;
-    alternateText?: string | null;
+    text: string;
+    alternateText?: string;
     allReportErrors?: Errors;
     brickRoadIndicator?: ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | '' | null;
     tooltipText?: string | null;
@@ -369,7 +369,7 @@ type OptionData = {
     boldStyle?: boolean;
     customIcon?: CustomIcon;
     subtitle?: string | null;
-    login?: string | null;
+    login?: string;
     accountID?: number | null;
     pronouns?: string;
     status?: Status | null;
@@ -377,11 +377,11 @@ type OptionData = {
     isUnread?: boolean | null;
     isUnreadWithMention?: boolean | null;
     hasDraftComment?: boolean | null;
-    keyForList?: string | null;
+    keyForList: string;
     searchText?: string | null;
     isIOUReportOwner?: boolean | null;
     isArchivedRoom?: boolean | null;
-    shouldShowSubscript?: boolean | null;
+    shouldShowSubscript?: boolean;
     isPolicyExpenseChat?: boolean | null;
     isMoneyRequestReport?: boolean | null;
     isExpenseRequest?: boolean | null;
@@ -398,7 +398,7 @@ type OptionData = {
     isSelected?: boolean;
     descriptiveText?: string;
     notificationPreference?: NotificationPreference | null;
-    isDisabled?: boolean | null;
+    isDisabled?: boolean;
     name?: string | null;
 } & Report;
 

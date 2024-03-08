@@ -1,5 +1,6 @@
 import type {ReactElement, ReactNode} from 'react';
 import type {GestureResponderEvent, InputModeOptions, LayoutChangeEvent, SectionListData, StyleProp, TextStyle, ViewStyle} from 'react-native';
+import type {MaybePhraseKey} from '@libs/Localize';
 import type {Errors, Icon, PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {ReceiptErrors} from '@src/types/onyx/Transaction';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
@@ -170,7 +171,7 @@ type BaseSelectionListProps<TItem extends ListItem> = Partial<ChildrenProps> & {
     textInputPlaceholder?: string;
 
     /** Hint for the text input */
-    textInputHint?: string;
+    textInputHint?: MaybePhraseKey;
 
     /** Value for the text input */
     textInputValue?: string;

@@ -72,7 +72,7 @@ type PayeePersonalDetails = {
 };
 
 type CategorySection = {
-    title: string | undefined;
+    title?: string;
     shouldShow: boolean;
     indexOffset: number;
     data: Option[];
@@ -600,8 +600,8 @@ function createOption(
     {showChatPreviewLine = false, forcePolicyNamePreview = false}: PreviewConfig,
 ): ReportUtils.OptionData {
     const result: ReportUtils.OptionData = {
-        text: undefined,
-        alternateText: null,
+        text: '',
+        alternateText: '',
         pendingAction: undefined,
         allReportErrors: undefined,
         brickRoadIndicator: null,
@@ -611,11 +611,11 @@ function createOption(
         subtitle: null,
         participantsList: undefined,
         accountID: 0,
-        login: null,
+        login: undefined,
         reportID: '',
         phoneNumber: null,
         hasDraftComment: false,
-        keyForList: null,
+        keyForList: '',
         searchText: null,
         isDefaultRoom: false,
         isPinned: false,
