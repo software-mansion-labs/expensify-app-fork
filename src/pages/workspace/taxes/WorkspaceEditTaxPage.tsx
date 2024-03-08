@@ -35,7 +35,10 @@ function WorkspaceEditTaxPage({
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
     const toggle = () => {
-        setPolicyTaxesEnabled(policyID, [taxID], !!currentTaxRate?.isDisabled);
+        if (!currentTaxRate) {
+            return;
+        }
+        setPolicyTaxesEnabled(policyID, [taxID], !!currentTaxRate.isDisabled);
     };
 
     const deleteTax = () => {
