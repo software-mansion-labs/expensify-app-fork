@@ -154,7 +154,7 @@ export type {default as SetWorkspaceAutoReportingFrequencyParams} from './SetWor
 export type {default as SetWorkspaceAutoReportingMonthlyOffsetParams} from './SetWorkspaceAutoReportingMonthlyOffsetParams';
 export type {default as SetWorkspaceApprovalModeParams} from './SetWorkspaceApprovalModeParams';
 export type {default as SwitchToOldDotParams} from './SwitchToOldDotParams';
-export type {default as SetWorkspaceTaxesDisabledParams} from './SetWorkspaceTaxesDisabledParams';
+export type {default as SetPolicyTaxesEnabledParams} from './SetPolicyTaxesEnabledParams';
 export type {default as SetWorkspaceTaxesCurrencyDefaultParams} from './SetWorkspaceTaxesCurrencyDefaultParams';
 export type {default as SetWorkspaceForeignCurrencyDefaultParams} from './SetWorkspaceForeignCurrencyDefaultParams';
 export type {default as CreateWorkspaceTaxParams} from './CreateWorkspaceTaxParams';

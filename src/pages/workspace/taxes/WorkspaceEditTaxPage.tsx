@@ -16,7 +16,7 @@ import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
-import {deleteWorkspaceTaxes, setWorkspaceTaxesDisabled} from '@userActions/TaxRate';
+import {deleteWorkspaceTaxes, setPolicyTaxesEnabled} from '@userActions/TaxRate';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
@@ -35,14 +35,7 @@ function WorkspaceEditTaxPage({
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
     const toggle = () => {
-        setWorkspaceTaxesDisabled({
-            policyID,
-            taxesToUpdate: {
-                [taxID]: {
-                    isDisabled: !currentTaxRate?.isDisabled,
-                },
-            },
-        });
+        setPolicyTaxesEnabled(policyID, [taxID], !!currentTaxRate?.isDisabled);
     };
 
     const deleteTax = () => {

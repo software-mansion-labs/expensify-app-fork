@@ -5,9 +5,9 @@ import type {
     CreateWorkspaceTaxParams,
     DeleteWorkspaceTaxesParams,
     SetPolicyCustomTaxNameParams,
+    SetPolicyTaxesEnabledParams,
     SetWorkspaceForeignCurrencyDefaultParams,
     SetWorkspaceTaxesCurrencyDefaultParams,
-    SetWorkspaceTaxesDisabledParams,
 } from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
@@ -226,7 +226,7 @@ function setForeignCurrencyDefault({policyID, foreignTaxDefault}: SetWorkspaceFo
     API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_FOREIGN_CURRENCY_DEFAULT, parameters, onyxData);
 }
 
-function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesDisabledParams) {
+function setPolicyTaxesEnabled(policyID: string, taxesIDsToUpdate: string[], isEnabled: boolean) {
     const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
     const originalTaxes = {...policy?.taxRates?.taxes};
     const onyxData: OnyxData = {
@@ -236,8 +236,8 @@ function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesD
                 key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
                     taxRates: {
-                        taxes: Object.keys(taxesToUpdate).reduce((acc, taxID) => {
-                            acc[taxID] = {isDisabled: taxesToUpdate[taxID].isDisabled, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE};
+                        taxes: taxesIDsToUpdate.reduce((acc, taxID) => {
+                            acc[taxID] = {isDisabled: !isEnabled, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE};
                             return acc;
                         }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
                     },
@@ -250,8 +250,8 @@ function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesD
                 key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
                     taxRates: {
-                        taxes: Object.keys(taxesToUpdate).reduce((acc, taxID) => {
-                            acc[taxID] = {isDisabled: taxesToUpdate[taxID].isDisabled, pendingAction: null};
+                        taxes: taxesIDsToUpdate.reduce((acc, taxID) => {
+                            acc[taxID] = {isDisabled: !isEnabled, pendingAction: null};
                             return acc;
                         }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
                     },
@@ -264,10 +264,8 @@ function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesD
                 key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
                 value: {
                     taxRates: {
-                        taxes: Object.keys(originalTaxes).reduce((acc, taxID) => {
-                            if (taxesToUpdate[taxID]) {
-                                acc[taxID] = {isDisabled: !!originalTaxes[taxID].isDisabled, pendingAction: null};
-                            }
+                        taxes: taxesIDsToUpdate.reduce((acc, taxID) => {
+                            acc[taxID] = {isDisabled: !!originalTaxes[taxID].isDisabled, pendingAction: null};
                             return acc;
                         }, {} as Record<string, {isDisabled: boolean; pendingAction: PendingAction}>),
                     },
@@ -278,10 +276,10 @@ function setWorkspaceTaxesDisabled({policyID, taxesToUpdate}: SetWorkspaceTaxesD
 
     const parameters = {
         policyID,
-        taxesToUpdate,
-    };
+        taxFields: taxesIDsToUpdate.map((taxID) => ({taxCode: taxID, enabled: isEnabled})),
+    } satisfies SetPolicyTaxesEnabledParams;
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_TAXES_DISABLED, parameters, onyxData);
+    API.write(WRITE_COMMANDS.SET_POLIC_TAXES_ENABLED, parameters, onyxData);
 }
 
 function renamePolicyTax(policyID: string, taxID: string, newName: string) {
@@ -491,7 +489,7 @@ function deleteWorkspaceTaxes({policyID, taxesToDelete}: DeleteWorkspaceTaxesPar
 
 export {
     setWorkspaceCurrencyDefault,
-    setWorkspaceTaxesDisabled,
+    setPolicyTaxesEnabled,
     setForeignCurrencyDefault,
     createWorkspaceTax,
     renamePolicyTax,

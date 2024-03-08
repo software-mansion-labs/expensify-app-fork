@@ -156,7 +156,7 @@ const WRITE_COMMANDS = {
     CANCEL_PAYMENT: 'CancelPayment',
     ACCEPT_ACH_CONTRACT_FOR_BANK_ACCOUNT: 'AcceptACHContractForBankAccount',
     SWITCH_TO_OLD_DOT: 'SwitchToOldDot',
-    SET_WORKSPACE_TAXES_DISABLED: 'SetWorkspaceTaxesEnabled',
+    SET_POLIC_TAXES_ENABLED: 'SetWorkspaceTaxesEnabled',
     SET_WORKSPACE_TAXES_CURRENCY_DEFAULT: 'SetWorkspaceCurrencyDefault',
     SET_WORKSPACE_TAXES_FOREIGN_CURRENCY_DEFAULT: 'SetWorkspaceForeignCurrencyDefault',
     CREATE_WORKSPACE_TAX: 'CreateWorkspaceTax',
@@ -322,7 +322,7 @@ type WriteCommandParameters = {
     [WRITE_COMMANDS.SET_WORKSPACE_AUTO_REPORTING_MONTHLY_OFFSET]: Parameters.SetWorkspaceAutoReportingMonthlyOffsetParams;
     [WRITE_COMMANDS.SET_WORKSPACE_APPROVAL_MODE]: Parameters.SetWorkspaceApprovalModeParams;
     [WRITE_COMMANDS.SWITCH_TO_OLD_DOT]: Parameters.SwitchToOldDotParams;
-    [WRITE_COMMANDS.SET_WORKSPACE_TAXES_DISABLED]: Parameters.SetWorkspaceTaxesDisabledParams;
+    [WRITE_COMMANDS.SET_POLIC_TAXES_ENABLED]: Parameters.SetPolicyTaxesEnabledParams;
     [WRITE_COMMANDS.SET_WORKSPACE_TAXES_CURRENCY_DEFAULT]: Parameters.SetWorkspaceTaxesCurrencyDefaultParams;
     [WRITE_COMMANDS.SET_WORKSPACE_TAXES_FOREIGN_CURRENCY_DEFAULT]: Parameters.SetWorkspaceForeignCurrencyDefaultParams;
     [WRITE_COMMANDS.CREATE_WORKSPACE_TAX]: Parameters.CreateWorkspaceTaxParams;
