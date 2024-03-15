@@ -712,6 +712,7 @@ const CONST = {
             POLICY_ROOM: 'policyRoom',
             POLICY_EXPENSE_CHAT: 'policyExpenseChat',
             SELF_DM: 'selfDM',
+            POLICY_TRIP_ROOM: 'policyTripRoom',
         },
         WORKSPACE_CHAT_ROOMS: {
             ANNOUNCE: '#announce',

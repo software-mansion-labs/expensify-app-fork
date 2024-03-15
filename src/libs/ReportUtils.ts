@@ -687,6 +687,13 @@ function isOpenTaskReport(report: OnyxEntry<Report>, parentReportAction: OnyxEnt
 }
 
 /**
+ * Checks if a report is an trip room report.
+ */
+function isTripRoom(report: OnyxEntry<Report>): boolean {
+    return report?.type === CONST.REPORT.TYPE.CHAT && report.chatType === CONST.REPORT.CHAT_TYPE.POLICY_TRIP_ROOM;
+}
+
+/**
  * Checks if a report is a completed task report.
  */
 function isCompletedTaskReport(report: OnyxEntry<Report>): boolean {
@@ -5422,6 +5429,7 @@ export {
     isIOUReport,
     isTaskReport,
     isOpenTaskReport,
+    isTripRoom,
     isCanceledTaskReport,
     isCompletedTaskReport,
     isReportManager,
