@@ -32,6 +32,7 @@ import ROUTES from '@src/ROUTES';
 import type {Policy, Report, ReportAction, Transaction, TransactionViolations, UserWallet} from '@src/types/onyx';
 import type {PaymentMethodType} from '@src/types/onyx/OriginalMessage';
 import ReportActionItemImages from './ReportActionItemImages';
+import TripRoomPreview from './TripRoomPreview';
 
 type ReportPreviewOnyxProps = {
     /** The policy tied to the money request report */
@@ -103,6 +104,13 @@ function ReportPreview({
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {canUseViolations} = usePermissions();
+
+    // return (
+    //     <TripRoomPreview
+    //         action={action}
+    //         iouReportID={iouReportID}
+    //     />
+    // );
 
     const {hasMissingSmartscanFields, areAllRequestsBeingSmartScanned, hasOnlyTransactionsWithPendingRoutes, hasNonReimbursableTransactions} = useMemo(
         () => ({

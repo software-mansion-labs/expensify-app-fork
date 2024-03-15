@@ -576,6 +576,7 @@ const CONST = {
         ACTIONS: {
             LIMIT: 50,
             TYPE: {
+                ACTION_TRIPPREVIEW: 'ACTION_TRIPPREVIEW',
                 ADDCOMMENT: 'ADDCOMMENT',
                 ACTIONABLEJOINREQUEST: 'ACTIONABLEJOINREQUEST',
                 APPROVED: 'APPROVED',
