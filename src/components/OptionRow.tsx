@@ -32,6 +32,9 @@ type OptionRowProps = {
     /** Whether this option is currently in focus so we can modify its style */
     optionIsFocused?: boolean;
 
+    /** A function that is called when the option is focused e.g. by pressing tab */
+    onFocus?: () => void;
+
     /** A function that is called when an option is selected. Selected option is passed as a param */
     onSelectRow?: (option: OptionData, refElement: View | HTMLDivElement | null) => void | Promise<void>;
 
@@ -98,6 +101,7 @@ function OptionRow({
     shouldHaveOptionSeparator = false,
     showTitleTooltip = false,
     optionIsFocused = false,
+    onFocus = () => {},
     boldStyle = false,
     onSelectedStatePressed = () => {},
     backgroundColor,
@@ -105,6 +109,7 @@ function OptionRow({
     showSelectedState = false,
     shouldDisableRowInnerPadding = false,
     shouldPreventDefaultFocusOnSelectRow = false,
+    shouldSyncActiveElementWithIsFocused = false,
 }: OptionRowProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -153,6 +158,13 @@ function OptionRow({
         subscriptColor = focusedBackgroundColor;
     }
 
+    useEffect(() => {
+        console.log('OptionRow useEffect', optionIsFocused);
+        if (optionIsFocused && pressableRef.current && shouldSyncActiveElementWithIsFocused) {
+            pressableRef.current?.focus();
+        }
+    }, [optionIsFocused, shouldSyncActiveElementWithIsFocused]);
+
     return (
         <OfflineWithFeedback
             pendingAction={option.pendingAction}
@@ -163,6 +175,7 @@ function OptionRow({
             <Hoverable>
                 {(hovered) => (
                     <PressableWithFeedback
+                        onFocus={onFocus}
                         nativeID={keyForList}
                         ref={pressableRef}
                         onPress={(e) => {

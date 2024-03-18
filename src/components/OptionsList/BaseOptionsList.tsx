@@ -22,6 +22,7 @@ function BaseOptionsList(
         onScroll = () => {},
         listStyles,
         focusedIndex = 0,
+        updateFocusedIndex = () => {},
         selectedOptions = [],
         headerMessage = '',
         isLoading = false,
@@ -174,6 +175,7 @@ function BaseOptionsList(
 
             return option.name === item.searchText;
         });
+        console.log('should prevent default focus', shouldPreventDefaultFocusOnSelectRow);
 
         return (
             <OptionRow
@@ -182,6 +184,7 @@ function BaseOptionsList(
                 showTitleTooltip={showTitleTooltip}
                 hoverStyle={optionHoveredStyle}
                 optionIsFocused={!disableFocusOptions && !isItemDisabled && focusedIndex === index + section.indexOffset}
+                onFocus={() => updateFocusedIndex(index)}
                 onSelectRow={onSelectRow}
                 isSelected={isSelected}
                 showSelectedState={canSelectMultipleOptions}
@@ -195,6 +198,7 @@ function BaseOptionsList(
                 shouldDisableRowInnerPadding={shouldDisableRowInnerPadding}
                 shouldPreventDefaultFocusOnSelectRow={shouldPreventDefaultFocusOnSelectRow}
                 isMultilineSupported={isRowMultilineSupported}
+                shouldSyncActiveElementWithIsFocused
             />
         );
     };
