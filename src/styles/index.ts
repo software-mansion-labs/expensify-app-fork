@@ -1310,6 +1310,10 @@ const styles = (theme: ThemeColors) =>
             color: theme.textSupporting,
         },
 
+        lh14: {
+            lineHeight: 14,
+        },
+
         lh16: {
             lineHeight: 16,
         },
@@ -3461,6 +3465,12 @@ const styles = (theme: ThemeColors) =>
             zIndex: 1000,
         },
 
+        invisibleImage: {
+            opacity: 0,
+            width: 200,
+            height: 200,
+        },
+
         reportDropOverlay: {
             backgroundColor: theme.dropUIBG,
             zIndex: 2,
@@ -4699,6 +4709,19 @@ const styles = (theme: ThemeColors) =>
         workspaceTitleStyle: {
             ...headlineFont,
             fontSize: variables.fontSizeXLarge,
+        },
+
+        tripReservationIconContainer: {
+            width: 32,
+            height: 32,
+            backgroundColor: theme.overlay,
+            borderRadius: 32,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+
+        tripReserviationInfoContainer: {
+            gap: 2,
         },
     } satisfies Styles);
 
