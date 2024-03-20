@@ -5,6 +5,7 @@ import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import {InitialURLContext} from '@components/InitialURLContextProvider';
+import replaceOldWorkspaceUrlInExitToParam from '@libs/replaceOldWorkspaceUrlInExitToParam';
 import * as SessionUtils from '@libs/SessionUtils';
 import Navigation from '@navigation/Navigation';
 import type {AuthScreensParamList} from '@navigation/types';
@@ -63,7 +64,9 @@ function LogOutPreviousUserPage({session, route, isAccountLoading}: LogOutPrevio
             const shortLivedAuthToken = route.params.shortLivedAuthToken ?? '';
             SessionActions.signInWithShortLivedAuthToken(email, shortLivedAuthToken);
         }
-        const exitTo = route.params.exitTo as Route | null;
+
+        // Due to the change in workspace screens URLs in NewDot, the URL in the exitTo parameter must be replaced.
+        const exitTo = replaceOldWorkspaceUrlInExitToParam(route.params.exitTo as Route);
         // We don't want to navigate to the exitTo route when creating a new workspace from a deep link,
         // because we already handle creating the optimistic policy and navigating to it in App.setUpPoliciesAndNavigate,
         // which is already called when AuthScreens mounts.

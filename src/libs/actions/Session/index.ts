@@ -31,6 +31,7 @@ import * as MainQueue from '@libs/Network/MainQueue';
 import * as NetworkStore from '@libs/Network/NetworkStore';
 import NetworkConnection from '@libs/NetworkConnection';
 import * as Pusher from '@libs/Pusher/pusher';
+import replaceOldWorkspaceUrlInExitToParam from '@libs/replaceOldWorkspaceUrlInExitToParam';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as SessionUtils from '@libs/SessionUtils';
 import Timers from '@libs/Timers';
@@ -920,7 +921,8 @@ function handleExitToNavigation(exitTo: Route | HybridAppRoute) {
         waitForUserSignIn().then(() => {
             Navigation.waitForProtectedRoutes().then(() => {
                 const url = NativeModules.HybridAppModule ? Navigation.parseHybridAppUrl(exitTo) : (exitTo as Route);
-                Navigation.navigate(url);
+                // Due to the change in workspace screens URLs in NewDot, the URL in the exitTo parameter must be replaced.
+                Navigation.navigate(replaceOldWorkspaceUrlInExitToParam(url));
             });
         });
     });

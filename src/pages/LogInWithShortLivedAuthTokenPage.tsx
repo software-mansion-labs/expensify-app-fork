@@ -15,6 +15,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PublicScreensParamList} from '@libs/Navigation/types';
+import replaceOldWorkspaceUrlInExitToParam from '@libs/replaceOldWorkspaceUrlInExitToParam';
 import * as Session from '@userActions/Session';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -65,7 +66,8 @@ function LogInWithShortLivedAuthTokenPage({route, account}: LogInWithShortLivedA
         if (exitTo) {
             Navigation.isNavigationReady().then(() => {
                 const url = NativeModules.HybridAppModule ? Navigation.parseHybridAppUrl(exitTo) : (exitTo as Route);
-                Navigation.navigate(url);
+                // Due to the change in workspace screens URLs in NewDot, the URL in the exitTo parameter must be replaced.
+                Navigation.navigate(replaceOldWorkspaceUrlInExitToParam(url));
             });
         }
         // The only dependencies of the effect are based on props.route

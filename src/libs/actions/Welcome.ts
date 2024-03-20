@@ -2,10 +2,12 @@ import type {NavigationState} from '@react-navigation/native';
 import type {OnyxCollection} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import Navigation from '@libs/Navigation/Navigation';
+import replaceOldWorkspaceUrlInExitToParam from '@libs/replaceOldWorkspaceUrlInExitToParam';
 import * as ReportUtils from '@libs/ReportUtils';
 import type {RootStackParamList, State} from '@navigation/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import type OnyxPolicy from '@src/types/onyx/Policy';
@@ -137,7 +139,10 @@ function show(routes: State<RootStackParamList>['routes'] | undefined, showEngag
         const transitionRoute = routes?.find(
             (route): route is NavigationState<Pick<RootStackParamList, typeof SCREENS.TRANSITION_BETWEEN_APPS>>['routes'][number] => route.name === SCREENS.TRANSITION_BETWEEN_APPS,
         );
-        const isExitingToWorkspaceRoute = transitionRoute?.params?.exitTo === 'workspace/new';
+
+        // Due to the change in workspace screens URLs in NewDot, the URL in the exitTo parameter must be replaced.
+        const exitToParam = replaceOldWorkspaceUrlInExitToParam(transitionRoute?.params?.exitTo as Route);
+        const isExitingToWorkspaceRoute = exitToParam === ROUTES.WORKSPACE_NEW;
 
         // If we already opened the workspace settings or want the admin room to stay open, do not
         // navigate away to the workspace chat report

@@ -22,6 +22,7 @@ import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
 import Performance from '@libs/Performance';
+import replaceOldWorkspaceUrlInExitToParam from '@libs/replaceOldWorkspaceUrlInExitToParam';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as SessionUtils from '@libs/SessionUtils';
 import CONST from '@src/CONST';
@@ -373,7 +374,9 @@ function setUpPoliciesAndNavigate(session: OnyxEntry<OnyxTypes.Session>) {
 
     const isLoggingInAsNewUser = !!session.email && SessionUtils.isLoggingInAsNewUser(currentUrl, session.email);
     const url = new URL(currentUrl);
-    const exitTo = url.searchParams.get('exitTo') as Route | null;
+
+    // Due to the change in workspace screens URLs in NewDot, the URL in the exitTo parameter must be replaced.
+    const exitTo = replaceOldWorkspaceUrlInExitToParam(url.searchParams.get('exitTo') as Route);
 
     // Approved Accountants and Guides can enter a flow where they make a workspace for other users,
     // and those are passed as a search parameter when using transition links

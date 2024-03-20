@@ -57,6 +57,7 @@ import getPolicyMemberAccountIDs from '@libs/PolicyMembersUtils';
 import {extractPolicyIDFromPath} from '@libs/PolicyUtils';
 import processReportIDDeeplink from '@libs/processReportIDDeeplink';
 import * as Pusher from '@libs/Pusher/pusher';
+import replaceOldWorkspaceUrlInExitToParam from '@libs/replaceOldWorkspaceUrlInExitToParam';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import {doesReportBelongToWorkspace} from '@libs/ReportUtils';
@@ -2236,10 +2237,13 @@ function openReportFromDeepLink(url: string) {
                     return;
                 }
 
+                // Due to the change of url to workspace screens in NewDot, the url in the exitTo parameter must be replaced
+                const exitToRoute = replaceOldWorkspaceUrlInExitToParam(new URL(url).searchParams.get('exitTo') as Route);
+
                 // We don't want to navigate to the exitTo route when creating a new workspace from a deep link,
                 // because we already handle creating the optimistic policy and navigating to it in App.setUpPoliciesAndNavigate,
                 // which is already called when AuthScreens mounts.
-                if (new URL(url).searchParams.get('exitTo') === ROUTES.WORKSPACE_NEW) {
+                if (exitToRoute === ROUTES.WORKSPACE_NEW) {
                     return;
                 }
 
