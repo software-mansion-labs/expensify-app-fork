@@ -338,6 +338,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
                         [SCREENS.KEYBOARD_SHORTCUTS]: {
                             path: ROUTES.KEYBOARD_SHORTCUTS,
                         },
+                        [SCREENS.RIGHT_MODAL.TROUBLESHOT2]: {
+                            path: ROUTES.TROUBLESHORT_RHP,
+                        },
                         [SCREENS.WORKSPACE.NAME]: ROUTES.WORKSPACE_PROFILE_NAME.route,
                         [SCREENS.SETTINGS.SHARE_CODE]: {
                             path: ROUTES.SETTINGS_SHARE_CODE,

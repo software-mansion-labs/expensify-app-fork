@@ -162,6 +162,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
     }
 
     useEffect(() => {
+        const shortcutsTroubleshotShortcutConfig = CONST.KEYBOARD_SHORTCUTS.TROUBLESHOT;
         const shortcutsOverviewShortcutConfig = CONST.KEYBOARD_SHORTCUTS.SHORTCUTS;
         const searchShortcutConfig = CONST.KEYBOARD_SHORTCUTS.SEARCH;
         const chatShortcutConfig = CONST.KEYBOARD_SHORTCUTS.NEW_CHAT;
@@ -225,6 +226,22 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
             true,
         );
 
+        // Listen to keyboard shortcuts for opening certain pages
+        const unsubscribeShortcutsTroubleshotShortcut = KeyboardShortcut.subscribe(
+            shortcutsTroubleshotShortcutConfig.shortcutKey,
+            () => {
+                Modal.close(() => {
+                    if (Navigation.isActiveRoute(ROUTES.TROUBLESHORT_RHP)) {
+                        return;
+                    }
+                    return Navigation.navigate(ROUTES.TROUBLESHORT_RHP);
+                });
+            },
+            shortcutsTroubleshotShortcutConfig.descriptionKey,
+            shortcutsTroubleshotShortcutConfig.modifiers,
+            true,
+        );
+
         // Listen for the key K being pressed so that focus can be given to
         // the chat switcher, or new group chat
         // based on the key modifiers pressed and the operating system
@@ -250,6 +267,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
 
         return () => {
             unsubscribeShortcutsOverviewShortcut();
+            unsubscribeShortcutsTroubleshotShortcut();
             unsubscribeSearchShortcut();
             unsubscribeChatShortcut();
             Session.cleanupSession();

@@ -124,6 +124,7 @@ const SCREENS = {
         ROOM_INVITE: 'RoomInvite',
         REFERRAL: 'Referral',
         PROCESS_MONEY_REQUEST_HOLD: 'ProcessMoneyRequestHold',
+        TROUBLESHOT2: 'Troubleshoot2',
     },
     SIGN_IN_WITH_APPLE_DESKTOP: 'AppleSignInDesktop',
     SIGN_IN_WITH_GOOGLE_DESKTOP: 'GoogleSignInDesktop',

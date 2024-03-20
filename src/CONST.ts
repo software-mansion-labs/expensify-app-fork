@@ -409,6 +409,16 @@ const CONST = {
                 [PLATFORM_IOS]: {input: 'j', modifierFlags: keyModifierCommand},
             },
         },
+        TROUBLESHOT: {
+            descriptionKey: 'openTroubleshotDialog',
+            shortcutKey: 'U',
+            modifiers: ['CTRL'],
+            trigger: {
+                DEFAULT: {input: 'u', modifierFlags: keyModifierControl},
+                [PLATFORM_OS_MACOS]: {input: 'u', modifierFlags: keyModifierCommand},
+                [PLATFORM_IOS]: {input: 'u', modifierFlags: keyModifierCommand},
+            },
+        },
         ESCAPE: {
             descriptionKey: 'escape',
             shortcutKey: 'Escape',

@@ -171,6 +171,7 @@ const ROUTES = {
     },
 
     KEYBOARD_SHORTCUTS: 'keyboard-shortcuts',
+    TROUBLESHORT_RHP: 'troubleshot-rhp',
 
     NEW: 'new',
     NEW_CHAT: 'new/chat',
