@@ -9,8 +9,7 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@navigation/types';
-import AdminPolicyAccessOrNotFoundWrapper from '@pages/workspace/AdminPolicyAccessOrNotFoundWrapper';
-import PaidPolicyAccessOrNotFoundWrapper from '@pages/workspace/PaidPolicyAccessOrNotFoundWrapper';
+import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import * as Policy from '@userActions/Policy';
@@ -61,24 +60,22 @@ function WorkspaceMemberDetailsRoleSelectionPage({policyMembers, route}: Workspa
     };
 
     return (
-        <AdminPolicyAccessOrNotFoundWrapper policyID={policyID}>
-            <PaidPolicyAccessOrNotFoundWrapper policyID={policyID}>
-                <ScreenWrapper testID={WorkspaceMemberDetailsRoleSelectionPage.displayName}>
-                    <HeaderWithBackButton
-                        title={translate('common.role')}
-                        onBackButtonPress={() => Navigation.goBack(backTo)}
+        <AccessOrNotFoundWrapper policyID={policyID}>
+            <ScreenWrapper testID={WorkspaceMemberDetailsRoleSelectionPage.displayName}>
+                <HeaderWithBackButton
+                    title={translate('common.role')}
+                    onBackButtonPress={() => Navigation.goBack(backTo)}
+                />
+                <View style={[styles.containerWithSpaceBetween, styles.pointerEventsBoxNone]}>
+                    <SelectionList
+                        sections={[{data: items, indexOffset: 0}]}
+                        ListItem={RadioListItem}
+                        onSelectRow={changeRole}
+                        initiallyFocusedOptionKey={items.find((item) => item.isSelected)?.keyForList}
                     />
-                    <View style={[styles.containerWithSpaceBetween, styles.pointerEventsBoxNone]}>
-                        <SelectionList
-                            sections={[{data: items, indexOffset: 0}]}
-                            ListItem={RadioListItem}
-                            onSelectRow={changeRole}
-                            initiallyFocusedOptionKey={items.find((item) => item.isSelected)?.keyForList}
-                        />
-                    </View>
-                </ScreenWrapper>
-            </PaidPolicyAccessOrNotFoundWrapper>
-        </AdminPolicyAccessOrNotFoundWrapper>
+                </View>
+            </ScreenWrapper>
+        </AccessOrNotFoundWrapper>
     );
 }
 

@@ -14,8 +14,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import validateRateValue from '@libs/PolicyDistanceRatesUtils';
 import Navigation from '@navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@navigation/types';
-import AdminPolicyAccessOrNotFoundWrapper from '@pages/workspace/AdminPolicyAccessOrNotFoundWrapper';
-import PaidPolicyAccessOrNotFoundWrapper from '@pages/workspace/PaidPolicyAccessOrNotFoundWrapper';
+import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
 import {createPolicyDistanceRate, generateCustomUnitID} from '@userActions/Policy';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -58,37 +57,35 @@ function CreateDistanceRatePage({policy, route}: CreateDistanceRatePageProps) {
     };
 
     return (
-        <AdminPolicyAccessOrNotFoundWrapper policyID={route.params.policyID}>
-            <PaidPolicyAccessOrNotFoundWrapper policyID={route.params.policyID}>
-                <ScreenWrapper
-                    includeSafeAreaPaddingBottom={false}
-                    style={[styles.defaultModalContainer]}
-                    testID={CreateDistanceRatePage.displayName}
+        <AccessOrNotFoundWrapper policyID={route.params.policyID}>
+            <ScreenWrapper
+                includeSafeAreaPaddingBottom={false}
+                style={[styles.defaultModalContainer]}
+                testID={CreateDistanceRatePage.displayName}
+            >
+                <HeaderWithBackButton title={translate('workspace.distanceRates.addRate')} />
+                <FormProvider
+                    formID={ONYXKEYS.FORMS.POLICY_CREATE_DISTANCE_RATE_FORM}
+                    submitButtonText={translate('common.save')}
+                    onSubmit={submit}
+                    validate={validate}
+                    enabledWhenOffline
+                    style={[styles.flexGrow1]}
+                    shouldHideFixErrorsAlert
+                    submitFlexEnabled={false}
+                    submitButtonStyles={[styles.mh5, styles.mt0]}
                 >
-                    <HeaderWithBackButton title={translate('workspace.distanceRates.addRate')} />
-                    <FormProvider
-                        formID={ONYXKEYS.FORMS.POLICY_CREATE_DISTANCE_RATE_FORM}
-                        submitButtonText={translate('common.save')}
-                        onSubmit={submit}
-                        validate={validate}
-                        enabledWhenOffline
-                        style={[styles.flexGrow1]}
-                        shouldHideFixErrorsAlert
-                        submitFlexEnabled={false}
-                        submitButtonStyles={[styles.mh5, styles.mt0]}
-                    >
-                        <InputWrapperWithRef
-                            InputComponent={AmountForm}
-                            inputID={INPUT_IDS.RATE}
-                            extraDecimals={1}
-                            isCurrencyPressable={false}
-                            currency={currency}
-                            ref={inputCallbackRef}
-                        />
-                    </FormProvider>
-                </ScreenWrapper>
-            </PaidPolicyAccessOrNotFoundWrapper>
-        </AdminPolicyAccessOrNotFoundWrapper>
+                    <InputWrapperWithRef
+                        InputComponent={AmountForm}
+                        inputID={INPUT_IDS.RATE}
+                        extraDecimals={1}
+                        isCurrencyPressable={false}
+                        currency={currency}
+                        ref={inputCallbackRef}
+                    />
+                </FormProvider>
+            </ScreenWrapper>
+        </AccessOrNotFoundWrapper>
     );
 }
 
