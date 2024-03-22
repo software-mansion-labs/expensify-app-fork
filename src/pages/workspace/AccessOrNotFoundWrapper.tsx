@@ -10,6 +10,7 @@ import * as Policy from '@userActions/Policy';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
+import type {PolicyFeatureName} from '@src/types/onyx/Policy';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 const POLICY_ACCESS_VARIANTS = {
@@ -36,6 +37,9 @@ type AccessOrNotFoundWrapperProps = AccessOrNotFoundWrapperOnyxProps & {
 
     /** Defines which types of access should be verified */
     accessVariants?: PolicyAccessVariant[];
+
+    /** The current feature name that the user tries to get access */
+    featureName?: PolicyFeatureName;
 };
 
 function AccessOrNotFoundWrapper({accessVariants = ['ADMIN', 'PAID'], ...props}: AccessOrNotFoundWrapperProps) {
@@ -53,10 +57,12 @@ function AccessOrNotFoundWrapper({accessVariants = ['ADMIN', 'PAID'], ...props}:
 
     const shouldShowFullScreenLoadingIndicator = props.isLoadingReportData !== false && (!Object.entries(props.policy ?? {}).length || !props.policy?.id);
 
-    const pageUnaccessible = accessVariants.reduce((acc, variant) => {
-        const accessFunction = POLICY_ACCESS_VARIANTS[variant];
-        return acc || accessFunction(props.policy);
-    }, false);
+    const pageUnaccessible =
+        accessVariants.reduce((acc, variant) => {
+            const accessFunction = POLICY_ACCESS_VARIANTS[variant];
+            return acc || accessFunction(props.policy);
+        }, false) || !PolicyUtils.isPolicyFeatureEnabled(props.policy, props.featureName);
+
     const shouldShowNotFoundPage = isEmptyObject(props.policy) || !props.policy?.id || pageUnaccessible;
 
     if (shouldShowFullScreenLoadingIndicator) {
