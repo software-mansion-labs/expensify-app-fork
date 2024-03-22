@@ -11,7 +11,6 @@ import {setForeignCurrencyDefault} from '@libs/actions/Policy';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
-import FeatureEnabledAccessOrNotFoundWrapper from '@pages/workspace/FeatureEnabledAccessOrNotFoundWrapper';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import withPolicyAndFullscreenLoading from '@pages/workspace/withPolicyAndFullscreenLoading';
 import CONST from '@src/CONST';
@@ -36,33 +35,31 @@ function WorkspaceTaxesSettingsForeignCurrency({
     };
 
     return (
-        <AccessOrNotFoundWrapper policyID={policyID}>
-            <FeatureEnabledAccessOrNotFoundWrapper
-                policyID={policyID}
-                featureName={CONST.POLICY.MORE_FEATURES.ARE_TAXES_ENABLED}
+        <AccessOrNotFoundWrapper
+            policyID={policyID}
+            featureName={CONST.POLICY.MORE_FEATURES.ARE_TAXES_ENABLED}
+        >
+            <ScreenWrapper
+                includeSafeAreaPaddingBottom={false}
+                shouldEnableMaxHeight
+                testID={WorkspaceTaxesSettingsForeignCurrency.displayName}
+                style={styles.defaultModalContainer}
             >
-                <ScreenWrapper
-                    includeSafeAreaPaddingBottom={false}
-                    shouldEnableMaxHeight
-                    testID={WorkspaceTaxesSettingsForeignCurrency.displayName}
-                    style={styles.defaultModalContainer}
-                >
-                    {({insets}) => (
-                        <>
-                            <HeaderWithBackButton title={translate('workspace.taxes.foreignDefault')} />
+                {({insets}) => (
+                    <>
+                        <HeaderWithBackButton title={translate('workspace.taxes.foreignDefault')} />
 
-                            <View style={[styles.mb4, styles.flex1]}>
-                                <TaxPicker
-                                    selectedTaxRate={policy?.taxRates?.foreignTaxDefault}
-                                    taxRates={policy?.taxRates}
-                                    insets={insets}
-                                    onSubmit={submit}
-                                />
-                            </View>
-                        </>
-                    )}
-                </ScreenWrapper>
-            </FeatureEnabledAccessOrNotFoundWrapper>
+                        <View style={[styles.mb4, styles.flex1]}>
+                            <TaxPicker
+                                selectedTaxRate={policy?.taxRates?.foreignTaxDefault}
+                                taxRates={policy?.taxRates}
+                                insets={insets}
+                                onSubmit={submit}
+                            />
+                        </View>
+                    </>
+                )}
+            </ScreenWrapper>
         </AccessOrNotFoundWrapper>
     );
 }

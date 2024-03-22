@@ -11,7 +11,6 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
-import FeatureEnabledAccessOrNotFoundWrapper from '@pages/workspace/FeatureEnabledAccessOrNotFoundWrapper';
 import * as Policy from '@userActions/Policy';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -54,48 +53,46 @@ function PolicyDistanceRatesSettingsPage({policy, route}: PolicyDistanceRatesSet
     };
 
     return (
-        <AccessOrNotFoundWrapper policyID={route.params.policyID}>
-            <FeatureEnabledAccessOrNotFoundWrapper
-                policyID={route.params.policyID}
-                featureName={CONST.POLICY.MORE_FEATURES.ARE_DISTANCE_RATES_ENABLED}
+        <AccessOrNotFoundWrapper
+            policyID={route.params.policyID}
+            featureName={CONST.POLICY.MORE_FEATURES.ARE_DISTANCE_RATES_ENABLED}
+        >
+            <ScreenWrapper
+                includeSafeAreaPaddingBottom={false}
+                style={[styles.defaultModalContainer]}
+                testID={PolicyDistanceRatesSettingsPage.displayName}
             >
-                <ScreenWrapper
-                    includeSafeAreaPaddingBottom={false}
-                    style={[styles.defaultModalContainer]}
-                    testID={PolicyDistanceRatesSettingsPage.displayName}
+                <HeaderWithBackButton title={translate('workspace.common.settings')} />
+                <OfflineWithFeedback
+                    errors={errorFields?.attributes}
+                    pendingAction={customUnits[customUnitID].pendingFields?.attributes}
+                    errorRowStyles={styles.mh5}
+                    onClose={() => clearErrorFields('attributes')}
                 >
-                    <HeaderWithBackButton title={translate('workspace.common.settings')} />
+                    <UnitSelector
+                        label={translate('workspace.distanceRates.unit')}
+                        defaultValue={defaultUnit}
+                        wrapperStyle={[styles.ph5, styles.mt3]}
+                        setNewUnit={setNewUnit}
+                    />
+                </OfflineWithFeedback>
+                {policy?.areCategoriesEnabled && (
                     <OfflineWithFeedback
-                        errors={errorFields?.attributes}
-                        pendingAction={customUnits[customUnitID].pendingFields?.attributes}
+                        errors={errorFields?.defaultCategory}
+                        pendingAction={customUnits[customUnitID].pendingFields?.defaultCategory}
                         errorRowStyles={styles.mh5}
-                        onClose={() => clearErrorFields('attributes')}
+                        onClose={() => clearErrorFields('defaultCategory')}
                     >
-                        <UnitSelector
-                            label={translate('workspace.distanceRates.unit')}
-                            defaultValue={defaultUnit}
+                        <CategorySelector
+                            policyID={policyID}
+                            label={translate('workspace.distanceRates.defaultCategory')}
+                            defaultValue={defaultCategory}
                             wrapperStyle={[styles.ph5, styles.mt3]}
-                            setNewUnit={setNewUnit}
+                            setNewCategory={setNewCategory}
                         />
                     </OfflineWithFeedback>
-                    {policy?.areCategoriesEnabled && (
-                        <OfflineWithFeedback
-                            errors={errorFields?.defaultCategory}
-                            pendingAction={customUnits[customUnitID].pendingFields?.defaultCategory}
-                            errorRowStyles={styles.mh5}
-                            onClose={() => clearErrorFields('defaultCategory')}
-                        >
-                            <CategorySelector
-                                policyID={policyID}
-                                label={translate('workspace.distanceRates.defaultCategory')}
-                                defaultValue={defaultCategory}
-                                wrapperStyle={[styles.ph5, styles.mt3]}
-                                setNewCategory={setNewCategory}
-                            />
-                        </OfflineWithFeedback>
-                    )}
-                </ScreenWrapper>
-            </FeatureEnabledAccessOrNotFoundWrapper>
+                )}
+            </ScreenWrapper>
         </AccessOrNotFoundWrapper>
     );
 }

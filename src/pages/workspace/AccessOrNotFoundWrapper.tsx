@@ -2,6 +2,7 @@
 import React, {useEffect} from 'react';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
+import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import FullscreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import Navigation from '@libs/Navigation/Navigation';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -42,6 +43,20 @@ type AccessOrNotFoundWrapperProps = AccessOrNotFoundWrapperOnyxProps & {
     featureName?: PolicyFeatureName;
 };
 
+type PageNotFoundFallackProps = Pick<AccessOrNotFoundWrapperProps, 'policyID'> & {showFullScreenFallback: boolean};
+
+function PageNotFoundFallback({policyID, showFullScreenFallback}: PageNotFoundFallackProps) {
+    return showFullScreenFallback ? (
+        <FullPageNotFoundView
+            shouldShow
+            onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WORKSPACES)}
+            shouldForceFullScreen
+        />
+    ) : (
+        <NotFoundPage onBackButtonPress={() => Navigation.goBack(ROUTES.WORKSPACE_PROFILE.getRoute(policyID))} />
+    );
+}
+
 function AccessOrNotFoundWrapper({accessVariants = ['ADMIN', 'PAID'], ...props}: AccessOrNotFoundWrapperProps) {
     const isPolicyIDInRoute = !!props.policyID?.length;
 
@@ -57,20 +72,25 @@ function AccessOrNotFoundWrapper({accessVariants = ['ADMIN', 'PAID'], ...props}:
 
     const shouldShowFullScreenLoadingIndicator = props.isLoadingReportData !== false && (!Object.entries(props.policy ?? {}).length || !props.policy?.id);
 
-    const pageUnaccessible =
-        accessVariants.reduce((acc, variant) => {
-            const accessFunction = POLICY_ACCESS_VARIANTS[variant];
-            return acc || accessFunction(props.policy);
-        }, false) || !PolicyUtils.isPolicyFeatureEnabled(props.policy, props.featureName);
+    const isFeatureEnabled = props.featureName ? PolicyUtils.isPolicyFeatureEnabled(props.policy, props.featureName) : true;
+    const pageUnaccessible = accessVariants.reduce((acc, variant) => {
+        const accessFunction = POLICY_ACCESS_VARIANTS[variant];
+        return acc || accessFunction(props.policy);
+    }, false);
 
-    const shouldShowNotFoundPage = isEmptyObject(props.policy) || !props.policy?.id || pageUnaccessible;
+    const shouldShowNotFoundPage = isEmptyObject(props.policy) || !props.policy?.id || pageUnaccessible || !isFeatureEnabled;
 
     if (shouldShowFullScreenLoadingIndicator) {
         return <FullscreenLoadingIndicator />;
     }
 
     if (shouldShowNotFoundPage) {
-        return <NotFoundPage onBackButtonPress={() => Navigation.goBack(ROUTES.WORKSPACE_PROFILE.getRoute(props.policyID))} />;
+        return (
+            <PageNotFoundFallback
+                policyID={props.policyID}
+                showFullScreenFallback={!isFeatureEnabled}
+            />
+        );
     }
 
     return typeof props.children === 'function' ? props.children(props) : props.children;

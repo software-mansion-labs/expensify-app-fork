@@ -11,7 +11,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {setWorkspaceRequiresCategory} from '@libs/actions/Policy';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
-import FeatureEnabledAccessOrNotFoundWrapper from '@pages/workspace/FeatureEnabledAccessOrNotFoundWrapper';
 import CONST from '@src/CONST';
 import type SCREENS from '@src/SCREENS';
 
@@ -26,40 +25,38 @@ function WorkspaceCategoriesSettingsPage({route}: WorkspaceCategoriesSettingsPag
     };
 
     return (
-        <AccessOrNotFoundWrapper policyID={route.params.policyID}>
-            <FeatureEnabledAccessOrNotFoundWrapper
-                policyID={route.params.policyID}
-                featureName={CONST.POLICY.MORE_FEATURES.ARE_CATEGORIES_ENABLED}
-            >
-                {({policy}) => (
-                    <ScreenWrapper
-                        includeSafeAreaPaddingBottom={false}
-                        style={[styles.defaultModalContainer]}
-                        testID={WorkspaceCategoriesSettingsPage.displayName}
-                    >
-                        <HeaderWithBackButton title={translate('common.settings')} />
-                        <View style={styles.flexGrow1}>
-                            <OfflineWithFeedback
-                                errors={policy?.errorFields?.requiresCategory}
-                                pendingAction={policy?.pendingFields?.requiresCategory}
-                                errorRowStyles={styles.mh5}
-                            >
-                                <View style={[styles.mt2, styles.mh4]}>
-                                    <View style={[styles.flexRow, styles.mb5, styles.mr2, styles.alignItemsCenter, styles.justifyContentBetween]}>
-                                        <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.categories.requiresCategory')}</Text>
-                                        <Switch
-                                            isOn={policy?.requiresCategory ?? false}
-                                            accessibilityLabel={translate('workspace.categories.requiresCategory')}
-                                            onToggle={updateWorkspaceRequiresCategory}
-                                            disabled={!policy?.areCategoriesEnabled}
-                                        />
-                                    </View>
+        <AccessOrNotFoundWrapper
+            policyID={route.params.policyID}
+            featureName={CONST.POLICY.MORE_FEATURES.ARE_CATEGORIES_ENABLED}
+        >
+            {({policy}) => (
+                <ScreenWrapper
+                    includeSafeAreaPaddingBottom={false}
+                    style={[styles.defaultModalContainer]}
+                    testID={WorkspaceCategoriesSettingsPage.displayName}
+                >
+                    <HeaderWithBackButton title={translate('common.settings')} />
+                    <View style={styles.flexGrow1}>
+                        <OfflineWithFeedback
+                            errors={policy?.errorFields?.requiresCategory}
+                            pendingAction={policy?.pendingFields?.requiresCategory}
+                            errorRowStyles={styles.mh5}
+                        >
+                            <View style={[styles.mt2, styles.mh4]}>
+                                <View style={[styles.flexRow, styles.mb5, styles.mr2, styles.alignItemsCenter, styles.justifyContentBetween]}>
+                                    <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.categories.requiresCategory')}</Text>
+                                    <Switch
+                                        isOn={policy?.requiresCategory ?? false}
+                                        accessibilityLabel={translate('workspace.categories.requiresCategory')}
+                                        onToggle={updateWorkspaceRequiresCategory}
+                                        disabled={!policy?.areCategoriesEnabled}
+                                    />
                                 </View>
-                            </OfflineWithFeedback>
-                        </View>
-                    </ScreenWrapper>
-                )}
-            </FeatureEnabledAccessOrNotFoundWrapper>
+                            </View>
+                        </OfflineWithFeedback>
+                    </View>
+                </ScreenWrapper>
+            )}
         </AccessOrNotFoundWrapper>
     );
 }
