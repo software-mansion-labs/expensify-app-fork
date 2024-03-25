@@ -161,12 +161,13 @@ function Composer(
         (event: ClipboardEvent) => {
             const isVisible = checkComposerVisibility();
             const isFocused = textInput.current?.isFocused();
+            const isContenteditableDivFocused = document.activeElement?.nodeName === 'DIV' && document.activeElement?.hasAttribute('contenteditable');
 
             if (!(isVisible || isFocused)) {
                 return true;
             }
 
-            if (textInput.current !== event.target && !(document.activeElement?.nodeName === 'DIV' && document.activeElement?.hasAttribute('contenteditable'))) {
+            if (textInput.current !== event.target && !(isContenteditableDivFocused && !event.clipboardData?.files.length)) {
                 const eventTarget = event.target as HTMLInputElement | HTMLTextAreaElement | null;
 
                 // To make sure the composer does not capture paste events from other inputs, we check where the event originated
