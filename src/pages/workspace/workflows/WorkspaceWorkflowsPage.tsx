@@ -265,7 +265,6 @@ function WorkspaceWorkflowsPage({policy, betas, route, reimbursementAccount, ses
 
     return (
         <AccessOrNotFoundWrapper
-            accessVariants={[]}
             policyID={route.params.policyID}
             featureName={CONST.POLICY.MORE_FEATURES.ARE_WORKFLOWS_ENABLED}
         >

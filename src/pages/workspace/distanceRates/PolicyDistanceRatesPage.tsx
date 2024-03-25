@@ -235,6 +235,7 @@ function PolicyDistanceRatesPage({policy, route}: PolicyDistanceRatesPageProps) 
 
     return (
         <AccessOrNotFoundWrapper
+            accessVariants={['ADMIN', 'PAID']}
             policyID={policyID}
             featureName={CONST.POLICY.MORE_FEATURES.ARE_DISTANCE_RATES_ENABLED}
         >

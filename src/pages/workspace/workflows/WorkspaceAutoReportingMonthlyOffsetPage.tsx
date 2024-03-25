@@ -73,7 +73,6 @@ function WorkspaceAutoReportingMonthlyOffsetPage({policy, route}: WorkspaceAutoR
 
     return (
         <AccessOrNotFoundWrapper
-            accessVariants={[]}
             policyID={route.params.policyID}
             featureName={CONST.POLICY.MORE_FEATURES.ARE_WORKFLOWS_ENABLED}
         >

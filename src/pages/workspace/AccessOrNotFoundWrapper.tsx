@@ -57,7 +57,7 @@ function PageNotFoundFallback({policyID, showFullScreenFallback}: PageNotFoundFa
     );
 }
 
-function AccessOrNotFoundWrapper({accessVariants = ['ADMIN', 'PAID'], ...props}: AccessOrNotFoundWrapperProps) {
+function AccessOrNotFoundWrapper({accessVariants = [], ...props}: AccessOrNotFoundWrapperProps) {
     const isPolicyIDInRoute = !!props.policyID?.length;
 
     useEffect(() => {

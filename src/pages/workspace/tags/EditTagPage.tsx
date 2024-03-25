@@ -64,6 +64,7 @@ function EditTagPage({route, policyTags}: EditTagPageProps) {
 
     return (
         <AccessOrNotFoundWrapper
+            accessVariants={['ADMIN', 'PAID']}
             policyID={route.params.policyID}
             featureName={CONST.POLICY.MORE_FEATURES.ARE_TAGS_ENABLED}
         >
