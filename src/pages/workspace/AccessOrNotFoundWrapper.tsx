@@ -40,7 +40,7 @@ type AccessOrNotFoundWrapperProps = AccessOrNotFoundWrapperOnyxProps & {
     /** Defines which types of access should be verified */
     accessVariants?: PolicyAccessVariant[];
 
-    /** The current feature name that the user tries to get access */
+    /** The current feature name that the user tries to get access to */
     featureName?: PolicyFeatureName;
 };
 
@@ -59,27 +59,29 @@ function PageNotFoundFallback({policyID, showFullScreenFallback}: PageNotFoundFa
 }
 
 function AccessOrNotFoundWrapper({accessVariants = [], ...props}: AccessOrNotFoundWrapperProps) {
-    const isPolicyIDInRoute = !!props.policyID?.length;
+    const {policy, policyID, featureName, isLoadingReportData} = props;
+
+    const isPolicyIDInRoute = !!policyID?.length;
 
     useEffect(() => {
-        if (!isPolicyIDInRoute || !isEmptyObject(props.policy)) {
+        if (!isPolicyIDInRoute || !isEmptyObject(policy)) {
             // If the workspace is not required or is already loaded, we don't need to call the API
             return;
         }
 
-        Policy.openWorkspace(props.policyID, []);
+        Policy.openWorkspace(policyID, []);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isPolicyIDInRoute, props.policyID]);
+    }, [isPolicyIDInRoute, policyID]);
 
-    const shouldShowFullScreenLoadingIndicator = props.isLoadingReportData !== false && (!Object.entries(props.policy ?? {}).length || !props.policy?.id);
+    const shouldShowFullScreenLoadingIndicator = isLoadingReportData !== false && (!Object.entries(policy ?? {}).length || !policy?.id);
 
-    const isFeatureEnabled = props.featureName ? PolicyUtils.isPolicyFeatureEnabled(props.policy, props.featureName) : true;
+    const isFeatureEnabled = featureName ? PolicyUtils.isPolicyFeatureEnabled(policy, featureName) : true;
     const pageUnaccessible = accessVariants.reduce((acc, variant) => {
         const accessFunction = POLICY_ACCESS_VARIANTS[variant];
-        return acc || accessFunction(props.policy);
+        return acc || accessFunction(policy);
     }, false);
 
-    const shouldShowNotFoundPage = isEmptyObject(props.policy) || !props.policy?.id || pageUnaccessible || !isFeatureEnabled;
+    const shouldShowNotFoundPage = isEmptyObject(policy) || (Object.keys(policy).length === 1 && !isEmptyObject(policy.errors)) || !policy?.id || pageUnaccessible || !isFeatureEnabled;
 
     if (shouldShowFullScreenLoadingIndicator) {
         return <FullscreenLoadingIndicator />;
@@ -88,7 +90,7 @@ function AccessOrNotFoundWrapper({accessVariants = [], ...props}: AccessOrNotFou
     if (shouldShowNotFoundPage) {
         return (
             <PageNotFoundFallback
-                policyID={props.policyID}
+                policyID={policyID}
                 showFullScreenFallback={!isFeatureEnabled}
             />
         );
