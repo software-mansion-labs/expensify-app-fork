@@ -12,6 +12,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
 import type {PolicyFeatureName} from '@src/types/onyx/Policy';
+import callOrReturn from '@src/types/utils/callOrReturn';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 const POLICY_ACCESS_VARIANTS = {
@@ -93,7 +94,7 @@ function AccessOrNotFoundWrapper({accessVariants = [], ...props}: AccessOrNotFou
         );
     }
 
-    return typeof props.children === 'function' ? props.children(props) : props.children;
+    return callOrReturn(props.children, props);
 }
 
 export default withOnyx<AccessOrNotFoundWrapperProps, AccessOrNotFoundWrapperOnyxProps>({
