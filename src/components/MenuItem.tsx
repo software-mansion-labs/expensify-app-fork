@@ -1,7 +1,7 @@
 import ExpensiMark from 'expensify-common/lib/ExpensiMark';
 import type {ImageContentFit} from 'expo-image';
 import type {ForwardedRef, ReactNode} from 'react';
-import React, {forwardRef, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {forwardRef, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import type {GestureResponderEvent, StyleProp, TextStyle, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import type {AnimatedStyle} from 'react-native-reanimated';
@@ -246,6 +246,8 @@ type MenuItemBaseProps = {
 
     /** Adds padding to the left of the text when there is no icon. */
     shouldPutLeftPaddingWhenNoIcon?: boolean;
+
+    onFocus: () => void;
 };
 
 type MenuItemProps = (IconProps | AvatarProps | NoIcon) & MenuItemBaseProps;
@@ -317,6 +319,7 @@ function MenuItem(
         contentFit = 'cover',
         isPaneMenu = false,
         shouldPutLeftPaddingWhenNoIcon = false,
+        onFocus,
     }: MenuItemProps,
     ref: ForwardedRef<View>,
 ) {
@@ -415,6 +418,14 @@ function MenuItem(
         }
     };
 
+    useLayoutEffect(() => {
+        if (!focused) {
+            return;
+        }
+        
+        ref?.current?.focus();
+    }, [focused]);
+
     return (
         <View>
             {!!label && !isLabelHoverable && (
@@ -447,6 +458,7 @@ function MenuItem(
                         role={CONST.ROLE.MENUITEM}
                         accessibilityLabel={title ? title.toString() : ''}
                         accessible
+                        onFocus={onFocus}
                     >
                         {({pressed}) => (
                             <>

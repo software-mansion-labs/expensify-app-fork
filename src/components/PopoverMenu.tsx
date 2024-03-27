@@ -192,31 +192,37 @@ function PopoverMenu({
             <View style={isSmallScreenWidth ? {} : styles.createMenuContainer}>
                 {!!headerText && <Text style={[styles.createMenuHeaderText, styles.ml3]}>{headerText}</Text>}
                 {enteredSubMenuIndexes.length > 0 && renderBackButtonItem()}
-                {currentMenuItems.map((item, menuIndex) => (
-                    <MenuItem
-                        key={item.text}
-                        icon={item.icon}
-                        iconWidth={item.iconWidth}
-                        iconHeight={item.iconHeight}
-                        iconFill={item.iconFill}
-                        contentFit={item.contentFit}
-                        title={item.text}
-                        shouldCheckActionAllowedOnPress={false}
-                        description={item.description}
-                        numberOfLinesDescription={item.numberOfLinesDescription}
-                        onPress={() => selectItem(menuIndex)}
-                        focused={focusedIndex === menuIndex}
-                        displayInDefaultIconColor={item.displayInDefaultIconColor}
-                        shouldShowRightIcon={item.shouldShowRightIcon}
-                        shouldPutLeftPaddingWhenNoIcon={item.shouldPutLeftPaddingWhenNoIcon}
-                        label={item.label}
-                        isLabelHoverable={item.isLabelHoverable}
-                        floatRightAvatars={item.floatRightAvatars}
-                        floatRightAvatarSize={item.floatRightAvatarSize}
-                        shouldShowSubscriptRightAvatar={item.shouldShowSubscriptRightAvatar}
-                        disabled={item.disabled}
-                    />
-                ))}
+                {currentMenuItems.map((item, menuIndex) => {
+                    const pressableRef = useRef<View>(null);
+
+                    return (
+                        <MenuItem
+                            ref={pressableRef}
+                            key={item.text}
+                            icon={item.icon}
+                            iconWidth={item.iconWidth}
+                            iconHeight={item.iconHeight}
+                            iconFill={item.iconFill}
+                            contentFit={item.contentFit}
+                            title={item.text}
+                            shouldCheckActionAllowedOnPress={false}
+                            description={item.description}
+                            numberOfLinesDescription={item.numberOfLinesDescription}
+                            onPress={() => selectItem(menuIndex)}
+                            focused={focusedIndex === menuIndex}
+                            displayInDefaultIconColor={item.displayInDefaultIconColor}
+                            shouldShowRightIcon={item.shouldShowRightIcon}
+                            shouldPutLeftPaddingWhenNoIcon={item.shouldPutLeftPaddingWhenNoIcon}
+                            label={item.label}
+                            isLabelHoverable={item.isLabelHoverable}
+                            floatRightAvatars={item.floatRightAvatars}
+                            floatRightAvatarSize={item.floatRightAvatarSize}
+                            shouldShowSubscriptRightAvatar={item.shouldShowSubscriptRightAvatar}
+                            disabled={item.disabled}
+                            onFocus={() => setFocusedIndex(menuIndex)}
+                        />
+                    );
+                })}
             </View>
         </PopoverWithMeasuredContent>
     );
