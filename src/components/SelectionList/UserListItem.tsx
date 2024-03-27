@@ -24,6 +24,7 @@ function UserListItem({
     shouldPreventDefaultFocusOnSelectRow,
     rightHandSideComponent,
     checkmarkPosition,
+    onFocus,
 }: UserListItemProps) {
     const styles = useThemeStyles();
     const theme = useTheme();
@@ -51,6 +52,7 @@ function UserListItem({
             checkmarkPosition={checkmarkPosition}
             errors={item.errors}
             pendingAction={item.pendingAction}
+            onFocus={onFocus}
             FooterComponent={
                 item.invitedSecondaryLogin ? (
                     <Text style={[styles.ml9, styles.ph5, styles.pb3, styles.textLabelSupporting]}>

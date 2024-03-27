@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useLayoutEffect, useRef} from 'react';
 import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
@@ -31,11 +31,15 @@ function BaseListItem<TItem extends ListItem>({
     pendingAction,
     FooterComponent,
     children,
+    isFocused,
+    onFocus = () => {},
 }: BaseListItemProps<TItem>) {
     const theme = useTheme();
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {hovered, bind} = useHover();
+
+    const pressableRef = useRef<View | HTMLDivElement>(null);
 
     const rightHandSideComponentRender = () => {
         if (canSelectMultiple || !rightHandSideComponent) {
@@ -57,6 +61,14 @@ function BaseListItem<TItem extends ListItem>({
         }
     };
 
+    useLayoutEffect(() => {
+        if (!isFocused) {
+            return;
+        }
+
+        pressableRef.current?.focus();
+    }, [isFocused]);
+
     return (
         <OfflineWithFeedback
             onClose={() => onDismissError(item)}
@@ -68,6 +80,7 @@ function BaseListItem<TItem extends ListItem>({
             <PressableWithFeedback
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...bind}
+                ref={pressableRef}
                 onPress={() => onSelectRow(item)}
                 disabled={isDisabled}
                 accessibilityLabel={item.text ?? ''}
@@ -78,6 +91,7 @@ function BaseListItem<TItem extends ListItem>({
                 onMouseDown={shouldPreventDefaultFocusOnSelectRow ? (e) => e.preventDefault() : undefined}
                 nativeID={keyForList ?? ''}
                 style={pressableStyle}
+                onFocus={onFocus}
             >
                 <View style={wrapperStyle}>
                     {canSelectMultiple && checkmarkPosition === CONST.DIRECTION.LEFT && (
