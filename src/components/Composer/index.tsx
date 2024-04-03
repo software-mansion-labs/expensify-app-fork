@@ -242,6 +242,7 @@ function Composer(
             return;
         }
         // we reset the height to 0 to get the correct scrollHeight
+        const textInputHeight = textInput.current.style.height;
         textInput.current.style.height = '0';
         const computedStyle = window.getComputedStyle(textInput.current);
         const lineHeight = parseInt(computedStyle.lineHeight, 10) || 20;
@@ -254,7 +255,7 @@ function Composer(
         onNumberOfLinesChange(generalNumberOfLines);
         updateIsFullComposerAvailable({isFullComposerAvailable, setIsFullComposerAvailable}, generalNumberOfLines);
         setNumberOfLines(generalNumberOfLines);
-        textInput.current.style.height = 'auto';
+        textInput.current.style.height = textInputHeight;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value, maxLines, numberOfLinesProp, onNumberOfLinesChange, isFullComposerAvailable, setIsFullComposerAvailable, windowWidth]);
 
