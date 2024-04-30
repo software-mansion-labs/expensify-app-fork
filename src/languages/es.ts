@@ -628,6 +628,7 @@ export default {
         deleteReceipt: 'Eliminar recibo',
         pendingMatchWithCreditCard: 'Recibo pendiente de conciliar con la tarjeta de crédito.',
         pendingMatchWithCreditCardDescription: 'Recibo pendiente de conciliar con tarjeta de crédito. Marcar como efectivo para ignorar y solicitar pago.',
+        markAsCash: 'Marcar como efectivo',
         routePending: 'Ruta pendiente...',
         fieldPending: 'Pendiente...',
         defaultRate: 'Tasa predeterminada',
