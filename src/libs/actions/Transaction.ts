@@ -1,7 +1,7 @@
 import {isEqual} from 'lodash';
 import lodashClone from 'lodash/clone';
 import lodashHas from 'lodash/has';
-import type {OnyxEntry} from 'react-native-onyx';
+import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import type {GetRouteParams} from '@libs/API/parameters';
@@ -264,4 +264,28 @@ function clearError(transactionID: string) {
     Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {errors: null});
 }
 
-export {addStop, createInitialWaypoints, saveWaypoint, removeWaypoint, getRoute, updateWaypoints, clearError};
+function markAsCash(transactionID: string) {
+    const violationKey = `${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transactionID}`;
+
+    const successData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: violationKey,
+            value: {
+                isLoading: false,
+            },
+        },
+    ];
+
+    const failureData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: violationKey,
+            value: {
+                isLoading: false,
+            },
+        },
+    ];
+}
+
+export {addStop, createInitialWaypoints, saveWaypoint, removeWaypoint, getRoute, updateWaypoints, clearError, markAsCash};

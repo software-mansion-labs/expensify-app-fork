@@ -236,7 +236,7 @@ function MoneyRequestHeader({
                     />
                 )}
                 {isOnHold && <HoldBanner />}
-                {hasAllPendingRTERViolations && (
+                {hasAllPendingRTERViolations && isActionOwner && (
                     <View style={[styles.ph5, styles.pb3, styles.borderBottom]}>
                         <Button
                             medium
