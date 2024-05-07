@@ -30,6 +30,7 @@ type TransactionViolation = {
         tagListName?: string;
         errorIndexes?: number[];
         pendingPattern?: boolean;
+        dismissed?: Record<string, string>;
     };
 };
 

@@ -1,16 +1,17 @@
+import {format as timezoneFormat, utcToZonedTime} from 'date-fns-tz';
 import {isEqual} from 'lodash';
 import lodashClone from 'lodash/clone';
 import lodashHas from 'lodash/has';
-import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
+import type {OnyxCollection, OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
-import type {GetRouteParams} from '@libs/API/parameters';
-import {READ_COMMANDS} from '@libs/API/types';
+import type {GetRouteParams, MarkAsCashParams} from '@libs/API/parameters';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import * as CollectionUtils from '@libs/CollectionUtils';
 import * as TransactionUtils from '@libs/TransactionUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {RecentWaypoint, Transaction} from '@src/types/onyx';
+import type {RecentWaypoint, ReportActions, Transaction, TransactionViolation} from '@src/types/onyx';
 import type {OnyxData} from '@src/types/onyx/Request';
 import type {WaypointCollection} from '@src/types/onyx/Transaction';
 
@@ -29,6 +30,18 @@ Onyx.connect({
         }
         const transactionID = CollectionUtils.extractCollectionItemID(key);
         allTransactions[transactionID] = transaction;
+    },
+});
+
+const allTransactionViolation: OnyxCollection<TransactionViolation[]> = {};
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS,
+    callback: (transactionViolation, key) => {
+        if (!key || !transactionViolation) {
+            return;
+        }
+        const transactionID = CollectionUtils.extractCollectionItemID(key);
+        allTransactionViolation[transactionID] = transactionViolation;
     },
 });
 
@@ -263,29 +276,78 @@ function updateWaypoints(transactionID: string, waypoints: WaypointCollection, i
 function clearError(transactionID: string) {
     Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {errors: null});
 }
+// function dismissDuplicateTransactionViolation(transactionID: string, transactionIDs: string[]) {
+//     const currentTransactionViolations = allTransactionViolation?.[transactionID] ?? [];
+//     const optimisticTransactionViolation = currentTransactionViolations.filter((violation) => violation.name === CONST.VIOLATIONS.DUPLICATED_TRANSACTION);
+//     const transactionIDList = transactionIDs.join(',');
 
-function markAsCash(transactionID: string) {
-    const violationKey = `${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transactionID}`;
+//     const optimisticData: OnyxUpdate[] = [
+//         {
+//             onyxMethod: Onyx.METHOD.MERGE,
+//             key: `${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transactionID}`,
+//             value: optimisticTransactionViolation,
+//         },
+//     ];
 
-    const successData: OnyxUpdate[] = [
+//     const params: DismissViolationParams = {
+//         transactionViolationName: CONST.VIOLATIONS.DUPLICATED_TRANSACTION,
+//         transactionIDList,
+//     };
+
+//     API.write(WRITE_COMMANDS.DISMISS_VIOLATION, params, {optimisticData});
+// }
+
+function markAsCash(transactionID: string, currentUserEmail: string, reportID: string, reportActionID: string) {
+    const dismissedAt = timezoneFormat(utcToZonedTime(new Date(), 'UTC'), CONST.DATE.FNS_DB_FORMAT_STRING);
+
+    const currentTransactionViolations = allTransactionViolation?.[transactionID] ?? [];
+    const currentRTERTransactionViolation = currentTransactionViolations.find((violation) => violation.name === CONST.VIOLATIONS.RTER);
+    const currentViolationDismissed = currentRTERTransactionViolation?.data?.dismissed ?? {};
+
+    const updatedRTERTransactionViolationData = {
+        ...currentRTERTransactionViolation?.data,
+        dismissed: {
+            ...currentViolationDismissed,
+            [currentUserEmail]: dismissedAt,
+        },
+    };
+
+    const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: violationKey,
-            value: {
-                isLoading: false,
-            },
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transactionID}`,
+            value: [
+                {
+                    type: 'violation',
+                    name: CONST.VIOLATIONS.RTER,
+                    data: updatedRTERTransactionViolationData,
+                },
+            ],
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`,
+            value: optimisticReportActions as ReportActions,
         },
     ];
 
-    const failureData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: violationKey,
-            value: {
-                isLoading: false,
-            },
-        },
-    ];
+    // const failureData: OnyxUpdate[] = [
+    //     {
+    //         onyxMethod: Onyx.METHOD.MERGE,
+    //         key: violationKey,
+    //         value: {
+    //             isLoading: false,
+    //         },
+    //     },
+    // ];
+
+    const params: MarkAsCashParams = {
+        transactionID,
+        reportID,
+        reportActionID,
+    };
+
+    API.write(WRITE_COMMANDS.DISMISS_VIOLATION, params, {optimisticData});
 }
 
 export {addStop, createInitialWaypoints, saveWaypoint, removeWaypoint, getRoute, updateWaypoints, clearError, markAsCash};

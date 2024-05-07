@@ -250,6 +250,8 @@ type OptimisticClosedReportAction = Pick<
     'actionName' | 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'message' | 'originalMessage' | 'pendingAction' | 'person' | 'reportActionID' | 'shouldShow'
 >;
 
+type OptimisticDismissedViolationAction = Pick<ReportAction, 'reportActionID' | 'message' | 'actionName' | 'actorAccountID' | 'reportID'>;
+
 type OptimisticCreatedReportAction = OriginalMessageCreated &
     Pick<ReportActionBase, 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'message' | 'person' | 'reportActionID' | 'shouldShow' | 'pendingAction'>;
 
@@ -4419,6 +4421,12 @@ function buildOptimisticClosedReportAction(emailClosingReport: string, policyNam
     };
 }
 
+function buildOptimisticDismissedViolationAction(emailClosingReport: string, policyName: string, reason: string = CONST.REPORT.ARCHIVE_REASON.DEFAULT): OptimisticDismissedViolationAction {
+    return {
+        actionName: CONST.REPORT.ACTIONS.TYPE.DISMISSED_VIOLATION,
+    };
+}
+
 function buildOptimisticWorkspaceChats(policyID: string, policyName: string): OptimisticWorkspaceChats {
     const announceChatData = buildOptimisticChatReport(
         currentUserAccountID ? [currentUserAccountID] : [],
@@ -6193,6 +6201,7 @@ export {
     buildOptimisticChatReport,
     buildOptimisticClosedReportAction,
     buildOptimisticCreatedReportAction,
+    buildOptimisticDismissedViolationAction,
     buildOptimisticEditedTaskFieldReportAction,
     buildOptimisticExpenseReport,
     buildOptimisticGroupChatReport,
@@ -6434,6 +6443,7 @@ export type {
     OptimisticChatReport,
     OptimisticClosedReportAction,
     OptimisticCreatedReportAction,
+    OptimisticDismissedViolationAction,
     OptimisticIOUReportAction,
     OptimisticTaskReportAction,
     OptionData,

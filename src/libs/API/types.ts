@@ -212,6 +212,7 @@ const WRITE_COMMANDS = {
     CATEGORIZE_TRACKED_EXPENSE: 'CategorizeTrackedExpense',
     SHARE_TRACKED_EXPENSE: 'ShareTrackedExpense',
     LEAVE_POLICY: 'LeavePolicy',
+    DISMISS_VIOLATION: 'DismissViolation',
 } as const;
 
 type WriteCommand = ValueOf<typeof WRITE_COMMANDS>;
