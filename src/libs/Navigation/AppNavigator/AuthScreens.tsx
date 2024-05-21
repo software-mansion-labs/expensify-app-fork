@@ -17,8 +17,10 @@ import NetworkConnection from '@libs/NetworkConnection';
 import * as Pusher from '@libs/Pusher/pusher';
 import PusherConnectionManager from '@libs/PusherConnectionManager';
 import * as SessionUtils from '@libs/SessionUtils';
+import ReportScreenWrapper from '@navigation/AppNavigator/ReportScreenWrapper';
 import ConnectionCompletePage from '@pages/ConnectionCompletePage';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
+import SearchPage from '@pages/Search/SearchPage';
 import DesktopSignInRedirectPage from '@pages/signin/DesktopSignInRedirectPage';
 import SearchInputManager from '@pages/workspace/SearchInputManager';
 import * as App from '@userActions/App';
@@ -70,6 +72,19 @@ const loadWorkspaceAvatar = () => require('../../../pages/workspace/WorkspaceAva
 const loadReportAvatar = () => require('../../../pages/ReportAvatar').default as React.ComponentType;
 const loadReceiptView = () => require('../../../pages/TransactionReceiptPage').default as React.ComponentType;
 const loadWorkspaceJoinUser = () => require('@pages/workspace/WorkspaceJoinUserPage').default as React.ComponentType;
+
+// type Screens = Partial<Record<keyof AuthScreensParamList, () => React.ComponentType>>;
+
+const settingsScreens = {
+    [SCREENS.SETTINGS.WORKSPACES]: () => require('../../../../../pages/workspace/WorkspacesListPage').default as React.ComponentType,
+    [SCREENS.SETTINGS.PREFERENCES.ROOT]: () => require('../../../../../pages/settings/Preferences/PreferencesPage').default as React.ComponentType,
+    [SCREENS.SETTINGS.SECURITY]: () => require('../../../../../pages/settings/Security/SecuritySettingsPage').default as React.ComponentType,
+    [SCREENS.SETTINGS.PROFILE.ROOT]: () => require('../../../../../pages/settings/Profile/ProfilePage').default as React.ComponentType,
+    [SCREENS.SETTINGS.WALLET.ROOT]: () => require('../../../../../pages/settings/Wallet/WalletPage').default as React.ComponentType,
+    [SCREENS.SETTINGS.ABOUT]: () => require('../../../../../pages/settings/AboutPage/AboutPage').default as React.ComponentType,
+    [SCREENS.SETTINGS.TROUBLESHOOT]: () => require('../../../../../pages/settings/Troubleshoot/TroubleshootPage').default as React.ComponentType,
+    [SCREENS.SETTINGS.SAVE_THE_WORLD]: () => require('../../../../../pages/TeachersUnite/SaveTheWorldPage').default as React.ComponentType,
+} satisfies Partial<Record<keyof AuthScreensParamList, () => React.ComponentType>>;
 
 let timezone: Timezone | null;
 let currentAccountID = -1;
@@ -282,6 +297,26 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                         options={screenOptions.bottomTab}
                         component={BottomTabNavigator}
                     />
+
+                    <RootStack.Screen
+                        name={SCREENS.REPORT}
+                        // We do it this way to avoid adding the url params to url
+                        // initialParams={{openOnAdminRoom: openOnAdminRoom === 'true' || undefined}}
+                        component={ReportScreenWrapper}
+                    />
+                    <RootStack.Screen
+                        name={SCREENS.SEARCH.CENTRAL_PANE}
+                        // We do it this way to avoid adding the url params to url
+                        component={SearchPage}
+                    />
+                    {Object.entries(settingsScreens).map(([screenName, componentGetter]) => (
+                        <RootStack.Screen
+                            key={screenName}
+                            name={screenName as keyof typeof settingsScreens}
+                            getComponent={componentGetter}
+                        />
+                    ))}
+
                     <RootStack.Screen
                         name={NAVIGATORS.CENTRAL_PANE_NAVIGATOR}
                         options={screenOptions.centralPaneNavigator}

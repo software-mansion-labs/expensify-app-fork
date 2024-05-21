@@ -3,7 +3,7 @@
  * The ResponsiveStackNavigator displays stack differently based on these constants
  * */
 export default {
-    CENTRAL_PANE_NAVIGATOR: 'CentralPaneNavigator',
+    CENTRAL_PANE_NAVIGATOR: 'CentralPaneNavigator', // Todo remove
     BOTTOM_TAB_NAVIGATOR: 'BottomTabNavigator',
     LEFT_MODAL_NAVIGATOR: 'LeftModalNavigator',
     RIGHT_MODAL_NAVIGATOR: 'RightModalNavigator',

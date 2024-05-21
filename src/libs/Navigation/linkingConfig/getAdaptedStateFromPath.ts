@@ -67,11 +67,9 @@ function createBottomTabNavigator(route: NavigationPartialRoute<BottomTabName>, 
     };
 }
 
-function createCentralPaneNavigator(route: NavigationPartialRoute<CentralPaneName>): NavigationPartialRoute<typeof NAVIGATORS.CENTRAL_PANE_NAVIGATOR> {
-    return {
-        name: NAVIGATORS.CENTRAL_PANE_NAVIGATOR,
-        state: getRoutesWithIndex([route]),
-    };
+// Todo remove this
+function createCentralPaneNavigator(route: NavigationPartialRoute<CentralPaneName>) {
+    return {state: getRoutesWithIndex([route])};
 }
 
 function createFullScreenNavigator(route?: NavigationPartialRoute<FullScreenName>): NavigationPartialRoute<typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR> {
@@ -97,10 +95,8 @@ function createFullScreenNavigator(route?: NavigationPartialRoute<FullScreenName
 }
 
 // This function will return CentralPaneNavigator route or FullScreenNavigator route.
-function getMatchingRootRouteForRHPRoute(
-    route: NavigationPartialRoute,
-): NavigationPartialRoute<typeof NAVIGATORS.CENTRAL_PANE_NAVIGATOR | typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR> | undefined {
-    // Check for backTo param. One screen with different backTo value may need diferent screens visible under the overlay.
+function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): NavigationPartialRoute<typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR> | undefined {
+    // Check for backTo param. One screen with different backTo value may need different screens visible under the overlay.
     if (route.params && 'backTo' in route.params && typeof route.params.backTo === 'string') {
         const stateForBackTo = getStateFromPath(route.params.backTo, config);
         if (stateForBackTo) {

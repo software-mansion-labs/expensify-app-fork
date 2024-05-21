@@ -3,16 +3,16 @@ import React from 'react';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ReportScreenWrapper from '@libs/Navigation/AppNavigator/ReportScreenWrapper';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
-import type {CentralPaneNavigatorParamList} from '@navigation/types';
+import type {AuthScreensParamList} from '@navigation/types';
 import SearchPage from '@pages/Search/SearchPage';
 import SCREENS from '@src/SCREENS';
 
-const Stack = createStackNavigator<CentralPaneNavigatorParamList>();
+const Stack = createStackNavigator<AuthScreensParamList>();
 
 const url = getCurrentUrl();
 const openOnAdminRoom = url ? new URL(url).searchParams.get('openOnAdminRoom') : undefined;
 
-type Screens = Partial<Record<keyof CentralPaneNavigatorParamList, () => React.ComponentType>>;
+type Screens = Partial<Record<keyof AuthScreensParamList, () => React.ComponentType>>;
 
 const settingsScreens = {
     [SCREENS.SETTINGS.WORKSPACES]: () => require('../../../../../pages/workspace/WorkspacesListPage').default as React.ComponentType,
