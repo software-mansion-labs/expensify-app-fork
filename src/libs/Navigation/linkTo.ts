@@ -8,6 +8,7 @@ import {extractPolicyIDFromPath, getPathWithoutPolicyID} from '@libs/PolicyUtils
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
 import type {Route} from '@src/ROUTES';
+import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import getActionsFromPartialDiff from './AppNavigator/getActionsFromPartialDiff';
 import getPartialStateDiff from './AppNavigator/getPartialStateDiff';
@@ -67,6 +68,7 @@ function getMinimalAction(action: NavigationAction, state: NavigationState): Wri
             target: currentTargetKey,
         };
     }
+
     return currentAction;
 }
 
@@ -117,7 +119,7 @@ function isModalNavigator(targetNavigator?: string) {
     return targetNavigator === NAVIGATORS.LEFT_MODAL_NAVIGATOR || targetNavigator === NAVIGATORS.RIGHT_MODAL_NAVIGATOR;
 }
 
-export default function linkTo(navigation: NavigationContainerRef<RootStackParamList> | null, path: Route, type?: string, isActiveRoute?: boolean) {
+export default function linkTo(navigation: NavigationContainerRef<RootStackParamList> | null, path2: Route, type?: string, isActiveRoute?: boolean) {
     if (!navigation) {
         throw new Error("Couldn't find a navigation object. Is your component inside a screen in a navigator?");
     }
@@ -128,8 +130,17 @@ export default function linkTo(navigation: NavigationContainerRef<RootStackParam
     while ((current = root.getParent())) {
         root = current;
     }
-    const pathWithoutPolicyID = getPathWithoutPolicyID(`/${path}`) as Route;
+    let path = path2;
     const rootState = navigation.getRootState() as NavigationState<RootStackParamList>;
+
+    const topmostRoute = rootState.routes.at(-1);
+    const topmostRouteRoute = topmostRoute?.state?.routes?.at(-1);
+    if (topmostRouteRoute?.name === 'SearchReport' && path.startsWith('r/')) {
+        const newReportID = path.split('/')[1];
+        const query = topmostRouteRoute?.state?.routes?.at(-1)?.params?.query;
+        path = ROUTES.SEARCH_REPORT.getRoute(query, newReportID);
+    }
+    const pathWithoutPolicyID = getPathWithoutPolicyID(`/${path}`) as Route;
     const stateFromPath = getStateFromPath(pathWithoutPolicyID) as PartialState<NavigationState<RootStackParamList>>;
 
     // Creating path with /w/ included if necessary.
