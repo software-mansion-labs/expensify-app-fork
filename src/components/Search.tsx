@@ -126,7 +126,6 @@ function Search({query, policyIDs}: SearchProps) {
             sections={[{data, isDisabled: false}]}
             onSelectRow={(item) => {
                 const reportID = isReportListItemType(item) ? item.reportID : item.transactionThreadReportID;
-
                 openReport(reportID);
             }}
             shouldPreventDefaultFocusOnSelectRow={!DeviceCapabilities.canUseTouchScreen()}
