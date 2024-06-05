@@ -11,8 +11,18 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.ReactMethod;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import com.google.android.gms.tapandpay.TapAndPay;
+import static com.google.android.gms.tapandpay.TapAndPayStatusCodes.TAP_AND_PAY_NO_ACTIVE_WALLET;
+import static com.google.android.gms.tapandpay.TapAndPayStatusCodes.TAP_AND_PAY_TOKEN_NOT_FOUND;
+import com.google.android.gms.tapandpay.TapAndPayClient;
 import com.google.android.gms.tapandpay.issuer.PushTokenizeRequest;
+import com.google.android.gms.tapandpay.issuer.TokenStatus;
+import com.google.android.gms.tapandpay.issuer.UserAddress;
+import java.nio.charset.Charset;
+
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -23,10 +33,10 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
     private static final int REQUEST_CODE_PUSH_TOKENIZE = 3; // Arbitrary request code
     private Promise promise;
 
-    public GooglePushProvisioningModule(ReactApplicationContext reactContext) {
-        super(reactContext);
-        this.reactContext = reactContext;
-        reactContext.addActivityEventListener(mActivityEventListener);
+    public GooglePushProvisioningModule(ReactApplicationContext ctx) {
+        super(ctx);
+        this.reactContext = ctx;
+        ctx.addActivityEventListener(mActivityEventListener);
     }
 
     @NonNull
@@ -36,7 +46,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void startPushProvision(String opc, String cardholderName, String lastFourDigits, Promise promise) {
+    public void startPushProvision(String opc, String tsp, String clientName, String lastDigits, JSONObject address,  Promise promise) {
         this.promise = promise;
 
         Activity currentActivity = getCurrentActivity();
@@ -46,30 +56,33 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
         }
 
         try {
-            PushTokenizeRequest request = PushTokenizeRequest.builder()
-                .setOpaquePaymentCard(opc)
-                .build(); // You might add more parameters here if needed
+          
+            TapAndPayClient tapAndPayClient = TapAndPay.getClient(currentActivity);
+            int cardNetwork = (tsp.equals("VISA")) ? TapAndPay.CARD_NETWORK_VISA : TapAndPay.CARD_NETWORK_MASTERCARD;
+            int tokenServiceProvider = (tsp.equals("VISA")) ? TapAndPay.TOKEN_PROVIDER_VISA : TapAndPay.TOKEN_PROVIDER_MASTERCARD;
+              
+            UserAddress userAddress =
+                    UserAddress.newBuilder()
+                            .setName(address.getString("name"))
+                            .setAddress1(address.getString("address"))
+                            .setLocality(address.getString("locality"))
+                            .setAdministrativeArea(address.getString("administrativeArea"))
+                            .setCountryCode(address.getString("countryCode"))
+                            .setPostalCode(address.getString("postalCode"))
+                            .setPhoneNumber(address.getString("phoneNumber"))
+                            .build();
 
-                TapAndPay.getClient(reactContext)
-                .pushTokenize(request)
-                .addOnCompleteListener(new OnCompleteListener<String>() {
-                    @Override
-                    public void onComplete(@NonNull Task<String> task) {
-                        if (task.isSuccessful()) {
-                            String token = task.getResult();
-                            promise.resolve(token); // Resolve with the obtained token
-                        } else {
-                            Exception exception = task.getException();
-                            if (exception instanceof ApiException) {
-                                ApiException apiException = (ApiException) exception;
-                                // Handle specific API exceptions here (e.g., RESOLUTION_REQUIRED)
-                                promise.reject("E_PUSH_TOKENIZE_API_EXCEPTION", "ApiException: " + apiException.getStatusCode()); 
-                            } else {
-                                promise.reject("E_PUSH_TOKENIZE_FAILED", exception != null ? exception.getMessage() : "Push tokenization failed");
-                            }
-                        }
-                    }
-                });
+            PushTokenizeRequest request = new PushTokenizeRequest.Builder()
+            .setOpaquePaymentCard(opc.getBytes(Charset.forName("UTF-8")))
+                            .setNetwork(cardNetwork)
+                            .setTokenServiceProvider(tokenServiceProvider)
+                            .setDisplayName(clientName)
+                            .setLastDigits(lastDigits)
+                            .setUserAddress(userAddress)
+                            .build();
+
+            tapAndPayClient.pushTokenize(currentActivity,request,REQUEST_CODE_PUSH_TOKENIZE);
+          
 
         } catch (Exception e) {
             promise.reject("E_PUSH_TOKENIZE_ERROR", e.getMessage());
