@@ -1,4 +1,4 @@
-package com.rnwalletcards;
+package com.expensify;
 
 import android.app.Activity;
 import android.content.Intent;
