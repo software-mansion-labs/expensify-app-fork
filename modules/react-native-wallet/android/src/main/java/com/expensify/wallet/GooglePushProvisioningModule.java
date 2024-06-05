@@ -1,4 +1,4 @@
-package com.rnwalletcards;
+package com.expensify.wallet;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -86,21 +86,34 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
         @Override
         public void onComplete(@NonNull Task<String> task) {
           if (task.isSuccessful()) {
-            promise.resolve(task.getResult());
+            String walletId = task.getResult();
+            promise.resolve(walletId);
           } else {
-            promise.reject("GET_ACTIVE_WALLET_ID_ERROR", "Error retrieving active wallet ID");
+            ApiException apiException = (ApiException) task.getException();
+            Log.i(TAG, apiException.getMessage());
+            if (apiException.getStatusCode() == TAP_AND_PAY_NO_ACTIVE_WALLET) {
+              // If no Google Pay wallet is found, create one and then call
+              // getActiveWalletId() again.
+              getTapAndPayClient().createWallet(getCurrentActivity(), REQUEST_CREATE_WALLET);
+              getActiveWalletID(promise);
+            } else {
+              // Failed to get active wallet ID
+              promise.reject("GET_ACTIVE_WALLET_ID_ERROR", task.getException());
+            }
           }
         }
       })
       .addOnFailureListener(new OnFailureListener() {
         @Override
         public void onFailure(@NonNull Exception e) {
+          Log.i(TAG, "onFailure (getActiveWalletID) - " + e.getMessage());
           promise.reject("GET_ACTIVE_WALLET_ID_FAILURE", e);
         }
       })
       .addOnCanceledListener(new OnCanceledListener() {
         @Override
         public void onCanceled() {
+          Log.i(TAG, "onCanceled (getActiveWalletID) - ");
           promise.reject("GET_ACTIVE_WALLET_ID_CANCELED", "Active wallet ID retrieval canceled");
         }
       });
@@ -115,7 +128,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
           if (task.isSuccessful()) {
             promise.resolve(task.getResult());
           } else {
-            promise.reject("GET_STABLE_HARDWARE_ID_ERROR", "Error retrieving stable hardware ID");
+            promise.reject("GET_STABLE_HARDWARE_ID_ERROR", task.getException());
           }
         }
       })
