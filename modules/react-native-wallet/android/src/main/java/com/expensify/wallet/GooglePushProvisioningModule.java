@@ -1,4 +1,4 @@
-package com.expensify.wallet;
+package com.rnwalletcards;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -12,8 +12,7 @@ import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.ReactMethod;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+
 import com.google.android.gms.tapandpay.TapAndPay;
 import static com.google.android.gms.tapandpay.TapAndPayStatusCodes.TAP_AND_PAY_NO_ACTIVE_WALLET;
 import static com.google.android.gms.tapandpay.TapAndPayStatusCodes.TAP_AND_PAY_TOKEN_NOT_FOUND;
@@ -46,7 +45,9 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void startPushProvision(String opc, String tsp, String clientName, String lastDigits, JSONObject address,  Promise promise) {
+    public void startPushProvision(String opc, String tsp, String clientName, String lastDigits, 
+    String addressOne, String addressTwo, String countryCode, String city, String state ,
+    String postalCode, String phoneNumber,  Promise promise) {
         this.promise = promise;
 
         Activity currentActivity = getCurrentActivity();
@@ -63,13 +64,14 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
               
             UserAddress userAddress =
                     UserAddress.newBuilder()
-                            .setName(address.getString("name"))
-                            .setAddress1(address.getString("address"))
-                            .setLocality(address.getString("locality"))
-                            .setAdministrativeArea(address.getString("administrativeArea"))
-                            .setCountryCode(address.getString("countryCode"))
-                            .setPostalCode(address.getString("postalCode"))
-                            .setPhoneNumber(address.getString("phoneNumber"))
+                            .setName(clientName)
+                            .setAddress1(addressOne)
+                            .setAddress2(addressTwo)
+                            .setLocality(city)
+                            .setAdministrativeArea(state)
+                            .setCountryCode(countryCode)
+                            .setPostalCode(postalCode)
+                            .setPhoneNumber(phoneNumber)
                             .build();
 
             PushTokenizeRequest request = new PushTokenizeRequest.Builder()
