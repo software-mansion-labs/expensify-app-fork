@@ -274,6 +274,9 @@ type Report = OnyxCommon.OnyxValueWithOfflineFeedback<
 
         /** Collection of report permissions granted to the current user */
         permissions?: Array<ValueOf<typeof CONST.REPORT.PERMISSIONS>>;
+
+        /** TEMP */
+        customCacheKey?: string;
     },
     PolicyReportField['fieldID']
 >;

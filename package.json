@@ -123,6 +123,7 @@
     "lodash": "4.17.21",
     "lottie-react-native": "6.5.1",
     "mapbox-gl": "^2.15.0",
+    "memoize": "^10.0.0",
     "onfido-sdk-ui": "14.15.0",
     "process": "^0.11.10",
     "pusher-js": "8.3.0",
@@ -185,6 +186,7 @@
     "react-webcam": "^7.1.1",
     "react-window": "^1.8.9",
     "semver": "^7.5.2",
+    "serialize-javascript": "^6.0.2",
     "shim-keyboard-event-key": "^1.0.3"
   },
   "devDependencies": {

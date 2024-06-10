@@ -1,4 +1,5 @@
 import {Str} from 'expensify-common';
+import memoize from 'memoize';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ChatReportSelector, PolicySelector, ReportActionsSelector} from '@hooks/useReportIDs';
@@ -21,6 +22,25 @@ import * as OptionsListUtils from './OptionsListUtils';
 import * as ReportActionsUtils from './ReportActionsUtils';
 import * as ReportUtils from './ReportUtils';
 import * as TaskUtils from './TaskUtils';
+
+const testFunc = memoize(ReportUtils.shouldReportBeInOptionList, {
+    cacheKey: (
+        params: Array<{
+            report: OnyxEntry<Report>;
+            currentReportId: string;
+            isInFocusMode: boolean;
+            betas: OnyxEntry<Beta[]>;
+            policies: OnyxCollection<Policy>;
+            excludeEmptyChats: boolean;
+            doesReportHaveViolations: boolean;
+            includeSelfDM?: boolean;
+        }>,
+    ) => {
+        // // Return random number
+        const report = params[0].report;
+        return report?.reportID + report.customCacheKey;
+    },
+});
 
 const visibleReportActionItems: ReportActions = {};
 Onyx.connect({
@@ -88,6 +108,9 @@ function getOrderedReportIDs(
     console.time('getOrderedReportIDs 1: reportsToDisplay');
     // Filter out all the reports that shouldn't be displayed
     let reportsToDisplay = allReportsDictValues.filter((report) => {
+        if (report?.customCacheKey) {
+            console.log('!!!!!!! :OOO', report);
+        }
         if (!report) {
             return false;
         }
@@ -111,7 +134,7 @@ function getOrderedReportIDs(
             return false;
         }
 
-        return ReportUtils.shouldReportBeInOptionList({
+        return testFunc({
             report,
             currentReportId: currentReportId ?? '',
             isInFocusMode,

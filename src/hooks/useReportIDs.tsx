@@ -72,6 +72,7 @@ const chatReportSelector = (report: OnyxEntry<OnyxTypes.Report>): ChatReportSele
         parentReportID: report.parentReportID,
         isDeletedParentAction: report.isDeletedParentAction,
         isUnreadWithMention: ReportUtils.isUnreadWithMention(report),
+        customCacheKey: report.customCacheKey,
     }) as ChatReportSelector;
 
 const reportActionsSelector = (reportActions: OnyxEntry<OnyxTypes.ReportActions>): ReportActionsSelector =>
