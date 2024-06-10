@@ -114,20 +114,55 @@ function ReportIDsContextProvider({
      */
     currentReportIDForTests,
 }: ReportIDsContextProviderProps) {
+    console.time('ReportIDsContextProvider: init');
+
+    console.time('useOnyx1');
     const [priorityMode] = useOnyx(ONYXKEYS.NVP_PRIORITY_MODE, {initialValue: CONST.PRIORITY_MODE.DEFAULT});
+    console.timeEnd('useOnyx1');
+
+    console.time('useOnyx2');
     const [chatReports] = useOnyx(ONYXKEYS.COLLECTION.REPORT, {selector: chatReportSelector});
+    console.timeEnd('useOnyx2');
+
+    console.time('useOnyx3');
     const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {selector: policySelector});
+    console.timeEnd('useOnyx3');
+
+    console.time('useOnyx4');
     const [allReportActions] = useOnyx(ONYXKEYS.COLLECTION.REPORT_ACTIONS, {selector: reportActionsSelector});
+    console.timeEnd('useOnyx4');
+
+    console.time('useOnyx5');
     const [transactionViolations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS);
+    console.timeEnd('useOnyx5');
+
+    console.time('useOnyx6');
     const [reportsDrafts] = useOnyx(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
+    console.timeEnd('useOnyx6');
+
+    console.time('useOnyx7');
     const [betas] = useOnyx(ONYXKEYS.BETAS);
+    console.timeEnd('useOnyx7');
 
+    console.time('useCurrentUserPersonalDetails');
     const {accountID} = useCurrentUserPersonalDetails();
-    const currentReportIDValue = useCurrentReportID();
-    const derivedCurrentReportID = currentReportIDForTests ?? currentReportIDValue?.currentReportID;
-    const {activeWorkspaceID} = useActiveWorkspace();
+    console.timeEnd('useCurrentUserPersonalDetails');
 
+    console.time('useCurrentReportID');
+    const currentReportIDValue = useCurrentReportID();
+    console.timeEnd('useCurrentReportID');
+
+    const derivedCurrentReportID = currentReportIDForTests ?? currentReportIDValue?.currentReportID;
+
+    console.time('useActiveWorkspace');
+    const {activeWorkspaceID} = useActiveWorkspace();
+    console.timeEnd('useActiveWorkspace');
+
+    console.time('getPolicyEmployeeListByIdWithoutCurrentUser');
     const policyMemberAccountIDs = getPolicyEmployeeListByIdWithoutCurrentUser(policies, activeWorkspaceID, accountID);
+    console.timeEnd('getPolicyEmployeeListByIdWithoutCurrentUser');
+
+    console.timeEnd('ReportIDsContextProvider: init');
 
     const getOrderedReportIDs = useCallback(
         (currentReportID?: string) => {

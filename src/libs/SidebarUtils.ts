@@ -87,6 +87,21 @@ type MiniReport = {
     lastVisibleActionCreated?: string;
 };
 
+const getMiniReport = memoize(
+    (report: OnyxEntry<Report>) =>
+        ({
+            reportID: report?.reportID,
+            displayName: ReportUtils.getReportName(report),
+            lastVisibleActionCreated: report?.lastVisibleActionCreated,
+        } as MiniReport),
+    {
+        cacheKey: (params: Array<OnyxEntry<Report>>) => {
+            const report = params[0];
+            return (report?.reportID ?? '') + (report?.lastVisibleActionCreated ?? '0') + (report?.customCacheKey ?? '-');
+        },
+    },
+);
+
 /**
  * @returns An array of reportIDs sorted in the proper order
  */
@@ -105,19 +120,35 @@ function getOrderedReportIDs(
     const isInDefaultMode = !isInFocusMode;
     const allReportsDictValues = Object.values(allReports ?? {});
 
+    let timer = {
+        filter: 0,
+        getReportActions: 0,
+        calculateVars: 0,
+        testFuncExecution: 0,
+    };
+
     console.time('getOrderedReportIDs 1: reportsToDisplay');
-    // Filter out all the reports that shouldn't be displayed
+
     let reportsToDisplay = allReportsDictValues.filter((report) => {
-        if (report?.customCacheKey) {
-            console.log('!!!!!!! :OOO', report);
-        }
+        let start, end;
+
+        start = performance.now();
         if (!report) {
+            end = performance.now();
+            timer.filter += end - start;
             return false;
         }
+        end = performance.now();
+        timer.filter += end - start;
 
+        start = performance.now();
         const parentReportActionsKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.parentReportID}`;
         const parentReportActions = allReportActions?.[parentReportActionsKey];
         const reportActions = allReportActions?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.reportID}`] ?? {};
+        end = performance.now();
+        timer.getReportActions += end - start;
+
+        start = performance.now();
         const parentReportAction = parentReportActions?.find((action) => action && action?.reportActionID === report.parentReportActionID);
         const doesReportHaveViolations = !!(
             betas?.includes(CONST.BETAS.VIOLATIONS) &&
@@ -131,10 +162,15 @@ function getOrderedReportIDs(
         const isSystemChat = ReportUtils.isSystemChat(report);
         const shouldOverrideHidden = hasErrorsOtherThanFailedReceipt || isFocused || isSystemChat || report.isPinned;
         if (isHidden && !shouldOverrideHidden) {
+            end = performance.now();
+            timer.calculateVars += end - start;
             return false;
         }
+        end = performance.now();
+        timer.calculateVars += end - start;
 
-        return testFunc({
+        start = performance.now();
+        const result = testFunc({
             report,
             currentReportId: currentReportId ?? '',
             isInFocusMode,
@@ -144,8 +180,18 @@ function getOrderedReportIDs(
             doesReportHaveViolations,
             includeSelfDM: true,
         });
+        end = performance.now();
+        timer.testFuncExecution += end - start;
+
+        return result;
     });
+
     console.timeEnd('getOrderedReportIDs 1: reportsToDisplay');
+
+    console.log('Filter time:', timer.filter);
+    console.log('GetReportActions time:', timer.getReportActions);
+    console.log('Variables Calculation time:', timer.calculateVars);
+    console.log('Test Function Execution time:', timer.testFuncExecution);
 
     // The LHN is split into four distinct groups, and each group is sorted a little differently. The groups will ALWAYS be in this order:
     // 1. Pinned/GBR - Always sorted by reportDisplayName
@@ -168,16 +214,24 @@ function getOrderedReportIDs(
         );
     }
     console.timeEnd('getOrderedReportIDs 2: sort');
+    let timer2 = {
+        miniReportCreation: 0,
+        reportEvaluation: 0,
+    };
+
     console.time('getOrderedReportIDs 3: sort');
     // There are a few properties that need to be calculated for the report which are used when sorting reports.
     reportsToDisplay.forEach((reportToDisplay) => {
-        const report = reportToDisplay as OnyxEntry<Report>;
-        const miniReport: MiniReport = {
-            reportID: report?.reportID,
-            displayName: ReportUtils.getReportName(report),
-            lastVisibleActionCreated: report?.lastVisibleActionCreated,
-        };
+        let start, end;
 
+        start = performance.now();
+        const report = reportToDisplay as OnyxEntry<Report>;
+        const miniReport: MiniReport = getMiniReport(report);
+
+        end = performance.now();
+        timer2.miniReportCreation += end - start;
+
+        start = performance.now();
         const isPinned = report?.isPinned ?? false;
         const reportAction = ReportActionsUtils.getReportAction(report?.parentReportID ?? '', report?.parentReportActionID ?? '');
         if (isPinned || ReportUtils.requiresAttentionFromCurrentUser(report, reportAction)) {
@@ -189,8 +243,13 @@ function getOrderedReportIDs(
         } else {
             nonArchivedReports.push(miniReport);
         }
+        end = performance.now();
+        timer2.reportEvaluation += end - start;
     });
     console.timeEnd('getOrderedReportIDs 3: sort');
+
+    console.log('MiniRecord Creation time:', timer2.miniReportCreation);
+    console.log('Report Evaluation time:', timer2.reportEvaluation);
 
     console.time('getOrderedReportIDs 4: sort');
 
