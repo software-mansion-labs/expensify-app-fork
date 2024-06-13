@@ -1,13 +1,14 @@
-import type {ListRenderItemInfo} from '@react-native/virtualized-lists/Lists/VirtualizedList';
 import {useIsFocused, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
+import type {ContentStyle, FlashList, ListRenderItem} from '@shopify/flash-list';
 import type {DebouncedFunc} from 'lodash';
+import type {RefObject} from 'react';
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {DeviceEventEmitter, InteractionManager} from 'react-native';
-import type {LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle} from 'react-native';
+import {DeviceEventEmitter, InteractionManager, StyleSheet} from 'react-native';
+import type {LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, StyleProp} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
-import InvertedFlatList from '@components/InvertedFlatList';
+import InvertedFlashList from '@components/InvertedFlashList';
 import {AUTOSCROLL_TO_TOP_THRESHOLD} from '@components/InvertedFlatList/BaseInvertedFlatList';
 import {usePersonalDetails} from '@components/OnyxProvider';
 import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalDetails';
@@ -23,7 +24,6 @@ import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import Visibility from '@libs/Visibility';
 import type {CentralPaneNavigatorParamList} from '@navigation/types';
-import variables from '@styles/variables';
 import * as Report from '@userActions/Report';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
@@ -31,7 +31,6 @@ import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 import type {EmptyObject} from '@src/types/utils/EmptyObject';
 import FloatingMessageCounter from './FloatingMessageCounter';
-import getInitialNumToRender from './getInitialNumReportActionsToRender';
 import ListBoundaryLoader from './ListBoundaryLoader';
 import ReportActionsListItemRenderer from './ReportActionsListItemRenderer';
 
@@ -136,7 +135,7 @@ function isMessageUnread(message: OnyxTypes.ReportAction, lastReadTime?: string)
     return !!(message && lastReadTime && message.created && lastReadTime < message.created);
 }
 
-const onScrollToIndexFailed = () => {};
+// const onScrollToIndexFailed = () => {};
 
 function ReportActionsList({
     report,
@@ -168,7 +167,7 @@ function ReportActionsList({
     const {isOffline} = useNetwork();
     const route = useRoute<RouteProp<CentralPaneNavigatorParamList, typeof SCREENS.REPORT>>();
     const opacity = useSharedValue(0);
-    const reportScrollManager = useReportScrollManager();
+    const reportScrollManager = useReportScrollManager<RefObject<FlashList<OnyxTypes.ReportAction>>>();
     const userActiveSince = useRef<string | null>(null);
     const lastMessageTime = useRef<string | null>(null);
 
@@ -419,15 +418,15 @@ function ReportActionsList({
      * Calculates the ideal number of report actions to render in the first render, based on the screen height and on
      * the height of the smallest report action possible.
      */
-    const initialNumToRender = useMemo((): number | undefined => {
-        const minimumReportActionHeight = styles.chatItem.paddingTop + styles.chatItem.paddingBottom + variables.fontSizeNormalHeight;
-        const availableHeight = windowHeight - (CONST.CHAT_FOOTER_MIN_HEIGHT + variables.contentHeaderHeight);
-        const numToRender = Math.ceil(availableHeight / minimumReportActionHeight);
-        if (linkedReportActionID) {
-            return getInitialNumToRender(numToRender);
-        }
-        return numToRender || undefined;
-    }, [styles.chatItem.paddingBottom, styles.chatItem.paddingTop, windowHeight, linkedReportActionID]);
+    // const initialNumToRender = useMemo((): number | undefined => {
+    //     const minimumReportActionHeight = styles.chatItem.paddingTop + styles.chatItem.paddingBottom + variables.fontSizeNormalHeight;
+    //     const availableHeight = windowHeight - (CONST.CHAT_FOOTER_MIN_HEIGHT + variables.contentHeaderHeight);
+    //     const numToRender = Math.ceil(availableHeight / minimumReportActionHeight);
+    //     if (linkedReportActionID) {
+    //         return getInitialNumToRender(numToRender);
+    //     }
+    //     return numToRender || undefined;
+    // }, [styles.chatItem.paddingBottom, styles.chatItem.paddingTop, windowHeight, linkedReportActionID]);
 
     /**
      * Thread's divider line should hide when the first chat in the thread is marked as unread.
@@ -556,8 +555,8 @@ function ReportActionsList({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isFocused, isVisible]);
 
-    const renderItem = useCallback(
-        ({item: reportAction, index}: ListRenderItemInfo<OnyxTypes.ReportAction>) => (
+    const renderItem: ListRenderItem<OnyxTypes.ReportAction> = useCallback(
+        ({item: reportAction, index}) => (
             <ReportActionsListItemRenderer
                 reportAction={reportAction}
                 reportActions={reportActions}
@@ -599,9 +598,14 @@ function ReportActionsList({
     const shouldShowReportRecipientLocalTime = ReportUtils.canShowReportRecipientLocalTime(personalDetailsList, report, currentUserPersonalDetails.accountID) && !isComposerFullSize;
     const canShowHeader = isOffline || hasHeaderRendered.current;
 
-    const contentContainerStyle: StyleProp<ViewStyle> = useMemo(
+    // const contentContainerStyle: ContentStyle = useMemo(
+    //     () => [styles.chatContentScrollView, isLoadingNewerReportActions && canShowHeader ? styles.chatContentScrollViewWithHeaderLoader : {}],
+    //     [isLoadingNewerReportActions, styles.chatContentScrollView, styles.chatContentScrollViewWithHeaderLoader, canShowHeader],
+    // );
+
+    const contentContainerStyle: StyleProp<ContentStyle> = useMemo(
         () => [styles.chatContentScrollView, isLoadingNewerReportActions && canShowHeader ? styles.chatContentScrollViewWithHeaderLoader : {}],
-        [isLoadingNewerReportActions, styles.chatContentScrollView, styles.chatContentScrollViewWithHeaderLoader, canShowHeader],
+        [styles.chatContentScrollView, styles.chatContentScrollViewWithHeaderLoader, isLoadingNewerReportActions, canShowHeader],
     );
 
     const lastReportAction: OnyxTypes.ReportAction | EmptyObject = useMemo(() => sortedReportActions.at(-1) ?? {}, [sortedReportActions]);
@@ -666,9 +670,9 @@ function ReportActionsList({
         );
     }, [isLoadingNewerReportActions, canShowHeader, hasLoadingNewerReportActionsError, retryLoadNewerChatsError]);
 
-    const onStartReached = useCallback(() => {
-        loadNewerChats(false);
-    }, [loadNewerChats]);
+    // const onStartReached = useCallback(() => {
+    //     loadNewerChats(false);
+    // }, [loadNewerChats]);
 
     const onEndReached = useCallback(() => {
         loadOlderChats(false);
@@ -684,27 +688,27 @@ function ReportActionsList({
                 onClick={scrollToBottomAndMarkReportAsRead}
             />
             <Animated.View style={[animatedStyles, styles.flex1, !shouldShowReportRecipientLocalTime && !hideComposer ? styles.pb4 : {}]}>
-                <InvertedFlatList
+                <InvertedFlashList
                     accessibilityLabel={translate('sidebarScreen.listOfChatMessages')}
                     ref={reportScrollManager.ref}
                     testID="report-actions-list"
                     style={styles.overscrollBehaviorContain}
                     data={sortedVisibleReportActions}
                     renderItem={renderItem}
-                    contentContainerStyle={contentContainerStyle}
+                    contentContainerStyle={StyleSheet.flatten(contentContainerStyle)}
                     keyExtractor={keyExtractor}
-                    initialNumToRender={initialNumToRender}
+                    // initialNumToRender={initialNumToRender}
                     onEndReached={onEndReached}
                     onEndReachedThreshold={0.75}
-                    onStartReached={onStartReached}
-                    onStartReachedThreshold={0.75}
+                    // onStartReached={onStartReached}
+                    // onStartReachedThreshold={0.75}
                     ListFooterComponent={listFooterComponent}
                     ListHeaderComponent={listHeaderComponent}
                     keyboardShouldPersistTaps="handled"
                     onLayout={onLayoutInner}
                     onContentSizeChange={onContentSizeChangeInner}
                     onScroll={trackVerticalScrolling}
-                    onScrollToIndexFailed={onScrollToIndexFailed}
+                    // onScrollToIndexFailed={onScrollToIndexFailed}
                     extraData={extraData}
                     key={listID}
                     shouldEnableAutoScrollToTopThreshold={shouldEnableAutoScrollToTopThreshold}

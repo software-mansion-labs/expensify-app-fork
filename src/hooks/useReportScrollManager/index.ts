@@ -2,7 +2,7 @@ import {useCallback, useContext} from 'react';
 import {ActionListContext} from '@pages/home/ReportScreenContext';
 import type ReportScrollManagerData from './types';
 
-function useReportScrollManager(): ReportScrollManagerData {
+function useReportScrollManager<T>(): ReportScrollManagerData<T> {
     const {flatListRef} = useContext(ActionListContext);
 
     /**
