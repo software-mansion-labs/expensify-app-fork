@@ -1,7 +1,9 @@
+import type {ReportAction} from '@src/types/onyx';
+import type {FlashList} from '@shopify/flash-list';
 import type {RefObject, SyntheticEvent} from 'react';
 import {createContext} from 'react';
 // eslint-disable-next-line no-restricted-imports
-import type {FlatList, GestureResponderEvent, Text, View} from 'react-native';
+import type {GestureResponderEvent, Text, View} from 'react-native';
 
 type ReactionListAnchor = View | Text | HTMLDivElement | null;
 
@@ -13,7 +15,7 @@ type ReactionListRef = {
     isActiveReportAction: (actionID: number | string) => boolean;
 };
 
-type FlatListRefType = RefObject<FlatList<unknown>> | null;
+type FlatListRefType = RefObject<FlashList<ReportAction>> | null;
 
 type ScrollPosition = {offset?: number};
 

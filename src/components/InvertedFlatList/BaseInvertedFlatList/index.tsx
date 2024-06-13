@@ -1,15 +1,16 @@
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useMemo} from 'react';
-import type {FlatListProps, FlatList as RNFlatList, ScrollViewProps} from 'react-native';
-import FlatList from '@components/FlatList';
+import type {ScrollViewProps} from 'react-native';
+import type {FlashListProps} from '@shopify/flash-list';
+import {FlashList} from '@shopify/flash-list';
 
-type BaseInvertedFlatListProps<T> = FlatListProps<T> & {
+type BaseInvertedFlatListProps<T> = FlashListProps<T> & {
     shouldEnableAutoScrollToTopThreshold?: boolean;
 };
 
 const AUTOSCROLL_TO_TOP_THRESHOLD = 250;
 
-function BaseInvertedFlatList<T>(props: BaseInvertedFlatListProps<T>, ref: ForwardedRef<RNFlatList>) {
+function BaseInvertedFlatList<T>(props: BaseInvertedFlatListProps<T>, ref: ForwardedRef<FlashList<T>>) {
     const {shouldEnableAutoScrollToTopThreshold, ...rest} = props;
 
     const maintainVisibleContentPosition = useMemo(() => {
@@ -26,7 +27,7 @@ function BaseInvertedFlatList<T>(props: BaseInvertedFlatListProps<T>, ref: Forwa
     }, [shouldEnableAutoScrollToTopThreshold]);
 
     return (
-        <FlatList
+        <FlashList
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...rest}
             ref={ref}
