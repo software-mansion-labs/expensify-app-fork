@@ -9,8 +9,6 @@ import SearchPageBottomTab from '@pages/Search/SearchPageBottomTab';
 import SCREENS from '@src/SCREENS';
 import ActiveRouteContext from './ActiveRouteContext';
 
-const loadInitialSettingsPage = () => require('../../../../pages/settings/InitialSettingsPage').default as React.ComponentType;
-
 const Tab = createCustomBottomTabNavigator<BottomTabNavigatorParamList>();
 
 const screenOptions: StackNavigationOptions = {
@@ -31,10 +29,6 @@ function BottomTabNavigator() {
                 <Tab.Screen
                     name={SCREENS.SEARCH.BOTTOM_TAB}
                     component={SearchPageBottomTab}
-                />
-                <Tab.Screen
-                    name={SCREENS.SETTINGS.ROOT}
-                    getComponent={loadInitialSettingsPage}
                 />
             </Tab.Navigator>
         </ActiveRouteContext.Provider>

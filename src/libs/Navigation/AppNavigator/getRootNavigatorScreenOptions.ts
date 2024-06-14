@@ -100,7 +100,7 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (isSmallScr
 
         fullScreen: {
             ...commonScreenOptions,
-            cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator(isSmallScreenWidth, true, false, props),
+            cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator(false, true, false, props),
             cardStyle: {
                 ...StyleUtils.getNavigationModalCardStyle(),
 
@@ -109,7 +109,6 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (isSmallScr
             },
 
             // We need to turn off animation for the full screen to avoid delay when closing screens.
-            animationEnabled: isSmallScreenWidth,
         },
 
         centralPaneNavigator: {

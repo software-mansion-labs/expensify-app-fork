@@ -3,7 +3,7 @@ import {findFocusedRoute, getStateFromPath} from '@react-navigation/native';
 import type {TupleToUnion} from 'type-fest';
 import {isAnonymousUser} from '@libs/actions/Session';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
-import type {BottomTabName, CentralPaneName, FullScreenName, NavigationPartialRoute, RootStackParamList} from '@libs/Navigation/types';
+import type {BottomTabName, CentralPaneName, FullScreenName, NavigationPartialRoute, RootStackParamList, SettingsScreenName} from '@libs/Navigation/types';
 import {extractPolicyIDFromPath, getPathWithoutPolicyID} from '@libs/PolicyUtils';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -15,6 +15,7 @@ import FULL_SCREEN_TO_RHP_MAPPING from './FULL_SCREEN_TO_RHP_MAPPING';
 import getMatchingBottomTabRouteForState from './getMatchingBottomTabRouteForState';
 import getMatchingCentralPaneRouteForState from './getMatchingCentralPaneRouteForState';
 import replacePathInNestedState from './replacePathInNestedState';
+import SETTINGS_SPLIT_TO_RHP_MAPPING from './SETTINGS_SPLIT_TO_RHP_MAPPING';
 
 const RHP_SCREENS_OPENED_FROM_LHN = [SCREENS.SETTINGS.SHARE_CODE, SCREENS.SETTINGS.PROFILE.STATUS] as const;
 
@@ -98,10 +99,32 @@ function createFullScreenNavigator(route?: NavigationPartialRoute<FullScreenName
     };
 }
 
+function createSettingsSplitNavigator(route?: NavigationPartialRoute<SettingsScreenName>): NavigationPartialRoute<typeof NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR> {
+    const routes = [];
+
+    const policyID = route?.params && 'policyID' in route.params ? route.params.policyID : undefined;
+
+    // Both routes in FullScreenNavigator should store a policyID in params, so here this param is also passed to the screen displayed in LHN in FullScreenNavigator
+    routes.push({
+        name: SCREENS.SETTINGS.ROOT,
+        params: {
+            policyID,
+        },
+    });
+
+    if (route) {
+        routes.push(route);
+    }
+    return {
+        name: NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR,
+        state: getRoutesWithIndex(routes),
+    };
+}
+
 // This function will return CentralPaneNavigator route or FullScreenNavigator route.
 function getMatchingRootRouteForRHPRoute(
     route: NavigationPartialRoute,
-): NavigationPartialRoute<typeof NAVIGATORS.CENTRAL_PANE_NAVIGATOR | typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR> | undefined {
+): NavigationPartialRoute<typeof NAVIGATORS.CENTRAL_PANE_NAVIGATOR | typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR | typeof NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR> | undefined {
     // Check for backTo param. One screen with different backTo value may need diferent screens visible under the overlay.
     if (route.params && 'backTo' in route.params && typeof route.params.backTo === 'string') {
         const stateForBackTo = getStateFromPath(route.params.backTo, config);
@@ -138,6 +161,14 @@ function getMatchingRootRouteForRHPRoute(
                 delete (params as Record<string, string | undefined>)?.reportID;
             }
             return createCentralPaneNavigator({name: centralPaneName as CentralPaneName, params});
+        }
+    }
+
+    // Check for CentralPaneNavigator
+    for (const [centralPaneName, RHPNames] of Object.entries(SETTINGS_SPLIT_TO_RHP_MAPPING)) {
+        if (RHPNames.includes(route.name)) {
+            const params = {...route.params};
+            return createSettingsSplitNavigator({name: centralPaneName as SettingsScreenName, params});
         }
     }
 
@@ -198,9 +229,9 @@ function getAdaptedState(state: PartialState<NavigationState<RootStackParamList>
             routes.push(createBottomTabNavigator(matchingBottomTabRoute, policyID));
             // When we open a screen in RHP from FullScreenNavigator, we need to add the appropriate screen in CentralPane.
             // Then, when we close FullScreenNavigator, we will be redirected to the correct page in CentralPane.
-            if (matchingRootRoute?.name === NAVIGATORS.FULL_SCREEN_NAVIGATOR) {
-                routes.push(createCentralPaneNavigator({name: SCREENS.SETTINGS.WORKSPACES}));
-            }
+            // if (matchingRootRoute?.name === NAVIGATORS.FULL_SCREEN_NAVIGATOR) {
+            //     routes.push(createCentralPaneNavigator({name: SCREENS.SETTINGS.WORKSPACES}));
+            // }
 
             if (matchingRootRoute && (!isNarrowLayout || !isRHPScreenOpenedFromLHN)) {
                 routes.push(matchingRootRoute);
@@ -277,11 +308,11 @@ function getAdaptedState(state: PartialState<NavigationState<RootStackParamList>
             ),
         );
 
-        routes.push(
-            createCentralPaneNavigator({
-                name: SCREENS.SETTINGS.WORKSPACES,
-            }),
-        );
+        // routes.push(
+        //     createCentralPaneNavigator({
+        //         name: SCREENS.SETTINGS.WORKSPACES,
+        //     }),
+        // );
 
         routes.push(fullScreenNavigator);
 

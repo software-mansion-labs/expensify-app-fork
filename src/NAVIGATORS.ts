@@ -11,4 +11,5 @@ export default {
     FEATURE_TRANING_MODAL_NAVIGATOR: 'FeatureTrainingModalNavigator',
     WELCOME_VIDEO_MODAL_NAVIGATOR: 'WelcomeVideoModalNavigator',
     FULL_SCREEN_NAVIGATOR: 'FullScreenNavigator',
+    SETTINGS_SPLIT_NAVIGATOR: 'SettingsSplitNavigator',
 } as const;

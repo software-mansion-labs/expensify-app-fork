@@ -32,43 +32,13 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             initialRouteName: SCREENS.HOME,
             screens: {
                 [SCREENS.HOME]: ROUTES.HOME,
-                [SCREENS.SETTINGS.ROOT]: {
-                    path: ROUTES.SETTINGS,
-                },
             },
         },
 
         [NAVIGATORS.CENTRAL_PANE_NAVIGATOR]: {
             screens: {
                 [SCREENS.REPORT]: ROUTES.REPORT_WITH_ID.route,
-                [SCREENS.SETTINGS.PROFILE.ROOT]: {
-                    path: ROUTES.SETTINGS_PROFILE,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.PREFERENCES.ROOT]: {
-                    path: ROUTES.SETTINGS_PREFERENCES,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.SECURITY]: {
-                    path: ROUTES.SETTINGS_SECURITY,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.WALLET.ROOT]: {
-                    path: ROUTES.SETTINGS_WALLET,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.ABOUT]: {
-                    path: ROUTES.SETTINGS_ABOUT,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.TROUBLESHOOT]: {
-                    path: ROUTES.SETTINGS_TROUBLESHOOT,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.WORKSPACES]: ROUTES.SETTINGS_WORKSPACES,
                 [SCREENS.SEARCH.CENTRAL_PANE]: ROUTES.SEARCH.route,
-                [SCREENS.SETTINGS.SAVE_THE_WORLD]: ROUTES.SETTINGS_SAVE_THE_WORLD,
-                [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: ROUTES.SETTINGS_SUBSCRIPTION,
             },
         },
         [SCREENS.NOT_FOUND]: '*',
@@ -737,6 +707,41 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
                         [SCREENS.SEARCH.REPORT_RHP]: ROUTES.SEARCH_REPORT.route,
                     },
                 },
+            },
+        },
+
+        [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: {
+            screens: {
+                [SCREENS.SETTINGS.ROOT]: {
+                    path: ROUTES.SETTINGS,
+                },
+                [SCREENS.SETTINGS.PROFILE.ROOT]: {
+                    path: ROUTES.SETTINGS_PROFILE,
+                    exact: true,
+                },
+                [SCREENS.SETTINGS.PREFERENCES.ROOT]: {
+                    path: ROUTES.SETTINGS_PREFERENCES,
+                    exact: true,
+                },
+                [SCREENS.SETTINGS.SECURITY]: {
+                    path: ROUTES.SETTINGS_SECURITY,
+                    exact: true,
+                },
+                [SCREENS.SETTINGS.WALLET.ROOT]: {
+                    path: ROUTES.SETTINGS_WALLET,
+                    exact: true,
+                },
+                [SCREENS.SETTINGS.ABOUT]: {
+                    path: ROUTES.SETTINGS_ABOUT,
+                    exact: true,
+                },
+                [SCREENS.SETTINGS.TROUBLESHOOT]: {
+                    path: ROUTES.SETTINGS_TROUBLESHOOT,
+                    exact: true,
+                },
+                [SCREENS.SETTINGS.SAVE_THE_WORLD]: ROUTES.SETTINGS_SAVE_THE_WORLD,
+                [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: ROUTES.SETTINGS_SUBSCRIPTION,
+                [SCREENS.SETTINGS.WORKSPACES]: ROUTES.SETTINGS_WORKSPACES,
             },
         },
 

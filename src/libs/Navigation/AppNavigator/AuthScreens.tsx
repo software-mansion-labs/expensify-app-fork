@@ -50,6 +50,7 @@ import FullScreenNavigator from './Navigators/FullScreenNavigator';
 import LeftModalNavigator from './Navigators/LeftModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
+import SettingsSplitNavigator from './Navigators/SettingsSplitNavigator';
 import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
 
 type AuthScreensProps = {
@@ -368,6 +369,11 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                         name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}
                         options={screenOptions.fullScreen}
                         component={FullScreenNavigator}
+                    />
+                    <RootStack.Screen
+                        name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
+                        options={screenOptions.fullScreen}
+                        component={SettingsSplitNavigator}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.LEFT_MODAL_NAVIGATOR}

@@ -56,13 +56,6 @@ type CentralPaneNavigatorParamList = {
         openOnAdminRoom?: boolean;
         referrer?: string;
     };
-    [SCREENS.SETTINGS.PROFILE.ROOT]: undefined;
-    [SCREENS.SETTINGS.PREFERENCES.ROOT]: undefined;
-    [SCREENS.SETTINGS.SECURITY]: undefined;
-    [SCREENS.SETTINGS.WALLET.ROOT]: undefined;
-    [SCREENS.SETTINGS.ABOUT]: undefined;
-    [SCREENS.SETTINGS.TROUBLESHOOT]: undefined;
-    [SCREENS.SETTINGS.WORKSPACES]: undefined;
     [SCREENS.SEARCH.CENTRAL_PANE]: {
         query: string;
         policyIDs?: string;
@@ -70,6 +63,17 @@ type CentralPaneNavigatorParamList = {
         sortBy?: SearchColumnType;
         sortOrder?: SortOrder;
     };
+};
+
+type SettingsSplitNavigatorParamList = {
+    [SCREENS.SETTINGS.ROOT]: {policyID?: string};
+    [SCREENS.SETTINGS.PROFILE.ROOT]: undefined;
+    [SCREENS.SETTINGS.PREFERENCES.ROOT]: undefined;
+    [SCREENS.SETTINGS.SECURITY]: undefined;
+    [SCREENS.SETTINGS.WALLET.ROOT]: undefined;
+    [SCREENS.SETTINGS.ABOUT]: undefined;
+    [SCREENS.SETTINGS.TROUBLESHOOT]: undefined;
+    [SCREENS.SETTINGS.WORKSPACES]: undefined;
     [SCREENS.SETTINGS.SAVE_THE_WORLD]: undefined;
     [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: undefined;
 };
@@ -861,7 +865,6 @@ type BottomTabNavigatorParamList = {
         sortBy?: SearchColumnType;
         sortOrder?: SortOrder;
     };
-    [SCREENS.SETTINGS.ROOT]: {policyID?: string};
 };
 
 type SharedScreensParamList = {
@@ -924,6 +927,7 @@ type AuthScreensParamList = SharedScreensParamList & {
     [NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR]: NavigatorScreenParams<OnboardingModalNavigatorParamList>;
     [NAVIGATORS.FEATURE_TRANING_MODAL_NAVIGATOR]: NavigatorScreenParams<FeatureTrainingNavigatorParamList>;
     [NAVIGATORS.WELCOME_VIDEO_MODAL_NAVIGATOR]: NavigatorScreenParams<WelcomeVideoModalNavigatorParamList>;
+    [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: NavigatorScreenParams<SettingsSplitNavigatorParamList>;
     [SCREENS.DESKTOP_SIGN_IN_REDIRECT]: undefined;
     [SCREENS.TRANSACTION_RECEIPT]: {
         reportID: string;
@@ -946,6 +950,8 @@ type BottomTabName = keyof BottomTabNavigatorParamList;
 type CentralPaneName = keyof CentralPaneNavigatorParamList;
 
 type FullScreenName = keyof FullScreenNavigatorParamList;
+
+type SettingsScreenName = keyof SettingsSplitNavigatorParamList;
 
 type SwitchPolicyIDParams = {
     policyID?: string;
@@ -1003,4 +1009,6 @@ export type {
     WalletStatementNavigatorParamList,
     WelcomeVideoModalNavigatorParamList,
     SearchReportParamList,
+    SettingsSplitNavigatorParamList,
+    SettingsScreenName,
 };
