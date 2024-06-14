@@ -93,7 +93,7 @@ function InvertedFlashList<T>({onScroll: onScrollProp = () => {}, ...props}: Inv
             {...props}
             ref={ref}
             onScroll={handleScroll}
-            CellRendererComponent={CellRendererComponent}
+            // CellRendererComponent={CellRendererComponent}
         />
     );
 }
