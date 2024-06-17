@@ -1,6 +1,6 @@
+import {FlashList} from '@irisjae/flash-list';
+import type {FlashListProps} from '@irisjae/flash-list';
 import {useRoute} from '@react-navigation/native';
-import type {FlashListProps} from '@shopify/flash-list';
-import {FlashList} from '@shopify/flash-list';
 import type {ReactElement} from 'react';
 import React, {memo, useCallback, useContext, useEffect, useMemo, useRef} from 'react';
 import {StyleSheet, View} from 'react-native';

@@ -1,4 +1,4 @@
-import type {ListRenderItem} from '@shopify/flash-list';
+import type {ListRenderItem} from '@irisjae/flash-list';
 import lodashDebounce from 'lodash/debounce';
 import React, {useCallback} from 'react';
 import type {ForwardedRef} from 'react';

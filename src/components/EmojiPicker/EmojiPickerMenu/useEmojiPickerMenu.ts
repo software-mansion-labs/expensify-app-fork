@@ -1,4 +1,4 @@
-import type {FlashList} from '@shopify/flash-list';
+import type {FlashList} from '@irisjae/flash-list';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useAnimatedRef} from 'react-native-reanimated';
 import emojis from '@assets/emojis';

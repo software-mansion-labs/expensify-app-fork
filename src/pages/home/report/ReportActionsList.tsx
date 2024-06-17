@@ -1,6 +1,6 @@
+import type {ContentStyle, FlashList, ListRenderItem} from '@irisjae/flash-list';
 import {useIsFocused, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
-import type {ContentStyle, FlashList, ListRenderItem} from '@shopify/flash-list';
 import type {DebouncedFunc} from 'lodash';
 import type {RefObject} from 'react';
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -670,11 +670,12 @@ function ReportActionsList({
         );
     }, [isLoadingNewerReportActions, canShowHeader, hasLoadingNewerReportActionsError, retryLoadNewerChatsError]);
 
-    // const onStartReached = useCallback(() => {
-    //     loadNewerChats(false);
-    // }, [loadNewerChats]);
+    const onStartReached = useCallback(() => {
+        loadNewerChats(false);
+    }, [loadNewerChats]);
 
     const onEndReached = useCallback(() => {
+        console.log('end reached');
         loadOlderChats(false);
     }, [loadOlderChats]);
 
@@ -700,8 +701,9 @@ function ReportActionsList({
                     // initialNumToRender={initialNumToRender}
                     onEndReached={onEndReached}
                     onEndReachedThreshold={0.75}
-                    // onStartReached={onStartReached}
-                    // onStartReachedThreshold={0.75}
+                    onStartReached={onStartReached}
+                    onStartReachedThreshold={0.75}
+                    preserveVisiblePosition
                     ListFooterComponent={listFooterComponent}
                     ListHeaderComponent={listHeaderComponent}
                     keyboardShouldPersistTaps="handled"

@@ -1,5 +1,5 @@
-import type {FlashListProps} from '@shopify/flash-list';
-import {FlashList} from '@shopify/flash-list';
+import {FlashList} from '@irisjae/flash-list';
+import type {FlashListProps} from '@irisjae/flash-list';
 import React, {forwardRef, useMemo} from 'react';
 import type {ScrollViewProps, ViewToken} from 'react-native';
 import type {ReportAction} from '@src/types/onyx';

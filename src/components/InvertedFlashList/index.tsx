@@ -1,11 +1,10 @@
-import type {FlashList, FlashListProps} from '@shopify/flash-list';
+import type {FlashList, FlashListProps} from '@irisjae/flash-list';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useEffect, useRef} from 'react';
 import type {NativeScrollEvent, NativeSyntheticEvent} from 'react-native';
 import {DeviceEventEmitter} from 'react-native';
 import CONST from '@src/CONST';
 import BaseInvertedFlashList from './BaseInvertedFlashList';
-import CellRendererComponent from './CellRendererComponent';
 
 type InvertedFlashListProps<T> = FlashListProps<T> & {
     shouldEnableAutoScrollToTopThreshold?: boolean;

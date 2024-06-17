@@ -1,8 +1,7 @@
-import type {FlashList, FlashListProps} from '@shopify/flash-list';
+import type {FlashList, FlashListProps} from '@irisjae/flash-list';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef} from 'react';
 import BaseInvertedFlashList from './BaseInvertedFlashList';
-import CellRendererComponent from './CellRendererComponent';
 
 function BaseInvertedFlashListWithRef<T>(props: FlashListProps<T>, ref: ForwardedRef<FlashList<T>>) {
     return (

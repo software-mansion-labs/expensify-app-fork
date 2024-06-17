@@ -1,5 +1,5 @@
-import {FlashList} from '@shopify/flash-list';
-import type {ListRenderItem} from '@shopify/flash-list';
+import type {ListRenderItem} from '@irisjae/flash-list';
+import {FlashList} from '@irisjae/flash-list';
 import React, {useMemo} from 'react';
 import type {ForwardedRef} from 'react';
 import {StyleSheet, View} from 'react-native';

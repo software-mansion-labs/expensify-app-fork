@@ -1,4 +1,4 @@
-import type {ListRenderItem} from '@shopify/flash-list';
+import type {ListRenderItem} from '@irisjae/flash-list';
 import throttle from 'lodash/throttle';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {ForwardedRef} from 'react';
