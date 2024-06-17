@@ -356,7 +356,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                     />
                     <RootStack.Screen
                         name={SCREENS.NOT_FOUND}
-                        options={screenOptions.fullScreen}
+                        options={screenOptions.animatedFullScreen}
                         component={NotFoundPage}
                     />
                     <RootStack.Screen
@@ -367,7 +367,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}
-                        options={screenOptions.fullScreen}
+                        options={screenOptions.animatedFullScreen}
                         component={FullScreenNavigator}
                     />
                     <RootStack.Screen
@@ -383,7 +383,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                     />
                     <RootStack.Screen
                         name={SCREENS.DESKTOP_SIGN_IN_REDIRECT}
-                        options={screenOptions.fullScreen}
+                        options={screenOptions.animatedFullScreen}
                         component={DesktopSignInRedirectPage}
                     />
                     <RootStack.Screen

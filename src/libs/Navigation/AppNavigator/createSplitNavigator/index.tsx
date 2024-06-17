@@ -2,16 +2,17 @@ import type {ParamListBase, StackActionHelpers, StackNavigationState} from '@rea
 import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
 import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
 import {StackView} from '@react-navigation/stack';
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import getRootNavigatorScreenOptions from '@libs/Navigation/AppNavigator/getRootNavigatorScreenOptions';
-import navigationRef from '@libs/Navigation/navigationRef';
 import SplitRouter from './SplitRouter';
 import type {SplitNavigatorProps, SplitNavigatorRouterOptions} from './types';
+import useNavigationReset from './useNavigationReset';
+import usePrepareSplitNavigatorChildren from './usePrepareSplitNavigatorChildren';
 
 function SplitNavigator(props: SplitNavigatorProps) {
     const styles = useThemeStyles();
@@ -19,28 +20,23 @@ function SplitNavigator(props: SplitNavigatorProps) {
     const {isSmallScreenWidth} = useWindowDimensions();
     const screenOptions = getRootNavigatorScreenOptions(isSmallScreenWidth, styles, StyleUtils);
 
+    const children = usePrepareSplitNavigatorChildren(props.children, props.sidebarScreen, screenOptions.homeScreen);
+
     const {navigation, state, descriptors, NavigationContent} = useNavigationBuilder<
         StackNavigationState<ParamListBase>,
-        SplitNavigatorRouterOptions<keyof ParamListBase>,
+        SplitNavigatorRouterOptions,
         StackActionHelpers<ParamListBase>,
         StackNavigationOptions,
         StackNavigationEventMap
     >(SplitRouter, {
-        children: props.children,
+        children,
         screenOptions: screenOptions.centralPaneNavigator,
         initialRouteName: props.initialRouteName,
         sidebarScreen: props.sidebarScreen,
         initialCentralPaneScreen: props.initialCentralPaneScreen,
     });
 
-    useEffect(() => {
-        if (!navigationRef.isReady()) {
-            return;
-        }
-        // We need to separately reset state of this navigator to trigger getRehydratedState.
-        navigation.reset(navigation.getState());
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isSmallScreenWidth]);
+    useNavigationReset(navigation, isSmallScreenWidth);
 
     return (
         <FocusTrapForScreens>

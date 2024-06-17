@@ -80,13 +80,13 @@ function createCentralPaneNavigator(route: NavigationPartialRoute<CentralPaneNam
 function createFullScreenNavigator(route?: NavigationPartialRoute<FullScreenName>): NavigationPartialRoute<typeof NAVIGATORS.FULL_SCREEN_NAVIGATOR> {
     const routes = [];
 
-    const policyID = route?.params && 'policyID' in route.params ? route.params.policyID : undefined;
+    const policyIdParam = route?.params && 'policyID' in route.params ? route.params.policyID : undefined;
 
     // Both routes in FullScreenNavigator should store a policyID in params, so here this param is also passed to the screen displayed in LHN in FullScreenNavigator
     routes.push({
         name: SCREENS.WORKSPACE.INITIAL,
         params: {
-            policyID,
+            policyID: policyIdParam,
         },
     });
 
@@ -99,16 +99,16 @@ function createFullScreenNavigator(route?: NavigationPartialRoute<FullScreenName
     };
 }
 
-function createSettingsSplitNavigator(route?: NavigationPartialRoute<SettingsScreenName>): NavigationPartialRoute<typeof NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR> {
+function createSettingsSplitNavigator(route?: NavigationPartialRoute<SettingsScreenName>, policyID?: string): NavigationPartialRoute<typeof NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR> {
     const routes = [];
 
-    const policyID = route?.params && 'policyID' in route.params ? route.params.policyID : undefined;
+    const policyIdParam = policyID ?? (route?.params && 'policyID' in route.params ? route.params.policyID : undefined);
 
     // Both routes in FullScreenNavigator should store a policyID in params, so here this param is also passed to the screen displayed in LHN in FullScreenNavigator
     routes.push({
         name: SCREENS.SETTINGS.ROOT,
         params: {
-            policyID,
+            policyID: policyIdParam,
         },
     });
 
@@ -229,9 +229,9 @@ function getAdaptedState(state: PartialState<NavigationState<RootStackParamList>
             routes.push(createBottomTabNavigator(matchingBottomTabRoute, policyID));
             // When we open a screen in RHP from FullScreenNavigator, we need to add the appropriate screen in CentralPane.
             // Then, when we close FullScreenNavigator, we will be redirected to the correct page in CentralPane.
-            // if (matchingRootRoute?.name === NAVIGATORS.FULL_SCREEN_NAVIGATOR) {
-            //     routes.push(createCentralPaneNavigator({name: SCREENS.SETTINGS.WORKSPACES}));
-            // }
+            if (matchingRootRoute?.name === NAVIGATORS.FULL_SCREEN_NAVIGATOR) {
+                routes.push(createSettingsSplitNavigator({name: SCREENS.SETTINGS.WORKSPACES}));
+            }
 
             if (matchingRootRoute && (!isNarrowLayout || !isRHPScreenOpenedFromLHN)) {
                 routes.push(matchingRootRoute);
@@ -300,7 +300,7 @@ function getAdaptedState(state: PartialState<NavigationState<RootStackParamList>
 
         const routes = [];
         routes.push(
-            createBottomTabNavigator(
+            createSettingsSplitNavigator(
                 {
                     name: SCREENS.SETTINGS.ROOT,
                 },

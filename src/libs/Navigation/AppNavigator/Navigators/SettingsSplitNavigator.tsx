@@ -1,9 +1,5 @@
 import React from 'react';
-import useStyleUtils from '@hooks/useStyleUtils';
-import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import createSplitNavigator from '@libs/Navigation/AppNavigator/createSplitNavigator';
-import getRootNavigatorScreenOptions from '@libs/Navigation/AppNavigator/getRootNavigatorScreenOptions';
 import type {SettingsSplitNavigatorParamList} from '@libs/Navigation/types';
 import SCREENS from '@src/SCREENS';
 
@@ -26,20 +22,13 @@ const SETTINGS_CENTRAL_PANE_SCREENS = {
 } satisfies Screens;
 
 function SettingsSplitNavigator() {
-    const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
-    const {isSmallScreenWidth} = useWindowDimensions();
-    const screenOptions = getRootNavigatorScreenOptions(isSmallScreenWidth, styles, StyleUtils);
-
     return (
         <RootStack.Navigator
             sidebarScreen={SCREENS.SETTINGS.ROOT}
             initialCentralPaneScreen={SCREENS.SETTINGS.PROFILE.ROOT}
-            screenOptions={screenOptions.centralPaneNavigator}
         >
             <RootStack.Screen
                 name={SCREENS.SETTINGS.ROOT}
-                options={screenOptions.homeScreen}
                 getComponent={loadInitialSettingsPage}
             />
             {Object.entries(SETTINGS_CENTRAL_PANE_SCREENS).map(([screenName, componentGetter]) => (
