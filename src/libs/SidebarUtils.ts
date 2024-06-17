@@ -82,6 +82,10 @@ function compareStringDates(a: string, b: string): 0 | 1 | -1 {
     return 0;
 }
 
+/**
+ * A mini report object that contains only the necessary information to sort reports.
+ * This is used to avoid copying the entire report object and only the necessary information.
+ */
 type MiniReport = {
     reportID?: string;
     displayName: string;
@@ -130,6 +134,7 @@ function getOrderedReportIDs(
 
     console.time('getOrderedReportIDs 1: reportsToDisplay');
 
+    // Filter out all the reports that shouldn't be displayed
     let reportsToDisplay = allReportsDictValues.filter((report) => {
         let start, end;
 
@@ -179,7 +184,7 @@ function getOrderedReportIDs(
         start = performance.now();
         const result = testFunc({
             report,
-            currentReportId: currentReportId ?? '',
+            currentReportId: currentReportId ?? '-1',
             isInFocusMode,
             betas,
             policies: policies as OnyxCollection<Policy>,
@@ -214,7 +219,6 @@ function getOrderedReportIDs(
     const nonArchivedReports: MiniReport[] = [];
     const archivedReports: MiniReport[] = [];
 
-    console.time('getOrderedReportIDs 2: sort');
     if (currentPolicyID || policyMemberAccountIDs.length > 0) {
         reportsToDisplay = reportsToDisplay.filter(
             (report) => report?.reportID === currentReportId || ReportUtils.doesReportBelongToWorkspace(report, policyMemberAccountIDs, currentPolicyID),
@@ -240,10 +244,10 @@ function getOrderedReportIDs(
 
         start = performance.now();
         const isPinned = report?.isPinned ?? false;
-        const reportAction = ReportActionsUtils.getReportAction(report?.parentReportID ?? '', report?.parentReportActionID ?? '');
+        const reportAction = ReportActionsUtils.getReportAction(report?.parentReportID ?? '-1', report?.parentReportActionID ?? '-1');
         if (isPinned || ReportUtils.requiresAttentionFromCurrentUser(report, reportAction)) {
             pinnedAndGBRReports.push(miniReport);
-        } else if (hasValidDraftComment(report?.reportID ?? '')) {
+        } else if (hasValidDraftComment(report?.reportID ?? '-1')) {
             draftReports.push(miniReport);
         } else if (ReportUtils.isArchivedRoom(report)) {
             archivedReports.push(miniReport);
@@ -279,13 +283,10 @@ function getOrderedReportIDs(
         nonArchivedReports.sort((a, b) => (a?.displayName && b?.displayName ? localeCompare(a.displayName, b.displayName) : 0));
         archivedReports.sort((a, b) => (a?.displayName && b?.displayName ? localeCompare(a.displayName, b.displayName) : 0));
     }
-    console.timeEnd('getOrderedReportIDs 4: sort');
 
     // Now that we have all the reports grouped and sorted, they must be flattened into an array and only return the reportID.
     // The order the arrays are concatenated in matters and will determine the order that the groups are displayed in the sidebar.
-    console.time('getOrderedReportIDs 5: flatten');
-    const LHNReports = [...pinnedAndGBRReports, ...draftReports, ...nonArchivedReports, ...archivedReports].map((report) => report?.reportID ?? '');
-    console.timeEnd('getOrderedReportIDs 5: flatten');
+    const LHNReports = [...pinnedAndGBRReports, ...draftReports, ...nonArchivedReports, ...archivedReports].map((report) => report?.reportID ?? '-1');
     return LHNReports;
 }
 
@@ -386,7 +387,7 @@ function getOptionData({
     result.iouReportID = report.iouReportID;
     result.keyForList = String(report.reportID);
     result.hasOutstandingChildRequest = report.hasOutstandingChildRequest;
-    result.parentReportID = report.parentReportID ?? '';
+    result.parentReportID = report.parentReportID ?? '-1';
     result.isWaitingOnBankAccount = report.isWaitingOnBankAccount;
     result.notificationPreference = report.notificationPreference;
     result.isAllowedToComment = ReportUtils.canUserPerformWriteAction(report);
