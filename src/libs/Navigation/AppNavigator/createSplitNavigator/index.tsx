@@ -14,7 +14,7 @@ import type {SplitNavigatorProps, SplitNavigatorRouterOptions} from './types';
 import useNavigationReset from './useNavigationReset';
 import usePrepareSplitNavigatorChildren from './usePrepareSplitNavigatorChildren';
 
-function SplitNavigator(props: SplitNavigatorProps) {
+function SplitNavigator<ParamList extends ParamListBase>(props: SplitNavigatorProps<ParamList>) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {isSmallScreenWidth} = useWindowDimensions();
@@ -57,4 +57,8 @@ function SplitNavigator(props: SplitNavigatorProps) {
 
 SplitNavigator.displayName = 'SplitNavigator';
 
-export default createNavigatorFactory<StackNavigationState<ParamListBase>, StackNavigationOptions, StackNavigationEventMap, typeof SplitNavigator>(SplitNavigator);
+export default function <ParamList extends ParamListBase>() {
+    return createNavigatorFactory<StackNavigationState<ParamList>, StackNavigationOptions, StackNavigationEventMap, React.ComponentType<SplitNavigatorProps<ParamList>>>(
+        SplitNavigator,
+    )<ParamList>();
+}

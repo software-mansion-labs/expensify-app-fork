@@ -6,9 +6,9 @@ type SplitNavigatorRouterOptions<RouteName extends string = string> = DefaultRou
     sidebarScreen: RouteName;
 };
 
-type SplitNavigatorProps = DefaultNavigatorOptions<ParamListBase, StackNavigationState<ParamListBase>, StackNavigationOptions, StackNavigationEventMap> & {
-    initialCentralPaneScreen: keyof ParamListBase;
-    sidebarScreen: keyof ParamListBase;
+type SplitNavigatorProps<ParamList extends ParamListBase> = DefaultNavigatorOptions<ParamListBase, StackNavigationState<ParamListBase>, StackNavigationOptions, StackNavigationEventMap> & {
+    initialCentralPaneScreen: Extract<keyof ParamList, string>;
+    sidebarScreen: Extract<keyof ParamList, string>;
 };
 
 export type {SplitNavigatorProps, SplitNavigatorRouterOptions};
