@@ -1,7 +1,5 @@
 import { NativeModules, NativeEventEmitter } from 'react-native';
-
 const { GooglePushProvisioning } = NativeModules;
-const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
 
 type Tsp = 'VISA' | 'MASTERCARD';
 
@@ -23,6 +21,8 @@ interface PushTokenizeRequest {
     lastDigits: string;
     address: UserAddress;
 }
+
+const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
 
 const GooglePushProvisioningModule = {
     async getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
