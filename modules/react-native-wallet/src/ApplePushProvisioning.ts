@@ -1,49 +1,48 @@
-import ReactNative from 'react-native';
-import { NativeEventEmitter } from 'react-native';
+import { NativeModules, NativeEventEmitter } from 'react-native';
 
-interface AppleWalletModule {
-    canAddPaymentPass: () => Promise<boolean>;
-    startAddPaymentPass: (last4: string, cardHolderName: string) => Promise<void>;
-    completeAddPaymentPass: (
-        activationData: string,
-        encryptedPassData: string,
-        ephemeralPublicKey: string,
-    ) => Promise<void>;
+const { RNWallet } = NativeModules;
+
+interface AddPassRequest {
+    last4: string;
+    cardHolder: string;
 }
 
-const module = ReactNative.NativeModules?.PaymentPass || {
-    addListener: null,
-    removeListeners: null,
-};
-const AppleWalletModule = module as AppleWalletModule;
-const eventEmitter = new NativeEventEmitter(module);
+interface CompletePassRequest {
+    activation: string;
+    encryptedData: string;
+    ephemeralKey: string;
+}
 
-const canAddPaymentPass = (): Promise<boolean> => {
-    return AppleWalletModule.canAddPaymentPass();
+const eventEmitter = new NativeEventEmitter(RNWallet);
+
+const ApplePushProvisioningModule = {
+    async canAddPass(): Promise<boolean> {
+        try {
+            return await RNWallet.canAddPass();
+        } catch (error) {
+            throw new Error(`Error checking add pass capability: ${error.message}`);
+        }
+    },
+    async startAddPass(request: AddPassRequest): Promise<void> {
+        try {
+            return await RNWallet.startAddPass(request.last4, request.cardHolder);
+        } catch (error) {
+            throw new Error(`Error starting add pass: ${error.message}`);
+        }
+    },
+    async completeAddPass(request: CompletePassRequest): Promise<void> {
+        try {
+            RNWallet.completeAddPass(request.activation, request.encryptedData, request.ephemeralKey);
+        } catch (error) {
+            throw new Error(`Error completing add pass: ${error.message}`);
+        }
+    },
+    addEventListener(event: string, callback: (data: any) => void) {
+        eventEmitter.addListener(event, callback);
+    },
+    removeAllListeners(event: string) {
+        eventEmitter.removeAllListeners(event);
+    }
 };
 
-const startAddPaymentPass = (
-    last4: string,
-    cardHolderName: string,
-): Promise<void> => {
-    return AppleWalletModule.startAddPaymentPass(last4, cardHolderName);
-};
-
-const completeAddPaymentPass = (
-    activationData: string,
-    encryptedPassData: string,
-    ephemeralPublicKey: string,
-): Promise<void> => {
-    return AppleWalletModule.completeAddPaymentPass(
-        activationData,
-        encryptedPassData,
-        ephemeralPublicKey,
-    );
-};
-
-export default {
-    canAddPaymentPass,
-    startAddPaymentPass,
-    completeAddPaymentPass,
-    eventEmitter,
-};
+export default ApplePushProvisioningModule;
