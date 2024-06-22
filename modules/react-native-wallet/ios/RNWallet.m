@@ -2,6 +2,13 @@
 #import <React/RCTLog.h>
 #import <React/RCTUtils.h>
 #import <React/RCTBridge.h>
+#import <PassKit/PassKit.h>
+
+typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request);
+
+@interface RNWallet () <PKAddPaymentPassViewControllerDelegate>
+@property (nonatomic, strong) completedPaymentProcessHandler completionHandler;
+@end
 
 @implementation RNWallet
 
