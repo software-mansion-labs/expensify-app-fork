@@ -1,25 +1,20 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "es5",
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    "isolatedModules": true,
-    "incremental": true,
-    "baseUrl": ".",
-    "types": ["react-native"],
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": [
-    "src/**/*.ts"
+    "src",
+    "modules/react-native-wallet/src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "**/*.test.ts"
+    "dist"
   ]
 }

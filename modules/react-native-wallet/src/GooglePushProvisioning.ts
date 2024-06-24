@@ -1,5 +1,6 @@
-import { NativeModules, NativeEventEmitter } from 'react-native';
-const { GooglePushProvisioning } = NativeModules;
+import {NativeEventEmitter, NativeModules} from 'react-native';
+
+const {GooglePushProvisioning} = NativeModules;
 
 type Tsp = 'VISA' | 'MASTERCARD';
 
@@ -28,43 +29,37 @@ const GooglePushProvisioningModule = {
     async getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
         try {
             return await GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
-        } catch (error) {
-            throw new Error(`Error getting token status: ${error.message}`);
+        } catch {
+            throw new Error(`Error getting token status.`);
         }
     },
     async getActiveWalletID(): Promise<string> {
         try {
             return await GooglePushProvisioning.getActiveWalletID();
-        } catch (error) {
-            throw new Error(`Error getting active wallet ID: ${error.message}`);
+        } catch {
+            throw new Error(`Error getting active wallet ID.`);
         }
     },
     async getStableHardwareId(): Promise<string> {
         try {
             return await GooglePushProvisioning.getStableHardwareId();
-        } catch (error) {
-            throw new Error(`Error getting stable hardware ID: ${error.message}`);
+        } catch {
+            throw new Error(`Error getting stable hardware ID.`);
         }
     },
     async getEnvironment(): Promise<string> {
         try {
             return await GooglePushProvisioning.getEnvironment();
-        } catch (error) {
-            throw new Error(`Error getting environment: ${error.message}`);
+        } catch {
+            throw new Error(`Error getting environment.`);
         }
     },
     async pushProvision(request: PushTokenizeRequest): Promise<string> {
         try {
             const addressJson = JSON.stringify(request.address);
-            return await GooglePushProvisioning.pushProvision(
-                request.opc,
-                request.tsp,
-                request.clientName,
-                request.lastDigits,
-                addressJson
-            );
-        } catch (error) {
-            throw new Error(`Error during push provision: ${error.message}`);
+            return await GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
+        } catch {
+            throw new Error(`Error during push provision.`);
         }
     },
     addEventListener(event: string, callback: (data: any) => void) {
@@ -72,7 +67,7 @@ const GooglePushProvisioningModule = {
     },
     removeAllListeners(event: string) {
         eventEmitter.removeAllListeners(event);
-    }
+    },
 };
 
 export default GooglePushProvisioningModule;

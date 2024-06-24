@@ -1,6 +1,6 @@
-import { NativeModules, NativeEventEmitter } from 'react-native';
+import {NativeEventEmitter, NativeModules} from 'react-native';
 
-const { RNWallet } = NativeModules;
+const {RNWallet} = NativeModules;
 
 interface AddPassRequest {
     last4: string;
@@ -19,22 +19,22 @@ const ApplePushProvisioningModule = {
     async canAddPass(): Promise<boolean> {
         try {
             return await RNWallet.canAddPass();
-        } catch (error) {
-            throw new Error(`Error checking add pass capability: ${error.message}`);
+        } catch {
+            throw new Error(`Error checking add pass capability.`);
         }
     },
     async startAddPass(request: AddPassRequest): Promise<void> {
         try {
             return await RNWallet.startAddPass(request.last4, request.cardHolder);
-        } catch (error) {
-            throw new Error(`Error starting add pass: ${error.message}`);
+        } catch {
+            throw new Error(`Error starting add pass.`);
         }
     },
     async completeAddPass(request: CompletePassRequest): Promise<void> {
         try {
             RNWallet.completeAddPass(request.activation, request.encryptedData, request.ephemeralKey);
-        } catch (error) {
-            throw new Error(`Error completing add pass: ${error.message}`);
+        } catch {
+            throw new Error(`Error completing add pass.`);
         }
     },
     addEventListener(event: string, callback: (data: any) => void) {
@@ -42,7 +42,7 @@ const ApplePushProvisioningModule = {
     },
     removeAllListeners(event: string) {
         eventEmitter.removeAllListeners(event);
-    }
+    },
 };
 
 export default ApplePushProvisioningModule;
