@@ -264,7 +264,7 @@ type MenuItemBaseProps = {
     furtherDetails?: string;
 
     /** Render custom content under the main item */
-    furtherDetailsContent?: () => ReactNode;
+    furtherDetailsComponent?: ReactElement;
 
     /** The function that should be called when this component is LongPressed or right-clicked. */
     onSecondaryInteraction?: (event: GestureResponderEvent | MouseEvent) => void;
@@ -341,7 +341,7 @@ function MenuItem(
         iconRight = Expensicons.ArrowRight,
         furtherDetailsIcon,
         furtherDetails,
-        furtherDetailsContent,
+        furtherDetailsComponent,
         description,
         helperText,
         helperTextStyle,
@@ -706,7 +706,7 @@ function MenuItem(
                                                                 </Text>
                                                             </View>
                                                         )}
-                                                        {!!furtherDetailsContent && <View style={[styles.flexRow, styles.alignItemsCenter]}>{furtherDetailsContent()}</View>}
+                                                        {!!furtherDetailsComponent && <View style={[styles.flexRow, styles.alignItemsCenter]}>{furtherDetailsComponent}</View>}
                                                         {titleComponent}
                                                     </View>
                                                 </View>
