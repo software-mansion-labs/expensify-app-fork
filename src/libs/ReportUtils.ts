@@ -6872,6 +6872,15 @@ function isNonAdminOrOwnerOfPolicyExpenseChat(report: OnyxInputOrEntry<Report>, 
     return isPolicyExpenseChat(report) && !(PolicyUtils.isPolicyAdmin(policy) || PolicyUtils.isPolicyOwner(policy, currentUserAccountID ?? -1) || isReportOwner(report));
 }
 
+function isAdminOwnerOrParticipantOfPolicyExpenseChat(report: OnyxInputOrEntry<Report>, policy: OnyxInputOrEntry<Policy>): boolean {
+    return (
+        (isPolicyExpenseChat(report) && PolicyUtils.isPolicyAdmin(policy)) ||
+        PolicyUtils.isPolicyOwner(policy, currentUserAccountID ?? -1) ||
+        isReportOwner(report) ||
+        isReportParticipant(report)
+    );
+}
+
 /**
  * Whether the user can join a report
  */
@@ -7332,6 +7341,7 @@ export {
     isCurrentUserInvoiceReceiver,
     isDraftReport,
     changeMoneyRequestHoldStatus,
+    isAdminOwnerOrParticipantOfPolicyExpenseChat,
     createDraftWorkspaceAndNavigateToConfirmationScreen,
     isChatUsedForOnboarding,
     getChatUsedForOnboarding,
