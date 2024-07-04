@@ -2,17 +2,19 @@ import {NativeEventEmitter, NativeModules} from 'react-native';
 
 const {RNWallet} = NativeModules;
 
-interface AddPassRequest {
+type AddPassRequest = {
     last4: string;
     cardHolder: string;
-}
+};
 
-interface CompletePassRequest {
+type CompletePassRequest = {
     activation: string;
     encryptedData: string;
     ephemeralKey: string;
-}
+};
+
 type SupportedEvents = 'addPaymentPassViewControllerDidFinish' | 'getPassAndActivation';
+
 const eventEmitter = new NativeEventEmitter(RNWallet);
 
 const ApplePushProvisioningModule = {
@@ -20,7 +22,7 @@ const ApplePushProvisioningModule = {
         try {
             return await RNWallet.canAddPaymentPass();
         } catch {
-            throw new Error(`Error checking add pass capability.`);
+            throw new Error('Error checking add pass capability.');
         }
     },
     async startAddPass(request: AddPassRequest): Promise<void> {
