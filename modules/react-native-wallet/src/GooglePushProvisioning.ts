@@ -1,9 +1,9 @@
-import { NativeEventEmitter, NativeModules } from 'react-native';
-import type { NativeModule } from 'react-native';
+import {NativeEventEmitter, NativeModules} from 'react-native';
+import type {NativeModule} from 'react-native';
 
 type Tsp = 'VISA' | 'MASTERCARD';
 
-interface UserAddress {
+type UserAddress = {
     name: string;
     addressOne: string;
     addressTwo: string;
@@ -12,15 +12,30 @@ interface UserAddress {
     countryCode: string;
     postalCode: string;
     phoneNumber: string;
-}
+};
 
-interface PushTokenizeRequest {
+type PushTokenizeRequest = {
     opc: string;
     tsp: Tsp;
     clientName: string;
     lastDigits: string;
     address: UserAddress;
-}
+};
+
+type SupportedEvents = 'getActiveWalletID' | 'getStableHardwareId';
+
+type GetActiveWalletIDEvent = {
+    walletID: string;
+};
+
+type GetStableHardwareIdEvent = {
+    deviceID: string;
+};
+
+type EventDataMap = {
+    getActiveWalletID: GetActiveWalletIDEvent;
+    getStableHardwareId: GetStableHardwareIdEvent;
+};
 
 type GooglePushProvisioningType = NativeModule & {
     getTokenStatus: (tsp: Tsp, tokenReferenceId: string) => Promise<number>;
@@ -30,7 +45,7 @@ type GooglePushProvisioningType = NativeModule & {
     pushProvision: (opc: string, tsp: Tsp, clientName: string, lastDigits: string, addressJson: string) => Promise<string>;
 };
 
-const { GooglePushProvisioning } = NativeModules as { GooglePushProvisioning: GooglePushProvisioningType };
+const {GooglePushProvisioning} = NativeModules as {GooglePushProvisioning: GooglePushProvisioningType};
 
 const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
 
@@ -84,7 +99,7 @@ const GooglePushProvisioningModule = {
      * @param event - The event name to listen for.
      * @param callback - The callback function to handle the event.
      */
-    addEventListener(event: string, callback: (data: any) => void) {
+    addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
         eventEmitter.addListener(event, callback);
     },
 
@@ -92,10 +107,10 @@ const GooglePushProvisioningModule = {
      * Removes all listeners for the specified event.
      * @param event - The event name to remove listeners for.
      */
-    removeAllListeners(event: string) {
+    removeAllListeners(event: SupportedEvents) {
         eventEmitter.removeAllListeners(event);
     },
 };
 
 export default GooglePushProvisioningModule;
-export type { PushTokenizeRequest, UserAddress, Tsp };
+export type {PushTokenizeRequest, UserAddress, Tsp};

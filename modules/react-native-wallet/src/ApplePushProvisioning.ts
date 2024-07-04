@@ -1,5 +1,5 @@
-import { NativeEventEmitter, NativeModules } from 'react-native';
-import type { NativeModule } from 'react-native';
+import {NativeEventEmitter, NativeModules} from 'react-native';
+import type {NativeModule} from 'react-native';
 
 type RNWalletType = NativeModule & {
     canAddPaymentPass: () => Promise<boolean>;
@@ -27,7 +27,7 @@ type GetPassAndActivationEvent = {
 
 type SupportedEvents = 'addPaymentPassViewControllerDidFinish' | 'getPassAndActivation';
 
-const { RNWallet } = NativeModules as { RNWallet: RNWalletType };
+const {RNWallet} = NativeModules as {RNWallet: RNWalletType};
 
 const eventEmitter = new NativeEventEmitter(RNWallet);
 
@@ -63,7 +63,7 @@ const ApplePushProvisioningModule = {
      * @param event - The event name to listen for.
      * @param callback - The callback function to handle the event.
      */
-    addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? { data: GetPassAndActivationEvent } : never) => void) {
+    addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? {data: GetPassAndActivationEvent} : never) => void) {
         eventEmitter.addListener(event, callback);
     },
 
@@ -77,4 +77,4 @@ const ApplePushProvisioningModule = {
 };
 
 export default ApplePushProvisioningModule;
-export type { AddPassRequest, CompletePassRequest, GetPassAndActivationEvent };
+export type {AddPassRequest, CompletePassRequest, GetPassAndActivationEvent};
