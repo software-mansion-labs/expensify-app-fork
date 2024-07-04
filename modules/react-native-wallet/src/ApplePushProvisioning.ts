@@ -1,5 +1,5 @@
-import {NativeEventEmitter, NativeModules} from 'react-native';
-import type {NativeModule} from 'react-native';
+import { NativeEventEmitter, NativeModules } from 'react-native';
+import type { NativeModule } from 'react-native';
 
 // Use a `type` instead of an `interface`
 type RNWalletType = NativeModule & {
@@ -8,7 +8,7 @@ type RNWalletType = NativeModule & {
     completeAddPaymentPass: (activation: string, encryptedData: string, ephemeralKey: string) => Promise<void>;
 };
 
-const {RNWallet} = NativeModules as {RNWallet: RNWalletType};
+const { RNWallet } = NativeModules as { RNWallet: RNWalletType };
 
 // Define types separately and then export them
 type AddPassRequest = {
@@ -38,8 +38,8 @@ const ApplePushProvisioningModule = {
      * Checks if a payment pass can be added.
      * @returns A promise that resolves to a boolean indicating if a payment pass can be added.
      */
-    async canAddPass(): Promise<boolean> {
-        return await RNWallet.canAddPaymentPass();
+    canAddPass(): Promise<boolean> {
+        return RNWallet.canAddPaymentPass();
     },
 
     /**
@@ -47,8 +47,8 @@ const ApplePushProvisioningModule = {
      * @param request - The request object containing the last 4 digits of the card and the card holder's name.
      * @returns A promise that resolves when the process is started.
      */
-    async startAddPass(request: AddPassRequest): Promise<void> {
-        return await RNWallet.startAddPaymentPass(request.last4, request.cardHolder);
+    startAddPass(request: AddPassRequest): Promise<void> {
+        return RNWallet.startAddPaymentPass(request.last4, request.cardHolder);
     },
 
     /**
@@ -56,8 +56,8 @@ const ApplePushProvisioningModule = {
      * @param request - The request object containing activation data, encrypted data, and ephemeral key.
      * @returns A promise that resolves when the process is completed.
      */
-    async completeAddPass(request: CompletePassRequest): Promise<void> {
-        return await RNWallet.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
+    completeAddPass(request: CompletePassRequest): Promise<void> {
+        return RNWallet.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
     },
 
     /**
@@ -65,7 +65,7 @@ const ApplePushProvisioningModule = {
      * @param event - The event name to listen for.
      * @param callback - The callback function to handle the event.
      */
-    addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? {data: GetPassAndActivationEvent} : never) => void) {
+    addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? { data: GetPassAndActivationEvent } : never) => void) {
         eventEmitter.addListener(event, callback);
     },
 
@@ -79,4 +79,4 @@ const ApplePushProvisioningModule = {
 };
 
 export default ApplePushProvisioningModule;
-export type {AddPassRequest, CompletePassRequest, GetPassAndActivationEvent};
+export type { AddPassRequest, CompletePassRequest, GetPassAndActivationEvent };
