@@ -1,16 +1,12 @@
 import { NativeEventEmitter, NativeModules } from 'react-native';
 import type { NativeModule } from 'react-native';
 
-// Use a `type` instead of an `interface`
 type RNWalletType = NativeModule & {
     canAddPaymentPass: () => Promise<boolean>;
     startAddPaymentPass: (last4: string, cardHolder: string) => Promise<void>;
     completeAddPaymentPass: (activation: string, encryptedData: string, ephemeralKey: string) => Promise<void>;
 };
 
-const { RNWallet } = NativeModules as { RNWallet: RNWalletType };
-
-// Define types separately and then export them
 type AddPassRequest = {
     last4: string;
     cardHolder: string;
@@ -30,6 +26,8 @@ type GetPassAndActivationEvent = {
 };
 
 type SupportedEvents = 'addPaymentPassViewControllerDidFinish' | 'getPassAndActivation';
+
+const { RNWallet } = NativeModules as { RNWallet: RNWalletType };
 
 const eventEmitter = new NativeEventEmitter(RNWallet);
 

@@ -1,6 +1,5 @@
-import {NativeEventEmitter, NativeModules} from 'react-native';
-
-const {GooglePushProvisioning} = NativeModules;
+import { NativeEventEmitter, NativeModules } from 'react-native';
+import type { NativeModule } from 'react-native';
 
 type Tsp = 'VISA' | 'MASTERCARD';
 
@@ -23,51 +22,80 @@ interface PushTokenizeRequest {
     address: UserAddress;
 }
 
+type GooglePushProvisioningType = NativeModule & {
+    getTokenStatus: (tsp: Tsp, tokenReferenceId: string) => Promise<number>;
+    getActiveWalletID: () => Promise<string>;
+    getStableHardwareId: () => Promise<string>;
+    getEnvironment: () => Promise<string>;
+    pushProvision: (opc: string, tsp: Tsp, clientName: string, lastDigits: string, addressJson: string) => Promise<string>;
+};
+
+const { GooglePushProvisioning } = NativeModules as { GooglePushProvisioning: GooglePushProvisioningType };
+
 const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
 
 const GooglePushProvisioningModule = {
-    async getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
-        try {
-            return await GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
-        } catch {
-            throw new Error(`Error getting token status.`);
-        }
+    /**
+     * Retrieves the status of a token.
+     * @param tsp - The token service provider (VISA or MASTERCARD).
+     * @param tokenReferenceId - The token reference ID.
+     * @returns A promise that resolves to the token status.
+     */
+    getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
+        return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
     },
-    async getActiveWalletID(): Promise<string> {
-        try {
-            return await GooglePushProvisioning.getActiveWalletID();
-        } catch {
-            throw new Error(`Error getting active wallet ID.`);
-        }
+
+    /**
+     * Retrieves the active wallet ID.
+     * @returns A promise that resolves to the active wallet ID.
+     */
+    getActiveWalletID(): Promise<string> {
+        return GooglePushProvisioning.getActiveWalletID();
     },
-    async getStableHardwareId(): Promise<string> {
-        try {
-            return await GooglePushProvisioning.getStableHardwareId();
-        } catch {
-            throw new Error(`Error getting stable hardware ID.`);
-        }
+
+    /**
+     * Retrieves the stable hardware ID.
+     * @returns A promise that resolves to the stable hardware ID.
+     */
+    getStableHardwareId(): Promise<string> {
+        return GooglePushProvisioning.getStableHardwareId();
     },
-    async getEnvironment(): Promise<string> {
-        try {
-            return await GooglePushProvisioning.getEnvironment();
-        } catch {
-            throw new Error(`Error getting environment.`);
-        }
+
+    /**
+     * Retrieves the environment.
+     * @returns A promise that resolves to the environment.
+     */
+    getEnvironment(): Promise<string> {
+        return GooglePushProvisioning.getEnvironment();
     },
-    async pushProvision(request: PushTokenizeRequest): Promise<string> {
-        try {
-            const addressJson = JSON.stringify(request.address);
-            return await GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
-        } catch {
-            throw new Error(`Error during push provision.`);
-        }
+
+    /**
+     * Initiates the push provisioning process.
+     * @param request - The push tokenize request object.
+     * @returns A promise that resolves when the push provisioning process is complete.
+     */
+    pushProvision(request: PushTokenizeRequest): Promise<string> {
+        const addressJson = JSON.stringify(request.address);
+        return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
     },
+
+    /**
+     * Adds an event listener for the specified event.
+     * @param event - The event name to listen for.
+     * @param callback - The callback function to handle the event.
+     */
     addEventListener(event: string, callback: (data: any) => void) {
         eventEmitter.addListener(event, callback);
     },
+
+    /**
+     * Removes all listeners for the specified event.
+     * @param event - The event name to remove listeners for.
+     */
     removeAllListeners(event: string) {
         eventEmitter.removeAllListeners(event);
     },
 };
 
 export default GooglePushProvisioningModule;
+export type { PushTokenizeRequest, UserAddress, Tsp };
