@@ -38,6 +38,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {AccountData} from '@src/types/onyx';
+import TestNativeWalletComponent from './TestNativeWalletComponent';
 import type {FormattedSelectedPaymentMethodIcon, WalletPageOnyxProps, WalletPageProps} from './types';
 
 type FormattedSelectedPaymentMethod = {
@@ -519,6 +520,13 @@ function WalletPage({bankAccountList = {}, cardList = {}, fundList = {}, isLoadi
                                         style={[styles.mt5, [isSmallScreenWidth ? styles.mhn5 : styles.mhn8]]}
                                         listItemStyle={isSmallScreenWidth ? styles.ph5 : styles.ph8}
                                     />
+                                </Section>
+                                <Section
+                                    title={'Test: react-native-wallet'}
+                                    isCentralPane
+                                    titleStyles={styles.accountSettingsSectionTitle}
+                                >
+                                    <TestNativeWalletComponent />
                                 </Section>
                             </OfflineWithFeedback>
                         </View>
