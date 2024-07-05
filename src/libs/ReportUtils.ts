@@ -1183,13 +1183,17 @@ function findLastAccessedReport(
         reportsValues = filterReportsByPolicyIDAndMemberAccountIDs(reportsValues, policyMemberAccountIDs, policyID);
     }
 
-    console.time('findLastAccessedReport');
+    console.time('sortReportsByLastRead');
+
+    // OLD SOLUTION
+    // let sortedReports = sortReportsByLastRead(reportsValues, reportMetadata);
+
+    // NEW SOLUTION
     let sortedReports = reportsValues.filter(
         (report) => !!report?.reportID && !!(reportMetadata?.[`${ONYXKEYS.COLLECTION.REPORT_METADATA}${report.reportID}`]?.lastVisitTime ?? report?.lastReadTime),
     );
-    console.time('findLastAccessedReport');
-
     const lastRead = lodashMaxBy(sortedReports, (a) => new Date(reportMetadata?.[`${ONYXKEYS.COLLECTION.REPORT_METADATA}${a?.reportID}`]?.lastVisitTime ?? a?.lastReadTime ?? '').valueOf());
+    console.timeEnd('sortReportsByLastRead');
 
     let adminReport: OnyxEntry<Report>;
     if (openOnAdminRoom) {
@@ -1241,6 +1245,7 @@ function findLastAccessedReport(
     }
 
     return adminReport ?? lastRead;
+    // return adminReport ?? sortedReports.at(-1);
 }
 
 /**
