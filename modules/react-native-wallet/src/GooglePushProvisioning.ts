@@ -45,9 +45,11 @@ type GooglePushProvisioningType = NativeModule & {
     pushProvision: (opc: string, tsp: Tsp, clientName: string, lastDigits: string, addressJson: string) => Promise<string>;
 };
 
-const {GooglePushProvisioning} = NativeModules as {GooglePushProvisioning: GooglePushProvisioningType};
+const GooglePushProvisioning = NativeModules.GooglePushProvisioning as GooglePushProvisioningType | undefined;
 
-const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
+const LINK_ERR = 'GooglePushProvisioning module is not linked properly.';
+
+const eventEmitter = GooglePushProvisioning ? new NativeEventEmitter(GooglePushProvisioning) : null;
 
 const GooglePushProvisioningModule = {
     /**
@@ -57,6 +59,7 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the token status.
      */
     getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
+        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
     },
 
@@ -65,6 +68,7 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the active wallet ID.
      */
     getActiveWalletID(): Promise<string> {
+        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getActiveWalletID();
     },
 
@@ -73,6 +77,7 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the stable hardware ID.
      */
     getStableHardwareId(): Promise<string> {
+        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getStableHardwareId();
     },
 
@@ -81,6 +86,7 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the environment.
      */
     getEnvironment(): Promise<string> {
+        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getEnvironment();
     },
 
@@ -90,6 +96,7 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves when the push provisioning process is complete.
      */
     pushProvision(request: PushTokenizeRequest): Promise<string> {
+        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         const addressJson = JSON.stringify(request.address);
         return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
     },
@@ -100,7 +107,11 @@ const GooglePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
-        eventEmitter.addListener(event, callback);
+        if (eventEmitter) {
+            eventEmitter.addListener(event, callback);
+        } else {
+            console.error('Event emitter is not initialized.');
+        }
     },
 
     /**
@@ -108,7 +119,11 @@ const GooglePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
-        eventEmitter.removeAllListeners(event);
+        if (eventEmitter) {
+            eventEmitter.removeAllListeners(event);
+        } else {
+            console.error('Event emitter is not initialized.');
+        }
     },
 };
 

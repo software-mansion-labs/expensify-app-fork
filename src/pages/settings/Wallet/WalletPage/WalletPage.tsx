@@ -522,7 +522,7 @@ function WalletPage({bankAccountList = {}, cardList = {}, fundList = {}, isLoadi
                                     />
                                 </Section>
                                 <Section
-                                    title={'Test: react-native-wallet'}
+                                    title="Test: react-native-wallet"
                                     isCentralPane
                                     titleStyles={styles.accountSettingsSectionTitle}
                                 >

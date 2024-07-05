@@ -27,9 +27,11 @@ type GetPassAndActivationEvent = {
 
 type SupportedEvents = 'addPaymentPassViewControllerDidFinish' | 'getPassAndActivation';
 
-const {RNWallet} = NativeModules as {RNWallet: RNWalletType};
+const ApplePushProvisioning = NativeModules.RNWallet as RNWalletType | undefined;
 
-const eventEmitter = new NativeEventEmitter(RNWallet);
+const LINK_ERR = 'ApplePushProvisioning module is not linked properly.';
+
+const eventEmitter = ApplePushProvisioning ? new NativeEventEmitter(ApplePushProvisioning) : null;
 
 const ApplePushProvisioningModule = {
     /**
@@ -37,7 +39,8 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves to a boolean indicating if a payment pass can be added.
      */
     canAddPass(): Promise<boolean> {
-        return RNWallet.canAddPaymentPass();
+        if (!ApplePushProvisioning) return Promise.reject(LINK_ERR);
+        return ApplePushProvisioning.canAddPaymentPass();
     },
 
     /**
@@ -46,7 +49,8 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves when the process is started.
      */
     startAddPass(request: AddPassRequest): Promise<void> {
-        return RNWallet.startAddPaymentPass(request.last4, request.cardHolder);
+        if (!ApplePushProvisioning) return Promise.reject(LINK_ERR);
+        return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
     },
 
     /**
@@ -55,7 +59,8 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves when the process is completed.
      */
     completeAddPass(request: CompletePassRequest): Promise<void> {
-        return RNWallet.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
+        if (!ApplePushProvisioning) return Promise.reject(LINK_ERR);
+        return ApplePushProvisioning.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
     },
 
     /**
@@ -64,7 +69,11 @@ const ApplePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? {data: GetPassAndActivationEvent} : never) => void) {
-        eventEmitter.addListener(event, callback);
+        if (eventEmitter) {
+            eventEmitter.addListener(event, callback);
+        } else {
+            console.error('Event emitter is not initialized.');
+        }
     },
 
     /**
@@ -72,7 +81,11 @@ const ApplePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
-        eventEmitter.removeAllListeners(event);
+        if (eventEmitter) {
+            eventEmitter.removeAllListeners(event);
+        } else {
+            console.error('Event emitter is not initialized.');
+        }
     },
 };
 

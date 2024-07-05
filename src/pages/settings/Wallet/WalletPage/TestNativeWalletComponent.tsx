@@ -1,10 +1,11 @@
 import React, {useState} from 'react';
-import {Platform, Text, View} from 'react-native';
+import {Platform, View} from 'react-native';
 import PushProvisioning from 'react-native-wallet';
 import Button from '@components/Button';
+import Text from '@components/Text';
 import Log from '@libs/Log';
 
-const TestNativeWalletComponent: React.FC = () => {
+function TestNativeWalletComponent() {
     const [result, setResult] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -37,6 +38,14 @@ const TestNativeWalletComponent: React.FC = () => {
         setIsLoading(false);
     };
 
+    const handleIosTestWrapper = () => {
+        handleIosTest().catch(() => {});
+    };
+
+    const handleAndroidTestWrapper = () => {
+        handleAndroidTest().catch(() => {});
+    };
+
     return (
         <View style={{padding: 20}}>
             {Platform.OS === 'ios' && (
@@ -44,7 +53,7 @@ const TestNativeWalletComponent: React.FC = () => {
                     <Button
                         text="Test canAddPass (iOS)"
                         isLoading={isLoading}
-                        onPress={handleIosTest}
+                        onPress={handleIosTestWrapper} // Wrapped function to avoid direct promise
                     />
                     {result && <Text>{result}</Text>}
                     {error && <Text style={{color: 'red'}}>{error}</Text>}
@@ -55,7 +64,7 @@ const TestNativeWalletComponent: React.FC = () => {
                     <Button
                         isLoading={isLoading}
                         text="Test getStableHardwareId (Android)"
-                        onPress={handleAndroidTest}
+                        onPress={handleAndroidTestWrapper} // Wrapped function to avoid direct promise
                     />
                     {result && <Text>{result}</Text>}
                     {error && <Text style={{color: 'red'}}>{error}</Text>}
@@ -64,6 +73,6 @@ const TestNativeWalletComponent: React.FC = () => {
             {Platform.OS !== 'android' && Platform.OS !== 'ios' && <Text style={{color: 'red'}}>You need an iOS or Android</Text>}
         </View>
     );
-};
+}
 
 export default TestNativeWalletComponent;
