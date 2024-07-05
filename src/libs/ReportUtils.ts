@@ -1155,6 +1155,20 @@ function hasExpensifyGuidesEmails(accountIDs: number[]): boolean {
     return accountIDs.some((accountID) => Str.extractEmailDomain(allPersonalDetails?.[accountID]?.login ?? '') === CONST.EMAIL.GUIDES_DOMAIN);
 }
 
+/**
+ * Given an array of reports, return them sorted by the last read timestamp.
+ */
+function sortReportsByLastRead(reports: Array<OnyxEntry<Report>>, reportMetadata: OnyxCollection<ReportMetadata>): Array<OnyxEntry<Report>> {
+    return reports
+        .filter((report) => !!report?.reportID && !!(reportMetadata?.[`${ONYXKEYS.COLLECTION.REPORT_METADATA}${report.reportID}`]?.lastVisitTime ?? report?.lastReadTime))
+        .sort((a, b) => {
+            const aTime = new Date(reportMetadata?.[`${ONYXKEYS.COLLECTION.REPORT_METADATA}${a?.reportID}`]?.lastVisitTime ?? a?.lastReadTime ?? '');
+            const bTime = new Date(reportMetadata?.[`${ONYXKEYS.COLLECTION.REPORT_METADATA}${b?.reportID}`]?.lastVisitTime ?? b?.lastReadTime ?? '');
+
+            return aTime.valueOf() - bTime.valueOf();
+        });
+}
+
 function findLastAccessedReport(
     reports: OnyxCollection<Report>,
     ignoreDomainRooms: boolean,
@@ -1178,13 +1192,17 @@ function findLastAccessedReport(
         reportsValues = filterReportsByPolicyIDAndMemberAccountIDs(reportsValues, policyMemberAccountIDs, policyID);
     }
 
-    console.time('findLastAccessedReport');
+    console.time('sortReportsByLastRead');
+
+    // OLD SOLUTION
+    // let sortedReports = sortReportsByLastRead(reportsValues, reportMetadata);
+
+    // NEW SOLUTION
     let sortedReports = reportsValues.filter(
         (report) => !!report?.reportID && !!(reportMetadata?.[`${ONYXKEYS.COLLECTION.REPORT_METADATA}${report.reportID}`]?.lastVisitTime ?? report?.lastReadTime),
     );
-    console.time('findLastAccessedReport');
-
     const lastRead = lodashMaxBy(sortedReports, (a) => new Date(reportMetadata?.[`${ONYXKEYS.COLLECTION.REPORT_METADATA}${a?.reportID}`]?.lastVisitTime ?? a?.lastReadTime ?? '').valueOf());
+    console.timeEnd('sortReportsByLastRead');
 
     let adminReport: OnyxEntry<Report>;
     if (openOnAdminRoom) {
@@ -1236,6 +1254,7 @@ function findLastAccessedReport(
     }
 
     return adminReport ?? lastRead;
+    // return adminReport ?? sortedReports.at(-1);
 }
 
 /**

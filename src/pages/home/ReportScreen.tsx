@@ -133,6 +133,7 @@ function ReportScreen({
     currentReportID = '',
     navigation,
 }: ReportScreenProps) {
+    console.time('ReportScreen - render');
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const reportIDFromRoute = getReportID(route);
@@ -165,7 +166,8 @@ function ReportScreen({
     const permissions = useDeepCompareRef(reportOnyx?.permissions);
 
     // Check if there's a reportID in the route. If not, set it to the last accessed reportID
-    const lastAccessedReportID = useLastAccessedReportID(!!route.params.openOnAdminRoom);
+    const lastAccessedReportID = useLastAccessedReportID(!!route.params.openOnAdminRoom, !route.params.reportID);
+
     useEffect(() => {
         // Don't update if there is a reportID in the params already
         if (route.params.reportID) {
@@ -728,6 +730,8 @@ function ReportScreen({
             />
         );
     }
+
+    console.timeEnd('ReportScreen - render');
 
     return (
         <ActionListContext.Provider value={actionListValue}>
