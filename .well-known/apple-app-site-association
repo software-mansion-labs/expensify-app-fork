@@ -2,7 +2,7 @@
     "applinks": {
         "details": [
             {
-                "appIDs": ["368M544MTT.com.chat.expensify.chat"],
+                "appIDs": ["368M544MTT.com.chat.expensify.chat", "368M544MTT.com.expensify.chat.dev", "368M544MTT.com.expensify.chat.dev:8082", "com.expensify.chat.dev", "368M544MTT.expensify.chat.dev"],
                 "components": [
                     {
                        "/": "/r/*",
@@ -97,6 +97,6 @@
         ]
     },
     "webcredentials": {
-        "apps": ["368M544MTT.com.chat.expensify.chat"]
+        "apps": ["368M544MTT.com.chat.expensify.chat", "368M544MTT.com.expensify.chat.dev", "368M544MTT.com.expensify.chat.dev:8082", "com.expensify.chat.dev", "368M544MTT.expensify.chat.dev"]
     }
 }
