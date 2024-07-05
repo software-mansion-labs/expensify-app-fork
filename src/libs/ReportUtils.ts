@@ -4385,7 +4385,6 @@ function buildOptimisticActionableTrackExpenseWhisper(iouAction: OptimisticIOURe
                 type: 'TEXT',
             },
         ],
-        previousReportActionID: iouAction?.reportActionID,
         reportActionID,
         shouldShow: true,
         pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
@@ -6872,6 +6871,12 @@ function isNonAdminOrOwnerOfPolicyExpenseChat(report: OnyxInputOrEntry<Report>, 
     return isPolicyExpenseChat(report) && !(PolicyUtils.isPolicyAdmin(policy) || PolicyUtils.isPolicyOwner(policy, currentUserAccountID ?? -1) || isReportOwner(report));
 }
 
+function isAdminOwnerApproverOrReportOwner(report: OnyxEntry<Report>, policy: OnyxEntry<Policy>): boolean {
+    const isApprover = isMoneyRequestReport(report) && report?.managerID !== null && currentUserPersonalDetails?.accountID === report?.managerID;
+
+    return PolicyUtils.isPolicyAdmin(policy) || PolicyUtils.isPolicyOwner(policy, currentUserAccountID ?? -1) || isReportOwner(report) || isApprover;
+}
+
 /**
  * Whether the user can join a report
  */
@@ -7332,6 +7337,7 @@ export {
     isCurrentUserInvoiceReceiver,
     isDraftReport,
     changeMoneyRequestHoldStatus,
+    isAdminOwnerApproverOrReportOwner,
     createDraftWorkspaceAndNavigateToConfirmationScreen,
     isChatUsedForOnboarding,
     getChatUsedForOnboarding,
