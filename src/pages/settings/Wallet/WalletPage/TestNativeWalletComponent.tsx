@@ -10,40 +10,40 @@ function TestNativeWalletComponent() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    const handleIosTest = async () => {
+    const handleIosTest = () => {
         setIsLoading(true);
-        try {
-            const canAdd = await PushProvisioning.Apple.canAddPass();
-            setResult(`Can add pass: ${canAdd}`);
-            setError(null);
-        } catch (e: any) {
-            Log.hmmm(`Apple.canAddPass error: ${e}`);
-            setResult(null);
-            setError('Error on Apple.canAddPass');
-        }
-        setIsLoading(false);
+        PushProvisioning.Apple.canAddPass()
+            .then((canAdd) => {
+                setResult(`Can add pass: ${canAdd}`);
+                setError(null);
+            })
+            .catch((error: unknown) => {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                Log.hmmm(`[PushProvisioning] Apple.canAddPass error: ${errorMessage}`);
+                setResult(null);
+                setError('Error on Apple.canAddPass');
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     };
 
-    const handleAndroidTest = async () => {
+    const handleAndroidTest = () => {
         setIsLoading(true);
-        try {
-            const hardwareId = await PushProvisioning.Google.getStableHardwareId();
-            setResult(`Stable hardware ID: ${hardwareId}`);
-            setError(null);
-        } catch (e: any) {
-            Log.hmmm(`Google.getStableHardwareId error: ${e}`);
-            setResult(null);
-            setError('Error on Google.getStableHardwareId');
-        }
-        setIsLoading(false);
-    };
-
-    const handleIosTestWrapper = () => {
-        handleIosTest().catch(() => {});
-    };
-
-    const handleAndroidTestWrapper = () => {
-        handleAndroidTest().catch(() => {});
+        PushProvisioning.Google.getStableHardwareId()
+            .then((hardwareId: string) => {
+                setResult(`Stable hardware ID: ${hardwareId}`);
+                setError(null);
+            })
+            .catch((error: unknown) => {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                Log.hmmm(`[PushProvisioning] Google.getStableHardwareId error: ${errorMessage}`);
+                setResult(null);
+                setError('Error on Google.getStableHardwareId');
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     };
 
     return (
@@ -53,7 +53,7 @@ function TestNativeWalletComponent() {
                     <Button
                         text="Test canAddPass (iOS)"
                         isLoading={isLoading}
-                        onPress={handleIosTestWrapper} // Wrapped function to avoid direct promise
+                        onPress={handleIosTest}
                     />
                     {result && <Text>{result}</Text>}
                     {error && <Text style={{color: 'red'}}>{error}</Text>}
@@ -64,7 +64,7 @@ function TestNativeWalletComponent() {
                     <Button
                         isLoading={isLoading}
                         text="Test getStableHardwareId (Android)"
-                        onPress={handleAndroidTestWrapper} // Wrapped function to avoid direct promise
+                        onPress={handleAndroidTest}
                     />
                     {result && <Text>{result}</Text>}
                     {error && <Text style={{color: 'red'}}>{error}</Text>}

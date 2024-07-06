@@ -4,5 +4,5 @@
 #import <React/RCTBridge.h>
 #import <React/RCTUtils.h>
 
-@interface RNWallet : RCTEventEmitter<RCTBridgeModule, PKAddPaymentPassViewControllerDelegate>
+@interface ApplePushProvisioning : RCTEventEmitter<RCTBridgeModule, PKAddPaymentPassViewControllerDelegate>
 @end

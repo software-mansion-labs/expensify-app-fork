@@ -1,4 +1,4 @@
-#import "RNWallet.h"
+#import "ApplePushProvisioning.h"
 #import <React/RCTLog.h>
 #import <React/RCTUtils.h>
 #import <React/RCTBridge.h>
@@ -6,11 +6,11 @@
 
 typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request);
 
-@interface RNWallet () <PKAddPaymentPassViewControllerDelegate>
+@interface ApplePushProvisioning () <PKAddPaymentPassViewControllerDelegate>
 @property (nonatomic, strong) completedPaymentProcessHandler completionHandler;
 @end
 
-@implementation RNWallet
+@implementation ApplePushProvisioning
 
 RCT_EXPORT_MODULE()
 

@@ -22,8 +22,6 @@ type PushTokenizeRequest = {
     address: UserAddress;
 };
 
-type SupportedEvents = 'getActiveWalletID' | 'getStableHardwareId';
-
 type GetActiveWalletIDEvent = {
     walletID: string;
 };
@@ -37,6 +35,8 @@ type EventDataMap = {
     getStableHardwareId: GetStableHardwareIdEvent;
 };
 
+type SupportedEvents = 'getActiveWalletID' | 'getStableHardwareId';
+
 type GooglePushProvisioningType = NativeModule & {
     getTokenStatus: (tsp: Tsp, tokenReferenceId: string) => Promise<number>;
     getActiveWalletID: () => Promise<string>;
@@ -45,85 +45,69 @@ type GooglePushProvisioningType = NativeModule & {
     pushProvision: (opc: string, tsp: Tsp, clientName: string, lastDigits: string, addressJson: string) => Promise<string>;
 };
 
-const GooglePushProvisioning = NativeModules.GooglePushProvisioning as GooglePushProvisioningType | undefined;
-
-const LINK_ERR = 'GooglePushProvisioning module is not linked properly.';
-
-const eventEmitter = GooglePushProvisioning ? new NativeEventEmitter(GooglePushProvisioning) : null;
+const GooglePushProvisioning = NativeModules.GooglePushProvisioning as GooglePushProvisioningType;
+const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
 
 const GooglePushProvisioningModule = {
     /**
      * Retrieves the status of a token.
-     * @param tsp - The token service provider (VISA or MASTERCARD).
-     * @param tokenReferenceId - The token reference ID.
-     * @returns A promise that resolves to the token status.
+     * @param {Tsp} tsp - The token service provider (VISA or MASTERCARD).
+     * @param {string} tokenReferenceId - The token reference ID.
+     * @returns {Promise<number>} A promise that resolves to the token status.
      */
     getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
-        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
     },
 
     /**
      * Retrieves the active wallet ID.
-     * @returns A promise that resolves to the active wallet ID.
+     * @returns {Promise<string>} A promise that resolves to the active wallet ID.
      */
     getActiveWalletID(): Promise<string> {
-        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getActiveWalletID();
     },
 
     /**
      * Retrieves the stable hardware ID.
-     * @returns A promise that resolves to the stable hardware ID.
+     * @returns {Promise<string>} A promise that resolves to the stable hardware ID.
      */
     getStableHardwareId(): Promise<string> {
-        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getStableHardwareId();
     },
 
     /**
      * Retrieves the environment.
-     * @returns A promise that resolves to the environment.
+     * @returns {Promise<string>} A promise that resolves to the environment.
      */
     getEnvironment(): Promise<string> {
-        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         return GooglePushProvisioning.getEnvironment();
     },
 
     /**
      * Initiates the push provisioning process.
-     * @param request - The push tokenize request object.
-     * @returns A promise that resolves when the push provisioning process is complete.
+     * @param {PushTokenizeRequest} request - The push tokenize request object.
+     * @returns {Promise<string>} A promise that resolves when the push provisioning process is complete.
      */
     pushProvision(request: PushTokenizeRequest): Promise<string> {
-        if (!GooglePushProvisioning) return Promise.reject(LINK_ERR);
         const addressJson = JSON.stringify(request.address);
         return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
     },
 
     /**
      * Adds an event listener for the specified event.
-     * @param event - The event name to listen for.
-     * @param callback - The callback function to handle the event.
+     * @param {SupportedEvents} event - The event name to listen for.
+     * @param {(data: EventDataMap[T]) => void} callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
-        if (eventEmitter) {
-            eventEmitter.addListener(event, callback);
-        } else {
-            console.error('Event emitter is not initialized.');
-        }
+        eventEmitter.addListener(event, callback);
     },
 
     /**
      * Removes all listeners for the specified event.
-     * @param event - The event name to remove listeners for.
+     * @param {SupportedEvents} event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
-        if (eventEmitter) {
-            eventEmitter.removeAllListeners(event);
-        } else {
-            console.error('Event emitter is not initialized.');
-        }
+        eventEmitter.removeAllListeners(event);
     },
 };
 
