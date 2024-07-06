@@ -46,21 +46,21 @@ type GooglePushProvisioningType = NativeModule & {
 };
 
 const LINKING_ERROR =
-    `The package 'react-native-awesome-module' doesn't seem to be linked. Make sure: \n\n` +
+    "The package 'react-native-wallet' doesn't seem to be linked. Make sure: \n" +
     Platform.select({ios: "- You have run 'pod install'\n", default: ''}) +
     '- You rebuilt the app after installing the package\n' +
     '- You are not using Expo Go\n';
 
-const GooglePushProvisioning: GooglePushProvisioningType = NativeModules.GooglePushProvisioning
-    ? NativeModules.GooglePushProvisioning
-    : new Proxy(
-          {},
-          {
-              get() {
-                  throw new Error(LINKING_ERROR);
-              },
-          },
-      );
+const GooglePushProvisioning: GooglePushProvisioningType =
+    NativeModules.GooglePushProvisioning ??
+    new Proxy(
+        {},
+        {
+            get() {
+                throw new Error(LINKING_ERROR);
+            },
+        },
+    );
 
 const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
 
