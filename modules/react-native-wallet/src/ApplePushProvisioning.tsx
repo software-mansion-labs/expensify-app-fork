@@ -29,12 +29,12 @@ type ApplePushProvisioningType = NativeModule & {
 
 const LINKING_ERROR =
     "The package 'react-native-wallet' doesn't seem to be linked. Make sure: \n" +
-    Platform.select({ios: "- You have run 'pod install'\n", default: ''}) +
+    `${Platform.OS === 'ios' ? "- You have run 'pod install'\n" : ''}` +
     '- You rebuilt the app after installing the package\n' +
     '- You are not using Expo Go\n';
 
-const ApplePushProvisioning: ApplePushProvisioningType =
-    NativeModules.ApplePushProvisioning ??
+const ApplePushProvisioning =
+    (NativeModules.ApplePushProvisioning as ApplePushProvisioningType) ??
     new Proxy(
         {},
         {
