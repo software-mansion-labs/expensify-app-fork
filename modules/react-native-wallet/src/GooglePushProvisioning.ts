@@ -51,9 +51,9 @@ const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
 const GooglePushProvisioningModule = {
     /**
      * Retrieves the status of a token.
-     * @param {Tsp} tsp - The token service provider (VISA or MASTERCARD).
-     * @param {string} tokenReferenceId - The token reference ID.
-     * @returns {Promise<number>} A promise that resolves to the token status.
+     * @param tsp - The token service provider (VISA or MASTERCARD).
+     * @param tokenReferenceId - The token reference ID.
+     * @returns A promise that resolves to the token status.
      */
     getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
         return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
@@ -61,7 +61,7 @@ const GooglePushProvisioningModule = {
 
     /**
      * Retrieves the active wallet ID.
-     * @returns {Promise<string>} A promise that resolves to the active wallet ID.
+     * @returns A promise that resolves to the active wallet ID.
      */
     getActiveWalletID(): Promise<string> {
         return GooglePushProvisioning.getActiveWalletID();
@@ -69,7 +69,7 @@ const GooglePushProvisioningModule = {
 
     /**
      * Retrieves the stable hardware ID.
-     * @returns {Promise<string>} A promise that resolves to the stable hardware ID.
+     * @returns A promise that resolves to the stable hardware ID.
      */
     getStableHardwareId(): Promise<string> {
         return GooglePushProvisioning.getStableHardwareId();
@@ -77,7 +77,7 @@ const GooglePushProvisioningModule = {
 
     /**
      * Retrieves the environment.
-     * @returns {Promise<string>} A promise that resolves to the environment.
+     * @returns A promise that resolves to the environment.
      */
     getEnvironment(): Promise<string> {
         return GooglePushProvisioning.getEnvironment();
@@ -85,8 +85,8 @@ const GooglePushProvisioningModule = {
 
     /**
      * Initiates the push provisioning process.
-     * @param {PushTokenizeRequest} request - The push tokenize request object.
-     * @returns {Promise<string>} A promise that resolves when the push provisioning process is complete.
+     * @param request - The push tokenize request object.
+     * @returns A promise that resolves when the push provisioning process is complete.
      */
     pushProvision(request: PushTokenizeRequest): Promise<string> {
         const addressJson = JSON.stringify(request.address);
@@ -95,8 +95,8 @@ const GooglePushProvisioningModule = {
 
     /**
      * Adds an event listener for the specified event.
-     * @param {SupportedEvents} event - The event name to listen for.
-     * @param {(data: EventDataMap[T]) => void} callback - The callback function to handle the event.
+     * @param event - The event name to listen for.
+     * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
         eventEmitter.addListener(event, callback);
@@ -104,7 +104,7 @@ const GooglePushProvisioningModule = {
 
     /**
      * Removes all listeners for the specified event.
-     * @param {SupportedEvents} event - The event name to remove listeners for.
+     * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
         eventEmitter.removeAllListeners(event);

@@ -17,8 +17,8 @@ function TestNativeWalletComponent() {
                 setResult(`Can add pass: ${canAdd}`);
                 setError(null);
             })
-            .catch((error: unknown) => {
-                const errorMessage = error instanceof Error ? error.message : String(error);
+            .catch((e: unknown) => {
+                const errorMessage = e instanceof Error ? e.message : String(e);
                 Log.hmmm(`[PushProvisioning] Apple.canAddPass error: ${errorMessage}`);
                 setResult(null);
                 setError('Error on Apple.canAddPass');
@@ -35,8 +35,8 @@ function TestNativeWalletComponent() {
                 setResult(`Stable hardware ID: ${hardwareId}`);
                 setError(null);
             })
-            .catch((error: unknown) => {
-                const errorMessage = error instanceof Error ? error.message : String(error);
+            .catch((e: unknown) => {
+                const errorMessage = e instanceof Error ? e.message : String(e);
                 Log.hmmm(`[PushProvisioning] Google.getStableHardwareId error: ${errorMessage}`);
                 setResult(null);
                 setError('Error on Google.getStableHardwareId');
