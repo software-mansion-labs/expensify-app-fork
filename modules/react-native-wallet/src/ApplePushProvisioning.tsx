@@ -1,11 +1,5 @@
-import {NativeEventEmitter, NativeModules} from 'react-native';
+import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
 import type {NativeModule} from 'react-native';
-
-type ApplePushProvisioningType = NativeModule & {
-    canAddPaymentPass: () => Promise<boolean>;
-    startAddPaymentPass: (last4: string, cardHolder: string) => Promise<void>;
-    completeAddPaymentPass: (activation: string, encryptedData: string, ephemeralKey: string) => Promise<void>;
-};
 
 type AddPassRequest = {
     last4: string;
@@ -27,7 +21,29 @@ type GetPassAndActivationEvent = {
 
 type SupportedEvents = 'addPaymentPassViewControllerDidFinish' | 'getPassAndActivation';
 
-const ApplePushProvisioning = NativeModules.ApplePushProvisioning as ApplePushProvisioningType;
+type ApplePushProvisioningType = NativeModule & {
+    canAddPaymentPass: () => Promise<boolean>;
+    startAddPaymentPass: (last4: string, cardHolder: string) => Promise<void>;
+    completeAddPaymentPass: (activation: string, encryptedData: string, ephemeralKey: string) => Promise<void>;
+};
+
+const LINKING_ERROR =
+    `The package 'react-native-awesome-module' doesn't seem to be linked. Make sure: \n\n` +
+    Platform.select({ios: "- You have run 'pod install'\n", default: ''}) +
+    '- You rebuilt the app after installing the package\n' +
+    '- You are not using Expo Go\n';
+
+const ApplePushProvisioning: ApplePushProvisioningType = NativeModules.ApplePushProvisioning
+    ? NativeModules.ApplePushProvisioning
+    : new Proxy(
+          {},
+          {
+              get() {
+                  throw new Error(LINKING_ERROR);
+              },
+          },
+      );
+
 const eventEmitter = new NativeEventEmitter(ApplePushProvisioning);
 
 const ApplePushProvisioningModule = {
@@ -36,11 +52,7 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves to a boolean indicating if a payment pass can be added.
      */
     canAddPass(): Promise<boolean> {
-        try {
-            return ApplePushProvisioning.canAddPaymentPass();
-        } catch (e) {
-            throw e;
-        }
+        return ApplePushProvisioning.canAddPaymentPass();
     },
 
     /**
@@ -49,11 +61,7 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves when the process is started.
      */
     startAddPass(request: AddPassRequest): Promise<void> {
-        try {
-            return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
-        } catch (e) {
-            throw e;
-        }
+        return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
     },
 
     /**
@@ -62,11 +70,7 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves when the process is completed.
      */
     completeAddPass(request: CompletePassRequest): Promise<void> {
-        try {
-            return ApplePushProvisioning.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
-        } catch (e) {
-            throw e;
-        }
+        return ApplePushProvisioning.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
     },
 
     /**
@@ -75,11 +79,7 @@ const ApplePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? {data: GetPassAndActivationEvent} : never) => void) {
-        try {
-            eventEmitter.addListener(event, callback);
-        } catch (e) {
-            throw e;
-        }
+        eventEmitter.addListener(event, callback);
     },
 
     /**
@@ -87,11 +87,7 @@ const ApplePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
-        try {
-            eventEmitter.removeAllListeners(event);
-        } catch (e) {
-            throw e;
-        }
+        eventEmitter.removeAllListeners(event);
     },
 };
 
