@@ -56,7 +56,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the token status.
      */
     getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
-        return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
+        try {
+            return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -64,7 +68,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the active wallet ID.
      */
     getActiveWalletID(): Promise<string> {
-        return GooglePushProvisioning.getActiveWalletID();
+        try {
+            return GooglePushProvisioning.getActiveWalletID();
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -72,7 +80,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the stable hardware ID.
      */
     getStableHardwareId(): Promise<string> {
-        return GooglePushProvisioning.getStableHardwareId();
+        try {
+            return GooglePushProvisioning.getStableHardwareId();
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -80,7 +92,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the environment.
      */
     getEnvironment(): Promise<string> {
-        return GooglePushProvisioning.getEnvironment();
+        try {
+            return GooglePushProvisioning.getEnvironment();
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -89,8 +105,12 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves when the push provisioning process is complete.
      */
     pushProvision(request: PushTokenizeRequest): Promise<string> {
-        const addressJson = JSON.stringify(request.address);
-        return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
+        try {
+            const addressJson = JSON.stringify(request.address);
+            return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -99,7 +119,11 @@ const GooglePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
-        eventEmitter.addListener(event, callback);
+        try {
+            eventEmitter.addListener(event, callback);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -107,7 +131,11 @@ const GooglePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
-        eventEmitter.removeAllListeners(event);
+        try {
+            eventEmitter.removeAllListeners(event);
+        } catch (e) {
+            throw e;
+        }
     },
 };
 

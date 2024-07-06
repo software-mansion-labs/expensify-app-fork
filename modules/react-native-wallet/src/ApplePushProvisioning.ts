@@ -36,7 +36,11 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves to a boolean indicating if a payment pass can be added.
      */
     canAddPass(): Promise<boolean> {
-        return ApplePushProvisioning.canAddPaymentPass();
+        try {
+            return ApplePushProvisioning.canAddPaymentPass();
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -45,7 +49,11 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves when the process is started.
      */
     startAddPass(request: AddPassRequest): Promise<void> {
-        return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
+        try {
+            return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -54,7 +62,11 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves when the process is completed.
      */
     completeAddPass(request: CompletePassRequest): Promise<void> {
-        return ApplePushProvisioning.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
+        try {
+            return ApplePushProvisioning.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -63,7 +75,11 @@ const ApplePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? {data: GetPassAndActivationEvent} : never) => void) {
-        eventEmitter.addListener(event, callback);
+        try {
+            eventEmitter.addListener(event, callback);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -71,7 +87,11 @@ const ApplePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
-        eventEmitter.removeAllListeners(event);
+        try {
+            eventEmitter.removeAllListeners(event);
+        } catch (e) {
+            throw e;
+        }
     },
 };
 
