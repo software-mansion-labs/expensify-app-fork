@@ -45,24 +45,9 @@ type GooglePushProvisioningType = NativeModule & {
     pushProvision: (opc: string, tsp: Tsp, clientName: string, lastDigits: string, addressJson: string) => Promise<string>;
 };
 
-const LINKING_ERROR =
-    "The package 'react-native-wallet' doesn't seem to be linked. Make sure: \n" +
-    `${Platform.OS === 'ios' ? "- You have run 'pod install'\n" : ''}` +
-    '- You rebuilt the app after installing the package\n' +
-    '- You are not using Expo Go\n';
+const GooglePushProvisioning = (NativeModules.GooglePushProvisioning as GooglePushProvisioningType) ?? null;
 
-const GooglePushProvisioning =
-    (NativeModules.GooglePushProvisioning as GooglePushProvisioningType) ??
-    new Proxy(
-        {},
-        {
-            get() {
-                throw new Error(LINKING_ERROR);
-            },
-        },
-    );
-
-const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
+const eventEmitter = GooglePushProvisioning ? new NativeEventEmitter(GooglePushProvisioning) : null;
 
 const GooglePushProvisioningModule = {
     /**
@@ -72,7 +57,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the token status.
      */
     getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
-        return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
+        try {
+            return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -80,7 +69,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the active wallet ID.
      */
     getActiveWalletID(): Promise<string> {
-        return GooglePushProvisioning.getActiveWalletID();
+        try {
+            return GooglePushProvisioning.getActiveWalletID();
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -88,7 +81,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the stable hardware ID.
      */
     getStableHardwareId(): Promise<string> {
-        return GooglePushProvisioning.getStableHardwareId();
+        try {
+            return GooglePushProvisioning.getStableHardwareId();
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -96,7 +93,11 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves to the environment.
      */
     getEnvironment(): Promise<string> {
-        return GooglePushProvisioning.getEnvironment();
+        try {
+            return GooglePushProvisioning.getEnvironment();
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -105,8 +106,12 @@ const GooglePushProvisioningModule = {
      * @returns A promise that resolves when the push provisioning process is complete.
      */
     pushProvision(request: PushTokenizeRequest): Promise<string> {
-        const addressJson = JSON.stringify(request.address);
-        return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
+        try {
+            const addressJson = JSON.stringify(request.address);
+            return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
+        } catch (e) {
+            throw e;
+        }
     },
 
     /**
@@ -115,6 +120,9 @@ const GooglePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
+        if (!eventEmitter) {
+            return;
+        }
         eventEmitter.addListener(event, callback);
     },
 
@@ -123,6 +131,9 @@ const GooglePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
+        if (!eventEmitter) {
+            return;
+        }
         eventEmitter.removeAllListeners(event);
     },
 };

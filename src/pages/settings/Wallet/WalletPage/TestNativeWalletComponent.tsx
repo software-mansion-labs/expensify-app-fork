@@ -12,16 +12,15 @@ function TestNativeWalletComponent() {
 
     const handleIosTest = () => {
         setIsLoading(true);
-        PushProvisioning.Apple.canAddPass()
+        PushProvisioning.Apple.canAddPaymentPass()
             .then((canAdd) => {
                 setResult(`Can add pass: ${canAdd}`);
                 setError(null);
             })
             .catch((e: unknown) => {
-                const errorMessage = e instanceof Error ? e.message : String(e);
-                Log.hmmm(`[PushProvisioning] Apple.canAddPass error: ${errorMessage}`);
+                Log.hmmm(`[PushProvisioning] - ${e}`);
                 setResult(null);
-                setError('Error on Apple.canAddPass');
+                setError('Error');
             })
             .finally(() => {
                 setIsLoading(false);
@@ -32,14 +31,13 @@ function TestNativeWalletComponent() {
         setIsLoading(true);
         PushProvisioning.Google.getStableHardwareId()
             .then((hardwareId: string) => {
-                setResult(`Stable hardware ID: ${hardwareId}`);
+                setResult(`Stable device ID: ${hardwareId}`);
                 setError(null);
             })
             .catch((e: unknown) => {
-                const errorMessage = e instanceof Error ? e.message : String(e);
-                Log.hmmm(`[PushProvisioning] Google.getStableHardwareId error: ${errorMessage}`);
+                Log.hmmm(`[PushProvisioning] - ${e}`);
                 setResult(null);
-                setError('Error on Google.getStableHardwareId');
+                setError('Error');
             })
             .finally(() => {
                 setIsLoading(false);
@@ -51,7 +49,7 @@ function TestNativeWalletComponent() {
             {Platform.OS === 'ios' && (
                 <>
                     <Button
-                        text="Test canAddPass (iOS)"
+                        text="Test can Add"
                         isLoading={isLoading}
                         onPress={handleIosTest}
                     />
@@ -63,7 +61,7 @@ function TestNativeWalletComponent() {
                 <>
                     <Button
                         isLoading={isLoading}
-                        text="Test getStableHardwareId (Android)"
+                        text="Test get Device ID"
                         onPress={handleAndroidTest}
                     />
                     {result && <Text>{result}</Text>}
