@@ -27,31 +27,16 @@ type ApplePushProvisioningType = NativeModule & {
     completeAddPaymentPass: (activation: string, encryptedData: string, ephemeralKey: string) => Promise<void>;
 };
 
-const LINKING_ERROR =
-    "The package 'react-native-wallet' doesn't seem to be linked. Make sure: \n" +
-    `${Platform.OS === 'ios' ? "- You have run 'pod install'\n" : ''}` +
-    '- You rebuilt the app after installing the package\n' +
-    '- You are not using Expo Go\n';
+const ApplePushProvisioning = (NativeModules.ApplePushProvisioning as ApplePushProvisioningType) ?? null;
 
-const ApplePushProvisioning =
-    (NativeModules.ApplePushProvisioning as ApplePushProvisioningType) ??
-    new Proxy(
-        {},
-        {
-            get() {
-                throw new Error(LINKING_ERROR);
-            },
-        },
-    );
-
-const eventEmitter = new NativeEventEmitter(ApplePushProvisioning);
+const eventEmitter = ApplePushProvisioning ? new NativeEventEmitter(ApplePushProvisioning) : null;
 
 const ApplePushProvisioningModule = {
     /**
      * Checks if a payment pass can be added.
      * @returns A promise that resolves to a boolean indicating if a payment pass can be added.
      */
-    canAddPaymentPass(): Promise<boolean> {
+    async canAddPaymentPass(): Promise<boolean> {
         return ApplePushProvisioning.canAddPaymentPass();
     },
 
@@ -60,7 +45,7 @@ const ApplePushProvisioningModule = {
      * @param request - The request object containing the last 4 digits of the card and the card holder's name.
      * @returns A promise that resolves when the process is started.
      */
-    startAddPaymentPass(request: AddPassRequest): Promise<void> {
+    async startAddPaymentPass(request: AddPassRequest): Promise<void> {
         return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
     },
 
@@ -69,7 +54,7 @@ const ApplePushProvisioningModule = {
      * @param request - The request object containing activation data, encrypted data, and ephemeral key.
      * @returns A promise that resolves when the process is completed.
      */
-    completeAddPaymentPass(request: CompletePassRequest): Promise<void> {
+    async completeAddPaymentPass(request: CompletePassRequest): Promise<void> {
         return ApplePushProvisioning.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
     },
 
@@ -79,6 +64,9 @@ const ApplePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (e: T extends 'getPassAndActivation' ? {data: GetPassAndActivationEvent} : never) => void) {
+        if (!eventEmitter) {
+            return;
+        }
         eventEmitter.addListener(event, callback);
     },
 
@@ -87,6 +75,9 @@ const ApplePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
+        if (!eventEmitter) {
+            return;
+        }
         eventEmitter.removeAllListeners(event);
     },
 };

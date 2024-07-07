@@ -45,36 +45,11 @@ type GooglePushProvisioningType = NativeModule & {
     pushProvision: (opc: string, tsp: Tsp, clientName: string, lastDigits: string, addressJson: string) => Promise<string>;
 };
 
-const LINKING_ERROR =
-    "The package 'react-native-wallet' doesn't seem to be linked. Make sure: \n" +
-    `${Platform.OS === 'ios' ? "- You have run 'pod install'\n" : ''}` +
-    '- You rebuilt the app after installing the package\n' +
-    '- You are not using Expo Go\n';
+const GooglePushProvisioning = (NativeModules.GooglePushProvisioning as GooglePushProvisioningType) ?? null;
 
-const GooglePushProvisioning =
-    (NativeModules.GooglePushProvisioning as GooglePushProvisioningType) ??
-    new Proxy(
-        {},
-        {
-            get() {
-                throw new Error(LINKING_ERROR);
-            },
-        },
-    );
-
-const eventEmitter = new NativeEventEmitter(GooglePushProvisioning);
+const eventEmitter = GooglePushProvisioning ? new NativeEventEmitter(GooglePushProvisioning) : null;
 
 const GooglePushProvisioningModule = {
-    /**
-     * Retrieves the status of a token.
-     * @param tsp - The token service provider (VISA or MASTERCARD).
-     * @param tokenReferenceId - The token reference ID.
-     * @returns A promise that resolves to the token status.
-     */
-    getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
-        return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
-    },
-
     /**
      * Retrieves the active wallet ID.
      * @returns A promise that resolves to the active wallet ID.
@@ -100,6 +75,16 @@ const GooglePushProvisioningModule = {
     },
 
     /**
+     * Retrieves the status of a token.
+     * @param tsp - The token service provider (VISA or MASTERCARD).
+     * @param tokenReferenceId - The token reference ID.
+     * @returns A promise that resolves to the token status.
+     */
+    getTokenStatus(tsp: Tsp, tokenReferenceId: string): Promise<number> {
+        return GooglePushProvisioning.getTokenStatus(tsp, tokenReferenceId);
+    },
+
+    /**
      * Initiates the push provisioning process.
      * @param request - The push tokenize request object.
      * @returns A promise that resolves when the push provisioning process is complete.
@@ -115,6 +100,9 @@ const GooglePushProvisioningModule = {
      * @param callback - The callback function to handle the event.
      */
     addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
+        if (!eventEmitter) {
+            return;
+        }
         eventEmitter.addListener(event, callback);
     },
 
@@ -123,6 +111,9 @@ const GooglePushProvisioningModule = {
      * @param event - The event name to remove listeners for.
      */
     removeAllListeners(event: SupportedEvents) {
+        if (!eventEmitter) {
+            return;
+        }
         eventEmitter.removeAllListeners(event);
     },
 };

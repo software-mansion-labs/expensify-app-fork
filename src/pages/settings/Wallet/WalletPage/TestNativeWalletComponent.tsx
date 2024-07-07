@@ -17,8 +17,8 @@ function TestNativeWalletComponent() {
                 setResult(`Can add pass: ${canAdd}`);
                 setError(null);
             })
-            .catch((e: unknown) => {
-                Log.hmmm(`[PushProvisioning] - ${e}`);
+            .catch((e) => {
+                Log.hmmm(`[PushProvisioning] - ${e.message}`);
                 setResult(null);
                 setError('Error');
             })
@@ -31,11 +31,11 @@ function TestNativeWalletComponent() {
         setIsLoading(true);
         PushProvisioning.Google.getStableHardwareId()
             .then((hardwareId: string) => {
-                setResult(`Device ID: ${hardwareId}`);
+                setResult(`Stable device ID: ${hardwareId}`);
                 setError(null);
             })
-            .catch((e: unknown) => {
-                Log.hmmm(`[PushProvisioning] - ${e}`);
+            .catch((e) => {
+                Log.hmmm(`[PushProvisioning] - ${e.message}`);
                 setResult(null);
                 setError('Error');
             })
