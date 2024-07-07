@@ -31,7 +31,7 @@ function TestNativeWalletComponent() {
         setIsLoading(true);
         PushProvisioning.Google.getStableHardwareId()
             .then((hardwareId: string) => {
-                setResult(`Stable device ID: ${hardwareId}`);
+                setResult(`Device ID: ${hardwareId}`);
                 setError(null);
             })
             .catch((e: unknown) => {
