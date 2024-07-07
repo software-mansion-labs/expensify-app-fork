@@ -17,7 +17,7 @@ function TestNativeWalletComponent() {
                 setResult(`Can add pass: ${canAdd}`);
                 setError(null);
             })
-            .catch((e) => {
+            .catch((e: Error) => {
                 Log.hmmm(`[PushProvisioning] - ${e.message}`);
                 setResult(null);
                 setError('Error');
@@ -34,7 +34,7 @@ function TestNativeWalletComponent() {
                 setResult(`Stable device ID: ${hardwareId}`);
                 setError(null);
             })
-            .catch((e) => {
+            .catch((e: Error) => {
                 Log.hmmm(`[PushProvisioning] - ${e.message}`);
                 setResult(null);
                 setError('Error');

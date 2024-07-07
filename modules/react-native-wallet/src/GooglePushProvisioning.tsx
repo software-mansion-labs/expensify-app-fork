@@ -1,4 +1,4 @@
-import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
+import {NativeEventEmitter, NativeModules} from 'react-native';
 import type {NativeModule} from 'react-native';
 
 type Tsp = 'VISA' | 'MASTERCARD';

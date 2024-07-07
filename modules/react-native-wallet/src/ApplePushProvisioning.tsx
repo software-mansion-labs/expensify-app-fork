@@ -1,4 +1,4 @@
-import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
+import {NativeEventEmitter, NativeModules} from 'react-native';
 import type {NativeModule} from 'react-native';
 
 type AddPassRequest = {
@@ -36,7 +36,7 @@ const ApplePushProvisioningModule = {
      * Checks if a payment pass can be added.
      * @returns A promise that resolves to a boolean indicating if a payment pass can be added.
      */
-    async canAddPaymentPass(): Promise<boolean> {
+    canAddPaymentPass(): Promise<boolean> {
         return ApplePushProvisioning.canAddPaymentPass();
     },
 
@@ -45,7 +45,7 @@ const ApplePushProvisioningModule = {
      * @param request - The request object containing the last 4 digits of the card and the card holder's name.
      * @returns A promise that resolves when the process is started.
      */
-    async startAddPaymentPass(request: AddPassRequest): Promise<void> {
+    startAddPaymentPass(request: AddPassRequest): Promise<void> {
         return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
     },
 
@@ -54,7 +54,7 @@ const ApplePushProvisioningModule = {
      * @param request - The request object containing activation data, encrypted data, and ephemeral key.
      * @returns A promise that resolves when the process is completed.
      */
-    async completeAddPaymentPass(request: CompletePassRequest): Promise<void> {
+    completeAddPaymentPass(request: CompletePassRequest): Promise<void> {
         return ApplePushProvisioning.completeAddPaymentPass(request.activation, request.encryptedData, request.ephemeralKey);
     },
 
