@@ -27,13 +27,13 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
     const screenOptions = useMemo(() => {
         const options = ModalNavigatorScreenOptions(styles);
         // The .forHorizontalIOS interpolator from `@react-navigation` is misbehaving on Safari, so we override it with Expensify custom interpolator
-        if (isSafari()) {
-            const customInterpolator = createModalCardStyleInterpolator(styleUtils);
-            options.cardStyleInterpolator = (props: StackCardInterpolationProps) => customInterpolator(isSmallScreenWidth, false, false, props);
-        }
+        // if (isSafari()) {
+        //     const customInterpolator = createModalCardStyleInterpolator(styleUtils);
+        //     options.cardStyleInterpolator = (props: StackCardInterpolationProps) => customInterpolator(isSmallScreenWidth, false, false, props);
+        // }
 
         return options;
-    }, [isSmallScreenWidth, styleUtils, styles]);
+    }, [styles]);
 
     return (
         <NoDropZone>

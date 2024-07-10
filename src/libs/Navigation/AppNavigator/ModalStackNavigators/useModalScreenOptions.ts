@@ -10,15 +10,15 @@ import type {ThemeStyles} from '@src/styles';
 
 function useModalScreenOptions(getScreenOptions?: (styles: ThemeStyles) => StackNavigationOptions) {
     const styles = useThemeStyles();
-    const styleUtils = useStyleUtils();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    // const styleUtils = useStyleUtils();
+    // const {isSmallScreenWidth} = useWindowDimensions();
 
-    let cardStyleInterpolator = CardStyleInterpolators.forHorizontalIOS;
+    const cardStyleInterpolator = CardStyleInterpolators.forHorizontalIOS;
 
-    if (isSafari()) {
-        const customInterpolator = createModalCardStyleInterpolator(styleUtils);
-        cardStyleInterpolator = (props: StackCardInterpolationProps) => customInterpolator(isSmallScreenWidth, false, false, props);
-    }
+    // if (isSafari()) {
+    //     const customInterpolator = createModalCardStyleInterpolator(styleUtils);
+    //     cardStyleInterpolator = (props: StackCardInterpolationProps) => customInterpolator(isSmallScreenWidth, false, false, props);
+    // }
 
     const defaultSubRouteOptions = useMemo(
         (): StackNavigationOptions => ({
