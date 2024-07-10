@@ -1,12 +1,17 @@
 import {useNavigation} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
 import React, {useCallback, useEffect, useRef} from 'react';
+import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {useOnyx} from 'react-native-onyx';
+import FlatList from '@components/FlatList';
 import SearchTableHeader from '@components/SelectionList/SearchTableHeader';
 import type {ReportListItemType, TransactionListItemType} from '@components/SelectionList/types';
 import TableListItemSkeleton from '@components/Skeletons/TableListItemSkeleton';
+import TabSelectorItem from '@components/TabSelector/TabSelectorItem';
+import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
+import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as SearchActions from '@libs/actions/Search';
@@ -17,7 +22,9 @@ import * as SearchUtils from '@libs/SearchUtils';
 import Navigation from '@navigation/Navigation';
 import type {AuthScreensParamList} from '@navigation/types';
 import EmptySearchView from '@pages/Search/EmptySearchView';
+import type {SearchMenuFilterItem} from '@pages/Search/SearchFilters';
 import variables from '@styles/variables';
+import * as Expensicons from '@src/components/Icon/Expensicons';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -43,6 +50,37 @@ const listItemPadding = 12; // this is equivalent to 'mb3' on every transaction/
 const searchHeaderHeight = 54;
 
 function Search({query, policyIDs, sortBy, sortOrder}: SearchProps) {
+    const {singleExecution} = useSingleExecution();
+
+    const {translate} = useLocalize();
+
+    const filterItems: SearchMenuFilterItem[] = [
+        {
+            title: translate('common.expenses'),
+            query: CONST.SEARCH.TAB.ALL,
+            icon: Expensicons.Receipt,
+            route: ROUTES.SEARCH.getRoute(CONST.SEARCH.TAB.ALL),
+        },
+        {
+            title: translate('common.shared'),
+            query: CONST.SEARCH.TAB.SHARED,
+            icon: Expensicons.Send,
+            route: ROUTES.SEARCH.getRoute(CONST.SEARCH.TAB.SHARED),
+        },
+        {
+            title: translate('common.drafts'),
+            query: CONST.SEARCH.TAB.DRAFTS,
+            icon: Expensicons.Pencil,
+            route: ROUTES.SEARCH.getRoute(CONST.SEARCH.TAB.DRAFTS),
+        },
+        {
+            title: translate('common.finished'),
+            query: CONST.SEARCH.TAB.FINISHED,
+            icon: Expensicons.CheckCircle,
+            route: ROUTES.SEARCH.getRoute(CONST.SEARCH.TAB.FINISHED),
+        },
+    ];
+
     const {isOffline} = useNetwork();
     const styles = useThemeStyles();
     const {isLargeScreenWidth} = useWindowDimensions();
@@ -166,54 +204,78 @@ function Search({query, policyIDs, sortBy, sortOrder}: SearchProps) {
     const shouldShowYear = SearchUtils.shouldShowYear(searchResults?.data);
 
     return (
-        <SearchListWithHeader
-            query={query}
-            hash={hash}
-            data={sortedData}
-            searchType={searchResults?.search?.type as SearchDataTypes}
-            customListHeader={
-                <SearchTableHeader
-                    data={searchResults?.data}
-                    metadata={searchResults?.search}
-                    onSortPress={onSortPress}
-                    sortOrder={sortOrder}
-                    isSortingAllowed={isSortingAllowed}
-                    sortBy={sortBy}
-                    shouldShowYear={shouldShowYear}
+        <>
+            <View style={[styles.tabSelector]}>
+                <FlatList
+                    horizontal
+                    keyExtractor={(item) => item.query}
+                    data={filterItems}
+                    renderItem={({item}) => {
+                        const onPress = singleExecution(() => Navigation.navigate(item.route));
+
+                        return (
+                            <TabSelectorItem
+                                title={item.title}
+                                icon={item.icon}
+                                onPress={onPress}
+                                wrapperStyle={{}}
+                                positionStyle={{}}
+                            />
+                        );
+                    }}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={[styles.flexGrow1]}
                 />
-            }
-            canSelectMultiple={isLargeScreenWidth}
-            customListHeaderHeight={searchHeaderHeight}
-            // To enhance the smoothness of scrolling and minimize the risk of encountering blank spaces during scrolling,
-            // we have configured a larger windowSize and a longer delay between batch renders.
-            // The windowSize determines the number of items rendered before and after the currently visible items.
-            // A larger windowSize helps pre-render more items, reducing the likelihood of blank spaces appearing.
-            // The updateCellsBatchingPeriod sets the delay (in milliseconds) between rendering batches of cells.
-            // A longer delay allows the UI to handle rendering in smaller increments, which can improve performance and smoothness.
-            // For more information, refer to the React Native documentation:
-            // https://reactnative.dev/docs/0.73/optimizing-flatlist-configuration#windowsize
-            // https://reactnative.dev/docs/0.73/optimizing-flatlist-configuration#updatecellsbatchingperiod
-            windowSize={111}
-            updateCellsBatchingPeriod={200}
-            ListItem={ListItem}
-            onSelectRow={openReport}
-            getItemHeight={getItemHeight}
-            shouldDebounceRowSelect
-            shouldPreventDefaultFocusOnSelectRow={!DeviceCapabilities.canUseTouchScreen()}
-            listHeaderWrapperStyle={[styles.ph8, styles.pv3, styles.pb5]}
-            containerStyle={[styles.pv0]}
-            showScrollIndicator={false}
-            onEndReachedThreshold={0.75}
-            onEndReached={fetchMoreResults}
-            listFooterContent={
-                isLoadingMoreItems ? (
-                    <TableListItemSkeleton
-                        shouldAnimate
-                        fixedNumItems={5}
+            </View>
+            <SearchListWithHeader
+                query={query}
+                hash={hash}
+                data={sortedData}
+                searchType={searchResults?.search?.type as SearchDataTypes}
+                customListHeader={
+                    <SearchTableHeader
+                        data={searchResults?.data}
+                        metadata={searchResults?.search}
+                        onSortPress={onSortPress}
+                        sortOrder={sortOrder}
+                        isSortingAllowed={isSortingAllowed}
+                        sortBy={sortBy}
+                        shouldShowYear={shouldShowYear}
                     />
-                ) : undefined
-            }
-        />
+                }
+                canSelectMultiple={isLargeScreenWidth}
+                customListHeaderHeight={searchHeaderHeight}
+                // To enhance the smoothness of scrolling and minimize the risk of encountering blank spaces during scrolling,
+                // we have configured a larger windowSize and a longer delay between batch renders.
+                // The windowSize determines the number of items rendered before and after the currently visible items.
+                // A larger windowSize helps pre-render more items, reducing the likelihood of blank spaces appearing.
+                // The updateCellsBatchingPeriod sets the delay (in milliseconds) between rendering batches of cells.
+                // A longer delay allows the UI to handle rendering in smaller increments, which can improve performance and smoothness.
+                // For more information, refer to the React Native documentation:
+                // https://reactnative.dev/docs/0.73/optimizing-flatlist-configuration#windowsize
+                // https://reactnative.dev/docs/0.73/optimizing-flatlist-configuration#updatecellsbatchingperiod
+                windowSize={111}
+                updateCellsBatchingPeriod={200}
+                ListItem={ListItem}
+                onSelectRow={openReport}
+                getItemHeight={getItemHeight}
+                shouldDebounceRowSelect
+                shouldPreventDefaultFocusOnSelectRow={!DeviceCapabilities.canUseTouchScreen()}
+                listHeaderWrapperStyle={[styles.ph8, styles.pv3, styles.pb5]}
+                containerStyle={[styles.pv0]}
+                showScrollIndicator={false}
+                onEndReachedThreshold={0.75}
+                onEndReached={fetchMoreResults}
+                listFooterContent={
+                    isLoadingMoreItems ? (
+                        <TableListItemSkeleton
+                            shouldAnimate
+                            fixedNumItems={5}
+                        />
+                    ) : undefined
+                }
+            />
+        </>
     );
 }
 
