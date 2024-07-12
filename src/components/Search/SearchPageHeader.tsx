@@ -1,9 +1,11 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
 import type {DropdownOption} from '@components/ButtonWithDropdownMenu/types';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
+import Modal from '@components/Modal';
+import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -35,6 +37,7 @@ function SearchPageHeader({query, selectedItems = {}, hash, clearSelectedItems, 
     const styles = useThemeStyles();
     const {isOffline} = useNetwork();
     const {isSmallScreenWidth} = useResponsiveLayout();
+    const [isModalVisible, setIsModalVisible] = useState(false);
     const headerContent: {[key in SearchQuery]: {icon: IconAsset; title: string}} = {
         all: {icon: Illustrations.MoneyReceipts, title: translate('common.expenses')},
         shared: {icon: Illustrations.SendMoney, title: translate('common.shared')},
@@ -45,11 +48,25 @@ function SearchPageHeader({query, selectedItems = {}, hash, clearSelectedItems, 
     const selectedItemsKeys = Object.keys(selectedItems ?? []);
 
     const headerButtonsOptions = useMemo(() => {
-        const options: Array<DropdownOption<SearchHeaderOptionValue>> = [];
-
         if (selectedItemsKeys.length === 0) {
-            return options;
+            return [];
         }
+
+        const options: Array<DropdownOption<SearchHeaderOptionValue>> = [
+            {
+                icon: Expensicons.Download,
+                text: translate('common.download'),
+                value: CONST.SEARCH.BULK_ACTION_TYPES.EXPORT,
+                onSelected: () => {
+                    if (isOffline) {
+                        setIsModalVisible(true);
+                        return;
+                    }
+                    clearSelectedItems?.();
+                    SearchActions.exportSearchItemsToCSV(query, [], selectedItemsKeys, []);
+                },
+            },
+        ];
 
         const itemsToDelete = selectedItemsKeys.filter((id) => selectedItems[id].canDelete);
 
@@ -121,7 +138,7 @@ function SearchPageHeader({query, selectedItems = {}, hash, clearSelectedItems, 
         }
 
         return options;
-    }, [clearSelectedItems, hash, selectedItems, selectedItemsKeys, styles, theme, translate, isMobileSelectionModeActive, setIsMobileSelectionModeActive]);
+    }, [clearSelectedItems, hash, selectedItems, selectedItemsKeys, styles, theme, translate, isMobileSelectionModeActive, setIsMobileSelectionModeActive, query, isOffline]);
 
     if (isSmallScreenWidth) {
         if (isMobileSelectionModeActive) {
@@ -153,6 +170,13 @@ function SearchPageHeader({query, selectedItems = {}, hash, clearSelectedItems, 
                     isDisabled={isOffline}
                 />
             )}
+            <Modal
+                isVisible={isModalVisible}
+                type={isSmallScreenWidth ? CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED : CONST.MODAL.MODAL_TYPE.CENTERED}
+                onClose={() => setIsModalVisible(false)}
+            >
+                <Text>Nie mozna pobrac</Text>
+            </Modal>
         </HeaderWithBackButton>
     );
 }

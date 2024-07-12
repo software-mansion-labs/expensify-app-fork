@@ -3,6 +3,9 @@ import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import type {SearchParams} from '@libs/API/parameters';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import * as ApiUtils from '@libs/ApiUtils';
+import fileDownload from '@libs/fileDownload';
+import enhanceParameters from '@libs/Network/enhanceParameters';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {SearchTransaction} from '@src/types/onyx/SearchResults';
 import * as Report from './Report';
@@ -82,5 +85,41 @@ function deleteMoneyRequestOnSearch(hash: number, transactionIDList: string[]) {
     const {optimisticData, finallyData} = getOnyxLoadingData(hash);
     API.write(WRITE_COMMANDS.DELETE_MONEY_REQUEST_ON_SEARCH, {hash, transactionIDList}, {optimisticData, finallyData});
 }
+type Params = Record<string, string | string[] | number | boolean>;
 
-export {search, createTransactionThread, deleteMoneyRequestOnSearch, holdMoneyRequestOnSearch, unholdMoneyRequestOnSearch};
+function convertArrayToCommaSeparatedString(value: string[]): string {
+    return value.join(',');
+}
+
+function convertObjectToFormData(obj: Params): FormData {
+    const formData = new FormData();
+
+    Object.entries(obj).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+            formData.append(key, convertArrayToCommaSeparatedString(value)); // Convert the array to a comma-separated string
+        } else {
+            formData.append(key, String(value));
+        }
+    });
+
+    return formData;
+}
+
+function exportSearchItemsToCSV(query: string, reportIDList: string[], transactionIDList: string[], policyIDs: string[]) {
+    const fileName = `Expensify_${query}.csv`;
+    const params: Params = {
+        query,
+        reportIDList,
+        transactionIDList,
+        policyIDs,
+    };
+
+    // Assuming enhanceParameters modifies the params object
+    const finalParameters = enhanceParameters(READ_COMMANDS.EXPORT_SEARCH_ITEMS_TO_CSV, params) as Params;
+
+    // Convert final parameters to FormData
+    const formData = convertObjectToFormData(finalParameters);
+
+    fileDownload(ApiUtils.getCommandURL({command: READ_COMMANDS.EXPORT_SEARCH_ITEMS_TO_CSV}), fileName, '', false, formData, 'post');
+}
+export {search, createTransactionThread, deleteMoneyRequestOnSearch, holdMoneyRequestOnSearch, unholdMoneyRequestOnSearch, exportSearchItemsToCSV};
