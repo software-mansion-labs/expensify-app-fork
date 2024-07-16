@@ -36,13 +36,17 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
   private static final int REQUEST_CREATE_WALLET = 4;
   private Promise promise;
 
+  private TapAndPayClient tapAndPayClient;
+
   public GooglePushProvisioningModule(ReactApplicationContext reactContext) {
     super(reactContext);
     reactContext.addActivityEventListener(mActivityEventListener);
   }
 
-  private TapAndPayClient getTapAndPayClient() {
-    return TapAndPay.getClient(getCurrentActivity());
+  @Override
+  public void initialize() {
+    super.initialize();
+    tapAndPayClient = TapAndPay.getClient(this.getCurrentActivity());
   }
 
   @Override
@@ -53,7 +57,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void getTokenStatus(String tsp, String tokenReferenceId, Promise promise) {
     int tokenServiceProvider = tsp.equalsIgnoreCase("VISA") ? TapAndPay.TOKEN_PROVIDER_VISA : TapAndPay.TOKEN_PROVIDER_MASTERCARD;
-    getTapAndPayClient().getTokenStatus(tokenServiceProvider, tokenReferenceId)
+    tapAndPayClient.getTokenStatus(tokenServiceProvider, tokenReferenceId)
       .addOnCompleteListener(new OnCompleteListener<TokenStatus>() {
         @Override
         public void onComplete(@NonNull Task<TokenStatus> task) {
@@ -81,7 +85,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void getActiveWalletID(Promise promise) {
-    getTapAndPayClient().getActiveWalletId()
+    tapAndPayClient.getActiveWalletId()
       .addOnCompleteListener(new OnCompleteListener<String>() {
         @Override
         public void onComplete(@NonNull Task<String> task) {
@@ -94,7 +98,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
             if (apiException.getStatusCode() == TAP_AND_PAY_NO_ACTIVE_WALLET) {
               // If no Google Pay wallet is found, create one and then call
               // getActiveWalletId() again.
-              getTapAndPayClient().createWallet(getCurrentActivity(), REQUEST_CREATE_WALLET);
+              tapAndPayClient.createWallet(getCurrentActivity(), REQUEST_CREATE_WALLET);
               getActiveWalletID(promise);
             } else {
               // Failed to get active wallet ID
@@ -121,7 +125,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void getStableHardwareId(Promise promise) {
-    getTapAndPayClient().getStableHardwareId()
+    tapAndPayClient.getStableHardwareId()
       .addOnCompleteListener(new OnCompleteListener<String>() {
         @Override
         public void onComplete(@NonNull Task<String> task) {
@@ -148,7 +152,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void getEnvironment(Promise promise) {
-    getTapAndPayClient().getEnvironment()
+    tapAndPayClient.getEnvironment()
       .addOnCompleteListener(new OnCompleteListener<String>() {
         @Override
         public void onComplete(@NonNull Task<String> task) {
@@ -202,7 +206,7 @@ public class GooglePushProvisioningModule extends ReactContextBaseJavaModule {
         .build();
         
       Activity currentActivity = getCurrentActivity();
-      getTapAndPayClient().pushTokenize(currentActivity, pushTokenizeRequest, REQUEST_CODE_PUSH_TOKENIZE);
+      tapAndPayClient.pushTokenize(currentActivity, pushTokenizeRequest, REQUEST_CODE_PUSH_TOKENIZE);
 
     } catch (Exception e) {
       this.promise.reject("PUSH_PROVISION_ERROR", e);
