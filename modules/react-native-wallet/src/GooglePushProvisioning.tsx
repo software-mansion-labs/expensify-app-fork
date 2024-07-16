@@ -1,4 +1,4 @@
-import {NativeEventEmitter, NativeModules} from 'react-native';
+import {NativeModules} from 'react-native';
 import type {NativeModule} from 'react-native';
 
 type Tsp = 'VISA' | 'MASTERCARD';
@@ -22,21 +22,6 @@ type PushTokenizeRequest = {
     address: UserAddress;
 };
 
-type GetActiveWalletIDEvent = {
-    walletID: string;
-};
-
-type GetStableHardwareIdEvent = {
-    deviceID: string;
-};
-
-type EventDataMap = {
-    getActiveWalletID: GetActiveWalletIDEvent;
-    getStableHardwareId: GetStableHardwareIdEvent;
-};
-
-type SupportedEvents = 'getActiveWalletID' | 'getStableHardwareId';
-
 type GooglePushProvisioningType = NativeModule & {
     getTokenStatus: (tsp: Tsp, tokenReferenceId: string) => Promise<number>;
     getActiveWalletID: () => Promise<string>;
@@ -46,8 +31,6 @@ type GooglePushProvisioningType = NativeModule & {
 };
 
 const GooglePushProvisioning = (NativeModules.GooglePushProvisioning as GooglePushProvisioningType) ?? null;
-
-const eventEmitter = GooglePushProvisioning ? new NativeEventEmitter(GooglePushProvisioning) : null;
 
 const GooglePushProvisioningModule = {
     /**
@@ -92,29 +75,6 @@ const GooglePushProvisioningModule = {
     pushProvision(request: PushTokenizeRequest): Promise<string> {
         const addressJson = JSON.stringify(request.address);
         return GooglePushProvisioning.pushProvision(request.opc, request.tsp, request.clientName, request.lastDigits, addressJson);
-    },
-
-    /**
-     * Adds an event listener for the specified event.
-     * @param event - The event name to listen for.
-     * @param callback - The callback function to handle the event.
-     */
-    addEventListener<T extends SupportedEvents>(event: T, callback: (data: EventDataMap[T]) => void) {
-        if (!eventEmitter) {
-            return;
-        }
-        eventEmitter.addListener(event, callback);
-    },
-
-    /**
-     * Removes all listeners for the specified event.
-     * @param event - The event name to remove listeners for.
-     */
-    removeAllListeners(event: SupportedEvents) {
-        if (!eventEmitter) {
-            return;
-        }
-        eventEmitter.removeAllListeners(event);
     },
 };
 
