@@ -124,7 +124,10 @@ function PopoverMenu({
         } else {
             selectedItemIndex.current = index;
             onItemSelected(selectedItem, index);
+            selectedItem?.onSelected?.();
         }
+        // selectedItem?.onSelected?.();
+        // onItemSelected(selectedItem, index);
     };
 
     const getPreviousSubMenu = () => {
@@ -177,11 +180,11 @@ function PopoverMenu({
     );
 
     const onModalHide = () => {
-        setFocusedIndex(-1);
-        if (selectedItemIndex.current !== null) {
-            currentMenuItems[selectedItemIndex.current].onSelected?.();
-            selectedItemIndex.current = null;
-        }
+        // setFocusedIndex(-1);
+        // if (selectedItemIndex.current !== null) {
+        //     // currentMenuItems[selectedItemIndex.current].onSelected?.();
+        //     // selectedItemIndex.current = null;
+        // }
     };
 
     useEffect(() => {

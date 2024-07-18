@@ -58,7 +58,6 @@ function PopoverWithoutOverlay(
         } else {
             onModalHide();
             close(anchorRef);
-            Modal.onModalDidClose();
         }
         Modal.willAlertModalBecomeVisible(isVisible, true);
 

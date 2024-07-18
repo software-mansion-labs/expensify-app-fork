@@ -30,6 +30,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import {hasSynchronizationError, removePolicyConnection, syncConnection} from '@libs/actions/connections';
+import getQuickBooksOnlineSetupLink from '@libs/actions/connections/QuickBooksOnline';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import {findCurrentXeroOrganization, getCurrentSageIntacctEntityName, getCurrentXeroOrganizationName, getIntegrationLastSuccessfulDate, getXeroTenants} from '@libs/PolicyUtils';
 import Navigation from '@navigation/Navigation';
@@ -37,6 +38,7 @@ import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
 import type {WithPolicyConnectionsProps} from '@pages/workspace/withPolicyConnections';
 import withPolicyConnections from '@pages/workspace/withPolicyConnections';
 import type {AnchorPosition} from '@styles/index';
+import * as Link from '@userActions/Link';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -181,7 +183,10 @@ function PolicyAccountingPage({policy}: PolicyAccountingPageProps) {
             {
                 icon: Expensicons.Sync,
                 text: translate('workspace.accounting.syncNow'),
-                onSelected: () => syncConnection(policyID, connectedIntegration),
+                onSelected: () => {
+                    Link.openLink(getQuickBooksOnlineSetupLink(policyID), CONST.NEW_EXPENSIFY_URL);
+                    syncConnection(policyID, connectedIntegration);
+                },
                 disabled: isOffline,
             },
             {
@@ -190,7 +195,7 @@ function PolicyAccountingPage({policy}: PolicyAccountingPageProps) {
                 onSelected: () => setIsDisconnectModalOpen(true),
             },
         ],
-        [translate, policyID, isOffline, connectedIntegration],
+        [translate, policyID, isOffline],
     );
 
     useEffect(() => {

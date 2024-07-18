@@ -11,6 +11,8 @@ import * as FileUtils from '@libs/fileDownload/FileUtils';
 import getImageResolution from '@libs/fileDownload/getImageResolution';
 import type {AvatarSource} from '@libs/UserUtils';
 import variables from '@styles/variables';
+import * as Link from '@userActions/Link';
+import * as Modal from '@userActions/Modal';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
@@ -269,19 +271,30 @@ function AvatarWithImagePicker({
                     });
                 },
             },
-        ];
-
-        // If current avatar isn't a default avatar, allow Remove Photo option
-        if (!isUsingDefaultAvatar) {
-            menuItems.push({
+            {
                 icon: Expensicons.Trashcan,
                 text: translate('avatarWithImagePicker.removePhoto'),
                 onSelected: () => {
+                    setIsMenuVisible(false);
+                    Link.openLink('https://www.expensify.com/api/ConnectPolicyToQuickbooksOnline?policyID=69EAA7F3A05FA02C', CONST.NEW_EXPENSIFY_URL);
                     setError(null, {});
                     onImageRemoved();
                 },
-            });
-        }
+            },
+        ];
+
+        // // If current avatar isn't a default avatar, allow Remove Photo option
+        // if (!isUsingDefaultAvatar) {
+        //     menuItems.push({
+        //         icon: Expensicons.Trashcan,
+        //         text: translate('avatarWithImagePicker.removePhoto'),
+        //         onSelected: () => {
+        //             Link.openLink('https://www.expensify.com/api/ConnectPolicyToQuickbooksOnline?policyID=69EAA7F3A05FA02C', CONST.NEW_EXPENSIFY_URL);
+        //             // setError(null, {});
+        //             // onImageRemoved();
+        //         },
+        //     });
+        // }
         return menuItems;
     };
 
@@ -370,20 +383,22 @@ function AvatarWithImagePicker({
                                 const menuItems = createMenuItems(openPicker);
 
                                 // If the current avatar isn't a default avatar and we are not overriding this behavior allow the "View Photo" option
-                                if (!shouldDisableViewPhoto && !isUsingDefaultAvatar) {
-                                    menuItems.push({
-                                        icon: Expensicons.Eye,
-                                        text: translate('avatarWithImagePicker.viewPhoto'),
-                                        onSelected: () => {
-                                            if (typeof onViewPhotoPress !== 'function') {
-                                                show();
-                                                return;
-                                            }
-                                            onViewPhotoPress();
-                                        },
-                                    });
-                                }
+                                // if (!shouldDisableViewPhoto && !isUsingDefaultAvatar) {
 
+                                // }
+                                menuItems.push({
+                                    icon: Expensicons.Eye,
+                                    text: translate('avatarWithImagePicker.viewPhoto'),
+                                    onSelected: () => {
+                                        Modal.close(() => {
+                                            onViewPhotoPress?.();
+                                        });
+                                        // if (typeof onViewPhotoPress !== 'function') {
+                                        //     show();
+                                        //     return;
+                                        // }
+                                    },
+                                });
                                 return (
                                     <PopoverMenu
                                         isVisible={isMenuVisible}
@@ -393,11 +408,15 @@ function AvatarWithImagePicker({
                                             // In order for the file picker to open dynamically, the click
                                             // function must be called from within an event handler that was initiated
                                             // by the user on Safari.
-                                            if (index === 0 && Browser.isSafari()) {
-                                                openPicker({
-                                                    onPicked: showAvatarCropModal,
-                                                });
-                                            }
+                                            // if (index === 0 && Browser.isSafari()) {
+                                            //     openPicker({
+                                            //         onPicked: showAvatarCropModal,
+                                            //     });
+                                            // }
+                                            // Link.openLink('https://www.expensify.com/api/ConnectPolicyToQuickbooksOnline?policyID=69EAA7F3A05FA02C', CONST.NEW_EXPENSIFY_URL);
+                                            // if (index === 1) {
+                                            //     Link.openLink('https://www.expensify.com/api/ConnectPolicyToQuickbooksOnline?policyID=69EAA7F3A05FA02C', CONST.NEW_EXPENSIFY_URL);
+                                            // }
                                         }}
                                         menuItems={menuItems}
                                         anchorPosition={shouldUseStyleUtilityForAnchorPosition ? styles.popoverMenuOffset(windowWidth) : popoverPosition}
