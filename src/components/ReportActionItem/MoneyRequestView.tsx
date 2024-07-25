@@ -203,7 +203,7 @@ function MoneyRequestView({
     const shouldShowTax = isTaxTrackingEnabled(isPolicyExpenseChat, policy, isDistanceRequest);
     const tripID = ReportUtils.getTripIDFromTransactionParentReport(parentReport);
     const shouldShowViewTripDetails = TransactionUtils.hasReservationList(transaction) && !!tripID;
-
+    const shouldShowAttendees = useMemo(() => !!policy?.id && policy?.type !== CONST.POLICY.TYPE.FREE, [policy?.id, policy?.type]);
     const {getViolationsForField} = useViolations(transactionViolations ?? [], isReceiptBeingScanned || !ReportUtils.isPaidGroupPolicy(report));
     const hasViolations = useCallback(
         (field: ViolationField, data?: OnyxTypes.TransactionViolation['data'], policyHasDependentTags = false, tagValue?: string): boolean =>
@@ -359,7 +359,6 @@ function MoneyRequestView({
             />
         </OfflineWithFeedback>
     );
-
     const isReceiptAllowed = !isPaidReport && !isInvoice;
     const shouldShowReceiptEmptyState =
         isReceiptAllowed && !hasReceipt && !isApproved && !isSettled && (canEditReceipt || isAdmin || isApprover) && (canEditReceipt || ReportUtils.isPaidGroupPolicy(report));
@@ -413,6 +412,8 @@ function MoneyRequestView({
             </OfflineWithFeedback>
         );
     });
+    console.log('LOGLOGLOG:', moneyRequestReport?.ownerAccountID);
+    const payerPersonalDetails = ReportUtils.getPersonalDetailsForAccountID(moneyRequestReport?.ownerAccountID ?? 0);
 
     return (
         <View style={styles.pRelative}>
@@ -623,6 +624,19 @@ function MoneyRequestView({
                         shouldShowRightIcon
                         onPress={() => Link.openTravelDotLink(activePolicyID, CONST.TRIP_ID_PATH(tripID))}
                     />
+                )}
+                {/* // ATTENDEES */}
+                {shouldShowAttendees && (
+                    <OfflineWithFeedback pendingAction={getPendingFieldAction('taxAmount')}>
+                        <MenuItemWithTopDescription
+                            title={payerPersonalDetails.displayName}
+                            description={`${translate('iou.attendees')} \u2022 ${formattedTransactionAmount} per person`}
+                            interactive
+                            shouldShowRightIcon
+                            titleStyle={styles.flex1}
+                            onPress={() => console.log('Navigate to Attendees Page')}
+                        />
+                    </OfflineWithFeedback>
                 )}
                 {shouldShowBillable && (
                     <View style={[styles.flexRow, styles.optionRow, styles.justifyContentBetween, styles.alignItemsCenter, styles.ml5, styles.mr8]}>

@@ -677,6 +677,7 @@ export default {
         card: 'Card',
         original: 'Original',
         split: 'Split',
+        attendees: 'Attendees',
         splitExpense: 'Split expense',
         paySomeone: ({name}: PaySomeoneParams) => `Pay ${name ?? 'someone'}`,
         expense: 'Expense',

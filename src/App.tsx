@@ -52,6 +52,8 @@ LogBox.ignoreLogs([
     'Setting a timer for a long period of time',
 ]);
 
+LogBox.ignoreAllLogs();
+
 const fill = {flex: 1};
 
 const StrictModeWrapper = CONFIG.USE_REACT_STRICT_MODE ? React.StrictMode : ({children}: {children: React.ReactElement}) => children;

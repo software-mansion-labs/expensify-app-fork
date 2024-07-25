@@ -137,6 +137,9 @@ type MoneyRequestConfirmationListFooterProps = {
     /** The report ID */
     reportID: string;
 
+    /** Author of the request */
+    requestCreator: string;
+
     /** The selected participants */
     selectedParticipants: Participant[];
 
@@ -202,6 +205,7 @@ function MoneyRequestConfirmationListFooter({
     receiptPath,
     reportActionID,
     reportID,
+    requestCreator,
     selectedParticipants,
     shouldDisplayFieldError,
     shouldDisplayReceipt,
@@ -227,7 +231,7 @@ function MoneyRequestConfirmationListFooter({
     // TODO: remove the !isTypeInvoice from this condition after BE supports tags for invoices: https://github.com/Expensify/App/issues/41281
     const shouldShowTags = useMemo(() => isPolicyExpenseChat && OptionsListUtils.hasEnabledTags(policyTagLists) && !isTypeInvoice, [isPolicyExpenseChat, isTypeInvoice, policyTagLists]);
     const isMultilevelTags = useMemo(() => PolicyUtils.isMultiLevelTags(policyTags), [policyTags]);
-
+    const shouldShowAttendees = useMemo(() => !!policy?.id && (policy?.type === CONST.POLICY.TYPE.CORPORATE || policy?.type === CONST.POLICY.TYPE.TEAM), [policy?.id, policy?.type]);
     const senderWorkspace = useMemo(() => {
         const senderWorkspaceParticipant = selectedParticipants.find((participant) => participant.isSender);
         return allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${senderWorkspaceParticipant?.policyID}`];
@@ -497,6 +501,23 @@ function MoneyRequestConfirmationListFooter({
                 />
             ),
             shouldShow: shouldShowTax,
+            isSupplementary: true,
+        },
+        {
+            item: (
+                <MenuItemWithTopDescription
+                    key="attendees"
+                    shouldShowRightIcon
+                    title={requestCreator}
+                    description={translate('iou.attendees')}
+                    style={[styles.moneyRequestMenuItem]}
+                    titleStyle={styles.flex1}
+                    onPress={() => console.log('Navigate to edit attendees page')}
+                    disabled={didConfirm}
+                    interactive
+                />
+            ),
+            shouldShow: shouldShowAttendees,
             isSupplementary: true,
         },
         {

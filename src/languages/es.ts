@@ -672,6 +672,7 @@ export default {
         card: 'Tarjeta',
         original: 'Original',
         split: 'Dividir',
+        attendees: 'Asistentes',
         splitExpense: 'Dividir gasto',
         expense: 'Gasto',
         categorize: 'Categorizar',

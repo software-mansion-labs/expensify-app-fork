@@ -209,7 +209,6 @@ function MoneyRequestConfirmationList({
 }: MoneyRequestConfirmationListProps) {
     const policy = policyReal ?? policyDraft;
     const policyCategories = policyCategoriesReal ?? policyCategoriesDraft;
-
     const styles = useThemeStyles();
     const {translate, toLocaleDigit} = useLocalize();
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
@@ -823,6 +822,8 @@ function MoneyRequestConfirmationList({
         translate,
     ]);
 
+    console.log('{___LOG____}: ', policy?.type);
+    console.log('{___LOG ID____}: ', policy?.id);
     const listFooterContent = (
         <MoneyRequestConfirmationListFooter
             action={action}
@@ -858,6 +859,7 @@ function MoneyRequestConfirmationList({
             receiptPath={receiptPath}
             reportActionID={reportActionID}
             reportID={reportID}
+            requestCreator={payeePersonalDetails.displayName ?? ''}
             selectedParticipants={selectedParticipantsProp}
             shouldDisplayFieldError={shouldDisplayFieldError}
             shouldDisplayReceipt={shouldDisplayReceipt}
