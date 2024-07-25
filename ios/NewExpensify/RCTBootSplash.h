@@ -13,5 +13,6 @@
 + (void)invalidateBootSplash;
 + (void)initWithStoryboard:(NSString * _Nonnull)storyboardName
                   rootView:(UIView * _Nullable)rootView;
++ (void)setBootSplashDidAppearCallback:(void (^ _Nonnull)(void))callback;
 
 @end

@@ -1,4 +1,5 @@
 #import "RCTBootSplash.h"
+#import "BootSplashController.h"
 
 #import <React/RCTUtils.h>
 
@@ -15,6 +16,7 @@ static UIView *_rootView = nil;
 static float _duration = 0;
 static bool _nativeHidden = false;
 static bool _transitioning = false;
+static void (^_onBootSplashDidAppearCallback)(void) = nil;
 
 @implementation RCTBootSplash
 
@@ -28,6 +30,10 @@ RCT_EXPORT_MODULE();
     _resolveQueue = nil;
     _rootView = nil;
     _nativeHidden = false;
+}
+
++ (void)setBootSplashDidAppearCallback:(void (^)(void))callback {
+    _onBootSplashDidAppearCallback = callback;
 }
 
 + (bool)isLoadingViewHidden {
@@ -105,7 +111,13 @@ RCT_EXPORT_MODULE();
 
   UIStoryboard *storyboard = [UIStoryboard storyboardWithName:storyboardName bundle:nil];
 
-  _loadingView = [[storyboard instantiateInitialViewController] view];
+  BootSplashController *loadingViewController = [storyboard instantiateInitialViewControllerWithCreator:^BootSplashController * _Nullable(NSCoder *coder) {
+        return [[BootSplashController alloc] initWithCoder:coder];
+  }];
+  
+  [loadingViewController setBootSplashDidAppearCallback: _onBootSplashDidAppearCallback];
+
+  _loadingView = [loadingViewController view];
   _loadingView.hidden = NO;
 
   [_rootView addSubview:_loadingView];

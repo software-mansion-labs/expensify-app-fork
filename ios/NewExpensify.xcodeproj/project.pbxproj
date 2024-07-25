@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		052828F82C5248EE00434B1A /* BootSplashController.m in Sources */ = {isa = PBXBuildFile; fileRef = 052828F72C5248EE00434B1A /* BootSplashController.m */; };
 		083353EB2B5AB22A00C603C0 /* attention.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 083353E72B5AB22900C603C0 /* attention.mp3 */; };
 		083353EC2B5AB22A00C603C0 /* done.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 083353E82B5AB22900C603C0 /* done.mp3 */; };
 		083353ED2B5AB22A00C603C0 /* receive.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 083353E92B5AB22900C603C0 /* receive.mp3 */; };
@@ -40,7 +41,7 @@
 		BDB853621F354EBB84E619C2 /* ExpensifyNewKansas-MediumItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = D2AFB39EC1D44BF9B91D3227 /* ExpensifyNewKansas-MediumItalic.otf */; };
 		DD79042B2792E76D004484B4 /* RCTBootSplash.mm in Sources */ = {isa = PBXBuildFile; fileRef = DD79042A2792E76D004484B4 /* RCTBootSplash.mm */; };
 		DDCB2E57F334C143AC462B43 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D20D83B0E39BA6D21761E72 /* ExpoModulesProvider.swift */; };
-		E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
+		E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		E9DF872D2525201700607FDC /* AirshipConfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = E9DF872C2525201700607FDC /* AirshipConfig.plist */; };
 		ED222ED90E074A5481A854FA /* ExpensifyNeue-BoldItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 8B28D84EF339436DBD42A203 /* ExpensifyNeue-BoldItalic.otf */; };
 		F0C450EA2705020500FD2970 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C450E92705020500FD2970 /* colors.json */; };
@@ -82,6 +83,8 @@
 		008F07F21AC5B25A0029DE68 /* main.jsbundle */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
 		00E356EE1AD99517003FC87E /* NewExpensifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NewExpensifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		052828F62C5248EE00434B1A /* BootSplashController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BootSplashController.h; path = NewExpensify/BootSplashController.h; sourceTree = "<group>"; };
+		052828F72C5248EE00434B1A /* BootSplashController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = BootSplashController.m; path = NewExpensify/BootSplashController.m; sourceTree = "<group>"; };
 		083353E72B5AB22900C603C0 /* attention.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = attention.mp3; path = ../assets/sounds/attention.mp3; sourceTree = "<group>"; };
 		083353E82B5AB22900C603C0 /* done.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = done.mp3; path = ../assets/sounds/done.mp3; sourceTree = "<group>"; };
 		083353E92B5AB22900C603C0 /* receive.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = receive.mp3; path = ../assets/sounds/receive.mp3; sourceTree = "<group>"; };
@@ -160,8 +163,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				383643682B6D4AE2005BB9AE /* DeviceCheck.framework in Frameworks */,
-				E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */,
-				E51DC681C7DEE40AEBDDFBFE /* BuildFile in Frameworks */,
+				E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */,
+				E51DC681C7DEE40AEBDDFBFE /* (null) in Frameworks */,
 				8744C5400E24E379441C04A4 /* libPods-NewExpensify.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -267,6 +270,8 @@
 				F0C450E92705020500FD2970 /* colors.json */,
 				DD7904292792E76D004484B4 /* RCTBootSplash.h */,
 				DD79042A2792E76D004484B4 /* RCTBootSplash.mm */,
+				052828F62C5248EE00434B1A /* BootSplashController.h */,
+				052828F72C5248EE00434B1A /* BootSplashController.m */,
 				7041848326A8E40900E09F4D /* RCTStartupTimer.h */,
 				7041848426A8E47D00E09F4D /* RCTStartupTimer.m */,
 				18D050DF262400AF000D658B /* BridgingFile.swift */,
@@ -849,6 +854,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18D050E0262400AF000D658B /* BridgingFile.swift in Sources */,
+				052828F82C5248EE00434B1A /* BootSplashController.m in Sources */,
 				0F5E5350263B73FD004CA14F /* EnvironmentChecker.m in Sources */,
 				374FB8D728A133FE000D84EF /* OriginImageRequestHandler.mm in Sources */,
 				7041848526A8E47D00E09F4D /* RCTStartupTimer.m in Sources */,
