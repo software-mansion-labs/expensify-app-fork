@@ -558,6 +558,12 @@ function AuthScreens() {
                     />
                     {Object.entries(CENTRAL_PANE_SCREENS).map(([screenName, componentGetter]) => {
                         const centralPaneName = screenName as CentralPaneName;
+                        const options = {...CentralPaneScreenOptions};
+
+                        if (centralPaneName === SCREENS.SETTINGS.WORKSPACES) {
+                            options.animationEnabled = false;
+                        }
+
                         return (
                             <RootStack.Screen
                                 key={centralPaneName}
