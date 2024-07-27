@@ -74,9 +74,9 @@ function fromLocaleDigit(locale: Locale, localeDigit: string): string {
 /**
  * Formats a number into its localized ordinal representation i.e 1st, 2nd etc
  */
-function toLocaleOrdinal(locale: Locale, number: number): string {
+function toLocaleOrdinal(locale: Locale, number: number, returnWords = false): string {
     // Defaults to "other" suffix or "th" in English
-    let suffixKey = 'workflowsPage.frequencies.ordinals.other';
+    let suffixKey: TranslationPaths = 'workflowsPage.frequencies.ordinals.other';
 
     // Calculate last digit of the number to determine basic ordinality
     const lastDigit = number % 10;
@@ -92,7 +92,11 @@ function toLocaleOrdinal(locale: Locale, number: number): string {
         suffixKey = 'workflowsPage.frequencies.ordinals.few';
     }
 
-    const suffix = Localize.translate(locale, suffixKey as TranslationPaths);
+    if (returnWords && number >= 1 && number <= 10) {
+        suffixKey = `workflowsPage.frequencies.ordinals.${number}` as TranslationPaths;
+    }
+
+    const suffix = Localize.translate(locale, suffixKey);
 
     return `${number}${suffix}`;
 }
