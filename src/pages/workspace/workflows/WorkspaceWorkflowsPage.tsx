@@ -164,6 +164,7 @@ function WorkspaceWorkflowsPage({policy, betas, route}: WorkspaceWorkflowsPagePr
                                 iconFill={theme.success}
                                 style={[styles.ph2, styles.ml11, styles.widthAuto]}
                                 hoverAndPressStyle={[styles.mr0, styles.br2]}
+                                onPress={() => Navigation.navigate(ROUTES.WORKSPACE_WORKFLOWS_APPROVALS_EXPENSES_FROM.getRoute(route.params.policyID))}
                             />
                         )}
                     </>
