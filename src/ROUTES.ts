@@ -335,11 +335,31 @@ const ROUTES = {
     },
     ROOM_MEMBERS: {
         route: 'r/:reportID/members',
-        getRoute: (reportID: string) => `r/${reportID}/members` as const,
+        getRoute: (reportID: string, search?: string) => {
+            let baseRoute = `r/${reportID}/members`;
+
+            if (search) {
+                baseRoute += `?search=${encodeURIComponent(search)}`;
+            }
+
+            return baseRoute;
+        },
     },
     ROOM_INVITE: {
         route: 'r/:reportID/invite/:role?',
-        getRoute: (reportID: string, role?: string) => `r/${reportID}/invite/${role ?? ''}` as const,
+        getRoute: (reportID: string, role?: string, search?: string) => {
+            let baseRoute = `r/${reportID}/invite`;
+
+            if (role) {
+                baseRoute += `/${role}`;
+            }
+
+            if (search) {
+                baseRoute += `?search=${encodeURIComponent(search)}`;
+            }
+
+            return baseRoute;
+        },
     },
     MONEY_REQUEST_HOLD_REASON: {
         route: ':type/edit/reason/:transactionID?',

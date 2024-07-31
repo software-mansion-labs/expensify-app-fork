@@ -94,8 +94,9 @@ function RoomMembersPage({report, session, policies}: RoomMembersPageProps) {
         if (!report) {
             return;
         }
-        setSearchValue('');
-        Navigation.navigate(ROUTES.ROOM_INVITE.getRoute(report.reportID));
+        // setSearchValue('');
+        console.log('TEST ', ROUTES.ROOM_INVITE.getRoute(report.reportID, undefined, searchValue));
+        Navigation.navigate(ROUTES.ROOM_INVITE.getRoute(report.reportID, undefined, searchValue));
     };
 
     /**

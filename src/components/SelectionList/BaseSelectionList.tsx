@@ -24,6 +24,7 @@ import usePrevious from '@hooks/usePrevious';
 import useThemeStyles from '@hooks/useThemeStyles';
 import getSectionsWithIndexOffset from '@libs/getSectionsWithIndexOffset';
 import Log from '@libs/Log';
+import Navigation from '@libs/Navigation/Navigation';
 import * as SearchUtils from '@libs/SearchUtils';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
@@ -676,7 +677,9 @@ function BaseSelectionList<TItem extends ListItem>(
                                     }
                                 }}
                                 onFocus={() => (isTextInputFocusedRef.current = true)}
-                                onBlur={() => (isTextInputFocusedRef.current = false)}
+                                onBlur={() => {
+                                    isTextInputFocusedRef.current = false;
+                                }}
                                 label={textInputLabel}
                                 accessibilityLabel={textInputLabel}
                                 hint={textInputHint}
