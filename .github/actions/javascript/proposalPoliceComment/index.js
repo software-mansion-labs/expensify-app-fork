@@ -18061,7 +18061,9 @@ async function run() {
 }
 run().catch((error) => {
     console.error(error);
-    process.exit(1);
+    // Zero status ensures that the action is marked as successful regardless the outcome
+    // which means that no failure notification is sent to issue's subscribers
+    process.exit(0);
 });
 
 
@@ -18486,12 +18488,6 @@ class GithubUtils {
             workflow_id: workflow,
         })
             .then((response) => response.data.workflow_runs[0]?.id);
-    }
-    /**
-     * Generate the well-formatted body of a production release.
-     */
-    static getReleaseBody(pullRequests) {
-        return pullRequests.map((number) => `- ${this.getPullRequestURLFromNumber(number)}`).join('\r\n');
     }
     /**
      * Generate the URL of an New Expensify pull request given the PR number.
