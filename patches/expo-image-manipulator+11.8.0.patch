@@ -61,11 +61,11 @@ index 5b77ad6..5dbcfdf 100644
 -            canvas.height = imageSource.naturalHeight;
 +            const adjudstedCanvasSize = getAdjustedCanvasSize(imageSource.naturalWidth, imageSource.naturalHeight);
 +
-+            canvas.width = adjudstedCanvasSize.naturalWidth;
-+            canvas.height = adjudstedCanvasSize.naturalHeight;
++            canvas.width = adjudstedCanvasSize.width;
++            canvas.height = adjudstedCanvasSize.height;
              const context = getContext(canvas);
 -            context.drawImage(imageSource, 0, 0, imageSource.naturalWidth, imageSource.naturalHeight);
-+            context.drawImage(imageSource, 0, 0, adjudstedCanvasSize.naturalWidth, adjudstedCanvasSize.naturalHeight);
++            context.drawImage(imageSource, 0, 0, adjudstedCanvasSize.width, adjudstedCanvasSize.height);
              resolve(canvas);
          };
          imageSource.onerror = () => reject(canvas);
