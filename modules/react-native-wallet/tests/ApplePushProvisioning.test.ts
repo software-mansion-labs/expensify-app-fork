@@ -46,14 +46,15 @@ describe('ApplePushProvisioning', () => {
         const request = {last4: '1234', cardHolderName: 'John Doe'};
         NativeModules.ApplePushProvisioning.startAddPaymentPass.mockResolvedValue(undefined);
 
-        await ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolderName);
+        await ApplePushProvisioning.startAddPaymentPass(request);
         expect(NativeModules.ApplePushProvisioning.startAddPaymentPass).toHaveBeenCalledWith(request.last4, request.cardHolderName);
     });
 
     test('should handle error when starting to add a payment pass', async () => {
+        const request = {last4: '1234', cardHolderName: 'John Doe'};
         NativeModules.ApplePushProvisioning.startAddPaymentPass.mockRejectedValue(new Error('Error'));
 
-        await expect(ApplePushProvisioning.startAddPaymentPass('1234', 'John Doe')).rejects.toThrow('Error');
+        await expect(ApplePushProvisioning.startAddPaymentPass(request)).rejects.toThrow('Error');
         expect(NativeModules.ApplePushProvisioning.startAddPaymentPass).toHaveBeenCalled();
     });
 

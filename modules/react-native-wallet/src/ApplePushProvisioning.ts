@@ -3,7 +3,7 @@ import type {NativeModule} from 'react-native';
 
 type AddPassRequest = {
     last4: string;
-    cardHolder: string;
+    cardHolderName: string;
 };
 
 type CompletePassRequest = {
@@ -23,7 +23,7 @@ type SupportedEvents = 'addPaymentPassViewControllerDidFinish' | 'getPassAndActi
 
 type ApplePushProvisioningType = NativeModule & {
     canAddPaymentPass: () => Promise<boolean>;
-    startAddPaymentPass: (last4: string, cardHolder: string) => Promise<void>;
+    startAddPaymentPass: (last4: string, cardHolderName: string) => Promise<void>;
     completeAddPaymentPass: (activation: string, encryptedData: string, ephemeralKey: string) => Promise<void>;
 };
 
@@ -46,7 +46,7 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves when the process is started.
      */
     startAddPaymentPass(request: AddPassRequest): Promise<void> {
-        return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolder);
+        return ApplePushProvisioning.startAddPaymentPass(request.last4, request.cardHolderName);
     },
 
     /**
