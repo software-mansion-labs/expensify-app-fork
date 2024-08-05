@@ -37,7 +37,6 @@ import type {Session} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type {WithReportOrNotFoundProps} from './home/report/withReportOrNotFound';
 import withReportOrNotFound from './home/report/withReportOrNotFound';
-import SearchInputManager from './workspace/SearchInputManager';
 
 type RoomMembersPageOnyxProps = {
     session: OnyxEntry<Session>;
@@ -58,19 +57,6 @@ function RoomMembersPage({report, session, policies}: RoomMembersPageProps) {
     const personalDetails = usePersonalDetails() || CONST.EMPTY_OBJECT;
     const policy = useMemo(() => policies?.[`${ONYXKEYS.COLLECTION.POLICY}${report?.policyID ?? ''}`], [policies, report?.policyID]);
     const isPolicyExpenseChat = useMemo(() => ReportUtils.isPolicyExpenseChat(report), [report]);
-
-    const isFocusedScreen = useIsFocused();
-
-    useEffect(() => {
-        setSearchValue(SearchInputManager.searchInput);
-    }, [isFocusedScreen]);
-
-    useEffect(
-        () => () => {
-            SearchInputManager.searchInput = '';
-        },
-        [],
-    );
 
     /**
      * Get members for the current room
@@ -95,8 +81,7 @@ function RoomMembersPage({report, session, policies}: RoomMembersPageProps) {
         if (!report) {
             return;
         }
-        setSearchValue('');
-        Navigation.navigate(ROUTES.ROOM_INVITE.getRoute(report.reportID));
+        Navigation.navigate(ROUTES.ROOM_INVITE.getRoute(report.reportID, undefined, searchValue));
     };
 
     /**
@@ -295,7 +280,6 @@ function RoomMembersPage({report, session, policies}: RoomMembersPageProps) {
                             disableKeyboardShortcuts={removeMembersConfirmModalVisible}
                             textInputValue={searchValue}
                             onChangeText={(value) => {
-                                SearchInputManager.searchInput = value;
                                 setSearchValue(value);
                             }}
                             headerMessage={headerMessage}

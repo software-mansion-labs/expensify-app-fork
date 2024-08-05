@@ -11,10 +11,13 @@ const SCREENS_WITH_POLICY_ID_IN_URL: BottomTabName[] = [SCREENS.HOME] as const;
 const customGetPathFromState: typeof getPathFromState = (state, options) => {
     // For the Home and Settings pages we should remove policyID from the params, because on small screens it's displayed twice in the URL
     const stateWithoutPolicyID = removePolicyIDParamFromState(state as State<RootStackParamList>);
-    const path = getPathFromState(stateWithoutPolicyID, options);
+    let path = getPathFromState(stateWithoutPolicyID, options);
+    // Handle '/?' case for the purpose of params
+    path = path.replace(/\/\?/, '?');
     const policyIDFromState = getPolicyIDFromState(state as State<RootStackParamList>);
     const topmostBottomTabRouteName = getTopmostBottomTabRoute(state as State<RootStackParamList>)?.name;
     const shouldAddPolicyID = !!topmostBottomTabRouteName && SCREENS_WITH_POLICY_ID_IN_URL.includes(topmostBottomTabRouteName);
+
     return `${policyIDFromState && shouldAddPolicyID ? `/w/${policyIDFromState}` : ''}${path}`;
 };
 
