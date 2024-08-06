@@ -9,13 +9,6 @@
         "outDir": "./dist",
         "rootDir": "./src"
     },
-    "include": [
-        "src",
-        "modules/react-native-wallet/src/**/*",
-        "modules/react-native-wallet/tests/**/*"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist"
-    ]
+    "include": ["src", "modules/react-native-wallet/src/**/*", "modules/react-native-wallet/tests/**/*"],
+    "exclude": ["node_modules", "dist"]
 }
