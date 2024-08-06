@@ -45,6 +45,7 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                             return;
                         }
                         isExecutingRef.current = true;
+                        console.log('OVERLAY PRESS');
                         navigation.goBack();
                     }}
                 />

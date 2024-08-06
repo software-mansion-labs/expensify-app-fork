@@ -1,4 +1,3 @@
-import {useIsFocused} from '@react-navigation/native';
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {View} from 'react-native';
@@ -17,6 +16,7 @@ import UserListItem from '@components/SelectionList/UserListItem';
 import type {WithCurrentUserPersonalDetailsProps} from '@components/withCurrentUserPersonalDetails';
 import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
+import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import localeCompare from '@libs/LocaleCompare';
@@ -49,6 +49,7 @@ type RoomMembersPageProps = WithReportOrNotFoundProps &
 
 function RoomMembersPage({report, session, policies}: RoomMembersPageProps) {
     const styles = useThemeStyles();
+    const {singleExecution} = useSingleExecution();
     const {formatPhoneNumber, translate} = useLocalize();
     const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
     const [removeMembersConfirmModalVisible, setRemoveMembersConfirmModalVisible] = useState(false);
@@ -282,6 +283,20 @@ function RoomMembersPage({report, session, policies}: RoomMembersPageProps) {
                             onChangeText={(value) => {
                                 setSearchValue(value);
                             }}
+                            onTextInputBlur={singleExecution((e) => {
+                                e.preventDefault();
+
+                                if (!Navigation.getSearchParam('search') && !e.nativeEvent.text) {
+                                    return;
+                                }
+
+                                if (!e.nativeEvent.text) {
+                                    Navigation.setParams({search: undefined});
+                                    return;
+                                }
+
+                                Navigation.setParams({search: e.nativeEvent.text});
+                            })}
                             headerMessage={headerMessage}
                             onSelectRow={(item) => toggleUser(item)}
                             onSelectAll={() => toggleAllUsers(data)}

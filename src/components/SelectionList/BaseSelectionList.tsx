@@ -82,6 +82,7 @@ function BaseSelectionList<TItem extends ListItem>(
         isRowMultilineSupported = false,
         isAlternateTextMultilineSupported = false,
         textInputRef,
+        onTextInputBlur,
         headerMessageStyle,
         shouldHideListOnInitialRender = true,
         textInputIconLeft,
@@ -674,7 +675,10 @@ function BaseSelectionList<TItem extends ListItem>(
                                     }
                                 }}
                                 onFocus={() => (isTextInputFocusedRef.current = true)}
-                                onBlur={() => (isTextInputFocusedRef.current = false)}
+                                onBlur={(e) => {
+                                    isTextInputFocusedRef.current = false;
+                                    onTextInputBlur?.(e);
+                                }}
                                 label={textInputLabel}
                                 accessibilityLabel={textInputLabel}
                                 hint={textInputHint}

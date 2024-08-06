@@ -406,6 +406,24 @@ function getTopMostCentralPaneRouteFromRootState() {
     return getTopmostCentralPaneRoute(navigationRef.getRootState() as State<RootStackParamList>);
 }
 
+/** Returns the value of the provided search param key or null if it isn't used */
+function getSearchParam(key: string): string | undefined {
+    const queryString = getActiveRoute().split('?')[1];
+
+    if (!queryString) {
+        return undefined;
+    }
+
+    const params = queryString.split('&');
+    const searchParam = params.find((param) => param.startsWith(`${key}=`));
+    if (!searchParam) {
+        return undefined;
+    }
+
+    // Extract and decode the value of 'search' parameter
+    return decodeURIComponent(searchParam.split('=')[1]);
+}
+
 export default {
     setShouldPopAllStateOnUP,
     navigate,
@@ -429,6 +447,7 @@ export default {
     closeRHPFlow,
     setNavigationActionToMicrotaskQueue,
     getTopMostCentralPaneRouteFromRootState,
+    getSearchParam,
 };
 
 export {navigationRef};

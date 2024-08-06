@@ -1,5 +1,16 @@
 import type {MutableRefObject, ReactElement, ReactNode} from 'react';
-import type {GestureResponderEvent, InputModeOptions, LayoutChangeEvent, SectionListData, StyleProp, TextInput, TextStyle, ViewStyle} from 'react-native';
+import type {
+    GestureResponderEvent,
+    InputModeOptions,
+    LayoutChangeEvent,
+    NativeSyntheticEvent,
+    SectionListData,
+    StyleProp,
+    TextInput,
+    TextInputFocusEventData,
+    TextStyle,
+    ViewStyle,
+} from 'react-native';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 // eslint-disable-next-line no-restricted-imports
 import type CursorStyles from '@styles/utils/cursor/types';
@@ -451,6 +462,9 @@ type BaseSelectionListProps<TItem extends ListItem> = Partial<ChildrenProps> & {
 
     /** Ref for textInput */
     textInputRef?: MutableRefObject<TextInput | null> | ((ref: TextInput | null) => void);
+
+    /** Ref for textInput */
+    onTextInputBlur?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
 
     /** Styles for the section title */
     sectionTitleStyles?: StyleProp<ViewStyle>;
