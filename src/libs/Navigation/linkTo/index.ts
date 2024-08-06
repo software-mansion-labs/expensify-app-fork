@@ -44,6 +44,24 @@ export default function linkTo(navigation: NavigationContainerRef<RootStackParam
         root = current;
     }
 
+    if (path.startsWith('PERF_TEST')) {
+        root.dispatch({
+            type: 'PUSH',
+            payload: {
+                name: 'FullScreenNavigator',
+                params: {
+                    initial: true,
+                    screen: 'Workspace_Initial',
+                    params: {
+                        policyID: path.split(',')[1],
+                    },
+                    path: `settings/workspaces/${path.split(',')[1]}`,
+                },
+            },
+        });
+        return;
+    }
+
     const pathWithoutPolicyID = getPathWithoutPolicyID(`/${path}`) as Route;
     const rootState = navigation.getRootState() as NavigationState<RootStackParamList>;
     const stateFromPath = getStateFromPath(pathWithoutPolicyID) as PartialState<NavigationState<RootStackParamList>>;

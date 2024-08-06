@@ -6,6 +6,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
+import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import HighlightableMenuItem from '@components/HighlightableMenuItem';
@@ -408,6 +409,11 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, reimbursementAcc
                         shouldHideOnDelete={false}
                     >
                         <View style={[styles.pb4, styles.mh3, styles.mt3]}>
+                            <Button
+                                text="PERF TEST"
+                                onPress={() => Navigation.navigate(`PERF_TEST,${policyID}`)}
+                                style={styles.mb2}
+                            />
                             {/*
                                 Ideally we should use MenuList component for MenuItems with singleExecution/Navigation actions.
                                 In this case where user can click on workspace avatar or menu items, we need to have a check for `isExecuting`. So, we are directly mapping menuItems.
