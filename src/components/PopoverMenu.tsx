@@ -8,6 +8,8 @@ import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import * as Browser from '@libs/Browser';
+import * as Modal from '@userActions/Modal';
 import CONST from '@src/CONST';
 import type {AnchorPosition} from '@src/styles';
 import type AnchorAlignment from '@src/types/utils/AnchorAlignment';
@@ -83,6 +85,8 @@ type PopoverMenuProps = Partial<PopoverModalProps> & {
      * We are attempting to migrate to a new refocus manager, adding this property for gradual migration.
      * */
     shouldEnableNewFocusManagement?: boolean;
+
+    shouldSelectOnModalHide?: boolean;
 };
 
 function PopoverMenu({
@@ -106,6 +110,7 @@ function PopoverMenu({
     withoutOverlay = false,
     shouldSetModalVisibility = true,
     shouldEnableNewFocusManagement,
+    shouldSelectOnModalHide = true,
 }: PopoverMenuProps) {
     const styles = useThemeStyles();
     const theme = useTheme();
@@ -123,6 +128,11 @@ function PopoverMenu({
             setEnteredSubMenuIndexes([...enteredSubMenuIndexes, index]);
             const selectedSubMenuItemIndex = selectedItem?.subMenuItems.findIndex((option) => option.isSelected);
             setFocusedIndex(selectedSubMenuItemIndex);
+        } else if (shouldSelectOnModalHide && !Browser.isSafari()) {
+            Modal.close(() => {
+                onItemSelected?.(selectedItem, index);
+                selectedItem.onSelected?.();
+            });
         } else {
             onItemSelected(selectedItem, index);
             selectedItem.onSelected?.();

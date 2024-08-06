@@ -53,12 +53,12 @@ function ThreeDotsMenu({
         setPopupMenuVisible(false);
     };
 
-    useEffect(() => {
-        if (!isBehindModal || !isPopupMenuVisible) {
-            return;
-        }
-        hidePopoverMenu();
-    }, [isBehindModal, isPopupMenuVisible]);
+    // useEffect(() => {
+    //     if (!isBehindModal || !isPopupMenuVisible) {
+    //         return;
+    //     }
+    //     hidePopoverMenu();
+    // }, [isBehindModal, isPopupMenuVisible]);
 
     return (
         <>
@@ -66,10 +66,10 @@ function ThreeDotsMenu({
                 <Tooltip text={translate(iconTooltip)}>
                     <PressableWithoutFeedback
                         onPress={() => {
-                            if (isPopupMenuVisible) {
-                                hidePopoverMenu();
-                                return;
-                            }
+                            // if (isPopupMenuVisible) {
+                            //     hidePopoverMenu();
+                            //     return;
+                            // }
                             buttonRef.current?.blur();
                             showPopoverMenu();
                             if (onIconPress) {
@@ -97,8 +97,8 @@ function ThreeDotsMenu({
                 </Tooltip>
             </View>
             <PopoverMenu
-                onClose={hidePopoverMenu}
-                isVisible={isPopupMenuVisible && !isBehindModal}
+                // onClose={hidePopoverMenu}
+                isVisible={isPopupMenuVisible}
                 anchorPosition={anchorPosition}
                 anchorAlignment={anchorAlignment}
                 onItemSelected={hidePopoverMenu}

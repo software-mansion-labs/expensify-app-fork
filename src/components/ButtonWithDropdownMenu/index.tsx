@@ -158,12 +158,13 @@ function ButtonWithDropdownMenu<IValueType>({
                     menuItems={options.map((item, index) => ({
                         ...item,
                         onSelected: item.onSelected
-                            ? () => Modal.close(() => item.onSelected?.())
+                            ? () => item.onSelected?.()
                             : () => {
                                   onOptionSelected?.(item);
                                   setSelectedItemIndex(index);
                               },
                     }))}
+                    shouldSelectOnModalHide={false}
                 />
             )}
         </View>
