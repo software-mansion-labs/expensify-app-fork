@@ -441,7 +441,7 @@ function WorkspacesListPage({policies, reimbursementAccount, reports, session}: 
                 cancelText={translate('common.cancel')}
                 danger
             />
-            {isSmallScreenWidth && <BottomTabBar selectedTab={SCREENS.SETTINGS.ROOT} />}
+            {shouldUseNarrowLayout && <BottomTabBar selectedTab={SCREENS.SETTINGS.ROOT} />}
         </ScreenWrapper>
     );
 }
