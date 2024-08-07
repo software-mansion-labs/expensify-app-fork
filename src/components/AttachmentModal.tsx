@@ -21,6 +21,7 @@ import * as TransactionUtils from '@libs/TransactionUtils';
 import type {AvatarSource} from '@libs/UserUtils';
 import variables from '@styles/variables';
 import * as IOU from '@userActions/IOU';
+import * as ModalActions from '@userActions/Modal';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -365,10 +366,12 @@ function AttachmentModal({
      * close the modal
      */
     const closeModal = useCallback(() => {
+        console.log('closeModal 1');
         setIsModalOpen(false);
 
         if (typeof onModalClose === 'function') {
-            onModalClose();
+            console.log('closeModal 2');
+            // onModalClose();
         }
 
         // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
@@ -427,13 +430,17 @@ function AttachmentModal({
                 icon: Expensicons.Trashcan,
                 text: translate('receipt.deleteReceipt'),
                 onSelected: () => {
-                    setIsDeleteReceiptConfirmModalVisible(true);
+                    console.log('onSelected 1');
+                    ModalActions.close(() => {
+                        console.log('onSelected 2');
+                        setIsDeleteReceiptConfirmModalVisible(true);
+                    });
                 },
             });
         }
         return menuItems;
         // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-    }, [isReceiptAttachment, transaction, file, sourceState, iouType]);
+    }, [isReceiptAttachment, transaction, file, sourceState, iouType, isDeleteReceiptConfirmModalVisible, isModalOpen, ModalActions]);
 
     // There are a few things that shouldn't be set until we absolutely know if the file is a receipt or an attachment.
     // props.isReceiptAttachment will be null until its certain what the file is, in which case it will then be true|false.
@@ -466,7 +473,11 @@ function AttachmentModal({
             <Modal
                 type={modalType}
                 onSubmit={submitAndClose}
-                onClose={isOverlayModalVisible ? closeConfirmModal : closeModal}
+                onClose={() => {
+                    if (isOverlayModalVisible) {
+                        closeConfirmModal();
+                    }
+                }}
                 isVisible={isModalOpen}
                 onModalShow={() => {
                     onModalShow();

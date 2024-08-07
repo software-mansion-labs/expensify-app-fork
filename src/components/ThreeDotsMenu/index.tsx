@@ -97,7 +97,7 @@ function ThreeDotsMenu({
                 </Tooltip>
             </View>
             <PopoverMenu
-                // onClose={hidePopoverMenu}
+                onClose={hidePopoverMenu}
                 isVisible={isPopupMenuVisible}
                 anchorPosition={anchorPosition}
                 anchorAlignment={anchorAlignment}

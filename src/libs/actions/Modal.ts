@@ -51,12 +51,18 @@ function close(onModalCloseCallback: () => void, isNavigating = true) {
 
 function onModalDidClose() {
     if (!onModalClose) {
+        console.log('ON DID CLOSE 1');
+
         return;
     }
-    if (closeModals.length) {
-        closeTop();
-        return;
-    }
+    // if (closeModals.length) {
+    //     console.log('ON DID CLOSE 2');
+
+    //     closeTop();
+    //     return;
+    // }
+    console.log('ON DID CLOSE 3');
+
     onModalClose();
     onModalClose = null;
     isNavigate = undefined;

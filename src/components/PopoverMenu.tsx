@@ -129,10 +129,10 @@ function PopoverMenu({
             const selectedSubMenuItemIndex = selectedItem?.subMenuItems.findIndex((option) => option.isSelected);
             setFocusedIndex(selectedSubMenuItemIndex);
         } else if (shouldSelectOnModalHide && !Browser.isSafari()) {
-            Modal.close(() => {
-                onItemSelected?.(selectedItem, index);
-                selectedItem.onSelected?.();
-            });
+            // Modal.close(() => {
+            onItemSelected?.(selectedItem, index);
+            selectedItem.onSelected?.();
+            // });
         } else {
             onItemSelected(selectedItem, index);
             selectedItem.onSelected?.();
@@ -275,8 +275,6 @@ function PopoverMenu({
         </PopoverWithMeasuredContent>
     );
 }
-
-PopoverMenu.displayName = 'PopoverMenu';
 
 export default React.memo(
     PopoverMenu,

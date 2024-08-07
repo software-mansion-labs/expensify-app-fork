@@ -242,7 +242,7 @@ function HeaderWithBackButton({
                             menuItems={threeDotsMenuItems}
                             onIconPress={onThreeDotsButtonPress}
                             anchorPosition={threeDotsAnchorPosition}
-                            shouldOverlay={shouldOverlayDots}
+                            shouldOverlay
                             shouldSetModalVisibility={shouldSetModalVisibility}
                         />
                     )}
