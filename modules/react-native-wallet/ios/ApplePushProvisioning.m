@@ -4,10 +4,18 @@
 #import <React/RCTBridge.h>
 #import <PassKit/PassKit.h>
 
-typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request);
+static NSString * const ModuleName = @"ApplePushProvisioning";
+static NSString * const ErrorPaymentPassUnsupported = @"payment_pass_unsupported";
+static NSString * const ErrorRootViewController = @"root_view_controller_error";
+static NSString * const ErrorCompletionHandler = @"completion_handler_error";
+
+// Token service providers. Add more if necessary
+static PKPaymentNetwork const CardNetwork = PKPaymentNetworkVisa;
+
+typedef void (^CompletedPaymentProcessHandler)(PKAddPaymentPassRequest *request);
 
 @interface ApplePushProvisioning () <PKAddPaymentPassViewControllerDelegate>
-@property (nonatomic, strong) completedPaymentProcessHandler completionHandler;
+@property (nonatomic, strong) CompletedPaymentProcessHandler completionHandler;
 @end
 
 @implementation ApplePushProvisioning
@@ -29,14 +37,14 @@ RCT_EXPORT_METHOD(startAddPaymentPass:(NSString *)last4
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejector:(RCTPromiseRejectBlock)reject) {
   if (![PKAddPaymentPassViewController canAddPaymentPass]) {
-    reject(@"payment_pass_unsupported", @"Unable to add payment pass, please check you have the correct entitlements", nil);
+    reject(ErrorPaymentPassUnsupported, @"Unable to add payment pass, please check you have the correct entitlements", nil);
     return;
   }
   
   PKAddPaymentPassRequestConfiguration *passConfig = [[PKAddPaymentPassRequestConfiguration alloc] initWithEncryptionScheme:PKEncryptionSchemeECC_V2];
   passConfig.primaryAccountSuffix = last4;
   passConfig.cardholderName = cardHolderName;
-  passConfig.paymentNetwork = PKPaymentNetworkMasterCard;
+  passConfig.paymentNetwork = CardNetwork;
   
   PKAddPaymentPassViewController *paymentPassVC = [[PKAddPaymentPassViewController alloc] initWithRequestConfiguration:passConfig delegate:self];
   
@@ -47,7 +55,7 @@ RCT_EXPORT_METHOD(startAddPaymentPass:(NSString *)last4
         resolve(nil);
       }];
     } else {
-      reject(@"root_view_controller_error", @"Unable to get the root view controller", nil);
+      reject(ErrorRootViewController, @"Unable to get the root view controller", nil);
     }
   });
 }
