@@ -1,5 +1,4 @@
-import {useNavigation} from '@react-navigation/native';
-import React, {useEffect, useRef} from 'react';
+import React, {useRef} from 'react';
 import {View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -32,14 +31,6 @@ function ProcessMoneyRequestHoldMenu({isVisible, onClose, onConfirm, anchorPosit
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const popoverRef = useRef(null);
-    const navigation = useNavigation();
-
-    useEffect(() => {
-        const unsub = navigation.addListener('beforeRemove', () => {
-            onClose();
-        });
-        return unsub;
-    }, [navigation, onClose]);
 
     return (
         <Popover
@@ -50,7 +41,6 @@ function ProcessMoneyRequestHoldMenu({isVisible, onClose, onConfirm, anchorPosit
             anchorAlignment={anchorAlignment}
             disableAnimation={false}
             withoutOverlay={false}
-            shouldCloseWhenBrowserNavigationChanged={false}
         >
             <View style={[styles.mh5, styles.mv5]}>
                 <View style={[styles.flexRow, styles.alignItemsCenter, styles.mb5]}>
