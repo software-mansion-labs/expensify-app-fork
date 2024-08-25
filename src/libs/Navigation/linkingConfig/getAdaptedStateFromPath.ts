@@ -78,7 +78,7 @@ function createBottomTabNavigator(route: NavigationPartialRoute<BottomTabName>, 
     };
 }
 
-function createWorkspaceNavigator(route?: NavigationPartialRoute<WorkspaceScreenName>): NavigationPartialRoute<typeof NAVIGATORS.WORKSPACE_NAVIGATOR> {
+function createWorkspaceNavigator(route?: NavigationPartialRoute<WorkspaceScreenName>): NavigationPartialRoute<typeof NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR> {
     const routes = [];
 
     const policyID = route?.params && 'policyID' in route.params ? route.params.policyID : undefined;
@@ -95,7 +95,7 @@ function createWorkspaceNavigator(route?: NavigationPartialRoute<WorkspaceScreen
         routes.push(route);
     }
     return {
-        name: NAVIGATORS.WORKSPACE_NAVIGATOR,
+        name: NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,
         state: getRoutesWithIndex(routes),
     };
 }
@@ -109,7 +109,7 @@ function getParamsFromRoute(screenName: string): string[] {
 }
 
 // This function will return CentralPaneNavigator route or WorkspaceNavigator route.
-function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): NavigationPartialRoute<CentralPaneName | typeof NAVIGATORS.WORKSPACE_NAVIGATOR> | undefined {
+function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): NavigationPartialRoute<CentralPaneName | typeof NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR> | undefined {
     // Check for backTo param. One screen with different backTo value may need diferent screens visible under the overlay.
     if (route.params && 'backTo' in route.params && typeof route.params.backTo === 'string') {
         const stateForBackTo = getStateFromPath(route.params.backTo, config);
@@ -119,7 +119,7 @@ function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): Navigat
 
             const centralPaneOrWorkspaceNavigator = stateForBackTo.routes.find(
                 // eslint-disable-next-line @typescript-eslint/no-shadow
-                (route) => isCentralPaneName(route.name) || route.name === NAVIGATORS.WORKSPACE_NAVIGATOR,
+                (route) => isCentralPaneName(route.name) || route.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,
             );
 
             // If there is rhpNavigator in the state generated for backTo url, we want to get root route matching to this rhp screen.
@@ -129,7 +129,7 @@ function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): Navigat
 
             // If we know that backTo targets the root route (central pane or full screen) we want to use it.
             if (centralPaneOrWorkspaceNavigator && centralPaneOrWorkspaceNavigator.state) {
-                return centralPaneOrWorkspaceNavigator as NavigationPartialRoute<CentralPaneName | typeof NAVIGATORS.WORKSPACE_NAVIGATOR>;
+                return centralPaneOrWorkspaceNavigator as NavigationPartialRoute<CentralPaneName | typeof NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR>;
             }
         }
     }
@@ -170,7 +170,7 @@ function getAdaptedState(state: PartialState<NavigationState<RootStackParamList>
     // We need to check what is defined to know what we need to add.
     const bottomTabNavigator = state.routes.find((route) => route.name === NAVIGATORS.BOTTOM_TAB_NAVIGATOR);
     const centralPaneNavigator = state.routes.find((route) => isCentralPaneName(route.name));
-    const WorkspaceNavigator = state.routes.find((route) => route.name === NAVIGATORS.WORKSPACE_NAVIGATOR);
+    const WorkspaceNavigator = state.routes.find((route) => route.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR);
     const rhpNavigator = state.routes.find((route) => route.name === NAVIGATORS.RIGHT_MODAL_NAVIGATOR);
     const lhpNavigator = state.routes.find((route) => route.name === NAVIGATORS.LEFT_MODAL_NAVIGATOR);
     const onboardingModalNavigator = state.routes.find((route) => route.name === NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR);
@@ -204,7 +204,7 @@ function getAdaptedState(state: PartialState<NavigationState<RootStackParamList>
             routes.push(createBottomTabNavigator(matchingBottomTabRoute, policyID));
             // When we open a screen in RHP from WorkspaceNavigator, we need to add the appropriate screen in CentralPane.
             // Then, when we close WorkspaceNavigator, we will be redirected to the correct page in CentralPane.
-            if (matchingRootRoute?.name === NAVIGATORS.WORKSPACE_NAVIGATOR) {
+            if (matchingRootRoute?.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR) {
                 routes.push({name: SCREENS.SETTINGS.WORKSPACES});
             }
 
@@ -374,6 +374,9 @@ const getAdaptedStateFromPath: GetAdaptedStateFromPath = (path, options) => {
     const policyID = isAnonymous ? undefined : extractPolicyIDFromPath(path);
 
     const state = getStateFromPath(pathWithoutPolicyID, options) as PartialState<NavigationState<RootStackParamList>>;
+    console.log('getAdaptedStateFromPath', state);
+
+    return {adaptedState: state};
     replacePathInNestedState(state, path);
     if (state === undefined) {
         throw new Error('Unable to parse path');

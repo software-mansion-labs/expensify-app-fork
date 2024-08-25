@@ -8,14 +8,14 @@ import prefixes from './prefixes';
 import subscribe from './subscribe';
 
 const linkingConfig: LinkingOptions<RootStackParamList> = {
-    getStateFromPath: (...args) => {
-        const {adaptedState} = getAdaptedStateFromPath(...args);
+    // getStateFromPath: (...args) => {
+    //     const {adaptedState} = getAdaptedStateFromPath(...args);
 
-        // ResultState | undefined is the type this function expect.
-        return adaptedState;
-    },
+    //     // ResultState | undefined is the type this function expect.
+    //     return adaptedState;
+    // },
     subscribe,
-    getPathFromState: customGetPathFromState,
+    // getPathFromState: customGetPathFromState,
     prefixes,
     config,
 };

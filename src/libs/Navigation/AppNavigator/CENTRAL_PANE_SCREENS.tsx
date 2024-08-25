@@ -5,6 +5,7 @@ import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
 type Screens = Partial<Record<CentralPaneName, () => React.ComponentType>>;
 
+// TODO: Is this part still necessary?
 const CENTRAL_PANE_SCREENS = {
     [SCREENS.SETTINGS.WORKSPACES]: withPrepareCentralPaneScreen(() => require<ReactComponentModule>('../../../pages/workspace/WorkspacesListPage').default),
     [SCREENS.SETTINGS.PREFERENCES.ROOT]: withPrepareCentralPaneScreen(() => require<ReactComponentModule>('../../../pages/settings/Preferences/PreferencesPage').default),
