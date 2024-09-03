@@ -30,6 +30,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
+import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import Navigation from '@libs/Navigation/Navigation';
 import * as SubscriptionUtils from '@libs/SubscriptionUtils';
 import * as UserUtils from '@libs/UserUtils';
@@ -45,6 +46,7 @@ import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
+import SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 import type {Icon as TIcon} from '@src/types/onyx/OnyxCommon';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
@@ -444,6 +446,7 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
                     onCancel={() => toggleSignoutConfirmModal(false)}
                 />
             </ScrollView>
+            <BottomTabBar selectedTab={SCREENS.SETTINGS.ROOT} />
         </ScreenWrapper>
     );
 }

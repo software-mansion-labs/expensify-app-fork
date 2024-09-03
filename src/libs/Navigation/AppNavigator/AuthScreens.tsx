@@ -30,6 +30,7 @@ import {buildSearchQueryString} from '@libs/SearchUtils';
 import * as SessionUtils from '@libs/SessionUtils';
 import ConnectionCompletePage from '@pages/ConnectionCompletePage';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
+import SearchPage from '@pages/Search/SearchPage';
 import DesktopSignInRedirectPage from '@pages/signin/DesktopSignInRedirectPage';
 import * as App from '@userActions/App';
 import * as Download from '@userActions/Download';
@@ -53,18 +54,18 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import beforeRemoveReportOpenedFromSearchRHP from './beforeRemoveReportOpenedFromSearchRHP';
-import CENTRAL_PANE_SCREENS from './CENTRAL_PANE_SCREENS';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import defaultScreenOptions from './defaultScreenOptions';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
-import BottomTabNavigator from './Navigators/BottomTabNavigator';
 import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
 import FeatureTrainingModalNavigator from './Navigators/FeatureTrainingModalNavigator';
 import LeftModalNavigator from './Navigators/LeftModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
+import ReportsSplitNavigator from './Navigators/ReportsSplitNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
+import SettingsSplitNavigator from './Navigators/SettingsSplitNavigator';
 import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
-import WorkspaceNavigator from './Navigators/WorkspaceNavigator';
+import WorkspaceSplitNavigator from './Navigators/WorkspaceSplitNavigator';
 
 const loadReportAttachments = () => require<ReactComponentModule>('../../../pages/home/report/ReportAttachments').default;
 const loadValidateLoginPage = () => require<ReactComponentModule>('../../../pages/ValidateLoginPage').default;
@@ -409,10 +410,21 @@ function AuthScreens() {
                     screenOptions={screenOptions.centralPaneNavigator}
                     isSmallScreenWidth={isSmallScreenWidth}
                 >
+                    {/* This have to be the first navigator in auth screens. */}
                     <RootStack.Screen
-                        name={NAVIGATORS.BOTTOM_TAB_NAVIGATOR}
-                        options={screenOptions.bottomTab}
-                        component={BottomTabNavigator}
+                        name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
+                        options={screenOptions.fullScreen}
+                        component={ReportsSplitNavigator}
+                    />
+                    <RootStack.Screen
+                        name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
+                        options={screenOptions.fullScreen}
+                        component={SettingsSplitNavigator}
+                    />
+                    <RootStack.Screen
+                        name={SCREENS.SEARCH.CENTRAL_PANE}
+                        options={screenOptions.fullScreen}
+                        component={SearchPage}
                     />
                     <RootStack.Screen
                         name={SCREENS.VALIDATE_LOGIN}
@@ -491,9 +503,9 @@ function AuthScreens() {
                         listeners={modalScreenListenersWithCancelSearch}
                     />
                     <RootStack.Screen
-                        name={NAVIGATORS.WORKSPACE_NAVIGATOR}
+                        name={NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR}
                         options={screenOptions.fullScreen}
-                        component={WorkspaceNavigator}
+                        component={WorkspaceSplitNavigator}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.LEFT_MODAL_NAVIGATOR}
@@ -556,7 +568,7 @@ function AuthScreens() {
                         options={defaultScreenOptions}
                         component={ConnectionCompletePage}
                     />
-                    {Object.entries(CENTRAL_PANE_SCREENS).map(([screenName, componentGetter]) => {
+                    {/* {Object.entries(CENTRAL_PANE_SCREENS).map(([screenName, componentGetter]) => {
                         const centralPaneName = screenName as CentralPaneName;
                         const options = {...CentralPaneScreenOptions};
 
@@ -574,7 +586,7 @@ function AuthScreens() {
                                 listeners={getCentralPaneScreenListeners(centralPaneName)}
                             />
                         );
-                    })}
+                    })} */}
                 </RootStack.Navigator>
                 <SearchRouter />
             </View>
