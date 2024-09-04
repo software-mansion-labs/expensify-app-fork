@@ -205,7 +205,8 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({the
                     boxShadow: variables.popoverMenuShadow,
                 };
 
-                hideBackdrop = true;
+                // Todo add new modal type instead of this
+                // hideBackdrop = true;
                 swipeDirection = undefined;
                 animationIn = 'fadeIn';
                 animationOut = 'fadeOut';

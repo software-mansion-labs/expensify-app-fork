@@ -5,6 +5,7 @@ import Breadcrumbs from '@components/Breadcrumbs';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import {PressableWithoutFeedback} from '@components/Pressable';
+import SearchRouter from '@components/Search/SearchRouter';
 import Tooltip from '@components/Tooltip';
 import WorkspaceSwitcherButton from '@components/WorkspaceSwitcherButton';
 import useLocalize from '@hooks/useLocalize';
@@ -38,6 +39,7 @@ function TopBar({breadcrumbLabel, activeWorkspaceID, shouldDisplaySearch = true}
 
     const displaySignIn = isAnonymousUser;
     const displaySearch = !isAnonymousUser && shouldDisplaySearch;
+    const displayNewSearch = true;
 
     return (
         <View style={styles.w100}>
@@ -60,6 +62,7 @@ function TopBar({breadcrumbLabel, activeWorkspaceID, shouldDisplaySearch = true}
                     </View>
                 </View>
                 {displaySignIn && <SignInButton />}
+                {displayNewSearch && <SearchRouter />}
                 {displaySearch && (
                     <Tooltip text={translate('common.find')}>
                         <PressableWithoutFeedback
