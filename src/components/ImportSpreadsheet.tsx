@@ -75,10 +75,10 @@ function ImportSpreedsheet({backTo, goTo}: ImportSpreedsheetProps) {
         if (!validateFile(file)) {
             return;
         }
-        if (!file.uri) {
-            return;
-        }
         let filePath = file.uri;
+        if (!filePath) {
+            filePath = URL.createObjectURL(file);
+        }
         if (Platform.OS === 'ios') {
             filePath = filePath.replace(/^.*\/Documents\//, `${RNFetchBlob.fs.dirs.DocumentDir}/`);
         }
@@ -97,6 +97,7 @@ function ImportSpreedsheet({backTo, goTo}: ImportSpreedsheetProps) {
                 });
             })
             .finally(() => {
+                URL.revokeObjectURL(filePath);
                 setIsReadingFIle(false);
             });
     };
