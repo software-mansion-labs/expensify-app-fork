@@ -201,7 +201,7 @@ function Search({queryJSON}: SearchProps) {
 
     if (shouldShowLoadingState) {
         return (
-            <>
+            <View style={styles.flex1}>
                 <SearchPageHeader
                     queryJSON={queryJSON}
                     hash={hash}
@@ -218,7 +218,7 @@ function Search({queryJSON}: SearchProps) {
                     <SearchStatusSkeleton shouldAnimate />
                 )}
                 <SearchRowSkeleton shouldAnimate />
-            </>
+            </View>
         );
     }
 
@@ -236,7 +236,7 @@ function Search({queryJSON}: SearchProps) {
 
     if (shouldShowEmptyState) {
         return (
-            <>
+            <View style={styles.flex1}>
                 <SearchPageHeader
                     queryJSON={queryJSON}
                     hash={hash}
@@ -247,7 +247,7 @@ function Search({queryJSON}: SearchProps) {
                     resetOffset={resetOffset}
                 />
                 <EmptySearchView type={type} />
-            </>
+            </View>
         );
     }
 
