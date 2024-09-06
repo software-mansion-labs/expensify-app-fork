@@ -94,12 +94,12 @@ export default function (useCachedViewportHeight = false): WindowDimensions {
     const windowDimensions = {
         windowWidth,
         windowHeight: isCachedViewportHeight ? cachedViewportHeight : windowHeight,
-        isExtraSmallScreenHeight,
-        isSmallScreenWidth,
-        isMediumScreenWidth,
-        isLargeScreenWidth,
-        isExtraSmallScreenWidth,
-        isSmallScreen,
+        isExtraSmallScreenHeight: false,
+        isSmallScreenWidth: false,
+        isMediumScreenWidth: false,
+        isLargeScreenWidth: true,
+        isExtraSmallScreenWidth: false,
+        isSmallScreen: false,
     };
 
     if (!lockedWindowDimensionsRef.current && !isFullScreenRef.current) {

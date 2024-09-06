@@ -43,7 +43,7 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
 
     return (
         <FocusTrapForScreens>
-            <View style={styles.rootNavigatorContainerStyles(isSmallScreenWidth)}>
+            <View style={{display: 'flex', width: '100%', height: '100%'}}>
                 <NavigationContent>
                     <StackView
                         // eslint-disable-next-line react/jsx-props-no-spreading
