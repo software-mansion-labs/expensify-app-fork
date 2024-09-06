@@ -17,7 +17,8 @@ import usePrepareSplitStackNavigatorChildren from './usePrepareSplitStackNavigat
 function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackNavigatorProps<ParamList>) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    // const {isSmallScreenWidth} = useWindowDimensions();
+    const isSmallScreenWidth = false;
     const screenOptions = getRootNavigatorScreenOptions(isSmallScreenWidth, styles, StyleUtils);
 
     const children = usePrepareSplitStackNavigatorChildren(props.children, props.sidebarScreen, screenOptions.homeScreen);
@@ -35,6 +36,8 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
         sidebarScreen: props.sidebarScreen,
         defaultCentralScreen: props.defaultCentralScreen,
     });
+
+    console.log('STATE test ', state.routes);
 
     useHandleScreenResize(navigation);
 

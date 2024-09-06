@@ -8,7 +8,7 @@ type StackState = StackNavigationState<ParamListBase> | PartialState<StackNaviga
 const isAtLeastOneInState = (state: StackState, screenName: string): boolean => state.routes.some((route) => route.name === screenName);
 
 function adaptStateIfNecessary(state: StackState, sidebarScreen: string, defaultCentralScreen: string) {
-    const isNarrowLayout = getIsNarrowLayout();
+    const isNarrowLayout = false;
     const workspaceCentralPane = state.routes.at(-1);
     // There should always be sidebarScreen screen in the state to make sure go back works properly if we deeplinkg to a subpage of settings.
     if (!isAtLeastOneInState(state, sidebarScreen)) {
@@ -60,11 +60,6 @@ function SplitStackRouter(options: SplitStackNavigatorRouterOptions) {
         ...stackRouter,
         getStateForAction(state: StackNavigationState<ParamListBase>, action: CommonActions.Action | StackActionType, configOptions: RouterConfigOptions) {
             if (isPushingSidebarOnCentralPane(state, action, options)) {
-                if (getIsNarrowLayout()) {
-                    // TODO: It's possible that it's better to push whole new SplitNavigator in such case. Not sure yet.
-                    // Pop to top on narrow layout.
-                    return {...state, routes: [state.routes.at(0)], index: 0};
-                }
                 // On wide screen do nothing as we want to keep the central pane screen and the sidebar is visible.
                 return state;
             }
