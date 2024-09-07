@@ -139,7 +139,7 @@ function createSplitNavigator(splitNavigatorLHNScreen: SplitNavigatorLHNScreen, 
 }
 
 // This function will return CentralPaneNavigator route or WorkspaceNavigator route.
-function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): NavigationPartialRoute<CentralPaneName | typeof NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR> | undefined {
+function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): NavigationPartialRoute<SplitNavigator> | undefined {
     // Check for backTo param. One screen with different backTo value may need diferent screens visible under the overlay.
     if (route.params && 'backTo' in route.params && typeof route.params.backTo === 'string') {
         const stateForBackTo = getStateFromPath(route.params.backTo, config);
@@ -159,7 +159,7 @@ function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): Navigat
 
             // If we know that backTo targets the root route (central pane or full screen) we want to use it.
             if (centralPaneOrWorkspaceNavigator && centralPaneOrWorkspaceNavigator.state) {
-                return centralPaneOrWorkspaceNavigator as NavigationPartialRoute<CentralPaneName | typeof NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR>;
+                return centralPaneOrWorkspaceNavigator as NavigationPartialRoute<SplitNavigator>;
             }
         }
     }
@@ -367,6 +367,7 @@ const getAdaptedStateFromPath: GetAdaptedStateFromPath = (path, options, shouldR
     if (shouldReplacePathInNestedState) {
         replacePathInNestedState(state, path);
     }
+
     if (state === undefined) {
         throw new Error('Unable to parse path');
     }

@@ -114,7 +114,7 @@ function WorkspacesListPage() {
     const [reports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
     const [session] = useOnyx(ONYXKEYS.SESSION);
 
-    const {activeWorkspaceID, setActiveWorkspaceID} = useActiveWorkspace();
+    const activeWorkspaceID = useActiveWorkspace();
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [policyIDToDelete, setPolicyIDToDelete] = useState<string>();
@@ -131,7 +131,6 @@ function WorkspacesListPage() {
 
         // If the workspace being deleted is the active workspace, switch to the "All Workspaces" view
         if (activeWorkspaceID === policyIDToDelete) {
-            setActiveWorkspaceID(undefined);
             Navigation.navigateWithSwitchPolicyID({policyID: undefined});
         }
     };

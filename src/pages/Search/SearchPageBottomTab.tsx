@@ -10,11 +10,13 @@ import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
+import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import Navigation from '@libs/Navigation/Navigation';
 import * as SearchUtils from '@libs/SearchUtils';
 import TopBar from '@navigation/AppNavigator/createCustomBottomTabNavigator/TopBar';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
+import SCREENS from '@src/SCREENS';
 import SearchTypeMenu from './SearchTypeMenu';
 
 type SearchPageBottomTabProps = {
@@ -64,6 +66,7 @@ function SearchPageBottomTab({queryJSON, policyID}: SearchPageBottomTabProps) {
                     />
                 )}
                 {shouldUseNarrowLayout && queryJSON && <Search queryJSON={queryJSON} />}
+                <BottomTabBar selectedTab={SCREENS.SEARCH.CENTRAL_PANE} />
             </FullPageNotFoundView>
         </ScreenWrapper>
     );
