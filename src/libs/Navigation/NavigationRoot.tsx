@@ -5,7 +5,6 @@ import {NativeModules} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import HybridAppMiddleware from '@components/HybridAppMiddleware';
 import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
-import useActiveWorkspace from '@hooks/useActiveWorkspace';
 import useCurrentReportID from '@hooks/useCurrentReportID';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
@@ -22,13 +21,11 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import AppNavigator from './AppNavigator';
-import getPolicyIDFromState from './getPolicyIDFromState';
 import linkingConfig from './linkingConfig';
 import customGetPathFromState from './linkingConfig/customGetPathFromState';
 import getAdaptedStateFromPath from './linkingConfig/getAdaptedStateFromPath';
 import Navigation, {navigationRef} from './Navigation';
 import setupCustomAndroidBackHandler from './setupCustomAndroidBackHandler';
-import type {RootStackParamList} from './types';
 
 type NavigationRootProps = {
     /** Whether the current user is logged in with an authToken */
@@ -89,7 +86,6 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady, sh
 
     const currentReportIDValue = useCurrentReportID();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
-    const {setActiveWorkspaceID} = useActiveWorkspace();
     const [user] = useOnyx(ONYXKEYS.USER);
 
     const [hasCompletedGuidedSetupFlow] = useOnyx(ONYXKEYS.NVP_ONBOARDING, {
@@ -162,11 +158,9 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady, sh
         const currentRoute = navigationRef.getCurrentRoute();
         Firebase.log(`[NAVIGATION] screen: ${currentRoute?.name}, params: ${JSON.stringify(currentRoute?.params ?? {})}`);
 
-        const activeWorkspaceID = getPolicyIDFromState(state as NavigationState<RootStackParamList>);
         // Performance optimization to avoid context consumers to delay first render
         setTimeout(() => {
             currentReportIDValue?.updateCurrentReportID(state);
-            setActiveWorkspaceID(activeWorkspaceID);
         }, 0);
         parseAndLogRoute(state);
 
