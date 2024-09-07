@@ -5,6 +5,7 @@ import {View} from 'react-native';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import {useOnyx, withOnyx} from 'react-native-onyx';
 import Button from '@components/Button';
+import DelegateNoAccessModal from '@components/DelegateNoAccessModal';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
@@ -14,6 +15,7 @@ import type {ActionHandledType} from '@components/ProcessMoneyReportHoldMenu';
 import SettlementButton from '@components/SettlementButton';
 import {showContextMenuForReport} from '@components/ShowContextMenuContext';
 import Text from '@components/Text';
+import useDelegateUserDetails from '@hooks/useDelegateUserDetails';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useTheme from '@hooks/useTheme';
@@ -191,13 +193,18 @@ function ReportPreview({
         [chatReport?.isOwnPolicyExpenseChat, policy?.harvesting?.enabled],
     );
 
+    const {isDelegateAccessRestricted, delegatorEmail} = useDelegateUserDetails();
+    const [isNoDelegateAccessMenuVisible, setIsNoDelegateAccessMenuVisible] = useState(false);
+
     const confirmPayment = (type: PaymentMethodType | undefined, payAsBusiness?: boolean) => {
         if (!type) {
             return;
         }
         setPaymentType(type);
         setRequestType(CONST.IOU.REPORT_ACTION_TYPE.PAY);
-        if (ReportUtils.hasHeldExpenses(iouReport?.reportID)) {
+        if (isDelegateAccessRestricted) {
+            setIsNoDelegateAccessMenuVisible(true);
+        } else if (ReportUtils.hasHeldExpenses(iouReport?.reportID)) {
             setIsHoldMenuVisible(true);
         } else if (chatReport && iouReport) {
             if (ReportUtils.isInvoiceReport(iouReport)) {
@@ -210,7 +217,9 @@ function ReportPreview({
 
     const confirmApproval = () => {
         setRequestType(CONST.IOU.REPORT_ACTION_TYPE.APPROVE);
-        if (ReportUtils.hasHeldExpenses(iouReport?.reportID)) {
+        if (isDelegateAccessRestricted) {
+            setIsNoDelegateAccessMenuVisible(true);
+        } else if (ReportUtils.hasHeldExpenses(iouReport?.reportID)) {
             setIsHoldMenuVisible(true);
         } else {
             IOU.approveMoneyRequest(iouReport, true);
@@ -297,15 +306,15 @@ function ReportPreview({
 
     const bankAccountRoute = ReportUtils.getBankAccountRoute(chatReport);
 
-    const shouldShowPayButton = useMemo(() => IOU.canIOUBePaid(iouReport, chatReport, policy), [iouReport, chatReport, policy]);
+    const shouldShowPayButton = useMemo(() => IOU.canIOUBePaid(iouReport, chatReport, policy, allTransactions), [iouReport, chatReport, policy, allTransactions]);
 
-    const shouldShowApproveButton = useMemo(() => IOU.canApproveIOU(iouReport, chatReport, policy), [iouReport, chatReport, policy]);
+    const shouldShowApproveButton = useMemo(() => IOU.canApproveIOU(iouReport, policy), [iouReport, policy]);
 
     const shouldDisableApproveButton = shouldShowApproveButton && !ReportUtils.isAllowedToApproveExpenseReport(iouReport);
 
     const shouldShowSettlementButton = (shouldShowPayButton || shouldShowApproveButton) && !showRTERViolationMessage;
 
-    const shouldPromptUserToAddBankAccount = ReportUtils.hasMissingPaymentMethod(userWallet, iouReportID);
+    const shouldPromptUserToAddBankAccount = ReportUtils.hasMissingPaymentMethod(userWallet, iouReportID) || ReportUtils.hasMissingInvoiceBankAccount(iouReportID);
     const shouldShowRBR = hasErrors;
 
     /*
@@ -322,7 +331,23 @@ function ReportPreview({
     const shouldShowScanningSubtitle = numberOfScanningReceipts === 1 && numberOfRequests === 1;
     const shouldShowPendingSubtitle = numberOfPendingRequests === 1 && numberOfRequests === 1;
 
+    const isPayAtEndExpense = ReportUtils.isPayAtEndExpenseReport(iouReportID, allTransactions);
+    const isArchivedReport = ReportUtils.isArchivedRoomWithID(iouReportID);
+    const [archiveReason] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${iouReportID}`, {selector: ReportUtils.getArchiveReason});
+
     const getPendingMessageProps: () => PendingMessageProps = () => {
+        if (isPayAtEndExpense) {
+            if (!isArchivedReport) {
+                return {shouldShow: true, messageIcon: Expensicons.Hourglass, messageDescription: translate('iou.bookingPending')};
+            }
+            if (isArchivedReport && archiveReason === CONST.REPORT.ARCHIVE_REASON.BOOKING_END_DATE_HAS_PASSED) {
+                return {
+                    shouldShow: true,
+                    messageIcon: Expensicons.Box,
+                    messageDescription: translate('iou.bookingArchived'),
+                };
+            }
+        }
         if (shouldShowScanningSubtitle) {
             return {shouldShow: true, messageIcon: Expensicons.ReceiptScan, messageDescription: translate('iou.receiptScanInProgress')};
         }
@@ -349,7 +374,7 @@ function ReportPreview({
         }
         return {
             supportText: translate('iou.expenseCount', {
-                count: numberOfRequests - numberOfScanningReceipts - numberOfPendingRequests,
+                count: numberOfRequests,
                 scanningReceipts: numberOfScanningReceipts,
                 pendingReceipts: numberOfPendingRequests,
             }),
@@ -362,7 +387,7 @@ function ReportPreview({
     const connectedIntegration = PolicyUtils.getConnectedIntegration(policy);
 
     const isAdmin = policy?.role === CONST.POLICY.ROLE.ADMIN;
-    const shouldShowExportIntegrationButton = !shouldShowPayButton && !shouldShowSubmitButton && connectedIntegration && isAdmin;
+    const shouldShowExportIntegrationButton = !shouldShowPayButton && !shouldShowSubmitButton && connectedIntegration && isAdmin && ReportUtils.canBeExported(iouReport);
 
     return (
         <OfflineWithFeedback
@@ -373,7 +398,7 @@ function ReportPreview({
             <View style={[styles.chatItemMessage, containerStyles]}>
                 <PressableWithoutFeedback
                     onPress={() => {
-                        Timing.start(CONST.TIMING.SWITCH_REPORT);
+                        Timing.start(CONST.TIMING.OPEN_REPORT_FROM_PREVIEW);
                         Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(iouReportID));
                     }}
                     onPressIn={() => DeviceCapabilities.canUseTouchScreen() && ControlSelection.block()}
@@ -500,6 +525,12 @@ function ReportPreview({
                     </View>
                 </PressableWithoutFeedback>
             </View>
+            <DelegateNoAccessModal
+                isNoDelegateAccessMenuVisible={isNoDelegateAccessMenuVisible}
+                onClose={() => setIsNoDelegateAccessMenuVisible(false)}
+                delegatorEmail={delegatorEmail ?? ''}
+            />
+
             {isHoldMenuVisible && iouReport && requestType !== undefined && (
                 <ProcessMoneyReportHoldMenu
                     nonHeldAmount={!hasOnlyHeldExpenses ? nonHeldAmount : undefined}
