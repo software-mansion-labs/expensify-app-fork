@@ -115,25 +115,31 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (isSmallScr
             ...commonScreenOptions,
             animationEnabled: isSmallScreenWidth,
             cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator(isSmallScreenWidth, true, false, props),
-
+            flex: 1,
             cardStyle: {
                 ...StyleUtils.getNavigationModalCardStyle(),
-                paddingRight: isSmallScreenWidth ? 0 : variables.sideBarWidth,
             },
+            // cardStyle: {
+            //     ...StyleUtils.getNavigationModalCardStyle(),
+            //     paddingRight: isSmallScreenWidth ? 0 : variables.sideBarWidth,
+            // },
         },
 
         bottomTab: {
             ...commonScreenOptions,
             cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator(isSmallScreenWidth, false, false, props),
-
+            flex: 1,
             cardStyle: {
                 ...StyleUtils.getNavigationModalCardStyle(),
-                width: isSmallScreenWidth ? '100%' : variables.sideBarWidth,
-
-                // We need to shift the sidebar to not be covered by the StackNavigator so it can be clickable.
-                marginLeft: isSmallScreenWidth ? 0 : -variables.sideBarWidth,
-                ...(isSmallScreenWidth ? {} : themeStyles.borderRight),
             },
+            // cardStyle: {
+            //     ...StyleUtils.getNavigationModalCardStyle(),
+            //     width: isSmallScreenWidth ? '100%' : variables.sideBarWidth,
+
+            //     // We need to shift the sidebar to not be covered by the StackNavigator so it can be clickable.
+            //     marginLeft: isSmallScreenWidth ? 0 : -variables.sideBarWidth,
+            //     ...(isSmallScreenWidth ? {} : themeStyles.borderRight),
+            // },
         },
     };
 };

@@ -18,11 +18,11 @@ export default function (): WindowDimensions {
     return {
         windowWidth,
         windowHeight,
-        isExtraSmallScreenHeight,
-        isSmallScreenWidth,
-        isMediumScreenWidth,
-        isLargeScreenWidth,
-        isExtraSmallScreenWidth,
-        isSmallScreen,
+        isExtraSmallScreenHeight: false,
+        isSmallScreenWidth: false,
+        isMediumScreenWidth: false,
+        isLargeScreenWidth: true,
+        isExtraSmallScreenWidth: false,
+        isSmallScreen: false,
     };
 }

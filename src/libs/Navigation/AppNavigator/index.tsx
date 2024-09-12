@@ -26,6 +26,8 @@ function AppNavigator({authenticated}: AppNavigatorProps) {
         });
     }, [initUrl]);
 
+    console.log('INIT URL ', initUrl);
+
     if (authenticated) {
         // These are the protected screens and only accessible when an authToken is present
         return (

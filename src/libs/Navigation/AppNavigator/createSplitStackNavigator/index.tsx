@@ -2,13 +2,14 @@ import type {ParamListBase, StackActionHelpers, StackNavigationState} from '@rea
 import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
 import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
 import {StackView} from '@react-navigation/stack';
-import React from 'react';
+import React, {useMemo} from 'react';
 import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import getRootNavigatorScreenOptions from '@libs/Navigation/AppNavigator/getRootNavigatorScreenOptions';
+import type {State} from '@libs/Navigation/types';
 import SplitStackRouter from './SplitStackRouter';
 import type {SplitStackNavigatorProps, SplitStackNavigatorRouterOptions} from './types';
 import useHandleScreenResize from './useHandleScreenResize';
@@ -22,7 +23,7 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
 
     const children = usePrepareSplitStackNavigatorChildren(props.children, props.sidebarScreen, screenOptions.homeScreen);
 
-    const {navigation, state, descriptors, NavigationContent} = useNavigationBuilder<
+    const {navigation, descriptors, NavigationContent, state} = useNavigationBuilder<
         StackNavigationState<ParamListBase>,
         SplitStackNavigatorRouterOptions,
         StackActionHelpers<ParamListBase>,
@@ -36,8 +37,22 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
         defaultCentralScreen: props.defaultCentralScreen,
     });
 
-    useHandleScreenResize(navigation);
+    const splitStackState = useMemo(() => {
+        const lhnState = {...state, routes: [state.routes.at(0)], index: 0};
+        const centralPaneState = state.routes.length > 1 ? {...state, routes: state.routes.slice(1), index: state.routes.length - 2} : undefined;
+        return [lhnState, centralPaneState];
+    }, [state]);
 
+    // undefined dla prawego jesli nie ma routes
+    // index w poszczególnych stackach od 0, bo są jako stany osobne, oba na podstawie obecnej sciezki z routes
+    // index = routes.length -1
+
+    useHandleScreenResize(navigation);
+    const test = [
+        {index: 0, key: 'stack-o2tDiH2Q_0IVUMmxKKcWc', routeNames: ['Home', 'Report'], routes: [[Object]], stale: false, type: 'stack'},
+        {index: 0, key: 'stack-o2tDiH2Q_0IVUMmxKKcWc', routeNames: ['Home', 'Report'], routes: [[Object]], stale: false, type: 'stack'},
+    ];
+    console.log('splitStackState TEST ', JSON.stringify(splitStackState));
     return (
         <FocusTrapForScreens>
             <View style={styles.rootNavigatorContainerStyles(isSmallScreenWidth)}>
@@ -45,10 +60,21 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
                     <StackView
                         // eslint-disable-next-line react/jsx-props-no-spreading
                         {...props}
-                        state={state}
+                        state={splitStackState[0]}
+                        detachInactiveScreens={false}
                         descriptors={descriptors}
                         navigation={navigation}
                     />
+                    {/* {splitStackState[1] && (
+                        <StackView
+                            // eslint-disable-next-line react/jsx-props-no-spreading
+                            {...props}
+                            state={splitStackState[1]}
+                            detachInactiveScreens={false}
+                            descriptors={descriptors}
+                            navigation={navigation}
+                        />
+                    )} */}
                 </NavigationContent>
             </View>
         </FocusTrapForScreens>

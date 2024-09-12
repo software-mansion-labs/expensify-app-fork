@@ -72,6 +72,7 @@ function SplitStackRouter(options: SplitStackNavigatorRouterOptions) {
         },
         getInitialState({routeNames, routeParamList, routeGetIdList}: RouterConfigOptions) {
             const initialState = stackRouter.getInitialState({routeNames, routeParamList, routeGetIdList});
+            console.log('ROUTENAMES test ', initialState);
             adaptStateIfNecessary(initialState, options.sidebarScreen, options.defaultCentralScreen);
 
             // If we needed to modify the state we need to rehydrate it to get keys for new routes.
