@@ -25,8 +25,7 @@ import getMatchingBottomTabRouteForState from './linkingConfig/getMatchingBottom
 import navigationRef from './navigationRef';
 import linkTo from './newLinkTo';
 import setNavigationActionToMicrotaskQueue from './setNavigationActionToMicrotaskQueue';
-import switchPolicyID from './switchPolicyID';
-import type {NavigationStateRoute, RootStackParamList, State, StateOrRoute, SwitchPolicyIDParams} from './types';
+import type {NavigationStateRoute, RootStackParamList, State, StateOrRoute} from './types';
 
 let resolveNavigationIsReadyPromise: () => void;
 const navigationIsReadyPromise = new Promise<void>((resolve) => {
@@ -421,16 +420,19 @@ function waitForProtectedRoutes() {
     });
 }
 
-function navigateWithSwitchPolicyID(params: SwitchPolicyIDParams) {
-    if (!canNavigate('navigateWithSwitchPolicyID')) {
-        return;
-    }
-
-    return switchPolicyID(navigationRef.current, params);
-}
-
 function getTopMostCentralPaneRouteFromRootState() {
     return getTopmostCentralPaneRoute(navigationRef.getRootState() as State<RootStackParamList>);
+}
+
+type SwitchPolicyIDPayload = {
+    policyID?: string;
+    reportID?: number;
+    reportActionID?: string;
+    referrer?: string;
+};
+
+function switchPolicyID(payload: SwitchPolicyIDPayload) {
+    navigationRef.dispatch({type: CONST.NAVIGATION.ACTION_TYPE.SWITCH_POLICY_ID, payload});
 }
 
 export default {
@@ -451,7 +453,7 @@ export default {
     getTopmostReportActionId,
     waitForProtectedRoutes,
     parseHybridAppUrl,
-    navigateWithSwitchPolicyID,
+    switchPolicyID,
     resetToHome,
     closeRHPFlow,
     setNavigationActionToMicrotaskQueue,

@@ -4155,6 +4155,7 @@ const CONST = {
             REPLACE: 'REPLACE',
             PUSH: 'PUSH',
             NAVIGATE: 'NAVIGATE',
+            SWITCH_POLICY_ID: 'SWITCH_POLICY_ID',
         },
     },
     TIME_PERIOD: {

@@ -1034,8 +1034,7 @@ function navigateToAndOpenReport(
     if (shouldDismissModal) {
         Navigation.dismissModalWithReport(report);
     } else {
-        Navigation.navigateWithSwitchPolicyID({route: ROUTES.HOME});
-        Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(report?.reportID ?? '-1'), actionType);
+        Navigation.switchPolicyID({policyID: undefined, reportID: report?.reportID ?? '-1'});
     }
 }
 
@@ -2483,7 +2482,8 @@ function showReportActionNotification(reportID: string, reportAction: ReportActi
             const policyEmployeeAccountIDs = policyID ? getPolicyEmployeeAccountIDs(policyID) : [];
             const reportBelongsToWorkspace = policyID ? doesReportBelongToWorkspace(report, policyEmployeeAccountIDs, policyID) : false;
             if (!reportBelongsToWorkspace) {
-                Navigation.navigateWithSwitchPolicyID({route: ROUTES.HOME});
+                Navigation.switchPolicyID({policyID: undefined, reportID, referrer: CONST.REFERRER.NOTIFICATION});
+                return;
             }
             navigateFromNotification(reportID);
         });
