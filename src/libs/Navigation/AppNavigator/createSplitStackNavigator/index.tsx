@@ -2,7 +2,7 @@ import type {ParamListBase, StackActionHelpers, StackNavigationState} from '@rea
 import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
 import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
 import {StackView} from '@react-navigation/stack';
-import React from 'react';
+import React, {useMemo} from 'react';
 import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -36,6 +36,14 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
         defaultCentralScreen: props.defaultCentralScreen,
     });
 
+    const [lhn, centralPane] = useMemo(() => {
+        const lhnState = {...state, routes: [state.routes.at(0)], index: 0};
+        const centralPaneState = state.routes.length > 1 ? {...state, routes: state.routes.slice(1), index: state.routes.length - 2} : undefined;
+        return [lhnState, centralPaneState];
+    }, [state]);
+
+    // console.log('splitStackState TEST ', JSON.stringify(splitStackState));
+
     useHandleScreenResize(navigation);
 
     return (
@@ -45,7 +53,14 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
                     <StackView
                         // eslint-disable-next-line react/jsx-props-no-spreading
                         {...props}
-                        state={state}
+                        state={lhn}
+                        descriptors={descriptors}
+                        navigation={navigation}
+                    />
+                    <StackView
+                        // eslint-disable-next-line react/jsx-props-no-spreading
+                        {...props}
+                        state={centralPane}
                         descriptors={descriptors}
                         navigation={navigation}
                     />
