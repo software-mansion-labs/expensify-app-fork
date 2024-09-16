@@ -50,20 +50,26 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
         <FocusTrapForScreens>
             <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
                 <NavigationContent>
-                    <StackView
-                        // eslint-disable-next-line react/jsx-props-no-spreading
-                        {...props}
-                        state={lhn}
-                        descriptors={descriptors}
-                        navigation={navigation}
-                    />
-                    <StackView
-                        // eslint-disable-next-line react/jsx-props-no-spreading
-                        {...props}
-                        state={centralPane}
-                        descriptors={descriptors}
-                        navigation={navigation}
-                    />
+                    <View style={{flexDirection: 'row', flex: 1}}>
+                        <View style={{flex: 1}}>
+                            <StackView
+                                // eslint-disable-next-line react/jsx-props-no-spreading
+                                {...props}
+                                state={lhn}
+                                descriptors={descriptors}
+                                navigation={navigation}
+                            />
+                        </View>
+                        <View style={{flex: 1}}>
+                            <StackView
+                                // eslint-disable-next-line react/jsx-props-no-spreading
+                                {...props}
+                                state={centralPane}
+                                descriptors={descriptors}
+                                navigation={navigation}
+                            />
+                        </View>
+                    </View>
                 </NavigationContent>
             </View>
         </FocusTrapForScreens>
