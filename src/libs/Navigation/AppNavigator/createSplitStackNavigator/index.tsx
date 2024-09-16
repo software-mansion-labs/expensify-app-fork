@@ -8,7 +8,9 @@ import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
+import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import getRootNavigatorScreenOptions from '@libs/Navigation/AppNavigator/getRootNavigatorScreenOptions';
+import variables from '@styles/variables';
 import SplitStackRouter from './SplitStackRouter';
 import type {SplitStackNavigatorProps, SplitStackNavigatorRouterOptions} from './types';
 import useHandleScreenResize from './useHandleScreenResize';
@@ -17,6 +19,7 @@ import usePrepareSplitStackNavigatorChildren from './usePrepareSplitStackNavigat
 function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackNavigatorProps<ParamList>) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
+    const isNarrowLayout = getIsNarrowLayout();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const screenOptions = getRootNavigatorScreenOptions(shouldUseNarrowLayout, styles, StyleUtils);
 
@@ -46,30 +49,42 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
 
     useHandleScreenResize(navigation);
 
+    const sideBarWidth = isNarrowLayout ? '100%' : variables.sideBarWidth;
+
     return (
         <FocusTrapForScreens>
             <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
                 <NavigationContent>
-                    <View style={{flexDirection: 'row', flex: 1}}>
-                        <View style={{flex: 1}}>
-                            <StackView
-                                // eslint-disable-next-line react/jsx-props-no-spreading
-                                {...props}
-                                state={lhn}
-                                descriptors={descriptors}
-                                navigation={navigation}
-                            />
+                    {isNarrowLayout ? (
+                        <StackView
+                            // eslint-disable-next-line react/jsx-props-no-spreading
+                            {...props}
+                            state={state}
+                            descriptors={descriptors}
+                            navigation={navigation}
+                        />
+                    ) : (
+                        <View style={{flexDirection: 'row', flex: 1}}>
+                            <View style={{flex: 1, maxWidth: sideBarWidth}}>
+                                <StackView
+                                    // eslint-disable-next-line react/jsx-props-no-spreading
+                                    {...props}
+                                    state={lhn}
+                                    descriptors={descriptors}
+                                    navigation={navigation}
+                                />
+                            </View>
+                            <View style={{flex: 1}}>
+                                <StackView
+                                    // eslint-disable-next-line react/jsx-props-no-spreading
+                                    {...props}
+                                    state={centralPane}
+                                    descriptors={descriptors}
+                                    navigation={navigation}
+                                />
+                            </View>
                         </View>
-                        <View style={{flex: 1}}>
-                            <StackView
-                                // eslint-disable-next-line react/jsx-props-no-spreading
-                                {...props}
-                                state={centralPane}
-                                descriptors={descriptors}
-                                navigation={navigation}
-                            />
-                        </View>
-                    </View>
+                    )}
                 </NavigationContent>
             </View>
         </FocusTrapForScreens>
