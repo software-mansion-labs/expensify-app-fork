@@ -127,7 +127,7 @@ function WorkspacesListPage({policies, reimbursementAccount, reports, session}: 
     const {shouldUseNarrowLayout, isMediumScreenWidth} = useResponsiveLayout();
     const [allConnectionSyncProgresses] = useOnyx(ONYXKEYS.COLLECTION.POLICY_CONNECTION_SYNC_PROGRESS);
 
-    const activeWorkspaceID = useActiveWorkspace();
+    const {activeWorkspaceID} = useActiveWorkspace();
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [policyIDToDelete, setPolicyIDToDelete] = useState<string>();
