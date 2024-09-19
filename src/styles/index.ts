@@ -131,10 +131,10 @@ const headlineFont = {
     ...FontUtils.fontFamily.platform.EXP_NEW_KANSAS_MEDIUM,
 } satisfies TextStyle;
 
-const modalNavigatorContainer = (isSmallScreenWidth: boolean) =>
+const modalNavigatorContainer = (shouldUseNarrowLayout: boolean) =>
     ({
         position: 'absolute',
-        width: isSmallScreenWidth ? '100%' : variables.sideBarWidth,
+        width: shouldUseNarrowLayout ? '100%' : variables.sideBarWidth,
         height: '100%',
     } satisfies ViewStyle);
 
@@ -1702,9 +1702,9 @@ const styles = (theme: ThemeColors) =>
             top: 1.66, // Pixel-perfect alignment due to a small difference between logo height and breadcrumb text height
         },
 
-        LHPNavigatorContainer: (isSmallScreenWidth: boolean) =>
+        LHPNavigatorContainer: (shouldUseNarrowLayout: boolean) =>
             ({
-                ...modalNavigatorContainer(isSmallScreenWidth),
+                ...modalNavigatorContainer(shouldUseNarrowLayout),
                 left: 0,
             } satisfies ViewStyle),
 
@@ -2808,8 +2808,7 @@ const styles = (theme: ThemeColors) =>
             borderRadius: 88,
         },
 
-        rootNavigatorContainerStyles: (isSmallScreenWidth: boolean) => ({flex: 1} satisfies ViewStyle),
-        RHPNavigatorContainerNavigatorContainerStyles: (isSmallScreenWidth: boolean) => ({} satisfies ViewStyle),
+        rootNavigatorContainerStyles: {flex: 1},
 
         avatarInnerTextChat: {
             color: theme.text,

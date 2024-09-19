@@ -389,7 +389,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
 
     return (
         <ComposeProviders components={[OptionsListContextProvider, ActiveWorkspaceContextProvider, ReportIDsContextProvider, SearchContextProvider]}>
-            <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
+            <View style={styles.rootNavigatorContainerStyles}>
                 <RootStack.Navigator
                     screenOptions={screenOptions.centralPaneNavigator}
                     isSmallScreenWidth={isSmallScreenWidth}

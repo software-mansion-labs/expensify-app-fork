@@ -51,7 +51,7 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
 
     return (
         <FocusTrapForScreens>
-            <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
+            <View style={styles.rootNavigatorContainerStyles}>
                 <NavigationContent>
                     {isSmallScreenWidth ? (
                         <StackView
