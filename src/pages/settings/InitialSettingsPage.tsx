@@ -416,9 +416,8 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
 
     return (
         <ScreenWrapper
-            style={[styles.w100, styles.pb0]}
-            includePaddingTop={false}
-            includeSafeAreaPaddingBottom={false}
+            style={[styles.w100]}
+            includeSafeAreaPaddingBottom
             testID={InitialSettingsPage.displayName}
         >
             {headerContent}
@@ -428,7 +427,7 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
                 scrollEventThrottle={16}
                 contentContainerStyle={[styles.w100]}
                 showsVerticalScrollIndicator={false}
-            >
+        >
                 {accountMenuItems}
                 {workspaceMenuItems}
                 {generalMenuItems}
