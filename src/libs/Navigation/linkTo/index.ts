@@ -2,10 +2,10 @@ import {getActionFromState} from '@react-navigation/core';
 import type {NavigationContainerRef, NavigationState, PartialState} from '@react-navigation/native';
 import {findFocusedRoute} from '@react-navigation/native';
 import {omitBy} from 'lodash';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import isReportOpenInRHP from '@libs/Navigation/isReportOpenInRHP';
 import {isCentralPaneName} from '@libs/NavigationUtils';
-import shallowCompare from '@libs/ObjectUtils';
+import {shallowCompare} from '@libs/ObjectUtils';
 import {extractPolicyIDFromPath, getPathWithoutPolicyID} from '@libs/PolicyUtils';
 import getActionsFromPartialDiff from '@navigation/AppNavigator/getActionsFromPartialDiff';
 import getPartialStateDiff from '@navigation/AppNavigator/getPartialStateDiff';
@@ -55,7 +55,7 @@ export default function linkTo(navigation: NavigationContainerRef<RootStackParam
     const policyID = extractedPolicyID ?? policyIDFromState;
     const lastRoute = rootState?.routes?.at(-1);
 
-    const isNarrowLayout = getIsNarrowLayout();
+    const isNarrowLayout = getIsSmallScreenWidth();
 
     const isWorkspaceScreenOnTop = lastRoute?.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR;
 

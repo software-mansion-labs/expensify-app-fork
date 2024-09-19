@@ -2,7 +2,7 @@ import {getActionFromState} from '@react-navigation/core';
 import type {NavigationAction, NavigationContainerRef, NavigationState, PartialState} from '@react-navigation/native';
 import {getPathFromState} from '@react-navigation/native';
 import type {Writable} from 'type-fest';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import {isCentralPaneName} from '@libs/NavigationUtils';
 import * as SearchUtils from '@libs/SearchUtils';
 import CONST from '@src/CONST';
@@ -102,7 +102,7 @@ export default function switchPolicyID(navigation: NavigationContainerRef<RootSt
     }
 
     // The correct route for SearchPage is located in the CentralPane
-    const shouldAddToCentralPane = !getIsNarrowLayout() || isOpeningSearchFromBottomTab;
+    const shouldAddToCentralPane = !getIsSmallScreenWidth() || isOpeningSearchFromBottomTab;
 
     // If the layout is wide we need to push matching central pane route to the stack.
     if (shouldAddToCentralPane) {

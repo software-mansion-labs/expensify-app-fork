@@ -1,7 +1,7 @@
 import type {CommonActions, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
 import {findFocusedRoute, getPathFromState, StackRouter} from '@react-navigation/native';
 import type {ParamListBase} from '@react-navigation/routers';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import * as Localize from '@libs/Localize';
 import getPolicyIDFromState from '@libs/Navigation/getPolicyIDFromState';
 import isSideModalNavigator from '@libs/Navigation/isSideModalNavigator';
@@ -134,7 +134,7 @@ function CustomRouter(options: ResponsiveStackNavigatorRouterOptions) {
                         return {...state, stale: true, routes: newRoutes, index: newRoutes.length - 1};
                     }
 
-                    const splitNavigatorMainScreen = getIsNarrowLayout() ? undefined : {name: SCREENS.REPORT, params: {reportID: ''}};
+                    const splitNavigatorMainScreen = getIsSmallScreenWidth() ? undefined : {name: SCREENS.REPORT, params: {reportID: ''}};
 
                     const newRoute = createSplitNavigator(
                         {

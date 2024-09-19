@@ -1708,11 +1708,12 @@ const styles = (theme: ThemeColors) =>
                 left: 0,
             } satisfies ViewStyle),
 
-        RHPNavigatorContainer: (isSmallScreenWidth: boolean) =>
-            ({
-                ...modalNavigatorContainer(isSmallScreenWidth),
+        RHPNavigatorContainer: (shouldUseNarrowLayout: boolean) => {
+            return {
+                ...modalNavigatorContainer(shouldUseNarrowLayout),
                 right: 0,
-            } satisfies ViewStyle),
+            } satisfies ViewStyle;
+        },
 
         onboardingNavigatorOuterView: {
             flex: 1,

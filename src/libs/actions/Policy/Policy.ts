@@ -61,7 +61,7 @@ import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import DateUtils from '@libs/DateUtils';
 import * as ErrorUtils from '@libs/ErrorUtils';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import Log from '@libs/Log';
 import * as NetworkStore from '@libs/Network/NetworkStore';
 import * as NumberUtils from '@libs/NumberUtils';
@@ -2740,7 +2740,7 @@ function enablePolicyConnections(policyID: string, enabled: boolean) {
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_CONNECTIONS, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && isSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }
@@ -2797,7 +2797,7 @@ function enableExpensifyCard(policyID: string, enabled: boolean) {
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_EXPENSIFY_CARDS, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && isSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }
@@ -2847,7 +2847,7 @@ function enableCompanyCards(policyID: string, enabled: boolean) {
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_COMPANY_CARDS, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && isSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }
@@ -2895,7 +2895,7 @@ function enablePolicyReportFields(policyID: string, enabled: boolean, disableRed
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_REPORT_FIELDS, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout() && !disableRedirect) {
+    if (enabled && isSmallScreenWidth() && !disableRedirect) {
         navigateWhenEnableFeature(policyID);
     }
 }
@@ -3009,7 +3009,7 @@ function enablePolicyTaxes(policyID: string, enabled: boolean) {
     }
     API.write(WRITE_COMMANDS.ENABLE_POLICY_TAXES, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && isSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }
@@ -3100,7 +3100,7 @@ function enablePolicyWorkflows(policyID: string, enabled: boolean) {
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_WORKFLOWS, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && isSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }
@@ -3162,7 +3162,7 @@ function enablePolicyRules(policyID: string, enabled: boolean, disableRedirect =
     const parameters: SetPolicyRulesEnabledParams = {policyID, enabled};
     API.write(WRITE_COMMANDS.SET_POLICY_RULES_ENABLED, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout() && !disableRedirect) {
+    if (enabled && isSmallScreenWidth() && !disableRedirect) {
         navigateWhenEnableFeature(policyID);
     }
 }
@@ -3274,7 +3274,7 @@ function enablePolicyInvoicing(policyID: string, enabled: boolean) {
     API.write(WRITE_COMMANDS.ENABLE_POLICY_INVOICING, parameters, onyxData);
 
     // TODO: Uncomment the following line when the invoices screen is ready - https://github.com/Expensify/App/issues/45175.
-    // if (enabled && getIsNarrowLayout()) {
+    // if (enabled && getIsSmallScreenWidth()) {
     //     navigateWhenEnableFeature(policyID);
     // }
 }

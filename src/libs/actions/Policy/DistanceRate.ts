@@ -12,7 +12,7 @@ import type {
 } from '@libs/API/parameters';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import * as ErrorUtils from '@libs/ErrorUtils';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import {navigateWhenEnableFeature, removePendingFieldsFromCustomUnit} from '@libs/PolicyUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import CONST from '@src/CONST';
@@ -163,7 +163,7 @@ function enablePolicyDistanceRates(policyID: string, enabled: boolean) {
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_DISTANCE_RATES, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && getIsSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }

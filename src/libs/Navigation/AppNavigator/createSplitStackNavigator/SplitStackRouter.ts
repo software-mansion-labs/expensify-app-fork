@@ -1,6 +1,7 @@
 import type {CommonActions, ParamListBase, PartialState, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
 import {StackRouter} from '@react-navigation/native';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import type {SplitStackNavigatorRouterOptions} from './types';
 
 type StackState = StackNavigationState<ParamListBase> | PartialState<StackNavigationState<ParamListBase>>;
@@ -8,7 +9,7 @@ type StackState = StackNavigationState<ParamListBase> | PartialState<StackNaviga
 const isAtLeastOneInState = (state: StackState, screenName: string): boolean => state.routes.some((route) => route.name === screenName);
 
 function adaptStateIfNecessary(state: StackState, sidebarScreen: string, defaultCentralScreen: string) {
-    const isNarrowLayout = getIsNarrowLayout();
+    const isSmallScreenWidth = getIsSmallScreenWidth();
     const workspaceCentralPane = state.routes.at(-1);
     // There should always be sidebarScreen screen in the state to make sure go back works properly if we deeplinkg to a subpage of settings.
     if (!isAtLeastOneInState(state, sidebarScreen)) {
@@ -29,7 +30,7 @@ function adaptStateIfNecessary(state: StackState, sidebarScreen: string, default
     // If the screen is wide, there should be at least two screens inside:
     // - sidebarScreen to cover left pane.
     // - defaultCentralScreen to cover central pane.
-    if (!isNarrowLayout) {
+    if (!isSmallScreenWidth) {
         if (state.routes.length === 1 && state.routes[0].name === sidebarScreen) {
             // @ts-expect-error Updating read only property
             // noinspection JSConstantReassignment
@@ -56,11 +57,13 @@ function isPushingSidebarOnCentralPane(state: StackState, action: CommonActions.
 
 function SplitStackRouter(options: SplitStackNavigatorRouterOptions) {
     const stackRouter = StackRouter(options);
+    const {isSmallScreenWidth} = useResponsiveLayout();
+
     return {
         ...stackRouter,
         getStateForAction(state: StackNavigationState<ParamListBase>, action: CommonActions.Action | StackActionType, configOptions: RouterConfigOptions) {
             if (isPushingSidebarOnCentralPane(state, action, options)) {
-                if (getIsNarrowLayout()) {
+                if (isSmallScreenWidth) {
                     // TODO: It's possible that it's better to push whole new SplitNavigator in such case. Not sure yet.
                     // Pop to top on narrow layout.
                     return {...state, routes: [state.routes.at(0)], index: 0};

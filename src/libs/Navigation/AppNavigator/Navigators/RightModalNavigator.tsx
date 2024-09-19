@@ -23,7 +23,7 @@ const Stack = createStackNavigator<RightModalNavigatorParamList>();
 function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
     const styles = useThemeStyles();
     const styleUtils = useStyleUtils();
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const {shouldUseNarrowLayout, test} = useResponsiveLayout();
     const isExecutingRef = useRef<boolean>(false);
     const screenOptions = useMemo(() => {
         const options = ModalNavigatorScreenOptions(styles);

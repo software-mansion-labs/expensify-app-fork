@@ -21,7 +21,7 @@ import * as ApiUtils from '@libs/ApiUtils';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import fileDownload from '@libs/fileDownload';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import {translateLocal} from '@libs/Localize';
 import Log from '@libs/Log';
 import enhanceParameters from '@libs/Network/enhanceParameters';
@@ -942,7 +942,7 @@ function enablePolicyCategories(policyID: string, enabled: boolean) {
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_CATEGORIES, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && getIsSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }

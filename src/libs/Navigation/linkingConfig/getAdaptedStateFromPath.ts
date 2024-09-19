@@ -3,7 +3,7 @@ import {findFocusedRoute, getStateFromPath} from '@react-navigation/native';
 import pick from 'lodash/pick';
 import type {TupleToUnion} from 'type-fest';
 import {isAnonymousUser} from '@libs/actions/Session';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import type {NavigationPartialRoute, RootStackParamList, SplitNavigatorScreenName} from '@libs/Navigation/types';
 import {extractPolicyIDFromPath, getPathWithoutPolicyID} from '@libs/PolicyUtils';
 import * as ReportConnection from '@libs/ReportConnection';
@@ -126,7 +126,7 @@ function getMatchingRootRouteForRHPRoute(route: NavigationPartialRoute): Navigat
 }
 
 function getAdaptedState(state: PartialState<NavigationState<RootStackParamList>>, policyID?: string): GetAdaptedStateReturnType {
-    const isNarrowLayout = getIsNarrowLayout();
+    const isNarrowLayout = getIsSmallScreenWidth();
     // const metainfo = {
     //     isCentralPaneAndBottomTabMandatory: true,
     //     isWorkspaceNavigatorMandatory: true,

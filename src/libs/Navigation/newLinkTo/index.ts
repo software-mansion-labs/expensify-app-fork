@@ -72,7 +72,7 @@ export default function linkTo(navigation: NavigationContainerRef<RootStackParam
     // const policyID = extractedPolicyID ?? policyIDFromState ?? policyIDs;
     // const lastRoute = rootState?.routes?.at(-1);
 
-    // const isNarrowLayout = getIsNarrowLayout();
+    // const isNarrowLayout = getIsSmallScreenWidth();
 
     // const isWorkspaceScreenOnTop = lastRoute?.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR;
 

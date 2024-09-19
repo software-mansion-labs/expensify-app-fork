@@ -12,7 +12,7 @@ import type {
 } from '@libs/API/parameters';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import * as ErrorUtils from '@libs/ErrorUtils';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
 import Log from '@libs/Log';
 import * as OptionsListUtils from '@libs/OptionsListUtils';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -583,7 +583,7 @@ function enablePolicyTags(policyID: string, enabled: boolean) {
 
     API.write(WRITE_COMMANDS.ENABLE_POLICY_TAGS, parameters, onyxData);
 
-    if (enabled && getIsNarrowLayout()) {
+    if (enabled && getIsSmallScreenWidth()) {
         navigateWhenEnableFeature(policyID);
     }
 }

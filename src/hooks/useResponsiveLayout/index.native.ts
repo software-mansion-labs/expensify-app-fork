@@ -27,7 +27,7 @@ export default function useResponsiveLayout(): ResponsiveLayoutResult {
 
     const isExtraSmallScreenHeight = windowHeight <= variables.extraSmallMobileResponsiveHeightBreakpoint;
     const isSmallScreenWidth = windowWidth <= variables.mobileResponsiveWidthBreakpoint;
-    const isMediumScreenWidth = false;
+    const isMediumScreenWidth = windowWidth > variables.mobileResponsiveWidthBreakpoint && windowWidth <= variables.tabletResponsiveWidthBreakpoint;
     const isLargeScreenWidth = false;
     const isExtraSmallScreenWidth = windowWidth <= variables.extraSmallMobileResponsiveWidthBreakpoint;
     const isSmallScreen = true;
@@ -62,7 +62,7 @@ export default function useResponsiveLayout(): ResponsiveLayoutResult {
         // and the component calling this hook is not the child of another modal type, such as a confirm modal
         (isDisplayedInNarrowModalNavigator && !activeModalType);
 
-    const shouldUseNarrowLayout = isSmallScreenWidth || isInNarrowPaneModal;
+    const shouldUseNarrowLayout = isSmallScreenWidth || isMediumScreenWidth || isInNarrowPaneModal;
 
     return {
         shouldUseNarrowLayout,
