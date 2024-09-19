@@ -37,7 +37,6 @@ function SearchPageBottomTab({queryJSON, policyID}: SearchPageBottomTabProps) {
     return (
         <ScreenWrapper
             testID={SearchPageBottomTab.displayName}
-            style={styles.pv0}
             offlineIndicatorStyle={styles.mtAuto}
         >
             <FullPageNotFoundView
