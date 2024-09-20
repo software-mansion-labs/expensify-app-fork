@@ -144,7 +144,7 @@ function WorkspacesListPage({policies, reimbursementAccount, reports, session}: 
 
         // If the workspace being deleted is the active workspace, switch to the "All Workspaces" view
         if (activeWorkspaceID === policyIDToDelete) {
-            Navigation.switchPolicyID({policyID: undefined});
+            Navigation.switchPolicyID(undefined);
         }
     };
 
