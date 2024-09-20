@@ -134,7 +134,7 @@ const headlineFont = {
 const modalNavigatorContainer = (shouldUseNarrowLayout: boolean) =>
     ({
         position: 'absolute',
-        width: shouldUseNarrowLayout ? '100%' : variables.sideBarWidth,
+        width: variables.sideBarWidth,
         height: '100%',
     } satisfies ViewStyle);
 
@@ -1979,6 +1979,7 @@ const styles = (theme: ThemeColors) =>
                 backgroundColor: theme.overlay,
                 width: '100%',
                 height: '100%',
+                left: 0,
                 opacity: current.progress.interpolate({
                     inputRange: [0, 1],
                     outputRange: [0, variables.overlayOpacity],

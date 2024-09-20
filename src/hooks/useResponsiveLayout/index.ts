@@ -65,7 +65,7 @@ export default function useResponsiveLayout(): ResponsiveLayoutResult {
         // and the component calling this hook is not the child of another modal type, such as a confirm modal
         (isDisplayedInNarrowModalNavigator && !activeModalType);
 
-    const shouldUseNarrowLayout = isSmallScreenWidth || isMediumScreenWidth || isInNarrowPaneModal;
+    const shouldUseNarrowLayout = isSmallScreenWidth || isInNarrowPaneModal;
 
     return {
         shouldUseNarrowLayout,

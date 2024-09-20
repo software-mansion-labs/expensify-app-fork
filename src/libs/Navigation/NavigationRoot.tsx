@@ -131,7 +131,7 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady, sh
             ...DefaultTheme,
             colors: {
                 ...DefaultTheme.colors,
-                background: theme.appBG,
+                background: 'transparent',
             },
         }),
         [theme],

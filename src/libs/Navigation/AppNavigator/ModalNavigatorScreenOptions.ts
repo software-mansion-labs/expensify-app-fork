@@ -14,6 +14,7 @@ const ModalNavigatorScreenOptions = (themeStyles: ThemeStyles, gestureDirection:
     gestureDirection,
     cardStyle: themeStyles.navigationScreenCardStyle,
     cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+    presentation: 'transparentModal',
 });
 
 export default ModalNavigatorScreenOptions;
