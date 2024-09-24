@@ -1,118 +1,101 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {useState} from 'react';
+import {Button, Platform, SafeAreaView, ScrollView, Text} from 'react-native';
+import PushProvisioning from 'react-native-wallet';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+type FetchDataHandler = (methodName: string, method: () => Promise<any>) => void;
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const AppleMethods: React.FC<{handleFetchData: FetchDataHandler}> = ({handleFetchData}) => (
+    <>
+        <Button
+            title="Can Add Payment Pass (Apple)"
+            onPress={() => handleFetchData('canAddPaymentPass', PushProvisioning.Apple.canAddPaymentPass)}
+        />
+        <Button
+            title="Start Add Payment Pass (Apple)"
+            onPress={() =>
+                handleFetchData('startAddPaymentPass', () =>
+                    PushProvisioning.Apple.startAddPaymentPass({
+                        last4: '1234',
+                        cardHolderName: 'John Doe',
+                    }),
+                )
+            }
+        />
+        <Button
+            title="Complete Add Payment Pass (Apple)"
+            onPress={() =>
+                handleFetchData('completeAddPaymentPass', () =>
+                    PushProvisioning.Apple.completeAddPaymentPass({
+                        activation: 'activationData',
+                        encryptedData: 'encryptedPassData',
+                        ephemeralKey: 'ephemeralPublicKey',
+                    }),
+                )
+            }
+        />
+    </>
+);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const GoogleMethods: React.FC<{handleFetchData: FetchDataHandler}> = ({handleFetchData}) => (
+    <>
+        <Button
+            title="Get Active Wallet ID (Google)"
+            onPress={() => handleFetchData('getActiveWalletID', PushProvisioning.Google.getActiveWalletID)}
+        />
+        <Button
+            title="Get Stable Hardware ID (Google)"
+            onPress={() => handleFetchData('getStableHardwareId', PushProvisioning.Google.getStableHardwareId)}
+        />
+        <Button
+            title="Push Provision (Google)"
+            onPress={() =>
+                handleFetchData('pushProvision', () =>
+                    PushProvisioning.Google.pushProvision({
+                        opc: 'someOpc',
+                        tsp: 'VISA',
+                        clientName: 'Expensify',
+                        lastDigits: '1234',
+                        address: {
+                            name: 'John Doe',
+                            addressOne: '123 Main St',
+                            addressTwo: '',
+                            locality: 'Somewhere',
+                            administrativeArea: 'CA',
+                            countryCode: 'US',
+                            postalCode: '90210',
+                            phoneNumber: '555-555-5555',
+                        },
+                    }),
+                )
+            }
+        />
+    </>
+);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+const App: React.FC = () => {
+    const [log, setLog] = useState<string>('');
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+    const handleFetchData = async (methodName: string, method: () => Promise<any>) => {
+        try {
+            const result = await method();
+            setLog((prevLog) => `${prevLog}\n${methodName}: ${JSON.stringify(result)}`);
+        } catch (error: any) {
+            setLog((prevLog) => `${prevLog}\n${methodName} Error: ${error.message}`);
+        }
+    };
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+    return (
+        <SafeAreaView>
+            <ScrollView>
+                <Text>Test React Native Wallet</Text>
+                {Platform.OS === 'ios' && <AppleMethods handleFetchData={handleFetchData} />}
+                {Platform.OS === 'android' && <GoogleMethods handleFetchData={handleFetchData} />}
 
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+                <Text>Logs:</Text>
+                <Text>{log}</Text>
+            </ScrollView>
+        </SafeAreaView>
+    );
+};
 
 export default App;
