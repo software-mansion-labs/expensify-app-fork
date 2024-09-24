@@ -1,31 +1,14 @@
-// This files defines the grammar that's used by [Peggy](https://peggyjs.org/) to generate the searchParser.js file.
-// The searchParser is setup to parse our custom search syntax and output an AST with the filters.
-//
-// Here's a general grammar structure:
-//
-// query: entry point for the parser and rule to process the values returned by the filterList rule. Takes filters as an argument and returns the final AST output.
-// filterList: rule to process the array of filters returned by the filter rule. It takes head and tail as arguments, filters it for null values and builds the AST.
-// filter: abstract rule to simplify the filterList rule. It takes all filter types.
-// defaultFilter: rule to process the default values returned by the defaultKey rule. It updates the default values object.
-// freeTextFilter: rule to process the free text search values returned by the identifier rule. It builds filter Object.
-// standardFilter: rule to process the values returned by the key rule. It builds filter Object.
-// operator: rule to match pre-defined search syntax operators, e.g. !=, >, etc
-// key: rule to match pre-defined search syntax fields, e.g. amount, merchant, etc
-// defaultKey: rule to match pre-defined search syntax fields that are used to update default values, e.g. type, status, etc
-// identifier: composite rule to match patterns defined by the quotedString and alphanumeric rules
-// quotedString: rule to match a quoted string pattern, e.g. "this is a quoted string"
-// alphanumeric: rule to match unquoted alphanumeric characters, e.g. a-z, 0-9, _, @, etc
-// logicalAnd: rule to match whitespace and return it as a logical 'and' operator
-// whitespace: rule to match whitespaces
+// short grammar poc
+// accepts only 5 filters: type, date, amount, merchant, keyword
+// main purpose:
+// present parsers ability to validate input
+// present example solution how autocomplete can be implemented
 
-// global initializer (code executed only once)
 {{
   function buildFilter(operator, left, right) {
     return { operator, left, right };
   }
 }}
-
-// per-parser initializer (code executed before every parse)
 {
   const defaultValues = {
     type: "expense",
@@ -49,7 +32,7 @@
 query = _ filters:filterList? _ { return applyDefaults(filters); }
 
 filterList
-  = head:filter tail:(logicalAnd filter)* {
+  = head:filter tail:(" " filter)* {
       const allFilters = [head, ...tail.map(([_, filter]) => filter)]
         .filter(Boolean)
         .filter((filter) => filter.right);
@@ -79,52 +62,114 @@ filterList
       );
     }
 
-filter = @(standardFilter / defaultFilter / freeTextFilter)
-
-defaultFilter
-  = _ key:defaultKey _ op:operator _ value:identifier {
-      updateDefaultValues(key, value);
-    }
+filter
+= @( autocompleteFilter / typeFilter / dateFilter / amountFilter / merchantFilter/ freeTextFilter)
 
 freeTextFilter
-  = _ value:identifier _ { return buildFilter("eq", "keyword", value); }
+  = _ value:identifier _ { return buildFilter("eq", "keyword", value); }    
+    
 
-standardFilter
-  = _ field:key _ op:operator _ values:identifier {
-      return buildFilter(op, field, values);
+autocompleteFilter "autocomplete"
+= key:keyToAutoComplete op:operator value:(identifier)? !. {
+	const l = location();
+ 	const obj = {
+    key,
+    operatr: op,
+    value,
+    location: l,
     }
+    updateDefaultValues("complete", obj);
+    if(value){
+    	if(key == "type"){
+        	updateDefaultValues(key, value);
+        }else{
+    		return buildFilter(op, key, value);
+        }
+    }
+}
 
-operator "operator"
+keyToAutoComplete
+= @("type"/
+    "merchant")
+
+
+// allows only predefined 
+typeFilter
+= "type" equals value:types {
+	updateDefaultValues("type", value);
+}
+
+
+//validates date to be in yyyy-mm-dd format
+dateFilter
+= field:"date" op:operator values:date &(" "/ !.){
+ 	return buildFilter(op, field, values);
+}
+
+amountFilter
+= field:"amount" op:operator values:amount &(" "/ !.){
+	return buildFilter(op, field, values);
+}
+
+merchantFilter 
+= field:"merchant" op:equals values:merchant {
+	return buildFilter(op, field, values);
+}
+
+operator
   = (":" / "=") { return "eq"; }
   / "!=" { return "neq"; }
   / ">=" { return "gte"; }
   / ">" { return "gt"; }
   / "<=" { return "lte"; }
   / "<" { return "lt"; }
+  
+ equals "equals"
+  = (":" / "=") { return "eq"; }
+  
+  
+merchant "merchant"
+= @(identifier)
 
-key "key"
-  = @(
-      "date"
-      / "amount"
-      / "merchant"
-      / "description"
-      / "reportID"
-      / "keyword"
-      / "in"
-      / "currency"
-      / "tag"
-      / "category"
-      / "to"
-      / "taxRate"
-      / "cardID"
-      / "from"
-      / "expenseType"
-      / "in"
-    )
+ types "type" 
+= @(
+      "chat"
+      / "expense"
+      / "invoice"
+      / "trips")
 
-defaultKey "default key"
-  = @("type" / "status" / "sortBy" / "sortOrder" / "policyID")
+date "date"
+= date:(year "-" month "-" day)|1.. , ","| &(" "/ ","/ !.){
+	return date.map((date) => date.join(""));
+}
 
+
+year "year"
+= values:(digit digit digit digit) {
+	return values.join("");
+}
+
+month "month"
+= values:( ("0"/ "1") digit){
+	return values.join("");
+}
+      
+day "day"
+= values:(("0"/"1"/"2"/"3") digit){
+	return values.join("");
+}
+
+amount "amount"
+= values:(startDigit digit|0..6| (("." digit|1..2|))?) {
+return values?.flat(2).join("");
+}
+
+startDigit
+= @("1"/ "2" / "3" / "4" / "5" / "6" / "7" / "9")
+
+digit "digit"
+= @("0" / "1"/ "2" / "3" / "4" / "5" / "6" / "7" / "9")
+  
 identifier
   = parts:(quotedString / alphanumeric)+ {
       const value = parts.flat();
