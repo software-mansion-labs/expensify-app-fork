@@ -49,19 +49,12 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                     cardOverlay: ({style}) => {
                         return (
                             <Animated.View
-                                style={[
-                                    {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.42)',
-                                        flex: 1,
-                                        // @ts-ignore
-                                        opacity: style
-                                            ? style.opacity.interpolate({
-                                                  inputRange: [0, 0.2],
-                                                  outputRange: [0, 1],
-                                              })
-                                            : 1,
-                                    },
-                                ]}
+                                style={{
+                                    zIndex: -10,
+                                    backgroundColor: style ? style.backgroundColor : 'red',
+                                    flex: 1,
+                                    opacity: style.opacity,
+                                }}
                             />
                         );
                     },

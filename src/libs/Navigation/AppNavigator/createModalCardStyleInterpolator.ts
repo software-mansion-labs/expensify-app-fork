@@ -32,6 +32,14 @@ const createModalCardStyleInterpolator: CreateModalCardStyleInterpolator =
             inverted,
         );
 
+        const opacity = Animated.multiply(
+            progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 0.5],
+            }),
+            inverted,
+        );
+
         const cardStyle = StyleUtils.getCardStyles(screen.width);
 
         if (!isFullScreenModal || isSmallScreenWidth) {
@@ -43,6 +51,9 @@ const createModalCardStyleInterpolator: CreateModalCardStyleInterpolator =
                 overflow: 'hidden',
             },
             cardStyle,
+            overlayStyle: {
+                opacity,
+            },
         };
     };
 
