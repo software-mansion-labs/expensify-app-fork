@@ -50,12 +50,17 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                         return (
                             <Animated.View
                                 style={{
-                                    zIndex: -10,
-                                    backgroundColor: style ? style.backgroundColor : 'red',
+                                    backgroundColor: 'transparent',
                                     flex: 1,
                                     opacity: style.opacity,
                                 }}
-                            />
+                            >
+                                <Pressable
+                                    accessibilityRole="button"
+                                    style={{height: '100%', width: '100%'}}
+                                    onPress={() => console.log('TEST')}
+                                />
+                            </Animated.View>
                         );
                     },
                 }}
