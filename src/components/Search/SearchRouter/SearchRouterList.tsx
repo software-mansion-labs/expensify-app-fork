@@ -1,10 +1,10 @@
 import React, {useCallback} from 'react';
 import * as Expensicons from '@components/Icon/Expensicons';
-import type {SearchQueryJSON, SearchRouterListItem} from '@components/Search/types';
+import type {SearchQueryJSON} from '@components/Search/types';
 import SelectionList from '@components/SelectionList';
 import SingleIconListItem from '@components/SelectionList/Search/SingleIconListItem';
-import type {ListItemWithSingleIcon, SingleIconListItemProps} from '@components/SelectionList/Search/SingleIconListItem';
-import type {SectionListDataType, UserListItemProps} from '@components/SelectionList/types';
+import type {SingleIconListItemProps} from '@components/SelectionList/Search/SingleIconListItem';
+import type {SectionListDataType, SingleIconListItemType, UserListItemProps, UserListItemType} from '@components/SelectionList/types';
 import UserListItem from '@components/SelectionList/UserListItem';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -29,25 +29,28 @@ type SearchRouterListProps = {
     closeAndClearRouter: () => void;
 };
 
-function SearchRouterItem(props: UserListItemProps<SearchRouterListItem> | SingleIconListItemProps<SearchRouterListItem>) {
+function SearchRouterItem(props: UserListItemProps<UserListItemType> | SingleIconListItemProps<SingleIconListItemType>) {
     const styles = useThemeStyles();
-    if (props.item.itemType === CONST.SEARCH.ROUTER_LIST_ITEM_TYPE.REPORT) {
+    // Here instead of checking itemType prepare correct type guards for the prop types and use them
+    if (props.item) {
+        // this cast would actually happen in the type guard; type guard can stay in this file I think
+        const actuallyProps = props as UserListItemProps<UserListItemType>;
         return (
             <UserListItem
                 pressableStyle={styles.br2}
                 // eslint-disable-next-line react/jsx-props-no-spreading
-                {...(props as UserListItemProps<OptionData>)}
+                {...actuallyProps}
             />
         );
     }
     // eslint-disable-next-line react/jsx-props-no-spreading
-    return <SingleIconListItem {...(props as SingleIconListItemProps<ListItemWithSingleIcon & ItemWithQuery>)} />;
+    return <SingleIconListItem {...props} />;
 }
 
 function SearchRouterList({currentQuery, reportForContextualSearch, recentSearches, recentReports, onSearchSubmit, updateUserSearchQuery, closeAndClearRouter}: SearchRouterListProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const sections: Array<SectionListDataType<SearchRouterListItem>> = [];
+    const sections: Array<SectionListDataType<SingleIconListItemType | UserListItemType>> = [];
 
     if (currentQuery?.inputQuery) {
         sections.push({
@@ -95,8 +98,9 @@ function SearchRouterList({currentQuery, reportForContextualSearch, recentSearch
     sections.push({title: translate('search.recentChats'), data: recentReportsData});
 
     const onSelectRow = useCallback(
-        (item: SearchRouterListItem) => {
+        (item: SingleIconListItemType | UserListItemType) => {
             // eslint-disable-next-line default-case
+            // Here instead of switch on itemType prepare correct type guards for the types of list item: SingleIconListItemType and UserListItemType and use them here
             switch (item.itemType) {
                 case CONST.SEARCH.ROUTER_LIST_ITEM_TYPE.SEARCH:
                     // Handle selection of "Recent search"
@@ -126,7 +130,7 @@ function SearchRouterList({currentQuery, reportForContextualSearch, recentSearch
     );
 
     return (
-        <SelectionList<SearchRouterListItem>
+        <SelectionList<SingleIconListItemType | UserListItemType>
             sections={sections}
             onSelectRow={onSelectRow}
             ListItem={SearchRouterItem}

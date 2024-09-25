@@ -2,15 +2,12 @@ import React from 'react';
 import {View} from 'react-native';
 import Icon from '@components/Icon';
 import BaseListItem from '@components/SelectionList/BaseListItem';
-import type {ListItem} from '@components/SelectionList/types';
+import type {ListItem, SingleIconListItemType} from '@components/SelectionList/types';
 import TextWithTooltip from '@components/TextWithTooltip';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type IconAsset from '@src/types/utils/IconAsset';
 
-type ListItemWithSingleIcon = {singleIcon?: IconAsset} & ListItem;
-
-type SingleIconListItemProps<TItem extends ListItemWithSingleIcon> = {
+type SingleIconListItemProps<TItem extends ListItem> = {
     item: TItem;
     isFocused?: boolean;
     showTooltip?: boolean;
@@ -18,7 +15,7 @@ type SingleIconListItemProps<TItem extends ListItemWithSingleIcon> = {
     onFocus?: () => void;
 };
 
-function SingleIconListItem<TItem extends ListItemWithSingleIcon>({item, isFocused, showTooltip, onSelectRow, onFocus}: SingleIconListItemProps<TItem>) {
+function SingleIconListItem<TItem extends SingleIconListItemType>({item, isFocused, showTooltip, onSelectRow, onFocus}: SingleIconListItemProps<TItem>) {
     const styles = useThemeStyles();
     const theme = useTheme();
 
@@ -71,4 +68,4 @@ function SingleIconListItem<TItem extends ListItemWithSingleIcon>({item, isFocus
 SingleIconListItem.displayName = 'SingleIconListItem';
 
 export default SingleIconListItem;
-export type {ListItemWithSingleIcon, SingleIconListItemProps};
+export type {SingleIconListItemProps};

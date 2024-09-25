@@ -1,6 +1,7 @@
 import type {MutableRefObject, ReactElement, ReactNode} from 'react';
 import type {GestureResponderEvent, InputModeOptions, LayoutChangeEvent, SectionListData, StyleProp, TextInput, TextStyle, ViewStyle} from 'react-native';
 import type {SearchRouterItem} from '@components/Search/SearchRouter/SearchRouterList';
+import type {SearchQueryString} from '@components/Search/types';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 // eslint-disable-next-line no-restricted-imports
 import type CursorStyles from '@styles/utils/cursor/types';
@@ -240,6 +241,18 @@ type ReportListItemType = ListItem &
 
         transactions: TransactionListItemType[];
     };
+
+type UserListItemType = ListItem & {
+    foo: string;
+};
+
+// In general I don't think we can create a generic `SingleIconListItemType` if you want to store query in it
+// Im afraid we might just name it properly like SomethingSomethingSearchItem...
+type SingleIconListItemType = ListItem & {
+    singleIcon?: IconAsset;
+    query: SearchQueryString;
+    itemType: string; // fix this
+};
 
 type ListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> & {
     /** The section list item */
@@ -600,6 +613,8 @@ export type {
     TransactionListItemProps,
     TransactionListItemType,
     UserListItemProps,
+    UserListItemType,
+    SingleIconListItemType,
     ValidListItem,
     ReportActionListItemType,
     ChatListItemProps,
