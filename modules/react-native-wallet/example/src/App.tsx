@@ -88,7 +88,7 @@ const App: React.FC = () => {
         <SafeAreaView>
             <ScrollView>
                 <Text>Test React Native Wallet</Text>
-                
+
                 {Platform.OS === 'ios' && <AppleMethods handleFetchData={handleFetchData} />}
                 {Platform.OS === 'android' && <GoogleMethods handleFetchData={handleFetchData} />}
 
