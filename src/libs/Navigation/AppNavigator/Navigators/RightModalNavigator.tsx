@@ -58,7 +58,7 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                                 <Pressable
                                     accessibilityRole="button"
                                     style={{height: '100%', width: '100%'}}
-                                    onPress={() => console.log('TEST')}
+                                    onPress={navigation.goBack}
                                 />
                             </Animated.View>
                         );

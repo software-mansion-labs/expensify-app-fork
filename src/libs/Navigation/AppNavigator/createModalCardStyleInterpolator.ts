@@ -53,7 +53,7 @@ const createModalCardStyleInterpolator: CreateModalCardStyleInterpolator =
             cardStyle,
             overlayStyle: {
                 opacity,
-                backgroundColor: 'green',
+                backgroundColor: '#1A3D32',
             },
         };
     };
