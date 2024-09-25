@@ -1,5 +1,6 @@
 import type {ParamListBase, StackActionHelpers, StackNavigationState} from '@react-navigation/native';
 import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
+import {NativeStackView} from '@react-navigation/native-stack';
 import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
 import {StackView} from '@react-navigation/stack';
 import React, {useMemo} from 'react';
@@ -31,7 +32,7 @@ function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
 
     return (
         <NavigationContent>
-            <StackView
+            <NativeStackView
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...props}
                 state={stateToRender}

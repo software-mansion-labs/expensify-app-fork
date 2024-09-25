@@ -1,5 +1,6 @@
 import type {ParamListBase, StackActionHelpers, StackNavigationState} from '@react-navigation/native';
 import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
+import {NativeStackView} from '@react-navigation/native-stack';
 import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
 import {StackView} from '@react-navigation/stack';
 import React, {useMemo} from 'react';
@@ -54,7 +55,7 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
             <View style={styles.rootNavigatorContainerStyles}>
                 <NavigationContent>
                     {isSmallScreenWidth ? (
-                        <StackView
+                        <NativeStackView
                             // eslint-disable-next-line react/jsx-props-no-spreading
                             {...props}
                             state={state}
@@ -64,7 +65,7 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
                     ) : (
                         <View style={{flexDirection: 'row', flex: 1}}>
                             <View style={{flex: 1, maxWidth: sideBarWidth}}>
-                                <StackView
+                                <NativeStackView
                                     // eslint-disable-next-line react/jsx-props-no-spreading
                                     {...props}
                                     state={lhn}
@@ -73,7 +74,7 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
                                 />
                             </View>
                             <View style={{flex: 1}}>
-                                <StackView
+                                <NativeStackView
                                     // eslint-disable-next-line react/jsx-props-no-spreading
                                     {...props}
                                     state={centralPane}
