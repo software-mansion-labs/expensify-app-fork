@@ -60,7 +60,7 @@ Ensure your Xcode project is configured with the necessary entitlements for [App
       console.log('Certificate and nonce details:', certificateLeaf, certificateSubCA, nonce, nonceSignature);
       // Send these to the backend to complete provisioning
     });
-´´´
+```
 
 ## Google Pay Integration
 
@@ -107,4 +107,4 @@ Follow the Google Pay setup guide for [Android Push Provisioning API](https://de
     }).catch(error => {
     console.error('Error:', error);
     });
-´´´
+```

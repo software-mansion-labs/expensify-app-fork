@@ -27,7 +27,7 @@ The **Android Push Provisioning API** is used for adding a card to Google Wallet
 Make sure that you have added the following permissions to your `AndroidManifest.xml`:
 ´´´xml
 <uses-permission android:name="com.google.android.gms.wallet.permission.BIND_WALLET_SERVICE" />
-´´´
+```
 
 ### Android Methods Tested:
 
@@ -48,7 +48,7 @@ Ensure that the following permissions are added to your `Info.plist`:
 <array>
     <string>Visa</string>  <!-- Add other payment networks as needed -->
 </array>
-´´´
+```
 
 ### iOS Methods Tested:
 
@@ -63,12 +63,12 @@ Once the necessary permissions and setup are complete, you can run the app to te
 ### iOS:
 ´´´bash
 npx react-native run-ios
-´´´
+```
 
 ### Android:
 ´´´bash
 npx react-native run-android
-´´´
+```
 
 ## Logs & Output
 
@@ -83,7 +83,7 @@ completeAddPaymentPass: { success: true, activationData: '...' }
 getActiveWalletID: MockedWalletID
 getStableHardwareId: MockedHardwareId
 pushProvision: { success: true, opc: 'someOpc' }
-´´´
+```
 
 ## Conclusion
 
