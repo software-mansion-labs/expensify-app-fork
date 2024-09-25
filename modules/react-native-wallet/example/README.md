@@ -1,79 +1,90 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# React Native Wallet Example App
 
-# Getting Started
+This app demonstrates how to verify that the `react-native-wallet` library is correctly integrated with **Apple Pay** and **Google Pay** for virtual cards. The focus is to ensure that the app fetches the necessary parameters required for provisioning a card to these wallets, using native methods.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Purpose
 
-## Step 1: Start the Metro Server
+In this PR, we aim to verify that we can fetch the following parameters to support card tokenization in Apple Pay and Google Pay:
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+| **Mutual Parameters**   | **Android Specific Parameters** | **iOS Specific Parameters** |
+|--------------------------|---------------------------------|----------------------------|
+|1.`appVersion`            | 1.`walletAccountID`             | 1.`certificates`            |
+|                          | 2.`deviceID`                   | 2.`nonce`                   |
+|                          |                                 | 3.`nonceSignature`          |
 
-To start Metro, run the following command from the _root_ of your React Native project:
+The main focus of this example is to validate that these values are correctly fetched from the native modules, which are required for tokenizing a virtual card into Apple Pay or Google Pay.
 
-```bash
-# using npm
-npm start
 
-# OR using Yarn
-yarn start
-```
+## Backend Dependencies
 
-## Step 2: Start your Application
+While this app fetches the parameters listed above, note that **the app itself does not generate these values**. These values must be obtained from the **server** (issuer’s server or a third-party service that generates secure transaction data). For testing purposes, mock values are used here.
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+## Android Setup
 
-### For Android
+The **Android Push Provisioning API** is used for adding a card to Google Wallet. You can find more details here:
+[Android Push Provisioning API](https://developers.google.com/pay/issuers/apis/push-provisioning/android?hl=pt-br)
 
-```bash
-# using npm
-npm run android
+Make sure that you have added the following permissions to your `AndroidManifest.xml`:
+´´´xml
+<uses-permission android:name="com.google.android.gms.wallet.permission.BIND_WALLET_SERVICE" />
+´´´
 
-# OR using Yarn
-yarn android
-```
+### Android Methods Tested:
 
-### For iOS
+- **`getActiveWalletID`**: Fetches the active Google Wallet account ID.
+- **`getStableHardwareId`**: Fetches the hardware ID of the device, which is used for security purposes.
+- **`pushProvision`**: Initiates the process of provisioning a card into Google Pay, using mock data in this example.
 
-```bash
-# using npm
-npm run ios
+## iOS Setup
 
-# OR using Yarn
-yarn ios
-```
+On iOS, the **PKAddPaymentPassViewController** class is used to initiate and manage the addition of a payment pass to Apple Wallet. This is essential for Apple Pay integration. More information can be found in the Apple documentation:
+[PKAddPaymentPassViewController Documentation](https://developer.apple.com/documentation/passkit_apple_pay_and_wallet/pkaddpaymentpassviewcontroller)
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+### iOS Permissions
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+Ensure that the following permissions are added to your `Info.plist`:
+´´´xml
+<key>com.apple.developer.in-app-payments</key>
+<array>
+    <string>Visa</string>  <!-- Add other payment networks as needed -->
+</array>
+´´´
 
-## Step 3: Modifying your App
+### iOS Methods Tested:
 
-Now that you have successfully run the app, let's modify it.
+- **`canAddPaymentPass`**: Verifies if a payment pass can be added to Apple Wallet.
+- **`startAddPaymentPass`**: Initiates the process of adding a virtual card to Apple Wallet using mock cardholder data.
+- **`completeAddPaymentPass`**: Completes the payment pass process with mock data for activation, encrypted pass data, and the ephemeral public key.
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+## Running the App
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+Once the necessary permissions and setup are complete, you can run the app to test if the `react-native-wallet` library is linked correctly and if the methods return the expected results.
 
-## Congratulations! :tada:
+### iOS:
+´´´bash
+npx react-native run-ios
+´´´
 
-You've successfully run and modified your React Native App. :partying_face:
+### Android:
+´´´bash
+npx react-native run-android
+´´´
 
-### Now what?
+## Logs & Output
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+Logs will appear directly in the app, indicating whether the native methods are successfully called and what values they return. These logs help validate that the required parameters are being fetched correctly.
 
-# Troubleshooting
+#### Example output:
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+´´´yaml
+canAddPaymentPass: true
+startAddPaymentPass: { success: true }
+completeAddPaymentPass: { success: true, activationData: '...' }
+getActiveWalletID: MockedWalletID
+getStableHardwareId: MockedHardwareId
+pushProvision: { success: true, opc: 'someOpc' }
+´´´
 
-# Learn More
+## Conclusion
 
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+The purpose of this app is not to test the entire card provisioning flow but to ensure that we can call the necessary native methods to work with the required parameters for Apple Pay and Google Pay.
