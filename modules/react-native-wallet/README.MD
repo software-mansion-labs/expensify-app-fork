@@ -36,7 +36,7 @@ Ensure your Xcode project is configured with the necessary entitlements for [App
 
 ### Example Usage
 
-´´´typescript
+```typescript
     import PushProvisioning from '@your-org/push-provisioning';
 
     PushProvisioning.Apple.canAddPaymentPass().then(canAdd => {
@@ -99,7 +99,7 @@ Follow the Google Pay setup guide for [Android Push Provisioning API](https://de
 
 ### Example Usage:
 
-´´´typescript
+```typescript
     import PushProvisioning from '@your-org/push-provisioning';
 
     PushProvisioning.Google.getActiveWalletID().then(walletId => {

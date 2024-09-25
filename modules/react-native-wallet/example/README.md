@@ -25,7 +25,7 @@ The **Android Push Provisioning API** is used for adding a card to Google Wallet
 [Android Push Provisioning API](https://developers.google.com/pay/issuers/apis/push-provisioning/android?hl=pt-br)
 
 Make sure that you have added the following permissions to your `AndroidManifest.xml`:
-´´´xml
+```xml
 <uses-permission android:name="com.google.android.gms.wallet.permission.BIND_WALLET_SERVICE" />
 ```
 
@@ -43,7 +43,7 @@ On iOS, the **PKAddPaymentPassViewController** class is used to initiate and man
 ### iOS Permissions
 
 Ensure that the following permissions are added to your `Info.plist`:
-´´´xml
+```xml
 <key>com.apple.developer.in-app-payments</key>
 <array>
     <string>Visa</string>  <!-- Add other payment networks as needed -->
@@ -61,12 +61,12 @@ Ensure that the following permissions are added to your `Info.plist`:
 Once the necessary permissions and setup are complete, you can run the app to test if the `react-native-wallet` library is linked correctly and if the methods return the expected results.
 
 ### iOS:
-´´´bash
+```bash
 npx react-native run-ios
 ```
 
 ### Android:
-´´´bash
+```bash
 npx react-native run-android
 ```
 
@@ -76,7 +76,7 @@ Logs will appear directly in the app, indicating whether the native methods are 
 
 #### Example output:
 
-´´´yaml
+```yaml
 canAddPaymentPass: true
 startAddPaymentPass: { success: true }
 completeAddPaymentPass: { success: true, activationData: '...' }
