@@ -2,12 +2,6 @@
 
 A React Native library for integrating Apple Pay and Google Pay, allowing for easy tokenization of virtual cards.
 
-## Installation
-
-```
-npm install react-native-wallet
-```
-
 ## iOS Integration
 
 ### ApplePushProvisioning Module
@@ -34,9 +28,15 @@ Ensure your Xcode project is configured with the necessary entitlements for [App
         * `request`: An object containing `activation`, `encryptedData`, and `ephemeralKey`.
     * **Returns**: `Promise<void>`
 
+* **Event: `getPassAndActivation`**
+    * **Description**: Triggered when the app needs to pass the `certificate chain`, `nonce`, and `nonce signature` to Apple Pay.
+    * **Details**: 
+      - You will need to fetch the certificate chain, nonce, and nonce signature from your backend or server (typically provided by the card issuer).
+      - These values are required for securely provisioning the card into Apple Pay, as they encrypt sensitive data for secure transfer.
+
 ### Example Usage
 
-```typescript
+´´´typescript
     import PushProvisioning from '@your-org/push-provisioning';
 
     PushProvisioning.Apple.canAddPaymentPass().then(canAdd => {
@@ -53,7 +53,15 @@ Ensure your Xcode project is configured with the necessary entitlements for [App
     }).catch(error => {
     console.error('Error:', error);
     });
-```
+
+    // Listening for event to get certificate, nonce, and nonceSignature
+    PushProvisioning.Apple.addEventListener('getPassAndActivation', (event) => {
+      const { certificateLeaf, certificateSubCA, nonce, nonceSignature } = event.data;
+      console.log('Certificate and nonce details:', certificateLeaf, certificateSubCA, nonce, nonceSignature);
+      // Send these to the backend to complete provisioning
+    });
+´´´
+
 ## Google Pay Integration
 
 ### GooglePushProvisioning Module
@@ -91,7 +99,7 @@ Follow the Google Pay setup guide for [Android Push Provisioning API](https://de
 
 ### Example Usage:
 
-```typescript
+´´´typescript
     import PushProvisioning from '@your-org/push-provisioning';
 
     PushProvisioning.Google.getActiveWalletID().then(walletId => {
@@ -99,4 +107,4 @@ Follow the Google Pay setup guide for [Android Push Provisioning API](https://de
     }).catch(error => {
     console.error('Error:', error);
     });
-```
+´´´
