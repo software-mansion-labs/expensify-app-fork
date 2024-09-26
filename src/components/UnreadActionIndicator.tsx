@@ -6,24 +6,18 @@ import CONST from '@src/CONST';
 import Text from './Text';
 
 type UnreadActionIndicatorProps = {
-    /** The ID of the report action */
     reportActionID: string;
-
-    /** Whether we should hide thread divider line */
-    shouldHideThreadDividerLine?: boolean;
 };
 
-function UnreadActionIndicator({reportActionID, shouldHideThreadDividerLine}: UnreadActionIndicatorProps) {
+function UnreadActionIndicator({reportActionID}: UnreadActionIndicatorProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-
-    const containerStyle = shouldHideThreadDividerLine ? styles.topUnreadIndicatorContainer : styles.unreadIndicatorContainer;
 
     return (
         <View
             accessibilityLabel={translate('accessibilityHints.newMessageLineIndicator')}
             data-action-id={reportActionID}
-            style={[containerStyle, styles.userSelectNone, styles.pointerEventsNone]}
+            style={[styles.unreadIndicatorContainer, styles.userSelectNone, styles.pointerEventsNone]}
             dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
         >
             <View style={styles.unreadIndicatorLine} />

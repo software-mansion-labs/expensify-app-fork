@@ -1,13 +1,11 @@
 import Onyx from 'react-native-onyx';
-import type {ValueOf} from 'type-fest';
-import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-import CONST from '@src/CONST';
+import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type Credentials from '@src/types/onyx/Credentials';
 
-let credentials: Credentials | null | undefined;
-let authToken: string | null | undefined;
-let authTokenType: ValueOf<typeof CONST.AUTH_TOKEN_TYPES> | null;
+let credentials: Credentials | null = null;
+let authToken: string | null = null;
+let supportAuthToken: string | null = null;
 let currentUserEmail: string | null = null;
 let offline = false;
 let authenticating = false;
@@ -53,7 +51,7 @@ Onyx.connect({
     key: ONYXKEYS.SESSION,
     callback: (val) => {
         authToken = val?.authToken ?? null;
-        authTokenType = val?.authTokenType ?? null;
+        supportAuthToken = val?.supportAuthToken ?? null;
         currentUserEmail = val?.email ?? null;
         checkRequiredData();
     },
@@ -62,7 +60,7 @@ Onyx.connect({
 Onyx.connect({
     key: ONYXKEYS.CREDENTIALS,
     callback: (val) => {
-        credentials = val ?? null;
+        credentials = val;
         checkRequiredData();
     },
 });
@@ -81,11 +79,11 @@ Onyx.connect({
             triggerReconnectCallback();
         }
 
-        offline = !!network.shouldForceOffline || !!network.isOffline;
+        offline = Boolean(network.shouldForceOffline) || !!network.isOffline;
     },
 });
 
-function getCredentials(): Credentials | null | undefined {
+function getCredentials(): Credentials | null {
     return credentials;
 }
 
@@ -93,16 +91,20 @@ function isOffline(): boolean {
     return offline;
 }
 
-function getAuthToken(): string | null | undefined {
+function getAuthToken(): string | null {
     return authToken;
 }
 
 function isSupportRequest(command: string): boolean {
-    return [WRITE_COMMANDS.OPEN_APP, SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP, SIDE_EFFECT_REQUEST_COMMANDS.OPEN_REPORT, READ_COMMANDS.SEARCH].some((cmd) => cmd === command);
+    return [READ_COMMANDS.OPEN_APP, SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP, SIDE_EFFECT_REQUEST_COMMANDS.OPEN_REPORT].some((cmd) => cmd === command);
 }
 
-function isSupportAuthToken(): boolean {
-    return authTokenType === CONST.AUTH_TOKEN_TYPES.SUPPORT;
+function getSupportAuthToken(): string | null {
+    return supportAuthToken;
+}
+
+function setSupportAuthToken(newSupportAuthToken: string) {
+    supportAuthToken = newSupportAuthToken;
 }
 
 function setAuthToken(newAuthToken: string | null) {
@@ -137,6 +139,7 @@ export {
     setIsAuthenticating,
     getCredentials,
     checkRequiredData,
-    isSupportAuthToken,
+    getSupportAuthToken,
+    setSupportAuthToken,
     isSupportRequest,
 };

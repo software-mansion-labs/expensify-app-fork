@@ -1,4 +1,4 @@
-import deburr from 'lodash/deburr';
+import _ from 'lodash';
 import CONST from '@src/CONST';
 
 /**
@@ -7,7 +7,7 @@ import CONST from '@src/CONST';
  * @returns The sanitized string
  */
 function sanitizeString(str: string): string {
-    return deburr(str).toLowerCase().replaceAll(CONST.REGEX.NON_ALPHABETIC_AND_NON_LATIN_CHARS, '');
+    return _.deburr(str).toLowerCase().replaceAll(CONST.REGEX.NON_ALPHABETIC_AND_NON_LATIN_CHARS, '');
 }
 
 /**
@@ -64,15 +64,6 @@ function removeInvisibleCharacters(value: string): string {
 }
 
 /**
- * Remove accents/diacritics
- * @param text - The input string
- * @returns The string with all accents/diacritics removed
- */
-function normalizeAccents(text: string) {
-    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
-/**
  *  Replace all CRLF with LF
  *  @param value - The input string
  *  @returns The string with all CRLF replaced with LF
@@ -81,20 +72,4 @@ function normalizeCRLF(value?: string): string | undefined {
     return value?.replace(/\r\n/g, '\n');
 }
 
-/**
- * Replace all line breaks with white spaces
- */
-function lineBreaksToSpaces(text = '') {
-    return text.replace(CONST.REGEX.LINE_BREAK, ' ');
-}
-
-/**
- * Get the first line of the string
- */
-function getFirstLine(text = '') {
-    // Split the input string by newline characters and return the first element of the resulting array
-    const lines = text.split('\n');
-    return lines[0];
-}
-
-export default {sanitizeString, isEmptyString, removeInvisibleCharacters, normalizeAccents, normalizeCRLF, lineBreaksToSpaces, getFirstLine};
+export default {sanitizeString, isEmptyString, removeInvisibleCharacters, normalizeCRLF};

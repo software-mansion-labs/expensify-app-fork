@@ -1,7 +1,6 @@
 import {isAfter} from 'date-fns';
 import type {NativeEventSubscription} from 'react-native';
 import {AppState} from 'react-native';
-import type {Connection} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import * as ActiveClientManager from '@libs/ActiveClientManager';
 import * as API from '@libs/API';
@@ -10,18 +9,18 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {MapboxAccessToken, Network} from '@src/types/onyx';
 
-let authToken: string | undefined;
+let authToken: string | null;
 Onyx.connect({
     key: ONYXKEYS.SESSION,
     callback: (value) => {
-        authToken = value?.authToken;
+        authToken = value?.authToken ?? null;
     },
 });
 
-let tokenConnection: Connection | null;
-let networkConnection: Connection | null;
+let connectionIDForToken: number | null;
+let connectionIDForNetwork: number | null;
 let appStateSubscription: NativeEventSubscription | null;
-let currentToken: MapboxAccessToken | undefined;
+let currentToken: MapboxAccessToken | null;
 let refreshTimeoutID: NodeJS.Timeout | undefined;
 let isCurrentlyFetchingToken = false;
 const REFRESH_INTERVAL = 1000 * 60 * 25;
@@ -40,7 +39,7 @@ const setExpirationTimer = () => {
             return;
         }
         console.debug(`[MapboxToken] Fetching a new token after waiting ${REFRESH_INTERVAL / 1000 / 60} minutes`);
-        API.read(READ_COMMANDS.GET_MAPBOX_ACCESS_TOKEN, null, {});
+        API.read(READ_COMMANDS.GET_MAPBOX_ACCESS_TOKEN, {}, {});
     }, REFRESH_INTERVAL);
 };
 
@@ -53,18 +52,18 @@ const clearToken = () => {
 };
 
 const fetchToken = () => {
-    API.read(READ_COMMANDS.GET_MAPBOX_ACCESS_TOKEN, null, {});
+    API.read(READ_COMMANDS.GET_MAPBOX_ACCESS_TOKEN, {}, {});
     isCurrentlyFetchingToken = true;
 };
 
 const init = () => {
-    if (tokenConnection) {
+    if (connectionIDForToken) {
         console.debug('[MapboxToken] init() is already listening to Onyx so returning early');
         return;
     }
 
     // When the token changes in Onyx, the expiration needs to be checked so a new token can be retrieved.
-    tokenConnection = Onyx.connect({
+    connectionIDForToken = Onyx.connect({
         key: ONYXKEYS.MAPBOX_ACCESS_TOKEN,
         callback: (token) => {
             // Only the leader should be in charge of the mapbox token, or else when you have multiple tabs open, the Onyx connection fires multiple times
@@ -117,9 +116,9 @@ const init = () => {
         });
     }
 
-    if (!networkConnection) {
-        let network: Network | undefined;
-        networkConnection = Onyx.connect({
+    if (!connectionIDForNetwork) {
+        let network: Network | null;
+        connectionIDForNetwork = Onyx.connect({
             key: ONYXKEYS.NETWORK,
             callback: (value) => {
                 // When the network reconnects, check if the token has expired. If it has, then clearing the token will
@@ -140,13 +139,13 @@ const init = () => {
 
 const stop = () => {
     console.debug('[MapboxToken] Stopping all listeners and timers');
-    if (tokenConnection) {
-        Onyx.disconnect(tokenConnection);
-        tokenConnection = null;
+    if (connectionIDForToken) {
+        Onyx.disconnect(connectionIDForToken);
+        connectionIDForToken = null;
     }
-    if (networkConnection) {
-        Onyx.disconnect(networkConnection);
-        networkConnection = null;
+    if (connectionIDForNetwork) {
+        Onyx.disconnect(connectionIDForNetwork);
+        connectionIDForNetwork = null;
     }
     if (appStateSubscription) {
         appStateSubscription.remove();

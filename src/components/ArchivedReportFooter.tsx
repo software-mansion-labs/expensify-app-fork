@@ -4,7 +4,6 @@ import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {getCurrentUserAccountID} from '@libs/actions/Report';
 import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
@@ -30,26 +29,21 @@ function ArchivedReportFooter({report, reportClosedAction, personalDetails = {}}
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
-    const originalMessage = ReportActionsUtils.isClosedAction(reportClosedAction) ? ReportActionsUtils.getOriginalMessage(reportClosedAction) : null;
+    const originalMessage = reportClosedAction?.actionName === CONST.REPORT.ACTIONS.TYPE.CLOSED ? reportClosedAction.originalMessage : null;
     const archiveReason = originalMessage?.reason ?? CONST.REPORT.ARCHIVE_REASON.DEFAULT;
-    const actorPersonalDetails = personalDetails?.[reportClosedAction?.actorAccountID ?? -1];
-    let displayName = PersonalDetailsUtils.getDisplayNameOrDefault(actorPersonalDetails);
+    let displayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetails?.[report?.ownerAccountID ?? 0]);
 
     let oldDisplayName: string | undefined;
     if (archiveReason === CONST.REPORT.ARCHIVE_REASON.ACCOUNT_MERGED) {
         const newAccountID = originalMessage?.newAccountID;
         const oldAccountID = originalMessage?.oldAccountID;
-        displayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetails?.[newAccountID ?? -1]);
-        oldDisplayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetails?.[oldAccountID ?? -1]);
+        displayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetails?.[newAccountID ?? 0]);
+        oldDisplayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetails?.[oldAccountID ?? 0]);
     }
 
-    const shouldRenderHTML = archiveReason !== CONST.REPORT.ARCHIVE_REASON.DEFAULT && archiveReason !== CONST.REPORT.ARCHIVE_REASON.BOOKING_END_DATE_HAS_PASSED;
+    const shouldRenderHTML = archiveReason !== CONST.REPORT.ARCHIVE_REASON.DEFAULT;
 
     let policyName = ReportUtils.getPolicyName(report);
-
-    if (archiveReason === CONST.REPORT.ARCHIVE_REASON.INVOICE_RECEIVER_POLICY_DELETED) {
-        policyName = originalMessage?.receiverPolicyName ?? '';
-    }
 
     if (shouldRenderHTML) {
         oldDisplayName = lodashEscape(oldDisplayName);
@@ -62,13 +56,12 @@ function ArchivedReportFooter({report, reportClosedAction, personalDetails = {}}
               displayName: `<strong>${displayName}</strong>`,
               oldDisplayName: `<strong>${oldDisplayName}</strong>`,
               policyName: `<strong>${policyName}</strong>`,
-              shouldUseYou: actorPersonalDetails?.accountID === getCurrentUserAccountID(),
           })
         : translate(`reportArchiveReasons.${archiveReason}`);
 
     return (
         <Banner
-            containerStyles={[styles.chatFooterBanner]}
+            containerStyles={[styles.archivedReportFooter]}
             text={text}
             shouldRenderHTML={shouldRenderHTML}
             shouldShowIcon

@@ -33,5 +33,3 @@ function InlineSystemMessage({message = ''}: InlineSystemMessageProps) {
 InlineSystemMessage.displayName = 'InlineSystemMessage';
 
 export default InlineSystemMessage;
-
-export type {InlineSystemMessageProps};

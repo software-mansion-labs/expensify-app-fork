@@ -8,9 +8,6 @@ type CompleteSplitBillParams = {
     category?: string;
     tag?: string;
     splits: string;
-    taxCode?: string;
-    taxAmount?: number;
-    billable?: boolean;
 };
 
 export default CompleteSplitBillParams;

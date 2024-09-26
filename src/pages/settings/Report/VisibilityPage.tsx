@@ -1,6 +1,5 @@
 import type {StackScreenProps} from '@react-navigation/stack';
-import React, {useCallback, useMemo, useRef, useState} from 'react';
-import {useOnyx} from 'react-native-onyx';
+import React, {useCallback, useMemo, useState} from 'react';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -14,7 +13,6 @@ import type {WithReportOrNotFoundProps} from '@pages/home/report/withReportOrNot
 import withReportOrNotFound from '@pages/home/report/withReportOrNotFound';
 import * as ReportActions from '@userActions/Report';
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
 import type {RoomVisibility} from '@src/types/onyx/Report';
 
@@ -22,10 +20,8 @@ type VisibilityProps = WithReportOrNotFoundProps & StackScreenProps<ReportSettin
 
 function VisibilityPage({report}: VisibilityProps) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [reportNameValuePairs] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${report?.reportID || -1}`);
-    const shouldGoBackToDetailsPage = useRef(false);
 
-    const shouldDisableVisibility = ReportUtils.isArchivedRoom(report, reportNameValuePairs);
+    const shouldDisableVisibility = ReportUtils.isArchivedRoom(report);
     const {translate} = useLocalize();
 
     const visibilityOptions = useMemo(
@@ -47,14 +43,9 @@ function VisibilityPage({report}: VisibilityProps) {
             if (!report) {
                 return;
             }
-            ReportActions.updateRoomVisibility(report.reportID, report.visibility, newVisibility);
-            if (showConfirmModal) {
-                shouldGoBackToDetailsPage.current = true;
-            } else {
-                ReportUtils.goBackToDetailsPage(report);
-            }
+            ReportActions.updateRoomVisibility(report.reportID, report.visibility, newVisibility, true, report);
         },
-        [report, showConfirmModal],
+        [report],
     );
 
     const hideModal = useCallback(() => {
@@ -81,7 +72,6 @@ function VisibilityPage({report}: VisibilityProps) {
                         }
                         changeVisibility(option.value);
                     }}
-                    shouldSingleExecuteRowSelect
                     initiallyFocusedOptionKey={visibilityOptions.find((visibility) => visibility.isSelected)?.keyForList}
                     ListItem={RadioListItem}
                 />
@@ -90,13 +80,6 @@ function VisibilityPage({report}: VisibilityProps) {
                     onConfirm={() => {
                         changeVisibility(CONST.REPORT.VISIBILITY.PUBLIC);
                         hideModal();
-                    }}
-                    onModalHide={() => {
-                        if (!shouldGoBackToDetailsPage.current) {
-                            return;
-                        }
-                        shouldGoBackToDetailsPage.current = false;
-                        ReportUtils.goBackToDetailsPage(report);
                     }}
                     onCancel={hideModal}
                     title={translate('common.areYouSure')}

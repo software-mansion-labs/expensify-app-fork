@@ -11,7 +11,6 @@ import type {
 } from '@libs/API/parameters';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import type {PrivatePersonalDetails} from '@libs/GetPhysicalCardUtils';
-import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import type CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {WalletAdditionalQuestionDetails} from '@src/types/onyx';
@@ -50,16 +49,20 @@ function openOnfidoFlow() {
         },
     ];
 
-    API.read(READ_COMMANDS.OPEN_ONFIDO_FLOW, null, {optimisticData, finallyData});
+    API.read(READ_COMMANDS.OPEN_ONFIDO_FLOW, {}, {optimisticData, finallyData});
 }
 
-function setAdditionalDetailsQuestions(questions: WalletAdditionalQuestionDetails[] | null, idNumber?: string) {
+function setAdditionalDetailsQuestions(questions: WalletAdditionalQuestionDetails[], idNumber: string) {
     Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {questions, idNumber});
 }
 
 function setAdditionalDetailsErrors(errorFields: OnyxCommon.ErrorFields) {
     Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {errorFields: null});
     Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {errorFields});
+}
+
+function setAdditionalDetailsErrorMessage(additionalErrorMessage: string) {
+    Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {additionalErrorMessage});
 }
 
 /**
@@ -76,7 +79,7 @@ function updatePersonalDetails(personalDetails: UpdatePersonalDetailsForWalletPa
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.FORMS.WALLET_ADDITIONAL_DETAILS,
+            key: ONYXKEYS.WALLET_ADDITIONAL_DETAILS,
             value: {
                 isLoading: true,
                 errors: null,
@@ -88,7 +91,7 @@ function updatePersonalDetails(personalDetails: UpdatePersonalDetailsForWalletPa
     const finallyData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.FORMS.WALLET_ADDITIONAL_DETAILS,
+            key: ONYXKEYS.WALLET_ADDITIONAL_DETAILS,
             value: {
                 isLoading: false,
             },
@@ -209,17 +212,17 @@ function acceptWalletTerms(parameters: AcceptWalletTermsParams) {
  * Fetches data when the user opens the InitialSettingsPage
  */
 function openInitialSettingsPage() {
-    API.read(READ_COMMANDS.OPEN_INITIAL_SETTINGS_PAGE, null);
+    API.read(READ_COMMANDS.OPEN_INITIAL_SETTINGS_PAGE, {});
 }
 
 /**
  * Fetches data when the user opens the EnablePaymentsPage
  */
 function openEnablePaymentsPage() {
-    API.read(READ_COMMANDS.OPEN_ENABLE_PAYMENTS_PAGE, null);
+    API.read(READ_COMMANDS.OPEN_ENABLE_PAYMENTS_PAGE, {});
 }
 
-function updateCurrentStep(currentStep: ValueOf<typeof CONST.WALLET.STEP> | null) {
+function updateCurrentStep(currentStep: ValueOf<typeof CONST.WALLET.STEP>) {
     Onyx.merge(ONYXKEYS.USER_WALLET, {currentStep});
 }
 
@@ -229,7 +232,7 @@ function answerQuestionsForWallet(answers: WalletQuestionAnswer[], idNumber: str
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.FORMS.WALLET_ADDITIONAL_DETAILS,
+            key: ONYXKEYS.WALLET_ADDITIONAL_DETAILS,
             value: {
                 isLoading: true,
             },
@@ -239,7 +242,7 @@ function answerQuestionsForWallet(answers: WalletQuestionAnswer[], idNumber: str
     const finallyData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.FORMS.WALLET_ADDITIONAL_DETAILS,
+            key: ONYXKEYS.WALLET_ADDITIONAL_DETAILS,
             value: {
                 isLoading: false,
             },
@@ -258,8 +261,7 @@ function answerQuestionsForWallet(answers: WalletQuestionAnswer[], idNumber: str
 }
 
 function requestPhysicalExpensifyCard(cardID: number, authToken: string, privatePersonalDetails: PrivatePersonalDetails) {
-    const {legalFirstName = '', legalLastName = '', phoneNumber = ''} = privatePersonalDetails;
-    const {city = '', country = '', state = '', street = '', zip = ''} = PersonalDetailsUtils.getCurrentAddress(privatePersonalDetails) ?? {};
+    const {legalFirstName = '', legalLastName = '', phoneNumber = '', address: {city = '', country = '', state = '', street = '', zip = ''} = {}} = privatePersonalDetails;
 
     const requestParams: RequestPhysicalExpensifyCardParams = {
         authToken,
@@ -293,15 +295,12 @@ function requestPhysicalExpensifyCard(cardID: number, authToken: string, private
     API.write(WRITE_COMMANDS.REQUEST_PHYSICAL_EXPENSIFY_CARD, requestParams, {optimisticData});
 }
 
-function resetWalletAdditionalDetailsDraft() {
-    Onyx.set(ONYXKEYS.FORMS.WALLET_ADDITIONAL_DETAILS_DRAFT, null);
-}
-
 export {
     openOnfidoFlow,
     openInitialSettingsPage,
     openEnablePaymentsPage,
     setAdditionalDetailsErrors,
+    setAdditionalDetailsErrorMessage,
     setAdditionalDetailsQuestions,
     updateCurrentStep,
     answerQuestionsForWallet,
@@ -310,5 +309,4 @@ export {
     acceptWalletTerms,
     setKYCWallSource,
     requestPhysicalExpensifyCard,
-    resetWalletAdditionalDetailsDraft,
 };

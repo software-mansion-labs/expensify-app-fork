@@ -1,6 +1,5 @@
 import type {RefObject} from 'react';
-// eslint-disable-next-line no-restricted-imports
-import type {Text, View} from 'react-native';
+import type {View} from 'react-native';
 import type BaseModalProps from '@components/Modal/types';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 
@@ -15,7 +14,7 @@ type PopoverWithoutOverlayProps = ChildrenProps &
         };
 
         /** The anchor ref of the popover */
-        anchorRef: RefObject<View | HTMLDivElement | Text>;
+        anchorRef: RefObject<View | HTMLDivElement>;
 
         /** A react-native-animatable animation timing for the modal display animation */
         animationInTiming?: number;

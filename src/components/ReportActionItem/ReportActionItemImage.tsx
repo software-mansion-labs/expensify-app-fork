@@ -1,39 +1,30 @@
-/* eslint-disable react/jsx-props-no-spreading */
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import React from 'react';
-import type {ViewStyle} from 'react-native';
+import type {ReactElement} from 'react';
+import type {ImageSourcePropType, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
-import ConfirmedRoute from '@components/ConfirmedRoute';
-import type {IconSize} from '@components/EReceiptThumbnail';
+import AttachmentModal from '@components/AttachmentModal';
+import EReceiptThumbnail from '@components/EReceiptThumbnail';
 import * as Expensicons from '@components/Icon/Expensicons';
+import Image from '@components/Image';
 import PressableWithoutFocus from '@components/Pressable/PressableWithoutFocus';
-import type {ReceiptImageProps} from '@components/ReceiptImage';
-import ReceiptImage from '@components/ReceiptImage';
 import {ShowContextMenuContext} from '@components/ShowContextMenuContext';
+import ThumbnailImage from '@components/ThumbnailImage';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import Navigation from '@libs/Navigation/Navigation';
 import * as TransactionUtils from '@libs/TransactionUtils';
 import tryResolveUrlFromApiRoot from '@libs/tryResolveUrlFromApiRoot';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
-import ROUTES from '@src/ROUTES';
 import type {Transaction} from '@src/types/onyx';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 type ReportActionItemImageProps = {
     /** thumbnail URI for the image */
-    thumbnail?: string;
-
-    /** The file type of the receipt */
-    fileExtension?: string;
-
-    /** whether or not we are going to display a thumbnail */
-    isThumbnail?: boolean;
+    thumbnail?: string | ImageSourcePropType | null;
 
     /** URI for the image or local numeric reference for the image  */
-    image?: string;
+    image?: string | ImageSourcePropType;
 
     /** whether to enable the image preview modal */
     enablePreviewModal?: boolean;
@@ -44,17 +35,14 @@ type ReportActionItemImageProps = {
     /** whether thumbnail is refer the local file or not */
     isLocalFile?: boolean;
 
+    /** whether the receipt can be replaced */
+    canEditReceipt?: boolean;
+
     /** Filename of attachment */
     filename?: string;
 
     /** Whether there are other images displayed in the same parent container */
     isSingleImage?: boolean;
-
-    /** Whether the map view should have border radius  */
-    shouldMapHaveBorderRadius?: boolean;
-
-    /** Whether the receipt is not editable */
-    readonly?: boolean;
 };
 
 /**
@@ -65,90 +53,81 @@ type ReportActionItemImageProps = {
 
 function ReportActionItemImage({
     thumbnail,
-    isThumbnail,
     image,
     enablePreviewModal = false,
     transaction,
+    canEditReceipt = false,
     isLocalFile = false,
-    fileExtension,
     filename,
     isSingleImage = true,
-    readonly = false,
-    shouldMapHaveBorderRadius,
 }: ReportActionItemImageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const isDistanceRequest = !!transaction && TransactionUtils.isDistanceRequest(transaction);
-    const hasPendingWaypoints = transaction && TransactionUtils.isFetchingWaypointsFromServer(transaction);
-    const hasErrors = !isEmptyObject(transaction?.errors) || !isEmptyObject(transaction?.errorFields);
-    const showMapAsImage = isDistanceRequest && (hasErrors || hasPendingWaypoints);
+    const imageSource = tryResolveUrlFromApiRoot(image ?? '');
+    const thumbnailSource = tryResolveUrlFromApiRoot(thumbnail ?? '');
+    const isEReceipt = transaction && TransactionUtils.hasEReceipt(transaction);
 
-    if (showMapAsImage) {
-        return (
+    let receiptImageComponent: ReactElement;
+
+    if (isEReceipt) {
+        receiptImageComponent = (
             <View style={[styles.w100, styles.h100]}>
-                <ConfirmedRoute
-                    transaction={transaction}
-                    isSmallerIcon={!isSingleImage}
-                    shouldHaveBorderRadius={shouldMapHaveBorderRadius}
-                    interactive={false}
-                    requireRouteToDisplayMap
+                <EReceiptThumbnail
+                    transactionID={transaction.transactionID}
+                    iconSize={isSingleImage ? 'medium' : 'small'}
                 />
             </View>
         );
-    }
-
-    const attachmentModalSource = tryResolveUrlFromApiRoot(image ?? '');
-    const thumbnailSource = tryResolveUrlFromApiRoot(thumbnail ?? '');
-    const isEReceipt = transaction && !TransactionUtils.hasReceiptSource(transaction) && TransactionUtils.hasEReceipt(transaction);
-
-    let propsObj: ReceiptImageProps;
-
-    if (isEReceipt) {
-        propsObj = {isEReceipt: true, transactionID: transaction.transactionID, iconSize: isSingleImage ? 'medium' : ('small' as IconSize)};
-    } else if (thumbnail && !isLocalFile) {
-        propsObj = {
-            shouldUseThumbnailImage: true,
-            source: thumbnailSource,
-            fallbackIcon: Expensicons.Receipt,
-            fallbackIconSize: isSingleImage ? variables.iconSizeSuperLarge : variables.iconSizeExtraLarge,
-            isAuthTokenRequired: true,
-            shouldUseInitialObjectPosition: isDistanceRequest,
-        };
-    } else if (isLocalFile && filename && Str.isPDF(filename) && typeof attachmentModalSource === 'string') {
-        propsObj = {isPDFThumbnail: true, source: attachmentModalSource};
+    } else if (thumbnail && !isLocalFile && !Str.isPDF(imageSource as string)) {
+        receiptImageComponent = (
+            <ThumbnailImage
+                previewSourceURL={thumbnailSource}
+                style={[styles.w100, styles.h100]}
+                isAuthTokenRequired
+                fallbackIcon={Expensicons.Receipt}
+                fallbackIconSize={isSingleImage ? variables.iconSizeSuperLarge : variables.iconSizeExtraLarge}
+                shouldDynamicallyResize={false}
+            />
+        );
     } else {
-        propsObj = {
-            isThumbnail,
-            ...(isThumbnail && {iconSize: (isSingleImage ? 'medium' : 'small') as IconSize, fileExtension}),
-            shouldUseThumbnailImage: true,
-            isAuthTokenRequired: false,
-            source: thumbnail ?? image ?? '',
-            shouldUseInitialObjectPosition: isDistanceRequest,
-        };
+        receiptImageComponent = (
+            <Image
+                source={{uri: thumbnail ?? image}}
+                style={[styles.w100, styles.h100]}
+            />
+        );
     }
 
     if (enablePreviewModal) {
         return (
             <ShowContextMenuContext.Consumer>
-                {({report, transactionThreadReport}) => (
-                    <PressableWithoutFocus
-                        style={[styles.w100, styles.h100, styles.noOutline as ViewStyle]}
-                        onPress={() =>
-                            Navigation.navigate(
-                                ROUTES.TRANSACTION_RECEIPT.getRoute(transactionThreadReport?.reportID ?? report?.reportID ?? '-1', transaction?.transactionID ?? '-1', readonly),
-                            )
-                        }
-                        accessibilityLabel={translate('accessibilityHints.viewAttachment')}
-                        accessibilityRole={CONST.ROLE.BUTTON}
+                {({report}) => (
+                    <AttachmentModal
+                        source={imageSource}
+                        isAuthTokenRequired={!isLocalFile}
+                        report={report}
+                        isReceiptAttachment
+                        canEditReceipt={canEditReceipt}
+                        allowDownload={!isEReceipt}
+                        originalFileName={filename}
                     >
-                        <ReceiptImage {...propsObj} />
-                    </PressableWithoutFocus>
+                        {({show}) => (
+                            <PressableWithoutFocus
+                                style={[styles.w100, styles.h100, styles.noOutline as ViewStyle]}
+                                onPress={show}
+                                accessibilityRole={CONST.ROLE.BUTTON}
+                                accessibilityLabel={translate('accessibilityHints.viewAttachment')}
+                            >
+                                {receiptImageComponent}
+                            </PressableWithoutFocus>
+                        )}
+                    </AttachmentModal>
                 )}
             </ShowContextMenuContext.Consumer>
         );
     }
 
-    return <ReceiptImage {...propsObj} />;
+    return receiptImageComponent;
 }
 
 ReportActionItemImage.displayName = 'ReportActionItemImage';

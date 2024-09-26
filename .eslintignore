@@ -1,14 +1,4 @@
-!.storybook
-!.github
-.github/actions/**/index.js
-*.config.js
-**/.eslintrc.js
-**/.eslintrc.changed.js
-**/node_modules/**
-**/dist/**
-android/**/build/**
+**/node_modules/*
+**/dist/*
+.github/actions/**/index.js"
 docs/vendor/**
-docs/assets/**
-web/gtm.js
-**/.expo/**
-src/libs/SearchParser/searchParser.js

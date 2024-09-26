@@ -16,5 +16,5 @@ export default function usePreferredEmojiSkinTone() {
         [preferredSkinTone],
     );
 
-    return [preferredSkinTone, updatePreferredSkinTone] as const;
+    return [preferredSkinTone, updatePreferredSkinTone];
 }

@@ -1,25 +1,25 @@
-import debounce from 'lodash/debounce';
 import type {OnyxCollection} from 'react-native-onyx';
-import memoize from '@libs/memoize';
-import * as ReportConnection from '@libs/ReportConnection';
+import Onyx from 'react-native-onyx';
 import * as ReportUtils from '@libs/ReportUtils';
 import Navigation, {navigationRef} from '@navigation/Navigation';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report} from '@src/types/onyx';
 import updateUnread from './updateUnread';
 
-function getUnreadReportsForUnreadIndicator(reports: OnyxCollection<Report>, currentReportID: string) {
-    return Object.values(reports ?? {}).filter((report) => {
-        const notificationPreference = ReportUtils.getReportNotificationPreference(report);
-        return (
+let allReports: OnyxCollection<Report> = {};
+
+export default function getUnreadReportsForUnreadIndicator(reports: OnyxCollection<Report>, currentReportID: string) {
+    return Object.values(reports ?? {}).filter(
+        (report) =>
             ReportUtils.isUnread(report) &&
             ReportUtils.shouldReportBeInOptionList({
                 report,
-                currentReportId: currentReportID ?? '-1',
+                currentReportId: currentReportID ?? '',
                 betas: [],
                 policies: {},
                 doesReportHaveViolations: false,
-                isInFocusMode: false,
+                isInGSDMode: false,
                 excludeEmptyChats: false,
             }) &&
             /**
@@ -30,25 +30,28 @@ function getUnreadReportsForUnreadIndicator(reports: OnyxCollection<Report>, cur
              * Furthermore, muted reports may or may not appear in the LHN depending on priority mode,
              * but they should not be considered in the unread indicator count.
              */
-            notificationPreference !== CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN &&
-            notificationPreference !== CONST.REPORT.NOTIFICATION_PREFERENCE.MUTE
-        );
-    });
+            report?.notificationPreference !== CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN &&
+            report?.notificationPreference !== CONST.REPORT.NOTIFICATION_PREFERENCE.MUTE,
+    );
 }
 
-const memoizedGetUnreadReportsForUnreadIndicator = memoize(getUnreadReportsForUnreadIndicator, {maxArgs: 1});
-
-const triggerUnreadUpdate = debounce(() => {
-    const currentReportID = navigationRef?.isReady?.() ? Navigation.getTopmostReportId() ?? '-1' : '-1';
+const triggerUnreadUpdate = () => {
+    const currentReportID = navigationRef.isReady() ? Navigation.getTopmostReportId() ?? '' : '';
 
     // We want to keep notification count consistent with what can be accessed from the LHN list
-    const unreadReports = memoizedGetUnreadReportsForUnreadIndicator(ReportConnection.getAllReports(), currentReportID);
-
+    const unreadReports = getUnreadReportsForUnreadIndicator(allReports, currentReportID);
     updateUnread(unreadReports.length);
-}, CONST.TIMING.UNREAD_UPDATE_DEBOUNCE_TIME);
+};
 
-navigationRef?.addListener?.('state', () => {
-    triggerUnreadUpdate();
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.REPORT,
+    waitForCollectionCallback: true,
+    callback: (reportsFromOnyx) => {
+        allReports = reportsFromOnyx;
+        triggerUnreadUpdate();
+    },
 });
 
-export {triggerUnreadUpdate, getUnreadReportsForUnreadIndicator};
+navigationRef.addListener('state', () => {
+    triggerUnreadUpdate();
+});

@@ -1,12 +1,12 @@
 import render from 'dom-serializer';
 import type {Node} from 'domhandler';
 import {DataNode, Element} from 'domhandler';
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import {parseDocument} from 'htmlparser2';
 import CONST from '@src/CONST';
 import type GetCurrentSelection from './types';
 
-const markdownElements = ['h1', 'strong', 'em', 'del', 'blockquote', 'q', 'code', 'pre', 'a', 'br', 'li', 'ul', 'ol', 'b', 'i', 's', 'mention-user'];
+const markdownElements = ['h1', 'strong', 'em', 'del', 'blockquote', 'q', 'code', 'pre', 'a', 'br', 'li', 'ul', 'ol', 'b', 'i', 's'];
 const tagAttribute = 'data-testid';
 
 /**

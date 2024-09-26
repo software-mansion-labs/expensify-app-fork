@@ -1,27 +1,19 @@
 import fontFamily from './fontFamily';
 import multiFontFamily from './fontFamily/multiFontFamily';
 import singleFontFamily from './fontFamily/singleFontFamily';
-import fontWeight from './fontWeight';
+import fontWeightBold from './fontWeight/bold';
 
 const FontUtils = {
     fontFamily: {
-        /**
-         * Set of font families that can either have fallback fonts (if web / desktop) or not (if native).
-         */
         platform: fontFamily,
-
-        /**
-         * Set of font families that don't include any fallback fonts, normally used on native platforms.
-         */
         single: singleFontFamily,
-
-        /**
-         * Set of font families that include fallback fonts, normally used on web / desktop platforms.
-         */
         multi: multiFontFamily,
     },
-    fontWeight,
-} as const;
+    fontWeight: {
+        bold: fontWeightBold,
+        normal: '400',
+    },
+};
 
 type FontUtilsType = typeof FontUtils;
 

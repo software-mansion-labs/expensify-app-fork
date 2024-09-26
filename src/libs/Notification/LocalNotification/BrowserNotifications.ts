@@ -1,10 +1,9 @@
 // Web and desktop implementation only. Do not import for direct use. Use LocalNotification.
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import type {ImageSourcePropType} from 'react-native';
 import EXPENSIFY_ICON_URL from '@assets/images/expensify-logo-round-clearspace.png';
 import * as AppUpdate from '@libs/actions/AppUpdate';
 import ModifiedExpenseMessage from '@libs/ModifiedExpenseMessage';
-import {getTextFromHtml} from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import type {Report, ReportAction} from '@src/types/onyx';
 import focusApp from './focusApp';
@@ -19,16 +18,14 @@ function canUseBrowserNotifications(): Promise<boolean> {
     return new Promise((resolve) => {
         // They have no browser notifications so we can't use this feature
         if (!window.Notification) {
-            resolve(false);
-            return;
+            return resolve(false);
         }
 
         // Check if they previously granted or denied us access to send a notification
         const permissionGranted = Notification.permission === 'granted';
 
         if (permissionGranted || Notification.permission === 'denied') {
-            resolve(permissionGranted);
-            return;
+            return resolve(permissionGranted);
         }
 
         // Check their global preferences for browser notifications and ask permission if they have none
@@ -45,15 +42,7 @@ function canUseBrowserNotifications(): Promise<boolean> {
  * @param icon Path to icon
  * @param data extra data to attach to the notification
  */
-function push(
-    title: string,
-    body = '',
-    icon: string | ImageSourcePropType = '',
-    data: LocalNotificationData = {},
-    onClick: LocalNotificationClickHandler = () => {},
-    silent = false,
-    tag = '',
-) {
+function push(title: string, body = '', icon: string | ImageSourcePropType = '', data: LocalNotificationData = {}, onClick: LocalNotificationClickHandler = () => {}, silent = false) {
     canUseBrowserNotifications().then((canUseNotifications) => {
         if (!canUseNotifications) {
             return;
@@ -66,7 +55,6 @@ function push(
             icon: String(icon),
             data,
             silent,
-            tag,
         });
         notificationCache[notificationID].onclick = () => {
             onClick();
@@ -102,12 +90,7 @@ export default {
         const plainTextPerson = person?.map((f) => f.text).join() ?? '';
 
         // Specifically target the comment part of the message
-        let plainTextMessage = '';
-        if (Array.isArray(message)) {
-            plainTextMessage = getTextFromHtml(message?.find((f) => f?.type === 'COMMENT')?.html);
-        } else {
-            plainTextMessage = message?.type === 'COMMENT' ? getTextFromHtml(message?.html) : '';
-        }
+        const plainTextMessage = message?.find((f) => f.type === 'COMMENT')?.text ?? '';
 
         if (isChatRoom) {
             const roomName = ReportUtils.getReportName(report);
@@ -139,17 +122,9 @@ export default {
      * Create a notification to indicate that an update is available.
      */
     pushUpdateAvailableNotification() {
-        push(
-            'Update available',
-            'A new version of this app is available!',
-            '',
-            {},
-            () => {
-                AppUpdate.triggerUpdateAvailable();
-            },
-            false,
-            'UpdateAvailable',
-        );
+        push('Update available', 'A new version of this app is available!', '', {}, () => {
+            AppUpdate.triggerUpdateAvailable();
+        });
     },
 
     /**
@@ -159,7 +134,7 @@ export default {
      */
     clearNotifications(shouldClearNotification: (notificationData: LocalNotificationData) => boolean) {
         Object.values(notificationCache)
-            .filter((notification) => shouldClearNotification(notification.data as LocalNotificationData))
+            .filter((notification) => shouldClearNotification(notification.data))
             .forEach((notification) => notification.close());
     },
 };

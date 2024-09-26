@@ -1,11 +1,11 @@
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import React from 'react';
 import {View} from 'react-native';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 
-type ReportActionItemBasicMessageProps = Partial<ChildrenProps> & {
+type ReportActionItemBasicMessageProps = ChildrenProps & {
     message: string;
 };
 

@@ -49,13 +49,12 @@ function WriteCapabilityPage({report, policy}: WriteCapabilityPageProps) {
                 <HeaderWithBackButton
                     title={translate('writeCapabilityPage.label')}
                     shouldShowBackButton
-                    onBackButtonPress={() => Navigation.goBack(ROUTES.REPORT_SETTINGS.getRoute(report?.reportID ?? '-1'))}
+                    onBackButtonPress={() => Navigation.goBack(ROUTES.REPORT_SETTINGS.getRoute(report?.reportID ?? ''))}
                 />
                 <SelectionList
                     sections={[{data: writeCapabilityOptions}]}
                     ListItem={RadioListItem}
                     onSelectRow={(option) => report && ReportActions.updateWriteCapabilityAndNavigate(report, option.value)}
-                    shouldSingleExecuteRowSelect
                     initiallyFocusedOptionKey={writeCapabilityOptions.find((locale) => locale.isSelected)?.keyForList}
                 />
             </FullPageNotFoundView>

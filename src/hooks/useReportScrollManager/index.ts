@@ -7,17 +7,15 @@ function useReportScrollManager(): ReportScrollManagerData {
 
     /**
      * Scroll to the provided index. On non-native implementations we do not want to scroll when we are scrolling because
+     * we are editing a comment.
      */
-    const scrollToIndex = useCallback(
-        (index: number, isEditing?: boolean) => {
-            if (!flatListRef?.current || isEditing) {
-                return;
-            }
+    const scrollToIndex = (index: number, isEditing?: boolean) => {
+        if (!flatListRef?.current || isEditing) {
+            return;
+        }
 
-            flatListRef.current.scrollToIndex({index, animated: true});
-        },
-        [flatListRef],
-    );
+        flatListRef.current.scrollToIndex({index, animated: true});
+    };
 
     /**
      * Scroll to the bottom of the flatlist.

@@ -1,15 +1,16 @@
-import lodashIsEqual from 'lodash/isEqual';
 import React, {memo} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
-import {useOnyx, withOnyx} from 'react-native-onyx';
+import {withOnyx} from 'react-native-onyx';
 import MultipleAvatars from '@components/MultipleAvatars';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import ReportWelcomeText from '@components/ReportWelcomeText';
 import useLocalize from '@hooks/useLocalize';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
+import reportWithoutHasDraftSelector from '@libs/OnyxSelectors/reportWithoutHasDraftSelector';
 import * as ReportUtils from '@libs/ReportUtils';
 import {navigateToConciergeChatAndDeleteReport} from '@userActions/Report';
 import CONST from '@src/CONST';
@@ -34,60 +35,55 @@ type ReportActionItemCreatedProps = ReportActionItemCreatedOnyxProps & {
 
     /** The id of the policy */
     // eslint-disable-next-line react/no-unused-prop-types
-    policyID: string | undefined;
+    policyID: string;
 };
-function ReportActionItemCreated({report, personalDetails, policy, reportID}: ReportActionItemCreatedProps) {
+function ReportActionItemCreated(props: ReportActionItemCreatedProps) {
     const styles = useThemeStyles();
+    const StyleUtils = useStyleUtils();
 
     const {translate} = useLocalize();
-    const {shouldUseNarrowLayout, isLargeScreenWidth} = useResponsiveLayout();
-    const [invoiceReceiverPolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${report?.invoiceReceiver && 'policyID' in report.invoiceReceiver ? report.invoiceReceiver.policyID : -1}`);
+    const {isSmallScreenWidth, isLargeScreenWidth} = useWindowDimensions();
 
-    if (!ReportUtils.isChatReport(report)) {
+    if (!ReportUtils.isChatReport(props.report)) {
         return null;
     }
 
-    let icons = ReportUtils.getIcons(report, personalDetails, null, '', -1, undefined, invoiceReceiverPolicy);
-    const shouldDisableDetailPage = ReportUtils.shouldDisableDetailPage(report);
-
-    if (ReportUtils.isInvoiceRoom(report) && ReportUtils.isCurrentUserInvoiceReceiver(report)) {
-        icons = [...icons].reverse();
-    }
+    const icons = ReportUtils.getIcons(props.report, props.personalDetails);
+    const shouldDisableDetailPage = ReportUtils.shouldDisableDetailPage(props.report);
 
     return (
         <OfflineWithFeedback
-            pendingAction={report?.pendingFields?.addWorkspaceRoom ?? report?.pendingFields?.createChat}
-            errors={report?.errorFields?.addWorkspaceRoom ?? report?.errorFields?.createChat}
+            pendingAction={props.report?.pendingFields?.addWorkspaceRoom ?? props.report?.pendingFields?.createChat}
+            errors={props.report?.errorFields?.addWorkspaceRoom ?? props.report?.errorFields?.createChat}
             errorRowStyles={[styles.ml10, styles.mr2]}
-            onClose={() => navigateToConciergeChatAndDeleteReport(report?.reportID ?? reportID, undefined, true)}
+            onClose={() => navigateToConciergeChatAndDeleteReport(props.report?.reportID ?? props.reportID)}
+            needsOffscreenAlphaCompositing
         >
-            <View style={[styles.pRelative]}>
+            <View style={StyleUtils.getReportWelcomeContainerStyle(isSmallScreenWidth)}>
                 <AnimatedEmptyStateBackground />
                 <View
                     accessibilityLabel={translate('accessibilityHints.chatWelcomeMessage')}
-                    style={[styles.p5]}
+                    style={[styles.p5, StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth)]}
                 >
-                    <OfflineWithFeedback pendingAction={report?.pendingFields?.avatar}>
-                        <PressableWithoutFeedback
-                            onPress={() => ReportUtils.navigateToDetailsPage(report)}
-                            style={[styles.mh5, styles.mb3, styles.alignSelfStart, shouldDisableDetailPage && styles.cursorDefault]}
-                            accessibilityLabel={translate('common.details')}
-                            role={CONST.ROLE.BUTTON}
-                            disabled={shouldDisableDetailPage}
-                        >
-                            <MultipleAvatars
-                                icons={icons}
-                                size={isLargeScreenWidth || (icons && icons.length < 3) ? CONST.AVATAR_SIZE.LARGE : CONST.AVATAR_SIZE.MEDIUM}
-                                shouldStackHorizontally
-                                shouldDisplayAvatarsInRows={shouldUseNarrowLayout}
-                                maxAvatarsInRow={shouldUseNarrowLayout ? CONST.AVATAR_ROW_SIZE.DEFAULT : CONST.AVATAR_ROW_SIZE.LARGE_SCREEN}
-                            />
-                        </PressableWithoutFeedback>
-                    </OfflineWithFeedback>
+                    <PressableWithoutFeedback
+                        onPress={() => ReportUtils.navigateToDetailsPage(props.report)}
+                        style={[styles.mh5, styles.mb3, styles.alignSelfStart]}
+                        accessibilityLabel={translate('common.details')}
+                        role={CONST.ROLE.BUTTON}
+                        disabled={shouldDisableDetailPage}
+                    >
+                        <MultipleAvatars
+                            icons={icons}
+                            size={isLargeScreenWidth || (icons && icons.length < 3) ? CONST.AVATAR_SIZE.LARGE : CONST.AVATAR_SIZE.MEDIUM}
+                            shouldStackHorizontally
+                            shouldDisplayAvatarsInRows={isSmallScreenWidth}
+                            maxAvatarsInRow={isSmallScreenWidth ? CONST.AVATAR_ROW_SIZE.DEFAULT : CONST.AVATAR_ROW_SIZE.LARGE_SCREEN}
+                        />
+                    </PressableWithoutFeedback>
                     <View style={[styles.ph5]}>
                         <ReportWelcomeText
-                            report={report}
-                            policy={policy}
+                            report={props.report}
+                            policy={props.policy}
                         />
                     </View>
                 </View>
@@ -101,6 +97,7 @@ ReportActionItemCreated.displayName = 'ReportActionItemCreated';
 export default withOnyx<ReportActionItemCreatedProps, ReportActionItemCreatedOnyxProps>({
     report: {
         key: ({reportID}) => `${ONYXKEYS.COLLECTION.REPORT}${reportID}`,
+        selector: reportWithoutHasDraftSelector,
     },
 
     policy: {
@@ -115,16 +112,13 @@ export default withOnyx<ReportActionItemCreatedProps, ReportActionItemCreatedOny
         ReportActionItemCreated,
         (prevProps, nextProps) =>
             prevProps.policy?.name === nextProps.policy?.name &&
-            prevProps.policy?.avatarURL === nextProps.policy?.avatarURL &&
+            prevProps.policy?.avatar === nextProps.policy?.avatar &&
             prevProps.report?.stateNum === nextProps.report?.stateNum &&
             prevProps.report?.statusNum === nextProps.report?.statusNum &&
             prevProps.report?.lastReadTime === nextProps.report?.lastReadTime &&
             prevProps.report?.description === nextProps.report?.description &&
             prevProps.personalDetails === nextProps.personalDetails &&
             prevProps.policy?.description === nextProps.policy?.description &&
-            prevProps.report?.reportName === nextProps.report?.reportName &&
-            prevProps.report?.avatarUrl === nextProps.report?.avatarUrl &&
-            lodashIsEqual(prevProps.report?.invoiceReceiver, nextProps.report?.invoiceReceiver) &&
-            prevProps.report?.errorFields === nextProps.report?.errorFields,
+            prevProps.report?.reportName === nextProps.report?.reportName,
     ),
 );

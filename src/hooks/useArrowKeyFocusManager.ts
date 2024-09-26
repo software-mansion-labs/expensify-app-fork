@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import CONST from '@src/CONST';
 import useKeyboardShortcut from './useKeyboardShortcut';
-import usePrevious from './usePrevious';
 
 type Config = {
     maxIndex: number;
@@ -12,9 +11,7 @@ type Config = {
     isActive?: boolean;
     itemsPerRow?: number;
     disableCyclicTraversal?: boolean;
-    allowHorizontalArrowKeys?: boolean;
-    allowNegativeIndexes?: boolean;
-    isFocused?: boolean;
+    disableHorizontalKeys?: boolean;
 };
 
 type UseArrowKeyFocusManager = [number, (index: number) => void];
@@ -32,8 +29,7 @@ type UseArrowKeyFocusManager = [number, (index: number) => void];
  * @param [config.isActive] – Whether the component is ready and should subscribe to KeyboardShortcut
  * @param [config.itemsPerRow] – The number of items per row. If provided, the arrow keys will move focus horizontally as well as vertically
  * @param [config.disableCyclicTraversal] – Whether to disable cyclic traversal of the list. If true, the arrow keys will have no effect when the first or last item is focused
- * @param [config.allowHorizontalArrowKeys] – Whether to enable the right/left keys
- * @param [config.isFocused] Whether navigation is focused
+ * @param [config.disableHorizontalKeys] – Whether to disable the right/left keys
  */
 export default function useArrowKeyFocusManager({
     maxIndex,
@@ -47,12 +43,10 @@ export default function useArrowKeyFocusManager({
     isActive,
     itemsPerRow,
     disableCyclicTraversal = false,
-    allowHorizontalArrowKeys = false,
-    allowNegativeIndexes = false,
-    isFocused = true,
+    disableHorizontalKeys = false,
 }: Config): UseArrowKeyFocusManager {
+    const allowHorizontalArrowKeys = !!itemsPerRow;
     const [focusedIndex, setFocusedIndex] = useState(initialFocusedIndex);
-    const prevIsFocusedIndex = usePrevious(focusedIndex);
     const arrowConfig = useMemo(
         () => ({
             excludedNodes: shouldExcludeTextAreaNodes ? ['TEXTAREA'] : [],
@@ -64,39 +58,33 @@ export default function useArrowKeyFocusManager({
     const horizontalArrowConfig = useMemo(
         () => ({
             excludedNodes: shouldExcludeTextAreaNodes ? ['TEXTAREA'] : [],
-            isActive: isActive && allowHorizontalArrowKeys,
+            isActive: isActive && !disableHorizontalKeys,
         }),
-        [isActive, shouldExcludeTextAreaNodes, allowHorizontalArrowKeys],
+        [isActive, shouldExcludeTextAreaNodes, disableHorizontalKeys],
     );
 
-    useEffect(() => {
-        if (prevIsFocusedIndex === focusedIndex) {
-            return;
-        }
-        onFocusedIndexChange(focusedIndex);
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-    }, [focusedIndex, prevIsFocusedIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => onFocusedIndexChange(focusedIndex), [focusedIndex]);
 
     const arrowUpCallback = useCallback(() => {
-        if (maxIndex < 0 || !isFocused) {
+        if (maxIndex < 0) {
             return;
         }
         const nextIndex = disableCyclicTraversal ? -1 : maxIndex;
 
         setFocusedIndex((actualIndex) => {
-            const currentFocusedIndex = actualIndex > 0 ? actualIndex - (itemsPerRow ?? 1) : nextIndex;
+            let currentFocusedIndex = -1;
+            if (allowHorizontalArrowKeys) {
+                currentFocusedIndex = actualIndex > 0 ? actualIndex - itemsPerRow : nextIndex;
+            } else {
+                currentFocusedIndex = actualIndex > 0 ? actualIndex - 1 : nextIndex;
+            }
             let newFocusedIndex = currentFocusedIndex;
 
             while (disabledIndexes.includes(newFocusedIndex)) {
-                newFocusedIndex -= itemsPerRow ?? 1;
+                newFocusedIndex -= allowHorizontalArrowKeys ? itemsPerRow : 1;
                 if (newFocusedIndex < 0) {
-                    if (disableCyclicTraversal) {
-                        if (!allowNegativeIndexes) {
-                            return actualIndex;
-                        }
-                        break;
-                    }
-                    newFocusedIndex = maxIndex;
+                    break;
                 }
                 if (newFocusedIndex === currentFocusedIndex) {
                     // all indexes are disabled
@@ -105,12 +93,12 @@ export default function useArrowKeyFocusManager({
             }
             return newFocusedIndex;
         });
-    }, [maxIndex, isFocused, disableCyclicTraversal, itemsPerRow, disabledIndexes, allowNegativeIndexes]);
+    }, [allowHorizontalArrowKeys, disableCyclicTraversal, disabledIndexes, itemsPerRow, maxIndex]);
 
     useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ARROW_UP, arrowUpCallback, arrowConfig);
 
     const arrowDownCallback = useCallback(() => {
-        if (maxIndex < 0 || !isFocused) {
+        if (maxIndex < 0) {
             return;
         }
 
@@ -121,8 +109,10 @@ export default function useArrowKeyFocusManager({
 
             if (actualIndex === -1) {
                 currentFocusedIndex = 0;
+            } else if (allowHorizontalArrowKeys) {
+                currentFocusedIndex = actualIndex < maxIndex ? actualIndex + itemsPerRow : nextIndex;
             } else {
-                currentFocusedIndex = actualIndex < maxIndex ? actualIndex + (itemsPerRow ?? 1) : nextIndex;
+                currentFocusedIndex = actualIndex < maxIndex ? actualIndex + 1 : nextIndex;
             }
 
             if (disableCyclicTraversal && currentFocusedIndex > maxIndex) {
@@ -134,14 +124,11 @@ export default function useArrowKeyFocusManager({
                 if (actualIndex < 0) {
                     newFocusedIndex += 1;
                 } else {
-                    newFocusedIndex += itemsPerRow ?? 1;
+                    newFocusedIndex += allowHorizontalArrowKeys ? itemsPerRow : 1;
                 }
 
-                if (newFocusedIndex > maxIndex) {
-                    if (disableCyclicTraversal) {
-                        return actualIndex;
-                    }
-                    newFocusedIndex = 0;
+                if (newFocusedIndex < 0) {
+                    break;
                 }
                 if (newFocusedIndex === currentFocusedIndex) {
                     // all indexes are disabled
@@ -150,7 +137,7 @@ export default function useArrowKeyFocusManager({
             }
             return newFocusedIndex;
         });
-    }, [disableCyclicTraversal, disabledIndexes, isFocused, itemsPerRow, maxIndex]);
+    }, [allowHorizontalArrowKeys, disableCyclicTraversal, disabledIndexes, itemsPerRow, maxIndex]);
 
     useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ARROW_DOWN, arrowDownCallback, arrowConfig);
 
@@ -162,7 +149,8 @@ export default function useArrowKeyFocusManager({
         const nextIndex = disableCyclicTraversal ? -1 : maxIndex;
 
         setFocusedIndex((actualIndex) => {
-            const currentFocusedIndex = actualIndex > 0 ? actualIndex - 1 : nextIndex;
+            let currentFocusedIndex = -1;
+            currentFocusedIndex = actualIndex > 0 ? actualIndex - 1 : nextIndex;
 
             let newFocusedIndex = currentFocusedIndex;
 
@@ -188,7 +176,8 @@ export default function useArrowKeyFocusManager({
         const nextIndex = disableCyclicTraversal ? maxIndex : 0;
 
         setFocusedIndex((actualIndex) => {
-            const currentFocusedIndex = actualIndex < maxIndex ? actualIndex + 1 : nextIndex;
+            let currentFocusedIndex = -1;
+            currentFocusedIndex = actualIndex < maxIndex ? actualIndex + 1 : nextIndex;
 
             let newFocusedIndex = currentFocusedIndex;
 

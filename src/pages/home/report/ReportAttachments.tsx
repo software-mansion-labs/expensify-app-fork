@@ -1,63 +1,44 @@
 import type {StackScreenProps} from '@react-navigation/stack';
-import React, {useCallback, useEffect, useRef} from 'react';
-import {useOnyx} from 'react-native-onyx';
+import React, {useCallback} from 'react';
+import type {Attachment} from '@components/AttachmentModal';
 import AttachmentModal from '@components/AttachmentModal';
-import type {Attachment} from '@components/Attachments/types';
 import ComposerFocusManager from '@libs/ComposerFocusManager';
 import Navigation from '@libs/Navigation/Navigation';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
-import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
+import * as ReportUtils from '@libs/ReportUtils';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
-type ReportAttachmentsProps = StackScreenProps<AuthScreensParamList, typeof SCREENS.ATTACHMENTS>;
+type ReportAttachmentsProps = StackScreenProps<AuthScreensParamList, typeof SCREENS.REPORT_ATTACHMENTS>;
 
 function ReportAttachments({route}: ReportAttachmentsProps) {
     const reportID = route.params.reportID;
-    const type = route.params.type;
-    const accountID = route.params.accountID;
-    const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID || -1}`);
-    const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
-    const hasDismissedModalRef = useRef(false);
-
-    useEffect(
-        () => () => {
-            hasDismissedModalRef.current = false;
-        },
-        [],
-    );
+    const report = ReportUtils.getReport(reportID);
 
     // In native the imported images sources are of type number. Ref: https://reactnative.dev/docs/image#imagesource
-    const source = Number(route.params.source) || route.params.source;
+    const decodedSource = decodeURI(route.params.source);
+    const source = Number(decodedSource) || decodedSource;
 
     const onCarouselAttachmentChange = useCallback(
         (attachment: Attachment) => {
-            const routeToNavigate = ROUTES.ATTACHMENTS.getRoute(reportID, type, String(attachment.source), Number(accountID));
+            const routeToNavigate = ROUTES.REPORT_ATTACHMENTS.getRoute(reportID, String(attachment.source));
             Navigation.navigate(routeToNavigate);
         },
-        [reportID, accountID, type],
+        [reportID],
     );
 
     return (
         <AttachmentModal
-            accountID={Number(accountID)}
-            type={type}
             allowDownload
             defaultOpen
             report={report}
             source={source}
-            onModalClose={() => {
-                if (!hasDismissedModalRef.current) {
-                    Navigation.dismissModal();
-                    hasDismissedModalRef.current = true;
-                }
+            onModalHide={() => {
+                Navigation.dismissModal();
                 // This enables Composer refocus when the attachments modal is closed by the browser navigation
                 ComposerFocusManager.setReadyToFocus();
             }}
             onCarouselAttachmentChange={onCarouselAttachmentChange}
-            shouldShowNotFoundPage={!isLoadingApp && type !== CONST.ATTACHMENT_TYPE.SEARCH && !report?.reportID}
-            isAuthTokenRequired={type === CONST.ATTACHMENT_TYPE.SEARCH}
         />
     );
 }

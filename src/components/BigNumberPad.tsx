@@ -1,8 +1,8 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import ControlSelection from '@libs/ControlSelection';
 import Button from './Button';
 
@@ -32,12 +32,7 @@ function BigNumberPad({numberPressed, longPressHandlerStateChanged = () => {}, i
 
     const styles = useThemeStyles();
     const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-    const {isExtraSmallScreenHeight} = useResponsiveLayout();
-    const numberPressedRef = useRef(numberPressed);
-
-    useEffect(() => {
-        numberPressedRef.current = numberPressed;
-    }, [numberPressed]);
+    const {isExtraSmallScreenHeight} = useWindowDimensions();
 
     /**
      * Handle long press key on number pad.
@@ -51,7 +46,7 @@ function BigNumberPad({numberPressed, longPressHandlerStateChanged = () => {}, i
         longPressHandlerStateChanged(true);
 
         const newTimer = setInterval(() => {
-            numberPressedRef.current?.(key);
+            numberPressed(key);
         }, 100);
 
         setTimer(newTimer);
@@ -76,7 +71,6 @@ function BigNumberPad({numberPressed, longPressHandlerStateChanged = () => {}, i
                             <Button
                                 key={column}
                                 medium={isExtraSmallScreenHeight}
-                                large={!isExtraSmallScreenHeight}
                                 shouldEnableHapticFeedback
                                 style={[styles.flex1, marginLeft]}
                                 text={column === '<' ? column : toLocaleDigit(column)}

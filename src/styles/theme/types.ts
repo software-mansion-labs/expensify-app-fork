@@ -1,10 +1,9 @@
-import type {ValueOf} from 'type-fest';
 import type CONST from '@src/CONST';
 import type {ColorScheme, StatusBarStyle} from '..';
 
 type Color = string;
 
-type ThemePreference = ValueOf<typeof CONST.THEME>;
+type ThemePreference = (typeof CONST.THEME)[keyof typeof CONST.THEME];
 type ThemePreferenceWithoutSystem = Exclude<ThemePreference, typeof CONST.THEME.SYSTEM>;
 
 type ThemeColors = {
@@ -12,7 +11,6 @@ type ThemeColors = {
     appBG: Color;
     splashBG: Color;
     highlightBG: Color;
-    messageHighlightBG: Color;
     border: Color;
     borderLighter: Color;
     borderFocus: Color;
@@ -21,7 +19,6 @@ type ThemeColors = {
     iconHovered: Color;
     iconMenuHovered: Color;
     iconSuccessFill: Color;
-    iconDangerFill: Color;
     iconReversed: Color;
     iconColorfulBackground: Color;
     textSupporting: Color;
@@ -33,7 +30,6 @@ type ThemeColors = {
     buttonDefaultBG: Color;
     buttonHoveredBG: Color;
     buttonPressedBG: Color;
-    buttonSuccessText: Color;
     danger: Color;
     dangerHover: Color;
     dangerPressed: Color;
@@ -72,7 +68,7 @@ type ThemeColors = {
     heroCard: Color;
     uploadPreviewActivityIndicator: Color;
     dropUIBG: Color;
-    fileDropUIBG: Color;
+    receiptDropUIBG: Color;
     checkBox: Color;
     imageCropBackgroundColor: Color;
     fallbackIconColor: Color;
@@ -84,11 +80,8 @@ type ThemeColors = {
     mentionBG: Color;
     ourMentionText: Color;
     ourMentionBG: Color;
-    tooltipHighlightBG: Color;
-    tooltipHighlightText: Color;
     tooltipSupportingText: Color;
     tooltipPrimaryText: Color;
-    trialBannerBackgroundColor: Color;
     skeletonLHNIn: Color;
     skeletonLHNOut: Color;
     QRLogo: Color;
@@ -97,8 +90,6 @@ type ThemeColors = {
     white: Color;
     videoPlayerBG: Color;
     transparentWhite: Color;
-    emptyFolderBG: Color;
-    travelBG: Color;
 
     PAGE_THEMES: Record<string, {backgroundColor: Color; statusBarStyle: StatusBarStyle}>;
 

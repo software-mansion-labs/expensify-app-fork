@@ -1,27 +1,26 @@
 import {useFocusEffect} from '@react-navigation/native';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import type {RefObject} from 'react';
+import {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import type {TextInput} from 'react-native';
 import {InteractionManager} from 'react-native';
 import CONST from '@src/CONST';
-import {useSplashScreenStateContext} from '@src/SplashScreenStateContext';
+import * as Expensify from '@src/Expensify';
 
 type UseAutoFocusInput = {
     inputCallbackRef: (ref: TextInput | null) => void;
-    inputRef: RefObject<TextInput | null>;
 };
 
 export default function useAutoFocusInput(): UseAutoFocusInput {
     const [isInputInitialized, setIsInputInitialized] = useState(false);
     const [isScreenTransitionEnded, setIsScreenTransitionEnded] = useState(false);
 
-    const {splashScreenState} = useSplashScreenStateContext();
+    // @ts-expect-error TODO: Remove this when Expensify.js is migrated.
+    const {isSplashHidden} = useContext(Expensify.SplashScreenHiddenContext);
 
     const inputRef = useRef<TextInput | null>(null);
     const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        if (!isScreenTransitionEnded || !isInputInitialized || !inputRef.current || splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN) {
+        if (!isScreenTransitionEnded || !isInputInitialized || !inputRef.current || !isSplashHidden) {
             return;
         }
         const focusTaskHandle = InteractionManager.runAfterInteractions(() => {
@@ -32,7 +31,7 @@ export default function useAutoFocusInput(): UseAutoFocusInput {
         return () => {
             focusTaskHandle.cancel();
         };
-    }, [isScreenTransitionEnded, isInputInitialized, splashScreenState]);
+    }, [isScreenTransitionEnded, isInputInitialized, isSplashHidden]);
 
     useFocusEffect(
         useCallback(() => {
@@ -51,11 +50,8 @@ export default function useAutoFocusInput(): UseAutoFocusInput {
 
     const inputCallbackRef = (ref: TextInput | null) => {
         inputRef.current = ref;
-        if (isInputInitialized) {
-            return;
-        }
         setIsInputInitialized(true);
     };
 
-    return {inputCallbackRef, inputRef};
+    return {inputCallbackRef};
 }

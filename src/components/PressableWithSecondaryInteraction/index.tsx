@@ -13,14 +13,12 @@ function PressableWithSecondaryInteraction(
         children,
         inline = false,
         style,
-        wrapperStyle,
         enableLongPressWithHover = false,
         withoutFocusOnSecondaryInteraction = false,
         needsOffscreenAlphaCompositing = false,
         preventDefaultContextMenu = true,
         onSecondaryInteraction,
         activeOpacity = 1,
-        opacityAnimationDuration,
         ...rest
     }: PressableWithSecondaryInteractionProps,
     ref: PressableRef,
@@ -98,10 +96,9 @@ function PressableWithSecondaryInteraction(
             // ESLint is disabled here to propagate all the props, enhancing PressableWithSecondaryInteraction's versatility across different use cases.
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...rest}
-            wrapperStyle={[StyleUtils.combineStyles(DeviceCapabilities.canUseTouchScreen() ? [styles.userSelectNone, styles.noSelect] : [], inlineStyle), wrapperStyle]}
+            wrapperStyle={StyleUtils.combineStyles(DeviceCapabilities.canUseTouchScreen() ? [styles.userSelectNone, styles.noSelect] : [], inlineStyle)}
             onLongPress={onSecondaryInteraction ? executeSecondaryInteraction : undefined}
             pressDimmingValue={activeOpacity}
-            dimAnimationDuration={opacityAnimationDuration}
             ref={pressableRef}
             style={(state) => [StyleUtils.parseStyleFromFunction(style, state), inlineStyle]}
             needsOffscreenAlphaCompositing={needsOffscreenAlphaCompositing}

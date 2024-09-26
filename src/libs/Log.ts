@@ -2,13 +2,13 @@
 // action would likely cause confusion about which one to use. But most other API methods should happen inside an action file.
 
 /* eslint-disable rulesdir/no-api-in-views */
-import {Logger} from 'expensify-common';
+import Logger from 'expensify-common/lib/Logger';
 import Onyx from 'react-native-onyx';
 import type {Merge} from 'type-fest';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import pkg from '../../package.json';
-import {addLog, flushAllLogsOnAppLaunch} from './actions/Console';
+import {addLog} from './actions/Console';
 import {shouldAttachLog} from './Console';
 import getPlatform from './getPlatform';
 import * as Network from './Network';
@@ -24,7 +24,7 @@ Onyx.connect({
             shouldCollectLogs = false;
         }
 
-        shouldCollectLogs = !!val;
+        shouldCollectLogs = Boolean(val);
     },
 });
 
@@ -66,17 +66,16 @@ function serverLoggingCallback(logger: Logger, params: ServerLoggingCallbackOpti
 // callback methods are passed in here so we can decouple the logging library from the logging methods.
 const Log = new Logger({
     serverLoggingCallback,
-    clientLoggingCallback: (message, extraData) => {
+    clientLoggingCallback: (message) => {
         if (!shouldAttachLog(message)) {
             return;
         }
 
-        flushAllLogsOnAppLaunch().then(() => {
-            console.debug(message, extraData);
-            if (shouldCollectLogs) {
-                addLog({time: new Date(), level: CONST.DEBUG_CONSOLE.LEVELS.DEBUG, message, extraData});
-            }
-        });
+        console.debug(message);
+
+        if (shouldCollectLogs) {
+            addLog({time: new Date(), level: CONST.DEBUG_CONSOLE.LEVELS.DEBUG, message});
+        }
     },
     isDebug: true,
 });

@@ -1,12 +1,13 @@
-import {Str} from 'expensify-common';
+/* eslint-disable rulesdir/onyx-props-must-have-default */
+import Str from 'expensify-common/lib/str';
 import React from 'react';
 import {FlatList} from 'react-native';
 import type {FlatListProps} from 'react-native';
-import {FallbackAvatar} from '@components/Icon/Expensicons';
 import OptionRow from '@components/OptionRow';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import Navigation from '@libs/Navigation/Navigation';
+import * as UserUtils from '@libs/UserUtils';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
@@ -40,7 +41,7 @@ const getItemLayout = (data: ArrayLike<PersonalDetails> | null | undefined, inde
 });
 
 function BaseReactionList({hasUserReacted = false, users, isVisible = false, emojiCodes, emojiCount, emojiName, onClose}: BaseReactionListProps) {
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const {isSmallScreenWidth} = useWindowDimensions();
     const {hoveredComponentBG, reactionListContainer, reactionListContainerFixedWidth, pv2} = useThemeStyles();
 
     if (!isVisible) {
@@ -71,7 +72,7 @@ function BaseReactionList({hasUserReacted = false, users, isVisible = false, emo
                 icons: [
                     {
                         id: item.accountID,
-                        source: item.avatar ?? FallbackAvatar,
+                        source: UserUtils.getAvatar(item.avatar, item.accountID),
                         name: item.login ?? '',
                         type: CONST.ICON_TYPE_AVATAR,
                     },
@@ -95,7 +96,7 @@ function BaseReactionList({hasUserReacted = false, users, isVisible = false, emo
                 keyExtractor={keyExtractor}
                 getItemLayout={getItemLayout}
                 contentContainerStyle={pv2}
-                style={[reactionListContainer, !shouldUseNarrowLayout && reactionListContainerFixedWidth]}
+                style={[reactionListContainer, !isSmallScreenWidth && reactionListContainerFixedWidth]}
             />
         </>
     );

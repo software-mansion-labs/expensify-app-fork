@@ -1,17 +1,14 @@
-import type {Ref} from 'react';
 import React from 'react';
 import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
-import useSafePaddingBottomStyle from '@hooks/useSafePaddingBottomStyle';
 import useThemeStyles from '@hooks/useThemeStyles';
-import getPlatform from '@libs/getPlatform';
-import CONST from '@src/CONST';
+import type {MaybePhraseKey} from '@libs/Localize';
 import Button from './Button';
 import FormAlertWrapper from './FormAlertWrapper';
 
 type FormAlertWithSubmitButtonProps = {
     /** Error message to display above button */
-    message?: string;
+    message?: MaybePhraseKey;
 
     /** Whether the button is disabled */
     isDisabled?: boolean;
@@ -47,10 +44,7 @@ type FormAlertWithSubmitButtonProps = {
     buttonStyles?: StyleProp<ViewStyle>;
 
     /** Whether to show the alert text */
-    isAlertVisible?: boolean;
-
-    /** React ref being forwarded to the submit button */
-    buttonRef?: Ref<View>;
+    isAlertVisible: boolean;
 
     /** Text for the button */
     buttonText: string;
@@ -60,9 +54,6 @@ type FormAlertWithSubmitButtonProps = {
 
     /** Style for the error message for submit button */
     errorMessageStyle?: StyleProp<ViewStyle>;
-
-    /** The priority to assign the enter key event listener to buttons. 0 is the highest priority. */
-    enterKeyEventListenerPriority?: number;
 };
 
 function FormAlertWithSubmitButton({
@@ -76,28 +67,19 @@ function FormAlertWithSubmitButton({
     disablePressOnEnter = false,
     isSubmitActionDangerous = false,
     footerContent,
-    buttonRef,
     buttonStyles,
     buttonText,
-    isAlertVisible = false,
+    isAlertVisible,
     onSubmit,
     useSmallerSubmitButtonSize = false,
     errorMessageStyle,
-    enterKeyEventListenerPriority = 0,
 }: FormAlertWithSubmitButtonProps) {
     const styles = useThemeStyles();
     const style = [!footerContent ? {} : styles.mb3, buttonStyles];
-    const safePaddingBottomStyle = useSafePaddingBottomStyle();
-
-    // Disable pressOnEnter for Android Native to avoid issues with the Samsung keyboard,
-    // where pressing Enter saves the form instead of adding a new line in multiline input.
-    // More details: https://github.com/Expensify/App/issues/46644
-    const isAndroidNative = getPlatform() === CONST.PLATFORM.ANDROID;
-    const pressOnEnter = isAndroidNative ? false : !disablePressOnEnter;
 
     return (
         <FormAlertWrapper
-            containerStyles={[styles.justifyContentEnd, safePaddingBottomStyle, containerStyles]}
+            containerStyles={[styles.mh5, styles.mb5, styles.justifyContentEnd, containerStyles]}
             isAlertVisible={isAlertVisible}
             isMessageHtml={isMessageHtml}
             message={message}
@@ -114,14 +96,11 @@ function FormAlertWithSubmitButton({
                             style={style}
                             danger={isSubmitActionDangerous}
                             medium={useSmallerSubmitButtonSize}
-                            large={!useSmallerSubmitButtonSize}
                         />
                     ) : (
                         <Button
-                            ref={buttonRef}
                             success
-                            pressOnEnter={pressOnEnter}
-                            enterKeyEventListenerPriority={enterKeyEventListenerPriority}
+                            pressOnEnter={!disablePressOnEnter}
                             text={buttonText}
                             style={style}
                             onPress={onSubmit}
@@ -129,7 +108,6 @@ function FormAlertWithSubmitButton({
                             isLoading={isLoading}
                             danger={isSubmitActionDangerous}
                             medium={useSmallerSubmitButtonSize}
-                            large={!useSmallerSubmitButtonSize}
                         />
                     )}
                     {footerContent}
@@ -142,5 +120,3 @@ function FormAlertWithSubmitButton({
 FormAlertWithSubmitButton.displayName = 'FormAlertWithSubmitButton';
 
 export default FormAlertWithSubmitButton;
-
-export type {FormAlertWithSubmitButtonProps};

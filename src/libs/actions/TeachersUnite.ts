@@ -4,8 +4,7 @@ import * as API from '@libs/API';
 import type {AddSchoolPrincipalParams, ReferTeachersUniteVolunteerParams} from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import Navigation from '@libs/Navigation/Navigation';
-import * as PhoneNumber from '@libs/PhoneNumber';
-import {getPolicy} from '@libs/PolicyUtils';
+import * as OptionsListUtils from '@libs/OptionsListUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import type {OptimisticCreatedReportAction} from '@libs/ReportUtils';
 import CONST from '@src/CONST';
@@ -27,7 +26,7 @@ Onyx.connect({
     key: ONYXKEYS.SESSION,
     callback: (value) => {
         sessionEmail = value?.email ?? '';
-        sessionAccountID = value?.accountID ?? -1;
+        sessionAccountID = value?.accountID ?? 0;
     },
 });
 
@@ -70,7 +69,7 @@ function referTeachersUniteVolunteer(partnerUserID: string, firstName: string, l
  */
 function addSchoolPrincipal(firstName: string, partnerUserID: string, lastName: string, policyID: string) {
     const policyName = CONST.TEACHERS_UNITE.POLICY_NAME;
-    const loggedInEmail = PhoneNumber.addSMSDomainIfPhoneNumber(sessionEmail);
+    const loggedInEmail = OptionsListUtils.addSMSDomainIfPhoneNumber(sessionEmail);
     const reportCreationData: ReportCreationData = {};
 
     const expenseChatData = ReportUtils.buildOptimisticChatReport([sessionAccountID], '', CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT, policyID, sessionAccountID, true, policyName);
@@ -96,14 +95,18 @@ function addSchoolPrincipal(firstName: string, partnerUserID: string, lastName: 
                 name: policyName,
                 role: CONST.POLICY.ROLE.USER,
                 owner: sessionEmail,
-                outputCurrency: getPolicy(policyID)?.outputCurrency ?? allPersonalDetails?.[sessionAccountID]?.localCurrencyCode ?? CONST.CURRENCY.USD,
-                employeeList: {
-                    [sessionEmail]: {
-                        role: CONST.POLICY.ROLE.USER,
-                        errors: {},
-                    },
-                },
+                outputCurrency: allPersonalDetails?.[sessionAccountID]?.localCurrencyCode ?? CONST.CURRENCY.USD,
                 pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.SET,
+            key: `${ONYXKEYS.COLLECTION.POLICY_MEMBERS}${policyID}`,
+            value: {
+                [sessionAccountID]: {
+                    role: CONST.POLICY.ROLE.USER,
+                    errors: {},
+                },
             },
         },
         {
@@ -152,11 +155,9 @@ function addSchoolPrincipal(firstName: string, partnerUserID: string, lastName: 
 
     const failureData: OnyxUpdate[] = [
         {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.POLICY}${policyID}`,
-            value: {
-                [sessionEmail]: null,
-            },
+            onyxMethod: Onyx.METHOD.SET,
+            key: `${ONYXKEYS.COLLECTION.POLICY_MEMBERS}${policyID}`,
+            value: null,
         },
         {
             onyxMethod: Onyx.METHOD.SET,

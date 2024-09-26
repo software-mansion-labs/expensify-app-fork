@@ -1,15 +1,9 @@
-import type {OnboardingInviteType, OnboardingPurposeType} from '@src/CONST';
+import type {ValueOf} from 'type-fest';
+import type CONST from '@src/CONST';
 
-/** Model of onboarding */
-type IntroSelected = Partial<{
+type IntroSelected = {
     /** The choice that the user selected in the engagement modal */
-    choice: OnboardingPurposeType;
-
-    /** The invite type */
-    inviteType: OnboardingInviteType;
-
-    /** Whether the onboarding is complete */
-    isInviteOnboardingComplete: boolean;
-}>;
+    choice: ValueOf<typeof CONST.INTRO_CHOICES>;
+};
 
 export default IntroSelected;

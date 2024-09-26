@@ -3,6 +3,7 @@ import type {ForwardedRef} from 'react';
 import {View} from 'react-native';
 import type {StyleProp, ViewStyle} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
+import type {MaybePhraseKey} from '@libs/Localize';
 import FormHelpMessage from './FormHelpMessage';
 import RadioButtonWithLabel from './RadioButtonWithLabel';
 
@@ -23,7 +24,7 @@ type RadioButtonsProps = {
     onPress: (value: string) => void;
 
     /** Potential error text provided by a form InputWrapper */
-    errorText?: string;
+    errorText?: MaybePhraseKey;
 
     /** Style for radio button */
     radioButtonStyle?: StyleProp<ViewStyle>;
@@ -38,9 +39,8 @@ type RadioButtonsProps = {
 function RadioButtons({items, onPress, defaultCheckedValue = '', radioButtonStyle, errorText, onInputChange = () => {}, value}: RadioButtonsProps, ref: ForwardedRef<View>) {
     const styles = useThemeStyles();
     const [checkedValue, setCheckedValue] = useState(defaultCheckedValue);
-
     useEffect(() => {
-        if (value === checkedValue || value === undefined) {
+        if (value === checkedValue) {
             return;
         }
         setCheckedValue(value ?? '');

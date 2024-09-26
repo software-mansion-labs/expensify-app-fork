@@ -8,10 +8,12 @@ import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as IOUUtils from '@libs/IOUUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
+import * as ReportUtils from '@libs/ReportUtils';
 import type {ContextMenuAnchor} from '@pages/home/report/ContextMenu/ReportActionContextMenu';
+import * as Report from '@userActions/Report';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
@@ -36,7 +38,7 @@ type MoneyRequestActionProps = MoneyRequestActionOnyxProps & {
     /** The ID of the associated chatReport */
     chatReportID: string;
 
-    /** The ID of the associated expense report */
+    /** The ID of the associated request report */
     requestReportID: string;
 
     /** The ID of the current report */
@@ -59,9 +61,6 @@ type MoneyRequestActionProps = MoneyRequestActionOnyxProps & {
 
     /** Styles to be assigned to Container */
     style?: StyleProp<ViewStyle>;
-
-    /** Whether  context menu should be shown on press */
-    shouldDisplayContextMenu?: boolean;
 };
 
 function MoneyRequestAction({
@@ -78,22 +77,30 @@ function MoneyRequestAction({
     isHovered = false,
     style,
     isWhisper = false,
-    shouldDisplayContextMenu = true,
 }: MoneyRequestActionProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
-    const isSplitBillAction = ReportActionsUtils.isSplitBillAction(action);
-    const isTrackExpenseAction = ReportActionsUtils.isTrackExpenseAction(action);
+
+    const isSplitBillAction = action.actionName === CONST.REPORT.ACTIONS.TYPE.IOU && action.originalMessage.type === CONST.IOU.REPORT_ACTION_TYPE.SPLIT;
 
     const onMoneyRequestPreviewPressed = () => {
         if (isSplitBillAction) {
-            const reportActionID = action.reportActionID ?? '-1';
+            const reportActionID = action.reportActionID ?? '0';
             Navigation.navigate(ROUTES.SPLIT_BILL_DETAILS.getRoute(chatReportID, reportActionID));
             return;
         }
 
-        const childReportID = action?.childReportID ?? '-1';
+        // If the childReportID is not present, we need to create a new thread
+        const childReportID = action?.childReportID;
+        if (!childReportID) {
+            const thread = ReportUtils.buildTransactionThread(action, requestReportID);
+            const userLogins = PersonalDetailsUtils.getLoginsByAccountIDs(thread.participantAccountIDs ?? []);
+            Report.openReport(thread.reportID, userLogins, thread, action.reportActionID);
+            Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(thread.reportID));
+            return;
+        }
+        Report.openReport(childReportID);
         Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(childReportID));
     };
 
@@ -111,22 +118,14 @@ function MoneyRequestAction({
         shouldShowPendingConversionMessage = IOUUtils.isIOUReportPendingCurrencyConversion(iouReport);
     }
 
-    if (isDeletedParentAction || isReversedTransaction) {
-        let message: TranslationPaths;
-        if (isReversedTransaction) {
-            message = 'parentReportAction.reversedTransaction';
-        } else {
-            message = 'parentReportAction.deletedExpense';
-        }
-        return <RenderHTML html={`<comment>${translate(message)}</comment>`} />;
-    }
-    return (
+    return isDeletedParentAction || isReversedTransaction ? (
+        <RenderHTML html={`<comment>${translate(isReversedTransaction ? 'parentReportAction.reversedTransaction' : 'parentReportAction.deletedRequest')}</comment>`} />
+    ) : (
         <MoneyRequestPreview
             iouReportID={requestReportID}
             chatReportID={chatReportID}
             reportID={reportID}
             isBillSplit={isSplitBillAction}
-            isTrackExpense={isTrackExpenseAction}
             action={action}
             contextMenuAnchor={contextMenuAnchor}
             checkIfContextMenuActive={checkIfContextMenuActive}
@@ -135,7 +134,6 @@ function MoneyRequestAction({
             containerStyles={[styles.cursorPointer, isHovered ? styles.reportPreviewBoxHoverBorder : undefined, style]}
             isHovered={isHovered}
             isWhisper={isWhisper}
-            shouldDisplayContextMenu={shouldDisplayContextMenu}
         />
     );
 }

@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react';
+import React from 'react';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
@@ -11,7 +11,6 @@ import useLocalize from '@hooks/useLocalize';
 import type {SubStepProps} from '@hooks/useSubStep/types';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ValidationUtils from '@libs/ValidationUtils';
-import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
 import type {ReimbursementAccount} from '@src/types/onyx';
@@ -30,26 +29,23 @@ const STEP_FIELDS = [
     INPUT_IDS.COMPLETE_VERIFICATION.CERTIFY_TRUE_INFORMATION,
 ];
 
-function IsAuthorizedToUseBankAccountLabel() {
-    const {translate} = useLocalize();
-    return <Text>{translate('completeVerificationStep.isAuthorizedToUseBankAccount')}</Text>;
-}
+const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM> => {
+    const errors = ValidationUtils.getFieldRequiredErrors(values, STEP_FIELDS);
 
-function CertifyTrueAndAccurateLabel() {
-    const {translate} = useLocalize();
-    return <Text>{translate('completeVerificationStep.certifyTrueAndAccurate')}</Text>;
-}
+    if (!ValidationUtils.isRequiredFulfilled(values.acceptTermsAndConditions)) {
+        errors.acceptTermsAndConditions = 'common.error.acceptTerms';
+    }
 
-function TermsAndConditionsLabel() {
-    const {translate} = useLocalize();
-    return (
-        <Text>
-            {translate('common.iAcceptThe')}
-            <TextLink href={CONST.ACH_TERMS_URL}>{`${translate('completeVerificationStep.termsAndConditions')}`}</TextLink>
-        </Text>
-    );
-}
+    if (!ValidationUtils.isRequiredFulfilled(values.certifyTrueInformation)) {
+        errors.certifyTrueInformation = 'completeVerificationStep.certifyTrueAndAccurateError';
+    }
 
+    if (!ValidationUtils.isRequiredFulfilled(values.isAuthorizedToUseBankAccount)) {
+        errors.isAuthorizedToUseBankAccount = 'completeVerificationStep.isAuthorizedToUseBankAccountError';
+    }
+
+    return errors;
+};
 function ConfirmAgreements({onNext, reimbursementAccount}: ConfirmAgreementsProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
@@ -58,26 +54,6 @@ function ConfirmAgreements({onNext, reimbursementAccount}: ConfirmAgreementsProp
         certifyTrueInformation: reimbursementAccount?.achData?.certifyTrueInformation ?? false,
         acceptTermsAndConditions: reimbursementAccount?.achData?.acceptTermsAndConditions ?? false,
     };
-    const validate = useCallback(
-        (values: FormOnyxValues<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM> => {
-            const errors = ValidationUtils.getFieldRequiredErrors(values, STEP_FIELDS);
-
-            if (!ValidationUtils.isRequiredFulfilled(values.acceptTermsAndConditions)) {
-                errors.acceptTermsAndConditions = translate('common.error.acceptTerms');
-            }
-
-            if (!ValidationUtils.isRequiredFulfilled(values.certifyTrueInformation)) {
-                errors.certifyTrueInformation = translate('completeVerificationStep.certifyTrueAndAccurateError');
-            }
-
-            if (!ValidationUtils.isRequiredFulfilled(values.isAuthorizedToUseBankAccount)) {
-                errors.isAuthorizedToUseBankAccount = translate('completeVerificationStep.isAuthorizedToUseBankAccountError');
-            }
-
-            return errors;
-        },
-        [translate],
-    );
 
     return (
         <FormProvider
@@ -94,7 +70,7 @@ function ConfirmAgreements({onNext, reimbursementAccount}: ConfirmAgreementsProp
                 accessibilityLabel={translate('completeVerificationStep.isAuthorizedToUseBankAccount')}
                 inputID={COMPLETE_VERIFICATION_KEYS.IS_AUTHORIZED_TO_USE_BANK_ACCOUNT}
                 style={styles.mt6}
-                LabelComponent={IsAuthorizedToUseBankAccountLabel}
+                LabelComponent={() => <Text>{translate('completeVerificationStep.isAuthorizedToUseBankAccount')}</Text>}
                 defaultValue={defaultValues.isAuthorizedToUseBankAccount}
                 shouldSaveDraft
             />
@@ -103,7 +79,7 @@ function ConfirmAgreements({onNext, reimbursementAccount}: ConfirmAgreementsProp
                 accessibilityLabel={translate('completeVerificationStep.certifyTrueAndAccurate')}
                 inputID={COMPLETE_VERIFICATION_KEYS.CERTIFY_TRUE_INFORMATION}
                 style={styles.mt6}
-                LabelComponent={CertifyTrueAndAccurateLabel}
+                LabelComponent={() => <Text>{translate('completeVerificationStep.certifyTrueAndAccurate')}</Text>}
                 defaultValue={defaultValues.certifyTrueInformation}
                 shouldSaveDraft
             />
@@ -112,7 +88,12 @@ function ConfirmAgreements({onNext, reimbursementAccount}: ConfirmAgreementsProp
                 accessibilityLabel={`${translate('common.iAcceptThe')} ${translate('completeVerificationStep.termsAndConditions')}`}
                 inputID={COMPLETE_VERIFICATION_KEYS.ACCEPT_TERMS_AND_CONDITIONS}
                 style={styles.mt6}
-                LabelComponent={TermsAndConditionsLabel}
+                LabelComponent={() => (
+                    <Text>
+                        {translate('common.iAcceptThe')}
+                        <TextLink href="https://use.expensify.com/achterms">{`${translate('completeVerificationStep.termsAndConditions')}`}</TextLink>
+                    </Text>
+                )}
                 defaultValue={defaultValues.acceptTermsAndConditions}
                 shouldSaveDraft
             />

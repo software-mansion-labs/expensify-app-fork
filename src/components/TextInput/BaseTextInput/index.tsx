@@ -1,4 +1,4 @@
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {GestureResponderEvent, LayoutChangeEvent, NativeSyntheticEvent, StyleProp, TextInputFocusEventData, ViewStyle} from 'react-native';
@@ -8,17 +8,12 @@ import FormHelpMessage from '@components/FormHelpMessage';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
-import type {AnimatedMarkdownTextInputRef} from '@components/RNMarkdownTextInput';
-import RNMarkdownTextInput from '@components/RNMarkdownTextInput';
-import type {AnimatedTextInputRef} from '@components/RNTextInput';
 import RNTextInput from '@components/RNTextInput';
 import SwipeInterceptPanResponder from '@components/SwipeInterceptPanResponder';
 import Text from '@components/Text';
 import * as styleConst from '@components/TextInput/styleConst';
-import TextInputClearButton from '@components/TextInput/TextInputClearButton';
 import TextInputLabel from '@components/TextInput/TextInputLabel';
 import useLocalize from '@hooks/useLocalize';
-import useMarkdownStyle from '@hooks/useMarkdownStyle';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -51,7 +46,6 @@ function BaseTextInput(
         disableKeyboard = false,
         autoGrow = false,
         autoGrowHeight = false,
-        maxAutoGrowHeight,
         hideFocusedState = false,
         maxLength = undefined,
         hint = '',
@@ -61,25 +55,13 @@ function BaseTextInput(
         shouldInterceptSwipe = false,
         autoCorrect = true,
         prefixCharacter = '',
-        suffixCharacter = '',
         inputID,
-        isMarkdownEnabled = false,
-        excludedMarkdownStyles = [],
-        shouldShowClearButton = false,
-        prefixContainerStyle = [],
-        prefixStyle = [],
-        suffixContainerStyle = [],
-        suffixStyle = [],
-        contentWidth,
         ...inputProps
     }: BaseTextInputProps,
     ref: ForwardedRef<BaseTextInputRef>,
 ) {
-    const InputComponent = isMarkdownEnabled ? RNMarkdownTextInput : RNTextInput;
-
     const theme = useTheme();
     const styles = useThemeStyles();
-    const markdownStyle = useMarkdownStyle(undefined, excludedMarkdownStyles);
     const {hasError = false} = inputProps;
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
@@ -87,7 +69,7 @@ function BaseTextInput(
     // Disabling this line for saftiness as nullish coalescing works only if value is undefined or null
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const initialValue = value || defaultValue || '';
-    const initialActiveLabel = !!forceActiveLabel || initialValue.length > 0 || !!prefixCharacter || !!suffixCharacter;
+    const initialActiveLabel = !!forceActiveLabel || initialValue.length > 0 || !!prefixCharacter;
 
     const [isFocused, setIsFocused] = useState(false);
     const [passwordHidden, setPasswordHidden] = useState(inputProps.secureTextEntry);
@@ -113,7 +95,7 @@ function BaseTextInput(
         }
         input.current.focus();
         // We only want this to run on mount
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const animateLabel = useCallback(
@@ -146,13 +128,13 @@ function BaseTextInput(
     const deactivateLabel = useCallback(() => {
         const newValue = value ?? '';
 
-        if (!!forceActiveLabel || newValue.length !== 0 || prefixCharacter || suffixCharacter) {
+        if (!!forceActiveLabel || newValue.length !== 0 || prefixCharacter) {
             return;
         }
 
         animateLabel(styleConst.INACTIVE_LABEL_TRANSLATE_Y, styleConst.INACTIVE_LABEL_SCALE);
         isLabelActive.current = false;
-    }, [animateLabel, forceActiveLabel, prefixCharacter, suffixCharacter, value]);
+    }, [animateLabel, forceActiveLabel, prefixCharacter, value]);
 
     const onFocus = (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
         inputProps.onFocus?.(event);
@@ -244,30 +226,45 @@ function BaseTextInput(
         setPasswordHidden((prevPasswordHidden: boolean | undefined) => !prevPasswordHidden);
     }, []);
 
-    const hasLabel = !!label?.length;
+    // When adding a new prefix character, adjust this method to add expected character width.
+    // This is because character width isn't known before it's rendered to the screen, and once it's rendered,
+    // it's too late to calculate it's width because the change in padding would cause a visible jump.
+    // Some characters are wider than the others when rendered, e.g. '@' vs '#'. Chosen font-family and font-size
+    // also have an impact on the width of the character, but as long as there's only one font-family and one font-size,
+    // this method will produce reliable results.
+    const getCharacterPadding = (prefix: string): number => {
+        switch (prefix) {
+            case CONST.POLICY.ROOM_PREFIX:
+                return 10;
+            default:
+                throw new Error(`Prefix ${prefix} has no padding assigned.`);
+        }
+    };
+
+    const hasLabel = Boolean(label?.length);
     const isReadOnly = inputProps.readOnly ?? inputProps.disabled;
     // Disabling this line for safeness as nullish coalescing works only if the value is undefined or null, and errorText can be an empty string
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const inputHelpText = errorText || hint;
-    const newPlaceholder = !!prefixCharacter || !!suffixCharacter || isFocused || !hasLabel || (hasLabel && forceActiveLabel) ? placeholder : undefined;
+    const newPlaceholder = !!prefixCharacter || isFocused || !hasLabel || (hasLabel && forceActiveLabel) ? placeholder : undefined;
+    const maxHeight = StyleSheet.flatten(containerStyles).maxHeight;
     const newTextInputContainerStyles: StyleProp<ViewStyle> = StyleSheet.flatten([
         styles.textInputContainer,
         textInputContainerStyles,
-        (autoGrow || !!contentWidth) && StyleUtils.getWidthStyle(textInputWidth),
+        autoGrow && StyleUtils.getWidthStyle(textInputWidth),
         !hideFocusedState && isFocused && styles.borderColorFocus,
         (!!hasError || !!errorText) && styles.borderColorDanger,
-        autoGrowHeight && {scrollPaddingTop: typeof maxAutoGrowHeight === 'number' ? 2 * maxAutoGrowHeight : undefined},
+        autoGrowHeight && {scrollPaddingTop: typeof maxHeight === 'number' ? 2 * maxHeight : undefined},
     ]);
     const isMultiline = multiline || autoGrowHeight;
 
-    /**
-     * To prevent text jumping caused by virtual DOM calculations on Safari and mobile Chrome,
-     * make sure to include the `lineHeight`.
-     * Reference: https://github.com/Expensify/App/issues/26735
-     * For other platforms, explicitly remove `lineHeight` from single-line inputs
-     * to prevent long text from disappearing once it exceeds the input space.
-     * See https://github.com/Expensify/App/issues/13802
-     */
+    /* To prevent text jumping caused by virtual DOM calculations on Safari and mobile Chrome,
+  make sure to include the `lineHeight`.
+  Reference: https://github.com/Expensify/App/issues/26735
+    For other platforms, explicitly remove `lineHeight` from single-line inputs
+  to prevent long text from disappearing once it exceeds the input space.
+  See https://github.com/Expensify/App/issues/13802 */
+
     const lineHeight = useMemo(() => {
         if (Browser.isSafari() || Browser.isMobileChrome()) {
             const lineHeightValue = StyleSheet.flatten(inputStyle).lineHeight;
@@ -278,9 +275,6 @@ function BaseTextInput(
 
         return undefined;
     }, [inputStyle]);
-
-    const inputPaddingLeft = !!prefixCharacter && StyleUtils.getPaddingLeft(StyleUtils.getCharacterPadding(prefixCharacter) + styles.pl1.paddingLeft);
-    const inputPaddingRight = !!suffixCharacter && StyleUtils.getPaddingRight(StyleUtils.getCharacterPadding(suffixCharacter) + styles.pr1.paddingRight);
 
     return (
         <>
@@ -294,16 +288,16 @@ function BaseTextInput(
                     onPress={onPress}
                     tabIndex={-1}
                     accessibilityLabel={label}
-                    // When autoGrowHeight is true we calculate the width for the textInput, so it will break lines properly
-                    // or if multiline is not supplied we calculate the textinput height, using onLayout.
-                    onLayout={onLayout}
                     style={[
-                        autoGrowHeight && styles.autoGrowHeightInputContainer(textInputHeight, variables.componentSizeLarge, typeof maxAutoGrowHeight === 'number' ? maxAutoGrowHeight : 0),
+                        autoGrowHeight && styles.autoGrowHeightInputContainer(textInputHeight, variables.componentSizeLarge, typeof maxHeight === 'number' ? maxHeight : 0),
                         !isMultiline && styles.componentHeightLarge,
                         touchableInputWrapperStyle,
                     ]}
                 >
                     <View
+                        // When autoGrowHeight is true we calculate the width for the textInput, so it will break lines properly
+                        // or if multiline is not supplied we calculate the textinput height, using onLayout.
+                        onLayout={onLayout}
                         style={[
                             newTextInputContainerStyles,
 
@@ -336,25 +330,24 @@ function BaseTextInput(
                                     />
                                 </View>
                             )}
-                            {!!prefixCharacter && (
-                                <View style={[styles.textInputPrefixWrapper, prefixContainerStyle]}>
+                            {Boolean(prefixCharacter) && (
+                                <View style={styles.textInputPrefixWrapper}>
                                     <Text
                                         tabIndex={-1}
-                                        style={[styles.textInputPrefix, !hasLabel && styles.pv0, styles.pointerEventsNone, prefixStyle]}
+                                        style={[styles.textInputPrefix, !hasLabel && styles.pv0, styles.pointerEventsNone]}
                                         dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
                                     >
                                         {prefixCharacter}
                                     </Text>
                                 </View>
                             )}
-                            <InputComponent
-                                ref={(element: AnimatedTextInputRef | AnimatedMarkdownTextInputRef | null): void => {
-                                    const baseTextInputRef = element as BaseTextInputRef | null;
+                            <RNTextInput
+                                ref={(element) => {
                                     if (typeof ref === 'function') {
-                                        ref(baseTextInputRef);
+                                        ref(element);
                                     } else if (ref && 'current' in ref) {
                                         // eslint-disable-next-line no-param-reassign
-                                        ref.current = baseTextInputRef;
+                                        ref.current = element;
                                     }
 
                                     input.current = element as HTMLInputElement | null;
@@ -370,8 +363,7 @@ function BaseTextInput(
                                     styles.w100,
                                     inputStyle,
                                     (!hasLabel || isMultiline) && styles.pv0,
-                                    inputPaddingLeft,
-                                    inputPaddingRight,
+                                    !!prefixCharacter && StyleUtils.getPaddingLeft(getCharacterPadding(prefixCharacter) + styles.pl1.paddingLeft),
                                     inputProps.secureTextEntry && styles.secureInput,
 
                                     // Explicitly remove `lineHeight` from single line inputs so that long text doesn't disappear
@@ -380,13 +372,11 @@ function BaseTextInput(
 
                                     // Explicitly change boxSizing attribute for mobile chrome in order to apply line-height
                                     // for the issue mentioned here https://github.com/Expensify/App/issues/26735
-                                    // Set overflow property to enable the parent flexbox to shrink its size
-                                    // (See https://github.com/Expensify/App/issues/41766)
-                                    !isMultiline && Browser.isMobileChrome() && {boxSizing: 'content-box', height: undefined, ...styles.overflowAuto},
+                                    !isMultiline && Browser.isMobileChrome() && {boxSizing: 'content-box', height: undefined},
 
                                     // Stop scrollbar flashing when breaking lines with autoGrowHeight enabled.
                                     ...(autoGrowHeight
-                                        ? [StyleUtils.getAutoGrowHeightInputStyle(textInputHeight, typeof maxAutoGrowHeight === 'number' ? maxAutoGrowHeight : 0), styles.verticalAlignTop]
+                                        ? [StyleUtils.getAutoGrowHeightInputStyle(textInputHeight, typeof maxHeight === 'number' ? maxHeight : 0), styles.verticalAlignTop]
                                         : []),
 
                                     // Add disabled color theme when field is not editable.
@@ -406,20 +396,7 @@ function BaseTextInput(
                                 selection={inputProps.selection}
                                 readOnly={isReadOnly}
                                 defaultValue={defaultValue}
-                                markdownStyle={markdownStyle}
                             />
-                            {!!suffixCharacter && (
-                                <View style={[styles.textInputSuffixWrapper, suffixContainerStyle]}>
-                                    <Text
-                                        tabIndex={-1}
-                                        style={[styles.textInputSuffix, !hasLabel && styles.pv0, styles.pointerEventsNone, suffixStyle]}
-                                        dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
-                                    >
-                                        {suffixCharacter}
-                                    </Text>
-                                </View>
-                            )}
-                            {isFocused && !isReadOnly && shouldShowClearButton && !!value && <TextInputClearButton onPressButton={() => setValue('')} />}
                             {inputProps.isLoading && (
                                 <ActivityIndicator
                                     size="small"
@@ -427,7 +404,7 @@ function BaseTextInput(
                                     style={[styles.mt4, styles.ml1]}
                                 />
                             )}
-                            {!!inputProps.secureTextEntry && (
+                            {Boolean(inputProps.secureTextEntry) && (
                                 <Checkbox
                                     style={[styles.flex1, styles.textInputIconContainer]}
                                     onPress={togglePasswordVisibility}
@@ -442,7 +419,7 @@ function BaseTextInput(
                                     />
                                 </Checkbox>
                             )}
-                            {!inputProps.secureTextEntry && !!icon && (
+                            {!inputProps.secureTextEntry && icon && (
                                 <View style={[styles.textInputIconContainer, !isReadOnly ? styles.cursorPointer : styles.pointerEventsNone]}>
                                     <Icon
                                         src={icon}
@@ -460,29 +437,6 @@ function BaseTextInput(
                     />
                 )}
             </View>
-            {contentWidth && (
-                <View
-                    style={[inputStyle as ViewStyle, styles.hiddenElementOutsideOfWindow, styles.visibilityHidden, styles.wAuto, inputPaddingLeft]}
-                    onLayout={(e) => {
-                        if (e.nativeEvent.layout.width === 0 && e.nativeEvent.layout.height === 0) {
-                            return;
-                        }
-                        setTextInputWidth(e.nativeEvent.layout.width);
-                        setTextInputHeight(e.nativeEvent.layout.height);
-                    }}
-                >
-                    <Text
-                        style={[
-                            inputStyle,
-                            autoGrowHeight && styles.autoGrowHeightHiddenInput(width ?? 0, typeof maxAutoGrowHeight === 'number' ? maxAutoGrowHeight : undefined),
-                            {width: contentWidth},
-                        ]}
-                    >
-                        {/* \u200B added to solve the issue of not expanding the text input enough when the value ends with '\n' (https://github.com/Expensify/App/issues/21271) */}
-                        {value ? `${value}${value.endsWith('\n') ? '\u200B' : ''}` : placeholder}
-                    </Text>
-                </View>
-            )}
             {/*
                  Text input component doesn't support auto grow by default.
                  We're using a hidden text input to achieve that.
@@ -497,7 +451,7 @@ function BaseTextInput(
                 <Text
                     style={[
                         inputStyle,
-                        autoGrowHeight && styles.autoGrowHeightHiddenInput(width ?? 0, typeof maxAutoGrowHeight === 'number' ? maxAutoGrowHeight : undefined),
+                        autoGrowHeight && styles.autoGrowHeightHiddenInput(width ?? 0, typeof maxHeight === 'number' ? maxHeight : undefined),
                         styles.hiddenElementOutsideOfWindow,
                         styles.visibilityHidden,
                     ]}

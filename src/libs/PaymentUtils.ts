@@ -1,15 +1,13 @@
-import type {ValueOf} from 'type-fest';
 import getBankIcon from '@components/Icon/BankIcons';
 import type {ThemeStyles} from '@styles/index';
 import CONST from '@src/CONST';
 import type BankAccount from '@src/types/onyx/BankAccount';
 import type Fund from '@src/types/onyx/Fund';
 import type PaymentMethod from '@src/types/onyx/PaymentMethod';
-import type {ACHAccount} from '@src/types/onyx/Policy';
 import * as Localize from './Localize';
 import BankAccountModel from './models/BankAccount';
 
-type AccountType = ValueOf<typeof CONST.PAYMENT_METHODS> | undefined;
+type AccountType = BankAccount['accountType'] | Fund['accountType'];
 
 /**
  * Check to see if user has either a debit card or personal bank account added that can be used with a wallet.
@@ -27,12 +25,9 @@ function hasExpensifyPaymentMethod(fundList: Record<string, Fund>, bankAccountLi
     return validBankAccount || (shouldIncludeDebitCard && validDebitCard);
 }
 
-function getPaymentMethodDescription(accountType: AccountType, account: BankAccount['accountData'] | Fund['accountData'] | ACHAccount): string {
+function getPaymentMethodDescription(accountType: AccountType, account: BankAccount['accountData'] | Fund['accountData']): string {
     if (account) {
         if (accountType === CONST.PAYMENT_METHODS.PERSONAL_BANK_ACCOUNT && 'accountNumber' in account) {
-            return `${Localize.translateLocal('paymentMethodList.accountLastFour')} ${account.accountNumber?.slice(-4)}`;
-        }
-        if (accountType === CONST.PAYMENT_METHODS.BUSINESS_BANK_ACCOUNT && 'accountNumber' in account) {
             return `${Localize.translateLocal('paymentMethodList.accountLastFour')} ${account.accountNumber?.slice(-4)}`;
         }
         if (accountType === CONST.PAYMENT_METHODS.DEBIT_CARD && 'cardNumber' in account) {

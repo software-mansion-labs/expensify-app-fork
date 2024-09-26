@@ -1,11 +1,8 @@
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useEffect, useImperativeHandle, useMemo, useRef} from 'react';
-// eslint-disable-next-line no-restricted-imports
-import type {ScrollView as RNScrollView} from 'react-native';
-import {View} from 'react-native';
+import {ScrollView, View} from 'react-native';
 import SignInGradient from '@assets/images/home-fade-gradient.svg';
 import ImageSVG from '@components/ImageSVG';
-import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -14,7 +11,6 @@ import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
-import * as Browser from '@libs/Browser';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import BackgroundImage from './BackgroundImage';
@@ -42,10 +38,10 @@ function SignInPageLayout(
     const StyleUtils = useStyleUtils();
     const {preferredLocale} = useLocalize();
     const {top: topInsets, bottom: bottomInsets} = useSafeAreaInsets();
-    const scrollViewRef = useRef<RNScrollView>(null);
+    const scrollViewRef = useRef<ScrollView>(null);
     const prevPreferredLocale = usePrevious(preferredLocale);
-    const {windowHeight} = useWindowDimensions();
-    const {shouldUseNarrowLayout, isMediumScreenWidth, isLargeScreenWidth} = useResponsiveLayout();
+    const {windowHeight, isMediumScreenWidth, isLargeScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const {containerStyles, contentContainerStyles} = useMemo(
         () => ({
@@ -145,15 +141,7 @@ function SignInPageLayout(
                     keyboardShouldPersistTaps="handled"
                     ref={scrollViewRef}
                 >
-                    <View
-                        style={[
-                            styles.flex1,
-                            styles.flexColumn,
-                            Browser.isMobileSafari() ? styles.overflowHidden : {},
-                            StyleUtils.getMinimumHeight(backgroundImageHeight),
-                            StyleUtils.getSignInBgStyles(theme),
-                        ]}
-                    >
+                    <View style={[styles.flex1, styles.flexColumn, styles.overflowHidden, StyleUtils.getMinimumHeight(backgroundImageHeight), StyleUtils.getSignInBgStyles(theme)]}>
                         <View style={[styles.pAbsolute, styles.w100, StyleUtils.getHeight(backgroundImageHeight), StyleUtils.getBackgroundColorStyle(theme.highlightBG)]}>
                             <BackgroundImage
                                 isSmallScreen

@@ -1,4 +1,3 @@
-/** Model of currency */
 type Currency = {
     /** Symbol for the currency */
     symbol: string;
@@ -22,7 +21,6 @@ type Currency = {
     cacheBurst?: number;
 };
 
-/** Record of currencies, index by currency code */
 type CurrencyList = Record<string, Currency | null>;
 
 export default Currency;

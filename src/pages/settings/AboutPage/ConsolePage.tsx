@@ -1,104 +1,83 @@
-import type {RouteProp} from '@react-navigation/native';
-import {useRoute} from '@react-navigation/native';
 import {format} from 'date-fns';
-import React, {useCallback, useMemo, useRef, useState} from 'react';
-import {View} from 'react-native';
+import isEmpty from 'lodash/isEmpty';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {FlatList, View} from 'react-native';
 import type {ListRenderItem, ListRenderItemInfo} from 'react-native';
-import {useOnyx} from 'react-native-onyx';
+import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
-import InvertedFlatList from '@components/InvertedFlatList';
-import type {PopoverMenuItem} from '@components/PopoverMenu';
 import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useLocalize from '@hooks/useLocalize';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import {addLog} from '@libs/actions/Console';
-import {createLog, parseStringifiedMessages, sanitizeConsoleInput} from '@libs/Console';
+import {createLog, sanitizeConsoleInput} from '@libs/Console';
 import type {Log} from '@libs/Console';
 import localFileCreate from '@libs/localFileCreate';
 import localFileDownload from '@libs/localFileDownload';
 import Navigation from '@libs/Navigation/Navigation';
-import type {SettingsNavigatorParamList} from '@navigation/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type SCREENS from '@src/SCREENS';
-import type {CapturedLogs} from '@src/types/onyx';
 
-const filterBy = {
-    all: '',
-    network: '[Network]',
-} as const;
-type FilterBy = (typeof filterBy)[keyof typeof filterBy];
+type CapturedLogs = Record<number, Log>;
 
-function ConsolePage() {
-    const [capturedLogs] = useOnyx(ONYXKEYS.LOGS);
-    const [shouldStoreLogs] = useOnyx(ONYXKEYS.SHOULD_STORE_LOGS);
+type ConsolePageOnyxProps = {
+    /** Logs captured on the current device */
+    capturedLogs: OnyxEntry<CapturedLogs>;
+
+    /** Whether or not logs should be stored */
+    shouldStoreLogs: OnyxEntry<boolean>;
+};
+
+type ConsolePageProps = ConsolePageOnyxProps;
+
+/**
+ * Loops through all the logs and parses the message if it's a stringified JSON
+ * @param logs Logs captured on the current device
+ * @returns CapturedLogs with parsed messages
+ */
+const parseStringifyMessages = (logs: Log[]) => {
+    if (isEmpty(logs)) {
+        return;
+    }
+
+    return logs.map((log) => {
+        try {
+            const parsedMessage = JSON.parse(log.message);
+            return {
+                ...log,
+                message: parsedMessage,
+            };
+        } catch {
+            // If the message can't be parsed, just return the original log
+            return log;
+        }
+    });
+};
+
+function ConsolePage({capturedLogs, shouldStoreLogs}: ConsolePageProps) {
     const [input, setInput] = useState('');
+    const [logs, setLogs] = useState(capturedLogs);
     const [isGeneratingLogsFile, setIsGeneratingLogsFile] = useState(false);
     const [isLimitModalVisible, setIsLimitModalVisible] = useState(false);
-    const [activeFilterIndex, setActiveFilterIndex] = useState<FilterBy>(filterBy.all);
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const theme = useTheme();
-    const {windowWidth} = useWindowDimensions();
-    const route = useRoute<RouteProp<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.CONSOLE>>();
 
-    const menuItems: PopoverMenuItem[] = useMemo(
-        () => [
-            {
-                text: translate('common.filterLogs'),
-                disabled: true,
-            },
-            {
-                icon: Expensicons.All,
-                text: translate('common.all'),
-                iconFill: activeFilterIndex === filterBy.all ? theme.iconSuccessFill : theme.icon,
-                iconRight: Expensicons.Checkmark,
-                shouldShowRightIcon: activeFilterIndex === filterBy.all,
-                success: activeFilterIndex === filterBy.all,
-                onSelected: () => {
-                    setActiveFilterIndex(filterBy.all);
-                },
-            },
-            {
-                icon: Expensicons.Globe,
-                text: translate('common.network'),
-                iconFill: activeFilterIndex === filterBy.network ? theme.iconSuccessFill : theme.icon,
-                iconRight: Expensicons.CheckCircle,
-                shouldShowRightIcon: activeFilterIndex === filterBy.network,
-                success: activeFilterIndex === filterBy.network,
-                onSelected: () => {
-                    setActiveFilterIndex(filterBy.network);
-                },
-            },
-        ],
-        [activeFilterIndex, theme.icon, theme.iconSuccessFill, translate],
-    );
+    const logsList = useMemo(() => (logs ? Object.values(logs).reverse() : []), [logs]);
 
-    const prevLogs = useRef<OnyxEntry<CapturedLogs>>({});
-    const getLogs = useCallback(() => {
+    useEffect(() => {
         if (!shouldStoreLogs) {
-            return [];
+            return;
         }
 
-        prevLogs.current = {...prevLogs.current, ...capturedLogs};
-        return Object.entries(prevLogs.current ?? {})
-            .map(([key, value]) => ({key, ...value}))
-            .reverse();
+        setLogs((prevLogs) => ({...prevLogs, ...capturedLogs}));
     }, [capturedLogs, shouldStoreLogs]);
-
-    const logsList = useMemo(() => getLogs(), [getLogs]);
-
-    const filteredLogsList = useMemo(() => logsList.filter((log) => log.message.includes(activeFilterIndex)), [activeFilterIndex, logsList]);
 
     const executeArbitraryCode = () => {
         const sanitizedInput = sanitizeConsoleInput(input);
@@ -111,14 +90,14 @@ function ConsolePage() {
     useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ENTER, executeArbitraryCode);
 
     const saveLogs = () => {
-        const logsWithParsedMessages = parseStringifiedMessages(filteredLogsList);
+        const logsWithParsedMessages = parseStringifyMessages(logsList);
 
         localFileDownload('logs', JSON.stringify(logsWithParsedMessages, null, 2));
     };
 
     const shareLogs = () => {
         setIsGeneratingLogsFile(true);
-        const logsWithParsedMessages = parseStringifiedMessages(filteredLogsList);
+        const logsWithParsedMessages = parseStringifyMessages(logsList);
 
         // Generate a file with the logs and pass its path to the list of reports to share it with
         localFileCreate('logs', JSON.stringify(logsWithParsedMessages, null, 2)).then(({path, size}) => {
@@ -151,24 +130,17 @@ function ConsolePage() {
     );
 
     return (
-        <ScreenWrapper
-            testID={ConsolePage.displayName}
-            shouldEnableMaxHeight
-        >
+        <ScreenWrapper testID={ConsolePage.displayName}>
             <HeaderWithBackButton
                 title={translate('initialSettingsPage.troubleshoot.debugConsole')}
-                onBackButtonPress={() => Navigation.goBack(route.params?.backTo)}
-                shouldShowThreeDotsButton
-                threeDotsMenuItems={menuItems}
-                threeDotsAnchorPosition={styles.threeDotsPopoverOffset(windowWidth)}
-                threeDotsMenuIcon={Expensicons.Filter}
-                threeDotsMenuIconFill={theme.icon}
+                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_TROUBLESHOOT)}
             />
             <View style={[styles.border, styles.highlightBG, styles.borderNone, styles.mh5, styles.flex1]}>
-                <InvertedFlatList
-                    data={filteredLogsList}
+                <FlatList
+                    data={logsList}
                     renderItem={renderItem}
                     contentContainerStyle={styles.p5}
+                    inverted
                     ListEmptyComponent={<Text>{translate('initialSettingsPage.debugConsole.noLogsAvailable')}</Text>}
                 />
             </View>
@@ -176,14 +148,12 @@ function ConsolePage() {
                 <Button
                     text={translate('initialSettingsPage.debugConsole.saveLog')}
                     onPress={saveLogs}
-                    large
                     icon={Expensicons.Download}
                     style={[styles.flex1, styles.mr1]}
                 />
                 <Button
                     text={translate('initialSettingsPage.debugConsole.shareLog')}
                     onPress={shareLogs}
-                    large
                     icon={!isGeneratingLogsFile ? Expensicons.UploadAlt : undefined}
                     style={[styles.flex1, styles.ml1]}
                     isLoading={isGeneratingLogsFile}
@@ -202,15 +172,13 @@ function ConsolePage() {
                     success
                     text={translate('initialSettingsPage.debugConsole.execute')}
                     onPress={executeArbitraryCode}
-                    style={[styles.mv5]}
-                    large
+                    style={[styles.mt5]}
                 />
             </View>
             <ConfirmModal
                 title={translate('initialSettingsPage.debugConsole.shareLog')}
                 isVisible={isLimitModalVisible}
                 onConfirm={() => setIsLimitModalVisible(false)}
-                onCancel={() => setIsLimitModalVisible(false)}
                 prompt={translate('initialSettingsPage.debugConsole.logSizeTooLarge', {
                     size: CONST.API_ATTACHMENT_VALIDATIONS.MAX_SIZE / 1024 / 1024,
                 })}
@@ -223,4 +191,11 @@ function ConsolePage() {
 
 ConsolePage.displayName = 'ConsolePage';
 
-export default ConsolePage;
+export default withOnyx<ConsolePageProps, ConsolePageOnyxProps>({
+    capturedLogs: {
+        key: ONYXKEYS.LOGS,
+    },
+    shouldStoreLogs: {
+        key: ONYXKEYS.SHOULD_STORE_LOGS,
+    },
+})(ConsolePage);

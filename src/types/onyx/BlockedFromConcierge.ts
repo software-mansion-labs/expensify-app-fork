@@ -1,4 +1,3 @@
-/** Model of blocked user from concierge */
 type BlockedFromConcierge = {
     /** The date that the user will be unblocked */
     expiresAt: string;

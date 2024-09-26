@@ -3,6 +3,7 @@ import React from 'react';
 import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
+import type {MaybePhraseKey} from '@libs/Localize';
 import FormHelpMessage from './FormHelpMessage';
 import * as Pressables from './Pressable';
 import RadioButton from './RadioButton';
@@ -28,7 +29,7 @@ type RadioButtonWithLabelProps = {
     hasError?: boolean;
 
     /** Error text to display */
-    errorText?: string;
+    errorText?: MaybePhraseKey;
 };
 
 const PressableWithFeedback = Pressables.PressableWithFeedback;
@@ -59,7 +60,7 @@ function RadioButtonWithLabel({LabelComponent, style, label = '', hasError = fal
                     hoverDimmingValue={0.8}
                     pressDimmingValue={0.5}
                 >
-                    {!!label && <Text style={[styles.ml1]}>{label}</Text>}
+                    {Boolean(label) && <Text style={[styles.ml1]}>{label}</Text>}
                     {!!LabelComponent && <LabelComponent />}
                 </PressableWithFeedback>
             </View>
@@ -71,5 +72,3 @@ function RadioButtonWithLabel({LabelComponent, style, label = '', hasError = fal
 RadioButtonWithLabel.displayName = 'RadioButtonWithLabel';
 
 export default RadioButtonWithLabel;
-
-export type {RadioButtonWithLabelProps};

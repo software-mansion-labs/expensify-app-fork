@@ -1,11 +1,9 @@
 import {PortalHost} from '@gorhom/portal';
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 import {View} from 'react-native';
 import useDragAndDrop from '@hooks/useDragAndDrop';
 import useThemeStyles from '@hooks/useThemeStyles';
-import htmlDivElementRef from '@src/types/utils/htmlDivElementRef';
-import viewRef from '@src/types/utils/viewRef';
 import type {DragAndDropContextParams, DragAndDropProviderProps, SetOnDropHandlerCallback} from './types';
 
 const DragAndDropContext = React.createContext<DragAndDropContextParams>({});
@@ -16,7 +14,7 @@ function shouldAcceptDrop(event: DragEvent): boolean {
 
 function DragAndDropProvider({children, isDisabled = false, setIsDraggingOver = () => {}}: DragAndDropProviderProps) {
     const styles = useThemeStyles();
-    const dropZone = useRef<HTMLDivElement | View>(null);
+    const dropZone = useRef<View>(null);
     const dropZoneID = useRef(Str.guid('drag-n-drop'));
 
     const onDropHandler = useRef<SetOnDropHandlerCallback>(() => {});
@@ -25,7 +23,7 @@ function DragAndDropProvider({children, isDisabled = false, setIsDraggingOver = 
     }, []);
 
     const {isDraggingOver} = useDragAndDrop({
-        dropZone: htmlDivElementRef(dropZone),
+        dropZone,
         onDrop: onDropHandler.current,
         shouldAcceptDrop,
         isDisabled,
@@ -40,7 +38,7 @@ function DragAndDropProvider({children, isDisabled = false, setIsDraggingOver = 
     return (
         <DragAndDropContext.Provider value={contextValue}>
             <View
-                ref={viewRef(dropZone)}
+                ref={dropZone}
                 style={[styles.flex1, styles.w100, styles.h100]}
             >
                 {isDraggingOver && (

@@ -62,10 +62,9 @@ function BusinessTypeSelectorModal({isVisible, currentBusinessType, onBusinessTy
                     onBackButtonPress={onClose}
                 />
                 <SelectionList
-                    sections={[{data: incorporationTypes}]}
+                    sections={[{data: incorporationTypes, indexOffset: 0}]}
                     initiallyFocusedOptionKey={currentBusinessType}
                     onSelectRow={onBusinessTypeSelected}
-                    shouldSingleExecuteRowSelect
                     shouldStopPropagation
                     shouldUseDynamicMaxToRenderPerBatch
                     ListItem={RadioListItem}

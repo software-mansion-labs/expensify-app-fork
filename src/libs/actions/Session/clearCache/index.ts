@@ -1,8 +1,5 @@
 import type ClearCache from './types';
 
-const clearStorage: ClearCache = () =>
-    new Promise<void>((resolve) => {
-        resolve();
-    });
+const clearStorage: ClearCache = () => new Promise<void>((res) => res());
 
 export default clearStorage;

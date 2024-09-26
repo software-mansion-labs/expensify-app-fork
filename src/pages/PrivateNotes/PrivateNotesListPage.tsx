@@ -1,12 +1,11 @@
-import React, {useCallback, useMemo} from 'react';
-import type {OnyxEntry} from 'react-native-onyx';
+import React, {useMemo} from 'react';
+import {ScrollView} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
+import type {OnyxCollection} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import {AttachmentContext} from '@components/AttachmentContext';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import ScreenWrapper from '@components/ScreenWrapper';
-import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -16,11 +15,11 @@ import withReportAndPrivateNotesOrNotFound from '@pages/home/report/withReportAn
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {PersonalDetailsList, Report} from '@src/types/onyx';
+import type {PersonalDetails, Report} from '@src/types/onyx';
 
 type PrivateNotesListPageOnyxProps = {
     /** All of the personal details for everyone */
-    personalDetailsList: OnyxEntry<PersonalDetailsList>;
+    personalDetailsList: OnyxCollection<PersonalDetails>;
 };
 
 type PrivateNotesListPageProps = WithReportAndPrivateNotesOrNotFoundProps &
@@ -35,34 +34,29 @@ type NoteListItem = {
     brickRoadIndicator: ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | undefined;
     note: string;
     disabled: boolean;
-    reportID: string;
-    accountID: string;
 };
 
 function PrivateNotesListPage({report, personalDetailsList, session}: PrivateNotesListPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const getAttachmentValue = useCallback((item: NoteListItem) => ({reportID: item.reportID, accountID: Number(item.accountID), type: CONST.ATTACHMENT_TYPE.NOTE}), []);
 
     /**
      * Gets the menu item for each workspace
      */
     function getMenuItem(item: NoteListItem) {
         return (
-            <AttachmentContext.Provider value={getAttachmentValue(item)}>
-                <MenuItemWithTopDescription
-                    key={item.title}
-                    description={item.title}
-                    title={item.note}
-                    onPress={item.action}
-                    shouldShowRightIcon={!item.disabled}
-                    numberOfLinesTitle={0}
-                    shouldRenderAsHTML
-                    brickRoadIndicator={item.brickRoadIndicator}
-                    disabled={item.disabled}
-                    shouldGreyOutWhenDisabled={false}
-                />
-            </AttachmentContext.Provider>
+            <MenuItemWithTopDescription
+                key={item.title}
+                description={item.title}
+                title={item.note}
+                onPress={item.action}
+                shouldShowRightIcon={!item.disabled}
+                numberOfLinesTitle={0}
+                shouldRenderAsHTML
+                brickRoadIndicator={item.brickRoadIndicator}
+                disabled={item.disabled}
+                shouldGreyOutWhenDisabled={false}
+            />
         );
     }
 
@@ -74,8 +68,6 @@ function PrivateNotesListPage({report, personalDetailsList, session}: PrivateNot
         return Object.keys(report.privateNotes ?? {}).map((accountID: string) => {
             const privateNote = report.privateNotes?.[Number(accountID)];
             return {
-                reportID: report.reportID,
-                accountID,
                 title: Number(session?.accountID) === Number(accountID) ? translate('privateNotes.myNote') : personalDetailsList?.[accountID]?.login ?? '',
                 action: () => Navigation.navigate(ROUTES.PRIVATE_NOTES_EDIT.getRoute(report.reportID, accountID)),
                 brickRoadIndicator: privateNoteBrickRoadIndicator(Number(accountID)),

@@ -2,17 +2,15 @@ import type {PushPayload} from '@ua/react-native-airship';
 import Airship, {EventType} from '@ua/react-native-airship';
 import Onyx from 'react-native-onyx';
 import Log from '@libs/Log';
-import ShortcutManager from '@libs/ShortcutManager';
 import * as PushNotificationActions from '@userActions/PushNotification';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ForegroundNotifications from './ForegroundNotifications';
-import type {PushNotificationData} from './NotificationType';
+import type {NotificationData} from './NotificationType';
 import NotificationType from './NotificationType';
-import parsePushNotificationPayload from './parsePushNotificationPayload';
 import type {ClearNotifications, Deregister, Init, OnReceived, OnSelected, Register} from './types';
 import type PushNotificationType from './types';
 
-type NotificationEventActionCallback = (data: PushNotificationData) => Promise<void>;
+type NotificationEventActionCallback = (data: NotificationData) => void;
 
 type NotificationEventActionMap = Partial<Record<EventType, Record<string, NotificationEventActionCallback>>>;
 
@@ -29,8 +27,14 @@ const notificationEventActionMap: NotificationEventActionMap = {};
  */
 function pushNotificationEventCallback(eventType: EventType, notification: PushPayload) {
     const actionMap = notificationEventActionMap[eventType] ?? {};
+    let payload = notification.extras.payload;
 
-    const data = parsePushNotificationPayload(notification.extras.payload);
+    // On Android, some notification payloads are sent as a JSON string rather than an object
+    if (typeof payload === 'string') {
+        payload = JSON.parse(payload);
+    }
+
+    const data = payload as NotificationData;
 
     Log.info(`[PushNotification] Callback triggered for ${eventType}`);
 
@@ -52,13 +56,7 @@ function pushNotificationEventCallback(eventType: EventType, notification: PushP
         });
         return;
     }
-
-    /**
-     * The action callback should return a promise. It's very important we return that promise so that
-     * when these callbacks are run in Android's background process (via Headless JS), the process waits
-     * for the promise to resolve before quitting
-     */
-    return action(data);
+    action(data);
 }
 
 /**
@@ -66,7 +64,7 @@ function pushNotificationEventCallback(eventType: EventType, notification: PushP
  */
 function refreshNotificationOptInStatus() {
     Airship.push.getNotificationStatus().then((notificationStatus) => {
-        const isOptedIn = notificationStatus.isOptedIn && notificationStatus.areNotificationsAllowed;
+        const isOptedIn = notificationStatus.airshipOptIn && notificationStatus.systemEnabled;
         if (isOptedIn === isUserOptedInToPushNotifications) {
             return;
         }
@@ -85,14 +83,23 @@ function refreshNotificationOptInStatus() {
  */
 const init: Init = () => {
     // Setup event listeners
-    Airship.addListener(EventType.PushReceived, (notification) => pushNotificationEventCallback(EventType.PushReceived, notification.pushPayload));
+    Airship.addListener(EventType.PushReceived, (notification) => {
+        // By default, refresh notification opt-in status to true if we receive a notification
+        if (!isUserOptedInToPushNotifications) {
+            PushNotificationActions.setPushNotificationOptInStatus(true);
+        }
+
+        pushNotificationEventCallback(EventType.PushReceived, notification.pushPayload);
+    });
 
     // Note: the NotificationResponse event has a nested PushReceived event,
     // so event.notification refers to the same thing as notification above ^
-    Airship.addListener(EventType.NotificationResponse, (event) => pushNotificationEventCallback(EventType.NotificationResponse, event.pushPayload));
+    Airship.addListener(EventType.NotificationResponse, (event) => {
+        pushNotificationEventCallback(EventType.NotificationResponse, event.pushPayload);
+    });
 
     // Keep track of which users have enabled push notifications via an NVP.
-    Airship.addListener(EventType.PushNotificationStatusChangedStatus, refreshNotificationOptInStatus);
+    Airship.addListener(EventType.NotificationOptInStatus, refreshNotificationOptInStatus);
 
     ForegroundNotifications.configureForegroundNotifications();
 };
@@ -126,7 +133,7 @@ const register: Register = (notificationID) => {
             // Refresh notification opt-in status NVP for the new user.
             refreshNotificationOptInStatus();
         })
-        .catch((error: Record<string, unknown>) => {
+        .catch((error) => {
             Log.warn('[PushNotification] Failed to register for push notifications! Reason: ', error);
         });
 };
@@ -140,7 +147,6 @@ const deregister: Deregister = () => {
     Airship.removeAllListeners(EventType.PushReceived);
     Airship.removeAllListeners(EventType.NotificationResponse);
     ForegroundNotifications.disableForegroundNotifications();
-    ShortcutManager.removeAllDynamicShortcuts();
 };
 
 /**

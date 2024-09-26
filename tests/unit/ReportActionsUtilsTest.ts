@@ -1,4 +1,3 @@
-import type {KeyValueMapping} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import CONST from '../../src/CONST';
 import * as ReportActionsUtils from '../../src/libs/ReportActionsUtils';
@@ -36,7 +35,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:27:01.825',
                         reportActionID: '8401445780099176',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -45,7 +44,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:27:01.600',
                         reportActionID: '6401435781022176',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -56,7 +55,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:26:48.789',
                         reportActionID: '2962390724708756',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -65,7 +64,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:26:48.789',
                         reportActionID: '1609646094152486',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -74,7 +73,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:26:48.789',
                         reportActionID: '1661970171066218',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -85,7 +84,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:26:48.789',
                         reportActionID: '1609646094152486',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -94,7 +93,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:26:48.789',
                         reportActionID: '1661970171066218',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -103,7 +102,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:26:48.789',
                         reportActionID: '2962390724708756',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -112,7 +111,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:27:01.600',
                         reportActionID: '6401435781022176',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -121,7 +120,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2022-11-09 22:27:01.825',
                         reportActionID: '8401445780099176',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -135,7 +134,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2023-01-10 22:25:47.132',
                         reportActionID: '3',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -153,7 +152,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2023-01-10 22:25:47.132',
                         reportActionID: '1',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -174,7 +173,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2023-01-10 22:25:47.132',
                         reportActionID: '1',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -183,7 +182,7 @@ describe('ReportActionsUtils', () => {
                     {
                         created: '2023-01-10 22:25:47.132',
                         reportActionID: '3',
-                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                         originalMessage: {
                             html: 'Hello world',
                             whisperedTo: [],
@@ -210,7 +209,7 @@ describe('ReportActionsUtils', () => {
                 {
                     created: '2022-11-13 22:27:01.825',
                     reportActionID: '8401445780099176',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                     originalMessage: {
                         html: 'Hello world',
                         whisperedTo: [],
@@ -277,23 +276,24 @@ describe('ReportActionsUtils', () => {
                 {
                     created: '2022-11-09 22:27:01.825',
                     reportActionID: '8049485084562457',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.POLICY_CHANGE_LOG.UPDATE_FIELD,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.POLICYCHANGELOG.UPDATE_FIELD,
                     originalMessage: {},
                     message: [{html: 'updated the Approval Mode from "Submit and Approve" to "Submit and Close"', type: 'Action type', text: 'Action text'}],
                 },
                 {
                     created: '2022-11-08 22:27:06.825',
                     reportActionID: '1661970171066216',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENT_QUEUED,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENTQUEUED,
                     originalMessage: {
-                        paymentType: 'ACH',
+                        html: 'Hello world',
+                        whisperedTo: [],
                     },
                     message: [{html: 'Waiting for the bank account', type: 'Action type', text: 'Action text'}],
                 },
                 {
                     created: '2022-11-06 22:27:08.825',
                     reportActionID: '1661970171066220',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.TASK_EDITED,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.TASKEDITED,
                     originalMessage: {
                         html: 'Hello world',
                         whisperedTo: [],
@@ -303,7 +303,119 @@ describe('ReportActionsUtils', () => {
             ];
 
             const result = ReportActionsUtils.getSortedReportActionsForDisplay(input);
+            input.pop();
             expect(result).toStrictEqual(input);
+        });
+
+        describe('getSortedReportActionsForDisplay with marked the first reportAction', () => {
+            it('should filter out non-whitelisted actions', () => {
+                const input: ReportAction[] = [
+                    {
+                        created: '2022-11-13 22:27:01.825',
+                        reportActionID: '8401445780099176',
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
+                        originalMessage: {
+                            html: 'Hello world',
+                            whisperedTo: [],
+                        },
+                        message: [
+                            {
+                                html: 'Hello world',
+                                type: 'Action type',
+                                text: 'Action text',
+                            },
+                        ],
+                    },
+                    {
+                        created: '2022-11-12 22:27:01.825',
+                        reportActionID: '6401435781022176',
+                        actionName: CONST.REPORT.ACTIONS.TYPE.CREATED,
+                        originalMessage: {
+                            html: 'Hello world',
+                            whisperedTo: [],
+                        },
+                        message: [
+                            {
+                                html: 'Hello world',
+                                type: 'Action type',
+                                text: 'Action text',
+                            },
+                        ],
+                    },
+                    {
+                        created: '2022-11-11 22:27:01.825',
+                        reportActionID: '2962390724708756',
+                        actionName: CONST.REPORT.ACTIONS.TYPE.IOU,
+                        originalMessage: {
+                            amount: 0,
+                            currency: 'USD',
+                            type: 'split', // change to const
+                        },
+                        message: [
+                            {
+                                html: 'Hello world',
+                                type: 'Action type',
+                                text: 'Action text',
+                            },
+                        ],
+                    },
+                    {
+                        created: '2022-11-10 22:27:01.825',
+                        reportActionID: '1609646094152486',
+                        actionName: CONST.REPORT.ACTIONS.TYPE.RENAMED,
+                        originalMessage: {
+                            html: 'Hello world',
+                            lastModified: '2022-11-10 22:27:01.825',
+                            oldName: 'old name',
+                            newName: 'new name',
+                        },
+                        message: [
+                            {
+                                html: 'Hello world',
+                                type: 'Action type',
+                                text: 'Action text',
+                            },
+                        ],
+                    },
+                    {
+                        created: '2022-11-09 22:27:01.825',
+                        reportActionID: '8049485084562457',
+                        actionName: CONST.REPORT.ACTIONS.TYPE.POLICYCHANGELOG.UPDATE_FIELD,
+                        originalMessage: {},
+                        message: [{html: 'updated the Approval Mode from "Submit and Approve" to "Submit and Close"', type: 'Action type', text: 'Action text'}],
+                    },
+                    {
+                        created: '2022-11-08 22:27:06.825',
+                        reportActionID: '1661970171066216',
+                        actionName: CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENTQUEUED,
+                        originalMessage: {
+                            html: 'Hello world',
+                            whisperedTo: [],
+                        },
+                        message: [{html: 'Waiting for the bank account', type: 'Action type', text: 'Action text'}],
+                    },
+                    {
+                        created: '2022-11-06 22:27:08.825',
+                        reportActionID: '1661970171066220',
+                        actionName: CONST.REPORT.ACTIONS.TYPE.TASKEDITED,
+                        originalMessage: {
+                            html: 'Hello world',
+                            whisperedTo: [],
+                        },
+                        message: [{html: 'I have changed the task', type: 'Action type', text: 'Action text'}],
+                    },
+                ];
+
+                const resultWithoutNewestFlag = ReportActionsUtils.getSortedReportActionsForDisplay(input);
+                const resultWithNewestFlag = ReportActionsUtils.getSortedReportActionsForDisplay(input, true);
+                input.pop();
+                // Mark the newest report action as the newest report action
+                resultWithoutNewestFlag[0] = {
+                    ...resultWithoutNewestFlag[0],
+                    isNewestReportAction: true,
+                };
+                expect(resultWithoutNewestFlag).toStrictEqual(resultWithNewestFlag);
+            });
         });
 
         it('should filter out closed actions', () => {
@@ -311,7 +423,7 @@ describe('ReportActionsUtils', () => {
                 {
                     created: '2022-11-13 22:27:01.825',
                     reportActionID: '8401445780099176',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                     originalMessage: {
                         html: 'Hello world',
                         whisperedTo: [],
@@ -402,7 +514,7 @@ describe('ReportActionsUtils', () => {
                 {
                     created: '2022-11-13 22:27:01.825',
                     reportActionID: '8401445780099176',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                     originalMessage: {
                         html: 'Hello world',
                         whisperedTo: [],
@@ -418,7 +530,7 @@ describe('ReportActionsUtils', () => {
                 {
                     created: '2022-11-12 22:27:01.825',
                     reportActionID: '8401445780099175',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                     originalMessage: {
                         html: 'Hello world',
                         whisperedTo: [],
@@ -429,7 +541,7 @@ describe('ReportActionsUtils', () => {
                 {
                     created: '2022-11-11 22:27:01.825',
                     reportActionID: '8401445780099174',
-                    actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                    actionName: CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT,
                     originalMessage: {
                         html: 'Hello world',
                         whisperedTo: [],
@@ -473,18 +585,20 @@ describe('ReportActionsUtils', () => {
                 waitForBatchedUpdates()
                     // When Onyx is updated with the data and the sidebar re-renders
                     .then(() =>
+                        // @ts-expect-error Preset necessary values
                         Onyx.multiSet({
                             [`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`]: report,
                             [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.reportID}`]: {[action.reportActionID]: action, [action2.reportActionID]: action2},
-                        } as unknown as KeyValueMapping),
+                        }),
                     )
                     .then(
                         () =>
                             new Promise<void>((resolve) => {
-                                const connection = Onyx.connect({
+                                const connectionID = Onyx.connect({
                                     key: `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.reportID}`,
+                                    waitForCollectionCallback: true,
                                     callback: () => {
-                                        Onyx.disconnect(connection);
+                                        Onyx.disconnect(connectionID);
                                         const res = ReportActionsUtils.getLastVisibleAction(report.reportID);
                                         expect(res).toEqual(action2);
                                         resolve();

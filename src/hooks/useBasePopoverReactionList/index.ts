@@ -22,7 +22,6 @@ export default function useBasePopoverReactionList({emojiName, emojiReactions, a
                 emojiCodes: [],
                 hasUserReacted: false,
                 users: [],
-                isReady: false,
             };
         }
 
@@ -35,7 +34,6 @@ export default function useBasePopoverReactionList({emojiName, emojiReactions, a
             reactionCount,
             hasUserReacted,
             users,
-            isReady: true,
         };
     }
 

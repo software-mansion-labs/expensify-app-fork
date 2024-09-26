@@ -16,7 +16,7 @@ function ValidateLoginPage({
     useEffect(() => {
         // Wait till navigation becomes available
         Navigation.isNavigationReady().then(() => {
-            if (session?.authToken && session?.authTokenType !== CONST.AUTH_TOKEN_TYPES.ANONYMOUS) {
+            if (session?.authToken) {
                 // If already signed in, do not show the validate code if not on web,
                 // because we don't want to block the user with the interstitial page.
                 if (exitTo) {
@@ -28,7 +28,7 @@ function ValidateLoginPage({
                 Session.signInWithValidateCodeAndNavigate(Number(accountID), validateCode, '', exitTo);
             }
         });
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

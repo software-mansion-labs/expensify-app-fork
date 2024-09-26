@@ -1,4 +1,5 @@
-import {PUBLIC_DOMAINS, Str} from 'expensify-common';
+import {PUBLIC_DOMAINS} from 'expensify-common/lib/CONST';
+import Str from 'expensify-common/lib/str';
 import Onyx from 'react-native-onyx';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -21,14 +22,7 @@ function getPhoneNumberWithoutSpecialChars(phone: string): string {
  * Append user country code to the phone number
  */
 function appendCountryCode(phone: string): string {
-    if (phone.startsWith('+')) {
-        return phone;
-    }
-    const phoneWithCountryCode = `+${countryCodeByIP}${phone}`;
-    if (parsePhoneNumber(phoneWithCountryCode).possible) {
-        return phoneWithCountryCode;
-    }
-    return `+${phone}`;
+    return phone.startsWith('+') ? phone : `+${countryCodeByIP}${phone}`;
 }
 
 /**
@@ -46,8 +40,8 @@ function isEmailPublicDomain(email: string): boolean {
 function validateNumber(values: string): string {
     const parsedPhoneNumber = parsePhoneNumber(values);
 
-    if (parsedPhoneNumber.possible && Str.isValidE164Phone(values.slice(0))) {
-        return `${parsedPhoneNumber.number?.e164}${CONST.SMS.DOMAIN}`;
+    if (parsedPhoneNumber.possible && Str.isValidPhone(values.slice(0))) {
+        return parsedPhoneNumber.number?.e164 + CONST.SMS.DOMAIN;
     }
 
     return '';

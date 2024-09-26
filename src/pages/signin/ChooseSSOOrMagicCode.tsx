@@ -8,8 +8,8 @@ import Text from '@components/Text';
 import useKeyboardState from '@hooks/useKeyboardState';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import * as Session from '@userActions/Session';
@@ -39,7 +39,7 @@ function ChooseSSOOrMagicCode({credentials, account, setIsUsingMagicCode}: Choos
     const {isKeyboardShown} = useKeyboardState();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const {isSmallScreenWidth} = useWindowDimensions();
 
     // This view doesn't have a field for user input, so dismiss the device keyboard if shown
     useEffect(() => {
@@ -52,11 +52,10 @@ function ChooseSSOOrMagicCode({credentials, account, setIsUsingMagicCode}: Choos
     return (
         <>
             <View>
-                <Text style={[styles.loginHeroBody, styles.mb5, styles.textNormal, !shouldUseNarrowLayout ? styles.textAlignLeft : {}]}>{translate('samlSignIn.welcomeSAMLEnabled')}</Text>
+                <Text style={[styles.loginHeroBody, styles.mb5, styles.textNormal, !isSmallScreenWidth ? styles.textAlignLeft : {}]}>{translate('samlSignIn.welcomeSAMLEnabled')}</Text>
                 <Button
                     isDisabled={isOffline}
                     success
-                    large
                     style={[styles.mv3]}
                     text={translate('samlSignIn.useSingleSignOn')}
                     isLoading={account?.isLoading}
@@ -66,7 +65,7 @@ function ChooseSSOOrMagicCode({credentials, account, setIsUsingMagicCode}: Choos
                 />
 
                 <View style={[styles.mt5]}>
-                    <Text style={[styles.loginHeroBody, styles.mb5, styles.textNormal, !shouldUseNarrowLayout ? styles.textAlignLeft : {}]}>
+                    <Text style={[styles.loginHeroBody, styles.mb5, styles.textNormal, !isSmallScreenWidth ? styles.textAlignLeft : {}]}>
                         {translate('samlSignIn.orContinueWithMagicCode')}
                     </Text>
                 </View>
@@ -74,7 +73,6 @@ function ChooseSSOOrMagicCode({credentials, account, setIsUsingMagicCode}: Choos
                 <Button
                     isDisabled={isOffline}
                     style={[styles.mv3]}
-                    large
                     text={translate('samlSignIn.useMagicCode')}
                     isLoading={account?.isLoading && account?.loadingForm === (account?.requiresTwoFactorAuth ? CONST.FORMS.VALIDATE_TFA_CODE_FORM : CONST.FORMS.VALIDATE_CODE_FORM)}
                     onPress={() => {

@@ -32,20 +32,13 @@ type BaseMiniContextMenuItemProps = {
      * Whether the button should be in the active state
      */
     isDelayButtonStateComplete: boolean;
-    /**
-     * Can be used to control the click event, and for example whether or not to lose focus from the composer when pressing the item
-     */
-    shouldPreventDefaultFocusOnPress?: boolean;
 };
 
 /**
  * Component that renders a mini context menu item with a
  * pressable. Also renders a tooltip when hovering the item.
  */
-function BaseMiniContextMenuItem(
-    {tooltipText, onPress, children, isDelayButtonStateComplete = true, shouldPreventDefaultFocusOnPress = true}: BaseMiniContextMenuItemProps,
-    ref: ForwardedRef<View>,
-) {
+function BaseMiniContextMenuItem({tooltipText, onPress, children, isDelayButtonStateComplete = true}: BaseMiniContextMenuItemProps, ref: ForwardedRef<View>) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     return (
@@ -71,15 +64,13 @@ function BaseMiniContextMenuItem(
                     }
 
                     // Prevent text input blur on left click
-                    if (shouldPreventDefaultFocusOnPress) {
-                        event.preventDefault();
-                    }
+                    event.preventDefault();
                 }}
                 accessibilityLabel={tooltipText}
                 role={CONST.ROLE.BUTTON}
                 style={({hovered, pressed}) => [
                     styles.reportActionContextMenuMiniButton,
-                    StyleUtils.getButtonBackgroundColorStyle(getButtonState(hovered, pressed, isDelayButtonStateComplete), true),
+                    StyleUtils.getButtonBackgroundColorStyle(getButtonState(hovered, pressed, isDelayButtonStateComplete)),
                     isDelayButtonStateComplete && styles.cursorDefault,
                 ]}
             >

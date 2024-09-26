@@ -109,30 +109,29 @@ function BaseGetPhysicalCard({
     const styles = useThemeStyles();
     const isRouteSet = useRef(false);
 
-    const domainCards = CardUtils.getDomainCards(cardList)[domain] || [];
-    const cardToBeIssued = domainCards.find((card) => !card?.nameValuePairs?.isVirtual && card?.state === CONST.EXPENSIFY_CARD.STATE.STATE_NOT_ISSUED);
-    const cardID = cardToBeIssued?.cardID.toString() ?? '-1';
-
     useEffect(() => {
         if (isRouteSet.current || !privatePersonalDetails || !cardList) {
             return;
         }
 
+        const domainCards = CardUtils.getDomainCards(cardList)[domain] || [];
+        const physicalCard = domainCards.find((card) => !card?.isVirtual);
+
         // When there are no cards for the specified domain, user is redirected to the wallet page
-        if (domainCards.length === 0 || !cardToBeIssued) {
+        if (domainCards.length === 0) {
             Navigation.goBack(ROUTES.SETTINGS_WALLET);
             return;
         }
 
         // When there's no physical card or it exists but it doesn't have the required state for this flow,
         // redirect user to the espensify card page
-        if (cardToBeIssued.state !== CONST.EXPENSIFY_CARD.STATE.STATE_NOT_ISSUED) {
-            Navigation.goBack(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(cardToBeIssued.cardID.toString()));
+        if (!physicalCard || physicalCard.state !== CONST.EXPENSIFY_CARD.STATE.STATE_NOT_ISSUED) {
+            Navigation.goBack(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(domain));
             return;
         }
 
         if (!draftValues) {
-            const updatedDraftValues = GetPhysicalCardUtils.getUpdatedDraftValues(undefined, privatePersonalDetails, loginList);
+            const updatedDraftValues = GetPhysicalCardUtils.getUpdatedDraftValues(null, privatePersonalDetails, loginList);
             // Form draft data needs to be initialized with the private personal details
             // If no draft data exists
             FormActions.setDraftValues(ONYXKEYS.FORMS.GET_PHYSICAL_CARD_FORM, updatedDraftValues);
@@ -140,23 +139,27 @@ function BaseGetPhysicalCard({
         }
 
         // Redirect user to previous steps of the flow if he hasn't finished them yet
-        GetPhysicalCardUtils.setCurrentRoute(currentRoute, domain, GetPhysicalCardUtils.getUpdatedPrivatePersonalDetails(draftValues, privatePersonalDetails));
+        GetPhysicalCardUtils.setCurrentRoute(currentRoute, domain, GetPhysicalCardUtils.getUpdatedPrivatePersonalDetails(draftValues));
         isRouteSet.current = true;
-    }, [cardList, currentRoute, domain, domainCards.length, draftValues, loginList, cardToBeIssued, privatePersonalDetails]);
+    }, [cardList, currentRoute, domain, draftValues, loginList, privatePersonalDetails]);
 
     const onSubmit = useCallback(() => {
-        const updatedPrivatePersonalDetails = GetPhysicalCardUtils.getUpdatedPrivatePersonalDetails(draftValues, privatePersonalDetails);
+        const updatedPrivatePersonalDetails = GetPhysicalCardUtils.getUpdatedPrivatePersonalDetails(draftValues);
         // If the current step of the get physical card flow is the confirmation page
         if (isConfirmation) {
-            Wallet.requestPhysicalExpensifyCard(cardToBeIssued?.cardID ?? -1, session?.authToken ?? '', updatedPrivatePersonalDetails);
+            const domainCards = CardUtils.getDomainCards(cardList)[domain];
+            const physicalCard = domainCards.find((card) => !card?.isVirtual);
+            const cardID = physicalCard?.cardID ?? 0;
+
+            Wallet.requestPhysicalExpensifyCard(cardID, session?.authToken ?? '', updatedPrivatePersonalDetails);
             // Form draft data needs to be erased when the flow is complete,
             // so that no stale data is left on Onyx
             FormActions.clearDraftValues(ONYXKEYS.FORMS.GET_PHYSICAL_CARD_FORM);
-            Navigation.navigate(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(cardID.toString()));
+            Navigation.navigate(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(domain));
             return;
         }
         GetPhysicalCardUtils.goToNextPhysicalCardRoute(domain, updatedPrivatePersonalDetails);
-    }, [cardID, cardToBeIssued?.cardID, domain, draftValues, isConfirmation, session?.authToken, privatePersonalDetails]);
+    }, [cardList, domain, draftValues, isConfirmation, session?.authToken]);
     return (
         <ScreenWrapper
             shouldEnablePickerAvoiding={false}
@@ -165,7 +168,7 @@ function BaseGetPhysicalCard({
         >
             <HeaderWithBackButton
                 title={title}
-                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(cardID))}
+                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(domain))}
             />
             <Text style={[styles.textHeadline, styles.mh5, styles.mb5]}>{headline}</Text>
             {renderContent({onSubmit, submitButtonText, children, onValidate})}

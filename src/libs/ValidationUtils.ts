@@ -1,15 +1,16 @@
 import {addYears, endOfMonth, format, isAfter, isBefore, isSameDay, isValid, isWithinInterval, parse, parseISO, startOfDay, subYears} from 'date-fns';
-import {PUBLIC_DOMAINS, Str, Url} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
+import {URL_REGEX_WITH_REQUIRED_PROTOCOL} from 'expensify-common/lib/Url';
+import isDate from 'lodash/isDate';
 import isEmpty from 'lodash/isEmpty';
 import isObject from 'lodash/isObject';
 import type {OnyxCollection} from 'react-native-onyx';
 import type {FormInputErrors, FormOnyxKeys, FormOnyxValues, FormValue} from '@components/Form/types';
 import CONST from '@src/CONST';
 import type {OnyxFormKey} from '@src/ONYXKEYS';
-import type {Report, TaxRates} from '@src/types/onyx';
+import type {Report} from '@src/types/onyx';
 import * as CardUtils from './CardUtils';
 import DateUtils from './DateUtils';
-import * as Localize from './Localize';
 import * as LoginUtils from './LoginUtils';
 import {parsePhoneNumber} from './PhoneNumber';
 import StringUtils from './StringUtils';
@@ -80,7 +81,7 @@ function isValidPastDate(date: string | Date): boolean {
  * Used to validate a value that is "required".
  * @param value - field value
  */
-function isRequiredFulfilled(value?: FormValue | number[] | string[] | Record<string, string>): boolean {
+function isRequiredFulfilled(value?: FormValue): boolean {
     if (!value) {
         return false;
     }
@@ -88,13 +89,13 @@ function isRequiredFulfilled(value?: FormValue | number[] | string[] | Record<st
         return !StringUtils.isEmptyString(value);
     }
 
-    if (DateUtils.isDate(value)) {
+    if (isDate(value)) {
         return isValidDate(value);
     }
     if (Array.isArray(value) || isObject(value)) {
         return !isEmpty(value);
     }
-    return !!value;
+    return Boolean(value);
 }
 
 /**
@@ -110,7 +111,7 @@ function getFieldRequiredErrors<TFormID extends OnyxFormKey>(values: FormOnyxVal
             return;
         }
 
-        errors[fieldKey] = Localize.translateLocal('common.error.fieldRequired');
+        errors[fieldKey] = 'common.error.fieldRequired';
     });
 
     return errors;
@@ -189,12 +190,12 @@ function meetsMaximumAgeRequirement(date: string): boolean {
 /**
  * Validate that given date is in a specified range of years before now.
  */
-function getAgeRequirementError(date: string, minimumAge: number, maximumAge: number): string {
+function getAgeRequirementError(date: string, minimumAge: number, maximumAge: number): string | Array<string | Record<string, string>> {
     const currentDate = startOfDay(new Date());
     const testDate = parse(date, CONST.DATE.FNS_FORMAT_STRING, currentDate);
 
     if (!isValid(testDate)) {
-        return Localize.translateLocal('common.error.dateInvalid');
+        return 'common.error.dateInvalid';
     }
 
     const maximalDate = subYears(currentDate, minimumAge);
@@ -205,10 +206,10 @@ function getAgeRequirementError(date: string, minimumAge: number, maximumAge: nu
     }
 
     if (isSameDay(testDate, maximalDate) || isAfter(testDate, maximalDate)) {
-        return Localize.translateLocal('privatePersonalDetails.error.dateShouldBeBefore', {dateString: format(maximalDate, CONST.DATE.FNS_FORMAT_STRING)});
+        return ['privatePersonalDetails.error.dateShouldBeBefore', {dateString: format(maximalDate, CONST.DATE.FNS_FORMAT_STRING)}];
     }
 
-    return Localize.translateLocal('privatePersonalDetails.error.dateShouldBeAfter', {dateString: format(minimalDate, CONST.DATE.FNS_FORMAT_STRING)});
+    return ['privatePersonalDetails.error.dateShouldBeAfter', {dateString: format(minimalDate, CONST.DATE.FNS_FORMAT_STRING)}];
 }
 
 /**
@@ -220,14 +221,14 @@ function getDatePassedError(inputDate: string): string {
 
     // If input date is not valid, return an error
     if (!isValid(parsedDate)) {
-        return Localize.translateLocal('common.error.dateInvalid');
+        return 'common.error.dateInvalid';
     }
 
     // Clear time for currentDate so comparison is based solely on the date
     currentDate.setHours(0, 0, 0, 0);
 
     if (parsedDate < currentDate) {
-        return Localize.translateLocal('common.error.dateInvalid');
+        return 'common.error.dateInvalid';
     }
 
     return '';
@@ -239,12 +240,7 @@ function getDatePassedError(inputDate: string): string {
  */
 function isValidWebsite(url: string): boolean {
     const isLowerCase = url === url.toLowerCase();
-    return new RegExp(`^${Url.URL_REGEX_WITH_REQUIRED_PROTOCOL}$`, 'i').test(url) && isLowerCase;
-}
-
-/** Checks if the domain is public */
-function isPublicDomain(domain: string): boolean {
-    return PUBLIC_DOMAINS.some((publicDomain) => publicDomain === domain.toLowerCase());
+    return new RegExp(`^${URL_REGEX_WITH_REQUIRED_PROTOCOL}$`, 'i').test(url) && isLowerCase;
 }
 
 function validateIdentity(identity: Record<string, string>): Record<string, boolean> {
@@ -287,7 +283,7 @@ function isValidUSPhone(phoneNumber = '', isCountryCodeOptional?: boolean): bool
 
     // When we pass regionCode as an option to parsePhoneNumber it wrongly assumes inputs like '=15123456789' as valid
     // so we need to check if it is a valid phone.
-    if (regionCode && !Str.isValidPhoneFormat(phone)) {
+    if (regionCode && !Str.isValidPhone(phone)) {
         return false;
     }
 
@@ -296,15 +292,15 @@ function isValidUSPhone(phoneNumber = '', isCountryCodeOptional?: boolean): bool
 }
 
 function isValidValidateCode(validateCode: string): boolean {
-    return !!validateCode.match(CONST.VALIDATE_CODE_REGEX_STRING);
+    return Boolean(validateCode.match(CONST.VALIDATE_CODE_REGEX_STRING));
 }
 
 function isValidRecoveryCode(recoveryCode: string): boolean {
-    return !!recoveryCode.match(CONST.RECOVERY_CODE_REGEX_STRING);
+    return Boolean(recoveryCode.match(CONST.RECOVERY_CODE_REGEX_STRING));
 }
 
 function isValidTwoFactorCode(code: string): boolean {
-    return !!code.match(CONST.REGEX.CODE_2FA);
+    return Boolean(code.match(CONST.REGEX.CODE_2FA));
 }
 
 /**
@@ -339,10 +335,6 @@ function isValidCompanyName(name: string) {
     return !name.match(CONST.REGEX.EMOJIS);
 }
 
-function isValidReportName(name: string) {
-    return new Blob([name.trim()]).size <= CONST.REPORT_NAME_LIMIT;
-}
-
 /**
  * Checks that the provided name doesn't contain any commas or semicolons
  */
@@ -354,7 +346,8 @@ function isValidDisplayName(name: string): boolean {
  * Checks that the provided legal name doesn't contain special characters
  */
 function isValidLegalName(name: string): boolean {
-    return CONST.REGEX.ALPHABETIC_AND_LATIN_CHARS.test(name);
+    const hasAccentedChars = Boolean(name.match(CONST.REGEX.ACCENT_LATIN_CHARS));
+    return CONST.REGEX.ALPHABETIC_AND_LATIN_CHARS.test(name) && !hasAccentedChars;
 }
 
 /**
@@ -367,7 +360,7 @@ function isValidPersonName(value: string) {
 /**
  * Checks if the provided string includes any of the provided reserved words
  */
-function doesContainReservedWord(value: string, reservedWords: typeof CONST.DISPLAY_NAME.RESERVED_NAMES): boolean {
+function doesContainReservedWord(value: string, reservedWords: string[]): boolean {
     const valueToCheck = value.trim().toLowerCase();
     return reservedWords.some((reservedWord) => valueToCheck.includes(reservedWord.toLowerCase()));
 }
@@ -411,7 +404,7 @@ function isNumeric(value: string): boolean {
     if (typeof value !== 'string') {
         return false;
     }
-    return CONST.REGEX.NUMBER.test(value);
+    return /^\d*$/.test(value);
 }
 
 /**
@@ -466,35 +459,6 @@ function prepareValues(values: ValuesType): ValuesType {
     return trimmedStringValues;
 }
 
-/**
- * Validates the given value if it is correct percentage value.
- */
-function isValidPercentage(value: string): boolean {
-    const parsedValue = Number(value);
-    return !Number.isNaN(parsedValue) && parsedValue >= 0 && parsedValue <= 100;
-}
-
-/**
- * Validates the given value if it is correct tax name.
- */
-function isExistingTaxName(taxName: string, taxRates: TaxRates): boolean {
-    const trimmedTaxName = taxName.trim();
-    return !!Object.values(taxRates).find((taxRate) => taxRate.name === trimmedTaxName);
-}
-
-function isExistingTaxCode(taxCode: string, taxRates: TaxRates): boolean {
-    const trimmedTaxCode = taxCode.trim();
-    return !!Object.keys(taxRates).find((taxID) => taxID === trimmedTaxCode);
-}
-
-/**
- * Validates the given value if it is correct subscription size.
- */
-function isValidSubscriptionSize(subscriptionSize: string): boolean {
-    const parsedSubscriptionSize = Number(subscriptionSize);
-    return !Number.isNaN(parsedSubscriptionSize) && parsedSubscriptionSize > 0 && parsedSubscriptionSize <= CONST.SUBSCRIPTION_SIZE_LIMIT && Number.isInteger(parsedSubscriptionSize);
-}
-
 export {
     meetsMinimumAgeRequirement,
     meetsMaximumAgeRequirement,
@@ -533,10 +497,4 @@ export {
     validateDateTimeIsAtLeastOneMinuteInFuture,
     prepareValues,
     isValidPersonName,
-    isValidPercentage,
-    isValidReportName,
-    isExistingTaxName,
-    isValidSubscriptionSize,
-    isExistingTaxCode,
-    isPublicDomain,
 };

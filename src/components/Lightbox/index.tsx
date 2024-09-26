@@ -1,19 +1,19 @@
 import React, {useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import type {LayoutChangeEvent, StyleProp, ViewStyle} from 'react-native';
+import type {LayoutChangeEvent, NativeSyntheticEvent, StyleProp, ViewStyle} from 'react-native';
 import {ActivityIndicator, PixelRatio, StyleSheet, View} from 'react-native';
 import {useSharedValue} from 'react-native-reanimated';
-import AttachmentOfflineIndicator from '@components/AttachmentOfflineIndicator';
 import AttachmentCarouselPagerContext from '@components/Attachments/AttachmentCarousel/Pager/AttachmentCarouselPagerContext';
 import Image from '@components/Image';
-import type {ImageOnLoadEvent} from '@components/Image/types';
 import MultiGestureCanvas, {DEFAULT_ZOOM_RANGE} from '@components/MultiGestureCanvas';
 import type {CanvasSize, ContentSize, OnScaleChangedCallback, ZoomRange} from '@components/MultiGestureCanvas/types';
 import {getCanvasFitScale} from '@components/MultiGestureCanvas/utils';
-import useNetwork from '@hooks/useNetwork';
 import useStyleUtils from '@hooks/useStyleUtils';
-import useThemeStyles from '@hooks/useThemeStyles';
-import * as FileUtils from '@libs/fileDownload/FileUtils';
 import NUMBER_OF_CONCURRENT_LIGHTBOXES from './numberOfConcurrentLightboxes';
+
+const DEFAULT_IMAGE_SIZE = 200;
+const DEFAULT_IMAGE_DIMENSION: ContentSize = {width: DEFAULT_IMAGE_SIZE, height: DEFAULT_IMAGE_SIZE};
+
+type ImageOnLoadEvent = NativeSyntheticEvent<ContentSize>;
 
 const cachedImageDimensions = new Map<string, ContentSize | undefined>();
 
@@ -42,7 +42,6 @@ type LightboxProps = {
  */
 function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChangedProp, onError, style, zoomRange = DEFAULT_ZOOM_RANGE}: LightboxProps) {
     const StyleUtils = useStyleUtils();
-    const styles = useThemeStyles();
 
     /**
      * React hooks must be used in the render function of the component at top-level and unconditionally.
@@ -50,7 +49,6 @@ function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChan
      * we need to create a shared value that can be used in the render function.
      */
     const isPagerScrollingFallback = useSharedValue(false);
-    const {isOffline} = useNetwork();
 
     const attachmentCarouselPagerContext = useContext(AttachmentCarouselPagerContext);
     const {
@@ -78,10 +76,10 @@ function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChan
             };
         }
 
-        const foundPage = attachmentCarouselPagerContext.pagerItems.findIndex((item) => item.source === uri || item.previewSource === uri);
+        const foundPage = attachmentCarouselPagerContext.pagerItems.findIndex((item) => item.source === uri);
         return {
             ...attachmentCarouselPagerContext,
-            isUsedInCarousel: !!attachmentCarouselPagerContext.pagerRef,
+            isUsedInCarousel: true,
             isSingleCarouselItem: attachmentCarouselPagerContext.pagerItems.length === 1,
             page: foundPage,
         };
@@ -116,7 +114,7 @@ function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChan
                 return;
             }
 
-            setContentSize({width, height});
+            setContentSize({width: width * PixelRatio.get(), height: height * PixelRatio.get()});
         },
         [contentSize, setContentSize],
     );
@@ -140,7 +138,7 @@ function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChan
     const [isFallbackImageLoaded, setFallbackImageLoaded] = useState(false);
     const fallbackSize = useMemo(() => {
         if (!hasSiblingCarouselItems || !contentSize || isCanvasLoading) {
-            return undefined;
+            return DEFAULT_IMAGE_DIMENSION;
         }
 
         const {minScale} = getCanvasFitScale({canvasSize, contentSize});
@@ -198,8 +196,6 @@ function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChan
         [onScaleChangedContext, onScaleChangedProp],
     );
 
-    const isLocalFile = FileUtils.isLocalFile(uri);
-
     return (
         <View
             style={[StyleSheet.absoluteFill, style]}
@@ -222,11 +218,11 @@ function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChan
                             >
                                 <Image
                                     source={{uri}}
-                                    style={[contentSize ?? styles.invisibleImage]}
+                                    style={contentSize ?? DEFAULT_IMAGE_DIMENSION}
                                     isAuthTokenRequired={isAuthTokenRequired}
                                     onError={onError}
-                                    onLoad={(e) => {
-                                        updateContentSize(e);
+                                    onLoad={updateContentSize}
+                                    onLoadEnd={() => {
                                         setLightboxImageLoaded(true);
                                     }}
                                 />
@@ -240,24 +236,21 @@ function Lightbox({isAuthTokenRequired = false, uri, onScaleChanged: onScaleChan
                             <Image
                                 source={{uri}}
                                 resizeMode="contain"
-                                style={[fallbackSize ?? styles.invisibleImage]}
+                                style={fallbackSize}
                                 isAuthTokenRequired={isAuthTokenRequired}
-                                onLoad={(e) => {
-                                    updateContentSize(e);
-                                    setFallbackImageLoaded(true);
-                                }}
+                                onLoad={updateContentSize}
+                                onLoadEnd={() => setFallbackImageLoaded(true)}
                             />
                         </View>
                     )}
 
                     {/* Show activity indicator while the lightbox is still loading the image. */}
-                    {isLoading && (!isOffline || isLocalFile) && (
+                    {isLoading && (
                         <ActivityIndicator
                             size="large"
                             style={StyleSheet.absoluteFill}
                         />
                     )}
-                    {isLoading && !isLocalFile && <AttachmentOfflineIndicator />}
                 </>
             )}
         </View>

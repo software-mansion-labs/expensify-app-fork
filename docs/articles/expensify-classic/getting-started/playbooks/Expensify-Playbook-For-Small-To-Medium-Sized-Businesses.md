@@ -114,7 +114,7 @@ For an efficient company, we recommend setting up [Scheduled Submit](https://hel
 - You’ll notice *Scheduled Submit* is located directly under *Report Basics*
 - Choose *Daily*
 
-Between Expensify's SmartScan technology, automatic categorization, and [DoubleCheck](https://help.expensify.com/articles/expensify-classic/copilots-and-delegates/Approving-Reports) features, your employees shouldn't need to do anything more than swipe their Expensify Card or take a photo of  their receipt.
+Between Expensify's SmartScan technology, automatic categorization, and [DoubleCheck](https://help.expensify.com/articles/expensify-classic/manage-employees-and-report-approvals/Approving-Reports) features, your employees shouldn't need to do anything more than swipe their Expensify Card or take a photo of  their receipt.
 
 Expenses with violations will stay behind for the employee to fix, while expenses that are “in-workspace” will move into an approver’s queue to mitigate any potential for delays. Scheduled Submit will ensure all expenses are submitted automatically for approval.
 
@@ -147,10 +147,10 @@ You only need to do this once: you are fully set up for not only reimbursing exp
 
 ## Step 9: Invite employees and set an approval workflow
 *Select an Approval Mode*
-We recommend you select *Advanced Approval* as your Approval Mode to set up a middle-management layer of approval. If you have a single layer of approval, we recommend selecting [Submit & Approve](https://help.expensify.com/articles/expensify-classic/copilots-and-delegates/Approval-Workflows). But if *Advanced Approval* is your jam, keep reading! 
+We recommend you select *Advanced Approval* as your Approval Mode to set up a middle-management layer of approval. If you have a single layer of approval, we recommend selecting [Submit & Approve](https://help.expensify.com/articles/expensify-classic/manage-employees-and-report-approvals/Approval-Workflows). But if *Advanced Approval* is your jam, keep reading! 
 
 *Import your employees in bulk via CSV*
-Given the amount of employees you have, it’s best you import employees in bulk via CSV. You can learn more about using a CSV file to bulk upload employees with *Advanced Approval [here](https://help.expensify.com/articles/expensify-classic/copilots-and-delegates/Approval-Workflows)*
+Given the amount of employees you have, it’s best you import employees in bulk via CSV. You can learn more about using a CSV file to bulk upload employees with *Advanced Approval [here](https://help.expensify.com/articles/expensify-classic/manage-employees-and-report-approvals/Approval-Workflows)*
 
 ![Bulk import your employees](https://help.expensify.com/assets/images/playbook-impoort-employees.png){:width="100%"}
 
@@ -194,11 +194,14 @@ As mentioned above, we’ll be able to pull in transactions as they post (daily)
 ### If you don't have a corporate card, use the Expensify Card (US only)
 Expensify provides a corporate card with the following features:
 
-- Finish your expenses in a swipe, we'll take care of everything else
-- Get cash back on every US purchase and up to 50% off your monthly Expensify bill
-- Stay in control with realtime alerts, spend limits, and auto-reconciliation
-- Don't worry about credit checks, annual fees, or personal guarantees
-- Create unlimited virtual cards with fixed or monthly limits for specific purchases
+- Up to 2% cash back (_Applies to USD purchases only._)
+- [SmartLimits](https://help.expensify.com/articles/expensify-classic/expensify-card/Cardholder-Settings-and-Features) to control what each individual cardholder can spend
+- A stable, unbreakable real-time connection (third-party bank feeds can run into connectivity issues)
+- Receipt compliance - informing notifications (e.g. add a receipt!) for users *as soon as the card is swiped*
+- Unlimited Virtual Cards - single-purpose cards with a fixed or monthly limit for specific company purchases
+- A 50% discount on the price of all Expensify plans
+- Multiple discounts and savings on a host of partner tech suppliers 
+- Good Karma - 10% of all card interchange we earn goes directly to the Expensify.org Social Justice Community funds
 
 The Expensify Card is recommended as the most efficient way to manage your company's spending. 
 

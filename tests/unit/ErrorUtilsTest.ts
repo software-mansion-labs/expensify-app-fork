@@ -6,21 +6,21 @@ describe('ErrorUtils', () => {
         const errors: Errors = {};
         ErrorUtils.addErrorMessage(errors, 'username', 'Username cannot be empty');
 
-        expect(errors).toEqual({username: 'Username cannot be empty'});
+        expect(errors).toEqual({username: ['Username cannot be empty', {isTranslated: true}]});
     });
 
     test('should append an error message to an existing error message for a given inputID', () => {
         const errors: Errors = {username: 'Username cannot be empty'};
         ErrorUtils.addErrorMessage(errors, 'username', 'Username must be at least 6 characters long');
 
-        expect(errors).toEqual({username: 'Username cannot be empty\nUsername must be at least 6 characters long'});
+        expect(errors).toEqual({username: ['Username cannot be empty\nUsername must be at least 6 characters long', {isTranslated: true}]});
     });
 
     test('should add an error to input which does not contain any errors yet', () => {
         const errors: Errors = {username: 'Username cannot be empty'};
         ErrorUtils.addErrorMessage(errors, 'password', 'Password cannot be empty');
 
-        expect(errors).toEqual({username: 'Username cannot be empty', password: 'Password cannot be empty'});
+        expect(errors).toEqual({username: 'Username cannot be empty', password: ['Password cannot be empty', {isTranslated: true}]});
     });
 
     test('should not mutate the errors object when message is empty', () => {
@@ -50,7 +50,7 @@ describe('ErrorUtils', () => {
         ErrorUtils.addErrorMessage(errors, 'username', 'Username must be at least 6 characters long');
         ErrorUtils.addErrorMessage(errors, 'username', 'Username must contain at least one letter');
 
-        expect(errors).toEqual({username: 'Username cannot be empty\nUsername must be at least 6 characters long\nUsername must contain at least one letter'});
+        expect(errors).toEqual({username: ['Username cannot be empty\nUsername must be at least 6 characters long\nUsername must contain at least one letter', {isTranslated: true}]});
     });
 
     test('should append multiple error messages to an existing error message for the same inputID', () => {
@@ -59,7 +59,10 @@ describe('ErrorUtils', () => {
         ErrorUtils.addErrorMessage(errors, 'username', 'Username must not contain special characters');
 
         expect(errors).toEqual({
-            username: 'Username cannot be empty\nUsername must be at least 6 characters long\nUsername must contain at least one letter\nUsername must not contain special characters',
+            username: [
+                'Username cannot be empty\nUsername must be at least 6 characters long\nUsername must contain at least one letter\nUsername must not contain special characters',
+                {isTranslated: true},
+            ],
         });
     });
 });

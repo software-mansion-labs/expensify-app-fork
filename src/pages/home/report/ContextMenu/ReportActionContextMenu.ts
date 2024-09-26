@@ -1,7 +1,7 @@
 import React from 'react';
 import type {RefObject} from 'react';
 // eslint-disable-next-line no-restricted-imports
-import type {GestureResponderEvent, Text as RNText, TextInput, View} from 'react-native';
+import type {GestureResponderEvent, Text as RNText, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import type CONST from '@src/CONST';
@@ -16,7 +16,7 @@ type OnCancel = () => void;
 
 type ContextMenuType = ValueOf<typeof CONST.CONTEXT_MENU_TYPES>;
 
-type ContextMenuAnchor = View | RNText | TextInput | HTMLDivElement | null | undefined;
+type ContextMenuAnchor = View | RNText | null | undefined;
 
 type ShowContextMenu = (
     type: ContextMenuType,
@@ -35,8 +35,6 @@ type ShowContextMenu = (
     isUnreadChat?: boolean,
     disabledOptions?: ContextMenuAction[],
     shouldCloseOnTarget?: boolean,
-    setIsEmojiPickerActive?: (state: boolean) => void,
-    isOverflowMenu?: boolean,
 ) => void;
 
 type ReportActionContextMenu = {
@@ -105,9 +103,9 @@ function showContextMenu(
     event: GestureResponderEvent | MouseEvent,
     selection: string,
     contextMenuAnchor: ContextMenuAnchor,
-    reportID = '-1',
-    reportActionID = '-1',
-    originalReportID = '-1',
+    reportID = '0',
+    reportActionID = '0',
+    originalReportID = '0',
     draftMessage: string | undefined = undefined,
     onShow = () => {},
     onHide = () => {},
@@ -117,43 +115,35 @@ function showContextMenu(
     isUnreadChat = false,
     disabledActions: ContextMenuAction[] = [],
     shouldCloseOnTarget = false,
-    setIsEmojiPickerActive = () => {},
-    isOverflowMenu = false,
 ) {
     if (!contextMenuRef.current) {
         return;
     }
-    const show = () => {
-        contextMenuRef.current?.showContextMenu(
-            type,
-            event,
-            selection,
-            contextMenuAnchor,
-            reportID,
-            reportActionID,
-            originalReportID,
-            draftMessage,
-            onShow,
-            onHide,
-            isArchivedRoom,
-            isChronosReport,
-            isPinnedChat,
-            isUnreadChat,
-            disabledActions,
-            shouldCloseOnTarget,
-            setIsEmojiPickerActive,
-            isOverflowMenu,
-        );
-    };
-
     // If there is an already open context menu, close it first before opening
     // a new one.
     if (contextMenuRef.current.instanceID) {
-        hideContextMenu(false, show);
-        return;
+        hideContextMenu();
+        contextMenuRef.current.runAndResetOnPopoverHide();
     }
 
-    show();
+    contextMenuRef.current.showContextMenu(
+        type,
+        event,
+        selection,
+        contextMenuAnchor,
+        reportID,
+        reportActionID,
+        originalReportID,
+        draftMessage,
+        onShow,
+        onHide,
+        isArchivedRoom,
+        isChronosReport,
+        isPinnedChat,
+        isUnreadChat,
+        disabledActions,
+        shouldCloseOnTarget,
+    );
 }
 
 /**

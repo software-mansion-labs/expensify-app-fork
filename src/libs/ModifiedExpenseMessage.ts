@@ -2,17 +2,16 @@ import Onyx from 'react-native-onyx';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {PolicyTagLists, ReportAction} from '@src/types/onyx';
+import type {PolicyTagList, ReportAction} from '@src/types/onyx';
 import * as CurrencyUtils from './CurrencyUtils';
 import DateUtils from './DateUtils';
 import * as Localize from './Localize';
-import Log from './Log';
 import * as PolicyUtils from './PolicyUtils';
-import * as ReportActionsUtils from './ReportActionsUtils';
-import * as ReportConnection from './ReportConnection';
+import * as ReportUtils from './ReportUtils';
+import type {ExpenseOriginalMessage} from './ReportUtils';
 import * as TransactionUtils from './TransactionUtils';
 
-let allPolicyTags: OnyxCollection<PolicyTagLists> = {};
+let allPolicyTags: OnyxCollection<PolicyTagList> = {};
 Onyx.connect({
     key: ONYXKEYS.COLLECTION.POLICY_TAGS,
     waitForCollectionCallback: true,
@@ -24,13 +23,6 @@ Onyx.connect({
         allPolicyTags = value;
     },
 });
-
-/**
- * Utility to get message based on boolean literal value.
- */
-function getBooleanLiteralMessage(value: string | undefined, truthyMessage: string, falsyMessage: string): string {
-    return value === 'true' ? truthyMessage : falsyMessage;
-}
 
 /**
  * Builds the partial message fragment for a modified field on the expense.
@@ -64,14 +56,6 @@ function buildMessageFragmentForValue(
 }
 
 /**
- * Get the absolute value for a tax amount.
- */
-function getTaxAmountAbsValue(taxAmount: number): number {
-    // IOU requests cannot have negative values but they can be stored as negative values, let's return absolute value
-    return Math.abs(taxAmount ?? 0);
-}
-
-/**
  * Get the message line for a modified expense.
  */
 function getMessageLine(prefix: string, messageFragments: string[]): string {
@@ -95,32 +79,13 @@ function getMessageLine(prefix: string, messageFragments: string[]): string {
     }, prefix);
 }
 
-function getForDistanceRequest(newMerchant: string, oldMerchant: string, newAmount: string, oldAmount: string): string {
-    let changedField: 'distance' | 'rate' = 'distance';
-
-    if (CONST.REGEX.DISTANCE_MERCHANT.test(newMerchant) && CONST.REGEX.DISTANCE_MERCHANT.test(oldMerchant)) {
-        const oldValues = oldMerchant.split('@');
-        const oldDistance = oldValues[0]?.trim() || '';
-        const oldRate = oldValues[1]?.trim() || '';
-        const newValues = newMerchant.split('@');
-        const newDistance = newValues[0]?.trim() || '';
-        const newRate = newValues[1]?.trim() || '';
-
-        if (oldDistance === newDistance && oldRate !== newRate) {
-            changedField = 'rate';
-        }
-    } else {
-        Log.hmmm("Distance request merchant doesn't match NewDot format. Defaulting to showing as distance changed.", {newMerchant, oldMerchant});
+function getForDistanceRequest(newDistance: string, oldDistance: string, newAmount: string, oldAmount: string): string {
+    if (!oldDistance) {
+        return Localize.translateLocal('iou.setTheDistance', {newDistanceToDisplay: newDistance, newAmountToDisplay: newAmount});
     }
-
-    const translatedChangedField = Localize.translateLocal(`common.${changedField}`).toLowerCase();
-    if (!oldMerchant.length) {
-        return Localize.translateLocal('iou.setTheDistanceMerchant', {translatedChangedField, newMerchant, newAmountToDisplay: newAmount});
-    }
-    return Localize.translateLocal('iou.updatedTheDistanceMerchant', {
-        translatedChangedField,
-        newMerchant,
-        oldMerchant,
+    return Localize.translateLocal('iou.updatedTheDistance', {
+        newDistanceToDisplay: newDistance,
+        oldDistanceToDisplay: oldDistance,
         newAmountToDisplay: newAmount,
         oldAmountToDisplay: oldAmount,
     });
@@ -133,32 +98,30 @@ function getForDistanceRequest(newMerchant: string, oldMerchant: string, newAmou
  * If we change this function be sure to update the backend as well.
  */
 function getForReportAction(reportID: string | undefined, reportAction: OnyxEntry<ReportAction>): string {
-    if (!ReportActionsUtils.isModifiedExpenseAction(reportAction)) {
+    if (reportAction?.actionName !== CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE) {
         return '';
     }
-    const reportActionOriginalMessage = ReportActionsUtils.getOriginalMessage(reportAction);
-    const policyID = ReportConnection.getAllReports()?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]?.policyID ?? '-1';
+    const reportActionOriginalMessage = reportAction?.originalMessage as ExpenseOriginalMessage | undefined;
+    const policyID = ReportUtils.getReportPolicyID(reportID) ?? '';
 
     const removalFragments: string[] = [];
     const setFragments: string[] = [];
     const changeFragments: string[] = [];
 
-    const isReportActionOriginalMessageAnObject = reportActionOriginalMessage && typeof reportActionOriginalMessage === 'object';
     const hasModifiedAmount =
-        isReportActionOriginalMessageAnObject &&
+        reportActionOriginalMessage &&
         'oldAmount' in reportActionOriginalMessage &&
         'oldCurrency' in reportActionOriginalMessage &&
         'amount' in reportActionOriginalMessage &&
         'currency' in reportActionOriginalMessage;
 
-    const hasModifiedMerchant = isReportActionOriginalMessageAnObject && 'oldMerchant' in reportActionOriginalMessage && 'merchant' in reportActionOriginalMessage;
-
+    const hasModifiedMerchant = reportActionOriginalMessage && 'oldMerchant' in reportActionOriginalMessage && 'merchant' in reportActionOriginalMessage;
     if (hasModifiedAmount) {
-        const oldCurrency = reportActionOriginalMessage?.oldCurrency;
+        const oldCurrency = reportActionOriginalMessage?.oldCurrency ?? '';
         const oldAmountValue = reportActionOriginalMessage?.oldAmount ?? 0;
         const oldAmount = oldAmountValue > 0 ? CurrencyUtils.convertToDisplayString(reportActionOriginalMessage?.oldAmount ?? 0, oldCurrency) : '';
 
-        const currency = reportActionOriginalMessage?.currency;
+        const currency = reportActionOriginalMessage?.currency ?? '';
         const amount = CurrencyUtils.convertToDisplayString(reportActionOriginalMessage?.amount ?? 0, currency);
 
         // Only Distance edits should modify amount and merchant (which stores distance) in a single transaction.
@@ -170,7 +133,7 @@ function getForReportAction(reportID: string | undefined, reportAction: OnyxEntr
         buildMessageFragmentForValue(amount, oldAmount, Localize.translateLocal('iou.amount'), false, setFragments, removalFragments, changeFragments);
     }
 
-    const hasModifiedComment = isReportActionOriginalMessageAnObject && 'oldComment' in reportActionOriginalMessage && 'newComment' in reportActionOriginalMessage;
+    const hasModifiedComment = reportActionOriginalMessage && 'oldComment' in reportActionOriginalMessage && 'newComment' in reportActionOriginalMessage;
     if (hasModifiedComment) {
         buildMessageFragmentForValue(
             reportActionOriginalMessage?.newComment ?? '',
@@ -209,7 +172,7 @@ function getForReportAction(reportID: string | undefined, reportAction: OnyxEntr
         );
     }
 
-    const hasModifiedCategory = isReportActionOriginalMessageAnObject && 'oldCategory' in reportActionOriginalMessage && 'category' in reportActionOriginalMessage;
+    const hasModifiedCategory = reportActionOriginalMessage && 'oldCategory' in reportActionOriginalMessage && 'category' in reportActionOriginalMessage;
     if (hasModifiedCategory) {
         buildMessageFragmentForValue(
             reportActionOriginalMessage?.category ?? '',
@@ -222,7 +185,7 @@ function getForReportAction(reportID: string | undefined, reportAction: OnyxEntr
         );
     }
 
-    const hasModifiedTag = isReportActionOriginalMessageAnObject && 'oldTag' in reportActionOriginalMessage && 'tag' in reportActionOriginalMessage;
+    const hasModifiedTag = reportActionOriginalMessage && 'oldTag' in reportActionOriginalMessage && 'tag' in reportActionOriginalMessage;
     if (hasModifiedTag) {
         const policyTags = allPolicyTags?.[`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`] ?? {};
         const transactionTag = reportActionOriginalMessage?.tag ?? '';
@@ -230,10 +193,9 @@ function getForReportAction(reportID: string | undefined, reportAction: OnyxEntr
         const splittedTag = TransactionUtils.getTagArrayFromName(transactionTag);
         const splittedOldTag = TransactionUtils.getTagArrayFromName(oldTransactionTag);
         const localizedTagListName = Localize.translateLocal('common.tag');
-        const sortedTagKeys = PolicyUtils.getSortedTagKeys(policyTags);
 
-        sortedTagKeys.forEach((policyTagKey, index) => {
-            const policyTagListName = policyTags[policyTagKey].name || localizedTagListName;
+        Object.keys(policyTags).forEach((policyTagKey, index) => {
+            const policyTagListName = PolicyUtils.getTagListName(policyTags, index) || localizedTagListName;
 
             const newTag = splittedTag[index] ?? '';
             const oldTag = splittedOldTag[index] ?? '';
@@ -253,48 +215,12 @@ function getForReportAction(reportID: string | undefined, reportAction: OnyxEntr
         });
     }
 
-    const hasModifiedTaxAmount = isReportActionOriginalMessageAnObject && 'oldTaxAmount' in reportActionOriginalMessage && 'taxAmount' in reportActionOriginalMessage;
-    if (hasModifiedTaxAmount) {
-        const currency = reportActionOriginalMessage?.currency;
-
-        const taxAmount = CurrencyUtils.convertToDisplayString(getTaxAmountAbsValue(reportActionOriginalMessage?.taxAmount ?? 0), currency);
-        const oldTaxAmountValue = getTaxAmountAbsValue(reportActionOriginalMessage?.oldTaxAmount ?? 0);
-        const oldTaxAmount = oldTaxAmountValue > 0 ? CurrencyUtils.convertToDisplayString(oldTaxAmountValue, currency) : '';
-        buildMessageFragmentForValue(taxAmount, oldTaxAmount, Localize.translateLocal('iou.taxAmount'), false, setFragments, removalFragments, changeFragments);
-    }
-
-    const hasModifiedTaxRate = isReportActionOriginalMessageAnObject && 'oldTaxRate' in reportActionOriginalMessage && 'taxRate' in reportActionOriginalMessage;
-    if (hasModifiedTaxRate) {
-        buildMessageFragmentForValue(
-            reportActionOriginalMessage?.taxRate ?? '',
-            reportActionOriginalMessage?.oldTaxRate ?? '',
-            Localize.translateLocal('iou.taxRate'),
-            false,
-            setFragments,
-            removalFragments,
-            changeFragments,
-        );
-    }
-
-    const hasModifiedBillable = isReportActionOriginalMessageAnObject && 'oldBillable' in reportActionOriginalMessage && 'billable' in reportActionOriginalMessage;
+    const hasModifiedBillable = reportActionOriginalMessage && 'oldBillable' in reportActionOriginalMessage && 'billable' in reportActionOriginalMessage;
     if (hasModifiedBillable) {
         buildMessageFragmentForValue(
             reportActionOriginalMessage?.billable ?? '',
             reportActionOriginalMessage?.oldBillable ?? '',
-            Localize.translateLocal('iou.expense'),
-            true,
-            setFragments,
-            removalFragments,
-            changeFragments,
-        );
-    }
-
-    const hasModifiedReimbursable = isReportActionOriginalMessageAnObject && 'oldReimbursable' in reportActionOriginalMessage && 'reimbursable' in reportActionOriginalMessage;
-    if (hasModifiedReimbursable) {
-        buildMessageFragmentForValue(
-            getBooleanLiteralMessage(reportActionOriginalMessage?.reimbursable, Localize.translateLocal('iou.reimbursable'), Localize.translateLocal('iou.nonReimbursable')),
-            getBooleanLiteralMessage(reportActionOriginalMessage?.oldReimbursable, Localize.translateLocal('iou.reimbursable'), Localize.translateLocal('iou.nonReimbursable')),
-            Localize.translateLocal('iou.expense'),
+            Localize.translateLocal('iou.request'),
             true,
             setFragments,
             removalFragments,
@@ -307,7 +233,7 @@ function getForReportAction(reportID: string | undefined, reportAction: OnyxEntr
         getMessageLine(`\n${Localize.translateLocal('iou.set')}`, setFragments) +
         getMessageLine(`\n${Localize.translateLocal('iou.removed')}`, removalFragments);
     if (message === '') {
-        return Localize.translateLocal('iou.changedTheExpense');
+        return Localize.translateLocal('iou.changedTheRequest');
     }
     return `${message.substring(1, message.length)}`;
 }

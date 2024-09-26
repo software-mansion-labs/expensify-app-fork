@@ -1,15 +1,14 @@
-import debounce from 'lodash/debounce';
+import _ from 'lodash';
 import {useCallback, useMemo, useState} from 'react';
 import * as ReportUtils from '@libs/ReportUtils';
-import type {ParsingDetails} from '@libs/ReportUtils';
 import CONST from '@src/CONST';
 
 const useHandleExceedMaxCommentLength = () => {
     const [hasExceededMaxCommentLength, setHasExceededMaxCommentLength] = useState(false);
 
     const handleValueChange = useCallback(
-        (value: string, parsingDetails?: ParsingDetails) => {
-            if (ReportUtils.getCommentLength(value, parsingDetails) <= CONST.MAX_COMMENT_LENGTH) {
+        (value: string) => {
+            if (ReportUtils.getCommentLength(value) <= CONST.MAX_COMMENT_LENGTH) {
                 if (hasExceededMaxCommentLength) {
                     setHasExceededMaxCommentLength(false);
                 }
@@ -20,7 +19,7 @@ const useHandleExceedMaxCommentLength = () => {
         [hasExceededMaxCommentLength],
     );
 
-    const validateCommentMaxLength = useMemo(() => debounce(handleValueChange, 1500, {leading: true}), [handleValueChange]);
+    const validateCommentMaxLength = useMemo(() => _.debounce(handleValueChange, 1500, {leading: true}), [handleValueChange]);
 
     return {hasExceededMaxCommentLength, validateCommentMaxLength};
 };

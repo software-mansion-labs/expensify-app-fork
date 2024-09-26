@@ -1,9 +1,7 @@
 import React, {useCallback} from 'react';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import type {OnDragEndResponder} from 'react-beautiful-dnd';
-// eslint-disable-next-line no-restricted-imports
-import type {ScrollView as RNScrollView} from 'react-native';
-import ScrollView from '@components/ScrollView';
+import {ScrollView} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {DraggableListProps} from './types';
 import useDraggableInPortal from './useDraggableInPortal';
@@ -39,7 +37,7 @@ function DraggableList<T>(
         // eslint-disable-next-line @typescript-eslint/naming-convention
         ListFooterComponent,
     }: DraggableListProps<T>,
-    ref: React.ForwardedRef<RNScrollView>,
+    ref: React.ForwardedRef<ScrollView>,
 ) {
     const styles = useThemeStyles();
     /**

@@ -62,12 +62,12 @@ html,
 body {
     height: 100%;
     min-height: 100%;
-    background: var(--color-appBG);
-    color: var(--color-text-supporting);
+    background: $color-appBG;
+    color: $color-text-supporting;
 }
 
 hr {
-    background: var(--color-borders);
+    background: $color-borders;
     border: none;
     display: inline-block;
     width: 24px;
@@ -84,7 +84,7 @@ em {
 }
 
 a {
-    color: var(--color-link);
+    color: $color-link;
     text-decoration: none;
 
     img {
@@ -97,9 +97,9 @@ h2,
 h3,
 h4,
 h5,
-h6,
+h6, 
 summary {
-    color: var(--color-text);
+    color: $color-text;
     font-weight: bold;
     padding-bottom: 12px;
 }
@@ -116,22 +116,22 @@ h6 {
     font-size: 1.5em;
 }
 
-details summary {
+details summary { 
     cursor: pointer;
     user-select: none;
 }
 
 details > summary {
-    list-style-image: url('/assets/images/arrow-right.svg');
+    list-style-image: url("/assets/images/arrow-right.svg");
 }
 
 details[open] > summary {
-    list-style-image: url('/assets/images/down.svg');
+    list-style-image: url("/assets/images/down.svg");
 }
 
-h1,
+h1, 
 summary {
-    font-family: 'Expensify New Kansas', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+    font-family: "ExpensifyNewKansas", "Helvetica Neue", "Helvetica", Arial, sans-serif;
     font-weight: 500;
     font-size: larger;
 }
@@ -151,28 +151,28 @@ select,
 textarea {
     line-height: 1.4;
     font-weight: 400;
-    font-family: 'Expensify Neue', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+    font-family: "ExpensifyNeue", "Helvetica Neue", "Helvetica", Arial, sans-serif;
     font-size: 16px;
-    color: var(--color-text-supporting);
+    color: $color-text-supporting;
 }
 
 button {
     border-radius: 12px;
     padding: 12px;
-    font-family: 'Expensify Neue', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+    font-family: "ExpensifyNeue", "Helvetica Neue", "Helvetica", Arial, sans-serif;
     font-size: 15px;
     font-weight: bold;
 
     &.success {
-        background-color: var(--color-button-success-background);
-        color: var(--color-button-text);
+        background-color: $color-button-success-background;
+        color: $color-text;
         width: 100%;
         border-radius: 100px;
         padding-left: 20px;
         padding-right: 20px;
 
         &:hover {
-            background-color: var(--color-button-success-background-hover);
+            background-color: $color-button-success-background-hover;
             cursor: pointer;
         }
 
@@ -205,9 +205,9 @@ button {
 
 #lhn {
     position: fixed;
-    background-color: var(--color-highlightBG);
+    background-color: $color-highlightBG;
     box-sizing: border-box;
-    border-right-color: var(--color-borders);
+    border-right-color: $color-borders;
     border-right-width: 1px;
     border-style: solid;
     width: 100%;
@@ -229,6 +229,7 @@ button {
     li {
         list-style: none;
     }
+
 
     #lhn-content {
         overflow: auto;
@@ -252,6 +253,7 @@ button {
             &::-webkit-scrollbar {
                 display: none;
             }
+
         }
 
         &.expanded {
@@ -305,7 +307,7 @@ button {
 
     .selected {
         font-weight: bold;
-        color: var(--color-text);
+        color: $color-text;
     }
 
     .hide {
@@ -336,7 +338,7 @@ button {
         margin-left: 420px;
         /* On wide screens, the padding needs to be equal to
         the view width, minus the content size, minus the lhn size, divided by two. */
-        padding: 52px calc((100vw - 1000px - 420px) / 2) 0 calc((100vw - 1000px - 420px) / 2);
+        padding: 52px calc((100vw - 1000px - 420px)/2) 0 calc((100vw - 1000px - 420px)/2);
     }
 
     ul,
@@ -381,7 +383,7 @@ button {
             // Box shadow is used here because border-radius and border-collapse don't work together. It leads to double borders.
             // https://stackoverflow.com/questions/628301/the-border-radius-property-and-border-collapsecollapse-dont-mix-how-can-i-use
             border-style: hidden;
-            box-shadow: 0 0 0 1px var(--color-borders);
+            box-shadow: 0 0 0 1px $color-borders;
         }
 
         th:first-child {
@@ -403,12 +405,12 @@ button {
         th,
         td {
             padding: 6px 13px;
-            border: 1px solid var(--color-borders);
+            border: 1px solid $color-borders;
         }
 
         thead tr th {
             font-weight: bold;
-            background-color: var(--color-highlightBG);
+            background-color: $color-highlightBG;
         }
 
         .img-wrap {
@@ -417,8 +419,7 @@ button {
             flex-wrap: wrap;
         }
 
-        h1,
-        summary {
+        h1, summary {
             font-size: 1.5em;
             padding: 20px 0 12px 0;
         }
@@ -426,12 +427,12 @@ button {
         h2 {
             font-size: 1.125em;
             font-weight: 500;
-            font-family: 'Expensify New Kansas', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+            font-family: "ExpensifyNewKansas", "Helvetica Neue", "Helvetica", Arial, sans-serif;
         }
 
         h3 {
             font-size: 1em;
-            font-family: 'Expensify Neue', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+            font-family: "ExpensifyNeue", "Helvetica Neue", "Helvetica", Arial, sans-serif;
         }
 
         h2,
@@ -445,25 +446,25 @@ button {
             margin-bottom: 20px;
             padding-top: 20px;
             padding-left: 5%;
-            border-left: 5px solid var(--color-button-background-hover);
+            border-left: 5px solid #1B5744;
 
             em:before {
-                content: '\“\a';
+                content: "\“\a";
                 white-space: pre;
                 font-size: 60px;
                 line-height: 1em;
-                color: var(--color-accent);
+                color: #03d47c;
             }
 
             p:first-child {
                 font-size: large;
-                font-family: 'Expensify New Kansas', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+                font-family: "ExpensifyNewKansas", "Helvetica Neue", "Helvetica", Arial, sans-serif;
                 opacity: 0.8;
             }
         }
 
         .selector-container {
-            background-color: var(--color-highlightBG);
+            background-color: $color-highlightBG;
             display: flex;
             flex-direction: row-reverse;
             gap: 20px;
@@ -471,8 +472,7 @@ button {
             padding: 20px;
             margin-bottom: 20px;
             justify-content: space-between;
-            * > ol,
-            ul {
+            * > ol, ul {
                 padding: 0;
             }
 
@@ -485,7 +485,7 @@ button {
             height: 28px;
             border-radius: 20px;
             padding: 0px 26px 0px 12px;
-            color: var(--color-text);
+            color: $color-text;
             font-size: 11px;
             font-weight: 700;
             text-align: center;
@@ -494,10 +494,11 @@ button {
             @include maxBreakpoint($breakpoint-tablet) {
                 width: 100px;
             }
+
         }
 
         select {
-            background: url('/assets/images/down.svg') no-repeat right var(--color-button-background);
+            background: url("/assets/images/down.svg") no-repeat right $color-button-background;
             background-size: 12px;
             background-position-x: 85%;
             appearance: none !important;
@@ -507,14 +508,13 @@ button {
 
         .info {
             padding: 12px;
-            margin-bottom: 20px;
             border-radius: 8px;
-            background-color: var(--color-highlightBG);
-            color: var(--color-text);
+            background-color: $color-highlightBG;
+            color: $color-text;
             display: flex;
             gap: 12px;
             align-items: center;
-
+        
             img {
                 height: 16px;
                 width: 16px;
@@ -524,25 +524,23 @@ button {
                 padding: 0;
                 margin: 0;
             }
-
-            li {
-                margin-left: 12px;
-            }
         }
     }
+
 }
 
 .link {
     display: inline;
-    color: var(--color-text-supporting);
+    color: $color-text-supporting;
     cursor: pointer;
 
     &:hover {
-        color: var(--color-link);
+        color: $color-link;
     }
 }
 
 .lhn-items {
+
     ol,
     ul {
         padding-left: 32px;
@@ -566,7 +564,7 @@ button {
 
     .selected-article {
         font-weight: bold;
-        color: var(--color-text);
+        color: $color-text;
     }
 
     .home-link {
@@ -586,6 +584,7 @@ button {
     }
 }
 
+
 .platform-cards-group {
     @extend .cards-group;
 
@@ -601,16 +600,16 @@ button {
     padding: 28px;
     font-weight: 700;
     cursor: pointer;
-    color: var(--color-text);
-    background-color: var(--color-highlightBG);
+    color: $color-text;
+    background-color: $color-highlightBG;
 
     &:hover {
-        background-color: var(--color-row-hover);
+        background-color: $color-row-hover;
     }
 
     .row {
         display: flex;
-        flex-basis: 100%;
+        flex-basis:100%;
     }
 
     .body {
@@ -621,7 +620,7 @@ button {
     }
 
     h3.title {
-        font-family: 'Expensify New Kansas', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+        font-family: "ExpensifyNewKansas", "Helvetica Neue", "Helvetica", Arial, sans-serif;
     }
 
     h3.title,
@@ -704,14 +703,14 @@ button {
     }
 
     p.description {
-        color: var(--color-text-supporting);
+        color: $color-text-supporting;
         padding: 20px 0 20px 0;
     }
 
     p.url {
         padding: 0;
         font-size: 0.8em;
-        color: var(--color-text-supporting);
+        color: $color-text-supporting;
     }
 }
 
@@ -733,7 +732,7 @@ button {
 
     p.description {
         padding: 0;
-        color: var(--color-text-supporting);
+        color: $color-text-supporting;
 
         &.with-min-height {
             min-height: 68px;
@@ -749,7 +748,6 @@ button {
     width: 20px;
     height: 20px;
     cursor: pointer;
-    display: inline-block;
 }
 
 .homepage {
@@ -761,7 +759,7 @@ button {
             padding-top: 0px;
         }
     }
-    h2 {
+    h2  {
         padding-bottom: 24px;
     }
     p {
@@ -819,8 +817,8 @@ button {
     }
 
     h3 {
-        color: var(--color-success);
-        font-family: 'Expensify New Kansas', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+        color: $color-success;
+        font-family: "ExpensifyNewKansas", "Helvetica Neue", "Helvetica", Arial, sans-serif;
         font-size: 17px;
         font-weight: 500;
         padding: 0;
@@ -837,13 +835,13 @@ button {
             margin: 0 0 8px;
 
             a {
-                color: var(--color-text-supporting);
+                color: $color-text-supporting;
                 display: block;
                 padding: 4px 0;
                 word-break: break-word;
 
                 &:hover {
-                    color: var(--color-link);
+                    color: $color-link;
                 }
             }
         }
@@ -853,21 +851,21 @@ button {
         padding-bottom: 20px;
 
         a {
-            color: var(--color-text-supporting);
+            color: $color-text-supporting;
             display: inline-block;
 
             &:hover {
-                color: var(--color-link);
+                color: $color-link;
             }
         }
     }
 
     &__fine-print {
-        color: var(--color-text-supporting);
+        color: $color-text-supporting;
         font-size: 10px;
 
         a {
-            color: var(--color-link);
+            color: $color-link;
         }
     }
 
@@ -946,8 +944,8 @@ button {
 }
 
 #platform-tabs > .active {
-    color: var(--color-text);
-    background-color: var(--color-button-background);
+    color: $color-text;
+    background-color: $color-button-background;
 }
 
 .hidden {

@@ -7,6 +7,7 @@ import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import PressableWithDelayToggle from '@components/Pressable/PressableWithDelayToggle';
 import TextLink from '@components/TextLink';
 import useLocalize from '@hooks/useLocalize';
+import usePrivatePersonalDetails from '@hooks/usePrivatePersonalDetails';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Clipboard from '@libs/Clipboard';
 import Navigation from '@libs/Navigation/Navigation';
@@ -16,15 +17,13 @@ import ROUTES from '@src/ROUTES';
 import type {PrivatePersonalDetails} from '@src/types/onyx';
 
 const defaultPrivatePersonalDetails: PrivatePersonalDetails = {
-    addresses: [
-        {
-            street: '',
-            city: '',
-            state: '',
-            zip: '',
-            country: '',
-        },
-    ],
+    address: {
+        street: '',
+        city: '',
+        state: '',
+        zip: '',
+        country: '',
+    },
 };
 
 type CardDetailsOnyxProps = {
@@ -48,6 +47,7 @@ type CardDetailsProps = CardDetailsOnyxProps & {
 
 function CardDetails({pan = '', expiration = '', cvv = '', privatePersonalDetails, domain}: CardDetailsProps) {
     const styles = useThemeStyles();
+    usePrivatePersonalDetails();
     const {translate} = useLocalize();
 
     const handleCopyToClipboard = () => {

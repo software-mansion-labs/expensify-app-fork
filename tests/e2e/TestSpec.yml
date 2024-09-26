@@ -1,15 +1,15 @@
 version: 0.1
 
-android_test_host: amazon_linux_2
-
 phases:
   install:
     commands:
-      - export FLASHLIGHT_BINARY_PATH=$DEVICEFARM_TEST_PACKAGE_PATH/zip/bin
+      # Install correct version of node
+      - export NVM_DIR=$HOME/.nvm
+      - . $NVM_DIR/nvm.sh
       # Note: Node v16 is the latest supported version of node for AWS Device Farm
       # using v20 will not work!
-      - devicefarm-cli use node 16
-      - node -v
+      - nvm install 16
+      - nvm use --delete-prefix 16
 
       # Reverse ports using AWS magic
       - PORT=4723
@@ -21,7 +21,8 @@ phases:
   test:
     commands:
       - cd zip
-      - node testRunner.ts -- --mainAppPath app-e2eRelease.apk --deltaAppPath app-e2edeltaRelease.apk
+      - npm install underscore ts-node typescript
+      - npx ts-node e2e/testRunner.js -- --mainAppPath app-e2eRelease.apk --deltaAppPath app-e2edeltaRelease.apk
 
 artifacts:
   - $WORKING_DIRECTORY

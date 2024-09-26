@@ -15,31 +15,31 @@ const iOS: Partial<typeof AirshipIOS> = {
     },
 };
 
-const pushIOS = jest.fn().mockImplementation(() => ({
+const pushIOS: AirshipPushIOS = jest.fn().mockImplementation(() => ({
     setBadgeNumber: jest.fn(),
     setForegroundPresentationOptions: jest.fn(),
     setForegroundPresentationOptionsCallback: jest.fn(),
-}))() as AirshipPushIOS;
+}))();
 
-const pushAndroid = jest.fn().mockImplementation(() => ({
+const pushAndroid: AirshipPushAndroid = jest.fn().mockImplementation(() => ({
     setForegroundDisplayPredicate: jest.fn(),
-}))() as AirshipPushAndroid;
+}))();
 
-const push = jest.fn().mockImplementation(() => ({
+const push: AirshipPush = jest.fn().mockImplementation(() => ({
     iOS: pushIOS,
     android: pushAndroid,
     enableUserNotifications: () => Promise.resolve(false),
     clearNotifications: jest.fn(),
     getNotificationStatus: () => Promise.resolve({airshipOptIn: false, systemEnabled: false, airshipEnabled: false}),
     getActiveNotifications: () => Promise.resolve([]),
-}))() as AirshipPush;
+}))();
 
-const contact = jest.fn().mockImplementation(() => ({
+const contact: AirshipContact = jest.fn().mockImplementation(() => ({
     identify: jest.fn(),
     getNamedUserId: () => Promise.resolve(undefined),
     reset: jest.fn(),
     module: jest.fn(),
-}))() as AirshipContact;
+}))();
 
 const Airship: Partial<AirshipRoot> = {
     addListener: jest.fn(),

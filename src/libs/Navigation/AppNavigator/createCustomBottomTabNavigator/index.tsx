@@ -9,6 +9,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type {NavigationStateRoute} from '@libs/Navigation/types';
 import SCREENS from '@src/SCREENS';
 import BottomTabBar from './BottomTabBar';
+import TopBar from './TopBar';
 
 type CustomNavigatorProps = DefaultNavigatorOptions<ParamListBase, StackNavigationState<ParamListBase>, StackNavigationOptions, StackNavigationEventMap> & {
     initialRouteName: string;
@@ -44,16 +45,14 @@ function CustomBottomTabNavigator({initialRouteName, children, screenOptions, ..
 
     const styles = useThemeStyles();
     const stateToRender = getStateToRender(state);
-    const selectedTab = stateToRender.routes.at(-1)?.name;
 
     return (
         <ScreenWrapper
             testID={CustomBottomTabNavigator.displayName}
             shouldShowOfflineIndicator={false}
-            shouldEnableKeyboardAvoidingView={false}
-            shouldEnablePickerAvoiding={false}
         >
             <View style={styles.flex1}>
+                <TopBar />
                 <NavigationContent>
                     <StackView
                         // eslint-disable-next-line react/jsx-props-no-spreading
@@ -63,7 +62,7 @@ function CustomBottomTabNavigator({initialRouteName, children, screenOptions, ..
                         navigation={navigation}
                     />
                 </NavigationContent>
-                <BottomTabBar selectedTab={selectedTab} />
+                <BottomTabBar />
             </View>
         </ScreenWrapper>
     );

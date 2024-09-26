@@ -68,7 +68,6 @@ const usePinchGesture = ({
     useAnimatedReaction(
         () => [pinchTranslateX.value, pinchTranslateY.value, pinchBounceTranslateX.value, pinchBounceTranslateY.value],
         ([translateX, translateY, bounceX, bounceY]) => {
-            // eslint-disable-next-line react-compiler/react-compiler
             totalPinchTranslateX.value = translateX + bounceX;
             totalPinchTranslateY.value = translateY + bounceY;
         },
@@ -99,6 +98,7 @@ const usePinchGesture = ({
     const pinchGesture = Gesture.Pinch()
         .enabled(pinchEnabled)
         // The first argument is not used, but must be defined
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         .onTouchesDown((_evt, state) => {
             // We don't want to activate pinch gesture when we are swiping in the pager
             if (!shouldDisableTransformationGestures.value) {

@@ -2,7 +2,6 @@ import React from 'react';
 import {View} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as UserUtils from '@libs/UserUtils';
-import CONST from '@src/CONST';
 import Avatar from './Avatar';
 import AvatarSkeleton from './AvatarSkeleton';
 import * as Expensicons from './Icon/Expensicons';
@@ -11,10 +10,7 @@ import Tooltip from './Tooltip';
 
 type AvatarWithIndicatorProps = {
     /** URL for the avatar */
-    source?: UserUtils.AvatarSource;
-
-    /** Account id if it's user avatar */
-    accountID?: number;
+    source: UserUtils.AvatarSource;
 
     /** To show a tooltip on hover */
     tooltipText?: string;
@@ -26,7 +22,7 @@ type AvatarWithIndicatorProps = {
     isLoading?: boolean;
 };
 
-function AvatarWithIndicator({source, accountID, tooltipText = '', fallbackIcon = Expensicons.FallbackAvatar, isLoading = true}: AvatarWithIndicatorProps) {
+function AvatarWithIndicator({source, tooltipText = '', fallbackIcon = Expensicons.FallbackAvatar, isLoading = true}: AvatarWithIndicatorProps) {
     const styles = useThemeStyles();
 
     return (
@@ -37,11 +33,8 @@ function AvatarWithIndicator({source, accountID, tooltipText = '', fallbackIcon 
                 ) : (
                     <>
                         <Avatar
-                            size={CONST.AVATAR_SIZE.SMALL}
-                            source={UserUtils.getSmallSizeAvatar(source, accountID)}
+                            source={UserUtils.getSmallSizeAvatar(source)}
                             fallbackIcon={fallbackIcon}
-                            avatarID={accountID}
-                            type={CONST.ICON_TYPE_AVATAR}
                         />
                         <Indicator />
                     </>

@@ -1,6 +1,6 @@
 import type {FirebaseCrashlyticsTypes} from '@react-native-firebase/crashlytics';
 
-type CrashlyticsModule = Pick<FirebaseCrashlyticsTypes.Module, 'log' | 'recordError' | 'setCrashlyticsCollectionEnabled' | 'setUserId'>;
+type CrashlyticsModule = Pick<FirebaseCrashlyticsTypes.Module, 'log' | 'recordError' | 'setCrashlyticsCollectionEnabled'>;
 
 type CrashlyticsMock = () => CrashlyticsModule;
 
@@ -10,7 +10,6 @@ const crashlyticsMock: CrashlyticsMock = () => ({
     log: jest.fn(),
     recordError: jest.fn(),
     setCrashlyticsCollectionEnabled: jest.fn(),
-    setUserId: jest.fn(),
 });
 
 export default crashlyticsMock;

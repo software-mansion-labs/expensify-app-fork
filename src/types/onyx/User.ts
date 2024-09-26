@@ -1,4 +1,3 @@
-/** Model of user data */
 type User = {
     /** Whether or not the user is subscribed to news updates */
     isSubscribedToNewsletter: boolean;
@@ -29,12 +28,6 @@ type User = {
 
     /** Whether the form is being submitted */
     loading?: boolean;
-
-    /** Whether the user is Expensify Guide */
-    isGuide?: boolean;
-
-    /** Whether the debug mode is currently enabled */
-    isDebugModeEnabled?: boolean;
 };
 
 export default User;

@@ -1,16 +1,23 @@
 // Issue - https://github.com/Expensify/App/issues/26719
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import type {AppStateStatus} from 'react-native';
 import {AppState} from 'react-native';
 import type {OnyxCollection, OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import {importEmojiLocale} from '@assets/emojis';
 import * as API from '@libs/API';
-import type {GetMissingOnyxMessagesParams, HandleRestrictedEventParams, OpenAppParams, OpenOldDotLinkParams, ReconnectAppParams, UpdatePreferredLocaleParams} from '@libs/API/parameters';
-import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import type {
+    GetMissingOnyxMessagesParams,
+    HandleRestrictedEventParams,
+    OpenAppParams,
+    OpenOldDotLinkParams,
+    OpenProfileParams,
+    ReconnectAppParams,
+    UpdatePreferredLocaleParams,
+} from '@libs/API/parameters';
+import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import * as Browser from '@libs/Browser';
-import {buildEmojisTrie} from '@libs/EmojiTrie';
+import DateUtils from '@libs/DateUtils';
 import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
@@ -19,12 +26,12 @@ import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as SessionUtils from '@libs/SessionUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnyxKey} from '@src/ONYXKEYS';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
+import type {SelectedTimezone} from '@src/types/onyx/PersonalDetails';
 import type {OnyxData} from '@src/types/onyx/Request';
-import * as Policy from './Policy/Policy';
+import * as Policy from './Policy';
 import * as Session from './Session';
 import Timing from './Timing';
 
@@ -34,37 +41,30 @@ type PolicyParamsForOpenOrReconnect = {
 
 type Locale = ValueOf<typeof CONST.LOCALES>;
 
-let currentUserAccountID: number | undefined;
+let currentUserAccountID: number | null;
 let currentUserEmail: string;
 Onyx.connect({
     key: ONYXKEYS.SESSION,
     callback: (val) => {
-        currentUserAccountID = val?.accountID;
+        currentUserAccountID = val?.accountID ?? null;
         currentUserEmail = val?.email ?? '';
     },
 });
 
-let isSidebarLoaded: boolean | undefined;
+let isSidebarLoaded: boolean | null;
 Onyx.connect({
     key: ONYXKEYS.IS_SIDEBAR_LOADED,
     callback: (val) => (isSidebarLoaded = val),
     initWithStoredValues: false,
 });
 
-let preferredLocale: string | undefined;
+let preferredLocale: string | null;
 Onyx.connect({
     key: ONYXKEYS.NVP_PREFERRED_LOCALE,
-    callback: (val) => {
-        preferredLocale = val;
-        if (preferredLocale) {
-            importEmojiLocale(preferredLocale as Locale).then(() => {
-                buildEmojisTrie(preferredLocale as Locale);
-            });
-        }
-    },
+    callback: (val) => (preferredLocale = val),
 });
 
-let priorityMode: ValueOf<typeof CONST.PRIORITY_MODE> | undefined;
+let priorityMode: ValueOf<typeof CONST.PRIORITY_MODE> | null;
 Onyx.connect({
     key: ONYXKEYS.NVP_PRIORITY_MODE,
     callback: (nextPriorityMode) => {
@@ -74,38 +74,6 @@ Onyx.connect({
             openApp();
         }
         priorityMode = nextPriorityMode;
-    },
-});
-
-const KEYS_TO_PRESERVE: OnyxKey[] = [
-    ONYXKEYS.ACCOUNT,
-    ONYXKEYS.IS_CHECKING_PUBLIC_ROOM,
-    ONYXKEYS.IS_LOADING_APP,
-    ONYXKEYS.IS_SIDEBAR_LOADED,
-    ONYXKEYS.MODAL,
-    ONYXKEYS.NETWORK,
-    ONYXKEYS.SESSION,
-    ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT,
-    ONYXKEYS.NVP_TRY_FOCUS_MODE,
-    ONYXKEYS.PREFERRED_THEME,
-    ONYXKEYS.NVP_PREFERRED_LOCALE,
-    ONYXKEYS.CREDENTIALS,
-];
-
-Onyx.connect({
-    key: ONYXKEYS.RESET_REQUIRED,
-    callback: (isResetRequired) => {
-        if (!isResetRequired) {
-            return;
-        }
-
-        Onyx.clear(KEYS_TO_PRESERVE).then(() => {
-            // Set this to false to reset the flag for this client
-            Onyx.set(ONYXKEYS.RESET_REQUIRED, false);
-
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            openApp();
-        });
     },
 });
 
@@ -149,10 +117,6 @@ function setLocale(locale: Locale) {
         value: locale,
     };
 
-    importEmojiLocale(locale).then(() => {
-        buildEmojisTrie(locale);
-    });
-
     API.write(WRITE_COMMANDS.UPDATE_PREFERRED_LOCALE, parameters, {optimisticData});
 }
 
@@ -167,6 +131,7 @@ function setSidebarLoaded() {
     }
 
     Onyx.set(ONYXKEYS.IS_SIDEBAR_LOADED, true);
+    Performance.markEnd(CONST.TIMING.SIDEBAR_LOADED);
     Performance.markStart(CONST.TIMING.REPORT_INITIAL_RENDER);
 }
 
@@ -184,11 +149,11 @@ AppState.addEventListener('change', (nextAppState) => {
 function getPolicyParamsForOpenOrReconnect(): Promise<PolicyParamsForOpenOrReconnect> {
     return new Promise((resolve) => {
         isReadyToOpenApp.then(() => {
-            const connection = Onyx.connect({
+            const connectionID = Onyx.connect({
                 key: ONYXKEYS.COLLECTION.POLICY,
                 waitForCollectionCallback: true,
                 callback: (policies) => {
-                    Onyx.disconnect(connection);
+                    Onyx.disconnect(connectionID);
                     resolve({policyIDList: getNonOptimisticPolicyIDs(policies)});
                 },
             });
@@ -246,7 +211,7 @@ function openApp() {
     getPolicyParamsForOpenOrReconnect().then((policyParams: PolicyParamsForOpenOrReconnect) => {
         const params: OpenAppParams = {enablePriorityModeFilter: true, ...policyParams};
 
-        API.write(WRITE_COMMANDS.OPEN_APP, params, getOnyxDataForOpenOrReconnect(true));
+        API.read(READ_COMMANDS.OPEN_APP, params, getOnyxDataForOpenOrReconnect(true));
     });
 }
 
@@ -257,7 +222,7 @@ function openApp() {
 function reconnectApp(updateIDFrom: OnyxEntry<number> = 0) {
     console.debug(`[OnyxUpdates] App reconnecting with updateIDFrom: ${updateIDFrom}`);
     getPolicyParamsForOpenOrReconnect().then((policyParams) => {
-        const params: ReconnectAppParams = policyParams;
+        const params: ReconnectAppParams = {...policyParams};
 
         // When the app reconnects we do a fast "sync" of the LHN and only return chats that have new messages. We achieve this by sending the most recent reportActionID.
         // we have locally. And then only update the user about chats with messages that have occurred after that reportActionID.
@@ -350,9 +315,8 @@ function endSignOnTransition() {
  * @param [policyName] Optional, custom policy name we will use for created workspace
  * @param [transitionFromOldDot] Optional, if the user is transitioning from old dot
  * @param [makeMeAdmin] Optional, leave the calling account as an admin on the policy
- * @param [backTo] An optional return path. If provided, it will be URL-encoded and appended to the resulting URL.
  */
-function createWorkspaceWithPolicyDraftAndNavigateToIt(policyOwnerEmail = '', policyName = '', transitionFromOldDot = false, makeMeAdmin = false, backTo = '') {
+function createWorkspaceWithPolicyDraftAndNavigateToIt(policyOwnerEmail = '', policyName = '', transitionFromOldDot = false, makeMeAdmin = false) {
     const policyID = Policy.generatePolicyID();
     Policy.createDraftInitialWorkspace(policyOwnerEmail, policyName, policyID, makeMeAdmin);
 
@@ -362,8 +326,7 @@ function createWorkspaceWithPolicyDraftAndNavigateToIt(policyOwnerEmail = '', po
                 // We must call goBack() to remove the /transition route from history
                 Navigation.goBack();
             }
-            savePolicyDraftByNewWorkspace(policyID, policyName, policyOwnerEmail, makeMeAdmin);
-            Navigation.navigate(ROUTES.WORKSPACE_INITIAL.getRoute(policyID, backTo));
+            Navigation.navigate(ROUTES.WORKSPACE_INITIAL.getRoute(policyID));
         })
         .then(endSignOnTransition);
 }
@@ -401,7 +364,7 @@ function savePolicyDraftByNewWorkspace(policyID?: string, policyName?: string, p
  */
 function setUpPoliciesAndNavigate(session: OnyxEntry<OnyxTypes.Session>) {
     const currentUrl = getCurrentUrl();
-    if (!session || !currentUrl?.includes('exitTo')) {
+    if (!session || !currentUrl || !currentUrl.includes('exitTo')) {
         return;
     }
 
@@ -426,6 +389,8 @@ function setUpPoliciesAndNavigate(session: OnyxEntry<OnyxTypes.Session>) {
     if (!isLoggingInAsNewUser && exitTo) {
         Navigation.waitForProtectedRoutes()
             .then(() => {
+                // We must call goBack() to remove the /transition route from history
+                Navigation.goBack();
                 Navigation.navigate(exitTo);
             })
             .then(endSignOnTransition);
@@ -447,10 +412,56 @@ function redirectThirdPartyDesktopSignIn() {
     }
 }
 
+function openProfile(personalDetails: OnyxTypes.PersonalDetails) {
+    const oldTimezoneData = personalDetails.timezone ?? {};
+    let newTimezoneData = oldTimezoneData;
+
+    if (oldTimezoneData?.automatic ?? true) {
+        newTimezoneData = {
+            automatic: true,
+            selected: Intl.DateTimeFormat().resolvedOptions().timeZone as SelectedTimezone,
+        };
+    }
+
+    newTimezoneData = DateUtils.formatToSupportedTimezone(newTimezoneData);
+
+    const parameters: OpenProfileParams = {
+        timezone: JSON.stringify(newTimezoneData),
+    };
+
+    // We expect currentUserAccountID to be a number because it doesn't make sense to open profile if currentUserAccountID is not set
+    if (typeof currentUserAccountID === 'number') {
+        API.write(WRITE_COMMANDS.OPEN_PROFILE, parameters, {
+            optimisticData: [
+                {
+                    onyxMethod: Onyx.METHOD.MERGE,
+                    key: ONYXKEYS.PERSONAL_DETAILS_LIST,
+                    value: {
+                        [currentUserAccountID]: {
+                            timezone: newTimezoneData,
+                        },
+                    },
+                },
+            ],
+            failureData: [
+                {
+                    onyxMethod: Onyx.METHOD.MERGE,
+                    key: ONYXKEYS.PERSONAL_DETAILS_LIST,
+                    value: {
+                        [currentUserAccountID]: {
+                            timezone: oldTimezoneData,
+                        },
+                    },
+                },
+            ],
+        });
+    }
+}
+
 /**
  * @param shouldAuthenticateWithCurrentAccount Optional, indicates whether default authentication method (shortLivedAuthToken) should be used
  */
-function beginDeepLinkRedirect(shouldAuthenticateWithCurrentAccount = true, initialRoute?: string) {
+function beginDeepLinkRedirect(shouldAuthenticateWithCurrentAccount = true) {
     // There's no support for anonymous users on desktop
     if (Session.isAnonymousUser()) {
         return;
@@ -476,7 +487,7 @@ function beginDeepLinkRedirect(shouldAuthenticateWithCurrentAccount = true, init
             return;
         }
 
-        Browser.openRouteInDesktopApp(response.shortLivedAuthToken, currentUserEmail, initialRoute);
+        Browser.openRouteInDesktopApp(response.shortLivedAuthToken, currentUserEmail);
     });
 }
 
@@ -497,15 +508,12 @@ function updateLastVisitedPath(path: string) {
     Onyx.merge(ONYXKEYS.LAST_VISITED_PATH, path);
 }
 
-function updateLastRoute(screen: string) {
-    Onyx.set(ONYXKEYS.LAST_ROUTE, screen);
-}
-
 export {
     setLocale,
     setLocaleAndNavigate,
     setSidebarLoaded,
     setUpPoliciesAndNavigate,
+    openProfile,
     redirectThirdPartyDesktopSignIn,
     openApp,
     reconnectApp,
@@ -518,6 +526,4 @@ export {
     savePolicyDraftByNewWorkspace,
     createWorkspaceWithPolicyDraftAndNavigateToIt,
     updateLastVisitedPath,
-    updateLastRoute,
-    KEYS_TO_PRESERVE,
 };

@@ -12,16 +12,15 @@ let deviceID: string | null = null;
 function getDeviceID(): Promise<string | null> {
     return new Promise((resolve) => {
         if (deviceID) {
-            resolve(deviceID);
-            return;
+            return resolve(deviceID);
         }
 
-        const connection = Onyx.connect({
+        const connectionID = Onyx.connect({
             key: ONYXKEYS.DEVICE_ID,
             callback: (id) => {
-                Onyx.disconnect(connection);
-                deviceID = id ?? null;
-                return resolve(id ?? null);
+                Onyx.disconnect(connectionID);
+                deviceID = id;
+                return resolve(id);
             },
         });
     });
@@ -43,7 +42,7 @@ function setDeviceID() {
             Log.info('Got new deviceID', false, uniqueID);
             Onyx.set(ONYXKEYS.DEVICE_ID, uniqueID);
         })
-        .catch((error: Error) => Log.info('Found existing deviceID', false, error.message));
+        .catch((err) => Log.info('Found existing deviceID', false, err.message));
 }
 
 /**

@@ -1,5 +1,4 @@
 import React from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -9,29 +8,23 @@ import PressableWithoutFeedback from './Pressable/PressableWithoutFeedback';
 import SelectCircle from './SelectCircle';
 import Text from './Text';
 
-type Item<TKey extends string> = {
-    key: TKey;
+type Item = {
+    key: string;
     label: TranslationPaths;
 };
 
-type SingleOptionSelectorProps<TKey extends string> = {
+type SingleOptionSelectorProps = {
     /** Array of options for the selector, key is a unique identifier, label is a localize key that will be translated and displayed */
-    options?: Array<Item<TKey>>;
+    options?: Item[];
 
     /** Key of the option that is currently selected */
-    selectedOptionKey?: TKey;
+    selectedOptionKey?: string;
 
     /** Function to be called when an option is selected */
-    onSelectOption?: (item: Item<TKey>) => void;
-
-    /** Styles for the option row element */
-    optionRowStyles?: StyleProp<ViewStyle>;
-
-    /** Styles for the select circle */
-    selectCircleStyles?: StyleProp<ViewStyle>;
+    onSelectOption?: (item: Item) => void;
 };
 
-function SingleOptionSelector<TKey extends string>({options = [], selectedOptionKey, onSelectOption = () => {}, optionRowStyles, selectCircleStyles}: SingleOptionSelectorProps<TKey>) {
+function SingleOptionSelector({options = [], selectedOptionKey, onSelectOption = () => {}}: SingleOptionSelectorProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     return (
@@ -42,7 +35,7 @@ function SingleOptionSelector<TKey extends string>({options = [], selectedOption
                     key={option.key}
                 >
                     <PressableWithoutFeedback
-                        style={[styles.singleOptionSelectorRow, optionRowStyles]}
+                        style={styles.singleOptionSelectorRow}
                         onPress={() => onSelectOption(option)}
                         role={CONST.ROLE.BUTTON}
                         accessibilityState={{checked: selectedOptionKey === option.key}}
@@ -51,7 +44,7 @@ function SingleOptionSelector<TKey extends string>({options = [], selectedOption
                     >
                         <SelectCircle
                             isChecked={selectedOptionKey ? selectedOptionKey === option.key : false}
-                            selectCircleStyles={[styles.ml0, styles.singleOptionSelectorCircle, selectCircleStyles]}
+                            selectCircleStyles={[styles.ml0, styles.singleOptionSelectorCircle]}
                         />
                         <Text>{translate(option.label)}</Text>
                     </PressableWithoutFeedback>

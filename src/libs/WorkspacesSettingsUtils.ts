@@ -2,22 +2,42 @@ import Onyx from 'react-native-onyx';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Policy, ReimbursementAccount, Report, ReportAction, ReportActions, TransactionViolations} from '@src/types/onyx';
-import type {PolicyConnectionSyncProgress, Unit} from '@src/types/onyx/Policy';
-import {isConnectionInProgress} from './actions/connections';
-import * as CurrencyUtils from './CurrencyUtils';
-import type {Phrase, PhraseParameters} from './Localize';
+import type {Policy, PolicyMembers, ReimbursementAccount, Report} from '@src/types/onyx';
 import * as OptionsListUtils from './OptionsListUtils';
-import {hasCustomUnitsError, hasEmployeeListError, hasPolicyError, hasSyncError, hasTaxRateError} from './PolicyUtils';
+import {hasCustomUnitsError, hasPolicyError, hasPolicyMemberError} from './PolicyUtils';
 import * as ReportActionsUtils from './ReportActionsUtils';
-import * as ReportConnection from './ReportConnection';
 import * as ReportUtils from './ReportUtils';
 
 type CheckingMethod = () => boolean;
 
+let allReports: OnyxCollection<Report>;
+
 type BrickRoad = ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | undefined;
+
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.REPORT,
+    waitForCollectionCallback: true,
+    callback: (value) => (allReports = value),
+});
+
+let allPolicies: OnyxCollection<Policy>;
+
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.POLICY,
+    waitForCollectionCallback: true,
+    callback: (value) => (allPolicies = value),
+});
+
+let allPolicyMembers: OnyxCollection<PolicyMembers>;
+
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.POLICY_MEMBERS,
+    waitForCollectionCallback: true,
+    callback: (val) => {
+        allPolicyMembers = val;
+    },
+});
 
 let reimbursementAccount: OnyxEntry<ReimbursementAccount>;
 
@@ -28,85 +48,39 @@ Onyx.connect({
     },
 });
 
-let allReportActions: OnyxCollection<ReportActions>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    waitForCollectionCallback: true,
-    callback: (actions) => {
-        if (!actions) {
-            return;
-        }
-        allReportActions = actions;
-    },
-});
-
-let allTransactionViolations: NonNullable<OnyxCollection<TransactionViolations>> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS,
-    waitForCollectionCallback: true,
-    callback: (value) => {
-        if (!value) {
-            allTransactionViolations = {};
-            return;
-        }
-
-        allTransactionViolations = value;
-    },
-});
-
 /**
- * @param altReportActions Replaces (local) allReportActions used within (local) function getWorkspacesBrickRoads
- * @returns BrickRoad for the policy passed as a param and optionally actionsByReport (if passed)
+ * @param report
+ * @returns BrickRoad for the policy passed as a param
  */
-const getBrickRoadForPolicy = (report: Report, altReportActions?: OnyxCollection<ReportActions>): BrickRoad => {
-    const reportActions = (altReportActions ?? allReportActions)?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.reportID}`] ?? {};
+const getBrickRoadForPolicy = (report: Report): BrickRoad => {
+    const reportActions = ReportActionsUtils.getAllReportActions(report.reportID);
     const reportErrors = OptionsListUtils.getAllReportErrors(report, reportActions);
-    const oneTransactionThreadReportID = ReportActionsUtils.getOneTransactionThreadReportID(report.reportID, reportActions);
-    let doesReportContainErrors = Object.keys(reportErrors ?? {}).length !== 0 ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined;
-
-    if (oneTransactionThreadReportID) {
-        const oneTransactionThreadReport = ReportUtils.getReport(oneTransactionThreadReportID);
-
-        if (
-            ReportUtils.shouldDisplayTransactionThreadViolations(
-                oneTransactionThreadReport,
-                allTransactionViolations,
-                reportActions[oneTransactionThreadReport?.parentReportActionID ?? '-1'],
-            )
-        ) {
-            doesReportContainErrors = CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR;
-        }
-    }
-
+    const doesReportContainErrors = Object.keys(reportErrors ?? {}).length !== 0 ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined;
     if (doesReportContainErrors) {
         return CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR;
     }
 
     // To determine if the report requires attention from the current user, we need to load the parent report action
-    let itemParentReportAction: OnyxEntry<ReportAction>;
+    let itemParentReportAction = {};
     if (report.parentReportID) {
-        const itemParentReportActions = allReportActions?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.parentReportID}`] ?? {};
-        itemParentReportAction = report.parentReportActionID ? itemParentReportActions[report.parentReportActionID] : undefined;
+        const itemParentReportActions = ReportActionsUtils.getAllReportActions(report.parentReportID);
+        itemParentReportAction = report.parentReportActionID ? itemParentReportActions[report.parentReportActionID] : {};
     }
     const reportOption = {...report, isUnread: ReportUtils.isUnread(report), isUnreadWithMention: ReportUtils.isUnreadWithMention(report)};
     const shouldShowGreenDotIndicator = ReportUtils.requiresAttentionFromCurrentUser(reportOption, itemParentReportAction);
     return shouldShowGreenDotIndicator ? CONST.BRICK_ROAD_INDICATOR_STATUS.INFO : undefined;
 };
 
-function hasGlobalWorkspaceSettingsRBR(policies: OnyxCollection<Policy>, allConnectionProgresses: OnyxCollection<PolicyConnectionSyncProgress>) {
+function hasGlobalWorkspaceSettingsRBR(policies: OnyxCollection<Policy>, policyMembers: OnyxCollection<PolicyMembers>) {
     // When attempting to open a policy with an invalid policyID, the policy collection is updated to include policy objects with error information.
     // Only policies displayed on the policy list page should be verified. Otherwise, the user will encounter an RBR unrelated to any policies on the list.
     const cleanPolicies = Object.fromEntries(Object.entries(policies ?? {}).filter(([, policy]) => policy?.id));
 
+    const cleanAllPolicyMembers = Object.fromEntries(Object.entries(policyMembers ?? {}).filter(([, policyMemberValues]) => !!policyMemberValues));
     const errorCheckingMethods: CheckingMethod[] = [
         () => Object.values(cleanPolicies).some(hasPolicyError),
         () => Object.values(cleanPolicies).some(hasCustomUnitsError),
-        () => Object.values(cleanPolicies).some(hasTaxRateError),
-        () => Object.values(cleanPolicies).some(hasEmployeeListError),
-        () =>
-            Object.values(cleanPolicies).some((cleanPolicy) =>
-                hasSyncError(cleanPolicy, isConnectionInProgress(allConnectionProgresses?.[`${ONYXKEYS.COLLECTION.POLICY_CONNECTION_SYNC_PROGRESS}${cleanPolicy?.id}`], cleanPolicy)),
-            ),
+        () => Object.values(cleanAllPolicyMembers).some(hasPolicyMemberError),
         () => Object.keys(reimbursementAccount?.errors ?? {}).length > 0,
     ];
 
@@ -114,14 +88,12 @@ function hasGlobalWorkspaceSettingsRBR(policies: OnyxCollection<Policy>, allConn
 }
 
 function hasWorkspaceSettingsRBR(policy: Policy) {
-    const policyMemberError = hasEmployeeListError(policy);
-    const taxRateError = hasTaxRateError(policy);
+    const policyMemberError = allPolicyMembers ? hasPolicyMemberError(allPolicyMembers[`${ONYXKEYS.COLLECTION.POLICY_MEMBERS}${policy.id}`]) : false;
 
-    return Object.keys(reimbursementAccount?.errors ?? {}).length > 0 || hasPolicyError(policy) || hasCustomUnitsError(policy) || policyMemberError || taxRateError;
+    return Object.keys(reimbursementAccount?.errors ?? {}).length > 0 || hasPolicyError(policy) || hasCustomUnitsError(policy) || policyMemberError;
 }
 
 function getChatTabBrickRoad(policyID?: string): BrickRoad | undefined {
-    const allReports = ReportConnection.getAllReports();
     if (!allReports) {
         return undefined;
     }
@@ -150,17 +122,30 @@ function getChatTabBrickRoad(policyID?: string): BrickRoad | undefined {
     return undefined;
 }
 
+function checkIfWorkspaceSettingsTabHasRBR(policyID?: string) {
+    if (!policyID) {
+        return hasGlobalWorkspaceSettingsRBR(allPolicies, allPolicyMembers);
+    }
+    const policy = allPolicies ? allPolicies[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`] : null;
+
+    if (!policy) {
+        return false;
+    }
+
+    return hasWorkspaceSettingsRBR(policy);
+}
+
 /**
  * @returns a map where the keys are policyIDs and the values are BrickRoads for each policy
  */
-function getWorkspacesBrickRoads(reports: OnyxCollection<Report>, policies: OnyxCollection<Policy>, reportActions: OnyxCollection<ReportActions>): Record<string, BrickRoad> {
-    if (!reports) {
+function getWorkspacesBrickRoads(): Record<string, BrickRoad> {
+    if (!allReports) {
         return {};
     }
 
     // The key in this map is the workspace id
     const workspacesBrickRoadsMap: Record<string, BrickRoad> = {};
-    Object.values(policies ?? {}).forEach((policy) => {
+    Object.values(allPolicies ?? {}).forEach((policy) => {
         // Only policies which user has access to on the list should be checked. Policies that don't have an ID and contain only information about the errors aren't displayed anywhere.
         if (!policy?.id) {
             return;
@@ -171,12 +156,12 @@ function getWorkspacesBrickRoads(reports: OnyxCollection<Report>, policies: Onyx
         }
     });
 
-    Object.values(reports).forEach((report) => {
+    Object.values(allReports).forEach((report) => {
         const policyID = report?.policyID ?? CONST.POLICY.EMPTY;
         if (!report || workspacesBrickRoadsMap[policyID] === CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR) {
             return;
         }
-        const workspaceBrickRoad = getBrickRoadForPolicy(report, reportActions);
+        const workspaceBrickRoad = getBrickRoadForPolicy(report);
 
         if (!workspaceBrickRoad && !!workspacesBrickRoadsMap[policyID]) {
             return;
@@ -191,109 +176,23 @@ function getWorkspacesBrickRoads(reports: OnyxCollection<Report>, policies: Onyx
 /**
  * @returns a map where the keys are policyIDs and the values are truthy booleans if policy has unread content
  */
-function getWorkspacesUnreadStatuses(reports: OnyxCollection<Report>): Record<string, boolean> {
-    if (!reports) {
+function getWorkspacesUnreadStatuses(): Record<string, boolean> {
+    if (!allReports) {
         return {};
     }
 
     const workspacesUnreadStatuses: Record<string, boolean> = {};
 
-    Object.values(reports).forEach((report) => {
+    Object.values(allReports).forEach((report) => {
         const policyID = report?.policyID;
         if (!policyID || workspacesUnreadStatuses[policyID]) {
             return;
         }
 
-        // When the only message of a report is deleted lastVisibileActionCreated is not reset leading to wrongly
-        // setting it Unread so we add additional condition here to avoid read workspace indicator from being bold.
-        workspacesUnreadStatuses[policyID] = ReportUtils.isUnread(report) && !!report.lastActorAccountID;
+        workspacesUnreadStatuses[policyID] = ReportUtils.isUnread(report);
     });
 
     return workspacesUnreadStatuses;
-}
-
-/**
- * @param unit Unit
- * @returns translation key for the unit
- */
-function getUnitTranslationKey(unit: Unit): TranslationPaths {
-    const unitTranslationKeysStrategy: Record<Unit, TranslationPaths> = {
-        [CONST.CUSTOM_UNITS.DISTANCE_UNIT_KILOMETERS]: 'common.kilometers',
-        [CONST.CUSTOM_UNITS.DISTANCE_UNIT_MILES]: 'common.miles',
-    };
-
-    return unitTranslationKeysStrategy[unit];
-}
-
-/**
- * @param error workspace change owner error
- * @param translate translation function
- * @param policy policy object
- * @param accountLogin account login/email
- * @returns ownership change checks page display text's
- */
-function getOwnershipChecksDisplayText(
-    error: ValueOf<typeof CONST.POLICY.OWNERSHIP_ERRORS>,
-    translate: <TKey extends TranslationPaths>(phraseKey: TKey, ...phraseParameters: PhraseParameters<Phrase<TKey>>) => string,
-    policy: OnyxEntry<Policy>,
-    accountLogin: string | undefined,
-) {
-    let title;
-    let text;
-    let buttonText;
-
-    const changeOwner = policy?.errorFields?.changeOwner;
-    const subscription = changeOwner?.subscription as unknown as {ownerUserCount: number; totalUserCount: number};
-    const ownerOwesAmount = changeOwner?.ownerOwesAmount as unknown as {ownerEmail: string; amount: number; currency: string};
-
-    switch (error) {
-        case CONST.POLICY.OWNERSHIP_ERRORS.AMOUNT_OWED:
-            title = translate('workspace.changeOwner.amountOwedTitle');
-            text = translate('workspace.changeOwner.amountOwedText');
-            buttonText = translate('workspace.changeOwner.amountOwedButtonText');
-            break;
-        case CONST.POLICY.OWNERSHIP_ERRORS.OWNER_OWES_AMOUNT:
-            title = translate('workspace.changeOwner.ownerOwesAmountTitle');
-            text = translate('workspace.changeOwner.ownerOwesAmountText', {
-                email: ownerOwesAmount?.ownerEmail,
-                amount: CurrencyUtils.convertToDisplayString(ownerOwesAmount?.amount, ownerOwesAmount?.currency),
-            });
-            buttonText = translate('workspace.changeOwner.ownerOwesAmountButtonText');
-            break;
-        case CONST.POLICY.OWNERSHIP_ERRORS.SUBSCRIPTION:
-            title = translate('workspace.changeOwner.subscriptionTitle');
-            text = translate('workspace.changeOwner.subscriptionText', {
-                usersCount: subscription?.ownerUserCount,
-                finalCount: subscription?.totalUserCount,
-            });
-            buttonText = translate('workspace.changeOwner.subscriptionButtonText');
-            break;
-        case CONST.POLICY.OWNERSHIP_ERRORS.DUPLICATE_SUBSCRIPTION:
-            title = translate('workspace.changeOwner.duplicateSubscriptionTitle');
-            text = translate('workspace.changeOwner.duplicateSubscriptionText', {
-                email: changeOwner?.duplicateSubscription,
-                workspaceName: policy?.name,
-            });
-            buttonText = translate('workspace.changeOwner.duplicateSubscriptionButtonText');
-            break;
-        case CONST.POLICY.OWNERSHIP_ERRORS.HAS_FAILED_SETTLEMENTS:
-            title = translate('workspace.changeOwner.hasFailedSettlementsTitle');
-            text = translate('workspace.changeOwner.hasFailedSettlementsText', {email: accountLogin});
-            buttonText = translate('workspace.changeOwner.hasFailedSettlementsButtonText');
-            break;
-        case CONST.POLICY.OWNERSHIP_ERRORS.FAILED_TO_CLEAR_BALANCE:
-            title = translate('workspace.changeOwner.failedToClearBalanceTitle');
-            text = translate('workspace.changeOwner.failedToClearBalanceText');
-            buttonText = translate('workspace.changeOwner.failedToClearBalanceButtonText');
-            break;
-        default:
-            title = '';
-            text = '';
-            buttonText = '';
-            break;
-    }
-
-    return {title, text, buttonText};
 }
 
 export {
@@ -301,9 +200,8 @@ export {
     getWorkspacesBrickRoads,
     getWorkspacesUnreadStatuses,
     hasGlobalWorkspaceSettingsRBR,
+    checkIfWorkspaceSettingsTabHasRBR,
     hasWorkspaceSettingsRBR,
     getChatTabBrickRoad,
-    getUnitTranslationKey,
-    getOwnershipChecksDisplayText,
 };
 export type {BrickRoad};

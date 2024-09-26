@@ -22,7 +22,12 @@ function getActionsFromPartialDiff(diff: GetPartialStateDiffReturnType): Navigat
 
     if (centralPaneDiff) {
         // In this case we have to wrap the inner central pane route with central pane navigator.
-        actions.push(StackActions.push(centralPaneDiff.name, centralPaneDiff.params));
+        actions.push(
+            StackActions.push(NAVIGATORS.CENTRAL_PANE_NAVIGATOR, {
+                screen: centralPaneDiff.name,
+                params: centralPaneDiff.params,
+            }),
+        );
     }
 
     if (fullScreenDiff) {

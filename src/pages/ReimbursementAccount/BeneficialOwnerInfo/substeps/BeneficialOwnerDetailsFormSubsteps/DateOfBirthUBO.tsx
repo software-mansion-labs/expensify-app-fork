@@ -40,9 +40,9 @@ function DateOfBirthUBO({reimbursementAccountDraft, onNext, isEditing, beneficia
 
         if (values[dobInputID]) {
             if (!ValidationUtils.isValidPastDate(values[dobInputID]) || !ValidationUtils.meetsMaximumAgeRequirement(values[dobInputID])) {
-                errors[dobInputID] = translate('bankAccount.error.dob');
+                errors[dobInputID] = 'bankAccount.error.dob';
             } else if (!ValidationUtils.meetsMinimumAgeRequirement(values[dobInputID])) {
-                errors[dobInputID] = translate('bankAccount.error.age');
+                errors[dobInputID] = 'bankAccount.error.age';
             }
         }
 
@@ -51,8 +51,8 @@ function DateOfBirthUBO({reimbursementAccountDraft, onNext, isEditing, beneficia
 
     const handleSubmit = useReimbursementAccountStepFormSubmit({
         fieldIds: [dobInputID],
+        isEditing,
         onNext,
-        shouldSaveDraft: isEditing,
     });
 
     return (
@@ -62,10 +62,11 @@ function DateOfBirthUBO({reimbursementAccountDraft, onNext, isEditing, beneficia
             validate={validate}
             onSubmit={handleSubmit}
             style={[styles.mh5, styles.flexGrow2, styles.justifyContentBetween]}
-            submitButtonStyles={[styles.mb0]}
+            submitButtonStyles={[styles.pb5, styles.mb0]}
         >
             <Text style={[styles.textHeadlineLineHeightXXL]}>{translate('beneficialOwnerInfoStep.enterTheDateOfBirthOfTheOwner')}</Text>
-            <InputWrapper
+            {/* @ts-expect-error TODO: Remove this once DatePicker (https://github.com/Expensify/App/issues/25148) is migrated to TypeScript. */}
+            <InputWrapper<unknown>
                 InputComponent={DatePicker}
                 inputID={dobInputID}
                 label={translate('common.dob')}

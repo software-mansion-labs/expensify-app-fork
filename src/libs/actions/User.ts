@@ -2,7 +2,6 @@ import {isBefore} from 'date-fns';
 import type {OnyxCollection, OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import * as ActiveClientManager from '@libs/ActiveClientManager';
 import * as API from '@libs/API';
 import type {
     AddNewContactMethodParams,
@@ -11,8 +10,8 @@ import type {
     GetStatementPDFParams,
     RequestContactMethodValidateCodeParams,
     SetContactMethodAsDefaultParams,
-    SetNameValuePairParams,
     UpdateChatPriorityModeParams,
+    UpdateFrequentlyUsedEmojisParams,
     UpdateNewsletterSubscriptionParams,
     UpdatePreferredEmojiSkinToneParams,
     UpdateStatusParams,
@@ -21,7 +20,6 @@ import type {
     ValidateSecondaryLoginParams,
 } from '@libs/API/parameters';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-import DateUtils from '@libs/DateUtils';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
@@ -32,23 +30,24 @@ import PusherUtils from '@libs/PusherUtils';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import playSound, {SOUNDS} from '@libs/Sound';
 import playSoundExcludingMobile from '@libs/Sound/playSoundExcludingMobile';
-import Visibility from '@libs/Visibility';
-import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {BlockedFromConcierge, CustomStatusDraft, LoginList, Policy} from '@src/types/onyx';
+import type {FrequentlyUsedEmoji} from '@src/types/onyx';
 import type Login from '@src/types/onyx/Login';
 import type {OnyxServerUpdate} from '@src/types/onyx/OnyxUpdatesFromServer';
 import type OnyxPersonalDetails from '@src/types/onyx/PersonalDetails';
 import type {Status} from '@src/types/onyx/PersonalDetails';
 import type ReportAction from '@src/types/onyx/ReportAction';
+import type {OriginalMessage} from '@src/types/onyx/ReportAction';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import * as App from './App';
-import applyOnyxUpdatesReliably from './applyOnyxUpdatesReliably';
+import type {EmptyObject} from '@src/types/utils/EmptyObject';
 import * as Link from './Link';
+import * as OnyxUpdates from './OnyxUpdates';
 import * as Report from './Report';
 import * as Session from './Session';
+
+type BlockedFromConciergeNVP = {expiresAt: number};
 
 let currentUserAccountID = -1;
 let currentEmail = '';
@@ -60,7 +59,7 @@ Onyx.connect({
     },
 });
 
-let myPersonalDetails: OnyxEntry<OnyxPersonalDetails>;
+let myPersonalDetails: OnyxEntry<OnyxPersonalDetails> | EmptyObject = {};
 Onyx.connect({
     key: ONYXKEYS.PERSONAL_DETAILS_LIST,
     callback: (value) => {
@@ -68,15 +67,8 @@ Onyx.connect({
             return;
         }
 
-        myPersonalDetails = value[currentUserAccountID] ?? undefined;
+        myPersonalDetails = value[currentUserAccountID];
     },
-});
-
-let allPolicies: OnyxCollection<Policy>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.POLICY,
-    waitForCollectionCallback: true,
-    callback: (value) => (allPolicies = value),
 });
 
 /**
@@ -163,7 +155,7 @@ function requestContactMethodValidateCode(contactMethod: string) {
                 [contactMethod]: {
                     validateCodeSent: false,
                     errorFields: {
-                        validateCodeSent: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.requestContactMethodValidateCode'),
+                        validateCodeSent: ErrorUtils.getMicroSecondOnyxError('contacts.genericFailureMessages.requestContactMethodValidateCode'),
                     },
                     pendingFields: {
                         validateCodeSent: null,
@@ -210,7 +202,7 @@ function updateNewsletterSubscription(isSubscribed: boolean) {
  * @param contactMethod - the contact method being deleted
  * @param loginList
  */
-function deleteContactMethod(contactMethod: string, loginList: Record<string, Login>, backTo?: string) {
+function deleteContactMethod(contactMethod: string, loginList: Record<string, Login>) {
     const oldLoginData = loginList[contactMethod];
 
     const optimisticData: OnyxUpdate[] = [
@@ -246,7 +238,7 @@ function deleteContactMethod(contactMethod: string, loginList: Record<string, Lo
                     ...oldLoginData,
                     errorFields: {
                         ...oldLoginData?.errorFields,
-                        deletedLogin: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.deleteContactMethod'),
+                        deletedLogin: ErrorUtils.getMicroSecondOnyxError('contacts.genericFailureMessages.deleteContactMethod'),
                     },
                     pendingFields: {
                         deletedLogin: null,
@@ -259,27 +251,7 @@ function deleteContactMethod(contactMethod: string, loginList: Record<string, Lo
     const parameters: DeleteContactMethodParams = {partnerUserID: contactMethod};
 
     API.write(WRITE_COMMANDS.DELETE_CONTACT_METHOD, parameters, {optimisticData, successData, failureData});
-    Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo));
-}
-
-/**
- * Clears a contact method optimistically. this is used when the contact method fails to be added to the backend
- */
-function clearContactMethod(contactMethod: string) {
-    Onyx.merge(ONYXKEYS.LOGIN_LIST, {
-        [contactMethod]: null,
-    });
-}
-
-/**
- * Clears error for a sepcific field on validate action code.
- */
-function clearValidateCodeActionError(fieldName: string) {
-    Onyx.merge(ONYXKEYS.VALIDATE_ACTION_CODE, {
-        errorFields: {
-            [fieldName]: null,
-        },
-    });
+    Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.route);
 }
 
 /**
@@ -312,100 +284,9 @@ function resetContactMethodValidateCodeSentState(contactMethod: string) {
 }
 
 /**
- * Clears unvalidated new contact method action
- */
-function clearUnvalidatedNewContactMethodAction() {
-    Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, {
-        validateCodeSent: null,
-        pendingFields: null,
-        errorFields: null,
-    });
-}
-
-/**
- * When user adds a new contact method, they need to verify the magic code first
- * So we add the temporary contact method to Onyx to use it later, after user verified magic code.
- */
-function addPendingContactMethod(contactMethod: string) {
-    Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, {
-        contactMethod,
-    });
-}
-
-/**
- * Validates the action to add secondary contact method
- */
-function saveNewContactMethodAndRequestValidationCode(contactMethod: string) {
-    const optimisticData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.PENDING_CONTACT_ACTION,
-            value: {
-                contactMethod,
-                errorFields: {
-                    actionVerified: null,
-                },
-                pendingFields: {
-                    actionVerified: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
-                },
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.FORMS.NEW_CONTACT_METHOD_FORM,
-            value: {isLoading: true},
-        },
-    ];
-
-    const successData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.PENDING_CONTACT_ACTION,
-            value: {
-                validateCodeSent: true,
-                errorFields: {
-                    actionVerified: null,
-                },
-                pendingFields: {
-                    actionVerified: null,
-                },
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.FORMS.NEW_CONTACT_METHOD_FORM,
-            value: {isLoading: false},
-        },
-    ];
-
-    const failureData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.PENDING_CONTACT_ACTION,
-            value: {
-                validateCodeSent: null,
-                errorFields: {
-                    actionVerified: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.requestContactMethodValidateCode'),
-                },
-                pendingFields: {
-                    actionVerified: null,
-                },
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.FORMS.NEW_CONTACT_METHOD_FORM,
-            value: {isLoading: false},
-        },
-    ];
-
-    API.write(WRITE_COMMANDS.RESEND_VALIDATE_CODE, null, {optimisticData, successData, failureData});
-}
-
-/**
  * Adds a secondary login to a user's account
  */
-function addNewContactMethod(contactMethod: string, validateCode = '') {
+function addNewContactMethodAndNavigate(contactMethod: string) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -414,7 +295,6 @@ function addNewContactMethod(contactMethod: string, validateCode = '') {
                 [contactMethod]: {
                     partnerUserID: contactMethod,
                     validatedDate: '',
-                    validateCodeSent: true,
                     errorFields: {
                         addedLogin: null,
                     },
@@ -424,11 +304,6 @@ function addNewContactMethod(contactMethod: string, validateCode = '') {
                 },
             },
         },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.ACCOUNT,
-            value: {isLoading: true},
-        },
     ];
     const successData: OnyxUpdate[] = [
         {
@@ -441,24 +316,6 @@ function addNewContactMethod(contactMethod: string, validateCode = '') {
                     },
                 },
             },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.PENDING_CONTACT_ACTION,
-            value: {
-                validateCodeSent: null,
-                errorFields: {
-                    actionVerified: null,
-                },
-                pendingFields: {
-                    actionVerified: null,
-                },
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.ACCOUNT,
-            value: {isLoading: false},
         },
     ];
     const failureData: OnyxUpdate[] = [
@@ -468,7 +325,7 @@ function addNewContactMethod(contactMethod: string, validateCode = '') {
             value: {
                 [contactMethod]: {
                     errorFields: {
-                        addedLogin: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.addContactMethod'),
+                        addedLogin: ErrorUtils.getMicroSecondOnyxError('contacts.genericFailureMessages.addContactMethod'),
                     },
                     pendingFields: {
                         addedLogin: null,
@@ -476,78 +333,12 @@ function addNewContactMethod(contactMethod: string, validateCode = '') {
                 },
             },
         },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.ACCOUNT,
-            value: {isLoading: false},
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.PENDING_CONTACT_ACTION,
-            value: {validateCodeSent: null},
-        },
     ];
 
-    const parameters: AddNewContactMethodParams = {partnerUserID: contactMethod, validateCode};
+    const parameters: AddNewContactMethodParams = {partnerUserID: contactMethod};
 
     API.write(WRITE_COMMANDS.ADD_NEW_CONTACT_METHOD, parameters, {optimisticData, successData, failureData});
-}
-
-/**
- * Requests a magic code to verify current user
- */
-function requestValidateCodeAction() {
-    const optimisticData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.VALIDATE_ACTION_CODE,
-            value: {
-                isLoading: true,
-                pendingFields: {
-                    actionVerified: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
-                },
-                errorFields: {
-                    actionVerified: null,
-                },
-            },
-        },
-    ];
-
-    const successData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.VALIDATE_ACTION_CODE,
-            value: {
-                validateCodeSent: true,
-                isLoading: false,
-                errorFields: {
-                    actionVerified: null,
-                },
-                pendingFields: {
-                    actionVerified: null,
-                },
-            },
-        },
-    ];
-
-    const failureData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.VALIDATE_ACTION_CODE,
-            value: {
-                validateCodeSent: null,
-                isLoading: false,
-                errorFields: {
-                    actionVerified: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.requestContactMethodValidateCode'),
-                },
-                pendingFields: {
-                    actionVerified: null,
-                },
-            },
-        },
-    ];
-
-    API.write(WRITE_COMMANDS.RESEND_VALIDATE_CODE, null, {optimisticData, successData, failureData});
+    Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.route);
 }
 
 /**
@@ -575,7 +366,7 @@ function validateLogin(accountID: number, validateCode: string) {
 /**
  * Validates a secondary login / contact method
  */
-function validateSecondaryLogin(loginList: OnyxEntry<LoginList>, contactMethod: string, validateCode: string) {
+function validateSecondaryLogin(contactMethod: string, validateCode: string) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -607,7 +398,6 @@ function validateSecondaryLogin(loginList: OnyxEntry<LoginList>, contactMethod: 
             key: ONYXKEYS.LOGIN_LIST,
             value: {
                 [contactMethod]: {
-                    validatedDate: DateUtils.getDBTime(),
                     pendingFields: {
                         validateLogin: null,
                     },
@@ -620,83 +410,9 @@ function validateSecondaryLogin(loginList: OnyxEntry<LoginList>, contactMethod: 
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: ONYXKEYS.ACCOUNT,
-            value: {
-                isLoading: false,
-                validated: true,
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.USER,
-            value: {
-                validated: true,
-            },
+            value: {isLoading: false},
         },
     ];
-    // If the primary login isn't validated yet, set the secondary login as the primary login
-    if (!loginList?.[currentEmail].validatedDate) {
-        successData.push(
-            ...[
-                {
-                    onyxMethod: Onyx.METHOD.MERGE,
-                    key: ONYXKEYS.ACCOUNT,
-                    value: {
-                        primaryLogin: contactMethod,
-                    },
-                },
-                {
-                    onyxMethod: Onyx.METHOD.MERGE,
-                    key: ONYXKEYS.SESSION,
-                    value: {
-                        email: contactMethod,
-                    },
-                },
-                {
-                    onyxMethod: Onyx.METHOD.MERGE,
-                    key: ONYXKEYS.PERSONAL_DETAILS_LIST,
-                    value: {
-                        [currentUserAccountID]: {
-                            login: contactMethod,
-                            displayName: PersonalDetailsUtils.createDisplayName(contactMethod, myPersonalDetails),
-                        },
-                    },
-                },
-            ],
-        );
-
-        Object.values(allPolicies ?? {}).forEach((policy) => {
-            if (!policy) {
-                return;
-            }
-
-            let optimisticPolicyDataValue;
-
-            if (policy.employeeList) {
-                const currentEmployee = policy.employeeList[currentEmail];
-                optimisticPolicyDataValue = {
-                    employeeList: {
-                        [currentEmail]: null,
-                        [contactMethod]: currentEmployee,
-                    },
-                };
-            }
-
-            if (policy.ownerAccountID === currentUserAccountID) {
-                optimisticPolicyDataValue = {
-                    ...optimisticPolicyDataValue,
-                    owner: contactMethod,
-                };
-            }
-
-            if (optimisticPolicyDataValue) {
-                successData.push({
-                    onyxMethod: Onyx.METHOD.MERGE,
-                    key: `${ONYXKEYS.COLLECTION.POLICY}${policy.id}`,
-                    value: optimisticPolicyDataValue,
-                });
-            }
-        });
-    }
 
     const failureData: OnyxUpdate[] = [
         {
@@ -705,7 +421,7 @@ function validateSecondaryLogin(loginList: OnyxEntry<LoginList>, contactMethod: 
             value: {
                 [contactMethod]: {
                     errorFields: {
-                        validateLogin: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.validateSecondaryLogin'),
+                        validateLogin: ErrorUtils.getMicroSecondOnyxError('contacts.genericFailureMessages.validateSecondaryLogin'),
                         validateCodeSent: null,
                     },
                     pendingFields: {
@@ -731,7 +447,7 @@ function validateSecondaryLogin(loginList: OnyxEntry<LoginList>, contactMethod: 
  * and if so whether the expiresAt date of a user's ban is before right now
  *
  */
-function isBlockedFromConcierge(blockedFromConciergeNVP: OnyxEntry<BlockedFromConcierge>): boolean {
+function isBlockedFromConcierge(blockedFromConciergeNVP: OnyxEntry<BlockedFromConciergeNVP>): boolean {
     if (isEmptyObject(blockedFromConciergeNVP)) {
         return false;
     }
@@ -758,104 +474,97 @@ function triggerNotifications(onyxUpdates: OnyxServerUpdate[]) {
 
 const isChannelMuted = (reportId: string) =>
     new Promise((resolve) => {
-        const connection = Onyx.connect({
+        const connectionId = Onyx.connect({
             key: `${ONYXKEYS.COLLECTION.REPORT}${reportId}`,
             callback: (report) => {
-                Onyx.disconnect(connection);
-                const notificationPreference = report?.participants?.[currentUserAccountID]?.notificationPreference;
+                Onyx.disconnect(connectionId);
 
                 resolve(
-                    !notificationPreference || notificationPreference === CONST.REPORT.NOTIFICATION_PREFERENCE.MUTE || notificationPreference === CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN,
+                    !report?.notificationPreference ||
+                        report?.notificationPreference === CONST.REPORT.NOTIFICATION_PREFERENCE.MUTE ||
+                        report?.notificationPreference === CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN,
                 );
             },
         });
     });
 
 function playSoundForMessageType(pushJSON: OnyxServerUpdate[]) {
-    const reportActionsOnly = pushJSON.filter((update) => update.key?.includes('reportActions_'));
+    const reportActionsOnly = pushJSON.filter((update) => update.key.includes('reportActions_'));
     // "reportActions_5134363522480668" -> "5134363522480668"
-    const reportID = reportActionsOnly
-        .map((value) => value.key.split('_')[1])
-        .find((reportKey) => reportKey === Navigation.getTopmostReportId() && Visibility.isVisible() && Visibility.hasFocus());
+    const reportIDs = reportActionsOnly.map((value) => value.key.split('_')[1]);
 
-    if (!reportID) {
-        return;
-    }
-
-    isChannelMuted(reportID).then((isSoundMuted) => {
-        if (isSoundMuted) {
-            return;
-        }
-
-        try {
-            const flatten = reportActionsOnly.flatMap((update) => {
-                const value = update.value as OnyxCollection<ReportAction>;
-
-                if (!value) {
-                    return [];
-                }
-
-                return Object.values(value);
-            }) as ReportAction[];
-
-            for (const data of flatten) {
-                // Someone completes a task
-                if (data.actionName === 'TASKCOMPLETED') {
-                    return playSound(SOUNDS.SUCCESS);
-                }
+    Promise.all(reportIDs.map((reportID) => isChannelMuted(reportID)))
+        .then((muted) => muted.every((isMuted) => isMuted))
+        .then((isSoundMuted) => {
+            if (isSoundMuted) {
+                return;
             }
 
-            const types = flatten.map((data) => ReportActionsUtils.getOriginalMessage(data)).filter(Boolean);
+            try {
+                const flatten = reportActionsOnly.flatMap((update) => {
+                    const value = update.value as OnyxCollection<ReportAction>;
 
-            for (const message of types) {
-                if (!message) {
-                    return;
+                    if (!value) {
+                        return [];
+                    }
+
+                    return Object.values(value);
+                }) as ReportAction[];
+
+                for (const data of flatten) {
+                    // Someone completes a task
+                    if (data.actionName === 'TASKCOMPLETED') {
+                        return playSound(SOUNDS.SUCCESS);
+                    }
                 }
 
-                // Pay someone flow
-                if ('IOUDetails' in message) {
-                    return playSound(SOUNDS.SUCCESS);
+                const types = flatten.map((data) => data?.originalMessage).filter(Boolean) as OriginalMessage[];
+
+                for (const message of types) {
+                    // someone sent money
+                    if ('IOUDetails' in message) {
+                        return playSound(SOUNDS.SUCCESS);
+                    }
+
+                    // mention user
+                    if ('html' in message && typeof message.html === 'string' && message.html.includes(`<mention-user>@${currentEmail}</mention-user>`)) {
+                        return playSoundExcludingMobile(SOUNDS.ATTENTION);
+                    }
+
+                    // mention @here
+                    if ('html' in message && typeof message.html === 'string' && message.html.includes('<mention-here>')) {
+                        return playSoundExcludingMobile(SOUNDS.ATTENTION);
+                    }
+
+                    // assign a task
+                    if ('taskReportID' in message) {
+                        return playSound(SOUNDS.ATTENTION);
+                    }
+
+                    // request money
+                    if ('IOUTransactionID' in message) {
+                        return playSound(SOUNDS.ATTENTION);
+                    }
+
+                    // Someone completes a money request
+                    if ('IOUReportID' in message) {
+                        return playSound(SOUNDS.SUCCESS);
+                    }
+
+                    // plain message
+                    if ('html' in message) {
+                        return playSoundExcludingMobile(SOUNDS.RECEIVE);
+                    }
+                }
+            } catch (e) {
+                let errorMessage = String(e);
+                if (e instanceof Error) {
+                    errorMessage = e.message;
                 }
 
-                // mention user
-                if ('html' in message && typeof message.html === 'string' && message.html.includes(`<mention-user>@${currentEmail}</mention-user>`)) {
-                    return playSoundExcludingMobile(SOUNDS.ATTENTION);
-                }
-
-                // mention @here
-                if ('html' in message && typeof message.html === 'string' && message.html.includes('<mention-here>')) {
-                    return playSoundExcludingMobile(SOUNDS.ATTENTION);
-                }
-
-                // assign a task
-                if ('taskReportID' in message) {
-                    return playSound(SOUNDS.ATTENTION);
-                }
-
-                // Submit expense flow
-                if ('IOUTransactionID' in message) {
-                    return playSound(SOUNDS.ATTENTION);
-                }
-
-                // Someone reimburses an expense
-                if ('IOUReportID' in message) {
-                    return playSound(SOUNDS.SUCCESS);
-                }
-
-                // plain message
-                if ('html' in message) {
-                    return playSoundExcludingMobile(SOUNDS.RECEIVE);
-                }
+                Log.client(`Unexpected error occurred while parsing the data to play a sound: ${errorMessage}`);
             }
-        } catch (e) {
-            let errorMessage = String(e);
-            if (e instanceof Error) {
-                errorMessage = e.message;
-            }
-
-            Log.client(`Unexpected error occurred while parsing the data to play a sound: ${errorMessage}`);
-        }
-    });
+        });
 }
 
 /**
@@ -871,20 +580,35 @@ function subscribeToUserEvents() {
     // Handles the mega multipleEvents from Pusher which contains an array of single events.
     // Each single event is passed to PusherUtils in order to trigger the callbacks for that event
     PusherUtils.subscribeToPrivateUserChannelEvent(Pusher.TYPE.MULTIPLE_EVENTS, currentUserAccountID.toString(), (pushJSON) => {
-        // If this is not the main client, we shouldn't process any data received from pusher.
-        if (!ActiveClientManager.isClientTheLeader()) {
-            Log.info('[Pusher] Received updates, but ignoring it since this is not the active client');
+        // The data for this push event comes in two different formats:
+        // 1. Original format - this is what was sent before the RELIABLE_UPDATES project and will go away once RELIABLE_UPDATES is fully complete
+        //     - The data is an array of objects, where each object is an onyx update
+        //       Example: [{onyxMethod: 'whatever', key: 'foo', value: 'bar'}]
+        // 1. Reliable updates format - this is what was sent with the RELIABLE_UPDATES project and will be the format from now on
+        //     - The data is an object, containing updateIDs from the server and an array of onyx updates (this array is the same format as the original format above)
+        //       Example: {lastUpdateID: 1, previousUpdateID: 0, updates: [{onyxMethod: 'whatever', key: 'foo', value: 'bar'}]}
+        if (Array.isArray(pushJSON)) {
+            Log.warn('Received pusher event with array format');
+            pushJSON.forEach((multipleEvent) => {
+                PusherUtils.triggerMultiEventHandler(multipleEvent.eventType, multipleEvent.data);
+            });
             return;
         }
-        // The data for the update is an object, containing updateIDs from the server and an array of onyx updates (this array is the same format as the original format above)
-        // Example: {lastUpdateID: 1, previousUpdateID: 0, updates: [{onyxMethod: 'whatever', key: 'foo', value: 'bar'}]}
+
         const updates = {
             type: CONST.ONYX_UPDATE_TYPES.PUSHER,
             lastUpdateID: Number(pushJSON.lastUpdateID || 0),
             updates: pushJSON.updates ?? [],
             previousUpdateID: Number(pushJSON.previousUpdateID || 0),
         };
-        applyOnyxUpdatesReliably(updates);
+        if (!OnyxUpdates.doesClientNeedToBeUpdated(Number(pushJSON.previousUpdateID || 0))) {
+            OnyxUpdates.apply(updates);
+            return;
+        }
+
+        // If we reached this point, we need to pause the queue while we prepare to fetch older OnyxUpdates.
+        SequentialQueue.pause();
+        OnyxUpdates.saveUpdateInformation(updates);
     });
 
     // Handles Onyx updates coming from Pusher through the mega multipleEvents.
@@ -892,13 +616,8 @@ function subscribeToUserEvents() {
         playSoundForMessageType(pushJSON);
 
         return SequentialQueue.getCurrentRequest().then(() => {
-            // If we don't have the currentUserAccountID (user is logged out) or this is not the
-            // main client we don't want to update Onyx with data from Pusher
+            // If we don't have the currentUserAccountID (user is logged out) we don't want to update Onyx with data from Pusher
             if (currentUserAccountID === -1) {
-                return;
-            }
-            if (!ActiveClientManager.isClientTheLeader()) {
-                Log.info('[Pusher] Received updates, but ignoring it since this is not the active client');
                 return;
             }
 
@@ -910,13 +629,6 @@ function subscribeToUserEvents() {
             // the onyx updates in order
             return onyxUpdatePromise;
         });
-    });
-
-    // We have an event to reconnect the App. It is triggered when we detect that the user passed updateID
-    // is not in the DB
-    PusherUtils.subscribeToMultiEvent(Pusher.TYPE.MULTIPLE_EVENT_TYPE.RECONNECT_APP, () => {
-        App.reconnectApp();
-        return Promise.resolve();
     });
 }
 
@@ -935,6 +647,23 @@ function updatePreferredSkinTone(skinTone: number) {
     const parameters: UpdatePreferredEmojiSkinToneParams = {value: skinTone};
 
     API.write(WRITE_COMMANDS.UPDATE_PREFERRED_EMOJI_SKIN_TONE, parameters, {optimisticData});
+}
+
+/**
+ * Sync frequentlyUsedEmojis with Onyx and Server
+ */
+function updateFrequentlyUsedEmojis(frequentlyUsedEmojis: FrequentlyUsedEmoji[]) {
+    const optimisticData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.SET,
+            key: ONYXKEYS.FREQUENTLY_USED_EMOJIS,
+            value: frequentlyUsedEmojis,
+        },
+    ];
+
+    const parameters: UpdateFrequentlyUsedEmojisParams = {value: JSON.stringify(frequentlyUsedEmojis)};
+
+    API.write(WRITE_COMMANDS.UPDATE_FREQUENTLY_USED_EMOJIS, parameters, {optimisticData});
 }
 
 /**
@@ -1048,7 +777,7 @@ function generateStatementPDF(period: string) {
 /**
  * Sets a contact method / secondary login as the user's "Default" contact method.
  */
-function setContactMethodAsDefault(newDefaultContactMethod: string, backTo?: string) {
+function setContactMethodAsDefault(newDefaultContactMethod: string) {
     const oldDefaultContactMethod = currentEmail;
     const optimisticData: OnyxUpdate[] = [
         {
@@ -1127,7 +856,7 @@ function setContactMethodAsDefault(newDefaultContactMethod: string, backTo?: str
                         defaultLogin: null,
                     },
                     errorFields: {
-                        defaultLogin: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.setDefaultContactMethod'),
+                        defaultLogin: ErrorUtils.getMicroSecondOnyxError('contacts.genericFailureMessages.setDefaultContactMethod'),
                     },
                 },
             },
@@ -1141,54 +870,6 @@ function setContactMethodAsDefault(newDefaultContactMethod: string, backTo?: str
         },
     ];
 
-    Object.values(allPolicies ?? {}).forEach((policy) => {
-        if (!policy) {
-            return;
-        }
-
-        let optimisticPolicyDataValue;
-        let failurePolicyDataValue;
-
-        if (policy.employeeList) {
-            const currentEmployee = policy.employeeList[oldDefaultContactMethod];
-            optimisticPolicyDataValue = {
-                employeeList: {
-                    [oldDefaultContactMethod]: null,
-                    [newDefaultContactMethod]: currentEmployee,
-                },
-            };
-            failurePolicyDataValue = {
-                employeeList: {
-                    [oldDefaultContactMethod]: currentEmployee,
-                    [newDefaultContactMethod]: null,
-                },
-            };
-        }
-
-        if (policy.ownerAccountID === currentUserAccountID) {
-            optimisticPolicyDataValue = {
-                ...optimisticPolicyDataValue,
-                owner: newDefaultContactMethod,
-            };
-            failurePolicyDataValue = {
-                ...failurePolicyDataValue,
-                owner: policy.owner,
-            };
-        }
-
-        if (optimisticPolicyDataValue && failurePolicyDataValue) {
-            optimisticData.push({
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY}${policy.id}`,
-                value: optimisticPolicyDataValue,
-            });
-            failureData.push({
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: `${ONYXKEYS.COLLECTION.POLICY}${policy.id}`,
-                value: failurePolicyDataValue,
-            });
-        }
-    });
     const parameters: SetContactMethodAsDefaultParams = {
         partnerUserID: newDefaultContactMethod,
     };
@@ -1198,7 +879,7 @@ function setContactMethodAsDefault(newDefaultContactMethod: string, backTo?: str
         successData,
         failureData,
     });
-    Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo));
+    Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.route);
 }
 
 function updateTheme(theme: ValueOf<typeof CONST.THEME>) {
@@ -1257,7 +938,7 @@ function clearCustomStatus() {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.CLEAR_STATUS, null, {optimisticData});
+    API.write(WRITE_COMMANDS.CLEAR_STATUS, {}, {optimisticData});
 }
 
 /**
@@ -1267,7 +948,7 @@ function clearCustomStatus() {
  * @param status.emojiCode
  * @param status.clearAfter - ISO 8601 format string, which represents the time when the status should be cleared
  */
-function updateDraftCustomStatus(status: CustomStatusDraft) {
+function updateDraftCustomStatus(status: Status) {
     Onyx.merge(ONYXKEYS.CUSTOM_STATUS_DRAFT, status);
 }
 
@@ -1282,9 +963,11 @@ function dismissReferralBanner(type: ValueOf<typeof CONST.REFERRAL_PROGRAM.CONTE
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.NVP_DISMISSED_REFERRAL_BANNERS,
+            key: ONYXKEYS.ACCOUNT,
             value: {
-                [type]: true,
+                dismissedReferralBanners: {
+                    [type]: true,
+                },
             },
         },
     ];
@@ -1297,61 +980,16 @@ function dismissReferralBanner(type: ValueOf<typeof CONST.REFERRAL_PROGRAM.CONTE
     );
 }
 
-function dismissTrackTrainingModal() {
-    const parameters: SetNameValuePairParams = {
-        name: ONYXKEYS.NVP_HAS_SEEN_TRACK_TRAINING,
-        value: true,
-    };
-
-    const optimisticData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: ONYXKEYS.NVP_HAS_SEEN_TRACK_TRAINING,
-            value: true,
-        },
-    ];
-
-    API.write(WRITE_COMMANDS.SET_NAME_VALUE_PAIR, parameters, {
-        optimisticData,
-    });
-}
-
-function dismissWorkspaceTooltip() {
-    Onyx.merge(ONYXKEYS.NVP_WORKSPACE_TOOLTIP, {shouldShow: false});
-}
-
-function dismissGBRTooltip() {
-    Onyx.merge(ONYXKEYS.NVP_SHOULD_HIDE_GBR_TOOLTIP, true);
-}
-
-function requestRefund() {
-    API.write(WRITE_COMMANDS.REQUEST_REFUND, null);
-}
-
-function subscribeToActiveGuides() {
-    const pusherChannelName = `${CONST.PUSHER.PRESENCE_ACTIVE_GUIDES}${CONFIG.PUSHER.SUFFIX}`;
-    Pusher.subscribe(pusherChannelName).catch(() => {
-        Log.hmmm('[User] Failed to initially subscribe to Pusher channel', {pusherChannelName});
-    });
-}
-
-function setIsDebugModeEnabled(isDebugModeEnabled: boolean) {
-    Onyx.merge(ONYXKEYS.USER, {isDebugModeEnabled});
-}
-
 export {
     clearFocusModeNotification,
     closeAccount,
     dismissReferralBanner,
-    dismissTrackTrainingModal,
-    dismissWorkspaceTooltip,
     resendValidateCode,
     requestContactMethodValidateCode,
     updateNewsletterSubscription,
     deleteContactMethod,
     clearContactMethodErrors,
-    clearContactMethod,
-    addNewContactMethod,
+    addNewContactMethodAndNavigate,
     validateLogin,
     validateSecondaryLogin,
     isBlockedFromConcierge,
@@ -1360,6 +998,7 @@ export {
     setShouldUseStagingServer,
     setMuteAllSounds,
     clearUserErrorMessage,
+    updateFrequentlyUsedEmojis,
     joinScreenShare,
     clearScreenShareRequest,
     generateStatementPDF,
@@ -1371,13 +1010,4 @@ export {
     clearCustomStatus,
     updateDraftCustomStatus,
     clearDraftCustomStatus,
-    requestRefund,
-    saveNewContactMethodAndRequestValidationCode,
-    clearUnvalidatedNewContactMethodAction,
-    requestValidateCodeAction,
-    addPendingContactMethod,
-    clearValidateCodeActionError,
-    subscribeToActiveGuides,
-    dismissGBRTooltip,
-    setIsDebugModeEnabled,
 };

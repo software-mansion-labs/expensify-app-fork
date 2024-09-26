@@ -42,9 +42,9 @@ function GetPhysicalCardPhone({
         const errors: OnValidateResult = {};
 
         if (!LoginUtils.validateNumber(phoneNumberToValidate)) {
-            errors.phoneNumber = translate('common.error.phoneNumber');
+            errors.phoneNumber = 'common.error.phoneNumber';
         } else if (!phoneNumberToValidate) {
-            errors.phoneNumber = translate('common.error.fieldRequired');
+            errors.phoneNumber = 'common.error.fieldRequired';
         }
 
         return errors;

@@ -1,5 +1,6 @@
-import type {TextSelection} from '@components/Composer/types';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
+import getNumberOfLines from './getNumberOfLines';
+import updateNumberOfLines from './updateNumberOfLines';
 
 type Selection = {
     start: number;
@@ -9,7 +10,7 @@ type Selection = {
 /**
  * Replace substring between selection with a text.
  */
-function insertText(text: string, selection: TextSelection, textToInsert: string): string {
+function insertText(text: string, selection: Selection, textToInsert: string): string {
     return text.slice(0, selection.start) + textToInsert + text.slice(selection.end, text.length);
 }
 
@@ -48,5 +49,4 @@ function findCommonSuffixLength(str1: string, str2: string, cursorPosition: numb
     return commonSuffixLength;
 }
 
-export {insertText, canSkipTriggerHotkeys, insertWhiteSpaceAtIndex, findCommonSuffixLength};
-export type {Selection};
+export {getNumberOfLines, updateNumberOfLines, insertText, canSkipTriggerHotkeys, insertWhiteSpaceAtIndex, findCommonSuffixLength};

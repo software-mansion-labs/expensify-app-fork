@@ -24,7 +24,7 @@ DerivedData
 *.p12
 *.mobileprovision
 ios-fastlane-json-key.json
-**/.xcode.env.local
+ios/.xcode.env.local
 
 # Android/IntelliJ
 #
@@ -36,11 +36,6 @@ local.properties
 *.hprof
 android/app/src/main/java/com/expensify/chat/generated/
 .cxx/
-
-# VIM
-*.swp
-*.swo
-*~
 
 # Vscode
 .vscode
@@ -78,7 +73,7 @@ android/app/android-fastlane-json-key.json
 *.jsbundle
 
 # Ruby / CocoaPods
-**/Pods/
+/ios/Pods/
 /vendor/bundle/
 
 # Local DEV config
@@ -110,6 +105,10 @@ tsconfig.tsbuildinfo
 # Mock-github
 /repo/
 
+# Workflow test logs
+/workflow_tests/logs/
+/workflow_tests/repo/
+
 # Yalc
 .yalc
 yalc.lock
@@ -126,20 +125,3 @@ config/webpack/*.pem
 .expo
 dist/
 web-build/
-
-# Yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-
-# Storage location for downloaded app source maps (see scripts/symbolicate-profile.ts)
-.sourcemaps/
-
-# Jeykll
-docs/.bundle
-
-# Output of react compiler healthcheck dev script
-react-compiler-output.txt

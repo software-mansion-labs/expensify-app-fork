@@ -1,19 +1,18 @@
 import type {StackScreenProps} from '@react-navigation/stack';
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {InteractionManager, Keyboard, View} from 'react-native';
-import {useOnyx} from 'react-native-onyx';
+import {InteractionManager, Keyboard, ScrollView, View} from 'react-native';
+import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
+import {withOnyx} from 'react-native-onyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import ConfirmModal from '@components/ConfirmModal';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
-import ErrorMessageRow from '@components/ErrorMessageRow';
 import FullscreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
 import MenuItem from '@components/MenuItem';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
-import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
@@ -23,34 +22,43 @@ import {canUseTouchScreen} from '@libs/DeviceCapabilities';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
+import * as Session from '@userActions/Session';
 import * as User from '@userActions/User';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import type {LoginList, SecurityGroup, Session as TSession} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 import ValidateCodeForm from './ValidateCodeForm';
 import type {ValidateCodeFormHandle} from './ValidateCodeForm/BaseValidateCodeForm';
 
-type ContactMethodDetailsPageProps = StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.PROFILE.CONTACT_METHOD_DETAILS>;
+type ContactMethodDetailsPageOnyxProps = {
+    /** Login list for the user that is signed in */
+    loginList: OnyxEntry<LoginList>;
 
-function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
-    const [loginList, loginListResult] = useOnyx(ONYXKEYS.LOGIN_LIST);
-    const [session, sessionResult] = useOnyx(ONYXKEYS.SESSION);
-    const [myDomainSecurityGroups, myDomainSecurityGroupsResult] = useOnyx(ONYXKEYS.MY_DOMAIN_SECURITY_GROUPS);
-    const [securityGroups, securityGroupsResult] = useOnyx(ONYXKEYS.COLLECTION.SECURITY_GROUP);
-    const [isLoadingReportData, isLoadingReportDataResult] = useOnyx(ONYXKEYS.IS_LOADING_REPORT_DATA, {initialValue: true});
+    /** Current user session */
+    session: OnyxEntry<TSession>;
 
-    const isLoadingOnyxValues = isLoadingOnyxValue(loginListResult, sessionResult, myDomainSecurityGroupsResult, securityGroupsResult, isLoadingReportDataResult);
+    /** User's security group IDs by domain */
+    myDomainSecurityGroups: OnyxEntry<Record<string, string>>;
 
+    /** All of the user's security groups and their settings */
+    securityGroups: OnyxCollection<SecurityGroup>;
+
+    /** Indicated whether the report data is loading */
+    isLoadingReportData: OnyxEntry<boolean>;
+};
+
+type ContactMethodDetailsPageProps = ContactMethodDetailsPageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.PROFILE.CONTACT_METHOD_DETAILS>;
+
+function ContactMethodDetailsPage({loginList, session, myDomainSecurityGroups, securityGroups, isLoadingReportData = true, route}: ContactMethodDetailsPageProps) {
     const {formatPhoneNumber, translate} = useLocalize();
     const theme = useTheme();
     const themeStyles = useThemeStyles();
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const validateCodeFormRef = useRef<ValidateCodeFormHandle>(null);
-    const backTo = route.params.backTo;
 
     /**
      * Gets the current contact method from the route params
@@ -80,8 +88,8 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
      * Attempt to set this contact method as user's "Default contact method"
      */
     const setAsDefault = useCallback(() => {
-        User.setContactMethodAsDefault(contactMethod, backTo);
-    }, [contactMethod, backTo]);
+        User.setContactMethodAsDefault(contactMethod);
+    }, [contactMethod]);
 
     /**
      * Checks if the user is allowed to change their default contact method. This should only be allowed if:
@@ -130,8 +138,16 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
      */
     const confirmDeleteAndHideModal = useCallback(() => {
         toggleDeleteModal(false);
-        User.deleteContactMethod(contactMethod, loginList ?? {}, backTo);
-    }, [contactMethod, loginList, toggleDeleteModal, backTo]);
+        User.deleteContactMethod(contactMethod, loginList ?? {});
+    }, [contactMethod, loginList, toggleDeleteModal]);
+
+    useEffect(() => {
+        if (isEmptyObject(loginData)) {
+            return;
+        }
+        User.resetContactMethodValidateCodeSentState(contactMethod);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const prevValidatedDate = usePrevious(loginData?.validatedDate);
     useEffect(() => {
@@ -140,12 +156,19 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
             return;
         }
 
+        // If the selected contactMethod is the current session['login'] and the account is unvalidated,
+        // the current authToken is invalid after the successful magic code verification.
+        // So we need to sign out the user and redirect to the sign in page.
+        if (isDefaultContactMethod) {
+            Session.signOutAndRedirectToSignIn();
+            return;
+        }
         // Navigate to methods page on successful magic code verification
         // validatedDate property is responsible to decide the status of the magic code verification
-        Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo));
-    }, [prevValidatedDate, loginData?.validatedDate, isDefaultContactMethod, backTo]);
+        Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.route);
+    }, [prevValidatedDate, loginData?.validatedDate, isDefaultContactMethod]);
 
-    if (isLoadingOnyxValues || (isLoadingReportData && isEmptyObject(loginList))) {
+    if (isLoadingReportData && isEmptyObject(loginList)) {
         return <FullscreenLoadingIndicator />;
     }
 
@@ -155,15 +178,15 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
                 <FullPageNotFoundView
                     shouldShow
                     linkKey="contacts.goBackContactMethods"
-                    onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo))}
-                    onLinkPress={() => Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo))}
+                    onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.route)}
+                    onLinkPress={() => Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.route)}
                 />
             </ScreenWrapper>
         );
     }
 
     // Replacing spaces with "hard spaces" to prevent breaking the number
-    const formattedContactMethod = Str.isSMSLogin(contactMethod) ? formatPhoneNumber(contactMethod) : contactMethod;
+    const formattedContactMethod = Str.isSMSLogin(contactMethod) ? formatPhoneNumber(contactMethod).replace(/ /g, '\u00A0') : contactMethod;
     const hasMagicCodeBeenSent = !!loginData.validateCodeSent;
     const isFailedAddContactMethod = !!loginData.errorFields?.addedLogin;
     const isFailedRemovedContactMethod = !!loginData.errorFields?.deletedLogin;
@@ -175,7 +198,7 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
         >
             <HeaderWithBackButton
                 title={formattedContactMethod}
-                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo))}
+                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.route)}
             />
             <ScrollView keyboardShouldPersistTaps="handled">
                 <ConfirmModal
@@ -195,14 +218,10 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
                 />
 
                 {isFailedAddContactMethod && (
-                    <ErrorMessageRow
-                        errors={ErrorUtils.getLatestErrorField(loginData, 'addedLogin')}
-                        errorRowStyles={[themeStyles.mh5, themeStyles.mv3]}
-                        onClose={() => {
-                            User.clearContactMethod(contactMethod);
-                            Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo));
-                        }}
-                        canDismissError
+                    <DotIndicatorMessage
+                        style={[themeStyles.mh5, themeStyles.mv3]}
+                        messages={ErrorUtils.getLatestErrorField(loginData, 'addedLogin')}
+                        type="error"
                     />
                 )}
 
@@ -212,7 +231,7 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
                             type="success"
                             style={[themeStyles.mb3]}
                             // eslint-disable-next-line @typescript-eslint/naming-convention
-                            messages={{0: translate('contacts.enterMagicCode', {contactMethod: formattedContactMethod})}}
+                            messages={{0: ['contacts.enterMagicCode', {contactMethod: formattedContactMethod}]}}
                         />
 
                         <ValidateCodeForm
@@ -231,7 +250,7 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
                     >
                         <MenuItem
                             title={translate('contacts.setAsDefault')}
-                            icon={Expensicons.Star}
+                            icon={Expensicons.Profile}
                             onPress={setAsDefault}
                         />
                     </OfflineWithFeedback>
@@ -267,4 +286,20 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
 
 ContactMethodDetailsPage.displayName = 'ContactMethodDetailsPage';
 
-export default ContactMethodDetailsPage;
+export default withOnyx<ContactMethodDetailsPageProps, ContactMethodDetailsPageOnyxProps>({
+    loginList: {
+        key: ONYXKEYS.LOGIN_LIST,
+    },
+    session: {
+        key: ONYXKEYS.SESSION,
+    },
+    myDomainSecurityGroups: {
+        key: ONYXKEYS.MY_DOMAIN_SECURITY_GROUPS,
+    },
+    securityGroups: {
+        key: `${ONYXKEYS.COLLECTION.SECURITY_GROUP}`,
+    },
+    isLoadingReportData: {
+        key: `${ONYXKEYS.IS_LOADING_REPORT_DATA}`,
+    },
+})(ContactMethodDetailsPage);

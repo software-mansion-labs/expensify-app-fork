@@ -1,16 +1,15 @@
 import {getActionFromState} from '@react-navigation/core';
 import type {NavigationContainerRef} from '@react-navigation/native';
 import {StackActions} from '@react-navigation/native';
-import findLastIndex from 'lodash/findLastIndex';
-import type {OnyxEntry} from 'react-native-onyx';
+import {findLastIndex} from 'lodash';
 import Log from '@libs/Log';
-import {isCentralPaneName} from '@libs/NavigationUtils';
-import getPolicyEmployeeAccountIDs from '@libs/PolicyEmployeeListUtils';
+import getPolicyMemberAccountIDs from '@libs/PolicyMembersUtils';
 import {doesReportBelongToWorkspace} from '@libs/ReportUtils';
 import NAVIGATORS from '@src/NAVIGATORS';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import type {Report} from '@src/types/onyx';
+import type {EmptyObject} from '@src/types/utils/EmptyObject';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import getPolicyIDFromState from './getPolicyIDFromState';
 import getStateFromPath from './getStateFromPath';
@@ -26,7 +25,7 @@ import type {RootStackParamList, StackNavigationAction, State} from './types';
  *
  * @param targetReportID - The reportID to navigate to after dismissing the modal
  */
-function dismissModalWithReport(targetReport: OnyxEntry<Report>, navigationRef: NavigationContainerRef<RootStackParamList>) {
+function dismissModalWithReport(targetReport: Report | EmptyObject, navigationRef: NavigationContainerRef<RootStackParamList>) {
     if (!navigationRef.isReady()) {
         return;
     }
@@ -38,17 +37,12 @@ function dismissModalWithReport(targetReport: OnyxEntry<Report>, navigationRef: 
         case NAVIGATORS.LEFT_MODAL_NAVIGATOR:
         case NAVIGATORS.RIGHT_MODAL_NAVIGATOR:
         case SCREENS.NOT_FOUND:
-        case SCREENS.ATTACHMENTS:
-        case SCREENS.TRANSACTION_RECEIPT:
-        case SCREENS.PROFILE_AVATAR:
-        case SCREENS.WORKSPACE_AVATAR:
-        case SCREENS.REPORT_AVATAR:
-        case SCREENS.CONCIERGE:
+        case SCREENS.REPORT_ATTACHMENTS:
             // If we are not in the target report, we need to navigate to it after dismissing the modal
-            if (targetReport?.reportID !== getTopmostReportId(state)) {
-                const reportState = getStateFromPath(ROUTES.REPORT_WITH_ID.getRoute(targetReport?.reportID ?? '-1'));
+            if (targetReport.reportID !== getTopmostReportId(state)) {
+                const reportState = getStateFromPath(ROUTES.REPORT_WITH_ID.getRoute(targetReport.reportID));
                 const policyID = getPolicyIDFromState(state as State<RootStackParamList>);
-                const policyMemberAccountIDs = getPolicyEmployeeAccountIDs(policyID);
+                const policyMemberAccountIDs = getPolicyMemberAccountIDs(policyID);
                 const shouldOpenAllWorkspace = isEmptyObject(targetReport) ? true : !doesReportBelongToWorkspace(targetReport, policyMemberAccountIDs, policyID);
 
                 if (shouldOpenAllWorkspace) {
@@ -65,7 +59,7 @@ function dismissModalWithReport(targetReport: OnyxEntry<Report>, navigationRef: 
                 // If not-found page is in the route stack, we need to close it
             } else if (state.routes.some((route) => route.name === SCREENS.NOT_FOUND)) {
                 const lastRouteIndex = state.routes.length - 1;
-                const centralRouteIndex = findLastIndex(state.routes, (route) => isCentralPaneName(route.name));
+                const centralRouteIndex = findLastIndex(state.routes, (route) => route.name === NAVIGATORS.CENTRAL_PANE_NAVIGATOR);
                 navigationRef.dispatch({...StackActions.pop(lastRouteIndex - centralRouteIndex), target: state.key});
             } else {
                 navigationRef.dispatch({...StackActions.pop(), target: state.key});

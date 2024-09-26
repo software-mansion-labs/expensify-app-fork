@@ -5,8 +5,6 @@ import Log from '@libs/Log';
 import * as Session from '@userActions/Session';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
-import type {GoogleSignInProps} from '.';
-import type GoogleError from './types';
 
 /**
  * Google Sign In method for iOS and android that returns identityToken.
@@ -26,11 +24,10 @@ function googleSignInRequest() {
     GoogleSignin.signIn()
         .then((response) => response.idToken)
         .then((token) => Session.beginGoogleSignIn(token))
-        .catch((error: GoogleError | undefined) => {
+        .catch((error) => {
             // Handle unexpected error shape
-            if (error?.code === undefined) {
-                Log.alert(`[Google Sign In] Google sign in failed: ${JSON.stringify(error)}`);
-                return;
+            if (error === undefined || error.code === undefined) {
+                Log.alert(`[Google Sign In] Google sign in failed: ${error}`);
             }
             /** The logged code is useful for debugging any new errors that are not specifically handled. To decode, see:
               - The common status codes documentation: https://developers.google.com/android/reference/com/google/android/gms/common/api/CommonStatusCodes
@@ -47,13 +44,10 @@ function googleSignInRequest() {
 /**
  * Google Sign In button for iOS.
  */
-function GoogleSignIn({onPress = () => {}}: GoogleSignInProps) {
+function GoogleSignIn() {
     return (
         <IconButton
-            onPress={() => {
-                onPress();
-                googleSignInRequest();
-            }}
+            onPress={googleSignInRequest}
             provider={CONST.SIGN_IN_METHOD.GOOGLE}
         />
     );

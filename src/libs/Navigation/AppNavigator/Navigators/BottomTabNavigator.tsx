@@ -3,14 +3,14 @@ import type {StackNavigationOptions} from '@react-navigation/stack';
 import React from 'react';
 import createCustomBottomTabNavigator from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator';
 import getTopmostCentralPaneRoute from '@libs/Navigation/getTopmostCentralPaneRoute';
-import type {BottomTabNavigatorParamList, CentralPaneName, NavigationPartialRoute, RootStackParamList} from '@libs/Navigation/types';
+import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
+import AllSettingsScreen from '@pages/home/sidebar/AllSettingsScreen';
 import SidebarScreen from '@pages/home/sidebar/SidebarScreen';
-import SearchPageBottomTab from '@pages/Search/SearchPageBottomTab';
 import SCREENS from '@src/SCREENS';
-import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
-import ActiveCentralPaneRouteContext from './ActiveCentralPaneRouteContext';
+import ActiveRouteContext from './ActiveRouteContext';
 
-const loadInitialSettingsPage = () => require<ReactComponentModule>('../../../../pages/settings/InitialSettingsPage').default;
+const loadWorkspaceInitialPage = () => require('../../../../pages/workspace/WorkspaceInitialPage').default as React.ComponentType;
+
 const Tab = createCustomBottomTabNavigator<BottomTabNavigatorParamList>();
 
 const screenOptions: StackNavigationOptions = {
@@ -19,24 +19,24 @@ const screenOptions: StackNavigationOptions = {
 };
 
 function BottomTabNavigator() {
-    const activeRoute = useNavigationState<RootStackParamList, NavigationPartialRoute<CentralPaneName> | undefined>(getTopmostCentralPaneRoute);
+    const activeRoute = useNavigationState(getTopmostCentralPaneRoute);
     return (
-        <ActiveCentralPaneRouteContext.Provider value={activeRoute}>
+        <ActiveRouteContext.Provider value={activeRoute?.name ?? ''}>
             <Tab.Navigator screenOptions={screenOptions}>
                 <Tab.Screen
                     name={SCREENS.HOME}
                     component={SidebarScreen}
                 />
                 <Tab.Screen
-                    name={SCREENS.SEARCH.BOTTOM_TAB}
-                    component={SearchPageBottomTab}
+                    name={SCREENS.ALL_SETTINGS}
+                    component={AllSettingsScreen}
                 />
                 <Tab.Screen
-                    name={SCREENS.SETTINGS.ROOT}
-                    getComponent={loadInitialSettingsPage}
+                    name={SCREENS.WORKSPACE.INITIAL}
+                    getComponent={loadWorkspaceInitialPage}
                 />
             </Tab.Navigator>
-        </ActiveCentralPaneRouteContext.Provider>
+        </ActiveRouteContext.Provider>
     );
 }
 

@@ -1,12 +1,10 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
-import useHover from '@hooks/useHover';
-import {useMouseContext} from '@hooks/useMouseContext';
-import useSyncFocus from '@hooks/useSyncFocus';
+import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
@@ -16,9 +14,9 @@ function BaseListItem<TItem extends ListItem>({
     item,
     pressableStyle,
     wrapperStyle,
-    containerStyle,
+    selectMultipleStyle,
     isDisabled = false,
-    shouldPreventEnterKeySubmit = false,
+    shouldPreventDefaultFocusOnSelectRow = false,
     canSelectMultiple = false,
     onSelectRow,
     onDismissError = () => {},
@@ -28,26 +26,10 @@ function BaseListItem<TItem extends ListItem>({
     pendingAction,
     FooterComponent,
     children,
-    isFocused,
-    shouldSyncFocus = true,
-    shouldDisplayRBR = true,
-    onFocus = () => {},
-    hoverStyle,
-    onLongPressRow,
 }: BaseListItemProps<TItem>) {
     const theme = useTheme();
     const styles = useThemeStyles();
-    const {hovered, bind} = useHover();
-    const {isMouseDownOnInput, setMouseUp} = useMouseContext();
-
-    const pressableRef = useRef<View>(null);
-
-    // Sync focus on an item
-    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
-    const handleMouseLeave = (e: React.MouseEvent<Element, MouseEvent>) => {
-        e.stopPropagation();
-        setMouseUp();
-    };
+    const StyleUtils = useStyleUtils();
 
     const rightHandSideComponentRender = () => {
         if (canSelectMultiple || !rightHandSideComponent) {
@@ -55,7 +37,7 @@ function BaseListItem<TItem extends ListItem>({
         }
 
         if (typeof rightHandSideComponent === 'function') {
-            return rightHandSideComponent(item, isFocused);
+            return rightHandSideComponent(item);
         }
 
         return rightHandSideComponent;
@@ -67,67 +49,60 @@ function BaseListItem<TItem extends ListItem>({
             pendingAction={pendingAction}
             errors={errors}
             errorRowStyles={styles.ph5}
-            contentContainerStyle={containerStyle}
         >
             <PressableWithFeedback
-                // eslint-disable-next-line react/jsx-props-no-spreading
-                {...bind}
-                ref={pressableRef}
-                onLongPress={() => {
-                    onLongPressRow?.(item);
-                }}
-                onPress={(e) => {
-                    if (isMouseDownOnInput) {
-                        e?.stopPropagation(); // Preventing the click action
-                        return;
-                    }
-                    if (shouldPreventEnterKeySubmit && e && 'key' in e && e.key === CONST.KEYBOARD_SHORTCUTS.ENTER.shortcutKey) {
-                        return;
-                    }
-                    onSelectRow(item);
-                }}
-                disabled={isDisabled && !item.isSelected}
-                interactive={item.isInteractive}
-                accessibilityLabel={item.text ?? ''}
+                onPress={() => onSelectRow(item)}
+                disabled={isDisabled}
+                accessibilityLabel={item.text}
                 role={CONST.ROLE.BUTTON}
                 hoverDimmingValue={1}
-                hoverStyle={[!item.isDisabled && styles.hoveredComponentBG, hoverStyle]}
+                hoverStyle={styles.hoveredComponentBG}
                 dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
-                onMouseDown={(e) => e.preventDefault()}
-                id={keyForList ?? ''}
+                onMouseDown={shouldPreventDefaultFocusOnSelectRow ? (e) => e.preventDefault() : undefined}
+                nativeID={keyForList}
                 style={pressableStyle}
-                onFocus={onFocus}
-                onMouseLeave={handleMouseLeave}
-                tabIndex={item.tabIndex}
             >
-                <View style={wrapperStyle}>
-                    {typeof children === 'function' ? children(hovered) : children}
+                {({hovered}) => (
+                    <>
+                        <View style={wrapperStyle}>
+                            {canSelectMultiple && (
+                                <View
+                                    role={CONST.ROLE.BUTTON}
+                                    style={StyleUtils.getCheckboxPressableStyle()}
+                                >
+                                    <View style={selectMultipleStyle}>
+                                        {item.isSelected && (
+                                            <Icon
+                                                src={Expensicons.Checkmark}
+                                                fill={theme.textLight}
+                                                height={14}
+                                                width={14}
+                                            />
+                                        )}
+                                    </View>
+                                </View>
+                            )}
 
-                    {!canSelectMultiple && item.isSelected && !rightHandSideComponent && (
-                        <View
-                            style={[styles.flexRow, styles.alignItemsCenter, styles.ml3]}
-                            accessible={false}
-                        >
-                            <View>
-                                <Icon
-                                    src={Expensicons.Checkmark}
-                                    fill={theme.success}
-                                />
-                            </View>
-                        </View>
-                    )}
-                    {!item.isSelected && !!item.brickRoadIndicator && shouldDisplayRBR && (
-                        <View style={[styles.alignItemsCenter, styles.justifyContentCenter]}>
-                            <Icon
-                                src={Expensicons.DotIndicator}
-                                fill={item.brickRoadIndicator === CONST.BRICK_ROAD_INDICATOR_STATUS.INFO ? theme.iconSuccessFill : theme.danger}
-                            />
-                        </View>
-                    )}
+                            {typeof children === 'function' ? children(hovered) : children}
 
-                    {rightHandSideComponentRender()}
-                </View>
-                {FooterComponent}
+                            {!canSelectMultiple && item.isSelected && !rightHandSideComponent && (
+                                <View
+                                    style={[styles.flexRow, styles.alignItemsCenter, styles.ml3]}
+                                    accessible={false}
+                                >
+                                    <View>
+                                        <Icon
+                                            src={Expensicons.Checkmark}
+                                            fill={theme.success}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+                            {rightHandSideComponentRender()}
+                        </View>
+                        {FooterComponent}
+                    </>
+                )}
             </PressableWithFeedback>
         </OfflineWithFeedback>
     );

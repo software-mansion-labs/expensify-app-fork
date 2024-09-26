@@ -1,31 +1,7 @@
 import {useNavigation} from '@react-navigation/native';
+import ExpensiMark from 'expensify-common/lib/ExpensiMark';
 import {useCallback, useEffect} from 'react';
-import Parser from '@libs/Parser';
 import type UseHtmlPaste from './types';
-
-const insertByCommand = (text: string) => {
-    document.execCommand('insertText', false, text);
-};
-
-const insertAtCaret = (target: HTMLElement, text: string) => {
-    const selection = window.getSelection();
-    if (selection?.rangeCount) {
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        const node = document.createTextNode(text);
-        range.insertNode(node);
-
-        // Move caret to the end of the newly inserted text node.
-        range.setStart(node, node.length);
-        range.setEnd(node, node.length);
-        selection.setBaseAndExtent(range.startContainer, range.startOffset, range.endContainer, range.endOffset);
-
-        // Dispatch input event to trigger Markdown Input to parse the new text
-        target.dispatchEvent(new Event('input', {bubbles: true}));
-    } else {
-        insertByCommand(text);
-    }
-};
 
 const useHtmlPaste: UseHtmlPaste = (textInputRef, preHtmlPasteCallback, removeListenerOnScreenBlur = false) => {
     const navigation = useNavigation();
@@ -36,25 +12,15 @@ const useHtmlPaste: UseHtmlPaste = (textInputRef, preHtmlPasteCallback, removeLi
      */
     const paste = useCallback((text: string) => {
         try {
-            const textInputHTMLElement = textInputRef.current as HTMLElement;
-            if (textInputHTMLElement?.hasAttribute('contenteditable')) {
-                insertAtCaret(textInputHTMLElement, text);
-            } else {
-                insertByCommand(text);
-            }
+            document.execCommand('insertText', false, text);
 
             // Pointer will go out of sight when a large paragraph is pasted on the web. Refocusing the input keeps the cursor in view.
-            // To avoid the keyboard toggle issue in mWeb if using blur() and focus() functions, we just need to dispatch the event to trigger the onFocus handler
-            // We need to trigger the bubbled "focusin" event to make sure the onFocus handler is triggered
-            textInputHTMLElement.dispatchEvent(
-                new FocusEvent('focusin', {
-                    bubbles: true,
-                }),
-            );
+            textInputRef.current?.blur();
+            textInputRef.current?.focus();
             // eslint-disable-next-line no-empty
         } catch (e) {}
         // We only need to set the callback once.
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     /**
@@ -64,7 +30,8 @@ const useHtmlPaste: UseHtmlPaste = (textInputRef, preHtmlPasteCallback, removeLi
      */
     const handlePastedHTML = useCallback(
         (html: string) => {
-            paste(Parser.htmlToMarkdown(html));
+            const parser = new ExpensiMark();
+            paste(parser.htmlToMarkdown(html));
         },
         [paste],
     );
@@ -102,10 +69,11 @@ const useHtmlPaste: UseHtmlPaste = (textInputRef, preHtmlPasteCallback, removeLi
 
             event.preventDefault();
 
+            const types = event.clipboardData?.types;
             const TEXT_HTML = 'text/html';
 
             // If paste contains HTML
-            if (event.clipboardData?.types?.includes(TEXT_HTML)) {
+            if (types && types.includes(TEXT_HTML)) {
                 const pastedHTML = event.clipboardData.getData(TEXT_HTML);
 
                 const domparser = new DOMParser();
@@ -124,7 +92,7 @@ const useHtmlPaste: UseHtmlPaste = (textInputRef, preHtmlPasteCallback, removeLi
             }
             handlePastePlainText(event);
         },
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [handlePastedHTML, handlePastePlainText, preHtmlPasteCallback],
     );
 
@@ -135,20 +103,20 @@ const useHtmlPaste: UseHtmlPaste = (textInputRef, preHtmlPasteCallback, removeLi
         let unsubscribeFocus: () => void;
         let unsubscribeBlur: () => void;
         if (removeListenerOnScreenBlur) {
-            unsubscribeFocus = navigation.addListener('focus', () => document.addEventListener('paste', handlePaste, true));
-            unsubscribeBlur = navigation.addListener('blur', () => document.removeEventListener('paste', handlePaste, true));
+            unsubscribeFocus = navigation.addListener('focus', () => document.addEventListener('paste', handlePaste));
+            unsubscribeBlur = navigation.addListener('blur', () => document.removeEventListener('paste', handlePaste));
         }
 
-        document.addEventListener('paste', handlePaste, true);
+        document.addEventListener('paste', handlePaste);
 
         return () => {
             if (removeListenerOnScreenBlur) {
                 unsubscribeFocus();
                 unsubscribeBlur();
             }
-            document.removeEventListener('paste', handlePaste, true);
+            document.removeEventListener('paste', handlePaste);
         };
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 };
 

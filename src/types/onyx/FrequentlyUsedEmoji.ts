@@ -1,4 +1,3 @@
-/** Model of frequently used emoji */
 type FrequentlyUsedEmoji = {
     /** The emoji code */
     code: string;

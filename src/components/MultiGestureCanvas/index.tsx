@@ -1,7 +1,6 @@
 import type {ForwardedRef} from 'react';
 import React, {useEffect, useMemo, useRef} from 'react';
 import {View} from 'react-native';
-import type {GestureType} from 'react-native-gesture-handler';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import type {GestureRef} from 'react-native-gesture-handler/lib/typescript/handlers/gestures/gesture';
 import type PagerView from 'react-native-pager-view';
@@ -41,7 +40,7 @@ type MultiGestureCanvasProps = ChildrenProps & {
     shouldDisableTransformationGestures?: SharedValue<boolean>;
 
     /** If there is a pager wrapping the canvas, we need to disable the pan gesture in case the pager is swiping */
-    pagerRef?: ForwardedRef<PagerView | GestureType>; // TODO: For TS migration: Exclude<GestureRef, number>
+    pagerRef?: ForwardedRef<PagerView>; // TODO: For TS migration: Exclude<GestureRef, number>
 
     /** Handles scale changed event */
     onScaleChanged?: OnScaleChangedCallback;
@@ -49,15 +48,12 @@ type MultiGestureCanvasProps = ChildrenProps & {
     /** Handles scale changed event */
     onTap?: OnTapCallback;
 
-    /** Handles swipe down event */
     onSwipeDown?: OnSwipeDownCallback;
 };
 
-const defaultContentSize = {width: 1, height: 1};
-
 function MultiGestureCanvas({
     canvasSize,
-    contentSize: contentSizeProp,
+    contentSize = {width: 1, height: 1},
     zoomRange: zoomRangeProp,
     isActive = true,
     children,
@@ -70,7 +66,6 @@ function MultiGestureCanvas({
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
 
-    const contentSize = contentSizeProp ?? defaultContentSize;
     const shouldDisableTransformationGesturesFallback = useSharedValue(false);
     const shouldDisableTransformationGestures = shouldDisableTransformationGesturesProp ?? shouldDisableTransformationGesturesFallback;
 
@@ -121,12 +116,9 @@ function MultiGestureCanvas({
     const reset = useWorkletCallback((animated: boolean, callback?: () => void) => {
         stopAnimation();
 
-        // eslint-disable-next-line react-compiler/react-compiler
-        offsetX.value = 0;
-        offsetY.value = 0;
-        pinchScale.value = 1;
-
         if (animated) {
+            offsetX.value = 0;
+            offsetY.value = 0;
             panTranslateX.value = withSpring(0, SPRING_CONFIG);
             panTranslateY.value = withSpring(0, SPRING_CONFIG);
             pinchTranslateX.value = withSpring(0, SPRING_CONFIG);
@@ -136,6 +128,8 @@ function MultiGestureCanvas({
             return;
         }
 
+        offsetX.value = 0;
+        offsetY.value = 0;
         panTranslateX.value = 0;
         panTranslateY.value = 0;
         pinchTranslateX.value = 0;
@@ -230,8 +224,6 @@ function MultiGestureCanvas({
                 },
                 {scale: totalScale.value},
             ],
-            // Hide the image if the size is not ready yet
-            opacity: contentSizeProp?.width ? 1 : 0,
         };
     });
 
@@ -245,12 +237,11 @@ function MultiGestureCanvas({
             <GestureDetector gesture={Gesture.Simultaneous(pinchGesture, Gesture.Race(singleTapGesture, doubleTapGesture, panGesture))}>
                 <View
                     collapsable={false}
-                    onTouchEnd={(e) => e.preventDefault()}
                     style={StyleUtils.getFullscreenCenteredContentStyles()}
                 >
                     <Animated.View
                         collapsable={false}
-                        style={[animatedStyles, styles.canvasContainer]}
+                        style={animatedStyles}
                     >
                         {children}
                     </Animated.View>

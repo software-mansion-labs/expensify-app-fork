@@ -7,12 +7,14 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {isReceiptError} from '@libs/ErrorUtils';
 import fileDownload from '@libs/fileDownload';
+import type {MaybePhraseKey} from '@libs/Localize';
 import * as Localize from '@libs/Localize';
+import CONST from '@src/CONST';
 import type {ReceiptError} from '@src/types/onyx/Transaction';
 import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
+import {PressableWithoutFeedback} from './Pressable';
 import Text from './Text';
-import TextLink from './TextLink';
 
 type DotIndicatorMessageProps = {
     /**
@@ -22,7 +24,7 @@ type DotIndicatorMessageProps = {
      *      timestamp: 'message',
      *  }
      */
-    messages: Record<string, string | ReceiptError | null>;
+    messages: Record<string, Localize.MaybePhraseKey | ReceiptError>;
 
     /** The type of message, 'error' shows a red dot, 'success' shows a green dot */
     type: 'error' | 'success';
@@ -44,12 +46,12 @@ function DotIndicatorMessage({messages = {}, style, type, textStyles}: DotIndica
     }
 
     // Fetch the keys, sort them, and map through each key to get the corresponding message
-    const sortedMessages: Array<string | ReceiptError> = Object.keys(messages)
+    const sortedMessages: Array<MaybePhraseKey | ReceiptError> = Object.keys(messages)
         .sort()
-        .map((key) => messages[key])
-        .filter((message): message is string | ReceiptError => message !== null);
+        .map((key) => messages[key]);
+
     // Removing duplicates using Set and transforming the result into an array
-    const uniqueMessages: Array<ReceiptError | string> = [...new Set(sortedMessages)].map((message) => message);
+    const uniqueMessages: Array<ReceiptError | string> = [...new Set(sortedMessages)].map((message) => (isReceiptError(message) ? message : Localize.translateIfPhraseKey(message)));
 
     const isErrorMessage = type === 'error';
 
@@ -64,22 +66,23 @@ function DotIndicatorMessage({messages = {}, style, type, textStyles}: DotIndica
             <View style={styles.offlineFeedback.textContainer}>
                 {uniqueMessages.map((message, i) =>
                     isReceiptError(message) ? (
-                        <Text
+                        <PressableWithoutFeedback
+                            accessibilityLabel={Localize.translateLocal('iou.error.saveFileMessage')}
                             key={i}
-                            style={styles.offlineFeedback.text}
+                            accessibilityRole={CONST.ACCESSIBILITY_ROLE.LINK}
+                            onPress={() => {
+                                fileDownload(message.source, message.filename);
+                            }}
                         >
-                            <Text style={[StyleUtils.getDotIndicatorTextStyles(isErrorMessage)]}>{Localize.translateLocal('iou.error.receiptFailureMessage')}</Text>
-                            <TextLink
-                                style={[StyleUtils.getDotIndicatorTextStyles(), styles.link]}
-                                onPress={() => {
-                                    fileDownload(message.source, message.filename);
-                                }}
+                            <Text
+                                key={i}
+                                style={styles.offlineFeedback.text}
                             >
-                                {Localize.translateLocal('iou.error.saveFileMessage')}
-                            </TextLink>
-
-                            <Text style={[StyleUtils.getDotIndicatorTextStyles(isErrorMessage)]}>{Localize.translateLocal('iou.error.loseFileMessage')}</Text>
-                        </Text>
+                                <Text style={[StyleUtils.getDotIndicatorTextStyles(isErrorMessage)]}>{Localize.translateLocal('iou.error.receiptFailureMessage')}</Text>
+                                <Text style={[StyleUtils.getDotIndicatorTextStyles(isErrorMessage), styles.link]}>{Localize.translateLocal('iou.error.saveFileMessage')}</Text>
+                                <Text style={[StyleUtils.getDotIndicatorTextStyles(isErrorMessage)]}>{Localize.translateLocal('iou.error.loseFileMessage')}</Text>
+                            </Text>
+                        </PressableWithoutFeedback>
                     ) : (
                         <Text
                             // eslint-disable-next-line react/no-array-index-key

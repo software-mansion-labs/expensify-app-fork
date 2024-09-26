@@ -19,9 +19,13 @@ function PopoverReactionList(props: unknown, ref: ForwardedRef<ReactionListRef>)
         innerReactionListRef.current?.hideReactionList();
     };
 
-    const isActiveReportAction = (actionID: number | string) => !!actionID && reactionListReportActionID === actionID;
+    const isActiveReportAction = (actionID: number | string) => Boolean(actionID) && reactionListReportActionID === actionID;
 
     useImperativeHandle(ref, () => ({showReactionList, hideReactionList, isActiveReportAction}));
+
+    if (reactionListReportActionID === '' || reactionListEmojiName === '') {
+        return null;
+    }
 
     return (
         <BasePopoverReactionList

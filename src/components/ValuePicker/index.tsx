@@ -1,15 +1,16 @@
 import React, {forwardRef, useState} from 'react';
 import type {ForwardedRef} from 'react';
 import {View} from 'react-native';
+import FormHelpMessage from '@components/FormHelpMessage';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import useStyleUtils from '@hooks/useStyleUtils';
-import Navigation from '@libs/Navigation/Navigation';
+import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
-import CONST from '@src/CONST';
 import type {ValuePickerItem, ValuePickerProps} from './types';
 import ValueSelectorModal from './ValueSelectorModal';
 
 function ValuePicker({value, label, items, placeholder = '', errorText = '', onInputChange, furtherDetails, shouldShowTooltips = true}: ValuePickerProps, forwardedRef: ForwardedRef<View>) {
+    const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const [isPickerVisible, setIsPickerVisible] = useState(false);
 
@@ -42,9 +43,10 @@ function ValuePicker({value, label, items, placeholder = '', errorText = '', onI
                 description={label}
                 onPress={showPickerModal}
                 furtherDetails={furtherDetails}
-                brickRoadIndicator={errorText ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                errorText={errorText}
             />
+            <View style={styles.ml5}>
+                <FormHelpMessage message={errorText} />
+            </View>
             <ValueSelectorModal
                 isVisible={isPickerVisible}
                 label={label}
@@ -53,7 +55,6 @@ function ValuePicker({value, label, items, placeholder = '', errorText = '', onI
                 onClose={hidePickerModal}
                 onItemSelected={updateInput}
                 shouldShowTooltips={shouldShowTooltips}
-                onBackdropPress={Navigation.dismissModal}
             />
         </View>
     );

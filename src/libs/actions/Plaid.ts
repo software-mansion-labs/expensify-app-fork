@@ -3,7 +3,7 @@ import * as API from '@libs/API';
 import type {OpenPlaidBankAccountSelectorParams, OpenPlaidBankLoginParams} from '@libs/API/parameters';
 import {READ_COMMANDS} from '@libs/API/types';
 import getPlaidLinkTokenParameters from '@libs/getPlaidLinkTokenParameters';
-import CONST from '@src/CONST';
+import * as PlaidDataProps from '@pages/ReimbursementAccount/plaidDataPropTypes';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 /**
@@ -11,11 +11,10 @@ import ONYXKEYS from '@src/ONYXKEYS';
  */
 function openPlaidBankLogin(allowDebit: boolean, bankAccountID: number) {
     // redirect_uri needs to be in kebab case convention because that's how it's passed to the backend
-    const {redirectURI, androidPackage} = getPlaidLinkTokenParameters();
+    const {redirectURI} = getPlaidLinkTokenParameters();
 
     const params: OpenPlaidBankLoginParams = {
         redirectURI,
-        androidPackage,
         allowDebit,
         bankAccountID,
     };
@@ -24,7 +23,7 @@ function openPlaidBankLogin(allowDebit: boolean, bankAccountID: number) {
         {
             onyxMethod: Onyx.METHOD.SET,
             key: ONYXKEYS.PLAID_DATA,
-            value: {...CONST.PLAID.DEFAULT_DATA, isLoading: true},
+            value: {...PlaidDataProps.plaidDataDefaultProps, isLoading: true},
         },
         {
             onyxMethod: Onyx.METHOD.SET,

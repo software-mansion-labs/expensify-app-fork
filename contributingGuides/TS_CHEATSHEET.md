@@ -21,10 +21,8 @@
 - [1.1](#children-prop) **`props.children`**
 
   ```tsx
-  import type ChildrenProps from '@src/types/utils/ChildrenProps';
-
-  type WrapperComponentProps = ChildrenProps & {
-    ...
+  type WrapperComponentProps = {
+    children?: React.ReactNode;
   };
 
   function WrapperComponent({ children }: WrapperComponentProps) {

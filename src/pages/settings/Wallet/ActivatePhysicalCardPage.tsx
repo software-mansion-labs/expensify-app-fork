@@ -12,13 +12,14 @@ import type {MagicCodeInputHandle} from '@components/MagicCodeInput';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
+import * as CardUtils from '@libs/CardUtils';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
-import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
+import type {PublicScreensParamList} from '@libs/Navigation/types';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import * as CardSettings from '@userActions/Card';
 import CONST from '@src/CONST';
@@ -33,7 +34,7 @@ type ActivatePhysicalCardPageOnyxProps = {
     cardList: OnyxEntry<Record<string, Card>>;
 };
 
-type ActivatePhysicalCardPageProps = ActivatePhysicalCardPageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.WALLET.CARD_ACTIVATE>;
+type ActivatePhysicalCardPageProps = ActivatePhysicalCardPageOnyxProps & StackScreenProps<PublicScreensParamList, typeof SCREENS.TRANSITION_BETWEEN_APPS>;
 
 const LAST_FOUR_DIGITS_LENGTH = 4;
 const MAGIC_INPUT_MIN_HEIGHT = 86;
@@ -41,12 +42,12 @@ const MAGIC_INPUT_MIN_HEIGHT = 86;
 function ActivatePhysicalCardPage({
     cardList,
     route: {
-        params: {cardID = ''},
+        params: {domain = ''},
     },
 }: ActivatePhysicalCardPageProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
-    const {isExtraSmallScreenHeight} = useResponsiveLayout();
+    const {isExtraSmallScreenHeight} = useWindowDimensions();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
 
@@ -54,8 +55,10 @@ function ActivatePhysicalCardPage({
     const [lastFourDigits, setLastFourDigits] = useState('');
     const [lastPressedDigit, setLastPressedDigit] = useState('');
 
-    const inactiveCard = cardList?.[cardID];
-    const cardError = ErrorUtils.getLatestErrorMessage(inactiveCard ?? {});
+    const domainCards = CardUtils.getDomainCards(cardList)[domain] ?? [];
+    const physicalCard = domainCards.find((card) => !card.isVirtual);
+    const cardID = physicalCard?.cardID ?? 0;
+    const cardError = ErrorUtils.getLatestErrorMessage(physicalCard ?? {});
 
     const activateCardCodeInputRef = useRef<MagicCodeInputHandle>(null);
 
@@ -63,21 +66,19 @@ function ActivatePhysicalCardPage({
      * If state of the card is CONST.EXPENSIFY_CARD.STATE.OPEN, navigate to card details screen.
      */
     useEffect(() => {
-        if (inactiveCard?.state !== CONST.EXPENSIFY_CARD.STATE.OPEN || inactiveCard?.isLoading) {
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        if (physicalCard?.isLoading || cardList?.[cardID]?.state !== CONST.EXPENSIFY_CARD.STATE.OPEN) {
             return;
         }
 
-        Navigation.navigate(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(cardID));
-    }, [cardID, cardList, inactiveCard?.isLoading, inactiveCard?.state]);
+        Navigation.navigate(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(domain));
+    }, [cardID, cardList, domain, physicalCard?.isLoading]);
 
     useEffect(
         () => () => {
-            if (!inactiveCard?.cardID) {
-                return;
-            }
-            CardSettings.clearCardListErrors(inactiveCard?.cardID);
+            CardSettings.clearCardListErrors(cardID);
         },
-        [inactiveCard?.cardID],
+        [cardID],
     );
 
     /**
@@ -94,8 +95,8 @@ function ActivatePhysicalCardPage({
     const onCodeInput = (text: string) => {
         setFormError('');
 
-        if (cardError && inactiveCard?.cardID) {
-            CardSettings.clearCardListErrors(inactiveCard?.cardID);
+        if (cardError) {
+            CardSettings.clearCardListErrors(cardID);
         }
 
         setLastFourDigits(text);
@@ -105,24 +106,21 @@ function ActivatePhysicalCardPage({
         activateCardCodeInputRef.current?.blur();
 
         if (lastFourDigits.replace(CONST.MAGIC_CODE_EMPTY_CHAR, '').length !== LAST_FOUR_DIGITS_LENGTH) {
-            setFormError(translate('activateCardPage.error.thatDidntMatch'));
-            return;
-        }
-        if (inactiveCard?.cardID === undefined) {
+            setFormError('activateCardPage.error.thatDidntMatch');
             return;
         }
 
-        CardSettings.activatePhysicalExpensifyCard(lastFourDigits, inactiveCard?.cardID);
-    }, [lastFourDigits, inactiveCard?.cardID, translate]);
+        CardSettings.activatePhysicalExpensifyCard(lastFourDigits, cardID);
+    }, [lastFourDigits, cardID]);
 
-    if (isEmptyObject(inactiveCard)) {
+    if (isEmptyObject(physicalCard)) {
         return <NotFoundPage />;
     }
 
     return (
         <IllustratedHeaderPageLayout
             title={translate('activateCardPage.activateCard')}
-            onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(cardID))}
+            onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(domain))}
             backgroundColor={theme.PAGE_THEMES[SCREENS.SETTINGS.PREFERENCES.ROOT].backgroundColor}
             illustration={LottieAnimations.Magician}
             scrollViewContainerStyles={[styles.mnh100]}
@@ -150,9 +148,8 @@ function ActivatePhysicalCardPage({
             <Button
                 success
                 isDisabled={isOffline}
-                isLoading={inactiveCard?.isLoading}
+                isLoading={physicalCard?.isLoading}
                 medium={isExtraSmallScreenHeight}
-                large={!isExtraSmallScreenHeight}
                 style={[styles.w100, styles.p5, styles.mtAuto]}
                 onPress={submitAndNavigateToNextPage}
                 pressOnEnter

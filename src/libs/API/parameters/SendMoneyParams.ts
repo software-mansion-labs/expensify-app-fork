@@ -9,7 +9,6 @@ type SendMoneyParams = {
     newIOUReportDetails: string;
     createdReportActionID: string;
     reportPreviewReportActionID: string;
-    createdIOUReportActionID: string;
     transactionThreadReportID: string;
     createdReportActionIDForThread: string;
 };

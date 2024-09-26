@@ -1,27 +1,23 @@
-import type {IOUAction, IOUType} from '@src/CONST';
+import type {OnyxEntry} from 'react-native-onyx';
+import type {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
-import type {OnyxInputOrEntry, Report, Transaction} from '@src/types/onyx';
-import type {IOURequestType} from './actions/IOU';
+import type {Report, Transaction} from '@src/types/onyx';
 import * as CurrencyUtils from './CurrencyUtils';
 import Navigation from './Navigation/Navigation';
 import * as TransactionUtils from './TransactionUtils';
 
-function navigateToStartMoneyRequestStep(requestType: IOURequestType, iouType: IOUType, transactionID: string, reportID: string, iouAction?: IOUAction): void {
-    if (iouAction === CONST.IOU.ACTION.CATEGORIZE || iouAction === CONST.IOU.ACTION.SUBMIT || iouAction === CONST.IOU.ACTION.SHARE) {
-        Navigation.goBack();
-        return;
-    }
+function navigateToStartMoneyRequestStep(requestType: ValueOf<typeof CONST.IOU.REQUEST_TYPE>, iouType: ValueOf<typeof CONST.IOU.TYPE>, transactionID: string, reportID: string) {
     // If the participants were automatically added to the transaction, then the user needs taken back to the starting step
     switch (requestType) {
         case CONST.IOU.REQUEST_TYPE.DISTANCE:
-            Navigation.goBack(ROUTES.MONEY_REQUEST_CREATE_TAB_DISTANCE.getRoute(CONST.IOU.ACTION.CREATE, iouType, transactionID, reportID));
+            Navigation.goBack(ROUTES.MONEY_REQUEST_CREATE_TAB_DISTANCE.getRoute(iouType, transactionID, reportID));
             break;
         case CONST.IOU.REQUEST_TYPE.SCAN:
-            Navigation.goBack(ROUTES.MONEY_REQUEST_CREATE_TAB_SCAN.getRoute(CONST.IOU.ACTION.CREATE, iouType, transactionID, reportID));
+            Navigation.goBack(ROUTES.MONEY_REQUEST_CREATE_TAB_SCAN.getRoute(iouType, transactionID, reportID));
             break;
         default:
-            Navigation.goBack(ROUTES.MONEY_REQUEST_CREATE_TAB_MANUAL.getRoute(CONST.IOU.ACTION.CREATE, iouType, transactionID, reportID));
+            Navigation.goBack(ROUTES.MONEY_REQUEST_CREATE_TAB_MANUAL.getRoute(iouType, transactionID, reportID));
             break;
     }
 }
@@ -56,10 +52,10 @@ function calculateAmount(numberOfParticipants: number, total: number, currency: 
  * For example: if user1 owes user2 $10, then we have: {ownerAccountID: user2, managerID: user1, total: $10 (a positive amount, owed to user2)}
  * If user1 requests $17 from user2, then we have: {ownerAccountID: user1, managerID: user2, total: $7 (still a positive amount, but now owed to user1)}
  *
- * @param isDeleting - whether the user is deleting the expense
- * @param isUpdating - whether the user is updating the expense
+ * @param isDeleting - whether the user is deleting the request
+ * @param isUpdating - whether the user is updating the request
  */
-function updateIOUOwnerAndTotal<TReport extends OnyxInputOrEntry<Report>>(
+function updateIOUOwnerAndTotal<TReport extends OnyxEntry<Report>>(
     iouReport: TReport,
     actorAccountID: number,
     amount: number,
@@ -95,7 +91,7 @@ function updateIOUOwnerAndTotal<TReport extends OnyxInputOrEntry<Report>>(
 }
 
 /**
- * Returns whether or not an IOU report contains expenses in a different currency
+ * Returns whether or not an IOU report contains money requests in a different currency
  * that are either created or cancelled offline, and thus haven't been converted to the report's currency yet
  */
 function isIOUReportPendingCurrencyConversion(iouReport: Report): boolean {
@@ -105,27 +101,10 @@ function isIOUReportPendingCurrencyConversion(iouReport: Report): boolean {
 }
 
 /**
- * Checks if the iou type is one of request, send, invoice or split.
+ * Checks if the iou type is one of request, send, or split.
  */
 function isValidMoneyRequestType(iouType: string): boolean {
-    const moneyRequestType: string[] = [
-        CONST.IOU.TYPE.REQUEST,
-        CONST.IOU.TYPE.SUBMIT,
-        CONST.IOU.TYPE.SPLIT,
-        CONST.IOU.TYPE.SEND,
-        CONST.IOU.TYPE.PAY,
-        CONST.IOU.TYPE.TRACK,
-        CONST.IOU.TYPE.INVOICE,
-    ];
-    return moneyRequestType.includes(iouType);
-}
-
-/**
- * Checks if the iou type is one of submit, pay, track, or split.
- */
-// eslint-disable-next-line @typescript-eslint/naming-convention
-function temporary_isValidMoneyRequestType(iouType: string): boolean {
-    const moneyRequestType: string[] = [CONST.IOU.TYPE.SUBMIT, CONST.IOU.TYPE.SPLIT, CONST.IOU.TYPE.PAY, CONST.IOU.TYPE.TRACK, CONST.IOU.TYPE.INVOICE];
+    const moneyRequestType: string[] = [CONST.IOU.TYPE.REQUEST, CONST.IOU.TYPE.SPLIT, CONST.IOU.TYPE.SEND];
     return moneyRequestType.includes(iouType);
 }
 
@@ -141,33 +120,7 @@ function insertTagIntoTransactionTagsString(transactionTags: string, tag: string
     const tagArray = TransactionUtils.getTagArrayFromName(transactionTags);
     tagArray[tagIndex] = tag;
 
-    while (tagArray.length > 0 && !tagArray[tagArray.length - 1]) {
-        tagArray.pop();
-    }
-
-    return tagArray.map((tagItem) => tagItem.trim()).join(CONST.COLON);
+    return tagArray.join(CONST.COLON).replace(/:*$/, '');
 }
 
-function isMovingTransactionFromTrackExpense(action?: IOUAction) {
-    if (action === CONST.IOU.ACTION.SUBMIT || action === CONST.IOU.ACTION.SHARE || action === CONST.IOU.ACTION.CATEGORIZE) {
-        return true;
-    }
-
-    return false;
-}
-
-function shouldUseTransactionDraft(action: IOUAction | undefined) {
-    return action === CONST.IOU.ACTION.CREATE || isMovingTransactionFromTrackExpense(action);
-}
-
-export {
-    calculateAmount,
-    insertTagIntoTransactionTagsString,
-    isIOUReportPendingCurrencyConversion,
-    isMovingTransactionFromTrackExpense,
-    shouldUseTransactionDraft,
-    isValidMoneyRequestType,
-    navigateToStartMoneyRequestStep,
-    updateIOUOwnerAndTotal,
-    temporary_isValidMoneyRequestType,
-};
+export {calculateAmount, updateIOUOwnerAndTotal, isIOUReportPendingCurrencyConversion, isValidMoneyRequestType, navigateToStartMoneyRequestStep, insertTagIntoTransactionTagsString};

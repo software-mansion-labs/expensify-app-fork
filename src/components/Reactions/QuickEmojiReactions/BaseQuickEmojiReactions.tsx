@@ -20,7 +20,6 @@ function BaseQuickEmojiReactions({
     emojiReactions = {},
     onPressOpenPicker = () => {},
     onWillShowPicker = () => {},
-    setIsEmojiPickerActive,
 }: BaseQuickEmojiReactionsProps) {
     const styles = useThemeStyles();
 
@@ -46,7 +45,6 @@ function BaseQuickEmojiReactions({
                 onWillShowPicker={onWillShowPicker}
                 onSelectEmoji={(emoji) => onEmojiSelected(emoji, emojiReactions)}
                 reportAction={reportAction}
-                setIsEmojiPickerActive={setIsEmojiPickerActive}
             />
         </View>
     );

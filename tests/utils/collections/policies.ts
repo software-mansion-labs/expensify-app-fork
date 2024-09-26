@@ -1,5 +1,4 @@
 import {rand, randAvatar, randBoolean, randCurrencyCode, randEmail, randPastDate, randWord} from '@ngneat/falso';
-import type {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
 import type {Policy} from '@src/types/onyx';
 
@@ -10,22 +9,18 @@ export default function createRandomPolicy(index: number): Policy {
         type: rand(Object.values(CONST.POLICY.TYPE)),
         autoReporting: randBoolean(),
         isPolicyExpenseChatEnabled: randBoolean(),
-        autoReportingFrequency: rand(
-            Object.values(CONST.POLICY.AUTO_REPORTING_FREQUENCIES).filter(
-                (frequency): frequency is Exclude<ValueOf<typeof CONST.POLICY.AUTO_REPORTING_FREQUENCIES>, typeof CONST.POLICY.AUTO_REPORTING_FREQUENCIES.MANUAL> =>
-                    frequency !== CONST.POLICY.AUTO_REPORTING_FREQUENCIES.MANUAL,
-            ),
-        ),
+        autoReportingFrequency: rand(Object.values(CONST.POLICY.AUTO_REPORTING_FREQUENCIES)),
         harvesting: {
             enabled: randBoolean(),
         },
         autoReportingOffset: 1,
-        preventSelfApproval: randBoolean(),
+        preventSelfApprovalEnabled: randBoolean(),
+        submitsTo: index,
         outputCurrency: randCurrencyCode(),
         role: rand(Object.values(CONST.POLICY.ROLE)),
         owner: randEmail(),
         ownerAccountID: index,
-        avatarURL: randAvatar(),
+        avatar: randAvatar(),
         isFromFullPolicy: randBoolean(),
         lastModified: randPastDate().toISOString(),
         pendingAction: rand(Object.values(CONST.RED_BRICK_ROAD_PENDING_ACTION)),

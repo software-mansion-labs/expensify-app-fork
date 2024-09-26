@@ -4,25 +4,16 @@ import type {LayoutChangeEvent} from 'react-native';
 import {View} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
-import ComposerFocusManager from '@libs/ComposerFocusManager';
 import PopoverWithMeasuredContentUtils from '@libs/PopoverWithMeasuredContentUtils';
 import CONST from '@src/CONST';
-import type {AnchorDimensions, AnchorPosition} from '@src/styles';
+import type {AnchorPosition} from '@src/styles';
 import Popover from './Popover';
-import type PopoverProps from './Popover/types';
+import type {PopoverProps} from './Popover/types';
+import type {WindowDimensionsProps} from './withWindowDimensions/types';
 
-type PopoverWithMeasuredContentProps = Omit<PopoverProps, 'anchorPosition'> & {
+type PopoverWithMeasuredContentProps = Omit<PopoverProps, 'anchorPosition' | keyof WindowDimensionsProps> & {
     /** The horizontal and vertical anchors points for the popover */
     anchorPosition: AnchorPosition;
-
-    /** The dimension of anchor component */
-    anchorDimensions?: AnchorDimensions;
-
-    /** Whether we should change the vertical position if the popover's position is overflow */
-    shoudSwitchPositionIfOverflow?: boolean;
-
-    /** Whether handle navigation back when modal show. */
-    shouldHandleNavigationBack?: boolean;
 };
 
 /**
@@ -51,13 +42,6 @@ function PopoverWithMeasuredContent({
     statusBarTranslucent = true,
     avoidKeyboard = false,
     hideModalContentWhileAnimating = false,
-    anchorDimensions = {
-        height: 0,
-        width: 0,
-    },
-    shoudSwitchPositionIfOverflow = false,
-    shouldHandleNavigationBack = false,
-    shouldEnableNewFocusManagement,
     ...props
 }: PopoverWithMeasuredContentProps) {
     const styles = useThemeStyles();
@@ -67,16 +51,11 @@ function PopoverWithMeasuredContent({
     const [isContentMeasured, setIsContentMeasured] = useState(popoverWidth > 0 && popoverHeight > 0);
     const [isPopoverVisible, setIsPopoverVisible] = useState(false);
 
-    const modalId = useMemo(() => ComposerFocusManager.getId(), []);
-
     /**
      * When Popover becomes visible, we need to recalculate the Dimensions.
      * Skip render on Popover until recalculations are done by setting isContentMeasured to false as early as possible.
      */
     if (!isPopoverVisible && isVisible) {
-        if (shouldEnableNewFocusManagement) {
-            ComposerFocusManager.saveFocusState(modalId);
-        }
         // When Popover is shown recalculate
         setIsContentMeasured(popoverDimensions.width > 0 && popoverDimensions.height > 0);
         setIsPopoverVisible(true);
@@ -131,21 +110,13 @@ function PopoverWithMeasuredContent({
     }, [anchorPosition, anchorAlignment, popoverWidth, popoverHeight]);
 
     const horizontalShift = PopoverWithMeasuredContentUtils.computeHorizontalShift(adjustedAnchorPosition.left, popoverWidth, windowWidth);
-    const verticalShift = PopoverWithMeasuredContentUtils.computeVerticalShift(
-        adjustedAnchorPosition.top,
-        popoverHeight,
-        windowHeight,
-        anchorDimensions.height,
-        shoudSwitchPositionIfOverflow,
-    );
+    const verticalShift = PopoverWithMeasuredContentUtils.computeVerticalShift(adjustedAnchorPosition.top, popoverHeight, windowHeight);
     const shiftedAnchorPosition = {
         left: adjustedAnchorPosition.left + horizontalShift,
         bottom: windowHeight - (adjustedAnchorPosition.top + popoverHeight) - verticalShift,
     };
-
     return isContentMeasured ? (
         <Popover
-            shouldHandleNavigationBack={shouldHandleNavigationBack}
             popoverDimensions={popoverDimensions}
             anchorAlignment={anchorAlignment}
             isVisible={isVisible}
@@ -156,8 +127,6 @@ function PopoverWithMeasuredContent({
             statusBarTranslucent={statusBarTranslucent}
             avoidKeyboard={avoidKeyboard}
             hideModalContentWhileAnimating={hideModalContentWhileAnimating}
-            modalId={modalId}
-            shouldEnableNewFocusManagement={shouldEnableNewFocusManagement}
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...props}
             anchorPosition={shiftedAnchorPosition}

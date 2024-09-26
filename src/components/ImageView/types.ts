@@ -21,4 +21,9 @@ type ImageViewProps = {
     zoomRange?: ZoomRange;
 };
 
-export default ImageViewProps;
+type ImageLoadNativeEventData = {
+    width: number;
+    height: number;
+};
+
+export type {ImageViewProps, ImageLoadNativeEventData};

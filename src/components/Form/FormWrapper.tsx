@@ -1,15 +1,13 @@
 import React, {useCallback, useMemo, useRef} from 'react';
 import type {RefObject} from 'react';
-// eslint-disable-next-line no-restricted-imports
-import type {ScrollView as RNScrollView, StyleProp, View, ViewStyle} from 'react-native';
-import {Keyboard} from 'react-native';
+import type {StyleProp, View, ViewStyle} from 'react-native';
+import {Keyboard, ScrollView} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import FormElement from '@components/FormElement';
 import SafeAreaConsumer from '@components/SafeAreaConsumer';
 import type {SafeAreaChildrenProps} from '@components/SafeAreaConsumer/types';
-import ScrollView from '@components/ScrollView';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
@@ -38,9 +36,6 @@ type FormWrapperProps = ChildrenProps &
         /** Assuming refs are React refs */
         inputRefs: RefObject<InputRefs>;
 
-        /** Whether the submit button is disabled */
-        isSubmitDisabled?: boolean;
-
         /** Callback to submit the form */
         onSubmit: () => void;
     };
@@ -60,14 +55,12 @@ function FormWrapper({
     enabledWhenOffline,
     isSubmitActionDangerous = false,
     formID,
-    shouldUseScrollView = true,
     scrollContextEnabled = false,
     shouldHideFixErrorsAlert = false,
-    disablePressOnEnter = false,
-    isSubmitDisabled = false,
+    disablePressOnEnter = true,
 }: FormWrapperProps) {
     const styles = useThemeStyles();
-    const formRef = useRef<RNScrollView>(null);
+    const formRef = useRef<ScrollView>(null);
     const formContentRef = useRef<View>(null);
     const errorMessage = useMemo(() => (formState ? ErrorUtils.getLatestErrorMessage(formState) : undefined), [formState]);
 
@@ -107,13 +100,12 @@ function FormWrapper({
             <FormElement
                 key={formID}
                 ref={formContentRef}
-                style={[style, safeAreaPaddingBottomStyle.paddingBottom ? safeAreaPaddingBottomStyle : styles.pb5]}
+                style={[style, safeAreaPaddingBottomStyle]}
             >
                 {children}
                 {isSubmitButtonVisible && (
                     <FormAlertWithSubmitButton
                         buttonText={submitButtonText}
-                        isDisabled={isSubmitDisabled}
                         isAlertVisible={((!isEmptyObject(errors) || !isEmptyObject(formState?.errorFields)) && !shouldHideFixErrorsAlert) || !!errorMessage}
                         isLoading={!!formState?.isLoading}
                         message={isEmptyObject(formState?.errorFields) ? errorMessage : undefined}
@@ -124,41 +116,34 @@ function FormWrapper({
                         enabledWhenOffline={enabledWhenOffline}
                         isSubmitActionDangerous={isSubmitActionDangerous}
                         disablePressOnEnter={disablePressOnEnter}
-                        enterKeyEventListenerPriority={1}
                     />
                 )}
             </FormElement>
         ),
         [
-            formID,
-            style,
-            styles.pb5,
-            styles.mh0,
-            styles.mt5,
-            styles.flex1,
             children,
-            isSubmitButtonVisible,
-            submitButtonText,
-            isSubmitDisabled,
+            enabledWhenOffline,
+            errorMessage,
             errors,
+            footerContent,
+            formID,
             formState?.errorFields,
             formState?.isLoading,
-            shouldHideFixErrorsAlert,
-            errorMessage,
-            onSubmit,
-            footerContent,
-            onFixTheErrorsLinkPressed,
-            submitFlexEnabled,
-            submitButtonStyles,
-            enabledWhenOffline,
             isSubmitActionDangerous,
+            isSubmitButtonVisible,
+            onSubmit,
+            style,
+            styles.flex1,
+            styles.mh0,
+            styles.mt5,
+            submitButtonStyles,
+            submitFlexEnabled,
+            submitButtonText,
+            shouldHideFixErrorsAlert,
+            onFixTheErrorsLinkPressed,
             disablePressOnEnter,
         ],
     );
-
-    if (!shouldUseScrollView) {
-        return scrollViewContent({});
-    }
 
     return (
         <SafeAreaConsumer>

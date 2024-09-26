@@ -1,9 +1,8 @@
 import React, {useMemo} from 'react';
 import type {ReactNode} from 'react';
-import {View} from 'react-native';
+import {ScrollView, View} from 'react-native';
 import type {StyleProp, ViewStyle} from 'react-native';
 import useNetwork from '@hooks/useNetwork';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -14,7 +13,6 @@ import FixedFooter from './FixedFooter';
 import HeaderWithBackButton from './HeaderWithBackButton';
 import type HeaderWithBackButtonProps from './HeaderWithBackButton/types';
 import ScreenWrapper from './ScreenWrapper';
-import ScrollView from './ScrollView';
 
 type HeaderPageLayoutProps = ChildrenProps &
     HeaderWithBackButtonProps & {
@@ -61,8 +59,7 @@ function HeaderPageLayout({
     const theme = useTheme();
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
-    const {windowHeight} = useWindowDimensions();
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const {windowHeight, isSmallScreenWidth} = useWindowDimensions();
     const {isOffline} = useNetwork();
     const appBGColor = StyleUtils.getBackgroundColorStyle(theme.appBG);
     const {titleColor, iconFill} = useMemo(() => {
@@ -95,7 +92,7 @@ function HeaderPageLayout({
                         {Browser.isSafari() && (
                             <View style={styles.dualColorOverscrollSpacer}>
                                 <View style={[styles.flex1, StyleUtils.getBackgroundColorStyle(backgroundColor ?? theme.appBG)]} />
-                                <View style={[shouldUseNarrowLayout ? styles.flex1 : styles.flex3, appBGColor]} />
+                                <View style={[isSmallScreenWidth ? styles.flex1 : styles.flex3, appBGColor]} />
                             </View>
                         )}
                         <ScrollView contentContainerStyle={[safeAreaPaddingBottomStyle, style, scrollViewContainerStyles]}>

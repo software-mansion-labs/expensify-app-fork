@@ -1,10 +1,10 @@
 import type {OnyxUpdate} from 'react-native-onyx';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
-import type {OnyxUpdatesFromServer} from '@src/types/onyx';
 import Log from './Log';
 import NetworkConnection from './NetworkConnection';
 import * as Pusher from './Pusher/pusher';
+import type {PushJSON} from './Pusher/pusher';
 
 type Callback = (data: OnyxUpdate[]) => Promise<void>;
 
@@ -17,7 +17,6 @@ function subscribeToMultiEvent(eventType: string, callback: Callback) {
 
 function triggerMultiEventHandler(eventType: string, data: OnyxUpdate[]): Promise<void> {
     if (!multiEventCallbackMapping[eventType]) {
-        Log.warn('[PusherUtils] Received unexpected multi-event', {eventType});
         return Promise.resolve();
     }
     return multiEventCallbackMapping[eventType](data);
@@ -26,10 +25,10 @@ function triggerMultiEventHandler(eventType: string, data: OnyxUpdate[]): Promis
 /**
  * Abstraction around subscribing to private user channel events. Handles all logs and errors automatically.
  */
-function subscribeToPrivateUserChannelEvent(eventName: string, accountID: string, onEvent: (pushJSON: OnyxUpdatesFromServer) => void) {
+function subscribeToPrivateUserChannelEvent(eventName: string, accountID: string, onEvent: (pushJSON: PushJSON) => void) {
     const pusherChannelName = `${CONST.PUSHER.PRIVATE_USER_CHANNEL_PREFIX}${accountID}${CONFIG.PUSHER.SUFFIX}` as const;
 
-    function logPusherEvent(pushJSON: OnyxUpdatesFromServer) {
+    function logPusherEvent(pushJSON: PushJSON) {
         Log.info(`[Report] Handled ${eventName} event sent by Pusher`, false, pushJSON);
     }
 
@@ -37,7 +36,7 @@ function subscribeToPrivateUserChannelEvent(eventName: string, accountID: string
         NetworkConnection.triggerReconnectionCallbacks('Pusher re-subscribed to private user channel');
     }
 
-    function onEventPush(pushJSON: OnyxUpdatesFromServer) {
+    function onEventPush(pushJSON: PushJSON) {
         logPusherEvent(pushJSON);
         onEvent(pushJSON);
     }

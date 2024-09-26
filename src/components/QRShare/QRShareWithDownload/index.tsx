@@ -19,8 +19,7 @@ function QRShareWithDownload(props: QRShareProps, ref: ForwardedRef<QRShareWithD
                     // eslint-disable-next-line es/no-optional-chaining
                     const svg = qrShareRef.current?.getSvg();
                     if (!svg) {
-                        reject();
-                        return;
+                        return reject();
                     }
 
                     svg.toDataURL((dataURL) => resolve(fileDownload(dataURL, getQrCodeFileName(props.title))));

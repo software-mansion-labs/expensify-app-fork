@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import isEmpty from 'lodash/isEmpty';
 import Onyx from 'react-native-onyx';
 import {addLog} from '@libs/actions/Console';
 import CONFIG from '@src/CONFIG';
@@ -24,7 +23,7 @@ Onyx.connect({
 const originalConsoleLog = console.log;
 
 /* List of patterns to ignore in logs. "logs" key always needs to be ignored because otherwise it will cause infinite loop */
-const logPatternsToIgnore = [`merge called for key: ${ONYXKEYS.LOGS}`];
+const logPatternsToIgnore = [`merge() called for key: ${ONYXKEYS.LOGS}`];
 
 /**
  * Check if the log should be attached to the console
@@ -53,7 +52,7 @@ function logMessage(args: unknown[]) {
             return String(arg);
         })
         .join(' ');
-    const newLog = {time: new Date(), level: CONST.DEBUG_CONSOLE.LEVELS.INFO, message, extraData: ''};
+    const newLog = {time: new Date(), level: CONST.DEBUG_CONSOLE.LEVELS.INFO, message};
     addLog(newLog);
 }
 
@@ -87,7 +86,8 @@ const charMap: Record<string, string> = {
  * @param text the text to sanitize
  * @returns the sanitized text
  */
-function sanitizeConsoleInput(text: string): string {
+function sanitizeConsoleInput(text: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return text.replace(charsToSanitize, (match) => charMap[match]);
 }
 
@@ -101,46 +101,22 @@ function createLog(text: string) {
     try {
         // @ts-expect-error Any code inside `sanitizedInput` that gets evaluated by `eval()` will be executed in the context of the current this value.
         // eslint-disable-next-line no-eval, no-invalid-this
-        const result = eval.call(this, text) as unknown;
+        const result = eval.call(this, text);
 
         if (result !== undefined) {
             return [
-                {time, level: CONST.DEBUG_CONSOLE.LEVELS.INFO, message: `> ${text}`, extraData: ''},
-                {time, level: CONST.DEBUG_CONSOLE.LEVELS.RESULT, message: String(result), extraData: ''},
+                {time, level: CONST.DEBUG_CONSOLE.LEVELS.INFO, message: `> ${text}`},
+                {time, level: CONST.DEBUG_CONSOLE.LEVELS.RESULT, message: String(result)},
             ];
         }
-        return [{time, level: CONST.DEBUG_CONSOLE.LEVELS.INFO, message: `> ${text}`, extraData: ''}];
+        return [{time, level: CONST.DEBUG_CONSOLE.LEVELS.INFO, message: `> ${text}`}];
     } catch (error) {
         return [
-            {time, level: CONST.DEBUG_CONSOLE.LEVELS.ERROR, message: `> ${text}`, extraData: ''},
-            {time, level: CONST.DEBUG_CONSOLE.LEVELS.ERROR, message: `Error: ${(error as Error).message}`, extraData: ''},
+            {time, level: CONST.DEBUG_CONSOLE.LEVELS.ERROR, message: `> ${text}`},
+            {time, level: CONST.DEBUG_CONSOLE.LEVELS.ERROR, message: `Error: ${(error as Error).message}`},
         ];
     }
 }
 
-/**
- * Loops through all the logs and parses the message if it's a stringified JSON
- * @param logs Logs captured on the current device
- * @returns CapturedLogs with parsed messages
- */
-function parseStringifiedMessages(logs: Log[]): Log[] {
-    if (isEmpty(logs)) {
-        return logs;
-    }
-
-    return logs.map((log) => {
-        try {
-            const parsedMessage = JSON.parse(log.message) as Log['message'];
-            return {
-                ...log,
-                message: parsedMessage,
-            };
-        } catch {
-            // If the message can't be parsed, just return the original log
-            return log;
-        }
-    });
-}
-
-export {sanitizeConsoleInput, createLog, shouldAttachLog, parseStringifiedMessages};
+export {sanitizeConsoleInput, createLog, shouldAttachLog};
 export type {Log};

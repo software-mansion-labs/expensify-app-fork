@@ -1,4 +1,4 @@
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import * as KeyCommand from 'react-native-key-command';
 import getOperatingSystem from '@libs/getOperatingSystem';
 import localeCompare from '@libs/LocaleCompare';
@@ -132,10 +132,10 @@ function getPlatformEquivalentForKeys(keys: ShortcutModifiers): string[] {
 function subscribe(
     key: string,
     callback: (event?: KeyboardEvent) => void,
-    descriptionKey: string | null,
+    descriptionKey: string,
     modifiers: ShortcutModifiers = ['CTRL'],
     captureOnInputs = false,
-    shouldBubble: boolean | (() => boolean) = false,
+    shouldBubble = false,
     priority = 0,
     shouldPreventDefault = true,
     excludedNodes: string[] = [],

@@ -1,7 +1,6 @@
 import type {Source} from '@components/KYCWall/types';
 import type * as OnyxCommon from './OnyxCommon';
 
-/** Model of wallet terms */
 type WalletTerms = {
     /** Any error message to show */
     errors?: OnyxCommon.Errors;

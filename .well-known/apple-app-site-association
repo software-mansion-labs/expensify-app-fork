@@ -33,6 +33,10 @@
                         "comment": "I Owe You reports"
                     },
                     {
+                        "/": "/request/*",
+                        "comment": "Money request"
+                    },
+                    {
                         "/": "/enable-payments/*",
                         "comment": "Payments setup"
                     },
@@ -50,15 +54,11 @@
                     },
                     {
                         "/": "/split/*",
-                        "comment": "Split Expense"
-                    },
-                    {
-                        "/": "/submit/*",
-                        "comment": "Submit Expense"
+                        "comment": "Split Bill"
                     },
                     {
                         "/": "/request/*",
-                        "comment": "Submit Expense"
+                        "comment": "Request Money"
                     },
                     {
                         "/": "/new/*",
@@ -81,24 +81,12 @@
                         "comment": "Search"
                     },
                     {
-                        "/": "/pay/*",
-                        "comment": "Pay someone"
-                    },
-                    {
                         "/": "/send/*",
-                        "comment": "Pay someone"
+                        "comment": "Send money"
                     },
                     {
                         "/": "/money2020/*",
                         "comment": "Money 2020"
-                    },
-                    {
-                        "/": "/track-expense/*",
-                        "comment": "Track Expense"
-                    },
-                    {
-                        "/": "/submit-expense/*",
-                        "comment": "Submit Expense"
                     }
                 ]
             }

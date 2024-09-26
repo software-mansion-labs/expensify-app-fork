@@ -5,11 +5,22 @@
  */
 import * as core from '@actions/core';
 import type {Writable} from 'type-fest';
-import type {InternalOctokit, ListForRepoMethod} from '@github/libs/GithubUtils';
-import GithubUtils from '@github/libs/GithubUtils';
+import GithubUtils from '../../.github/libs/GithubUtils';
 
 const mockGetInput = jest.fn();
 const mockListIssues = jest.fn();
+
+type DeployBlockers = {
+    url: string;
+    number: number;
+    isResolved: boolean;
+};
+
+type PullRequest = {
+    url: string;
+    number: number;
+    isVerified: boolean;
+};
 
 type Label = {
     id: number;
@@ -23,6 +34,20 @@ type Label = {
     description: string;
 };
 
+type ExpectedReponse = {
+    PRList: PullRequest[];
+    labels: Label[];
+    tag: string;
+    title: string;
+    url: string;
+    number: number;
+    deployBlockers: DeployBlockers[];
+    internalQAPRList: string[];
+    isTimingDashboardChecked: boolean;
+    isFirebaseChecked: boolean;
+    isGHStatusChecked: boolean;
+};
+
 type Issue = {
     url: string;
     title: string;
@@ -34,8 +59,6 @@ type ObjectMethodData<T> = {
     data: T;
 };
 
-type OctokitCreateIssue = InternalOctokit['rest']['issues']['create'];
-
 const asMutable = <T>(value: T): Writable<T> => value as Writable<T>;
 
 beforeAll(() => {
@@ -46,7 +69,7 @@ beforeAll(() => {
     const moctokit = {
         rest: {
             issues: {
-                create: jest.fn().mockImplementation((arg: Parameters<OctokitCreateIssue>[0]) =>
+                create: jest.fn().mockImplementation((arg) =>
                     Promise.resolve({
                         data: {
                             ...arg,
@@ -58,8 +81,9 @@ beforeAll(() => {
             },
         },
         paginate: jest.fn().mockImplementation(<T>(objectMethod: () => Promise<ObjectMethodData<T>>) => objectMethod().then(({data}) => data)),
-    } as unknown as InternalOctokit;
+    };
 
+    // @ts-expect-error TODO: Remove this once GithubUtils (https://github.com/Expensify/App/issues/25382) is migrated to TypeScript.
     GithubUtils.internalOctokit = moctokit;
 });
 
@@ -92,7 +116,7 @@ describe('GithubUtils', () => {
         issueWithDeployBlockers.body +=
             '\r\n**Deploy Blockers:**\r\n- [ ] https://github.com/Expensify/App/issues/1\r\n- [x] https://github.com/Expensify/App/issues/2\r\n- [ ] https://github.com/Expensify/App/pull/1234\r\n';
 
-        const baseExpectedResponse: Partial<Awaited<ReturnType<typeof GithubUtils.getStagingDeployCash>>> = {
+        const baseExpectedResponse: ExpectedReponse = {
             PRList: [
                 {
                     url: 'https://github.com/Expensify/App/pull/21',
@@ -157,22 +181,22 @@ describe('GithubUtils', () => {
                 body: '**Release Version:** `1.0.1-47`\r\n**Compare Changes:** https://github.com/Expensify/App/compare/production...staging\r\n\r\ncc @Expensify/applauseleads\n',
             };
 
-            const bareExpectedResponse: Partial<Awaited<ReturnType<typeof GithubUtils.getStagingDeployCash>>> = {
+            const bareExpectedResponse: ExpectedReponse = {
                 ...baseExpectedResponse,
                 PRList: [],
             };
 
-            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [bareIssue]}) as unknown as ListForRepoMethod;
+            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [bareIssue]});
             return GithubUtils.getStagingDeployCash().then((data) => expect(data).toStrictEqual(bareExpectedResponse));
         });
 
         test('Test finding an open issue successfully', () => {
-            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [baseIssue]}) as unknown as ListForRepoMethod;
+            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [baseIssue]});
             return GithubUtils.getStagingDeployCash().then((data) => expect(data).toStrictEqual(baseExpectedResponse));
         });
 
         test('Test finding an open issue successfully and parsing with deploy blockers', () => {
-            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [issueWithDeployBlockers]}) as unknown as ListForRepoMethod;
+            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [issueWithDeployBlockers]});
             return GithubUtils.getStagingDeployCash().then((data) => expect(data).toStrictEqual(expectedResponseWithDeployBlockers));
         });
 
@@ -182,7 +206,7 @@ describe('GithubUtils', () => {
 
             GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({
                 data: [modifiedIssueWithDeployBlockers],
-            }) as unknown as ListForRepoMethod;
+            });
             return GithubUtils.getStagingDeployCash().then((data) => expect(data).toStrictEqual(expectedResponseWithDeployBlockers));
         });
 
@@ -190,17 +214,17 @@ describe('GithubUtils', () => {
             const noBodyIssue = baseIssue;
             noBodyIssue.body = '';
 
-            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [noBodyIssue]}) as unknown as ListForRepoMethod;
+            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [noBodyIssue]});
             return GithubUtils.getStagingDeployCash().catch((e) => expect(e).toEqual(new Error('Unable to find StagingDeployCash issue with correct data.')));
         });
 
         test('Test finding more than one issue', () => {
-            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [{a: 1}, {b: 2}]}) as unknown as ListForRepoMethod;
+            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: [{a: 1}, {b: 2}]});
             return GithubUtils.getStagingDeployCash().catch((e) => expect(e).toEqual(new Error('Found more than one StagingDeployCash issue.')));
         });
 
         test('Test finding no issues', () => {
-            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: []}) as unknown as ListForRepoMethod;
+            GithubUtils.octokit.issues.listForRepo = jest.fn().mockResolvedValue({data: []});
             return GithubUtils.getStagingDeployCash().catch((e) => expect(e).toEqual(new Error('Unable to find StagingDeployCash issue.')));
         });
     });
@@ -331,7 +355,7 @@ describe('GithubUtils', () => {
             },
             {
                 number: 6,
-                title: '[Internal QA] Another Test Internal QA PR',
+                title: '[Internal QA] Test Internal QA PR',
                 html_url: 'https://github.com/Expensify/App/pull/6',
                 user: {login: 'testUser'},
                 labels: [
@@ -344,7 +368,14 @@ describe('GithubUtils', () => {
                         color: 'f29513',
                     },
                 ],
-                assignees: [],
+                assignees: [
+                    {
+                        login: 'octocat',
+                    },
+                    {
+                        login: 'hubot',
+                    },
+                ],
             },
             {
                 number: 7,
@@ -361,12 +392,16 @@ describe('GithubUtils', () => {
                         color: 'f29513',
                     },
                 ],
-                assignees: [],
+                assignees: [
+                    {
+                        login: 'octocat',
+                    },
+                    {
+                        login: 'hubot',
+                    },
+                ],
             },
         ];
-        const mockInternalQaPR = {
-            merged_by: {login: 'octocat'},
-        };
         const mockGithub = jest.fn(() => ({
             getOctokit: () => ({
                 rest: {
@@ -375,7 +410,6 @@ describe('GithubUtils', () => {
                     },
                     pulls: {
                         list: jest.fn().mockResolvedValue({data: mockPRs}),
-                        get: jest.fn().mockResolvedValue({data: mockInternalQaPR}),
                     },
                 },
                 paginate: jest.fn().mockImplementation(<T>(objectMethod: () => Promise<ObjectMethodData<T>>) => objectMethod().then(({data}) => data)),
@@ -384,7 +418,8 @@ describe('GithubUtils', () => {
 
         const octokit = mockGithub().getOctokit();
         const githubUtils = class extends GithubUtils {};
-        githubUtils.internalOctokit = octokit as unknown as InternalOctokit;
+        // @ts-expect-error TODO: Remove this once GithubUtils (https://github.com/Expensify/App/issues/25382) is migrated to TypeScript.
+        githubUtils.internalOctokit = octokit;
         const tag = '1.0.2-12';
         const basePRList = [
             'https://github.com/Expensify/App/pull/2',
@@ -411,7 +446,7 @@ describe('GithubUtils', () => {
         const internalQAHeader = '\r\n\r\n**Internal QA:**';
         const lineBreak = '\r\n';
         const lineBreakDouble = '\r\n\r\n';
-        const assignOctocat = ' - @octocat';
+        const assignOctocatHubot = ' - @octocat @hubot';
         const deployerVerificationsHeader = '\r\n**Deployer verifications:**';
         // eslint-disable-next-line max-len
         const timingDashboardVerification =
@@ -433,11 +468,8 @@ describe('GithubUtils', () => {
             `${lineBreak}`;
 
         test('Test no verified PRs', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, basePRList).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, basePRList).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${baseExpectedOutput}` +
                         `${openCheckbox}${basePRList[2]}` +
                         `${lineBreak}${openCheckbox}${basePRList[0]}` +
@@ -450,17 +482,12 @@ describe('GithubUtils', () => {
                         `${lineBreak}${openCheckbox}${ghVerification}` +
                         `${lineBreakDouble}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual([]);
             });
         });
 
         test('Test some verified PRs', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, basePRList, [basePRList[0]]).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, basePRList, [basePRList[0]]).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${baseExpectedOutput}` +
                         `${openCheckbox}${basePRList[2]}` +
                         `${lineBreak}${closedCheckbox}${basePRList[0]}` +
@@ -473,17 +500,12 @@ describe('GithubUtils', () => {
                         `${lineBreak}${openCheckbox}${ghVerification}` +
                         `${lineBreakDouble}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual([]);
             });
         });
 
         test('Test all verified PRs', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, basePRList, basePRList).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, basePRList, basePRList).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${allVerifiedExpectedOutput}` +
                         `${lineBreak}${deployerVerificationsHeader}` +
                         `${lineBreak}${openCheckbox}${timingDashboardVerification}` +
@@ -491,17 +513,12 @@ describe('GithubUtils', () => {
                         `${lineBreak}${openCheckbox}${ghVerification}` +
                         `${lineBreakDouble}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual([]);
             });
         });
 
         test('Test no resolved deploy blockers', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, basePRList, basePRList, baseDeployBlockerList).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, basePRList, basePRList, baseDeployBlockerList).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${allVerifiedExpectedOutput}` +
                         `${lineBreak}${deployBlockerHeader}` +
                         `${lineBreak}${openCheckbox}${baseDeployBlockerList[0]}` +
@@ -512,17 +529,12 @@ describe('GithubUtils', () => {
                         `${lineBreak}${openCheckbox}${ghVerification}${lineBreak}` +
                         `${lineBreak}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual([]);
             });
         });
 
         test('Test some resolved deploy blockers', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, basePRList, basePRList, baseDeployBlockerList, [baseDeployBlockerList[0]]).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, basePRList, basePRList, baseDeployBlockerList, [baseDeployBlockerList[0]]).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${allVerifiedExpectedOutput}` +
                         `${lineBreak}${deployBlockerHeader}` +
                         `${lineBreak}${closedCheckbox}${baseDeployBlockerList[0]}` +
@@ -533,16 +545,12 @@ describe('GithubUtils', () => {
                         `${lineBreak}${openCheckbox}${ghVerification}` +
                         `${lineBreakDouble}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual([]);
             });
         });
 
         test('Test all resolved deploy blockers', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, basePRList, basePRList, baseDeployBlockerList, baseDeployBlockerList).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, basePRList, basePRList, baseDeployBlockerList, baseDeployBlockerList).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${baseExpectedOutput}` +
                         `${closedCheckbox}${basePRList[2]}` +
                         `${lineBreak}${closedCheckbox}${basePRList[0]}` +
@@ -558,17 +566,12 @@ describe('GithubUtils', () => {
                         `${lineBreak}${openCheckbox}${ghVerification}` +
                         `${lineBreakDouble}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual([]);
             });
         });
 
         test('Test internalQA PRs', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, [...basePRList, ...internalQAPRList]).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, [...basePRList, ...internalQAPRList]).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${baseExpectedOutput}` +
                         `${openCheckbox}${basePRList[2]}` +
                         `${lineBreak}${openCheckbox}${basePRList[0]}` +
@@ -576,25 +579,20 @@ describe('GithubUtils', () => {
                         `${lineBreak}${closedCheckbox}${basePRList[4]}` +
                         `${lineBreak}${closedCheckbox}${basePRList[5]}` +
                         `${lineBreak}${internalQAHeader}` +
-                        `${lineBreak}${openCheckbox}${internalQAPRList[0]}${assignOctocat}` +
-                        `${lineBreak}${openCheckbox}${internalQAPRList[1]}${assignOctocat}` +
+                        `${lineBreak}${openCheckbox}${internalQAPRList[0]}${assignOctocatHubot}` +
+                        `${lineBreak}${openCheckbox}${internalQAPRList[1]}${assignOctocatHubot}` +
                         `${lineBreakDouble}${deployerVerificationsHeader}` +
                         `${lineBreak}${openCheckbox}${timingDashboardVerification}` +
                         `${lineBreak}${openCheckbox}${firebaseVerification}` +
                         `${lineBreak}${openCheckbox}${ghVerification}` +
                         `${lineBreakDouble}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual(['octocat']);
             });
         });
 
         test('Test some verified internalQA PRs', () => {
-            githubUtils.generateStagingDeployCashBodyAndAssignees(tag, [...basePRList, ...internalQAPRList], [], [], [], [internalQAPRList[0]]).then((issue) => {
-                if (typeof issue !== 'object') {
-                    return;
-                }
-
-                expect(issue.issueBody).toBe(
+            githubUtils.generateStagingDeployCashBody(tag, [...basePRList, ...internalQAPRList], [], [], [], [internalQAPRList[0]]).then((issueBody: string) => {
+                expect(issueBody).toBe(
                     `${baseExpectedOutput}` +
                         `${openCheckbox}${basePRList[2]}` +
                         `${lineBreak}${openCheckbox}${basePRList[0]}` +
@@ -602,15 +600,14 @@ describe('GithubUtils', () => {
                         `${lineBreak}${closedCheckbox}${basePRList[4]}` +
                         `${lineBreak}${closedCheckbox}${basePRList[5]}` +
                         `${lineBreak}${internalQAHeader}` +
-                        `${lineBreak}${closedCheckbox}${internalQAPRList[0]}${assignOctocat}` +
-                        `${lineBreak}${openCheckbox}${internalQAPRList[1]}${assignOctocat}` +
+                        `${lineBreak}${closedCheckbox}${internalQAPRList[0]}${assignOctocatHubot}` +
+                        `${lineBreak}${openCheckbox}${internalQAPRList[1]}${assignOctocatHubot}` +
                         `${lineBreakDouble}${deployerVerificationsHeader}` +
                         `${lineBreak}${openCheckbox}${timingDashboardVerification}` +
                         `${lineBreak}${openCheckbox}${firebaseVerification}` +
                         `${lineBreak}${openCheckbox}${ghVerification}` +
                         `${lineBreakDouble}${ccApplauseLeads}`,
                 );
-                expect(issue.issueAssignees).toEqual(['octocat']);
             });
         });
     });
@@ -620,5 +617,14 @@ describe('GithubUtils', () => {
             [1234, 'https://github.com/Expensify/App/pull/1234'],
             [54321, 'https://github.com/Expensify/App/pull/54321'],
         ])('getPullRequestNumberFromURL("%s")', (input, expectedOutput) => expect(GithubUtils.getPullRequestURLFromNumber(input)).toBe(expectedOutput));
+    });
+
+    describe('getReleaseBody', () => {
+        test.each([
+            // eslint-disable-next-line max-len
+            [[1, 2, 3], '- https://github.com/Expensify/App/pull/1\r\n- https://github.com/Expensify/App/pull/2\r\n- https://github.com/Expensify/App/pull/3'],
+            [[], ''],
+            [[12345], '- https://github.com/Expensify/App/pull/12345'],
+        ])('getReleaseBody("%s")', (input, expectedOutput) => expect(GithubUtils.getReleaseBody(input)).toBe(expectedOutput));
     });
 });

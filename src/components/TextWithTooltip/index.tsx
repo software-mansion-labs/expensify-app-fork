@@ -7,7 +7,7 @@ type LayoutChangeEvent = {
     target: HTMLElement;
 };
 
-function TextWithTooltip({text, shouldShowTooltip, style, numberOfLines = 1}: TextWithTooltipProps) {
+function TextWithTooltip({text, shouldShowTooltip, textStyles}: TextWithTooltipProps) {
     const [showTooltip, setShowTooltip] = useState(false);
 
     return (
@@ -16,8 +16,8 @@ function TextWithTooltip({text, shouldShowTooltip, style, numberOfLines = 1}: Te
             text={text}
         >
             <Text
-                style={style}
-                numberOfLines={numberOfLines}
+                style={textStyles}
+                numberOfLines={1}
                 onLayout={(e) => {
                     const target = (e.nativeEvent as unknown as LayoutChangeEvent).target;
                     if (!shouldShowTooltip) {

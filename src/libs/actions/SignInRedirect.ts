@@ -2,7 +2,6 @@ import Onyx from 'react-native-onyx';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import type {OnyxKey} from '@src/ONYXKEYS';
 import ONYXKEYS from '@src/ONYXKEYS';
-import * as Policy from './Policy/Policy';
 
 let currentIsOffline: boolean | undefined;
 let currentShouldForceOffline: boolean | undefined;
@@ -14,7 +13,7 @@ Onyx.connect({
     },
 });
 
-function clearStorageAndRedirect(errorMessage?: string): Promise<void> {
+function clearStorageAndRedirect(errorMessage?: string) {
     // Under certain conditions, there are key-values we'd like to keep in storage even when a user is logged out.
     // We pass these into the clear() method in order to avoid having to reset them on a delayed tick and getting
     // flashes of unwanted default state.
@@ -29,14 +28,13 @@ function clearStorageAndRedirect(errorMessage?: string): Promise<void> {
         keysToPreserve.push(ONYXKEYS.NETWORK);
     }
 
-    return Onyx.clear(keysToPreserve).then(() => {
-        Policy.clearAllPolicies();
+    Onyx.clear(keysToPreserve).then(() => {
         if (!errorMessage) {
             return;
         }
 
         // `Onyx.clear` reinitializes the Onyx instance with initial values so use `Onyx.merge` instead of `Onyx.set`
-        Onyx.merge(ONYXKEYS.SESSION, {errors: ErrorUtils.getMicroSecondOnyxErrorWithMessage(errorMessage)});
+        Onyx.merge(ONYXKEYS.SESSION, {errors: ErrorUtils.getMicroSecondOnyxError(errorMessage)});
     });
 }
 
@@ -48,8 +46,8 @@ function clearStorageAndRedirect(errorMessage?: string): Promise<void> {
  *
  * @param [errorMessage] error message to be displayed on the sign in page
  */
-function redirectToSignIn(errorMessage?: string): Promise<void> {
-    return clearStorageAndRedirect(errorMessage);
+function redirectToSignIn(errorMessage?: string) {
+    clearStorageAndRedirect(errorMessage);
 }
 
 export default redirectToSignIn;

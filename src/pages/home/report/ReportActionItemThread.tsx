@@ -1,12 +1,10 @@
 import React from 'react';
-import type {GestureResponderEvent} from 'react-native';
 import {View} from 'react-native';
 import MultipleAvatars from '@components/MultipleAvatars';
 import PressableWithSecondaryInteraction from '@components/PressableWithSecondaryInteraction';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import Timing from '@libs/actions/Timing';
 import * as Report from '@userActions/Report';
 import CONST from '@src/CONST';
 import type {Icon} from '@src/types/onyx/OnyxCommon';
@@ -28,7 +26,7 @@ type ReportActionItemThreadProps = {
     isHovered: boolean;
 
     /** The function that should be called when the thread is LongPressed or right-clicked */
-    onSecondaryInteraction: (event: GestureResponderEvent | MouseEvent) => void;
+    onSecondaryInteraction: () => void;
 };
 
 function ReportActionItemThread({numberOfReplies, icons, mostRecentReply, childReportID, isHovered, onSecondaryInteraction}: ReportActionItemThreadProps) {
@@ -46,7 +44,6 @@ function ReportActionItemThread({numberOfReplies, icons, mostRecentReply, childR
             <PressableWithSecondaryInteraction
                 onPress={() => {
                     Report.navigateToAndOpenChildReport(childReportID);
-                    Timing.start(CONST.TIMING.OPEN_REPORT_THREAD);
                 }}
                 role={CONST.ROLE.BUTTON}
                 accessibilityLabel={`${numberOfReplies} ${replyText}`}

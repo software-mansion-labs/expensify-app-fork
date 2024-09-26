@@ -1,7 +1,6 @@
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
@@ -27,7 +26,7 @@ type BankAccountValidationFormProps = {
     requiresTwoFactorAuth: boolean;
 
     /** The policy which the user has access to and which the report is tied to */
-    policy: OnyxEntry<Policy>;
+    policy: Policy | null;
 };
 
 type AmountValues = {
@@ -44,10 +43,9 @@ function getAmountValues(values: FormOnyxValues<typeof ONYXKEYS.FORMS.REIMBURSEM
     };
 }
 
-const filterInput = (amount: string, amountRegex?: RegExp, permittedDecimalSeparator?: string) => {
+const filterInput = (amount: string, amountRegex?: RegExp) => {
     let value = amount ? amount.toString().trim() : '';
-    const regex = new RegExp(`^0+|([${permittedDecimalSeparator}]\\d*?)0+$`, 'g');
-    value = value.replace(regex, '$1');
+    value = value.replace(/^0+|0+$/g, '');
     if (value === '' || Number.isNaN(Number(value)) || !Math.abs(Str.fromUSDToNumber(value, false)) || (amountRegex && !amountRegex.test(value))) {
         return '';
     }
@@ -59,22 +57,22 @@ function BankAccountValidationForm({requiresTwoFactorAuth, reimbursementAccount,
     const {translate, toLocaleDigit} = useLocalize();
     const styles = useThemeStyles();
 
-    const policyID = reimbursementAccount?.achData?.policyID ?? '-1';
-    const decimalSeparator = toLocaleDigit('.');
-    const permittedDecimalSeparator = getPermittedDecimalSeparator(decimalSeparator);
+    const policyID = reimbursementAccount?.achData?.policyID ?? '';
+
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM> => {
         const errors: FormInputErrors<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM> = {};
         const amountValues = getAmountValues(values);
+        const decimalSeparator = toLocaleDigit('.');
         const outputCurrency = policy?.outputCurrency ?? CONST.CURRENCY.USD;
-        const amountRegex = RegExp(String.raw`^-?\d{0,8}([${permittedDecimalSeparator}]\d{0,${CurrencyUtils.getCurrencyDecimals(outputCurrency)}})?$`, 'i');
+        const amountRegex = RegExp(String.raw`^-?\d{0,8}([${getPermittedDecimalSeparator(decimalSeparator)}]\d{0,${CurrencyUtils.getCurrencyDecimals(outputCurrency)}})?$`, 'i');
 
         Object.keys(amountValues).forEach((key) => {
             const value = amountValues[key as keyof AmountValues];
-            const filteredValue = filterInput(value, amountRegex, permittedDecimalSeparator);
+            const filteredValue = filterInput(value, amountRegex);
             if (ValidationUtils.isRequiredFulfilled(filteredValue.toString())) {
                 return;
             }
-            errors[key as keyof AmountValues] = translate('common.error.invalidAmount');
+            errors[key as keyof AmountValues] = 'common.error.invalidAmount';
         });
 
         return errors;
@@ -82,19 +80,19 @@ function BankAccountValidationForm({requiresTwoFactorAuth, reimbursementAccount,
 
     const submit = useCallback(
         (values: FormOnyxValues<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM>) => {
-            const amount1 = filterInput(values.amount1 ?? '', undefined, permittedDecimalSeparator);
-            const amount2 = filterInput(values.amount2 ?? '', undefined, permittedDecimalSeparator);
-            const amount3 = filterInput(values.amount3 ?? '', undefined, permittedDecimalSeparator);
+            const amount1 = filterInput(values.amount1 ?? '');
+            const amount2 = filterInput(values.amount2 ?? '');
+            const amount3 = filterInput(values.amount3 ?? '');
 
             const validateCode = [amount1, amount2, amount3].join(',');
 
             // Send valid amounts to BankAccountAPI::validateBankAccount in Web-Expensify
-            const bankAccountID = Number(reimbursementAccount?.achData?.bankAccountID ?? '-1');
+            const bankAccountID = Number(reimbursementAccount?.achData?.bankAccountID ?? '0');
             if (bankAccountID) {
                 BankAccounts.validateBankAccount(bankAccountID, validateCode, policyID);
             }
         },
-        [reimbursementAccount, policyID, permittedDecimalSeparator],
+        [reimbursementAccount, policyID],
     );
     return (
         <FormProvider

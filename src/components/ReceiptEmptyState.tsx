@@ -12,12 +12,10 @@ type ReceiptEmptyStateProps = {
 
     /** Callback to be called on onPress */
     onPress?: () => void;
-
-    disabled?: boolean;
 };
 
 // Returns an SVG icon indicating that the user should attach a receipt
-function ReceiptEmptyState({hasError = false, onPress = () => {}, disabled = false}: ReceiptEmptyStateProps) {
+function ReceiptEmptyState({hasError = false, onPress = () => {}}: ReceiptEmptyStateProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
@@ -26,8 +24,6 @@ function ReceiptEmptyState({hasError = false, onPress = () => {}, disabled = fal
             accessibilityRole="imagebutton"
             accessibilityLabel={translate('receipt.upload')}
             onPress={onPress}
-            disabled={disabled}
-            disabledStyle={styles.cursorDefault}
             style={[styles.alignItemsCenter, styles.justifyContentCenter, styles.moneyRequestViewImage, styles.moneyRequestAttachReceipt, hasError && styles.borderColorDanger]}
         >
             <Icon

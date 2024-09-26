@@ -1,14 +1,13 @@
 import type {ForwardedRef, ReactNode} from 'react';
 import React, {createContext, forwardRef, useMemo, useRef, useState} from 'react';
-// eslint-disable-next-line no-restricted-imports
-import type {NativeScrollEvent, NativeSyntheticEvent, ScrollView as RNScrollView, ScrollViewProps} from 'react-native';
-import ScrollView from './ScrollView';
+import type {NativeScrollEvent, NativeSyntheticEvent, ScrollViewProps} from 'react-native';
+import {ScrollView} from 'react-native';
 
 const MIN_SMOOTH_SCROLL_EVENT_THROTTLE = 16;
 
 type ScrollContextValue = {
     contentOffsetY: number;
-    scrollViewRef: ForwardedRef<RNScrollView>;
+    scrollViewRef: ForwardedRef<ScrollView>;
 };
 
 const ScrollContext = createContext<ScrollContextValue>({
@@ -29,9 +28,9 @@ type ScrollViewWithContextProps = Partial<ScrollViewProps> & {
  * Using this wrapper will automatically handle scrolling to the picker's <TextInput />
  * when the picker modal is opened
  */
-function ScrollViewWithContext({onScroll, scrollEventThrottle, children, ...restProps}: ScrollViewWithContextProps, ref: ForwardedRef<RNScrollView>) {
+function ScrollViewWithContext({onScroll, scrollEventThrottle, children, ...restProps}: ScrollViewWithContextProps, ref: ForwardedRef<ScrollView>) {
     const [contentOffsetY, setContentOffsetY] = useState(0);
-    const defaultScrollViewRef = useRef<RNScrollView>(null);
+    const defaultScrollViewRef = useRef<ScrollView>(null);
     const scrollViewRef = ref ?? defaultScrollViewRef;
 
     const setContextScrollPosition = (event: NativeSyntheticEvent<NativeScrollEvent>) => {

@@ -1,5 +1,4 @@
 import {Linking} from 'react-native';
-import Log from '@libs/Log';
 import type AsyncOpenURL from './types';
 
 const asyncOpenURL: AsyncOpenURL = (promise, url) => {
@@ -7,13 +6,9 @@ const asyncOpenURL: AsyncOpenURL = (promise, url) => {
         return;
     }
 
-    promise
-        .then((params) => {
-            Linking.openURL(typeof url === 'string' ? url : url(params));
-        })
-        .catch(() => {
-            Log.warn('[asyncOpenURL] error occured while opening URL', {url});
-        });
+    promise.then((params) => {
+        Linking.openURL(typeof url === 'string' ? url : url(params));
+    });
 };
 
 export default asyncOpenURL;

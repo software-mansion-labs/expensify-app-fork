@@ -2,8 +2,7 @@ import React from 'react';
 import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
-import Lottie from '@components/Lottie';
-import LottieAnimations from '@components/LottieAnimations';
+import * as Illustrations from '@components/Icon/Illustrations';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -23,12 +22,10 @@ function JustSignedInModal({is2FARequired}: JustSignedInModalProps) {
         <View style={styles.deeplinkWrapperContainer}>
             <View style={styles.deeplinkWrapperMessage}>
                 <View style={styles.mb2}>
-                    <Lottie
-                        source={is2FARequired ? LottieAnimations.Safe : LottieAnimations.Abracadabra}
-                        style={styles.justSignedInModalAnimation(is2FARequired)}
-                        webStyle={styles.justSignedInModalAnimation(is2FARequired)}
-                        autoPlay
-                        loop
+                    <Icon
+                        width={variables.modalTopIconWidth}
+                        height={is2FARequired ? variables.modalTopIconHeight : variables.modalTopBigIconHeight}
+                        src={is2FARequired ? Illustrations.SafeBlue : Illustrations.Abracadabra}
                     />
                 </View>
                 <Text style={[styles.textHeadline, styles.textXXLarge, styles.textAlignCenter]}>

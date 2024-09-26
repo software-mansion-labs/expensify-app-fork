@@ -11,9 +11,4 @@ type WalletStatementProps = WalletStatementOnyxProps & {
     statementPageURL: string;
 };
 
-type WalletStatementMessage = {
-    url: string;
-    type: string;
-};
-
-export type {WalletStatementProps, WalletStatementOnyxProps, WalletStatementMessage};
+export type {WalletStatementProps, WalletStatementOnyxProps};

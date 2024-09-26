@@ -1,4 +1,4 @@
-import {Str} from 'expensify-common';
+import Str from 'expensify-common/lib/str';
 import RNDeviceInfo from 'react-native-device-info';
 import type {GetOSAndName} from './types';
 

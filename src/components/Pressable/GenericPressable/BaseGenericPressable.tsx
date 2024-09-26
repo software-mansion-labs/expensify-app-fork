@@ -1,5 +1,5 @@
 import type {ForwardedRef} from 'react';
-import React, {forwardRef, useCallback, useEffect, useMemo, useState} from 'react';
+import React, {forwardRef, useCallback, useEffect, useMemo} from 'react';
 import type {GestureResponderEvent, View} from 'react-native';
 // eslint-disable-next-line no-restricted-imports
 import {Pressable} from 'react-native';
@@ -26,7 +26,7 @@ function GenericPressable(
         focusStyle = {},
         pressStyle = {},
         screenReaderActiveStyle = {},
-        shouldUseHapticsOnLongPress = true,
+        shouldUseHapticsOnLongPress = false,
         shouldUseHapticsOnPress = false,
         nextFocusRef,
         keyboardShortcut,
@@ -35,8 +35,6 @@ function GenericPressable(
         onPressIn,
         onPressOut,
         accessible = true,
-        fullDisabled = false,
-        interactive = true,
         ...rest
     }: PressableProps,
     ref: PressableRef,
@@ -46,7 +44,6 @@ function GenericPressable(
     const {isExecuting, singleExecution} = useSingleExecution();
     const isScreenReaderActive = Accessibility.useScreenReaderStatus();
     const [hitSlop, onLayout] = Accessibility.useAutoHitSlop();
-    const [isHovered, setIsHovered] = useState(false);
 
     const isDisabled = useMemo(() => {
         let shouldBeDisabledByScreenReader = false;
@@ -68,9 +65,6 @@ function GenericPressable(
      * Returns the cursor style based on the state of Pressable
      */
     const cursorStyle = useMemo(() => {
-        if (!interactive) {
-            return styles.cursorDefault;
-        }
         if (shouldUseDisabledCursor) {
             return styles.cursorDisabled;
         }
@@ -78,7 +72,7 @@ function GenericPressable(
             return styles.cursorText;
         }
         return styles.cursorPointer;
-    }, [styles, shouldUseDisabledCursor, rest.accessibilityRole, rest.role, interactive]);
+    }, [styles, shouldUseDisabledCursor, rest.accessibilityRole, rest.role]);
 
     const onLongPressHandler = useCallback(
         (event: GestureResponderEvent) => {
@@ -91,18 +85,19 @@ function GenericPressable(
             if (shouldUseHapticsOnLongPress) {
                 HapticFeedback.longPress();
             }
-            if (ref && 'current' in ref && nextFocusRef) {
+            if (ref && 'current' in ref) {
                 ref.current?.blur();
-                Accessibility.moveAccessibilityFocus(nextFocusRef);
             }
             onLongPress(event);
+
+            Accessibility.moveAccessibilityFocus(nextFocusRef);
         },
         [shouldUseHapticsOnLongPress, onLongPress, nextFocusRef, ref, isDisabled],
     );
 
     const onPressHandler = useCallback(
         (event?: GestureResponderEvent | KeyboardEvent) => {
-            if (isDisabled || !interactive) {
+            if (isDisabled) {
                 return;
             }
             if (!onPress) {
@@ -111,27 +106,14 @@ function GenericPressable(
             if (shouldUseHapticsOnPress) {
                 HapticFeedback.press();
             }
-            if (ref && 'current' in ref && nextFocusRef) {
+            if (ref && 'current' in ref) {
                 ref.current?.blur();
-                Accessibility.moveAccessibilityFocus(nextFocusRef);
             }
-            return onPress(event);
-        },
-        [shouldUseHapticsOnPress, onPress, nextFocusRef, ref, isDisabled, interactive],
-    );
+            onPress(event);
 
-    const voidOnPressHandler = useCallback(
-        (...args: Parameters<typeof onPressHandler>) => {
-            onPressHandler(...args);
+            Accessibility.moveAccessibilityFocus(nextFocusRef);
         },
-        [onPressHandler],
-    );
-
-    const onKeyboardShortcutPressHandler = useCallback(
-        (event?: GestureResponderEvent | KeyboardEvent) => {
-            onPressHandler(event);
-        },
-        [onPressHandler],
+        [shouldUseHapticsOnPress, onPress, nextFocusRef, ref, isDisabled],
     );
 
     useEffect(() => {
@@ -139,15 +121,14 @@ function GenericPressable(
             return () => {};
         }
         const {shortcutKey, descriptionKey, modifiers} = keyboardShortcut;
-        return KeyboardShortcut.subscribe(shortcutKey, onKeyboardShortcutPressHandler, descriptionKey, modifiers, true, false, 0, false);
-    }, [keyboardShortcut, onKeyboardShortcutPressHandler]);
+        return KeyboardShortcut.subscribe(shortcutKey, onPressHandler, descriptionKey, modifiers, true, false, 0, false);
+    }, [keyboardShortcut, onPressHandler]);
 
     return (
         <Pressable
             hitSlop={shouldUseAutoHitSlop ? hitSlop : undefined}
             onLayout={shouldUseAutoHitSlop ? onLayout : undefined}
             ref={ref as ForwardedRef<View>}
-            disabled={fullDisabled}
             onPress={!isDisabled ? singleExecution(onPressHandler) : undefined}
             onLongPress={!isDisabled && onLongPress ? onLongPressHandler : undefined}
             onKeyDown={!isDisabled ? onKeyDown : undefined}
@@ -158,7 +139,7 @@ function GenericPressable(
                 StyleUtils.parseStyleFromFunction(style, state),
                 isScreenReaderActive && StyleUtils.parseStyleFromFunction(screenReaderActiveStyle, state),
                 state.focused && StyleUtils.parseStyleFromFunction(focusStyle, state),
-                (state.hovered || isHovered) && StyleUtils.parseStyleFromFunction(hoverStyle, state),
+                state.hovered && StyleUtils.parseStyleFromFunction(hoverStyle, state),
                 state.pressed && StyleUtils.parseStyleFromFunction(pressStyle, state),
                 isDisabled && [StyleUtils.parseStyleFromFunction(disabledStyle, state), styles.noSelect],
             ]}
@@ -170,28 +151,13 @@ function GenericPressable(
             aria-disabled={isDisabled}
             aria-keyshortcuts={keyboardShortcut && `${keyboardShortcut.modifiers.join('')}+${keyboardShortcut.shortcutKey}`}
             // ios-only form of inputs
-            onMagicTap={!isDisabled ? voidOnPressHandler : undefined}
-            onAccessibilityTap={!isDisabled ? voidOnPressHandler : undefined}
+            onMagicTap={!isDisabled ? onPressHandler : undefined}
+            onAccessibilityTap={!isDisabled ? onPressHandler : undefined}
             accessible={accessible}
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...rest}
-            onHoverOut={(event) => {
-                if (event?.type === 'pointerenter' || event?.type === 'mouseenter') {
-                    return;
-                }
-                setIsHovered(false);
-                if (rest.onHoverOut) {
-                    rest.onHoverOut(event);
-                }
-            }}
-            onHoverIn={(event) => {
-                setIsHovered(true);
-                if (rest.onHoverIn) {
-                    rest.onHoverIn(event);
-                }
-            }}
         >
-            {(state) => (typeof children === 'function' ? children({...state, isScreenReaderActive, hovered: state.hovered || isHovered, isDisabled}) : children)}
+            {(state) => (typeof children === 'function' ? children({...state, isScreenReaderActive, isDisabled}) : children)}
         </Pressable>
     );
 }

@@ -8,16 +8,13 @@ function useReportScrollManager(): ReportScrollManagerData {
     /**
      * Scroll to the provided index.
      */
-    const scrollToIndex = useCallback(
-        (index: number) => {
-            if (!flatListRef?.current) {
-                return;
-            }
+    const scrollToIndex = (index: number) => {
+        if (!flatListRef?.current) {
+            return;
+        }
 
-            flatListRef.current.scrollToIndex({index});
-        },
-        [flatListRef],
-    );
+        flatListRef.current.scrollToIndex({index});
+    };
 
     /**
      * Scroll to the bottom of the flatlist.

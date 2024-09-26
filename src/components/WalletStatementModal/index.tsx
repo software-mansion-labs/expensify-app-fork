@@ -8,7 +8,7 @@ import * as Report from '@userActions/Report';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {WalletStatementMessage, WalletStatementOnyxProps, WalletStatementProps} from './types';
+import type {WalletStatementOnyxProps, WalletStatementProps} from './types';
 
 function WalletStatementModal({statementPageURL, session}: WalletStatementProps) {
     const styles = useThemeStyles();
@@ -18,13 +18,13 @@ function WalletStatementModal({statementPageURL, session}: WalletStatementProps)
     /**
      * Handles in-app navigation for iframe links
      */
-    const navigate = (event: MessageEvent<WalletStatementMessage>) => {
+    const navigate = (event: MessageEvent) => {
         if (!event.data?.type || (event.data.type !== CONST.WALLET.WEB_MESSAGE_TYPE.STATEMENT && event.data.type !== CONST.WALLET.WEB_MESSAGE_TYPE.CONCIERGE)) {
             return;
         }
 
         if (event.data.type === CONST.WALLET.WEB_MESSAGE_TYPE.CONCIERGE) {
-            Report.navigateToConciergeChat(true);
+            Report.navigateToConciergeChat();
         }
 
         if (event.data.type === CONST.WALLET.WEB_MESSAGE_TYPE.STATEMENT && event.data.url) {

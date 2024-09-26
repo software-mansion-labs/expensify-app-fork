@@ -2,11 +2,33 @@ import type {ParamListBase, StackActionHelpers, StackNavigationState} from '@rea
 import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
 import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
 import {StackView} from '@react-navigation/stack';
-import React, {useEffect} from 'react';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import React, {useEffect, useMemo} from 'react';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import navigationRef from '@libs/Navigation/navigationRef';
+import SCREENS from '@src/SCREENS';
 import CustomFullScreenRouter from './CustomFullScreenRouter';
 import type {FullScreenNavigatorProps, FullScreenNavigatorRouterOptions} from './types';
+
+type Routes = StackNavigationState<ParamListBase>['routes'];
+function reduceReportRoutes(routes: Routes): Routes {
+    const result: Routes = [];
+    let count = 0;
+    const reverseRoutes = [...routes].reverse();
+
+    reverseRoutes.forEach((route) => {
+        if (route.name === SCREENS.SETTINGS_CENTRAL_PANE) {
+            // Remove all report routes except the last 3. This will improve performance.
+            if (count < 3) {
+                result.push(route);
+                count++;
+            }
+        } else {
+            result.push(route);
+        }
+    });
+
+    return result.reverse();
+}
 
 function CustomFullScreenNavigator(props: FullScreenNavigatorProps) {
     const {navigation, state, descriptors, NavigationContent} = useNavigationBuilder<
@@ -21,7 +43,17 @@ function CustomFullScreenNavigator(props: FullScreenNavigatorProps) {
         initialRouteName: props.initialRouteName,
     });
 
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const {isSmallScreenWidth} = useWindowDimensions();
+
+    const stateToRender = useMemo(() => {
+        const result = reduceReportRoutes(state.routes);
+
+        return {
+            ...state,
+            index: result.length - 1,
+            routes: [...result],
+        };
+    }, [state]);
 
     useEffect(() => {
         if (!navigationRef.isReady()) {
@@ -29,15 +61,15 @@ function CustomFullScreenNavigator(props: FullScreenNavigatorProps) {
         }
         // We need to separately reset state of this navigator to trigger getRehydratedState.
         navigation.reset(navigation.getState());
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-    }, [shouldUseNarrowLayout]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSmallScreenWidth]);
 
     return (
         <NavigationContent>
             <StackView
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...props}
-                state={state}
+                state={stateToRender}
                 descriptors={descriptors}
                 navigation={navigation}
             />

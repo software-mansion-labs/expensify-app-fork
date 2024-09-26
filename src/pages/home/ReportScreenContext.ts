@@ -1,9 +1,8 @@
 import type {RefObject, SyntheticEvent} from 'react';
 import {createContext} from 'react';
-// eslint-disable-next-line no-restricted-imports
-import type {FlatList, GestureResponderEvent, Text, View} from 'react-native';
+import type {FlatList, GestureResponderEvent, View} from 'react-native';
 
-type ReactionListAnchor = View | Text | HTMLDivElement | null;
+type ReactionListAnchor = View | HTMLDivElement | null;
 
 type ReactionListEvent = GestureResponderEvent | MouseEvent | SyntheticEvent<ReactionListAnchor, MouseEvent>;
 
@@ -15,11 +14,9 @@ type ReactionListRef = {
 
 type FlatListRefType = RefObject<FlatList<unknown>> | null;
 
-type ScrollPosition = {offset?: number};
-
 type ActionListContextType = {
     flatListRef: FlatListRefType;
-    scrollPosition: ScrollPosition | null;
+    scrollPosition: {offset: number} | null;
     setScrollPosition: (position: {offset: number}) => void;
 };
 type ReactionListContextType = RefObject<ReactionListRef> | null;
@@ -28,4 +25,4 @@ const ActionListContext = createContext<ActionListContextType>({flatListRef: nul
 const ReactionListContext = createContext<ReactionListContextType>(null);
 
 export {ActionListContext, ReactionListContext};
-export type {ReactionListRef, ActionListContextType, ReactionListContextType, FlatListRefType, ReactionListAnchor, ReactionListEvent, ScrollPosition};
+export type {ReactionListRef, ActionListContextType, ReactionListContextType, FlatListRefType, ReactionListAnchor, ReactionListEvent};

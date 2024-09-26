@@ -1,9 +1,8 @@
 import Log from '@libs/Log';
+import type {VisibilityStatus} from './types';
 
 function resolveAfter(delay: number): Promise<void> {
-    return new Promise<void>((resolve) => {
-        setTimeout(resolve, delay);
-    });
+    return new Promise<void>((resolve) => setTimeout(resolve, delay));
 }
 
 function hide(): Promise<void> {
@@ -24,8 +23,13 @@ function hide(): Promise<void> {
     });
 }
 
+function getVisibilityStatus(): Promise<VisibilityStatus> {
+    return Promise.resolve(document.getElementById('splash') ? 'visible' : 'hidden');
+}
+
 export default {
     hide,
+    getVisibilityStatus,
     logoSizeRatio: 1,
     navigationBarHeight: 0,
 };

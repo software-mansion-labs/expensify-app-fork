@@ -11,10 +11,11 @@ import SingleOptionSelector from '@components/SingleOptionSelector';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
-import useStyledSafeAreaInsets from '@hooks/useStyledSafeAreaInsets';
+import usePrivatePersonalDetails from '@hooks/usePrivatePersonalDetails';
 import useThemeStyles from '@hooks/useThemeStyles';
+import * as CardUtils from '@libs/CardUtils';
 import Navigation from '@libs/Navigation/Navigation';
-import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
+import type {PublicScreensParamList} from '@libs/Navigation/types';
 import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import type {ReplacementReason} from '@userActions/Card';
@@ -61,30 +62,30 @@ type ReportCardLostPageOnyxProps = {
     cardList: OnyxEntry<Record<string, Card>>;
 };
 
-type ReportCardLostPageProps = ReportCardLostPageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.REPORT_CARD_LOST_OR_DAMAGED>;
+type ReportCardLostPageProps = ReportCardLostPageOnyxProps & StackScreenProps<PublicScreensParamList, typeof SCREENS.TRANSITION_BETWEEN_APPS>;
 
 function ReportCardLostPage({
     privatePersonalDetails = {
-        addresses: [
-            {
-                street: '',
-                street2: '',
-                city: '',
-                state: '',
-                zip: '',
-                country: '',
-            },
-        ],
+        address: {
+            street: '',
+            street2: '',
+            city: '',
+            state: '',
+            zip: '',
+            country: '',
+        },
     },
     cardList = {},
     route: {
-        params: {cardID = ''},
+        params: {domain = ''},
     },
     formData,
 }: ReportCardLostPageProps) {
     const styles = useThemeStyles();
+    usePrivatePersonalDetails();
 
-    const physicalCard = cardList?.[cardID];
+    const domainCards = CardUtils.getDomainCards(cardList ?? {})[domain];
+    const physicalCard = CardUtils.findPhysicalCard(domainCards);
 
     const {translate} = useLocalize();
 
@@ -95,8 +96,6 @@ function ReportCardLostPage({
 
     const prevIsLoading = usePrevious(formData?.isLoading);
 
-    const {paddingBottom} = useStyledSafeAreaInsets();
-
     const formattedAddress = PersonalDetailsUtils.getFormattedAddress(privatePersonalDetails ?? {});
 
     useEffect(() => {
@@ -104,8 +103,8 @@ function ReportCardLostPage({
             return;
         }
 
-        Navigation.navigate(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(cardID));
-    }, [formData?.isLoading, prevIsLoading, physicalCard?.errors, cardID]);
+        Navigation.navigate(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(domain));
+    }, [domain, formData?.isLoading, prevIsLoading, physicalCard?.errors]);
 
     useEffect(() => {
         if (formData?.isLoading && isEmptyObject(physicalCard?.errors)) {
@@ -164,11 +163,11 @@ function ReportCardLostPage({
                 title={translate('reportCardLostOrDamaged.screenTitle')}
                 onBackButtonPress={handleBackButtonPress}
             />
-            <View style={[styles.flex1, styles.justifyContentBetween, styles.pt3, styles.mh5, !paddingBottom ? styles.pb5 : null]}>
+            <View style={[styles.flex1, styles.justifyContentBetween, styles.pt3]}>
                 {isReasonConfirmed ? (
                     <>
                         <View>
-                            <Text style={[styles.textHeadline, styles.mb3]}>{translate('reportCardLostOrDamaged.confirmAddressTitle')}</Text>
+                            <Text style={[styles.textHeadline, styles.mb3, styles.mh5]}>{translate('reportCardLostOrDamaged.confirmAddressTitle')}</Text>
                             <MenuItemWithTopDescription
                                 title={formattedAddress}
                                 description={translate('reportCardLostOrDamaged.address')}
@@ -177,22 +176,22 @@ function ReportCardLostPage({
                                 numberOfLinesTitle={2}
                             />
                             {isDamaged ? (
-                                <Text style={[styles.mt3]}>{translate('reportCardLostOrDamaged.cardDamagedInfo')}</Text>
+                                <Text style={[styles.mt3, styles.mh5]}>{translate('reportCardLostOrDamaged.cardDamagedInfo')}</Text>
                             ) : (
-                                <Text style={[styles.mt3]}>{translate('reportCardLostOrDamaged.cardLostOrStolenInfo')}</Text>
+                                <Text style={[styles.mt3, styles.mh5]}>{translate('reportCardLostOrDamaged.cardLostOrStolenInfo')}</Text>
                             )}
                         </View>
                         <FormAlertWithSubmitButton
                             isAlertVisible={shouldShowAddressError}
                             onSubmit={handleSubmitSecondStep}
-                            message={translate('reportCardLostOrDamaged.addressError')}
+                            message="reportCardLostOrDamaged.addressError"
                             isLoading={formData?.isLoading}
                             buttonText={isDamaged ? translate('reportCardLostOrDamaged.shipNewCardButton') : translate('reportCardLostOrDamaged.deactivateCardButton')}
                         />
                     </>
                 ) : (
                     <>
-                        <View>
+                        <View style={styles.mh5}>
                             <Text style={[styles.textHeadline, styles.mr5]}>{translate('reportCardLostOrDamaged.reasonTitle')}</Text>
                             <SingleOptionSelector
                                 options={OPTIONS}
@@ -203,7 +202,7 @@ function ReportCardLostPage({
                         <FormAlertWithSubmitButton
                             isAlertVisible={shouldShowReasonError}
                             onSubmit={handleSubmitFirstStep}
-                            message={translate('reportCardLostOrDamaged.reasonError')}
+                            message="reportCardLostOrDamaged.reasonError"
                             buttonText={translate('reportCardLostOrDamaged.nextButtonLabel')}
                         />
                     </>

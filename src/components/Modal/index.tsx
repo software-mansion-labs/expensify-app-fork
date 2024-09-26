@@ -1,13 +1,12 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import StatusBar from '@libs/StatusBar';
 import CONST from '@src/CONST';
 import BaseModal from './BaseModal';
 import type BaseModalProps from './types';
-import type {WindowState} from './types';
 
-function Modal({fullscreen = true, onModalHide = () => {}, type, onModalShow = () => {}, children, shouldHandleNavigationBack, ...rest}: BaseModalProps) {
+function Modal({fullscreen = true, onModalHide = () => {}, type, onModalShow = () => {}, children, ...rest}: BaseModalProps) {
     const theme = useTheme();
     const StyleUtils = useStyleUtils();
     const [previousStatusBarColor, setPreviousStatusBarColor] = useState<string>();
@@ -23,14 +22,7 @@ function Modal({fullscreen = true, onModalHide = () => {}, type, onModalShow = (
     const hideModal = () => {
         setStatusBarColor(previousStatusBarColor);
         onModalHide();
-        if ((window.history.state as WindowState)?.shouldGoBack) {
-            window.history.back();
-        }
     };
-
-    const handlePopStateRef = useRef(() => {
-        rest.onClose();
-    });
 
     const showModal = () => {
         const statusBarColor = StatusBar.getBackgroundColor() ?? theme.appBG;
@@ -43,19 +35,8 @@ function Modal({fullscreen = true, onModalHide = () => {}, type, onModalShow = (
             setStatusBarColor(isFullScreenModal ? theme.appBG : StyleUtils.getThemeBackgroundColor(statusBarColor));
         }
 
-        if (shouldHandleNavigationBack) {
-            window.history.pushState({shouldGoBack: true}, '', null);
-            window.addEventListener('popstate', handlePopStateRef.current);
-        }
         onModalShow?.();
     };
-
-    useEffect(
-        () => () => {
-            window.removeEventListener('popstate', handlePopStateRef.current);
-        },
-        [],
-    );
 
     return (
         <BaseModal

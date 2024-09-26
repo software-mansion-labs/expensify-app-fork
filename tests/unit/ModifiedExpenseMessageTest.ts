@@ -9,7 +9,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the amount is changed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     amount: 1800,
                     currency: CONST.CURRENCY.USD,
@@ -30,7 +30,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the amount is changed while the original value was partial', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     amount: 1800,
                     currency: CONST.CURRENCY.USD,
@@ -51,7 +51,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the amount is changed and the description is removed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     amount: 1800,
                     currency: CONST.CURRENCY.USD,
@@ -74,7 +74,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the amount is changed, the description is removed, and category is set', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     amount: 1800,
                     currency: CONST.CURRENCY.USD,
@@ -99,7 +99,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the amount and merchant are changed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     merchant: 'Taco Bell',
                     oldMerchant: 'Big Belly',
@@ -122,7 +122,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the amount and merchant are changed, the description is removed, and category is set', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     merchant: 'Taco Bell',
                     oldMerchant: 'Big Belly',
@@ -150,7 +150,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the amount, comment and merchant are changed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     merchant: 'Taco Bell',
                     oldMerchant: 'Big Belly',
@@ -176,7 +176,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the merchant is removed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     merchant: '',
                     oldMerchant: 'Big Belly',
@@ -195,7 +195,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the merchant is changed while the previous merchant was partial', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     merchant: 'KFC',
                     oldMerchant: CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT,
@@ -214,7 +214,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the merchant and the description are removed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     merchant: '',
                     oldMerchant: 'Big Belly',
@@ -235,7 +235,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the merchant, the category and the description are removed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     merchant: '',
                     oldMerchant: 'Big Belly',
@@ -258,7 +258,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the merchant is set', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     oldMerchant: '',
                     merchant: 'Big Belly',
@@ -277,7 +277,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the merchant and the description are set', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     oldMerchant: '',
                     merchant: 'Big Belly',
@@ -298,7 +298,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the merchant, the category and the description are set', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     oldMerchant: '',
                     merchant: 'Big Belly',
@@ -321,7 +321,7 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the created date is changed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     created: '2023-12-27',
                     oldCreated: '2023-12-26',
@@ -340,59 +340,17 @@ describe('ModifiedExpenseMessage', () => {
         describe('when the created date was not changed', () => {
             const reportAction = {
                 ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
+                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE,
                 originalMessage: {
                     created: '2023-12-27',
                 },
             };
 
             it('returns the correct text message', () => {
-                const expectedResult = 'changed the expense';
+                const expectedResult = 'changed the request';
 
                 const result = ModifiedExpenseMessage.getForReportAction(report.reportID, reportAction);
 
-                expect(result).toEqual(expectedResult);
-            });
-        });
-
-        describe('when the distance is changed', () => {
-            const reportAction = {
-                ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
-                originalMessage: {
-                    oldMerchant: '1.00 mi @ $0.67 / mi',
-                    merchant: '10.00 mi @ $0.67 / mi',
-                    oldAmount: 67,
-                    amount: 670,
-                    oldCurrency: CONST.CURRENCY.USD,
-                    currency: CONST.CURRENCY.USD,
-                },
-            };
-
-            it('then the message says the distance is changed and shows the new and old merchant and amount', () => {
-                const expectedResult = `changed the distance to ${reportAction.originalMessage.merchant} (previously ${reportAction.originalMessage.oldMerchant}), which updated the amount to $6.70 (previously $0.67)`;
-                const result = ModifiedExpenseMessage.getForReportAction(report.reportID, reportAction);
-                expect(result).toEqual(expectedResult);
-            });
-        });
-
-        describe('when the distance rate is changed', () => {
-            const reportAction = {
-                ...createRandomReportAction(1),
-                actionName: CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE,
-                originalMessage: {
-                    oldMerchant: '56.36 mi @ $0.67 / mi',
-                    merchant: '56.36 mi @ $0.99 / mi',
-                    oldAmount: 3776,
-                    amount: 5580,
-                    oldCurrency: CONST.CURRENCY.USD,
-                    currency: CONST.CURRENCY.USD,
-                },
-            };
-
-            it('then the message says the rate is changed and shows the new and old merchant and amount', () => {
-                const expectedResult = `changed the rate to ${reportAction.originalMessage.merchant} (previously ${reportAction.originalMessage.oldMerchant}), which updated the amount to $55.80 (previously $37.76)`;
-                const result = ModifiedExpenseMessage.getForReportAction(report.reportID, reportAction);
                 expect(result).toEqual(expectedResult);
             });
         });

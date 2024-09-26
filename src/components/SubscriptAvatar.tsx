@@ -27,8 +27,8 @@ type SubIcon = {
 };
 
 type SubscriptAvatarProps = {
-    /** Avatar icon */
-    mainAvatar: IconType;
+    /** Avatar URL or icon */
+    mainAvatar?: IconType;
 
     /** Subscript avatar URL or icon */
     secondaryAvatar?: IconType;
@@ -82,7 +82,6 @@ function SubscriptAvatar({
                         source={mainAvatar?.source}
                         size={size}
                         name={mainAvatar?.name}
-                        avatarID={mainAvatar?.id}
                         type={mainAvatar?.type}
                         fallbackIcon={mainAvatar?.fallbackIcon}
                     />
@@ -109,7 +108,6 @@ function SubscriptAvatar({
                             size={isSmall ? CONST.AVATAR_SIZE.SMALL_SUBSCRIPT : CONST.AVATAR_SIZE.SUBSCRIPT}
                             fill={secondaryAvatar.fill}
                             name={secondaryAvatar.name}
-                            avatarID={secondaryAvatar.id}
                             type={secondaryAvatar.type}
                             fallbackIcon={secondaryAvatar.fallbackIcon}
                         />

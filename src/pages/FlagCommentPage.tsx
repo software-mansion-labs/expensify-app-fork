@@ -1,6 +1,6 @@
 import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback} from 'react';
-import {View} from 'react-native';
+import {ScrollView, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {SvgProps} from 'react-native-svg';
 import type {ValueOf} from 'type-fest';
@@ -9,7 +9,6 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
 import MenuItem from '@components/MenuItem';
 import ScreenWrapper from '@components/ScreenWrapper';
-import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -19,6 +18,7 @@ import * as ReportUtils from '@libs/ReportUtils';
 import * as Report from '@userActions/Report';
 import * as Session from '@userActions/Session';
 import CONST from '@src/CONST';
+import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 import withReportAndReportActionOrNotFound from './home/report/withReportAndReportActionOrNotFound';
@@ -31,7 +31,7 @@ type FlagCommentPageWithOnyxProps = {
 
 type FlagCommentPageNavigationProps = StackScreenProps<FlagCommentNavigatorParamList, typeof SCREENS.FLAG_COMMENT_ROOT>;
 
-type FlagCommentPageProps = WithReportAndReportActionOrNotFoundProps & FlagCommentPageNavigationProps & FlagCommentPageWithOnyxProps;
+type FlagCommentPageProps = FlagCommentPageNavigationProps & WithReportAndReportActionOrNotFoundProps & FlagCommentPageWithOnyxProps;
 
 type Severity = ValueOf<typeof CONST.MODERATION>;
 
@@ -53,7 +53,7 @@ function getReportID(route: FlagCommentPageNavigationProps['route']) {
     return route.params.reportID.toString();
 }
 
-function FlagCommentPage({parentReportAction, route, report, parentReport, reportActions}: FlagCommentPageProps) {
+function FlagCommentPage({parentReportAction, route, report, reportActions}: FlagCommentPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
@@ -129,11 +129,11 @@ function FlagCommentPage({parentReportAction, route, report, parentReport, repor
 
         // Handle threads if needed
         if (ReportUtils.isChatThread(report) && reportAction?.reportActionID === parentReportAction?.reportActionID) {
-            reportID = parentReport?.reportID;
+            reportID = ReportUtils.getParentReport(report)?.reportID;
         }
 
         if (reportAction && ReportUtils.canFlagReportAction(reportAction, reportID)) {
-            Report.flagComment(reportID ?? '-1', reportAction, severity);
+            Report.flagComment(reportID ?? '', reportAction, severity);
         }
 
         Navigation.dismissModal();
@@ -159,7 +159,14 @@ function FlagCommentPage({parentReportAction, route, report, parentReport, repor
         >
             {({safeAreaPaddingBottomStyle}) => (
                 <FullPageNotFoundView shouldShow={!ReportUtils.shouldShowFlagComment(getActionToFlag(), report)}>
-                    <HeaderWithBackButton title={translate('reportActionContextMenu.flagAsOffensive')} />
+                    <HeaderWithBackButton
+                        title={translate('reportActionContextMenu.flagAsOffensive')}
+                        shouldNavigateToTopMostReport
+                        onBackButtonPress={() => {
+                            Navigation.goBack();
+                            Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(report?.reportID ?? ''));
+                        }}
+                    />
                     <ScrollView
                         contentContainerStyle={safeAreaPaddingBottomStyle}
                         style={styles.settingsPageBackground}

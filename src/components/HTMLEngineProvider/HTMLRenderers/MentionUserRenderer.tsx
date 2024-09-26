@@ -1,4 +1,3 @@
-import {Str} from 'expensify-common';
 import cloneDeep from 'lodash/cloneDeep';
 import isEmpty from 'lodash/isEmpty';
 import React from 'react';
@@ -35,12 +34,12 @@ function MentionUserRenderer({style, tnode, TDefaultRenderer, currentUserPersona
     const htmlAttributeAccountID = tnode.attributes.accountid;
 
     let accountID: number;
-    let mentionDisplayText: string;
+    let displayNameOrLogin: string;
     let navigationRoute: Route;
 
     const tnodeClone = cloneDeep(tnode);
 
-    const getShortMentionIfFound = (displayText: string, userAccountID: string, userLogin = '') => {
+    const getMentionDisplayText = (displayText: string, userAccountID: string, userLogin = '') => {
         // If the userAccountID does not exist, this is an email-based mention so the displayText must be an email.
         // If the userAccountID exists but userLogin is different from displayText, this means the displayText is either user display name, Hidden, or phone number, in which case we should return it as is.
         if (userAccountID && userLogin !== displayText) {
@@ -59,18 +58,17 @@ function MentionUserRenderer({style, tnode, TDefaultRenderer, currentUserPersona
     if (!isEmpty(htmlAttribAccountID)) {
         const user = personalDetails[htmlAttribAccountID];
         accountID = parseInt(htmlAttribAccountID, 10);
-        mentionDisplayText = LocalePhoneNumber.formatPhoneNumber(user?.login ?? '') || PersonalDetailsUtils.getDisplayNameOrDefault(user);
-        mentionDisplayText = getShortMentionIfFound(mentionDisplayText, htmlAttributeAccountID, user?.login ?? '');
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        displayNameOrLogin = PersonalDetailsUtils.getDisplayNameOrDefault(user, LocalePhoneNumber.formatPhoneNumber(user?.login ?? ''));
         navigationRoute = ROUTES.PROFILE.getRoute(htmlAttribAccountID);
     } else if ('data' in tnodeClone && !isEmptyObject(tnodeClone.data)) {
         // We need to remove the LTR unicode and leading @ from data as it is not part of the login
-        mentionDisplayText = tnodeClone.data.replace(CONST.UNICODE.LTR, '').slice(1);
+        displayNameOrLogin = tnodeClone.data.replace(CONST.UNICODE.LTR, '').slice(1);
         // We need to replace tnode.data here because we will pass it to TNodeChildrenRenderer below
-        asMutable(tnodeClone).data = tnodeClone.data.replace(mentionDisplayText, Str.removeSMSDomain(getShortMentionIfFound(mentionDisplayText, htmlAttributeAccountID)));
+        asMutable(tnodeClone).data = tnodeClone.data.replace(displayNameOrLogin, getMentionDisplayText(displayNameOrLogin, htmlAttributeAccountID));
 
-        accountID = PersonalDetailsUtils.getAccountIDsByLogins([mentionDisplayText])?.[0];
-        navigationRoute = ROUTES.PROFILE.getRoute(accountID, undefined, mentionDisplayText);
-        mentionDisplayText = Str.removeSMSDomain(mentionDisplayText);
+        accountID = PersonalDetailsUtils.getAccountIDsByLogins([displayNameOrLogin])?.[0];
+        navigationRoute = ROUTES.DETAILS.getRoute(displayNameOrLogin);
     } else {
         // If neither an account ID or email is provided, don't render anything
         return null;
@@ -83,15 +81,10 @@ function MentionUserRenderer({style, tnode, TDefaultRenderer, currentUserPersona
 
     return (
         <ShowContextMenuContext.Consumer>
-            {({anchor, report, reportNameValuePairs, action, checkIfContextMenuActive, isDisabled}) => (
+            {({anchor, report, action, checkIfContextMenuActive}) => (
                 <Text
                     suppressHighlighting
-                    onLongPress={(event) => {
-                        if (isDisabled) {
-                            return;
-                        }
-                        showContextMenuForReport(event, anchor, report?.reportID ?? '-1', action, checkIfContextMenuActive, ReportUtils.isArchivedRoom(report, reportNameValuePairs));
-                    }}
+                    onLongPress={(event) => showContextMenuForReport(event, anchor, report?.reportID ?? '', action, checkIfContextMenuActive, ReportUtils.isArchivedRoom(report))}
                     onPress={(event) => {
                         event.preventDefault();
                         Navigation.navigate(navigationRoute);
@@ -102,7 +95,7 @@ function MentionUserRenderer({style, tnode, TDefaultRenderer, currentUserPersona
                     <UserDetailsTooltip
                         accountID={accountID}
                         fallbackUserDetails={{
-                            displayName: mentionDisplayText,
+                            displayName: displayNameOrLogin,
                         }}
                     >
                         <Text
@@ -110,10 +103,10 @@ function MentionUserRenderer({style, tnode, TDefaultRenderer, currentUserPersona
                             {...defaultRendererProps}
                             style={[styles.link, styleWithoutColor, StyleUtils.getMentionStyle(isOurMention), {color: StyleUtils.getMentionTextColor(isOurMention)}]}
                             role={CONST.ROLE.LINK}
-                            testID="mention-user"
+                            testID="span"
                             href={`/${navigationRoute}`}
                         >
-                            {htmlAttribAccountID ? `@${mentionDisplayText}` : <TNodeChildrenRenderer tnode={tnodeClone} />}
+                            {htmlAttribAccountID ? `@${displayNameOrLogin}` : <TNodeChildrenRenderer tnode={tnodeClone} />}
                         </Text>
                     </UserDetailsTooltip>
                 </Text>

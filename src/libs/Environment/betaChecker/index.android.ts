@@ -4,18 +4,13 @@ import * as AppUpdate from '@libs/actions/AppUpdate';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import pkg from '../../../../package.json';
-import type {IsBetaBuild} from './types';
-
-type GithubReleaseJSON = {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    tag_name: string | semver.SemVer;
-};
+import type IsBetaBuild from './types';
 
 let isLastSavedBeta = false;
 Onyx.connect({
     key: ONYXKEYS.IS_BETA,
     callback: (value) => {
-        isLastSavedBeta = !!value;
+        isLastSavedBeta = Boolean(value);
     },
 });
 
@@ -26,7 +21,7 @@ function isBetaBuild(): IsBetaBuild {
     return new Promise((resolve) => {
         fetch(CONST.GITHUB_RELEASE_URL)
             .then((res) => res.json())
-            .then((json: GithubReleaseJSON) => {
+            .then((json) => {
                 const productionVersion = json.tag_name;
                 if (!productionVersion) {
                     AppUpdate.setIsAppInBeta(false);

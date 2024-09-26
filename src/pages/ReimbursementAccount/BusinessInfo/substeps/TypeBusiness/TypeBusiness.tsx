@@ -35,8 +35,8 @@ function TypeBusiness({reimbursementAccount, onNext, isEditing}: TypeBusinessPro
 
     const handleSubmit = useReimbursementAccountStepFormSubmit({
         fieldIds: STEP_FIELDS,
+        isEditing,
         onNext,
-        shouldSaveDraft: isEditing,
     });
 
     return (
@@ -46,7 +46,7 @@ function TypeBusiness({reimbursementAccount, onNext, isEditing}: TypeBusinessPro
             validate={validate}
             onSubmit={handleSubmit}
             style={[styles.flexGrow1]}
-            submitButtonStyles={[styles.ph5, styles.mb0]}
+            submitButtonStyles={[styles.p5, styles.mb0]}
         >
             <Text style={[styles.textHeadlineLineHeightXXL, styles.ph5]}>{translate('businessInfoStep.selectYourCompanysType')}</Text>
             <InputWrapper

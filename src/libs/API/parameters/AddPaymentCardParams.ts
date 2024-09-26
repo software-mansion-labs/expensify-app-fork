@@ -8,7 +8,7 @@ type AddPaymentCardParams = {
     cardCVV: string;
     addressName: string;
     addressZip: string;
-    currency: ValueOf<typeof CONST.PAYMENT_CARD_CURRENCY>;
+    currency: ValueOf<typeof CONST.CURRENCY>;
     isP2PDebitCard: boolean;
 };
 export default AddPaymentCardParams;

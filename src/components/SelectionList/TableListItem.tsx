@@ -1,31 +1,24 @@
-import React, {useCallback} from 'react';
+import React from 'react';
 import {View} from 'react-native';
-import Icon from '@components/Icon';
-import * as Expensicons from '@components/Icon/Expensicons';
 import MultipleAvatars from '@components/MultipleAvatars';
-import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import TextWithTooltip from '@components/TextWithTooltip';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import CONST from '@src/CONST';
 import BaseListItem from './BaseListItem';
-import type {ListItem, TableListItemProps} from './types';
+import type {TableListItemProps} from './types';
 
-function TableListItem<TItem extends ListItem>({
+function TableListItem({
     item,
     isFocused,
     showTooltip,
     isDisabled,
     canSelectMultiple,
     onSelectRow,
-    onCheckboxPress,
     onDismissError,
+    shouldPreventDefaultFocusOnSelectRow,
     rightHandSideComponent,
-    onFocus,
-    onLongPressRow,
-    shouldSyncFocus,
-}: TableListItemProps<TItem>) {
+}: TableListItemProps) {
     const styles = useThemeStyles();
     const theme = useTheme();
     const StyleUtils = useStyleUtils();
@@ -33,58 +26,26 @@ function TableListItem<TItem extends ListItem>({
     const focusedBackgroundColor = styles.sidebarLinkActive.backgroundColor;
     const hoveredBackgroundColor = styles.sidebarLinkHover?.backgroundColor ? styles.sidebarLinkHover.backgroundColor : theme.sidebar;
 
-    const handleCheckboxPress = useCallback(() => {
-        if (onCheckboxPress) {
-            onCheckboxPress(item);
-        } else {
-            onSelectRow(item);
-        }
-    }, [item, onCheckboxPress, onSelectRow]);
-
     return (
         <BaseListItem
             item={item}
-            pressableStyle={[[styles.selectionListPressableItemWrapper, item.isSelected && styles.activeComponentBG, isFocused && styles.sidebarLinkActive, item.cursorStyle]]}
-            wrapperStyle={[styles.flexRow, styles.flex1, styles.justifyContentBetween, styles.userSelectNone, styles.alignItemsCenter]}
-            containerStyle={styles.mb3}
+            pressableStyle={[[styles.selectionListPressableItemWrapper, isFocused && styles.activeComponentBG]]}
+            wrapperStyle={[styles.flexRow, styles.flex1, styles.justifyContentBetween, styles.userSelectNone, styles.alignItemsCenter, isFocused && styles.sidebarLinkActive]}
+            selectMultipleStyle={[StyleUtils.getCheckboxContainerStyle(20), StyleUtils.getMultiselectListStyles(!!item.isSelected, !!item.isDisabled)]}
             isFocused={isFocused}
             isDisabled={isDisabled}
             showTooltip={showTooltip}
             canSelectMultiple={canSelectMultiple}
-            onLongPressRow={onLongPressRow}
             onSelectRow={onSelectRow}
             onDismissError={onDismissError}
+            shouldPreventDefaultFocusOnSelectRow={shouldPreventDefaultFocusOnSelectRow}
             rightHandSideComponent={rightHandSideComponent}
             errors={item.errors}
             pendingAction={item.pendingAction}
             keyForList={item.keyForList}
-            onFocus={onFocus}
-            shouldSyncFocus={shouldSyncFocus}
-            hoverStyle={item.isSelected && styles.activeComponentBG}
         >
             {(hovered) => (
                 <>
-                    {canSelectMultiple && (
-                        <PressableWithFeedback
-                            accessibilityLabel={item.text ?? ''}
-                            role={CONST.ROLE.BUTTON}
-                            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-                            disabled={isDisabled || item.isDisabledCheckbox}
-                            onPress={handleCheckboxPress}
-                            style={[styles.cursorUnset, StyleUtils.getCheckboxPressableStyle(), item.isDisabledCheckbox && styles.cursorDisabled, styles.mr3, item.cursorStyle]}
-                        >
-                            <View style={[StyleUtils.getCheckboxContainerStyle(20), StyleUtils.getMultiselectListStyles(!!item.isSelected, !!item.isDisabled), item.cursorStyle]}>
-                                {item.isSelected && (
-                                    <Icon
-                                        src={Expensicons.Checkmark}
-                                        fill={theme.textLight}
-                                        height={14}
-                                        width={14}
-                                    />
-                                )}
-                            </View>
-                        </PressableWithFeedback>
-                    )}
                     {!!item.icons && (
                         <MultipleAvatars
                             icons={item.icons ?? []}
@@ -99,8 +60,8 @@ function TableListItem<TItem extends ListItem>({
                     <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch]}>
                         <TextWithTooltip
                             shouldShowTooltip={showTooltip}
-                            text={item.text ?? ''}
-                            style={[
+                            text={item.text}
+                            textStyles={[
                                 styles.optionDisplayName,
                                 isFocused ? styles.sidebarLinkActiveText : styles.sidebarLinkText,
                                 styles.sidebarLinkTextBold,
@@ -113,7 +74,7 @@ function TableListItem<TItem extends ListItem>({
                             <TextWithTooltip
                                 shouldShowTooltip={showTooltip}
                                 text={item.alternateText}
-                                style={[styles.textLabelSupporting, styles.lh16, styles.pre]}
+                                textStyles={[styles.textLabelSupporting, styles.lh16, styles.pre]}
                             />
                         )}
                     </View>

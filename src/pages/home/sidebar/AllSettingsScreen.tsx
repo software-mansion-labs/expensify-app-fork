@@ -1,38 +1,37 @@
 import React, {useMemo} from 'react';
+import {ScrollView} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
-import {useOnyx, withOnyx} from 'react-native-onyx';
+import {withOnyx} from 'react-native-onyx';
 import Breadcrumbs from '@components/Breadcrumbs';
 import * as Expensicons from '@components/Icon/Expensicons';
 import MenuItemList from '@components/MenuItemList';
 import ScreenWrapper from '@components/ScreenWrapper';
-import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import Navigation from '@libs/Navigation/Navigation';
+import shouldShowSubscriptionsMenu from '@libs/shouldShowSubscriptionsMenu';
 import {hasGlobalWorkspaceSettingsRBR} from '@libs/WorkspacesSettingsUtils';
 import * as Link from '@userActions/Link';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {Policy} from '@src/types/onyx';
+import type {Policy, PolicyMembers} from '@src/types/onyx';
 
 type AllSettingsScreenOnyxProps = {
     policies: OnyxCollection<Policy>;
+    policyMembers: OnyxCollection<PolicyMembers>;
 };
 
 type AllSettingsScreenProps = AllSettingsScreenOnyxProps;
 
-function AllSettingsScreen({policies}: AllSettingsScreenProps) {
+function AllSettingsScreen({policies, policyMembers}: AllSettingsScreenProps) {
     const styles = useThemeStyles();
     const waitForNavigate = useWaitForNavigation();
     const {translate} = useLocalize();
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
-    const [allConnectionSyncProgresses] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_CONNECTION_SYNC_PROGRESS}`);
-
-    const [privateSubscription] = useOnyx(ONYXKEYS.NVP_PRIVATE_SUBSCRIPTION);
+    const {isSmallScreenWidth} = useWindowDimensions();
 
     /**
      * Retuns a list of menu items data for All workspaces settings
@@ -48,13 +47,13 @@ function AllSettingsScreen({policies}: AllSettingsScreenProps) {
                         Navigation.navigate(ROUTES.SETTINGS_WORKSPACES);
                     })();
                 },
-                focused: !shouldUseNarrowLayout,
-                brickRoadIndicator: hasGlobalWorkspaceSettingsRBR(policies, allConnectionSyncProgresses) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
+                focused: !isSmallScreenWidth,
+                brickRoadIndicator: hasGlobalWorkspaceSettingsRBR(policies, policyMembers) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
             },
-            ...(privateSubscription
+            ...(shouldShowSubscriptionsMenu
                 ? [
                       {
-                          translationKey: 'allSettingsScreen.subscription',
+                          translationKey: 'allSettingsScreen.subscriptions',
                           icon: Expensicons.MoneyBag,
                           action: () => {
                               Link.openOldDotLink(CONST.OLDDOT_URLS.ADMIN_POLICIES_URL);
@@ -66,8 +65,8 @@ function AllSettingsScreen({policies}: AllSettingsScreenProps) {
                   ]
                 : []),
             {
-                translationKey: 'allSettingsScreen.domains',
-                icon: Expensicons.Globe,
+                translationKey: 'allSettingsScreen.cardsAndDomains',
+                icon: Expensicons.CardsAndDomains,
                 action: () => {
                     Link.openOldDotLink(CONST.OLDDOT_URLS.ADMIN_DOMAINS_URL);
                 },
@@ -84,13 +83,14 @@ function AllSettingsScreen({policies}: AllSettingsScreenProps) {
             iconRight: item.iconRight,
             onPress: item.action,
             shouldShowRightIcon: item.shouldShowRightIcon,
-            shouldBlockSelection: !!item.link,
+            shouldBlockSelection: Boolean(item.link),
             wrapperStyle: styles.sectionMenuItem,
             isPaneMenu: true,
             focused: item.focused,
+            hoverAndPressStyle: styles.hoveredComponentBG,
             brickRoadIndicator: item.brickRoadIndicator,
         }));
-    }, [shouldUseNarrowLayout, policies, privateSubscription, waitForNavigate, translate, styles, allConnectionSyncProgresses]);
+    }, [isSmallScreenWidth, styles.hoveredComponentBG, styles.sectionMenuItem, translate, waitForNavigate, policies, policyMembers]);
 
     return (
         <ScreenWrapper
@@ -125,5 +125,8 @@ AllSettingsScreen.displayName = 'AllSettingsScreen';
 export default withOnyx<AllSettingsScreenProps, AllSettingsScreenOnyxProps>({
     policies: {
         key: ONYXKEYS.COLLECTION.POLICY,
+    },
+    policyMembers: {
+        key: ONYXKEYS.COLLECTION.POLICY_MEMBERS,
     },
 })(AllSettingsScreen);

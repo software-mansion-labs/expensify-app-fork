@@ -4,7 +4,6 @@ import type {CustomRendererProps, TPhrasing, TText} from 'react-native-render-ht
 import * as HTMLEngineUtils from '@components/HTMLEngineProvider/htmlEngineUtils';
 import InlineCodeBlock from '@components/InlineCodeBlock';
 import useStyleUtils from '@hooks/useStyleUtils';
-import FontUtils from '@styles/utils/FontUtils';
 
 type CodeRendererProps = CustomRendererProps<TText | TPhrasing> & {
     /** Key of the element */
@@ -18,7 +17,10 @@ function CodeRenderer({TDefaultRenderer, key, style, ...defaultRendererProps}: C
     const {boxModelStyle, otherStyle: textStyle} = splitBoxModelStyle(style ?? {});
 
     /** Get the default fontFamily variant */
-    const font = FontUtils.fontFamily.platform.MONOSPACE.fontFamily;
+    const font = StyleUtils.getFontFamilyMonospace({
+        fontStyle: undefined,
+        fontWeight: undefined,
+    });
 
     // Determine the font size for the code based on whether it's inside an H1 element.
     const isInsideH1 = HTMLEngineUtils.isChildOfH1(defaultRendererProps.tnode);
