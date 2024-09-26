@@ -22,7 +22,7 @@ If you don't already have one, go to *[new.expensify.com](https://new.expensify.
 There are three paid policies; Individual, Collect, and Control, but for your needs we recommend the Control Policy for the following reasons:
 
 - You can cap spend on certain expense types, and set compliance controls so Expensify’s built-in Concierge Audit Tracking can detect violations on your behalf
-- As a growing business with VC-funding, the Control plan will scale with you as your team grows and you start to introduce more sophisticated [approval workflows](https://help.expensify.com/articles/expensify-classic/manage-employees-and-report-approvals/Approval-Workflows) (see Step 8 below). 
+- As a growing business with VC-funding, the Control plan will scale with you as your team grows and you start to introduce more sophisticated [approval workflows](https://help.expensify.com/articles/expensify-classic/copilots-and-delegates/Approval-Workflows) (see Step 8 below). 
 
 To create your Control Policy:
 
@@ -155,11 +155,12 @@ The Expensify Card has many benefits for your company. Two in particular are wor
 ### If you don't have a corporate card, use the Expensify Card
 Expensify provides a corporate card with the following features:
 
-- Up to 2% cash back (Applies to USD purchases only)
-- [SmartLimits](https://community.expensify.com/discussion/4851/deep-dive-what-are-unapproved-expense-limits#latest)
-- Unlimited Virtual Cards - single-purpose cards with a fixed or monthly limit for specific company purchases
-- A stable, unbreakable connection (third-party bank feeds can run into connectivity issues)
-
+- Finish your expenses in a swipe, we'll take care of everything else
+- Get cash back on every US purchase and up to 50% off your monthly Expensify bill
+- Stay in control with realtime alerts, spend limits, and auto-reconciliation
+- Don't worry about credit checks, annual fees, or personal guarantees
+- Create unlimited virtual cards with fixed or monthly limits for specific purchases
+  
 The Expensify Card is recommended as the most efficient way to manage your company's spending.
 
 Here’s how to enable it:

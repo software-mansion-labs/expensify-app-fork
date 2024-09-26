@@ -27,13 +27,12 @@ import EXIT_SURVEY_REASON_INPUT_IDS from '@src/types/form/ExitSurveyReasonForm';
 import ExitSurveyOffline from './ExitSurveyOffline';
 
 type ExitSurveyConfirmPageOnyxProps = {
-    exitReason?: ExitReason;
-    isLoading: OnyxEntry<boolean>;
+    exitReason?: ExitReason | null;
 };
 
 type ExitSurveyConfirmPageProps = ExitSurveyConfirmPageOnyxProps & StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.EXIT_SURVEY.CONFIRM>;
 
-function ExitSurveyConfirmPage({exitReason, isLoading, route, navigation}: ExitSurveyConfirmPageProps) {
+function ExitSurveyConfirmPage({exitReason, route, navigation}: ExitSurveyConfirmPageProps) {
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
     const styles = useThemeStyles();
@@ -62,7 +61,7 @@ function ExitSurveyConfirmPage({exitReason, isLoading, route, navigation}: ExitS
         <ScreenWrapper testID={ExitSurveyConfirmPage.displayName}>
             <HeaderWithBackButton
                 title={translate('exitSurvey.header')}
-                onBackButtonPress={() => Navigation.goBack(backTo)}
+                onBackButtonPress={() => Navigation.goBack()}
             />
             <View style={[styles.flex1, styles.justifyContentCenter, styles.alignItemsCenter, styles.mh5]}>
                 {isOffline && <ExitSurveyOffline />}
@@ -81,12 +80,13 @@ function ExitSurveyConfirmPage({exitReason, isLoading, route, navigation}: ExitS
             <FixedFooter>
                 <Button
                     success
+                    large
                     text={translate('exitSurvey.goToExpensifyClassic')}
                     onPress={() => {
                         ExitSurvey.switchToOldDot();
+                        Navigation.dismissModal();
                         Link.openOldDotLink(CONST.OLDDOT_URLS.INBOX);
                     }}
-                    isLoading={isLoading ?? false}
                     isDisabled={isOffline}
                 />
             </FixedFooter>
@@ -99,9 +99,6 @@ ExitSurveyConfirmPage.displayName = 'ExitSurveyConfirmPage';
 export default withOnyx<ExitSurveyConfirmPageProps, ExitSurveyConfirmPageOnyxProps>({
     exitReason: {
         key: ONYXKEYS.FORMS.EXIT_SURVEY_REASON_FORM,
-        selector: (value: OnyxEntry<ExitSurveyReasonForm>) => value?.[EXIT_SURVEY_REASON_INPUT_IDS.REASON],
-    },
-    isLoading: {
-        key: ONYXKEYS.IS_SWITCHING_TO_OLD_DOT,
+        selector: (value: OnyxEntry<ExitSurveyReasonForm>) => value?.[EXIT_SURVEY_REASON_INPUT_IDS.REASON] ?? null,
     },
 })(ExitSurveyConfirmPage);

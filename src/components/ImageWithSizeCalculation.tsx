@@ -5,9 +5,12 @@ import {View} from 'react-native';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Log from '@libs/Log';
+import CONST from '@src/CONST';
+import AttachmentOfflineIndicator from './AttachmentOfflineIndicator';
 import FullscreenLoadingIndicator from './FullscreenLoadingIndicator';
 import Image from './Image';
 import RESIZE_MODES from './Image/resizeModes';
+import type {ImageObjectPosition} from './Image/types';
 
 type OnMeasure = (args: {width: number; height: number}) => void;
 
@@ -22,6 +25,9 @@ type ImageWithSizeCalculationProps = {
     /** Url for image to display */
     url: string | ImageSourcePropType;
 
+    /** alt text for the image */
+    altText?: string;
+
     /** Any additional styles to apply */
     style?: StyleProp<ViewStyle>;
 
@@ -32,6 +38,9 @@ type ImageWithSizeCalculationProps = {
 
     /** Whether the image requires an authToken */
     isAuthTokenRequired: boolean;
+
+    /** The object position of image */
+    objectPosition?: ImageObjectPosition;
 };
 
 /**
@@ -40,14 +49,14 @@ type ImageWithSizeCalculationProps = {
  * performing some calculation on a network image after fetching dimensions so
  * it can be appropriately resized.
  */
-function ImageWithSizeCalculation({url, style, onMeasure, onLoadFailure, isAuthTokenRequired}: ImageWithSizeCalculationProps) {
+function ImageWithSizeCalculation({url, altText, style, onMeasure, onLoadFailure, isAuthTokenRequired, objectPosition = CONST.IMAGE_OBJECT_POSITION.INITIAL}: ImageWithSizeCalculationProps) {
     const styles = useThemeStyles();
     const isLoadedRef = useRef<boolean | null>(null);
     const [isImageCached, setIsImageCached] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const {isOffline} = useNetwork();
 
-    const source = useMemo(() => ({uri: url}), [url]);
+    const source = useMemo(() => (typeof url === 'string' ? {uri: url} : url), [url]);
 
     const onError = () => {
         Log.hmmm('Unable to fetch image to calculate size', {url});
@@ -91,6 +100,7 @@ function ImageWithSizeCalculation({url, style, onMeasure, onLoadFailure, isAuthT
             <Image
                 style={[styles.w100, styles.h100]}
                 source={source}
+                aria-label={altText}
                 isAuthTokenRequired={isAuthTokenRequired}
                 resizeMode={RESIZE_MODES.cover}
                 onLoadStart={() => {
@@ -101,8 +111,10 @@ function ImageWithSizeCalculation({url, style, onMeasure, onLoadFailure, isAuthT
                 }}
                 onError={onError}
                 onLoad={imageLoadedSuccessfully}
+                objectPosition={objectPosition}
             />
-            {isLoading && !isImageCached && <FullscreenLoadingIndicator style={[styles.opacity1, styles.bgTransparent]} />}
+            {isLoading && !isImageCached && !isOffline && <FullscreenLoadingIndicator style={[styles.opacity1, styles.bgTransparent]} />}
+            {isLoading && !isImageCached && <AttachmentOfflineIndicator isPreview />}
         </View>
     );
 }

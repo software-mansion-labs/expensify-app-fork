@@ -1,8 +1,14 @@
+import {Str} from 'expensify-common';
 import {Alert, Linking, Platform} from 'react-native';
+import ImageSize from 'react-native-image-size';
+import type {FileObject} from '@components/AttachmentModal';
 import DateUtils from '@libs/DateUtils';
 import * as Localize from '@libs/Localize';
 import Log from '@libs/Log';
+import saveLastRoute from '@libs/saveLastRoute';
 import CONST from '@src/CONST';
+import getImageManipulator from './getImageManipulator';
+import getImageResolution from './getImageResolution';
 import type {ReadFileAsync, SplitExtensionFromFileName} from './types';
 
 /**
@@ -12,7 +18,9 @@ import type {ReadFileAsync, SplitExtensionFromFileName} from './types';
 function showSuccessAlert(successMessage?: string) {
     Alert.alert(
         Localize.translateLocal('fileDownload.success.title'),
-        successMessage ?? Localize.translateLocal('fileDownload.success.message'),
+        // successMessage can be an empty string and we want to default to `Localize.translateLocal('fileDownload.success.message')`
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        successMessage || Localize.translateLocal('fileDownload.success.message'),
         [
             {
                 text: Localize.translateLocal('common.ok'),
@@ -69,6 +77,9 @@ function showCameraPermissionsAlert() {
                 text: Localize.translateLocal('common.settings'),
                 onPress: () => {
                     Linking.openSettings();
+                    // In the case of ios, the App reloads when we update camera permission from settings
+                    // we are saving last route so we can navigate to it after app reload
+                    saveLastRoute();
                 },
             },
         ],
@@ -159,7 +170,7 @@ function appendTimeToFileName(fileName: string): string {
  * @param path - the blob url of the locally uploaded file
  * @param fileName - name of the file to read
  */
-const readFileAsync: ReadFileAsync = (path, fileName, onSuccess, onFailure = () => {}) =>
+const readFileAsync: ReadFileAsync = (path, fileName, onSuccess, onFailure = () => {}, fileType = '') =>
     new Promise((resolve) => {
         if (!path) {
             resolve();
@@ -176,7 +187,9 @@ const readFileAsync: ReadFileAsync = (path, fileName, onSuccess, onFailure = () 
                 }
                 res.blob()
                     .then((blob) => {
-                        const file = new File([blob], cleanFileName(fileName), {type: blob.type});
+                        // On Android devices, fetching blob for a file with name containing spaces fails to retrieve the type of file.
+                        // In this case, let us fallback on fileType provided by the caller of this function.
+                        const file = new File([blob], cleanFileName(fileName), {type: blob.type || fileType});
                         file.source = path;
                         // For some reason, the File object on iOS does not have a uri property
                         // so images aren't uploaded correctly to the backend
@@ -236,6 +249,80 @@ function base64ToFile(base64: string, filename: string): File {
     return file;
 }
 
+function validateImageForCorruption(file: FileObject): Promise<{width: number; height: number} | void> {
+    if (!Str.isImage(file.name ?? '') || !file.uri) {
+        return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+        ImageSize.getSize(file.uri ?? '')
+            .then(() => resolve())
+            .catch(() => reject(new Error('Error reading file: The file is corrupted')));
+    });
+}
+
+/** Verify file format based on the magic bytes of the file - some formats might be identified by multiple signatures */
+function verifyFileFormat({fileUri, formatSignatures}: {fileUri: string; formatSignatures: readonly string[]}) {
+    return fetch(fileUri)
+        .then((file) => file.arrayBuffer())
+        .then((arrayBuffer) => {
+            const uintArray = new Uint8Array(arrayBuffer, 4, 12);
+
+            const hexString = Array.from(uintArray)
+                .map((b) => b.toString(16).padStart(2, '0'))
+                .join('');
+
+            return hexString;
+        })
+        .then((hexSignature) => {
+            return formatSignatures.some((signature) => hexSignature.startsWith(signature));
+        });
+}
+
+function isLocalFile(receiptUri?: string | number): boolean {
+    if (!receiptUri) {
+        return false;
+    }
+    return typeof receiptUri === 'number' || receiptUri?.startsWith('blob:') || receiptUri?.startsWith('file:') || receiptUri?.startsWith('/');
+}
+
+function getFileResolution(targetFile: FileObject | undefined): Promise<{width: number; height: number} | null> {
+    if (!targetFile) {
+        return Promise.resolve(null);
+    }
+
+    // If the file already has width and height, return them directly
+    if ('width' in targetFile && 'height' in targetFile) {
+        return Promise.resolve({width: targetFile.width ?? 0, height: targetFile.height ?? 0});
+    }
+
+    // Otherwise, attempt to get the image resolution
+    return getImageResolution(targetFile)
+        .then(({width, height}) => ({width, height}))
+        .catch((error: Error) => {
+            Log.hmmm('Failed to get image resolution:', error);
+            return null;
+        });
+}
+
+function isHighResolutionImage(resolution: {width: number; height: number} | null): boolean {
+    return resolution !== null && (resolution.width > CONST.IMAGE_HIGH_RESOLUTION_THRESHOLD || resolution.height > CONST.IMAGE_HIGH_RESOLUTION_THRESHOLD);
+}
+
+const getImageDimensionsAfterResize = (file: FileObject) =>
+    ImageSize.getSize(file.uri ?? '').then(({width, height}) => {
+        const scaleFactor = CONST.MAX_IMAGE_DIMENSION / (width < height ? height : width);
+        const newWidth = Math.max(1, width * scaleFactor);
+        const newHeight = Math.max(1, height * scaleFactor);
+
+        return {width: newWidth, height: newHeight};
+    });
+
+const resizeImageIfNeeded = (file: FileObject) => {
+    if (!file || !Str.isImage(file.name ?? '') || (file?.size ?? 0) <= CONST.API_ATTACHMENT_VALIDATIONS.MAX_SIZE) {
+        return Promise.resolve(file);
+    }
+    return getImageDimensionsAfterResize(file).then(({width, height}) => getImageManipulator({fileUri: file.uri ?? '', width, height, fileName: file.name ?? '', type: file.type}));
+};
 export {
     showGeneralErrorAlert,
     showSuccessAlert,
@@ -248,4 +335,12 @@ export {
     appendTimeToFileName,
     readFileAsync,
     base64ToFile,
+    isLocalFile,
+    validateImageForCorruption,
+    isImage,
+    getFileResolution,
+    isHighResolutionImage,
+    verifyFileFormat,
+    getImageDimensionsAfterResize,
+    resizeImageIfNeeded,
 };

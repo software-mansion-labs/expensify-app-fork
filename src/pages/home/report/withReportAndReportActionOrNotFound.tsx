@@ -2,14 +2,12 @@
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {ComponentType, ForwardedRef, RefAttributes} from 'react';
 import React, {useCallback, useEffect} from 'react';
-import type {OnyxCollection, OnyxEntry, WithOnyxInstanceState} from 'react-native-onyx';
+import type {OnyxCollection, OnyxEntry, WithOnyxState} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import FullscreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import withWindowDimensions from '@components/withWindowDimensions';
-import type {WindowDimensionsProps} from '@components/withWindowDimensions/types';
-import compose from '@libs/compose';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import getComponentDisplayName from '@libs/getComponentDisplayName';
-import type {FlagCommentNavigatorParamList} from '@libs/Navigation/types';
+import type {FlagCommentNavigatorParamList, SplitDetailsNavigatorParamList} from '@libs/Navigation/types';
 import * as ReportUtils from '@libs/ReportUtils';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import * as Report from '@userActions/Report';
@@ -22,6 +20,9 @@ type OnyxProps = {
     /** The report currently being looked at */
     report: OnyxEntry<OnyxTypes.Report>;
 
+    /** The parent report if the current report is a thread and it has a parent */
+    parentReport: OnyxEntry<OnyxTypes.Report>;
+
     /** The report metadata */
     reportMetadata: OnyxEntry<OnyxTypes.ReportMetadata>;
 
@@ -29,7 +30,7 @@ type OnyxProps = {
     reportActions: OnyxEntry<OnyxTypes.ReportActions>;
 
     /** The report's parentReportAction */
-    parentReportAction: OnyxEntry<OnyxTypes.ReportAction>;
+    parentReportAction: NonNullable<OnyxEntry<OnyxTypes.ReportAction>> | null;
 
     /** The policies which the user has access to */
     policies: OnyxCollection<OnyxTypes.Policy>;
@@ -41,18 +42,19 @@ type OnyxProps = {
     isLoadingReportData: OnyxEntry<boolean>;
 };
 
-type WithReportAndReportActionOrNotFoundProps = OnyxProps & WindowDimensionsProps & StackScreenProps<FlagCommentNavigatorParamList, typeof SCREENS.FLAG_COMMENT_ROOT>;
+type WithReportAndReportActionOrNotFoundProps = OnyxProps &
+    StackScreenProps<FlagCommentNavigatorParamList & SplitDetailsNavigatorParamList, typeof SCREENS.FLAG_COMMENT_ROOT | typeof SCREENS.SPLIT_DETAILS.ROOT>;
 
 export default function <TProps extends WithReportAndReportActionOrNotFoundProps, TRef>(
     WrappedComponent: ComponentType<TProps & RefAttributes<TRef>>,
-): ComponentType<TProps & RefAttributes<TRef>> {
+): ComponentType<Omit<TProps & RefAttributes<TRef>, keyof OnyxProps>> {
     function WithReportOrNotFound(props: TProps, ref: ForwardedRef<TRef>) {
         const getReportAction = useCallback(() => {
-            let reportAction: OnyxTypes.ReportAction | Record<string, never> | undefined = props.reportActions?.[`${props.route.params.reportActionID}`];
+            let reportAction: OnyxEntry<OnyxTypes.ReportAction> = props.reportActions?.[`${props.route.params.reportActionID}`];
 
             // Handle threads if needed
             if (!reportAction?.reportActionID) {
-                reportAction = props?.parentReportAction ?? {};
+                reportAction = props?.parentReportAction ?? undefined;
             }
 
             return reportAction;
@@ -60,15 +62,17 @@ export default function <TProps extends WithReportAndReportActionOrNotFoundProps
 
         const reportAction = getReportAction();
 
+        const {shouldUseNarrowLayout} = useResponsiveLayout();
+
         // For small screen, we don't call openReport API when we go to a sub report page by deeplink
         // So we need to call openReport here for small screen
         useEffect(() => {
-            if (!props.isSmallScreenWidth || (!isEmptyObject(props.report) && !isEmptyObject(reportAction))) {
+            if (!shouldUseNarrowLayout || (!isEmptyObject(props.report) && !isEmptyObject(reportAction))) {
                 return;
             }
             Report.openReport(props.route.params.reportID);
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [props.isSmallScreenWidth, props.route.params.reportID]);
+            // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+        }, [shouldUseNarrowLayout, props.route.params.reportID]);
 
         // Perform all the loading checks
         const isLoadingReport = props.isLoadingReportData && !props.report?.reportID;
@@ -98,41 +102,41 @@ export default function <TProps extends WithReportAndReportActionOrNotFoundProps
 
     WithReportOrNotFound.displayName = `withReportOrNotFound(${getComponentDisplayName(WrappedComponent)})`;
 
-    return compose(
-        withOnyx<TProps & RefAttributes<TRef>, OnyxProps>({
-            report: {
-                key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT}${route.params.reportID}`,
+    return withOnyx<TProps & RefAttributes<TRef>, OnyxProps>({
+        report: {
+            key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT}${route.params.reportID}`,
+        },
+        parentReport: {
+            key: ({report}) => `${ONYXKEYS.COLLECTION.REPORT}${report ? report.parentReportID : '-1'}`,
+        },
+        reportMetadata: {
+            key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT_METADATA}${route.params.reportID}`,
+        },
+        isLoadingReportData: {
+            key: ONYXKEYS.IS_LOADING_REPORT_DATA,
+        },
+        betas: {
+            key: ONYXKEYS.BETAS,
+        },
+        policies: {
+            key: ONYXKEYS.COLLECTION.POLICY,
+        },
+        reportActions: {
+            key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${route.params.reportID}`,
+            canEvict: false,
+        },
+        parentReportAction: {
+            key: ({report}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report ? report.parentReportID : 0}`,
+            selector: (parentReportActions: OnyxEntry<OnyxTypes.ReportActions>, props?: WithOnyxState<OnyxProps>): NonNullable<OnyxEntry<OnyxTypes.ReportAction>> | null => {
+                const parentReportActionID = props?.report?.parentReportActionID;
+                if (!parentReportActionID) {
+                    return null;
+                }
+                return parentReportActions?.[parentReportActionID] ?? null;
             },
-            reportMetadata: {
-                key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT_METADATA}${route.params.reportID}`,
-            },
-            isLoadingReportData: {
-                key: ONYXKEYS.IS_LOADING_REPORT_DATA,
-            },
-            betas: {
-                key: ONYXKEYS.BETAS,
-            },
-            policies: {
-                key: ONYXKEYS.COLLECTION.POLICY,
-            },
-            reportActions: {
-                key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${route.params.reportID}`,
-                canEvict: false,
-            },
-            parentReportAction: {
-                key: ({report}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report ? report.parentReportID : 0}`,
-                selector: (parentReportActions: OnyxEntry<OnyxTypes.ReportActions>, props: WithOnyxInstanceState<OnyxProps>): OnyxEntry<OnyxTypes.ReportAction> => {
-                    const parentReportActionID = props?.report?.parentReportActionID;
-                    if (!parentReportActionID) {
-                        return null;
-                    }
-                    return parentReportActions?.[parentReportActionID] ?? null;
-                },
-                canEvict: false,
-            },
-        }),
-        withWindowDimensions,
-    )(React.forwardRef(WithReportOrNotFound));
+            canEvict: false,
+        },
+    })(React.forwardRef(WithReportOrNotFound));
 }
 
 export type {WithReportAndReportActionOrNotFoundProps};

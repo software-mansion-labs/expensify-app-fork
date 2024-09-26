@@ -15,7 +15,7 @@ type AnimatedStepProps = ChildrenProps & {
     direction: AnimationDirection;
 
     /** Callback to fire when the animation ends */
-    onAnimationEnd: () => void;
+    onAnimationEnd?: () => void;
 };
 
 function AnimatedStep({onAnimationEnd, direction = CONST.ANIMATION_DIRECTION.IN, style, children}: AnimatedStepProps) {
@@ -37,6 +37,7 @@ function AnimatedStep({onAnimationEnd, direction = CONST.ANIMATION_DIRECTION.IN,
             }}
             duration={CONST.ANIMATED_TRANSITION}
             animation={animationStyle}
+            // eslint-disable-next-line react-compiler/react-compiler
             useNativeDriver={useNativeDriver}
             style={style}
         >

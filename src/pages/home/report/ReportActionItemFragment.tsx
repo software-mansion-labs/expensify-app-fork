@@ -1,6 +1,5 @@
 import React, {memo} from 'react';
 import type {StyleProp, TextStyle} from 'react-native';
-import type {AvatarProps} from '@components/Avatar';
 import RenderHTML from '@components/RenderHTML';
 import Text from '@components/Text';
 import UserDetailsTooltip from '@components/UserDetailsTooltip';
@@ -13,6 +12,7 @@ import CONST from '@src/CONST';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
 import type {DecisionName, OriginalMessageSource} from '@src/types/onyx/OriginalMessage';
 import type {Message} from '@src/types/onyx/ReportAction';
+import type ReportActionName from '@src/types/onyx/ReportActionName';
 import AttachmentCommentFragment from './comment/AttachmentCommentFragment';
 import TextCommentFragment from './comment/TextCommentFragment';
 
@@ -21,7 +21,7 @@ type ReportActionItemFragmentProps = {
     accountID: number;
 
     /** The message fragment needing to be displayed */
-    fragment: Message;
+    fragment: Message | undefined;
 
     /** Message(text) of an IOU report action */
     iouMessage?: string;
@@ -39,7 +39,7 @@ type ReportActionItemFragmentProps = {
     delegateAccountID?: number;
 
     /** icon */
-    actorIcon?: AvatarProps;
+    actorIcon?: OnyxCommon.Icon;
 
     /** Whether the comment is a thread parent message/the first message in a thread */
     isThreadParentMessage?: boolean;
@@ -59,11 +59,25 @@ type ReportActionItemFragmentProps = {
     /** The pending action for the report action */
     pendingAction?: OnyxCommon.PendingAction;
 
+    /** The report action name */
+    actionName?: ReportActionName;
+
     moderationDecision?: DecisionName;
 };
 
+const MUTED_ACTIONS = [
+    ...Object.values(CONST.REPORT.ACTIONS.TYPE.POLICY_CHANGE_LOG),
+    CONST.REPORT.ACTIONS.TYPE.IOU,
+    CONST.REPORT.ACTIONS.TYPE.APPROVED,
+    CONST.REPORT.ACTIONS.TYPE.FORWARDED,
+    CONST.REPORT.ACTIONS.TYPE.UNAPPROVED,
+    CONST.REPORT.ACTIONS.TYPE.MOVED,
+    CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_JOIN_REQUEST,
+] as ReportActionName[];
+
 function ReportActionItemFragment({
     pendingAction,
+    actionName,
     fragment,
     accountID,
     iouMessage = '',
@@ -71,7 +85,7 @@ function ReportActionItemFragment({
     source = '',
     style = [],
     delegateAccountID = 0,
-    actorIcon = {},
+    actorIcon,
     isThreadParentMessage = false,
     isApprovedOrSubmittedReportAction = false,
     isHoldReportAction = false,
@@ -83,7 +97,7 @@ function ReportActionItemFragment({
     const {isOffline} = useNetwork();
     const {translate} = useLocalize();
 
-    switch (fragment.type) {
+    switch (fragment?.type) {
         case 'COMMENT': {
             const isPendingDelete = pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE;
 
@@ -91,7 +105,7 @@ function ReportActionItemFragment({
             // While offline we display the previous message with a strikethrough style. Once online we want to
             // immediately display "[Deleted message]" while the delete action is pending.
 
-            if ((!isOffline && isThreadParentMessage && isPendingDelete) || fragment.isDeletedParentAction) {
+            if ((!isOffline && isThreadParentMessage && isPendingDelete) || fragment?.isDeletedParentAction) {
                 return <RenderHTML html={`<comment>${translate('parentReportAction.deletedMessage')}</comment>`} />;
             }
 
@@ -103,8 +117,9 @@ function ReportActionItemFragment({
                 return (
                     <AttachmentCommentFragment
                         source={source}
-                        html={fragment.html ?? ''}
+                        html={fragment?.html ?? ''}
                         addExtraMargin={!displayAsGroup}
+                        styleAsDeleted={!!(isOffline && isPendingDelete)}
                     />
                 );
             }
@@ -114,6 +129,7 @@ function ReportActionItemFragment({
                     source={source}
                     fragment={fragment}
                     styleAsDeleted={!!(isOffline && isPendingDelete)}
+                    styleAsMuted={!!actionName && MUTED_ACTIONS.includes(actionName)}
                     iouMessage={iouMessage}
                     displayAsGroup={displayAsGroup}
                     style={style}
@@ -127,7 +143,7 @@ function ReportActionItemFragment({
                         numberOfLines={isSingleLine ? 1 : undefined}
                         style={[styles.chatItemMessage, styles.colorMuted]}
                     >
-                        {isFragmentContainingDisplayName ? convertToLTR(fragment.text) : fragment.text}
+                        {isFragmentContainingDisplayName ? convertToLTR(fragment?.text ?? '') : fragment?.text}
                     </Text>
                 );
             }
@@ -138,7 +154,7 @@ function ReportActionItemFragment({
                         numberOfLines={isSingleLine ? 1 : undefined}
                         style={[styles.chatItemMessage]}
                     >
-                        {isFragmentContainingDisplayName ? convertToLTR(fragment.text) : fragment.text}
+                        {isFragmentContainingDisplayName ? convertToLTR(fragment?.text ?? '') : fragment?.text}
                     </Text>
                 );
             }
@@ -153,7 +169,7 @@ function ReportActionItemFragment({
                         numberOfLines={isSingleLine ? 1 : undefined}
                         style={[styles.chatItemMessageHeaderSender, isSingleLine ? styles.pre : styles.preWrap]}
                     >
-                        {fragment.text}
+                        {fragment?.text}
                     </Text>
                 </UserDetailsTooltip>
             );

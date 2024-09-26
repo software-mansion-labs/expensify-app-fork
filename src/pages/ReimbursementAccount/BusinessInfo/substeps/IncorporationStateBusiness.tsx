@@ -4,7 +4,7 @@ import {withOnyx} from 'react-native-onyx';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
-import StatePicker from '@components/StatePicker';
+import StateSelector from '@components/StateSelector';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useReimbursementAccountStepFormSubmit from '@hooks/useReimbursementAccountStepFormSubmit';
@@ -35,8 +35,8 @@ function IncorporationStateBusiness({reimbursementAccount, onNext, isEditing}: I
 
     const handleSubmit = useReimbursementAccountStepFormSubmit({
         fieldIds: STEP_FIELDS,
-        isEditing,
         onNext,
+        shouldSaveDraft: isEditing,
     });
 
     return (
@@ -46,11 +46,11 @@ function IncorporationStateBusiness({reimbursementAccount, onNext, isEditing}: I
             validate={validate}
             onSubmit={handleSubmit}
             style={[styles.mh0, styles.flexGrow1]}
-            submitButtonStyles={[styles.p5, styles.mb0]}
+            submitButtonStyles={[styles.ph5, styles.mb0]}
         >
             <Text style={[styles.textHeadlineLineHeightXXL, styles.ph5]}>{translate('businessInfoStep.pleaseSelectTheStateYourCompanyWasIncorporatedIn')}</Text>
             <InputWrapper
-                InputComponent={StatePicker}
+                InputComponent={StateSelector}
                 inputID={COMPANY_INCORPORATION_STATE_KEY}
                 label={translate('businessInfoStep.incorporationState')}
                 defaultValue={defaultCompanyIncorporationState}
