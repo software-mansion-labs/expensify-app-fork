@@ -1,6 +1,6 @@
 import type {ParamListBase, StackActionHelpers, StackNavigationState} from '@react-navigation/native';
 import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
-import {NativeStackView} from '@react-navigation/native-stack';
+import {NativeStackNavigationEventMap, NativeStackNavigationOptions, NativeStackView} from '@react-navigation/native-stack';
 import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
 import {StackView} from '@react-navigation/stack';
 import React, {useMemo} from 'react';
@@ -93,7 +93,7 @@ function SplitStackNavigator<ParamList extends ParamListBase>(props: SplitStackN
 SplitStackNavigator.displayName = 'SplitStackNavigator';
 
 export default function <ParamList extends ParamListBase>() {
-    return createNavigatorFactory<StackNavigationState<ParamList>, StackNavigationOptions, StackNavigationEventMap, React.ComponentType<SplitStackNavigatorProps<ParamList>>>(
+    return createNavigatorFactory<StackNavigationState<ParamList>, NativeStackNavigationOptions, NativeStackNavigationEventMap, React.ComponentType<SplitStackNavigatorProps<ParamList>>>(
         SplitStackNavigator,
     )<ParamList>();
 }

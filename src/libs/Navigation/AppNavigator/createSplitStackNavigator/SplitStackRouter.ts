@@ -1,10 +1,11 @@
-import type {CommonActions, ParamListBase, PartialState, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
+import type {CommonActions, ParamListBase, PartialState, Router, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
 import {StackRouter} from '@react-navigation/native';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import getIsSmallScreenWidth from '@libs/getIsSmallScreenWidth';
+import {PlatformStackNavigationState} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {SplitStackNavigatorRouterOptions} from './types';
 
-type StackState = StackNavigationState<ParamListBase> | PartialState<StackNavigationState<ParamListBase>>;
+type StackState = PlatformStackNavigationState<ParamListBase> | PartialState<PlatformStackNavigationState<ParamListBase>>;
 
 const isAtLeastOneInState = (state: StackState, screenName: string): boolean => state.routes.some((route) => route.name === screenName);
 
@@ -56,7 +57,7 @@ function isPushingSidebarOnCentralPane(state: StackState, action: CommonActions.
 }
 
 function SplitStackRouter(options: SplitStackNavigatorRouterOptions) {
-    const stackRouter = StackRouter(options);
+    const stackRouter = StackRouter(options) as Router<PlatformStackNavigationState<ParamListBase>, any>;
     const {isSmallScreenWidth} = useResponsiveLayout();
 
     return {

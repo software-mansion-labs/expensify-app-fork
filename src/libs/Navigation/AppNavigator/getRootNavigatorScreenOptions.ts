@@ -36,7 +36,7 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (isSmallScr
             ...commonScreenOptions,
             cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator(isSmallScreenWidth, false, false, props),
             presentation: getModalPresentationStyle(),
-
+            animation: 'fade',
             // We want pop in RHP since there are some flows that would work weird otherwise
             animationTypeForReplace: 'pop',
             cardStyle: {
@@ -111,6 +111,7 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (isSmallScr
             title: CONFIG.SITE_TITLE,
             ...commonScreenOptions,
             animationEnabled: isSmallScreenWidth,
+            animation: 'none',
             cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator(isSmallScreenWidth, true, false, props),
 
             cardStyle: {

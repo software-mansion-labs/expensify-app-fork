@@ -47,6 +47,7 @@ function ReportsSplitNavigator() {
             <Stack.Navigator
                 sidebarScreen={SCREENS.HOME}
                 defaultCentralScreen={SCREENS.REPORT}
+                screenOptions={{animation: 'none', animationDuration: 0}}
             >
                 <Stack.Screen
                     name={SCREENS.HOME}
