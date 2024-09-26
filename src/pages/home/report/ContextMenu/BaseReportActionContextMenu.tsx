@@ -5,24 +5,29 @@ import {InteractionManager, View} from 'react-native';
 // eslint-disable-next-line no-restricted-imports
 import type {GestureResponderEvent, Text as RNText, View as ViewType} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
-import {withOnyx} from 'react-native-onyx';
+import {useOnyx, withOnyx} from 'react-native-onyx';
 import type {ContextMenuItemHandle} from '@components/ContextMenuItem';
 import ContextMenuItem from '@components/ContextMenuItem';
+import FocusTrapForModal from '@components/FocusTrap/FocusTrapForModal';
 import useArrowKeyFocusManager from '@hooks/useArrowKeyFocusManager';
+import useEnvironment from '@hooks/useEnvironment';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
+import usePaginatedReportActions from '@hooks/usePaginatedReportActions';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
-import useWindowDimensions from '@hooks/useWindowDimensions';
+import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
+import shouldEnableContextMenuEnterShortcut from '@libs/shouldEnableContextMenuEnterShortcut';
 import * as Session from '@userActions/Session';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Beta, ReportAction, ReportActions} from '@src/types/onyx';
+import type {Beta, ReportAction, ReportActions, Transaction} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type {ContextMenuAction, ContextMenuActionPayload} from './ContextMenuActions';
 import ContextMenuActions from './ContextMenuActions';
-import type {ContextMenuType} from './ReportActionContextMenu';
+import type {ContextMenuAnchor, ContextMenuType} from './ReportActionContextMenu';
 import {hideContextMenu, showContextMenu} from './ReportActionContextMenu';
 
 type BaseReportActionContextMenuOnyxProps = {
@@ -31,6 +36,9 @@ type BaseReportActionContextMenuOnyxProps = {
 
     /** All of the actions of the report */
     reportActions: OnyxEntry<ReportActions>;
+
+    /** The transaction linked to the report action this context menu is attached to. */
+    transaction: OnyxEntry<Transaction>;
 };
 
 type BaseReportActionContextMenuProps = BaseReportActionContextMenuOnyxProps & {
@@ -64,7 +72,7 @@ type BaseReportActionContextMenuProps = BaseReportActionContextMenuOnyxProps & {
     type?: ContextMenuType;
 
     /** Target node which is the target of ContentMenu */
-    anchor?: MutableRefObject<HTMLElement | null>;
+    anchor?: MutableRefObject<ContextMenuAnchor>;
 
     /** Flag to check if the chat participant is Chronos */
     isChronosReport?: boolean;
@@ -86,6 +94,9 @@ type BaseReportActionContextMenuProps = BaseReportActionContextMenuOnyxProps & {
 
     /** List of disabled actions */
     disabledActions?: ContextMenuAction[];
+
+    /** Function to update emoji picker state */
+    setIsEmojiPickerActive?: (state: boolean) => void;
 };
 
 type MenuItemRefs = Record<string, ContextMenuItemHandle | null>;
@@ -103,32 +114,93 @@ function BaseReportActionContextMenu({
     selection = '',
     draftMessage = '',
     reportActionID,
+    transaction,
     reportID,
     betas,
     reportActions,
     checkIfContextMenuActive,
     disabledActions = [],
+    setIsEmojiPickerActive,
 }: BaseReportActionContextMenuProps) {
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     const menuItemRefs = useRef<MenuItemRefs>({});
     const [shouldKeepOpen, setShouldKeepOpen] = useState(false);
-    const wrapperStyle = StyleUtils.getReportActionContextMenuStyles(isMini, isSmallScreenWidth);
+    const wrapperStyle = StyleUtils.getReportActionContextMenuStyles(isMini, shouldUseNarrowLayout);
     const {isOffline} = useNetwork();
+    const {isProduction} = useEnvironment();
+    const threedotRef = useRef<View>(null);
 
     const reportAction: OnyxEntry<ReportAction> = useMemo(() => {
-        if (isEmptyObject(reportActions) || reportActionID === '0') {
-            return null;
+        if (isEmptyObject(reportActions) || reportActionID === '0' || reportActionID === '-1') {
+            return;
         }
-        return reportActions[reportActionID] ?? null;
+        return reportActions[reportActionID];
     }, [reportActions, reportActionID]);
+
+    const sourceID = ReportUtils.getSourceIDFromReportAction(reportAction);
+
+    const [download] = useOnyx(`${ONYXKEYS.COLLECTION.DOWNLOAD}${sourceID}`);
+
+    const childReport = ReportUtils.getReport(reportAction?.childReportID ?? '-1');
+    const parentReportAction = ReportActionsUtils.getReportAction(childReport?.parentReportID ?? '', childReport?.parentReportActionID ?? '');
+    const {reportActions: paginatedReportActions} = usePaginatedReportActions(childReport?.reportID ?? '-1');
+
+    const transactionThreadReportID = useMemo(
+        () => ReportActionsUtils.getOneTransactionThreadReportID(childReport?.reportID ?? '-1', paginatedReportActions ?? [], isOffline),
+        [childReport?.reportID, paginatedReportActions, isOffline],
+    );
+
+    const [transactionThreadReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${transactionThreadReportID}`);
+
+    const isMoneyRequestReport = useMemo(() => ReportUtils.isMoneyRequestReport(childReport), [childReport]);
+    const isInvoiceReport = useMemo(() => ReportUtils.isInvoiceReport(childReport), [childReport]);
+
+    const requestParentReportAction = useMemo(() => {
+        if (isMoneyRequestReport || isInvoiceReport) {
+            if (!paginatedReportActions || !transactionThreadReport?.parentReportActionID) {
+                return undefined;
+            }
+            return paginatedReportActions.find((action) => action.reportActionID === transactionThreadReport.parentReportActionID);
+        }
+        return parentReportAction;
+    }, [parentReportAction, isMoneyRequestReport, isInvoiceReport, paginatedReportActions, transactionThreadReport?.parentReportActionID]);
+
+    const moneyRequestAction = transactionThreadReportID ? requestParentReportAction : parentReportAction;
+
+    const [parentReportNameValuePairs] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${childReport?.parentReportID ?? '-1'}`);
+    const parentReport = ReportUtils.getReport(childReport?.parentReportID ?? '-1');
+
+    const isMoneyRequest = useMemo(() => ReportUtils.isMoneyRequest(childReport), [childReport]);
+    const isTrackExpenseReport = ReportUtils.isTrackExpenseReport(childReport);
+    const isSingleTransactionView = isMoneyRequest || isTrackExpenseReport;
+    const isMoneyRequestOrReport = isMoneyRequestReport || isInvoiceReport || isSingleTransactionView;
+
+    const areHoldRequirementsMet = isMoneyRequestOrReport && !ReportUtils.isArchivedRoom(transactionThreadReportID ? childReport : parentReport, parentReportNameValuePairs);
+
+    const originalReportID = useMemo(() => ReportUtils.getOriginalReportID(reportID, reportAction), [reportID, reportAction]);
 
     const shouldEnableArrowNavigation = !isMini && (isVisible || shouldKeepOpen);
     let filteredContextMenuActions = ContextMenuActions.filter(
         (contextAction) =>
             !disabledActions.includes(contextAction) &&
-            contextAction.shouldShow(type, reportAction, isArchivedRoom, betas, anchor, isChronosReport, reportID, isPinnedChat, isUnreadChat, !!isOffline, isMini),
+            contextAction.shouldShow(
+                type,
+                reportAction,
+                isArchivedRoom,
+                betas,
+                anchor,
+                isChronosReport,
+                reportID,
+                isPinnedChat,
+                isUnreadChat,
+                !!isOffline,
+                isMini,
+                isProduction,
+                moneyRequestAction,
+                areHoldRequirementsMet,
+            ),
     );
 
     if (isMini) {
@@ -186,81 +258,102 @@ function BaseReportActionContextMenu({
             menuItemRefs.current[focusedIndex]?.triggerPressAndUpdateSuccess?.();
             setFocusedIndex(-1);
         },
-        {isActive: shouldEnableArrowNavigation},
+        {isActive: shouldEnableArrowNavigation && shouldEnableContextMenuEnterShortcut, shouldPreventDefault: false},
     );
 
-    const openOverflowMenu = (event: GestureResponderEvent | MouseEvent) => {
-        const originalReportID = ReportUtils.getOriginalReportID(reportID, reportAction);
-        const originalReport = ReportUtils.getReport(originalReportID);
+    const openOverflowMenu = (event: GestureResponderEvent | MouseEvent, anchorRef: MutableRefObject<View | null>) => {
         showContextMenu(
             CONST.CONTEXT_MENU_TYPES.REPORT_ACTION,
             event,
             selection,
-            anchor?.current as ViewType | RNText | null,
+            anchorRef?.current as ViewType | RNText | null,
             reportID,
             reportAction?.reportActionID,
             originalReportID,
             draftMessage,
             checkIfContextMenuActive,
-            checkIfContextMenuActive,
-            ReportUtils.isArchivedRoom(originalReport),
-            ReportUtils.chatIncludesChronos(originalReport),
+            () => {
+                checkIfContextMenuActive?.();
+                setShouldKeepOpen(false);
+            },
+            ReportUtils.isArchivedRoomWithID(originalReportID),
+            ReportUtils.chatIncludesChronosWithID(originalReportID),
             undefined,
             undefined,
             filteredContextMenuActions,
+            true,
+            () => {},
             true,
         );
     };
 
     return (
         (isVisible || shouldKeepOpen) && (
-            <View
-                ref={contentRef}
-                style={wrapperStyle}
-            >
-                {filteredContextMenuActions.map((contextAction, index) => {
-                    const closePopup = !isMini;
-                    const payload: ContextMenuActionPayload = {
-                        reportAction: reportAction as ReportAction,
-                        reportID,
-                        draftMessage,
-                        selection,
-                        close: () => setShouldKeepOpen(false),
-                        openContextMenu: () => setShouldKeepOpen(true),
-                        interceptAnonymousUser,
-                        openOverflowMenu,
-                    };
+            <FocusTrapForModal active={!isMini}>
+                <View
+                    ref={contentRef}
+                    style={wrapperStyle}
+                >
+                    {filteredContextMenuActions.map((contextAction, index) => {
+                        const closePopup = !isMini;
+                        const payload: ContextMenuActionPayload = {
+                            // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
+                            reportAction: (reportAction ?? null) as ReportAction,
+                            reportID,
+                            draftMessage,
+                            selection,
+                            close: () => setShouldKeepOpen(false),
+                            openContextMenu: () => setShouldKeepOpen(true),
+                            interceptAnonymousUser,
+                            openOverflowMenu,
+                            setIsEmojiPickerActive,
+                            moneyRequestAction,
+                        };
 
-                    if ('renderContent' in contextAction) {
-                        return contextAction.renderContent(closePopup, payload);
-                    }
+                        if ('renderContent' in contextAction) {
+                            return contextAction.renderContent(closePopup, payload);
+                        }
 
-                    const {textTranslateKey} = contextAction;
-                    const isKeyInActionUpdateKeys =
-                        textTranslateKey === 'reportActionContextMenu.editAction' ||
-                        textTranslateKey === 'reportActionContextMenu.deleteAction' ||
-                        textTranslateKey === 'reportActionContextMenu.deleteConfirmation';
-                    const text = textTranslateKey && (isKeyInActionUpdateKeys ? translate(textTranslateKey, {action: reportAction}) : translate(textTranslateKey));
+                        const {textTranslateKey} = contextAction;
+                        const isKeyInActionUpdateKeys =
+                            textTranslateKey === 'reportActionContextMenu.editAction' ||
+                            textTranslateKey === 'reportActionContextMenu.deleteAction' ||
+                            textTranslateKey === 'reportActionContextMenu.deleteConfirmation';
+                        const text = textTranslateKey && (isKeyInActionUpdateKeys ? translate(textTranslateKey, {action: reportAction}) : translate(textTranslateKey));
+                        const transactionPayload = textTranslateKey === 'reportActionContextMenu.copyToClipboard' && transaction && {transaction};
+                        const isMenuAction = textTranslateKey === 'reportActionContextMenu.menu';
 
-                    return (
-                        <ContextMenuItem
-                            ref={(ref) => {
-                                menuItemRefs.current[index] = ref;
-                            }}
-                            icon={contextAction.icon}
-                            text={text ?? ''}
-                            successIcon={contextAction.successIcon}
-                            successText={contextAction.successTextTranslateKey ? translate(contextAction.successTextTranslateKey) : undefined}
-                            isMini={isMini}
-                            key={contextAction.textTranslateKey}
-                            onPress={(event) => interceptAnonymousUser(() => contextAction.onPress?.(closePopup, {...payload, event}), contextAction.isAnonymousAction)}
-                            description={contextAction.getDescription?.(selection) ?? ''}
-                            isAnonymousAction={contextAction.isAnonymousAction}
-                            isFocused={focusedIndex === index}
-                        />
-                    );
-                })}
-            </View>
+                        return (
+                            <ContextMenuItem
+                                ref={(ref) => {
+                                    menuItemRefs.current[index] = ref;
+                                }}
+                                buttonRef={isMenuAction ? threedotRef : {current: null}}
+                                icon={contextAction.icon}
+                                text={text ?? ''}
+                                successIcon={contextAction.successIcon}
+                                successText={contextAction.successTextTranslateKey ? translate(contextAction.successTextTranslateKey) : undefined}
+                                isMini={isMini}
+                                key={contextAction.textTranslateKey}
+                                onPress={(event) =>
+                                    interceptAnonymousUser(
+                                        () => contextAction.onPress?.(closePopup, {...payload, ...transactionPayload, event, ...(isMenuAction ? {anchorRef: threedotRef} : {})}),
+                                        contextAction.isAnonymousAction,
+                                    )
+                                }
+                                description={contextAction.getDescription?.(selection) ?? ''}
+                                isAnonymousAction={contextAction.isAnonymousAction}
+                                isFocused={focusedIndex === index}
+                                shouldPreventDefaultFocusOnPress={contextAction.shouldPreventDefaultFocusOnPress}
+                                onFocus={() => setFocusedIndex(index)}
+                                onBlur={() => (index === filteredContextMenuActions.length - 1 || index === 1) && setFocusedIndex(-1)}
+                                disabled={contextAction?.shouldDisable ? contextAction?.shouldDisable(download) : false}
+                                shouldShowLoadingSpinnerIcon={contextAction?.shouldDisable ? contextAction?.shouldDisable(download) : false}
+                            />
+                        );
+                    })}
+                </View>
+            </FocusTrapForModal>
         )
     );
 }
@@ -272,6 +365,12 @@ export default withOnyx<BaseReportActionContextMenuProps, BaseReportActionContex
     reportActions: {
         key: ({originalReportID}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${originalReportID}`,
         canEvict: false,
+    },
+    transaction: {
+        key: ({reportActions, reportActionID}) => {
+            const reportAction = reportActions?.[reportActionID];
+            return `${ONYXKEYS.COLLECTION.TRANSACTION}${(reportAction && ReportActionsUtils.getLinkedTransactionID(reportAction)) ?? -1}`;
+        },
     },
 })(
     memo(BaseReportActionContextMenu, (prevProps, nextProps) => {

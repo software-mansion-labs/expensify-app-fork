@@ -1,25 +1,30 @@
-import React, {useMemo} from 'react';
-import {ScrollView} from 'react-native';
+import type {RouteProp} from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
+import React, {useCallback, useMemo} from 'react';
+import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
-import type {OnyxCollection} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
+import {AttachmentContext} from '@components/AttachmentContext';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import ScreenWrapper from '@components/ScreenWrapper';
+import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
+import type {PrivateNotesNavigatorParamList} from '@libs/Navigation/types';
 import type {WithReportAndPrivateNotesOrNotFoundProps} from '@pages/home/report/withReportAndPrivateNotesOrNotFound';
 import withReportAndPrivateNotesOrNotFound from '@pages/home/report/withReportAndPrivateNotesOrNotFound';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {PersonalDetails, Report} from '@src/types/onyx';
+import type SCREENS from '@src/SCREENS';
+import type {PersonalDetailsList, Report} from '@src/types/onyx';
 
 type PrivateNotesListPageOnyxProps = {
     /** All of the personal details for everyone */
-    personalDetailsList: OnyxCollection<PersonalDetails>;
+    personalDetailsList: OnyxEntry<PersonalDetailsList>;
 };
 
 type PrivateNotesListPageProps = WithReportAndPrivateNotesOrNotFoundProps &
@@ -34,29 +39,36 @@ type NoteListItem = {
     brickRoadIndicator: ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | undefined;
     note: string;
     disabled: boolean;
+    reportID: string;
+    accountID: string;
 };
 
 function PrivateNotesListPage({report, personalDetailsList, session}: PrivateNotesListPageProps) {
+    const route = useRoute<RouteProp<PrivateNotesNavigatorParamList, typeof SCREENS.PRIVATE_NOTES.LIST>>();
+    const backTo = route.params.backTo;
     const styles = useThemeStyles();
     const {translate} = useLocalize();
+    const getAttachmentValue = useCallback((item: NoteListItem) => ({reportID: item.reportID, accountID: Number(item.accountID), type: CONST.ATTACHMENT_TYPE.NOTE}), []);
 
     /**
      * Gets the menu item for each workspace
      */
     function getMenuItem(item: NoteListItem) {
         return (
-            <MenuItemWithTopDescription
-                key={item.title}
-                description={item.title}
-                title={item.note}
-                onPress={item.action}
-                shouldShowRightIcon={!item.disabled}
-                numberOfLinesTitle={0}
-                shouldRenderAsHTML
-                brickRoadIndicator={item.brickRoadIndicator}
-                disabled={item.disabled}
-                shouldGreyOutWhenDisabled={false}
-            />
+            <AttachmentContext.Provider value={getAttachmentValue(item)}>
+                <MenuItemWithTopDescription
+                    key={item.title}
+                    description={item.title}
+                    title={item.note}
+                    onPress={item.action}
+                    shouldShowRightIcon={!item.disabled}
+                    numberOfLinesTitle={0}
+                    shouldRenderAsHTML
+                    brickRoadIndicator={item.brickRoadIndicator}
+                    disabled={item.disabled}
+                    shouldGreyOutWhenDisabled={false}
+                />
+            </AttachmentContext.Provider>
         );
     }
 
@@ -68,14 +80,16 @@ function PrivateNotesListPage({report, personalDetailsList, session}: PrivateNot
         return Object.keys(report.privateNotes ?? {}).map((accountID: string) => {
             const privateNote = report.privateNotes?.[Number(accountID)];
             return {
+                reportID: report.reportID,
+                accountID,
                 title: Number(session?.accountID) === Number(accountID) ? translate('privateNotes.myNote') : personalDetailsList?.[accountID]?.login ?? '',
-                action: () => Navigation.navigate(ROUTES.PRIVATE_NOTES_EDIT.getRoute(report.reportID, accountID)),
+                action: () => Navigation.navigate(ROUTES.PRIVATE_NOTES_EDIT.getRoute(report.reportID, accountID, backTo)),
                 brickRoadIndicator: privateNoteBrickRoadIndicator(Number(accountID)),
                 note: privateNote?.note ?? '',
                 disabled: Number(session?.accountID) !== Number(accountID),
             };
         });
-    }, [report, personalDetailsList, session, translate]);
+    }, [report, personalDetailsList, session, translate, backTo]);
 
     return (
         <ScreenWrapper
@@ -85,6 +99,7 @@ function PrivateNotesListPage({report, personalDetailsList, session}: PrivateNot
             <HeaderWithBackButton
                 title={translate('privateNotes.title')}
                 shouldShowBackButton
+                onBackButtonPress={() => Navigation.goBack(ROUTES.REPORT_WITH_ID_DETAILS.getRoute(report.reportID, backTo))}
                 onCloseButtonPress={() => Navigation.dismissModal()}
             />
             <Text style={[styles.mb5, styles.ph5]}>{translate('privateNotes.personalNoteMessage')}</Text>

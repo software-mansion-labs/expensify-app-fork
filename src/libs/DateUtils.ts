@@ -1,6 +1,7 @@
 import {
     addDays,
     addHours,
+    addMilliseconds,
     addMinutes,
     eachDayOfInterval,
     eachMonthOfInterval,
@@ -14,8 +15,10 @@ import {
     isAfter,
     isBefore,
     isSameDay,
+    isSameMonth,
     isSameSecond,
     isSameYear,
+    isThisYear,
     isValid,
     parse,
     set,
@@ -27,7 +30,8 @@ import {
     subMinutes,
 } from 'date-fns';
 import {formatInTimeZone, format as tzFormat, utcToZonedTime, zonedTimeToUtc} from 'date-fns-tz';
-import {enGB, es} from 'date-fns/locale';
+import enGB from 'date-fns/locale/en-GB';
+import es from 'date-fns/locale/es';
 import throttle from 'lodash/throttle';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
@@ -39,10 +43,11 @@ import * as CurrentDate from './actions/CurrentDate';
 import * as Localize from './Localize';
 import Log from './Log';
 
-type CustomStatusTypes = (typeof CONST.CUSTOM_STATUS_TYPES)[keyof typeof CONST.CUSTOM_STATUS_TYPES];
-type TimePeriod = 'AM' | 'PM';
+type CustomStatusTypes = ValueOf<typeof CONST.CUSTOM_STATUS_TYPES>;
 type Locale = ValueOf<typeof CONST.LOCALES>;
 type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+const TIMEZONE_UPDATE_THROTTLE_MINUTES = 5;
 
 let currentUserAccountID: number | undefined;
 Onyx.connect({
@@ -79,6 +84,10 @@ Onyx.connect({
     key: ONYXKEYS.NETWORK,
     callback: (value) => (networkTimeSkew = value?.timeSkew ?? 0),
 });
+
+function isDate(arg: unknown): arg is Date {
+    return Object.prototype.toString.call(arg) === '[object Date]';
+}
 
 /**
  * Get the day of the week that the week starts on
@@ -130,7 +139,15 @@ function getLocalDateFromDatetime(locale: Locale, datetime?: string, currentSele
         }
         return res;
     }
-    const parsedDatetime = new Date(`${datetime}Z`);
+    let parsedDatetime;
+    try {
+        // in some cases we cannot add 'Z' to the date string
+        parsedDatetime = new Date(`${datetime}Z`);
+        parsedDatetime.toISOString(); // we need to call toISOString because it throws RangeError in case of an invalid date
+    } catch (e) {
+        parsedDatetime = new Date(datetime);
+    }
+
     return utcToZonedTime(parsedDatetime, currentSelectedTimezone);
 }
 
@@ -231,7 +248,7 @@ function datetimeToCalendarTime(locale: Locale, datetime: string, includeTimeZon
  */
 function datetimeToRelative(locale: Locale, datetime: string): string {
     const date = getLocalDateFromDatetime(locale, datetime);
-    return formatDistanceToNow(date, {addSuffix: true});
+    return formatDistanceToNow(date, {addSuffix: true, locale: locale === CONST.LOCALES.EN ? enGB : es});
 }
 
 /**
@@ -265,8 +282,8 @@ function formatToLongDateWithWeekday(datetime: string | Date): string {
  *
  * @returns Sunday
  */
-function formatToDayOfWeek(datetime: string): string {
-    return format(new Date(datetime), CONST.DATE.WEEKDAY_TIME_FORMAT);
+function formatToDayOfWeek(datetime: Date): string {
+    return format(datetime, CONST.DATE.WEEKDAY_TIME_FORMAT);
 }
 
 /**
@@ -319,7 +336,6 @@ function getMonthNames(preferredLocale: Locale): string[] {
         end: new Date(fullYear, 11, 31), // December 31st of the current year
     });
 
-    // eslint-disable-next-line rulesdir/prefer-underscore-method
     return monthsArray.map((monthDate) => format(monthDate, CONST.DATE.MONTH_FORMAT));
 }
 
@@ -335,16 +351,15 @@ function getDaysOfWeek(preferredLocale: Locale): string[] {
     const endOfCurrentWeek = endOfWeek(new Date(), {weekStartsOn});
     const daysOfWeek = eachDayOfInterval({start: startOfCurrentWeek, end: endOfCurrentWeek});
 
-    // eslint-disable-next-line rulesdir/prefer-underscore-method
     return daysOfWeek.map((date) => format(date, 'eeee'));
 }
 
-// Used to throttle updates to the timezone when necessary
-let lastUpdatedTimezoneTime = new Date();
+// Used to throttle updates to the timezone when necessary. Initialize outside the throttle window so it's updated the first time.
+let lastUpdatedTimezoneTime = subMinutes(new Date(), TIMEZONE_UPDATE_THROTTLE_MINUTES + 1);
 
 function canUpdateTimezone(): boolean {
     const currentTime = new Date();
-    const fiveMinutesAgo = subMinutes(currentTime, 5);
+    const fiveMinutesAgo = subMinutes(currentTime, TIMEZONE_UPDATE_THROTTLE_MINUTES);
     // Compare the last updated time with five minutes ago
     return isBefore(lastUpdatedTimezoneTime, fiveMinutesAgo);
 }
@@ -377,11 +392,12 @@ function getDBTime(timestamp: string | number = ''): string {
 /**
  * Returns the current time plus skew in milliseconds in the format expected by the database
  */
-function getDBTimeWithSkew(): string {
+function getDBTimeWithSkew(timestamp: string | number = ''): string {
     if (networkTimeSkew > 0) {
-        return getDBTime(new Date().valueOf() + networkTimeSkew);
+        const datetime = timestamp ? new Date(timestamp) : new Date();
+        return getDBTime(datetime.valueOf() + networkTimeSkew);
     }
-    return getDBTime();
+    return getDBTime(timestamp);
 }
 
 function subtractMillisecondsFromDateTime(dateTime: string, milliseconds: number): string {
@@ -391,17 +407,11 @@ function subtractMillisecondsFromDateTime(dateTime: string, milliseconds: number
     return getDBTime(newTimestamp);
 }
 
-/**
- * @param isoTimestamp example: 2023-05-16 05:34:14.388
- * @returns example: 2023-05-16
- */
-function getDateStringFromISOTimestamp(isoTimestamp: string): string {
-    if (!isoTimestamp) {
-        return '';
-    }
+function addMillisecondsFromDateTime(dateTime: string, milliseconds: number): string {
+    const date = zonedTimeToUtc(dateTime, 'UTC');
+    const newTimestamp = addMilliseconds(date, milliseconds).valueOf();
 
-    const [dateString] = isoTimestamp.split(' ');
-    return dateString;
+    return getDBTime(newTimestamp);
 }
 
 /**
@@ -455,12 +465,12 @@ function extractDate(dateTimeString: string): string {
  * param {string} dateTimeString
  * returns {string} example: 11:10 PM
  */
-function extractTime12Hour(dateTimeString: string): string {
+function extractTime12Hour(dateTimeString: string, isFullFormat = false): string {
     if (!dateTimeString || dateTimeString === 'never') {
         return '';
     }
     const date = new Date(dateTimeString);
-    return format(date, 'hh:mm a');
+    return format(date, isFullFormat ? 'hh:mm:ss.SSS a' : 'hh:mm a');
 }
 
 /**
@@ -526,8 +536,8 @@ function getStatusUntilDate(inputDate: string): string {
     const now = new Date();
     const endOfToday = endOfDay(now);
 
-    // If the date is equal to the end of today
-    if (isSameDay(input, endOfToday)) {
+    // If the date is adjusted to the following day
+    if (isSameSecond(input, endOfToday)) {
         return translateLocal('statusPage.untilTomorrow');
     }
 
@@ -604,46 +614,28 @@ const combineDateAndTime = (updatedTime: string, inputDateTime: string): string 
 };
 
 /**
- * param {String} dateTime in 'HH:mm:ss' format
+ * param {String} dateTime in 'HH:mm:ss.SSS a' format
  * returns {Object}
- * example {hour: '11', minute: '10', period: 'AM'}
+ * example {hour: '11', minute: '10', seconds: '10', miliseconds: '123', period: 'AM'}
  */
-function get12HourTimeObjectFromDate(dateTime: string): {hour: string; minute: string; period: string} {
+function get12HourTimeObjectFromDate(dateTime: string, isFullFormat = false): {hour: string; minute: string; seconds: string; miliseconds: string; period: string} {
     if (!dateTime) {
         return {
             hour: '12',
             minute: '00',
+            seconds: '00',
+            miliseconds: '000',
             period: 'PM',
         };
     }
-    const parsedTime = parse(dateTime, 'hh:mm a', new Date());
+    const parsedTime = parse(dateTime, isFullFormat ? 'hh:mm:ss.SSS a' : 'hh:mm a', new Date());
     return {
         hour: format(parsedTime, 'hh'),
         minute: format(parsedTime, 'mm'),
+        seconds: isFullFormat ? format(parsedTime, 'ss') : '00',
+        miliseconds: isFullFormat ? format(parsedTime, 'SSS') : '000',
         period: format(parsedTime, 'a').toUpperCase(),
     };
-}
-
-/**
- * param {String} timeString
- * returns {String}
- * example getTimePeriod('11:10 PM') // 'PM'
- */
-function getTimePeriod(timeString: string): TimePeriod {
-    const parts = timeString.split(' ');
-    return parts[1] as TimePeriod;
-}
-
-/**
- * param {String} dateTimeStringFirst // YYYY-MM-DD HH:mm:ss
- * param {String} dateTimeStringSecond // YYYY-MM-DD HH:mm:ss
- * returns {Boolean}
- */
-function areDatesIdentical(dateTimeStringFirst: string, dateTimeStringSecond: string): boolean {
-    const date1 = parse(dateTimeStringFirst, 'yyyy-MM-dd HH:mm:ss', new Date());
-    const date2 = parse(dateTimeStringSecond, 'yyyy-MM-dd HH:mm:ss', new Date());
-
-    return isSameSecond(date1, date2);
 }
 
 /**
@@ -655,15 +647,6 @@ function areDatesIdentical(dateTimeStringFirst: string, dateTimeStringSecond: st
 const isTimeAtLeastOneMinuteInFuture = ({timeString, dateTimeString}: {timeString?: string; dateTimeString: string}): boolean => {
     let dateToCheck = dateTimeString;
     if (timeString) {
-        //  return false;
-        // Parse the hour and minute from the time input
-        const [hourStr] = timeString.split(/[:\s]+/);
-        const hour = parseInt(hourStr, 10);
-
-        if (hour === 0) {
-            return false;
-        }
-
         dateToCheck = combineDateAndTime(timeString, dateTimeString);
     }
 
@@ -686,7 +669,7 @@ const getDayValidationErrorKey = (inputDate: Date): string => {
     }
 
     if (isAfter(startOfDay(new Date()), startOfDay(inputDate))) {
-        return 'common.error.invalidDateShouldBeFuture';
+        return Localize.translateLocal('common.error.invalidDateShouldBeFuture');
     }
     return '';
 };
@@ -700,7 +683,7 @@ const getDayValidationErrorKey = (inputDate: Date): string => {
 const getTimeValidationErrorKey = (inputTime: Date): string => {
     const timeNowPlusOneMinute = addMinutes(new Date(), 1);
     if (isBefore(inputTime, timeNowPlusOneMinute)) {
-        return 'common.error.invalidTimeShouldBeFuture';
+        return Localize.translateLocal('common.error.invalidTimeShouldBeFuture');
     }
     return '';
 };
@@ -739,15 +722,6 @@ function formatToSupportedTimezone(timezoneInput: Timezone): Timezone {
 }
 
 /**
- * Return the date with full format if the created date is the current date.
- * Otherwise return the created date.
- */
-function enrichMoneyRequestTimestamp(created: string): string {
-    const now = new Date();
-    const createdDate = parse(created, CONST.DATE.FNS_FORMAT_STRING, now);
-    return isSameDay(createdDate, now) ? getDBTimeFromDate(now) : created;
-}
-/**
  * Returns the last business day of given date month
  *
  * param {Date} inputDate
@@ -766,7 +740,93 @@ function getLastBusinessDayOfMonth(inputDate: Date): number {
     return getDate(currentDate);
 }
 
+/**
+ * Returns a formatted date range from date 1 to date 2.
+ * Dates are formatted as follows:
+ * 1. When both dates refer to the same day: Mar 17
+ * 2. When both dates refer to the same month: Mar 17-20
+ * 3. When both dates refer to the same year: Feb 28 to Mar 1
+ * 4. When the dates are from different years: Dec 28, 2023 to Jan 5, 2024
+ */
+function getFormattedDateRange(date1: Date, date2: Date): string {
+    const {translateLocal} = Localize;
+
+    if (isSameDay(date1, date2)) {
+        // Dates are from the same day
+        return format(date1, 'MMM d');
+    }
+    if (isSameMonth(date1, date2)) {
+        // Dates in the same month and year, differ by days
+        return `${format(date1, 'MMM d')}-${format(date2, 'd')}`;
+    }
+    if (isSameYear(date1, date2)) {
+        // Dates are in the same year, differ by months
+        return `${format(date1, 'MMM d')} ${translateLocal('common.to').toLowerCase()} ${format(date2, 'MMM d')}`;
+    }
+    // Dates differ by years, months, days
+    return `${format(date1, 'MMM d, yyyy')} ${translateLocal('common.to').toLowerCase()} ${format(date2, 'MMM d, yyyy')}`;
+}
+
+/**
+ * Returns a formatted date range from date 1 to date 2 of a reservation.
+ * Dates are formatted as follows:
+ * 1. When both dates refer to the same day and the current year: Sunday, Mar 17
+ * 2. When both dates refer to the same day but not the current year: Wednesday, Mar 17, 2023
+ * 3. When both dates refer to the current year: Sunday, Mar 17 to Wednesday, Mar 20
+ * 4. When the dates are from different years or from a year which is not current: Wednesday, Mar 17, 2023 to Saturday, Jan 20, 2024
+ */
+function getFormattedReservationRangeDate(date1: Date, date2: Date): string {
+    const {translateLocal} = Localize;
+    if (isSameDay(date1, date2) && isThisYear(date1)) {
+        // Dates are from the same day
+        return format(date1, 'EEEE, MMM d');
+    }
+    if (isSameDay(date1, date2)) {
+        // Dates are from the same day but not this year
+        return format(date1, 'EEEE, MMM d, yyyy');
+    }
+    if (isSameYear(date1, date2) && isThisYear(date1)) {
+        // Dates are in the current year, differ by months
+        return `${format(date1, 'EEEE, MMM d')} ${translateLocal('common.conjunctionTo')} ${format(date2, 'EEEE, MMM d')}`;
+    }
+    // Dates differ by years, months, days or only by months but the year is not current
+    return `${format(date1, 'EEEE, MMM d, yyyy')} ${translateLocal('common.conjunctionTo')} ${format(date2, 'EEEE, MMM d, yyyy')}`;
+}
+
+/**
+ * Returns a formatted date of departure.
+ * Dates are formatted as follows:
+ * 1. When the date refers to the current day: Departs on Sunday, Mar 17 at 8:00
+ * 2. When the date refers not to the current day: Departs on Wednesday, Mar 17, 2023 at 8:00
+ */
+function getFormattedTransportDate(date: Date): string {
+    const {translateLocal} = Localize;
+    if (isThisYear(date)) {
+        return `${translateLocal('travel.departs')} ${format(date, 'EEEE, MMM d')} ${translateLocal('common.conjunctionAt')} ${format(date, 'HH:MM')}`;
+    }
+    return `${translateLocal('travel.departs')} ${format(date, 'EEEE, MMM d, yyyy')} ${translateLocal('common.conjunctionAt')} ${format(date, 'HH:MM')}`;
+}
+
+function doesDateBelongToAPastYear(date: string): boolean {
+    const transactionYear = new Date(date).getFullYear();
+    return transactionYear !== new Date().getFullYear();
+}
+
+/**
+ * Returns a boolean value indicating whether the card has expired.
+ * @param expiryMonth month when card expires (starts from 1 so can be any number between 1 and 12)
+ * @param expiryYear year when card expires
+ */
+
+function isCardExpired(expiryMonth: number, expiryYear: number): boolean {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+
+    return expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth);
+}
+
 const DateUtils = {
+    isDate,
     formatToDayOfWeek,
     formatToLongDateWithWeekday,
     formatToLocalTime,
@@ -783,19 +843,14 @@ const DateUtils = {
     getDBTimeWithSkew,
     setLocale,
     subtractMillisecondsFromDateTime,
-    getDateStringFromISOTimestamp,
-    getThirtyMinutesFromNow,
+    addMillisecondsFromDateTime,
     getEndOfToday,
-    getOneWeekFromNow,
     getDateFromStatusType,
     getOneHourFromNow,
     extractDate,
-    formatDateTimeTo12Hour,
     getStatusUntilDate,
     extractTime12Hour,
     get12HourTimeObjectFromDate,
-    areDatesIdentical,
-    getTimePeriod,
     getLocalizedTimePeriodDescription,
     combineDateAndTime,
     getDayValidationErrorKey,
@@ -806,12 +861,15 @@ const DateUtils = {
     getMonthNames,
     getDaysOfWeek,
     formatWithUTCTimeZone,
-    getWeekStartsOn,
     getWeekEndsOn,
     isTimeAtLeastOneMinuteInFuture,
     formatToSupportedTimezone,
-    enrichMoneyRequestTimestamp,
     getLastBusinessDayOfMonth,
+    getFormattedDateRange,
+    getFormattedReservationRangeDate,
+    getFormattedTransportDate,
+    doesDateBelongToAPastYear,
+    isCardExpired,
 };
 
 export default DateUtils;

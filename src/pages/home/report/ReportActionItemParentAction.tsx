@@ -1,27 +1,24 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
-import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
-import useStyleUtils from '@hooks/useStyleUtils';
+import TripDetailsView from '@components/ReportActionItem/TripDetailsView';
+import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import Navigation from '@libs/Navigation/Navigation';
 import onyxSubscribe from '@libs/onyxSubscribe';
+import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as Report from '@userActions/Report';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
 import AnimatedEmptyStateBackground from './AnimatedEmptyStateBackground';
+import RepliesDivider from './RepliesDivider';
 import ReportActionItem from './ReportActionItem';
+import ThreadDivider from './ThreadDivider';
 
-type ReportActionItemParentActionOnyxProps = {
-    /** The current report is displayed */
-    report: OnyxEntry<OnyxTypes.Report>;
-};
-
-type ReportActionItemParentActionProps = ReportActionItemParentActionOnyxProps & {
+type ReportActionItemParentActionProps = {
     /** Flag to show, hide the thread divider line */
     shouldHideThreadDividerLine?: boolean;
 
@@ -31,14 +28,45 @@ type ReportActionItemParentActionProps = ReportActionItemParentActionOnyxProps &
     /** The id of the report */
     // eslint-disable-next-line react/no-unused-prop-types
     reportID: string;
+
+    /** The current report is displayed */
+    report: OnyxEntry<OnyxTypes.Report>;
+
+    /** The transaction thread report associated with the current report, if any */
+    transactionThreadReport: OnyxEntry<OnyxTypes.Report>;
+
+    /** Array of report actions for this report */
+    reportActions: OnyxTypes.ReportAction[];
+
+    /** Report actions belonging to the report's parent */
+    parentReportAction: OnyxEntry<OnyxTypes.ReportAction>;
+
+    /** Whether we should display "Replies" divider */
+    shouldDisplayReplyDivider: boolean;
+
+    /** If this is the first visible report action */
+    isFirstVisibleReportAction: boolean;
+
+    /** If the thread divider line will be used */
+    shouldUseThreadDividerLine?: boolean;
 };
 
-function ReportActionItemParentAction({report, index = 0, shouldHideThreadDividerLine = false}: ReportActionItemParentActionProps) {
+function ReportActionItemParentAction({
+    report,
+    transactionThreadReport,
+    reportActions,
+    parentReportAction,
+    index = 0,
+    shouldHideThreadDividerLine = false,
+    shouldDisplayReplyDivider,
+    isFirstVisibleReportAction = false,
+    shouldUseThreadDividerLine = false,
+}: ReportActionItemParentActionProps) {
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
-    const {isSmallScreenWidth} = useWindowDimensions();
     const ancestorIDs = useRef(ReportUtils.getAllAncestorReportActionIDs(report));
+    const ancestorReports = useRef<Record<string, OnyxEntry<OnyxTypes.Report>>>({});
     const [allAncestors, setAllAncestors] = useState<ReportUtils.Ancestor[]>([]);
+    const {isOffline} = useNetwork();
 
     useEffect(() => {
         const unsubscribeReports: Array<() => void> = [];
@@ -47,8 +75,13 @@ function ReportActionItemParentAction({report, index = 0, shouldHideThreadDivide
             unsubscribeReports.push(
                 onyxSubscribe({
                     key: `${ONYXKEYS.COLLECTION.REPORT}${ancestorReportID}`,
-                    callback: () => {
-                        setAllAncestors(ReportUtils.getAllAncestorReportActions(report, shouldHideThreadDividerLine));
+                    callback: (val) => {
+                        ancestorReports.current[ancestorReportID] = val;
+                        //  getAllAncestorReportActions use getReportOrDraftReport to get parent reports which gets the report from allReports that
+                        // holds the report collection. However, allReports is not updated by the time this current callback is called.
+                        // Therefore we need to pass the up-to-date report to getAllAncestorReportActions so that it uses the up-to-date report value
+                        // to calculate, for instance, unread marker.
+                        setAllAncestors(ReportUtils.getAllAncestorReportActions(report, val));
                     },
                 }),
             );
@@ -56,7 +89,7 @@ function ReportActionItemParentAction({report, index = 0, shouldHideThreadDivide
                 onyxSubscribe({
                     key: `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${ancestorReportID}`,
                     callback: () => {
-                        setAllAncestors(ReportUtils.getAllAncestorReportActions(report, shouldHideThreadDividerLine));
+                        setAllAncestors(ReportUtils.getAllAncestorReportActions(report));
                     },
                 }),
             );
@@ -66,45 +99,68 @@ function ReportActionItemParentAction({report, index = 0, shouldHideThreadDivide
             unsubscribeReports.forEach((unsubscribeReport) => unsubscribeReport());
             unsubscribeReportActions.forEach((unsubscribeReportAction) => unsubscribeReportAction());
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
     }, []);
 
     return (
-        <>
-            <View style={[StyleUtils.getReportWelcomeContainerStyle(isSmallScreenWidth)]}>
-                <AnimatedEmptyStateBackground />
-                <View style={[StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth)]} />
-                {allAncestors.map((ancestor) => (
-                    <OfflineWithFeedback
-                        key={ancestor.reportAction.reportActionID}
-                        shouldDisableOpacity={Boolean(ancestor.reportAction?.pendingAction)}
-                        pendingAction={ancestor.report?.pendingFields?.addWorkspaceRoom ?? ancestor.report?.pendingFields?.createChat}
-                        errors={ancestor.report?.errorFields?.addWorkspaceRoom ?? ancestor.report?.errorFields?.createChat}
-                        errorRowStyles={[styles.ml10, styles.mr2]}
-                        onClose={() => Report.navigateToConciergeChatAndDeleteReport(ancestor.report.reportID)}
-                    >
+        <View style={[styles.pRelative]}>
+            <AnimatedEmptyStateBackground />
+            {allAncestors.map((ancestor) => (
+                <OfflineWithFeedback
+                    key={ancestor.reportAction.reportActionID}
+                    shouldDisableOpacity={!!ancestor.reportAction?.pendingAction}
+                    pendingAction={ancestor.report?.pendingFields?.addWorkspaceRoom ?? ancestor.report?.pendingFields?.createChat}
+                    errors={ancestor.report?.errorFields?.addWorkspaceRoom ?? ancestor.report?.errorFields?.createChat}
+                    errorRowStyles={[styles.ml10, styles.mr2]}
+                    onClose={() => Report.navigateToConciergeChatAndDeleteReport(ancestor.report.reportID)}
+                >
+                    <ThreadDivider
+                        ancestor={ancestor}
+                        isLinkDisabled={!ReportUtils.canCurrentUserOpenReport(ancestorReports.current?.[ancestor?.report?.reportID ?? '-1'])}
+                    />
+                    {ReportActionsUtils.isTripPreview(ancestor?.reportAction) ? (
+                        <OfflineWithFeedback pendingAction={ancestor.reportAction.pendingAction}>
+                            <TripDetailsView
+                                tripRoomReportID={ReportActionsUtils.getOriginalMessage(ancestor.reportAction)?.linkedReportID ?? '-1'}
+                                shouldShowHorizontalRule={false}
+                            />
+                        </OfflineWithFeedback>
+                    ) : (
                         <ReportActionItem
-                            // @ts-expect-error TODO: Remove this once ReportActionItem (https://github.com/Expensify/App/issues/31982) is migrated to TypeScript.
-                            onPress={() => Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(ancestor.report.reportID))}
+                            onPress={
+                                ReportUtils.canCurrentUserOpenReport(ancestorReports.current?.[ancestor?.report?.reportID ?? '-1'])
+                                    ? () => {
+                                          const isVisibleAction = ReportActionsUtils.shouldReportActionBeVisible(ancestor.reportAction, ancestor.reportAction.reportActionID ?? '-1');
+                                          // Pop the thread report screen before navigating to the chat report.
+                                          Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute(ancestor.report.reportID ?? '-1'));
+                                          if (isVisibleAction && !isOffline) {
+                                              // Pop the chat report screen before navigating to the linked report action.
+                                              Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute(ancestor.report.reportID ?? '-1', ancestor.reportAction.reportActionID));
+                                          }
+                                      }
+                                    : undefined
+                            }
+                            parentReportAction={parentReportAction}
                             report={ancestor.report}
+                            reportActions={reportActions}
+                            transactionThreadReport={transactionThreadReport}
                             action={ancestor.reportAction}
                             displayAsGroup={false}
                             isMostRecentIOUReportAction={false}
                             shouldDisplayNewMarker={ancestor.shouldDisplayNewMarker}
                             index={index}
+                            isFirstVisibleReportAction={isFirstVisibleReportAction}
+                            shouldUseThreadDividerLine={shouldUseThreadDividerLine}
+                            hideThreadReplies
                         />
-                        {!ancestor.shouldHideThreadDividerLine && <View style={[styles.threadDividerLine]} />}
-                    </OfflineWithFeedback>
-                ))}
-            </View>
-        </>
+                    )}
+                </OfflineWithFeedback>
+            ))}
+            {shouldDisplayReplyDivider && <RepliesDivider shouldHideThreadDividerLine={shouldHideThreadDividerLine} />}
+        </View>
     );
 }
 
 ReportActionItemParentAction.displayName = 'ReportActionItemParentAction';
 
-export default withOnyx<ReportActionItemParentActionProps, ReportActionItemParentActionOnyxProps>({
-    report: {
-        key: ({reportID}) => `${ONYXKEYS.COLLECTION.REPORT}${reportID}`,
-    },
-})(ReportActionItemParentAction);
+export default ReportActionItemParentAction;

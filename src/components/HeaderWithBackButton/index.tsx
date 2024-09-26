@@ -1,11 +1,13 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {Keyboard, StyleSheet, View} from 'react-native';
+import Avatar from '@components/Avatar';
 import AvatarWithDisplayName from '@components/AvatarWithDisplayName';
 import Header from '@components/Header';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import PinButton from '@components/PinButton';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
+import SearchButton from '@components/Search/SearchRouter/SearchButton';
 import ThreeDotsMenu from '@components/ThreeDotsMenu';
 import Tooltip from '@components/Tooltip';
 import useKeyboardState from '@hooks/useKeyboardState';
@@ -14,7 +16,6 @@ import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useThrottledButtonState from '@hooks/useThrottledButtonState';
-import useWaitForNavigation from '@hooks/useWaitForNavigation';
 import getButtonState from '@libs/getButtonState';
 import Navigation from '@libs/Navigation/Navigation';
 import variables from '@styles/variables';
@@ -30,9 +31,10 @@ function HeaderWithBackButton({
     onCloseButtonPress = () => Navigation.dismissModal(),
     onDownloadButtonPress = () => {},
     onThreeDotsButtonPress = () => {},
-    report = null,
+    report,
     policy,
-    shouldShowAvatarWithDisplay = false,
+    policyAvatar,
+    shouldShowReportAvatarWithDisplay = false,
     shouldShowBackButton = true,
     shouldShowBorderBottom = false,
     shouldShowCloseButton = false,
@@ -52,12 +54,16 @@ function HeaderWithBackButton({
         horizontal: 0,
     },
     threeDotsMenuItems = [],
+    threeDotsMenuIcon,
+    threeDotsMenuIconFill,
     shouldEnableDetailPageNavigation = false,
     children = null,
     shouldOverlayDots = false,
     shouldOverlay = false,
-    singleExecution = (func) => func,
     shouldNavigateToTopMostReport = false,
+    shouldDisplaySearchRouter = false,
+    progressBarPercentage,
+    style,
 }: HeaderWithBackButtonProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -65,10 +71,63 @@ function HeaderWithBackButton({
     const [isDownloadButtonActive, temporarilyDisableDownloadButton] = useThrottledButtonState();
     const {translate} = useLocalize();
     const {isKeyboardShown} = useKeyboardState();
-    const waitForNavigate = useWaitForNavigation();
 
     // If the icon is present, the header bar should be taller and use different font.
     const isCentralPaneSettings = !!icon;
+
+    const middleContent = useMemo(() => {
+        if (progressBarPercentage) {
+            return (
+                <>
+                    {/* Reserves as much space for the middleContent as possible */}
+                    <View style={styles.flexGrow1} />
+                    {/* Uses absolute positioning so that it's always centered instead of being affected by the
+                    presence or absence of back/close buttons to the left/right of it */}
+                    <View style={styles.headerProgressBarContainer}>
+                        <View style={styles.headerProgressBar}>
+                            <View style={[{width: `${progressBarPercentage}%`}, styles.headerProgressBarFill]} />
+                        </View>
+                    </View>
+                </>
+            );
+        }
+
+        if (shouldShowReportAvatarWithDisplay) {
+            return (
+                <AvatarWithDisplayName
+                    report={report}
+                    policy={policy}
+                    shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
+                />
+            );
+        }
+
+        return (
+            <Header
+                title={title}
+                subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
+                textStyles={[titleColor ? StyleUtils.getTextColorStyle(titleColor) : {}, isCentralPaneSettings && styles.textHeadlineH2]}
+            />
+        );
+    }, [
+        StyleUtils,
+        isCentralPaneSettings,
+        policy,
+        progressBarPercentage,
+        report,
+        shouldEnableDetailPageNavigation,
+        shouldShowReportAvatarWithDisplay,
+        stepCounter,
+        styles.flexGrow1,
+        styles.headerProgressBar,
+        styles.headerProgressBarContainer,
+        styles.headerProgressBarFill,
+        styles.textHeadlineH2,
+        subtitle,
+        title,
+        titleColor,
+        translate,
+    ]);
 
     return (
         <View
@@ -79,8 +138,12 @@ function HeaderWithBackButton({
                 styles.headerBar,
                 isCentralPaneSettings && styles.headerBarDesktopHeight,
                 shouldShowBorderBottom && styles.borderBottom,
-                shouldShowBackButton && styles.pl2,
+                // progressBarPercentage can be 0 which would
+                // be falsey, hence using !== undefined explicitly
+                progressBarPercentage !== undefined && styles.pl0,
+                shouldShowBackButton && [styles.pl2, styles.pr2],
                 shouldOverlay && StyleSheet.absoluteFillObject,
+                style,
             ]}
         >
             <View style={[styles.dFlex, styles.flexRow, styles.alignItemsCenter, styles.flexGrow1, styles.justifyContentBetween, styles.overflowHidden]}>
@@ -99,9 +162,9 @@ function HeaderWithBackButton({
                                 }
                             }}
                             style={[styles.touchableButtonImage]}
-                            role="button"
+                            role={CONST.ROLE.BUTTON}
                             accessibilityLabel={translate('common.back')}
-                            nativeID={CONST.BACK_BUTTON_NATIVE_ID}
+                            id={CONST.BACK_BUTTON_NATIVE_ID}
                         >
                             <Icon
                                 src={Expensicons.BackArrow}
@@ -118,19 +181,16 @@ function HeaderWithBackButton({
                         additionalStyles={[styles.mr2]}
                     />
                 )}
-                {shouldShowAvatarWithDisplay ? (
-                    <AvatarWithDisplayName
-                        report={report}
-                        policy={policy}
-                        shouldEnableDetailPageNavigation={shouldEnableDetailPageNavigation}
-                    />
-                ) : (
-                    <Header
-                        title={title}
-                        subtitle={stepCounter ? translate('stepCounter', stepCounter) : subtitle}
-                        textStyles={[titleColor ? StyleUtils.getTextColorStyle(titleColor) : {}, isCentralPaneSettings && styles.textHeadlineH1]}
+                {policyAvatar && (
+                    <Avatar
+                        containerStyles={[StyleUtils.getWidthAndHeightStyle(StyleUtils.getAvatarSize(CONST.AVATAR_SIZE.DEFAULT)), styles.mr3]}
+                        source={policyAvatar?.source}
+                        name={policyAvatar?.name}
+                        avatarID={policyAvatar?.id}
+                        type={policyAvatar?.type}
                     />
                 )}
+                {middleContent}
                 <View style={[styles.reportOptions, styles.flexRow, styles.pr5, styles.alignItemsCenter]}>
                     {children}
                     {shouldShowDownloadButton && (
@@ -163,7 +223,7 @@ function HeaderWithBackButton({
                         <Tooltip text={translate('getAssistancePage.questionMarkButtonTooltip')}>
                             <PressableWithoutFeedback
                                 disabled={shouldDisableGetAssistanceButton}
-                                onPress={singleExecution(waitForNavigate(() => Navigation.navigate(ROUTES.GET_ASSISTANCE.getRoute(guidesCallTaskID, Navigation.getActiveRoute()))))}
+                                onPress={() => Navigation.navigate(ROUTES.GET_ASSISTANCE.getRoute(guidesCallTaskID, Navigation.getActiveRoute()))}
                                 style={[styles.touchableButtonImage]}
                                 role="button"
                                 accessibilityLabel={translate('getAssistancePage.questionMarkButtonTooltip')}
@@ -178,6 +238,8 @@ function HeaderWithBackButton({
                     {shouldShowPinButton && !!report && <PinButton report={report} />}
                     {shouldShowThreeDotsButton && (
                         <ThreeDotsMenu
+                            icon={threeDotsMenuIcon}
+                            iconFill={threeDotsMenuIconFill}
                             disabled={shouldDisableThreeDotsButton}
                             menuItems={threeDotsMenuItems}
                             onIconPress={onThreeDotsButtonPress}
@@ -201,6 +263,7 @@ function HeaderWithBackButton({
                             </PressableWithoutFeedback>
                         </Tooltip>
                     )}
+                    {shouldDisplaySearchRouter && <SearchButton />}
                 </View>
             </View>
         </View>

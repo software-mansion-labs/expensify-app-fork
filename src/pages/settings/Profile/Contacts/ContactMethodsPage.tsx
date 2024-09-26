@@ -1,7 +1,7 @@
 import type {StackScreenProps} from '@react-navigation/stack';
-import Str from 'expensify-common/lib/str';
+import {Str} from 'expensify-common';
 import React, {useCallback} from 'react';
-import {ScrollView, View} from 'react-native';
+import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import Button from '@components/Button';
@@ -11,11 +11,13 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItem from '@components/MenuItem';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
+import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
+import * as User from '@userActions/User';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -37,7 +39,7 @@ function ContactMethodsPage({loginList, session, route}: ContactMethodsPageProps
     const styles = useThemeStyles();
     const {formatPhoneNumber, translate} = useLocalize();
     const loginNames = Object.keys(loginList ?? {});
-    const navigateBackTo = route?.params?.backTo || ROUTES.SETTINGS_PROFILE;
+    const navigateBackTo = route?.params?.backTo;
 
     // Sort the login names by placing the one corresponding to the default contact method as the first item before displaying the contact methods.
     // The default contact method is determined by checking against the session email (the current login).
@@ -79,7 +81,12 @@ function ContactMethodsPage({loginList, session, route}: ContactMethodsPageProps
                 <MenuItem
                     title={menuItemTitle}
                     description={description}
-                    onPress={() => Navigation.navigate(ROUTES.SETTINGS_CONTACT_METHOD_DETAILS.getRoute(partnerUserID))}
+                    onPress={() => {
+                        if (!login?.validatedDate && !login?.validateCodeSent) {
+                            User.requestContactMethodValidateCode(loginName);
+                        }
+                        Navigation.navigate(ROUTES.SETTINGS_CONTACT_METHOD_DETAILS.getRoute(partnerUserID, navigateBackTo));
+                    }}
                     brickRoadIndicator={indicator}
                     shouldShowBasicTitle
                     shouldShowRightIcon
@@ -90,10 +97,6 @@ function ContactMethodsPage({loginList, session, route}: ContactMethodsPageProps
     });
 
     const onNewContactMethodButtonPress = useCallback(() => {
-        if (navigateBackTo === ROUTES.SETTINGS_PROFILE) {
-            Navigation.navigate(ROUTES.SETTINGS_NEW_CONTACT_METHOD.route);
-            return;
-        }
         Navigation.navigate(ROUTES.SETTINGS_NEW_CONTACT_METHOD.getRoute(navigateBackTo));
     }, [navigateBackTo]);
 
@@ -104,7 +107,7 @@ function ContactMethodsPage({loginList, session, route}: ContactMethodsPageProps
         >
             <HeaderWithBackButton
                 title={translate('contacts.contactMethods')}
-                onBackButtonPress={() => Navigation.goBack(navigateBackTo)}
+                onBackButtonPress={() => Navigation.goBack()}
             />
             <ScrollView contentContainerStyle={styles.flexGrow1}>
                 <View style={[styles.ph5, styles.mv3, styles.flexRow, styles.flexWrap]}>
@@ -120,6 +123,7 @@ function ContactMethodsPage({loginList, session, route}: ContactMethodsPageProps
                 {loginMenuItems}
                 <FixedFooter style={[styles.mtAuto, styles.pt5]}>
                     <Button
+                        large
                         success
                         text={translate('contacts.newContactMethod')}
                         onPress={onNewContactMethodButtonPress}

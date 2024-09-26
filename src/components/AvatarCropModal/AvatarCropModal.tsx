@@ -1,8 +1,9 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {ActivityIndicator, Image, View} from 'react-native';
+import {ActivityIndicator, View} from 'react-native';
 import type {LayoutChangeEvent} from 'react-native';
 import {Gesture, GestureHandlerRootView} from 'react-native-gesture-handler';
 import type {GestureUpdateEvent, PanGestureChangeEventPayload, PanGestureHandlerEventPayload} from 'react-native-gesture-handler';
+import ImageSize from 'react-native-image-size';
 import {interpolate, runOnUI, useSharedValue, useWorkletCallback} from 'react-native-reanimated';
 import Button from '@components/Button';
 import HeaderGap from '@components/HeaderGap';
@@ -15,10 +16,10 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import Tooltip from '@components/Tooltip';
 import useLocalize from '@hooks/useLocalize';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import cropOrRotateImage from '@libs/cropOrRotateImage';
 import type {CustomRNImageManipulatorResult} from '@libs/cropOrRotateImage/types';
 import CONST from '@src/CONST';
@@ -64,7 +65,7 @@ function AvatarCropModal({imageUri = '', imageName = '', imageType = '', onClose
     const isPressableEnabled = useSharedValue(true);
 
     const {translate} = useLocalize();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     // Check if image cropping, saving or uploading is in progress
     const isLoading = useSharedValue(false);
@@ -118,10 +119,18 @@ function AvatarCropModal({imageUri = '', imageName = '', imageType = '', onClose
         if (!imageUri) {
             return;
         }
-        Image.getSize(imageUri, (width, height) => {
-            // We need to have image sizes in shared values to properly calculate position/size/animation
-            originalImageHeight.value = height;
-            originalImageWidth.value = width;
+        // We need to have image sizes in shared values to properly calculate position/size/animation
+        ImageSize.getSize(imageUri).then(({width, height, rotation: orginalRotation}) => {
+            // On Android devices ImageSize library returns also rotation parameter.
+            if (orginalRotation === 90 || orginalRotation === 270) {
+                // eslint-disable-next-line react-compiler/react-compiler
+                originalImageHeight.value = width;
+                originalImageWidth.value = height;
+            } else {
+                originalImageHeight.value = height;
+                originalImageWidth.value = width;
+            }
+
             setIsImageInitialized(true);
 
             // Because the reanimated library has some internal optimizations,
@@ -349,7 +358,7 @@ function AvatarCropModal({imageUri = '', imageName = '', imageType = '', onClose
                 includeSafeAreaPaddingBottom={false}
                 testID={AvatarCropModal.displayName}
             >
-                {isSmallScreenWidth && <HeaderGap />}
+                {shouldUseNarrowLayout && <HeaderGap />}
                 <HeaderWithBackButton
                     title={translate('avatarCropModal.title')}
                     onBackButtonPress={onClose}
@@ -404,10 +413,8 @@ function AvatarCropModal({imageUri = '', imageName = '', imageType = '', onClose
                                 >
                                     <View>
                                         <Button
-                                            medium
                                             icon={Expensicons.Rotate}
-                                            iconFill={theme.inverse}
-                                            iconStyles={[styles.mr0]}
+                                            iconFill={theme.icon}
                                             onPress={rotateImage}
                                         />
                                     </View>
@@ -421,6 +428,7 @@ function AvatarCropModal({imageUri = '', imageName = '', imageType = '', onClose
                     style={[styles.m5]}
                     onPress={cropAndSaveImage}
                     pressOnEnter
+                    large
                     text={translate('common.save')}
                 />
             </ScreenWrapper>

@@ -6,13 +6,14 @@ import type {FullScreenNavigatorRouterOptions} from './types';
 
 type StackState = StackNavigationState<ParamListBase> | PartialState<StackNavigationState<ParamListBase>>;
 
-const isAtLeastOneInState = (state: StackState, screenName: string): boolean => !!state.routes.find((route) => route.name === screenName);
+const isAtLeastOneInState = (state: StackState, screenName: string): boolean => state.routes.some((route) => route.name === screenName);
 
 function adaptStateIfNecessary(state: StackState) {
     const isNarrowLayout = getIsNarrowLayout();
+    const workspaceCentralPane = state.routes.at(-1);
 
-    // There should always be SETTINGS.ROOT screen in the state to make sure go back works properly if we deeplinkg to a subpage of settings.
-    if (!isAtLeastOneInState(state, SCREENS.SETTINGS.ROOT)) {
+    // There should always be WORKSPACE.INITIAL screen in the state to make sure go back works properly if we deeplinkg to a subpage of settings.
+    if (!isAtLeastOneInState(state, SCREENS.WORKSPACE.INITIAL)) {
         // @ts-expect-error Updating read only property
         // noinspection JSConstantReassignment
         state.stale = true; // eslint-disable-line
@@ -20,30 +21,26 @@ function adaptStateIfNecessary(state: StackState) {
         // This is necessary for ts to narrow type down to PartialState.
         if (state.stale === true) {
             // Unshift the root screen to fill left pane.
-            state.routes.unshift({name: SCREENS.SETTINGS.ROOT});
+            state.routes.unshift({
+                name: SCREENS.WORKSPACE.INITIAL,
+                params: workspaceCentralPane?.params,
+            });
         }
     }
 
     // If the screen is wide, there should be at least two screens inside:
-    // - SETINGS.ROOT to cover left pane.
-    // - SETTINGS_CENTRAL_PANE to cover central pane.
+    // - WORKSPACE.INITIAL to cover left pane.
+    // - WORKSPACE.PROFILE (first workspace settings screen) to cover central pane.
     if (!isNarrowLayout) {
-        if (!isAtLeastOneInState(state, SCREENS.SETTINGS_CENTRAL_PANE)) {
+        if (state.routes.length === 1 && state.routes[0].name === SCREENS.WORKSPACE.INITIAL) {
             // @ts-expect-error Updating read only property
             // noinspection JSConstantReassignment
             state.stale = true; // eslint-disable-line
-
             // Push the default settings central pane screen.
             if (state.stale === true) {
                 state.routes.push({
-                    name: SCREENS.SETTINGS_CENTRAL_PANE,
-                    state: {
-                        routes: [
-                            {
-                                name: SCREENS.SETTINGS.PROFILE.ROOT,
-                            },
-                        ],
-                    },
+                    name: SCREENS.WORKSPACE.PROFILE,
+                    params: state.routes[0]?.params,
                 });
             }
         }

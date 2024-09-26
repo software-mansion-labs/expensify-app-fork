@@ -1,14 +1,7 @@
 import Config from '../../../tests/e2e/config';
 import Routes from '../../../tests/e2e/server/routes';
-import type {NetworkCacheMap, TestConfig} from './types';
-
-type TestResult = {
-    name: string;
-    branch?: string;
-    duration?: number;
-    error?: string;
-    renderCount?: number;
-};
+import type {NetworkCacheMap, TestConfig, TestResult} from './types';
+import {waitForActiveRequestsToBeEmpty} from './utils/NetworkInterceptor';
 
 type NativeCommandPayload = {
     text: string;
@@ -65,7 +58,7 @@ const submitTestResults = (testResult: TestResult): Promise<void> => {
     });
 };
 
-const submitTestDone = () => fetch(`${SERVER_ADDRESS}${Routes.testDone}`, defaultRequestInit);
+const submitTestDone = () => waitForActiveRequestsToBeEmpty().then(() => fetch(`${SERVER_ADDRESS}${Routes.testDone}`, defaultRequestInit));
 
 let currentActiveTestConfig: TestConfig | null = null;
 
@@ -113,3 +106,4 @@ export default {
     updateNetworkCache,
     getNetworkCache,
 };
+export type {TestResult, NativeCommand, NativeCommandPayload};

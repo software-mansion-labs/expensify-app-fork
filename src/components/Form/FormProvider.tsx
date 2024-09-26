@@ -1,5 +1,6 @@
+import {useFocusEffect} from '@react-navigation/native';
 import lodashIsEqual from 'lodash/isEqual';
-import type {ForwardedRef, MutableRefObject, ReactNode} from 'react';
+import type {ForwardedRef, MutableRefObject, ReactNode, RefAttributes} from 'react';
 import React, {createRef, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 import type {NativeSyntheticEvent, StyleProp, TextInputSubmitEditingEventData, ViewStyle} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
@@ -9,7 +10,6 @@ import * as ValidationUtils from '@libs/ValidationUtils';
 import Visibility from '@libs/Visibility';
 import * as FormActions from '@userActions/FormActions';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
 import type {OnyxFormKey} from '@src/ONYXKEYS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Form} from '@src/types/form';
@@ -18,14 +18,14 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type {RegisterInput} from './FormContext';
 import FormContext from './FormContext';
 import FormWrapper from './FormWrapper';
-import type {FormInputErrors, FormOnyxValues, FormProps, InputComponentBaseProps, InputRefs, ValueTypeKey} from './types';
+import type {FormInputErrors, FormOnyxValues, FormProps, FormRef, InputComponentBaseProps, InputRefs, ValueTypeKey} from './types';
 
 // In order to prevent Checkbox focus loss when the user are focusing a TextInput and proceeds to toggle a CheckBox in web and mobile web.
 // 200ms delay was chosen as a result of empirical testing.
 // More details: https://github.com/Expensify/App/pull/16444#issuecomment-1482983426
 const VALIDATE_DELAY = 200;
 
-type GenericFormInputErrors = Partial<Record<string, TranslationPaths>>;
+type GenericFormInputErrors = Partial<Record<string, string>>;
 type InitialDefaultValue = false | Date | '';
 
 function getInitialValueByType(valueType?: ValueTypeKey): InitialDefaultValue {
@@ -66,16 +66,21 @@ type FormProviderProps<TFormID extends OnyxFormKey = OnyxFormKey> = FormProvider
         /** Should validate function be called when the value of the input is changed */
         shouldValidateOnChange?: boolean;
 
+        /** Whether to remove invisible characters from strings before validation and submission */
+        shouldTrimValues?: boolean;
+
         /** Styles that will be applied to the submit button only */
         submitButtonStyles?: StyleProp<ViewStyle>;
 
         /** Whether to apply flex to the submit button */
         submitFlexEnabled?: boolean;
-    };
 
-type FormRef<TFormID extends OnyxFormKey = OnyxFormKey> = {
-    resetForm: (optionalValue: FormOnyxValues<TFormID>) => void;
-};
+        /** Whether button is disabled */
+        isSubmitDisabled?: boolean;
+
+        /** Whether HTML is allowed in form inputs */
+        allowHTML?: boolean;
+    };
 
 function FormProvider(
     {
@@ -89,11 +94,13 @@ function FormProvider(
         enabledWhenOffline = false,
         draftValues,
         onSubmit,
+        shouldTrimValues = true,
+        allowHTML = false,
         ...rest
     }: FormProviderProps,
     forwardedRef: ForwardedRef<FormRef>,
 ) {
-    const {preferredLocale} = useLocalize();
+    const {preferredLocale, translate} = useLocalize();
     const inputRefs = useRef<InputRefs>({});
     const touchedInputs = useRef<Record<string, boolean>>({});
     const [inputValues, setInputValues] = useState<Form>(() => ({...draftValues}));
@@ -102,7 +109,7 @@ function FormProvider(
 
     const onValidate = useCallback(
         (values: FormOnyxValues, shouldClearServerError = true) => {
-            const trimmedStringValues = ValidationUtils.prepareValues(values);
+            const trimmedStringValues = shouldTrimValues ? ValidationUtils.prepareValues(values) : values;
 
             if (shouldClearServerError) {
                 FormActions.clearErrors(formID);
@@ -111,40 +118,42 @@ function FormProvider(
 
             const validateErrors: GenericFormInputErrors = validate?.(trimmedStringValues) ?? {};
 
-            // Validate the input for html tags. It should supersede any other error
-            Object.entries(trimmedStringValues).forEach(([inputID, inputValue]) => {
-                // If the input value is empty OR is non-string, we don't need to validate it for HTML tags
-                if (!inputValue || typeof inputValue !== 'string') {
-                    return;
-                }
-                const foundHtmlTagIndex = inputValue.search(CONST.VALIDATE_FOR_HTML_TAG_REGEX);
-                const leadingSpaceIndex = inputValue.search(CONST.VALIDATE_FOR_LEADINGSPACES_HTML_TAG_REGEX);
+            if (!allowHTML) {
+                // Validate the input for html tags. It should supersede any other error
+                Object.entries(trimmedStringValues).forEach(([inputID, inputValue]) => {
+                    // If the input value is empty OR is non-string, we don't need to validate it for HTML tags
+                    if (!inputValue || typeof inputValue !== 'string') {
+                        return;
+                    }
+                    const foundHtmlTagIndex = inputValue.search(CONST.VALIDATE_FOR_HTML_TAG_REGEX);
+                    const leadingSpaceIndex = inputValue.search(CONST.VALIDATE_FOR_LEADINGSPACES_HTML_TAG_REGEX);
 
-                // Return early if there are no HTML characters
-                if (leadingSpaceIndex === -1 && foundHtmlTagIndex === -1) {
-                    return;
-                }
+                    // Return early if there are no HTML characters
+                    if (leadingSpaceIndex === -1 && foundHtmlTagIndex === -1) {
+                        return;
+                    }
 
-                const matchedHtmlTags = inputValue.match(CONST.VALIDATE_FOR_HTML_TAG_REGEX);
-                let isMatch = CONST.WHITELISTED_TAGS.some((regex) => regex.test(inputValue));
-                // Check for any matches that the original regex (foundHtmlTagIndex) matched
-                if (matchedHtmlTags) {
-                    // Check if any matched inputs does not match in WHITELISTED_TAGS list and return early if needed.
-                    for (const htmlTag of matchedHtmlTags) {
-                        isMatch = CONST.WHITELISTED_TAGS.some((regex) => regex.test(htmlTag));
-                        if (!isMatch) {
-                            break;
+                    const matchedHtmlTags = inputValue.match(CONST.VALIDATE_FOR_HTML_TAG_REGEX);
+                    let isMatch = CONST.WHITELISTED_TAGS.some((regex) => regex.test(inputValue));
+                    // Check for any matches that the original regex (foundHtmlTagIndex) matched
+                    if (matchedHtmlTags) {
+                        // Check if any matched inputs does not match in WHITELISTED_TAGS list and return early if needed.
+                        for (const htmlTag of matchedHtmlTags) {
+                            isMatch = CONST.WHITELISTED_TAGS.some((regex) => regex.test(htmlTag));
+                            if (!isMatch) {
+                                break;
+                            }
                         }
                     }
-                }
 
-                if (isMatch && leadingSpaceIndex === -1) {
-                    return;
-                }
+                    if (isMatch && leadingSpaceIndex === -1) {
+                        return;
+                    }
 
-                // Add a validation error here because it is a string value that contains HTML characters
-                validateErrors[inputID] = 'common.error.invalidCharacter';
-            });
+                    // Add a validation error here because it is a string value that contains HTML characters
+                    validateErrors[inputID] = translate('common.error.invalidCharacter');
+                });
+            }
 
             if (typeof validateErrors !== 'object') {
                 throw new Error('Validate callback must return an empty object or an object with shape {inputID: error}');
@@ -158,7 +167,7 @@ function FormProvider(
 
             return touchedInputErrors;
         },
-        [errors, formID, validate],
+        [shouldTrimValues, formID, validate, errors, translate, allowHTML],
     );
 
     // When locales change from another session of the same account,
@@ -170,14 +179,14 @@ function FormProvider(
         }
 
         // Prepare validation values
-        const trimmedStringValues = ValidationUtils.prepareValues(inputValues);
+        const trimmedStringValues = shouldTrimValues ? ValidationUtils.prepareValues(inputValues) : inputValues;
 
         // Validate in order to make sure the correct error translations are displayed,
         // making sure to not clear server errors if they exist
         onValidate(trimmedStringValues, !hasServerError);
 
         // Only run when locales change
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
     }, [preferredLocale]);
 
     /** @param inputID - The inputID of the input being touched */
@@ -195,7 +204,7 @@ function FormProvider(
         }
 
         // Prepare values before submitting
-        const trimmedStringValues = ValidationUtils.prepareValues(inputValues);
+        const trimmedStringValues = shouldTrimValues ? ValidationUtils.prepareValues(inputValues) : inputValues;
 
         // Touches all form inputs, so we can validate the entire form
         Object.keys(inputRefs.current).forEach((inputID) => (touchedInputs.current[inputID] = true));
@@ -211,7 +220,20 @@ function FormProvider(
         }
 
         onSubmit(trimmedStringValues);
-    }, [enabledWhenOffline, formState?.isLoading, inputValues, network?.isOffline, onSubmit, onValidate]);
+    }, [enabledWhenOffline, formState?.isLoading, inputValues, network?.isOffline, onSubmit, onValidate, shouldTrimValues]);
+
+    // Keep track of the focus state of the current screen.
+    // This is used to prevent validating the form on blur before it has been interacted with.
+    const isFocusedRef = useRef(true);
+
+    useFocusEffect(
+        useCallback(() => {
+            isFocusedRef.current = true;
+            return () => {
+                isFocusedRef.current = false;
+            };
+        }, []),
+    );
 
     const resetForm = useCallback(
         (optionalValue: FormOnyxValues) => {
@@ -240,6 +262,7 @@ function FormProvider(
                 inputRefs.current[inputID] = newRef;
             }
             if (inputProps.value !== undefined) {
+                // eslint-disable-next-line react-compiler/react-compiler
                 inputValues[inputID] = inputProps.value;
             } else if (inputProps.shouldSaveDraft && draftValues?.[inputID] !== undefined && inputValues[inputID] === undefined) {
                 inputValues[inputID] = draftValues[inputID];
@@ -253,10 +276,10 @@ function FormProvider(
 
             const errorFields = formState?.errorFields?.[inputID] ?? {};
             const fieldErrorMessage =
-                (Object.keys(errorFields)
+                Object.keys(errorFields)
                     .sort()
                     .map((key) => errorFields[key])
-                    .at(-1) as string) ?? '';
+                    .at(-1) ?? '';
 
             const inputRef = inputProps.ref;
 
@@ -329,7 +352,8 @@ function FormProvider(
                                 return;
                             }
                             setTouchedInput(inputID);
-                            if (shouldValidateOnBlur) {
+                            // We don't validate the form on blur in case the current screen is not focused
+                            if (shouldValidateOnBlur && isFocusedRef.current) {
                                 onValidate(inputValues, !hasServerError);
                             }
                         }, VALIDATE_DELAY);
@@ -351,7 +375,7 @@ function FormProvider(
                     });
 
                     if (inputProps.shouldSaveDraft && !formID.includes('Draft')) {
-                        FormActions.setDraftValues(formID as OnyxFormKey, {[inputKey]: value});
+                        FormActions.setDraftValues(formID, {[inputKey]: value});
                     }
                     inputProps.onValueChange?.(value, inputKey);
                 },
@@ -393,4 +417,6 @@ export default withOnyx<FormProviderProps, FormProviderOnyxProps>({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
         key: (props) => `${props.formID}Draft` as any,
     },
-})(forwardRef(FormProvider)) as <TFormID extends OnyxFormKey>(props: Omit<FormProviderProps<TFormID>, keyof FormProviderOnyxProps>) => ReactNode;
+})(forwardRef(FormProvider)) as <TFormID extends OnyxFormKey>(props: Omit<FormProviderProps<TFormID> & RefAttributes<FormRef>, keyof FormProviderOnyxProps>) => ReactNode;
+
+export type {FormProviderProps};

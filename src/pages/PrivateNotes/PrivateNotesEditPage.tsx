@@ -1,11 +1,10 @@
 import {useFocusEffect} from '@react-navigation/native';
 import type {StackScreenProps} from '@react-navigation/stack';
-import ExpensiMark from 'expensify-common/lib/ExpensiMark';
-import Str from 'expensify-common/lib/str';
+import {Str} from 'expensify-common';
 import lodashDebounce from 'lodash/debounce';
 import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Keyboard} from 'react-native';
-import type {OnyxCollection} from 'react-native-onyx';
+import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -20,22 +19,24 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PrivateNotesNavigatorParamList} from '@libs/Navigation/types';
+import Parser from '@libs/Parser';
 import * as ReportUtils from '@libs/ReportUtils';
 import updateMultilineInputRange from '@libs/updateMultilineInputRange';
 import type {WithReportAndPrivateNotesOrNotFoundProps} from '@pages/home/report/withReportAndPrivateNotesOrNotFound';
 import withReportAndPrivateNotesOrNotFound from '@pages/home/report/withReportAndPrivateNotesOrNotFound';
+import variables from '@styles/variables';
 import * as ReportActions from '@userActions/Report';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/PrivateNotesForm';
-import type {PersonalDetails, Report} from '@src/types/onyx';
+import type {PersonalDetailsList, Report} from '@src/types/onyx';
 import type {Note} from '@src/types/onyx/Report';
 
 type PrivateNotesEditPageOnyxProps = {
     /** All of the personal details for everyone */
-    personalDetailsList: OnyxCollection<PersonalDetails>;
+    personalDetailsList: OnyxEntry<PersonalDetailsList>;
 };
 
 type PrivateNotesEditPageProps = WithReportAndPrivateNotesOrNotFoundProps &
@@ -45,14 +46,14 @@ type PrivateNotesEditPageProps = WithReportAndPrivateNotesOrNotFoundProps &
         report: Report;
     };
 
-function PrivateNotesEditPage({route, personalDetailsList, report}: PrivateNotesEditPageProps) {
+function PrivateNotesEditPage({route, personalDetailsList, report, session}: PrivateNotesEditPageProps) {
+    const backTo = route.params.backTo;
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
     // We need to edit the note in markdown format, but display it in HTML format
-    const parser = new ExpensiMark();
     const [privateNote, setPrivateNote] = useState(
-        () => ReportActions.getDraftPrivateNote(report.reportID).trim() || parser.htmlToMarkdown(report?.privateNotes?.[Number(route.params.accountID)]?.note ?? '').trim(),
+        () => ReportActions.getDraftPrivateNote(report.reportID).trim() || Parser.htmlToMarkdown(report?.privateNotes?.[Number(route.params.accountID)]?.note ?? '').trim(),
     );
 
     /**
@@ -93,7 +94,7 @@ function PrivateNotesEditPage({route, personalDetailsList, report}: PrivateNotes
         const originalNote = report?.privateNotes?.[Number(route.params.accountID)]?.note ?? '';
         let editedNote = '';
         if (privateNote.trim() !== originalNote.trim()) {
-            editedNote = ReportActions.handleUserDeletedLinksInHtml(privateNote.trim(), parser.htmlToMarkdown(originalNote).trim());
+            editedNote = ReportActions.handleUserDeletedLinksInHtml(privateNote.trim(), Parser.htmlToMarkdown(originalNote).trim());
             ReportActions.updatePrivateNotes(report.reportID, Number(route.params.accountID), editedNote);
         }
 
@@ -102,9 +103,9 @@ function PrivateNotesEditPage({route, personalDetailsList, report}: PrivateNotes
 
         Keyboard.dismiss();
         if (!Object.values<Note>({...report.privateNotes, [route.params.accountID]: {note: editedNote}}).some((item) => item.note)) {
-            ReportUtils.navigateToDetailsPage(report);
+            ReportUtils.navigateToDetailsPage(report, backTo);
         } else {
-            Navigation.goBack(ROUTES.PRIVATE_NOTES_LIST.getRoute(report.reportID));
+            Navigation.goBack(ROUTES.PRIVATE_NOTES_LIST.getRoute(report.reportID, backTo));
         }
     };
 
@@ -116,7 +117,7 @@ function PrivateNotesEditPage({route, personalDetailsList, report}: PrivateNotes
         >
             <HeaderWithBackButton
                 title={translate('privateNotes.title')}
-                onBackButtonPress={() => Navigation.goBack(ROUTES.PRIVATE_NOTES_LIST.getRoute(report.reportID))}
+                onBackButtonPress={() => ReportUtils.goBackFromPrivateNotes(report, session, backTo)}
                 shouldShowBackButton
                 onCloseButtonPress={() => Navigation.dismissModal()}
             />
@@ -151,7 +152,7 @@ function PrivateNotesEditPage({route, personalDetailsList, report}: PrivateNotes
                         maxLength={CONST.MAX_COMMENT_LENGTH}
                         autoCorrect={false}
                         autoGrowHeight
-                        containerStyles={[styles.autoGrowHeightMultilineInput]}
+                        maxAutoGrowHeight={variables.textInputAutoGrowMaxHeight}
                         defaultValue={privateNote}
                         value={privateNote}
                         onChangeText={(text: string) => {
@@ -162,9 +163,12 @@ function PrivateNotesEditPage({route, personalDetailsList, report}: PrivateNotes
                             if (!el) {
                                 return;
                             }
+                            if (!privateNotesInput.current) {
+                                updateMultilineInputRange(el);
+                            }
                             privateNotesInput.current = el;
-                            updateMultilineInputRange(privateNotesInput.current);
                         }}
+                        isMarkdownEnabled
                     />
                 </OfflineWithFeedback>
             </FormProvider>

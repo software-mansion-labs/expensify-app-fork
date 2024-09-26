@@ -7,6 +7,7 @@ import {withOnyx} from 'react-native-onyx';
 import ReportActionsSkeletonView from '@components/ReportActionsSkeletonView';
 import ReportHeaderSkeletonView from '@components/ReportHeaderSkeletonView';
 import ScreenWrapper from '@components/ScreenWrapper';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
@@ -31,6 +32,7 @@ type ConciergePageProps = ConciergePageOnyxProps & StackScreenProps<AuthScreensP
 function ConciergePage({session}: ConciergePageProps) {
     const styles = useThemeStyles();
     const isUnmounted = useRef(false);
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     useFocusEffect(() => {
         if (session && 'authToken' in session) {
@@ -40,23 +42,23 @@ function ConciergePage({session}: ConciergePageProps) {
                 if (isUnmounted.current) {
                     return;
                 }
-                Report.navigateToConciergeChat(undefined, true, () => !isUnmounted.current);
+                Report.navigateToConciergeChat(true, () => !isUnmounted.current);
             });
         } else {
             Navigation.navigate();
         }
     });
 
-    useEffect(
-        () => () => {
+    useEffect(() => {
+        isUnmounted.current = false;
+        return () => {
             isUnmounted.current = true;
-        },
-        [],
-    );
+        };
+    }, []);
 
     return (
         <ScreenWrapper testID={ConciergePage.displayName}>
-            <View style={[styles.borderBottom]}>
+            <View style={[styles.borderBottom, styles.appContentHeader, !shouldUseNarrowLayout && styles.headerBarDesktopHeight]}>
                 <ReportHeaderSkeletonView onBackButtonPress={Navigation.goBack} />
             </View>
             <ReportActionsSkeletonView />

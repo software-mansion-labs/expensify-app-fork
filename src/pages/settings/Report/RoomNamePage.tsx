@@ -1,9 +1,9 @@
-import {useIsFocused} from '@react-navigation/native';
-import type {StackScreenProps} from '@react-navigation/stack';
+import type {RouteProp} from '@react-navigation/native';
+import {useIsFocused, useRoute} from '@react-navigation/native';
 import React, {useCallback, useRef} from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
-import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
+import type {OnyxCollection} from 'react-native-onyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -16,34 +16,37 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import type {ReportSettingsNavigatorParamList} from '@libs/Navigation/types';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as ValidationUtils from '@libs/ValidationUtils';
-import type {ReportSettingsNavigatorParamList} from '@navigation/types';
-import withReportOrNotFound from '@pages/home/report/withReportOrNotFound';
-import type {WithReportOrNotFoundProps} from '@pages/home/report/withReportOrNotFound';
 import * as ReportActions from '@userActions/Report';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/RoomNameForm';
-import type {Policy, Report} from '@src/types/onyx';
+import type {Report} from '@src/types/onyx';
 
 type RoomNamePageOnyxProps = {
     /** All reports shared with the user */
     reports: OnyxCollection<Report>;
-
-    /** Policy of the report for which the name is being edited */
-    policy: OnyxEntry<Policy>;
 };
 
-type RoomNamePageProps = RoomNamePageOnyxProps & WithReportOrNotFoundProps & StackScreenProps<ReportSettingsNavigatorParamList, typeof SCREENS.REPORT_SETTINGS.ROOM_NAME>;
+type RoomNamePageProps = RoomNamePageOnyxProps & {
+    report: Report;
+};
 
-function RoomNamePage({report, policy, reports}: RoomNamePageProps) {
+function RoomNamePage({report, reports}: RoomNamePageProps) {
+    const route = useRoute<RouteProp<ReportSettingsNavigatorParamList, typeof SCREENS.REPORT_SETTINGS.NAME>>();
     const styles = useThemeStyles();
     const roomNameInputRef = useRef<AnimatedTextInputRef>(null);
     const isFocused = useIsFocused();
     const {translate} = useLocalize();
+    const reportID = report?.reportID ?? '-1';
+
+    const goBack = useCallback(() => {
+        Navigation.goBack(ROUTES.REPORT_WITH_ID_DETAILS.getRoute(reportID, route.params.backTo));
+    }, [reportID, route.params.backTo]);
 
     const validate = useCallback(
         (values: FormOnyxValues<typeof ONYXKEYS.FORMS.ROOM_NAME_FORM>) => {
@@ -56,23 +59,31 @@ function RoomNamePage({report, policy, reports}: RoomNamePageProps) {
 
             if (!values.roomName || values.roomName === CONST.POLICY.ROOM_PREFIX) {
                 // We error if the user doesn't enter a room name or left blank
-                ErrorUtils.addErrorMessage(errors, 'roomName', 'newRoomPage.pleaseEnterRoomName');
+                ErrorUtils.addErrorMessage(errors, 'roomName', translate('newRoomPage.pleaseEnterRoomName'));
             } else if (!ValidationUtils.isValidRoomName(values.roomName)) {
                 // We error if the room name has invalid characters
-                ErrorUtils.addErrorMessage(errors, 'roomName', 'newRoomPage.roomNameInvalidError');
+                ErrorUtils.addErrorMessage(errors, 'roomName', translate('newRoomPage.roomNameInvalidError'));
             } else if (ValidationUtils.isReservedRoomName(values.roomName)) {
                 // Certain names are reserved for default rooms and should not be used for policy rooms.
-                ErrorUtils.addErrorMessage(errors, 'roomName', ['newRoomPage.roomNameReservedError', {reservedName: values.roomName}]);
-            } else if (ValidationUtils.isExistingRoomName(values.roomName, reports, report?.policyID ?? '')) {
+                ErrorUtils.addErrorMessage(errors, 'roomName', translate('newRoomPage.roomNameReservedError', {reservedName: values.roomName}));
+            } else if (ValidationUtils.isExistingRoomName(values.roomName, reports, report?.policyID ?? '-1')) {
                 // The room name can't be set to one that already exists on the policy
-                ErrorUtils.addErrorMessage(errors, 'roomName', 'newRoomPage.roomAlreadyExistsError');
+                ErrorUtils.addErrorMessage(errors, 'roomName', translate('newRoomPage.roomAlreadyExistsError'));
             } else if (values.roomName.length > CONST.TITLE_CHARACTER_LIMIT) {
-                ErrorUtils.addErrorMessage(errors, 'roomName', ['common.error.characterLimitExceedCounter', {length: values.roomName.length, limit: CONST.TITLE_CHARACTER_LIMIT}]);
+                ErrorUtils.addErrorMessage(errors, 'roomName', translate('common.error.characterLimitExceedCounter', {length: values.roomName.length, limit: CONST.TITLE_CHARACTER_LIMIT}));
             }
 
             return errors;
         },
-        [report, reports],
+        [report, reports, translate],
+    );
+
+    const updatePolicyRoomName = useCallback(
+        (values: FormOnyxValues<typeof ONYXKEYS.FORMS.ROOM_NAME_FORM>) => {
+            ReportActions.updatePolicyRoomName(report, values.roomName);
+            goBack();
+        },
+        [report, goBack],
     );
 
     return (
@@ -81,15 +92,15 @@ function RoomNamePage({report, policy, reports}: RoomNamePageProps) {
             includeSafeAreaPaddingBottom={false}
             testID={RoomNamePage.displayName}
         >
-            <FullPageNotFoundView shouldShow={ReportUtils.shouldDisableRename(report, policy)}>
+            <FullPageNotFoundView shouldShow={ReportUtils.shouldDisableRename(report)}>
                 <HeaderWithBackButton
                     title={translate('newRoomPage.roomName')}
-                    onBackButtonPress={() => Navigation.goBack(ROUTES.REPORT_SETTINGS.getRoute(report?.reportID ?? ''))}
+                    onBackButtonPress={goBack}
                 />
                 <FormProvider
                     style={[styles.flexGrow1, styles.ph5]}
                     formID={ONYXKEYS.FORMS.ROOM_NAME_FORM}
-                    onSubmit={(values) => report && ReportActions.updatePolicyRoomNameAndNavigate(report, values.roomName)}
+                    onSubmit={updatePolicyRoomName}
                     validate={validate}
                     submitButtonText={translate('common.save')}
                     enabledWhenOffline
@@ -111,13 +122,8 @@ function RoomNamePage({report, policy, reports}: RoomNamePageProps) {
 
 RoomNamePage.displayName = 'RoomNamePage';
 
-export default withReportOrNotFound()(
-    withOnyx<RoomNamePageProps, RoomNamePageOnyxProps>({
-        reports: {
-            key: ONYXKEYS.COLLECTION.REPORT,
-        },
-        policy: {
-            key: ({report}) => `${ONYXKEYS.COLLECTION.POLICY}${report?.policyID}`,
-        },
-    })(RoomNamePage),
-);
+export default withOnyx<RoomNamePageProps, RoomNamePageOnyxProps>({
+    reports: {
+        key: ONYXKEYS.COLLECTION.REPORT,
+    },
+})(RoomNamePage);
