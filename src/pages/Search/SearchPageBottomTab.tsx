@@ -50,6 +50,8 @@ function SearchPageBottomTab({queryJSON, policyID}: SearchPageBottomTabProps) {
                             activeWorkspaceID={policyID}
                             breadcrumbLabel={translate('common.search')}
                             shouldDisplaySearch={false}
+                            shouldDisplaySearchRouter={shouldUseNarrowLayout}
+                            isCustomSearchQuery={shouldUseNarrowLayout && !SearchUtils.isCannedSearchQuery(queryJSON)}
                         />
                         <SearchTypeMenu queryJSON={queryJSON} />
                     </>

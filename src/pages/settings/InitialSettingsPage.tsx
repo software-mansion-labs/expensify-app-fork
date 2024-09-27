@@ -115,6 +115,8 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
 
     const [shouldShowSignoutConfirmModal, setShouldShowSignoutConfirmModal] = useState(false);
 
+    const freeTrialText = SubscriptionUtils.getFreeTrialText(policies);
+
     useEffect(() => {
         Wallet.openInitialSettingsPage();
     }, []);
@@ -222,8 +224,8 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
                 icon: Expensicons.CreditCard,
                 routeName: ROUTES.SETTINGS_SUBSCRIPTION,
                 brickRoadIndicator: !!privateSubscription?.errors || SubscriptionUtils.hasSubscriptionRedDotError() ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
-                badgeText: SubscriptionUtils.isUserOnFreeTrial() ? translate('subscription.badge.freeTrial', {numOfDays: SubscriptionUtils.calculateRemainingFreeTrialDays()}) : undefined,
-                badgeStyle: SubscriptionUtils.isUserOnFreeTrial() ? styles.badgeSuccess : undefined,
+                badgeText: freeTrialText,
+                badgeStyle: freeTrialText ? styles.badgeSuccess : undefined,
             });
         }
 
@@ -232,7 +234,7 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
             sectionTranslationKey: 'common.workspaces',
             items,
         };
-    }, [policies, privateSubscription?.errors, styles.badgeSuccess, styles.workspaceSettingsSectionContainer, subscriptionPlan, translate, allConnectionSyncProgresses]);
+    }, [allConnectionSyncProgresses, freeTrialText, policies, privateSubscription?.errors, styles.badgeSuccess, styles.workspaceSettingsSectionContainer, subscriptionPlan]);
 
     /**
      * Retuns a list of menu items data for general section
@@ -336,7 +338,6 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
                                 shouldStackHorizontally={item.shouldStackHorizontally}
                                 floatRightAvatarSize={item.avatarSize}
                                 ref={popoverAnchor}
-                                hoverAndPressStyle={styles.hoveredComponentBG}
                                 shouldBlockSelection={!!item.link}
                                 onSecondaryInteraction={item.link ? (event) => openPopover(item.link, event) : undefined}
                                 focused={!!activeRoute && !!item.routeName && !!(activeRoute.toLowerCase().replaceAll('_', '') === item.routeName.toLowerCase().replaceAll('/', ''))}
@@ -349,19 +350,7 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
                 </View>
             );
         },
-        [
-            styles.pb4,
-            styles.mh3,
-            styles.sectionTitle,
-            styles.sectionMenuItem,
-            styles.hoveredComponentBG,
-            translate,
-            userWallet?.currentBalance,
-            isExecuting,
-            singleExecution,
-            activeRoute,
-            waitForNavigate,
-        ],
+        [styles.pb4, styles.mh3, styles.sectionTitle, styles.sectionMenuItem, translate, userWallet?.currentBalance, isExecuting, singleExecution, activeRoute, waitForNavigate],
     );
 
     const accountMenuItems = useMemo(() => getMenuItemsSection(accountMenuItemsData), [accountMenuItemsData, getMenuItemsSection]);
@@ -438,7 +427,7 @@ function InitialSettingsPage({userWallet, bankAccountList, fundList, walletTerms
                 scrollEventThrottle={16}
                 contentContainerStyle={[styles.w100]}
                 showsVerticalScrollIndicator={false}
-        >
+            >
                 {accountMenuItems}
                 {workspaceMenuItems}
                 {generalMenuItems}

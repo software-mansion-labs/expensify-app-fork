@@ -1,19 +1,18 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {FlatList, View} from 'react-native';
-import {useOnyx, withOnyx} from 'react-native-onyx';
-import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
-import FeatureList from '@components/FeatureList';
 import type {FeatureListItem} from '@components/FeatureList';
+import FeatureList from '@components/FeatureList';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
 import LottieAnimations from '@components/LottieAnimations';
 import type {MenuItemProps} from '@components/MenuItem';
-import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import type {OfflineWithFeedbackProps} from '@components/OfflineWithFeedback';
+import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import type {PopoverMenuItem} from '@components/PopoverMenu';
 import {PressableWithoutFeedback} from '@components/Pressable';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -40,7 +39,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-import type {Policy as PolicyType, ReimbursementAccount, Report, Session as SessionType} from '@src/types/onyx';
+import type {Policy as PolicyType} from '@src/types/onyx';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import WorkspacesListRow from './WorkspacesListRow';
@@ -68,22 +67,6 @@ type ChatType = {
 };
 
 type ChatPolicyType = Record<string, ChatType>;
-
-type WorkspaceListPageOnyxProps = {
-    /** The list of this user's policies */
-    policies: OnyxCollection<PolicyType>;
-
-    /** Bank account attached to free plan */
-    reimbursementAccount: OnyxEntry<ReimbursementAccount>;
-
-    /** All reports shared with the user (coming from Onyx) */
-    reports: OnyxCollection<Report>;
-
-    /** Session info for the currently logged in user. */
-    session: OnyxEntry<SessionType>;
-};
-
-type WorkspaceListPageProps = WorkspaceListPageOnyxProps;
 
 const workspaceFeatures: FeatureListItem[] = [
     {
@@ -119,13 +102,17 @@ function dismissWorkspaceError(policyID: string, pendingAction: OnyxCommon.Pendi
 
 const stickyHeaderIndices = [0];
 
-function WorkspacesListPage({policies, reimbursementAccount, reports, session}: WorkspaceListPageProps) {
+function WorkspacesListPage() {
     const theme = useTheme();
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
     const {shouldUseNarrowLayout, isMediumScreenWidth} = useResponsiveLayout();
     const [allConnectionSyncProgresses] = useOnyx(ONYXKEYS.COLLECTION.POLICY_CONNECTION_SYNC_PROGRESS);
+    const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
+    const [reports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
+    const [session] = useOnyx(ONYXKEYS.SESSION);
 
     const {activeWorkspaceID} = useActiveWorkspace();
 
@@ -314,7 +301,7 @@ function WorkspacesListPage({policies, reimbursementAccount, reports, session}: 
         }
 
         return Object.values(policies)
-            .filter((policy): policy is PolicyType => PolicyUtils.shouldShowPolicy(policy, !!isOffline, session?.email))
+            .filter((policy): policy is PolicyType => PolicyUtils.shouldShowPolicy(policy, isOffline, session?.email))
             .map((policy): WorkspaceItem => {
                 if (policy?.isJoinRequestPending && policy?.policyDetailsForNonMembers) {
                     const policyInfo = Object.values(policy.policyDetailsForNonMembers)[0];
@@ -388,6 +375,7 @@ function WorkspacesListPage({policies, reimbursementAccount, reports, session}: 
                 <HeaderWithBackButton
                     title={translate('common.workspaces')}
                     shouldShowBackButton={shouldUseNarrowLayout}
+                    shouldDisplaySearchRouter
                     onBackButtonPress={() => Navigation.goBack()}
                     icon={Illustrations.BigRocket}
                 >
@@ -424,6 +412,7 @@ function WorkspacesListPage({policies, reimbursementAccount, reports, session}: 
                 <HeaderWithBackButton
                     title={translate('common.workspaces')}
                     shouldShowBackButton={shouldUseNarrowLayout}
+                    shouldDisplaySearchRouter
                     onBackButtonPress={() => Navigation.goBack()}
                     icon={Illustrations.BigRocket}
                 >
@@ -454,18 +443,4 @@ function WorkspacesListPage({policies, reimbursementAccount, reports, session}: 
 
 WorkspacesListPage.displayName = 'WorkspacesListPage';
 
-export default withOnyx<WorkspaceListPageProps, WorkspaceListPageOnyxProps>({
-    policies: {
-        key: ONYXKEYS.COLLECTION.POLICY,
-    },
-    // @ts-expect-error: ONYXKEYS.REIMBURSEMENT_ACCOUNT is conflicting with ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM
-    reimbursementAccount: {
-        key: ONYXKEYS.REIMBURSEMENT_ACCOUNT,
-    },
-    reports: {
-        key: ONYXKEYS.COLLECTION.REPORT,
-    },
-    session: {
-        key: ONYXKEYS.SESSION,
-    },
-})(WorkspacesListPage);
+export default WorkspacesListPage;
