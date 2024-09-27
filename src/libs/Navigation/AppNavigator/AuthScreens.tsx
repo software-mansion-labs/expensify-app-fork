@@ -9,6 +9,7 @@ import ComposeProviders from '@components/ComposeProviders';
 import OptionsListContextProvider from '@components/OptionListContextProvider';
 import {SearchContextProvider} from '@components/Search/SearchContext';
 import SearchRouter from '@components/Search/SearchRouter/SearchRouter';
+import withPrepareCentralPaneScreen from '@components/withPrepareCentralPaneScreen';
 import useActiveWorkspace from '@hooks/useActiveWorkspace';
 import usePermissions from '@hooks/usePermissions';
 import {ReportIDsContextProvider} from '@hooks/useReportIDs';
@@ -32,7 +33,6 @@ import {buildSearchQueryString} from '@libs/SearchUtils';
 import * as SessionUtils from '@libs/SessionUtils';
 import ConnectionCompletePage from '@pages/ConnectionCompletePage';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
-import SearchPage from '@pages/Search/SearchPage';
 import DesktopSignInRedirectPage from '@pages/signin/DesktopSignInRedirectPage';
 import * as App from '@userActions/App';
 import * as Download from '@userActions/Download';
@@ -53,7 +53,6 @@ import SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/PersonalDetails';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import defaultScreenOptions from './defaultScreenOptions';
@@ -62,11 +61,8 @@ import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
 import FeatureTrainingModalNavigator from './Navigators/FeatureTrainingModalNavigator';
 import LeftModalNavigator from './Navigators/LeftModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
-import ReportsSplitNavigator from './Navigators/ReportsSplitNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
-import SettingsSplitNavigator from './Navigators/SettingsSplitNavigator';
 import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
-import WorkspaceSplitNavigator from './Navigators/WorkspaceSplitNavigator';
 
 const loadReportAttachments = () => require<ReactComponentModule>('../../../pages/home/report/ReportAttachments').default;
 const loadValidateLoginPage = () => require<ReactComponentModule>('../../../pages/ValidateLoginPage').default;
@@ -79,6 +75,11 @@ const loadWorkspaceAvatar = () => require<ReactComponentModule>('../../../pages/
 const loadReportAvatar = () => require<ReactComponentModule>('../../../pages/ReportAvatar').default;
 const loadReceiptView = () => require<ReactComponentModule>('../../../pages/TransactionReceiptPage').default;
 const loadWorkspaceJoinUser = () => require<ReactComponentModule>('@pages/workspace/WorkspaceJoinUserPage').default;
+
+const loadReportSplitNavigator = withPrepareCentralPaneScreen(() => require<ReactComponentModule>('./Navigators/ReportsSplitNavigator').default);
+const loadSettingsSplitNavigator = withPrepareCentralPaneScreen(() => require<ReactComponentModule>('./Navigators/SettingsSplitNavigator').default);
+const loadWorkspaceSplitNavigator = withPrepareCentralPaneScreen(() => require<ReactComponentModule>('./Navigators/WorkspaceSplitNavigator').default);
+const loadSearchPage = withPrepareCentralPaneScreen(() => require<ReactComponentModule>('@pages/Search/SearchPage').default);
 
 function shouldOpenOnAdminRoom() {
     const url = getCurrentUrl();
@@ -209,9 +210,9 @@ const modalScreenListenersWithCancelSearch = {
 };
 
 function AuthScreens() {
-    const [session, sessionStatus] = useOnyx(ONYXKEYS.SESSION);
-    const [lastOpenedPublicRoomID, lastOpenedPublicRoomIDStatus] = useOnyx(ONYXKEYS.LAST_OPENED_PUBLIC_ROOM_ID);
-    const [initialLastUpdateIDAppliedToClient, initialLastUpdateIDAppliedToClientStatus] = useOnyx(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT);
+    const [session] = useOnyx(ONYXKEYS.SESSION);
+    const [lastOpenedPublicRoomID] = useOnyx(ONYXKEYS.LAST_OPENED_PUBLIC_ROOM_ID);
+    const [initialLastUpdateIDAppliedToClient] = useOnyx(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT);
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {shouldUseNarrowLayout, onboardingIsMediumOrLargerScreenWidth, isSmallScreenWidth} = useResponsiveLayout();
@@ -397,23 +398,23 @@ function AuthScreens() {
                     <RootStack.Screen
                         name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
                         options={screenOptions.fullScreen}
-                        getComponent={withPrepareCentralPaneScreen(() => ReportsSplitNavigator)}
+                        getComponent={loadReportSplitNavigator}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
                         options={screenOptions.fullScreen}
-                        getComponent={withPrepareCentralPaneScreen(() => SettingsSplitNavigator)}
+                        getComponent={loadSettingsSplitNavigator}
                     />
                     <RootStack.Screen
                         name={SCREENS.SEARCH.CENTRAL_PANE}
                         options={screenOptions.fullScreen}
-                        getComponent={withPrepareCentralPaneScreen(() => SearchPage)}
+                        getComponent={loadSearchPage}
                         initialParams={{q: buildSearchQueryString()}}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR}
                         options={screenOptions.fullScreen}
-                        getComponent={withPrepareCentralPaneScreen(() => WorkspaceSplitNavigator)}
+                        getComponent={loadWorkspaceSplitNavigator}
                     />
                     <RootStack.Screen
                         name={SCREENS.VALIDATE_LOGIN}
