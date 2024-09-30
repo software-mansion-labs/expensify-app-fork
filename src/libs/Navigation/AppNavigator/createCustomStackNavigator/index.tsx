@@ -20,7 +20,6 @@ function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
         initialRouteName: props.initialRouteName,
     });
 
-
     return (
         <NavigationContent>
             <StackView
