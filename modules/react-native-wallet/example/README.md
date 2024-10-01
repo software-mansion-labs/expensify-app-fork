@@ -4,7 +4,7 @@ This app demonstrates how to verify that the `react-native-wallet` library is co
 
 ## Purpose
 
-In this PR, we aim to verify that we can fetch the following parameters to support card tokenization in Apple Pay and Google Pay:
+First, we aim to verify that we can fetch the following parameters to support card tokenization in Apple Pay and Google Pay:
 
 | **Mutual Parameters**   | **Android Specific Parameters** | **iOS Specific Parameters** |
 |--------------------------|---------------------------------|----------------------------|
