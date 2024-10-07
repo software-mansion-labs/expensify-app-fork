@@ -27,18 +27,29 @@ type InitialURLContextProviderProps = {
 
 function InitialURLContextProvider({children, url}: InitialURLContextProviderProps) {
     const [initialURL, setInitialURL] = useState<Route | undefined>(url);
-    const {setSplashScreenState} = useSplashScreenStateContext();
+    const {splashScreenState, setSplashScreenState} = useSplashScreenStateContext();
 
     useEffect(() => {
-        if (url) {
-            const route = signInAfterTransitionFromOldDot(url);
+        Linking.addEventListener('url', (initURL) => {
+            console.log('linking getinitialurl', initURL);
+
+            const route = signInAfterTransitionFromOldDot(initURL.url);
             setInitialURL(route);
-            setSplashScreenState(CONST.BOOT_SPLASH_STATE.READY_TO_BE_HIDDEN);
+
+            if (splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN) {
+                setSplashScreenState(CONST.BOOT_SPLASH_STATE.READY_TO_BE_HIDDEN);
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!url) {
             return;
         }
-        Linking.getInitialURL().then((initURL) => {
-            setInitialURL(initURL as Route);
-        });
+
+        const route = signInAfterTransitionFromOldDot(url);
+        setInitialURL(route);
+        setSplashScreenState(CONST.BOOT_SPLASH_STATE.READY_TO_BE_HIDDEN);
     }, [setSplashScreenState, url]);
 
     const initialUrlContext = useMemo(
