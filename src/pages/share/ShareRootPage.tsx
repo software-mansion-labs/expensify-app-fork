@@ -1,39 +1,33 @@
 import React, {useEffect, useRef} from 'react';
 import type {AppStateStatus} from 'react-native';
 import {AppState, View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
-import {withOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import TabSelector from '@components/TabSelector/TabSelector';
-import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {setShareFileData} from '@libs/actions/ShareFile';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import Navigation from '@navigation/Navigation';
 import OnyxTabNavigator, {TopTab} from '@navigation/OnyxTabNavigator';
 import CONST from '@src/CONST';
 import ShareActionHandlerModule from '@src/modules/ShareActionHandlerModule';
-import ONYXKEYS from '@src/ONYXKEYS';
+import type {SharedFileData} from '@src/types/onyx/ShareFile';
 import ScanTab from './ScanTab';
+import ShareTab from './ShareTab';
 
-type ShareRootPageOnyxProps = {
-    selectedTab: OnyxEntry<string>;
-};
-
-type ShareRootPageProps = ShareRootPageOnyxProps;
-
-function ShareRootPage({selectedTab}: ShareRootPageProps) {
+function ShareRootPage() {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const fileIsScannable = false;
     const appState = useRef(AppState.currentState);
 
     const handleProcessFiles = () => {
-        console.log('PROCESS FILES ATTEMPT');
-        ShareActionHandlerModule.processFiles((processedFiles) => {
+        ShareActionHandlerModule.processFiles((file) => {
+            const processedFile = JSON.parse(file) as SharedFileData;
+
             // eslint-disable-next-line no-console
-            console.log('PROCESSED FILES ', processedFiles);
+            console.log('PROCESS FILES ATTEMPT', file, processedFile);
+            setShareFileData(processedFile);
         });
     };
 
@@ -72,19 +66,9 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
                 />
                 <OnyxTabNavigator
                     id={CONST.TAB.SHARE_TAB_ID}
-                    // @ts-expect-error I think that OnyxTabNavigator is going to be refactored in terms of types
-                    selectedTab={fileIsScannable && selectedTab ? selectedTab : CONST.TAB.SHARE}
-                    hideTabBar={!fileIsScannable}
-                    // @ts-expect-error I think that OnyxTabNavigator is going to be refactored in terms of types
-                    tabBar={({state, navigation, position}) => (
-                        <TabSelector
-                            state={state}
-                            navigation={navigation}
-                            position={position}
-                        />
-                    )}
+                    tabBar={TabSelector}
                 >
-                    <TopTab.Screen name={CONST.TAB.SHARE}>{() => <Text>test</Text>}</TopTab.Screen>
+                    <TopTab.Screen name={CONST.TAB.SHARE}>{() => <ShareTab />}</TopTab.Screen>
                     <TopTab.Screen name={CONST.TAB.SCAN}>{() => <ScanTab />}</TopTab.Screen>
                 </OnyxTabNavigator>
             </View>
@@ -94,8 +78,4 @@ function ShareRootPage({selectedTab}: ShareRootPageProps) {
 
 ShareRootPage.displayName = 'ShareRootPage';
 
-export default withOnyx<ShareRootPageProps, ShareRootPageOnyxProps>({
-    selectedTab: {
-        key: `${ONYXKEYS.COLLECTION.SELECTED_TAB}${CONST.TAB.RECEIPT_TAB_ID}`,
-    },
-})(ShareRootPage);
+export default ShareRootPage;

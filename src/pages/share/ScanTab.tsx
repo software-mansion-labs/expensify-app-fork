@@ -4,7 +4,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 import * as IOU from '@libs/actions/IOU';
 import Navigation from '@libs/Navigation/Navigation';
 import * as ReportUtils from '@libs/ReportUtils';
-import MoneyRequestParticipantsSelector from '@pages/iou/steps/MoneyRequstParticipantsPage/MoneyRequestParticipantsSelector';
+import MoneyRequestParticipantsSelector from '@pages/iou/request/MoneyRequestParticipantsSelector';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -29,13 +29,13 @@ function ScanTab({transaction}: ScanTabProps) {
         IOU.initMoneyRequest(optimisticReportID, false, CONST.IOU.REQUEST_TYPE.SCAN);
         IOU.setMoneyRequestTag(transactionID, '');
         IOU.setMoneyRequestCategory(transactionID, '');
-        IOU.setMoneyRequestParticipants_temporaryForRefactor(transactionID, transaction?.participants ?? []);
+        IOU.setMoneyRequestParticipants(transactionID, transaction?.participants ?? []);
         Navigation.navigate(ROUTES.SHARE_SCAN_CONFIRM.getRoute(nextStepIOUType, transactionID, selectedReportID.current || optimisticReportID));
     }, [transactionID, optimisticReportID]);
 
     const addParticipant = useCallback(
         (val: Participant[]) => {
-            IOU.setMoneyRequestParticipants_temporaryForRefactor(transactionID, val);
+            IOU.setMoneyRequestParticipants(transactionID, val);
             numberOfParticipants.current = val.length;
 
             // When multiple participants are selected, the reportID is generated at the end of the confirmation step.
@@ -54,17 +54,16 @@ function ScanTab({transaction}: ScanTabProps) {
     return (
         <MoneyRequestParticipantsSelector
             participants={transaction?.participants ?? []}
-            onAddParticipants={addParticipant}
-            navigateToRequest={goToNextStep}
-            navigateToSplit={goToNextStep}
+            onParticipantsAdded={addParticipant}
+            onFinish={goToNextStep}
             iouType={CONST.IOU.TYPE.REQUEST}
-            isScanRequest
+            iouRequestType="scan"
+            action="create"
         />
     );
 }
 
 export default withOnyx<ScanTabProps, ScanTabOnyxProps>({
-    // @ts-expect-error to fix
     transaction: {
         key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_TRANSACTION_ID}`,
     },

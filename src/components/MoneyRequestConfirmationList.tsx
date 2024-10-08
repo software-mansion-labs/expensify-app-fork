@@ -441,7 +441,7 @@ function MoneyRequestConfirmationList({
         } else if (isTypeSplit && iouAmount === 0) {
             text = translate('iou.splitExpense');
         } else if ((receiptPath && isTypeRequest) || isDistanceRequestWithPendingRoute) {
-            text = translate('iou.submitExpense');
+            text = 'siemaaaa';
             if (iouAmount !== 0) {
                 text = translate('iou.submitAmount', {amount: formattedAmount});
             }

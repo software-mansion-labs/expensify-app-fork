@@ -531,9 +531,9 @@ const ProcessMoneyRequestHoldStackNavigator = createModalStackNavigator({
 });
 
 const ShareModalStackNavigator = createModalStackNavigator({
-    [SCREENS.SHARE.ROOT]: () => require('../../../pages/share/ShareRootPage').default as React.ComponentType,
-    [SCREENS.SHARE.MESSAGE]: () => require('../../../pages/share/ShareComposeMessagePage').default as React.ComponentType,
-    [SCREENS.SHARE.SCAN_CONFIRM]: () => require('../../../pages/iou/request/step/IOURequestStepConfirmation').default as React.ComponentType,
+    [SCREENS.SHARE.ROOT]: () => require<ReactComponentModule>('../../../../pages/share/ShareRootPage').default,
+    [SCREENS.SHARE.MESSAGE]: () => require<ReactComponentModule>('../../../../pages/share/ShareComposeMessagePage').default,
+    [SCREENS.SHARE.SCAN_CONFIRM]: () => require<ReactComponentModule>('../../../../pages/iou/request/step/IOURequestStepConfirmation').default,
 });
 
 const TransactionDuplicateStackNavigator = createModalStackNavigator<TransactionDuplicateNavigatorParamList>({
