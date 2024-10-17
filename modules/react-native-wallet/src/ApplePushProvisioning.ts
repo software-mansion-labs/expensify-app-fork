@@ -35,7 +35,7 @@ const ApplePushProvisioning: ApplePushProvisioningType = NativeModules.ApplePush
         get() {
             throw new Error(LINKING_ERROR);
         },
-    });
+    }); 
 
 const eventEmitter = ApplePushProvisioning ? new NativeEventEmitter(ApplePushProvisioning) : null;
 
