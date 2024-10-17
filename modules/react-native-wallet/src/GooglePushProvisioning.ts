@@ -30,16 +30,15 @@ type GooglePushProvisioningType = NativeModule & {
     pushProvision: (opc: string, tsp: Tsp, clientName: string, lastDigits: string, addressJson: string) => Promise<string>;
 };
 
-const GooglePushProvisioning = NativeModules.GooglePushProvisioning
+const LINKING_ERROR = "Error linking GooglePushProvisioning module.";
+
+const GooglePushProvisioning: GooglePushProvisioningType = NativeModules.GooglePushProvisioning
   ? NativeModules.GooglePushProvisioning
-  : new Proxy(
-      {},
-      {
+  : new Proxy<GooglePushProvisioningType>({} as GooglePushProvisioningType, {
         get() {
-          throw new Error(LINKING_ERROR);
+            throw new Error(LINKING_ERROR);
         },
-      }
-    );
+    });
 
 const GooglePushProvisioningModule = {
     /**

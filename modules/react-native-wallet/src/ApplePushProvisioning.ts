@@ -27,7 +27,15 @@ type ApplePushProvisioningType = NativeModule & {
     completeAddPaymentPass: (activation: string, encryptedData: string, ephemeralKey: string) => Promise<void>;
 };
 
-const ApplePushProvisioning = (NativeModules.ApplePushProvisioning as ApplePushProvisioningType) ?? null;
+const LINKING_ERROR = "Error linking ApplePushProvisioning module.";
+
+const ApplePushProvisioning: ApplePushProvisioningType = NativeModules.ApplePushProvisioning
+  ? NativeModules.ApplePushProvisioning
+  : new Proxy<ApplePushProvisioningType>({} as ApplePushProvisioningType, {
+        get() {
+            throw new Error(LINKING_ERROR);
+        },
+    });
 
 const eventEmitter = ApplePushProvisioning ? new NativeEventEmitter(ApplePushProvisioning) : null;
 
