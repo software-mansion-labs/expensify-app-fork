@@ -5,6 +5,7 @@
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.expensify.new</string>
+		<string>applinks:https://3410-2a02-a31d-a1e5-d980-6c52-c1dd-9ac-e9e.ngrok-free.app</string>
 	</array>
 </dict>
 </plist>

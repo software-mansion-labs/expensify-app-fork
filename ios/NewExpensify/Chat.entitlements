@@ -13,6 +13,7 @@
 		<string>applinks:new.expensify.com</string>
 		<string>applinks:staging.new.expensify.com</string>
 		<string>webcredentials:new.expensify.com</string>
+		<string>applinks:https://3410-2a02-a31d-a1e5-d980-6c52-c1dd-9ac-e9e.ngrok-free.app</string>
 	</array>
 	<key>com.apple.developer.usernotifications.communication</key>
 	<true/>

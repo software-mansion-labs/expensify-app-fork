@@ -2,8 +2,12 @@
     "applinks": {
         "details": [
             {
-                "appIDs": ["368M544MTT.com.chat.expensify.chat"],
+                "appIDs": ["368M544MTT.com.expensify.expensifylite"],
                 "components": [
+                    {
+                      "/": "/inbox",
+                      "comment": ""
+                    },
                     {
                        "/": "/r/*",
                        "comment": "Reports"
@@ -105,6 +109,6 @@
         ]
     },
     "webcredentials": {
-        "apps": ["368M544MTT.com.chat.expensify.chat"]
+        "apps": ["368M544MTT.com.expensify.expensifylite"]
     }
 }
