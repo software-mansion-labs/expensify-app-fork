@@ -5,6 +5,7 @@ import {InteractionManager, Linking, NativeModules} from 'react-native';
 import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
+import type HybridAppSettings from '@libs/actions/HybridApp';
 import * as PersistedRequests from '@libs/actions/PersistedRequests';
 import * as API from '@libs/API';
 import type {
@@ -479,21 +480,12 @@ function signUpUser() {
     API.write(WRITE_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData});
 }
 
-function signInAfterTransitionFromOldDot(transitionURL: string) {
-    const [route, queryParams] = transitionURL.split('?');
-    const queryParamsObject = queryParams
-        ? Object.fromEntries(
-              queryParams.split('&').map((param) => {
-                  const [key, value] = param.split('=');
-                  return [key, value];
-              }),
-          )
-        : {};
-
-    const {useNewDotSignInPage, isSingleNewDotEntry} = queryParamsObject;
+function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: HybridAppSettings) {
+    const {initialOnyxValues} = hybridAppSettings;
+    const {hybridApp} = initialOnyxValues;
 
     const clearOnyxBeforeSignIn = () => {
-        if (useNewDotSignInPage !== 'true') {
+        if (!hybridApp.useNewDotSignInPage) {
             return Promise.resolve();
         }
 
@@ -501,7 +493,7 @@ function signInAfterTransitionFromOldDot(transitionURL: string) {
     };
 
     const initAppAfterTransition = () => {
-        if (useNewDotSignInPage === 'true') {
+        if (hybridApp.useNewDotSignInPage) {
             return Promise.resolve();
         }
 
@@ -510,18 +502,13 @@ function signInAfterTransitionFromOldDot(transitionURL: string) {
 
     const setSessionDataAndOpenApp = new Promise<Route>((resolve) => {
         clearOnyxBeforeSignIn()
-            .then(() =>
-                Onyx.multiSet({
-                    [ONYXKEYS.USE_NEWDOT_SIGN_IN_PAGE]: useNewDotSignInPage === 'true',
-                    [ONYXKEYS.NVP_TRYNEWDOT]: {classicRedirect: {dismissed: 'true'}}, // This data is mocked and should be returned by BeginSignUp/SignInUser API commands
-                }),
-            )
+            .then(() => Onyx.multiSet(initialOnyxValues))
             .then(initAppAfterTransition)
             .catch((error) => {
                 Log.hmmm('[HybridApp] Initialization of HybridApp has failed. Forcing transition', {error});
             })
             .finally(() => {
-                resolve(`${route}?singleNewDotEntry=${isSingleNewDotEntry}` as Route);
+                resolve(route);
             });
     });
 

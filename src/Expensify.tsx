@@ -96,7 +96,7 @@ function Expensify() {
     const [screenShareRequest] = useOnyx(ONYXKEYS.SCREEN_SHARE_REQUEST);
     const [focusModeNotification] = useOnyx(ONYXKEYS.FOCUS_MODE_NOTIFICATION, {initWithStoredValues: false});
     const [lastVisitedPath] = useOnyx(ONYXKEYS.LAST_VISITED_PATH);
-    const [useNewDotSignInPage] = useOnyx(ONYXKEYS.USE_NEWDOT_SIGN_IN_PAGE);
+    const [useNewDotSignInPage] = useOnyx(ONYXKEYS.HYBRID_APP, {selector: (data) => data?.useNewDotSignInPage});
 
     useEffect(() => {
         if (!account?.needsTwoFactorAuthSetup || account.requiresTwoFactorAuth) {

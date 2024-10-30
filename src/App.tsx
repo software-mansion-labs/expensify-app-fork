@@ -35,14 +35,15 @@ import CONFIG from './CONFIG';
 import Expensify from './Expensify';
 import useDefaultDragAndDrop from './hooks/useDefaultDragAndDrop';
 import {ReportIDsContextProvider} from './hooks/useReportIDs';
+import type HybridAppSettings from './libs/actions/HybridApp';
 import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
 import {ReportAttachmentsProvider} from './pages/home/report/ReportAttachmentsContext';
 import type {Route} from './ROUTES';
 import {SplashScreenStateContextProvider} from './SplashScreenStateContext';
 
 type AppProps = {
-    /** URL passed to our top-level React Native component by HybridApp. Will always be undefined in "pure" NewDot builds. */
     url?: Route;
+    hybridAppSettings?: HybridAppSettings;
 };
 
 LogBox.ignoreLogs([
@@ -56,14 +57,17 @@ const fill = {flex: 1};
 
 const StrictModeWrapper = CONFIG.USE_REACT_STRICT_MODE_IN_DEV ? React.StrictMode : ({children}: {children: React.ReactElement}) => children;
 
-function App({url}: AppProps) {
+function App({url, hybridAppSettings}: AppProps) {
     useDefaultDragAndDrop();
     OnyxUpdateManager();
 
     return (
         <StrictModeWrapper>
             <SplashScreenStateContextProvider>
-                <InitialURLContextProvider url={url}>
+                <InitialURLContextProvider
+                    url={url}
+                    hybridAppSettings={hybridAppSettings}
+                >
                     <GestureHandlerRootView style={fill}>
                         <ComposeProviders
                             components={[
