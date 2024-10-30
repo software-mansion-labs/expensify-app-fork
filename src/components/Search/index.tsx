@@ -7,7 +7,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 import {useOnyx} from 'react-native-onyx';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import SearchTableHeader from '@components/SelectionList/SearchTableHeader';
-import type {ReportActionListItemType, ReportListItemType, TransactionListItemType} from '@components/SelectionList/types';
+import type {ReportActionListItemType, ReportListItemType, SelectionListHandle, TransactionListItemType} from '@components/SelectionList/types';
 import SelectionListWithModal from '@components/SelectionListWithModal';
 import SearchRowSkeleton from '@components/Skeletons/SearchRowSkeleton';
 import useMobileSelectionMode from '@hooks/useMobileSelectionMode';
@@ -35,6 +35,7 @@ import ROUTES from '@src/ROUTES';
 import type SearchResults from '@src/types/onyx/SearchResults';
 import {useSearchContext} from './SearchContext';
 import type {SearchColumnType, SearchQueryJSON, SearchStatus, SelectedTransactionInfo, SelectedTransactions, SortOrder} from './types';
+import isEqual from 'lodash/isEqual';
 
 type SearchProps = {
     queryJSON: SearchQueryJSON;
@@ -404,9 +405,38 @@ function Search({queryJSON, onSearchListScroll, contentContainerStyle}: SearchPr
     const shouldShowYear = SearchUIUtils.shouldShowYear(searchResults?.data);
     const shouldShowSorting = sortableSearchStatuses.includes(status);
 
+    const [isSelectionListRefLoaded, setIsSelectionListRefLoaded] = useState<boolean>(false);
+
+    const handleSelectionListReload = (ref: SelectionListHandle | null) => {
+        if(!ref || isSelectionListRefLoaded) {
+            return;
+        }
+        
+        setIsSelectionListRefLoaded(true);
+        const storedIndexString = sessionStorage.getItem(CONST.SESSION_STORAGE_KEYS.SEARCH_SELECTED_INDEX);
+
+        if (!storedIndexString) {
+            return;
+        }
+
+        const storedIndex = parseInt(storedIndexString);
+
+        if (storedIndex <= 0) {
+            return;
+        }
+
+        ref.scrollToIndex(storedIndex);
+        sessionStorage.removeItem(CONST.SESSION_STORAGE_KEYS.SEARCH_SELECTED_INDEX);
+    };
+
+    const handleSelectionListRef = (ref: SelectionListHandle) => {
+        handleSelectionListScroll(sortedSelectedData)(ref);
+        handleSelectionListReload(ref);
+    };
+
     return (
         <SelectionListWithModal<ReportListItemType | TransactionListItemType | ReportActionListItemType>
-            ref={handleSelectionListScroll(sortedSelectedData)}
+            ref={handleSelectionListRef}
             sections={[{data: sortedSelectedData, isDisabled: false}]}
             turnOnSelectionModeOnLongPress={type !== CONST.SEARCH.DATA_TYPES.CHAT}
             onTurnOnSelectionMode={(item) => item && toggleTransaction(item)}
@@ -446,7 +476,11 @@ function Search({queryJSON, onSearchListScroll, contentContainerStyle}: SearchPr
             windowSize={111}
             updateCellsBatchingPeriod={200}
             ListItem={ListItem}
-            onSelectRow={openReport}
+            onSelectRow={(item) => {
+                const index = sortedSelectedData.findIndex(sortedItem => isEqual(sortedItem, item));
+                sessionStorage.setItem(CONST.SESSION_STORAGE_KEYS.SEARCH_SELECTED_INDEX, index.toString());
+                openReport(item);
+            }}
             getItemHeight={getItemHeightMemoized}
             shouldSingleExecuteRowSelect
             shouldPreventDefaultFocusOnSelectRow={!DeviceCapabilities.canUseTouchScreen()}
