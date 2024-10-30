@@ -1,5 +1,6 @@
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
+import isEqual from 'lodash/isEqual';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import type {NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle} from 'react-native';
@@ -35,7 +36,6 @@ import ROUTES from '@src/ROUTES';
 import type SearchResults from '@src/types/onyx/SearchResults';
 import {useSearchContext} from './SearchContext';
 import type {SearchColumnType, SearchQueryJSON, SearchStatus, SelectedTransactionInfo, SelectedTransactions, SortOrder} from './types';
-import isEqual from 'lodash/isEqual';
 
 type SearchProps = {
     queryJSON: SearchQueryJSON;
@@ -408,10 +408,10 @@ function Search({queryJSON, onSearchListScroll, contentContainerStyle}: SearchPr
     const [isSelectionListRefLoaded, setIsSelectionListRefLoaded] = useState<boolean>(false);
 
     const handleSelectionListReload = (ref: SelectionListHandle | null) => {
-        if(!ref || isSelectionListRefLoaded) {
+        if (!ref || isSelectionListRefLoaded) {
             return;
         }
-        
+
         setIsSelectionListRefLoaded(true);
         const storedIndexString = sessionStorage.getItem(CONST.SESSION_STORAGE_KEYS.SEARCH_SELECTED_INDEX);
 
@@ -477,7 +477,7 @@ function Search({queryJSON, onSearchListScroll, contentContainerStyle}: SearchPr
             updateCellsBatchingPeriod={200}
             ListItem={ListItem}
             onSelectRow={(item) => {
-                const index = sortedSelectedData.findIndex(sortedItem => isEqual(sortedItem, item));
+                const index = sortedSelectedData.findIndex((sortedItem) => isEqual(sortedItem, item));
                 sessionStorage.setItem(CONST.SESSION_STORAGE_KEYS.SEARCH_SELECTED_INDEX, index.toString());
                 openReport(item);
             }}
