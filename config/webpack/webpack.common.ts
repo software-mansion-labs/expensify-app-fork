@@ -1,27 +1,23 @@
+import {RsdoctorRspackPlugin} from '@rsdoctor/rspack-plugin';
+import rspack from '@rspack/core';
 import {CleanWebpackPlugin} from 'clean-webpack-plugin';
-import CopyPlugin from 'copy-webpack-plugin';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import path from 'path';
-import type {Class} from 'type-fest';
-import type {Configuration, WebpackPluginInstance} from 'webpack';
-import {DefinePlugin, EnvironmentPlugin, IgnorePlugin, ProvidePlugin} from 'webpack';
-import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
-import CustomVersionFilePlugin from './CustomVersionFilePlugin';
 import type Environment from './types';
 
-type Options = {
-    rel: string;
-    as: string;
-    fileWhitelist: RegExp[];
-    include: string;
-};
+// type Options = {
+//     rel: string;
+//     as: string;
+//     fileWhitelist: RegExp[];
+//     include: string;
+// };
 
-type PreloadWebpackPluginClass = Class<WebpackPluginInstance, [Options]>;
+// type PreloadWebpackPluginClass = Class<WebpackPluginInstance, [Options]>;
 
 // require is necessary, importing anything from @vue/preload-webpack-plugin causes an error
-const PreloadWebpackPlugin = require('@vue/preload-webpack-plugin') as PreloadWebpackPluginClass;
+// const PreloadWebpackPlugin = require('@vue/preload-webpack-plugin') as PreloadWebpackPluginClass;
 
 const includeModules = [
     'react-native-animatable',
@@ -57,7 +53,7 @@ function mapEnvironmentToLogoSuffix(environmentFile: string): string {
 /**
  * Get a production grade config for web or desktop
  */
-const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment): Configuration => ({
+const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment): any => ({
     mode: 'production',
     devtool: 'source-map',
     entry: {
@@ -83,24 +79,24 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
             isProduction: file === '.env.production',
             isStaging: file === '.env.staging',
         }),
-        new PreloadWebpackPlugin({
-            rel: 'preload',
-            as: 'font',
-            fileWhitelist: [/\.woff2$/],
-            include: 'allAssets',
-        }),
-        new PreloadWebpackPlugin({
-            rel: 'prefetch',
-            as: 'fetch',
-            fileWhitelist: [/\.lottie$/],
-            include: 'allAssets',
-        }),
-        new ProvidePlugin({
+        // new PreloadWebpackPlugin({
+        //     rel: 'preload',
+        //     as: 'font',
+        //     fileWhitelist: [/\.woff2$/],
+        //     include: 'allAssets',
+        // }),
+        // new PreloadWebpackPlugin({
+        //     rel: 'prefetch',
+        //     as: 'fetch',
+        //     fileWhitelist: [/\.lottie$/],
+        //     include: 'allAssets',
+        // }),
+        new rspack.ProvidePlugin({
             process: 'process/browser',
         }),
 
         // Copies favicons into the dist/ folder to use for unread status
-        new CopyPlugin({
+        new rspack.CopyRspackPlugin({
             patterns: [
                 {from: 'web/favicon.png'},
                 {from: 'web/favicon-unread.png'},
@@ -123,20 +119,20 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
                 {from: 'node_modules/pdfjs-dist/cmaps/', to: 'cmaps/'},
             ],
         }),
-        new EnvironmentPlugin({JEST_WORKER_ID: ''}),
-        new IgnorePlugin({
+        new rspack.EnvironmentPlugin({JEST_WORKER_ID: ''}),
+        new rspack.IgnorePlugin({
             resourceRegExp: /^\.\/locale$/,
             contextRegExp: /moment$/,
         }),
         ...(file === '.env.production' || file === '.env.staging'
             ? [
-                  new IgnorePlugin({
+                  new rspack.IgnorePlugin({
                       resourceRegExp: /@welldone-software\/why-did-you-render/,
                   }),
               ]
             : []),
-        ...(platform === 'web' ? [new CustomVersionFilePlugin()] : []),
-        new DefinePlugin({
+        // ...(platform === 'web' ? [new CustomVersionFilePlugin()] : []),
+        new rspack.DefinePlugin({
             ...(platform === 'desktop' ? {} : {process: {env: {}}}),
             // eslint-disable-next-line @typescript-eslint/naming-convention
             __REACT_WEB_CONFIG__: JSON.stringify(dotenv.config({path: file}).parsed),
@@ -147,9 +143,11 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
             // eslint-disable-next-line @typescript-eslint/naming-convention
             __DEV__: /staging|prod|adhoc/.test(file) === false,
         }),
-
+        new RsdoctorRspackPlugin({
+            // plugin options
+        }),
         // This allows us to interactively inspect JS bundle contents
-        ...(process.env.ANALYZE_BUNDLE === 'true' ? [new BundleAnalyzerPlugin()] : []),
+        // ...(process.env.ANALYZE_BUNDLE === 'true' ? [new BundleAnalyzerPlugin()] : []),
     ],
     module: {
         rules: [

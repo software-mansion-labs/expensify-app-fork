@@ -1,10 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 /* eslint-disable @typescript-eslint/naming-convention */
-import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import rspack from '@rspack/core';
 import path from 'path';
 import portfinder from 'portfinder';
-import {TimeAnalyticsPlugin} from 'time-analytics-webpack-plugin';
-import type {Configuration} from 'webpack';
-import {DefinePlugin} from 'webpack';
 import type {Configuration as DevServerConfiguration} from 'webpack-dev-server';
 import {merge} from 'webpack-merge';
 import type Environment from './types';
@@ -15,7 +14,7 @@ const BASE_PORT = 8082;
 /**
  * Configuration for the local dev server
  */
-const getConfiguration = (environment: Environment): Promise<Configuration> =>
+const getConfiguration = (environment: Environment): Promise<any> =>
     portfinder.getPortPromise({port: BASE_PORT}).then((port) => {
         // Check if the USE_WEB_PROXY variable has been provided
         // and rewrite any requests to the local proxy server
@@ -60,11 +59,11 @@ const getConfiguration = (environment: Environment): Promise<Configuration> =>
                 },
             },
             plugins: [
-                new DefinePlugin({
+                new rspack.DefinePlugin({
                     'process.env.PORT': port,
                     'process.env.NODE_ENV': JSON.stringify('development'),
                 }),
-                new ReactRefreshWebpackPlugin({overlay: {sockProtocol: 'wss'}}),
+                // new ReactRefreshWebpackPlugin({overlay: {sockProtocol: 'wss'}}),
             ],
             cache: {
                 type: 'filesystem',
@@ -84,7 +83,8 @@ const getConfiguration = (environment: Environment): Promise<Configuration> =>
             },
         });
 
-        return TimeAnalyticsPlugin.wrap(config, {plugin: {exclude: ['ReactRefreshPlugin']}});
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return config;
     });
 
 export default getConfiguration;
