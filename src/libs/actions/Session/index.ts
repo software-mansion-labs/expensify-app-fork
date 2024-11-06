@@ -5,7 +5,7 @@ import {InteractionManager, Linking, NativeModules} from 'react-native';
 import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import type HybridAppSettings from '@libs/actions/HybridApp';
+import parseHybridAppSettings from '@libs/actions/HybridApp';
 import * as PersistedRequests from '@libs/actions/PersistedRequests';
 import * as API from '@libs/API';
 import type {
@@ -480,8 +480,9 @@ function signUpUser() {
     API.write(WRITE_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData});
 }
 
-function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: HybridAppSettings) {
-    const {initialOnyxValues} = hybridAppSettings;
+function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string) {
+    const parsedHybridAppSettings = parseHybridAppSettings(hybridAppSettings);
+    const {initialOnyxValues} = parsedHybridAppSettings;
     const {hybridApp} = initialOnyxValues;
 
     const clearOnyxBeforeSignIn = () => {

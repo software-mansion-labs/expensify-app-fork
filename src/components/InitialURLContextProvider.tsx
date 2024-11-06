@@ -1,7 +1,6 @@
 import React, {createContext, useEffect, useMemo, useState} from 'react';
 import type {ReactNode} from 'react';
 import {Linking} from 'react-native';
-import type HybridAppSettings from '@libs/actions/HybridApp';
 import {signInAfterTransitionFromOldDot} from '@libs/actions/Session';
 import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';
@@ -21,7 +20,7 @@ const InitialURLContext = createContext<InitialUrlContextType>({
 type InitialURLContextProviderProps = {
     url?: Route;
 
-    hybridAppSettings?: HybridAppSettings;
+    hybridAppSettings?: string;
 
     /** Children passed to the context provider */
     children: ReactNode;

@@ -35,7 +35,6 @@ import CONFIG from './CONFIG';
 import Expensify from './Expensify';
 import useDefaultDragAndDrop from './hooks/useDefaultDragAndDrop';
 import {ReportIDsContextProvider} from './hooks/useReportIDs';
-import type HybridAppSettings from './libs/actions/HybridApp';
 import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
 import {ReportAttachmentsProvider} from './pages/home/report/ReportAttachmentsContext';
 import type {Route} from './ROUTES';
@@ -43,7 +42,7 @@ import {SplashScreenStateContextProvider} from './SplashScreenStateContext';
 
 type AppProps = {
     url?: Route;
-    hybridAppSettings?: HybridAppSettings;
+    hybridAppSettings?: string;
 };
 
 LogBox.ignoreLogs([
