@@ -490,7 +490,7 @@ function signInAfterTransitionFromOldDot(transitionURL: string) {
           )
         : {};
 
-    const {useNewDotSignInPage, isSingleNewDotEntry} = queryParamsObject;
+    const {useNewDotSignInPage, isSingleNewDotEntry, loggedOut} = queryParamsObject;
 
     const clearOnyxBeforeSignIn = () => {
         if (useNewDotSignInPage !== 'true') {
@@ -513,6 +513,7 @@ function signInAfterTransitionFromOldDot(transitionURL: string) {
             .then(() =>
                 Onyx.multiSet({
                     [ONYXKEYS.USE_NEWDOT_SIGN_IN_PAGE]: useNewDotSignInPage === 'true',
+                    [ONYXKEYS.LOGGED_OUT_FROM_OLDDOT]: loggedOut === 'true',
                     [ONYXKEYS.NVP_TRYNEWDOT]: {classicRedirect: {dismissed: 'true'}}, // This data is mocked and should be returned by BeginSignUp/SignInUser API commands
                 }),
             )

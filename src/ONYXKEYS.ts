@@ -455,6 +455,9 @@ const ONYXKEYS = {
     /** Stores the information if HybridApp uses NewDot's sign in flow */
     USE_NEWDOT_SIGN_IN_PAGE: 'useNewDotSignInPage',
 
+    /** Stores the information if user logged out from OldDot when using hybrid app */
+    LOGGED_OUT_FROM_OLDDOT: 'loggedOutFromOldDot',
+
     HYBRID_APP: 'hybridApp',
 
     /** Collection Keys */
@@ -1027,6 +1030,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.SHOULD_SHOW_SAVED_SEARCH_RENAME_TOOLTIP]: boolean;
     [ONYXKEYS.NVP_EXPENSIFY_COMPANY_CARDS_CUSTOM_NAMES]: Record<string, string>;
     [ONYXKEYS.USE_NEWDOT_SIGN_IN_PAGE]: boolean;
+    [ONYXKEYS.LOGGED_OUT_FROM_OLDDOT]: boolean;
     [ONYXKEYS.HYBRID_APP]: OnyxTypes.HybridApp;
 };
 type OnyxValues = OnyxValuesMapping & OnyxCollectionValuesMapping & OnyxFormValuesMapping & OnyxFormDraftValuesMapping;
