@@ -39,9 +39,10 @@ import * as SessionUtils from '@libs/SessionUtils';
 import {clearSoundAssetsCache} from '@libs/Sound';
 import Timers from '@libs/Timers';
 import {hideContextMenu} from '@pages/home/report/ContextMenu/ReportActionContextMenu';
-import {KEYS_TO_PRESERVE, openApp} from '@userActions/App';
 import * as App from '@userActions/App';
+import {KEYS_TO_PRESERVE, openApp} from '@userActions/App';
 import * as Device from '@userActions/Device';
+import {setLoggedOutFromOldDot, setReadyToShowAuthScreens, setReadyToSwitchToClassicExperience, setUseNewDotSignInPage} from '@userActions/HybridApp';
 import * as PriorityMode from '@userActions/PriorityMode';
 import redirectToSignIn from '@userActions/SignInRedirect';
 import Timing from '@userActions/Timing';
@@ -481,19 +482,19 @@ function signUpUser() {
 
 function signInAfterTransitionFromOldDot(transitionURL: string) {
     const [route, queryParams] = transitionURL.split('?');
-    const queryParamsObject = queryParams
+    const {useNewDotSignInPage, isSingleNewDotEntry, loggedOut} = queryParams
         ? Object.fromEntries(
               queryParams.split('&').map((param) => {
                   const [key, value] = param.split('=');
                   return [key, value];
               }),
           )
-        : {};
-
-    const {useNewDotSignInPage, isSingleNewDotEntry, loggedOut} = queryParamsObject;
+        : {useNewDotSignInPage: undefined, isSingleNewDotEntry: undefined, loggedOut: undefined};
 
     const clearOnyxBeforeSignIn = () => {
         if (useNewDotSignInPage !== 'true') {
+            setReadyToShowAuthScreens(true);
+            setReadyToSwitchToClassicExperience(true);
             return Promise.resolve();
         }
 
@@ -508,15 +509,17 @@ function signInAfterTransitionFromOldDot(transitionURL: string) {
         return App.openApp();
     };
 
-    const setSessionDataAndOpenApp = new Promise<Route>((resolve) => {
+    return new Promise<Route>((resolve) => {
         clearOnyxBeforeSignIn()
-            .then(() =>
+            .then(() => {
+                setUseNewDotSignInPage(useNewDotSignInPage === 'true');
+                setLoggedOutFromOldDot(loggedOut === 'true');
+                const useOldDot = 'true';
+                const dismissed = useNewDotSignInPage === 'true' ? useOldDot : 'false';
                 Onyx.multiSet({
-                    [ONYXKEYS.USE_NEWDOT_SIGN_IN_PAGE]: useNewDotSignInPage === 'true',
-                    [ONYXKEYS.LOGGED_OUT_FROM_OLDDOT]: loggedOut === 'true',
-                    [ONYXKEYS.NVP_TRYNEWDOT]: {classicRedirect: {dismissed: 'true'}}, // This data is mocked and should be returned by BeginSignUp/SignInUser API commands
-                }),
-            )
+                    [ONYXKEYS.NVP_TRYNEWDOT]: {classicRedirect: {dismissed}}, // This data is mocked and should be returned by BeginSignUp/SignInUser API commands
+                });
+            })
             .then(initAppAfterTransition)
             .catch((error) => {
                 Log.hmmm('[HybridApp] Initialization of HybridApp has failed. Forcing transition', {error});
@@ -525,8 +528,6 @@ function signInAfterTransitionFromOldDot(transitionURL: string) {
                 resolve(`${route}?singleNewDotEntry=${isSingleNewDotEntry}` as Route);
             });
     });
-
-    return setSessionDataAndOpenApp;
 }
 
 /**
