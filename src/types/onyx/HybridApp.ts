@@ -1,10 +1,25 @@
 /**  */
 type HybridApp = {
+    /** Stores the information if HybridApp uses NewDot's sign in flow */
+    useNewDotSignInPage?: boolean;
+
     /**  */
     isSigningIn?: boolean;
 
-    /** Stores the information if HybridApp uses NewDot's sign in flow */
-    useNewDotSignInPage: boolean;
+    /** */
+    oldDotSignInError?: string | null;
+
+    /**  */
+    readyToShowAuthScreens?: boolean;
+
+    /**  */
+    readyToSwitchToClassicExperience?: boolean;
+
+    /** */
+    shouldResetSigningInLogic?: boolean;
+
+    /** */
+    isSingleNewDotEntry?: boolean;
 };
 
 export default HybridApp;

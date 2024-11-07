@@ -5,7 +5,6 @@ import {InteractionManager, Linking, NativeModules} from 'react-native';
 import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import parseHybridAppSettings from '@libs/actions/HybridApp';
 import * as PersistedRequests from '@libs/actions/PersistedRequests';
 import * as API from '@libs/API';
 import type {
@@ -40,9 +39,10 @@ import * as SessionUtils from '@libs/SessionUtils';
 import {clearSoundAssetsCache} from '@libs/Sound';
 import Timers from '@libs/Timers';
 import {hideContextMenu} from '@pages/home/report/ContextMenu/ReportActionContextMenu';
-import {KEYS_TO_PRESERVE, openApp} from '@userActions/App';
 import * as App from '@userActions/App';
+import {KEYS_TO_PRESERVE, openApp} from '@userActions/App';
 import * as Device from '@userActions/Device';
+import {parseHybridAppSettings, setReadyToShowAuthScreens, setReadyToSwitchToClassicExperience} from '@userActions/HybridApp';
 import * as PriorityMode from '@userActions/PriorityMode';
 import redirectToSignIn from '@userActions/SignInRedirect';
 import Timing from '@userActions/Timing';
@@ -483,10 +483,12 @@ function signUpUser() {
 function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string) {
     const parsedHybridAppSettings = parseHybridAppSettings(hybridAppSettings);
     const {initialOnyxValues} = parsedHybridAppSettings;
-    const {hybridApp} = initialOnyxValues;
+    const {hybridApp, ...newDotOnyxValues} = initialOnyxValues;
 
     const clearOnyxBeforeSignIn = () => {
         if (!hybridApp.useNewDotSignInPage) {
+            setReadyToShowAuthScreens(true);
+            setReadyToSwitchToClassicExperience(true);
             return Promise.resolve();
         }
 
@@ -501,19 +503,26 @@ function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string
         return App.openApp();
     };
 
-    const setSessionDataAndOpenApp = new Promise<Route>((resolve) => {
+    return new Promise<Route>((resolve) => {
         clearOnyxBeforeSignIn()
-            .then(() => Onyx.multiSet(initialOnyxValues))
+            .then(() => Onyx.merge(ONYXKEYS.HYBRID_APP, hybridApp))
+            .then(() => Onyx.multiSet(newDotOnyxValues))
+            .then(() => {
+                // This data is mocked and should be returned by BeginSignUp/SignInUser API commands
+                const useOldDot = 'true';
+                const dismissed = hybridApp.useNewDotSignInPage ? useOldDot : 'false';
+                return Onyx.multiSet({
+                    [ONYXKEYS.NVP_TRYNEWDOT]: {classicRedirect: {dismissed}},
+                });
+            })
             .then(initAppAfterTransition)
             .catch((error) => {
                 Log.hmmm('[HybridApp] Initialization of HybridApp has failed. Forcing transition', {error});
             })
             .finally(() => {
-                resolve(route);
+                resolve(`${route}?singleNewDotEntry=${hybridApp.isSingleNewDotEntry}` as Route);
             });
     });
-
-    return setSessionDataAndOpenApp;
 }
 
 /**

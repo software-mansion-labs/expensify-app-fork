@@ -36,6 +36,8 @@ import * as UserUtils from '@libs/UserUtils';
 import {hasGlobalWorkspaceSettingsRBR} from '@libs/WorkspacesSettingsUtils';
 import * as ReportActionContextMenu from '@pages/home/report/ContextMenu/ReportActionContextMenu';
 import variables from '@styles/variables';
+import * as App from '@userActions/App';
+import {setIsSigningIn, setReadyToShowAuthScreens, setReadyToSwitchToClassicExperience, setShouldResetSigningInLogic, setUseNewDotSignInPage} from '@userActions/HybridApp';
 import * as Link from '@userActions/Link';
 import * as PaymentMethods from '@userActions/PaymentMethods';
 import * as Session from '@userActions/Session';
@@ -81,6 +83,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
     const [loginList] = useOnyx(ONYXKEYS.LOGIN_LIST);
     const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const [privatePersonalDetails] = useOnyx(ONYXKEYS.PRIVATE_PERSONAL_DETAILS);
+    const [hybridApp] = useOnyx(ONYXKEYS.HYBRID_APP);
 
     const network = useNetwork();
     const theme = useTheme();
@@ -103,6 +106,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
 
     useEffect(() => {
         Wallet.openInitialSettingsPage();
+        App.confirmReadyToOpenApp();
     }, []);
 
     const toggleSignoutConfirmModal = (value: boolean) => {
@@ -234,6 +238,9 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                     ...(NativeModules.HybridAppModule
                         ? {
                               action: () => {
+                                  if (!hybridApp?.readyToSwitchToClassicExperience) {
+                                      return;
+                                  }
                                   NativeModules.HybridAppModule.closeReactNativeApp(false, true);
                                   setInitialURL(undefined);
                               },
@@ -263,12 +270,18 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                     translationKey: signOutTranslationKey,
                     icon: Expensicons.Exit,
                     action: () => {
+                        setShouldResetSigningInLogic(true);
+                        setReadyToShowAuthScreens(false);
+                        setReadyToSwitchToClassicExperience(false);
+                        setIsSigningIn(false);
+                        setUseNewDotSignInPage(true);
+
                         signOut(false);
                     },
                 },
             ],
         };
-    }, [styles.pt4, signOut, setInitialURL]);
+    }, [styles.pt4, hybridApp?.readyToSwitchToClassicExperience, setInitialURL, signOut]);
 
     /**
      * Retuns JSX.Element with menu items
