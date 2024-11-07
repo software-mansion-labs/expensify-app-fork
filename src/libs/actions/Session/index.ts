@@ -482,14 +482,14 @@ function signUpUser() {
 
 function signInAfterTransitionFromOldDot(transitionURL: string) {
     const [route, queryParams] = transitionURL.split('?');
-    const {useNewDotSignInPage, isSingleNewDotEntry, loggedOut} = queryParams
+    const {useNewDotSignInPage, isSingleNewDotEntry, loggedOutFromOldDot} = queryParams
         ? Object.fromEntries(
               queryParams.split('&').map((param) => {
                   const [key, value] = param.split('=');
                   return [key, value];
               }),
           )
-        : {useNewDotSignInPage: undefined, isSingleNewDotEntry: undefined, loggedOut: undefined};
+        : {useNewDotSignInPage: undefined, isSingleNewDotEntry: undefined, loggedOutFromOldDot: undefined};
 
     const clearOnyxBeforeSignIn = () => {
         if (useNewDotSignInPage !== 'true') {
@@ -513,7 +513,7 @@ function signInAfterTransitionFromOldDot(transitionURL: string) {
         clearOnyxBeforeSignIn()
             .then(() => {
                 setUseNewDotSignInPage(useNewDotSignInPage === 'true');
-                setLoggedOutFromOldDot(loggedOut === 'true');
+                setLoggedOutFromOldDot(loggedOutFromOldDot === 'true');
                 const useOldDot = 'true';
                 const dismissed = useNewDotSignInPage === 'true' ? useOldDot : 'false';
                 Onyx.multiSet({
