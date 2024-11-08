@@ -38,6 +38,6 @@ allprojects {
         }
         mavenCentral()
         google()
-        maven { url "file://${rootDir}/libs/GoogleSDK" }
+        maven { url "file://${rootDir}/libs" }
     }
 }

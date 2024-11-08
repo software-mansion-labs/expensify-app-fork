@@ -1,4 +1,4 @@
-import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
+import {NativeEventEmitter, NativeModules} from 'react-native';
 import type {NativeModule} from 'react-native';
 
 type AddPassRequest = {
@@ -28,9 +28,6 @@ type ApplePushProvisioningType = NativeModule & {
 };
 
 const ApplePushProvisioning = (NativeModules.ApplePushProvisioning as ApplePushProvisioningType) ?? null;
-if (Platform.OS === 'ios' && !ApplePushProvisioning) {
-    throw new Error('ApplePushProvisioning module is not linked. Please ensure it is properly installed and linked.');
-}
 
 const eventEmitter = ApplePushProvisioning ? new NativeEventEmitter(ApplePushProvisioning) : null;
 
@@ -40,6 +37,7 @@ const ApplePushProvisioningModule = {
      * @returns A promise that resolves to a boolean indicating if a payment pass can be added.
      */
     canAddPaymentPass(): Promise<boolean> {
+        console.log('---', ApplePushProvisioning, NativeModules.ApplePushProvisioning);
         return ApplePushProvisioning.canAddPaymentPass();
     },
 

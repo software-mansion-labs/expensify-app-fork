@@ -44,6 +44,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {AccountData} from '@src/types/onyx';
+import TestWallet from './WalletTest';
 
 type WalletPageProps = {
     /** Listen for window resize event on web and desktop. */
@@ -520,6 +521,14 @@ function WalletPage({shouldListenForResize = false}: WalletPageProps) {
                                         </>
                                     </Section>
                                 )}
+
+                                <Section
+                                    title={'Test: react-native-wallet'}
+                                    isCentralPane
+                                    titleStyles={styles.accountSettingsSectionTitle}
+                                >
+                                    <TestWallet />
+                                </Section>
                             </OfflineWithFeedback>
                         </View>
                     </ScrollView>

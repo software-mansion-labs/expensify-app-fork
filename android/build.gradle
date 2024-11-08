@@ -76,6 +76,8 @@ allprojects {
                 password = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: ""
             }
         }
+        google()
+        maven { url "file://${rootDir}/libs" }
     }
 }
 

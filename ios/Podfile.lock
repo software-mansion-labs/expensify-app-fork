@@ -1983,6 +1983,27 @@ PODS:
     - Yoga
   - react-native-view-shot (3.8.0):
     - React-Core
+  - react-native-wallet (0.0.1):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-webview (13.8.6):
     - DoubleConversion
     - glog
@@ -2793,6 +2814,7 @@ DEPENDENCIES:
   - react-native-release-profiler (from `../node_modules/react-native-release-profiler`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
+  - react-native-wallet (from `../node_modules/react-native-wallet`)
   - react-native-webview (from `../node_modules/react-native-webview`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
@@ -3023,6 +3045,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-view-shot:
     :path: "../node_modules/react-native-view-shot"
+  react-native-wallet:
+    :path: "../node_modules/react-native-wallet"
   react-native-webview:
     :path: "../node_modules/react-native-webview"
   React-nativeconfig:
@@ -3232,6 +3256,7 @@ SPEC CHECKSUMS:
   react-native-release-profiler: 131ec5e4145d900b2be2a8d6641e2ce0dd784259
   react-native-safe-area-context: 38fdd9b3c5561de7cabae64bd0cd2ce05d2768a1
   react-native-view-shot: 6b7ed61d77d88580fed10954d45fad0eb2d47688
+  react-native-wallet: 898cb4e20d5f90ef4a734684fcba29d061e93406
   react-native-webview: ad29375839c9aa0409ce8e8693291b42bdc067a4
   React-nativeconfig: 57781b79e11d5af7573e6f77cbf1143b71802a6d
   React-NativeModulesApple: 7ff2e2cfb2e5fa5bdedcecf28ce37e696c6ef1e1
