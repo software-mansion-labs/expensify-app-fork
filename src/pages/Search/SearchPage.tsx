@@ -1,5 +1,4 @@
 // eslint-disable-next-line import/extensions, prettier/prettier
-import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useMemo} from 'react';
 import {View} from 'react-native';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
@@ -16,6 +15,7 @@ import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import TopBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/TopBar';
 import Navigation from '@libs/Navigation/Navigation';
+import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
 import * as SearchQueryUtils from '@libs/SearchQueryUtils';
 import ROUTES from '@src/ROUTES';
@@ -23,7 +23,7 @@ import SCREENS from '@src/SCREENS';
 import SearchPageBottomTab from './SearchPageBottomTab';
 import SearchTypeMenu from './SearchTypeMenu';
 
-type SearchPageProps = StackScreenProps<AuthScreensParamList, typeof SCREENS.SEARCH.CENTRAL_PANE>;
+type SearchPageProps = PlatformStackScreenProps<AuthScreensParamList, typeof SCREENS.SEARCH.CENTRAL_PANE>;
 
 function SearchPage({route}: SearchPageProps) {
     const {translate} = useLocalize();

@@ -1,4 +1,3 @@
-import type {StackScreenProps} from '@react-navigation/stack';
 import {Str} from 'expensify-common';
 import React, {useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
@@ -12,6 +11,7 @@ import useAutoFocusInput from '@hooks/useAutoFocusInput';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {getDefaultCompanyWebsite} from '@libs/BankAccountUtils';
+import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import * as Url from '@libs/Url';
 import * as ValidationUtils from '@libs/ValidationUtils';
 import Navigation from '@navigation/Navigation';
@@ -23,7 +23,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/WorkspaceInvoicesCompanyWebsiteForm';
 
-type WorkspaceInvoicingDetailsWebsiteProps = StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.INVOICES_COMPANY_WEBSITE>;
+type WorkspaceInvoicingDetailsWebsiteProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.INVOICES_COMPANY_WEBSITE>;
 
 function WorkspaceInvoicingDetailsWebsite({route}: WorkspaceInvoicingDetailsWebsiteProps) {
     const {policyID} = route.params;

@@ -1,5 +1,4 @@
 import {useFocusEffect, useNavigationState} from '@react-navigation/native';
-import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
@@ -24,6 +23,7 @@ import * as CurrencyUtils from '@libs/CurrencyUtils';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import getTopmostRouteName from '@libs/Navigation/getTopmostRouteName';
 import Navigation from '@libs/Navigation/Navigation';
+import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {WorkspaceSplitNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import {getDefaultWorkspaceAvatar} from '@libs/ReportUtils';
@@ -67,7 +67,7 @@ type WorkspaceMenuItem = {
     badgeText?: string;
 };
 
-type WorkspaceInitialPageProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<WorkspaceSplitNavigatorParamList, typeof SCREENS.WORKSPACE.INITIAL>;
+type WorkspaceInitialPageProps = WithPolicyAndFullscreenLoadingProps & PlatformStackScreenProps<WorkspaceSplitNavigatorParamList, typeof SCREENS.WORKSPACE.INITIAL>;
 
 type PolicyFeatureStates = Record<PolicyFeatureName, boolean>;
 

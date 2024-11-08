@@ -1,5 +1,4 @@
 import {useFocusEffect} from '@react-navigation/native';
-import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback, useState} from 'react';
 import type {ImageStyle, StyleProp} from 'react-native';
 import {Image, StyleSheet, View} from 'react-native';
@@ -21,6 +20,7 @@ import useThemeIllustrations from '@hooks/useThemeIllustrations';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {WorkspaceSplitNavigatorParamList} from '@libs/Navigation/types';
 import Parser from '@libs/Parser';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -37,7 +37,7 @@ import type {WithPolicyProps} from './withPolicy';
 import withPolicy from './withPolicy';
 import WorkspacePageWithSections from './WorkspacePageWithSections';
 
-type WorkspaceProfilePageProps = WithPolicyProps & StackScreenProps<WorkspaceSplitNavigatorParamList, typeof SCREENS.WORKSPACE.PROFILE>;
+type WorkspaceProfilePageProps = WithPolicyProps & PlatformStackScreenProps<WorkspaceSplitNavigatorParamList, typeof SCREENS.WORKSPACE.PROFILE>;
 
 function WorkspaceProfilePage({policyDraft, policy: policyProp, route}: WorkspaceProfilePageProps) {
     const styles = useThemeStyles();

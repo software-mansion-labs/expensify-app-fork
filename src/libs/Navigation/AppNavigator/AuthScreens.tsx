@@ -1,5 +1,4 @@
-import type {RouteProp} from '@react-navigation/native';
-import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
+import React, {memo, useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import Onyx, {withOnyx} from 'react-native-onyx';
@@ -16,15 +15,12 @@ import useOnboardingFlowRouter from '@hooks/useOnboardingFlow';
 import usePermissions from '@hooks/usePermissions';
 import {ReportIDsContextProvider} from '@hooks/useReportIDs';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
-import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {READ_COMMANDS} from '@libs/API/types';
 import HttpUtils from '@libs/HttpUtils';
 import KeyboardShortcut from '@libs/KeyboardShortcut';
 import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
-import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
-import SIDEBAR_TO_SPLIT from '@libs/Navigation/linkingConfig/RELATIONS/SIDEBAR_TO_SPLIT';
 import Navigation from '@libs/Navigation/Navigation';
 import shouldOpenOnAdminRoom from '@libs/Navigation/shouldOpenOnAdminRoom';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
@@ -58,15 +54,16 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/PersonalDetails';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
-import createCustomStackNavigator from './createCustomStackNavigator';
+import createResponsiveStackNavigator from './createResponsiveStackNavigator';
 import defaultScreenOptions from './defaultScreenOptions';
-import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
+import hideKeyboardOnSwipe from './hideKeyboardOnSwipe';
 import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
 import FeatureTrainingModalNavigator from './Navigators/FeatureTrainingModalNavigator';
 import LeftModalNavigator from './Navigators/LeftModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
 import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
+import useRootNavigatorOptions from './useRootNavigatorOptions';
 
 type AuthScreensProps = {
     /** Session of currently logged in user */
@@ -175,7 +172,7 @@ function handleNetworkReconnect() {
     }
 }
 
-const RootStack = createCustomStackNavigator<AuthScreensParamList>();
+const RootStack = createResponsiveStackNavigator<AuthScreensParamList>();
 // We want to delay the re-rendering for components(e.g. ReportActionCompose)
 // that depends on modal visibility until Modal is completely closed and its focused
 // When modal screen is focused, update modal visibility in Onyx
@@ -205,20 +202,12 @@ const modalScreenListenersWithCancelSearch = {
 
 function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDAppliedToClient}: AuthScreensProps) {
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
-    // We need to use isSmallScreenWidth for the root stack navigator
-    // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
-    const {shouldUseNarrowLayout, onboardingIsMediumOrLargerScreenWidth, isSmallScreenWidth} = useResponsiveLayout();
-    const screenOptions = getRootNavigatorScreenOptions(shouldUseNarrowLayout, styles, StyleUtils);
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const rootNavigatorOptions = useRootNavigatorOptions();
     const {canUseDefaultRooms} = usePermissions();
     const {activeWorkspaceID} = useActiveWorkspace();
     const {toggleSearchRouter} = useSearchRouterContext();
 
-    const onboardingModalScreenOptions = useMemo(() => screenOptions.onboardingModalNavigator(onboardingIsMediumOrLargerScreenWidth), [screenOptions, onboardingIsMediumOrLargerScreenWidth]);
-    const onboardingScreenOptions = useMemo(
-        () => getOnboardingModalScreenOptions(shouldUseNarrowLayout, styles, StyleUtils, onboardingIsMediumOrLargerScreenWidth),
-        [StyleUtils, shouldUseNarrowLayout, onboardingIsMediumOrLargerScreenWidth, styles],
-    );
     const modal = useRef<OnyxTypes.Modal>({});
     const [didPusherInit, setDidPusherInit] = useState(false);
     const {isOnboardingCompleted} = useOnboardingFlowRouter();
@@ -245,25 +234,25 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
     }
 
     // Animation is disabled when navigating to the sidebar screen
-    const getSplitNavigatorOptions = (route: RouteProp<AuthScreensParamList>) => {
-        if (!isSmallScreenWidth || !route?.params) {
-            return screenOptions.fullScreen;
-        }
+    // const getSplitNavigatorOptions = (route: RouteProp<AuthScreensParamList>) => {
+    //     if (!isSmallScreenWidth || !route?.params) {
+    //         return screenOptions.fullScreen;
+    //     }
 
-        const screenName = 'screen' in route.params ? route.params.screen : undefined;
+    //     const screenName = 'screen' in route.params ? route.params.screen : undefined;
 
-        if (!screenName) {
-            return screenOptions.fullScreen;
-        }
+    //     if (!screenName) {
+    //         return screenOptions.fullScreen;
+    //     }
 
-        // SETTINGS.WORKSPACES has bottom tab bar so we have to disable animations for it as well.
-        const animationEnabled = !Object.keys(SIDEBAR_TO_SPLIT).includes(screenName) && screenName !== SCREENS.SETTINGS.WORKSPACES;
+    //     // SETTINGS.WORKSPACES has bottom tab bar so we have to disable animations for it as well.
+    //     const animationEnabled = !Object.keys(SIDEBAR_TO_SPLIT).includes(screenName) && screenName !== SCREENS.SETTINGS.WORKSPACES;
 
-        return {
-            ...screenOptions.fullScreen,
-            animationEnabled,
-        };
-    };
+    //     return {
+    //         ...screenOptions.fullScreen,
+    //         animationEnabled,
+    //     };
+    // };
     const isOnboardingCompletedRef = useRef(isOnboardingCompleted);
 
     useEffect(() => {
@@ -411,39 +400,45 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
         // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
     }, []);
 
+    const CentralPaneScreenOptions = {
+        ...hideKeyboardOnSwipe,
+        headerShown: false,
+        title: 'New Expensify',
+
+        // Prevent unnecessary scrolling
+        cardStyle: styles.cardStyleNavigator,
+    };
+
     return (
         <ComposeProviders components={[OptionsListContextProvider, ActiveWorkspaceContextProvider, ReportIDsContextProvider, SearchContextProvider]}>
             <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
-                <RootStack.Navigator
-                    screenOptions={screenOptions.centralPaneNavigator}
-                    isSmallScreenWidth={isSmallScreenWidth}
-                >
+                <RootStack.Navigator screenOptions={rootNavigatorOptions.centralPaneNavigator}>
                     {/* This have to be the first navigator in auth screens. */}
                     <RootStack.Screen
                         name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
-                        options={({route}) => getSplitNavigatorOptions(route)}
+                        options={rootNavigatorOptions.fullScreen}
                         getComponent={loadReportSplitNavigator}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
-                        options={({route}) => getSplitNavigatorOptions(route)}
+                        options={rootNavigatorOptions.fullScreen}
                         getComponent={loadSettingsSplitNavigator}
                     />
                     <RootStack.Screen
                         name={SCREENS.SEARCH.CENTRAL_PANE}
-                        options={screenOptions.fullScreen}
+                        options={rootNavigatorOptions.searchPage}
                         getComponent={loadSearchPage}
                         initialParams={{q: SearchQueryUtils.buildSearchQueryString()}}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR}
-                        options={({route}) => getSplitNavigatorOptions(route)}
+                        options={rootNavigatorOptions.fullScreen}
                         getComponent={loadWorkspaceSplitNavigator}
                     />
                     <RootStack.Screen
                         name={SCREENS.VALIDATE_LOGIN}
                         options={{
-                            ...screenOptions.fullScreen,
+                            ...rootNavigatorOptions.fullScreen,
                             headerShown: false,
                             title: 'New Expensify',
                         }}
@@ -483,6 +478,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                         options={{
                             headerShown: false,
                             presentation: 'transparentModal',
+                            animation: 'none',
                         }}
                         getComponent={loadProfileAvatar}
                         listeners={modalScreenListeners}
@@ -507,46 +503,46 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                     />
                     <RootStack.Screen
                         name={SCREENS.NOT_FOUND}
-                        options={screenOptions.fullScreen}
+                        options={rootNavigatorOptions.fullScreen}
                         component={NotFoundPage}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}
-                        options={screenOptions.rightModalNavigator}
+                        options={rootNavigatorOptions.rightModalNavigator}
                         component={RightModalNavigator}
                         listeners={modalScreenListenersWithCancelSearch}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.LEFT_MODAL_NAVIGATOR}
-                        options={screenOptions.leftModalNavigator}
+                        options={rootNavigatorOptions.leftModalNavigator}
                         component={LeftModalNavigator}
                         listeners={modalScreenListeners}
                     />
                     <RootStack.Screen
                         name={SCREENS.DESKTOP_SIGN_IN_REDIRECT}
-                        options={screenOptions.fullScreen}
+                        options={rootNavigatorOptions.fullScreen}
                         component={DesktopSignInRedirectPage}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.EXPLANATION_MODAL_NAVIGATOR}
-                        options={onboardingModalScreenOptions}
+                        options={rootNavigatorOptions.onboardingModalNavigator}
                         component={ExplanationModalNavigator}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.FEATURE_TRANING_MODAL_NAVIGATOR}
-                        options={onboardingModalScreenOptions}
+                        options={rootNavigatorOptions.onboardingModalNavigator}
                         component={FeatureTrainingModalNavigator}
                         listeners={modalScreenListeners}
                     />
                     <RootStack.Screen
                         name={NAVIGATORS.WELCOME_VIDEO_MODAL_NAVIGATOR}
-                        options={onboardingModalScreenOptions}
+                        options={rootNavigatorOptions.onboardingModalNavigator}
                         component={WelcomeVideoModalNavigator}
                     />
                     {isOnboardingCompleted === false && (
                         <RootStack.Screen
                             name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
-                            options={onboardingScreenOptions}
+                            options={rootNavigatorOptions.onboardingModalNavigator}
                             component={OnboardingModalNavigator}
                             listeners={{
                                 focus: () => {
@@ -576,7 +572,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                     />
                     <RootStack.Screen
                         name={SCREENS.CONNECTION_COMPLETE}
-                        options={screenOptions.fullScreen}
+                        options={defaultScreenOptions}
                         component={ConnectionCompletePage}
                     />
                 </RootStack.Navigator>

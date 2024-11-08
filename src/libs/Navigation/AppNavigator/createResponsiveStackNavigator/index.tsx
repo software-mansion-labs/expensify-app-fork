@@ -4,16 +4,12 @@ import useNavigationResetOnLayoutChange from '@libs/Navigation/AppNavigator/useN
 import createPlatformStackNavigatorComponent from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent';
 import defaultPlatformStackScreenOptions from '@libs/Navigation/PlatformStackNavigation/defaultPlatformStackScreenOptions';
 import type {PlatformStackNavigationEventMap, PlatformStackNavigationOptions, PlatformStackNavigationState} from '@libs/Navigation/PlatformStackNavigation/types';
-import CustomRouter from './CustomRouter';
-import RenderSearchRoute from './SearchRoute';
-import useStateWithSearch from './useStateWithSearch';
+import CustomRouter from '../createCustomStackNavigator/CustomRouter';
 
 const ResponsiveStackNavigatorComponent = createPlatformStackNavigatorComponent('ResponsiveStackNavigator', {
     createRouter: CustomRouter,
     defaultScreenOptions: defaultPlatformStackScreenOptions,
-    useCustomState: useStateWithSearch,
     useCustomEffects: useNavigationResetOnLayoutChange,
-    ExtraContent: RenderSearchRoute,
 });
 
 function createResponsiveStackNavigator<ParamList extends ParamListBase>() {

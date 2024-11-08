@@ -1,6 +1,6 @@
-import type {StackNavigationOptions} from '@react-navigation/stack';
 import React from 'react';
 import createCustomBottomTabNavigator from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator';
+import type {PlatformStackNavigationOptions} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import SidebarScreen from '@pages/home/sidebar/SidebarScreen';
 import SearchPageBottomTab from '@pages/Search/SearchPageBottomTab';
@@ -10,9 +10,8 @@ import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 const loadInitialSettingsPage = () => require<ReactComponentModule>('../../../../pages/settings/InitialSettingsPage').default;
 const Tab = createCustomBottomTabNavigator<BottomTabNavigatorParamList>();
 
-const screenOptions: StackNavigationOptions = {
+const screenOptions: PlatformStackNavigationOptions = {
     headerShown: false,
-    animationEnabled: false,
 };
 
 function BottomTabNavigator() {
