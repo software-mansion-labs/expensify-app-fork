@@ -1,5 +1,7 @@
 import type {MarkdownTextInputProps} from '@expensify/react-native-live-markdown';
 import {MarkdownTextInput} from '@expensify/react-native-live-markdown';
+import parseExpensiMark from '@expensify/react-native-live-markdown/src/parseExpensiMark';
+import {ExpensiMark} from 'expensify-common';
 import type {ForwardedRef} from 'react';
 import React from 'react';
 import type {TextInput} from 'react-native';
@@ -11,6 +13,8 @@ const AnimatedMarkdownTextInput = Animated.createAnimatedComponent(MarkdownTextI
 
 type AnimatedMarkdownTextInputRef = typeof AnimatedMarkdownTextInput & TextInput & HTMLInputElement;
 
+console.log(new ExpensiMark());
+
 function RNMarkdownTextInputWithRef(props: MarkdownTextInputProps, ref: ForwardedRef<AnimatedMarkdownTextInputRef>) {
     const theme = useTheme();
 
@@ -19,6 +23,7 @@ function RNMarkdownTextInputWithRef(props: MarkdownTextInputProps, ref: Forwarde
             allowFontScaling={false}
             textBreakStrategy="simple"
             keyboardAppearance={theme.colorScheme}
+            parser={parseExpensiMark}
             ref={(refHandle) => {
                 if (typeof ref !== 'function') {
                     return;
