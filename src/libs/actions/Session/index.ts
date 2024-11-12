@@ -509,7 +509,7 @@ function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string
             .then(() => Onyx.merge(ONYXKEYS.HYBRID_APP, hybridApp))
             .then(() => Onyx.multiSet(newDotOnyxValues))
             .then(() => {
-                if (!shouldRemoveDelegatedAccess) {
+                if (!hybridApp.shouldRemoveDelegatedAccess) {
                     return;
                 }
                 return Onyx.clear(KEYS_TO_PRESERVE_DELEGATE_ACCESS);

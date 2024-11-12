@@ -23,6 +23,9 @@ type HybridApp = {
 
     /** stores infromation if last log out was performed from OldDot */
     loggedOutFromOldDot?: boolean;
+
+    /** */
+    shouldRemoveDelegatedAccess?: boolean;
 };
 
 export default HybridApp;
