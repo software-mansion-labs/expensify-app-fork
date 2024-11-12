@@ -41,8 +41,9 @@ import Timers from '@libs/Timers';
 import {hideContextMenu} from '@pages/home/report/ContextMenu/ReportActionContextMenu';
 import * as App from '@userActions/App';
 import {KEYS_TO_PRESERVE, openApp} from '@userActions/App';
+import {KEYS_TO_PRESERVE_DELEGATE_ACCESS} from '@userActions/Delegate';
 import * as Device from '@userActions/Device';
-import {parseHybridAppSettings, setReadyToShowAuthScreens, setReadyToSwitchToClassicExperience} from '@userActions/HybridApp';
+import {parseHybridAppSettings, setLoggedOutFromOldDot, setReadyToShowAuthScreens, setReadyToSwitchToClassicExperience, setUseNewDotSignInPage} from '@userActions/HybridApp';
 import * as PriorityMode from '@userActions/PriorityMode';
 import redirectToSignIn from '@userActions/SignInRedirect';
 import Timing from '@userActions/Timing';
@@ -492,7 +493,7 @@ function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string
             return Promise.resolve();
         }
 
-        return Onyx.clear();
+        return Onyx.clear(KEYS_TO_PRESERVE);
     };
 
     const initAppAfterTransition = () => {
@@ -508,7 +509,15 @@ function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string
             .then(() => Onyx.merge(ONYXKEYS.HYBRID_APP, hybridApp))
             .then(() => Onyx.multiSet(newDotOnyxValues))
             .then(() => {
+                if (!shouldRemoveDelegatedAccess) {
+                    return;
+                }
+                return Onyx.clear(KEYS_TO_PRESERVE_DELEGATE_ACCESS);
+            })
+            .then(() => {
                 // This data is mocked and should be returned by BeginSignUp/SignInUser API commands
+                setUseNewDotSignInPage(!!hybridApp.useNewDotSignInPage);
+                setLoggedOutFromOldDot(!!hybridApp.loggedOutFromOldDot);
                 const useOldDot = 'true';
                 const dismissed = hybridApp.useNewDotSignInPage ? useOldDot : 'false';
                 return Onyx.multiSet({
