@@ -1,7 +1,7 @@
 import type {ParamListBase, StackActionHelpers} from '@react-navigation/native';
 import {StackRouter, useNavigationBuilder} from '@react-navigation/native';
-import {NativeStackView} from '@react-navigation/native-stack';
 import type {NativeStackNavigationEventMap, NativeStackNavigationOptions} from '@react-navigation/native-stack';
+import {NativeStackView} from '@react-navigation/native-stack';
 import React, {useMemo} from 'react';
 import convertToNativeNavigationOptions from '@libs/Navigation/PlatformStackNavigation/navigationOptions/convertToNativeNavigationOptions';
 import type {
@@ -86,7 +86,7 @@ function createPlatformStackNavigatorComponent<RouterOptions extends PlatformSta
         );
 
         // Executes custom effects defined in "useCustomEffects" navigator option.
-        useCustomEffects(customCodePropsWithCustomState);
+        useCustomEffects(customCodePropsWithCustomState, parentRoute);
 
         const Content = useMemo(
             () => (

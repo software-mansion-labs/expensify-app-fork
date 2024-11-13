@@ -4,8 +4,20 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useNavigationResetOnLayoutChange from '@libs/Navigation/AppNavigator/useNavigationResetOnLayoutChange';
 import createPlatformStackNavigatorComponent from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent';
 import defaultPlatformStackScreenOptions from '@libs/Navigation/PlatformStackNavigation/defaultPlatformStackScreenOptions';
-import type {CustomStateHookProps, PlatformStackNavigationEventMap, PlatformStackNavigationOptions, PlatformStackNavigationState} from '@libs/Navigation/PlatformStackNavigation/types';
+import type {
+    CustomEffectsHookProps,
+    CustomStateHookProps,
+    PlatformStackNavigationEventMap,
+    PlatformStackNavigationOptions,
+    PlatformStackNavigationState,
+} from '@libs/Navigation/PlatformStackNavigation/types';
 import SplitStackRouter from './SplitStackRouter';
+import usePreserveSplitNavigatorState from './usePreserveSplitNavigatorState';
+
+function useCustomEffects(props: CustomEffectsHookProps, route) {
+    useNavigationResetOnLayoutChange(props);
+    usePreserveSplitNavigatorState(route, props.navigation.getState());
+}
 
 function useCustomSplitNavigatorState({state}: CustomStateHookProps) {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -24,7 +36,7 @@ function useCustomSplitNavigatorState({state}: CustomStateHookProps) {
 
 const CustomFullScreenNavigatorComponent = createPlatformStackNavigatorComponent('CustomFullScreenNavigator', {
     createRouter: SplitStackRouter,
-    useCustomEffects: useNavigationResetOnLayoutChange,
+    useCustomEffects,
     defaultScreenOptions: defaultPlatformStackScreenOptions,
     useCustomState: useCustomSplitNavigatorState,
 });

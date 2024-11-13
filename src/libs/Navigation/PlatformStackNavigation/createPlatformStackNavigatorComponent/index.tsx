@@ -86,7 +86,7 @@ function createPlatformStackNavigatorComponent<RouterOptions extends PlatformSta
         );
 
         // Executes custom effects defined in "useCustomEffects" navigator option.
-        useCustomEffects(customCodePropsWithCustomState);
+        useCustomEffects(customCodePropsWithCustomState, parentRoute);
 
         const Content = useMemo(
             () => (
