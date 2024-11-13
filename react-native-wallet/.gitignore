@@ -80,3 +80,6 @@ lib/
 # React Native Codegen
 ios/generated
 android/generated
+
+# Google Push Provisioning SDK
+example/android/libs
