@@ -18,7 +18,7 @@ type HybridApp = {
     /** */
     shouldResetSigningInLogic?: boolean;
 
-    /** */
+    /** States whether we transitioned from OldDot to show only certain group of screens. It should be undefined on pure NewDot. */
     isSingleNewDotEntry?: boolean;
 
     /** stores infromation if last log out was performed from OldDot */

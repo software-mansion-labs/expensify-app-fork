@@ -41,6 +41,9 @@ import {ReportAttachmentsProvider} from './pages/home/report/ReportAttachmentsCo
 import type {Route} from './ROUTES';
 import {SplashScreenStateContextProvider} from './SplashScreenStateContext';
 
+/**
+ * URL and settings passed to our top-level React Native component by HybridApp. Will always be undefined in "pure" NewDot builds.
+ */
 type AppProps = {
     url?: Route;
     hybridAppSettings?: string;
