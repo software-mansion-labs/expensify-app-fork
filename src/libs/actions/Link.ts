@@ -1,3 +1,4 @@
+import {findFocusedRoute, getStateFromPath} from '@react-navigation/native';
 import Onyx from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import * as API from '@libs/API';
@@ -5,13 +6,16 @@ import type {GenerateSpotnanaTokenParams} from '@libs/API/parameters';
 import {SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
 import asyncOpenURL from '@libs/asyncOpenURL';
 import * as Environment from '@libs/Environment/Environment';
+import linkingConfig from '@libs/Navigation/linkingConfig';
 import Navigation from '@libs/Navigation/Navigation';
+import {ReportsSplitNavigatorParamList, SearchReportParamList} from '@libs/Navigation/types';
 import * as Url from '@libs/Url';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
+import SCREENS from '@src/SCREENS';
 import * as Session from './Session';
 
 let isNetworkOffline = false;
@@ -153,7 +157,36 @@ function getInternalExpensifyPath(href: string) {
     return attrPath;
 }
 
-function openLink(href: string, environmentURL: string, isAttachment = false) {
+function isReportURL(url: string) {
+    const reportURLRegex = /(r|search\/view)\/[0-9]+/;
+    return reportURLRegex.test(url);
+}
+
+function normalizeReportURL(url: string, isInNarrowPaneModal: boolean) {
+    const stateFromPath = getStateFromPath(url, linkingConfig.config);
+
+    if (!stateFromPath) {
+        console.error('Failed to normalize report URL');
+        return url;
+    }
+
+    const focusedRoute = findFocusedRoute(stateFromPath);
+
+    if (!focusedRoute) {
+        console.error('Failed to normalize report URL');
+        return url;
+    }
+
+    // We know that it will be one of these two types of routes.
+    const focusedRouteParams = focusedRoute.params as ReportsSplitNavigatorParamList[typeof SCREENS.REPORT] | SearchReportParamList[typeof SCREENS.SEARCH.REPORT_RHP];
+
+    if (isInNarrowPaneModal) {
+        return ROUTES.SEARCH_REPORT.getRoute({...focusedRouteParams});
+    }
+    return ROUTES.REPORT_WITH_ID.getRoute(focusedRouteParams.reportID, focusedRouteParams.reportActionID);
+}
+
+function openLink(href: string, environmentURL: string, isAttachment = false, isInNarrowPaneModal = false) {
     const hasSameOrigin = Url.hasSameExpensifyOrigin(href, environmentURL);
     const hasExpensifyOrigin = Url.hasSameExpensifyOrigin(href, CONFIG.EXPENSIFY.EXPENSIFY_URL) || Url.hasSameExpensifyOrigin(href, CONFIG.EXPENSIFY.STAGING_API_ROOT);
     const internalNewExpensifyPath = getInternalNewExpensifyPath(href);
@@ -178,6 +211,12 @@ function openLink(href: string, environmentURL: string, isAttachment = false) {
             Session.signOutAndRedirectToSignIn();
             return;
         }
+
+        if (isReportURL(internalNewExpensifyPath)) {
+            Navigation.navigate(normalizeReportURL(internalNewExpensifyPath, isInNarrowPaneModal) as Route);
+            return;
+        }
+
         Navigation.navigate(internalNewExpensifyPath as Route);
         return;
     }

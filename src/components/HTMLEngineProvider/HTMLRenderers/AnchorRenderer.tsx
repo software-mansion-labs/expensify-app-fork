@@ -7,6 +7,7 @@ import AnchorForCommentsOnly from '@components/AnchorForCommentsOnly';
 import * as HTMLEngineUtils from '@components/HTMLEngineProvider/htmlEngineUtils';
 import Text from '@components/Text';
 import useEnvironment from '@hooks/useEnvironment';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import tryResolveUrlFromApiRoot from '@libs/tryResolveUrlFromApiRoot';
 import * as Link from '@userActions/Link';
@@ -33,6 +34,7 @@ function AnchorRenderer({tnode, style, key}: AnchorRendererProps) {
 
     const isDeleted = HTMLEngineUtils.isDeletedNode(tnode);
     const textDecorationLineStyle = isDeleted ? styles.underlineLineThrough : {};
+    const {isInNarrowPaneModal} = useResponsiveLayout();
 
     if (!HTMLEngineUtils.isChildOfComment(tnode)) {
         // This is not a comment from a chat, the AnchorForCommentsOnly uses a Pressable to create a context menu on right click.
@@ -72,7 +74,7 @@ function AnchorRenderer({tnode, style, key}: AnchorRendererProps) {
             style={[style, parentStyle, textDecorationLineStyle, styles.textUnderlinePositionUnder, styles.textDecorationSkipInkNone]}
             key={key}
             // Only pass the press handler for internal links. For public links or whitelisted internal links fallback to default link handling
-            onPress={internalNewExpensifyPath || internalExpensifyPath ? () => Link.openLink(attrHref, environmentURL, isAttachment) : undefined}
+            onPress={internalNewExpensifyPath || internalExpensifyPath ? () => Link.openLink(attrHref, environmentURL, isAttachment, isInNarrowPaneModal) : undefined}
         >
             <TNodeChildrenRenderer
                 tnode={tnode}

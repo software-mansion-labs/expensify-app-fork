@@ -40,7 +40,7 @@ function TextLink({href, onPress, children, style, onMouseDown = (event) => even
         if (onPress) {
             onPress(event);
         } else {
-            Link.openLink(href, environmentURL);
+            Link.openLink(href, environmentURL, undefined, 'bbbbbbb');
         }
     };
 
