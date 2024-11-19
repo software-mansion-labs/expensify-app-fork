@@ -7,7 +7,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 import type {Writable} from 'type-fest';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import Log from '@libs/Log';
-import {isSplitNavigatorName} from '@libs/NavigationUtils';
+import {isFullScreenName, isSplitNavigatorName} from '@libs/NavigationUtils';
 import {shallowCompare} from '@libs/ObjectUtils';
 import getPolicyEmployeeAccountIDs from '@libs/PolicyEmployeeListUtils';
 import * as ReportConnection from '@libs/ReportConnection';
@@ -494,6 +494,28 @@ function removeScreenFromNavigationState(screen: Screen) {
     });
 }
 
+/**
+ * The function redirects the user to the report screen, taking into account the currently open tab.
+ * When a redirect is performed from the Search tab, a report screen will be opened in RHP, otherwise the chat will be displayed in the Inbox tab.
+ */
+function redirectToReportBasedOnCurrentTab(reportID: string) {
+    const lastFullScreenRoute = navigationRef
+        .getRootState()
+        .routes.filter((route) => isFullScreenName(route.name))
+        .at(-1);
+
+    if (!lastFullScreenRoute) {
+        return;
+    }
+
+    if (lastFullScreenRoute.name === SCREENS.SEARCH.CENTRAL_PANE) {
+        navigate(ROUTES.SEARCH_REPORT.getRoute({reportID}), {forceReplace: true});
+        return;
+    }
+
+    dismissModal(reportID);
+}
+
 export default {
     setShouldPopAllStateOnUP,
     navigate,
@@ -519,6 +541,7 @@ export default {
     navigateToReportWithPolicyCheck,
     goUp,
     removeScreenFromNavigationState,
+    redirectToReportBasedOnCurrentTab,
 };
 
 export {navigationRef};
