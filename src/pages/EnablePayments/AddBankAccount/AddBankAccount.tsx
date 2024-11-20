@@ -45,7 +45,7 @@ function AddBankAccount() {
         const onSuccessFallbackRoute = personalBankAccount?.onSuccessFallbackRoute ?? '';
 
         if (exitReportID) {
-            Navigation.dismissModal(exitReportID);
+            Navigation.dismissModalWithReportID(exitReportID);
             return;
         }
         if (shouldContinue && onSuccessFallbackRoute) {

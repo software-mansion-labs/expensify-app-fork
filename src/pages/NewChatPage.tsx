@@ -188,7 +188,7 @@ function NewChatPage() {
     const createChat = useCallback(
         (option?: OptionsListUtils.Option) => {
             if (option?.isSelfDM) {
-                Navigation.dismissModal(option.reportID);
+                Navigation.dismissModalWithReportID(option.reportID ?? '-1');
                 return;
             }
             let login = '';

@@ -68,14 +68,14 @@ function EditReportFieldPage({route}: EditReportFieldPageProps) {
             goBack();
         } else {
             ReportActions.updateReportField(report.reportID, {...reportField, value: value === '' ? null : value}, reportField);
-            Navigation.redirectToReportBasedOnCurrentTab(report?.reportID);
+            Navigation.dismissModalWithReportID(report?.reportID);
         }
     };
 
     const handleReportFieldDelete = () => {
         ReportActions.deleteReportField(report.reportID, reportField);
         setIsDeleteModalVisible(false);
-        Navigation.redirectToReportBasedOnCurrentTab(report?.reportID);
+        Navigation.dismissModalWithReportID(report?.reportID);
     };
 
     const fieldValue = isReportFieldTitle ? report.reportName ?? '' : reportField.value ?? reportField.defaultValue;

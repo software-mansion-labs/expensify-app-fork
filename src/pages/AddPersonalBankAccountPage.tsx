@@ -59,7 +59,7 @@ function AddPersonalBankAccountPage() {
             const onSuccessFallbackRoute = personalBankAccount?.onSuccessFallbackRoute ?? '';
 
             if (exitReportID) {
-                Navigation.dismissModal(exitReportID);
+                Navigation.dismissModalWithReportID(exitReportID);
             } else if (shouldContinue && onSuccessFallbackRoute) {
                 PaymentMethods.continueSetup(onSuccessFallbackRoute);
             } else {
