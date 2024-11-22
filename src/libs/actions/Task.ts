@@ -314,7 +314,7 @@ function createTaskAndNavigate(
 
     if (!isCreatedUsingMarkdown) {
         clearOutTaskInfo();
-        Navigation.dismissModal(parentReportID);
+        Navigation.dismissModalWithReportID(parentReportID);
     }
     Report.notifyNewAction(parentReportID, currentUserAccountID);
 }

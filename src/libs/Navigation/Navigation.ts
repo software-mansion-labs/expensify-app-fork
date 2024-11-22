@@ -7,7 +7,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 import type {Writable} from 'type-fest';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import Log from '@libs/Log';
-import {isSplitNavigatorName} from '@libs/NavigationUtils';
+import {isFullScreenName, isSplitNavigatorName} from '@libs/NavigationUtils';
 import {shallowCompare} from '@libs/ObjectUtils';
 import getPolicyEmployeeAccountIDs from '@libs/PolicyEmployeeListUtils';
 import * as ReportConnection from '@libs/ReportConnection';
@@ -17,8 +17,8 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {HybridAppRoute, Route} from '@src/ROUTES';
 import ROUTES, {HYBRID_APP_ROUTES} from '@src/ROUTES';
-import SCREENS, {PROTECTED_SCREENS} from '@src/SCREENS';
 import type {Screen} from '@src/SCREENS';
+import SCREENS, {PROTECTED_SCREENS} from '@src/SCREENS';
 import type {Report} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import originalCloseRHPFlow from './closeRHPFlow';
@@ -433,52 +433,56 @@ function switchPolicyID(policyID?: string) {
 
 type NavigateToReportWithPolicyCheckPayload = {report?: OnyxEntry<Report>; reportID?: string; reportActionID?: string; referrer?: string; policyIDToCheck?: string};
 
-function navigateToReportWithPolicyCheck({report, reportID, reportActionID, referrer, policyIDToCheck}: NavigateToReportWithPolicyCheckPayload, ref = navigationRef) {
+function navigateToReportWithPolicyCheck(
+    {report, reportID, reportActionID, referrer, policyIDToCheck}: NavigateToReportWithPolicyCheckPayload,
+    options: LinkToOptions = {forceReplace: false, reportPathConversionEnabled: true},
+    ref = navigationRef,
+) {
     const targetReport = reportID ? {reportID, ...ReportConnection.getAllReports()?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]} : report;
     const policyID = policyIDToCheck ?? getPolicyIDFromState(navigationRef.getRootState() as State<RootStackParamList>);
     const policyMemberAccountIDs = getPolicyEmployeeAccountIDs(policyID);
     const shouldOpenAllWorkspace = isEmptyObject(targetReport) ? true : !ReportUtils.doesReportBelongToWorkspace(targetReport, policyMemberAccountIDs, policyID);
 
-    if ((shouldOpenAllWorkspace && !policyID) || !shouldOpenAllWorkspace) {
-        linkTo(ref.current, ROUTES.REPORT_WITH_ID.getRoute(targetReport?.reportID ?? '-1', reportActionID, referrer));
+    if (shouldOpenAllWorkspace || !policyID) {
+        linkTo(ref.current, ROUTES.REPORT_WITH_ID.getRoute(targetReport?.reportID ?? '-1', reportActionID, referrer), options);
         return;
     }
 
-    const params: Record<string, string> = {
-        reportID: targetReport?.reportID ?? '-1',
-    };
-
-    if (reportActionID) {
-        params.reportActionID = reportActionID;
-    }
-
-    if (referrer) {
-        params.referrer = referrer;
-    }
-
-    ref.dispatch(
-        StackActions.push(NAVIGATORS.REPORTS_SPLIT_NAVIGATOR, {
-            policyID: null,
-            screen: SCREENS.REPORT,
-            params,
-        }),
-    );
+    linkTo(ref.current, `w/${policyID}/${ROUTES.REPORT_WITH_ID.getRoute(targetReport?.reportID ?? '-1', reportActionID, referrer)}` as Route, options);
 }
 
-// @TODO In places where we use dismissModal with report arg we should do dismiss modal and then navigate to the report.
-// @TODO There should be a way to not use as string.
-// We left it here to limit the number of changed files.
-const dismissModal = (reportID?: string, ref = navigationRef) => {
+const dismissModal = (ref = navigationRef) => {
     ref.dispatch({type: CONST.NAVIGATION.ACTION_TYPE.DISMISS_MODAL as string});
-    if (!reportID) {
+};
+
+type DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: boolean};
+
+const dismissModalWithReportData = (
+    reportData: Pick<NavigateToReportWithPolicyCheckPayload, 'report' | 'reportID'>,
+    options: DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: false},
+) => {
+    const {shouldRedirectToRhpFromSearch} = options;
+    const reportID = reportData?.report?.reportID ?? reportData?.reportID ?? '-1';
+    const topmostFullScreenRoute = navigationRef.getRootState().routes.findLast((route) => isFullScreenName(route.name));
+
+    // On SearchPage we don't want to switch policyID to global as a side effect of the action performed from RHP
+    if (topmostFullScreenRoute?.name === SCREENS.SEARCH.CENTRAL_PANE && shouldRedirectToRhpFromSearch) {
+        navigate(ROUTES.SEARCH_REPORT.getRoute({reportID}), {forceReplace: true, reportPathConversionEnabled: false});
         return;
     }
-    isNavigationReady().then(() => navigateToReportWithPolicyCheck({reportID}));
+
+    // If the target chat is opened under the RHP, it's not necessary to perform a replace action
+    if (getTopmostReportId() === reportID && navigationRef.getRootState().routes.at(-2)?.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR) {
+        dismissModal();
+        return;
+    }
+
+    navigateToReportWithPolicyCheck(reportData, {forceReplace: true, reportPathConversionEnabled: false});
 };
-const dismissModalWithReport = (report: OnyxEntry<Report>) => {
-    dismissModal();
-    isNavigationReady().then(() => navigateToReportWithPolicyCheck({report}));
-};
+
+const dismissModalWithReport = (report: OnyxEntry<Report>, options: DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: false}) => dismissModalWithReportData({report}, options);
+
+const dismissModalWithReportID = (reportID: string, options: DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: false}) => dismissModalWithReportData({reportID}, options);
 
 function removeScreenFromNavigationState(screen: Screen) {
     isNavigationReady().then(() => {
@@ -500,6 +504,7 @@ export default {
     setParams,
     dismissModal,
     dismissModalWithReport,
+    dismissModalWithReportID,
     isActiveRoute,
     getActiveRoute,
     getActiveRouteWithoutParams,

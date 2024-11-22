@@ -65,7 +65,7 @@ const PromotedActions = {
         text: Localize.translateLocal('common.message'),
         onSelected: () => {
             if (reportID) {
-                Navigation.dismissModal(reportID);
+                Navigation.dismissModalWithReportID(reportID);
                 return;
             }
 
