@@ -3685,7 +3685,7 @@ function requestMoney(
         return;
     }
 
-    Navigation.dismissModalWithReportID(activeReportID);
+    Navigation.dismissModalWithReportID(activeReportID, {shouldRedirectToRhpFromSearch: true});
     Report.notifyNewAction(activeReportID, payeeAccountID);
 }
 
@@ -3934,7 +3934,7 @@ function trackExpense(
             API.write(WRITE_COMMANDS.TRACK_EXPENSE, parameters, onyxData);
         }
     }
-    Navigation.dismissModalWithReportID(activeReportID ?? '-1');
+    Navigation.dismissModalWithReportID(activeReportID ?? '-1', {shouldRedirectToRhpFromSearch: true});
 
     if (action === CONST.IOU.ACTION.SHARE) {
         Navigation.setNavigationActionToMicrotaskQueue(() => Navigation.navigate(ROUTES.ROOM_INVITE.getRoute(activeReportID ?? '-1', CONST.IOU.SHARE.ROLE.ACCOUNTANT)));

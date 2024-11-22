@@ -443,70 +443,46 @@ function navigateToReportWithPolicyCheck(
     const policyMemberAccountIDs = getPolicyEmployeeAccountIDs(policyID);
     const shouldOpenAllWorkspace = isEmptyObject(targetReport) ? true : !ReportUtils.doesReportBelongToWorkspace(targetReport, policyMemberAccountIDs, policyID);
 
-    if ((shouldOpenAllWorkspace && !policyID) || !shouldOpenAllWorkspace) {
+    if (shouldOpenAllWorkspace || !policyID) {
         linkTo(ref.current, ROUTES.REPORT_WITH_ID.getRoute(targetReport?.reportID ?? '-1', reportActionID, referrer), options);
         return;
     }
 
-    const params: Record<string, string> = {
-        reportID: targetReport?.reportID ?? '-1',
-    };
-
-    if (reportActionID) {
-        params.reportActionID = reportActionID;
-    }
-
-    if (referrer) {
-        params.referrer = referrer;
-    }
-
-    if (options.forceReplace) {
-        ref.dispatch(
-            StackActions.replace(NAVIGATORS.REPORTS_SPLIT_NAVIGATOR, {
-                policyID: null,
-                screen: SCREENS.REPORT,
-                params,
-            }),
-        );
-        return;
-    }
-
-    ref.dispatch(
-        StackActions.push(NAVIGATORS.REPORTS_SPLIT_NAVIGATOR, {
-            policyID: null,
-            screen: SCREENS.REPORT,
-            params,
-        }),
-    );
+    linkTo(ref.current, `w/${policyID}/${ROUTES.REPORT_WITH_ID.getRoute(targetReport?.reportID ?? '-1', reportActionID, referrer)}` as Route, options);
 }
 
 const dismissModal = (ref = navigationRef) => {
     ref.dispatch({type: CONST.NAVIGATION.ACTION_TYPE.DISMISS_MODAL as string});
 };
 
-const dismissModalWithReport = (report: OnyxEntry<Report>) => {
+type DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: boolean};
+
+const dismissModalWithReportData = (
+    reportData: Pick<NavigateToReportWithPolicyCheckPayload, 'report' | 'reportID'>,
+    options: DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: false},
+) => {
+    const {shouldRedirectToRhpFromSearch} = options;
+    const reportID = reportData?.report?.reportID ?? reportData?.reportID ?? '-1';
     const topmostFullScreenRoute = navigationRef.getRootState().routes.findLast((route) => isFullScreenName(route.name));
 
     // On SearchPage we don't want to switch policyID to global as a side effect of the action performed from RHP
-    if (topmostFullScreenRoute?.name === SCREENS.SEARCH.CENTRAL_PANE) {
-        navigate(ROUTES.SEARCH_REPORT.getRoute({reportID: report?.reportID ?? '-1'}), {forceReplace: true, reportPathConversionEnabled: false});
-        return;
-    }
-
-    navigateToReportWithPolicyCheck({report}, {forceReplace: true, reportPathConversionEnabled: false});
-};
-
-const dismissModalWithReportID = (reportID: string) => {
-    const topmostFullScreenRoute = navigationRef.getRootState().routes.findLast((route) => isFullScreenName(route.name));
-
-    // On SearchPage we don't want to switch policyID to global as a side effect of the action performed from RHP
-    if (topmostFullScreenRoute?.name === SCREENS.SEARCH.CENTRAL_PANE) {
+    if (topmostFullScreenRoute?.name === SCREENS.SEARCH.CENTRAL_PANE && shouldRedirectToRhpFromSearch) {
         navigate(ROUTES.SEARCH_REPORT.getRoute({reportID}), {forceReplace: true, reportPathConversionEnabled: false});
         return;
     }
 
-    navigateToReportWithPolicyCheck({reportID}, {forceReplace: true, reportPathConversionEnabled: false});
+    // If the target chat is opened under the RHP, it's not necessary to perform a replace action
+    if (getTopmostReportId() === reportID && navigationRef.getRootState().routes.at(-2)?.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR) {
+        dismissModal();
+        return;
+    }
+
+    navigateToReportWithPolicyCheck(reportData, {forceReplace: true, reportPathConversionEnabled: false});
 };
+
+const dismissModalWithReport = (report: OnyxEntry<Report>, options: DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: false}) => dismissModalWithReportData({report}, options);
+
+const dismissModalWithReportID = (reportID: string, options: DismissModalWithReportOptions = {shouldRedirectToRhpFromSearch: false}) => dismissModalWithReportData({reportID}, options);
 
 function removeScreenFromNavigationState(screen: Screen) {
     isNavigationReady().then(() => {
