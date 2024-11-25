@@ -16,18 +16,6 @@ import {
 import type {Init} from './ActiveClientManager/types';
 import Log from './Log';
 
-function shouldUseOldApp(tryNewDot?: TryNewDot) {
-    return tryNewDot?.classicRedirect.dismissed === true;
-}
-
-let credentials: OnyxEntry<Credentials>;
-Onyx.connect({
-    key: ONYXKEYS.CREDENTIALS,
-    callback: (newCredentials) => {
-        credentials = newCredentials;
-    },
-});
-
 let currentHybridApp: OnyxEntry<HybridApp>;
 let currentTryNewDot: OnyxEntry<TryNewDot>;
 
@@ -44,6 +32,29 @@ Onyx.connect({
         handleSignInFlow(currentHybridApp, tryNewDot);
     },
 });
+
+let currentSession: OnyxEntry<Session>;
+Onyx.connect({
+    key: ONYXKEYS.SESSION,
+    callback: (session: OnyxEntry<Session>) => {
+        if (!currentSession?.authToken && session?.authToken && currentHybridApp?.newDotSignInState === CONST.HYBRID_APP_SIGN_IN_STATE.STARTED) {
+            setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED);
+        }
+        currentSession = session;
+    },
+});
+
+let credentials: OnyxEntry<Credentials>;
+Onyx.connect({
+    key: ONYXKEYS.CREDENTIALS,
+    callback: (newCredentials) => {
+        credentials = newCredentials;
+    },
+});
+
+function shouldUseOldApp(tryNewDot?: TryNewDot) {
+    return tryNewDot?.classicRedirect.dismissed === true;
+}
 
 function handleSignInFlow(hybridApp: OnyxEntry<HybridApp>, tryNewDot: OnyxEntry<TryNewDot>) {
     if (!NativeModules.HybridAppModule) {
@@ -104,16 +115,18 @@ function handleSignInFlow(hybridApp: OnyxEntry<HybridApp>, tryNewDot: OnyxEntry<
     currentTryNewDot = tryNewDot;
 }
 
-let currentSession: OnyxEntry<Session>;
-Onyx.connect({
-    key: ONYXKEYS.SESSION,
-    callback: (session: OnyxEntry<Session>) => {
-        if (!currentSession?.authToken && session?.authToken && currentHybridApp?.newDotSignInState === CONST.HYBRID_APP_SIGN_IN_STATE.STARTED) {
-            setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED);
-        }
-        currentSession = session;
-    },
-});
+function onOldDotSignInFinished(data: string) {
+    Log.info(`[HybridApp] onSignInFinished event received with data: ${data}`, true);
+    const eventData = JSON.parse(data) as {errorMessage: string};
+
+    setIsSigningIn(false);
+    setOldDotSignInError(eventData.errorMessage);
+    setOldDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED);
+
+    if (eventData.errorMessage === null) {
+        setReadyToSwitchToClassicExperience(true);
+    }
+}
 
 const init: Init = () => {
     if (!NativeModules.HybridAppModule) {
@@ -121,18 +134,7 @@ const init: Init = () => {
     }
 
     // Setup event listeners
-    DeviceEventEmitter.addListener(CONST.EVENTS.HYBRID_APP.ON_SIGN_IN_FINISHED, (data) => {
-        Log.info(`[HybridApp] onSignInFinished event received with data: ${data}`, true);
-        const eventData = JSON.parse(data as string) as {errorMessage: string};
-
-        setIsSigningIn(false);
-        setOldDotSignInError(eventData.errorMessage);
-        setOldDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED);
-
-        if (eventData.errorMessage === null) {
-            setReadyToSwitchToClassicExperience(true);
-        }
-    });
+    DeviceEventEmitter.addListener(CONST.EVENTS.HYBRID_APP.ON_SIGN_IN_FINISHED, onOldDotSignInFinished);
 };
 
 export default {init};
