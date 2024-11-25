@@ -1,4 +1,5 @@
 import { NativeModules, Platform } from 'react-native';
+import type { AndroidCardData } from './types';
 
 const LINKING_ERROR =
   `The package 'react-native-wallet' doesn't seem to be linked. Make sure: \n\n` +
@@ -24,6 +25,22 @@ const Wallet = WalletModule
       }
     );
 
-export function multiply(a: number, b: number): Promise<number> {
-  return Wallet.multiply(a, b);
+export function getWalletId(): Promise<string> {
+  return Wallet.getWalletId();
+}
+
+export function getHardwareId(): Promise<string> {
+  return Wallet.getHardwareId();
+}
+
+export function checkWalletAvailability(): Promise<boolean> {
+  return Wallet.checkWalletAvailability();
+}
+
+export function getSecureWalletInfo(): Promise<string> {
+  return Wallet.getSecureWalletInfo();
+}
+
+export function addCardToWallet(cardData: AndroidCardData): void {
+  return Wallet.addCardToWallet(cardData);
 }
