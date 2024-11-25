@@ -3,25 +3,25 @@ import type CONST from '@src/CONST';
 
 /**  */
 type HybridApp = {
-    /** Stores the information if HybridApp uses NewDot's sign in flow */
+    /** Stores the information if HybridApp uses NewDot's sign-in flow */
     useNewDotSignInPage?: boolean;
 
-    /**  */
+    /** Stores information on whether HybridApp is signing in to OldDot */
     isSigningIn?: boolean;
 
-    /** */
+    /** Stores the information about error that occurred on OldDot side during sign-in */
     oldDotSignInError?: string | null;
 
-    /**  */
+    /** Tells if we can show AuthScreens */
     readyToShowAuthScreens?: boolean;
 
-    /**  */
+    /** Tells if we can switch to OldDot */
     readyToSwitchToClassicExperience?: boolean;
 
-    /** */
+    /** Tells if we should reset signing in logic to initial state */
     shouldResetSigningInLogic?: boolean;
 
-    /** States whether we transitioned from OldDot to show only certain group of screens. It should be undefined on pure NewDot. */
+    /** States whether we transitioned from OldDot to show only certain group of screens */
     isSingleNewDotEntry?: boolean;
 
     /** stores infromation if last log out was performed from OldDot */
@@ -30,10 +30,10 @@ type HybridApp = {
     /** */
     shouldRemoveDelegatedAccess?: boolean;
 
-    /** */
+    /** Describes current stage of NewDot sign-in */
     newDotSignInState?: ValueOf<typeof CONST.HYBRID_APP_SIGN_IN_STATE>;
 
-    /** */
+    /** Describes current stage of OldDot sign-in */
     oldDotSignInState?: ValueOf<typeof CONST.HYBRID_APP_SIGN_IN_STATE>;
 };
 

@@ -1,6 +1,6 @@
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import type CONST from '@src/CONST';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type HybridAppSettings from './types';
 
@@ -44,6 +44,19 @@ function setOldDotSignInState(oldDotSignInState: ValueOf<typeof CONST.HYBRID_APP
     Onyx.merge(ONYXKEYS.HYBRID_APP, {oldDotSignInState});
 }
 
+function resetSigningInLogic() {
+    Onyx.merge(ONYXKEYS.HYBRID_APP, {
+        readyToShowAuthScreens: false,
+        readyToSwitchToClassicExperience: false,
+        isSigningIn: false,
+        useNewDotSignInPage: true,
+        oldDotSignInError: null,
+        oldDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED,
+        newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED,
+        shouldResetSigningInLogic: false,
+    });
+}
+
 export {
     parseHybridAppSettings,
     setOldDotSignInError,
@@ -55,4 +68,5 @@ export {
     setLoggedOutFromOldDot,
     setNewDotSignInState,
     setOldDotSignInState,
+    resetSigningInLogic,
 };
