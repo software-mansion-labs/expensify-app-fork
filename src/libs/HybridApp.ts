@@ -61,10 +61,11 @@ function handleSignInFlow(hybridApp: OnyxEntry<HybridApp>, tryNewDot: OnyxEntry<
         if (hybridApp?.oldDotSignInError) {
             Log.info('Unable to open OldDot. Sign-in has failed');
             setOldDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.FAILED_AGAIN);
-        } else {
-            Log.info('Closing NewDot as retrying sign-in to OldDot succeeded');
-            NativeModules.HybridAppModule.closeReactNativeApp(false, true);
+            return;
         }
+
+        Log.info('Closing NewDot as retrying sign-in to OldDot succeeded');
+        NativeModules.HybridAppModule.closeReactNativeApp(false, true);
     }
 
     if (
