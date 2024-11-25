@@ -3,7 +3,7 @@ import React, {createContext, useCallback, useEffect, useMemo, useRef} from 'rea
 import {withOnyx} from 'react-native-onyx';
 import usePrevious from '@hooks/usePrevious';
 import type {NavigationPartialRoute, State} from '@libs/Navigation/types';
-import NAVIGATORS from '@src/NAVIGATORS';
+import {isSidebarScreenName} from '@libs/NavigationUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
 import type {PriorityMode} from '@src/types/onyx';
@@ -74,14 +74,11 @@ function ScrollOffsetContextProvider({children, priorityMode}: ScrollOffsetConte
     }, []);
 
     const cleanStaleScrollOffsets: ScrollOffsetContextValue['cleanStaleScrollOffsets'] = useCallback((state) => {
-        const bottomTabNavigator = state.routes.find((route) => route.name === NAVIGATORS.BOTTOM_TAB_NAVIGATOR);
-        if (bottomTabNavigator?.state && 'routes' in bottomTabNavigator.state) {
-            const bottomTabNavigatorRoutes = bottomTabNavigator.state.routes;
-            const scrollOffsetkeysOfExistingScreens = bottomTabNavigatorRoutes.map((route) => getKey(route));
-            for (const key of Object.keys(scrollOffsetsRef.current)) {
-                if (!scrollOffsetkeysOfExistingScreens.includes(key)) {
-                    delete scrollOffsetsRef.current[key];
-                }
+        const sidebarRoutes = state.routes.filter((route) => isSidebarScreenName(route.name));
+        const scrollOffsetkeysOfExistingScreens = sidebarRoutes.map((route) => getKey(route));
+        for (const key of Object.keys(scrollOffsetsRef.current)) {
+            if (!scrollOffsetkeysOfExistingScreens.includes(key)) {
+                delete scrollOffsetsRef.current[key];
             }
         }
     }, []);
