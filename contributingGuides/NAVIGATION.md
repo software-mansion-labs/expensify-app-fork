@@ -1,6 +1,138 @@
+<!-- Change all references to screens and navigators using their names to screaming snake case to match names from SCREENS and NAVIGATORS -->
+<!-- Add permalinks everywhere!!!!!  -->
+
 # Overview
 
-The navigation in the App consists of a top-level Stack Navigator (called `RootStack`) with each of its `Screen` components handling different high-level flow. All those flows can be seen in `AuthScreens.tsx` file.
+Navigation of this app is build on top of the `react-navigation` library. To handle all requirements and cross platform challenges we created custom navigators and functionality. Documentation below will help you understand what is the navigation structure of this app and how to effectively create screens and navigate withing the app.
+
+# Custom navigators
+
+`react-navigation` provides are few fundamental navigators: `StackNavigator` `DrawerNavigator` etc.
+
+To meet unique expensify requirements we created two custom navigators that helped us expand functionality of the base `StackNavigator`
+
+## CustomRootNavigator
+
+There is only one navigator of this type and it is in the root of navigation. It uses `customRootRouter` to extend basic `StackNavigator` functionality. Custom functionality is responsible for handling policy id in workspace switcher, dismissing modal navigators and preventing user from going back in history during onboarding.
+
+## SplitNavigator
+
+This type of navigator is also based on `StackNavigator`. It has two types of screens.
+
+-   Side Screens -> There is only one screen of this type on the stack and it will be always the first one.
+-   Central Screens -> All other screens
+
+On narrow layout it will behave as normal `StackNavigator`.
+
+On wide layout, side screen is translated to the left to make it visible. This way the user will see both, side screen and a central screen.
+
+There is functionality that makes sure that on the wide layout there always will be at least one side screen and one central screen.
+
+# Screens and navigators of the app
+
+The root navigator has many screens. Some of them contains nested navigators. We can divide them into two groups:
+
+## Full screens
+
+These screens / navigators will cover whole screen and don't have transparent overlay. Every of one of of these has bottom tab bar icon that will be highlighted when this screen is on the top or is visible under the overlay of modal navigator.
+
+Something worth noticing is that we have bottom tab bar but we don't have a `BottomTabNavigator`. When the user presses one of the bottom tab bar buttons, we push a new full screen onto the root stack. We used the `StackNavigator` to have more flexibility and to preserve navigation history in the browser.
+
+### `REPORTS_SPLIT_NAVIGATOR` -> Inbox icon
+
+Contains `HOME` screen with list of reports and `REPORT` screen. There may be many report screens with different `reportID` on the stack.
+
+<!-- change the name in code -->
+
+### `SEARCH` (screen) -> Search icon
+
+Something worth noticing is even though SearchScreen can visually look like a split navigator, it is a single screen. It is necessary to meet requirement where search in both narrow and wide layout has the same URL.
+
+### `SETTINGS_SPLIT_NAVIGATOR` -> Settings icon
+
+### `WORKSPACE_SPLIT_NAVIGATOR` -> Settings icon
+
+## Modals
+
+These screens / navigators have a transparent overlay underneath.
+
+On wide layout we have functionality that ensures that there is at least one full screen under the modal on the stack that will be visible under overlay.
+
+### `RIGHT_MODAL_NAVIGATOR` (RHP - Right Hand Panel)
+
+One of the two side modal navigators.
+
+On narrow layout it will work as normal `StackNavigator`
+
+On wide layout it will be displayed on the right with transparent overlay underneath.
+
+<!-- Add links -->
+
+It contains many flows that are stack navigators. You can find them here
+
+### `LEFT_MODAL_NAVIGATOR` (LHP - Left Hand Panel)
+
+One of the two side modal navigators.
+
+This is the mirror image of RHP. Currently it contains only one screen which is `WORKSPACE_SWITCHER`.
+
+<!-- probably add onboarding navigator here -->
+
+## Other screens and navigators
+
+There are few other screens and modal navigators plugged into root navigator that don't have special logic.
+
+# Common navigation functions
+
+## `navigate(path: Route, options?: LinkToOptions)`
+
+This is the main function used to navigate forward in the app. Normally `react-navigation` uses screen names and params for navigate function. Our custom implementation takes path as argument to handle cross platform challenges easier. You can find defined paths and path getters in `ROUTES.ts`.
+
+Besides some special cases this function will create and dispatch minimalAction (see definition bellow) with type `PUSH`
+
+If the user is navigating to the RHP screen that should have different screen under the overlay, it will dispatch additional action to `PUSH` matching screen underneath.
+
+### Options
+
+#### `forceReplace` (default: false)
+
+Sometimes you may want to force replace. This is useful if want to replace the history entry. For example if the users finish one RHP flow that leads to another and it shouldn't be in the history.
+
+#### `reportPathConversionEnabled` (default: true)
+
+Report screen can be opened two ways.
+
+-   `/r/:reportID` - Opens the report screen inside `ReportsSplitNavigator`. This is the full screen version of this page. This version gives more visibility and should be considered a default.
+
+-   `/search/view/:reportID` - It displays report screen in the RHP. This way the user can easier go through many reports from search result. The general rule is _"If opened from RHP, stay in RHP"_
+
+By default the `navigate` function will convert paths described above to version that matches our rules defined in function `shouldConvertReportPath`.
+
+e.g. If has opened report in RHP and want to press link with path: `/r/123` the navigate function will convert it to the form `/search/view/123` to make sure it will open in RHP version.
+
+## `dismissModal()`
+
+Use this function if you want to close modal navigator.
+
+## `dismissModalWithReportID(reportID: string)`
+
+Use this function if you want to close modal navigator and then navigate to specific report. Example usage: Navigate to chat where you added expense after finishing the flow.
+
+## `dismissModalWithReport(report: OnyxEntry<Report>)`
+
+Use this function if you want to close modal navigator and then navigate to specific report. It's similar to the `dismissModalWithReport(reportID: string)` but it takes the whole report object. Sometimes if the user creates a new report we want to use this function instead because the new report may not be fully loaded in the onyx.
+
+## `goBack()`
+
+## `switchPolicyID()`
+
+This function will dispatch action `SWITCH_POLICY_ID` to the root navigator. It will push a new screen / navigator on top of the stack with updated policy. If the policy is undefined, it will be switched to the `GLOBAL` (no policy selected).
+
+## `resetToHome()`
+
+It will call `popToTop()` and adjust state to match the type of layout (narrow / wide). This function is reserved for very specific cases and will remove history entries.
+
+# Adding new screens
 
 ## Terminology
 
@@ -8,40 +140,40 @@ The navigation in the App consists of a top-level Stack Navigator (called `RootS
 
 Navigation Actions - User actions correspond to resulting navigation actions that we will define now. The navigation actions are: `Back`, `Up`, `Dismiss`, `Forward` and `Push`.
 
-- `Back` - Moves the user “back” in the history stack by popping the screen or stack of screens. Note: This can potentially make the user exit the app itself (native) or display a previous app (not Expensify), or just the empty state of the browser.
+-   `Back` - Moves the user “back” in the history stack by popping the screen or stack of screens. Note: This can potentially make the user exit the app itself (native) or display a previous app (not Expensify), or just the empty state of the browser.
 
-- `Up` - Pops the current screen off the current stack. This action is very easy to confuse with `Back`. Unless you’ve navigated from one screen to a nested screen in a stack of screens, these actions will almost always be the same. Unlike a “back” action, “up” should never result in the user exiting the app and should only be an option if there is somewhere to go “up” to.
+-   `Up` - Pops the current screen off the current stack. This action is very easy to confuse with `Back`. Unless you’ve navigated from one screen to a nested screen in a stack of screens, these actions will almost always be the same. Unlike a “back” action, “up” should never result in the user exiting the app and should only be an option if there is somewhere to go “up” to.
 
-- `Dismiss` - Closes any modals (outside the navigation hierarchy) or pops a nested stack of screens off returning the user to the previous screen in the main stack.
+-   `Dismiss` - Closes any modals (outside the navigation hierarchy) or pops a nested stack of screens off returning the user to the previous screen in the main stack.
 
-- `Forward` - This will take you forward in the history stack. Can only be invoked after you have gone `Back` at least once. Note: Only possible on web.
+-   `Forward` - This will take you forward in the history stack. Can only be invoked after you have gone `Back` at least once. Note: Only possible on web.
 
-- `Push` - Either adds a new individual screen to the main stack or a nested stack of screens to the main stack with the user pointed at the last index of the pushed stack.
+-   `Push` - Either adds a new individual screen to the main stack or a nested stack of screens to the main stack with the user pointed at the last index of the pushed stack.
 
 ## Adding RHP flows
 
 Most of the time, if you want to add some of the flows concerning one of your reports, e.g. `Money Request` from a user, you will most probably use `RightModalNavigator.tsx` and `ModalStackNavigators.tsx` file:
 
-- Since each of those flows is kind of a modal stack, if you want to add a page to the existing flow, you should just add a page to the correct stack in `ModalStackNavigators.tsx`.
+-   Since each of those flows is kind of a modal stack, if you want to add a page to the existing flow, you should just add a page to the correct stack in `ModalStackNavigators.tsx`.
 
-- If you want to create new flow, add a `Screen` in `RightModalNavigator.tsx` and make new modal in `ModalStackNavigators.tsx` with chosen pages.
+-   If you want to create new flow, add a `Screen` in `RightModalNavigator.tsx` and make new modal in `ModalStackNavigators.tsx` with chosen pages.
 
 When creating RHP flows, you have to remember a couple of things:
 
-- Since you can deeplink to different pages inside the RHP navigator, it is important to provide the possibility for the user to properly navigate back from any page with UP press (`HeaderWithBackButton` component).
+-   Since you can deeplink to different pages inside the RHP navigator, it is important to provide the possibility for the user to properly navigate back from any page with UP press (`HeaderWithBackButton` component).
 
-- An example can be deeplinking to `/settings/profile/timezone/select`. From there, when pressing the UP button, you should navigate to `/settings/profile/timezone`, so in order for it to work, you should provide the correct route in `onBackButtonPress` prop of `HeaderWithBackButton` (`Navigation.goBack(ROUTES.SETTINGS_PROFILE)` in this example). 
+-   An example can be deeplinking to `/settings/profile/timezone/select`. From there, when pressing the UP button, you should navigate to `/settings/profile/timezone`, so in order for it to work, you should provide the correct route in `onBackButtonPress` prop of `HeaderWithBackButton` (`Navigation.goBack(ROUTES.SETTINGS_PROFILE)` in this example).
 
-- We use a custom `goBack` function to handle the browser and the `react-navigation` history stack. Under the hood, it resolves to either replacing the current screen with the one we navigate to (deeplinking scenario) or just going back if we reached the current page by navigating in App (pops the screen). It ensures the requested behaviors on web, which is navigating back to the place from where you deeplinked when going into the RHP flow by it.
+-   We use a custom `goBack` function to handle the browser and the `react-navigation` history stack. Under the hood, it resolves to either replacing the current screen with the one we navigate to (deeplinking scenario) or just going back if we reached the current page by navigating in App (pops the screen). It ensures the requested behaviors on web, which is navigating back to the place from where you deeplinked when going into the RHP flow by it.
 
-- If you want to navigate to a certain report after completing a flow related to it, e.g. `RequestMoney` flow with a certain group/user, you should use `Navigation.dismissModal` with this `reportID` as an argument. If, in the future, we would like to navigate to something different than the report after such flows, the API should be rather easy to change. We do it like that in order to replace the RHP flow with the new report instead of pushing it, so pressing the back button does not navigate back to the ending page of the flow. If we were to navigate to the same report, we just pop the RHP modal.
+-   If you want to navigate to a certain report after completing a flow related to it, e.g. `RequestMoney` flow with a certain group/user, you should use `Navigation.dismissModal` with this `reportID` as an argument. If, in the future, we would like to navigate to something different than the report after such flows, the API should be rather easy to change. We do it like that in order to replace the RHP flow with the new report instead of pushing it, so pressing the back button does not navigate back to the ending page of the flow. If we were to navigate to the same report, we just pop the RHP modal.
 
 ### Example of usage
 
 An example of adding `Settings_Workspaces` page:
 
 1. Add the page name to `SCREENS.ts` which will be reused throughout the app (linkingConfig, navigators, etc.):
-    
+
 ```ts
 const SCREENS = {
     SETTINGS: {
@@ -62,7 +194,6 @@ export const ROUTES = {
         getRoute: (accountID: number) => `settings/${accountID}` as const,
     },
 };
-
 ```
 
 3. Add `Settings_Workspaces` page to proper RHP flow in `linkingConfig.ts`: https://github.com/Expensify/App/blob/fbc11ca729ffa4676fb3bc8cd110ac3890debff6/src/libs/Navigation/linkingConfig.ts#L47-L50
@@ -75,48 +206,48 @@ export const ROUTES = {
 
 Using [react-freeze](https://github.com/software-mansion/react-freeze) allows us to increase performance by avoiding unnecessary re-renders of screens that aren’t visible to the user anyway.
 
-- To ensure that the user doesn't ever see frozen report content, we are freezing the screens from 2 levels down the `RootStack` (which contains a `Screen` for each report), so when dismissing with a swipe, the user always sees the content of the previous report.
+-   To ensure that the user doesn't ever see frozen report content, we are freezing the screens from 2 levels down the `RootStack` (which contains a `Screen` for each report), so when dismissing with a swipe, the user always sees the content of the previous report.
 
-- We want to freeze as high in the view hierarchy as we can, so we do it in a `Screen` of `RootStack`, being `CentralPaneNavigator` and `SidebarScreen`.
+-   We want to freeze as high in the view hierarchy as we can, so we do it in a `Screen` of `RootStack`, being `CentralPaneNavigator` and `SidebarScreen`.
 
-- We want the report content visible as fast as possible, and at the same time we want the navigation animation to trigger instantly. To do so, we do a hack with `firstRenderRef` which renders `ReportActionsSkeletonView` instead of the messages at the first render, and the proper content afterward. It works since there are always more renders of `ReportScreen` before the content shows up (hopefully).
+-   We want the report content visible as fast as possible, and at the same time we want the navigation animation to trigger instantly. To do so, we do a hack with `firstRenderRef` which renders `ReportActionsSkeletonView` instead of the messages at the first render, and the proper content afterward. It works since there are always more renders of `ReportScreen` before the content shows up (hopefully).
 
 ## Handling wide and narrow layouts
 
-- The wide and narrow layouts are conditionally rendered with different components in `createResponsiveNavigator` depending on screen size (`isSmallScreen` prop from the `withWindowDimension.js`).
+-   The wide and narrow layouts are conditionally rendered with different components in `createResponsiveNavigator` depending on screen size (`isSmallScreen` prop from the `withWindowDimension.js`).
 
-- The wide layout is rendered with our custom `ThreePaneView.js` and the narrow layout is rendered with `StackView` from `@react-navigation/stack`
+-   The wide layout is rendered with our custom `ThreePaneView.js` and the narrow layout is rendered with `StackView` from `@react-navigation/stack`
 
-- To make sure that we have the correct navigation state after changing the layout, we need to force react to create new instance of the `NavigationContainer`. Without this, the navigation state could be broken after changing the type of layout.
+-   To make sure that we have the correct navigation state after changing the layout, we need to force react to create new instance of the `NavigationContainer`. Without this, the navigation state could be broken after changing the type of layout.
 
-- We are getting the new instance by changing the `key` prop of `NavigationContainer` that depends on the `isSmallScreenWidth`.
+-   We are getting the new instance by changing the `key` prop of `NavigationContainer` that depends on the `isSmallScreenWidth`.
 
-- To keep the navigation state that was present before changing the layout, we save the state on every change and use it for the `initialState` prop.
-Changing the layout means that every component inside `NavigationContainer` is mounted anew.
+-   To keep the navigation state that was present before changing the layout, we save the state on every change and use it for the `initialState` prop.
+    Changing the layout means that every component inside `NavigationContainer` is mounted anew.
 
 ## Why we need to use minimal action in the `linkTo` function
 
-### The problem 
+### The problem
+
 Let's assume that the user wants to navigate like this:
 
 ```
 1. Settings_root - navigate > Profile
 2. Profile - UP > Settings_root
-3. Settings_root - navigate > About 
+3. Settings_root - navigate > About
 4. About - browser back button > Settings_root
 ```
 
 Without minimal action, expected behavior won't be achieved and the final screen will be `Profile`.
 
 Broken behavior is the outcome of two things:
+
 1. Back button in the browser resets the navigation state with the state saved in step two.
-   
-2. `Navigation.navigate` creates action with `getActionFromState` dispatched at the top level of the navigation hierarchy. 
+2. `Navigation.navigate` creates action with `getActionFromState` dispatched at the top level of the navigation hierarchy.
 
 The reason why `getActionFromState` provided by `react-navigation` is dispatched at the top level of the navigation hierarchy is that it doesn't know about current navigation state, only about desired one.
 
 In this example, it doesn't know if the `RightModalNavigator` and `Settings` are already mounted.
-
 
 The action for the first step looks like that:
 
@@ -130,13 +261,12 @@ The action for the first step looks like that:
             "screen": "Settings",
             "params": {
                 "initial": true,
-                "screen": "Profile",
+                "screen": "Profile"
             }
         }
     }
 }
 ```
-
 
 That means, the params for the `RightModalNavigator` and `Settings` (also a navigator) will be filled with the information that we want to have the `Profile` screen in the state.
 
@@ -144,7 +274,7 @@ That means, the params for the `RightModalNavigator` and `Settings` (also a navi
 {
     "index": 2,
     "routes": [
-        { "name": "Home", },
+        {"name": "Home"},
         {
             "name": "RightModalNavigator",
             // here you can see that the params are filled with the information about structure that should be in the state.
@@ -184,13 +314,13 @@ That means, the params for the `RightModalNavigator` and `Settings` (also a navi
 }
 ```
 
-This information will stay here even if we pop the `Profile` screen and navigate to `About` screen. 
+This information will stay here even if we pop the `Profile` screen and navigate to `About` screen.
 
-Later on, when the user presses the browser back button expecting that the `Settings_root` screen will appear, the navigation state will be reset with information about the `Profile` screen in the params and this will be used as a source of truth for the navigation. 
+Later on, when the user presses the browser back button expecting that the `Settings_root` screen will appear, the navigation state will be reset with information about the `Profile` screen in the params and this will be used as a source of truth for the navigation.
 
 ### The solution
 
-If we can create simple action that will only push one screen to the existing navigator, we won't fill any params of the navigators. 
+If we can create simple action that will only push one screen to the existing navigator, we won't fill any params of the navigators.
 
 The `getMinimalAction` compares action generated by the `getActionFromState` with the current navigation state and tries to find the smallest action possible.
 
@@ -206,7 +336,8 @@ The action for the first step created with `getMinimalAction` looks like this:
 }
 ```
 
-### Deeplinking 
+### Deeplinking
+
 There is no minimal action for deeplinking directly to the `Profile` screen. But because the `Settings_root` is not on the stack, pressing UP will reset the params for navigators to the correct ones.
 
 ### Tests
@@ -218,19 +349,16 @@ There is no minimal action for deeplinking directly to the `Profile` screen. But
 3. Reload the page.
 4. Verify that after pressing back arrow in the header you are on the report where you sent the attachment.
 
-
 #### There is a proper split navigator under RHP with a sidebar screen only for screens that can be opened from the sidebar
 
 1. Open the browser on narrow layout with url `/settings/profile/status`.
 2. Reload the page.
 3. Verify that after pressing back arrow in the header you are on the settings root page.
 
-
 #### There is a proper split navigator under the overlay after refreshing page with RHP/LHP on wide screen
 
 1. Open the browser on wide screen with url `/settings/profile/display-name`.
 2. Verify that you can see settings profile page under the overlay of RHP.
-
 
 #### There is a proper split navigator under the overlay after deeplinking to page with RHP/LHP on wide screen
 
@@ -250,8 +378,7 @@ There is no minimal action for deeplinking directly to the `Profile` screen. But
 6. Click the Settings button on the bottom tab.
 7. Verify that the Workspace list is displayed (`/settings/workspaces`)
 
-
-#### The last visited screen in the settings tab is saved when switching between tabs 
+#### The last visited screen in the settings tab is saved when switching between tabs
 
 1. Open the app.
 2. Go to the settings tab.
@@ -260,16 +387,14 @@ There is no minimal action for deeplinking directly to the `Profile` screen. But
 5. Switch between tabs and open the settings tabs again.
 6. Verify that the last visited page in this tab is displayed.
 
-
 #### The Workspace selected in the application is reset when you select a chat that does not belong to the current policy
 
 1. Open the home page.
 2. Click on the Expensify icon in the upper left corner.
 3. Select any workspace.
-4. Click on the magnifying glass above the list of available chats. 
+4. Click on the magnifying glass above the list of available chats.
 5. Select a chat that does not belong to the workspace selected in the third step.
 6. Verify if the chat is opened and the global workspace is selected.
-
 
 #### The selected workspace is saved between Search and Inbox tabs
 
@@ -330,17 +455,17 @@ Linked issue: https://github.com/Expensify/App/pull/44138
 4. Next click Downgrade...
 5. Verify that modal got closed, your account is downgraded and the Home page is opened.
 
-#### Navigating back from the Search page with invalid query parameters 
+#### Navigating back from the Search page with invalid query parameters
 
 1. Open the search page with invalid query parameters (e.g `/search?q=from%3a`)
 2. Press the app's back button on the not found page.
 3. Verify that the Search page with default query parameters is displayed.
 
-#### Navigating to the chat from the link in the thread 
+#### Navigating to the chat from the link in the thread
 
 1. Open any chat.
 2. If there are no messages in the chat, send a message.
-3. Press reply in thread. 
+3. Press reply in thread.
 4. Press the "From" link in the displayed header.
 5. Verify if the link correctly redirects to the chat opened in the first step.
 
@@ -419,13 +544,12 @@ Linked issue: https://github.com/Expensify/App/pull/49539#issuecomment-243335170
 1. Open app on wide layout web.
 2. Go to report A (any report).
 3. Go to report B (any report with message).
-4. Press reply in thread. 
+4. Press reply in thread.
 5. Press on header subtitle.
 6. Press on the report B in the sidebar.
 7. Verify that the message you replied to is no longer highlighted.
 8. Press the browsers back button.
 9. Verify that you are on the A report.
-
 
 #### Don't push the default full screen route if not necessary.
 
@@ -459,7 +583,7 @@ Linked issue: https://github.com/Expensify/App/pull/49539#issuecomment-243332160
 4. Click Private notes.
 5. Enter anything and click Save.
 6. Click on the RHP back button.
-7. Verify if the Profile RHP Page is opened (URL in the format /a/:accountID).  
+7. Verify if the Profile RHP Page is opened (URL in the format /a/:accountID).
 
 #### Opening particular onboarding pages from a link and going back
 
