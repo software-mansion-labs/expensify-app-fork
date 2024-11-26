@@ -384,7 +384,7 @@ function WorkspacesListPage() {
                     title={translate('common.workspaces')}
                     shouldShowBackButton={shouldUseNarrowLayout}
                     shouldDisplaySearchRouter
-                    onBackButtonPress={() => Navigation.goUp(ROUTES.SETTINGS)}
+                    onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS)}
                     icon={Illustrations.BigRocket}
                 />
                 <ScrollView contentContainerStyle={styles.pt3}>
@@ -419,7 +419,7 @@ function WorkspacesListPage() {
                     title={translate('common.workspaces')}
                     shouldShowBackButton={shouldUseNarrowLayout}
                     shouldDisplaySearchRouter
-                    onBackButtonPress={() => Navigation.goUp(ROUTES.SETTINGS)}
+                    onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS)}
                     icon={Illustrations.BigRocket}
                 >
                     {!shouldUseNarrowLayout && getHeaderButton()}
