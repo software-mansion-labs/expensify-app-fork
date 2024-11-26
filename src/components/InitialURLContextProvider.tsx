@@ -1,4 +1,4 @@
-import React, {createContext, useEffect, useMemo, useState} from 'react';
+import React, {createContext, useEffect, useMemo, useRef, useState} from 'react';
 import type {ReactNode} from 'react';
 import {Linking} from 'react-native';
 import {signInAfterTransitionFromOldDot} from '@libs/actions/Session';
@@ -30,18 +30,25 @@ function InitialURLContextProvider({children, url, hybridAppSettings}: InitialUR
     const [initialURL, setInitialURL] = useState<Route | undefined>(url);
     const {setSplashScreenState} = useSplashScreenStateContext();
 
+    const firstRenderRef = useRef(true);
+
     useEffect(() => {
-        if (url && hybridAppSettings) {
+        if (url && hybridAppSettings && firstRenderRef.current) {
             signInAfterTransitionFromOldDot(url, hybridAppSettings).then((route) => {
                 setInitialURL(route);
                 setSplashScreenState(CONST.BOOT_SPLASH_STATE.READY_TO_BE_HIDDEN);
             });
+            firstRenderRef.current = false;
             return;
         }
         Linking.getInitialURL().then((initURL) => {
             setInitialURL(initURL as Route);
         });
     }, [hybridAppSettings, setSplashScreenState, url]);
+
+    useEffect(() => {
+        console.debug('VALUE OF firstRenderRef', {firstRenderRef: firstRenderRef.current});
+    });
 
     const initialUrlContext = useMemo(
         () => ({

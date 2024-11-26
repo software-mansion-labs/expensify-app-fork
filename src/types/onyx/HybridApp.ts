@@ -6,20 +6,11 @@ type HybridApp = {
     /** Stores the information if HybridApp uses NewDot's sign-in flow */
     useNewDotSignInPage?: boolean;
 
-    /** Stores information on whether HybridApp is signing in to OldDot */
-    isSigningIn?: boolean;
-
     /** Stores the information about error that occurred on OldDot side during sign-in */
     oldDotSignInError?: string | null;
 
     /** Tells if we can show AuthScreens */
     readyToShowAuthScreens?: boolean;
-
-    /** Tells if we can switch to OldDot */
-    readyToSwitchToClassicExperience?: boolean;
-
-    /** Tells if we should reset signing in logic to initial state */
-    shouldResetSigningInLogic?: boolean;
 
     /** States whether we transitioned from OldDot to show only certain group of screens */
     isSingleNewDotEntry?: boolean;
