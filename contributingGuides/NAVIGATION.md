@@ -38,6 +38,7 @@ Navigation of this app is build on top of the `react-navigation` library. To han
     -   [Modifying the linking config](#modifying-the-linking-config)
     -   [Adding types for the new screen](#adding-types-for-the-new-screen)
     -   [Updating RELATIONS](#updating-relations)
+    -   [Adding screen component to navigator](#adding-screen-component-to-navigator)
 
 # Custom navigators
 
