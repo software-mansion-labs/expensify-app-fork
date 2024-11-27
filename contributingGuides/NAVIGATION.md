@@ -283,7 +283,7 @@ Sometimes when on the narrow layout, going back should take the user directly to
 
 This defines relations between sidebar screens and whole split navigators. You probably won't edit this one if you just want to add a regular screen to the app.
 
-<!--
+# BELOW IS THE OLD PART OF DOCS, NOT ADJUSTED YET
 
 ## Terminology
 
