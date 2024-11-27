@@ -294,6 +294,33 @@ const WORKSPACE_TO_RHP: Partial<Record<keyof WorkspaceSplitNavigatorParamList, s
 };
 ```
 
+## Adding screen component to navigator
+
+Now we have to put our screen component into the right navigator.
+
+First we need to create screen component. Add `WorkspaceSpiritAnimalPage.tsx` in the `pages` directory.
+
+```ts
+// WorkspaceSpiritAnimalPage.tsx
+
+type WorkspaceSpiritAnimalPageProps = StackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.SPIRIT_ANIMAL>;
+
+function WorkspaceSpiritAnimalPage({route}: WorkspaceSpiritAnimalPageProps) {
+    ...
+
+};
+```
+
+Then we need to find navigator when we can put our screen. In this case it will be in `ModalStackNavigators/index.ts`. Function `createModalStackNavigators` is an abstraction that creates navigator from object.
+
+```ts
+const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorParamList>({
+    ...
+
+    [SCREENS.WORKSPACE.SPIRIT_ANIMAL]: () => require<ReactComponentModule>('../../../../pages/WorkspaceSpiritAnimalPage').default,
+});
+```
+
 **NOTE:** Depending on which type of screen we want to add we should choose corresponding relation file. Other relation files are:
 
 ### SETTINGS_TO_RHP
