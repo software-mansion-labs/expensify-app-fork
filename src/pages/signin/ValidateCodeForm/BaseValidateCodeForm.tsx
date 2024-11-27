@@ -1,8 +1,8 @@
 import {useIsFocused} from '@react-navigation/native';
 import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import type {ForwardedRef} from 'react';
-import {View} from 'react-native';
-import Onyx, {useOnyx} from 'react-native-onyx';
+import {NativeModules, View} from 'react-native';
+import {useOnyx} from 'react-native-onyx';
 import Button from '@components/Button';
 import SafariFormWrapper from '@components/Form/SafariFormWrapper';
 import FormHelpMessage from '@components/FormHelpMessage';
@@ -160,9 +160,10 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
      * Trigger the reset validate code flow and ensure the 2FA input field is reset to avoid it being permanently hidden
      */
     const resendValidateCode = () => {
-        HybridAppActions.setOldDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED);
-        HybridAppActions.setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED);
-        HybridAppActions.setOldDotSignInError(null);
+        if (NativeModules.HybridAppModule) {
+            HybridAppActions.resetSignInFlow();
+        }
+
         User.resendValidateCode(credentials?.login ?? '');
         inputValidateCodeRef.current?.clear();
         // Give feedback to the user to let them know the email was sent so that they don't spam the button.
@@ -184,13 +185,13 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
      * Clears local and Onyx sign in states
      */
     const clearSignInData = useCallback(() => {
-        clearLocalSignInData();
-        if (session?.authToken) {
+        if (NativeModules.HybridAppModule && session?.authToken) {
             signOut();
-            Onyx.set(ONYXKEYS.SESSION, null);
+            HybridAppActions.resetSignInFlow(true);
         }
+
+        clearLocalSignInData();
         SessionActions.clearSignInData();
-        HybridAppActions.resetHybridAppSignInState();
     }, [clearLocalSignInData, session?.authToken]);
 
     useImperativeHandle(forwardedRef, () => ({
@@ -247,17 +248,10 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
      * Check that all the form fields are valid, then trigger the submit callback
      */
     const validateAndSubmitForm = useCallback(() => {
-        if (session?.authToken) {
-            HybridAppActions.setOldDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.WAITING_FOR_SIGN_OUT);
-            HybridAppActions.setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.WAITING_FOR_SIGN_OUT);
+        if (NativeModules.HybridAppModule && session?.authToken) {
+            HybridAppActions.waitForSignOut();
             signOut();
-            Onyx.merge(ONYXKEYS.SESSION, {
-                authToken: null,
-            }).then(() => {
-                HybridAppActions.setOldDotSignInError(null);
-                HybridAppActions.setOldDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED);
-                HybridAppActions.setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.STARTED);
-            });
+            HybridAppActions.resetSignInFlowBeforeValidateAndSubmit();
         }
 
         if (account?.isLoading) {

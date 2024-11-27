@@ -1,5 +1,5 @@
 import {PortalProvider} from '@gorhom/portal';
-import React from 'react';
+import React, {useEffect} from 'react';
 import {LogBox} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {PickerStateProvider} from 'react-native-picker-select';
@@ -65,7 +65,10 @@ const StrictModeWrapper = CONFIG.USE_REACT_STRICT_MODE_IN_DEV ? React.StrictMode
 function App({url, hybridAppSettings}: AppProps) {
     useDefaultDragAndDrop();
     OnyxUpdateManager();
-    HybridApp.init();
+
+    useEffect(() => {
+        return HybridApp.init();
+    }, []);
 
     return (
         <StrictModeWrapper>
