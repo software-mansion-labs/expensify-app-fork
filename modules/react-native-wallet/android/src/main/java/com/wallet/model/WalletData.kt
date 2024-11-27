@@ -5,4 +5,3 @@ data class WalletData(
   val deviceID: String,
   val walletAccountID: String,
 )
-

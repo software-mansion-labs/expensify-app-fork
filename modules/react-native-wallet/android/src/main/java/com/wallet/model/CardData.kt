@@ -1,4 +1,5 @@
 package com.wallet.model
+
 import com.google.android.gms.tapandpay.issuer.UserAddress
 
 data class CardData(

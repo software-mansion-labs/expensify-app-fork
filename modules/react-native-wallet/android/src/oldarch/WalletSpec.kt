@@ -8,9 +8,7 @@ import com.facebook.react.bridge.ReadableMap
 abstract class WalletSpec internal constructor(context: ReactApplicationContext) :
   ReactContextBaseJavaModule(context) {
 
-  abstract fun getHardwareId(promise: Promise)
-  abstract fun getWalletId(promise: Promise)
   abstract fun checkWalletAvailability(promise: Promise)
   abstract fun getSecureWalletInfo(promise: Promise)
-  abstract fun addCardToWallet(cardData: ReadableMap, promise: Promise)
+  abstract fun addCardToWallet(data: ReadableMap, promise: Promise)
 }

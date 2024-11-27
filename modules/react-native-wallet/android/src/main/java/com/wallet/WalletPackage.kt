@@ -23,11 +23,11 @@ class WalletPackage : TurboReactPackage() {
       moduleInfos[WalletModule.NAME] = ReactModuleInfo(
         WalletModule.NAME,
         WalletModule.NAME,
-        false,  // canOverrideExistingModule
-        false,  // needsEagerInit
-        true,  // hasConstants
-        false,  // isCxxModule
-        isTurboModule // isTurboModule
+        canOverrideExistingModule = false,
+        needsEagerInit = false,
+        hasConstants = true,
+        isCxxModule = false,
+        isTurboModule
       )
       moduleInfos
     }
