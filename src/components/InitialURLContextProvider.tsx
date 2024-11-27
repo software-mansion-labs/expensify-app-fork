@@ -1,4 +1,4 @@
-import React, {createContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {createContext, useEffect, useMemo, useState} from 'react';
 import type {ReactNode} from 'react';
 import {Linking} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
