@@ -27,7 +27,6 @@ import ChangeExpensifyLoginLink from '@pages/signin/ChangeExpensifyLoginLink';
 import Terms from '@pages/signin/Terms';
 import * as HybridAppActions from '@userActions/HybridApp';
 import * as SessionActions from '@userActions/Session';
-import {signOut} from '@userActions/Session';
 import * as User from '@userActions/User';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
@@ -186,7 +185,6 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
      */
     const clearSignInData = useCallback(() => {
         if (NativeModules.HybridAppModule && session?.authToken) {
-            signOut();
             HybridAppActions.resetSignInFlow(true);
         }
 
@@ -249,9 +247,7 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
      */
     const validateAndSubmitForm = useCallback(() => {
         if (NativeModules.HybridAppModule && session?.authToken) {
-            HybridAppActions.waitForSignOut();
-            signOut();
-            HybridAppActions.resetSignInFlowBeforeValidateAndSubmit();
+            HybridAppActions.resetSignInFlow(true);
         }
 
         if (account?.isLoading) {
