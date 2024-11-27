@@ -295,6 +295,29 @@ const WORKSPACE_TO_RHP: Partial<Record<keyof WorkspaceSplitNavigatorParamList, s
 };
 ```
 
+**NOTE:** Depending on which type of screen we want to add we should choose corresponding relation file. Other relation files are:
+
+### SETTINGS_TO_RHP
+
+If you want to create relation between screens from `SETTINGS_SPLIT_NAVIGATOR` and `RIGHT_MODAL_NAVIGATOR`
+
+### WORKSPACE_TO_RHP
+
+If you want to create relation between screens from `WORKSPACE_SPLIT_NAVIGATOR` and `RIGHT_MODAL_NAVIGATOR`
+
+### SEARCH_TO_RHP
+
+If you want to create relation between the `SCREEN.SEARCH` and a screen from `RIGHT_MODAL_NAVIGATOR`. Currently there is only one central search screen so it's an array and not an object.
+
+### SIDEBAR_TO_RHP
+
+Sometimes when on the narrow layout, going back should take the user directly to the sidebar and not to central screen of split navigator. In this case you should define it here. Example of such relation is:
+`[SCREENS.SETTINGS.ROOT]: SCREENS.SETTINGS.PROFILE.STATUS`
+
+### SIDEBAR_TO_SPLIT
+
+This defines relations between sidebar screens and whole split navigators. You probably won't edit this one if you just want to add a regular screen to the app.
+
 ## Adding screen component to navigator
 
 Now we have to put our screen component into the right navigator.
@@ -321,29 +344,6 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
     [SCREENS.WORKSPACE.SPIRIT_ANIMAL]: () => require<ReactComponentModule>('../../../../pages/WorkspaceSpiritAnimalPage').default,
 });
 ```
-
-**NOTE:** Depending on which type of screen we want to add we should choose corresponding relation file. Other relation files are:
-
-### SETTINGS_TO_RHP
-
-If you want to create relation between screens from `SETTINGS_SPLIT_NAVIGATOR` and `RIGHT_MODAL_NAVIGATOR`
-
-### WORKSPACE_TO_RHP
-
-If you want to create relation between screens from `WORKSPACE_SPLIT_NAVIGATOR` and `RIGHT_MODAL_NAVIGATOR`
-
-### SEARCH_TO_RHP
-
-If you want to create relation between the `SCREEN.SEARCH` and a screen from `RIGHT_MODAL_NAVIGATOR`. Currently there is only one central search screen so it's an array and not an object.
-
-### SIDEBAR_TO_RHP
-
-Sometimes when on the narrow layout, going back should take the user directly to the sidebar and not to central screen of split navigator. In this case you should define it here. Example of such relation is:
-`[SCREENS.SETTINGS.ROOT]: SCREENS.SETTINGS.PROFILE.STATUS`
-
-### SIDEBAR_TO_SPLIT
-
-This defines relations between sidebar screens and whole split navigators. You probably won't edit this one if you just want to add a regular screen to the app.
 
 # BELOW IS THE OLD PART OF DOCS, NOT ADJUSTED YET
 
