@@ -5,6 +5,40 @@
 
 Navigation of this app is build on top of the `react-navigation` library. To handle all requirements and cross platform challenges we created custom navigators and functionality. Documentation below will help you understand what is the navigation structure of this app and how to effectively create screens and navigate withing the app.
 
+## Table of Contents
+
+-   [Overview](#overview)
+-   [Custom navigators](#custom-navigators)
+    -   [CustomRootNavigator](#customrootnavigator)
+    -   [SplitNavigator](#splitnavigator)
+-   [Screens and navigators of the app](#screens-and-navigators-of-the-app)
+    -   [Full screens](#full-screens)
+        -   [REPORTS_SPLIT_NAVIGATOR](#reports_split_navigator---inbox-icon)
+        -   [SEARCH](#search-screen---search-icon)
+        -   [SETTINGS_SPLIT_NAVIGATOR](#settings_split_navigator---settings-icon)
+        -   [WORKSPACE_SPLIT_NAVIGATOR](#workspace_split_navigator---settings-icon)
+    -   [Modals](#modals)
+        -   [RIGHT_MODAL_NAVIGATOR](#right_modal_navigator-rhp---right-hand-panel)
+        -   [LEFT_MODAL_NAVIGATOR](#left_modal_navigator-lhp---left-hand-panel)
+    -   [Other screens and navigators](#other-screens-and-navigators)
+-   [Common navigation functions](#common-navigation-functions)
+    -   [navigate](#navigatepath-route-options-linktooptions)
+        -   [Options](#options)
+            -   [forceReplace](#forcereplace-default-false)
+            -   [reportPathConversionEnabled](#reportpathconversionenabled-default-true)
+    -   [dismissModal](#dismissmodal)
+    -   [dismissModalWithReportID](#dismissmodalwithreportidreportid-string)
+    -   [dismissModalWithReport](#dismissmodalwithreportreport-onyxentryreport)
+    -   [goBack](#goback)
+    -   [switchPolicyID](#switchpolicyid)
+    -   [resetToHome](#resettohome)
+-   [Adding new screens](#adding-new-screens)
+    -   [Creating const for name of the screen](#creating-const-for-name-of-the-screen)
+    -   [Creating route for the new screen](#creating-route-for-the-new-screen)
+    -   [Modifying the linking config](#modifying-the-linking-config)
+    -   [Adding types for the new screen](#adding-types-for-the-new-screen)
+    -   [Updating RELATIONS](#updating-relations)
+
 # Custom navigators
 
 `react-navigation` provides are few fundamental navigators: `StackNavigator` `DrawerNavigator` etc.
