@@ -134,6 +134,157 @@ It will call `popToTop()` and adjust state to match the type of layout (narrow /
 
 # Adding new screens
 
+Let's assume that we want to add a new profile settings responsible for setting the spirit animal of a workspace. It will be accessed from the workspace profile screen.
+
+## Creating const for name of the screen
+
+First thing to do is to create name for our new screen. You need to add this name in `SCREENS.ts`. Screen names are grouped `SETTINGS`, `SEARCH` etc. In this case we want to put it in `
+
+```ts
+
+const SCREENS = {
+    ...
+
+    WORKSPACE: {
+        ...
+
+        // The new screen
+        SPIRIT_ANIMAL: 'Workspace_Profile_Spirit_Animal',
+    },
+};
+
+```
+
+## Creating route for the new screen
+
+We need to define route for our new screen. It will be used for functions like `navigate` or `goBack` and will also be visible in the browser URL bar. Routes are defined in `ROUTES.ts`. Workspace screens usually requires param called `policyID` in the url. To handle route with params we need to create object containing two fields: `route` and `getRoute`.
+
+```ts
+const ROUTES = {
+    ...
+
+    WORKSPACE_SPIRIT_ANIMAL: {
+        route: 'settings/workspaces/:policyID/spirit-animal',
+        getRoute: (policyID: string) => `settings/workspaces/${policyID}/profile/description` as const
+    },
+};
+```
+
+If we would want to create a route that doesn't need any params it would be simply:
+
+```ts
+const ROUTES = {
+    ...
+
+    WORKSPACE_SPIRIT_ANIMAL: 'settings/workspaces/spirit-animal',
+};
+```
+
+## Modifying the linking config
+
+Linking config is used to generate proper navigation state from given route. The structure of config reflects which screens are in which navigators. We need to add newly created route in `linkingConfig/config.ts`.
+
+```ts
+const config: LinkingOptions<RootStackParamList>['config'] = {
+    screens: {
+        ...
+
+        [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: {
+            screens: {
+                [SCREENS.RIGHT_MODAL.SETTINGS]: {
+                    screens: {
+                        ...
+
+                        // Our new screen
+                        [SCREENS.WORKSPACE_SPIRIT_ANIMAL]: {
+                            path: ROUTES.WORKSPACE_SPIRIT_ANIMAL.route,
+
+                            // We want to make sure that react-navigation won't add any prefix to our path.
+                            exact: true;
+                        }
+                    }
+                }
+            }
+        }
+    },
+};
+```
+
+## Adding types for the new screen
+
+To make sure that typescript can see which params are accessible for screens in the `route` prop, we need to modify the `Navigation/types.ts` file.
+In the file we can se that screen types for navigator that we choose as container for our screen are defined in `SettingsNavigatorParamList`
+
+```ts
+type RightModalNavigatorParamList = {
+    ...
+
+    [SCREENS.RIGHT_MODAL.SETTINGS]: NavigatorScreenParams<SettingsNavigatorParamList>;
+}
+```
+
+So we have to add our new screen params types here:
+
+```ts
+type SettingsNavigatorParamList = {
+    ...
+
+    // List of params for our new screen
+    [SCREENS.WORKSPACE.SPIRIT_ANIMAL]: {
+        policyID: string;
+    }
+}
+
+```
+
+## Updating RELATIONS
+
+This part is related to our custom navigation functionality. Our screen is one of the Workspaces RHP screens. On the wide layout this screen would be displayed on the right part of the screen with a transparent overlay on the rest of the screen. To make sure that everything works well we need to define which screen should be visible under the overlay.
+
+Relations are also important for the `goBack` function so we know where to go back after pressing back button visible in the upper left corner of the RHP screen.
+
+The screen that should be visible under the overlay in our case is `SCREENS.WORKSPACE.PROFILE` because that's where will be the button to navigate to our new screen.
+
+Relation for these types of screens are in file `WORKSPACE_TO_RHP.ts`.
+
+```ts
+const WORKSPACE_TO_RHP: Partial<Record<keyof WorkspaceSplitNavigatorParamList, string[]>> = {
+    ...
+
+    [SCREENS.WORKSPACE.PROFILE]: [
+        ...
+
+        SCREENS.WORKSPACE.SPIRIT_ANIMAL,
+    ],
+
+};
+```
+
+**NOTE:** Depending on which type of screen we want to add we should choose corresponding relation file. Other relation files are:
+
+### SETTINGS_TO_RHP
+
+If you want to create relation between screens from `SETTINGS_SPLIT_NAVIGATOR` and `RIGHT_MODAL_NAVIGATOR`
+
+### WORKSPACE_TO_RHP
+
+If you want to create relation between screens from `WORKSPACE_SPLIT_NAVIGATOR` and `RIGHT_MODAL_NAVIGATOR`
+
+### SEARCH_TO_RHP
+
+If you want to create relation between the `SCREEN.SEARCH` and a screen from `RIGHT_MODAL_NAVIGATOR`. Currently there is only one central search screen so it's an array and not an object.
+
+### SIDEBAR_TO_RHP
+
+Sometimes when on the narrow layout, going back should take the user directly to the sidebar and not to central screen of split navigator. In this case you should define it here. Example of such relation is:
+`[SCREENS.SETTINGS.ROOT]: SCREENS.SETTINGS.PROFILE.STATUS`
+
+### SIDEBAR_TO_SPLIT
+
+This defines relations between sidebar screens and whole split navigators. You probably won't edit this one if you just want to add a regular screen to the app.
+
+<!--
+
 ## Terminology
 
 `RHP` - Right hand panel that shows content inside a dismissible modal that takes up a partial portion of the screen on large format devices e.g. desktop/web/tablets. On smaller screens, the content shown in the RHP fills the entire screen.
@@ -602,4 +753,4 @@ Linked issue: https://github.com/Expensify/App/issues/50177
 11. Go back.
 12. Verify you are navigated back to the employee size step.
 13. Go back.
-14. Verify you are navigated back to the Purpose step.
+14. Verify you are navigated back to the Purpose step. -->
