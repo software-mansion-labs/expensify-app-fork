@@ -63,29 +63,6 @@ type SplitNavigatorParamListType = {
 
 type SplitNavigatorBySidebar<T extends SplitNavigatorSidebarScreen> = (typeof SIDEBAR_TO_SPLIT)[T];
 
-type CentralPaneScreensParamList = {
-    [SCREENS.REPORT]: {
-        reportActionID: string;
-        reportID: string;
-        openOnAdminRoom?: boolean;
-        referrer?: string;
-    };
-    // [SCREENS.SETTINGS.WORKSPACES]: undefined;
-    [SCREENS.SETTINGS.PREFERENCES.ROOT]: undefined;
-    // [SCREENS.SETTINGS.PROFILE.ROOT]: undefined;
-    [SCREENS.SETTINGS.SECURITY]: undefined;
-    // [SCREENS.SETTINGS.WALLET.ROOT]: undefined;
-    [SCREENS.SETTINGS.ABOUT]: undefined;
-    [SCREENS.SETTINGS.TROUBLESHOOT]: undefined;
-
-    [SCREENS.SEARCH.CENTRAL_PANE]: {
-        q: SearchQueryString;
-        name?: string;
-    };
-    // [SCREENS.SETTINGS.SAVE_THE_WORLD]: undefined;
-    [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: undefined;
-};
-
 type BackToParams = {
     backTo?: Routes;
 };
@@ -1568,51 +1545,54 @@ type PublicScreensParamList = SharedScreensParamList & {
     [SCREENS.CONNECTION_COMPLETE]: undefined;
 };
 
-type AuthScreensParamList = CentralPaneScreensParamList &
-    SharedScreensParamList & {
-        [SCREENS.CONCIERGE]: undefined;
-        [SCREENS.TRACK_EXPENSE]: undefined;
-        [SCREENS.SUBMIT_EXPENSE]: undefined;
-        [SCREENS.ATTACHMENTS]: {
-            reportID: string;
-            source: string;
-            type: ValueOf<typeof CONST.ATTACHMENT_TYPE>;
-            accountID: string;
-            isAuthTokenRequired?: string;
-        };
-        [SCREENS.PROFILE_AVATAR]: {
-            accountID: string;
-        };
-        [SCREENS.WORKSPACE_AVATAR]: {
-            policyID: string;
-        };
-        [SCREENS.WORKSPACE_JOIN_USER]: {
-            policyID: string;
-            email: string;
-        };
-        [SCREENS.REPORT_AVATAR]: {
-            reportID: string;
-            policyID?: string;
-        };
-        [SCREENS.NOT_FOUND]: undefined;
-        [NAVIGATORS.REPORTS_SPLIT_NAVIGATOR]: NavigatorScreenParams<ReportsSplitNavigatorParamList> & {policyID?: string};
-        [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: NavigatorScreenParams<SettingsSplitNavigatorParamList> & {policyID?: string};
-        [NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR]: NavigatorScreenParams<WorkspaceSplitNavigatorParamList>;
-        [NAVIGATORS.LEFT_MODAL_NAVIGATOR]: NavigatorScreenParams<LeftModalNavigatorParamList>;
-        [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: NavigatorScreenParams<RightModalNavigatorParamList>;
-        [NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR]: NavigatorScreenParams<OnboardingModalNavigatorParamList>;
-        [NAVIGATORS.FEATURE_TRANING_MODAL_NAVIGATOR]: NavigatorScreenParams<FeatureTrainingNavigatorParamList>;
-        [NAVIGATORS.WELCOME_VIDEO_MODAL_NAVIGATOR]: NavigatorScreenParams<WelcomeVideoModalNavigatorParamList>;
-        [NAVIGATORS.EXPLANATION_MODAL_NAVIGATOR]: NavigatorScreenParams<ExplanationModalNavigatorParamList>;
-        [SCREENS.DESKTOP_SIGN_IN_REDIRECT]: undefined;
-        [SCREENS.TRANSACTION_RECEIPT]: {
-            reportID: string;
-            transactionID: string;
-            readonly?: string;
-            isFromReviewDuplicates?: string;
-        };
-        [SCREENS.CONNECTION_COMPLETE]: undefined;
+type AuthScreensParamList = SharedScreensParamList & {
+    [SCREENS.CONCIERGE]: undefined;
+    [SCREENS.TRACK_EXPENSE]: undefined;
+    [SCREENS.SUBMIT_EXPENSE]: undefined;
+    [SCREENS.ATTACHMENTS]: {
+        reportID: string;
+        source: string;
+        type: ValueOf<typeof CONST.ATTACHMENT_TYPE>;
+        accountID: string;
+        isAuthTokenRequired?: string;
     };
+    [SCREENS.PROFILE_AVATAR]: {
+        accountID: string;
+    };
+    [SCREENS.WORKSPACE_AVATAR]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE_JOIN_USER]: {
+        policyID: string;
+        email: string;
+    };
+    [SCREENS.REPORT_AVATAR]: {
+        reportID: string;
+        policyID?: string;
+    };
+    [SCREENS.NOT_FOUND]: undefined;
+    [NAVIGATORS.REPORTS_SPLIT_NAVIGATOR]: NavigatorScreenParams<ReportsSplitNavigatorParamList> & {policyID?: string};
+    [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: NavigatorScreenParams<SettingsSplitNavigatorParamList> & {policyID?: string};
+    [NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR]: NavigatorScreenParams<WorkspaceSplitNavigatorParamList>;
+    [NAVIGATORS.LEFT_MODAL_NAVIGATOR]: NavigatorScreenParams<LeftModalNavigatorParamList>;
+    [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: NavigatorScreenParams<RightModalNavigatorParamList>;
+    [NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR]: NavigatorScreenParams<OnboardingModalNavigatorParamList>;
+    [NAVIGATORS.FEATURE_TRANING_MODAL_NAVIGATOR]: NavigatorScreenParams<FeatureTrainingNavigatorParamList>;
+    [NAVIGATORS.WELCOME_VIDEO_MODAL_NAVIGATOR]: NavigatorScreenParams<WelcomeVideoModalNavigatorParamList>;
+    [NAVIGATORS.EXPLANATION_MODAL_NAVIGATOR]: NavigatorScreenParams<ExplanationModalNavigatorParamList>;
+    [SCREENS.DESKTOP_SIGN_IN_REDIRECT]: undefined;
+    [SCREENS.TRANSACTION_RECEIPT]: {
+        reportID: string;
+        transactionID: string;
+        readonly?: string;
+        isFromReviewDuplicates?: string;
+    };
+    [SCREENS.CONNECTION_COMPLETE]: undefined;
+    [SCREENS.SEARCH.CENTRAL_PANE]: {
+        q: SearchQueryString;
+        name?: string;
+    };
+};
 
 type SearchReportParamList = {
     [SCREENS.SEARCH.REPORT_RHP]: {
@@ -1666,8 +1646,6 @@ type RootStackParamList = PublicScreensParamList & AuthScreensParamList & LeftMo
 
 type WorkspaceScreenName = keyof WorkspaceSplitNavigatorParamList;
 
-type CentralPaneName = keyof CentralPaneScreensParamList;
-
 type OnboardingFlowName = keyof OnboardingModalNavigatorParamList;
 
 type SplitNavigatorName = keyof SplitNavigatorParamListType;
@@ -1675,12 +1653,6 @@ type SplitNavigatorName = keyof SplitNavigatorParamListType;
 type SplitNavigatorScreenName = keyof (WorkspaceSplitNavigatorParamList & SettingsSplitNavigatorParamList & ReportsSplitNavigatorParamList);
 
 type FullScreenName = SplitNavigatorName | typeof SCREENS.SEARCH.CENTRAL_PANE;
-
-type SwitchPolicyIDParams = {
-    policyID?: string;
-    route?: Routes;
-    isPolicyAdmin?: boolean;
-};
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -1695,8 +1667,6 @@ export type {
     AuthScreensParamList,
     BackToAndForwardToParms,
     BackToParams,
-    CentralPaneName,
-    CentralPaneScreensParamList,
     DebugParamList,
     DetailsNavigatorParamList,
     EditRequestNavigatorParamList,
@@ -1745,7 +1715,6 @@ export type {
     StackNavigationAction,
     State,
     StateOrRoute,
-    SwitchPolicyIDParams,
     TaskDetailsNavigatorParamList,
     TeachersUniteNavigatorParamList,
     TransactionDuplicateNavigatorParamList,
