@@ -494,14 +494,6 @@ function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string
         return Onyx.clear();
     };
 
-    const initAppAfterTransition = () => {
-        if (hybridApp.useNewDotSignInPage) {
-            return Promise.resolve();
-        }
-
-        return App.openApp();
-    };
-
     return new Promise<Route>((resolve) => {
         clearOnyxBeforeSignIn()
             .then(() => HybridAppActions.prepareHybridAppAfterTransitionToNewDot(hybridApp))
@@ -516,7 +508,6 @@ function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string
                 HybridAppActions.setUseNewDotSignInPage(!!hybridApp.useNewDotSignInPage);
                 HybridAppActions.setLoggedOutFromOldDot(!!hybridApp.loggedOutFromOldDot);
             })
-            .then(initAppAfterTransition)
             .catch((error) => {
                 Log.hmmm('[HybridApp] Initialization of HybridApp has failed. Forcing transition', {error});
             })
