@@ -110,7 +110,7 @@ const init: Init = () => {
         return;
     }
 
-    return DeviceEventEmitter.addListener(CONST.EVENTS.HYBRID_APP.ON_SIGN_IN_FINISHED, onOldDotSignInFinished).remove();
+    DeviceEventEmitter.addListener(CONST.EVENTS.HYBRID_APP.ON_SIGN_IN_FINISHED, onOldDotSignInFinished);
 };
 
 export default {init};
