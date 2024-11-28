@@ -42,6 +42,7 @@ export default function App() {
     addressOne: '1234 Fictional Road',
     addressTwo: 'Unit 5678',
     administrativeArea: 'Imaginary State',
+    locality: '9090',
     countryCode: 'XX',
     postalCode: '99999',
     phoneNumber: '000-123-4567',

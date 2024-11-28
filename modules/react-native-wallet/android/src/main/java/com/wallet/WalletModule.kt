@@ -1,8 +1,10 @@
 package com.wallet
 
+import android.R
 import android.app.Activity
 import android.app.Activity.RESULT_OK
 import android.content.Intent
+import android.util.Log
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.PromiseImpl
@@ -12,8 +14,10 @@ import com.facebook.react.bridge.ReadableMap
 import com.google.android.gms.tapandpay.TapAndPay
 import com.google.android.gms.tapandpay.TapAndPayClient
 import com.google.android.gms.tapandpay.issuer.PushTokenizeRequest
+import com.google.android.gms.tapandpay.issuer.TokenInfo
 import com.wallet.Utils.getAsyncResult
 import com.wallet.Utils.toCardData
+import com.wallet.model.CardStatus
 import com.wallet.model.WalletData
 import kotlinx.coroutines.*
 import org.json.JSONObject
@@ -99,6 +103,36 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
       }
     }
   }
+
+  @ReactMethod
+  override fun getCardStatus(last4Digits: String, promise: Promise) {
+    if (!ensureTapAndPayClientInitialized()) {
+      promise.reject("Initialization error", "TapAndPay client initialization failed")
+      return
+    }
+
+    tapAndPayClient!!.listTokens()
+      .addOnCompleteListener { task ->
+        if (!task.isSuccessful || task.result == null) {
+          promise.reject("error", "no tokens available")
+          return@addOnCompleteListener
+        }
+        val token = task.result.find { it.fpanLastFour == last4Digits }
+        token?.let {
+          Log.wtf("LOG", "Card Token State: ${it.tokenState}")
+          promise.resolve(it.tokenState)
+        } ?: promise.reject("Error", "Didn't find proper token")
+      }
+      .addOnFailureListener { e -> promise.reject("getCardStatus function failed", e) }
+      .addOnCanceledListener {
+        promise.reject(
+          "Reject",
+          "Card status retrieval canceled"
+        )
+      }
+  }
+
+
 
   @ReactMethod
   override fun addCardToWallet(

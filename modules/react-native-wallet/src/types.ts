@@ -18,6 +18,7 @@ export type UserAddress = {
   addressOne: string;
   addressTwo?: string;
   administrativeArea: string;
+  locality: string;
   countryCode: string;
   postalCode: string;
   phoneNumber: string;

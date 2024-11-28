@@ -20,7 +20,7 @@ object Utils {
       .setName(addressMap.getString("name") ?: "")
       .setAddress1(addressMap.getString("addressOne") ?: "")
       .setAddress2(addressMap.getString("addressTwo") ?: "")
-      .setLocality(addressMap.getString("city") ?: "")
+      .setLocality(addressMap.getString("locality") ?: "")
       .setAdministrativeArea(addressMap.getString("administrativeArea") ?: "")
       .setCountryCode(addressMap.getString("countryCode") ?: "")
       .setPostalCode(addressMap.getString("postalCode") ?: "")
