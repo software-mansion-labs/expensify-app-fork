@@ -150,8 +150,8 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
       }
 
       val tokenServiceProvider: Int = when (cardData.network.uppercase(Locale.getDefault())) {
-        TSP_VISA -> TapAndPay.TOKEN_PROVIDER_MASTERCARD
-        TSP_MASTERCARD -> TapAndPay.TOKEN_PROVIDER_VISA
+        TSP_VISA -> TapAndPay.TOKEN_PROVIDER_VISA
+        TSP_MASTERCARD -> TapAndPay.TOKEN_PROVIDER_MASTERCARD
         else -> 1000
       }
 
