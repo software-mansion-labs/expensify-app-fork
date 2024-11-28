@@ -31,6 +31,7 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
     const val NAME = "Wallet"
     const val REQUEST_CODE_PUSH_TOKENIZE: Int = 3
     const val REQUEST_CREATE_WALLET: Int = 4
+
     const val TSP_VISA: String = "VISA"
     const val TSP_MASTERCARD: String = "MASTERCARD"
   }
@@ -38,6 +39,7 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
   private var tapAndPayClient: TapAndPayClient? = null
   private var pendingCreateWalletPromise: Promise? = null
   private var pendingAddCardPromise: Promise? = null
+
 
   init {
     reactApplicationContext.addActivityEventListener(object : ActivityEventListener {
@@ -68,6 +70,22 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
 
       override fun onNewIntent(p0: Intent?) {}
     })
+  }
+
+  private fun getCardNetwork(network: String): Int {
+    return when (network.uppercase(Locale.getDefault())) {
+      TSP_VISA -> TapAndPay.TOKEN_PROVIDER_VISA
+      TSP_MASTERCARD -> TapAndPay.TOKEN_PROVIDER_MASTERCARD
+      else -> 1000
+    }
+  }
+
+  private fun getTokenServiceProvider(network: String): Int {
+    return when (network.uppercase(Locale.getDefault())) {
+      TSP_VISA -> TapAndPay.TOKEN_PROVIDER_VISA
+      TSP_MASTERCARD -> TapAndPay.TOKEN_PROVIDER_MASTERCARD
+      else -> 1000
+    }
   }
 
   @ReactMethod
@@ -143,16 +161,10 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
     try {
       val cardData = data.toCardData() ?: return promise.reject("Reject: ", "Insufficient data")
 
-      val cardNetwork: Int = when (cardData.network.uppercase(Locale.getDefault())) {
-        TSP_MASTERCARD -> TapAndPay.CARD_NETWORK_MASTERCARD
-        TSP_VISA -> TapAndPay.CARD_NETWORK_VISA
-        else -> 1000
-      }
-
-      val tokenServiceProvider: Int = when (cardData.network.uppercase(Locale.getDefault())) {
-        TSP_VISA -> TapAndPay.TOKEN_PROVIDER_VISA
-        TSP_MASTERCARD -> TapAndPay.TOKEN_PROVIDER_MASTERCARD
-        else -> 1000
+      val cardNetwork = getCardNetwork(cardData.network)
+      val tokenServiceProvider = getTokenServiceProvider(cardData.network)
+      if (cardNetwork == 1000 || tokenServiceProvider == 1000) {
+        return promise.reject("Reject: ", "Invalid card network")
       }
 
       val pushTokenizeRequest = PushTokenizeRequest.Builder()
