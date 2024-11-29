@@ -42,8 +42,11 @@ function BaseSidebarScreen() {
         Timing.start(CONST.TIMING.SIDEBAR_LOADED);
     }, []);
 
+    // If the selected workspace has been deleted, the current workspace is reset to global.
     useEffect(() => {
-        if (!!activeWorkspace || activeWorkspaceID === undefined) {
+        const isActiveWorkspaceDeleted = !!activeWorkspace || activeWorkspaceID === undefined;
+
+        if (isActiveWorkspaceDeleted) {
             return;
         }
 
@@ -58,7 +61,7 @@ function BaseSidebarScreen() {
             navigationRef.current?.dispatch({
                 target: navigationRef.current.getRootState().key,
                 payload: createSplitNavigator({name: SCREENS.HOME}, {name: SCREENS.REPORT}),
-                type: 'REPLACE',
+                type: CONST.NAVIGATION.ACTION_TYPE.REPLACE,
             });
         }
     }, [activeWorkspace, activeWorkspaceID, currentRoute]);
