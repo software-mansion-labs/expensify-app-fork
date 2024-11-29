@@ -1,6 +1,6 @@
-export type WalletData = AndroidWalletData | IOSWalletData;
+type WalletData = AndroidWalletData | IOSWalletData;
 
-export type AndroidWalletData = {
+type AndroidWalletData = {
   platform: 'android';
   deviceID: string;
   walletAccountID: string;
@@ -13,7 +13,7 @@ type IOSWalletData = {
   certificates: string;
 };
 
-export type UserAddress = {
+type UserAddress = {
   name: string;
   addressOne: string;
   addressTwo?: string;
@@ -24,7 +24,7 @@ export type UserAddress = {
   phoneNumber: string;
 };
 
-export type AndroidCardData = {
+type AndroidCardData = {
   platform: 'android';
   network: string;
   opaquePaymentCard: string;
@@ -32,3 +32,5 @@ export type AndroidCardData = {
   lastDigits: string;
   userAddress: UserAddress;
 };
+
+export type { WalletData, AndroidWalletData, UserAddress, AndroidCardData };
