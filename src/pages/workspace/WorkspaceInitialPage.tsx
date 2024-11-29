@@ -22,7 +22,7 @@ import useWaitForNavigation from '@hooks/useWaitForNavigation';
 import {isConnectionInProgress} from '@libs/actions/connections';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
-import getTopmostRouteName from '@libs/Navigation/getTopmostRouteName';
+import getTopmostRouteName from '@libs/Navigation/helpers/getTopmostRouteName';
 import Navigation from '@libs/Navigation/Navigation';
 import type {WorkspaceSplitNavigatorParamList} from '@libs/Navigation/types';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -388,7 +388,7 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, route}: Workspac
         >
             <FullPageNotFoundView
                 onBackButtonPress={Navigation.dismissModal}
-                onLinkPress={() => Navigation.goUp(ROUTES.HOME)}
+                onLinkPress={() => Navigation.goBack(ROUTES.HOME)}
                 shouldShow={shouldShowNotFoundPage}
                 subtitleKey={isEmptyObject(policy) ? undefined : 'workspace.common.notAuthorized'}
             >
@@ -396,10 +396,10 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, route}: Workspac
                     title={policyName}
                     onBackButtonPress={() => {
                         if (route.params?.backTo) {
-                            Navigation.goUp(ROUTES.HOME);
+                            Navigation.goBack(ROUTES.HOME);
                             Navigation.isNavigationReady().then(() => Navigation.navigate(route.params?.backTo as Route));
                         } else {
-                            Navigation.goUp(ROUTES.SETTINGS_WORKSPACES);
+                            Navigation.goBack(ROUTES.SETTINGS_WORKSPACES);
                         }
                     }}
                     policyAvatar={policyAvatar}

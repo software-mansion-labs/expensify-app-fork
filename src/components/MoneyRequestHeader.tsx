@@ -7,7 +7,7 @@ import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import isReportOpenInRHP from '@libs/Navigation/isReportOpenInRHP';
+import isReportOpenInRHP from '@libs/Navigation/helpers/isReportOpenInRHP';
 import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';

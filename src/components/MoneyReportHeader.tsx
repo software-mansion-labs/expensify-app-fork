@@ -9,7 +9,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {getCurrentUserAccountID} from '@libs/actions/Report';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
-import isReportOpenInRHP from '@libs/Navigation/isReportOpenInRHP';
+import isReportOpenInRHP from '@libs/Navigation/helpers/isReportOpenInRHP';
 import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import * as PolicyUtils from '@libs/PolicyUtils';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';

@@ -7,7 +7,6 @@ import type {OnyxEntry} from 'react-native-onyx';
 import type {Writable} from 'type-fest';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import Log from '@libs/Log';
-import {isSplitNavigatorName} from '@libs/NavigationUtils';
 import {shallowCompare} from '@libs/ObjectUtils';
 import getPolicyEmployeeAccountIDs from '@libs/PolicyEmployeeListUtils';
 import * as ReportConnection from '@libs/ReportConnection';
@@ -18,29 +17,26 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {HybridAppRoute, Route} from '@src/ROUTES';
 import ROUTES, {HYBRID_APP_ROUTES} from '@src/ROUTES';
 import SCREENS, {PROTECTED_SCREENS} from '@src/SCREENS';
-import type {Screen} from '@src/SCREENS';
 import type {Report} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import originalCloseRHPFlow from './closeRHPFlow';
-import getPolicyIDFromState from './getPolicyIDFromState';
-import getStateFromPath from './getStateFromPath';
-import originalGetTopmostReportActionId from './getTopmostReportActionID';
-import originalGetTopmostReportId from './getTopmostReportId';
-import isReportOpenInRHP from './isReportOpenInRHP';
+import getInitialSplitNavigatorState from './AppNavigator/createSplitStackNavigator/getInitialSplitNavigatorState';
+import {
+    getMinimalAction,
+    getPolicyIDFromState,
+    getStateFromPath,
+    getTopmostReportParams,
+    isReportOpenInRHP,
+    isSplitNavigatorName,
+    linkTo,
+    closeRHPFlow as originalCloseRHPFlow,
+    setNavigationActionToMicrotaskQueue,
+} from './helpers';
 import linkingConfig from './linkingConfig';
-import createSplitNavigator from './linkingConfig/createSplitNavigator';
-import linkTo from './linkTo';
-import getMinimalAction from './linkTo/getMinimalAction';
+import RELATIONS from './linkingConfig/RELATIONS';
 import navigationRef from './navigationRef';
-import setNavigationActionToMicrotaskQueue from './setNavigationActionToMicrotaskQueue';
-import type {NavigationPartialRoute, NavigationStateRoute, RootStackParamList, SplitNavigatorLHNScreen, SplitNavigatorParamListType, State} from './types';
+import type {NavigationPartialRoute, NavigationStateRoute, RootStackParamList, State} from './types';
 
-const SPLIT_NAVIGATOR_TO_SIDEBAR_MAP: Record<keyof SplitNavigatorParamListType, SplitNavigatorLHNScreen> = {
-    [NAVIGATORS.REPORTS_SPLIT_NAVIGATOR]: SCREENS.HOME,
-    [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: SCREENS.SETTINGS.ROOT,
-    [NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR]: SCREENS.WORKSPACE.INITIAL,
-};
-
+// Get the sidebar screen parameters from the split navigator passed as a param
 function getSidebarScreenParams(splitNavigatorRoute: NavigationStateRoute) {
     if (splitNavigatorRoute.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR) {
         return splitNavigatorRoute.state?.routes?.at(0)?.params;
@@ -73,18 +69,16 @@ function canNavigate(methodName: string, params: Record<string, unknown> = {}): 
     return false;
 }
 
-// Re-exporting the getTopmostReportId here to fill in default value for state. The getTopmostReportId isn't defined in this file to avoid cyclic dependencies.
-const getTopmostReportId = (state = navigationRef.getState()) => originalGetTopmostReportId(state);
+// Extracts from the topmost report its id.
+const getTopmostReportId = (state = navigationRef.getState()) => getTopmostReportParams(state)?.reportID;
 
-// Re-exporting the getTopmostReportActionID here to fill in default value for state. The getTopmostReportActionID isn't defined in this file to avoid cyclic dependencies.
-const getTopmostReportActionId = (state = navigationRef.getState()) => originalGetTopmostReportActionId(state);
+// Extracts from the topmost report its action id.
+const getTopmostReportActionId = (state = navigationRef.getState()) => getTopmostReportParams(state)?.reportActionID;
 
 // Re-exporting the closeRHPFlow here to fill in default value for navigationRef. The closeRHPFlow isn't defined in this file to avoid cyclic dependencies.
 const closeRHPFlow = (ref = navigationRef) => originalCloseRHPFlow(ref);
 
-/**
- * Function that generates dynamic urls from paths passed from OldDot
- */
+// Function that generates dynamic urls from paths passed from OldDot.
 function parseHybridAppUrl(url: HybridAppRoute | Route): Route {
     switch (url) {
         case HYBRID_APP_ROUTES.MONEY_REQUEST_CREATE_TAB_MANUAL:
@@ -99,7 +93,7 @@ function parseHybridAppUrl(url: HybridAppRoute | Route): Route {
     }
 }
 
-/** Returns the current active route */
+// Returns the current active route.
 function getActiveRoute(): string {
     const currentRoute = navigationRef.current && navigationRef.current.getCurrentRoute();
     if (!currentRoute?.name) {
@@ -114,7 +108,7 @@ function getActiveRoute(): string {
 
     return '';
 }
-
+// Returns the route of a report opened in RHP.
 function getReportRHPActiveRoute(): string {
     if (isReportOpenInRHP(navigationRef.getRootState())) {
         return getActiveRoute();
@@ -151,10 +145,14 @@ function navigate(route: Route = ROUTES.HOME, type?: string) {
         pendingRoute = route;
         return;
     }
-    // linkTo(navigationRef.current, route, type, isActiveRoute(route));
+
     linkTo(navigationRef.current, route, type);
 }
 
+/**
+ * When routes are compared to determine whether the fallback route passed to the goUp function is in the state,
+ * these parameters shouldn't be included in the comparison.
+ */
 const routeParamsIgnore = ['path', 'initial', 'params', 'state', 'screen', 'policyID'];
 
 // If we use destructuring, we will get an error if any of the ignored properties are not present in the object.
@@ -191,26 +189,43 @@ function doesRouteMatchToMinimalActionPayload(route: NavigationStateRoute | Navi
     return shallowCompare(routeParams, minimalActionParams);
 }
 
-type GoUpOptions = {
-    /** If we should compare params when searching for a route in state to go up to.
-     * There are situations where we want to compare params when going up e.g. goUp to a specific report.
-     * Sometimes we want to go up and update params of screen e.g. country picker.
-     * In that case we want to goUp to a country picker with any params so we don't compare them. */
-    compareParams?: boolean;
-};
-
-const defaultGoUpOptions: Required<GoUpOptions> = {
-    compareParams: true,
-};
-
+// Checks whether the given state is the root navigator state
 function isRootNavigatorState(state: State): state is State<RootStackParamList> {
     return state.key === navigationRef.current?.getRootState().key;
 }
 
-function goUp(fallbackRoute: Route, options?: GoUpOptions) {
-    const compareParams = options?.compareParams ?? defaultGoUpOptions.compareParams;
+type GoBackOptions = {
+    /**
+     * If we should compare params when searching for a route in state to go up to.
+     * There are situations where we want to compare params when going up e.g. goUp to a specific report.
+     * Sometimes we want to go up and update params of screen e.g. country picker.
+     * In that case we want to goUp to a country picker with any params so we don't compare them.
+     */
+    compareParams?: boolean;
 
-    if (!canNavigate('goBack')) {
+    /**
+     * Specifies whether goBack should pop to top when invoked.
+     * Additionaly, to execute popToTop, set the value of the global variable ShouldPopAllStateOnUP to true using the setShouldPopAllStateOnUP function.
+     */
+    shouldPopToTop?: boolean;
+};
+
+const defaultGoBackOptions: Required<GoBackOptions> = {
+    compareParams: true,
+    shouldPopToTop: false,
+};
+
+/**
+ * Navigate to the given fallbackRoute taking into account whether it is possible to go back to this screen. Within one nested navigator, we can go back by any number
+ * of screens, but if as a result of going back we would have to remove more than one screen from the rootState,
+ * replace is performed so as not to lose the visited pages.
+ * If fallbackRoute is not found in the state, replace is also called then.
+ *
+ * @param fallbackRoute - The route to go up.
+ * @param options - Optional configuration that affects navigation logic, such as parameter comparison.
+ */
+function goUp(fallbackRoute: Route, options?: GoBackOptions) {
+    if (!canNavigate('goUp')) {
         return;
     }
 
@@ -233,6 +248,7 @@ function goUp(fallbackRoute: Route, options?: GoUpOptions) {
         return;
     }
 
+    const compareParams = options?.compareParams ?? defaultGoBackOptions.compareParams;
     const indexOfFallbackRoute = targetState.routes.findLastIndex((route) => doesRouteMatchToMinimalActionPayload(route, minimalAction, compareParams));
 
     const distanceToPop = targetState.routes.length - indexOfFallbackRoute - 1;
@@ -244,8 +260,10 @@ function goUp(fallbackRoute: Route, options?: GoUpOptions) {
         return;
     }
 
-    // If we are not comparing params, we want to use navigate action because it will replace params in the route already existing in the state if necessary.
-    // This part will need refactor after migrating to react-navigation 7. We will use popTo instead.
+    /**
+     * If we are not comparing params, we want to use navigate action because it will replace params in the route already existing in the state if necessary.
+     * This part will need refactor after migrating to react-navigation 7. We will use popTo instead.
+     */
     if (!compareParams) {
         navigationRef.current.dispatch(minimalAction);
         return;
@@ -256,14 +274,14 @@ function goUp(fallbackRoute: Route, options?: GoUpOptions) {
 
 /**
  * @param fallbackRoute - Fallback route if pop/goBack action should, but is not possible within RHP
- * @param shouldPopToTop - Should we navigate to LHN on back press
+ * @param options - Optional configuration that affects navigation logic, e.g. whether goBack should popToTop.
  */
-function goBack(fallbackRoute?: Route, shouldPopToTop = false) {
+function goBack(fallbackRoute?: Route, options?: GoBackOptions) {
     if (!canNavigate('goBack')) {
         return;
     }
 
-    if (shouldPopToTop) {
+    if (options?.shouldPopToTop) {
         if (shouldPopAllStateOnUP) {
             shouldPopAllStateOnUP = false;
             navigationRef.current?.dispatch(StackActions.popToTop());
@@ -272,7 +290,7 @@ function goBack(fallbackRoute?: Route, shouldPopToTop = false) {
     }
 
     if (fallbackRoute) {
-        goUp(fallbackRoute);
+        goUp(fallbackRoute, options);
         return;
     }
 
@@ -282,7 +300,7 @@ function goBack(fallbackRoute?: Route, shouldPopToTop = false) {
     const canGoBack = navigationRef.current?.canGoBack();
 
     if (!canGoBack && isSplitNavigatorName(lastRoute?.name) && lastRoute?.state?.routes?.length === 1) {
-        const name = SPLIT_NAVIGATOR_TO_SIDEBAR_MAP[lastRoute.name];
+        const name = RELATIONS.SPLIT_TO_SIDEBAR[lastRoute.name];
         const params = getSidebarScreenParams(lastRoute);
         navigationRef.dispatch({
             type: 'REPLACE',
@@ -302,9 +320,7 @@ function goBack(fallbackRoute?: Route, shouldPopToTop = false) {
     navigationRef.current?.goBack();
 }
 
-/**
- * Reset the navigation state to Home page
- */
+// Reset the navigation state to Home page
 function resetToHome() {
     const isNarrowLayout = getIsNarrowLayout();
     const rootState = navigationRef.getRootState();
@@ -314,13 +330,11 @@ function resetToHome() {
               name: SCREENS.REPORT,
           }
         : undefined;
-    const payload = createSplitNavigator({name: SCREENS.HOME}, splitNavigatorMainScreen);
+    const payload = getInitialSplitNavigatorState({name: SCREENS.HOME}, splitNavigatorMainScreen);
     navigationRef.dispatch({payload, type: 'REPLACE', target: rootState.key});
 }
 
-/**
- * Update route params for the specified route.
- */
+// Update route params for the specified route.
 function setParams(params: Record<string, unknown>, routeKey = '') {
     navigationRef.current?.dispatch({
         ...CommonActions.setParams(params),
@@ -328,14 +342,12 @@ function setParams(params: Record<string, unknown>, routeKey = '') {
     });
 }
 
-/**
- * Returns the current active route without the URL params
- */
+// Returns the current active route without the URL params.
 function getActiveRouteWithoutParams(): string {
     return getActiveRoute().replace(/\?.*/, '');
 }
 
-/** Returns the active route name from a state event from the navigationRef  */
+// Returns the active route name from a state event from the navigationRef.
 function getRouteNameFromStateEvent(event: EventArg<'state', false, NavigationContainerEventMap['state']['data']>): string | undefined {
     if (!event.data.state) {
         return;
@@ -415,12 +427,17 @@ function waitForProtectedRoutes() {
     });
 }
 
+// Changes the currently selected policy in the app.
 function switchPolicyID(policyID?: string) {
     navigationRef.dispatch({type: CONST.NAVIGATION.ACTION_TYPE.SWITCH_POLICY_ID, payload: {policyID}});
 }
 
 type NavigateToReportWithPolicyCheckPayload = {report?: OnyxEntry<Report>; reportID?: string; reportActionID?: string; referrer?: string; policyIDToCheck?: string};
 
+/**
+ * Navigates to a report passed as a param (as an id or report object) and checks whether the target object belongs to the currently selected workspace.
+ * If not, the current workspace is set to global.
+ */
 function navigateToReportWithPolicyCheck({report, reportID, reportActionID, referrer, policyIDToCheck}: NavigateToReportWithPolicyCheckPayload, ref = navigationRef) {
     const targetReport = reportID ? {reportID, ...ReportConnection.getAllReports()?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]} : report;
     const policyID = policyIDToCheck ?? getPolicyIDFromState(navigationRef.getRootState() as State<RootStackParamList>);
@@ -453,8 +470,7 @@ function navigateToReportWithPolicyCheck({report, reportID, reportActionID, refe
     );
 }
 
-// @TODO In places where we use dismissModal with report arg we should do dismiss modal and then navigate to the report.
-// We left it here to limit the number of changed files.
+// Closes the modal navigator (RHP, LHP, onboarding).
 const dismissModal = (reportID?: string, ref = navigationRef) => {
     ref.dispatch({type: CONST.NAVIGATION.ACTION_TYPE.DISMISS_MODAL});
     if (!reportID) {
@@ -462,24 +478,12 @@ const dismissModal = (reportID?: string, ref = navigationRef) => {
     }
     isNavigationReady().then(() => navigateToReportWithPolicyCheck({reportID}));
 };
+
+// Dismisses the modal and opens the given report.
 const dismissModalWithReport = (report: OnyxEntry<Report>) => {
     dismissModal();
     isNavigationReady().then(() => navigateToReportWithPolicyCheck({report}));
 };
-
-function removeScreenFromNavigationState(screen: Screen) {
-    isNavigationReady().then(() => {
-        navigationRef.dispatch((state) => {
-            const routes = state.routes?.filter((item) => item.name !== screen);
-
-            return CommonActions.reset({
-                ...state,
-                routes,
-                index: routes.length < state.routes.length ? state.index - 1 : state.index,
-            });
-        });
-    });
-}
 
 export default {
     setShouldPopAllStateOnUP,
@@ -504,8 +508,6 @@ export default {
     closeRHPFlow,
     setNavigationActionToMicrotaskQueue,
     navigateToReportWithPolicyCheck,
-    goUp,
-    removeScreenFromNavigationState,
 };
 
 export {navigationRef};

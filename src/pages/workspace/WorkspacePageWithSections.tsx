@@ -174,8 +174,8 @@ function WorkspacePageWithSections({
             shouldShowOfflineIndicatorInWideScreen={shouldShowOfflineIndicatorInWideScreen && !shouldShow}
         >
             <FullPageNotFoundView
-                onBackButtonPress={() => Navigation.goUp(ROUTES.SETTINGS_WORKSPACES)}
-                onLinkPress={() => Navigation.goUp(ROUTES.HOME)}
+                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WORKSPACES)}
+                onLinkPress={() => Navigation.goBack(ROUTES.HOME)}
                 shouldShow={shouldShow}
                 subtitleKey={isEmptyObject(policy) ? undefined : 'workspace.common.notAuthorized'}
                 shouldForceFullScreen
