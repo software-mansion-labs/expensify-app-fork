@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Button as RNButton, StyleSheet, Text, View } from 'react-native';
+import { Button as RNButton, ScrollView, StyleSheet, Text } from 'react-native';
 import {
   checkWalletAvailability,
   getSecureWalletInfo,
   addCardToWallet,
+  getCardStatus,
 } from 'react-native-wallet';
 import type {
   AndroidCardData,
@@ -45,6 +46,7 @@ export default function App() {
     boolean | undefined
   >();
   const [walletData, setWalletData] = useState<AndroidWalletData | undefined>();
+  const [cardStatus, setCardStatus] = useState<string | undefined>();
   const [addCard, setAddCard] = useState<string | undefined>();
 
   const handleCheckWalletAvailability = useCallback(() => {
@@ -66,13 +68,17 @@ export default function App() {
     }
   }, [walletData]);
 
+  const handleGetCardStatus = useCallback(() => {
+    getCardStatus(dummyCardData.lastDigits).then(setCardStatus);
+  }, []);
+
   const handleAddCardToWallet = useCallback(() => {
     addCardToWallet(dummyCardData);
     setAddCard('Completed');
   }, []);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>react-native-wallet example app</Text>
       <Button
         title="checkWalletAvailability"
@@ -83,15 +89,18 @@ export default function App() {
       <Button title="getSecureWalletInfo" onPress={handleGetSecureWalletInfo} />
       <Text>{`getSecureWalletInfo() -> {\n\t\tplatform: ${walletData?.platform}\n\t\twalletId: ${walletData?.walletAccountID}\n\t\thardwareId: ${walletData?.deviceID}\n}`}</Text>
 
+      <Button title="getCardStatus" onPress={handleGetCardStatus} />
+      <Text>{`getCardStatus(${dummyCardData.lastDigits}) -> ${cardStatus}`}</Text>
+
       <Button title="addCardToWallet" onPress={handleAddCardToWallet} />
       <Text>{`addCardToWallet() -> ${addCard}`}</Text>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    paddingTop: 20,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 40,
@@ -104,6 +113,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 25,
     fontWeight: 'bold',
-    marginBottom: 100,
+    marginBottom: 40,
   },
 });
