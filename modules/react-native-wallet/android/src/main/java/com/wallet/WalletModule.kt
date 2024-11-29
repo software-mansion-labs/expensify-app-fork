@@ -140,15 +140,15 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
           Log.i("getCardStatus", "Card Token State: ${it.tokenState}")
           promise.resolve(
             when (it.tokenState) {
-              TapAndPay.TOKEN_STATE_ACTIVE -> CardStatus.ACTIVE
-              TapAndPay.TOKEN_STATE_PENDING -> CardStatus.PENDING
-              TapAndPay.TOKEN_STATE_SUSPENDED -> CardStatus.SUSPENDED
-              TapAndPay.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION -> CardStatus.REQUIRE_IDENTITY_VERIFICATION
-              TapAndPay.TOKEN_STATE_FELICA_PENDING_PROVISIONING -> CardStatus.PENDING
-              else -> CardStatus.NOT_FOUND_IN_WALLET
+              TapAndPay.TOKEN_STATE_ACTIVE -> CardStatus.ACTIVE.code
+              TapAndPay.TOKEN_STATE_PENDING -> CardStatus.PENDING.code
+              TapAndPay.TOKEN_STATE_SUSPENDED -> CardStatus.SUSPENDED.code
+              TapAndPay.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION -> CardStatus.REQUIRE_IDENTITY_VERIFICATION.code
+              TapAndPay.TOKEN_STATE_FELICA_PENDING_PROVISIONING -> CardStatus.PENDING.code
+              else -> CardStatus.NOT_FOUND_IN_WALLET.code
             }
           )
-        } ?:  promise.resolve(CardStatus.NOT_FOUND_IN_WALLET)
+        } ?:  promise.resolve(CardStatus.NOT_FOUND_IN_WALLET.code)
       }
       .addOnFailureListener { e -> promise.reject("getCardStatus function failed", e) }
       .addOnCanceledListener {
