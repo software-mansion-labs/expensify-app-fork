@@ -1,6 +1,7 @@
 package com.wallet.model
 
 enum class CardStatus(val code: Int, val message: String) {
+  NOT_FOUND_IN_WALLET(0, "THe card can;t be found in your active wallet"),
   REQUIRE_IDENTITY_VERIFICATION(1, "Please activate your card."),
   PENDING(2, "Your card is pending."),
   ACTIVE(3, "Your card is ready to use."),

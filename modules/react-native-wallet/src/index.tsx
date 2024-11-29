@@ -1,5 +1,6 @@
 import { NativeModules, Platform } from 'react-native';
-import type { AndroidCardData } from './types';
+import type { AndroidCardData, CardStatus } from './types';
+import { getCardState } from './utils';
 
 const LINKING_ERROR =
   `The package 'react-native-wallet' doesn't seem to be linked. Make sure: \n\n` +
@@ -25,22 +26,36 @@ const Wallet = WalletModule
       }
     );
 
-export function getWalletId(): Promise<string> {
+function getWalletId(): Promise<string> {
   return Wallet.getWalletId();
 }
 
-export function getHardwareId(): Promise<string> {
+function getHardwareId(): Promise<string> {
   return Wallet.getHardwareId();
 }
 
-export function checkWalletAvailability(): Promise<boolean> {
+function checkWalletAvailability(): Promise<boolean> {
   return Wallet.checkWalletAvailability();
 }
 
-export function getSecureWalletInfo(): Promise<string> {
+function getSecureWalletInfo(): Promise<string> {
   return Wallet.getSecureWalletInfo();
 }
 
-export function addCardToWallet(cardData: AndroidCardData): void {
+function addCardToWallet(cardData: AndroidCardData): void {
   return Wallet.addCardToWallet(cardData);
 }
+
+async function getCardStatus(last4Digits: string): Promise<CardStatus> {
+  const cardState = await Wallet.getCardStatus(last4Digits);
+  return getCardState(cardState);
+}
+
+export {
+  getWalletId,
+  getHardwareId,
+  checkWalletAvailability,
+  getSecureWalletInfo,
+  addCardToWallet,
+  getCardStatus,
+};

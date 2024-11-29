@@ -33,4 +33,18 @@ type AndroidCardData = {
   userAddress: UserAddress;
 };
 
-export type { WalletData, AndroidWalletData, UserAddress, AndroidCardData };
+type CardStatus =
+  | 'not found'
+  | 'requireActivation'
+  | 'activating'
+  | 'activated'
+  | 'suspended'
+  | 'deactivated';
+
+export type {
+  WalletData,
+  AndroidWalletData,
+  UserAddress,
+  AndroidCardData,
+  CardStatus,
+};

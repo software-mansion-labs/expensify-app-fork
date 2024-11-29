@@ -137,9 +137,18 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
         }
         val token = task.result.find { it.fpanLastFour == last4Digits }
         token?.let {
-          Log.wtf("LOG", "Card Token State: ${it.tokenState}")
-          promise.resolve(it.tokenState)
-        } ?: promise.reject("Error", "Didn't find proper token")
+          Log.i("getCardStatus", "Card Token State: ${it.tokenState}")
+          promise.resolve(
+            when (it.tokenState) {
+              TapAndPay.TOKEN_STATE_ACTIVE -> CardStatus.ACTIVE
+              TapAndPay.TOKEN_STATE_PENDING -> CardStatus.PENDING
+              TapAndPay.TOKEN_STATE_SUSPENDED -> CardStatus.SUSPENDED
+              TapAndPay.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION -> CardStatus.REQUIRE_IDENTITY_VERIFICATION
+              TapAndPay.TOKEN_STATE_FELICA_PENDING_PROVISIONING -> CardStatus.PENDING
+              else -> CardStatus.NOT_FOUND_IN_WALLET
+            }
+          )
+        } ?:  promise.resolve(CardStatus.NOT_FOUND_IN_WALLET)
       }
       .addOnFailureListener { e -> promise.reject("getCardStatus function failed", e) }
       .addOnCanceledListener {
