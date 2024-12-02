@@ -1,139 +1,37 @@
-<!-- Change all references to screens and navigators using their names to screaming snake case to match names from SCREENS and NAVIGATORS -->
-<!-- Add permalinks everywhere!!!!!  -->
-
 # Overview
 
-Navigation of this app is build on top of the `react-navigation` library. To handle all requirements and cross platform challenges we created custom navigators and functionality. Documentation below will help you understand what is the navigation structure of this app and how to effectively create screens and navigate withing the app.
-
-## Table of Contents
-
--   [Overview](#overview)
--   [Custom navigators](#custom-navigators)
-    -   [CustomRootNavigator](#customrootnavigator)
-    -   [SplitNavigator](#splitnavigator)
--   [Screens and navigators of the app](#screens-and-navigators-of-the-app)
-    -   [Full screens](#full-screens)
-        -   [REPORTS_SPLIT_NAVIGATOR](#reports_split_navigator---inbox-icon)
-        -   [SEARCH](#search-screen---search-icon)
-        -   [SETTINGS_SPLIT_NAVIGATOR](#settings_split_navigator---settings-icon)
-        -   [WORKSPACE_SPLIT_NAVIGATOR](#workspace_split_navigator---settings-icon)
-    -   [Modals](#modals)
-        -   [RIGHT_MODAL_NAVIGATOR](#right_modal_navigator-rhp---right-hand-panel)
-        -   [LEFT_MODAL_NAVIGATOR](#left_modal_navigator-lhp---left-hand-panel)
-    -   [Other screens and navigators](#other-screens-and-navigators)
--   [Common navigation functions](#common-navigation-functions)
-    -   [navigate](#navigatepath-route-options-linktooptions)
-        -   [Options](#options)
-            -   [forceReplace](#forcereplace-default-false)
-            -   [reportPathConversionEnabled](#reportpathconversionenabled-default-true)
-    -   [dismissModal](#dismissmodal)
-    -   [dismissModalWithReportID](#dismissmodalwithreportidreportid-string)
-    -   [dismissModalWithReport](#dismissmodalwithreportreport-onyxentryreport)
-    -   [goBack](#goback)
-    -   [switchPolicyID](#switchpolicyid)
-    -   [resetToHome](#resettohome)
--   [Adding new screens](#adding-new-screens)
-    -   [Creating const for name of the screen](#creating-const-for-name-of-the-screen)
-    -   [Creating route for the new screen](#creating-route-for-the-new-screen)
-    -   [Modifying the linking config](#modifying-the-linking-config)
-    -   [Adding types for the new screen](#adding-types-for-the-new-screen)
-    -   [Updating RELATIONS](#updating-relations)
-    -   [Adding screen component to navigator](#adding-screen-component-to-navigator)
-
-# Custom navigators
-
-`react-navigation` provides are few fundamental navigators: `StackNavigator` `DrawerNavigator` etc.
-
-To meet unique expensify requirements we created two custom navigators that helped us expand functionality of the base `StackNavigator`
-
-## CustomRootNavigator
-
-There is only one navigator of this type and it is in the root of navigation. It uses `customRootRouter` to extend basic `StackNavigator` functionality. Custom functionality is responsible for handling policy id in workspace switcher, dismissing modal navigators and preventing user from going back in history during onboarding.
-
-## SplitNavigator
-
-This type of navigator is also based on `StackNavigator`. It has two types of screens.
-
--   Side Screens -> There is only one screen of this type on the stack and it will be always the first one.
--   Central Screens -> All other screens
-
-On narrow layout it will behave as normal `StackNavigator`.
-
-On wide layout, side screen is translated to the left to make it visible. This way the user will see both, side screen and a central screen.
-
-There is functionality that makes sure that on the wide layout there always will be at least one side screen and one central screen.
-
-# Screens and navigators of the app
-
-The root navigator has many screens. Some of them contains nested navigators. We can divide them into two groups:
-
-## Full screens
-
-These screens / navigators will cover whole screen and don't have transparent overlay. Every of one of of these has bottom tab bar icon that will be highlighted when this screen is on the top or is visible under the overlay of modal navigator.
-
-Something worth noticing is that we have bottom tab bar but we don't have a `BottomTabNavigator`. When the user presses one of the bottom tab bar buttons, we push a new full screen onto the root stack. We used the `StackNavigator` to have more flexibility and to preserve navigation history in the browser.
-
-### `REPORTS_SPLIT_NAVIGATOR` -> Inbox icon
-
-Contains `HOME` screen with list of reports and `REPORT` screen. There may be many report screens with different `reportID` on the stack.
-
-<!-- change the name in code -->
-
-### `SEARCH` (screen) -> Search icon
-
-Something worth noticing is even though SearchScreen can visually look like a split navigator, it is a single screen. It is necessary to meet requirement where search in both narrow and wide layout has the same URL.
-
-### `SETTINGS_SPLIT_NAVIGATOR` -> Settings icon
-
-### `WORKSPACE_SPLIT_NAVIGATOR` -> Settings icon
-
-## Modals
-
-These screens / navigators have a transparent overlay underneath.
-
-On wide layout we have functionality that ensures that there is at least one full screen under the modal on the stack that will be visible under overlay.
-
-### `RIGHT_MODAL_NAVIGATOR` (RHP - Right Hand Panel)
-
-One of the two side modal navigators.
-
-On narrow layout it will work as normal `StackNavigator`
-
-On wide layout it will be displayed on the right with transparent overlay underneath.
-
-<!-- Add links -->
-
-It contains many flows that are stack navigators. You can find them here
-
-### `LEFT_MODAL_NAVIGATOR` (LHP - Left Hand Panel)
-
-One of the two side modal navigators.
-
-This is the mirror image of RHP. Currently it contains only one screen which is `WORKSPACE_SWITCHER`.
-
-<!-- probably add onboarding navigator here -->
-
-## Other screens and navigators
-
-There are few other screens and modal navigators plugged into root navigator that don't have special logic.
+The navigation of this app is built on top of the `react-navigation` library. To accommodate all requirements and cross-platform challenges, we created custom navigators and functionalities. The documentation below will help you understand the app's navigation structure and how to effectively create screens and navigate within the app.
 
 # Common navigation functions
 
-## `navigate(path: Route, options?: LinkToOptions)`
+## navigate
 
-This is the main function used to navigate forward in the app. Normally `react-navigation` uses screen names and params for navigate function. Our custom implementation takes path as argument to handle cross platform challenges easier. You can find defined paths and path getters in `ROUTES.ts`.
+Navigates to a given page and adds a new entry to the history stack or replaces the last one.
 
-Besides some special cases this function will create and dispatch minimalAction (see definition bellow) with type `PUSH`
+```ts
+navigate(path: Route, options?: LinkToOptions)
+```
+
+### Arguments
+
+-   `path`: a string. One of the routes defined in `ROUTES.ts`
+-   **optional**: `options`: an object. It contains the following properties:
+    -   `forceReplace`: a bool. If the action type should be fixed to `REPLACE`. (default: `false`)
+    -   `reportPathConversionEnabled`: a bool. If the report path passed as argument should be converted to match the context. Split navigator or Right hand pane. (default: `true`)
+
+### Usage
+
+This is the main function used to navigate forward in the app. It differs from the standard `navigate` from `react-navigation`. Our custom implementation takes path as argument instead of screen name and params. This helps us handle cross platform differences and deep linking.
+
+Besides some special cases this function will create and dispatch minimalAction (see definition [here](#why-we-need-to-use-minimal-action-in-the-linkto-function)) with type `PUSH`. This action will add an entry on the history stack.
 
 If the user is navigating to the RHP screen that should have different screen under the overlay, it will dispatch additional action to `PUSH` matching screen underneath.
 
-### Options
+#### Force replace
 
-#### `forceReplace` (default: false)
+Sometimes you may want to force replace. This is useful if you want to replace the history entry. For example if the users finish one RHP flow that leads to another and it shouldn't be in the history.
 
-Sometimes you may want to force replace. This is useful if want to replace the history entry. For example if the users finish one RHP flow that leads to another and it shouldn't be in the history.
-
-#### `reportPathConversionEnabled` (default: true)
+#### Converting report path
 
 Report screen can be opened two ways.
 
@@ -145,25 +43,67 @@ By default the `navigate` function will convert paths described above to version
 
 e.g. If has opened report in RHP and want to press link with path: `/r/123` the navigate function will convert it to the form `/search/view/123` to make sure it will open in RHP version.
 
-## `dismissModal()`
+## dismissModal
 
-Use this function if you want to close modal navigator.
+Close currently opened side modal.
 
-## `dismissModalWithReportID(reportID: string)`
+```ts
+dismissModal();
+```
 
-Use this function if you want to close modal navigator and then navigate to specific report. Example usage: Navigate to chat where you added expense after finishing the flow.
+### Usage
 
-## `dismissModalWithReport(report: OnyxEntry<Report>)`
+e.g. You want to close modal after the user successfully saved some settings.
 
-Use this function if you want to close modal navigator and then navigate to specific report. It's similar to the `dismissModalWithReport(reportID: string)` but it takes the whole report object. Sometimes if the user creates a new report we want to use this function instead because the new report may not be fully loaded in the onyx.
+## dismissModalWithReportID
 
-## `goBack()`
+Close currently opened side modal and navigate to the report with given `reportID`
 
-## `switchPolicyID()`
+```ts
+dismissModalWithReportID(reportID: string)
+```
 
-This function will dispatch action `SWITCH_POLICY_ID` to the root navigator. It will push a new screen / navigator on top of the stack with updated policy. If the policy is undefined, it will be switched to the `GLOBAL` (no policy selected).
+### Arguments
 
-## `resetToHome()`
+-   `reportID`: a string. Id of the report you want to navigate after dismissing modal.
+
+### Usage
+
+There are use cases where you want to navigate to a specific report after finishing some modal flow.
+
+e.g. Navigate to the chat where you added expense after finishing the flow.
+
+## dismissModalWithReport
+
+Close currently opened side modal and navigate to the report with given report object.
+
+```ts
+dismissModalWithReport(report: OnyxEntry<Report>)
+```
+
+### Arguments
+
+-   `report`: an onyx report object
+
+### Usage
+
+If you want to navigate to newly created report you should use this function instead of `dismissModalWithReportID`. A new report that we could access with just `reportID` may not be loaded in the onyx yet.
+
+## goBack
+
+```ts
+goBack(fallbackRoute?: Route)
+```
+
+## resetToHome
+
+Navigate back to home (reports list) and remove other screens from history.
+
+```ts
+resetToHome();
+```
+
+### Usage
 
 It will call `popToTop()` and adjust state to match the type of layout (narrow / wide). This function is reserved for very specific cases and will remove history entries.
 
@@ -344,6 +284,104 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
     [SCREENS.WORKSPACE.SPIRIT_ANIMAL]: () => require<ReactComponentModule>('../../../../pages/WorkspaceSpiritAnimalPage').default,
 });
 ```
+
+# Navigation structure
+
+This is the description of the apps navigation structure. It includes custom navigators and why they are used as well
+
+## Custom navigators
+
+`react-navigation` provides are few fundamental navigators: `StackNavigator`, `DrawerNavigator` etc.
+
+To meet unique expensify requirements we created two custom navigators that helped us expand functionality of the base `StackNavigator`
+
+### CustomRootNavigator
+
+There is only one instance of this type navigator and it is the root navigator. It uses `customRootRouter` to extend basic `StackNavigator` functionality. Custom functionality is responsible for handling policy id in workspace switcher, dismissing modal navigators and preventing user from going back in history during onboarding.
+
+### SplitNavigator
+
+This type of navigator is also based on `StackNavigator`. It has two types of screens.
+
+-   **Side Screen:** There is only one screen of this type on the stack and it will be always the first one.
+-   **Central Screens:** All other screens
+
+On narrow layout it will behave as normal `StackNavigator`.
+
+On wide layout, side screen is translated to the left to make it visible. This way the user will see both, side screen and a central screen.
+
+There is functionality that makes sure that on the wide layout there always will be at least one side screen and one central screen.
+
+## Screens and navigators of the app
+
+The root navigator has many screens. Some of them contains nested navigators. We can divide them into two groups:
+
+### Non modals
+
+These screens / navigators will cover whole screen and don't have transparent overlay. Every of one of of these has bottom tab bar icon that will be highlighted when this screen is on the top or is visible under the overlay of modal navigator.
+
+Something worth noticing is that we have bottom tab bar but we don't have a `BottomTabNavigator`. When the user presses one of the bottom tab bar buttons, we push a new non modal onto the root stack. We used the `StackNavigator` to have more flexibility and to preserve navigation history in the browser.
+
+There are:
+
+-   Report split navigator
+-   Search screen
+-   Settings split navigator
+-   Workspace split navigator
+
+And a few other without special functionality.
+
+#### Report split navigator
+
+Contains `HOME` screen with list of reports and `REPORT` screen. There may be many report screens with different `reportID` on the stack.
+
+If this icon is the last non modal on the root stack, the **inbox** icon will be highlighted on the bottom tab bar.
+
+#### Search screen
+
+Something worth noticing is even though SearchScreen can visually look like a split navigator, it is a single screen. It is necessary to meet requirement where search in both narrow and wide layout has the same URL.
+
+If this icon is the last non modal on the root stack, the **search** icon will be highlighted on the bottom tab bar.
+
+#### Settings split navigator
+
+If this icon is the last non modal on the root stack, the **settings** icon will be highlighted on the bottom tab bar.
+
+#### Workspace split navigator
+
+If this icon is the last non modal on the root stack, the **settings** icon will be highlighted on the bottom tab bar. Same as with the settings split navigator.
+
+---
+
+### Modals
+
+These screens / navigators have a transparent overlay underneath.
+
+On wide layout we have functionality that ensures that there is at least one full screen under the modal on the stack that will be visible under overlay.
+
+### `RIGHT_MODAL_NAVIGATOR` (RHP - Right Hand Panel)
+
+One of the two side modal navigators.
+
+On narrow layout it will work as normal `StackNavigator`
+
+On wide layout it will be displayed on the right with transparent overlay underneath.
+
+<!-- Add links -->
+
+It contains many flows that are stack navigators. You can find them here
+
+### `LEFT_MODAL_NAVIGATOR` (LHP - Left Hand Panel)
+
+One of the two side modal navigators.
+
+This is the mirror image of RHP. Currently it contains only one screen which is `WORKSPACE_SWITCHER`.
+
+<!-- probably add onboarding navigator here -->
+
+## Other screens and navigators
+
+There are few other screens and modal navigators plugged into root navigator that don't have special logic.
 
 # BELOW IS THE OLD PART OF DOCS, NOT ADJUSTED YET
 
@@ -553,7 +591,7 @@ The action for the first step created with `getMinimalAction` looks like this:
 
 There is no minimal action for deeplinking directly to the `Profile` screen. But because the `Settings_root` is not on the stack, pressing UP will reset the params for navigators to the correct ones.
 
-### Tests
+# Tests
 
 #### There should be a proper report under attachment screen after reload
 

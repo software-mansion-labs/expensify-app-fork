@@ -30,6 +30,7 @@ export default function linkTo(navigation: NavigationContainerRef<RootStackParam
     }
 
     // We know that the options are always defined because we have default options.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const {forceReplace, reportPathConversionEnabled} = {...defaultLinkToOptions, ...options} as Required<LinkToOptions>;
 
     const normalizedPath = normalizePath(path);
