@@ -441,6 +441,15 @@ function hybridAppSignInAttemptState(): OnyxData {
                     newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED,
                 },
             },
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.NVP_TRYNEWDOT, // Temporary mock to make development easier. Remove when backend is ready.
+                value: {
+                    classicRedirect: {
+                        dismissed: true,
+                    },
+                },
+            },
         ],
         failureData: [
             {
@@ -574,11 +583,12 @@ function beginAppleSignIn(idToken: string | undefined | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
     if (NativeModules.HybridAppModule) {
+        Log.info('[HybridApp] Extending `signInAttemptState` with HybridApp data');
         const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
 
-        optimisticData.concat(hybridAppOptimisticData);
-        successData.concat(hybridAppSuccessData);
-        failureData.concat(hybridAppFailureData);
+        optimisticData.push(...hybridAppOptimisticData);
+        successData.push(...hybridAppSuccessData);
+        failureData.push(...hybridAppFailureData);
     }
 
     const params: BeginAppleSignInParams = {idToken, preferredLocale};
@@ -594,11 +604,12 @@ function beginGoogleSignIn(token: string | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
     if (NativeModules.HybridAppModule) {
+        Log.info('[HybridApp] Extending `signInAttemptState` with HybridApp data');
         const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
 
-        optimisticData.concat(hybridAppOptimisticData);
-        successData.concat(hybridAppSuccessData);
-        failureData.concat(hybridAppFailureData);
+        optimisticData.push(...hybridAppOptimisticData);
+        successData.push(...hybridAppSuccessData);
+        failureData.push(...hybridAppFailureData);
     }
 
     const params: BeginGoogleSignInParams = {token, preferredLocale};
