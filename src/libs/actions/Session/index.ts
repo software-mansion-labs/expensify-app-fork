@@ -419,6 +419,42 @@ function signInAttemptState(): OnyxData {
 }
 
 /**
+ * Constructs the state object that extends object returned from `signInAttemptState` for the `beginGoogleSignIn` / `beginAppleSignIn` API calls.
+ */
+
+function hybridAppSignInAttemptState(): OnyxData {
+    return {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.HYBRID_APP,
+                value: {
+                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.STARTED,
+                },
+            },
+        ],
+        successData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.HYBRID_APP,
+                value: {
+                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED,
+                },
+            },
+        ],
+        failureData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.HYBRID_APP,
+                value: {
+                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED,
+                },
+            },
+        ],
+    };
+}
+
+/**
  * Checks the API to see if an account exists for the given login.
  */
 function beginSignIn(email: string) {
@@ -537,6 +573,14 @@ function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string
 function beginAppleSignIn(idToken: string | undefined | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
+    if (NativeModules.HybridAppModule) {
+        const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
+
+        optimisticData.concat(hybridAppOptimisticData);
+        successData.concat(hybridAppSuccessData);
+        failureData.concat(hybridAppFailureData);
+    }
+
     const params: BeginAppleSignInParams = {idToken, preferredLocale};
 
     API.write(WRITE_COMMANDS.SIGN_IN_WITH_APPLE, params, {optimisticData, successData, failureData});
@@ -549,8 +593,15 @@ function beginAppleSignIn(idToken: string | undefined | null) {
 function beginGoogleSignIn(token: string | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
-    const params: BeginGoogleSignInParams = {token, preferredLocale};
+    if (NativeModules.HybridAppModule) {
+        const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
 
+        optimisticData.concat(hybridAppOptimisticData);
+        successData.concat(hybridAppSuccessData);
+        failureData.concat(hybridAppFailureData);
+    }
+
+    const params: BeginGoogleSignInParams = {token, preferredLocale};
     API.write(WRITE_COMMANDS.SIGN_IN_WITH_GOOGLE, params, {optimisticData, successData, failureData});
 }
 
