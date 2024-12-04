@@ -1,4 +1,5 @@
 import React, {useCallback, useState} from 'react';
+import {NativeModules} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import WebView from 'react-native-webview';
 import type {WebViewNativeEvent} from 'react-native-webview/lib/WebViewTypes';
@@ -9,6 +10,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import getPlatform from '@libs/getPlatform';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
+import * as HybridAppActions from '@userActions/HybridApp';
 import * as Session from '@userActions/Session';
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -58,6 +60,9 @@ function SAMLSignInPage() {
                 <HeaderWithBackButton
                     title=""
                     onBackButtonPress={() => {
+                        if (NativeModules.HybridAppModule) {
+                            HybridAppActions.resetSignInFlow();
+                        }
                         Session.clearSignInData();
                         Navigation.isNavigationReady().then(() => {
                             Navigation.goBack();

@@ -423,6 +423,16 @@ function signInAttemptState(): OnyxData {
  */
 function beginSignIn(email: string) {
     const {optimisticData, successData, failureData} = signInAttemptState();
+    // this data is mocked and should be removed before the merge
+    successData.push({
+        onyxMethod: Onyx.METHOD.MERGE,
+        key: ONYXKEYS.NVP_TRYNEWDOT,
+        value: {
+            classicRedirect: {
+                dismissed: true,
+            },
+        },
+    });
 
     const params: BeginSignInParams = {email};
 
@@ -618,17 +628,7 @@ function signIn(validateCode: string, twoFactorAuthCode?: string) {
             params.validateCode = validateCode || credentials.validateCode;
         }
 
-        // eslint-disable-next-line rulesdir/no-api-side-effects-method
-        API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.SIGN_IN_USER, params, {
-            optimisticData,
-            successData,
-            failureData,
-        }).then((response) => {
-            if (!response) {
-                return;
-            }
-            Onyx.merge(ONYXKEYS.NVP_TRYNEWDOT, {classicRedirect: {dismissed: !response.tryNewDot}});
-        });
+        API.write(WRITE_COMMANDS.SIGN_IN_USER, params, {optimisticData, successData, failureData});
     });
 }
 
