@@ -124,6 +124,7 @@ function Expensify() {
         (NativeModules.HybridAppModule
             ? splashScreenState === CONST.BOOT_SPLASH_STATE.READY_TO_BE_HIDDEN && (isAuthenticated || !!hybridApp?.useNewDotSignInPage)
             : splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE);
+    console.log('[dupa]', shouldHideSplash, splashScreenState, isAuthenticated);
 
     const initializeClient = () => {
         if (!Visibility.isVisible()) {
