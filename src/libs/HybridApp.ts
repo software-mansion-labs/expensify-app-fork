@@ -57,7 +57,13 @@ function shouldUseOldApp(tryNewDot?: TryNewDot) {
 }
 
 function handleChangeInHybridAppSignInFlow(hybridApp: OnyxEntry<HybridApp>, tryNewDot: OnyxEntry<TryNewDot>) {
-    if (!NativeModules.HybridAppModule || !hybridApp?.useNewDotSignInPage) {
+    if (!NativeModules.HybridAppModule) {
+        return;
+    }
+
+    if (!hybridApp?.useNewDotSignInPage) {
+        currentHybridApp = hybridApp;
+        currentTryNewDot = tryNewDot;
         return;
     }
 
@@ -79,7 +85,11 @@ function handleChangeInHybridAppSignInFlow(hybridApp: OnyxEntry<HybridApp>, tryN
         );
 
         if (shouldUseOldApp(tryNewDot)) {
-            NativeModules.HybridAppModule.closeReactNativeApp(false, false);
+            Onyx.merge(ONYXKEYS.HYBRID_APP, {
+                useNewDotSignInPage: false,
+            }).then(() => {
+                NativeModules.HybridAppModule.closeReactNativeApp(false, false);
+            });
         }
     }
 
