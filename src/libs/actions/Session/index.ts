@@ -419,10 +419,65 @@ function signInAttemptState(): OnyxData {
 }
 
 /**
+ * Constructs the state object that extends object returned from `signInAttemptState` for the `beginGoogleSignIn` / `beginAppleSignIn` API calls.
+ */
+
+function hybridAppSignInAttemptState(): OnyxData {
+    return {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.HYBRID_APP,
+                value: {
+                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.STARTED,
+                },
+            },
+        ],
+        successData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.HYBRID_APP,
+                value: {
+                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED,
+                },
+            },
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.NVP_TRYNEWDOT, // Temporary mock to make development easier. Remove when backend is ready.
+                value: {
+                    classicRedirect: {
+                        dismissed: true,
+                    },
+                },
+            },
+        ],
+        failureData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.HYBRID_APP,
+                value: {
+                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED,
+                },
+            },
+        ],
+    };
+}
+
+/**
  * Checks the API to see if an account exists for the given login.
  */
 function beginSignIn(email: string) {
     const {optimisticData, successData, failureData} = signInAttemptState();
+    // this data is mocked and should be removed before the merge
+    successData.push({
+        onyxMethod: Onyx.METHOD.MERGE,
+        key: ONYXKEYS.NVP_TRYNEWDOT,
+        value: {
+            classicRedirect: {
+                dismissed: true,
+            },
+        },
+    });
 
     const params: BeginSignInParams = {email};
 
@@ -527,6 +582,15 @@ function setupNewDotAfterTransitionFromOldDot(route: Route, hybridAppSettings: s
 function beginAppleSignIn(idToken: string | undefined | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
+    if (NativeModules.HybridAppModule) {
+        Log.info('[HybridApp] Extending `signInAttemptState` with HybridApp data');
+        const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
+
+        optimisticData.push(...hybridAppOptimisticData);
+        successData.push(...hybridAppSuccessData);
+        failureData.push(...hybridAppFailureData);
+    }
+
     const params: BeginAppleSignInParams = {idToken, preferredLocale};
 
     API.write(WRITE_COMMANDS.SIGN_IN_WITH_APPLE, params, {optimisticData, successData, failureData});
@@ -539,8 +603,16 @@ function beginAppleSignIn(idToken: string | undefined | null) {
 function beginGoogleSignIn(token: string | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
-    const params: BeginGoogleSignInParams = {token, preferredLocale};
+    if (NativeModules.HybridAppModule) {
+        Log.info('[HybridApp] Extending `signInAttemptState` with HybridApp data');
+        const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
 
+        optimisticData.push(...hybridAppOptimisticData);
+        successData.push(...hybridAppSuccessData);
+        failureData.push(...hybridAppFailureData);
+    }
+
+    const params: BeginGoogleSignInParams = {token, preferredLocale};
     API.write(WRITE_COMMANDS.SIGN_IN_WITH_GOOGLE, params, {optimisticData, successData, failureData});
 }
 
@@ -618,17 +690,7 @@ function signIn(validateCode: string, twoFactorAuthCode?: string) {
             params.validateCode = validateCode || credentials.validateCode;
         }
 
-        // eslint-disable-next-line rulesdir/no-api-side-effects-method
-        API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.SIGN_IN_USER, params, {
-            optimisticData,
-            successData,
-            failureData,
-        }).then((response) => {
-            if (!response) {
-                return;
-            }
-            Onyx.merge(ONYXKEYS.NVP_TRYNEWDOT, {classicRedirect: {dismissed: !response.tryNewDot}});
-        });
+        API.write(WRITE_COMMANDS.SIGN_IN_USER, params, {optimisticData, successData, failureData});
     });
 }
 
