@@ -37,6 +37,7 @@ function resetSignInFlow() {
     Onyx.merge(ONYXKEYS.HYBRID_APP, {
         readyToShowAuthScreens: false,
         newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED,
+        useNewDotSignInPage: true,
     });
 }
 
