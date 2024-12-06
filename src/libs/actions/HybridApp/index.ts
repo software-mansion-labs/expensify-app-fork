@@ -30,10 +30,6 @@ function setUseNewDotSignInPage(useNewDotSignInPage: boolean) {
     return Onyx.merge(ONYXKEYS.HYBRID_APP, {useNewDotSignInPage});
 }
 
-function setSignedInOnOldDot(signedInOnOldDot: boolean) {
-    Onyx.merge(ONYXKEYS.HYBRID_APP, {signedInOnOldDot});
-}
-
 /*
  * Starts HybridApp sign-in flow from the beginning.
  */
@@ -41,7 +37,6 @@ function resetSignInFlow() {
     Onyx.merge(ONYXKEYS.HYBRID_APP, {
         readyToShowAuthScreens: false,
         newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED,
-        signedInOnOldDot: false,
     });
 }
 
@@ -54,7 +49,6 @@ function prepareHybridAppAfterTransitionToNewDot(hybridApp: HybridApp) {
             ...hybridApp,
             readyToShowAuthScreens: false,
             newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.NOT_STARTED,
-            signedInOnOldDot: false,
         });
     }
 
@@ -65,4 +59,4 @@ function prepareHybridAppAfterTransitionToNewDot(hybridApp: HybridApp) {
     });
 }
 
-export {parseHybridAppSettings, setReadyToShowAuthScreens, setNewDotSignInState, resetSignInFlow, prepareHybridAppAfterTransitionToNewDot, setUseNewDotSignInPage, setSignedInOnOldDot};
+export {parseHybridAppSettings, setReadyToShowAuthScreens, setNewDotSignInState, resetSignInFlow, prepareHybridAppAfterTransitionToNewDot, setUseNewDotSignInPage};

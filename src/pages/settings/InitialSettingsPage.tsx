@@ -239,10 +239,8 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                     ...(NativeModules.HybridAppModule
                         ? {
                               action: () => {
-                                  HybridAppActions.setUseNewDotSignInPage(false).then(() => {
-                                      NativeModules.HybridAppModule.closeReactNativeApp(false, true);
-                                      setInitialURL(undefined);
-                                  });
+                                  NativeModules.HybridAppModule.closeReactNativeApp(false, true);
+                                  setInitialURL(undefined);
                               },
                           }
                         : {
