@@ -159,6 +159,41 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
       }
   }
 
+  @ReactMethod
+  override fun getCardTokenStatus(tsp: String, tokenRefId: String, promise: Promise) {
+    if (!ensureTapAndPayClientInitialized()) {
+      promise.reject("Initialization error", "TapAndPay client initialization failed")
+      return
+    }
+
+    tapAndPayClient!!.getTokenStatus(getTokenServiceProvider(tsp), tokenRefId)
+      .addOnCompleteListener { task ->
+        if (!task.isSuccessful || task.result == null) {
+          promise.resolve(CardStatus.NOT_FOUND_IN_WALLET.code)
+          return@addOnCompleteListener
+        }
+        val token = task.result
+        token?.let {
+          promise.resolve(
+            when (it.tokenState) {
+              TapAndPay.TOKEN_STATE_ACTIVE -> CardStatus.ACTIVE.code
+              TapAndPay.TOKEN_STATE_PENDING -> CardStatus.PENDING.code
+              TapAndPay.TOKEN_STATE_SUSPENDED -> CardStatus.SUSPENDED.code
+              TapAndPay.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION -> CardStatus.REQUIRE_IDENTITY_VERIFICATION.code
+              TapAndPay.TOKEN_STATE_FELICA_PENDING_PROVISIONING -> CardStatus.PENDING.code
+              else -> CardStatus.NOT_FOUND_IN_WALLET.code
+            }
+          )
+        } ?:  promise.resolve(CardStatus.NOT_FOUND_IN_WALLET.code)
+      }
+      .addOnFailureListener { e -> promise.reject("getCardStatus function failed", e) }
+      .addOnCanceledListener {
+        promise.reject(
+          "Reject",
+          "Card status retrieval canceled"
+        )
+      }
+  }
 
 
   @ReactMethod

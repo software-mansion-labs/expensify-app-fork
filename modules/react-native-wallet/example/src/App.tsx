@@ -5,6 +5,7 @@ import {
   getSecureWalletInfo,
   addCardToWallet,
   getCardStatus,
+  getCardTokenStatus,
 } from 'react-native-wallet';
 import type {
   AndroidCardData,
@@ -32,6 +33,8 @@ const dummyCardData: AndroidCardData = {
   userAddress: dummyAddress,
 };
 
+const TOKEN_REF_ID = 'DNITHE582433456017876308';
+
 type TestButtonProps = {
   title: string;
   onPress: () => void;
@@ -47,6 +50,7 @@ export default function App() {
   >();
   const [walletData, setWalletData] = useState<AndroidWalletData | undefined>();
   const [cardStatus, setCardStatus] = useState<string | undefined>();
+  const [tokenStatus, setTokenStatus] = useState<string | undefined>();
   const [addCard, setAddCard] = useState<string | undefined>();
 
   const handleCheckWalletAvailability = useCallback(() => {
@@ -72,6 +76,12 @@ export default function App() {
     getCardStatus(dummyCardData.lastDigits).then(setCardStatus);
   }, []);
 
+  const handleGetCardTokenStatus = useCallback(() => {
+    getCardTokenStatus(dummyCardData.network, TOKEN_REF_ID).then(
+      setTokenStatus
+    );
+  }, []);
+
   const handleAddCardToWallet = useCallback(() => {
     addCardToWallet(dummyCardData);
     setAddCard('Completed');
@@ -91,6 +101,9 @@ export default function App() {
 
       <Button title="getCardStatus" onPress={handleGetCardStatus} />
       <Text>{`getCardStatus(${dummyCardData.lastDigits}) -> ${cardStatus}`}</Text>
+
+      <Button title="getCardTokenStatus" onPress={handleGetCardTokenStatus} />
+      <Text>{`getCardTokenStatus(${TOKEN_REF_ID}) -> ${tokenStatus}`}</Text>
 
       <Button title="addCardToWallet" onPress={handleAddCardToWallet} />
       <Text>{`addCardToWallet() -> ${addCard}`}</Text>

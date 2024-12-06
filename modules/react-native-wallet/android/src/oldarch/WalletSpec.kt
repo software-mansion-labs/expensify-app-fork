@@ -11,5 +11,6 @@ abstract class WalletSpec internal constructor(context: ReactApplicationContext)
   abstract fun checkWalletAvailability(promise: Promise)
   abstract fun getSecureWalletInfo(promise: Promise)
   abstract fun getCardStatus(last4Digits: String, promise: Promise)
+  abstract fun getCardTokenStatus(tsp: String, tokenRefId: String, promise: Promise)
   abstract fun addCardToWallet(data: ReadableMap, promise: Promise)
 }

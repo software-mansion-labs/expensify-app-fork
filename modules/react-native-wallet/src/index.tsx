@@ -51,6 +51,14 @@ async function getCardStatus(last4Digits: string): Promise<CardStatus> {
   return getCardState(cardState);
 }
 
+async function getCardTokenStatus(
+  tsp: string,
+  tokenRefId: string
+): Promise<CardStatus> {
+  const tokenState = await Wallet.getCardTokenStatus(tsp, tokenRefId);
+  return getCardState(tokenState);
+}
+
 export {
   getWalletId,
   getHardwareId,
@@ -58,4 +66,5 @@ export {
   getSecureWalletInfo,
   addCardToWallet,
   getCardStatus,
+  getCardTokenStatus,
 };
