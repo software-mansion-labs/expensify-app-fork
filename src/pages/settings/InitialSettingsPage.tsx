@@ -239,9 +239,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                     ...(NativeModules.HybridAppModule
                         ? {
                               action: () => {
-                                  Onyx.merge(ONYXKEYS.HYBRID_APP, {
-                                      useNewDotSignInPage: false,
-                                  }).then(() => {
+                                  HybridAppActions.setUseNewDotSignInPage(false).then(() => {
                                       NativeModules.HybridAppModule.closeReactNativeApp(false, true);
                                       setInitialURL(undefined);
                                   });
@@ -279,7 +277,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                     icon: Expensicons.Exit,
                     action: () => {
                         signOut(false);
-                        HybridAppActions.resetStateAfterSignOut();
+                        HybridAppActions.resetSignInFlow();
                     },
                 },
             ],

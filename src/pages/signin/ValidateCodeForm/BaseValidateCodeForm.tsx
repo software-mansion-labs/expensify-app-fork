@@ -181,7 +181,7 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
     const clearSignInData = useCallback(() => {
         clearLocalSignInData();
         SessionActions.clearSignInData();
-    }, [clearLocalSignInData, session?.authToken]);
+    }, [clearLocalSignInData]);
 
     useImperativeHandle(forwardedRef, () => ({
         clearSignInData,
