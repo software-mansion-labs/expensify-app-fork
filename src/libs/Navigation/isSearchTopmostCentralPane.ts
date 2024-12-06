@@ -11,7 +11,12 @@ const isSearchTopmostCentralPane = (): boolean => {
     }
 
     const topmostCentralPaneRoute = getTopmostCentralPaneRoute(rootState);
-    return topmostCentralPaneRoute?.name === SCREENS.SEARCH.CENTRAL_PANE;
+
+    if (topmostCentralPaneRoute?.name === SCREENS.SEARCH.CENTRAL_PANE) {
+        return true;
+    }
+
+    return false;
 };
 
 export default isSearchTopmostCentralPane;

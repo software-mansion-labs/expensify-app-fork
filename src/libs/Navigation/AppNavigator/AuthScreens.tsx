@@ -237,7 +237,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
     const rootNavigatorOptions = useRootNavigatorOptions();
     const {canUseDefaultRooms} = usePermissions();
     const {activeWorkspaceID} = useActiveWorkspace();
-    const {toggleSearch} = useSearchRouterContext();
+    const {toggleSearchRouter} = useSearchRouterContext();
 
     const modal = useRef<OnyxTypes.Modal>({});
     const [didPusherInit, setDidPusherInit] = useState(false);
@@ -365,7 +365,7 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                     if (isOnboardingFlowName(currentFocusedRoute?.name)) {
                         return;
                     }
-                    toggleSearch();
+                    toggleSearchRouter();
                 })();
             },
             shortcutsOverviewShortcutConfig.descriptionKey,
