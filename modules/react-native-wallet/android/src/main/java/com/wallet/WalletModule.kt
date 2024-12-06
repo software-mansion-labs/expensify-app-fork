@@ -1,7 +1,8 @@
 package com.wallet
 
-import android.R
+import android.R.attr.data
 import android.app.Activity
+import android.app.Activity.RESULT_CANCELED
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.util.Log
@@ -20,6 +21,7 @@ import com.google.android.gms.tapandpay.TapAndPayClient
 import com.google.android.gms.tapandpay.issuer.PushTokenizeRequest
 import com.wallet.Utils.getAsyncResult
 import com.wallet.Utils.toCardData
+import com.wallet.event.OnCardActivatedEvent
 import com.wallet.model.CardStatus
 import com.wallet.model.WalletData
 import kotlinx.coroutines.*
@@ -59,14 +61,14 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
           }
           pendingCreateWalletPromise = null
         } else if (requestCode == REQUEST_CODE_PUSH_TOKENIZE) {
-          pendingAddCardPromise?.let {
-            if (resultCode == RESULT_OK) {
-              it.resolve(true);
-              return
-            }
-            it.resolve(false);
+          if (resultCode == RESULT_OK) {
+            val tokenId: String = intent?.getStringExtra(TapAndPay.EXTRA_ISSUER_TOKEN_ID).toString()
+            sendEvent(context, "onCardActivated", OnCardActivatedEvent("active", tokenId).toMap())
+            return
+          } else if (resultCode == RESULT_CANCELED) {
+            sendEvent(context, "onCardActivated", OnCardActivatedEvent("cancelled", null).toMap())
+            return
           }
-          pendingAddCardPromise = null
         }
         return
       }
@@ -74,7 +76,6 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
       override fun onNewIntent(p0: Intent?) {}
     })
   }
-
   private fun sendEvent(reactContext: ReactContext, eventName: String, params: WritableMap?) {
     reactContext
       .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
@@ -230,6 +231,10 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
       tapAndPayClient?.pushTokenize(
         currentActivity!!, pushTokenizeRequest, REQUEST_CODE_PUSH_TOKENIZE
       )
+
+      tapAndPayClient?.registerDataChangedListener {
+        Log.i("DUPA", "TEST")
+      }
     } catch (e: java.lang.Exception) {
       promise.reject(e)
     }

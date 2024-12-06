@@ -1,11 +1,18 @@
-import { useCallback, useState } from 'react';
-import { Button as RNButton, ScrollView, StyleSheet, Text } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Button as RNButton,
+  ScrollView,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import {
   checkWalletAvailability,
   getSecureWalletInfo,
   addCardToWallet,
   getCardStatus,
   getCardTokenStatus,
+  addListener,
 } from 'react-native-wallet';
 import type {
   AndroidCardData,
@@ -33,7 +40,7 @@ const dummyCardData: AndroidCardData = {
   userAddress: dummyAddress,
 };
 
-const TOKEN_REF_ID = 'DNITHE582433456017876308';
+const TOKEN_REF_ID = 'tokenID123';
 
 type TestButtonProps = {
   title: string;
@@ -85,6 +92,16 @@ export default function App() {
   const handleAddCardToWallet = useCallback(() => {
     addCardToWallet(dummyCardData);
     setAddCard('Completed');
+  }, []);
+
+  useEffect(() => {
+    const subscription = addListener('onCardActivated', (data) => {
+      Alert.alert('onCardActivated listener', JSON.stringify(data));
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   return (
