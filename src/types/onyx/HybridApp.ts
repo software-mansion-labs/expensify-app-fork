@@ -12,7 +12,7 @@ type HybridApp = {
     /** States whether we transitioned from OldDot to show only certain group of screens */
     isSingleNewDotEntry?: boolean;
 
-    /** stores infromation if last log out was performed from OldDot */
+    /** Stores information if last log out was performed from OldDot */
     loggedOutFromOldDot?: boolean;
 
     /** */
@@ -20,6 +20,9 @@ type HybridApp = {
 
     /** Describes current stage of NewDot sign-in */
     newDotSignInState?: ValueOf<typeof CONST.HYBRID_APP_SIGN_IN_STATE>;
+
+    /** Tells if OldDot sign-in was performed */
+    signedInOnOldDot?: boolean;
 };
 
 export default HybridApp;
