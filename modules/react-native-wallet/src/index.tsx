@@ -1,4 +1,9 @@
-import { NativeModules, Platform } from 'react-native';
+import {
+  NativeModules,
+  NativeEventEmitter,
+  Platform,
+  type EmitterSubscription,
+} from 'react-native';
 import type { AndroidCardData, CardStatus } from './types';
 import { getCardState } from './utils';
 
@@ -59,6 +64,19 @@ async function getCardTokenStatus(
   return getCardState(tokenState);
 }
 
+const eventEmitter = new NativeEventEmitter();
+
+function addListener(
+  event: string,
+  callback: (data: any) => void
+): EmitterSubscription {
+  return eventEmitter.addListener(event, callback);
+}
+
+function removeListener(subscription: EmitterSubscription): void {
+  subscription.remove();
+}
+
 export {
   getWalletId,
   getHardwareId,
@@ -67,4 +85,6 @@ export {
   addCardToWallet,
   getCardStatus,
   getCardTokenStatus,
+  addListener,
+  removeListener,
 };
