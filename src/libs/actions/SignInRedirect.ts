@@ -43,7 +43,7 @@ function clearStorageAndRedirect(errorMessage?: string): Promise<void> {
         Onyx.merge(ONYXKEYS.SESSION, {errors: ErrorUtils.getMicroSecondOnyxErrorWithMessage(errorMessage)});
 
         if (NativeModules.HybridAppModule) {
-            HybridAppActions.resetStateAfterSignOut();
+            HybridAppActions.resetSignInFlow();
         }
     });
 }
