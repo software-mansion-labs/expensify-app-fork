@@ -131,6 +131,18 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
     }
   }
 
+  private fun getCardStatusCode(code: Int): Int {
+    return when (code) {
+      TapAndPay.TOKEN_STATE_ACTIVE -> CardStatus.ACTIVE.code
+      TapAndPay.TOKEN_STATE_PENDING -> CardStatus.PENDING.code
+      TapAndPay.TOKEN_STATE_SUSPENDED -> CardStatus.SUSPENDED.code
+      TapAndPay.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION -> CardStatus.REQUIRE_IDENTITY_VERIFICATION.code
+      TapAndPay.TOKEN_STATE_FELICA_PENDING_PROVISIONING -> CardStatus.PENDING.code
+      else -> CardStatus.NOT_FOUND_IN_WALLET.code
+    }
+  }
+
+
   @ReactMethod
   override fun getCardStatus(last4Digits: String, promise: Promise) {
     if (!ensureTapAndPayClientInitialized()) {
@@ -148,14 +160,7 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
         token?.let {
           Log.i("getCardStatus", "Card Token State: ${it.tokenState}")
           promise.resolve(
-            when (it.tokenState) {
-              TapAndPay.TOKEN_STATE_ACTIVE -> CardStatus.ACTIVE.code
-              TapAndPay.TOKEN_STATE_PENDING -> CardStatus.PENDING.code
-              TapAndPay.TOKEN_STATE_SUSPENDED -> CardStatus.SUSPENDED.code
-              TapAndPay.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION -> CardStatus.REQUIRE_IDENTITY_VERIFICATION.code
-              TapAndPay.TOKEN_STATE_FELICA_PENDING_PROVISIONING -> CardStatus.PENDING.code
-              else -> CardStatus.NOT_FOUND_IN_WALLET.code
-            }
+            getCardStatusCode(token.tokenState)
           )
         } ?:  promise.resolve(CardStatus.NOT_FOUND_IN_WALLET.code)
       }
@@ -184,14 +189,7 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
         val token = task.result
         token?.let {
           promise.resolve(
-            when (it.tokenState) {
-              TapAndPay.TOKEN_STATE_ACTIVE -> CardStatus.ACTIVE.code
-              TapAndPay.TOKEN_STATE_PENDING -> CardStatus.PENDING.code
-              TapAndPay.TOKEN_STATE_SUSPENDED -> CardStatus.SUSPENDED.code
-              TapAndPay.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION -> CardStatus.REQUIRE_IDENTITY_VERIFICATION.code
-              TapAndPay.TOKEN_STATE_FELICA_PENDING_PROVISIONING -> CardStatus.PENDING.code
-              else -> CardStatus.NOT_FOUND_IN_WALLET.code
-            }
+            getCardStatusCode(token.tokenState)
           )
         } ?:  promise.resolve(CardStatus.NOT_FOUND_IN_WALLET.code)
       }
