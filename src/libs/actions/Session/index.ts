@@ -485,7 +485,13 @@ function signUpUser() {
 
     const params: SignUpUserParams = {email: credentials.login, preferredLocale};
 
-    API.write(WRITE_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData});
+    // eslint-disable-next-line rulesdir/no-api-side-effects-method
+    API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData}).then((response) => {
+        if (!response) {
+            return;
+        }
+        Onyx.merge(ONYXKEYS.NVP_TRYNEWDOT, {classicRedirect: {dismissed: !response.tryNewDot}});
+    });
 }
 
 function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string) {

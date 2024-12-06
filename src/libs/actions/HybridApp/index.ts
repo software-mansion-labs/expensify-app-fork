@@ -1,6 +1,5 @@
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import * as Session from '@userActions/Session';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {HybridApp} from '@src/types/onyx';

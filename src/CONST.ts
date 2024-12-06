@@ -6281,9 +6281,6 @@ const CONST = {
         NOT_STARTED: 'notStarted',
         STARTED: 'started',
         FINISHED: 'finished',
-        WAITING_FOR_SIGN_OUT: 'waitingForSignOut',
-        RETRYING_AFTER_FAILURE: 'retryingAfterFailure',
-        FAILED_AGAIN: 'failedAgain',
     },
 
     CSV_IMPORT_COLUMNS: {
