@@ -3,7 +3,7 @@ import type {ReactNode} from 'react';
 import {Linking} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import {signInAfterTransitionFromOldDot} from '@libs/actions/Session';
+import {setupNewDotAfterTransitionFromOldDot} from '@libs/actions/Session';
 import Navigation from '@navigation/Navigation';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -59,7 +59,7 @@ function InitialURLContextProvider({children, url, hybridAppSettings}: InitialUR
         if (url && hybridAppSettings) {
             if (!isLoadingOnyxValue(tryNewDotMetadata) && !setupCalled.current) {
                 setupCalled.current = true;
-                signInAfterTransitionFromOldDot(url, hybridAppSettings, tryNewDot).then((route) => {
+                setupNewDotAfterTransitionFromOldDot(url, hybridAppSettings, tryNewDot).then((route) => {
                     setInitialURL(route);
                     setSplashScreenState(CONST.BOOT_SPLASH_STATE.READY_TO_BE_HIDDEN);
                 });

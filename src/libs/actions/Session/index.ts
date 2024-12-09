@@ -214,12 +214,12 @@ function hasAuthToken(): boolean {
     return !!session.authToken;
 }
 
-function signOutAndRedirectToSignIn(shouldResetToHome?: boolean, shouldStashSession?: boolean, killHybridApp = true) {
+function signOutAndRedirectToSignIn(shouldResetToHome?: boolean, shouldStashSession?: boolean, shouldSignOutFromOldDot = true) {
     Log.info('Redirecting to Sign In because signOut() was called');
     hideContextMenu(false);
     if (!isAnonymousUser()) {
         // In the HybridApp, we want the Old Dot to handle the sign out process
-        if (NativeModules.HybridAppModule && killHybridApp) {
+        if (NativeModules.HybridAppModule && shouldSignOutFromOldDot) {
             NativeModules.HybridAppModule.signOutFromOldDot();
         }
         // We'll only call signOut if we're not stashing the session and this is not a supportal session,
@@ -496,7 +496,7 @@ function signUpUser() {
     });
 }
 
-function signInAfterTransitionFromOldDot(route: Route, hybridAppSettings: string, tryNewDot: TryNewDot | undefined) {
+function setupNewDotAfterTransitionFromOldDot(route: Route, hybridAppSettings: string, tryNewDot: TryNewDot | undefined) {
     const parsedHybridAppSettings = HybridAppActions.parseHybridAppSettings(hybridAppSettings);
     const {initialOnyxValues} = parsedHybridAppSettings;
     const {hybridApp, ...newDotOnyxValues} = initialOnyxValues;
@@ -1185,5 +1185,5 @@ export {
     isSupportAuthToken,
     hasStashedSession,
     signUpUser,
-    signInAfterTransitionFromOldDot,
+    setupNewDotAfterTransitionFromOldDot,
 };
