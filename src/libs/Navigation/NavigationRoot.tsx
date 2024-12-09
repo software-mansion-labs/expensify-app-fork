@@ -98,9 +98,9 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady, sh
     });
 
     const initialState = useMemo(() => {
-        if (!user || user.isFromPublicDomain) {
-            return;
-        }
+        // if (!user || user.isFromPublicDomain) {
+        //     return;
+        // }
 
         // If the user haven't completed the flow, we want to always redirect them to the onboarding flow.
         // We also make sure that the user is authenticated.

@@ -136,60 +136,60 @@ let currentAccountID = -1;
 let isLoadingApp = false;
 let lastUpdateIDAppliedToClient: OnyxEntry<number>;
 
-Onyx.connect({
-    key: ONYXKEYS.SESSION,
-    callback: (value) => {
-        // When signed out, val hasn't accountID
-        if (!(value && 'accountID' in value)) {
-            currentAccountID = -1;
-            timezone = null;
-            return;
-        }
+// Onyx.connect({
+//     key: ONYXKEYS.SESSION,
+//     callback: (value) => {
+//         // When signed out, val hasn't accountID
+//         if (!(value && 'accountID' in value)) {
+//             currentAccountID = -1;
+//             timezone = null;
+//             return;
+//         }
 
-        currentAccountID = value.accountID ?? -1;
+//         currentAccountID = value.accountID ?? -1;
 
-        if (Navigation.isActiveRoute(ROUTES.SIGN_IN_MODAL)) {
-            // This means sign in in RHP was successful, so we can subscribe to user events
-            initializePusher();
-        }
-    },
-});
+//         if (Navigation.isActiveRoute(ROUTES.SIGN_IN_MODAL)) {
+//             // This means sign in in RHP was successful, so we can subscribe to user events
+//             initializePusher();
+//         }
+//     },
+// });
 
-Onyx.connect({
-    key: ONYXKEYS.PERSONAL_DETAILS_LIST,
-    callback: (value) => {
-        if (!value || !isEmptyObject(timezone)) {
-            return;
-        }
+// Onyx.connect({
+//     key: ONYXKEYS.PERSONAL_DETAILS_LIST,
+//     callback: (value) => {
+//         if (!value || !isEmptyObject(timezone)) {
+//             return;
+//         }
 
-        timezone = value?.[currentAccountID]?.timezone ?? {};
-        const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone as SelectedTimezone;
+//         timezone = value?.[currentAccountID]?.timezone ?? {};
+//         const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone as SelectedTimezone;
 
-        // If the current timezone is different than the user's timezone, and their timezone is set to automatic
-        // then update their timezone.
-        if (!isEmptyObject(currentTimezone) && timezone?.automatic && timezone?.selected !== currentTimezone) {
-            timezone.selected = currentTimezone;
-            PersonalDetails.updateAutomaticTimezone({
-                automatic: true,
-                selected: currentTimezone,
-            });
-        }
-    },
-});
+//         // If the current timezone is different than the user's timezone, and their timezone is set to automatic
+//         // then update their timezone.
+//         if (!isEmptyObject(currentTimezone) && timezone?.automatic && timezone?.selected !== currentTimezone) {
+//             timezone.selected = currentTimezone;
+//             PersonalDetails.updateAutomaticTimezone({
+//                 automatic: true,
+//                 selected: currentTimezone,
+//             });
+//         }
+//     },
+// });
 
-Onyx.connect({
-    key: ONYXKEYS.IS_LOADING_APP,
-    callback: (value) => {
-        isLoadingApp = !!value;
-    },
-});
+// Onyx.connect({
+//     key: ONYXKEYS.IS_LOADING_APP,
+//     callback: (value) => {
+//         isLoadingApp = !!value;
+//     },
+// });
 
-Onyx.connect({
-    key: ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT,
-    callback: (value) => {
-        lastUpdateIDAppliedToClient = value;
-    },
-});
+// Onyx.connect({
+//     key: ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT,
+//     callback: (value) => {
+//         lastUpdateIDAppliedToClient = value;
+//     },
+// });
 
 function handleNetworkReconnect() {
     if (isLoadingApp) {
@@ -230,201 +230,202 @@ const modalScreenListenersWithCancelSearch = {
     },
 };
 
-function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDAppliedToClient}: AuthScreensProps) {
-    const theme = useTheme();
-    const styles = useThemeStyles();
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
-    const rootNavigatorOptions = useRootNavigatorOptions();
-    const {canUseDefaultRooms} = usePermissions();
-    const {activeWorkspaceID} = useActiveWorkspace();
-    const {toggleSearchRouter} = useSearchRouterContext();
+function AuthScreens({}: AuthScreensProps) {
+    // const theme = useTheme();
+    // const styles = useThemeStyles();
+    // const {shouldUseNarrowLayout} = useResponsiveLayout();
+    // const rootNavigatorOptions = useRootNavigatorOptions();
+    // const {canUseDefaultRooms} = usePermissions();
+    // const {activeWorkspaceID} = useActiveWorkspace();
+    // const {toggleSearchRouter} = useSearchRouterContext();
 
-    const modal = useRef<OnyxTypes.Modal>({});
-    const [didPusherInit, setDidPusherInit] = useState(false);
-    const {isOnboardingCompleted} = useOnboardingFlowRouter();
-    const [initialReportID] = useState(() => {
-        const currentURL = getCurrentUrl();
-        const reportIdFromPath = currentURL && new URL(currentURL).pathname.match(CONST.REGEX.REPORT_ID_FROM_PATH)?.at(1);
-        if (reportIdFromPath) {
-            return reportIdFromPath;
-        }
+    // const modal = useRef<OnyxTypes.Modal>({});
+    // const [didPusherInit, setDidPusherInit] = useState(false);
+    // const {isOnboardingCompleted} = useOnboardingFlowRouter();
+    // const [initialReportID] = useState(() => {
+    //     const currentURL = getCurrentUrl();
+    //     const reportIdFromPath = currentURL && new URL(currentURL).pathname.match(CONST.REGEX.REPORT_ID_FROM_PATH)?.at(1);
+    //     if (reportIdFromPath) {
+    //         return reportIdFromPath;
+    //     }
 
-        const initialReport = ReportUtils.findLastAccessedReport(!canUseDefaultRooms, shouldOpenOnAdminRoom(), activeWorkspaceID);
-        return initialReport?.reportID ?? '';
-    });
+    //     const initialReport = ReportUtils.findLastAccessedReport(!canUseDefaultRooms, shouldOpenOnAdminRoom(), activeWorkspaceID);
+    //     return initialReport?.reportID ?? '';
+    // });
 
-    useEffect(() => {
-        NavBarManager.setButtonStyle(theme.navigationBarButtonsStyle);
+    // useEffect(() => {
+    //     NavBarManager.setButtonStyle(theme.navigationBarButtonsStyle);
 
-        return () => {
-            NavBarManager.setButtonStyle(CONST.NAVIGATION_BAR_BUTTONS_STYLE.LIGHT);
-        };
-    }, [theme]);
+    //     return () => {
+    //         NavBarManager.setButtonStyle(CONST.NAVIGATION_BAR_BUTTONS_STYLE.LIGHT);
+    //     };
+    // }, [theme]);
 
-    useEffect(() => {
-        const shortcutsOverviewShortcutConfig = CONST.KEYBOARD_SHORTCUTS.SHORTCUTS;
-        const searchShortcutConfig = CONST.KEYBOARD_SHORTCUTS.SEARCH;
-        const chatShortcutConfig = CONST.KEYBOARD_SHORTCUTS.NEW_CHAT;
-        const debugShortcutConfig = CONST.KEYBOARD_SHORTCUTS.DEBUG;
-        const currentUrl = getCurrentUrl();
-        const isLoggingInAsNewUser = !!session?.email && SessionUtils.isLoggingInAsNewUser(currentUrl, session.email);
-        // Sign out the current user if we're transitioning with a different user
-        const isTransitioning = currentUrl.includes(ROUTES.TRANSITION_BETWEEN_APPS);
-        const isSupportalTransition = currentUrl.includes('authTokenType=support');
-        if (isLoggingInAsNewUser && isTransitioning) {
-            Session.signOutAndRedirectToSignIn(false, isSupportalTransition);
-            return;
-        }
+    // useEffect(() => {
+    //     const shortcutsOverviewShortcutConfig = CONST.KEYBOARD_SHORTCUTS.SHORTCUTS;
+    //     const searchShortcutConfig = CONST.KEYBOARD_SHORTCUTS.SEARCH;
+    //     const chatShortcutConfig = CONST.KEYBOARD_SHORTCUTS.NEW_CHAT;
+    //     const debugShortcutConfig = CONST.KEYBOARD_SHORTCUTS.DEBUG;
+    //     const currentUrl = getCurrentUrl();
+    //     const isLoggingInAsNewUser = !!session?.email && SessionUtils.isLoggingInAsNewUser(currentUrl, session.email);
+    //     // Sign out the current user if we're transitioning with a different user
+    //     const isTransitioning = currentUrl.includes(ROUTES.TRANSITION_BETWEEN_APPS);
+    //     const isSupportalTransition = currentUrl.includes('authTokenType=support');
+    //     if (isLoggingInAsNewUser && isTransitioning) {
+    //         Session.signOutAndRedirectToSignIn(false, isSupportalTransition);
+    //         return;
+    //     }
 
-        NetworkConnection.listenForReconnect();
-        NetworkConnection.onReconnect(handleNetworkReconnect);
-        PusherConnectionManager.init();
-        initializePusher().then(() => {
-            setDidPusherInit(true);
-        });
+    //     NetworkConnection.listenForReconnect();
+    //     NetworkConnection.onReconnect(handleNetworkReconnect);
+    //     PusherConnectionManager.init();
+    //     initializePusher().then(() => {
+    //         setDidPusherInit(true);
+    //     });
 
-        // In Hybrid App we decide to call one of those method when booting ND and we don't want to duplicate calls
-        if (!NativeModules.HybridAppModule) {
-            // If we are on this screen then we are "logged in", but the user might not have "just logged in". They could be reopening the app
-            // or returning from background. If so, we'll assume they have some app data already and we can call reconnectApp() instead of openApp().
-            if (SessionUtils.didUserLogInDuringSession()) {
-                App.openApp();
-            } else {
-                Log.info('[AuthScreens] Sending ReconnectApp');
-                App.reconnectApp(initialLastUpdateIDAppliedToClient);
-            }
-        }
+    //     // In Hybrid App we decide to call one of those method when booting ND and we don't want to duplicate calls
+    //     if (!NativeModules.HybridAppModule) {
+    //         // If we are on this screen then we are "logged in", but the user might not have "just logged in". They could be reopening the app
+    //         // or returning from background. If so, we'll assume they have some app data already and we can call reconnectApp() instead of openApp().
+    //         if (SessionUtils.didUserLogInDuringSession()) {
+    //             App.openApp();
+    //         } else {
+    //             Log.info('[AuthScreens] Sending ReconnectApp');
+    //             App.reconnectApp(initialLastUpdateIDAppliedToClient);
+    //         }
+    //     }
 
-        PriorityMode.autoSwitchToFocusMode();
+    //     PriorityMode.autoSwitchToFocusMode();
 
-        App.setUpPoliciesAndNavigate(session);
+    //     App.setUpPoliciesAndNavigate(session);
 
-        App.redirectThirdPartyDesktopSignIn();
+    //     App.redirectThirdPartyDesktopSignIn();
 
-        if (lastOpenedPublicRoomID) {
-            // Re-open the last opened public room if the user logged in from a public room link
-            Report.openLastOpenedPublicRoom(lastOpenedPublicRoomID);
-        }
-        Download.clearDownloads();
+    //     if (lastOpenedPublicRoomID) {
+    //         // Re-open the last opened public room if the user logged in from a public room link
+    //         Report.openLastOpenedPublicRoom(lastOpenedPublicRoomID);
+    //     }
+    //     Download.clearDownloads();
 
-        const unsubscribeOnyxModal = onyxSubscribe({
-            key: ONYXKEYS.MODAL,
-            callback: (modalArg) => {
-                if (modalArg === null || typeof modalArg !== 'object') {
-                    return;
-                }
-                modal.current = modalArg;
-            },
-        });
+    //     const unsubscribeOnyxModal = onyxSubscribe({
+    //         key: ONYXKEYS.MODAL,
+    //         callback: (modalArg) => {
+    //             if (modalArg === null || typeof modalArg !== 'object') {
+    //                 return;
+    //             }
+    //             modal.current = modalArg;
+    //         },
+    //     });
 
-        const shortcutConfig = CONST.KEYBOARD_SHORTCUTS.ESCAPE;
-        const unsubscribeEscapeKey = KeyboardShortcut.subscribe(
-            shortcutConfig.shortcutKey,
-            () => {
-                if (modal.current.willAlertModalBecomeVisible) {
-                    return;
-                }
+    //     const shortcutConfig = CONST.KEYBOARD_SHORTCUTS.ESCAPE;
+    //     const unsubscribeEscapeKey = KeyboardShortcut.subscribe(
+    //         shortcutConfig.shortcutKey,
+    //         () => {
+    //             if (modal.current.willAlertModalBecomeVisible) {
+    //                 return;
+    //             }
 
-                if (modal.current.disableDismissOnEscape) {
-                    return;
-                }
+    //             if (modal.current.disableDismissOnEscape) {
+    //                 return;
+    //             }
 
-                Navigation.dismissModal();
-            },
-            shortcutConfig.descriptionKey,
-            shortcutConfig.modifiers,
-            true,
-            true,
-        );
+    //             Navigation.dismissModal();
+    //         },
+    //         shortcutConfig.descriptionKey,
+    //         shortcutConfig.modifiers,
+    //         true,
+    //         true,
+    //     );
 
-        // Listen to keyboard shortcuts for opening certain pages
-        const unsubscribeShortcutsOverviewShortcut = KeyboardShortcut.subscribe(
-            shortcutsOverviewShortcutConfig.shortcutKey,
-            () => {
-                Modal.close(() => {
-                    if (Navigation.isActiveRoute(ROUTES.KEYBOARD_SHORTCUTS)) {
-                        return;
-                    }
-                    return Navigation.navigate(ROUTES.KEYBOARD_SHORTCUTS);
-                });
-            },
-            shortcutsOverviewShortcutConfig.descriptionKey,
-            shortcutsOverviewShortcutConfig.modifiers,
-            true,
-        );
+    //     // Listen to keyboard shortcuts for opening certain pages
+    //     const unsubscribeShortcutsOverviewShortcut = KeyboardShortcut.subscribe(
+    //         shortcutsOverviewShortcutConfig.shortcutKey,
+    //         () => {
+    //             Modal.close(() => {
+    //                 if (Navigation.isActiveRoute(ROUTES.KEYBOARD_SHORTCUTS)) {
+    //                     return;
+    //                 }
+    //                 return Navigation.navigate(ROUTES.KEYBOARD_SHORTCUTS);
+    //             });
+    //         },
+    //         shortcutsOverviewShortcutConfig.descriptionKey,
+    //         shortcutsOverviewShortcutConfig.modifiers,
+    //         true,
+    //     );
 
-        // Listen for the key K being pressed so that focus can be given to
-        // Search Router, or new group chat
-        // based on the key modifiers pressed and the operating system
-        const unsubscribeSearchShortcut = KeyboardShortcut.subscribe(
-            searchShortcutConfig.shortcutKey,
-            () => {
-                Session.checkIfActionIsAllowed(() => {
-                    const state = navigationRef.getRootState();
-                    const currentFocusedRoute = findFocusedRoute(state);
-                    if (isOnboardingFlowName(currentFocusedRoute?.name)) {
-                        return;
-                    }
-                    toggleSearchRouter();
-                })();
-            },
-            shortcutsOverviewShortcutConfig.descriptionKey,
-            shortcutsOverviewShortcutConfig.modifiers,
-            true,
-        );
+    //     // Listen for the key K being pressed so that focus can be given to
+    //     // Search Router, or new group chat
+    //     // based on the key modifiers pressed and the operating system
+    //     const unsubscribeSearchShortcut = KeyboardShortcut.subscribe(
+    //         searchShortcutConfig.shortcutKey,
+    //         () => {
+    //             Session.checkIfActionIsAllowed(() => {
+    //                 const state = navigationRef.getRootState();
+    //                 const currentFocusedRoute = findFocusedRoute(state);
+    //                 if (isOnboardingFlowName(currentFocusedRoute?.name)) {
+    //                     return;
+    //                 }
+    //                 toggleSearchRouter();
+    //             })();
+    //         },
+    //         shortcutsOverviewShortcutConfig.descriptionKey,
+    //         shortcutsOverviewShortcutConfig.modifiers,
+    //         true,
+    //     );
 
-        const unsubscribeChatShortcut = KeyboardShortcut.subscribe(
-            chatShortcutConfig.shortcutKey,
-            () => {
-                Modal.close(Session.checkIfActionIsAllowed(() => Navigation.navigate(ROUTES.NEW)));
-            },
-            chatShortcutConfig.descriptionKey,
-            chatShortcutConfig.modifiers,
-            true,
-        );
+    //     const unsubscribeChatShortcut = KeyboardShortcut.subscribe(
+    //         chatShortcutConfig.shortcutKey,
+    //         () => {
+    //             Modal.close(Session.checkIfActionIsAllowed(() => Navigation.navigate(ROUTES.NEW)));
+    //         },
+    //         chatShortcutConfig.descriptionKey,
+    //         chatShortcutConfig.modifiers,
+    //         true,
+    //     );
 
-        const unsubscribeDebugShortcut = KeyboardShortcut.subscribe(
-            debugShortcutConfig.shortcutKey,
-            () => toggleTestToolsModal(),
-            debugShortcutConfig.descriptionKey,
-            debugShortcutConfig.modifiers,
-            true,
-        );
+    //     const unsubscribeDebugShortcut = KeyboardShortcut.subscribe(
+    //         debugShortcutConfig.shortcutKey,
+    //         () => toggleTestToolsModal(),
+    //         debugShortcutConfig.descriptionKey,
+    //         debugShortcutConfig.modifiers,
+    //         true,
+    //     );
 
-        return () => {
-            unsubscribeEscapeKey();
-            unsubscribeOnyxModal();
-            unsubscribeShortcutsOverviewShortcut();
-            unsubscribeSearchShortcut();
-            unsubscribeChatShortcut();
-            unsubscribeDebugShortcut();
-            Session.cleanupSession();
-        };
+    //     return () => {
+    //         unsubscribeEscapeKey();
+    //         unsubscribeOnyxModal();
+    //         unsubscribeShortcutsOverviewShortcut();
+    //         unsubscribeSearchShortcut();
+    //         unsubscribeChatShortcut();
+    //         unsubscribeDebugShortcut();
+    //         Session.cleanupSession();
+    //     };
 
-        // Rule disabled because this effect is only for component did mount & will component unmount lifecycle event
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-    }, []);
+    //     // Rule disabled because this effect is only for component did mount & will component unmount lifecycle event
+    //     // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+    // }, []);
 
-    const CentralPaneScreenOptions: PlatformStackNavigationOptions = {
-        ...hideKeyboardOnSwipe,
-        headerShown: false,
-        title: 'New Expensify',
-        web: {
-            // Prevent unnecessary scrolling
-            cardStyle: styles.cardStyleNavigator,
-        },
-    };
+    // const CentralPaneScreenOptions: PlatformStackNavigationOptions = {
+    //     ...hideKeyboardOnSwipe,
+    //     headerShown: false,
+    //     title: 'New Expensify',
+    //     web: {
+    //         // Prevent unnecessary scrolling
+    //         cardStyle: styles.cardStyleNavigator,
+    //     },
+    // };
 
     return (
-        <ComposeProviders components={[OptionsListContextProvider, SearchContextProvider]}>
-            <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
-                <RootStack.Navigator screenOptions={rootNavigatorOptions.centralPaneNavigator}>
+        <ComposeProviders components={[]}>
+            {/* <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}> */}
+            <View>
+                <RootStack.Navigator>
                     <RootStack.Screen
                         name={NAVIGATORS.BOTTOM_TAB_NAVIGATOR}
-                        options={rootNavigatorOptions.bottomTab}
+                        // options={rootNavigatorOptions.bottomTab}
                         component={BottomTabNavigator}
                     />
-                    <RootStack.Screen
+                    {/* <RootStack.Screen
                         name={SCREENS.VALIDATE_LOGIN}
                         options={{
                             ...rootNavigatorOptions.fullScreen,
@@ -568,25 +569,25 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                         name={SCREENS.CONNECTION_COMPLETE}
                         options={defaultScreenOptions}
                         component={ConnectionCompletePage}
-                    />
+                    /> */}
                     {Object.entries(CENTRAL_PANE_SCREENS).map(([screenName, componentGetter]) => {
                         const centralPaneName = screenName as CentralPaneName;
                         return (
                             <RootStack.Screen
                                 key={centralPaneName}
                                 name={centralPaneName}
-                                initialParams={getCentralPaneScreenInitialParams(centralPaneName, initialReportID)}
+                                // initialParams={getCentralPaneScreenInitialParams(centralPaneName, initialReportID)}
                                 getComponent={componentGetter}
-                                options={CentralPaneScreenOptions}
+                                // options={CentralPaneScreenOptions}
                                 listeners={getCentralPaneScreenListeners(centralPaneName)}
                             />
                         );
                     })}
                 </RootStack.Navigator>
-                <TestToolsModal />
-                <SearchRouterModal />
+                {/* <TestToolsModal />
+                <SearchRouterModal /> */}
             </View>
-            {didPusherInit && <ActiveGuidesEventListener />}
+            {/* {didPusherInit && <ActiveGuidesEventListener />} */}
         </ComposeProviders>
     );
 }
@@ -599,14 +600,4 @@ const AuthScreensMemoized = memo(AuthScreens, () => true);
 // Further analysis required and more details can be seen here:
 // https://github.com/Expensify/App/issues/50560
 // eslint-disable-next-line
-export default withOnyx<AuthScreensProps, AuthScreensProps>({
-    session: {
-        key: ONYXKEYS.SESSION,
-    },
-    lastOpenedPublicRoomID: {
-        key: ONYXKEYS.LAST_OPENED_PUBLIC_ROOM_ID,
-    },
-    initialLastUpdateIDAppliedToClient: {
-        key: ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT,
-    },
-})(AuthScreensMemoized);
+export default AuthScreensMemoized
