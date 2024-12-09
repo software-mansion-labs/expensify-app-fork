@@ -438,13 +438,6 @@ function hybridAppSignInAttemptState(): OnyxData {
         successData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
-                key: ONYXKEYS.HYBRID_APP,
-                value: {
-                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED,
-                },
-            },
-            {
-                onyxMethod: Onyx.METHOD.MERGE,
                 key: ONYXKEYS.NVP_TRYNEWDOT, // Temporary mock to make development easier. Remove when backend is ready.
                 value: {
                     classicRedirect: {
@@ -453,15 +446,7 @@ function hybridAppSignInAttemptState(): OnyxData {
                 },
             },
         ],
-        failureData: [
-            {
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: ONYXKEYS.HYBRID_APP,
-                value: {
-                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.FINISHED,
-                },
-            },
-        ],
+        failureData: [],
     };
 }
 
@@ -522,6 +507,15 @@ function signUpUser() {
     const successData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.NVP_TRYNEWDOT,
+            value: {
+                classicRedirect: {
+                    dismissed: true, // this data is mocked and should be removed before the merge
+                },
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
             key: ONYXKEYS.ACCOUNT,
             value: {
                 isLoading: false,
@@ -541,14 +535,7 @@ function signUpUser() {
     ];
 
     const params: SignUpUserParams = {email: credentials.login, preferredLocale};
-
-    // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData}).then((response) => {
-        if (!response) {
-            return;
-        }
-        Onyx.merge(ONYXKEYS.NVP_TRYNEWDOT, {classicRedirect: {dismissed: !response.tryNewDot}});
-    });
+    API.write(WRITE_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData});
 }
 
 function setupNewDotAfterTransitionFromOldDot(route: Route, hybridAppSettings: string, tryNewDot: TryNewDot | undefined) {
