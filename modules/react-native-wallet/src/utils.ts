@@ -1,4 +1,4 @@
-import type { CardStatus } from './types';
+import type { CardStatus } from './NativeWallet';
 
 function getCardState(stateId: number): CardStatus {
   switch (stateId) {

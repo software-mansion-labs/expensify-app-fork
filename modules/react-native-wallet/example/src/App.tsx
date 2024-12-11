@@ -18,7 +18,7 @@ import type {
   AndroidCardData,
   AndroidWalletData,
   UserAddress,
-} from '../../src/types';
+} from '../../src/NativeWallet';
 
 const dummyAddress: UserAddress = {
   name: 'John Doe',
@@ -49,6 +49,10 @@ type TestButtonProps = {
 
 function Button({ title, onPress }: TestButtonProps) {
   return <RNButton title={title} onPress={onPress} color="#d57b9c" />;
+}
+
+function getArchitecture() {
+  return 'nativeFabricUIManager' in global ? 'Fabric' : 'Paper';
 }
 
 export default function App() {
@@ -107,6 +111,7 @@ export default function App() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>react-native-wallet example app</Text>
+      <Text>{getArchitecture()}</Text>
       <Button
         title="checkWalletAvailability"
         onPress={handleCheckWalletAvailability}

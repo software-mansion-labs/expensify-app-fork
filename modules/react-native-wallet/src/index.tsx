@@ -4,7 +4,11 @@ import {
   Platform,
   type EmitterSubscription,
 } from 'react-native';
-import type { AndroidCardData, CardStatus } from './types';
+import type {
+  AndroidCardData,
+  CardStatus,
+  onCardActivatedPayload,
+} from './NativeWallet';
 import { getCardState } from './utils';
 
 const LINKING_ERROR =
@@ -68,7 +72,7 @@ const eventEmitter = new NativeEventEmitter();
 
 function addListener(
   event: string,
-  callback: (data: any) => void
+  callback: (data: onCardActivatedPayload) => void
 ): EmitterSubscription {
   return eventEmitter.addListener(event, callback);
 }
