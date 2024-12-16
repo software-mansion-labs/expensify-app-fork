@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {Keyboard, View} from 'react-native';
+import {Keyboard, NativeModules, View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import Button from '@components/Button';
@@ -12,6 +12,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import * as HybridAppActions from '@userActions/HybridApp';
 import * as Session from '@userActions/Session';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -61,6 +62,7 @@ function ChooseSSOOrMagicCode({credentials, account, setIsUsingMagicCode}: Choos
                     text={translate('samlSignIn.useSingleSignOn')}
                     isLoading={account?.isLoading}
                     onPress={() => {
+                        HybridAppActions.setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.STARTED);
                         Navigation.navigate(ROUTES.SAML_SIGN_IN);
                     }}
                 />
@@ -83,7 +85,14 @@ function ChooseSSOOrMagicCode({credentials, account, setIsUsingMagicCode}: Choos
                     }}
                 />
                 {!!account && !isEmptyObject(account.errors) && <FormHelpMessage message={ErrorUtils.getLatestErrorMessage(account)} />}
-                <ChangeExpensifyLoginLink onPress={() => Session.clearSignInData()} />
+                <ChangeExpensifyLoginLink
+                    onPress={() => {
+                        if (NativeModules.HybridAppModule) {
+                            HybridAppActions.resetSignInFlow();
+                        }
+                        Session.clearSignInData();
+                    }}
+                />
             </View>
             <View style={[styles.mt5, styles.signInPageWelcomeTextContainer]}>
                 <Terms />
