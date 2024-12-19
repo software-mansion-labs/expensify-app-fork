@@ -39,14 +39,12 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  if (supportsNamespace()) {
     namespace "com.wallet"
 
     sourceSets {
       main {
         manifest.srcFile "src/main/AndroidManifestNew.xml"
       }
-    }
   }
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
