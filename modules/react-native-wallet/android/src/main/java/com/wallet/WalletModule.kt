@@ -43,7 +43,6 @@ class WalletModule internal constructor(context: ReactApplicationContext) : Wall
 
   private var tapAndPayClient: TapAndPayClient? = null
   private var pendingCreateWalletPromise: Promise? = null
-  private var pendingAddCardPromise: Promise? = null
 
 
   init {
