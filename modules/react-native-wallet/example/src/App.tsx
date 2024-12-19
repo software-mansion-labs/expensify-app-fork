@@ -13,7 +13,7 @@ import {
   getCardStatus,
   getCardTokenStatus,
   addListener,
-} from 'react-native-wallet';
+} from '@expensify/react-native-wallet';
 import type {
   AndroidCardData,
   AndroidWalletData,
