@@ -1,8 +1,8 @@
 import {findFocusedRoute, getStateFromPath} from '@react-navigation/native';
 import type {NavigationState, PartialState} from '@react-navigation/native';
 import Onyx from 'react-native-onyx';
+import {getAdaptedStateFromPath} from '@libs/Navigation/helpers';
 import linkingConfig from '@libs/Navigation/linkingConfig';
-import getAdaptedStateFromPath from '@libs/Navigation/linkingConfig/getAdaptedStateFromPath';
 import {navigationRef} from '@libs/Navigation/Navigation';
 import type {RootStackParamList} from '@libs/Navigation/types';
 import CONST from '@src/CONST';
@@ -39,7 +39,7 @@ Onyx.connect({
  */
 function startOnboardingFlow(isPrivateDomain?: boolean) {
     const currentRoute = navigationRef.getCurrentRoute();
-    const {adaptedState} = getAdaptedStateFromPath(getOnboardingInitialPath(isPrivateDomain), linkingConfig.config, false);
+    const adaptedState = getAdaptedStateFromPath(getOnboardingInitialPath(isPrivateDomain), linkingConfig.config, false);
     const focusedRoute = findFocusedRoute(adaptedState as PartialState<NavigationState<RootStackParamList>>);
     if (focusedRoute?.name === currentRoute?.name) {
         return;

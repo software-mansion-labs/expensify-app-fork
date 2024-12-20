@@ -15,7 +15,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as Browser from '@libs/Browser';
 import type {PlatformStackNavigationProp} from '@libs/Navigation/PlatformStackNavigation/types';
-import type {AuthScreensParamList, RootStackParamList} from '@libs/Navigation/types';
+import type {ReportsSplitNavigatorParamList, RootStackParamList} from '@libs/Navigation/types';
 import toggleTestToolsModal from '@userActions/TestTool';
 import CONST from '@src/CONST';
 import CustomDevMenu from './CustomDevMenu';
@@ -39,6 +39,9 @@ type ScreenWrapperChildrenProps = {
 type ScreenWrapperProps = {
     /** Returns a function as a child to pass insets to or a node to render without insets */
     children: ReactNode | React.FC<ScreenWrapperChildrenProps>;
+
+    /** Content to display under the offline indicator */
+    bottomContent?: ReactNode;
 
     /** A unique ID to find the screen wrapper in tests */
     testID: string;
@@ -96,7 +99,7 @@ type ScreenWrapperProps = {
      *
      * This is required because transitionEnd event doesn't trigger in the testing environment.
      */
-    navigation?: PlatformStackNavigationProp<RootStackParamList> | PlatformStackNavigationProp<AuthScreensParamList>;
+    navigation?: PlatformStackNavigationProp<RootStackParamList> | PlatformStackNavigationProp<ReportsSplitNavigatorParamList>;
 
     /** Whether to show offline indicator on wide screens */
     shouldShowOfflineIndicatorInWideScreen?: boolean;
@@ -135,6 +138,7 @@ function ScreenWrapper(
         shouldShowOfflineIndicatorInWideScreen = false,
         shouldUseCachedViewportHeight = false,
         focusTrapSettings,
+        bottomContent,
     }: ScreenWrapperProps,
     ref: ForwardedRef<View>,
 ) {
@@ -312,6 +316,7 @@ function ScreenWrapper(
                                         <ImportedStateIndicator />
                                     </>
                                 )}
+                                {bottomContent}
                             </ScreenWrapperStatusContext.Provider>
                         </PickerAvoidingView>
                     </KeyboardAvoidingView>
