@@ -73,6 +73,7 @@ export default function linkTo(navigation: NavigationContainerRef<RootStackParam
 
     // If action type is different than NAVIGATE we can't change it to the PUSH safely
     if (action?.type === CONST.NAVIGATION.ACTION_TYPE.NAVIGATE) {
+        action.type = 'PUSH';
         const actionPayloadParams = action.payload.params as ActionPayloadParams;
 
         const topRouteName = lastRoute?.name;

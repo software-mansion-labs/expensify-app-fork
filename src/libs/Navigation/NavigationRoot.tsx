@@ -165,6 +165,7 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady, sh
         if (!state) {
             return;
         }
+        console.log(`%%% state`, state);
         const currentRoute = navigationRef.getCurrentRoute();
         Firebase.log(`[NAVIGATION] screen: ${currentRoute?.name}, params: ${JSON.stringify(currentRoute?.params ?? {})}`);
 
