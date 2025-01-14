@@ -1,0 +1,42 @@
+diff --git a/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/NdkConfiguratorUtils.kt b/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/NdkConfiguratorUtils.kt
+index 86d40a0..19cbcbf 100644
+--- a/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/NdkConfiguratorUtils.kt
++++ b/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/NdkConfiguratorUtils.kt
+@@ -124,10 +124,10 @@ internal object NdkConfiguratorUtils {
+     if (hermesEnabled) {
+       excludes.add("**/libjsc.so")
+       excludes.add("**/libjsctooling.so")
+-      includes.add("**/libhermes.so")
++      includes.add("**/libhermesvm.so")
+       includes.add("**/libhermestooling.so")
+     } else {
+-      excludes.add("**/libhermes.so")
++      includes.add("**/libhermesvm.so")
+       excludes.add("**/libhermestooling.so")
+       includes.add("**/libjsc.so")
+       includes.add("**/libjsctooling.so")
+diff --git a/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/test/kotlin/com/facebook/react/utils/NdkConfiguratorUtilsTest.kt b/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/test/kotlin/com/facebook/react/utils/NdkConfiguratorUtilsTest.kt
+index bad4ce1..db9f8af 100644
+--- a/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/test/kotlin/com/facebook/react/utils/NdkConfiguratorUtilsTest.kt
++++ b/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/test/kotlin/com/facebook/react/utils/NdkConfiguratorUtilsTest.kt
+@@ -20,16 +20,16 @@ class NdkConfiguratorUtilsTest {
+     assertThat(excludes).containsExactly("**/libjsc.so", "**/libjsctooling.so")
+     assertThat(includes).doesNotContain("**/libjsc.so", "**/libjsctooling.so")
+ 
+-    assertThat(includes).containsExactly("**/libhermes.so", "**/libhermestooling.so")
+-    assertThat(excludes).doesNotContain("**/libhermes.so", "**/libhermestooling.so")
++    assertThat(includes).containsExactly("**/libhermesvm.so", "**/libhermestooling.so")
++    assertThat(excludes).doesNotContain("**/libhermesvm.so", "**/libhermestooling.so")
+   }
+ 
+   @Test
+   fun getPackagingOptionsForVariant_withHermesDisabled() {
+     val (excludes, includes) = getPackagingOptionsForVariant(hermesEnabled = false)
+ 
+-    assertThat(excludes).containsExactly("**/libhermes.so", "**/libhermestooling.so")
+-    assertThat(includes).doesNotContain("**/libhermes.so", "**/libhermestooling.so")
++    assertThat(excludes).containsExactly("**/libhermesvm.so", "**/libhermestooling.so")
++    assertThat(includes).doesNotContain("**/libhermesvm.so", "**/libhermestooling.so")
+ 
+     assertThat(includes).containsExactly("**/libjsc.so", "**/libjsctooling.so")
+     assertThat(excludes).doesNotContain("**/libjsc.so", "**/libjsctooling.so")

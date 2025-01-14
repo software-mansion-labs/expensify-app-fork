@@ -1,0 +1,1884 @@
+diff --git a/node_modules/react-native/ReactAndroid/build.gradle.kts b/node_modules/react-native/ReactAndroid/build.gradle.kts
+index 52acc4c..f0b71aa 100644
+--- a/node_modules/react-native/ReactAndroid/build.gradle.kts
++++ b/node_modules/react-native/ReactAndroid/build.gradle.kts
+@@ -439,7 +439,7 @@ val packageReactNdkLibsForBuck by
+       // Shared libraries (.so) are copied from the merged_native_libs folder instead
+       from("$buildDir/intermediates/merged_native_libs/debug/out/lib/")
+       exclude("**/libjsc.so")
+-      exclude("**/libhermes.so")
++      exclude("**/libhermesvm.so")
+       into("src/main/jni/prebuilt/lib")
+     }
+ 
+@@ -575,7 +575,7 @@ android {
+     // we produce. The reason behind this is that we want to allow users to pick the
+     // JS engine by specifying a dependency on either `hermes-engine` or `android-jsc`
+     // that will include the necessary .so files to load.
+-    jniLibs.excludes.add("**/libhermes.so")
++    jniLibs.excludes.add("**/libhermesvm.so")
+     jniLibs.excludes.add("**/libjsc.so")
+   }
+ 
+diff --git a/node_modules/react-native/ReactAndroid/hermes-engine/build.gradle.kts b/node_modules/react-native/ReactAndroid/hermes-engine/build.gradle.kts
+index 10f67fe..0d39c33 100644
+--- a/node_modules/react-native/ReactAndroid/hermes-engine/build.gradle.kts
++++ b/node_modules/react-native/ReactAndroid/hermes-engine/build.gradle.kts
+@@ -147,7 +147,8 @@ val configureBuildForHermes by
+               ".",
+               "-B",
+               hermesBuildDir.toString(),
+-              "-DJSI_DIR=" + jsiDir.absolutePath))
++              "-DJSI_DIR=" + jsiDir.absolutePath,
++              "-DCMAKE_BUILD_TYPE=Release"))
+     }
+ 
+ val buildHermesC by
+@@ -228,19 +229,20 @@ android {
+             "-DHERMES_IS_ANDROID=True",
+             "-DANDROID_STL=c++_shared",
+             "-DANDROID_PIE=True",
+-            "-DIMPORT_HERMESC=${File(hermesBuildDir, "ImportHermesc.cmake").toString()}",
++            "-DIMPORT_HOST_COMPILERS=${File(hermesBuildDir, "ImportHostCompilers.cmake").toString()}",
+             "-DJSI_DIR=${jsiDir}",
+             "-DHERMES_SLOW_DEBUG=False",
+             "-DHERMES_BUILD_SHARED_JSI=True",
+-            "-DHERMES_RELEASE_VERSION=for RN ${version}",
++            "-DHERMES_RELEASE_VERSION=for RN ${version} (static)",
+             // We intentionally build Hermes with Intl support only. This is to simplify
+             // the build setup and to avoid overcomplicating the build-type matrix.
+             "-DHERMES_ENABLE_INTL=True",
++            "-DHERMES_IS_MOBILE_BUILD:BOOLEAN=OFF",
+             // Due to https://github.com/android/ndk/issues/1693 we're losing Android
+             // specific compilation flags. This can be removed once we moved to NDK 25/26
+             "-DANDROID_USE_LEGACY_TOOLCHAIN_FILE=ON")
+ 
+-        targets("libhermes")
++        targets("hermesvm")
+       }
+     }
+     ndk { abiFilters.addAll(reactNativeArchitectures()) }
+@@ -261,7 +263,10 @@ android {
+           // Therefore we're passing as build type Release, to provide a faster build.
+           // This has the (unlucky) side effect of letting AGP call the build
+           // tasks `configureCMakeRelease` while is actually building the debug flavor.
+-          arguments("-DCMAKE_BUILD_TYPE=Release")
++          arguments(
++            "-DCMAKE_BUILD_TYPE=Release",
++            "-DHERMES_ENABLE_DEBUGGER=1"
++          )
+           // Adding -O3 to handle the issue here:
+           // https://github.com/android/ndk/issues/1740#issuecomment-1198438260
+           // The old NDK toolchain is not passing -O3 correctly for release CMake builds. This is
+@@ -273,10 +278,7 @@ android {
+     release {
+       externalNativeBuild {
+         cmake {
+-          arguments(
+-              "-DCMAKE_BUILD_TYPE=MinSizeRel",
+-              // For release builds, we don't want to enable the Hermes Debugger.
+-              "-DHERMES_ENABLE_DEBUGGER=False")
++          arguments("-DCMAKE_BUILD_TYPE=MinSizeRel")
+         }
+       }
+     }
+@@ -312,9 +314,8 @@ android {
+   }
+ 
+   prefab {
+-    create("libhermes") {
++    create("hermesvm") {
+       headers = prefabHeadersDir.absolutePath
+-      libraryName = "libhermes"
+     }
+   }
+ }
+diff --git a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/hermes/reactexecutor/HermesExecutor.java b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/hermes/reactexecutor/HermesExecutor.java
+index 2073bb4..8830101 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/hermes/reactexecutor/HermesExecutor.java
++++ b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/hermes/reactexecutor/HermesExecutor.java
+@@ -23,7 +23,7 @@ public class HermesExecutor extends JavaScriptExecutor {
+   public static void loadLibrary() throws UnsatisfiedLinkError {
+     if (mode_ == null) {
+       // libhermes must be loaded explicitly to invoke its JNI_OnLoad.
+-      SoLoader.loadLibrary("hermes");
++      SoLoader.loadLibrary("hermesvm");
+       SoLoader.loadLibrary("hermes_executor");
+       // libhermes_executor is built differently for Debug & Release so we load the proper mode.
+       mode_ = ReactBuildConfig.DEBUG ? "Debug" : "Release";
+diff --git a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/ReactNativeHost.java b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/ReactNativeHost.java
+index 332c7a6..e27f604 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/ReactNativeHost.java
++++ b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/ReactNativeHost.java
+@@ -220,6 +220,9 @@ public abstract class ReactNativeHost {
+   /** Returns whether dev mode should be enabled. This enables e.g. the dev menu. */
+   public abstract boolean getUseDeveloperSupport();
+ 
++  /** Cleanup function for brownfield scenarios. */
++  public abstract void invalidate();
++
+   /** Get the {@link DevSupportManagerFactory}. Override this to use a custom dev support manager */
+   protected @Nullable DevSupportManagerFactory getDevSupportManagerFactory() {
+     return null;
+diff --git a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactHost.kt b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactHost.kt
+index 428d715..1603d60 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactHost.kt
++++ b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactHost.kt
+@@ -30,7 +30,6 @@ import com.facebook.react.runtime.hermes.HermesInstance
+  */
+ public object DefaultReactHost {
+   private var reactHost: ReactHost? = null
+-
+   /**
+    * Util function to create a default [ReactHost] to be used in your application. This method is
+    * used by the New App template.
+@@ -120,4 +119,12 @@ public object DefaultReactHost {
+     }
+     return reactNativeHost.toReactHost(context)
+   }
++
++  /**
++    * Cleanup function for brownfield scenarios where you want to remove the references kept by
++    * reactHost after destroying the RN instance.
++    */
++  internal fun invalidate() {
++      reactHost = null
++  }
+ }
+diff --git a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactNativeHost.kt b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactNativeHost.kt
+index b85923b..bf0bdc9 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactNativeHost.kt
++++ b/node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/defaults/DefaultReactNativeHost.kt
+@@ -78,6 +78,10 @@ protected constructor(
+         null -> null
+       }
+ 
++  override fun invalidate() {
++      DefaultReactHost.invalidate()
++  }
++
+   /**
+    * Returns whether the user wants to use the New Architecture or not.
+    *
+@@ -96,6 +100,7 @@ protected constructor(
+    * load the JSC engine, and fail if not found. If null, the app will attempt to load JSC first and
+    * fallback to Hermes if not found.
+    */
++
+   protected open val isHermesEnabled: Boolean?
+     get() = null
+ 
+diff --git a/node_modules/react-native/ReactAndroid/src/main/jni/CMakeLists.txt b/node_modules/react-native/ReactAndroid/src/main/jni/CMakeLists.txt
+index eeab0dc..3942f48 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/jni/CMakeLists.txt
++++ b/node_modules/react-native/ReactAndroid/src/main/jni/CMakeLists.txt
+@@ -370,7 +370,7 @@ target_link_libraries(reactnative_unittest
+   glog
+   glog_init
+   gtest_main
+-  hermes-engine::libhermes
++  hermes-engine::hermesvm
+   hermes_inspector_modern
+   jserrorhandler
+   jsi
+diff --git a/node_modules/react-native/ReactAndroid/src/main/jni/first-party/hermes/CMakeLists.txt b/node_modules/react-native/ReactAndroid/src/main/jni/first-party/hermes/CMakeLists.txt
+index 4bfbaa1..1934f0e 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/jni/first-party/hermes/CMakeLists.txt
++++ b/node_modules/react-native/ReactAndroid/src/main/jni/first-party/hermes/CMakeLists.txt
+@@ -10,4 +10,4 @@ add_library(hermes SHARED IMPORTED GLOBAL)
+ set_target_properties(hermes
+         PROPERTIES
+         IMPORTED_LOCATION
+-        ${CMAKE_CURRENT_SOURCE_DIR}/jni/${ANDROID_ABI}/libhermes.so)
++        ${CMAKE_CURRENT_SOURCE_DIR}/jni/${ANDROID_ABI}/libhermesvm.so)
+diff --git a/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/instrumentation/CMakeLists.txt b/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/instrumentation/CMakeLists.txt
+index e906759..426b4cb 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/instrumentation/CMakeLists.txt
++++ b/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/instrumentation/CMakeLists.txt
+@@ -26,7 +26,7 @@ target_include_directories(jsijniprofiler PRIVATE .)
+ 
+ target_link_libraries(
+       jsijniprofiler
+-      hermes-engine::libhermes
++      hermes-engine::hermesvm
+       jsi
+       reactnative
+ )
+diff --git a/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/reactexecutor/CMakeLists.txt b/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/reactexecutor/CMakeLists.txt
+index ab70319..6944a6b 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/reactexecutor/CMakeLists.txt
++++ b/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/reactexecutor/CMakeLists.txt
+@@ -26,7 +26,7 @@ target_include_directories(hermes_executor PRIVATE .)
+ target_link_libraries(
+         hermes_executor
+         hermes_executor_common
+-        hermes-engine::libhermes
++        hermes-engine::hermesvm
+         jsi
+         reactnative
+ )
+diff --git a/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/tooling/CMakeLists.txt b/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/tooling/CMakeLists.txt
+index 5b54e34..50cc197 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/tooling/CMakeLists.txt
++++ b/node_modules/react-native/ReactAndroid/src/main/jni/react/hermes/tooling/CMakeLists.txt
+@@ -28,7 +28,7 @@ target_link_libraries(hermestooling
+         PUBLIC
+         reactnative
+         jsi
+-        hermes-engine::libhermes
++        hermes-engine::hermesvm
+ )
+ target_include_directories(hermestooling
+         PUBLIC
+diff --git a/node_modules/react-native/ReactAndroid/src/main/jni/react/runtime/hermes/jni/CMakeLists.txt b/node_modules/react-native/ReactAndroid/src/main/jni/react/runtime/hermes/jni/CMakeLists.txt
+index 1d8e0cf..d6d8714 100644
+--- a/node_modules/react-native/ReactAndroid/src/main/jni/react/runtime/hermes/jni/CMakeLists.txt
++++ b/node_modules/react-native/ReactAndroid/src/main/jni/react/runtime/hermes/jni/CMakeLists.txt
+@@ -26,7 +26,7 @@ target_include_directories(hermesinstancejni PRIVATE .)
+ target_merge_so(hermesinstancejni)
+ 
+ target_link_libraries(hermesinstancejni
+-        hermes-engine::libhermes
++        hermes-engine::hermesvm
+         fbjni
+         bridgelesshermes
+         reactnative
+diff --git a/node_modules/react-native/ReactCommon/hermes/executor/CMakeLists.txt b/node_modules/react-native/ReactCommon/hermes/executor/CMakeLists.txt
+index a52b9c3..67a4128 100644
+--- a/node_modules/react-native/ReactCommon/hermes/executor/CMakeLists.txt
++++ b/node_modules/react-native/ReactCommon/hermes/executor/CMakeLists.txt
+@@ -16,7 +16,7 @@ add_library(
+ )
+ target_include_directories(hermes_executor_common PUBLIC .)
+ target_link_libraries(hermes_executor_common
+-        hermes-engine::libhermes
++        hermes-engine::hermesvm
+         hermes_inspector_modern
+         jsi
+         reactnative
+diff --git a/node_modules/react-native/ReactCommon/hermes/executor/HermesExecutorFactory.cpp b/node_modules/react-native/ReactCommon/hermes/executor/HermesExecutorFactory.cpp
+index a1aac84..685f12f 100644
+--- a/node_modules/react-native/ReactCommon/hermes/executor/HermesExecutorFactory.cpp
++++ b/node_modules/react-native/ReactCommon/hermes/executor/HermesExecutorFactory.cpp
+@@ -14,8 +14,6 @@
+ #include <jsinspector-modern/InspectorFlags.h>
+ 
+ #include <hermes/inspector-modern/chrome/HermesRuntimeTargetDelegate.h>
+-#include <hermes/inspector-modern/chrome/Registration.h>
+-#include <hermes/inspector/RuntimeAdapter.h>
+ 
+ using namespace facebook::hermes;
+ using namespace facebook::jsi;
+@@ -24,43 +22,6 @@ namespace facebook::react {
+ 
+ namespace {
+ 
+-#ifdef HERMES_ENABLE_DEBUGGER
+-
+-class HermesExecutorRuntimeAdapter
+-    : public facebook::hermes::inspector_modern::RuntimeAdapter {
+- public:
+-  HermesExecutorRuntimeAdapter(
+-      std::shared_ptr<HermesRuntime> runtime,
+-      std::shared_ptr<MessageQueueThread> thread)
+-      : runtime_(runtime), thread_(std::move(thread)) {}
+-
+-  virtual ~HermesExecutorRuntimeAdapter() = default;
+-
+-  HermesRuntime& getRuntime() override {
+-    return *runtime_;
+-  }
+-
+-  void tickleJs() override {
+-    thread_->runOnQueue(
+-        [weakRuntime = std::weak_ptr<HermesRuntime>(runtime_)]() {
+-          auto runtime = weakRuntime.lock();
+-          if (!runtime) {
+-            return;
+-          }
+-          jsi::Function func =
+-              runtime->global().getPropertyAsFunction(*runtime, "__tickleJs");
+-          func.call(*runtime);
+-        });
+-  }
+-
+- private:
+-  std::shared_ptr<HermesRuntime> runtime_;
+-
+-  std::shared_ptr<MessageQueueThread> thread_;
+-};
+-
+-#endif // HERMES_ENABLE_DEBUGGER
+-
+ struct ReentrancyCheck {
+ // This is effectively a very subtle and complex assert, so only
+ // include it in builds which would include asserts.
+@@ -146,26 +107,11 @@ class DecoratedRuntime : public jsi::WithRuntimeDecorator<ReentrancyCheck> {
+         runtime_(std::move(runtime)) {
+ #ifdef HERMES_ENABLE_DEBUGGER
+     enableDebugger_ = enableDebugger;
+-    if (enableDebugger_) {
+-      std::shared_ptr<HermesRuntime> rt(runtime_, &hermesRuntime);
+-      auto adapter =
+-          std::make_unique<HermesExecutorRuntimeAdapter>(rt, jsQueue);
+-      debugToken_ = facebook::hermes::inspector_modern::chrome::enableDebugging(
+-          std::move(adapter), debuggerName);
+-    }
+ #else
+     (void)jsQueue;
+ #endif // HERMES_ENABLE_DEBUGGER
+   }
+ 
+-  ~DecoratedRuntime() {
+-#ifdef HERMES_ENABLE_DEBUGGER
+-    if (enableDebugger_) {
+-      facebook::hermes::inspector_modern::chrome::disableDebugging(debugToken_);
+-    }
+-#endif // HERMES_ENABLE_DEBUGGER
+-  }
+-
+  private:
+   // runtime_ is a potentially decorated Runtime.
+   // hermesRuntime is a reference to a HermesRuntime managed by runtime_.
+@@ -178,7 +124,6 @@ class DecoratedRuntime : public jsi::WithRuntimeDecorator<ReentrancyCheck> {
+   ReentrancyCheck reentrancyCheck_;
+ #ifdef HERMES_ENABLE_DEBUGGER
+   bool enableDebugger_;
+-  facebook::hermes::inspector_modern::chrome::DebugSessionToken debugToken_;
+ #endif // HERMES_ENABLE_DEBUGGER
+ };
+ 
+@@ -202,35 +147,17 @@ std::unique_ptr<JSExecutor> HermesExecutorFactory::createJSExecutor(
+   }
+ 
+   HermesRuntime& hermesRuntimeRef = *hermesRuntime;
+-  auto& inspectorFlags = jsinspector_modern::InspectorFlags::getInstance();
+-  bool enableDebugger = !inspectorFlags.getFuseboxEnabled() && enableDebugger_;
+-  auto decoratedRuntime = std::make_shared<DecoratedRuntime>(
+-      std::move(hermesRuntime),
+-      hermesRuntimeRef,
+-      jsQueue,
+-      enableDebugger,
+-      debuggerName_);
+-
+-  // So what do we have now?
+-  // DecoratedRuntime -> HermesRuntime
+-  //
+-  // DecoratedRuntime is held by JSIExecutor.  When it gets used, it
+-  // will check that it's on the right thread, do any necessary trace
+-  // logging, then call the real HermesRuntime.  When it is destroyed,
+-  // it will shut down the debugger before the HermesRuntime is.  In
+-  // the normal case where debugging is not compiled in,
+-  // all that's left is the thread checking.
+ 
+   // Add js engine information to Error.prototype so in error reporting we
+   // can send this information.
+   auto errorPrototype =
+-      decoratedRuntime->global()
+-          .getPropertyAsObject(*decoratedRuntime, "Error")
+-          .getPropertyAsObject(*decoratedRuntime, "prototype");
+-  errorPrototype.setProperty(*decoratedRuntime, "jsEngine", "hermes");
++      hermesRuntime->global()
++          .getPropertyAsObject(*hermesRuntime, "Error")
++          .getPropertyAsObject(*hermesRuntime, "prototype");
++  errorPrototype.setProperty(*hermesRuntime, "jsEngine", "hermes");
+ 
+   return std::make_unique<HermesExecutor>(
+-      decoratedRuntime,
++      std::move(hermesRuntime),
+       delegate,
+       jsQueue,
+       timeoutInvoker_,
+diff --git a/node_modules/react-native/ReactCommon/hermes/inspector-modern/CMakeLists.txt b/node_modules/react-native/ReactCommon/hermes/inspector-modern/CMakeLists.txt
+index 0e51112..739bed7 100644
+--- a/node_modules/react-native/ReactCommon/hermes/inspector-modern/CMakeLists.txt
++++ b/node_modules/react-native/ReactCommon/hermes/inspector-modern/CMakeLists.txt
+@@ -29,6 +29,6 @@ endif()
+ 
+ target_include_directories(hermes_inspector_modern PUBLIC ${REACT_COMMON_DIR})
+ target_link_libraries(hermes_inspector_modern
+-        hermes-engine::libhermes
++        hermes-engine::hermesvm
+         jsi
+         reactnative)
+diff --git a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/ConnectionDemux.cpp b/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/ConnectionDemux.cpp
+deleted file mode 100644
+index 0b9796a..0000000
+--- a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/ConnectionDemux.cpp
++++ /dev/null
+@@ -1,147 +0,0 @@
+-/*
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-#include "ConnectionDemux.h"
+-
+-#ifdef HERMES_ENABLE_DEBUGGER
+-
+-#include <hermes/inspector/RuntimeAdapter.h>
+-#include <hermes/inspector/chrome/CDPHandler.h>
+-
+-#include <jsinspector-modern/InspectorInterfaces.h>
+-
+-namespace facebook {
+-namespace hermes {
+-namespace inspector_modern {
+-namespace chrome {
+-
+-using ::facebook::react::jsinspector_modern::IInspector;
+-using ::facebook::react::jsinspector_modern::ILocalConnection;
+-using ::facebook::react::jsinspector_modern::IRemoteConnection;
+-
+-namespace {
+-
+-class LocalConnection : public ILocalConnection {
+- public:
+-  LocalConnection(
+-      std::shared_ptr<hermes::inspector_modern::chrome::CDPHandler> conn,
+-      std::shared_ptr<std::unordered_set<std::string>> inspectedContexts);
+-  ~LocalConnection();
+-
+-  void sendMessage(std::string message) override;
+-  void disconnect() override;
+-
+- private:
+-  std::shared_ptr<hermes::inspector_modern::chrome::CDPHandler> conn_;
+-  std::shared_ptr<std::unordered_set<std::string>> inspectedContexts_;
+-};
+-
+-LocalConnection::LocalConnection(
+-    std::shared_ptr<hermes::inspector_modern::chrome::CDPHandler> conn,
+-    std::shared_ptr<std::unordered_set<std::string>> inspectedContexts)
+-    : conn_(conn), inspectedContexts_(inspectedContexts) {
+-  inspectedContexts_->insert(conn->getTitle());
+-}
+-
+-LocalConnection::~LocalConnection() = default;
+-
+-void LocalConnection::sendMessage(std::string str) {
+-  conn_->handle(std::move(str));
+-}
+-
+-void LocalConnection::disconnect() {
+-  inspectedContexts_->erase(conn_->getTitle());
+-  conn_->unregisterCallbacks();
+-}
+-
+-} // namespace
+-
+-ConnectionDemux::ConnectionDemux(
+-    facebook::react::jsinspector_modern::IInspector& inspector)
+-    : globalInspector_(inspector),
+-      inspectedContexts_(std::make_shared<std::unordered_set<std::string>>()) {}
+-
+-ConnectionDemux::~ConnectionDemux() = default;
+-
+-DebugSessionToken ConnectionDemux::enableDebugging(
+-    std::unique_ptr<RuntimeAdapter> adapter,
+-    const std::string& title) {
+-  std::scoped_lock lock(mutex_);
+-
+-  // TODO(#22976087): workaround for ComponentScript contexts never being
+-  // destroyed.
+-  //
+-  // After a reload, the old ComponentScript VM instance stays alive. When we
+-  // register the new CS VM instance, check for any previous CS VM (via strcmp
+-  // of title) and remove them.
+-  std::vector<int> pagesToDelete;
+-  for (auto it = conns_.begin(); it != conns_.end(); ++it) {
+-    if (it->second->getTitle() == title) {
+-      pagesToDelete.push_back(it->first);
+-    }
+-  }
+-
+-  for (auto pageId : pagesToDelete) {
+-    removePage(pageId);
+-  }
+-
+-  auto waitForDebugger =
+-      (inspectedContexts_->find(title) != inspectedContexts_->end());
+-  return addPage(hermes::inspector_modern::chrome::CDPHandler::create(
+-      std::move(adapter), title, waitForDebugger));
+-}
+-
+-void ConnectionDemux::disableDebugging(DebugSessionToken session) {
+-  std::scoped_lock lock(mutex_);
+-  if (conns_.find(session) == conns_.end()) {
+-    return;
+-  }
+-  removePage(session);
+-}
+-
+-int ConnectionDemux::addPage(
+-    std::shared_ptr<hermes::inspector_modern::chrome::CDPHandler> conn) {
+-  auto connectFunc = [conn, this](std::unique_ptr<IRemoteConnection> remoteConn)
+-      -> std::unique_ptr<ILocalConnection> {
+-    // This cannot be unique_ptr as std::function is copyable but unique_ptr
+-    // isn't. TODO: Change the CDPHandler API to accommodate this and not
+-    // require a copyable callback?
+-    std::shared_ptr<IRemoteConnection> sharedConn = std::move(remoteConn);
+-    if (!conn->registerCallbacks(
+-            [sharedConn](const std::string& message) {
+-              sharedConn->onMessage(message);
+-            },
+-            [sharedConn]() { sharedConn->onDisconnect(); })) {
+-      return nullptr;
+-    }
+-
+-    return std::make_unique<LocalConnection>(conn, inspectedContexts_);
+-  };
+-
+-  int pageId = globalInspector_.addPage(
+-      conn->getTitle(), "Hermes", std::move(connectFunc));
+-  conns_[pageId] = std::move(conn);
+-
+-  return pageId;
+-}
+-
+-void ConnectionDemux::removePage(int pageId) {
+-  globalInspector_.removePage(pageId);
+-
+-  auto conn = conns_.at(pageId);
+-  std::string title = conn->getTitle();
+-  inspectedContexts_->erase(title);
+-  conn->unregisterCallbacks();
+-  conns_.erase(pageId);
+-}
+-
+-} // namespace chrome
+-} // namespace inspector_modern
+-} // namespace hermes
+-} // namespace facebook
+-
+-#endif // HERMES_ENABLE_DEBUGGER
+diff --git a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/ConnectionDemux.h b/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/ConnectionDemux.h
+deleted file mode 100644
+index ba1325e..0000000
+--- a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/ConnectionDemux.h
++++ /dev/null
+@@ -1,68 +0,0 @@
+-/*
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-#pragma once
+-
+-#ifdef HERMES_ENABLE_DEBUGGER
+-
+-#include <memory>
+-#include <mutex>
+-#include <string>
+-#include <unordered_map>
+-#include <unordered_set>
+-
+-#include <hermes/hermes.h>
+-#include <hermes/inspector-modern/chrome/Registration.h>
+-#include <hermes/inspector/RuntimeAdapter.h>
+-#include <hermes/inspector/chrome/CDPHandler.h>
+-#include <jsinspector-modern/InspectorInterfaces.h>
+-
+-namespace facebook {
+-namespace hermes {
+-namespace inspector_modern {
+-namespace chrome {
+-
+-/*
+- * ConnectionDemux keeps track of all debuggable Hermes runtimes (called
+- * "pages" in the higher-level React Native API) in this process. See
+- * Registration.h for documentation of the public API.
+- */
+-class ConnectionDemux {
+- public:
+-  explicit ConnectionDemux(
+-      facebook::react::jsinspector_modern::IInspector& inspector);
+-  ~ConnectionDemux();
+-
+-  ConnectionDemux(const ConnectionDemux&) = delete;
+-  ConnectionDemux& operator=(const ConnectionDemux&) = delete;
+-
+-  DebugSessionToken enableDebugging(
+-      std::unique_ptr<RuntimeAdapter> adapter,
+-      const std::string& title);
+-  void disableDebugging(DebugSessionToken session);
+-
+- private:
+-  int addPage(
+-      std::shared_ptr<hermes::inspector_modern::chrome::CDPHandler> conn);
+-  void removePage(int pageId);
+-
+-  facebook::react::jsinspector_modern::IInspector& globalInspector_;
+-
+-  std::mutex mutex_;
+-  std::unordered_map<
+-      int,
+-      std::shared_ptr<hermes::inspector_modern::chrome::CDPHandler>>
+-      conns_;
+-  std::shared_ptr<std::unordered_set<std::string>> inspectedContexts_;
+-};
+-
+-} // namespace chrome
+-} // namespace inspector_modern
+-} // namespace hermes
+-} // namespace facebook
+-
+-#endif // HERMES_ENABLE_DEBUGGER
+diff --git a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/Registration.cpp b/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/Registration.cpp
+deleted file mode 100644
+index 312330c..0000000
+--- a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/Registration.cpp
++++ /dev/null
+@@ -1,43 +0,0 @@
+-/*
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-#include "Registration.h"
+-#include "ConnectionDemux.h"
+-
+-#ifdef HERMES_ENABLE_DEBUGGER
+-
+-namespace facebook {
+-namespace hermes {
+-namespace inspector_modern {
+-namespace chrome {
+-
+-namespace {
+-
+-ConnectionDemux& demux() {
+-  static ConnectionDemux instance{
+-      facebook::react::jsinspector_modern::getInspectorInstance()};
+-  return instance;
+-}
+-
+-} // namespace
+-
+-DebugSessionToken enableDebugging(
+-    std::unique_ptr<RuntimeAdapter> adapter,
+-    const std::string& title) {
+-  return demux().enableDebugging(std::move(adapter), title);
+-}
+-
+-void disableDebugging(DebugSessionToken session) {
+-  demux().disableDebugging(session);
+-}
+-
+-} // namespace chrome
+-} // namespace inspector_modern
+-} // namespace hermes
+-} // namespace facebook
+-
+-#endif // HERMES_ENABLE_DEBUGGER
+diff --git a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/Registration.h b/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/Registration.h
+deleted file mode 100644
+index 3395a9e..0000000
+--- a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/Registration.h
++++ /dev/null
+@@ -1,47 +0,0 @@
+-/*
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-#pragma once
+-
+-#ifdef HERMES_ENABLE_DEBUGGER
+-
+-#include <memory>
+-#include <string>
+-
+-#include <hermes/hermes.h>
+-#include <hermes/inspector/RuntimeAdapter.h>
+-
+-namespace facebook {
+-namespace hermes {
+-namespace inspector_modern {
+-namespace chrome {
+-
+-using DebugSessionToken = int;
+-
+-/*
+- * enableDebugging adds this runtime to the list of debuggable JS targets
+- * (called "pages" in the higher-level React Native API) in this process. It
+- * should be called before any JS runs in the runtime. The returned token
+- * can be used to disable debugging for this runtime.
+- */
+-extern DebugSessionToken enableDebugging(
+-    std::unique_ptr<RuntimeAdapter> adapter,
+-    const std::string& title);
+-
+-/*
+- * disableDebugging removes this runtime from the list of debuggable JS targets
+- * in this process. The runtime to remove is identified by the token returned
+- * from enableDebugging.
+- */
+-extern void disableDebugging(DebugSessionToken session);
+-
+-} // namespace chrome
+-} // namespace inspector_modern
+-} // namespace hermes
+-} // namespace facebook
+-
+-#endif // HERMES_ENABLE_DEBUGGER
+diff --git a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/tests/ConnectionDemuxTests.cpp b/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/tests/ConnectionDemuxTests.cpp
+deleted file mode 100644
+index 0e652e2..0000000
+--- a/node_modules/react-native/ReactCommon/hermes/inspector-modern/chrome/tests/ConnectionDemuxTests.cpp
++++ /dev/null
+@@ -1,148 +0,0 @@
+-/*
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-#include <chrono>
+-#include <condition_variable>
+-#include <mutex>
+-#include <string>
+-#include <unordered_map>
+-#include <vector>
+-
+-#include <gtest/gtest.h>
+-#include <hermes/hermes.h>
+-#include <hermes/inspector-modern/chrome/ConnectionDemux.h>
+-#include <jsinspector-modern/InspectorInterfaces.h>
+-
+-namespace facebook {
+-namespace hermes {
+-namespace inspector_modern {
+-namespace chrome {
+-
+-using ::facebook::react::jsinspector_modern::IInspector;
+-using ::facebook::react::jsinspector_modern::InspectorPageDescription;
+-using ::facebook::react::jsinspector_modern::IRemoteConnection;
+-
+-namespace {
+-
+-std::unordered_map<int, std::string> makePageMap(
+-    const std::vector<InspectorPageDescription>& pages) {
+-  std::unordered_map<int, std::string> pageMap;
+-
+-  for (auto& page : pages) {
+-    pageMap[page.id] = page.title;
+-  }
+-
+-  return pageMap;
+-}
+-
+-void expectPages(
+-    IInspector& inspector,
+-    const std::unordered_map<int, std::string>& expected) {
+-  auto pages = makePageMap(inspector.getPages());
+-  EXPECT_EQ(pages, expected);
+-}
+-
+-class TestRemoteConnection : public IRemoteConnection {
+- public:
+-  class Data {
+-   public:
+-    void expectDisconnected() {
+-      std::unique_lock<std::mutex> lock(mutex_);
+-      cv_.wait_for(
+-          lock, std::chrono::milliseconds(2500), [&] { return !connected_; });
+-      EXPECT_FALSE(connected_);
+-    }
+-
+-    void setDisconnected() {
+-      std::scoped_lock lock(mutex_);
+-      connected_ = false;
+-      cv_.notify_one();
+-    }
+-
+-   private:
+-    std::mutex mutex_;
+-    std::condition_variable cv_;
+-    bool connected_{true};
+-  };
+-
+-  TestRemoteConnection() : data_(std::make_shared<Data>()) {}
+-  ~TestRemoteConnection() {}
+-
+-  void onMessage(std::string message) override {}
+-
+-  void onDisconnect() override {
+-    data_->setDisconnected();
+-  }
+-
+-  std::shared_ptr<Data> getData() {
+-    return data_;
+-  }
+-
+- private:
+-  std::shared_ptr<Data> data_;
+-};
+-
+-}; // namespace
+-
+-TEST(ConnectionDemuxTests, TestEnableDisable) {
+-  std::shared_ptr<HermesRuntime> runtime1(
+-      facebook::hermes::makeHermesRuntime());
+-  std::shared_ptr<HermesRuntime> runtime2(
+-      facebook::hermes::makeHermesRuntime());
+-  auto inspector =
+-      facebook::react::jsinspector_modern::makeTestInspectorInstance();
+-
+-  ConnectionDemux demux{*inspector};
+-
+-  int id1 = demux.enableDebugging(
+-      std::make_unique<SharedRuntimeAdapter>(runtime1), "page1");
+-  int id2 = demux.enableDebugging(
+-      std::make_unique<SharedRuntimeAdapter>(runtime2), "page2");
+-
+-  expectPages(*inspector, {{id1, "page1"}, {id2, "page2"}});
+-
+-  auto remoteConn1 = std::make_unique<TestRemoteConnection>();
+-  auto remoteData1 = remoteConn1->getData();
+-  auto localConn1 = inspector->connect(id1, std::move(remoteConn1));
+-  EXPECT_NE(localConn1.get(), nullptr);
+-
+-  {
+-    // If we connect to the same page id again without disconnecting, we should
+-    // get null
+-    auto remoteConn = std::make_unique<TestRemoteConnection>();
+-    auto localConn = inspector->connect(id1, std::move(remoteConn));
+-    EXPECT_EQ(localConn.get(), nullptr);
+-  }
+-
+-  auto remoteConn2 = std::make_unique<TestRemoteConnection>();
+-  auto remoteData2 = remoteConn2->getData();
+-  auto localConn2 = inspector->connect(id2, std::move(remoteConn2));
+-  EXPECT_NE(localConn2.get(), nullptr);
+-
+-  // Disable debugging on runtime2. This should remove its page from the list
+-  // and call onDisconnect on its remoteConn
+-  demux.disableDebugging(id2);
+-  expectPages(*inspector, {{id1, "page1"}});
+-  remoteData2->expectDisconnected();
+-
+-  // Disconnect conn1. Its page should still be in the page list and
+-  // onDisconnect should be called.
+-  localConn1->disconnect();
+-  remoteData1->expectDisconnected();
+-
+-  {
+-    // Should still be able to reconnect after disconnecting
+-    auto remoteConn = std::make_unique<TestRemoteConnection>();
+-    auto localConn = inspector->connect(id1, std::move(remoteConn));
+-    EXPECT_NE(localConn.get(), nullptr);
+-  }
+-}
+-
+-} // namespace chrome
+-} // namespace inspector_modern
+-} // namespace hermes
+-} // namespace facebook
+diff --git a/node_modules/react-native/ReactCommon/jsc/JSCRuntime.cpp b/node_modules/react-native/ReactCommon/jsc/JSCRuntime.cpp
+index e63260a..9e188fa 100644
+--- a/node_modules/react-native/ReactCommon/jsc/JSCRuntime.cpp
++++ b/node_modules/react-native/ReactCommon/jsc/JSCRuntime.cpp
+@@ -94,7 +94,7 @@ class JSCRuntime : public jsi::Runtime {
+         const std::atomic<bool>& ctxInvalid,
+         JSValueRef sym);
+ #endif
+-    void invalidate() override;
++    void invalidate() noexcept override;
+ 
+     JSGlobalContextRef ctx_;
+     const std::atomic<bool>& ctxInvalid_;
+@@ -114,7 +114,7 @@ class JSCRuntime : public jsi::Runtime {
+ #else
+     JSCStringValue(JSStringRef str);
+ #endif
+-    void invalidate() override;
++    void invalidate() noexcept override;
+ 
+     JSStringRef str_;
+ #ifndef NDEBUG
+@@ -135,7 +135,7 @@ class JSCRuntime : public jsi::Runtime {
+ #endif
+     );
+ 
+-    void invalidate() override;
++    void invalidate() noexcept override;
+ 
+     JSGlobalContextRef ctx_;
+     const std::atomic<bool>& ctxInvalid_;
+@@ -377,13 +377,11 @@ JSCRuntime::JSCRuntime(JSGlobalContextRef ctx)
+ {
+ #ifndef NDEBUG
+ #ifdef _JSC_HAS_INSPECTABLE
+-#if (__OSX_AVAILABLE_STARTING(MAC_NA, IPHONE_16_4))
+   if (__builtin_available(macOS 13.3, iOS 16.4, tvOS 16.4, *)) {
+     JSGlobalContextSetInspectable(ctx_, true);
+   }
+ #endif
+ #endif
+-#endif
+ }
+ 
+ JSCRuntime::~JSCRuntime() {
+@@ -506,7 +504,7 @@ JSCRuntime::JSCSymbolValue::JSCSymbolValue(
+ #endif
+ }
+ 
+-void JSCRuntime::JSCSymbolValue::invalidate() {
++void JSCRuntime::JSCSymbolValue::invalidate() noexcept {
+ #ifndef NDEBUG
+   counter_ -= 1;
+ #endif
+@@ -531,7 +529,7 @@ JSCRuntime::JSCStringValue::JSCStringValue(JSStringRef str)
+     : str_(JSStringRetain(str)) {}
+ #endif
+ 
+-void JSCRuntime::JSCStringValue::invalidate() {
++void JSCRuntime::JSCStringValue::invalidate() noexcept {
+   // These JSC{String,Object}Value objects are implicitly owned by the
+   // {String,Object} objects, thus when a String/Object is destructed
+   // the JSC{String,Object}Value should be released.
+@@ -566,7 +564,7 @@ JSCRuntime::JSCObjectValue::JSCObjectValue(
+ #endif
+ }
+ 
+-void JSCRuntime::JSCObjectValue::invalidate() {
++void JSCRuntime::JSCObjectValue::invalidate() noexcept {
+ #ifndef NDEBUG
+   counter_ -= 1;
+ #endif
+@@ -668,9 +666,9 @@ jsi::PropNameID JSCRuntime::createPropNameIDFromString(const jsi::String& str) {
+ }
+ 
+ jsi::PropNameID JSCRuntime::createPropNameIDFromSymbol(const jsi::Symbol& sym) {
+-  // TODO: Support for symbols through the native API in JSC is very limited.
+-  // While we could construct a PropNameID here, we would not be able to get a
+-  // symbol property through the C++ API.
++  // TODO(T204185517): Support for symbols through the native API in JSC is very
++  // limited. While we could construct a PropNameID here, we would not be able
++  // to get a symbol property through the C++ API.
+   throw std::logic_error("Not implemented");
+ }
+ 
+diff --git a/node_modules/react-native/ReactCommon/jsi/jsi/jsi.cpp b/node_modules/react-native/ReactCommon/jsi/jsi/jsi.cpp
+index 3a54aa1..e2e4a6f 100644
+--- a/node_modules/react-native/ReactCommon/jsi/jsi/jsi.cpp
++++ b/node_modules/react-native/ReactCommon/jsi/jsi/jsi.cpp
+@@ -62,6 +62,107 @@ Value callGlobalFunction(Runtime& runtime, const char* name, const Value& arg) {
+   return f.call(runtime, arg);
+ }
+ 
++// Given a sequence of UTF8 encoded bytes, advance the input to past where a
++// 32-bit unicode codepoint as been decoded and return the codepoint. If the
++// UTF8 encoding is invalid, then return the value with the unicode replacement
++// character (U+FFFD). This decoder also relies on zero termination at end of
++// the input for bound checks.
++// \param input char pointer pointing to the current character
++// \return Unicode codepoint
++uint32_t decodeUTF8(const char*& input) {
++  uint32_t ch = (unsigned char)input[0];
++  if (ch <= 0x7f) {
++    input += 1;
++    return ch;
++  }
++  uint32_t ret;
++  constexpr uint32_t replacementCharacter = 0xFFFD;
++  if ((ch & 0xE0) == 0xC0) {
++    uint32_t ch1 = (unsigned char)input[1];
++    if ((ch1 & 0xC0) != 0x80) {
++      input += 1;
++      return replacementCharacter;
++    }
++    ret = ((ch & 0x1F) << 6) | (ch1 & 0x3F);
++    input += 2;
++    if (ret <= 0x7F) {
++      return replacementCharacter;
++    }
++  } else if ((ch & 0xF0) == 0xE0) {
++    uint32_t ch1 = (unsigned char)input[1];
++    if ((ch1 & 0x40) != 0 || (ch1 & 0x80) == 0) {
++      input += 1;
++      return replacementCharacter;
++    }
++    uint32_t ch2 = (unsigned char)input[2];
++    if ((ch2 & 0x40) != 0 || (ch2 & 0x80) == 0) {
++      input += 2;
++      return replacementCharacter;
++    }
++    ret = ((ch & 0x0F) << 12) | ((ch1 & 0x3F) << 6) | (ch2 & 0x3F);
++    input += 3;
++    if (ret <= 0x7FF) {
++      return replacementCharacter;
++    }
++  } else if ((ch & 0xF8) == 0xF0) {
++    uint32_t ch1 = (unsigned char)input[1];
++    if ((ch1 & 0x40) != 0 || (ch1 & 0x80) == 0) {
++      input += 1;
++      return replacementCharacter;
++    }
++    uint32_t ch2 = (unsigned char)input[2];
++    if ((ch2 & 0x40) != 0 || (ch2 & 0x80) == 0) {
++      input += 2;
++      return replacementCharacter;
++    }
++    uint32_t ch3 = (unsigned char)input[3];
++    if ((ch3 & 0x40) != 0 || (ch3 & 0x80) == 0) {
++      input += 3;
++      return replacementCharacter;
++    }
++    ret = ((ch & 0x07) << 18) | ((ch1 & 0x3F) << 12) | ((ch2 & 0x3F) << 6) |
++        (ch3 & 0x3F);
++    input += 4;
++    if (ret <= 0xFFFF) {
++      return replacementCharacter;
++    }
++    if (ret > 0x10FFFF) {
++      return replacementCharacter;
++    }
++  } else {
++    input += 1;
++    return replacementCharacter;
++  }
++  return ret;
++}
++
++// Given a valid 32-bit unicode codepoint, encode it as UTF-16 into the output.
++void encodeUTF16(std::u16string& out, uint32_t cp) {
++  if (cp < 0x10000) {
++    out.push_back((uint16_t)cp);
++    return;
++  }
++  cp -= 0x10000;
++  uint16_t highSurrogate = 0xD800 + ((cp >> 10) & 0x3FF);
++  out.push_back(highSurrogate);
++  uint16_t lowSurrogate = 0xDC00 + (cp & 0x3FF);
++  out.push_back(lowSurrogate);
++}
++
++// Convert the UTF8 encoded string into a UTF16 encoded string. If the
++// input is not valid UTF8, the replacement character (U+FFFD) is used to
++// represent the invalid sequence.
++std::u16string convertUTF8ToUTF16(const std::string& utf8) {
++  std::u16string ret;
++  const char* curr = utf8.data();
++  const char* end = curr + utf8.length();
++  while (curr < end) {
++    auto cp = decodeUTF8(curr);
++    encodeUTF16(ret, cp);
++  }
++  return ret;
++}
++
+ } // namespace
+ 
+ Buffer::~Buffer() = default;
+@@ -147,7 +248,54 @@ Value Runtime::createValueFromJsonUtf8(const uint8_t* json, size_t length) {
+   return parseJson.call(*this, String::createFromUtf8(*this, json, length));
+ }
+ 
+-Pointer& Pointer::operator=(Pointer&& other) {
++std::u16string Runtime::utf16(const PropNameID& sym) {
++  auto utf8Str = utf8(sym);
++  return convertUTF8ToUTF16(utf8Str);
++}
++
++std::u16string Runtime::utf16(const String& str) {
++  auto utf8Str = utf8(str);
++  return convertUTF8ToUTF16(utf8Str);
++}
++
++void Runtime::getStringData(
++    const jsi::String& str,
++    void* ctx,
++    void (*cb)(void* ctx, bool ascii, const void* data, size_t num)) {
++  auto utf16Str = utf16(str);
++  cb(ctx, false, utf16Str.data(), utf16Str.size());
++}
++
++void Runtime::getPropNameIdData(
++    const jsi::PropNameID& sym,
++    void* ctx,
++    void (*cb)(void* ctx, bool ascii, const void* data, size_t num)) {
++  auto utf16Str = utf16(sym);
++  cb(ctx, false, utf16Str.data(), utf16Str.size());
++}
++
++void Runtime::setPrototypeOf(const Object& object, const Value& prototype) {
++  auto setPrototypeOfFn = global()
++                              .getPropertyAsObject(*this, "Object")
++                              .getPropertyAsFunction(*this, "setPrototypeOf");
++  setPrototypeOfFn.call(*this, object, prototype).asObject(*this);
++}
++
++Value Runtime::getPrototypeOf(const Object& object) {
++  auto setPrototypeOfFn = global()
++                              .getPropertyAsObject(*this, "Object")
++                              .getPropertyAsFunction(*this, "getPrototypeOf");
++  return setPrototypeOfFn.call(*this, object);
++}
++
++Object Runtime::createObjectWithPrototype(const Value& prototype) {
++  auto createFn = global()
++                      .getPropertyAsObject(*this, "Object")
++                      .getPropertyAsFunction(*this, "create");
++  return createFn.call(*this, prototype).asObject(*this);
++}
++
++Pointer& Pointer::operator=(Pointer&& other) noexcept {
+   if (ptr_) {
+     ptr_->invalidate();
+   }
+@@ -222,7 +370,7 @@ Function Object::asFunction(Runtime& runtime) && {
+   return std::move(*this).getFunction(runtime);
+ }
+ 
+-Value::Value(Value&& other) : Value(other.kind_) {
++Value::Value(Value&& other) noexcept : Value(other.kind_) {
+   if (kind_ == BooleanKind) {
+     data_.boolean = other.data_.boolean;
+   } else if (kind_ == NumberKind) {
+diff --git a/node_modules/react-native/ReactCommon/jsi/jsi/jsi.h b/node_modules/react-native/ReactCommon/jsi/jsi/jsi.h
+index 16e251d..6b59a89 100644
+--- a/node_modules/react-native/ReactCommon/jsi/jsi/jsi.h
++++ b/node_modules/react-native/ReactCommon/jsi/jsi/jsi.h
+@@ -288,7 +288,7 @@ class JSI_EXPORT Runtime {
+   // rvalue arguments/methods would also reduce the number of clones.
+ 
+   struct PointerValue {
+-    virtual void invalidate() = 0;
++    virtual void invalidate() noexcept = 0;
+ 
+    protected:
+     virtual ~PointerValue() = default;
+@@ -333,12 +333,18 @@ class JSI_EXPORT Runtime {
+   virtual std::shared_ptr<HostObject> getHostObject(const jsi::Object&) = 0;
+   virtual HostFunctionType& getHostFunction(const jsi::Function&) = 0;
+ 
++  // Creates a new Object with the custom prototype
++  virtual Object createObjectWithPrototype(const Value& prototype);
++
+   virtual bool hasNativeState(const jsi::Object&) = 0;
+   virtual std::shared_ptr<NativeState> getNativeState(const jsi::Object&) = 0;
+   virtual void setNativeState(
+       const jsi::Object&,
+       std::shared_ptr<NativeState> state) = 0;
+ 
++  virtual void setPrototypeOf(const Object& object, const Value& prototype);
++  virtual Value getPrototypeOf(const Object& object);
++
+   virtual Value getProperty(const Object&, const PropNameID& name) = 0;
+   virtual Value getProperty(const Object&, const String& name) = 0;
+   virtual bool hasProperty(const Object&, const PropNameID& name) = 0;
+@@ -399,6 +405,37 @@ class JSI_EXPORT Runtime {
+       const jsi::Object& obj,
+       size_t amount) = 0;
+ 
++  virtual std::u16string utf16(const String& str);
++  virtual std::u16string utf16(const PropNameID& sym);
++
++  /// Invokes the provided callback \p cb with the String content in \p str.
++  /// The callback must take in three arguments: bool ascii, const void* data,
++  /// and size_t num, respectively. \p ascii indicates whether the \p data
++  /// passed to the callback should be interpreted as a pointer to a sequence of
++  /// \p num ASCII characters or UTF16 characters. Depending on the internal
++  /// representation of the string, the function may invoke the callback
++  /// multiple times, with a different format on each invocation. The callback
++  /// must not access runtime functionality, as any operation on the runtime may
++  /// invalidate the data pointers.
++  virtual void getStringData(
++      const jsi::String& str,
++      void* ctx,
++      void (*cb)(void* ctx, bool ascii, const void* data, size_t num));
++
++  /// Invokes the provided callback \p cb with the PropNameID content in \p sym.
++  /// The callback must take in three arguments: bool ascii, const void* data,
++  /// and size_t num, respectively. \p ascii indicates whether the \p data
++  /// passed to the callback should be interpreted as a pointer to a sequence of
++  /// \p num ASCII characters or UTF16 characters. Depending on the internal
++  /// representation of the string, the function may invoke the callback
++  /// multiple times, with a different format on each invocation. The callback
++  /// must not access runtime functionality, as any operation on the runtime may
++  /// invalidate the data pointers.
++  virtual void getPropNameIdData(
++      const jsi::PropNameID& sym,
++      void* ctx,
++      void (*cb)(void* ctx, bool ascii, const void* data, size_t num));
++
+   // These exist so derived classes can access the private parts of
+   // Value, Symbol, String, and Object, which are all friends of Runtime.
+   template <typename T>
+@@ -415,7 +452,7 @@ class JSI_EXPORT Runtime {
+ // Base class for pointer-storing types.
+ class JSI_EXPORT Pointer {
+  protected:
+-  explicit Pointer(Pointer&& other) : ptr_(other.ptr_) {
++  explicit Pointer(Pointer&& other) noexcept : ptr_(other.ptr_) {
+     other.ptr_ = nullptr;
+   }
+ 
+@@ -425,7 +462,7 @@ class JSI_EXPORT Pointer {
+     }
+   }
+ 
+-  Pointer& operator=(Pointer&& other);
++  Pointer& operator=(Pointer&& other) noexcept;
+ 
+   friend class Runtime;
+   friend class Value;
+@@ -501,6 +538,27 @@ class JSI_EXPORT PropNameID : public Pointer {
+     return runtime.utf8(*this);
+   }
+ 
++  /// Copies the data in a PropNameID as utf16 into a C++ string.
++  std::u16string utf16(Runtime& runtime) const {
++    return runtime.utf16(*this);
++  }
++
++  /// Invokes the user provided callback to process the content in PropNameId.
++  /// The callback must take in three arguments: bool ascii, const void* data,
++  /// and size_t num, respectively. \p ascii indicates whether the \p data
++  /// passed to the callback should be interpreted as a pointer to a sequence of
++  /// \p num ASCII characters or UTF16 characters. The function may invoke the
++  /// callback multiple times, with a different format on each invocation. The
++  /// callback must not access runtime functionality, as any operation on the
++  /// runtime may invalidate the data pointers.
++  template <typename CB>
++  void getPropNameIdData(Runtime& runtime, CB& cb) const {
++    runtime.getPropNameIdData(
++        *this, &cb, [](void* ctx, bool ascii, const void* data, size_t num) {
++          (*((CB*)ctx))(ascii, data, num);
++        });
++  }
++
+   static bool compare(
+       Runtime& runtime,
+       const jsi::PropNameID& a,
+@@ -651,6 +709,27 @@ class JSI_EXPORT String : public Pointer {
+     return runtime.utf8(*this);
+   }
+ 
++  /// Copies the data in a JS string as utf16 into a C++ string.
++  std::u16string utf16(Runtime& runtime) const {
++    return runtime.utf16(*this);
++  }
++
++  /// Invokes the user provided callback to process content in String. The
++  /// callback must take in three arguments: bool ascii, const void* data, and
++  /// size_t num, respectively. \p ascii indicates whether the \p data passed to
++  /// the callback should be interpreted as a pointer to a sequence of \p num
++  /// ASCII characters or UTF16 characters. The function may invoke the callback
++  /// multiple times, with a different format on each invocation. The callback
++  /// must not access runtime functionality, as any operation on the runtime may
++  /// invalidate the data pointers.
++  template <typename CB>
++  void getStringData(Runtime& runtime, CB& cb) const {
++    runtime.getStringData(
++        *this, &cb, [](void* ctx, bool ascii, const void* data, size_t num) {
++          (*((CB*)ctx))(ascii, data, num);
++        });
++  }
++
+   friend class Runtime;
+   friend class Value;
+ };
+@@ -675,6 +754,11 @@ class JSI_EXPORT Object : public Pointer {
+     return runtime.createObject(ho);
+   }
+ 
++  /// Creates a new Object with the custom prototype
++  static Object create(Runtime& runtime, const Value& prototype) {
++    return runtime.createObjectWithPrototype(prototype);
++  }
++
+   /// \return whether this and \c obj are the same JSObject or not.
+   static bool strictEquals(Runtime& runtime, const Object& a, const Object& b) {
+     return runtime.strictEquals(a, b);
+@@ -685,6 +769,16 @@ class JSI_EXPORT Object : public Pointer {
+     return rt.instanceOf(*this, ctor);
+   }
+ 
++  /// Sets \p prototype as the prototype of the object. The prototype must be
++  /// either an Object or null. If the prototype was not set successfully, this
++  /// method will throw.
++  void setPrototype(Runtime& runtime, const Value& prototype) const {
++    return runtime.setPrototypeOf(*this, prototype);
++  }
++
++  /// \return the prototype of the object
++  inline Value getPrototype(Runtime& runtime) const;
++
+   /// \return the property of the object with the given ascii name.
+   /// If the name isn't a property on the object, returns the
+   /// undefined value.
+@@ -1108,7 +1202,7 @@ class JSI_EXPORT Function : public Object {
+ class JSI_EXPORT Value {
+  public:
+   /// Default ctor creates an \c undefined JS value.
+-  Value() : Value(UndefinedKind) {}
++  Value() noexcept : Value(UndefinedKind) {}
+ 
+   /// Creates a \c null JS value.
+   /* implicit */ Value(std::nullptr_t) : kind_(NullKind) {}
+@@ -1149,7 +1243,7 @@ class JSI_EXPORT Value {
+         "Value cannot be constructed directly from const char*");
+   }
+ 
+-  Value(Value&& value);
++  Value(Value&& other) noexcept;
+ 
+   /// Copies a Symbol lvalue into a new JS value.
+   Value(Runtime& runtime, const Symbol& sym) : Value(SymbolKind) {
+@@ -1204,7 +1298,7 @@ class JSI_EXPORT Value {
+   /// https://262.ecma-international.org/11.0/#sec-strict-equality-comparison
+   static bool strictEquals(Runtime& runtime, const Value& a, const Value& b);
+ 
+-  Value& operator=(Value&& other) {
++  Value& operator=(Value&& other) noexcept {
+     this->~Value();
+     new (this) Value(std::move(other));
+     return *this;
+diff --git a/node_modules/react-native/ReactCommon/react/runtime/hermes/CMakeLists.txt b/node_modules/react-native/ReactCommon/react/runtime/hermes/CMakeLists.txt
+index 91ef2b5..2f06259 100644
+--- a/node_modules/react-native/ReactCommon/react/runtime/hermes/CMakeLists.txt
++++ b/node_modules/react-native/ReactCommon/react/runtime/hermes/CMakeLists.txt
+@@ -17,7 +17,7 @@ add_library(
+ target_include_directories(bridgelesshermes PUBLIC .)
+ 
+ target_link_libraries(bridgelesshermes
+-        hermes-engine::libhermes
++        hermes-engine::hermesvm
+         hermes_executor_common
+         hermes_inspector_modern
+         jsi
+diff --git a/node_modules/react-native/ReactCommon/react/runtime/hermes/HermesInstance.cpp b/node_modules/react-native/ReactCommon/react/runtime/hermes/HermesInstance.cpp
+index 8e2e193..e7f4f38 100644
+--- a/node_modules/react-native/ReactCommon/react/runtime/hermes/HermesInstance.cpp
++++ b/node_modules/react-native/ReactCommon/react/runtime/hermes/HermesInstance.cpp
+@@ -13,8 +13,6 @@
+ #include <react/featureflags/ReactNativeFeatureFlags.h>
+ 
+ #ifdef HERMES_ENABLE_DEBUGGER
+-#include <hermes/inspector-modern/chrome/Registration.h>
+-#include <hermes/inspector/RuntimeAdapter.h>
+ #include <jsi/decorator.h>
+ #endif
+ 
+@@ -23,75 +21,6 @@ using namespace facebook::jsi;
+ 
+ namespace facebook::react {
+ 
+-#ifdef HERMES_ENABLE_DEBUGGER
+-
+-// Wrapper that strongly retains the HermesRuntime for on device debugging.
+-//
+-// HermesInstanceRuntimeAdapter needs to strongly retain the HermesRuntime. Why:
+-//   - facebook::hermes::inspector_modern::chrome::Connection::Impl owns the
+-//   Adapter
+-//   - facebook::hermes::inspector_modern::chrome::Connection::Impl also owns
+-//   jsi:: objects
+-//   - jsi:: objects need to be deleted before the Runtime.
+-//
+-// If Adapter doesn't share ownership over jsi::Runtime, the runtime can be
+-// deleted before Connection::Impl cleans up all its jsi:: Objects. This will
+-// lead to a runtime crash.
+-class HermesInstanceRuntimeAdapter : public inspector_modern::RuntimeAdapter {
+- public:
+-  HermesInstanceRuntimeAdapter(
+-      std::shared_ptr<HermesRuntime> hermesRuntime,
+-      std::shared_ptr<MessageQueueThread> msgQueueThread)
+-      : hermesRuntime_(std::move(hermesRuntime)),
+-        messageQueueThread_(std::move(msgQueueThread)) {}
+-  virtual ~HermesInstanceRuntimeAdapter() = default;
+-
+-  HermesRuntime& getRuntime() override {
+-    return *hermesRuntime_;
+-  }
+-
+-  void tickleJs() override {
+-    std::weak_ptr<HermesRuntime> weakRuntime(hermesRuntime_);
+-    messageQueueThread_->runOnQueue([weakRuntime]() {
+-      auto runtime = weakRuntime.lock();
+-      if (!runtime) {
+-        return;
+-      }
+-      jsi::Function func =
+-          runtime->global().getPropertyAsFunction(*runtime, "__tickleJs");
+-      func.call(*runtime);
+-    });
+-  }
+-
+- private:
+-  std::shared_ptr<HermesRuntime> hermesRuntime_;
+-  std::shared_ptr<MessageQueueThread> messageQueueThread_;
+-};
+-
+-class DecoratedRuntime : public jsi::RuntimeDecorator<jsi::Runtime> {
+- public:
+-  DecoratedRuntime(
+-      std::unique_ptr<HermesRuntime> runtime,
+-      std::shared_ptr<MessageQueueThread> msgQueueThread)
+-      : RuntimeDecorator<jsi::Runtime>(*runtime), runtime_(std::move(runtime)) {
+-    auto adapter = std::make_unique<HermesInstanceRuntimeAdapter>(
+-        runtime_, msgQueueThread);
+-
+-    debugToken_ = inspector_modern::chrome::enableDebugging(
+-        std::move(adapter), "Hermes Bridgeless React Native");
+-  }
+-
+-  ~DecoratedRuntime() {
+-    inspector_modern::chrome::disableDebugging(debugToken_);
+-  }
+-
+- private:
+-  std::shared_ptr<HermesRuntime> runtime_;
+-  inspector_modern::chrome::DebugSessionToken debugToken_;
+-};
+-
+-#endif
+-
+ class HermesJSRuntime : public JSRuntime {
+  public:
+   HermesJSRuntime(std::unique_ptr<HermesRuntime> runtime)
+@@ -157,17 +86,7 @@ std::unique_ptr<JSRuntime> HermesInstance::createJSRuntime(
+   std::unique_ptr<HermesRuntime> hermesRuntime =
+       hermes::makeHermesRuntime(runtimeConfigBuilder.build());
+ 
+-#ifdef HERMES_ENABLE_DEBUGGER
+-  auto& inspectorFlags = jsinspector_modern::InspectorFlags::getInstance();
+-  if (!inspectorFlags.getFuseboxEnabled()) {
+-    std::unique_ptr<DecoratedRuntime> decoratedRuntime =
+-        std::make_unique<DecoratedRuntime>(
+-            std::move(hermesRuntime), msgQueueThread);
+-    return std::make_unique<JSIRuntimeHolder>(std::move(decoratedRuntime));
+-  }
+-#else
+   (void)msgQueueThread;
+-#endif
+ 
+   return std::make_unique<HermesJSRuntime>(std::move(hermesRuntime));
+ }
+diff --git a/node_modules/react-native/scripts/cocoapods/jsengine.rb b/node_modules/react-native/scripts/cocoapods/jsengine.rb
+index 221c2ab..933d55a 100644
+--- a/node_modules/react-native/scripts/cocoapods/jsengine.rb
++++ b/node_modules/react-native/scripts/cocoapods/jsengine.rb
+@@ -28,6 +28,12 @@ def setup_hermes!(react_native_path: "../node_modules/react-native")
+     # We have custom logic to compute the source for hermes-engine. See sdks/hermes-engine/*
+     hermestag_file = File.join(react_native_dir, "sdks", ".hermesversion")
+     hermestag = File.exist?(hermestag_file) ? File.read(hermestag_file).strip : ''
+-    pod 'hermes-engine', :podspec => "#{react_native_path}/sdks/hermes-engine/hermes-engine.podspec", :tag => hermestag
++    podspec_path = "#{react_native_path}/sdks/hermes-engine/hermes-engine.podspec"
++    if hermestag.include? "."
++        pod 'hermes-engine', :podspec => podspec_path, :tag => hermestag
++    else
++        # Temporary workaround to test static Hermes from a specific commit, until the proper tag is created
++        pod 'hermes-engine', :podspec => podspec_path, :commit => hermestag
++    end
+     pod 'React-hermes', :path => "#{react_native_path}/ReactCommon/hermes"
+ end
+diff --git a/node_modules/react-native/scripts/hermes/hermes-utils.js b/node_modules/react-native/scripts/hermes/hermes-utils.js
+index 3a5aa8d..9655e5c 100644
+--- a/node_modules/react-native/scripts/hermes/hermes-utils.js
++++ b/node_modules/react-native/scripts/hermes/hermes-utils.js
+@@ -29,7 +29,7 @@ const MACOS_BIN_DIR = path.join(SDKS_DIR, 'hermesc', 'osx-bin');
+ const MACOS_HERMESC_PATH = path.join(MACOS_BIN_DIR, 'hermesc');
+ const MACOS_IMPORT_HERMESC_PATH = path.join(
+   MACOS_BIN_DIR,
+-  'ImportHermesc.cmake',
++  'ImportHostCompilers.cmake',
+ );
+ 
+ /**
+@@ -301,7 +301,7 @@ function createHermesPrebuiltArtifactsTarball(
+ function validateHermesFrameworksExist(destrootDir /*: string */) {
+   if (
+     !fs.existsSync(
+-      path.join(destrootDir, 'Library/Frameworks/macosx/hermes.framework'),
++      path.join(destrootDir, 'Library/Frameworks/macosx/hermesvm.framework'),
+     )
+   ) {
+     throw new Error(
+@@ -310,7 +310,10 @@ function validateHermesFrameworksExist(destrootDir /*: string */) {
+   }
+   if (
+     !fs.existsSync(
+-      path.join(destrootDir, 'Library/Frameworks/universal/hermes.xcframework'),
++      path.join(
++        destrootDir,
++        'Library/Frameworks/universal/hermesvm.xcframework',
++      ),
+     )
+   ) {
+     throw new Error(
+diff --git a/node_modules/react-native/sdks/.hermesversion b/node_modules/react-native/sdks/.hermesversion
+index d6e7968..942cb9c 100644
+--- a/node_modules/react-native/sdks/.hermesversion
++++ b/node_modules/react-native/sdks/.hermesversion
+@@ -1 +1 @@
+-hermes-2024-11-12-RNv0.76.2-5b4aa20c719830dcf5684832b89a6edb95ac3d64
+\ No newline at end of file
++d6c8fe6f1a1135aa2528b775bbd4662c625c0088
+\ No newline at end of file
+diff --git a/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec b/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
+index 6680c60..0f3e45b 100644
+--- a/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
++++ b/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
+@@ -39,9 +39,9 @@ Pod::Spec.new do |spec|
+                     "CLANG_CXX_LIBRARY" => "compiler-default"
+                   }
+ 
+-  spec.ios.vendored_frameworks = "destroot/Library/Frameworks/ios/hermes.framework"
+-  spec.osx.vendored_frameworks = "destroot/Library/Frameworks/macosx/hermes.framework"
+-  spec.visionos.vendored_frameworks = "destroot/Library/Frameworks/xros/hermes.framework"
++  spec.ios.vendored_frameworks = "destroot/Library/Frameworks/ios/hermesvm.framework"
++  spec.osx.vendored_frameworks = "destroot/Library/Frameworks/macosx/hermesvm.framework"
++  spec.visionos.vendored_frameworks = "destroot/Library/Frameworks/xros/hermesvm.framework"
+ 
+   if HermesEngineSourceType::isPrebuilt(source_type) then
+ 
+@@ -49,9 +49,9 @@ Pod::Spec.new do |spec|
+       ss.preserve_paths = ["destroot/bin/*"].concat(["**/*.{h,c,cpp}"])
+       ss.source_files = "destroot/include/hermes/**/*.h"
+       ss.header_mappings_dir = "destroot/include"
+-      ss.ios.vendored_frameworks = "destroot/Library/Frameworks/universal/hermes.xcframework"
+-      ss.visionos.vendored_frameworks = "destroot/Library/Frameworks/universal/hermes.xcframework"
+-      ss.osx.vendored_frameworks = "destroot/Library/Frameworks/macosx/hermes.framework"
++      ss.ios.vendored_frameworks = "destroot/Library/Frameworks/universal/hermesvm.xcframework"
++      ss.visionos.vendored_frameworks = "destroot/Library/Frameworks/universal/hermesvm.xcframework"
++      ss.osx.vendored_frameworks = "destroot/Library/Frameworks/macosx/hermesvm.framework"
+     end
+ 
+ 
+@@ -92,12 +92,6 @@ Pod::Spec.new do |spec|
+       ss.header_dir = 'hermes/cdp'
+     end
+ 
+-    spec.subspec 'inspector' do |ss|
+-      ss.source_files = ''
+-      ss.public_header_files = 'API/hermes/inspector/*.h'
+-      ss.header_dir = 'hermes/inspector'
+-    end
+-
+     spec.subspec 'inspector_chrome' do |ss|
+       ss.source_files = ''
+       ss.public_header_files = 'API/hermes/inspector/chrome/*.h'
+@@ -131,7 +125,7 @@ Pod::Spec.new do |spec|
+         {
+           :name => '[RN] [1] Build Hermesc',
+           :output_files => [
+-            "#{hermesc_path}/ImportHermesc.cmake"
++            "#{hermesc_path}/ImportHostCompilers.cmake"
+           ],
+           :script => <<-EOS
+           . "${REACT_NATIVE_PATH}/scripts/xcode/with-environment.sh"
+@@ -141,14 +135,14 @@ Pod::Spec.new do |spec|
+         },
+         {
+           :name => '[RN] [2] Build Hermes',
+-          :input_files => ["#{hermesc_path}/ImportHermesc.cmake"],
++          :input_files => ["#{hermesc_path}/ImportHostCompilers.cmake"],
+           :output_files => [
+-            "${PODS_ROOT}/hermes-engine/build/iphonesimulator/API/hermes/hermes.framework/hermes"
++            "${PODS_ROOT}/hermes-engine/build/iphonesimulator/lib/hermesvm.framework/hermesvm"
+           ],
+           :script => <<-EOS
+           . "${REACT_NATIVE_PATH}/scripts/xcode/with-environment.sh"
+           export CMAKE_BINARY=${CMAKE_BINARY:-#{CMAKE_BINARY}}
+-          . ${REACT_NATIVE_PATH}/sdks/hermes-engine/utils/build-hermes-xcode.sh #{version} #{hermesc_path}/ImportHermesc.cmake ${REACT_NATIVE_PATH}/ReactCommon/jsi
++          . ${REACT_NATIVE_PATH}/sdks/hermes-engine/utils/build-hermes-xcode.sh #{version} #{hermesc_path}/ImportHostCompilers.cmake ${REACT_NATIVE_PATH}/ReactCommon/jsi
+           EOS
+         }
+       ]
+diff --git a/node_modules/react-native/sdks/hermes-engine/hermes-utils.rb b/node_modules/react-native/sdks/hermes-engine/hermes-utils.rb
+index c0c7613..acd7be6 100644
+--- a/node_modules/react-native/sdks/hermes-engine/hermes-utils.rb
++++ b/node_modules/react-native/sdks/hermes-engine/hermes-utils.rb
+@@ -86,7 +86,7 @@ def hermes_commit_envvar_defined()
+ end
+ 
+ def force_build_from_tag(react_native_path)
+-    return ENV[ENV_BUILD_FROM_SOURCE] === 'true' && File.exist?(hermestag_file(react_native_path))
++    return File.exist?(hermestag_file(react_native_path))
+ end
+ 
+ def force_build_from_main(react_native_path)
+@@ -169,7 +169,11 @@ end
+ def podspec_source_build_from_github_tag(react_native_path)
+     tag = File.read(hermestag_file(react_native_path)).strip
+     hermes_log("Using tag difined in sdks/.hermesversion: #{tag}")
+-    return {:git => HERMES_GITHUB_URL, :tag => tag}
++    if tag.include? "."
++        return {:git => HERMES_GITHUB_URL, :tag => tag}
++    end
++    # Temporary workaround to test static Hermes from a specific commit, until the proper tag is created
++    return {:git => HERMES_GITHUB_URL, :commit => tag}
+ end
+ 
+ def podspec_source_build_from_github_main()
+diff --git a/node_modules/react-native/sdks/hermes-engine/utils/build-apple-framework.sh b/node_modules/react-native/sdks/hermes-engine/utils/build-apple-framework.sh
+index 08701e2..9e5f8c0 100755
+--- a/node_modules/react-native/sdks/hermes-engine/utils/build-apple-framework.sh
++++ b/node_modules/react-native/sdks/hermes-engine/utils/build-apple-framework.sh
+@@ -9,7 +9,7 @@
+ 
+ CURR_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+ 
+-IMPORT_HERMESC_PATH=${HERMES_OVERRIDE_HERMESC_PATH:-$PWD/build_host_hermesc/ImportHermesc.cmake}
++IMPORT_HERMESC_PATH=${HERMES_OVERRIDE_HERMESC_PATH:-$PWD/build_host_hermesc/ImportHostCompilers.cmake}
+ BUILD_TYPE=${BUILD_TYPE:-Debug}
+ 
+ HERMES_PATH="$CURR_SCRIPT_DIR/.."
+@@ -60,7 +60,7 @@ function get_mac_deployment_target {
+ function build_host_hermesc {
+   echo "Building hermesc"
+   pushd "$HERMES_PATH" > /dev/null || exit 1
+-    cmake -S . -B build_host_hermesc -DJSI_DIR="$JSI_PATH"
++    cmake -S . -B build_host_hermesc -DJSI_DIR="$JSI_PATH" -DCMAKE_BUILD_TYPE=Release
+     cmake --build ./build_host_hermesc --target hermesc -j "${NUM_CORES}"
+   popd > /dev/null || exit 1
+ }
+@@ -88,6 +88,10 @@ function configure_apple_framework {
+     xcode_15_flags="LINKER:-ld_classic"
+   fi
+ 
++  boost_context_flag=""
++  if [[ $1 == "catalyst" ]]; then
++    boost_context_flag="-DHERMES_ALLOW_BOOST_CONTEXT=0"
++  fi
+   pushd "$HERMES_PATH" > /dev/null || exit 1
+     cmake -S . -B "build_$1" \
+       -DHERMES_EXTRA_LINKER_FLAGS="$xcode_15_flags" \
+@@ -103,10 +107,14 @@ function configure_apple_framework {
+       -DHERMES_BUILD_APPLE_FRAMEWORK:BOOLEAN=true \
+       -DHERMES_BUILD_SHARED_JSI:BOOLEAN=false \
+       -DHERMES_BUILD_APPLE_DSYM:BOOLEAN=true \
++      -DCMAKE_CXX_FLAGS="-gdwarf ${CMAKE_CXX_FLAGS}" \
++      -DCMAKE_C_FLAGS="-gdwarf ${CMAKE_CXX_FLAGS}" \
+       -DIMPORT_HERMESC:PATH="$IMPORT_HERMESC_PATH" \
++      -DIMPORT_HOST_COMPILERS="$IMPORT_HERMESC_PATH" \
+       -DJSI_DIR="$JSI_PATH" \
+-      -DHERMES_RELEASE_VERSION="for RN $(get_release_version)" \
+-      -DCMAKE_BUILD_TYPE="$cmake_build_type"
++      -DHERMES_RELEASE_VERSION="for RN $(get_release_version) (static)" \
++      -DCMAKE_BUILD_TYPE="$cmake_build_type" \
++      $boost_context_flag
+     popd > /dev/null || exit 1
+ }
+ 
+@@ -118,6 +126,14 @@ function build_host_hermesc_if_needed {
+   fi
+ }
+ 
++function generate_dSYM {
++  TARGET_PLATFORM="$1"
++  DSYM_PATH="$PWD/build_$TARGET_PLATFORM/lib/hermesvm.framework.dSYM"
++  xcrun dsymutil "$PWD/build_$TARGET_PLATFORM/lib/hermesvm.framework/hermesvm" --out "$DSYM_PATH"
++  mkdir -p "$PWD/destroot/Library/Frameworks/$TARGET_PLATFORM"
++  cp -R "$DSYM_PATH" "$PWD/destroot/Library/Frameworks/$TARGET_PLATFORM"
++}
++
+ # Utility function to build an Apple framework
+ function build_apple_framework {
+   # Only build host HermesC if no file found at $IMPORT_HERMESC_PATH
+@@ -133,12 +149,13 @@ function build_apple_framework {
+ 
+   pushd "$HERMES_PATH" > /dev/null || exit 1
+     mkdir -p "destroot/Library/Frameworks/$1"
+-    cmake --build "./build_$1" --target libhermes -j "${NUM_CORES}"
+-    cp -R "./build_$1"/API/hermes/hermes.framework* "destroot/Library/Frameworks/$1"
++    cmake --build "./build_$1" --target hermesvm -j "${NUM_CORES}"
++    cp -R "./build_$1"/lib/hermesvm.framework* "destroot/Library/Frameworks/$1"
++    generate_dSYM "$1"
+ 
+     # In a MacOS build, also produce the hermes and hermesc CLI tools.
+     if [[ $1 == macosx ]]; then
+-      cmake --build "./build_$1" --target hermesc hermes -j "${NUM_CORES}"
++      cmake --build "./build_$1" --target hermesc hermesvm -j "${NUM_CORES}"
+       mkdir -p destroot/bin
+       cp "./build_$1/bin"/* "destroot/bin"
+     fi
+@@ -153,12 +170,6 @@ function build_apple_framework {
+     mkdir -p destroot/include/hermes/cdp
+     cp API/hermes/cdp/*.h destroot/include/hermes/cdp
+ 
+-    mkdir -p destroot/include/hermes/inspector
+-    cp API/hermes/inspector/*.h destroot/include/hermes/inspector
+-
+-    mkdir -p destroot/include/hermes/inspector/chrome
+-    cp API/hermes/inspector/chrome/*.h destroot/include/hermes/inspector/chrome
+-
+     mkdir -p destroot/include/jsi
+     cp "$JSI_PATH"/jsi/*.h destroot/include/jsi
+   popd > /dev/null || exit 1
+@@ -168,7 +179,7 @@ function prepare_dest_root_for_ci {
+   mkdir -p  "destroot/bin"
+   for platform in "${PLATFORMS[@]}"; do
+     mkdir -p "destroot/Library/Frameworks/$platform"
+-    cp -R "./build_$platform/API/hermes/hermes.framework"* "destroot/Library/Frameworks/$platform"
++    cp -R "./build_$platform/lib/hermesvm.framework"* "destroot/Library/Frameworks/$platform"
+   done
+ 
+   cp "./build_macosx/bin/"* "destroot/bin"
+@@ -183,12 +194,6 @@ function prepare_dest_root_for_ci {
+   mkdir -p destroot/include/hermes/cdp
+   cp API/hermes/cdp/*.h destroot/include/hermes/cdp
+ 
+-  mkdir -p destroot/include/hermes/inspector
+-  cp API/hermes/inspector/*.h destroot/include/hermes/inspector
+-
+-  mkdir -p destroot/include/hermes/inspector/chrome
+-  cp API/hermes/inspector/chrome/*.h destroot/include/hermes/inspector/chrome
+-
+   mkdir -p destroot/include/jsi
+   cp "$JSI_PATH"/jsi/*.h destroot/include/jsi
+ }
+@@ -206,15 +211,15 @@ function create_universal_framework {
+ 
+   for i in "${!platforms[@]}"; do
+     local platform="${platforms[$i]}"
+-    local hermes_framework_path="${platform}/hermes.framework"
++    local hermes_framework_path="${platform}/hermesvm.framework"
+     args+="-framework $hermes_framework_path "
+   done
+ 
+   mkdir -p universal
+   # shellcheck disable=SC2086
+-  if xcodebuild -create-xcframework $args -output "universal/hermes.xcframework"
++  if xcodebuild -create-xcframework $args -output "universal/hermesvm.xcframework"
+   then
+-    # # Remove the thin iOS hermes.frameworks that are now part of the universal
++    # # Remove the thin iOS hermesvm.frameworks that are now part of the universal
+     # XCFramework
+     for platform in "${platforms[@]}"; do
+       rm -r "$platform"
+diff --git a/node_modules/react-native/sdks/hermes-engine/utils/build-hermes-xcode.sh b/node_modules/react-native/sdks/hermes-engine/utils/build-hermes-xcode.sh
+index 0fa473e..60e2fe3 100755
+--- a/node_modules/react-native/sdks/hermes-engine/utils/build-hermes-xcode.sh
++++ b/node_modules/react-native/sdks/hermes-engine/utils/build-hermes-xcode.sh
+@@ -63,6 +63,11 @@ architectures=$( echo "$ARCHS" | tr  " " ";" )
+ 
+ echo "Configure Apple framework"
+ 
++boost_context_flag=""
++if [[ $PLATFORM_NAME == "catalyst" ]]; then
++  boost_context_flag="-DHERMES_ALLOW_BOOST_CONTEXT=0"
++fi
++
+ "$CMAKE_BINARY" \
+   -S "${PODS_ROOT}/hermes-engine" \
+   -B "${PODS_ROOT}/hermes-engine/build/${PLATFORM_NAME}" \
+@@ -80,15 +85,17 @@ echo "Configure Apple framework"
+   -DHERMES_BUILD_SHARED_JSI:BOOLEAN=false \
+   -DHERMES_BUILD_APPLE_DSYM:BOOLEAN=true \
+   -DIMPORT_HERMESC:PATH="${hermesc_path}" \
++  -DIMPORT_HOST_COMPILERS="${PODS_ROOT}/hermes-engine/build_host_hermesc/ImportHostCompilers.cmake" \
+   -DJSI_DIR="$jsi_path" \
+-  -DHERMES_RELEASE_VERSION="for RN $release_version" \
+-  -DCMAKE_BUILD_TYPE="$cmake_build_type"
++  -DHERMES_RELEASE_VERSION="for RN $release_version (static)" \
++  -DCMAKE_BUILD_TYPE="$cmake_build_type" \
++  $boost_context_flag
+ 
+ echo "Build Apple framework"
+ 
+ "$CMAKE_BINARY" \
+   --build "${PODS_ROOT}/hermes-engine/build/${PLATFORM_NAME}" \
+-  --target libhermes \
++  --target hermesvm \
+   -j "$(sysctl -n hw.ncpu)"
+ 
+ echo "Copy Apple framework to destroot/Library/Frameworks"
+@@ -96,5 +103,5 @@ echo "Copy Apple framework to destroot/Library/Frameworks"
+ platform_copy_destination=$(get_platform_copy_destination $PLATFORM_NAME)
+ 
+ cp -pfR \
+-  "${PODS_ROOT}/hermes-engine/build/${PLATFORM_NAME}/API/hermes/hermes.framework" \
++  "${PODS_ROOT}/hermes-engine/build/${PLATFORM_NAME}/lib/hermesvm.framework" \
+   "${PODS_ROOT}/hermes-engine/destroot/Library/Frameworks/${platform_copy_destination}"
+diff --git a/node_modules/react-native/sdks/hermes-engine/utils/build-hermesc-xcode.sh b/node_modules/react-native/sdks/hermes-engine/utils/build-hermesc-xcode.sh
+index 132ee54..b833f6b 100755
+--- a/node_modules/react-native/sdks/hermes-engine/utils/build-hermesc-xcode.sh
++++ b/node_modules/react-native/sdks/hermes-engine/utils/build-hermesc-xcode.sh
+@@ -14,5 +14,5 @@ jsi_path="$1"
+ # We want to make sure that hermesc is built for mac.
+ # So we clean the environment with env -i, and explicitly set SDKROOT to macosx
+ SDKROOT=$(xcode-select -p)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+-env -i SDKROOT="$SDKROOT" "$CMAKE_BINARY" -S "${PODS_ROOT}/hermes-engine" -B "$hermesc_dir_path" -DJSI_DIR="$jsi_path"
++env -i SDKROOT="$SDKROOT" "$CMAKE_BINARY" -S "${PODS_ROOT}/hermes-engine" -B "$hermesc_dir_path" -DJSI_DIR="$jsi_path" -DCMAKE_BUILD_TYPE=Release
+ env -i SDKROOT="$SDKROOT" "$CMAKE_BINARY" --build "$hermesc_dir_path" --target hermesc -j "$(sysctl -n hw.ncpu)"
+diff --git a/node_modules/react-native/sdks/hermes-engine/utils/build-ios-framework.sh b/node_modules/react-native/sdks/hermes-engine/utils/build-ios-framework.sh
+index 8933459..b6e352d 100755
+--- a/node_modules/react-native/sdks/hermes-engine/utils/build-ios-framework.sh
++++ b/node_modules/react-native/sdks/hermes-engine/utils/build-ios-framework.sh
+@@ -35,7 +35,7 @@ function get_deployment_target {
+ # build a single framework
+ # $1 is the target to build
+ function build_framework {
+-  if [ ! -d destroot/Library/Frameworks/universal/hermes.xcframework ]; then
++  if [ ! -d destroot/Library/Frameworks/universal/hermesvm.xcframework ]; then
+     deployment_target=$(get_deployment_target "$1")
+ 
+     architecture=$(get_architecture "$1")
+@@ -48,7 +48,7 @@ function build_framework {
+ 
+ # group the frameworks together to create a universal framework
+ function build_universal_framework {
+-    if [ ! -d destroot/Library/Frameworks/universal/hermes.xcframework ]; then
++    if [ ! -d destroot/Library/Frameworks/universal/hermesvm.xcframework ]; then
+         create_universal_framework "iphoneos" "iphonesimulator" "catalyst" "xros" "xrsimulator"
+     else
+         echo "Skipping; Clean \"destroot\" to rebuild".
+@@ -58,7 +58,7 @@ function build_universal_framework {
+ # single function that builds sequentially iphoneos, iphonesimulator and catalyst
+ # this is used to preserve backward compatibility
+ function create_framework {
+-    if [ ! -d destroot/Library/Frameworks/universal/hermes.xcframework ]; then
++    if [ ! -d destroot/Library/Frameworks/universal/hermesvm.xcframework ]; then
+         build_framework "iphoneos"
+         build_framework "iphonesimulator"
+         build_framework "catalyst"
+diff --git a/node_modules/react-native/sdks/hermes-engine/utils/build-mac-framework.sh b/node_modules/react-native/sdks/hermes-engine/utils/build-mac-framework.sh
+index 5abac8e..9881eca 100755
+--- a/node_modules/react-native/sdks/hermes-engine/utils/build-mac-framework.sh
++++ b/node_modules/react-native/sdks/hermes-engine/utils/build-mac-framework.sh
+@@ -13,7 +13,7 @@ set -e
+ CURR_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+ . "${CURR_SCRIPT_DIR}/build-apple-framework.sh"
+ 
+-if [ ! -d destroot/Library/Frameworks/macosx/hermes.framework ]; then
++if [ ! -d destroot/Library/Frameworks/macosx/hermesvm.framework ]; then
+     mac_deployment_target=$(get_mac_deployment_target)
+ 
+     build_apple_framework "macosx" "x86_64;arm64" "$mac_deployment_target"
+diff --git a/node_modules/react-native/sdks/hermes-engine/utils/create-dummy-hermes-xcframework.sh b/node_modules/react-native/sdks/hermes-engine/utils/create-dummy-hermes-xcframework.sh
+index 4419de9..2197381 100644
+--- a/node_modules/react-native/sdks/hermes-engine/utils/create-dummy-hermes-xcframework.sh
++++ b/node_modules/react-native/sdks/hermes-engine/utils/create-dummy-hermes-xcframework.sh
+@@ -8,7 +8,7 @@ set -x
+ 
+ # CocoaPods requires vendored frameworks to exist before `pod install` is run,
+ # and to be proper Moch-O binaries in order to auto-link them to the user's Xcode project.
+-# This script creates dummy hermes.framework for macosx and ios.
++# This script creates dummy hermesvm.framework for macosx and ios.
+ # They are then get rewritten by `build-hermes-xcode.sh` during Xcode build.
+ 
+ rm -rf destroot
+@@ -23,8 +23,8 @@ platforms=( "macosx" "ios" "xros" ) # Add other platforms here if needed
+ 
+ for platform in "${platforms[@]}" 
+ do 
+-    mkdir -p "${platform}/hermes.framework"
+-    clang dummy.c -dynamiclib -o "${platform}/hermes.framework/hermes"
++    mkdir -p "${platform}/hermesvm.framework"
++    clang dummy.c -dynamiclib -o "${platform}/hermesvm.framework/hermesvm"
+ done
+ 
+ rm dummy.c
