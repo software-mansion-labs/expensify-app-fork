@@ -1528,7 +1528,7 @@ index d6e7968..942cb9c 100644
 +d6c8fe6f1a1135aa2528b775bbd4662c625c0088
 \ No newline at end of file
 diff --git a/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec b/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
-index 6680c60..0f3e45b 100644
+index 6680c60..8477f5d 100644
 --- a/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
 +++ b/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
 @@ -39,9 +39,9 @@ Pod::Spec.new do |spec|
@@ -1557,7 +1557,7 @@ index 6680c60..0f3e45b 100644
      end
  
  
-@@ -92,12 +92,6 @@ Pod::Spec.new do |spec|
+@@ -92,18 +92,6 @@ Pod::Spec.new do |spec|
        ss.header_dir = 'hermes/cdp'
      end
  
@@ -1567,10 +1567,16 @@ index 6680c60..0f3e45b 100644
 -      ss.header_dir = 'hermes/inspector'
 -    end
 -
-     spec.subspec 'inspector_chrome' do |ss|
+-    spec.subspec 'inspector_chrome' do |ss|
+-      ss.source_files = ''
+-      ss.public_header_files = 'API/hermes/inspector/chrome/*.h'
+-      ss.header_dir = 'hermes/inspector/chrome'
+-    end
+-
+     spec.subspec 'Public' do |ss|
        ss.source_files = ''
-       ss.public_header_files = 'API/hermes/inspector/chrome/*.h'
-@@ -131,7 +125,7 @@ Pod::Spec.new do |spec|
+       ss.public_header_files = 'public/hermes/Public/*.h'
+@@ -131,7 +119,7 @@ Pod::Spec.new do |spec|
          {
            :name => '[RN] [1] Build Hermesc',
            :output_files => [
@@ -1579,7 +1585,7 @@ index 6680c60..0f3e45b 100644
            ],
            :script => <<-EOS
            . "${REACT_NATIVE_PATH}/scripts/xcode/with-environment.sh"
-@@ -141,14 +135,14 @@ Pod::Spec.new do |spec|
+@@ -141,14 +129,14 @@ Pod::Spec.new do |spec|
          },
          {
            :name => '[RN] [2] Build Hermes',
