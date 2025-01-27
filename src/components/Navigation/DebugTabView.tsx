@@ -78,9 +78,9 @@ function getSettingsRoute(status: IndicatorStatus | undefined, reimbursementAcco
         case CONST.INDICATOR_STATUS.HAS_REIMBURSEMENT_ACCOUNT_ERRORS:
             return ROUTES.BANK_ACCOUNT_WITH_STEP_TO_OPEN.getRoute(reimbursementAccount?.achData?.currentStep, reimbursementAccount?.achData?.policyID);
         case CONST.INDICATOR_STATUS.HAS_SUBSCRIPTION_ERRORS:
-            return ROUTES.SETTINGS_SUBSCRIPTION;
+            return ROUTES.SETTINGS_SUBSCRIPTION.route;
         case CONST.INDICATOR_STATUS.HAS_SUBSCRIPTION_INFO:
-            return ROUTES.SETTINGS_SUBSCRIPTION;
+            return ROUTES.SETTINGS_SUBSCRIPTION.route;
         case CONST.INDICATOR_STATUS.HAS_SYNC_ERRORS:
             return ROUTES.WORKSPACE_ACCOUNTING.getRoute(policyIDWithErrors);
         case CONST.INDICATOR_STATUS.HAS_USER_WALLET_ERRORS:

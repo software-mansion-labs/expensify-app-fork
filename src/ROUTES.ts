@@ -124,7 +124,10 @@ const ROUTES = {
     SETTINGS_TIMEZONE_SELECT: 'settings/profile/timezone/select',
     SETTINGS_PRONOUNS: 'settings/profile/pronouns',
     SETTINGS_PREFERENCES: 'settings/preferences',
-    SETTINGS_SUBSCRIPTION: 'settings/subscription',
+    SETTINGS_SUBSCRIPTION: {
+        route: 'settings/subscription',
+        getRoute: (backTo?: string) => getUrlWithBackToParam('settings/subscription', backTo),
+    },
     SETTINGS_SUBSCRIPTION_SIZE: {
         route: 'settings/subscription/subscription-size',
         getRoute: (canChangeSize: 0 | 1) => `settings/subscription/subscription-size?canChangeSize=${canChangeSize as number}` as const,

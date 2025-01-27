@@ -201,7 +201,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
             items.splice(1, 0, {
                 translationKey: 'allSettingsScreen.subscription',
                 icon: Expensicons.CreditCard,
-                routeName: ROUTES.SETTINGS_SUBSCRIPTION,
+                routeName: ROUTES.SETTINGS_SUBSCRIPTION.route,
                 brickRoadIndicator: !!privateSubscription?.errors || hasSubscriptionRedDotError() ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
                 badgeText: freeTrialText,
                 badgeStyle: freeTrialText ? styles.badgeSuccess : undefined,
