@@ -81,8 +81,7 @@ function WorkspaceMemberDetailsPage({personalDetails, policy, route}: WorkspaceM
     const policyOwnerDisplayName = formatPhoneNumber(getDisplayNameOrDefault(ownerDetails)) ?? policy?.owner ?? '';
     const hasMultipleFeeds = Object.values(getCompanyFeeds(cardFeeds)).filter((feed) => !feed.pending).length > 0;
 
-    const [workspaceCardFeeds = {}] = useOnyx(ONYXKEYS.COLLECTION.WORKSPACE_CARDS_LIST);
-    const workspaceCards = useMemo(() => getAllCardsForWorkspace(workspaceAccountID, workspaceCardFeeds), [workspaceAccountID, workspaceCardFeeds]);
+    const workspaceCards = getAllCardsForWorkspace(workspaceAccountID);
     const hasWorkspaceCardsAssigned = !!workspaceCards && !!Object.values(workspaceCards).length;
 
     useEffect(() => {
