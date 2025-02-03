@@ -13,7 +13,6 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {completeOnboarding} from '@libs/actions/Report';
 import Navigation from '@libs/Navigation/Navigation';
 import {isPaidGroupPolicy} from '@libs/PolicyUtils';
 import {createWorkspace, generatePolicyID} from '@userActions/Policy/Policy';
