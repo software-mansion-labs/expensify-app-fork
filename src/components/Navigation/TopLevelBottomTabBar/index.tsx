@@ -1,6 +1,6 @@
 import {findFocusedRoute, useNavigationState} from '@react-navigation/native';
 import React, {useContext, useEffect, useRef, useState} from 'react';
-import {InteractionManager, View} from 'react-native';
+import {InteractionManager, Platform, Text, View} from 'react-native';
 import {FullScreenBlockingViewContext} from '@components/FullScreenBlockingViewContextProvider';
 import BottomTabBar from '@components/Navigation/BottomTabBar';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -9,6 +9,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {isFullScreenName, isSplitNavigatorName} from '@libs/Navigation/helpers/isNavigatorName';
 import {FULLSCREEN_TO_TAB, SIDEBAR_TO_SPLIT} from '@libs/Navigation/linkingConfig/RELATIONS';
 import type {FullScreenName} from '@libs/Navigation/types';
+import variables from '@styles/variables';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
 import useIsBottomTabVisibleDirectly from './useIsBottomTabVisibleDirectly';
@@ -32,6 +33,10 @@ function TopLevelBottomTabBar() {
     const cancelAfterInteractions = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | undefined>();
     const {isBlockingViewVisible} = useContext(FullScreenBlockingViewContext);
 
+    const counter = useRef(0);
+
+    counter.current += 1;
+
     const selectedTab = useNavigationState((state) => {
         const topmostFullScreenRoute = state?.routes.findLast((route) => isFullScreenName(route.name));
         return FULLSCREEN_TO_TAB[(topmostFullScreenRoute?.name as FullScreenName) ?? NAVIGATORS.REPORTS_SPLIT_NAVIGATOR];
@@ -50,7 +55,8 @@ function TopLevelBottomTabBar() {
     const isBottomTabVisibleDirectly = useIsBottomTabVisibleDirectly();
 
     const shouldDisplayBottomBar = shouldUseNarrowLayout ? isScreenWithBottomTabFocused : isBottomTabVisibleDirectly;
-    const isReadyToDisplayBottomBar = isAfterClosingTransition && shouldDisplayBottomBar && !isBlockingViewVisible;
+    // const isReadyToDisplayBottomBar = isAfterClosingTransition && shouldDisplayBottomBar && !isBlockingViewVisible;
+    const isReadyToDisplayBottomBar = shouldDisplayBottomBar && !isBlockingViewVisible;
 
     useEffect(() => {
         cancelAfterInteractions.current?.cancel();
@@ -68,14 +74,45 @@ function TopLevelBottomTabBar() {
     }, [shouldDisplayBottomBar]);
 
     return (
-        <View style={styles.topLevelBottomTabBar(isReadyToDisplayBottomBar, shouldUseNarrowLayout, paddingBottom)}>
-            {/* We are not rendering BottomTabBar conditionally for two reasons
+        <View>
+            <View
+                style={{
+                    // We have to use position fixed to make sure web on safari displays the bottom tab bar correctly.
+                    // On natives we can use absolute positioning.
+                    position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+                    width: variables.sideBarWidth,
+                    paddingBottom,
+                    bottom: 0,
+                }}
+            >
+                {isAfterClosingTransition && (
+                    <View style={{height: 20, backgroundColor: 'red', width: '100%'}}>
+                        <Text>After Closing Transition</Text>
+                    </View>
+                )}
+                {shouldDisplayBottomBar && (
+                    <View style={{height: 20, backgroundColor: 'green', width: '100%'}}>
+                        <Text>Should Display Bottom Bar</Text>
+                    </View>
+                )}
+                {isReadyToDisplayBottomBar && (
+                    <View style={{height: 20, backgroundColor: 'blue', width: '100%'}}>
+                        <Text>Ready to Display Bottom Bar</Text>
+                    </View>
+                )}
+                <View style={{height: 20, backgroundColor: 'yellow', width: '100%'}}>
+                    <Text>Default State: {counter.current}</Text>
+                </View>
+                <View style={styles.topLevelBottomTabBar(isReadyToDisplayBottomBar, shouldUseNarrowLayout, paddingBottom)}>
+                    {/* We are not rendering BottomTabBar conditionally for two reasons
                 1. It's faster to hide/show it than mount a new when needed.
                 2. We need to hide tooltips as well if they were displayed. */}
-            <BottomTabBar
-                selectedTab={selectedTab}
-                isTooltipAllowed={isReadyToDisplayBottomBar}
-            />
+                    <BottomTabBar
+                        selectedTab={selectedTab}
+                        isTooltipAllowed={isReadyToDisplayBottomBar}
+                    />
+                </View>
+            </View>
         </View>
     );
 }

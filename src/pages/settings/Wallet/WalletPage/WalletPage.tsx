@@ -3,7 +3,7 @@ import isEmpty from 'lodash/isEmpty';
 import type {ForwardedRef, RefObject} from 'react';
 import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import type {GestureResponderEvent} from 'react-native';
-import {ActivityIndicator, Dimensions, View} from 'react-native';
+import {ActivityIndicator, Dimensions, Pressable, Text, View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import AddPaymentMethodMenu from '@components/AddPaymentMethodMenu';
 import ConfirmModal from '@components/ConfirmModal';
@@ -22,7 +22,6 @@ import Popover from '@components/Popover';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import Section from '@components/Section';
-import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import usePaymentMethodState from '@hooks/usePaymentMethodState';
@@ -55,6 +54,15 @@ type WalletPageProps = {
 };
 
 function WalletPage({shouldListenForResize = false}: WalletPageProps) {
+    return (
+        <Pressable
+            accessibilityRole="button"
+            style={{height: 100, width: 200, backgroundColor: 'white'}}
+            onPress={() => Navigation.navigate('settings/wallet/card/21937485')}
+        >
+            <Text style={{fontSize: 40, color: 'red'}}>to card</Text>
+        </Pressable>
+    );
     const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST, {initialValue: {}});
     const [cardList] = useOnyx(ONYXKEYS.CARD_LIST, {initialValue: {}});
     const [fundList] = useOnyx(ONYXKEYS.FUND_LIST, {initialValue: {}});

@@ -569,15 +569,15 @@ const styles = (theme: ThemeColors) =>
         topLevelBottomTabBar: (shouldDisplayTopLevelBottomTabBar: boolean, shouldUseNarrowLayout: boolean, bottomSafeAreaOffset: number) => ({
             // We have to use position fixed to make sure web on safari displays the bottom tab bar correctly.
             // On natives we can use absolute positioning.
-            position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+            // position: Platform.OS === 'web' ? 'fixed' : 'absolute',
             display: shouldDisplayTopLevelBottomTabBar ? 'flex' : 'none',
-            width: shouldUseNarrowLayout ? '100%' : variables.sideBarWidth,
-            paddingBottom: bottomSafeAreaOffset,
-            bottom: 0,
+            // width: shouldUseNarrowLayout ? '100%' : variables.sideBarWidth,
+            // paddingBottom: bottomSafeAreaOffset,
+            // bottom: 0,
 
             // There is a missing border right on the wide layout
-            borderRightWidth: shouldUseNarrowLayout ? 0 : 1,
-            borderColor: theme.border,
+            // borderRightWidth: shouldUseNarrowLayout ? 0 : 1,
+            // borderColor: theme.border,
         }),
 
         bottomTabBarContainer: {

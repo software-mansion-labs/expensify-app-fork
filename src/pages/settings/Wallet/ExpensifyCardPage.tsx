@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import Button from '@components/Button';
@@ -64,6 +64,16 @@ function ExpensifyCardPage({
         params: {cardID = ''},
     },
 }: ExpensifyCardPageProps) {
+    return (
+        <Pressable
+            accessibilityRole="button"
+            style={{height: 100, width: 200, backgroundColor: 'white'}}
+            onPress={() => Navigation.navigate('search?q=type%3Aexpense%20status%3Aall%20sortBy%3Adate%20sortOrder%3Adesc%20expenseType%3Acard%20cardID%3A21937485')}
+        >
+            <Text style={{fontSize: 40, color: 'red'}}>to search</Text>
+        </Pressable>
+    );
+
     const [account] = useOnyx(ONYXKEYS.ACCOUNT);
     const [privatePersonalDetails] = useOnyx(ONYXKEYS.PRIVATE_PERSONAL_DETAILS);
     const [loginList] = useOnyx(ONYXKEYS.LOGIN_LIST);
