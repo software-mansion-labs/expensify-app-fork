@@ -1,10 +1,14 @@
 # Overview
 
-The navigation in the App consists of a top-level Stack Navigator (called `RootStack`) with each of its `Screen` components handling different high-level flow. All those flows can be seen in `AuthScreens.tsx` file.
+The navigation in the app is built on top of the `react-navigation` library. To meet all cross-platform requirements and challenges, multiple custom navigators and features have been implemented. The following documentation will help you understand how to effectively use them to create new screens and navigate within the application.
 
 ## Terminology
 
 `RHP` - Right hand panel that shows content inside a dismissible modal that takes up a partial portion of the screen on large format devices e.g. desktop/web/tablets. On smaller screens, the content shown in the RHP fills the entire screen.
+
+`LHP` - Left hand pane. Same as RHP, but displayed on the left side of the screen.
+
+`Full screen` - A screen or navigator occupying the entire available screen space (sidebar and central part). 
 
 Navigation Actions - User actions correspond to resulting navigation actions that we will define now. The navigation actions are: `Back`, `Up`, `Dismiss`, `Forward` and `Push`.
 
@@ -17,6 +21,93 @@ Navigation Actions - User actions correspond to resulting navigation actions tha
 - `Forward` - This will take you forward in the history stack. Can only be invoked after you have gone `Back` at least once. Note: Only possible on web.
 
 - `Push` - Either adds a new individual screen to the main stack or a nested stack of screens to the main stack with the user pointed at the last index of the pushed stack.
+
+- `Replace` - Replaces the current screen/navigator with a new one. 
+
+- `Switch policy ID` - changes the currently selected workspace in the application. This action can only be called from 2 tabs: Inbox (`ReportsSplitNavigator`) and Reports (`Search`). Calling this action results in pushing a new `ReportsSplitNavigator` or `Search` with a changed workspace to the navigation stack.
+
+## Custom navigators
+
+`react-navigation` provides a few fundamental navigators: `StackNavigator`, `DrawerNavigator` etc.
+
+To handle unique application requirements, two custom navigators were created to help extend the functionality of the basic `StackNavigator`: `RootStackNavigator` and `SplitNavigator`.
+
+### RootStackNavigator
+
+This type of navigator is used only once in the app and it is in the root of navigation. It extends the basic functionality of `StackNavigator`. 
+Custom functionalities handled by this navigator:
+- handling policy id in workspace switcher
+- passing the currently selected policy id between tabs
+- preventing users from going back in history during onboarding
+
+### SplitNavigator
+
+This type of navigator is also based on `StackNavigator`. It has two types of screens.
+
+-   Sidebar screens -> There is only one screen of this type on the stack and it is always the first one in the SplitNavigator stack.
+-   Central screens -> All other screens
+
+On narrow layout it behaves as a normal `StackNavigator`.
+
+On wide layout, a sidebar screen is translated to the left to make it visible. This way, the user will see both a sidebar screen and a central screen.
+
+Thanks to this navigator, there is always at least one side screen and one center screen in a wide layout.
+
+`react-navigation` provides a few fundamental navigators: `StackNavigator`, `DrawerNavigator` etc.
+
+To handle unique application requirements, two custom navigators were created to help extend the functionality of the basic `StackNavigator`: `RootStackNavigator` and `SplitNavigator`.
+
+## Screens and navigators of the app
+
+The main navigator has multiple screens, some of which have nested navigators. Screens containing nested navigators are divided into two groups.
+
+### Full screens
+
+These screens / navigators cover the entire screen and do not have transparent overlay. Each of them has a bottom tab bar icon that is highlighted when that screen is at the top of the navigation stack or visible under the modal navigator overlay.
+
+It is worth noting that despite the bottom tab being displayed, the application does not use `BottomTabNavigator`. When one of the bottom tab bar buttons is pressed, a new full screen is pushed onto the root stack. `StackNavigator` was used to implement this groups of screens as it has more flexibility and preserves navigation history in the browser.
+
+#### `REPORTS_SPLIT_NAVIGATOR` -> Inbox icon
+
+It includes the `HOME` screen (`<BaseSidebarScreen />` component) with a list of reports as a sidebar screen and the `REPORT` screen displayed as a central one. There can be multiple report screens in the stack with different report IDs.
+
+<!-- change the name in code -->
+
+#### `SEARCH` (screen) -> Search icon
+
+Something worth noticing is even though the Search Page may visually look like a split navigator, it is a single screen. It is implemented this way to meet the requirement that the sidebar and the central screen of the Search page have the same URL. 
+
+#### `SETTINGS_SPLIT_NAVIGATOR` -> Settings icon
+
+`SettingsSplitNavigator` is responsible for displaying user profile settings screens. The URLs of these pages start with `/settings` and the sidebar component is `<InitialSettingsPage />`. 
+
+#### `WORKSPACE_SPLIT_NAVIGATOR` -> Settings icon
+
+`WorkspaceSplitNavigator` displays the settings of the selected workspace (the URLs start with `/settings/workspaces/:policyID`). `<WorkspaceInitialPage />` is the sidebar screen component of this navigator.
+
+## Modals
+
+These screens / navigators have a transparent overlay underneath.
+
+On a wide layout, there is functionality to ensure that there is at least one full screen below the modal on the stack that is visible under the overlay.
+
+### `RIGHT_MODAL_NAVIGATOR` (RHP - Right Hand Panel)
+
+One of the two side modal navigators.
+
+On narrow layout it will work as normal `StackNavigator`
+
+On wide layout it will be displayed on the right with transparent overlay underneath.
+
+<!-- Add links -->
+
+It contains many flows that are stack navigators. You can find them here
+
+### `LEFT_MODAL_NAVIGATOR` (LHP - Left Hand Panel)
+
+One of the two side modal navigators.
+
+This is the mirror image of RHP. Currently it contains only one screen which is `WORKSPACE_SWITCHER`.
 
 ## Adding RHP flows
 
