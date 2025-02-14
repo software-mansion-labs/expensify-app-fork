@@ -797,7 +797,7 @@ function MoneyRequestConfirmationList({
             return;
         }
 
-        Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.CREATE, transactionID, transaction.reportID));
+        Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.CREATE, transactionID, transaction.reportID, Navigation.getActiveRoute()));
     };
 
     /**
