@@ -1,6 +1,6 @@
 import {Str} from 'expensify-common';
 import type {ForwardedRef, MutableRefObject} from 'react';
-import React, {forwardRef, useCallback, useEffect, useRef, useState} from 'react';
+import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {GestureResponderEvent, LayoutChangeEvent, NativeSyntheticEvent, StyleProp, TextInput, TextInputFocusEventData, ViewStyle} from 'react-native';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import {useSharedValue, withSpring} from 'react-native-reanimated';
@@ -83,11 +83,11 @@ function BaseTextInput(
     const InputComponent = InputComponentMap.get(type) ?? RNTextInput;
     const isMarkdownEnabled = type === 'markdown';
     const isAutoGrowHeightMarkdown = isMarkdownEnabled && autoGrowHeight;
-
     const theme = useTheme();
     const styles = useThemeStyles();
     const markdownStyle = useMarkdownStyle(undefined, excludedMarkdownStyles);
-    const {hasError = false} = inputProps;
+    const {hasError = false, markdownStyle: propsMarkdownStyle} = inputProps;
+    const mergedMarkdownStyle = useMemo(() => ({...markdownStyle, ...propsMarkdownStyle}), [markdownStyle, propsMarkdownStyle]);
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
 
@@ -391,7 +391,7 @@ function BaseTextInput(
                                 selection={inputProps.selection}
                                 readOnly={isReadOnly}
                                 defaultValue={defaultValue}
-                                markdownStyle={markdownStyle}
+                                markdownStyle={mergedMarkdownStyle}
                             />
                             {!!suffixCharacter && (
                                 <View style={[styles.textInputSuffixWrapper, suffixContainerStyle]}>

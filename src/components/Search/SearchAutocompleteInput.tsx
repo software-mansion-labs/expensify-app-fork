@@ -11,6 +11,7 @@ import type {BaseTextInputRef} from '@components/TextInput/BaseTextInput/types';
 import useActiveWorkspace from '@hooks/useActiveWorkspace';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
+import useMarkdownStyle from '@hooks/useMarkdownStyle';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {parseFSAttributes} from '@libs/Fullstory';
@@ -163,6 +164,17 @@ function SearchAutocompleteInput(
         [currentUserPersonalDetails.displayName, substitutionMap, currencySharedValue, categorySharedValue, tagSharedValue, emailListSharedValue],
     );
 
+    const defaultMarkdownStyle = useMarkdownStyle(undefined);
+
+    const markdownStyle = useMemo(() => {
+        const mentionStyles = {
+            mentionHere: {...defaultMarkdownStyle.mentionHere, ...styles.br1},
+            mentionUser: {...defaultMarkdownStyle.mentionUser, ...styles.br1},
+        };
+
+        return {...defaultMarkdownStyle, ...mentionStyles};
+    }, [defaultMarkdownStyle, styles.br1]);
+
     const inputWidth = isFullWidth ? styles.w100 : {width: variables.popoverWidth};
 
     // Parse Fullstory attributes on initial render
@@ -192,6 +204,7 @@ function SearchAutocompleteInput(
                         enterKeyHint="search"
                         accessibilityLabel={translate('search.searchPlaceholder')}
                         disabled={disabled}
+                        markdownStyle={markdownStyle}
                         maxLength={CONST.SEARCH_QUERY_LIMIT}
                         onSubmitEditing={onSubmit}
                         shouldUseDisabledStyles={false}
