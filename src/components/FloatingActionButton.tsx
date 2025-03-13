@@ -100,14 +100,14 @@ function FloatingActionButton({onPress, isActive, accessibilityLabel, role, isTo
                         buttonRef.current = el ?? null;
                     }
                 }}
-                style={[styles.h100, styles.bottomTabBarItem]}
+                style={shouldUseNarrowLayout ? [styles.h100, styles.bottomTabBarItem] : {}}
                 accessibilityLabel={accessibilityLabel}
                 onPress={toggleFabAction}
                 onLongPress={() => {}}
                 role={role}
                 shouldUseHapticsOnLongPress={false}
             >
-                <Animated.View style={[styles.floatingActionButton, {borderRadius}, animatedStyle]}>
+                <Animated.View style={[styles.floatingActionButton, {borderRadius}, !shouldUseNarrowLayout && styles.floatingActionButtonSmall, animatedStyle]}>
                     <Svg
                         width={variables.iconSizeNormal}
                         height={variables.iconSizeNormal}

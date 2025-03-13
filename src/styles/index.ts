@@ -600,6 +600,20 @@ const styles = (theme: ThemeColors) =>
             backgroundColor: theme.appBG,
         },
 
+        leftNavigationTabBar: {
+            height: '100%',
+            width: variables.navigationTabBarSize,
+            position: 'fixed',
+            left: 0,
+        },
+
+        leftNavigationTabBarItem: {
+            height: variables.navigationTabBarSize,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+
         bottomTabBarItem: {
             height: '100%',
             display: 'flex',
@@ -1612,6 +1626,7 @@ const styles = (theme: ThemeColors) =>
         searchSplitContainer: {
             flex: 1,
             flexDirection: 'row',
+            marginLeft: variables.navigationTabBarSize,
         },
 
         searchSidebar: {
@@ -1706,11 +1721,16 @@ const styles = (theme: ThemeColors) =>
 
         floatingActionButton: {
             backgroundColor: theme.success,
-            height: variables.componentSizeLarge,
-            width: variables.componentSizeLarge,
+            height: 52,
+            width: 52,
             borderRadius: 999,
             alignItems: 'center',
             justifyContent: 'center',
+        },
+
+        floatingActionButtonSmall: {
+            width: 40,
+            height: 40,
         },
 
         sidebarFooterUsername: {
@@ -1759,6 +1779,12 @@ const styles = (theme: ThemeColors) =>
         breadcrumbSeparator: {
             color: theme.icon,
             fontSize: variables.breadcrumbsFontSize,
+            ...headlineFont,
+        },
+
+        topBarLabel: {
+            color: theme.text,
+            fontSize: 22,
             ...headlineFont,
         },
 
@@ -1832,7 +1858,7 @@ const styles = (theme: ThemeColors) =>
                 horizontal: 18,
                 // Menu should be displayed 12px above the floating action button.
                 // To achieve that sidebar must be moved by: distance from the bottom of the sidebar to the fab (variables.fabBottom) + fab height (variables.componentSizeLarge) + distance above the fab (12px)
-                vertical: windowHeight - (variables.fabBottom + variables.componentSizeLarge + 12),
+                vertical: windowHeight - (variables.fabBottom + 40 + 12),
             } satisfies AnchorPosition),
 
         createAccountMenuPositionProfile: () =>
@@ -2048,14 +2074,14 @@ const styles = (theme: ThemeColors) =>
             marginBottom: -16,
         },
 
-        overlayStyles: (current: OverlayStylesParams, isModalOnTheLeft: boolean) =>
+        overlayStyles: (current: OverlayStylesParams) =>
             ({
                 ...positioning.pFixed,
                 // We need to stretch the overlay to cover the sidebar and the translate animation distance.
-                left: isModalOnTheLeft ? 0 : -2 * variables.sideBarWidth,
                 top: 0,
                 bottom: 0,
-                right: isModalOnTheLeft ? -2 * variables.sideBarWidth : 0,
+                left: -2 * variables.sideBarWidth,
+                right: 0,
                 backgroundColor: theme.overlay,
                 opacity: current.progress.interpolate({
                     inputRange: [0, 1],
@@ -2928,7 +2954,8 @@ const styles = (theme: ThemeColors) =>
             borderRadius: 88,
         },
 
-        rootNavigatorContainerStyles: (isSmallScreenWidth: boolean) => ({marginLeft: isSmallScreenWidth ? 0 : variables.sideBarWidth, flex: 1} satisfies ViewStyle),
+        rootNavigatorContainerStyles: (isSmallScreenWidth: boolean) =>
+            ({marginLeft: isSmallScreenWidth ? 0 : variables.sideBarWidth + variables.navigationTabBarSize, flex: 1} satisfies ViewStyle),
         RHPNavigatorContainerNavigatorContainerStyles: (isSmallScreenWidth: boolean) => ({marginLeft: isSmallScreenWidth ? 0 : variables.sideBarWidth, flex: 1} satisfies ViewStyle),
 
         avatarInnerTextChat: {

@@ -24,10 +24,10 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import type {ReimbursementAccount} from '@src/types/onyx';
-import BOTTOM_TABS from './BottomTabBar/BOTTOM_TABS';
+import NAVIGATION_TABS from './NavigationTabBar/NAVIGATION_TABS';
 
 type DebugTabViewProps = {
-    selectedTab?: ValueOf<typeof BOTTOM_TABS>;
+    selectedTab?: ValueOf<typeof NAVIGATION_TABS>;
     chatTabBrickRoad: BrickRoad;
     activeWorkspaceID?: string;
 };
@@ -107,7 +107,7 @@ function DebugTabView({selectedTab, chatTabBrickRoad, activeWorkspaceID}: DebugT
     const {orderedReportIDs} = useReportIDs();
 
     const message = useMemo((): TranslationPaths | undefined => {
-        if (selectedTab === BOTTOM_TABS.HOME) {
+        if (selectedTab === NAVIGATION_TABS.HOME) {
             if (chatTabBrickRoad === CONST.BRICK_ROAD_INDICATOR_STATUS.INFO) {
                 return 'debug.indicatorStatus.theresAReportAwaitingAction';
             }
@@ -115,13 +115,13 @@ function DebugTabView({selectedTab, chatTabBrickRoad, activeWorkspaceID}: DebugT
                 return 'debug.indicatorStatus.theresAReportWithErrors';
             }
         }
-        if (selectedTab === BOTTOM_TABS.SETTINGS) {
+        if (selectedTab === NAVIGATION_TABS.SETTINGS) {
             return getSettingsMessage(status);
         }
     }, [selectedTab, chatTabBrickRoad, status]);
 
     const indicator = useMemo(() => {
-        if (selectedTab === BOTTOM_TABS.HOME) {
+        if (selectedTab === NAVIGATION_TABS.HOME) {
             if (chatTabBrickRoad === CONST.BRICK_ROAD_INDICATOR_STATUS.INFO) {
                 return theme.success;
             }
@@ -129,7 +129,7 @@ function DebugTabView({selectedTab, chatTabBrickRoad, activeWorkspaceID}: DebugT
                 return theme.danger;
             }
         }
-        if (selectedTab === BOTTOM_TABS.SETTINGS) {
+        if (selectedTab === NAVIGATION_TABS.SETTINGS) {
             if (status) {
                 return indicatorColor;
             }
@@ -137,14 +137,14 @@ function DebugTabView({selectedTab, chatTabBrickRoad, activeWorkspaceID}: DebugT
     }, [selectedTab, chatTabBrickRoad, theme.success, theme.danger, status, indicatorColor]);
 
     const navigateTo = useCallback(() => {
-        if (selectedTab === BOTTOM_TABS.HOME && !!chatTabBrickRoad) {
+        if (selectedTab === NAVIGATION_TABS.HOME && !!chatTabBrickRoad) {
             const report = getChatTabBrickRoadReport(activeWorkspaceID, orderedReportIDs);
 
             if (report) {
                 Navigation.navigate(ROUTES.DEBUG_REPORT.getRoute(report.reportID));
             }
         }
-        if (selectedTab === BOTTOM_TABS.SETTINGS) {
+        if (selectedTab === NAVIGATION_TABS.SETTINGS) {
             const route = getSettingsRoute(status, reimbursementAccount, policyIDWithErrors);
 
             if (route) {
@@ -153,7 +153,7 @@ function DebugTabView({selectedTab, chatTabBrickRoad, activeWorkspaceID}: DebugT
         }
     }, [selectedTab, chatTabBrickRoad, activeWorkspaceID, orderedReportIDs, status, reimbursementAccount, policyIDWithErrors]);
 
-    if (!([BOTTOM_TABS.HOME, BOTTOM_TABS.SETTINGS] as string[]).includes(selectedTab ?? '') || !indicator) {
+    if (!([NAVIGATION_TABS.HOME, NAVIGATION_TABS.SETTINGS] as string[]).includes(selectedTab ?? '') || !indicator) {
         return null;
     }
 

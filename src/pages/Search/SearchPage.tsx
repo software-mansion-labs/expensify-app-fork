@@ -3,8 +3,8 @@ import {View} from 'react-native';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import HeaderGap from '@components/HeaderGap';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import BottomTabBar from '@components/Navigation/BottomTabBar';
-import BOTTOM_TABS from '@components/Navigation/BottomTabBar/BOTTOM_TABS';
+import NavigationTabBar from '@components/Navigation/NavigationTabBar';
+import NAVIGATION_TABS from '@components/Navigation/NavigationTabBar/NAVIGATION_TABS';
 import TopBar from '@components/Navigation/TopBar';
 import ScreenWrapper from '@components/ScreenWrapper';
 import Search from '@components/Search';
@@ -79,7 +79,6 @@ function SearchPage({route}: SearchPageProps) {
                                 <View style={styles.flex1}>
                                     <HeaderGap />
                                     <TopBar
-                                        activeWorkspaceID={policyID}
                                         breadcrumbLabel={translate('common.reports')}
                                         shouldDisplaySearch={false}
                                     />
@@ -97,7 +96,7 @@ function SearchPage({route}: SearchPageProps) {
                                     }}
                                 />
                             )}
-                            <BottomTabBar selectedTab={BOTTOM_TABS.SEARCH} />
+                            <NavigationTabBar selectedTab={NAVIGATION_TABS.SEARCH} />
                         </View>
                         <ScreenWrapper
                             testID={Search.displayName}

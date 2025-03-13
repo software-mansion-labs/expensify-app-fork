@@ -10,12 +10,9 @@ import CONST from '@src/CONST';
 type BaseOverlayProps = {
     /* Callback to close the modal */
     onPress?: () => void;
-
-    /* Returns whether a modal is displayed on the left side of the screen. By default, the modal is displayed on the right */
-    isModalOnTheLeft?: boolean;
 };
 
-function BaseOverlay({onPress, isModalOnTheLeft = false}: BaseOverlayProps) {
+function BaseOverlay({onPress}: BaseOverlayProps) {
     const styles = useThemeStyles();
     const {current} = useCardAnimation();
     const {translate} = useLocalize();
@@ -23,7 +20,7 @@ function BaseOverlay({onPress, isModalOnTheLeft = false}: BaseOverlayProps) {
     return (
         <Animated.View
             id="BaseOverlay"
-            style={styles.overlayStyles(current, isModalOnTheLeft)}
+            style={styles.overlayStyles(current)}
         >
             <View style={[styles.flex1, styles.flexColumn]}>
                 {/* In the latest Electron version buttons can't be both clickable and draggable.

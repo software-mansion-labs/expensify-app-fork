@@ -355,7 +355,7 @@ function ScreenWrapper(
                         </PickerAvoidingView>
                     </KeyboardAvoidingView>
                 </View>
-                <View style={paddingBottomStyle}>{bottomContent}</View>
+                {includeSafeAreaPaddingBottom && paddingBottom > 0 ? <View style={paddingBottomStyle}>{bottomContent}</View> : bottomContent}
             </View>
         </FocusTrapForScreens>
     );

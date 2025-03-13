@@ -4,8 +4,8 @@ import type {OnyxEntry} from 'react-native-onyx';
 import {useOnyx} from 'react-native-onyx';
 import HeaderGap from '@components/HeaderGap';
 import MoneyReportHeader from '@components/MoneyReportHeader';
-import BottomTabBar from '@components/Navigation/BottomTabBar';
-import BOTTOM_TABS from '@components/Navigation/BottomTabBar/BOTTOM_TABS';
+import NavigationTabBar from '@components/Navigation/NavigationTabBar';
+import NAVIGATION_TABS from '@components/Navigation/NavigationTabBar/NAVIGATION_TABS';
 import TopBar from '@components/Navigation/TopBar';
 import ScreenWrapper from '@components/ScreenWrapper';
 import type {SearchQueryJSON} from '@components/Search/types';
@@ -101,7 +101,7 @@ function SearchMoneyRequestReportPage({route}: SearchPageProps) {
                         />
                         <SearchTypeMenu queryJSON={tempJSONQuery} />
                     </View>
-                    <BottomTabBar selectedTab={BOTTOM_TABS.SEARCH} />
+                    <NavigationTabBar selectedTab={NAVIGATION_TABS.SEARCH} />
                 </View>
                 <TemporaryMoneyRequestReportView
                     report={report}

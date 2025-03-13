@@ -1,4 +1,5 @@
 import React from 'react';
+import type {StyleProp, ViewStyle} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {PressableWithFeedback} from '@components/Pressable';
 import Text from '@components/Text';
@@ -17,9 +18,12 @@ type BottomTabAvatarProps = {
 
     /** Function to call when the avatar is pressed */
     onPress: () => void;
+
+    /** Additional styles to add to the button */
+    style?: StyleProp<ViewStyle>;
 };
 
-function BottomTabAvatar({onPress, isSelected = false}: BottomTabAvatarProps) {
+function BottomTabAvatar({onPress, style = {}, isSelected = false}: BottomTabAvatarProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.ACCOUNT);
@@ -60,12 +64,10 @@ function BottomTabAvatar({onPress, isSelected = false}: BottomTabAvatarProps) {
             role={CONST.ROLE.BUTTON}
             accessibilityLabel={translate('sidebarScreen.buttonMySettings')}
             wrapperStyle={styles.flex1}
-            style={[styles.bottomTabBarItem]}
+            style={style}
         >
             {children}
-            <Text style={[styles.textSmall, styles.textAlignCenter, isSelected ? styles.textBold : styles.textSupporting, styles.mt0Half, styles.bottomTabBarLabel]}>
-                {translate('common.settings')}
-            </Text>
+            <Text style={[styles.textSmall, styles.textAlignCenter, isSelected ? styles.textBold : styles.textSupporting, styles.mt0Half, styles.bottomTabBarLabel]}>Account</Text>
         </PressableWithFeedback>
     );
 }
