@@ -1,5 +1,5 @@
 import type {NavigationState} from '@react-navigation/native';
-import {DarkTheme, DefaultTheme, findFocusedRoute, NavigationContainer} from '@react-navigation/native';
+import {DarkTheme, DefaultTheme, findFocusedRoute, getPathFromState, NavigationContainer} from '@react-navigation/native';
 import React, {useContext, useEffect, useMemo, useRef} from 'react';
 import {NativeModules} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
@@ -26,7 +26,6 @@ import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import AppNavigator from './AppNavigator';
 import {cleanPreservedNavigatorStates} from './AppNavigator/createSplitNavigator/usePreserveNavigatorState';
-import customGetPathFromState from './helpers/customGetPathFromState';
 import getAdaptedStateFromPath from './helpers/getAdaptedStateFromPath';
 import {linkingConfig} from './linkingConfig';
 import Navigation, {navigationRef} from './Navigation';
@@ -56,7 +55,7 @@ function parseAndLogRoute(state: NavigationState) {
         return;
     }
 
-    const currentPath = customGetPathFromState(state, linkingConfig.config);
+    const currentPath = getPathFromState(state, linkingConfig.config);
 
     const focusedRoute = findFocusedRoute(state);
 

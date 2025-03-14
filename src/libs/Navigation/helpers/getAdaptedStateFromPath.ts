@@ -1,14 +1,12 @@
 import type {NavigationState, PartialState, Route} from '@react-navigation/native';
 import {findFocusedRoute, getStateFromPath} from '@react-navigation/native';
 import pick from 'lodash/pick';
-import Onyx from 'react-native-onyx';
 import type {OnyxCollection} from 'react-native-onyx';
-import {isAnonymousUser} from '@libs/actions/Session';
+import Onyx from 'react-native-onyx';
 import getInitialSplitNavigatorState from '@libs/Navigation/AppNavigator/createSplitNavigator/getInitialSplitNavigatorState';
 import {config} from '@libs/Navigation/linkingConfig/config';
 import {RHP_TO_SETTINGS, RHP_TO_SIDEBAR, RHP_TO_WORKSPACE, SEARCH_TO_RHP} from '@libs/Navigation/linkingConfig/RELATIONS';
 import type {NavigationPartialRoute, RootNavigatorParamList} from '@libs/Navigation/types';
-import {extractPolicyIDFromPath, getPathWithoutPolicyID} from '@libs/PolicyUtils';
 import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
@@ -228,13 +226,8 @@ function getAdaptedState(state: PartialState<NavigationState<RootNavigatorParamL
 
 const getAdaptedStateFromPath: GetAdaptedStateFromPath = (path, options, shouldReplacePathInNestedState = true) => {
     const normalizedPath = !path.startsWith('/') ? `/${path}` : path;
-    const pathWithoutPolicyID = getPathWithoutPolicyID(normalizedPath);
-    const isAnonymous = isAnonymousUser();
 
-    // Anonymous users don't have access to workspaces
-    const policyID = isAnonymous ? undefined : extractPolicyIDFromPath(path);
-
-    const state = getStateFromPath(pathWithoutPolicyID, options) as PartialState<NavigationState<RootNavigatorParamList>>;
+    const state = getStateFromPath(normalizedPath, options) as PartialState<NavigationState<RootNavigatorParamList>>;
     if (shouldReplacePathInNestedState) {
         replacePathInNestedState(state, normalizedPath);
     }
@@ -246,7 +239,7 @@ const getAdaptedStateFromPath: GetAdaptedStateFromPath = (path, options, shouldR
     // On SCREENS.SEARCH.ROOT policyID is stored differently inside search query ("q" param), so we're handling this case
     const focusedRoute = findFocusedRoute(state);
     const policyIDFromQuery = extractPolicyIDFromQuery(focusedRoute);
-    return getAdaptedState(state, policyID ?? policyIDFromQuery);
+    return getAdaptedState(state, policyIDFromQuery);
 };
 
 export default getAdaptedStateFromPath;
