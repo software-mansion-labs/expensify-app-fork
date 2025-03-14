@@ -13,6 +13,7 @@
     "setupNewDotWebForEmulators": "./scripts/setup-newdot-web-emulators.sh",
     "startAndroidEmulator": "./scripts/start-android.sh",
     "postinstall": "./scripts/postInstall.sh",
+    "patch-package": "./scripts/createPatch.sh",
     "clean": "./scripts/clean.sh",
     "clean-standalone": "STANDALONE_NEW_DOT=true ./scripts/clean.sh",
     "android": "./scripts/set-pusher-suffix.sh && ./scripts/run-build.sh --android",
