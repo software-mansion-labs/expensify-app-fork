@@ -15,19 +15,17 @@ function patchPackage {
 
   OS="$(uname)"
   if [[ "$OS" == "Darwin" || "$OS" == "Linux" ]]; then
+    TEMP_PATCH_DIR=$(mktemp -d ./tmp-patches-XXX)
+    find ./patches -type f -name '*.patch' -exec cp {} "$TEMP_PATCH_DIR" \;
+
     if [[ "$IS_HYBRID_APP_REPO" == "true" && "$NEW_DOT_FLAG" == "false" ]]; then
-      TEMP_PATCH_DIR=$(mktemp -d ./tmp-patches-XXX)
-      cp -r ./patches/* "$TEMP_PATCH_DIR"
-      cp -r ./Mobile-Expensify/patches/* "$TEMP_PATCH_DIR"
-
-      npx patch-package --patch-dir "$TEMP_PATCH_DIR" --error-on-fail --color=always
-      EXIT_CODE=$?
-
-      rm -rf "$TEMP_PATCH_DIR"
-    else
-      npx patch-package --error-on-fail --color=always
-      EXIT_CODE=$?
+      find ./Mobile-Expensify/patches -type f -name '*.patch' -exec cp {} "$TEMP_PATCH_DIR" \;
     fi
+
+    npx patch-package --patch-dir "$TEMP_PATCH_DIR" --error-on-fail --color=always
+    EXIT_CODE=$?
+
+    rm -rf "$TEMP_PATCH_DIR"
     exit $EXIT_CODE
   else
     error "Unsupported OS: $OS"
