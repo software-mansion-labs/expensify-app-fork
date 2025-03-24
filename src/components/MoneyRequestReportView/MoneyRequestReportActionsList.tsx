@@ -6,22 +6,18 @@ import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import {useOnyx} from 'react-native-onyx';
 import FlatList from '@components/FlatList';
 import {AUTOSCROLL_TO_TOP_THRESHOLD} from '@components/InvertedFlatList/BaseInvertedFlatList';
-import Text from '@components/Text';
 import useLoadReportActions from '@hooks/useLoadReportActions';
 import useLocalize from '@hooks/useLocalize';
 import useNetworkWithOfflineStatus from '@hooks/useNetworkWithOfflineStatus';
 import usePrevious from '@hooks/usePrevious';
 import useReportScrollManager from '@hooks/useReportScrollManager';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {convertToDisplayString} from '@libs/CurrencyUtils';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {
     getFirstVisibleReportActionID,
     getMostRecentIOURequestActionID,
     getOneTransactionThreadReportID,
     hasNextActionMadeBySameActor,
-    isActionOfType,
     isConsecutiveChronosAutomaticTimerAction,
     isDeletedParentAction,
     isReportActionUnread,
@@ -30,7 +26,7 @@ import {
     shouldReportActionBeVisible,
     wasMessageReceivedWhileOffline,
 } from '@libs/ReportActionsUtils';
-import {canUserPerformWriteAction, chatIncludesChronosWithID, getMoneyRequestSpendBreakdown, getReportLastVisibleActionCreated} from '@libs/ReportUtils';
+import {canUserPerformWriteAction, chatIncludesChronosWithID, getReportLastVisibleActionCreated} from '@libs/ReportUtils';
 import isSearchTopmostFullScreenRoute from '@navigation/helpers/isSearchTopmostFullScreenRoute';
 import Navigation from '@navigation/Navigation';
 import FloatingMessageCounter from '@pages/home/report/FloatingMessageCounter';
@@ -83,7 +79,6 @@ function getTransactionsForReportID(transactions: OnyxCollection<OnyxTypes.Trans
 
 /**
  * TODO make this component have the same functionalities as `ReportActionsList`
- *  - onScroll
  *  - shouldDisplayNewMarker
  */
 function MoneyRequestReportActionsList({report, reportActions = [], hasNewerActions, hasOlderActions}: MoneyRequestReportListProps) {
@@ -91,8 +86,6 @@ function MoneyRequestReportActionsList({report, reportActions = [], hasNewerActi
     const {translate} = useLocalize();
     const {preferredLocale} = useLocalize();
     const {isOffline, lastOfflineAt, lastOnlineAt} = useNetworkWithOfflineStatus();
-
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const reportID = report?.reportID;
 
@@ -114,15 +107,6 @@ function MoneyRequestReportActionsList({report, reportActions = [], hasNewerActi
     const [isFloatingMessageCounterVisible, setIsFloatingMessageCounterVisible] = useState(false);
 
     const reportScrollManager = useReportScrollManager();
-
-    const hasComments = useMemo(() => {
-        return reportActions.some((action) => isActionOfType(action, CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT));
-    }, [reportActions]);
-
-    const {totalDisplaySpend, nonReimbursableSpend, reimbursableSpend} = getMoneyRequestSpendBreakdown(report);
-    const formattedOutOfPocketAmount = convertToDisplayString(reimbursableSpend, report?.currency);
-    const formattedCompanySpendAmount = convertToDisplayString(nonReimbursableSpend, report?.currency);
-    const shouldShowBreakdown = !!nonReimbursableSpend && !!reimbursableSpend;
 
     // We are reversing actions because in this View we are starting at the top and don't use Inverted list
     const visibleReportActions = useMemo(() => {
@@ -382,41 +366,11 @@ function MoneyRequestReportActionsList({report, reportActions = [], hasNewerActi
                     onStartReached={onStartReached}
                     onStartReachedThreshold={0.75}
                     ListHeaderComponent={
-                        <View>
-                            <MoneyRequestReportTransactionList transactions={transactions} />
-                            {shouldShowBreakdown && (
-                                <View style={[styles.dFlex, styles.flexColumn, styles.alignItemsEnd, styles.ph5]}>
-                                    {[
-                                        {text: translate('cardTransactions.outOfPocket'), value: formattedOutOfPocketAmount},
-                                        {text: translate('cardTransactions.companySpend'), value: formattedCompanySpendAmount},
-                                    ].map(({text, value}) => (
-                                        <View style={[styles.dFlex, styles.flexRow, styles.alignItemsCenter, styles.mb1]}>
-                                            <Text
-                                                style={[styles.textLabelSupporting, styles.mr3]}
-                                                numberOfLines={1}
-                                            >
-                                                {text}
-                                            </Text>
-                                            <Text
-                                                numberOfLines={1}
-                                                style={[styles.textLabelSupporting, styles.textNormal, shouldUseNarrowLayout ? styles.mnw64p : styles.mnw100p, styles.textAlignRight]}
-                                            >
-                                                {value}
-                                            </Text>
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
-                            <View style={[styles.dFlex, styles.flexRow, styles.ph5, hasComments ? styles.justifyContentBetween : styles.justifyContentEnd, styles.mb2]}>
-                                {hasComments && <Text style={[styles.textLabelSupporting]}>{translate('common.comments')}</Text>}
-                                <View style={[styles.dFlex, styles.flexRow, styles.alignItemsCenter]}>
-                                    <Text style={[styles.mr3, styles.textLabelSupporting]}>{translate('common.total')}</Text>
-                                    <Text style={[shouldUseNarrowLayout ? styles.mnw64p : styles.mnw100p, styles.textAlignRight, styles.textBold]}>
-                                        {convertToDisplayString(totalDisplaySpend, report?.currency)}
-                                    </Text>
-                                </View>
-                            </View>
-                        </View>
+                        <MoneyRequestReportTransactionList
+                            report={report}
+                            transactions={transactions}
+                            reportActions={reportActions}
+                        />
                     }
                     keyboardShouldPersistTaps="handled"
                     onScroll={trackVerticalScrolling}
