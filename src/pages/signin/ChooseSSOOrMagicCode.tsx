@@ -14,6 +14,7 @@ import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import * as HybridAppActions from '@userActions/HybridApp';
 import * as Session from '@userActions/Session';
+import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -87,7 +88,7 @@ function ChooseSSOOrMagicCode({credentials, account, setIsUsingMagicCode}: Choos
                 {!!account && !isEmptyObject(account.errors) && <FormHelpMessage message={ErrorUtils.getLatestErrorMessage(account)} />}
                 <ChangeExpensifyLoginLink
                     onPress={() => {
-                        if (NativeModules.HybridAppModule) {
+                        if (CONFIG.IS_HYBRID_APP) {
                             HybridAppActions.resetSignInFlow();
                         }
                         Session.clearSignInData();

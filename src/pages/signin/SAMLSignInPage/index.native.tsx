@@ -60,7 +60,7 @@ function SAMLSignInPage() {
                 <HeaderWithBackButton
                     title=""
                     onBackButtonPress={() => {
-                        if (NativeModules.HybridAppModule) {
+                        if (CONFIG.IS_HYBRID_APP) {
                             HybridAppActions.resetSignInFlow();
                         }
                         Session.clearSignInData();
