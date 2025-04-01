@@ -4,11 +4,14 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTI18nUtil.h>
 #import <React/RCTLinkingManager.h>
+#import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
 #import <UserNotifications/UserNotifications.h>
 
 #import "RCTBootSplash.h"
 #import "RCTStartupTimer.h"
 #import <HardwareShortcuts.h>
+#import <BackgroundTasks/BackgroundTasks.h>
+#import <expensify-react-native-background-task/RNBackgroundTaskManager.h>
 
 @interface AppDelegate () <UNUserNotificationCenterDelegate>
 
@@ -22,6 +25,7 @@
   // You can add your custom initial props in the dictionary below.
   // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
+  self.dependencyProvider = [RCTAppDependencyProvider new];
   
   // Configure firebase
   [FIRApp configure];
@@ -49,6 +53,8 @@
       [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
       [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"isFirstRunComplete"];
   }
+  
+  [RNBackgroundTaskManager setup];
 
   return YES;
 }

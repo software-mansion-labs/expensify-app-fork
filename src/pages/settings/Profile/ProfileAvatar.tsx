@@ -1,13 +1,14 @@
 import React, {useEffect} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import AttachmentModal from '@components/AttachmentModal';
+import {formatPhoneNumber} from '@libs/LocalePhoneNumber';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
-import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
-import * as UserUtils from '@libs/UserUtils';
-import * as ValidationUtils from '@libs/ValidationUtils';
-import * as PersonalDetails from '@userActions/PersonalDetails';
+import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
+import {getFullSizeAvatar} from '@libs/UserUtils';
+import {isValidAccountRoute} from '@libs/ValidationUtils';
+import {openPublicProfilePage} from '@userActions/PersonalDetails';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
@@ -17,34 +18,32 @@ type ProfileAvatarProps = PlatformStackScreenProps<AuthScreensParamList, typeof 
 function ProfileAvatar({route}: ProfileAvatarProps) {
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST);
     const [personalDetailsMetadata] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_METADATA);
-    const [isLoadingApp = true] = useOnyx(ONYXKEYS.IS_LOADING_APP);
-
+    const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP, {initialValue: true});
     const personalDetail = personalDetails?.[route.params.accountID];
     const avatarURL = personalDetail?.avatar ?? '';
-    const accountID = Number(route.params.accountID ?? '-1');
+    const accountID = Number(route.params.accountID ?? CONST.DEFAULT_NUMBER_ID);
     const isLoading = personalDetailsMetadata?.[accountID]?.isLoading ?? (isLoadingApp && !Object.keys(personalDetail ?? {}).length);
-    const displayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetail);
+    const displayName = getDisplayNameOrDefault(personalDetail);
 
     useEffect(() => {
-        if (!ValidationUtils.isValidAccountRoute(Number(accountID)) || !!avatarURL) {
+        if (!isValidAccountRoute(Number(accountID)) ?? !!avatarURL) {
             return;
         }
-        PersonalDetails.openPublicProfilePage(accountID);
+        openPublicProfilePage(accountID);
     }, [accountID, avatarURL]);
 
     return (
         <AttachmentModal
+            headerTitle={formatPhoneNumber(displayName)}
             defaultOpen
-            headerTitle={displayName}
-            source={UserUtils.getFullSizeAvatar(avatarURL, accountID)}
+            source={getFullSizeAvatar(avatarURL, accountID)}
             onModalClose={() => {
-                setTimeout(() => {
-                    Navigation.goBack();
-                }, CONST.ANIMATED_TRANSITION);
+                Navigation.goBack();
             }}
             originalFileName={personalDetail?.originalFileName ?? ''}
             isLoading={!!isLoading}
             shouldShowNotFoundPage={!avatarURL}
+            maybeIcon
         />
     );
 }

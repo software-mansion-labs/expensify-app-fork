@@ -1,17 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 // we need "dirty" object key names in these tests
 import type {OnyxCollection} from 'react-native-onyx';
+import type {CardFeedNamesWithType} from '@libs/CardFeedUtils';
 import {buildSubstitutionsMap} from '@src/components/Search/SearchRouter/buildSubstitutionsMap';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxTypes from '@src/types/onyx';
-
-jest.mock('@libs/CardUtils', () => {
-    return {
-        getCardDescription(cardID: number) {
-            return cardID;
-        },
-    };
-});
 
 jest.mock('@libs/ReportUtils', () => {
     return {
@@ -53,18 +46,37 @@ const taxRatesMock = {
     TAX_1: ['id_TAX_1'],
 } as Record<string, string[]>;
 
+const cardListMock = {
+    '11223344': {
+        state: 1,
+        bank: 'vcf',
+        lastFourPAN: '1234',
+    },
+} as unknown as OnyxTypes.CardList;
+
+const cardFeedNamesWithTypeMock: CardFeedNamesWithType = {
+    'cards_11111111_Expensify Card': {
+        name: 'All Expensify',
+        type: 'workspace',
+    },
+    '12345678_Test Card': {
+        name: 'All Cards',
+        type: 'workspace',
+    },
+};
+
 describe('buildSubstitutionsMap should return correct substitutions map', () => {
     test('when there were no substitutions', () => {
         const userQuery = 'foo bar';
 
-        const result = buildSubstitutionsMap(userQuery, personalDetailsMock, reportsMock, taxRatesMock);
+        const result = buildSubstitutionsMap(userQuery, personalDetailsMock, reportsMock, taxRatesMock, {}, cardFeedNamesWithTypeMock);
 
         expect(result).toStrictEqual({});
     });
     test('when query has a single substitution', () => {
         const userQuery = 'foo from:12345';
 
-        const result = buildSubstitutionsMap(userQuery, personalDetailsMock, reportsMock, taxRatesMock);
+        const result = buildSubstitutionsMap(userQuery, personalDetailsMock, reportsMock, taxRatesMock, {}, cardFeedNamesWithTypeMock);
 
         expect(result).toStrictEqual({
             'from:John Doe': '12345',
@@ -72,16 +84,17 @@ describe('buildSubstitutionsMap should return correct substitutions map', () => 
     });
 
     test('when query has multiple substitutions of different types', () => {
-        const userQuery = 'from:78901,12345 to:nonExistingGuy@mail.com cardID:11223344 in:rep123 taxRate:id_TAX_1';
+        const userQuery = 'from:78901,12345 to:nonExistingGuy@mail.com cardID:11223344 in:rep123 taxRate:id_TAX_1 feed:"11111111_Expensify Card"';
 
-        const result = buildSubstitutionsMap(userQuery, personalDetailsMock, reportsMock, taxRatesMock);
+        const result = buildSubstitutionsMap(userQuery, personalDetailsMock, reportsMock, taxRatesMock, cardListMock, cardFeedNamesWithTypeMock);
 
         expect(result).toStrictEqual({
             'from:Jane Doe': '78901',
             'from:John Doe': '12345',
             'in:Report 1': 'rep123',
-            'cardID:11223344': '11223344',
+            'cardID:Visa - 1234': '11223344',
             'taxRate:TAX_1': 'id_TAX_1',
+            'feed:All Expensify': '11111111_Expensify Card',
         });
     });
 });

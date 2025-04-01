@@ -15,19 +15,26 @@ type ReceiptEmptyStateProps = {
     /** Callback to be called on onPress */
     onPress?: () => void;
 
+    /** Whether the receipt action is disabled */
     disabled?: boolean;
 
+    /** Whether the receipt is a thumbnail */
     isThumbnail?: boolean;
+
+    /** Whether the receipt is in the money request view */
+    isInMoneyRequestView?: boolean;
 };
 
 // Returns an SVG icon indicating that the user should attach a receipt
-function ReceiptEmptyState({hasError = false, onPress = () => {}, disabled = false, isThumbnail = false}: ReceiptEmptyStateProps) {
+function ReceiptEmptyState({hasError = false, onPress, disabled = false, isThumbnail = false, isInMoneyRequestView = false}: ReceiptEmptyStateProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const theme = useTheme();
 
+    const Wrapper = onPress ? PressableWithoutFeedback : View;
+
     return (
-        <PressableWithoutFeedback
+        <Wrapper
             accessibilityRole="imagebutton"
             accessibilityLabel={translate('receipt.upload')}
             onPress={onPress}
@@ -38,6 +45,7 @@ function ReceiptEmptyState({hasError = false, onPress = () => {}, disabled = fal
                 styles.justifyContentCenter,
                 styles.moneyRequestViewImage,
                 isThumbnail ? styles.moneyRequestAttachReceiptThumbnail : styles.moneyRequestAttachReceipt,
+                isInMoneyRequestView && styles.expenseViewImage,
                 hasError && styles.borderColorDanger,
             ]}
         >
@@ -57,7 +65,7 @@ function ReceiptEmptyState({hasError = false, onPress = () => {}, disabled = fal
                     />
                 )}
             </View>
-        </PressableWithoutFeedback>
+        </Wrapper>
     );
 }
 

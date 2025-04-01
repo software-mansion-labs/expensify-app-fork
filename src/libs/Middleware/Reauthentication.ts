@@ -1,11 +1,11 @@
 import redirectToSignIn from '@libs/actions/SignInRedirect';
-import * as Authentication from '@libs/Authentication';
+import {reauthenticate as reauthenticateLibs} from '@libs/Authentication';
 import Log from '@libs/Log';
-import * as MainQueue from '@libs/Network/MainQueue';
-import * as NetworkStore from '@libs/Network/NetworkStore';
+import {replay as replayMainQueue} from '@libs/Network/MainQueue';
+import {isAuthenticating as isAuthenticatingNetworkStore, isOffline, setIsAuthenticating} from '@libs/Network/NetworkStore';
 import type {RequestError} from '@libs/Network/SequentialQueue';
 import NetworkConnection from '@libs/NetworkConnection';
-import * as Request from '@libs/Request';
+import {processWithMiddleware} from '@libs/Request';
 import RequestThrottle from '@libs/RequestThrottle';
 import CONST from '@src/CONST';
 import type Middleware from './types';
@@ -15,32 +15,33 @@ let isAuthenticating: Promise<void> | null = null;
 
 const reauthThrottle = new RequestThrottle('Re-authentication');
 
-function reauthenticate(commandName?: string): Promise<void> {
+function reauthenticate(commandName?: string): Promise<void> | null {
     if (isAuthenticating) {
         return isAuthenticating;
     }
 
-    isAuthenticating = retryReauthenticate(commandName)
-        .then((response) => {
-            return response;
-        })
-        .catch((error) => {
-            throw error;
-        })
-        .finally(() => {
-            isAuthenticating = null;
-        });
+    isAuthenticating =
+        retryReauthenticate(commandName)
+            ?.then((response) => {
+                return response;
+            })
+            .catch((error) => {
+                throw error;
+            })
+            .finally(() => {
+                isAuthenticating = null;
+            }) ?? null;
 
     return isAuthenticating;
 }
 
-function retryReauthenticate(commandName?: string): Promise<void> {
-    return Authentication.reauthenticate(commandName).catch((error: RequestError) => {
+function retryReauthenticate(commandName?: string): Promise<void> | undefined {
+    return reauthenticateLibs(commandName)?.catch((error: RequestError) => {
         return reauthThrottle
             .sleep(error, 'Authenticate')
             .then(() => retryReauthenticate(commandName))
             .catch(() => {
-                NetworkStore.setIsAuthenticating(false);
+                setIsAuthenticating(false);
                 Log.hmmm('Redirecting to Sign In because we failed to reauthenticate after multiple attempts', {error});
                 redirectToSignIn('passwordForm.error.fallback');
             });
@@ -66,7 +67,7 @@ const Reauthentication: Middleware = (response, request, isFromSequentialQueue) 
             }
 
             if (data.jsonCode === CONST.JSON_CODE.NOT_AUTHENTICATED) {
-                if (NetworkStore.isOffline()) {
+                if (isOffline()) {
                     // If we are offline and somehow handling this response we do not want to reauthenticate
                     throw new Error('Unable to reauthenticate because we are offline');
                 }
@@ -93,15 +94,15 @@ const Reauthentication: Middleware = (response, request, isFromSequentialQueue) 
                 }
 
                 // We are already authenticating and using the DeprecatedAPI so we will replay the request
-                if (!apiRequestType && NetworkStore.isAuthenticating()) {
-                    MainQueue.replay(request);
+                if (!apiRequestType && isAuthenticatingNetworkStore()) {
+                    replayMainQueue(request);
                     return data;
                 }
 
                 return reauthenticate(request?.commandName)
-                    .then((authenticateResponse) => {
+                    ?.then((authenticateResponse) => {
                         if (isFromSequentialQueue || apiRequestType === CONST.API_REQUEST_TYPE.MAKE_REQUEST_WITH_SIDE_EFFECTS) {
-                            return Request.processWithMiddleware(request, isFromSequentialQueue);
+                            return processWithMiddleware(request, isFromSequentialQueue);
                         }
 
                         if (apiRequestType === CONST.API_REQUEST_TYPE.READ) {
@@ -109,7 +110,7 @@ const Reauthentication: Middleware = (response, request, isFromSequentialQueue) 
                             return Promise.resolve();
                         }
 
-                        MainQueue.replay(request);
+                        replayMainQueue(request);
                         return authenticateResponse;
                     })
                     .catch(() => {
@@ -118,7 +119,7 @@ const Reauthentication: Middleware = (response, request, isFromSequentialQueue) 
                         }
 
                         // If we make it here, then our reauthenticate request could not be made due to a networking issue. The original request can be retried safely.
-                        MainQueue.replay(request);
+                        replayMainQueue(request);
                     });
             }
 

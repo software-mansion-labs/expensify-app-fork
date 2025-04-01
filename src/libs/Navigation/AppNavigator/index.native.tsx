@@ -1,11 +1,7 @@
-import React, {memo, useContext, useEffect, useMemo} from 'react';
-import {NativeModules} from 'react-native';
+import React, {memo, useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
-import {InitialURLContext} from '@components/InitialURLContextProvider';
-import HybridApp from '@libs/HybridApp';
-import Navigation from '@libs/Navigation/Navigation';
+import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {TryNewDot} from '@src/types/onyx';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
 type AppNavigatorProps = {
@@ -14,31 +10,15 @@ type AppNavigatorProps = {
 };
 
 function AppNavigator({authenticated}: AppNavigatorProps) {
-    const {initialURL, setInitialURL} = useContext(InitialURLContext);
-    const [tryNewDot] = useOnyx(ONYXKEYS.NVP_TRYNEWDOT);
     const [hybridApp] = useOnyx(ONYXKEYS.HYBRID_APP);
 
     const shouldShowAuthScreens = useMemo(() => {
-        if (!NativeModules.HybridAppModule) {
+        if (!CONFIG.IS_HYBRID_APP) {
             return authenticated;
-        }
-        if (HybridApp.shouldUseOldApp(tryNewDot) && !hybridApp?.isSingleNewDotEntry) {
-            return false;
         }
 
         return authenticated && (!hybridApp?.useNewDotSignInPage || hybridApp?.readyToShowAuthScreens);
-    }, [tryNewDot, hybridApp?.isSingleNewDotEntry, hybridApp?.useNewDotSignInPage, hybridApp?.readyToShowAuthScreens, authenticated]);
-
-    useEffect(() => {
-        if (!NativeModules.HybridAppModule || !initialURL || !shouldShowAuthScreens) {
-            return;
-        }
-
-        Navigation.isNavigationReady().then(() => {
-            Navigation.navigate(Navigation.parseHybridAppUrl(initialURL));
-            setInitialURL(undefined);
-        });
-    }, [initialURL, setInitialURL, shouldShowAuthScreens]);
+    }, [hybridApp?.useNewDotSignInPage, hybridApp?.readyToShowAuthScreens, authenticated]);
 
     if (shouldShowAuthScreens) {
         const AuthScreens = require<ReactComponentModule>('./AuthScreens').default;

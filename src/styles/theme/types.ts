@@ -100,6 +100,7 @@ type ThemeColors = {
     transparentWhite: Color;
     emptyFolderBG: Color;
     travelBG: Color;
+    trialTimer: Color;
 
     PAGE_THEMES: Record<string, {backgroundColor: Color; statusBarStyle: StatusBarStyle}>;
 
@@ -108,6 +109,7 @@ type ThemeColors = {
     // e.g. the StatusBar displays either "light-content" or "dark-content" based on the theme
     statusBarStyle: StatusBarStyle;
     navigationBarButtonsStyle: NavBarButtonStyle;
+    navigationBarBackgroundColor: Color;
     colorScheme: ColorScheme;
 };
 

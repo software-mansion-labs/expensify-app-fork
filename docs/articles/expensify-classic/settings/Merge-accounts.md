@@ -1,30 +1,46 @@
 ---
-title: Merge accounts
-description: Merge two Expensify accounts into one
+title: Merge Accounts
+description: Learn how to merge two Expensify accounts together.
+keywords: [Expensify Classic, merge accounts]
 ---
 <div id="expensify-classic" markdown="1">
+  
+If you have multiple Expensify accounts—such as a personal and a company account—you can merge them into one. This process consolidates all receipts, expenses, reports, invoices, bills, imported cards, contact methods, Copilots, and group workspace settings into a single account.
 
-If you have two Expensify accounts (for example, a personal account and a separate account for your company), you can combine the two accounts by merging them. Once merged, all receipts, expenses, expense reports, invoices, bills, imported cards, secondary logins, co-pilots, and group workspace settings from both accounts will be combined into one account. 
+**Important:** Merging accounts is **permanent** and **cannot be undone**.
 
-{% include info.html %}
-Merging two accounts is a permanent action that cannot be reversed. To merge a company and personal account, you must sign in to your company account and merge your personal account with it. You cannot merge a company account into a personal account, nor can you merge two different company accounts together if they are private domains.
-{% include end-info.html %}
+- To merge a company and personal account, log in to your **company account** and merge your **personal account** into it.
+- You **cannot** merge a company account into a personal account.
+- You **cannot** merge two company accounts if they belong to private domains.
 
-*Note: This process is currently not available from the mobile app and must be completed from the Expensify website.* 
+**Note:** This process must be completed from the Expensify website and is not available in the mobile app.
 
-1. Log in to Expensify using the account you want to keep as the primary.
-2. Hover over Settings and click **Account**.
-3. Under Account Details, scroll down to the Merge Accounts section. 
-4. Enter the email address or phone number associated with the account that you want to merge into this account. 
-5. Select the “Yes, I understand this is not reversible” checkbox to agree. 
+---
+
+# How to Merge Accounts
+
+1. Log in to the **account you want to keep** as your primary Expensify account.
+2. Hover over **Settings** and click **Account**.
+3. Under **Profile** scroll down to the **Merge Accounts** section.
+4. Enter the **email address or phone number** associated with the account you want to merge.
+5. Select the **“Yes, I understand this is not reversible”** checkbox.
 6. Click **Merge Accounts**.
-7. Check your email for the magic code sent from Expensify and copy the code.
-8. Paste the code into the field and click **Merge**.
+7. Check your email for the **Magic Code** sent from Expensify.
+8. Copy and paste the code into the field, then click **Merge**.
+
+---
 
 # FAQ
 
-**What information merges into my new account?**
+## What happens to my data when I merge accounts?
 
-All receipts, expenses, expense reports, invoices, bills, imported cards, secondary logins, co-pilots, and group workspace settings will be merged into your new account.
+All the following will be transferred to your primary account:
+- Receipts and expenses
+- Expense reports
+- Invoices and bills
+- Imported cards
+- Saved Contact Methods
+- Copilots
+- Group workspace settings
 
 </div>

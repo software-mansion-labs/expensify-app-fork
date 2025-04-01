@@ -1,95 +1,129 @@
-import React, {memo, useCallback, useEffect, useRef, useState} from 'react';
-import type {LayoutRectangle, NativeSyntheticEvent} from 'react-native';
+import {NavigationContext} from '@react-navigation/native';
+import React, {memo, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import type {LayoutRectangle, NativeMethods, NativeSyntheticEvent} from 'react-native';
+import {DeviceEventEmitter, Dimensions} from 'react-native';
 import GenericTooltip from '@components/Tooltip/GenericTooltip';
-import type {EducationalTooltipProps} from '@components/Tooltip/types';
-import measureTooltipCoordinate from './measureTooltipCoordinate';
-import * as TooltipManager from './TooltipManager';
+import type {EducationalTooltipProps, GenericTooltipState} from '@components/Tooltip/types';
+import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
+import variables from '@styles/variables';
+import CONST from '@src/CONST';
+import measureTooltipCoordinate, {getTooltipCoordinates} from './measureTooltipCoordinate';
 
 type LayoutChangeEventWithTarget = NativeSyntheticEvent<{layout: LayoutRectangle; target: HTMLElement}>;
 
+type ScrollingEventData = {
+    isScrolling: boolean;
+};
 /**
  * A component used to wrap an element intended for displaying a tooltip.
  * This tooltip would show immediately without user's interaction and hide after 5 seconds.
  */
-function BaseEducationalTooltip({children, onHideTooltip, shouldRender = false, shouldAutoDismiss = false, ...props}: EducationalTooltipProps) {
-    const hideTooltipRef = useRef<() => void>();
+function BaseEducationalTooltip({children, shouldRender = false, shouldHideOnNavigate = true, shouldHideOnScroll = false, ...props}: EducationalTooltipProps) {
+    const genericTooltipStateRef = useRef<GenericTooltipState>();
+    const tooltipElementRef = useRef<Readonly<NativeMethods>>();
 
     const [shouldMeasure, setShouldMeasure] = useState(false);
     const show = useRef<() => void>();
-    const removeActiveTooltipRef = useRef(() => {});
-    const removePendingTooltipRef = useRef(() => {});
 
-    const didShow = useRef(false);
+    const navigator = useContext(NavigationContext);
+    const insets = useSafeAreaInsets();
 
-    const closeTooltip = useCallback(() => {
-        if (!didShow.current) {
-            return;
-        }
-        hideTooltipRef.current?.();
-        onHideTooltip?.();
-        removeActiveTooltipRef.current();
-    }, [onHideTooltip]);
-
-    useEffect(
-        () => () => {
-            if (!hideTooltipRef.current) {
+    const setTooltipPosition = useCallback(
+        (isScrolling: boolean) => {
+            if (!shouldHideOnScroll || !genericTooltipStateRef.current || !tooltipElementRef.current) {
                 return;
             }
 
-            hideTooltipRef.current();
+            const {hideTooltip, showTooltip, updateTargetBounds} = genericTooltipStateRef.current;
+            if (isScrolling) {
+                hideTooltip();
+            } else {
+                getTooltipCoordinates(tooltipElementRef.current, (bounds) => {
+                    updateTargetBounds(bounds);
+                    const {y, height} = bounds;
+
+                    const offset = 10; // Tooltip hides when content moves 10px past header/footer.
+                    const dimensions = Dimensions.get('screen');
+                    const top = y - (insets.top || 0);
+                    const bottom = y + height + insets.bottom || 0;
+
+                    // Calculate the available space at the top, considering the header height and offset
+                    const availableHeightForTop = top - (variables.contentHeaderHeight - offset);
+
+                    // Calculate the total height available after accounting for the bottom tab and offset
+                    const availableHeightForBottom = dimensions.height - (bottom + variables.bottomTabHeight - offset);
+
+                    if (availableHeightForTop < 0 || availableHeightForBottom < 0) {
+                        hideTooltip();
+                    } else {
+                        showTooltip();
+                    }
+                });
+            }
         },
-        [],
+        [insets, shouldHideOnScroll],
     );
 
-    // Automatically hide tooltip after 5 seconds
-    useEffect(() => {
-        if (!shouldAutoDismiss) {
+    useLayoutEffect(() => {
+        if (!shouldRender || !shouldHideOnScroll) {
             return;
         }
+        setTooltipPosition(false);
+        const scrollingListener = DeviceEventEmitter.addListener(CONST.EVENTS.SCROLLING, ({isScrolling}: ScrollingEventData = {isScrolling: false}) => {
+            setTooltipPosition(isScrolling);
+        });
 
-        // Automatically hide tooltip after 5 seconds if shouldAutoDismiss is true
-        const timerID = setTimeout(() => {
-            closeTooltip();
-        }, 5000);
-        return () => {
-            clearTimeout(timerID);
-        };
-    }, [shouldAutoDismiss, closeTooltip]);
+        return () => scrollingListener.remove();
+    }, [shouldRender, shouldHideOnScroll, setTooltipPosition]);
 
     useEffect(() => {
-        if (!shouldMeasure || !shouldRender || didShow.current) {
+        return () => {
+            genericTooltipStateRef.current?.hideTooltip();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!shouldMeasure) {
+            return;
+        }
+        if (!shouldRender) {
+            genericTooltipStateRef.current?.hideTooltip();
             return;
         }
         // When tooltip is used inside an animated view (e.g. popover), we need to wait for the animation to finish before measuring content.
         const timerID = setTimeout(() => {
-            removePendingTooltipRef.current();
             show.current?.();
-            didShow.current = true;
-            removeActiveTooltipRef.current = TooltipManager.addActiveTooltip(closeTooltip);
         }, 500);
-        removePendingTooltipRef.current = TooltipManager.addPendingTooltip(timerID);
         return () => {
-            removePendingTooltipRef.current();
             clearTimeout(timerID);
         };
-    }, [shouldMeasure, shouldRender, closeTooltip]);
+    }, [shouldMeasure, shouldRender]);
 
-    useEffect(
-        () => closeTooltip,
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-        [],
-    );
+    useEffect(() => {
+        if (!navigator) {
+            return;
+        }
+        const unsubscribe = navigator.addListener('blur', () => {
+            if (!shouldHideOnNavigate) {
+                return;
+            }
+            genericTooltipStateRef.current?.hideTooltip();
+        });
+        return unsubscribe;
+    }, [navigator, shouldHideOnNavigate]);
 
     return (
         <GenericTooltip
             shouldForceAnimate
+            shouldRender={shouldRender}
+            isEducationTooltip
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...props}
-            onHideTooltip={onHideTooltip}
         >
-            {({showTooltip, hideTooltip, updateTargetBounds}) => {
+            {(genericTooltipState) => {
+                const {updateTargetBounds, showTooltip} = genericTooltipState;
                 // eslint-disable-next-line react-compiler/react-compiler
-                hideTooltipRef.current = hideTooltip;
+                genericTooltipStateRef.current = genericTooltipState;
                 return React.cloneElement(children as React.ReactElement, {
                     onLayout: (e: LayoutChangeEventWithTarget) => {
                         if (!shouldMeasure) {
@@ -97,6 +131,7 @@ function BaseEducationalTooltip({children, onHideTooltip, shouldRender = false, 
                         }
                         // e.target is specific to native, use e.nativeEvent.target on web instead
                         const target = e.target || e.nativeEvent.target;
+                        tooltipElementRef.current = target;
                         show.current = () => measureTooltipCoordinate(target, updateTargetBounds, showTooltip);
                     },
                 });

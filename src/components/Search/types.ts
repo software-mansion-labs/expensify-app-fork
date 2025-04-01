@@ -39,7 +39,7 @@ type SelectedTransactions = Record<string, SelectedTransactionInfo>;
 /** Model of selected reports */
 type SelectedReports = {
     reportID: string;
-    policyID: string;
+    policyID: string | undefined;
     action: ValueOf<typeof CONST.SEARCH.ACTION_TYPES>;
     total: number;
 };
@@ -58,6 +58,8 @@ type InvoiceSearchStatus = ValueOf<typeof CONST.SEARCH.STATUS.INVOICE>;
 type TripSearchStatus = ValueOf<typeof CONST.SEARCH.STATUS.TRIP>;
 type ChatSearchStatus = ValueOf<typeof CONST.SEARCH.STATUS.CHAT>;
 type SearchStatus = ExpenseSearchStatus | InvoiceSearchStatus | TripSearchStatus | ChatSearchStatus | Array<ExpenseSearchStatus | InvoiceSearchStatus | TripSearchStatus | ChatSearchStatus>;
+type SearchGroupBy = ValueOf<typeof CONST.SEARCH.GROUP_BY>;
+type TableColumnSize = ValueOf<typeof CONST.SEARCH.TABLE_COLUMN_SIZES>;
 
 type SearchContext = {
     currentSearchHash: number;
@@ -65,7 +67,8 @@ type SearchContext = {
     selectedReports: SelectedReports[];
     setCurrentSearchHash: (hash: number) => void;
     setSelectedTransactions: (selectedTransactions: SelectedTransactions, data: TransactionListItemType[] | ReportListItemType[] | ReportActionListItemType[]) => void;
-    clearSelectedTransactions: (hash?: number) => void;
+    clearSelectedTransactions: (hash?: number, shouldTurnOffSelectionMode?: boolean) => void;
+    shouldTurnOffSelectionMode: boolean;
     shouldShowStatusBarLoading: boolean;
     setShouldShowStatusBarLoading: (shouldShow: boolean) => void;
     setLastSearchType: (type: string | undefined) => void;
@@ -95,7 +98,10 @@ type SearchFilterKey =
     | ValueOf<typeof CONST.SEARCH.SYNTAX_FILTER_KEYS>
     | typeof CONST.SEARCH.SYNTAX_ROOT_KEYS.TYPE
     | typeof CONST.SEARCH.SYNTAX_ROOT_KEYS.STATUS
-    | typeof CONST.SEARCH.SYNTAX_ROOT_KEYS.POLICY_ID;
+    | typeof CONST.SEARCH.SYNTAX_ROOT_KEYS.POLICY_ID
+    | typeof CONST.SEARCH.SYNTAX_ROOT_KEYS.GROUP_BY;
+
+type UserFriendlyKey = ValueOf<typeof CONST.SEARCH.SEARCH_USER_FRIENDLY_KEYS>;
 
 type QueryFilters = Array<{
     key: SearchFilterKey;
@@ -109,6 +115,7 @@ type SearchQueryAST = {
     status: SearchStatus;
     sortBy: SearchColumnType;
     sortOrder: SortOrder;
+    groupBy?: SearchGroupBy;
     filters: ASTNode;
     policyID?: string;
 };
@@ -148,6 +155,7 @@ export type {
     QueryFilter,
     QueryFilters,
     SearchFilterKey,
+    UserFriendlyKey,
     ExpenseSearchStatus,
     InvoiceSearchStatus,
     TripSearchStatus,
@@ -155,4 +163,5 @@ export type {
     SearchAutocompleteResult,
     PaymentData,
     SearchAutocompleteQueryRange,
+    TableColumnSize,
 };

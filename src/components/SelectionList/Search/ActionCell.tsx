@@ -48,16 +48,15 @@ function ActionCell({
     const StyleUtils = useStyleUtils();
     const {isOffline} = useNetwork();
 
-    const text = translate(actionTranslationsMap[action]);
-
+    const text = isChildListItem ? translate(actionTranslationsMap[CONST.SEARCH.ACTION_TYPES.VIEW]) : translate(actionTranslationsMap[action]);
     const shouldUseViewAction = action === CONST.SEARCH.ACTION_TYPES.VIEW || (parentAction === CONST.SEARCH.ACTION_TYPES.PAID && action === CONST.SEARCH.ACTION_TYPES.PAID);
 
-    if ((parentAction !== CONST.SEARCH.ACTION_TYPES.PAID && action === CONST.SEARCH.ACTION_TYPES.PAID) || action === CONST.SEARCH.ACTION_TYPES.DONE) {
+    if ((parentAction !== CONST.SEARCH.ACTION_TYPES.PAID && action === CONST.SEARCH.ACTION_TYPES.PAID) || (action === CONST.SEARCH.ACTION_TYPES.DONE && !isChildListItem)) {
         return (
             <View style={[StyleUtils.getHeight(variables.h28), styles.justifyContentCenter]}>
                 <Badge
                     text={text}
-                    icon={Expensicons.Checkmark}
+                    icon={action === CONST.SEARCH.ACTION_TYPES.DONE ? Expensicons.Checkbox : Expensicons.Checkmark}
                     badgeStyles={[
                         styles.ml0,
                         styles.ph2,
@@ -75,32 +74,36 @@ function ActionCell({
         );
     }
 
-    if (action === CONST.SEARCH.ACTION_TYPES.VIEW || shouldUseViewAction) {
-        const buttonInnerStyles = isSelected ? styles.buttonDefaultHovered : {};
+    if (action === CONST.SEARCH.ACTION_TYPES.VIEW || action === CONST.SEARCH.ACTION_TYPES.REVIEW || shouldUseViewAction || (action === CONST.SEARCH.ACTION_TYPES.DONE && isChildListItem)) {
+        const buttonInnerStyles = isSelected ? styles.buttonDefaultSelected : {};
+
         return isLargeScreenWidth ? (
             <Button
-                text={translate(actionTranslationsMap[CONST.SEARCH.ACTION_TYPES.VIEW])}
+                text={text}
                 onPress={goToItem}
                 small
                 style={[styles.w100]}
                 innerStyles={buttonInnerStyles}
                 link={isChildListItem}
                 shouldUseDefaultHover={!isChildListItem}
+                icon={!isChildListItem && action === CONST.SEARCH.ACTION_TYPES.REVIEW ? Expensicons.DotIndicator : undefined}
+                iconFill={theme.danger}
+                iconHoverFill={theme.dangerHover}
+                isNested
             />
         ) : null;
     }
 
-    const buttonInnerStyles = isSelected ? styles.buttonSuccessHovered : {};
     return (
         <Button
             text={text}
             onPress={goToItem}
             small
             style={[styles.w100]}
-            innerStyles={buttonInnerStyles}
             isLoading={isLoading}
             success
             isDisabled={isOffline}
+            isNested
         />
     );
 }
