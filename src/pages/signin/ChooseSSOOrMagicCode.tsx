@@ -12,7 +12,9 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import * as HybridAppActions from '@userActions/HybridApp';
 import * as Session from '@userActions/Session';
+import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -57,6 +59,7 @@ function ChooseSSOOrMagicCode({setIsUsingMagicCode}: ChooseSSOOrMagicCodeProps) 
                     text={translate('samlSignIn.useSingleSignOn')}
                     isLoading={account?.isLoading}
                     onPress={() => {
+                        HybridAppActions.setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.STARTED);
                         Navigation.navigate(ROUTES.SAML_SIGN_IN);
                     }}
                 />
@@ -79,7 +82,14 @@ function ChooseSSOOrMagicCode({setIsUsingMagicCode}: ChooseSSOOrMagicCodeProps) 
                     }}
                 />
                 {!!account && !isEmptyObject(account.errors) && <FormHelpMessage message={ErrorUtils.getLatestErrorMessage(account)} />}
-                <ChangeExpensifyLoginLink onPress={() => Session.clearSignInData()} />
+                <ChangeExpensifyLoginLink
+                    onPress={() => {
+                        if (CONFIG.IS_HYBRID_APP) {
+                            HybridAppActions.resetSignInFlow();
+                        }
+                        Session.clearSignInData();
+                    }}
+                />
             </View>
             <View style={[styles.mt5, styles.signInPageWelcomeTextContainer]}>
                 <Terms />

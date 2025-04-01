@@ -459,6 +459,26 @@ function signInAttemptState(): OnyxData {
 }
 
 /**
+ * Constructs the state object that extends object returned from `signInAttemptState` for the `beginGoogleSignIn` / `beginAppleSignIn` API calls.
+ */
+
+function hybridAppSignInAttemptState(): OnyxData {
+    return {
+        optimisticData: [
+            {
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: ONYXKEYS.HYBRID_APP,
+                value: {
+                    newDotSignInState: CONST.HYBRID_APP_SIGN_IN_STATE.STARTED,
+                },
+            },
+        ],
+        successData: [],
+        failureData: [],
+    };
+}
+
+/**
  * Checks the API to see if an account exists for the given login.
  */
 function beginSignIn(email: string) {
@@ -524,9 +544,7 @@ function signUpUser() {
     ];
 
     const params: SignUpUserParams = {email: credentials.login, preferredLocale};
-
-    // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData}).then(() => {});
+    API.write(WRITE_COMMANDS.SIGN_UP_USER, params, {optimisticData, successData, failureData});
 }
 
 function setupNewDotAfterTransitionFromOldDot(hybridAppSettings: string, tryNewDot?: TryNewDot) {
@@ -609,6 +627,15 @@ function setupNewDotAfterTransitionFromOldDot(hybridAppSettings: string, tryNewD
 function beginAppleSignIn(idToken: string | undefined | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
+    if (CONFIG.IS_HYBRID_APP) {
+        Log.info('[HybridApp] Extending `signInAttemptState` with HybridApp data');
+        const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
+
+        optimisticData.push(...hybridAppOptimisticData);
+        successData.push(...hybridAppSuccessData);
+        failureData.push(...hybridAppFailureData);
+    }
+
     const params: BeginAppleSignInParams = {idToken, preferredLocale};
 
     API.write(WRITE_COMMANDS.SIGN_IN_WITH_APPLE, params, {optimisticData, successData, failureData});
@@ -621,8 +648,16 @@ function beginAppleSignIn(idToken: string | undefined | null) {
 function beginGoogleSignIn(token: string | null) {
     const {optimisticData, successData, failureData} = signInAttemptState();
 
-    const params: BeginGoogleSignInParams = {token, preferredLocale};
+    if (CONFIG.IS_HYBRID_APP) {
+        Log.info('[HybridApp] Extending `signInAttemptState` with HybridApp data');
+        const {optimisticData: hybridAppOptimisticData, successData: hybridAppSuccessData, failureData: hybridAppFailureData} = hybridAppSignInAttemptState();
 
+        optimisticData.push(...hybridAppOptimisticData);
+        successData.push(...hybridAppSuccessData);
+        failureData.push(...hybridAppFailureData);
+    }
+
+    const params: BeginGoogleSignInParams = {token, preferredLocale};
     API.write(WRITE_COMMANDS.SIGN_IN_WITH_GOOGLE, params, {optimisticData, successData, failureData});
 }
 
@@ -700,12 +735,7 @@ function signIn(validateCode: string, twoFactorAuthCode?: string) {
             params.validateCode = validateCode || credentials.validateCode;
         }
 
-        // eslint-disable-next-line rulesdir/no-api-side-effects-method
-        API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.SIGN_IN_USER, params, {
-            optimisticData,
-            successData,
-            failureData,
-        }).then(() => {});
+        API.write(WRITE_COMMANDS.SIGN_IN_USER, params, {optimisticData, successData, failureData});
     });
 }
 
