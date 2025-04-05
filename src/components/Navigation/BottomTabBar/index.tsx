@@ -107,13 +107,22 @@ function BottomTabBar({selectedTab, isTooltipAllowed = false}: BottomTabBarProps
         });
     }, [activeWorkspaceID, selectedTab]);
 
+    const navigateToSettings = useCallback(() => {
+        if (selectedTab === BOTTOM_TABS.SETTINGS) {
+            return;
+        }
+
+        hideProductTrainingTooltip();
+        Navigation.navigate(ROUTES.SETTINGS);
+    }, [hideProductTrainingTooltip, selectedTab]);
+
     /**
      * The settings tab is related to SettingsSplitNavigator and WorkspaceSplitNavigator.
      * If the user opens this tab from another tab, it is necessary to check whether it has not been opened before.
      * If so, all previously opened screens have be pushed to the navigation stack to maintain the order of screens within the tab.
      * If the user clicks on the settings tab while on this tab, this button should go back to the previous screen within the tab.
      */
-    const showSettingsPage = useCallback(() => {
+    const showWorkspaces = useCallback(() => {
         const rootState = navigationRef.getRootState();
         const topmostFullScreenRoute = rootState.routes.findLast((route) => isFullScreenName(route.name));
 
@@ -123,7 +132,7 @@ function BottomTabBar({selectedTab, isTooltipAllowed = false}: BottomTabBarProps
 
         const lastRouteOfTopmostFullScreenRoute = 'state' in topmostFullScreenRoute ? topmostFullScreenRoute.state?.routes.at(-1) : undefined;
 
-        if (lastRouteOfTopmostFullScreenRoute && lastRouteOfTopmostFullScreenRoute.name === SCREENS.SETTINGS.WORKSPACES && shouldUseNarrowLayout) {
+        if (lastRouteOfTopmostFullScreenRoute && lastRouteOfTopmostFullScreenRoute.name === SCREENS.WORKSPACE_HUB.WORKSPACES && shouldUseNarrowLayout) {
             Navigation.goBack(ROUTES.SETTINGS);
             return;
         }
@@ -134,20 +143,20 @@ function BottomTabBar({selectedTab, isTooltipAllowed = false}: BottomTabBarProps
         }
 
         interceptAnonymousUser(() => {
-            const lastSettingsOrWorkspaceNavigatorRoute = rootState.routes.findLast(
-                (rootRoute) => rootRoute.name === NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR || rootRoute.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,
+            const lastWorkspaceHubOrWorkspaceNavigatorRoute = rootState.routes.findLast(
+                (rootRoute) => rootRoute.name === NAVIGATORS.WORKSPACE_HUB_SPLIT_NAVIGATOR || rootRoute.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,
             );
 
-            // If there is no settings or workspace navigator route, then we should open the settings navigator.
-            if (!lastSettingsOrWorkspaceNavigatorRoute) {
-                Navigation.navigate(ROUTES.SETTINGS);
+            // If there is no workspace hub or workspace navigator route, then we should open the .
+            if (!lastWorkspaceHubOrWorkspaceNavigatorRoute) {
+                Navigation.navigate(ROUTES.WORKSPACE_HUB_INITIAL);
                 return;
             }
 
-            const state = lastSettingsOrWorkspaceNavigatorRoute.state ?? getPreservedNavigatorState(lastSettingsOrWorkspaceNavigatorRoute.key);
+            const state = lastWorkspaceHubOrWorkspaceNavigatorRoute.state ?? getPreservedNavigatorState(lastWorkspaceHubOrWorkspaceNavigatorRoute.key);
 
             // If there is a workspace navigator route, then we should open the workspace initial screen as it should be "remembered".
-            if (lastSettingsOrWorkspaceNavigatorRoute.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR) {
+            if (lastWorkspaceHubOrWorkspaceNavigatorRoute.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR) {
                 const params = state?.routes.at(0)?.params as WorkspaceSplitNavigatorParamList[typeof SCREENS.WORKSPACE.INITIAL];
 
                 // Screens of this navigator should always have policyID
@@ -163,14 +172,14 @@ function BottomTabBar({selectedTab, isTooltipAllowed = false}: BottomTabBarProps
                 return;
             }
 
-            // If there is settings workspace screen in the settings navigator, then we should open the settings workspaces as it should be "remembered".
-            if (state?.routes?.at(-1)?.name === SCREENS.SETTINGS.WORKSPACES) {
+            // If there is settings workspace screen in the workspace hub navigator, then we should open the settings workspaces as it should be "remembered".
+            if (state?.routes?.at(-1)?.name === SCREENS.WORKSPACE_HUB.WORKSPACES) {
                 Navigation.navigate(ROUTES.SETTINGS_WORKSPACES.route);
                 return;
             }
 
-            // Otherwise we should simply open the settings navigator.
-            Navigation.navigate(ROUTES.SETTINGS);
+            // Otherwise we should simply open the workspace hub navigator.
+            Navigation.navigate(ROUTES.WORKSPACE_HUB_INITIAL);
         });
     }, [shouldUseNarrowLayout]);
 
@@ -254,13 +263,40 @@ function BottomTabBar({selectedTab, isTooltipAllowed = false}: BottomTabBarProps
                         {translate('common.reports')}
                     </Text>
                 </PressableWithFeedback>
-                <BottomTabAvatar
-                    isSelected={selectedTab === BOTTOM_TABS.SETTINGS}
-                    onPress={showSettingsPage}
-                />
                 <View style={[styles.flex1, styles.bottomTabBarItem]}>
                     <BottomTabBarFloatingActionButton isTooltipAllowed={isTooltipAllowed} />
                 </View>
+                <PressableWithFeedback
+                    onPress={showWorkspaces}
+                    role={CONST.ROLE.BUTTON}
+                    accessibilityLabel={translate('common.workspaces')}
+                    wrapperStyle={styles.flex1}
+                    style={styles.bottomTabBarItem}
+                >
+                    <View>
+                        <Icon
+                            src={Expensicons.Buildings}
+                            fill={selectedTab === BOTTOM_TABS.WORKSPACES ? theme.iconMenu : theme.icon}
+                            width={variables.iconBottomBar}
+                            height={variables.iconBottomBar}
+                        />
+                    </View>
+                    <Text
+                        style={[
+                            styles.textSmall,
+                            styles.textAlignCenter,
+                            styles.mt1Half,
+                            selectedTab === BOTTOM_TABS.WORKSPACES ? styles.textBold : styles.textSupporting,
+                            styles.bottomTabBarLabel,
+                        ]}
+                    >
+                        {translate('common.workspaces')}
+                    </Text>
+                </PressableWithFeedback>
+                <BottomTabAvatar
+                    isSelected={selectedTab === BOTTOM_TABS.SETTINGS}
+                    onPress={navigateToSettings}
+                />
             </View>
         </>
     );

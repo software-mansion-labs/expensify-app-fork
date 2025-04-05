@@ -10,6 +10,7 @@ import AccountSwitcher from '@components/AccountSwitcher';
 import AccountSwitcherSkeletonView from '@components/AccountSwitcherSkeletonView';
 import ConfirmModal from '@components/ConfirmModal';
 import CustomStatusBarAndBackgroundContext from '@components/CustomStatusBarAndBackground/CustomStatusBarAndBackgroundContext';
+import DelegateNoAccessModal from '@components/DelegateNoAccessModal';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import MenuItem from '@components/MenuItem';
@@ -32,11 +33,11 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {resetExitSurveyForm} from '@libs/actions/ExitSurvey';
 import {checkIfFeedConnectionIsBroken} from '@libs/CardUtils';
 import {convertToDisplayString} from '@libs/CurrencyUtils';
+import type {SETTINGS_TO_RHP, WORKSPACE_HUB_TO_RHP} from '@libs/Navigation/linkingConfig/RELATIONS';
 import Navigation from '@libs/Navigation/Navigation';
 import {getFreeTrialText, hasSubscriptionRedDotError} from '@libs/SubscriptionUtils';
 import {getProfilePageBrickRoadIndicator} from '@libs/UserUtils';
 import {hasGlobalWorkspaceSettingsRBR} from '@libs/WorkspacesSettingsUtils';
-import type SETTINGS_TO_RHP from '@navigation/linkingConfig/RELATIONS/SETTINGS_TO_RHP';
 import {showContextMenu} from '@pages/home/report/ContextMenu/ReportActionContextMenu';
 import variables from '@styles/variables';
 import {confirmReadyToOpenApp} from '@userActions/App';
@@ -57,11 +58,13 @@ import type IconAsset from '@src/types/utils/IconAsset';
 type InitialSettingsPageProps = WithCurrentUserPersonalDetailsProps;
 
 type SettingsTopLevelScreens = keyof typeof SETTINGS_TO_RHP;
+type WorkspaceHubTopLevelScreens = keyof typeof WORKSPACE_HUB_TO_RHP;
 
 type MenuData = {
     translationKey: TranslationPaths;
     icon: IconAsset;
-    screenName?: SettingsTopLevelScreens;
+    // @TODO remove SettingsTopLevelScreen
+    screenName?: SettingsTopLevelScreens | WorkspaceHubTopLevelScreens;
     brickRoadIndicator?: ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS>;
     action: () => void;
     link?: string | (() => Promise<string>);
@@ -80,7 +83,7 @@ type MenuData = {
 
 type Menu = {sectionStyle: StyleProp<ViewStyle>; sectionTranslationKey: TranslationPaths; items: MenuData[]};
 
-function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPageProps) {
+function WorkspaceHubInitialPage({currentUserPersonalDetails}: InitialSettingsPageProps) {
     const [userWallet] = useOnyx(ONYXKEYS.USER_WALLET);
     const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST);
     const [fundList] = useOnyx(ONYXKEYS.FUND_LIST);
@@ -90,6 +93,10 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
     const [privatePersonalDetails] = useOnyx(ONYXKEYS.PRIVATE_PERSONAL_DETAILS);
     const [tryNewDot] = useOnyx(ONYXKEYS.NVP_TRYNEWDOT);
     const [allCards] = useOnyx(`${ONYXKEYS.CARD_LIST}`);
+
+    const [isActingAsDelegate] = useOnyx(ONYXKEYS.ACCOUNT, {selector: (account) => !!account?.delegatedAccess?.delegate});
+
+    const [isNoDelegateAccessMenuVisible, setIsNoDelegateAccessMenuVisible] = useState(false);
 
     const network = useNetwork();
     const theme = useTheme();
@@ -255,6 +262,10 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                           }
                         : {
                               action() {
+                                  if (isActingAsDelegate) {
+                                      setIsNoDelegateAccessMenuVisible(true);
+                                      return;
+                                  }
                                   resetExitSurveyForm(() => {
                                       if (shouldOpenBookACall) {
                                           Navigation.navigate(ROUTES.SETTINGS_EXIT_SURVERY_BOOK_CALL.route);
@@ -292,7 +303,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                 },
             ],
         };
-    }, [styles.pt4, setRootStatusBarEnabled, shouldOpenBookACall, signOut]);
+    }, [styles.pt4, setRootStatusBarEnabled, isActingAsDelegate, shouldOpenBookACall, signOut]);
 
     /**
      * Retuns JSX.Element with menu items
@@ -435,7 +446,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
     return (
         <ScreenWrapper
             includeSafeAreaPaddingBottom
-            testID={InitialSettingsPage.displayName}
+            testID={WorkspaceHubInitialPage.displayName}
             bottomContent={<BottomTabBar selectedTab={BOTTOM_TABS.SETTINGS} />}
             shouldEnableKeyboardAvoidingView={false}
         >
@@ -461,10 +472,14 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
                     onCancel={() => toggleSignoutConfirmModal(false)}
                 />
             </ScrollView>
+            <DelegateNoAccessModal
+                isNoDelegateAccessMenuVisible={isNoDelegateAccessMenuVisible}
+                onClose={() => setIsNoDelegateAccessMenuVisible(false)}
+            />
         </ScreenWrapper>
     );
 }
 
-InitialSettingsPage.displayName = 'InitialSettingsPage';
+WorkspaceHubInitialPage.displayName = 'WorkspaceHubInitialPage';
 
-export default withCurrentUserPersonalDetails(InitialSettingsPage);
+export default withCurrentUserPersonalDetails(WorkspaceHubInitialPage);
