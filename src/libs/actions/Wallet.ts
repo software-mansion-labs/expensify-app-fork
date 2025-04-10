@@ -1,4 +1,4 @@
-import type {IOSEncryptPayload} from '@expensify/react-native-wallet/lib/typescript/src/NativeWallet';
+import type {AndroidCardData, IOSEncryptPayload} from '@expensify/react-native-wallet/lib/typescript/src/NativeWallet';
 import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
@@ -291,9 +291,33 @@ function issuerEncryptPayloadCallback(nonce: string, nonceSignature: string, cer
                 ephemeralPublicKey: data.ephemeralPublicKey,
             } as IOSEncryptPayload;
         })
-        .catch((e) => {
-            Log.warn(`issuerEncryptPayloadCallback error: ${e}`);
+        .catch((error) => {
+            Log.warn(`issuerEncryptPlayloadCallback error: ${error}`);
             return {} as IOSEncryptPayload;
+        });
+}
+
+function createDigitalGoogleWallet({walletAccountID, deviceID}: {walletAccountID: string; deviceID: string}): Promise<AndroidCardData> {
+    // eslint-disable-next-line rulesdir/no-api-side-effects-method
+    return API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.CREATE_DIGITAL_WALLET, {
+        platform: 'android',
+        appVersion: pkg.version,
+        walletAccountID,
+        deviceID,
+    })
+        .then((response) => {
+            const data = response as unknown as AndroidCardData;
+            return {
+                network: data.network,
+                opaquePaymentCard: data.network,
+                cardHolderName: data.userAddress.name ?? '',
+                lastDigits: data.lastDigits,
+                userAddress: data.userAddress,
+            } as AndroidCardData;
+        })
+        .catch((error) => {
+            Log.warn(`createDigitalGoogleWallet error: ${error}`);
+            return {} as AndroidCardData;
         });
 }
 
@@ -312,4 +336,5 @@ export {
     resetWalletAdditionalDetailsDraft,
     clearPhysicalCardError,
     issuerEncryptPayloadCallback,
+    createDigitalGoogleWallet,
 };
