@@ -3057,8 +3057,6 @@ const styles = (theme: ThemeColors) =>
         },
 
         workspaceSettingsSectionContainer: {
-            borderBottomWidth: 1,
-            borderBottomColor: theme.border,
             ...spacing.pt4,
         },
 
