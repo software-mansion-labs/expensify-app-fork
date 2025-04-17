@@ -135,18 +135,6 @@ function SearchAutocompleteInput(
         return focusedSharedValue.get() ? wrapperFocusedStyle : wrapperStyle ?? {};
     });
 
-    const [localValue, setLocalValue] = useState(value);
-
-    const debouncedOnSearchQueryChange = useMemo(() => lodashDebounce(onSearchQueryChange, CONST.TIMING.USE_DEBOUNCED_STATE_DELAY), [onSearchQueryChange]);
-
-    const handleChangeText = useCallback(
-        (text: string) => {
-            setLocalValue(text);
-            debouncedOnSearchQueryChange(text);
-        },
-        [debouncedOnSearchQueryChange],
-    );
-
     useEffect(() => {
         runOnLiveMarkdownRuntime(() => {
             'worklet';
@@ -206,8 +194,8 @@ function SearchAutocompleteInput(
                 >
                     <TextInput
                         testID="search-autocomplete-text-input"
-                        value={localValue}
-                        onChangeText={handleChangeText}
+                        value={value}
+                        onChangeText={onSearchQueryChange}
                         autoFocus={autoFocus}
                         shouldDelayFocus={shouldDelayFocus}
                         caretHidden={caretHidden}
