@@ -25,7 +25,6 @@ import type {WithCurrentUserPersonalDetailsProps} from '@components/withCurrentU
 import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
-import usePermissions from '@hooks/usePermissions';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSingleExecution from '@hooks/useSingleExecution';
 import useTheme from '@hooks/useTheme';
@@ -99,8 +98,7 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
     const focusedRouteName = useNavigationState((state) => findFocusedRoute(state)?.name);
     const emojiCode = currentUserPersonalDetails?.status?.emojiCode ?? '';
     const {setRootStatusBarEnabled} = useContext(CustomStatusBarAndBackgroundContext);
-    const {canUseLeftHandBar} = usePermissions();
-    const shouldDisplayLHB = canUseLeftHandBar && !shouldUseNarrowLayout;
+    const shouldDisplayLHB = !shouldUseNarrowLayout;
 
     const hasBrokenFeedConnection = checkIfFeedConnectionIsBroken(allCards, CONST.EXPENSIFY_CARD.BANK);
     const walletBrickRoadIndicator =
@@ -328,11 +326,11 @@ function InitialSettingsPage({currentUserPersonalDetails}: InitialSettingsPagePr
     const generalMenuItems = useMemo(() => getMenuItemsSection(generalMenuItemsData), [generalMenuItemsData, getMenuItemsSection]);
 
     const headerContent = (
-        <View style={[styles.ph5, !canUseLeftHandBar && styles.pv5]}>
+        <View style={styles.ph5}>
             {isEmptyObject(currentUserPersonalDetails) || currentUserPersonalDetails.displayName === undefined ? (
                 <AccountSwitcherSkeletonView avatarSize={CONST.AVATAR_SIZE.DEFAULT} />
             ) : (
-                <View style={[styles.flexRow, styles.justifyContentBetween, styles.alignItemsCenter, styles.gap3, canUseLeftHandBar ? [styles.headerBarDesktopHeight(true)] : []]}>
+                <View style={[styles.flexRow, styles.justifyContentBetween, styles.alignItemsCenter, styles.gap3, styles.headerBarHeight]}>
                     <AccountSwitcher />
                     <Tooltip text={translate('statusPage.status')}>
                         <PressableWithFeedback

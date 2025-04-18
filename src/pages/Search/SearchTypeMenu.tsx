@@ -5,8 +5,8 @@ import {View} from 'react-native';
 import type {ScrollView as RNScrollView, ScrollViewProps} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import MenuItem from '@components/MenuItem';
-import MenuItemList from '@components/MenuItemList';
 import type {MenuItemWithLink} from '@components/MenuItemList';
+import MenuItemList from '@components/MenuItemList';
 import {usePersonalDetails} from '@components/OnyxProvider';
 import {useProductTrainingContext} from '@components/ProductTrainingContext';
 import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
@@ -17,7 +17,6 @@ import Text from '@components/Text';
 import useDeleteSavedSearch from '@hooks/useDeleteSavedSearch';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
-import usePermissions from '@hooks/usePermissions';
 import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {clearAllFilters} from '@libs/actions/Search';
@@ -25,15 +24,9 @@ import {getCardFeedNamesWithType} from '@libs/CardFeedUtils';
 import {mergeCardListWithWorkspaceFeeds} from '@libs/CardUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import {getAllTaxRates} from '@libs/PolicyUtils';
-import {
-    buildSearchQueryJSON,
-    buildUserReadableQueryString,
-    buildUserReadableQueryStringWithPolicyID,
-    isCannedSearchQuery,
-    isCannedSearchQueryWithPolicyIDCheck,
-} from '@libs/SearchQueryUtils';
-import {createBaseSavedSearchMenuItem, createTypeMenuItems, getOverflowMenu as getOverflowMenuUtil} from '@libs/SearchUIUtils';
+import {buildSearchQueryJSON, buildUserReadableQueryStringWithPolicyID, isCannedSearchQueryWithPolicyIDCheck} from '@libs/SearchQueryUtils';
 import type {SavedSearchMenuItem, SearchTypeMenuItem} from '@libs/SearchUIUtils';
+import {createBaseSavedSearchMenuItem, createTypeMenuItems, getOverflowMenu as getOverflowMenuUtil} from '@libs/SearchUIUtils';
 import variables from '@styles/variables';
 import * as Expensicons from '@src/components/Icon/Expensicons';
 import CONST from '@src/CONST';
@@ -51,7 +44,6 @@ function SearchTypeMenu({queryJSON}: SearchTypeMenuProps) {
     const styles = useThemeStyles();
     const {singleExecution} = useSingleExecution();
     const {translate} = useLocalize();
-    const {canUseLeftHandBar} = usePermissions();
     const [savedSearches] = useOnyx(ONYXKEYS.SAVED_SEARCHES);
     const {isOffline} = useNetwork();
     const shouldShowSavedSearchesMenuItemTitle = Object.values(savedSearches ?? {}).filter((s) => s.pendingAction !== CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE || isOffline).length > 0;
@@ -82,11 +74,7 @@ function SearchTypeMenu({queryJSON}: SearchTypeMenuProps) {
             let title = item.name;
             if (title === item.query) {
                 const jsonQuery = buildSearchQueryJSON(item.query) ?? ({} as SearchQueryJSON);
-                if (canUseLeftHandBar) {
-                    title = buildUserReadableQueryStringWithPolicyID(jsonQuery, personalDetails, reports, taxRates, allCards, cardFeedNamesWithType, allPolicies);
-                } else {
-                    title = buildUserReadableQueryString(jsonQuery, personalDetails, reports, taxRates, allCards, cardFeedNamesWithType);
-                }
+                title = buildUserReadableQueryStringWithPolicyID(jsonQuery, personalDetails, reports, taxRates, allCards, cardFeedNamesWithType, allPolicies);
             }
 
             const isItemFocused = Number(key) === hash;
@@ -134,7 +122,6 @@ function SearchTypeMenu({queryJSON}: SearchTypeMenuProps) {
             renderProductTrainingTooltip,
             cardFeedNamesWithType,
             allPolicies,
-            canUseLeftHandBar,
         ],
     );
 
@@ -184,15 +171,7 @@ function SearchTypeMenu({queryJSON}: SearchTypeMenuProps) {
         [styles],
     );
 
-    let isCannedQuery = false;
-
-    if (queryJSON) {
-        if (canUseLeftHandBar) {
-            isCannedQuery = isCannedSearchQueryWithPolicyIDCheck(queryJSON);
-        } else {
-            isCannedQuery = isCannedSearchQuery(queryJSON);
-        }
-    }
+    const isCannedQuery = queryJSON ? isCannedSearchQueryWithPolicyIDCheck(queryJSON) : false;
 
     const activeItemIndex = isCannedQuery
         ? typeMenuItems.findIndex((item) => {

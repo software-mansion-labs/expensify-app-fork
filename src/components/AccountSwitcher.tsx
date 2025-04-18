@@ -5,7 +5,6 @@ import {useOnyx} from 'react-native-onyx';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
-import usePermissions from '@hooks/usePermissions';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -42,7 +41,6 @@ function AccountSwitcher() {
     const [user] = useOnyx(ONYXKEYS.USER);
     const buttonRef = useRef<HTMLDivElement>(null);
     const {windowHeight} = useWindowDimensions();
-    const {canUseLeftHandBar} = usePermissions();
 
     const [shouldShowDelegatorMenu, setShouldShowDelegatorMenu] = useState(false);
     const [shouldShowOfflineModal, setShouldShowOfflineModal] = useState(false);
@@ -51,7 +49,6 @@ function AccountSwitcher() {
     const isActingAsDelegate = !!account?.delegatedAccess?.delegate ?? false;
     const canSwitchAccounts = delegators.length > 0 || isActingAsDelegate;
     const processedTextArray = splitTextWithEmojis(currentUserPersonalDetails?.displayName);
-    const accountSwitcherPopoverStyle = canUseLeftHandBar ? styles.accountSwitcherPopoverWithLHB : styles.accountSwitcherPopover;
 
     const createBaseMenuItem = (
         personalDetails: PersonalDetails | undefined,
@@ -65,7 +62,7 @@ function AccountSwitcher() {
             avatarID: personalDetails?.accountID ?? CONST.DEFAULT_NUMBER_ID,
             icon: personalDetails?.avatar ?? '',
             iconType: CONST.ICON_TYPE_AVATAR,
-            outerWrapperStyle: shouldUseNarrowLayout ? {} : accountSwitcherPopoverStyle,
+            outerWrapperStyle: shouldUseNarrowLayout ? {} : styles.accountSwitcherPopover,
             numberOfLinesDescription: 1,
             errorText: error ?? '',
             shouldShowRedDotIndicator: !!error,
