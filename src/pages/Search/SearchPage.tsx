@@ -64,7 +64,6 @@ function SearchPage({route}: SearchPageProps) {
     const {selectedTransactions, clearSelectedTransactions, selectedReports, lastSearchType, setLastSearchType} = useSearchContext();
     const [selectionMode] = useOnyx(ONYXKEYS.MOBILE_SELECTION_MODE);
     const [lastPaymentMethods = {}] = useOnyx(ONYXKEYS.NVP_LAST_PAYMENT_METHOD);
-    const {canUseLeftHandBar} = usePermissions();
 
     const [isOfflineModalVisible, setIsOfflineModalVisible] = useState(false);
     const [isDownloadErrorModalVisible, setIsDownloadErrorModalVisible] = useState(false);
@@ -412,7 +411,7 @@ function SearchPage({route}: SearchPageProps) {
         <ScreenWrapper
             testID={Search.displayName}
             shouldEnableMaxHeight
-            headerGapStyles={[styles.searchHeaderGap, canUseLeftHandBar && styles.h0]}
+            headerGapStyles={[styles.searchHeaderGap, styles.h0]}
         >
             <FullPageNotFoundView
                 shouldForceFullScreen
@@ -421,8 +420,8 @@ function SearchPage({route}: SearchPageProps) {
                 shouldShowLink={false}
             >
                 {!!queryJSON && (
-                    <View style={[styles.searchSplitContainer, canUseLeftHandBar && {marginLeft: variables.navigationTabBarSize}]}>
-                        <View style={canUseLeftHandBar ? styles.searchSidebarWithLHB : styles.searchSidebar}>
+                    <View style={styles.searchSplitContainer}>
+                        <View style={styles.searchSidebar}>
                             {queryJSON ? (
                                 <View style={styles.flex1}>
                                     <HeaderGap />
