@@ -7,7 +7,6 @@ import SearchButton from '@components/Search/SearchRouter/SearchButton';
 import HelpButton from '@components/SidePanel/HelpComponents/HelpButton';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
-import usePermissions from '@hooks/usePermissions';
 import useThemeStyles from '@hooks/useThemeStyles';
 import SignInButton from '@pages/home/sidebar/SignInButton';
 import {isAnonymousUser as isAnonymousUserUtil} from '@userActions/Session';
@@ -30,7 +29,6 @@ function TopBar({breadcrumbLabel, shouldDisplaySearch = true, shouldDisplayHelpB
     const [session] = useOnyx(ONYXKEYS.SESSION, {selector: (sessionValue) => sessionValue && {authTokenType: sessionValue.authTokenType}});
     const [isLoadingReportData] = useOnyx(ONYXKEYS.IS_LOADING_REPORT_DATA);
     const isAnonymousUser = isAnonymousUserUtil(session);
-    const {canUseLeftHandBar} = usePermissions();
 
     const displaySignIn = isAnonymousUser;
     const displaySearch = !isAnonymousUser && shouldDisplaySearch;
@@ -38,7 +36,7 @@ function TopBar({breadcrumbLabel, shouldDisplaySearch = true, shouldDisplayHelpB
     return (
         <View style={[styles.w100, styles.zIndex10]}>
             <View
-                style={[styles.flexRow, styles.alignItemsCenter, styles.justifyContentBetween, styles.ml5, styles.mr3, styles.headerBarDesktopHeight(true)]}
+                style={[styles.flexRow, styles.alignItemsCenter, styles.justifyContentBetween, styles.ml5, styles.mr3, styles.headerBarHeight]}
                 dataSet={{dragArea: true}}
             >
                 <View style={[styles.flex1, styles.flexRow, styles.alignItemsCenter, styles.pr2]}>
@@ -55,7 +53,7 @@ function TopBar({breadcrumbLabel, shouldDisplaySearch = true, shouldDisplayHelpB
                 {!!cancelSearch && (
                     <PressableWithoutFeedback
                         accessibilityLabel={translate('common.cancel')}
-                        style={[styles.textBlue, !canUseLeftHandBar && styles.ph2]}
+                        style={styles.textBlue}
                         onPress={() => {
                             cancelSearch();
                         }}

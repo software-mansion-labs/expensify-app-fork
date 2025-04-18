@@ -13,7 +13,6 @@ import Text from '@components/Text';
 import EducationalTooltip from '@components/Tooltip/EducationalTooltip';
 import useActiveWorkspace from '@hooks/useActiveWorkspace';
 import useLocalize from '@hooks/useLocalize';
-import usePermissions from '@hooks/usePermissions';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useSidebarOrderedReportIDs} from '@hooks/useSidebarOrderedReportIDs';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -64,7 +63,6 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false}: NavigationTab
         isTooltipAllowed && selectedTab !== NAVIGATION_TABS.HOME,
     );
     const StyleUtils = useStyleUtils();
-    const {canUseLeftHandBar} = usePermissions();
 
     useEffect(() => {
         setChatTabBrickRoad(getChatTabBrickRoad(activeWorkspaceID, reports));
@@ -201,7 +199,7 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false}: NavigationTab
         });
     }, [shouldUseNarrowLayout]);
 
-    if (!shouldUseNarrowLayout && canUseLeftHandBar) {
+    if (!shouldUseNarrowLayout) {
         return (
             <>
                 {!!user?.isDebugModeEnabled && (
