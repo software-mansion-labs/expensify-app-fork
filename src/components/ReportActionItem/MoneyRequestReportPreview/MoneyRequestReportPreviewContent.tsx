@@ -543,10 +543,16 @@ function MoneyRequestReportPreviewContent({
     const scrollToOffsetWithSnapping = useCallback(
         (speed: number) => {
             const nextIndex = Math.min(currentIndex + Math.min(Math.round(1.5 * speed), 2), transactions.length - 1);
-            const offset = styles.pr2.paddingRight - styles.gap2.gap + nextIndex * (reportPreviewStyles.transactionPreviewStyle.width + styles.gap2.gap);
-            carouselRef.current?.scrollToOffset({offset});
+            const offset = nextIndex * (reportPreviewStyles.transactionPreviewStyle.width + styles.gap2.gap);
+            if (nextIndex == transactions.length - 1) {
+                carouselRef.current?.scrollToOffset({offset: nextIndex * (reportPreviewStyles.transactionPreviewStyle.width + styles.gap2.gap) - 1 - 2 * styles.gap2.gap});
+                return;
+            }
+            console.log(offset);
+            // carouselRef.current?.scrollToOffset({offset});
+            carouselRef.current?.scrollToOffset({offset: Math.max(offset, 1)});
         },
-        [currentIndex, reportPreviewStyles.transactionPreviewStyle.width, styles.gap2.gap, styles.pr2.paddingRight, transactions.length],
+        [currentIndex, reportPreviewStyles.transactionPreviewStyle.width, styles.gap2.gap, transactions.length],
     );
 
     useEffect(() => {
