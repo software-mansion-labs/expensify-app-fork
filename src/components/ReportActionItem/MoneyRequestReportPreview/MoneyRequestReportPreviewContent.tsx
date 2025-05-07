@@ -537,6 +537,63 @@ function MoneyRequestReportPreviewContent({
         ),
     };
 
+    const divRef = useRef();
+    const [previousPosition, setPreviousPosition] = useState({x: 0, y: 0, time: 0});
+
+    const scrollToOffsetWithSnapping = useCallback(
+        (speed: number) => {
+            const nextIndex = Math.min(currentIndex + Math.min(Math.round(1.5 * speed), 2), transactions.length - 1);
+            const offset = styles.pr2.paddingRight - styles.gap2.gap + nextIndex * (reportPreviewStyles.transactionPreviewStyle.width + styles.gap2.gap);
+            carouselRef.current?.scrollToOffset({offset});
+        },
+        [currentIndex, reportPreviewStyles.transactionPreviewStyle.width, styles.gap2.gap, styles.pr2.paddingRight, transactions.length],
+    );
+
+    useEffect(() => {
+        const logEvent = (e) => {
+            console.log(`Event: ${e.type}`, e);
+            console.log(previousPosition);
+        };
+
+        const updatePosition = (e) => {
+            setPreviousPosition({
+                x: e.pageX,
+                y: e.pageY,
+                time: Date.now(),
+            });
+        };
+
+        const snap = (e) => {
+            console.log(`ENDING: ${e}`);
+            const dx = previousPosition.x - e.pageX;
+            const dt = Date.now() - previousPosition.time;
+            const speed = dx / dt;
+
+            console.log(`SPEED X: ${speed}`);
+            updatePosition(e);
+            scrollToOffsetWithSnapping(speed);
+        };
+
+        const handleTouches = (e) => {
+            if (e.type == 'touchend') {
+                snap(e);
+            } else {
+                updatePosition(e);
+            }
+        };
+
+        const touchEvents = ['touchstart', 'touchmove', 'touchend'];
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const el = divRef.current;
+        touchEvents.forEach((eventType) => el.addEventListener(eventType, handleTouches));
+
+        // Cleanup
+        return () => {
+            touchEvents.forEach((eventType) => el.removeEventListener(eventType, handleTouches));
+        };
+    }, [currentIndex, previousPosition, scrollToOffsetWithSnapping]);
+
     return (
         transactions.length > 0 && (
             <OfflineWithFeedback
@@ -648,7 +705,10 @@ function MoneyRequestReportPreviewContent({
                                             )}
                                         </View>
                                     </View>
-                                    <View style={[styles.flex1, styles.flexColumn, styles.overflowVisible, styles.mtn1]}>
+                                    <View
+                                        style={[styles.flex1, styles.flexColumn, styles.overflowVisible, styles.mtn1]}
+                                        ref={divRef}
+                                    >
                                         <FlatList
                                             snapToAlignment="start"
                                             decelerationRate="fast"
