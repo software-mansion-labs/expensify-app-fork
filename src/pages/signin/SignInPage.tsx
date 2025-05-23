@@ -26,6 +26,8 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Account, Credentials} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import CONFIG from '@src/CONFIG';
+import HybridAppModule from '@expensify/react-native-hybrid-app';
 import ChooseSSOOrMagicCode from './ChooseSSOOrMagicCode';
 import EmailDeliveryFailurePage from './EmailDeliveryFailurePage';
 import LoginForm from './LoginForm';
@@ -299,6 +301,14 @@ function SignInPage({shouldEnableMaxHeight = true}: SignInPageInnerProps, ref: F
     useImperativeHandle(ref, () => ({
         navigateBack,
     }));
+
+    useEffect(() => {
+        if (!CONFIG.IS_HYBRID_APP) {
+            return;
+        }
+        HybridAppModule.clearOldDotAfterSignOut();
+    }, []);
+
     return (
         // Bottom SafeAreaView is removed so that login screen svg displays correctly on mobile.
         // The SVG should flow under the Home Indicator on iOS.
