@@ -12,8 +12,8 @@ import useStyleUtils from './useStyleUtils';
  */
 function useSafeAreaInsets(): EdgeInsets {
     const StyleUtils = useStyleUtils();
-    const insets = useSafeAreaInsetsInternal();
-    const adjustedInsets = StyleUtils.getSafeAreaInsets(insets);
+    // const insets = useSafeAreaInsetsInternal();
+    const adjustedInsets = StyleUtils.getSafeAreaInsets(null);
 
     return adjustedInsets;
 }

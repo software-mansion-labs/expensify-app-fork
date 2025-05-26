@@ -90,7 +90,7 @@ function App({url, hybridAppSettings, timestamp}: AppProps) {
                                 ThemeProvider,
                                 ThemeStylesProvider,
                                 ThemeIllustrationsProvider,
-                                SafeAreaProvider,
+                                // SafeAreaProvider,
                                 PortalProvider,
                                 SafeArea,
                                 LocaleContextProvider,
