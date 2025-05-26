@@ -1,3 +1,4 @@
+import HybridAppModule from '@expensify/react-native-hybrid-app';
 import {Str} from 'expensify-common';
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import type {ForwardedRef} from 'react';
@@ -182,6 +183,10 @@ function SignInPage({shouldEnableMaxHeight = true}: SignInPageInnerProps, ref: F
     // We need to show "Another login page is opened" message if the page isn't active and visible
     // eslint-disable-next-line rulesdir/no-negated-variables
     const shouldShowAnotherLoginPageOpenedMessage = Visibility.isVisible() && !isClientTheLeader;
+
+    useEffect(() => {
+        HybridAppModule.clearOldDotAfterSignOut();
+    }, []);
 
     useEffect(() => Performance.measureTTI(), []);
     useEffect(() => {
