@@ -60,7 +60,7 @@ Navigation.navigate(ROUTES.HOME);
 
 // Navigation with parameters
 Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({
-    query: 'search term',
+    query: 'type:expense status:all search',
     // additional parameters...
 }));
 
@@ -77,9 +77,10 @@ interceptAnonymousUser(() => {
 
 > [!NOTE]
 > The most relevant differences between our implementation of `Navigation.navigate` and `navigate` returned from `useNavigation`:
-> 1. We pass `route` instead of a screen name, because our implementation of `Navigation. navigate` is based on `linkTo` method which accepts `route` as a parameter
+> 1. We pass `route` instead of a screen name, because our implementation of `Navigation.navigate` is based on `linkTo` method which accepts `route` as a parameter
 > 2. We import Navigation object from `@libs/Navigation/Navigation` not get it from the hook
 > 3. Our method uses `PUSH` not `NAVIGATE` by default!!
+> 4. We do not have a separate function `REPLACE`, to use this method you need to pass the `forceReplace` option to `Navigation.navigate`.
 
 #### Going back
 
@@ -91,24 +92,33 @@ import ROUTES from '@src/ROUTES';
 Navigation.goBack();
 ```
 
-To navigate back, we use the `Navigation.goBack` function. We can call this function without any parameters, but the most common case is to call it with `backToRoute`. It is worth remembering that it is possible to deep link to any page in the application, and then we may lose a page to which we should go back from the navigation state. In such a case, we can simply use the mentioned parameter to indicate which page should be opened when going back. You can find more detailed description how to use `backToRoute param` in the next paragraph.
+To navigate back, we use the `Navigation.goBack` function. We can call this function without any parameters, but the most common case is to call it with `backToRoute`. It is worth remembering that it is possible to deep link to any page in the application, and then we may lose a page to which we should go back from the navigation state. In such a case, we can simply use the mentioned parameter to indicate which page should be opened when going back. You can find more detailed description how to use `backToRoute` in the next paragraph.
 
 > [!NOTE]
 > This function should be used mainly with `backToRoute` param. If you want to use it, make sure there is a screen to which you should always go back in a given case and pass its route as a param.
 
 #### Going back with comparing params
 
-There are cases when the screen has specific route parameters and we want to return to it regardless of their values. To do this, pass options to the Navigation.goBack function with the `compareParams` value set to false (this field is optional and is true by default). 
+```ts
+import Navigation from '@libs/Navigation/Navigation';
+import ROUTES from '@src/ROUTES';
+
+Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute('1'), {compareParams: false});
+```
+
+There are cases when the screen has specific route parameters and we want to return to it regardless of their values. To do this, pass options to the `Navigation.goBack` function with the `compareParams` value set to false (this field is optional and is `true` by default). 
+
+Let's consider the case when we have 4 routes on stack, 3 reports with different ids and search on the top. The diagram shows how navigating back works with and without parameter comparison.
 
 ```mermaid
 flowchart TD
- subgraph subGraph0["Going back with comparing params"]
+ subgraph subGraph0["compareParams = true"]
         B2["r/1"]
         A2["search"]
         C2["r/2"]
         D2["r/3"]
   end
- subgraph subGraph1["Going back without comparing params"]
+ subgraph subGraph1["compareParams = false"]
         F2["r/1"]
         E2["search"]
         G2["r/2"]
@@ -191,13 +201,11 @@ Another common case in Expensify is opening a report from RHP. This happens, for
 > 2. On a wide screen we need to be sure that the modal has been closed, only then we want to navigate to the report. For this purpose, `navigate` called after `dismissModal` is wrapped in `InteractionManager.runAfterInteractions`.
 
 
-
-
-
 #### Summary
 
 - `Navigation.navigate` is used to navigate between screens. Remember that it calls the `linkTo` method implemented by us. It accepts the route as a parameter not a screen name.
 - `Navigation.goBack` allows you to navigate back to the previous page. You will probably need to pass the `backToRoute` parameter to this method in such cases to preserve the screen order after refreshing the page.
+- If you want to go back to the screen regardless of its parameter values, pass `{compareParams: false}` to `Navigation.goBack`.
 - If you want to close the entire modal window, regardless of how many pages you have opened, use `Navigation.dismissModal` to do that.
 - If you want to open a report from RHP to prevent navigation back to this modal window, use `Navigation.dismissModalWithReport`.
 
@@ -382,11 +390,13 @@ export default NewSettingsScreen;
 
 In the following section you will find information on how the navigation state is generated from the path.
 
-`getAdaptedStateFromPath` is a function that parses the passed path into a navigation state, in Expenisfy we use a custom implementation of this function because:
-- When opening a link leading to an onboarding screen, all previous screens in this flow have to be present to the navigation state
-- In case of opening the RHP, appropriate screens should be pushed to the navigation to be displayed underneath the overlay. A guide on how to set up a good screen for RHP can be found here
-- When opening the settings of a specific workspace, the workspace list need to be pushed to the state
-- When the backTo parameter is in the url, we need to build a state also for the screen we want to return to
+`getAdaptedStateFromPath` is a function that parses the passed path into a navigation state. 
+
+In Expenisfy we use a custom implementation of this function because:
+- When opening a link leading to an onboarding screen, all previous screens in this flow have to be present in the navigation state.
+- In case of opening the RHP, appropriate screens should be pushed to the navigation to be displayed below the overlay. A guide on how to set up a good screen for RHP can be found [here](#how-to-set-a-correct-screen-below-the-rhp).
+- When opening the settings of a specific workspace, the workspace list need to be pushed to the state.
+- When `backTo` parameter is in the url, we need to build a state also for the screen we want to return to.
 
 Here are examples how the state is generated based on route:
 
@@ -452,7 +462,7 @@ Here are examples how the state is generated based on route:
 }
 ```
 
-As you can see after opening the workspace settings of the specific workspace, we need to adapt state to add WorkspacesListPage to the state. Thanks to that it is possible to swipe back to the workspaces list when the app is opened from the link.  
+As you can see after opening the workspace settings of the specific workspace, we need to adapt state to add `WorkspacesListPage` to the state. Thanks to that it is possible to swipe back to the workspaces list when the app is opened from the link.  
 
 - `settings/profile/display-name`
 
@@ -560,9 +570,9 @@ In the above example, we can see that when building a state from a link leading 
 
 ### When we need to adapt the navigation state (function `adaptStateIfNecessary`)
 
- The purpose of `adaptStateIfNecessary` function is to ensure that a given SplitNavigator has a sidebar and a central screen when necessary. When is this function used:
+The purpose of `adaptStateIfNecessary` function is to ensure that a given `SplitNavigator` has a sidebar and a central screen when necessary. When is this function used:
 - This function is called when the application starts. If we open the application on the central screen, this function will push the sidebar screen.
-- When we are on the sidebar on a small screen and we expand it to a wide layout we have to push the central screen to fill the screen.
+- When we are on the sidebar on a small screen and we expand it to a wide layout we have to push the central screen to fill the space on the screen.
 
 ### How to use backTo route param
 
@@ -600,13 +610,13 @@ type SettingsSplitNavigatorParamList = {
 };
 ```
 
-3. When navigating to this screen from a non-default screen, pass a route to `Navigation.navigation` with the backTo parameter
+1. When navigating to this screen from a non-default screen, pass a route to `Navigation.navigation` with `backTo` parameter.
 
 ```ts
 Navigation.navigate(ROUTES.NEW_SETTINGS_SCREEN_WITH_BACK_TO.getRoute(Navigation.getActiveRoute()))
 ```
 
-4. In the new screen read `backTo` from `route.params` and pass it to `Navigation.goBack`
+4. In the new screen read `backTo` from `route.params` and pass it to `Navigation.goBack`.
 
 ```ts
 // src/pages/NewSettingsScreen.tsx
@@ -638,9 +648,9 @@ function NewSettingsScreen({route}: NewSettingsScreenNavigationProps) {
 ### How to set a correct screen below the RHP
 RHP screens can usually be opened from a specific central screen, of course there are cases where one RHP screen can be used in different tabs (then using `backTo` parameter proves useful), however most often one RHP screen has a specific central screen assigned underneath.
 
-To assign the RHP screen to the appropriate central screen, you need to add it to the appropriate relation (src/libs/Navigation/linkingConfig/RELATIONS)
+To assign RHP to the appropriate central screen, you need to add it to the proper relation (src/libs/Navigation/linkingConfig/RELATIONS)
 
-For example, if you want to display `SCREENS.SETTINGS.PROFILE.ROOT` in the Account tab under the RHP screen, then you need to add the screen to the SETTINGS_TO_RHP relation, etc.
+For example, if you want to display `SCREENS.SETTINGS.PROFILE.ROOT` in the Account tab under RHP screen, then you need to add the screen to `SETTINGS_TO_RHP`, etc.
 
 ```ts
 const SETTINGS_TO_RHP: Partial<Record<keyof SettingsSplitNavigatorParamList, string[]>> = {
@@ -656,7 +666,7 @@ const SETTINGS_TO_RHP: Partial<Record<keyof SettingsSplitNavigatorParamList, str
 > If the RHP screen is not added to any relation, the Inbox tab will be opened underneath by default.
 
 > [!NOTE]
-> If the RHP screen is not added to any relation, the Inbox tab will be opened underneath by default.
+> If a given RHP has a route param `backTo`, the relation of the screen passed as `backTo` will be checked, this allows reusing RHP screens in different tabs.
 
 ### Performance solutions
 
@@ -718,10 +728,10 @@ function useCustomSplitNavigatorState({state}: CustomStateHookProps) {
     return {...state, routes: routesToRender, index: routesToRender.length - 1};
 }
 ```
-In the split navigator, only the last 2 routes are rendered in a similar way, but we have to also ensure that the Sidebar is on the wide screen at 0 index in the state of this navigator.
+In `SplitNavigators`, only the last 2 routes are rendered in a similar way, but we have to also ensure that the sidebar is on the wide screen at 0 index in the state of this navigator.
 
 > [!NOTE]
-> When nested routes are not rendered their state is lost and when returning to these screens it has to be recreated. To do this the state is saved in the `preservedNavigatorStates` object using the `usePreserveNavigatorState` hook 
+> When nested routes are not rendered their state is lost and when returning to these screens it has to be recreated. To do this the state is saved in the `preservedNavigatorStates` object using the `usePreserveNavigatorState` hook.
 
 ### Debugging
 
@@ -763,7 +773,7 @@ These navigators cover the entire screen and do not have transparent overlay. Ea
 
 It is worth noting that despite the navigation tab is displayed, the application does not use `BottomTabNavigator`. When one of the navigation tab bar buttons is pressed, a new full screen is pushed onto the root stack. `StackNavigator` was used to implement this groups of screens as it has more flexibility and preserves navigation history in the browser.
 
-A subset of FullScreenNavigators are SplitNavigators:
+A subset of `FullScreenNavigators` are `SplitNavigators`:
 
 This type of navigator is also based on `StackNavigator`. It has two types of screens.
 
@@ -776,11 +786,11 @@ On a wide layout, a sidebar screen is translated to the left to make it visible.
 
 Thanks to this navigator, there is always at least one side screen and one center screen in a wide layout.
 
-FullScreenNavigators in the app:
+`FullScreenNavigators` in the app:
 
 #### `SEARCH_FULLSCREEN_NAVIGATOR` (screen) -> Reports tab
 
-Something worth noticing is even though the Search pages may visually look like a split navigator, it is a FullScreenNavigator with additional `ExtraContent` which displays <SearchSidebar />. It is implemented this way to meet the requirement that the sidebar and the central screen of the Search page have the same URL. 
+Something worth noticing is even though the Search pages may visually look like a split navigator, it is `FullScreenNavigator` with additional `ExtraContent` which displays `<SearchSidebar />`. It is implemented this way to meet the requirement that the sidebar and the central screen of the Search page have the same URL. 
 
 #### `REPORTS_SPLIT_NAVIGATOR` -> Inbox tab
 
@@ -792,10 +802,10 @@ It includes the `HOME` screen (`<BaseSidebarScreen />` component) with a list of
 
 #### `WORKSPACE_SPLIT_NAVIGATOR` -> Workspaces tab
 
-`WorkspaceSplitNavigator` displays the settings of the selected workspace (the URLs start with `/settings/workspaces/:policyID`). `<WorkspaceInitialPage />` is the sidebar screen component of this navigator.
+`WorkspaceSplitNavigator` displays the settings of the selected workspace (the URLs start with `/settings/workspaces`). `<WorkspaceInitialPage />` is the sidebar screen component of this navigator.
 
 > [!NOTE]
-> The Workspaces tab also displays the workspace list (SCREENS.WORKSPACES_LIST screen) which is a separate screen displayed in AuthScreens next to the other navigators!
+> The Workspaces tab is also selected when the workspace list is displayed (`SCREENS.WORKSPACES_LIST`) which is a separate screen displayed in `AuthScreens` next to the other navigators!
 
 ### Modals
 
@@ -811,7 +821,7 @@ On narrow layout it works as normal `StackNavigator` but on wide layout it is di
 
 #### `NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR`
 The screens of this navigator are displayed immediately after creating a new account.
-It is worth mentioning that during refresh on any screen, the onboardingModalNavigator state will be rebuilt
+It is worth mentioning that during refresh on any screen, the `OnboardingModalNavigator` state will be rebuilt
 
 > [!NOTE]
 > There are more modal navigators in the application, this section only describes those that contain many screens and are displayed quite often.
@@ -821,12 +831,16 @@ It is worth mentioning that during refresh on any screen, the onboardingModalNav
 
 The Navigation API provides several methods for handling navigation within the application. Each method serves a specific purpose and has its own set of parameters and use cases.
 
-
 ### Navigation.navigate
 
 Navigates to a given page and adds a new entry to the navigation state or replaces the last one.
 
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+import {ROUTES} from '@src/ROUTES';
+import type {Route} from '@libs/Navigation/types';
+import type {LinkToOptions} from '@libs/Navigation/types';
+
 navigate(path: Route, options?: LinkToOptions)
 ```
 
@@ -835,9 +849,8 @@ navigate(path: Route, options?: LinkToOptions)
   - `forceReplace` (boolean): If set to `true`, the action type will be set to `REPLACE` instead of `PUSH`. Default: `false`
 
 This is the primary function for forward navigation in the app. It differs from the standard `react-navigation` navigate by:
-- Taking a path as an argument instead of screen name and params
 - Handling cross-platform differences and deep linking
-- Creating and dispatching a minimalAction with type `PUSH` by default
+- Creating and dispatching `minimalAction` with type `PUSH` by default
 - Automatically handling RHP screen navigation by pushing matching screens underneath when needed
 
 ### Navigation.goBack
@@ -845,20 +858,28 @@ This is the primary function for forward navigation in the app. It differs from 
 Navigates back to the previous screen or a specified route.
 
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+import {ROUTES} from '@src/ROUTES';
+import type {Route} from '@libs/Navigation/types';
+import type {GoBackOptions} from '@libs/Navigation/types';
+
 goBack(backToRoute?: Route, options?: GoBackOptions)
 ```
 
-- `fallbackRoute` (optional): A route to navigate to back
+- `backToRoute` (optional): A route to navigate to back. If the passed screen is not in the navigation state, the current screen will be replaced with the given one.
 - `options` (optional): An object containing:
   - `compareParams` (boolean): 
 Determines whether a parameter comparison should be performed when navigating back to the path containing the route parameters. If so, we will return to the path with the exact parameters passed to `goBack`, if not, then to the first screen with a matching route regardless of the value of its parameters. Default: `true`
 
 Use this method for backward navigation, especially when:
-- You need to return to the previous screen
-- You want to provide a route to go back for cases where there is no history
+- You need to return to the previous screen.
+- You want to provide a route to go back for cases where there is no history.
 
 Example:
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+import {ROUTES} from '@src/ROUTES';
+
 // Simple back navigation
 Navigation.goBack();
 
@@ -879,6 +900,8 @@ Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute(reportID), {compareParams: fals
 Closes the currently opened modal.
 
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+
 Navigation.dismissModal()
 ```
 
@@ -889,6 +912,8 @@ Use this method when you need to close a modal after completing a flow, such as:
 
 Example:
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+
 // Close modal after saving settings
 Navigation.dismissModal();
 ```
@@ -898,6 +923,8 @@ Navigation.dismissModal();
 Closes the currently opened side modal and navigates to a report using a report object.
 
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+
 Navigation.dismissModalWithReport({
     reportID: string,
     reportActionID?: string,
@@ -921,6 +948,8 @@ Use this method when you need to:
 
 Example:
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+
 // Navigate to report with basic parameters
 Navigation.dismissModalWithReport({
     reportID: '123',
@@ -942,6 +971,8 @@ Navigation.dismissModalWithReport({
 Navigates back to the sidebar screen in SplitNavigator and pops all central screens at the same time. This function is especially useful after visiting many central screens and changing the screen width from wide to narrow, we can then pop all visited central screens.
 
 ```ts
+import {Navigation} from '@libs/Navigation/Navigation';
+
 Navigation.popToSidebar()
 ```
 
@@ -957,9 +988,12 @@ Use this method when you need to:
 This hook allows you to read the entire navigation state in any component, while using the base `useNavigationState` allows you to read only the current state of the navigator.
 
 ```ts
-// Example usage of useRootNavigationState
 import useRootNavigationState from '@hooks/useRootNavigationState';
 import {isFullScreenName} from '@libs/Navigation/helpers/isNavigatorName';
+import type {NavigationState} from '@react-navigation/native';
 
-const topmostFullScreenRoute = useRootNavigationState((state) => state.routes.findLast((route) => isFullScreenName(route.name)));
+// Example usage of useRootNavigationState
+const topmostFullScreenRoute = useRootNavigationState((state: NavigationState) => 
+    state.routes.findLast((route) => isFullScreenName(route.name))
+);
 ```
