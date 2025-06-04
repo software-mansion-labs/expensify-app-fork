@@ -21,6 +21,11 @@ The navigation in the app is built on top of the `react-navigation` library. To 
     - [How to use backTo route param](#how-to-use-backto-route-param)
     - [How to set a correct screen below the RHP](#how-to-set-a-correct-screen-below-the-rhp)
     - [Performance solutions](#performance-solutions)
+    - [State persistance after page refresh](#state-persistance-after-page-refresh)
+      - [How it works](#how-it-works)
+      - [Saving last visited paths to session storage](#saving-last-visited-paths-to-session-storage)
+      - [Navigating to Accounts](#navigating-to-accounts)
+      - [Navigating to workspaces tab](#navigating-to-workspaces-tab)
     - [Debugging](#debugging)
       - [Reading state when it changes](#reading-state-when-it-changes)
       - [Finding the code that calls the navigation function](#finding-the-code-that-calls-the-navigation-function)
@@ -733,6 +738,161 @@ In `SplitNavigators`, only the last 2 routes are rendered in a similar way, but 
 > [!NOTE]
 > When nested routes are not rendered their state is lost and when returning to these screens it has to be recreated. To do this the state is saved in the `preservedNavigatorStates` object using the `usePreserveNavigatorState` hook.
 
+### State persistance after page refresh
+
+Currently, two of our existing tabs (Account and Workspaces) already save the last visited screen to session storage.
+What is also worth mentioning is that we only want to restore the central screen on wide layout, on narrow layout we want the sidebar screen to be the last visited one.
+
+#### How it works
+
+To be able to persist last visited screen in desired tab, we need to have custom session storage keys in `CONST.ts`:
+```ts
+// src/CONST.TS
+import CONST from '@src/CONST';
+
+const SESSION_STORAGE_KEYS = {
+    INITIAL_URL: 'INITIAL_URL',
+    ACTIVE_WORKSPACE_ID: 'ACTIVE_WORKSPACE_ID',
+    RETRY_LAZY_REFRESHED: 'RETRY_LAZY_REFRESHED',
+    LAST_REFRESH_TIMESTAMP: 'LAST_REFRESH_TIMESTAMP',
+    LAST_VISITED_TAB_PATH: {
+        WORKSPACES: 'LAST_VISITED_WORKSPACES_TAB_PATH', // <--
+        SETTINGS: 'LAST_VISITED_SETTINGS_TAB_PATH', // <--
+    },
+} as const;
+```
+
+Functions that read saved paths and build state from them can be found in `src/libs/Navigation/helpers/lastVisitedTabPathUtils/index.ts`.
+
+We have the same functions for native platforms without implementations to avoid errors (session storage is only available in browsers).
+
+#### Saving last visited paths to session storage
+    
+On navigation state change, we check if the last visited screen belongs to the relevant navigator. If so, we store the path in session storage for future retrieval. 
+
+```ts
+// src/libs/Navigation/NavigationRoot.tsx
+import {Navigation} from '@libs/Navigation/Navigation';
+import {NAVIGATORS} from '@src/NAVIGATORS';
+import {isWorkspacesTabScreenName} from '@libs/Navigation/helpers/isNavigatorName';
+import {saveWorkspacesTabPathToSessionStorage, saveSettingsTabPathToSessionStorage} from '@libs/Navigation/helpers/lastVisitedTabPathUtils';
+import type {NavigationState} from '@react-navigation/native';
+
+function parseAndLogRoute(state: NavigationState) {
+    // ...
+
+    Navigation.setIsNavigationReady();
+    if (isWorkspacesTabScreenName(state.routes.at(-1)?.name)) { // <--- checking if it is the desired navigator screen
+        saveWorkspacesTabPathToSessionStorage(currentPath); // <--- saving the path to session storage
+    } else if (state.routes.at(-1)?.name === NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR) { // <--- checking
+        saveSettingsTabPathToSessionStorage(currentPath); // <---- saving
+    }
+
+    // .....
+}
+```
+When navigating to the Accounts (Settings) or Workspaces tab, we check whether the last visited screen has already been saved to session storage. 
+
+#### Navigating to Accounts
+
+```ts
+// src/components/Navigation/NavigationTabBar/index.tsx
+import {useCallback} from 'react';
+import {Navigation} from '@libs/Navigation/Navigation';
+import {ROUTES} from '@src/ROUTES';
+import {NAVIGATION_TABS} from '@src/NAVIGATION_TABS';
+import {getSettingsTabStateFromSessionStorage, getLastVisitedTabPath} from '@libs/Navigation/helpers/lastVisitedTabPathUtils';
+import interceptAnonymousUser from '@libs/interceptAnonymousUser';
+import {useResponsiveLayout} from '@hooks/useResponsiveLayout';
+
+const navigateToSettings = useCallback(() => {
+    if (selectedTab === NAVIGATION_TABS.SETTINGS) {
+        return;
+    }
+    interceptAnonymousUser(() => {
+        const settingsTabState = getSettingsTabStateFromSessionStorage(); // <--- retrieving state from session storage
+        if (settingsTabState && !shouldUseNarrowLayout) { // as mentioned above we want to restore the central screen only in wide layout
+            const lastVisitedSettingsRoute = getLastVisitedTabPath(settingsTabState); // <--- retrieving route using previously saved data
+            if (lastVisitedSettingsRoute) { 
+                Navigation.navigate(lastVisitedSettingsRoute); // <--- then simply navigating to that route
+                return;
+            }
+        }
+        Navigation.navigate(ROUTES.SETTINGS); // <--- normal navigation when narrow layout or there is no saved route in session storage
+    });
+}, [selectedTab, shouldUseNarrowLayout]);
+```
+
+#### Navigating to workspaces tab 
+
+Navigating here is a bit more tricky, as on first 'click' we navigate to the Workspaces list and then we can navigate to certain `WORKSPACE_SPLIT_NAVIGATOR` — unless a last visited screen has been saved in session storage, in which case we go directly to `WORKSPACE_SPLIT_NAVIGATOR`.
+
+```ts
+// src/components/Navigation/NavigationTabBar/index.tsx
+import {useCallback} from 'react';
+import {Navigation} from '@libs/Navigation/Navigation';
+import {ROUTES} from '@src/ROUTES';
+import {NAVIGATORS} from '@src/NAVIGATORS';
+import {SCREENS} from '@src/SCREENS';
+import {CONST} from '@src/CONST';
+import {isFullScreenName, isWorkspacesTabScreenName} from '@libs/Navigation/helpers/isNavigatorName';
+import {getWorkspacesTabStateFromSessionStorage, getLastVisitedWorkspaceTabScreen} from '@libs/Navigation/helpers/lastVisitedTabPathUtils';
+import {getPreservedNavigatorState} from '@libs/Navigation/helpers/preserveNavigatorState';
+import interceptAnonymousUser from '@libs/interceptAnonymousUser';
+import {useResponsiveLayout} from '@hooks/useResponsiveLayout';
+import type {WorkspaceSplitNavigatorParamList} from '@libs/Navigation/types';
+import {navigationRef} from '@libs/Navigation/Navigation';
+
+const showWorkspaces = useCallback(() => {
+    const rootState = navigationRef.getRootState();
+    const topmostFullScreenRoute = rootState.routes.findLast((route) => isFullScreenName(route.name));
+    if (!topmostFullScreenRoute) {
+        return;
+    }
+
+    if (topmostFullScreenRoute.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR) {
+        Navigation.goBack(ROUTES.WORKSPACES_LIST.route);
+        return;
+    }
+
+    interceptAnonymousUser(() => { // this is where magic begins 🪄
+        const state = getWorkspacesTabStateFromSessionStorage() ?? rootState; // <--- retrieving state from session storage
+        const lastWorkspacesTabNavigatorRoute = state.routes.findLast((route) => isWorkspacesTabScreenName(route.name)); // getting last visited route in workspace split
+
+        // If there is no workspace navigator route, then we should open the workspaces list.
+        if (!lastWorkspacesTabNavigatorRoute) {
+            Navigation.navigate(ROUTES.WORKSPACES_LIST.route);
+            return;
+        }
+
+        let workspacesTabState = lastWorkspacesTabNavigatorRoute.state;
+        if (!workspacesTabState && lastWorkspacesTabNavigatorRoute.key) {
+            workspacesTabState = getPreservedNavigatorState(lastWorkspacesTabNavigatorRoute.key);
+        }
+
+        // If there is a workspace navigator route, then we should open the workspace initial screen as it should be "remembered".
+        if (lastWorkspacesTabNavigatorRoute.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR) {
+            const params = workspacesTabState?.routes.at(0)?.params as WorkspaceSplitNavigatorParamList[typeof SCREENS.WORKSPACE.INITIAL];
+            // Screens of this navigator should always have policyID
+            if (params.policyID) {
+                const workspaceScreenName = !shouldUseNarrowLayout ? getLastVisitedWorkspaceTabScreen() : SCREENS.WORKSPACE.INITIAL;
+                // This action will put workspaces list under the workspace split to make sure that we can swipe back to workspaces list.
+                navigationRef.dispatch({
+                    type: CONST.NAVIGATION.ACTION_TYPE.OPEN_WORKSPACE_SPLIT,
+                    payload: {
+                        policyID: params.policyID,
+                        screenName: workspaceScreenName,
+                    },
+                });
+            }
+            return;
+        }
+
+        Navigation.navigate(ROUTES.WORKSPACES_LIST.route);
+    });
+}, [shouldUseNarrowLayout]);
+```
+
 ### Debugging
 
 #### Reading state when it changes
@@ -785,6 +945,10 @@ On a narrow layout it behaves as a normal `StackNavigator`.
 On a wide layout, a sidebar screen is translated to the left to make it visible. This way, the user will see both a sidebar screen and a central screen.
 
 Thanks to this navigator, there is always at least one side screen and one center screen in a wide layout.
+
+> [!NOTE]
+> To check if a route belongs to a specific group, it is worth using the functions available in `@libs/Navigation/helpers/isNavigatorName`. For example, to check if a route is a `FullScreenNavigator` you can use the `isFullScreenName` function
+
 
 `FullScreenNavigators` in the app:
 
