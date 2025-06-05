@@ -52,7 +52,7 @@ This section describes the most common cases of moving between screens. Detailed
 
 #### Navigating to a new screen
 
-`Navigation.navigate` is used to go to a specific screen in the app or replace the existing one. This function works based on a custom implementation of the `linkTo` method. Because of this, there are some differences between using our function and `navigate` returned from `useNavigation` hook.
+`Navigation.navigate` is used to go to a specific screen in the app or replace the existing one. This function works based on an extended implementation of the `linkTo` method. Because of this, there are some differences between using our function and `navigate` returned from `useNavigation` hook.
 
 ```ts
 import Navigation from '@libs/Navigation/Navigation';
@@ -505,7 +505,7 @@ In the following section you will find information on how the navigation state i
 
 `getAdaptedStateFromPath` is a function that parses the passed path into a navigation state. 
 
-In Expenisfy we use a custom implementation of this function because:
+In Expenisfy we use an extended implementation of this function because:
 - When opening a link leading to an onboarding screen, all previous screens in this flow have to be present in the navigation state.
 - In case of opening the RHP, appropriate screens should be pushed to the navigation to be displayed below the overlay. A guide on how to set up a good screen for RHP can be found [here](#how-to-set-a-correct-screen-below-the-rhp).
 - When opening the settings of a specific workspace, the workspace list need to be pushed to the state.
