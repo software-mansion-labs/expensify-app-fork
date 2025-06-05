@@ -19,7 +19,7 @@ The navigation in the app is built on top of the `react-navigation` library. To 
       - [Finding the code that calls the navigation function](#finding-the-code-that-calls-the-navigation-function)
     - [Using `backTo` route param](#using-backto-route-param)
     - [Genereting state from a path](#genereting-state-from-a-path)
-    - [How to set a correct screen below the RHP](#how-to-set-a-correct-screen-below-the-rhp)
+    - [Setting the correct screen below RHP](#setting-the-correct-screen-below-rhp)
     - [Performance solutions](#performance-solutions)
     - [State persistance after page refresh](#state-persistance-after-page-refresh)
       - [How it works](#how-it-works)
@@ -293,9 +293,9 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
 type SettingsSplitNavigatorParamList = {
     ...existing types
     // static 
-    [SCREENS.SETTINGS.NEW_SCREEN]: undefined,
+    [SCREENS.SETTINGS.NEW_SCREEN]: undefined;
     // dynamic
-    [SCREENS.SETTINGS.NEW_SCREEN]: {id: number}
+    [SCREENS.SETTINGS.NEW_SCREEN]: {id: number};
 };
 ```
 
@@ -505,7 +505,7 @@ In the following section you will find information on how the navigation state i
 
 `getAdaptedStateFromPath` is a function that parses the passed path into a navigation state. 
 
-In Expenisfy we use an extended implementation of this function because:
+In Expensify we use an extended implementation of this function because:
 - When opening a link leading to an onboarding screen, all previous screens in this flow have to be present in the navigation state.
 - In case of opening the RHP, appropriate screens should be pushed to the navigation to be displayed below the overlay. A guide on how to set up a good screen for RHP can be found [here](#how-to-set-a-correct-screen-below-the-rhp).
 - When opening the settings of a specific workspace, the workspace list need to be pushed to the state.
@@ -623,10 +623,10 @@ As you can see after opening the workspace settings of the specific workspace, w
 
 In the above example, we can see that when building a state from a link leading to a screen in RHP, screens that appear below the overlay are also built.
 
-### How to set a correct screen below the RHP
+### Setting the correct screen below RHP
 RHP screens can usually be opened from a specific central screen, of course there are cases where one RHP screen can be used in different tabs (then using `backTo` parameter proves useful), however most often one RHP screen has a specific central screen assigned underneath.
 
-To assign RHP to the appropriate central screen, you need to add it to the proper relation (src/libs/Navigation/linkingConfig/RELATIONS)
+To assign RHP to the appropriate central screen, you need to add it to the proper relation (`src/libs/Navigation/linkingConfig/RELATIONS`)
 
 For example, if you want to display `SCREENS.SETTINGS.PROFILE.ROOT` in the Account tab under RHP screen, then you need to add the screen to `SETTINGS_TO_RHP`, etc.
 
