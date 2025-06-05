@@ -48,7 +48,7 @@ The navigation in the app is built on top of the `react-navigation` library. To 
 ## Guides
 
 ### Moving between screens
-This section describes the most common cases of moving between screens. Detailed descriptions of the functions and their parameters can be found in the [API Reference](#api-reference) section
+This section describes the most common cases of moving between screens. Detailed descriptions of the functions and their parameters can be found in the [API Reference](#api-reference) section.
 
 #### Navigating to a new screen
 
@@ -299,7 +299,7 @@ type SettingsSplitNavigatorParamList = {
 };
 ```
 
-4. Create a new screen component and type props using the newly defined type from the previous step. The new screen component should be placed in the `src/pages` directory
+4. Create a new screen component and type props using the newly defined type from the previous step. The new screen component should be placed in the `src/pages` directory.
 
 ```ts
 // src/pages/NewSettingsScreen.tsx
@@ -436,7 +436,7 @@ One screen is accessible from two or more different screens. We need to remember
 
 In this case we can use the route parameter `backTo`.
 
-1. Define backTo route param for the target screen in `ROUTES.ts`
+1. Define backTo route param for the target screen in `ROUTES.ts`.
 
    ```ts
     /**
@@ -876,9 +876,9 @@ To handle unique application requirements, custom navigators were created to hel
 
 This type of navigator is used only once in the app and it is in the root of navigation. It extends the basic functionality of `StackNavigator`. 
 Custom functionalities handled by this navigator:
-- dismissing modals
-- animating central screens on a narrow layout
-- preventing users from going back in history during onboarding
+- dismissing modals,
+- animating central screens on a narrow layout,
+- preventing users from going back in history during onboarding.
 
 ### FullscreenNavigator / SplitNavigator
 
@@ -902,7 +902,7 @@ On a wide layout, a sidebar screen is translated to the left to make it visible.
 Thanks to this navigator, there is always at least one side screen and one center screen in a wide layout.
 
 > [!NOTE]
-> To check if a route belongs to a specific group, it is worth using the functions available in `@libs/Navigation/helpers/isNavigatorName`. For example, to check if a route is a `FullScreenNavigator` you can use the `isFullScreenName` function
+> To check if a route belongs to a specific group, it is worth using the functions available in `@libs/Navigation/helpers/isNavigatorName`. For example, to check if a route is a `FullScreenNavigator` you can use the `isFullScreenName` function.
 
 #### When we need to adapt the split navigator state (function `adaptStateIfNecessary`)
 
@@ -950,7 +950,7 @@ On narrow layout it works as normal `StackNavigator` but on wide layout it is di
 
 #### `NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR`
 The screens of this navigator are displayed immediately after creating a new account.
-It is worth mentioning that during refresh on any screen, the `OnboardingModalNavigator` state will be rebuilt
+It is worth mentioning that during refresh on any screen, the `OnboardingModalNavigator` state will be rebuilt.
 
 > [!NOTE]
 > There are more modal navigators in the application, this section only describes those that contain many screens and are displayed quite often.
@@ -977,9 +977,9 @@ Navigation.navigate(path: Route, options?: LinkToOptions)
   - `forceReplace` (boolean): If set to `true`, the action type will be set to `REPLACE` instead of `PUSH`. Default: `false`
 
 This is the primary function for forward navigation in the app. It differs from the standard `react-navigation` navigate by:
-- Handling cross-platform differences and deep linking
-- Creating and dispatching `minimalAction` with type `PUSH` by default
-- Automatically handling RHP screen navigation by pushing matching screens underneath when needed
+- Handling cross-platform differences and deep linking.
+- Creating and dispatching `minimalAction` with type `PUSH` by default.
+- Automatically handling RHP screen navigation by pushing matching screens underneath when needed.
 
 ### `Navigation.goBack`
 
@@ -1022,7 +1022,6 @@ Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute(reportID));
 Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute(reportID), {compareParams: false});
 ```
 
-
 ### `Navigation.dismissModal`
 
 Closes the currently opened modal.
@@ -1034,17 +1033,9 @@ Navigation.dismissModal()
 ```
 
 Use this method when you need to close a modal after completing a flow, such as:
-- After submitting the RHP flow (e.g. creating expenses, reports etc.)
-- When canceling a modal operation
-- When explicitly closing a modal from within its content
-
-Example:
-```ts
-import {Navigation} from '@libs/Navigation/Navigation';
-
-// Close modal after saving settings
-Navigation.dismissModal();
-```
+- After submitting the RHP flow (e.g. creating expenses, reports etc.).
+- When canceling a modal operation.
+- When explicitly closing a modal from within its content.
 
 ### `Navigation.dismissModalWithReport`
 
@@ -1071,8 +1062,8 @@ Navigation.dismissModalWithReport({
 - `backTo` (optional): A string representing the route to return to (e.g., 'r/321')
 
 Use this method when you need to:
-- Navigate to a report after completing a modal flow
-- Open a specific report action or transaction from modals
+- Navigate to a report after completing a modal flow.
+- Open a specific report action or transaction from modals.
 
 Example:
 ```ts
@@ -1105,7 +1096,7 @@ Navigation.popToSidebar()
 ```
 
 Use this method when you need to:
-- Return to the sidebar screen from any central screen in a split navigator
+- Return to the sidebar screen from any central screen in a split navigator.
 - Pop all visited central screens after resizing the layout from wide to narrow when navigating back to the SplitNavigator sidebar screen.
 
 > [!NOTE]
