@@ -18,10 +18,10 @@ The navigation in the app is built on top of the `react-navigation` library. To 
       - [Reading state when it changes](#reading-state-when-it-changes)
       - [Finding the code that calls the navigation function](#finding-the-code-that-calls-the-navigation-function)
     - [Using `backTo` route param](#using-backto-route-param)
-    - [Genereting state from a path](#genereting-state-from-a-path)
+    - [Generating state from a path](#generating-state-from-a-path)
     - [Setting the correct screen below RHP](#setting-the-correct-screen-below-rhp)
     - [Performance solutions](#performance-solutions)
-    - [State persistance after page refresh](#state-persistance-after-page-refresh)
+    - [State persistence after page refresh](#state-persistence-after-page-refresh)
       - [How it works](#how-it-works)
       - [Saving last visited paths to session storage](#saving-last-visited-paths-to-session-storage)
       - [Navigating to Accounts](#navigating-to-accounts)
@@ -79,17 +79,17 @@ interceptAnonymousUser(() => {
 
 > [!NOTE]
 > The most relevant differences between our implementation of `Navigation.navigate` and `navigate` returned from `useNavigation`:
-> 1. We pass `route` instead of a screen name, because our implementation of `Navigation.navigate` is based on `linkTo` method which accepts `route` as a parameter
-> 2. We import Navigation object from `@libs/Navigation/Navigation` not get it from the hook
-> 3. Our method uses `PUSH` not `NAVIGATE` by default!!
-> 4. We do not have a separate function `REPLACE`, to use this method you need to pass the `forceReplace` option to `Navigation.navigate`.
+> 1. We pass `route` instead of a screen name because our implementation of `Navigation.navigate` is based on the `linkTo` method, which accepts `route` as a parameter.
+> 2. We import the Navigation object from `@libs/Navigation/Navigation`, not get it from the hook.
+> 3. Our method uses `PUSH` not `NAVIGATE` by default!
+> 4. We do not have a separate function `REPLACE`; to use this method, you need to pass the `forceReplace` option to `Navigation.navigate`.
 
 #### Going back
 
 To navigate back, we use the `Navigation.goBack` function. We can call this function without any parameters, but the most common case is to call it with `backToRoute`. It is worth remembering that it is possible to deep link to any page in the application, and then we may lose a page to which we should go back from the navigation state. In such a case, we can simply use the mentioned parameter to indicate which page should be opened when going back. 
 
 > [!NOTE]
-> This function should be used mainly with `backToRoute` param. If you want to use it, make sure there is a screen to which you should always go back in a given case and pass its route as a param.
+> This function should be used mainly with the `backToRoute` param. If you want to use it, make sure there is a screen to which you should always go back in a given case and pass its route as a param.
 
 
 ```ts
@@ -191,7 +191,7 @@ Navigation.dismissModal();
 > [!NOTE]
 > Why do we need a method other than `Navigation.goBack` to close modals? 
 > Let's consider the following case: 
-> You are going through a flow which has multiple steps. During this flow you want to close the entire modal, no matter which page you are on. If it was the first screen in this flow, there would be no difference between `Navigation.dismissModal` and `Navigation.goBack`. But after opening several pages in RHP, it is necessary to pop the entire RHP with all the open screens from the navigation state. This is exactly what `Navigation.dismissModal` does.
+> You are going through a flow which has multiple steps. During this flow, you want to close the entire modal, no matter which page you are on. If it was the first screen in this flow, there would be no difference between `Navigation.dismissModal` and `Navigation.goBack`. But after opening several pages in RHP, it is necessary to pop the entire RHP with all the open screens from the navigation state. This is exactly what `Navigation.dismissModal` does.
 
 #### Dismissing modals with opening a report
 
@@ -219,8 +219,8 @@ Navigation.dismissModalWithReport({
 
 > [!NOTE]
 > Why do we need a separate method to open a report from a modal?
-> 1. On a narrow screen we do not want to perform two operations: closing the modal and opening the report, this would cause two actions to be displayed on the screen, which could be confusing for users. Instead of 2 operations we perform replace on the modal, thanks to which there is a smooth transition to the report with simultaneous closing of the modal.
-> 2. On a wide screen we need to be sure that the modal has been closed, only then we want to navigate to the report. For this purpose, `navigate` called after `dismissModal` is wrapped in `InteractionManager.runAfterInteractions`.
+> 1. On a narrow screen, we do not want to perform two operations: closing the modal and opening the report. This would cause two actions to be displayed on the screen, which could be confusing for users. Instead of two operations, we perform a replace on the modal, thanks to which there is a smooth transition to the report with simultaneous closing of the modal.
+> 2. On a wide screen, we need to be sure that the modal has been closed before we want to navigate to the report. For this purpose, `navigate` called after `dismissModal` is wrapped in `InteractionManager.runAfterInteractions`.
 
 
 #### Summary
@@ -499,17 +499,17 @@ function NewSettingsScreen({route}: NewSettingsScreenNavigationProps) {
 }
 ```
 
-### Genereting state from a path
+### Generating state from a path
 
-In the following section you will find information on how the navigation state is generated from the path.
+In the following section, you will find information on how the navigation state is generated from the path.
 
 `getAdaptedStateFromPath` is a function that parses the passed path into a navigation state. 
 
-In Expensify we use an extended implementation of this function because:
+In Expensify, we use an extended implementation of this function because:
 - When opening a link leading to an onboarding screen, all previous screens in this flow have to be present in the navigation state.
 - In case of opening the RHP, appropriate screens should be pushed to the navigation to be displayed below the overlay. A guide on how to set up a good screen for RHP can be found [here](#how-to-set-a-correct-screen-below-the-rhp).
-- When opening the settings of a specific workspace, the workspace list need to be pushed to the state.
-- When `backTo` parameter is in the url, we need to build a state also for the screen we want to return to.
+- When opening the settings of a specific workspace, the workspace list needs to be pushed to the state.
+- When the `backTo` parameter is in the URL, we need to build a state also for the screen we want to return to.
 
 Here are examples how the state is generated based on route:
 
@@ -644,7 +644,7 @@ const SETTINGS_TO_RHP: Partial<Record<keyof SettingsSplitNavigatorParamList, str
 > If the RHP screen is not added to any relation, the Inbox tab will be opened underneath by default.
 
 > [!NOTE]
-> If a given RHP has a route param `backTo`, the relation of the screen passed as `backTo` will be checked, this allows reusing RHP screens in different tabs.
+> If a given RHP has a route param `backTo`, the relation of the screen passed as `backTo` will be checked. This allows reusing RHP screens in different tabs.
 
 ### Performance solutions
 
@@ -709,12 +709,12 @@ function useCustomSplitNavigatorState({state}: CustomStateHookProps) {
 In `SplitNavigators`, only the last 2 routes are rendered in a similar way, but we have to also ensure that the sidebar is on the wide screen at 0 index in the state of this navigator.
 
 > [!NOTE]
-> When nested routes are not rendered their state is lost and when returning to these screens it has to be recreated. To do this the state is saved in the `preservedNavigatorStates` object using the `usePreserveNavigatorState` hook.
+> When nested routes are not rendered, their state is lost, and when returning to these screens, it has to be recreated. To do this, the state is saved in the `preservedNavigatorStates` object using the `usePreserveNavigatorState` hook.
 
-### State persistance after page refresh
+### State persistence after page refresh
 
 Currently, two of our existing tabs (Account and Workspaces) already save the last visited screen to session storage.
-What is also worth mentioning is that we only want to restore the central screen on wide layout, on narrow layout we want the sidebar screen to be the last visited one.
+What is also worth mentioning is that we only want to restore the central screen on wide layout. On narrow layout, we want the sidebar screen to be the last visited one.
 
 #### How it works
 
@@ -882,35 +882,35 @@ Custom functionalities handled by this navigator:
 
 ### FullscreenNavigator / SplitNavigator
 
-These navigators cover the entire screen and do not have transparent overlay. Each of them has a navigation tab bar icon that is highlighted when that screen is at the top of the navigation stack or visible under the mdal navigator overlay.
+These navigators cover the entire screen and do not have transparent overlay. Each of them has a navigation tab bar icon that is highlighted when that screen is at the top of the navigation stack or visible under the modal navigator overlay.
 
-It is worth noting that despite the navigation tab is displayed, the application does not use `BottomTabNavigator`. When one of the navigation tab bar buttons is pressed, a new full screen is pushed onto the root stack. `StackNavigator` was used to implement this groups of screens as it has more flexibility and preserves navigation history in the browser.
+It is worth noting that despite the navigation tab being displayed, the application does not use `BottomTabNavigator`. When one of the navigation tab bar buttons is pressed, a new full screen is pushed onto the root stack. `StackNavigator` was used to implement these groups of screens as it has more flexibility and preserves navigation history in the browser.
 
 A subset of `FullScreenNavigators` are `SplitNavigators`:
 
-This type of navigator is also based on `StackNavigator`. It has two types of screens.
+This type of navigator is also based on `StackNavigator`. It has two types of screens:
 
 1. ***Sidebar screen:***
-   There is only one screen of this type on the stack and it is always the first one in the SplitNavigator stack (it is present at 0 index in SplitNavigator's routes).
+   There is only one screen of this type on the stack, and it is always the first one in the SplitNavigator stack (it is present at index 0 in SplitNavigator's routes).
 2. ***Central screen:***
    All other screens displayed next to the sidebar.
 
-On a narrow layout it behaves as a normal `StackNavigator`.
+On a narrow layout, it behaves as a normal `StackNavigator`.
 
 On a wide layout, a sidebar screen is translated to the left to make it visible. This way, the user will see both a sidebar screen and a central screen.
 
 Thanks to this navigator, there is always at least one side screen and one center screen in a wide layout.
 
 > [!NOTE]
-> To check if a route belongs to a specific group, it is worth using the functions available in `@libs/Navigation/helpers/isNavigatorName`. For example, to check if a route is a `FullScreenNavigator` you can use the `isFullScreenName` function.
+> To check if a route belongs to a specific group, it is worth using the functions available in `@libs/Navigation/helpers/isNavigatorName`. For example, to check if a route is a `FullScreenNavigator`, you can use the `isFullScreenName` function.
 
 #### When we need to adapt the split navigator state (function `adaptStateIfNecessary`)
 
-The purpose of `adaptStateIfNecessary` function is to ensure that a given `SplitNavigator` has a sidebar and a central screen when necessary.
+The purpose of the `adaptStateIfNecessary` function is to ensure that a given `SplitNavigator` has a sidebar and a central screen when necessary.
 
- When is this function used:
-- This function is called when the application starts . If we open the application on the central screen, this function will push the sidebar screen.
-- When we are on the sidebar on a small screen and we expand it to a wide layout we have to push the central screen to fill the space on the screen.
+When is this function used:
+- This function is called when the application starts. If we open the application on the central screen, this function will push the sidebar screen.
+- When we are on the sidebar on a small screen and we expand it to a wide layout, we have to push the central screen to fill the space on the screen.
 
 > [!NOTE]
 > `adaptStateIfNecessary` is called in the `getInitialState` and `getRehydratedState` methods in `src/libs/Navigation/AppNavigator/createSplitNavigator/SplitRouter.ts`.
@@ -919,7 +919,7 @@ The purpose of `adaptStateIfNecessary` function is to ensure that a given `Split
 
 #### `NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR` (Reports tab) 
 
-Something worth noticing is even though the Search pages may visually look like a split navigator, it is `FullScreenNavigator` with additional `ExtraContent` which displays `<SearchSidebar />`. It is implemented this way to meet the requirement that the sidebar and the central screen of the Search page have the same URL. 
+Something worth noticing is that even though the Search pages may visually look like a split navigator, it is a `FullScreenNavigator` with additional `ExtraContent` which displays `<SearchSidebar />`. It is implemented this way to meet the requirement that the sidebar and the central screen of the Search page have the same URL. 
 
 #### `NAVIGATORS.REPORTS_SPLIT_NAVIGATOR` (Inbox tab)
 
@@ -940,7 +940,7 @@ It includes the `HOME` screen (`<BaseSidebarScreen />` component) with a list of
 
 These screens / navigators have a transparent overlay underneath.
 
-On wide layout we have functionality that ensures that there is at least one full screen under the modal on the stack that will be visible under overlay.
+On wide layout, we have functionality that ensures that there is at least one full screen under the modal on the stack that will be visible under the overlay.
 
 #### `NAVIGATORS.RIGHT_MODAL_NAVIGATOR` (RHP - Right Hand Panel)
 
@@ -972,9 +972,9 @@ import type {LinkToOptions} from '@libs/Navigation/types';
 Navigation.navigate(path: Route, options?: LinkToOptions)
 ```
 
-- `path` (required): A string representing one of the routes defined in `ROUTES.ts`
+- `path` (required): A string representing one of the routes defined in `ROUTES.ts`.
 - `options` (optional): An object containing:
-  - `forceReplace` (boolean): If set to `true`, the action type will be set to `REPLACE` instead of `PUSH`. Default: `false`
+  - `forceReplace` (boolean): If set to `true`, the action type will be set to `REPLACE` instead of `PUSH`. Default: `false`.
 
 This is the primary function for forward navigation in the app. It differs from the standard `react-navigation` navigate by:
 - Handling cross-platform differences and deep linking.
@@ -994,10 +994,9 @@ import type {GoBackOptions} from '@libs/Navigation/types';
 goBack(backToRoute?: Route, options?: GoBackOptions)
 ```
 
-- `backToRoute` (optional): A route to navigate to back. If the passed screen is not in the navigation state, the current screen will be replaced with the given one.
+- `backToRoute` (optional): A route to navigate back to. If the passed screen is not in the navigation state, the current screen will be replaced with the given one.
 - `options` (optional): An object containing:
-  - `compareParams` (boolean): 
-Determines whether a parameter comparison should be performed when navigating back to the path containing the route parameters. If so, we will return to the path with the exact parameters passed to `goBack`, if not, then to the first screen with a matching route regardless of the value of its parameters. Default: `true`
+  - `compareParams` (boolean): Determines whether a parameter comparison should be performed when navigating back to the path containing the route parameters. If so, we will return to the path with the exact parameters passed to `goBack`; if not, then to the first screen with a matching route regardless of the value of its parameters. Default: `true`.
 
 Use this method for backward navigation, especially when:
 - You need to return to the previous screen.
@@ -1054,12 +1053,12 @@ Navigation.dismissModalWithReport({
 })
 ```
 
-- `reportID` (required): A string representing the ID of the report to navigate to
-- `reportActionID` (optional): A string representing the specific report action to focus on
-- `referrer` (optional): A string indicating where the navigation was triggered from (e.g., 'notification')
-- `moneyRequestReportActionID` (optional): A string representing the ID of a money request report action
-- `transactionID` (optional): A string representing the ID of a transaction
-- `backTo` (optional): A string representing the route to return to (e.g., 'r/321')
+- `reportID` (required): A string representing the ID of the report to navigate to.
+- `reportActionID` (optional): A string representing the specific report action to focus on.
+- `referrer` (optional): A string indicating where the navigation was triggered from (e.g., 'notification').
+- `moneyRequestReportActionID` (optional): A string representing the ID of a money request report action.
+- `transactionID` (optional): A string representing the ID of a transaction.
+- `backTo` (optional): A string representing the route to return to (e.g., 'r/321').
 
 Use this method when you need to:
 - Navigate to a report after completing a modal flow.
@@ -1087,7 +1086,7 @@ Navigation.dismissModalWithReport({
 
 ### `Navigation.popToSidebar`
 
-Navigates back to the sidebar screen in SplitNavigator and pops all central screens at the same time. This function is especially useful after visiting many central screens and changing the screen width from wide to narrow, we can then pop all visited central screens.
+Navigates back to the sidebar screen in SplitNavigator and pops all central screens at the same time. This function is especially useful after visiting many central screens and changing the screen width from wide to narrow. In this case, we can pop all visited central screens.
 
 ```ts
 import {Navigation} from '@libs/Navigation/Navigation';
