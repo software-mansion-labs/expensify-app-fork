@@ -993,7 +993,7 @@ import {ROUTES} from '@src/ROUTES';
 import type {Route} from '@libs/Navigation/types';
 import type {GoBackOptions} from '@libs/Navigation/types';
 
-goBack(backToRoute?: Route, options?: GoBackOptions)
+Navigation.goBack(backToRoute?: Route, options?: GoBackOptions)
 ```
 
 -   `backToRoute` (optional): A route to navigate back to. If the passed screen is not in the navigation state, the current screen will be replaced with the given one.
