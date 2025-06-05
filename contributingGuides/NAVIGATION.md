@@ -191,7 +191,7 @@ Navigation.dismissModal();
 > [!NOTE]
 > Why do we need a method other than `Navigation.goBack` to close modals?
 > Let's consider the following case:
-> You are going through a flow which has multiple steps. During this flow, you want to close the entire modal, no matter which page you are on. If it was the first screen in this flow, there would be no difference between `Navigation.dismissModal` and `Navigation.goBack`. But after opening several pages in RHP, it is necessary to pop the entire RHP with all the open screens from the navigation state. This is exactly what `Navigation.dismissModal` does.
+> You are going through a flow which has multiple steps. During this flow, you want to close the entire modal, no matter which page you are on. If it was the first screen in this flow, there would be no difference between `Navigation.dismissModal` and `Navigation.goBack`. But after opening several pages in RHP, if you want to close the modal, it is necessary to pop the entire RHP with all the open screens from the navigation state. This is exactly what `Navigation.dismissModal` does.
 
 ### Dismissing modals with opening a report
 
@@ -912,7 +912,8 @@ When is this function used:
 -   This function is called when the application starts. If we open the application on the central screen, this function will push the sidebar screen.
 -   When we are on the sidebar on a small screen and we expand it to a wide layout, we have to push the central screen to fill the space on the screen.
 
-> [!NOTE] > `adaptStateIfNecessary` is called in the `getInitialState` and `getRehydratedState` methods in `src/libs/Navigation/AppNavigator/createSplitNavigator/SplitRouter.ts`.
+> [!NOTE] 
+> `adaptStateIfNecessary` is called in the `getInitialState` and `getRehydratedState` methods in `src/libs/Navigation/AppNavigator/createSplitNavigator/SplitRouter.ts`.
 
 `FullScreenNavigators` in the app:
 
