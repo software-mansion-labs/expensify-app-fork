@@ -85,14 +85,13 @@ interceptAnonymousUser(() => {
 > 1. We pass `route` instead of a screen name because our implementation of `Navigation.navigate` is based on the `linkTo` method, which accepts `route` as a parameter.
 > 2. We import the Navigation object from `@libs/Navigation/Navigation`, instead of getting it from the hook.
 > 3. Our method uses `PUSH` instead of `NAVIGATE` by default!
-> 4. We do not have a separate function `REPLACE`; to use this method, you need to pass the `forceReplace` option to `Navigation.navigate`.
+> 4. We do not have a separate function `REPLACE`. To use this method, you need to pass the `forceReplace` option to `Navigation.navigate`.
 
 ### Going back
 
 To navigate back, we use the `Navigation.goBack` function. We can call this function without any parameters, but the most common case is to call it with `backToRoute`. It is worth remembering that it is possible to deep link to any page in the application. When we open a specific page using a link, the navigation state is rebuilt and we lose previously visited pages. In such a case, we can simply use the mentioned parameter to indicate which page should be opened when going back.
 
-> [!NOTE]
-> This function should be used mainly with the `backToRoute` param. If you want to use it, make sure there is a screen to which you should always go back in a given case and pass its route as a param.
+If we specify a page as `backToRoute` that is not present in the navigation state, the current page will be replaced with the given one.
 
 ```ts
 import Navigation from '@libs/Navigation/Navigation';
@@ -109,7 +108,10 @@ Navigation.goBack(ROUTES.WORKSPACE_OVERVIEW.getRoute(policyID));
 Navigation.goBack();
 ```
 
-It also allows dynamic setting of `backToRoute` which is pretty handy when RHP can be opened from multiple pages. Then we should set `backTo` parameter in the URL, so it is possible to go to the previous page even after refreshing! More information on how to use backTo route param can be found [here](#how-to-use-backto-route-param)
+> [!NOTE]
+> This function should be used mainly with the `backToRoute` param. If you want to use it, make sure there is a screen to which you should always go back in a given case and pass its route as a param.
+
+It also allows dynamic setting of `backToRoute` which is pretty handy when RHP can be opened from multiple pages. Then we should set `backTo` parameter in the URL, so it is possible to go to the previous page even after refreshing! More information on how to use backTo route param can be found [here](#how-to-use-backto-route-param).
 
 ```ts
 // src/pages/NewSettingsScreen.tsx
@@ -136,9 +138,9 @@ function NewSettingsScreen({route}: NewSettingsScreenNavigationProps) {
 }
 ```
 
-There are cases when the page has specific route parameters defined in its URL and we want to return to it regardless of their values. To do this, pass options to the `Navigation.goBack` function with the `compareParams` value set to false (this field is optional and is `true` by default).
+In many cases, routes have parameters defined in the URL that can have different values ​​(for example `ROUTES.REPORT_WITH_ID`: `/r/123`, `/r/234` etc.).
 
-Let's consider the case when we have 4 routes on stack, 3 reports with different ids and search on the top. The diagram shows how navigating back works with and without parameter comparison.
+If we have several such pages in the navigation state and we want to return to the first one regardless of its parameter values, we can use the `compareParams` option with the value set to `false` and pass it to `Navigation.goBack`.
 
 ```ts
 import Navigation from '@libs/Navigation/Navigation';
@@ -146,6 +148,8 @@ import ROUTES from '@src/ROUTES';
 
 Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute('1'), {compareParams: false});
 ```
+
+Let's consider the case when we have 4 routes on stack, 3 reports with different ids and search on the top. The diagram shows how navigating back works with and without parameter comparison.
 
 ```mermaid
 flowchart TD
@@ -266,7 +270,7 @@ To add a new screen you need to:
     } as const;
     ```
 
-2. Link screen name to route in `src/libs/Navigation/linkingConfig/config.ts`.
+2. Link the screen name to the route in `src/libs/Navigation/linkingConfig/config.ts`.
 
 ```ts
 const config: LinkingOptions<RootNavigatorParamList>['config'] = {
@@ -386,7 +390,7 @@ export default NewSettingsScreen;
     });
     ```
 
-    Let's assume that we want to have PreferencesPage below our new Settings RHP screen
+    Let's assume that we want to have PreferencesPage below our new Settings RHP screen.
 
     ```ts
     // src/libs/Navigation/linkingConfig/RELATIONS/SETTINGS_TO_RHP.ts
@@ -409,7 +413,7 @@ export default NewSettingsScreen;
 
 ### Reading state when it changes
 
-Often, to find the cause of a bug, it is worth checking how the state changes. To do that quickly, add `console.log` to the `handleStateChange` method in `NavigationRoot.tsx`
+Often, to find the cause of a bug, it is worth checking how the state changes. To do that quickly, add `console.log` to the `handleStateChange` method in `NavigationRoot.tsx`.
 
 ```ts
 // src/libs/Navigation/NavigationRoot.tsx
@@ -457,7 +461,7 @@ type SettingsSplitNavigatorParamList = {
 };
 ```
 
-1. When navigating to this screen from a non-default screen, pass a route to `Navigation.navigation` with `backTo` parameter.
+3. When navigating to this screen from a non-default screen, pass a route to `Navigation.navigation` with `backTo` parameter.
 
 ```ts
 Navigation.navigate(ROUTES.NEW_SETTINGS_SCREEN_WITH_BACK_TO.getRoute(Navigation.getActiveRoute()));
@@ -1107,7 +1111,7 @@ Use this method when you need to:
 -   Pop all visited central screens after resizing the layout from wide to narrow when navigating back to the SplitNavigator sidebar screen.
 
 > [!NOTE]
-> This method can be used only within SplitNavigators
+> This method can be used only within SplitNavigators.
 
 ## `useRootNavigationState`
 
