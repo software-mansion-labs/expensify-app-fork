@@ -2,6 +2,7 @@ import {PortalProvider} from '@gorhom/portal';
 import React from 'react';
 import {LogBox} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {useOnyx} from 'react-native-onyx';
 import {PickerStateProvider} from 'react-native-picker-select';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import '../wdyr';
@@ -40,6 +41,7 @@ import Expensify from './Expensify';
 import {CurrentReportIDContextProvider} from './hooks/useCurrentReportID';
 import useDefaultDragAndDrop from './hooks/useDefaultDragAndDrop';
 import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
+import ONYXKEYS from './ONYXKEYS';
 import {ReportAttachmentsProvider} from './pages/home/report/ReportAttachmentsContext';
 import type {Route} from './ROUTES';
 import './setup/backgroundTask';
@@ -74,6 +76,11 @@ const StrictModeWrapper = CONFIG.USE_REACT_STRICT_MODE_IN_DEV ? React.StrictMode
 function App({url, hybridAppSettings, timestamp}: AppProps) {
     useDefaultDragAndDrop();
     OnyxUpdateManager();
+    const [, metadata] = useOnyx(ONYXKEYS.ACCOUNT);
+
+    if (metadata.status === 'loading') {
+        return null;
+    }
 
     return (
         <StrictModeWrapper>

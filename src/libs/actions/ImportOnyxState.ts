@@ -4,8 +4,10 @@ import type {OnyxCollectionKey, OnyxCollectionValuesMapping, OnyxValues} from '@
 import type CollectionDataSet from '@src/types/utils/CollectionDataSet';
 import {KEYS_TO_PRESERVE} from './App';
 
-function clearOnyxStateBeforeImport(): Promise<void> {
-    return Onyx.clear(KEYS_TO_PRESERVE);
+// eslint-disable-next-line @lwc/lwc/no-async-await
+async function clearOnyxStateBeforeImport(): Promise<void> {
+    // return Onyx.clear(KEYS_TO_PRESERVE);
+    return Promise.resolve();
 }
 
 function importOnyxCollectionState(collectionsMap: Map<keyof OnyxCollectionValuesMapping, CollectionDataSet<OnyxCollectionKey>>): Promise<void[]> {

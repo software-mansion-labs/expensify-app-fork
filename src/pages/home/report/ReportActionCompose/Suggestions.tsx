@@ -92,7 +92,7 @@ function Suggestions(
      * Clean data related to EmojiSuggestions
      */
     const resetSuggestions = useCallback(() => {
-        suggestionEmojiRef.current?.resetSuggestions();
+        suggestionEmojiRef.current?.resetSuggestions?.();
         suggestionMentionRef.current?.resetSuggestions();
     }, []);
 

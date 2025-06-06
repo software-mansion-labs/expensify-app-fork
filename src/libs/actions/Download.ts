@@ -9,21 +9,15 @@ function setDownload(sourceID: string, isDownloading: boolean): Promise<void | v
 }
 
 function clearDownloads() {
-    const connection = Onyx.connect({
-        key: ONYXKEYS.COLLECTION.DOWNLOAD,
-        waitForCollectionCallback: true,
-        callback: (records) => {
-            Onyx.disconnect(connection);
-            const downloadsToDelete: Record<string, null> = {};
-            Object.keys(records ?? {}).forEach((recordKey) => {
-                downloadsToDelete[recordKey] = null;
-            });
-
-            if (Object.keys(downloadsToDelete).length > 0) {
-                Onyx.multiSet(downloadsToDelete);
-            }
-        },
+    const records = Onyx.get(ONYXKEYS.COLLECTION.DOWNLOAD);
+    const downloadsToDelete: Record<string, null> = {};
+    Object.keys(records ?? {}).forEach((recordKey) => {
+        downloadsToDelete[recordKey] = null;
     });
+
+    if (Object.keys(downloadsToDelete).length > 0) {
+        Onyx.multiSet(downloadsToDelete);
+    }
 }
 
 export {setDownload, clearDownloads};

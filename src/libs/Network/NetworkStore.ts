@@ -41,6 +41,7 @@ function checkRequiredData() {
 
     resolveIsReadyPromise();
 }
+resolveIsReadyPromise();
 
 function resetHasReadRequiredDataFromStorage() {
     // Create a new promise and a new resolve function

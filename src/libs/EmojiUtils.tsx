@@ -42,7 +42,7 @@ Onyx.connect({
         }
         frequentlyUsedEmojis =
             val
-                ?.map((item) => {
+                ?.map?.((item) => {
                     let emoji = item;
                     if (!item.code) {
                         emoji = {...emoji, ...findEmojiByName(item.name)};

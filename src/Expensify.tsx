@@ -90,7 +90,7 @@ type ExpensifyProps = {
 function Expensify() {
     const appStateChangeListener = useRef<NativeEventSubscription | null>(null);
     const [isNavigationReady, setIsNavigationReady] = useState(false);
-    const [isOnyxMigrated, setIsOnyxMigrated] = useState(false);
+    const [isOnyxMigrated, setIsOnyxMigrated] = useState(true);
     const {splashScreenState, setSplashScreenState} = useContext(SplashScreenStateContext);
     const [hasAttemptedToOpenPublicRoom, setAttemptedToOpenPublicRoom] = useState(false);
     const {translate} = useLocalize();
@@ -196,14 +196,14 @@ function Expensify() {
         StartupTimer.stop();
 
         // Run any Onyx schema migrations and then continue loading the main app
-        migrateOnyx().then(() => {
-            // In case of a crash that led to disconnection, we want to remove all the push notifications.
-            if (!isAuthenticated) {
-                PushNotification.clearNotifications();
-            }
+        // migrateOnyx().then(() => {
+        //     // In case of a crash that led to disconnection, we want to remove all the push notifications.
+        //     if (!isAuthenticated) {
+        //         PushNotification.clearNotifications();
+        //     }
 
-            setIsOnyxMigrated(true);
-        });
+        //     setIsOnyxMigrated(true);
+        // });
 
         appStateChangeListener.current = AppState.addEventListener('change', initializeClient);
 

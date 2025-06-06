@@ -226,38 +226,28 @@ function flush(shouldResetPromise = true) {
         });
     }
 
-    // Ensure persistedRequests are read from storage before proceeding with the queue
-    const connection = Onyx.connect({
-        key: ONYXKEYS.PERSISTED_REQUESTS,
-        // We exceptionally opt out of reusing the connection here to avoid extra callback calls due to
-        // an existing connection already made in PersistedRequests.ts.
-        reuseConnection: false,
-        callback: () => {
-            Onyx.disconnect(connection);
-            process().finally(() => {
-                Log.info('[SequentialQueue] Finished processing queue.');
-                isSequentialQueueRunning = false;
-                if (isOffline() || getAllPersistedRequests().length === 0) {
-                    resolveIsReadyPromise?.();
-                }
-                currentRequestPromise = null;
+    process().finally(() => {
+        Log.info('[SequentialQueue] Finished processing queue.');
+        isSequentialQueueRunning = false;
+        if (isOffline() || getAllPersistedRequests().length === 0) {
+            resolveIsReadyPromise?.();
+        }
+        currentRequestPromise = null;
 
-                // The queue can be paused when we sync the data with backend so we should only update the Onyx data when the queue is empty
-                if (getAllPersistedRequests().length === 0) {
-                    flushOnyxUpdatesQueue()?.then(() => {
-                        const queueFlushedData = getQueueFlushedData();
-                        if (queueFlushedData.length === 0) {
-                            return;
-                        }
-                        Log.info('[SequentialQueue] Will store queueFlushedData.', false, {queueFlushedData});
-                        Onyx.update(queueFlushedData).then(() => {
-                            Log.info('[SequentialQueue] QueueFlushedData has been stored.', false, {queueFlushedData});
-                            clearQueueFlushedData();
-                        });
-                    });
+        // The queue can be paused when we sync the data with backend so we should only update the Onyx data when the queue is empty
+        if (getAllPersistedRequests().length === 0) {
+            flushOnyxUpdatesQueue()?.then(() => {
+                const queueFlushedData = getQueueFlushedData();
+                if (queueFlushedData.length === 0) {
+                    return;
                 }
+                Log.info('[SequentialQueue] Will store queueFlushedData.', false, {queueFlushedData});
+                Onyx.update(queueFlushedData).then(() => {
+                    Log.info('[SequentialQueue] QueueFlushedData has been stored.', false, {queueFlushedData});
+                    clearQueueFlushedData();
+                });
             });
-        },
+        }
     });
 }
 

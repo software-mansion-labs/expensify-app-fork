@@ -9,8 +9,8 @@ import type {OnyxKey} from '@src/ONYXKEYS';
  * We do this only on non-production builds - these should not be used in any application code.
  */
 export default function addUtilsToWindow() {
+    return;
     if (!window) {
-        return;
     }
 
     Environment.isProduction().then((isProduction) => {

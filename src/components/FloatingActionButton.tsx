@@ -51,8 +51,17 @@ function FloatingActionButton({onPress, isActive, accessibilityLabel, role, isTo
     const {renderProductTrainingTooltip, shouldShowProductTrainingTooltip, hideProductTrainingTooltip} = useProductTrainingContext(
         CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.GLOBAL_CREATE_TOOLTIP,
         // On Home screen, We need to wait for the sidebar to load before showing the tooltip because there is the Concierge tooltip which is higher priority
-        isTooltipAllowed && (!isHomeRouteActive || isSidebarLoaded),
+        false,
     );
+
+    console.log(`%%% isTooltipAllowed && (!isHomeRouteActive || isSidebarLoaded),`, isTooltipAllowed, isHomeRouteActive, isSidebarLoaded);
+
+    // const {renderProductTrainingTooltip, shouldShowProductTrainingTooltip, hideProductTrainingTooltip} = {
+    //     renderProductTrainingTooltip: () => null,
+    //     shouldShowProductTrainingTooltip: false,
+    //     hideProductTrainingTooltip: () => null,
+    // };
+
     const isLHBVisible = !shouldUseNarrowLayout;
 
     const fabSize = isLHBVisible ? variables.iconSizeSmall : variables.iconSizeNormal;

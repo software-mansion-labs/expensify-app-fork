@@ -55,7 +55,7 @@ Onyx.connect({
  * }}
  */
 function hasLoginListError(loginList: OnyxEntry<LoginList>): boolean {
-    return Object.values(loginList ?? {}).some((loginData) => Object.values(loginData.errorFields ?? {}).some((field) => Object.keys(field ?? {}).length > 0));
+    return Object.values(loginList ?? {}).some((loginData) => Object.values(loginData?.errorFields ?? {}).some((field) => Object.keys(field ?? {}).length > 0));
 }
 
 /**
@@ -64,7 +64,8 @@ function hasLoginListError(loginList: OnyxEntry<LoginList>): boolean {
  * has an unvalidated contact method.
  */
 function hasLoginListInfo(loginList: OnyxEntry<LoginList>): boolean {
-    return Object.values(loginList ?? {}).some((login) => session?.email !== login.partnerUserID && !login.validatedDate);
+    console.log(`%%% loginList`, loginList);
+    return Object.values(loginList ?? {}).some((login) => session?.email !== login?.partnerUserID && !login?.validatedDate);
 }
 
 /**

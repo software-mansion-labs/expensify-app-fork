@@ -6,7 +6,7 @@
  * The primary purpose is to optimize performance by reducing redundant computations. More info can be found in the README.
  */
 import Onyx from 'react-native-onyx';
-import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
+// import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 import Log from '@libs/Log';
 import ObjectUtils from '@src/types/utils/ObjectUtils';
 import ONYX_DERIVED_VALUES from './ONYX_DERIVED_VALUES';
@@ -16,6 +16,7 @@ import type {DerivedValueContext} from './types';
  * Initialize all Onyx derived values, store them in Onyx, and setup listeners to update them when dependencies change.
  */
 function init() {
+    return
     for (const [key, {compute, dependencies}] of ObjectUtils.typedEntries(ONYX_DERIVED_VALUES)) {
         let areAllConnectionsSet = false;
         let connectionsEstablishedCount = 0;

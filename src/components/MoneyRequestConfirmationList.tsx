@@ -341,7 +341,7 @@ function MoneyRequestConfirmationList({
         isDistanceRequestWithPendingRoute || isScanRequest || isPerDiemRequest
             ? ''
             : convertToDisplayString(
-                  (shouldCalculateDistanceAmount ? distanceRequestAmount : iouAmount) / (iouAttendees?.length && iouAttendees.length > 0 ? iouAttendees.length : 1),
+                  (shouldCalculateDistanceAmount ? distanceRequestAmount : iouAmount) / (iouAttendees?.length && iouAttendees?.length > 0 ? iouAttendees?.length : 1),
                   isDistanceRequest ? currency : iouCurrencyCode,
               );
     const isFocused = useIsFocused();
@@ -577,7 +577,7 @@ function MoneyRequestConfirmationList({
             .map((accountID) => Number(accountID));
 
         // A split must have at least two participants with amounts bigger than 0
-        if (participantsWithAmount.length === 1) {
+        if (participantsWithAmount?.length === 1) {
             setFormError('iou.error.invalidSplitParticipants');
             return;
         }
@@ -615,7 +615,7 @@ function MoneyRequestConfirmationList({
                 if (iouAmount > 0) {
                     amount =
                         transaction?.comment?.splits?.find((split) => split.accountID === participantOption.accountID)?.amount ??
-                        calculateAmount(selectedParticipants.length, iouAmount, iouCurrencyCode ?? '', isPayer);
+                        calculateAmount(selectedParticipants?.length, iouAmount, iouCurrencyCode ?? '', isPayer);
                 }
                 return {
                     ...participantOption,
@@ -655,8 +655,8 @@ function MoneyRequestConfirmationList({
                     touchableInputWrapperStyle={[styles.ml3]}
                     onFormatAmount={convertToDisplayStringWithoutCurrency}
                     onAmountChange={(value: string) => onSplitShareChange(participantOption.accountID ?? CONST.DEFAULT_NUMBER_ID, Number(value))}
-                    maxLength={formattedTotalAmount.length}
-                    contentWidth={formattedTotalAmount.length * 8}
+                    maxLength={formattedTotalAmount?.length}
+                    contentWidth={formattedTotalAmount?.length * 8}
                 />
             ),
         }));
@@ -792,7 +792,7 @@ function MoneyRequestConfirmationList({
     // Auto select the category if there is only one enabled category and it is required
     useEffect(() => {
         const enabledCategories = Object.values(policyCategories ?? {}).filter((category) => category.enabled);
-        if (!transactionID || iouCategory || !shouldShowCategories || enabledCategories.length !== 1 || !isCategoryRequired) {
+        if (!transactionID || iouCategory || !shouldShowCategories || enabledCategories?.length !== 1 || !isCategoryRequired) {
             return;
         }
         setMoneyRequestCategory(transactionID, enabledCategories.at(0)?.name ?? '', policy?.id);
@@ -813,7 +813,7 @@ function MoneyRequestConfirmationList({
                 return;
             }
             const enabledTags = Object.values(tagList.tags).filter((tag) => tag.enabled);
-            if (enabledTags.length !== 1 || getTag(transaction, index)) {
+            if (enabledTags?.length !== 1 || getTag(transaction, index)) {
                 return;
             }
             updatedTagsString = insertTagIntoTransactionTagsString(updatedTagsString, enabledTags.at(0)?.name ?? '', index);
@@ -850,7 +850,7 @@ function MoneyRequestConfirmationList({
                 return;
             }
 
-            if (selectedParticipants.length === 0) {
+            if (selectedParticipants?.length === 0) {
                 setFormError('iou.error.noParticipantSelected');
                 return;
             }
@@ -858,17 +858,17 @@ function MoneyRequestConfirmationList({
                 setFormError('iou.error.invalidMerchant');
                 return;
             }
-            if (iouCategory.length > CONST.API_TRANSACTION_CATEGORY_MAX_LENGTH) {
+            if (iouCategory?.length > CONST.API_TRANSACTION_CATEGORY_MAX_LENGTH) {
                 setFormError('iou.error.invalidCategoryLength');
                 return;
             }
 
-            if (getTag(transaction).length > CONST.API_TRANSACTION_TAG_MAX_LENGTH) {
+            if (getTag(transaction)?.length > CONST.API_TRANSACTION_TAG_MAX_LENGTH) {
                 setFormError('iou.error.invalidTagLength');
                 return;
             }
 
-            if (isPerDiemRequest && (transaction.comment?.customUnit?.subRates ?? []).length === 0) {
+            if (isPerDiemRequest && (transaction.comment?.customUnit?.subRates ?? [])?.length === 0) {
                 setFormError('iou.error.invalidSubrateLength');
                 return;
             }
@@ -910,7 +910,7 @@ function MoneyRequestConfirmationList({
             isMerchantEmpty,
             shouldDisplayFieldError,
             transaction,
-            iouCategory.length,
+            iouCategory?.length,
             formError,
             iouType,
             setFormError,
