@@ -55,8 +55,7 @@ function createPlatformStackNavigatorComponent<RouterOptions extends PlatformSta
             {
                 id,
                 children,
-                screenOptions,
-                defaultScreenOptions,
+                screenOptions: {...defaultScreenOptions, ...screenOptions},
                 screenListeners,
                 initialRouteName,
                 defaultCentralScreen,
