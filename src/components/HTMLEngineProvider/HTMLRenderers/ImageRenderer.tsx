@@ -1,4 +1,5 @@
 import React, {memo} from 'react';
+import {Keyboard} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {CustomRendererProps, TBlock} from 'react-native-render-html';
@@ -107,6 +108,7 @@ function ImageRenderer({tnode}: ImageRendererProps) {
                         <PressableWithoutFocus
                             style={[styles.noOutline]}
                             onPress={() => {
+                                Keyboard.dismiss();
                                 if (!source || !type) {
                                     return;
                                 }
