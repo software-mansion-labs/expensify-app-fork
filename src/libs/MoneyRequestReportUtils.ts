@@ -91,6 +91,11 @@ function shouldDisplayReportTableView(report: OnyxEntry<Report>, transactions: T
     return !isReportTransactionThread(report) && !isSingleTransactionReport(report, transactions);
 }
 
+/** This function checks, if the expense report transactions are not loaded yet.
+ * It's impossible to differentiate between a report that has no transactions and a report that is still loading transactions.
+ * If we have previously opened the report at least once(reportMetadata?.hasOnceLoadedReportActions indicates that), then we can assume that
+ * the report has no transactions(the transactions should already be in the onyx) and we can display the empty state, in the other case we should show loading.
+ */
 function shouldWaitForTransactions(report: OnyxEntry<Report>, transactions: Transaction[] | undefined, reportMetadata: OnyxEntry<ReportMetadata>) {
     const isTransactionDataReady = transactions !== undefined;
     const isTransactionThreadView = isReportTransactionThread(report);
