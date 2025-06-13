@@ -19,24 +19,24 @@ function SearchFullscreenNavigator({route}: PlatformStackScreenProps<AuthScreens
     // These options can be used here because the full screen navigator has the same structure as the split navigator in terms of the central screens, but it does not have a sidebar.
     const {centralScreen: centralScreenOptions} = useSplitNavigatorScreenOptions();
     return (
-        <FreezeWrapper>
-            <Stack.Navigator
-                screenOptions={centralScreenOptions}
-                defaultCentralScreen={SCREENS.SEARCH.ROOT}
-                parentRoute={route}
-            >
-                <Stack.Screen
-                    name={SCREENS.SEARCH.ROOT}
-                    getComponent={loadSearchPage}
-                    initialParams={{q: SearchQueryUtils.buildSearchQueryString()}}
-                    options={{animation: Animations.NONE}}
-                />
-                <Stack.Screen
-                    name={SCREENS.SEARCH.MONEY_REQUEST_REPORT}
-                    getComponent={loadSearchMoneyReportPage}
-                />
-            </Stack.Navigator>
-        </FreezeWrapper>
+        // <FreezeWrapper>
+        <Stack.Navigator
+            screenOptions={centralScreenOptions}
+            defaultCentralScreen={SCREENS.SEARCH.ROOT}
+            parentRoute={route}
+        >
+            <Stack.Screen
+                name={SCREENS.SEARCH.ROOT}
+                getComponent={loadSearchPage}
+                initialParams={{q: SearchQueryUtils.buildSearchQueryString()}}
+                options={{animation: Animations.NONE}}
+            />
+            <Stack.Screen
+                name={SCREENS.SEARCH.MONEY_REQUEST_REPORT}
+                getComponent={loadSearchMoneyReportPage}
+            />
+        </Stack.Navigator>
+        // </FreezeWrapper>
     );
 }
 

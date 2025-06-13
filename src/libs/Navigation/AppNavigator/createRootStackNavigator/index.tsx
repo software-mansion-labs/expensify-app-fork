@@ -21,7 +21,7 @@ const RootStackNavigatorComponent = createPlatformStackNavigatorComponent('RootS
     defaultScreenOptions: defaultPlatformStackScreenOptions,
     useCustomEffects: useNavigationResetOnLayoutChange,
     useCustomState: useCustomRootStackNavigatorState,
-    ExtraContent: RootNavigatorExtraContent,
+    // ExtraContent: RootNavigatorExtraContent,
 });
 
 function createRootStackNavigator<ParamList extends ParamListBase>() {

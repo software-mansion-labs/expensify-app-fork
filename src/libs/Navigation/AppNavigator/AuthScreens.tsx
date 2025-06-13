@@ -27,7 +27,6 @@ import Log from '@libs/Log';
 import NavBarManager from '@libs/NavBarManager';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
-import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import Presentation from '@libs/Navigation/PlatformStackNavigation/navigationOptions/presentation';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
 import NetworkConnection from '@libs/NetworkConnection';
@@ -40,7 +39,6 @@ import ConnectionCompletePage from '@pages/ConnectionCompletePage';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import RequireTwoFactorAuthenticationPage from '@pages/RequireTwoFactorAuthenticationPage';
 import DesktopSignInRedirectPage from '@pages/signin/DesktopSignInRedirectPage';
-import WorkspacesListPage from '@pages/workspace/WorkspacesListPage';
 import * as App from '@userActions/App';
 import * as Download from '@userActions/Download';
 import * as Modal from '@userActions/Modal';
@@ -59,8 +57,8 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/PersonalDetails';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
+import Animations from '../PlatformStackNavigation/navigationOptions/animation';
 import createRootStackNavigator from './createRootStackNavigator';
-import {screensWithEnteringAnimation, workspaceSplitsWithoutEnteringAnimation} from './createRootStackNavigator/GetStateForActionHandlers';
 import defaultScreenOptions from './defaultScreenOptions';
 import {ShareModalStackNavigator} from './ModalStackNavigators';
 import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
@@ -70,6 +68,7 @@ import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
 import TestDriveModalNavigator from './Navigators/TestDriveModalNavigator';
 import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
+import TabNavigator from './TabNavigator';
 import TestDriveDemoNavigator from './TestDriveDemoNavigator';
 import useRootNavigatorScreenOptions from './useRootNavigatorScreenOptions';
 
@@ -84,7 +83,6 @@ type AuthScreensProps = {
     initialLastUpdateIDAppliedToClient: OnyxEntry<number>;
 };
 
-const loadReportAttachments = () => require<ReactComponentModule>('../../../pages/home/report/ReportAttachments').default;
 const loadValidateLoginPage = () => require<ReactComponentModule>('../../../pages/ValidateLoginPage').default;
 const loadLogOutPreviousUserPage = () => require<ReactComponentModule>('../../../pages/LogOutPreviousUserPage').default;
 const loadConciergePage = () => require<ReactComponentModule>('../../../pages/ConciergePage').default;
@@ -95,6 +93,7 @@ const loadWorkspaceAvatar = () => require<ReactComponentModule>('../../../pages/
 const loadReportAvatar = () => require<ReactComponentModule>('../../../pages/ReportAvatar').default;
 const loadReceiptView = () => require<ReactComponentModule>('../../../pages/TransactionReceiptPage').default;
 const loadWorkspaceJoinUser = () => require<ReactComponentModule>('@pages/workspace/WorkspaceJoinUserPage').default;
+const loadReportAttachments = () => require<ReactComponentModule>('../../../pages/home/report/ReportAttachments').default;
 
 const loadReportSplitNavigator = () => require<ReactComponentModule>('./Navigators/ReportsSplitNavigator').default;
 const loadSettingsSplitNavigator = () => require<ReactComponentModule>('./Navigators/SettingsSplitNavigator').default;
@@ -536,27 +535,11 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
 
     return (
         <ComposeProviders components={[OptionsListContextProvider, SidebarOrderedReportsContextProvider, SearchContextProvider]}>
-            <RootStack.Navigator persistentScreens={[NAVIGATORS.REPORTS_SPLIT_NAVIGATOR, SCREENS.SEARCH.ROOT]}>
-                {/* This has to be the first navigator in auth screens. */}
+            <RootStack.Navigator>
                 <RootStack.Screen
-                    name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
-                    options={getFullscreenNavigatorOptions}
-                    getComponent={loadReportSplitNavigator}
-                />
-                <RootStack.Screen
-                    name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
-                    options={getFullscreenNavigatorOptions}
-                    getComponent={loadSettingsSplitNavigator}
-                />
-                <RootStack.Screen
-                    name={NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR}
-                    options={getFullscreenNavigatorOptions}
-                    getComponent={loadSearchNavigator}
-                />
-                <RootStack.Screen
-                    name={NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR}
-                    options={getWorkspaceSplitNavigatorOptions}
-                    getComponent={loadWorkspaceSplitNavigator}
+                    name={NAVIGATORS.TAB_NAVIGATOR}
+                    options={{headerShown: false}}
+                    component={TabNavigator}
                 />
                 <RootStack.Screen
                     name={SCREENS.VALIDATE_LOGIN}
@@ -567,11 +550,6 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
                     }}
                     listeners={fullScreenListeners}
                     getComponent={loadValidateLoginPage}
-                />
-                <RootStack.Screen
-                    name={SCREENS.WORKSPACES_LIST}
-                    options={rootNavigatorScreenOptions.workspacesListPage}
-                    component={WorkspacesListPage}
                 />
                 <RootStack.Screen
                     name={SCREENS.TRANSITION_BETWEEN_APPS}

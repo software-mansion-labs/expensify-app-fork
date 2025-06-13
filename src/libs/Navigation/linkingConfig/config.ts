@@ -1641,122 +1641,125 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                 },
             },
         },
-
-        [NAVIGATORS.REPORTS_SPLIT_NAVIGATOR]: {
-            path: ROUTES.ROOT,
+        [NAVIGATORS.TAB_NAVIGATOR]: {
             screens: {
-                [SCREENS.HOME]: {
-                    path: ROUTES.HOME,
-                    exact: true,
-                },
-                [SCREENS.REPORT]: {
-                    path: ROUTES.REPORT_WITH_ID.route,
-                    // If params are defined, but reportID is explicitly undefined, we will get the url /r/undefined.
-                    // We want to avoid that situation, so we will return an empty string instead.
-                    parse: {
-                        // eslint-disable-next-line
-                        reportID: (reportID: string | undefined) => reportID ?? '',
+                [NAVIGATORS.REPORTS_SPLIT_NAVIGATOR]: {
+                    path: ROUTES.ROOT,
+                    screens: {
+                        [SCREENS.HOME]: {
+                            path: ROUTES.HOME,
+                            exact: true,
+                        },
+                        [SCREENS.REPORT]: {
+                            path: ROUTES.REPORT_WITH_ID.route,
+                            // If params are defined, but reportID is explicitly undefined, we will get the url /r/undefined.
+                            // We want to avoid that situation, so we will return an empty string instead.
+                            parse: {
+                                // eslint-disable-next-line
+                                reportID: (reportID: string | undefined) => reportID ?? '',
+                            },
+                            stringify: {
+                                // eslint-disable-next-line
+                                reportID: (reportID: string | undefined) => reportID ?? '',
+                            },
+                        },
                     },
-                    stringify: {
-                        // eslint-disable-next-line
-                        reportID: (reportID: string | undefined) => reportID ?? '',
+                },
+
+                [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: {
+                    screens: {
+                        [SCREENS.SETTINGS.ROOT]: ROUTES.SETTINGS,
+                        [SCREENS.SETTINGS.PROFILE.ROOT]: {
+                            path: ROUTES.SETTINGS_PROFILE.route,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.SECURITY]: {
+                            path: ROUTES.SETTINGS_SECURITY,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.WALLET.ROOT]: {
+                            path: ROUTES.SETTINGS_WALLET,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.ABOUT]: {
+                            path: ROUTES.SETTINGS_ABOUT,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.TROUBLESHOOT]: {
+                            path: ROUTES.SETTINGS_TROUBLESHOOT,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.SAVE_THE_WORLD]: ROUTES.SETTINGS_SAVE_THE_WORLD,
+                        [SCREENS.SETTINGS.PREFERENCES.ROOT]: {
+                            path: ROUTES.SETTINGS_PREFERENCES,
+                            // exact: true,
+                        },
+                        [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: ROUTES.SETTINGS_SUBSCRIPTION.route,
                     },
                 },
-            },
-        },
 
-        [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: {
-            screens: {
-                [SCREENS.SETTINGS.ROOT]: ROUTES.SETTINGS,
-                [SCREENS.SETTINGS.PROFILE.ROOT]: {
-                    path: ROUTES.SETTINGS_PROFILE.route,
-                    exact: true,
+                [NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR]: {
+                    // The path given as initialRouteName does not have route params.
+                    // initialRouteName is not defined in this split navigator because in this case the initial route requires a policyID defined in its route params.
+                    screens: {
+                        [SCREENS.WORKSPACE.INITIAL]: {
+                            path: ROUTES.WORKSPACE_INITIAL.route,
+                        },
+                        [SCREENS.WORKSPACE.PROFILE]: ROUTES.WORKSPACE_OVERVIEW.route,
+                        [SCREENS.WORKSPACE.EXPENSIFY_CARD]: {
+                            path: ROUTES.WORKSPACE_EXPENSIFY_CARD.route,
+                        },
+                        [SCREENS.WORKSPACE.COMPANY_CARDS]: {
+                            path: ROUTES.WORKSPACE_COMPANY_CARDS.route,
+                        },
+                        [SCREENS.WORKSPACE.PER_DIEM]: {
+                            path: ROUTES.WORKSPACE_PER_DIEM.route,
+                        },
+                        [SCREENS.WORKSPACE.WORKFLOWS]: {
+                            path: ROUTES.WORKSPACE_WORKFLOWS.route,
+                        },
+                        [SCREENS.WORKSPACE.INVOICES]: {
+                            path: ROUTES.WORKSPACE_INVOICES.route,
+                        },
+                        [SCREENS.WORKSPACE.MEMBERS]: {
+                            path: ROUTES.WORKSPACE_MEMBERS.route,
+                        },
+                        [SCREENS.WORKSPACE.ACCOUNTING.ROOT]: {
+                            path: ROUTES.POLICY_ACCOUNTING.route,
+                        },
+                        [SCREENS.WORKSPACE.CATEGORIES]: {
+                            path: ROUTES.WORKSPACE_CATEGORIES.route,
+                        },
+                        [SCREENS.WORKSPACE.MORE_FEATURES]: {
+                            path: ROUTES.WORKSPACE_MORE_FEATURES.route,
+                        },
+                        [SCREENS.WORKSPACE.TAGS]: {
+                            path: ROUTES.WORKSPACE_TAGS.route,
+                        },
+                        [SCREENS.WORKSPACE.TAXES]: {
+                            path: ROUTES.WORKSPACE_TAXES.route,
+                        },
+                        [SCREENS.WORKSPACE.REPORT_FIELDS]: {
+                            path: ROUTES.WORKSPACE_REPORT_FIELDS.route,
+                        },
+                        [SCREENS.WORKSPACE.DISTANCE_RATES]: {
+                            path: ROUTES.WORKSPACE_DISTANCE_RATES.route,
+                        },
+                        [SCREENS.WORKSPACE.RULES]: {
+                            path: ROUTES.WORKSPACE_RULES.route,
+                        },
+                    },
                 },
-                [SCREENS.SETTINGS.SECURITY]: {
-                    path: ROUTES.SETTINGS_SECURITY,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.WALLET.ROOT]: {
-                    path: ROUTES.SETTINGS_WALLET,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.ABOUT]: {
-                    path: ROUTES.SETTINGS_ABOUT,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.TROUBLESHOOT]: {
-                    path: ROUTES.SETTINGS_TROUBLESHOOT,
-                    exact: true,
-                },
-                [SCREENS.SETTINGS.SAVE_THE_WORLD]: ROUTES.SETTINGS_SAVE_THE_WORLD,
-                [SCREENS.SETTINGS.PREFERENCES.ROOT]: {
-                    path: ROUTES.SETTINGS_PREFERENCES,
-                    // exact: true,
-                },
-                [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: ROUTES.SETTINGS_SUBSCRIPTION.route,
-            },
-        },
 
-        [NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR]: {
-            // The path given as initialRouteName does not have route params.
-            // initialRouteName is not defined in this split navigator because in this case the initial route requires a policyID defined in its route params.
-            screens: {
-                [SCREENS.WORKSPACE.INITIAL]: {
-                    path: ROUTES.WORKSPACE_INITIAL.route,
-                },
-                [SCREENS.WORKSPACE.PROFILE]: ROUTES.WORKSPACE_OVERVIEW.route,
-                [SCREENS.WORKSPACE.EXPENSIFY_CARD]: {
-                    path: ROUTES.WORKSPACE_EXPENSIFY_CARD.route,
-                },
-                [SCREENS.WORKSPACE.COMPANY_CARDS]: {
-                    path: ROUTES.WORKSPACE_COMPANY_CARDS.route,
-                },
-                [SCREENS.WORKSPACE.PER_DIEM]: {
-                    path: ROUTES.WORKSPACE_PER_DIEM.route,
-                },
-                [SCREENS.WORKSPACE.WORKFLOWS]: {
-                    path: ROUTES.WORKSPACE_WORKFLOWS.route,
-                },
-                [SCREENS.WORKSPACE.INVOICES]: {
-                    path: ROUTES.WORKSPACE_INVOICES.route,
-                },
-                [SCREENS.WORKSPACE.MEMBERS]: {
-                    path: ROUTES.WORKSPACE_MEMBERS.route,
-                },
-                [SCREENS.WORKSPACE.ACCOUNTING.ROOT]: {
-                    path: ROUTES.POLICY_ACCOUNTING.route,
-                },
-                [SCREENS.WORKSPACE.CATEGORIES]: {
-                    path: ROUTES.WORKSPACE_CATEGORIES.route,
-                },
-                [SCREENS.WORKSPACE.MORE_FEATURES]: {
-                    path: ROUTES.WORKSPACE_MORE_FEATURES.route,
-                },
-                [SCREENS.WORKSPACE.TAGS]: {
-                    path: ROUTES.WORKSPACE_TAGS.route,
-                },
-                [SCREENS.WORKSPACE.TAXES]: {
-                    path: ROUTES.WORKSPACE_TAXES.route,
-                },
-                [SCREENS.WORKSPACE.REPORT_FIELDS]: {
-                    path: ROUTES.WORKSPACE_REPORT_FIELDS.route,
-                },
-                [SCREENS.WORKSPACE.DISTANCE_RATES]: {
-                    path: ROUTES.WORKSPACE_DISTANCE_RATES.route,
-                },
-                [SCREENS.WORKSPACE.RULES]: {
-                    path: ROUTES.WORKSPACE_RULES.route,
-                },
-            },
-        },
-
-        [NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR]: {
-            screens: {
-                [SCREENS.SEARCH.ROOT]: {
-                    path: ROUTES.SEARCH_ROOT.route,
-                },
-                [SCREENS.SEARCH.MONEY_REQUEST_REPORT]: {
-                    path: ROUTES.SEARCH_MONEY_REQUEST_REPORT.route,
+                [NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR]: {
+                    screens: {
+                        [SCREENS.SEARCH.ROOT]: {
+                            path: ROUTES.SEARCH_ROOT.route,
+                        },
+                        [SCREENS.SEARCH.MONEY_REQUEST_REPORT]: {
+                            path: ROUTES.SEARCH_MONEY_REQUEST_REPORT.route,
+                        },
+                    },
                 },
             },
         },
