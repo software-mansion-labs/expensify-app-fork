@@ -7,6 +7,7 @@ import isSideModalNavigator from '@libs/Navigation/helpers/isSideModalNavigator'
 import * as Welcome from '@userActions/Welcome';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
+import SCREENS from '@src/SCREENS';
 import {
     handleDismissModalAction,
     handleNavigatingToModalFromModal,
@@ -60,6 +61,14 @@ function isNavigatingToModalFromModal(state: StackNavigationState<ParamListBase>
     // We want to dismiss the one that is currently on the top.
     return isSideModalNavigator(lastRoute?.name) && isSideModalNavigator(action.payload.name);
 }
+
+const TAB_ROUTES = [
+    NAVIGATORS.REPORTS_SPLIT_NAVIGATOR,
+    NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR,
+    SCREENS.WORKSPACES_LIST,
+    NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,
+    NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR,
+] as const;
 
 function RootStackRouter(options: RootStackNavigatorRouterOptions) {
     const stackRouter = StackRouter(options);

@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import TestPressable from '@components/TestPressable';
 import usePermissions from '@hooks/usePermissions';
 import createSplitNavigator from '@libs/Navigation/AppNavigator/createSplitNavigator';
 import FreezeWrapper from '@libs/Navigation/AppNavigator/FreezeWrapper';

@@ -6,10 +6,12 @@ import Onyx, {useOnyx, withOnyx} from 'react-native-onyx';
 import ComposeProviders from '@components/ComposeProviders';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import OptionsListContextProvider from '@components/OptionListContextProvider';
+import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import PriorityModeController from '@components/PriorityModeController';
 import {SearchContextProvider} from '@components/Search/SearchContext';
 import {useSearchRouterContext} from '@components/Search/SearchRouter/SearchRouterContext';
 import SearchRouterModal from '@components/Search/SearchRouter/SearchRouterModal';
+import Text from '@components/Text';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnboardingFlowRouter from '@hooks/useOnboardingFlow';
 import usePrevious from '@hooks/usePrevious';
@@ -26,7 +28,7 @@ import KeyboardShortcut from '@libs/KeyboardShortcut';
 import Log from '@libs/Log';
 import NavBarManager from '@libs/NavBarManager';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
-import Navigation from '@libs/Navigation/Navigation';
+import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import Presentation from '@libs/Navigation/PlatformStackNavigation/navigationOptions/presentation';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
@@ -745,6 +747,18 @@ function AuthScreens({session, lastOpenedPublicRoomID, initialLastUpdateIDApplie
             </RootStack.Navigator>
             <SearchRouterModal />
             <PriorityModeController />
+            <PressableWithFeedback
+                accessible={false}
+                accessibilityRole="button"
+                onPress={() => {
+                    navigationRef.current?.dispatch({
+                        type: CONST.NAVIGATION.ACTION_TYPE.FLIP_ROUTES,
+                    });
+                }}
+                style={{padding: 10, backgroundColor: 'white'}}
+            >
+                <Text style={{fontSize: 30, color: 'red'}}>Flip Routes</Text>
+            </PressableWithFeedback>
         </ComposeProviders>
     );
 }

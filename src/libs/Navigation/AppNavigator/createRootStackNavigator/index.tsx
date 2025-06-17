@@ -1,33 +1,55 @@
-import {createNavigatorFactory} from '@react-navigation/native';
-import type {ParamListBase} from '@react-navigation/native';
+import {BottomTabView} from '@react-navigation/bottom-tabs';
+import type {DefaultNavigatorOptions, ParamListBase, StackActionHelpers, StackNavigationState, StackRouterOptions} from '@react-navigation/native';
+import {createNavigatorFactory, useNavigationBuilder} from '@react-navigation/native';
+import type {StackNavigationEventMap, StackNavigationOptions} from '@react-navigation/stack';
+import type {StackNavigationConfig} from '@react-navigation/stack/lib/typescript/src/types';
+import React, {useMemo} from 'react';
 import RootNavigatorExtraContent from '@components/Navigation/RootNavigatorExtraContent';
-import useNavigationResetOnLayoutChange from '@libs/Navigation/AppNavigator/useNavigationResetOnLayoutChange';
-import {isFullScreenName} from '@libs/Navigation/helpers/isNavigatorName';
-import createPlatformStackNavigatorComponent from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent';
-import defaultPlatformStackScreenOptions from '@libs/Navigation/PlatformStackNavigation/defaultPlatformStackScreenOptions';
-import type {CustomStateHookProps, PlatformStackNavigationEventMap, PlatformStackNavigationOptions, PlatformStackNavigationState} from '@libs/Navigation/PlatformStackNavigation/types';
 import RootStackRouter from './RootStackRouter';
 
-// This is an optimization to keep mounted only last few screens in the stack.
-function useCustomRootStackNavigatorState({state}: CustomStateHookProps) {
-    const lastSplitIndex = state.routes.findLastIndex((route) => isFullScreenName(route.name));
-    const routesToRender = state.routes.slice(Math.max(0, lastSplitIndex - 1), state.routes.length);
+type Props = DefaultNavigatorOptions<ParamListBase, StackNavigationState<ParamListBase>, StackNavigationOptions, StackNavigationEventMap> & StackRouterOptions & StackNavigationConfig;
 
-    return {...state, routes: routesToRender, index: routesToRender.length - 1};
+function transformStateForBottomTab(state: StackNavigationState<ParamListBase>) {
+    const lastRoute = state.routes.at(-1);
+
+    if (!lastRoute) {
+        return state;
+    }
+
+    return {
+        ...state,
+        routes: [lastRoute],
+        index: 0,
+    };
 }
 
-const RootStackNavigatorComponent = createPlatformStackNavigatorComponent('RootStackNavigator', {
-    createRouter: RootStackRouter,
-    defaultScreenOptions: defaultPlatformStackScreenOptions,
-    useCustomEffects: useNavigationResetOnLayoutChange,
-    useCustomState: useCustomRootStackNavigatorState,
-    ExtraContent: RootNavigatorExtraContent,
-});
+function StackNavigator({id, initialRouteName, children, screenListeners, screenOptions}: Props) {
+    const {state, descriptors, navigation, NavigationContent} = useNavigationBuilder<
+        StackNavigationState<ParamListBase>,
+        StackRouterOptions,
+        StackActionHelpers<ParamListBase>,
+        StackNavigationOptions,
+        StackNavigationEventMap
+    >(RootStackRouter, {
+        id,
+        initialRouteName,
+        children,
+        screenListeners,
+        screenOptions,
+    });
 
-function createRootStackNavigator<ParamList extends ParamListBase>() {
-    return createNavigatorFactory<PlatformStackNavigationState<ParamList>, PlatformStackNavigationOptions, PlatformStackNavigationEventMap, typeof RootStackNavigatorComponent>(
-        RootStackNavigatorComponent,
-    )<ParamList>();
+    const transformedState = useMemo(() => transformStateForBottomTab(state), [state]);
+
+    return (
+        <NavigationContent>
+            <BottomTabView
+                state={transformedState}
+                descriptors={descriptors}
+                navigation={navigation}
+            />
+            <RootNavigatorExtraContent state={transformedState} />
+        </NavigationContent>
+    );
 }
 
-export default createRootStackNavigator;
+export default createNavigatorFactory<StackNavigationState<ParamListBase>, StackNavigationOptions, StackNavigationEventMap, typeof StackNavigator>(StackNavigator);
