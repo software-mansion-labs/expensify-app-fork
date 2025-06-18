@@ -1,8 +1,10 @@
 import React, {useEffect} from 'react';
 import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
+import NAVIGATION_TABS from '@components/Navigation/NavigationTabBar/NAVIGATION_TABS';
 import {workspaceSplitsWithoutEnteringAnimation} from '@libs/Navigation/AppNavigator/createRootStackNavigator/GetStateForActionHandlers';
 import createSplitNavigator from '@libs/Navigation/AppNavigator/createSplitNavigator';
+import usePreloadFullScreenNavigators from '@libs/Navigation/AppNavigator/usePreloadFullScreenNavigators';
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -54,6 +56,8 @@ function WorkspaceSplitNavigator({route, navigation}: PlatformStackScreenProps<A
 
         return unsubscribe;
     }, [navigation, route.key]);
+
+    usePreloadFullScreenNavigators(navigation, NAVIGATION_TABS.WORKSPACES);
 
     return (
         <FocusTrapForScreens>

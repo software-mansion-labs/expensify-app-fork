@@ -1,5 +1,4 @@
-import {findFocusedRoute} from '@react-navigation/native';
-import React, {memo, useCallback, useEffect, useState} from 'react';
+import React, {memo, useCallback, useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
@@ -24,19 +23,13 @@ import clearSelectedText from '@libs/clearSelectedText/clearSelectedText';
 import getPlatform from '@libs/getPlatform';
 import interceptAnonymousUser from '@libs/interceptAnonymousUser';
 import {getPreservedNavigatorState} from '@libs/Navigation/AppNavigator/createSplitNavigator/usePreserveNavigatorState';
-import {
-    getLastVisitedTabPath,
-    getLastVisitedWorkspaceTabScreen,
-    getSettingsTabStateFromSessionStorage,
-    getWorkspacesTabStateFromSessionStorage,
-} from '@libs/Navigation/helpers/lastVisitedTabPathUtils';
-import {buildCannedSearchQuery, buildSearchQueryJSON, buildSearchQueryString} from '@libs/SearchQueryUtils';
+import {getLastVisitedWorkspaceTabScreen, getWorkspacesTabStateFromSessionStorage} from '@libs/Navigation/helpers/lastVisitedTabPathUtils';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 import {getChatTabBrickRoad} from '@libs/WorkspacesSettingsUtils';
 import {isFullScreenName, isWorkspacesTabScreenName} from '@navigation/helpers/isNavigatorName';
 import Navigation from '@navigation/Navigation';
 import navigationRef from '@navigation/navigationRef';
-import type {RootNavigatorParamList, SearchFullscreenNavigatorParamList, State, WorkspaceSplitNavigatorParamList} from '@navigation/types';
+import type {WorkspaceSplitNavigatorParamList} from '@navigation/types';
 import NavigationTabBarAvatar from '@pages/home/sidebar/NavigationTabBarAvatar';
 import NavigationTabBarFloatingActionButton from '@pages/home/sidebar/NavigationTabBarFloatingActionButton';
 import variables from '@styles/variables';
@@ -51,6 +44,16 @@ type NavigationTabBarProps = {
     selectedTab: ValueOf<typeof NAVIGATION_TABS>;
     isTooltipAllowed?: boolean;
     isTopLevelBar?: boolean;
+};
+
+type TransitionTiming = {
+    count: number;
+    totalTime: number;
+    average: number;
+};
+
+type TransitionTimings = {
+    [key: string]: TransitionTiming;
 };
 
 function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar = false}: NavigationTabBarProps) {
@@ -71,6 +74,9 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
         shouldShowProductTrainingTooltip: shouldShowInboxTooltip,
         hideProductTrainingTooltip: hideInboxTooltip,
     } = useProductTrainingContext(CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.BOTTOM_NAV_INBOX_TOOLTIP, isTooltipAllowed && selectedTab !== NAVIGATION_TABS.HOME);
+    const transitionTimingsRef = useRef<TransitionTimings>({});
+    const startTimeRef = useRef<number>(0);
+    const [lastTab, setLastTab] = useState<ValueOf<typeof NAVIGATION_TABS> | null>(null);
 
     const StyleUtils = useStyleUtils();
 
@@ -83,42 +89,91 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
         // That's why reportAttributes is added as a dependency here
     }, [orderedReports, reportAttributes]);
 
+    // Add useEffect to handle timing end based on selectedTab changes
+    useEffect(() => {
+        if (!lastTab) {
+            setLastTab(selectedTab);
+            return;
+        }
+
+        const transitionKey = `${lastTab}_to_${selectedTab}`;
+
+        if (selectedTab === NAVIGATION_TABS.HOME) {
+            console.timeEnd('navigateToChats');
+            requestAnimationFrame(() => {
+                const tti = performance.now() - startTimeRef.current;
+                console.timeEnd('TTI_Chats');
+                console.log(`TTI for ${transitionKey}: ${tti}ms`);
+                updateTransitionTiming(transitionKey, tti);
+            });
+        } else if (selectedTab === NAVIGATION_TABS.SEARCH) {
+            console.timeEnd('navigateToSearch');
+            requestAnimationFrame(() => {
+                const tti = performance.now() - startTimeRef.current;
+                console.timeEnd('TTI_Search');
+                console.log(`TTI for ${transitionKey}: ${tti}ms`);
+                updateTransitionTiming(transitionKey, tti);
+            });
+        } else if (selectedTab === NAVIGATION_TABS.SETTINGS) {
+            console.timeEnd('navigateToSettings');
+            requestAnimationFrame(() => {
+                const tti = performance.now() - startTimeRef.current;
+                console.timeEnd('TTI_Settings');
+                console.log(`TTI for ${transitionKey}: ${tti}ms`);
+                updateTransitionTiming(transitionKey, tti);
+            });
+        } else if (selectedTab === NAVIGATION_TABS.WORKSPACES) {
+            console.timeEnd('showWorkspaces');
+            requestAnimationFrame(() => {
+                const tti = performance.now() - startTimeRef.current;
+                console.timeEnd('TTI_Workspaces');
+                console.log(`TTI for ${transitionKey}: ${tti}ms`);
+                updateTransitionTiming(transitionKey, tti);
+            });
+        }
+
+        setLastTab(selectedTab);
+    }, [selectedTab]);
+
+    const updateTransitionTiming = useCallback((transitionKey: string, tti: number) => {
+        const current = transitionTimingsRef.current?.[transitionKey] || {count: 0, totalTime: 0, average: 0};
+        const newCount = current.count + 1;
+        const newTotalTime = current.totalTime + tti;
+        const newAverage = newTotalTime / newCount;
+
+        console.log(`Average TTI for ${transitionKey}: ${newAverage.toFixed(2)}ms (${newCount} measurements)`);
+
+        transitionTimingsRef.current = {
+            ...(transitionTimingsRef.current || {}),
+            [transitionKey]: {
+                count: newCount,
+                totalTime: newTotalTime,
+                average: newAverage,
+            },
+        };
+    }, []);
+
     const navigateToChats = useCallback(() => {
         if (selectedTab === NAVIGATION_TABS.HOME) {
             return;
         }
-
+        startTimeRef.current = performance.now();
+        console.time('navigateToChats');
+        console.time('TTI_Chats');
         hideInboxTooltip();
-        Navigation.navigate(ROUTES.HOME);
+        navigationRef.dispatch({type: 'PUSH', payload: {name: NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}});
     }, [hideInboxTooltip, selectedTab]);
 
     const navigateToSearch = useCallback(() => {
         if (selectedTab === NAVIGATION_TABS.SEARCH) {
             return;
         }
+        startTimeRef.current = performance.now();
+        console.time('navigateToSearch');
+        console.time('TTI_Search');
         clearSelectedText();
         interceptAnonymousUser(() => {
-            const rootState = navigationRef.getRootState() as State<RootNavigatorParamList>;
-            const lastSearchNavigator = rootState.routes.findLast((route) => route.name === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR);
-            const lastSearchNavigatorState = lastSearchNavigator && lastSearchNavigator.key ? getPreservedNavigatorState(lastSearchNavigator?.key) : undefined;
-            const lastSearchRoute = lastSearchNavigatorState?.routes.findLast((route) => route.name === SCREENS.SEARCH.ROOT);
-
-            if (lastSearchRoute) {
-                const {q, ...rest} = lastSearchRoute.params as SearchFullscreenNavigatorParamList[typeof SCREENS.SEARCH.ROOT];
-                const queryJSON = buildSearchQueryJSON(q);
-                if (queryJSON) {
-                    const query = buildSearchQueryString(queryJSON);
-                    Navigation.navigate(
-                        ROUTES.SEARCH_ROOT.getRoute({
-                            query,
-                            ...rest,
-                        }),
-                    );
-                    return;
-                }
-            }
-
-            Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: buildCannedSearchQuery()}));
+            navigationRef.dispatch({type: 'PUSH', payload: {name: NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR}});
         });
     }, [selectedTab]);
 
@@ -126,21 +181,25 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
         if (selectedTab === NAVIGATION_TABS.SETTINGS) {
             return;
         }
+        startTimeRef.current = performance.now();
+        console.time('navigateToSettings');
+        console.time('TTI_Settings');
         interceptAnonymousUser(() => {
-            const settingsTabState = getSettingsTabStateFromSessionStorage();
-            if (settingsTabState && !shouldUseNarrowLayout) {
-                const stateRoute = findFocusedRoute(settingsTabState);
-                if (!subscriptionPlan && stateRoute?.name === SCREENS.SETTINGS.SUBSCRIPTION.ROOT) {
-                    Navigation.navigate(ROUTES.SETTINGS_PROFILE.route);
-                    return;
-                }
-                const lastVisitedSettingsRoute = getLastVisitedTabPath(settingsTabState);
-                if (lastVisitedSettingsRoute) {
-                    Navigation.navigate(lastVisitedSettingsRoute);
-                    return;
-                }
-            }
-            Navigation.navigate(ROUTES.SETTINGS);
+            navigationRef.dispatch({type: 'PUSH', payload: {name: NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}});
+            // const settingsTabState = getSettingsTabStateFromSessionStorage();
+            // if (settingsTabState && !shouldUseNarrowLayout) {
+            //     const stateRoute = findFocusedRoute(settingsTabState);
+            //     if (!subscriptionPlan && stateRoute?.name === SCREENS.SETTINGS.SUBSCRIPTION.ROOT) {
+            //         Navigation.navigate(ROUTES.SETTINGS_PROFILE.route);
+            //         return;
+            //     }
+            //     const lastVisitedSettingsRoute = getLastVisitedTabPath(settingsTabState);
+            //     if (lastVisitedSettingsRoute) {
+            //         Navigation.navigate(lastVisitedSettingsRoute);
+            //         return;
+            //     }
+            // }
+            // Navigation.navigate(ROUTES.SETTINGS);
         });
     }, [selectedTab, subscriptionPlan, shouldUseNarrowLayout]);
 
@@ -151,6 +210,9 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
      * If the user clicks on the settings tab while on this tab, this button should go back to the previous screen within the tab.
      */
     const showWorkspaces = useCallback(() => {
+        startTimeRef.current = performance.now();
+        console.time('showWorkspaces');
+        console.time('TTI_Workspaces');
         const rootState = navigationRef.getRootState();
         const topmostFullScreenRoute = rootState.routes.findLast((route) => isFullScreenName(route.name));
         if (!topmostFullScreenRoute) {
