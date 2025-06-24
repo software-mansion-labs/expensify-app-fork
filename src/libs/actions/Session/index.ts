@@ -66,6 +66,7 @@ import type Locale from '@src/types/onyx/Locale';
 import type Response from '@src/types/onyx/Response';
 import type Session from '@src/types/onyx/Session';
 import type {AutoAuthState} from '@src/types/onyx/Session';
+import Growl from '@libs/Growl';
 import clearCache from './clearCache';
 import updateSessionAuthTokens from './updateSessionAuthTokens';
 
@@ -623,7 +624,11 @@ function beginGoogleSignIn(token: string | null) {
 
     const params: BeginGoogleSignInParams = {token, preferredLocale};
 
-    API.write(WRITE_COMMANDS.SIGN_IN_WITH_GOOGLE, params, {optimisticData, successData, failureData});
+    API.write(WRITE_COMMANDS.SIGN_IN_WITH_GOOGLE, params, {optimisticData, successData, failureData}).then(response => {
+        Growl.error(`[Google Sign In] beginGoogleSignIn command result: ${JSON.stringify(response)}`);
+    }).catch((error) => {
+        Growl.error(`[Google Sign In] beginGoogleSignIn command failed: ${JSON.stringify(error)}`);
+    })
 }
 
 /**

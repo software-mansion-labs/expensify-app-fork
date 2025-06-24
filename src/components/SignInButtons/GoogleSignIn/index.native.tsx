@@ -6,6 +6,7 @@ import Log from '@libs/Log';
 import {beginGoogleSignIn} from '@userActions/Session';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
+import Growl from '@libs/Growl';
 import type {GoogleSignInProps} from '.';
 import type GoogleError from './types';
 
@@ -25,15 +26,19 @@ function googleSignInRequest() {
     GoogleSignin.signOut();
 
     GoogleSignin.signIn()
-        .then((response) => response.idToken)
+        .then((response) => {
+            return response.idToken
+        })
         .then((token) => {
             setNewDotSignInState(CONST.HYBRID_APP_SIGN_IN_STATE.STARTED);
+            Growl.error(`[Google Sign In] Google sign in started with token: ${token}`);
             beginGoogleSignIn(token);
         })
         .catch((error: GoogleError | undefined) => {
             // Handle unexpected error shape
             if (error?.code === undefined) {
                 Log.alert(`[Google Sign In] Google sign in failed: ${JSON.stringify(error)}`);
+                Growl.error(`[Google Sign In] Google sign in failed: ${JSON.stringify(error)}`);
                 return;
             }
             /** The logged code is useful for debugging any new errors that are not specifically handled. To decode, see:
@@ -42,8 +47,10 @@ function googleSignInRequest() {
             */
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
                 Log.info('[Google Sign In] Google Sign In cancelled');
+                Growl.error('[Google Sign In] Google Sign In cancelled');
             } else {
                 Log.alert(`[Google Sign In] Error Code: ${error.code}. ${error.message}`, {}, false);
+                Growl.error(`[Google Sign In] Error Code: ${error.code}. ${error.message}`);
             }
         });
 }
