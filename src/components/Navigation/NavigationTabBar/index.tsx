@@ -23,6 +23,7 @@ import clearSelectedText from '@libs/clearSelectedText/clearSelectedText';
 import getPlatform from '@libs/getPlatform';
 import interceptAnonymousUser from '@libs/interceptAnonymousUser';
 import {getPreservedNavigatorState} from '@libs/Navigation/AppNavigator/createSplitNavigator/usePreserveNavigatorState';
+import preloadFullScreenNavigators from '@libs/Navigation/AppNavigator/preloadFullscreenNavigators';
 import {getLastVisitedWorkspaceTabScreen, getWorkspacesTabStateFromSessionStorage} from '@libs/Navigation/helpers/lastVisitedTabPathUtils';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 import {getChatTabBrickRoad} from '@libs/WorkspacesSettingsUtils';
@@ -52,9 +53,7 @@ type TransitionTiming = {
     average: number;
 };
 
-type TransitionTimings = {
-    [key: string]: TransitionTiming;
-};
+type TransitionTimings = Record<string, TransitionTiming>;
 
 function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar = false}: NavigationTabBarProps) {
     const theme = useTheme();
@@ -77,6 +76,8 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
     const transitionTimingsRef = useRef<TransitionTimings>({});
     const startTimeRef = useRef<number>(0);
     const [lastTab, setLastTab] = useState<ValueOf<typeof NAVIGATION_TABS> | null>(null);
+    const [preloadCountdown, setPreloadCountdown] = useState<number | null>(null);
+    const preloadTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const StyleUtils = useStyleUtils();
 
@@ -186,20 +187,6 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
         console.time('TTI_Settings');
         interceptAnonymousUser(() => {
             navigationRef.dispatch({type: 'PUSH', payload: {name: NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}});
-            // const settingsTabState = getSettingsTabStateFromSessionStorage();
-            // if (settingsTabState && !shouldUseNarrowLayout) {
-            //     const stateRoute = findFocusedRoute(settingsTabState);
-            //     if (!subscriptionPlan && stateRoute?.name === SCREENS.SETTINGS.SUBSCRIPTION.ROOT) {
-            //         Navigation.navigate(ROUTES.SETTINGS_PROFILE.route);
-            //         return;
-            //     }
-            //     const lastVisitedSettingsRoute = getLastVisitedTabPath(settingsTabState);
-            //     if (lastVisitedSettingsRoute) {
-            //         Navigation.navigate(lastVisitedSettingsRoute);
-            //         return;
-            //     }
-            // }
-            // Navigation.navigate(ROUTES.SETTINGS);
         });
     }, [selectedTab, subscriptionPlan, shouldUseNarrowLayout]);
 
@@ -259,6 +246,36 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
             Navigation.navigate(ROUTES.WORKSPACES_LIST.route);
         });
     }, [shouldUseNarrowLayout]);
+
+    const handlePreloadPress = useCallback(() => {
+        // If a timer is already running, reset it
+        if (preloadTimerRef.current) {
+            clearInterval(preloadTimerRef.current);
+        }
+        setPreloadCountdown(5);
+        preloadTimerRef.current = setInterval(() => {
+            setPreloadCountdown((prev) => {
+                if (prev === null) {
+                    return null;
+                }
+                if (prev <= 1) {
+                    preloadFullScreenNavigators(selectedTab);
+                    clearInterval(preloadTimerRef.current!);
+                    preloadTimerRef.current = null;
+                    return null;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }, [selectedTab]);
+
+    useEffect(() => {
+        return () => {
+            if (preloadTimerRef.current) {
+                clearInterval(preloadTimerRef.current);
+            }
+        };
+    }, []);
 
     if (!shouldUseNarrowLayout) {
         return (
@@ -381,6 +398,23 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
                             >
                                 {translate('common.workspacesTabTitle')}
                             </Text>
+                        </PressableWithFeedback>
+                        <PressableWithFeedback
+                            onPress={handlePreloadPress}
+                            role={CONST.ROLE.BUTTON}
+                            accessibilityLabel={translate('common.preload')}
+                            style={styles.leftNavigationTabBarItem}
+                        >
+                            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                                <Icon
+                                    src={Expensicons.Bolt}
+                                    fill={theme.icon}
+                                    width={variables.iconBottomBar}
+                                    height={variables.iconBottomBar}
+                                />
+                                {preloadCountdown !== null && <Text style={[styles.textSmall, styles.textAlignCenter, styles.ml2]}>{preloadCountdown}s</Text>}
+                            </View>
+                            <Text style={[styles.textSmall, styles.textAlignCenter, styles.mt1Half, styles.textSupporting, styles.navigationTabBarLabel]}>{translate('common.preload')}</Text>
                         </PressableWithFeedback>
                         <NavigationTabBarAvatar
                             style={styles.leftNavigationTabBarItem}
@@ -505,6 +539,24 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
                     >
                         {translate('common.workspacesTabTitle')}
                     </Text>
+                </PressableWithFeedback>
+                <PressableWithFeedback
+                    onPress={handlePreloadPress}
+                    role={CONST.ROLE.BUTTON}
+                    accessibilityLabel={translate('common.preload')}
+                    wrapperStyle={styles.flex1}
+                    style={styles.navigationTabBarItem}
+                >
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <Icon
+                            src={Expensicons.Bolt}
+                            fill={theme.icon}
+                            width={variables.iconBottomBar}
+                            height={variables.iconBottomBar}
+                        />
+                        {preloadCountdown !== null && <Text style={[styles.textSmall, styles.textAlignCenter, styles.ml2]}>{preloadCountdown}s</Text>}
+                    </View>
+                    <Text style={[styles.textSmall, styles.textAlignCenter, styles.mt1Half, styles.textSupporting, styles.navigationTabBarLabel]}>{translate('common.preload')}</Text>
                 </PressableWithFeedback>
                 <NavigationTabBarAvatar
                     style={styles.navigationTabBarItem}
