@@ -16,6 +16,8 @@ import {getPreservedNavigatorState} from './createSplitNavigator/usePreserveNavi
  * This helps improve performance by preloading navigators that might be needed soon.
  */
 function usePreloadFullScreenNavigators(navigation: NavigationProp<RootNavigatorParamList>, fullscreenTabName: keyof typeof NAVIGATION_TABS) {
+    // @TODO: it is temporarily disabled for test purposes
+    return null;
     const state = navigation.getState();
     const {preloadedRoutes} = state;
 
