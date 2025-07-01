@@ -5,6 +5,7 @@ import {getSettingsTabStateFromSessionStorage} from '@libs/Navigation/helpers/la
 import {TAB_TO_FULLSCREEN} from '@libs/Navigation/linkingConfig/RELATIONS';
 import {navigationRef} from '@libs/Navigation/Navigation';
 import type {FullScreenName, SearchFullscreenNavigatorParamList} from '@libs/Navigation/types';
+import Performance from '@libs/Performance';
 import {buildCannedSearchQuery, buildSearchQueryJSON, buildSearchQueryString} from '@libs/SearchQueryUtils';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -20,7 +21,8 @@ function preloadFullScreenNavigators(fullscreenTabName: keyof typeof NAVIGATION_
     const state = navigationRef.getRootState();
     // preloadedRoutes is not typed on the navigation state, so we fallback to an empty array if it doesn't exist
     const preloadedRoutes = (state as {preloadedRoutes?: Array<{name: string}>}).preloadedRoutes ?? [];
-
+    Performance.markStart('PRELOAD');
+    console.time('PRELOAD');
     Object.values(NAVIGATION_TABS)
         .filter((tabName) => tabName !== fullscreenTabName && !preloadedRoutes.some((preloadedRoute) => TAB_TO_FULLSCREEN[tabName].includes(preloadedRoute.name as FullScreenName)))
         .forEach((tabName) => {
@@ -28,6 +30,7 @@ function preloadFullScreenNavigators(fullscreenTabName: keyof typeof NAVIGATION_
                 const lastWorkspacesSplitNavigator = state.routes.findLast((route: {name: string}) => route.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR);
 
                 if (!lastWorkspacesSplitNavigator) {
+                    console.time('PRELOAD_WORKSPACES_LIST');
                     navigationRef.current?.dispatch({
                         type: CONST.NAVIGATION.ACTION_TYPE.PRELOAD,
                         payload: {name: SCREENS.WORKSPACES_LIST, params: {}},
@@ -58,6 +61,7 @@ function preloadFullScreenNavigators(fullscreenTabName: keyof typeof NAVIGATION_
             if (tabName === NAVIGATION_TABS.SETTINGS) {
                 if (!getIsNarrowLayout()) {
                     const settingsTabState = getSettingsTabStateFromSessionStorage();
+                    console.time('PRELOAD_ACCOUNT');
                     navigationRef.current?.dispatch({
                         type: CONST.NAVIGATION.ACTION_TYPE.PRELOAD,
                         payload: {name: NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR, params: {screen: settingsTabState ? findFocusedRoute(settingsTabState)?.name : SCREENS.SETTINGS.PROFILE}},
@@ -65,6 +69,7 @@ function preloadFullScreenNavigators(fullscreenTabName: keyof typeof NAVIGATION_
                     });
                     return;
                 }
+
                 navigationRef.current?.dispatch({
                     type: CONST.NAVIGATION.ACTION_TYPE.PRELOAD,
                     payload: {name: NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR, params: {}},
@@ -93,14 +98,15 @@ function preloadFullScreenNavigators(fullscreenTabName: keyof typeof NAVIGATION_
                         return;
                     }
                 }
-
+                console.time('PRELOAD_SEARCH');
                 navigationRef.current?.dispatch({
                     type: CONST.NAVIGATION.ACTION_TYPE.PRELOAD,
                     payload: {name: NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR, params: {screen: SCREENS.SEARCH.ROOT, params: {q: buildCannedSearchQuery()}}},
                     target: state.key,
                 });
+                return;
             }
-
+            console.time('PRELOAD_INBOX');
             navigationRef.current?.dispatch({
                 type: CONST.NAVIGATION.ACTION_TYPE.PRELOAD,
                 payload: {name: NAVIGATORS.REPORTS_SPLIT_NAVIGATOR, params: {}},

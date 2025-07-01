@@ -168,7 +168,10 @@ function ProfilePage() {
                 scrollEnabled={scrollEnabled}
             >
                 <MenuItemGroup>
-                    <View style={[styles.flex1, shouldUseNarrowLayout ? styles.workspaceSectionMobile : styles.workspaceSection]}>
+                    <View
+                        style={[styles.flex1, shouldUseNarrowLayout ? styles.workspaceSectionMobile : styles.workspaceSection]}
+                        onLayout={() => console.timeEnd('PRELOAD_ACCOUNT')}
+                    >
                         <Section
                             title={translate('profilePage.publicSection.title')}
                             subtitle={translate('profilePage.publicSection.subtitle')}

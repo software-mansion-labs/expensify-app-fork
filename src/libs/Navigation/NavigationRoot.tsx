@@ -12,6 +12,7 @@ import Firebase from '@libs/Firebase';
 import {FSPage} from '@libs/Fullstory';
 import Log from '@libs/Log';
 import {hasCompletedGuidedSetupFlowSelector, wasInvitedToNewDotSelector} from '@libs/onboardingSelectors';
+import Performance from '@libs/Performance';
 import shouldOpenLastVisitedPath from '@libs/shouldOpenLastVisitedPath';
 import {getPathFromURL} from '@libs/Url';
 import {updateLastVisitedPath} from '@userActions/App';
@@ -237,6 +238,11 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady}: N
         // We want to clean saved scroll offsets for screens that aren't anymore in the state.
         cleanStaleScrollOffsets(state);
         cleanPreservedNavigatorStates(state);
+        console.log('state', state);
+        if (state.preloadedRoutes.length === 3) {
+            console.timeEnd('PRELOAD');
+            Performance.markEnd('PRELOAD');
+        }
     };
 
     return (

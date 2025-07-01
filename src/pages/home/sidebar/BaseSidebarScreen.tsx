@@ -36,7 +36,10 @@ function BaseSidebarScreen() {
                         shouldDisplaySearch={shouldUseNarrowLayout}
                         shouldDisplayHelpButton={shouldUseNarrowLayout}
                     />
-                    <View style={[styles.flex1]}>
+                    <View
+                        style={[styles.flex1]}
+                        onLayout={() => console.timeEnd('PRELOAD_INBOX')}
+                    >
                         <SidebarLinksData insets={insets} />
                     </View>
                     {shouldDisplayLHB && <NavigationTabBar selectedTab={NAVIGATION_TABS.HOME} />}

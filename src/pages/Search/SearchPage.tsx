@@ -576,7 +576,10 @@ function SearchPage({route}: SearchPageProps) {
                 shouldShowLink={false}
             >
                 {!!queryJSON && (
-                    <View style={styles.searchSplitContainer}>
+                    <View
+                        style={styles.searchSplitContainer}
+                        onLayout={() => console.timeEnd('PRELOAD_SEARCH')}
+                    >
                         <ScreenWrapper
                             testID={Search.displayName}
                             shouldShowOfflineIndicatorInWideScreen={!!shouldShowOfflineIndicator}

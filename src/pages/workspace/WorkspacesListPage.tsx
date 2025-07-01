@@ -451,7 +451,10 @@ function WorkspacesListPage({navigation}) {
                         contentContainerStyle={styles.pt2}
                         addBottomSafeAreaPadding
                     >
-                        <View style={[styles.flex1, isLessThanMediumScreen ? styles.workspaceSectionMobile : styles.workspaceSection]}>
+                        <View
+                            style={[styles.flex1, isLessThanMediumScreen ? styles.workspaceSectionMobile : styles.workspaceSection]}
+                            onLayout={() => console.timeEnd('PRELOAD_WORKSPACES_LIST')}
+                        >
                             <FeatureList
                                 menuItems={workspaceFeatures}
                                 title={translate('workspace.emptyWorkspace.title')}
@@ -480,7 +483,7 @@ function WorkspacesListPage({navigation}) {
             enableEdgeToEdgeBottomSafeAreaPadding={false}
             bottomContent={shouldUseNarrowLayout && <NavigationTabBar selectedTab={NAVIGATION_TABS.WORKSPACES} />}
         >
-            <View style={styles.flex1}>
+            <View style={styles.flex1} onLayout={() => console.timeEnd('PRELOAD_WORKSPACES_LIST')}>
                 <TopBar breadcrumbLabel={translate('common.workspaces')}>{!shouldUseNarrowLayout && <View style={[styles.pr2]}>{getHeaderButton()}</View>}</TopBar>
                 {shouldUseNarrowLayout && <View style={[styles.ph5, styles.pt2]}>{getHeaderButton()}</View>}
                 <FlatList
