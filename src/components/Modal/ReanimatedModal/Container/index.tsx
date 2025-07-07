@@ -10,8 +10,10 @@ import GestureHandler from './GestureHandler';
 
 function Container({
     style,
-    animationInTiming = 300,
-    animationOutTiming = 300,
+    animationInTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
+    animationOutTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_OUT,
+    animationInDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_IN,
+    animationOutDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_OUT,
     onCloseCallBack,
     onOpenCallBack,
     animationIn,
@@ -27,22 +29,26 @@ function Container({
     const Entering = useMemo(() => {
         const AnimationIn = new Keyframe(getModalInAnimation(animationIn));
 
-        return AnimationIn.duration(animationInTiming).withCallback(() => {
-            'worklet';
+        return AnimationIn.delay(animationInDelay)
+            .duration(animationInTiming)
+            .withCallback(() => {
+                'worklet';
 
-            runOnJS(onOpenCallBack)();
-        });
-    }, [animationIn, animationInTiming, onOpenCallBack]);
+                runOnJS(onOpenCallBack)();
+            });
+    }, [animationIn, animationInDelay, animationInTiming, onOpenCallBack]);
 
     const Exiting = useMemo(() => {
         const AnimationOut = new Keyframe(getModalOutAnimation(animationOut));
 
-        return AnimationOut.duration(animationOutTiming).withCallback(() => {
-            'worklet';
+        return AnimationOut.delay(animationOutDelay)
+            .duration(animationOutTiming)
+            .withCallback(() => {
+                'worklet';
 
-            runOnJS(onCloseCallBack)();
-        });
-    }, [animationOutTiming, onCloseCallBack, animationOut]);
+                runOnJS(onCloseCallBack)();
+            });
+    }, [animationOut, animationOutDelay, animationOutTiming, onCloseCallBack]);
 
     return (
         <View

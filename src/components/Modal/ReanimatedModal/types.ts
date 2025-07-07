@@ -78,6 +78,9 @@ type ReanimatedModalProps = ViewProps &
         /** Duration of the animation delay when modal appears */
         animationInDelay?: number;
 
+        /** Duration of the animation delay when modal disappears */
+        animationOutDelay?: number;
+
         /** Whether to avoid keyboard overlap during modal display */
         avoidKeyboard?: boolean;
 
@@ -150,6 +153,9 @@ type BackdropProps = {
 
     /** Delay set to animation on enter */
     animationInDelay?: number;
+
+    /** Delay set to animation on exit */
+    animationOutDelay?: number;
 
     /** Timing of animation on enter */
     animationInTiming?: number;

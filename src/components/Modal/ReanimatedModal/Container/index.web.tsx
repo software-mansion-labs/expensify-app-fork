@@ -1,12 +1,22 @@
 import React, {useEffect, useMemo, useRef} from 'react';
-import Animated, {Easing, Keyframe, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
+import Animated, {Easing, Keyframe, useAnimatedStyle, useSharedValue, withDelay, withTiming} from 'react-native-reanimated';
 import type ReanimatedModalProps from '@components/Modal/ReanimatedModal/types';
 import type {ContainerProps} from '@components/Modal/ReanimatedModal/types';
 import useThemeStyles from '@hooks/useThemeStyles';
+import CONST from '@src/CONST';
 
 const easing = Easing.bezier(0.76, 0.0, 0.24, 1.0).factory();
 
-function Container({style, animationInTiming = 300, animationOutTiming = 300, onOpenCallBack, onCloseCallBack, ...props}: ReanimatedModalProps & ContainerProps) {
+function Container({
+    style,
+    animationInTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
+    animationOutTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_OUT,
+    animationInDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
+    animationOutDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_OUT,
+    onOpenCallBack,
+    onCloseCallBack,
+    ...props
+}: ReanimatedModalProps & ContainerProps) {
     const styles = useThemeStyles();
     const onCloseCallbackRef = useRef(onCloseCallBack);
     const opacity = useSharedValue(0);
@@ -21,8 +31,8 @@ function Container({style, animationInTiming = 300, animationOutTiming = 300, on
             return;
         }
         isInitiated.set(true);
-        opacity.set(withTiming(1, {duration: animationInTiming, easing}, onOpenCallBack));
-    }, [animationInTiming, onOpenCallBack, opacity, isInitiated]);
+        opacity.set(withDelay(animationInDelay, withTiming(1, {duration: animationInTiming, easing}, onOpenCallBack)));
+    }, [animationInTiming, onOpenCallBack, opacity, isInitiated, animationInDelay]);
 
     const animatedStyles = useAnimatedStyle(() => ({opacity: opacity.get()}), [opacity]);
 
@@ -35,9 +45,13 @@ function Container({style, animationInTiming = 300, animationOutTiming = 300, on
             },
         });
 
-        // eslint-disable-next-line react-compiler/react-compiler
-        return FadeOut.duration(animationOutTiming).withCallback(() => onCloseCallbackRef.current());
-    }, [animationOutTiming]);
+        return (
+            FadeOut.delay(animationOutDelay)
+                .duration(animationOutTiming)
+                // eslint-disable-next-line react-compiler/react-compiler
+                .withCallback(() => onCloseCallbackRef.current())
+        );
+    }, [animationOutDelay, animationOutTiming]);
 
     return (
         <Animated.View

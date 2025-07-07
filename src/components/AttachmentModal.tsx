@@ -514,11 +514,12 @@ function AttachmentModal({
     );
 
     const submitRef = useRef<View | HTMLElement>(null);
-
+    // Added animation in delay for smoother experience
     return (
         <>
             <Modal
                 type={modalType}
+                animationInDelay={150}
                 onClose={isOverlayModalVisible ? closeConfirmModal : closeModal}
                 isVisible={isModalOpen}
                 onModalShow={() => {
@@ -560,6 +561,7 @@ function AttachmentModal({
                     return submitRef.current;
                 }}
                 shouldHandleNavigationBack={shouldHandleNavigationBack}
+                shouldUseReanimatedModal
             >
                 <GestureHandlerRootView style={styles.flex1}>
                     {shouldUseNarrowLayout && <HeaderGap />}

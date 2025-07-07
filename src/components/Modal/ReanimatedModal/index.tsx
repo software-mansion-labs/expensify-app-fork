@@ -14,11 +14,12 @@ import type {AnimationInType, AnimationOutType} from './types';
 
 function ReanimatedModal({
     testID,
-    animationInDelay,
-    animationInTiming = 300,
-    animationOutTiming = 300,
-    animationIn = 'fadeIn',
-    animationOut = 'fadeOut',
+    animationInDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_IN,
+    animationOutDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_OUT,
+    animationInTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
+    animationOutTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_OUT,
+    animationIn = CONST.MODAL.REANIMATED_MODAL_ANIMATION.DEFAULT_IN,
+    animationOut = CONST.MODAL.REANIMATED_MODAL_ANIMATION.DEFAULT_OUT,
     avoidKeyboard = false,
     coverScreen = true,
     children,
@@ -145,6 +146,7 @@ function ReanimatedModal({
             animationInTiming={animationInTiming}
             animationOutTiming={animationOutTiming}
             animationInDelay={animationInDelay}
+            animationOutDelay={animationOutDelay}
             onOpenCallBack={onOpenCallBack}
             onCloseCallBack={onCloseCallBack}
             animationIn={animationIn as AnimationInType}
@@ -167,6 +169,7 @@ function ReanimatedModal({
             animationInTiming={animationInTiming}
             animationOutTiming={animationOutTiming}
             animationInDelay={animationInDelay}
+            animationOutDelay={animationOutDelay}
             backdropOpacity={backdropOpacity}
         />
     );

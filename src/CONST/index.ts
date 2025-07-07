@@ -1453,6 +1453,16 @@ const CONST = {
             FAB_IN: 350,
             FAB_OUT: 200,
         },
+        REANIMATED_MODAL_ANIMATION: {
+            DEFAULT_IN: 'fadeIn',
+            DEFAULT_OUT: 'fadeOut',
+        },
+        REANIMATED_MODAL_ANIMATION_TIMING: {
+            DEFAULT_IN: 300,
+            DEFAULT_OUT: 300,
+            DEFAULT_DELAY_IN: 0,
+            DEFAULT_DELAY_OUT: 0,
+        },
     },
     TIMING: {
         GET_ORDERED_REPORT_IDS: 'get_ordered_report_ids',
