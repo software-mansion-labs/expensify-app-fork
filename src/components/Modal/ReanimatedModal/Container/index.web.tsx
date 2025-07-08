@@ -7,12 +7,14 @@ import CONST from '@src/CONST';
 
 const easing = Easing.bezier(0.76, 0.0, 0.24, 1.0).factory();
 
+const {DEFAULT_IN, DEFAULT_OUT, DEFAULT_DELAY_IN, DEFAULT_DELAY_OUT} = CONST.MODAL.REANIMATED_MODAL.ANIMATION_TIMING;
+
 function Container({
     style,
-    animationInTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
-    animationOutTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_OUT,
-    animationInDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
-    animationOutDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_OUT,
+    animationInTiming = DEFAULT_IN,
+    animationOutTiming = DEFAULT_OUT,
+    animationInDelay = DEFAULT_DELAY_IN,
+    animationOutDelay = DEFAULT_DELAY_OUT,
     onOpenCallBack,
     onCloseCallBack,
     ...props

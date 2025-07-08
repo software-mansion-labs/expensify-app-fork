@@ -12,14 +12,16 @@ import Container from './Container';
 import type ReanimatedModalProps from './types';
 import type {AnimationInType, AnimationOutType} from './types';
 
+const {ANIMATION_TIMING, ANIMATION} = CONST.MODAL.REANIMATED_MODAL;
+
 function ReanimatedModal({
     testID,
-    animationInDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_IN,
-    animationOutDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_OUT,
-    animationInTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
-    animationOutTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_OUT,
-    animationIn = CONST.MODAL.REANIMATED_MODAL_ANIMATION.DEFAULT_IN,
-    animationOut = CONST.MODAL.REANIMATED_MODAL_ANIMATION.DEFAULT_OUT,
+    animationInDelay = ANIMATION_TIMING.DEFAULT_DELAY_IN,
+    animationOutDelay = ANIMATION_TIMING.DEFAULT_DELAY_OUT,
+    animationInTiming = ANIMATION_TIMING.DEFAULT_IN,
+    animationOutTiming = ANIMATION_TIMING.DEFAULT_OUT,
+    animationIn = ANIMATION.DEFAULT_IN,
+    animationOut = ANIMATION.DEFAULT_OUT,
     avoidKeyboard = false,
     coverScreen = true,
     children,

@@ -9,12 +9,16 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 
+const {ANIMATION_TIMING, ANIMATION} = CONST.MODAL.REANIMATED_MODAL;
+
 function Backdrop({
     style,
     customBackdrop,
     onBackdropPress,
-    animationInTiming = CONST.MODAL.ANIMATION_TIMING.DEFAULT_IN,
-    animationOutTiming = CONST.MODAL.ANIMATION_TIMING.DEFAULT_OUT,
+    animationInDelay = ANIMATION_TIMING.DEFAULT_DELAY_IN,
+    animationOutDelay = ANIMATION_TIMING.DEFAULT_DELAY_OUT,
+    animationInTiming = ANIMATION_TIMING.DEFAULT_IN,
+    animationOutTiming = ANIMATION_TIMING.DEFAULT_OUT,
     isBackdropVisible,
     backdropOpacity = variables.overlayOpacity,
 }: BackdropProps) {
@@ -22,16 +26,16 @@ function Backdrop({
     const {translate} = useLocalize();
 
     const Entering = useMemo(() => {
-        const FadeIn = new Keyframe(getModalInAnimation('fadeIn'));
+        const FadeIn = new Keyframe(getModalInAnimation(ANIMATION.DEFAULT_IN));
 
-        return FadeIn.duration(animationInTiming);
-    }, [animationInTiming]);
+        return FadeIn.delay(animationInDelay).duration(animationInTiming);
+    }, [animationInDelay, animationInTiming]);
 
     const Exiting = useMemo(() => {
-        const FadeOut = new Keyframe(getModalOutAnimation('fadeOut'));
+        const FadeOut = new Keyframe(getModalOutAnimation(ANIMATION.DEFAULT_OUT));
 
-        return FadeOut.duration(animationOutTiming);
-    }, [animationOutTiming]);
+        return FadeOut.delay(animationOutDelay).duration(animationOutTiming);
+    }, [animationOutDelay, animationOutTiming]);
 
     const backdropStyle = useMemo(
         () => ({

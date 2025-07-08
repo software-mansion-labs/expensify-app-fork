@@ -8,12 +8,16 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
 import GestureHandler from './GestureHandler';
 
+const {ANIMATION_TIMING, GESTURES} = CONST.MODAL.REANIMATED_MODAL;
+
+const {DEFAULT_IN, DEFAULT_OUT, DEFAULT_DELAY_IN, DEFAULT_DELAY_OUT} = ANIMATION_TIMING;
+
 function Container({
     style,
-    animationInTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_IN,
-    animationOutTiming = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_OUT,
-    animationInDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_IN,
-    animationOutDelay = CONST.MODAL.REANIMATED_MODAL_ANIMATION_TIMING.DEFAULT_DELAY_OUT,
+    animationInTiming = DEFAULT_IN,
+    animationOutTiming = DEFAULT_OUT,
+    animationInDelay = DEFAULT_DELAY_IN,
+    animationOutDelay = DEFAULT_DELAY_OUT,
     onCloseCallBack,
     onOpenCallBack,
     animationIn,
@@ -21,7 +25,7 @@ function Container({
     type,
     onSwipeComplete,
     swipeDirection,
-    swipeThreshold = 100,
+    swipeThreshold = GESTURES.DEFAULT_SWIPE_THRESHOLD,
     ...props
 }: Partial<ReanimatedModalProps> & ContainerProps) {
     const styles = useThemeStyles();
