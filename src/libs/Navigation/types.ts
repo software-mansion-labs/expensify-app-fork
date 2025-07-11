@@ -19,7 +19,7 @@ import type {AttachmentModalScreenParams} from '@pages/media/AttachmentModalScre
 import type CONST from '@src/CONST';
 import type {Country, IOUAction, IOUType} from '@src/CONST';
 import type NAVIGATORS from '@src/NAVIGATORS';
-import type {Route as ExpensifyRoute, HybridAppRoute, Route as Routes} from '@src/ROUTES';
+import type {Route as ExpensifyRoute, Route as Routes} from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import type EXIT_SURVEY_REASON_FORM_INPUT_IDS from '@src/types/form/ExitSurveyReasonForm';
 import type {CompanyCardFeed} from '@src/types/onyx';
@@ -1010,6 +1010,9 @@ type SettingsNavigatorParamList = {
     [SCREENS.WORKSPACE.COMPANY_CARDS_SETTINGS_FEED_NAME]: {
         policyID: string;
     };
+    [SCREENS.WORKSPACE.COMPANY_CARDS_SETTINGS_STATEMENT_CLOSE_DATE]: {
+        policyID: string;
+    };
     [SCREENS.WORKSPACE.EXPENSIFY_CARD_DETAILS]: {
         policyID: string;
         cardID: string;
@@ -1975,7 +1978,7 @@ type SharedScreensParamList = {
         shortLivedToken?: string;
         authTokenType?: ValueOf<typeof CONST.AUTH_TOKEN_TYPES>;
         // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-        exitTo?: Routes | HybridAppRoute;
+        exitTo?: Routes;
         shouldForceLogin: string;
         domain?: Routes;
         delegatorEmail?: string;
@@ -1984,7 +1987,7 @@ type SharedScreensParamList = {
         accountID: string;
         validateCode: string;
         // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-        exitTo?: Routes | HybridAppRoute;
+        exitTo?: Routes;
     };
 };
 
