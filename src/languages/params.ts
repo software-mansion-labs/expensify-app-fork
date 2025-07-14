@@ -137,6 +137,19 @@ type SettleExpensifyCardParams = {
     formattedAmount: string;
 };
 
+type WorkspacesListRouteParams = {
+    workspacesListRoute: string;
+};
+
+type BusinessBankAccountParams = {
+    amount?: string;
+    last4Digits?: string;
+};
+
+type WorkspaceRouteParams = {
+    workspaceRoute: string;
+};
+
 type RequestAmountParams = {amount: string};
 
 type RequestedAmountMessageParams = {formattedAmount: string; comment?: string};
@@ -197,6 +210,8 @@ type TransferParams = {amount: string};
 
 type InstantSummaryParams = {rate: string; minAmount: string};
 
+type BankAccountLastFourParams = {lastFour: string};
+
 type NotYouParams = {user: string};
 
 type DateShouldBeBeforeParams = {dateString: string};
@@ -218,8 +233,6 @@ type UntilTimeParams = {time: string};
 type StepCounterParams = {step: number; total?: number; text?: string};
 
 type UserIsAlreadyMemberParams = {login: string; name: string};
-
-type GoToRoomParams = {roomName: string};
 
 type NewWorkspaceNameParams = {userName: string; workspaceNumber?: number};
 
@@ -441,7 +454,7 @@ type ExportAgainModalDescriptionParams = {
     connectionName: ConnectionName;
 };
 
-type IntegrationSyncFailedParams = {label: string; errorMessage: string; linkText?: string; linkURL?: string};
+type IntegrationSyncFailedParams = {label: string; errorMessage: string; linkText?: string; linkURL?: string; workspaceAccountingLink?: string};
 
 type AddEmployeeParams = {email: string; role: string};
 
@@ -675,6 +688,10 @@ type FileLimitParams = {
     fileLimit: number;
 };
 
+type FileTypeParams = {
+    fileType: string;
+};
+
 type CompanyCardBankName = {
     bankName: string;
 };
@@ -775,8 +792,17 @@ type ContactMethodsRouteParams = {
     contactMethodsRoute: string;
 };
 
+type ContactMethodParams = {
+    contactMethodRoute: string;
+};
+
+type BusinessTaxIDParams = {
+    country: string;
+};
+
 export type {
     ContactMethodsRouteParams,
+    ContactMethodParams,
     SplitExpenseEditTitleParams,
     SplitExpenseSubtitleParams,
     TotalAmountGreaterOrLessThanOriginalParams,
@@ -795,6 +821,7 @@ export type {
     AutoPayApprovedReportsLimitErrorParams,
     FeatureNameParams,
     FileLimitParams,
+    FileTypeParams,
     SpreadSheetColumnParams,
     SpreadFieldNameParams,
     AssignedCardParams,
@@ -869,7 +896,6 @@ export type {
     EnterMagicCodeParams,
     FormattedMaxLengthParams,
     GoBackMessageParams,
-    GoToRoomParams,
     SubmittedToVacationDelegateParams,
     HeldRequestParams,
     InstantSummaryParams,
@@ -1027,6 +1053,7 @@ export type {
     SettlementDateParams,
     PolicyExpenseChatNameParams,
     YourPlanPriceValueParams,
+    BusinessBankAccountParams,
     NeedCategoryForExportToIntegrationParams,
     UpdatedPolicyAuditRateParams,
     UpdatedPolicyManualApprovalThresholdParams,
@@ -1040,6 +1067,7 @@ export type {
     UpdatedPolicyCategoryExpenseLimitTypeParams,
     UpdatedPolicyCategoryMaxAmountNoReceiptParams,
     SubscriptionSettingsSummaryParams,
+    BankAccountLastFourParams,
     ReviewParams,
     CreateExpensesParams,
     CurrencyInputDisabledTextParams,
@@ -1048,4 +1076,7 @@ export type {
     AirlineParams,
     RailTicketParams,
     TravelTypeParams,
+    WorkspacesListRouteParams,
+    WorkspaceRouteParams,
+    BusinessTaxIDParams,
 };
