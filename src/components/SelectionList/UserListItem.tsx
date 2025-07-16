@@ -4,8 +4,8 @@ import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import {FallbackAvatar} from '@components/Icon/Expensicons';
-import MultipleAvatars from '@components/MultipleAvatars';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
+import ReportAvatar from '@components/ReportAvatar';
 import Text from '@components/Text';
 import TextWithTooltip from '@components/TextWithTooltip';
 import useLocalize from '@hooks/useLocalize';
@@ -109,12 +109,10 @@ function UserListItem<TItem extends ListItem>({
                         </PressableWithFeedback>
                     )}
                     {!!item.icons && (
-                        <MultipleAvatars
-                            subscript={{
-                                shouldShow: !!item.shouldShowSubscript,
-                                fallbackIcon,
-                                borderColor: hovered && !isFocused ? hoveredBackgroundColor : subscriptAvatarBorderColor,
-                            }}
+                        <ReportAvatar
+                            shouldShowSubscript={!!item.shouldShowSubscript}
+                            subscriptFallbackIcon={fallbackIcon}
+                            subscriptBorderColor={hovered && !isFocused ? hoveredBackgroundColor : subscriptAvatarBorderColor}
                             icons={item.icons}
                             shouldShowTooltip={showTooltip}
                             secondAvatarStyle={[

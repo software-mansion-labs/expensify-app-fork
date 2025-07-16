@@ -77,7 +77,7 @@ describe('useReportAvatarDetails', () => {
             useReportAvatarDetails({
                 action: actionR14932,
                 iouReport: iouReportR14932,
-                report: mockedDMChatRoom,
+                chatReport: mockedDMChatRoom,
                 ...policiesMock,
             }),
         );
@@ -92,7 +92,7 @@ describe('useReportAvatarDetails', () => {
             useReportAvatarDetails({
                 action: {...validAction, childMoneyRequestCount: 0},
                 iouReport: iouReportR14932,
-                report: mockedDMChatRoom,
+                chatReport: mockedDMChatRoom,
                 ...policiesMock,
             }),
         );
@@ -119,7 +119,7 @@ describe('useReportAvatarDetails', () => {
             useReportAvatarDetails({
                 action: validAction,
                 iouReport: iouReportR14932,
-                report: mockedDMChatRoom,
+                chatReport: mockedDMChatRoom,
                 ...policiesMock,
             }),
         );
@@ -142,7 +142,7 @@ describe('useReportAvatarDetails', () => {
             useReportAvatarDetails({
                 action: validAction,
                 iouReport: iouReportR14932,
-                report: mockedDMChatRoom,
+                chatReport: mockedDMChatRoom,
                 ...policiesMock,
             }),
         );
@@ -157,7 +157,7 @@ describe('useReportAvatarDetails', () => {
             useReportAvatarDetails({
                 action: validAction,
                 iouReport: iouReportR14932,
-                report: mockedDMChatRoom,
+                chatReport: mockedDMChatRoom,
                 ...policiesMock,
             }),
         );

@@ -79,6 +79,7 @@ import SCREENS from '@src/SCREENS';
 import type {Report, ReportAction} from '@src/types/onyx';
 import type {Icon as IconType} from '@src/types/onyx/OnyxCommon';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import ReportAvatar from "@components/ReportAvatar";
 
 type HeaderViewProps = {
     /** Toggles the navigationMenu open and closed */
@@ -242,7 +243,7 @@ function HeaderView({report, parentReportAction, onNavigationMenuButtonClicked, 
     );
 
     const multipleAvatars = (
-        <MultipleAvatars
+        <ReportAvatar
             icons={icons}
             subscript={{
                 fallbackIcon,

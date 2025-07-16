@@ -2,6 +2,7 @@ import {deepEqual} from 'fast-equals';
 import React, {useEffect, useRef, useState} from 'react';
 import type {StyleProp, TextStyle, ViewStyle} from 'react-native';
 import {InteractionManager, StyleSheet, View} from 'react-native';
+import ReportAvatar from '@components/ReportAvatar';
 import useLocalize from '@hooks/useLocalize';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
@@ -16,7 +17,6 @@ import Hoverable from './Hoverable';
 import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
 import MoneyRequestAmountInput from './MoneyRequestAmountInput';
-import MultipleAvatars from './MultipleAvatars';
 import OfflineWithFeedback from './OfflineWithFeedback';
 import PressableWithFeedback from './Pressable/PressableWithFeedback';
 import SelectCircle from './SelectCircle';
@@ -207,11 +207,9 @@ function OptionRow({
                         <View style={sidebarInnerRowStyle}>
                             <View style={[styles.flexRow, styles.alignItemsCenter]}>
                                 {!!option.icons?.length && !!firstIcon && (
-                                    <MultipleAvatars
-                                        subscript={{
-                                            shouldShow: !!option.shouldShowSubscript,
-                                            borderColor: hovered && !optionIsFocused ? hoveredBackgroundColor : subscriptColor,
-                                        }}
+                                    <ReportAvatar
+                                        subscriptBorderColor={hovered && !optionIsFocused ? hoveredBackgroundColor : subscriptColor}
+                                        shouldShowSubscript={!!option.shouldShowSubscript}
                                         icons={option.icons}
                                         size={CONST.AVATAR_SIZE.DEFAULT}
                                         secondAvatarStyle={[StyleUtils.getBackgroundAndBorderStyle(hovered && !optionIsFocused ? hoveredBackgroundColor : subscriptColor)]}

@@ -2,9 +2,9 @@ import {Str} from 'expensify-common';
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
 import {FallbackAvatar} from '@components/Icon/Expensicons';
-import MultipleAvatars from '@components/MultipleAvatars';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import {useProductTrainingContext} from '@components/ProductTrainingContext';
+import ReportAvatar from '@components/ReportAvatar';
 import SelectCircle from '@components/SelectCircle';
 import Text from '@components/Text';
 import TextWithTooltip from '@components/TextWithTooltip';
@@ -111,12 +111,10 @@ function InviteMemberListItem<TItem extends ListItem>({
                 >
                     <View style={[styles.flexRow, styles.alignItemsCenter, styles.flex1]}>
                         {!!item.icons && (
-                            <MultipleAvatars
-                                subscript={{
-                                    fallbackIcon,
-                                    shouldShow: !!item.shouldShowSubscript,
-                                    borderColor: hovered && !isFocused ? hoveredBackgroundColor : subscriptAvatarBorderColor,
-                                }}
+                            <ReportAvatar
+                                subscriptFallbackIcon={fallbackIcon}
+                                shouldShowSubscript={!!item.shouldShowSubscript}
+                                subscriptBorderColor={hovered && !isFocused ? hoveredBackgroundColor : subscriptAvatarBorderColor}
                                 icons={item.icons}
                                 shouldShowTooltip={showTooltip}
                                 secondAvatarStyle={[

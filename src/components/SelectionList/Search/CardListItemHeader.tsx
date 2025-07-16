@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import {View} from 'react-native';
 import Checkbox from '@components/Checkbox';
-import MultipleAvatars from '@components/MultipleAvatars';
+import ReportAvatar from '@components/ReportAvatar';
 import type {ListItem, TransactionCardGroupListItemType} from '@components/SelectionList/types';
 import type {SubIcon} from '@components/SubscriptAvatar';
 import TextWithTooltip from '@components/TextWithTooltip';
@@ -79,14 +79,12 @@ function CardListItemHeader<TItem extends ListItem>({card: cardItem, onCheckboxP
                         />
                     )}
                     <View style={[styles.flexRow, styles.gap3]}>
-                        <MultipleAvatars
+                        <ReportAvatar
                             icons={[memberAvatar]}
-                            subscript={{
-                                shouldShow: true,
-                                subIcon: cardIcon,
-                                borderColor: backgroundColor,
-                                noMargin: true,
-                            }}
+                            shouldShowSubscript
+                            subIcon={cardIcon}
+                            subscriptBorderColor={backgroundColor}
+                            subscriptNoMargin
                         />
                         <View style={[styles.gapHalf]}>
                             <TextWithTooltip

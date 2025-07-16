@@ -34,11 +34,11 @@ import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
 import * as defaultWorkspaceAvatars from './Icon/WorkspaceDefaultAvatars';
 import {MenuItemGroupContext} from './MenuItemGroup';
-import MultipleAvatars from './MultipleAvatars';
 import PlaidCardFeedIcon from './PlaidCardFeedIcon';
 import type {PressableRef} from './Pressable/GenericPressable/types';
 import PressableWithSecondaryInteraction from './PressableWithSecondaryInteraction';
 import RenderHTML from './RenderHTML';
+import ReportAvatar from './ReportAvatar';
 import SelectCircle from './SelectCircle';
 import Text from './Text';
 import EducationalTooltip from './Tooltip/EducationalTooltip';
@@ -717,11 +717,9 @@ function MenuItem(
                                                 )}
                                                 <View style={[styles.flexRow, styles.pointerEventsAuto, disabled && !shouldUseDefaultCursorWhenDisabled && styles.cursorDisabled]}>
                                                     {shouldShowAvatar && (
-                                                        <MultipleAvatars
-                                                            subscript={{
-                                                                shouldShow: shouldShowSubscriptAvatar,
-                                                                borderColor: getSubscriptAvatarBackgroundColor(isHovered, pressed, theme.hoverComponentBG, theme.buttonHoveredBG),
-                                                            }}
+                                                        <ReportAvatar
+                                                            shouldShowSubscript={shouldShowSubscriptAvatar}
+                                                            subscriptBorderColor={getSubscriptAvatarBackgroundColor(isHovered, pressed, theme.hoverComponentBG, theme.buttonHoveredBG)}
                                                             isHovered={isHovered}
                                                             isPressed={pressed}
                                                             icons={icon as IconType[]}
@@ -907,11 +905,9 @@ function MenuItem(
                                                 )}
                                                 {floatRightAvatars?.length > 0 && !!firstRightIcon && (
                                                     <View style={[styles.alignItemsCenter, styles.justifyContentCenter, brickRoadIndicator ? styles.mr2 : styles.mrn2]}>
-                                                        <MultipleAvatars
-                                                            subscript={{
-                                                                shouldShow: shouldShowSubscriptRightAvatar,
-                                                                borderColor: isHovered ? theme.activeComponentBG : theme.componentBG,
-                                                            }}
+                                                        <ReportAvatar
+                                                            shouldShowSubscript={shouldShowSubscriptRightAvatar}
+                                                            subscriptBorderColor={isHovered ? theme.activeComponentBG : theme.componentBG}
                                                             isHovered={isHovered}
                                                             isPressed={pressed}
                                                             icons={shouldShowSubscriptRightAvatar ? [firstRightIcon, ...floatRightAvatars.slice(1)] : floatRightAvatars}

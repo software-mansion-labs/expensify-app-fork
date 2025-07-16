@@ -1,10 +1,10 @@
-import React, {useCallback, useEffect, useMemo, useRef} from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import {View} from 'react-native';
 import type {ColorValue, TextStyle} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
+import ReportAvatar from '@components/ReportAvatar';
 import useOnyx from '@hooks/useOnyx';
-import type {ReportAvatarDetails} from '@hooks/useReportAvatarDetails';
 import useReportIsArchived from '@hooks/useReportIsArchived';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
@@ -37,7 +37,6 @@ import {getButtonRole} from './Button/utils';
 import DisplayNames from './DisplayNames';
 import type DisplayNamesProps from './DisplayNames/types';
 import {FallbackAvatar} from './Icon/Expensicons';
-import MultipleAvatars from './MultipleAvatars';
 import ParentNavigationSubtitle from './ParentNavigationSubtitle';
 import PressableWithoutFeedback from './Pressable/PressableWithoutFeedback';
 import type {TransactionListItemType} from './SelectionList/types';
@@ -73,9 +72,6 @@ type AvatarWithDisplayNameProps = {
 
     /** Color of the secondary avatar border, usually should match the container background */
     avatarBorderColor?: ColorValue;
-
-    /** If we want to override the default avatar behavior and set a single avatar, we should pass this prop. */
-    singleAvatarDetails?: ReportAvatarDetails;
 };
 
 const fallbackIcon: Icon = {
@@ -170,7 +166,6 @@ function AvatarWithDisplayName({
     shouldEnableAvatarNavigation = true,
     shouldUseCustomSearchTitleName = false,
     transactions = [],
-    singleAvatarDetails,
     openParentReportInCurrentTab = false,
     avatarBorderColor: avatarBorderColorProp,
 }: AvatarWithDisplayNameProps) {
@@ -243,31 +238,16 @@ function AvatarWithDisplayName({
 
     const shouldUseFullTitle = isMoneyRequestOrReport || isAnonymous;
 
-    const multipleAvatarDetails = useMemo(
-        () => ({
-            singleReportAvatar: {
-                shouldShow: !!singleAvatarDetails?.reportPreviewSenderID && !singleAvatarDetails.shouldDisplayAllActors && !shouldShowSubscriptAvatar,
-                personalDetails,
-                reportPreviewDetails: singleAvatarDetails,
-                containerStyles: [styles.actionAvatar, styles.mr3],
-                actorAccountID: singleAvatarDetails?.reportPreviewSenderID,
-            },
-            subscript: {
-                shouldShow: shouldShowSubscriptAvatar,
-                borderColor: avatarBorderColor,
-                fallbackIcon,
-            },
-        }),
-        [avatarBorderColor, personalDetails, shouldShowSubscriptAvatar, singleAvatarDetails, styles],
-    );
-
     const multipleAvatars = (
-        <MultipleAvatars
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...multipleAvatarDetails}
+        <ReportAvatar
+            singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
+            shouldShowSubscript={shouldShowSubscriptAvatar}
+            subscriptBorderColor={avatarBorderColor}
+            subscriptFallbackIcon={fallbackIcon}
             icons={icons}
             size={size}
             secondAvatarStyle={[StyleUtils.getBackgroundAndBorderStyle(avatarBorderColor)]}
+            iouReportID={report?.reportID}
         />
     );
 
