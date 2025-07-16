@@ -85,7 +85,7 @@ function getIconDetails({
 
     const isTripRoom = isTripRoomReportUtils(chatReport);
     // We want to display only the sender's avatar next to the report preview if it only contains one person's expenses.
-    console.log(action, isReportPreviewAction, isTripRoom, isPolicyExpenseChat(chatReport), reportPreviewSenderID);
+    // console.log(action, isReportPreviewAction, isTripRoom, isPolicyExpenseChat(chatReport), reportPreviewSenderID);
     const displayAllActors = isReportPreviewAction && !isTripRoom && !isPolicyExpenseChat(chatReport) && !reportPreviewSenderID;
     const isInvoiceReport = isInvoiceReportUtils(iouReport ?? null);
     const isWorkspaceActor = isInvoiceReport || (isPolicyExpenseChat(chatReport) && (!actorAccountID || displayAllActors));
@@ -146,7 +146,7 @@ function getIconDetails({
     };
 
     const getSecondaryAvatar = () => {
-        const defaultAvatar = {name: '', source: '', type: CONST.ICON_TYPE_AVATAR};
+        const defaultAvatar = {name: '', source: '', type: CONST.ICON_TYPE_AVATAR, id: 0};
 
         // If this is a report preview, display names and avatars of both people involved
         if (displayAllActors) {
@@ -196,10 +196,13 @@ function getIconDetails({
     };
 
     const {avatar: primaryAvatar, actorHint} = getPrimaryAvatar();
+    const secondaryAvatar = getSecondaryAvatar();
+
+    const icons = getIcons(chatReport ?? iouReport, personalDetails);
 
     return {
-        primaryAvatar,
-        secondaryAvatar: getSecondaryAvatar(),
+        primaryAvatar: !!iouReport && !!primaryAvatar.id ? primaryAvatar : (icons.at(0) ?? primaryAvatar),
+        secondaryAvatar: !!iouReport && !!secondaryAvatar?.id ? secondaryAvatar : (icons.at(1) ?? secondaryAvatar),
         shouldDisplayAllActors: displayAllActors,
         displayName: primaryAvatar.name,
         isWorkspaceActor,
@@ -236,7 +239,7 @@ function useReportAvatarDetails({iouReport, chatReport}: {iouReport: OnyxEntry<R
 
     const [transactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION, {
         canBeMissing: true,
-        selector: (allTransactions) => selectAllTransactionsForReport(allTransactions, action?.childReportID, iouActions ?? []),
+        selector: (allTransactions) => selectAllTransactionsForReport(allTransactions, action?.childReportID ?? iouReport?.reportID, iouActions ?? []),
     });
 
     const [splits] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${chatReport?.reportID}`, {
@@ -249,9 +252,6 @@ function useReportAvatarDetails({iouReport, chatReport}: {iouReport: OnyxEntry<R
 
     const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
     const actorAccountID = getReportActionActorAccountID(action, iouReport, chatReport, delegatePersonalDetails);
-
-    // console.log("INSIDE", action, actorAccountID, iouReport, chatReport, delegatePersonalDetails);
-
 
     if (action?.actionName !== CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW) {
         const reportPreviewSenderID = undefined;

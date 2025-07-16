@@ -10,11 +10,11 @@ import DisplayNames from '@components/DisplayNames';
 import Icon from '@components/Icon';
 import {BackArrow, DotIndicator, FallbackAvatar} from '@components/Icon/Expensicons';
 import LoadingBar from '@components/LoadingBar';
-import MultipleAvatars from '@components/MultipleAvatars';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import OnboardingHelpDropdownButton from '@components/OnboardingHelpDropdownButton';
 import ParentNavigationSubtitle from '@components/ParentNavigationSubtitle';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
+import ReportAvatar from '@components/ReportAvatar';
 import ReportHeaderSkeletonView from '@components/ReportHeaderSkeletonView';
 import SearchButton from '@components/Search/SearchRouter/SearchButton';
 import HelpButton from '@components/SidePanel/HelpComponents/HelpButton';
@@ -40,7 +40,6 @@ import {
     canUserPerformWriteAction,
     getChatRoomSubtitle,
     getDisplayNamesWithTooltips,
-    getIcons,
     getParentNavigationSubtitle,
     getParticipantsAccountIDsForDisplay,
     getPolicyDescriptionText,
@@ -79,7 +78,6 @@ import SCREENS from '@src/SCREENS';
 import type {Report, ReportAction} from '@src/types/onyx';
 import type {Icon as IconType} from '@src/types/onyx/OnyxCommon';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import ReportAvatar from "@components/ReportAvatar";
 
 type HeaderViewProps = {
     /** Toggles the navigationMenu open and closed */
@@ -215,7 +213,6 @@ function HeaderView({report, parentReportAction, onNavigationMenuButtonClicked, 
     const isArchived = isArchivedReport(reportNameValuePairs);
     const shouldShowSubscript = shouldReportShowSubscript(report, isArchived);
     const defaultSubscriptSize = isExpenseRequest(report) ? CONST.AVATAR_SIZE.SMALL_NORMAL : CONST.AVATAR_SIZE.DEFAULT;
-    const icons = getIcons(reportHeaderData, personalDetails, null, '', -1, policy, invoiceReceiverPolicy);
     const brickRoadIndicator = hasReportNameError(report) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : '';
     const shouldDisableDetailPage = shouldDisableDetailPageReportUtils(report);
     const shouldUseGroupTitle = isGroupChat && (!!report?.reportName || !isMultipleParticipant);
@@ -244,12 +241,10 @@ function HeaderView({report, parentReportAction, onNavigationMenuButtonClicked, 
 
     const multipleAvatars = (
         <ReportAvatar
-            icons={icons}
-            subscript={{
-                fallbackIcon,
-                shouldShow: shouldShowSubscript,
-            }}
+            reportID={report?.reportID}
+            subscriptFallbackIcon={fallbackIcon}
             size={shouldShowSubscript ? defaultSubscriptSize : undefined}
+            singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
         />
     );
 

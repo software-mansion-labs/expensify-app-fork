@@ -110,16 +110,16 @@ function UserListItem<TItem extends ListItem>({
                     )}
                     {!!item.icons && (
                         <ReportAvatar
-                            shouldShowSubscript={!!item.shouldShowSubscript}
                             subscriptFallbackIcon={fallbackIcon}
                             subscriptBorderColor={hovered && !isFocused ? hoveredBackgroundColor : subscriptAvatarBorderColor}
-                            icons={item.icons}
                             shouldShowTooltip={showTooltip}
                             secondAvatarStyle={[
                                 StyleUtils.getBackgroundAndBorderStyle(theme.sidebar),
                                 isFocused ? StyleUtils.getBackgroundAndBorderStyle(focusedBackgroundColor) : undefined,
                                 hovered && !isFocused ? StyleUtils.getBackgroundAndBorderStyle(hoveredBackgroundColor) : undefined,
                             ]}
+                            reportID={item.reportID}
+                            singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
                         />
                     )}
                     <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch, styles.optionRow]}>

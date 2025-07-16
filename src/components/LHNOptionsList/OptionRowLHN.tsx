@@ -261,9 +261,7 @@ function OptionRowLHN({
                                     <View style={[styles.flexRow, styles.alignItemsCenter]}>
                                         {!!optionItem.icons?.length && !!firstIcon && (
                                             <ReportAvatar
-                                                shouldShowSubscript={!!optionItem.shouldShowSubscript}
                                                 subscriptBorderColor={hovered && !isOptionFocused ? hoveredBackgroundColor : subscriptAvatarBorderColor}
-                                                icons={optionItem.icons}
                                                 isFocusMode={isInFocusMode}
                                                 size={isInFocusMode ? CONST.AVATAR_SIZE.SMALL : CONST.AVATAR_SIZE.DEFAULT}
                                                 secondAvatarStyle={[
@@ -273,7 +271,7 @@ function OptionRowLHN({
                                                 ]}
                                                 singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
                                                 shouldShowTooltip={shouldOptionShowTooltip(optionItem)}
-                                                reportID={optionItem?.iouReportID ?? optionItem?.chatReportID}
+                                                reportID={optionItem?.reportID}
                                             />
                                         )}
                                         <View style={contentContainerStyles}>

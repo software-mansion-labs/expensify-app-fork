@@ -89,7 +89,6 @@ import {
     navigateBackOnDeleteTransaction,
     navigateToPrivateNotes,
     shouldDisableRename as shouldDisableRenameUtil,
-    shouldReportShowSubscript,
     shouldUseFullTitleToDisplay,
 } from '@libs/ReportUtils';
 import StringUtils from '@libs/StringUtils';
@@ -222,7 +221,6 @@ function ReportDetailsPage({policy, report, route, reportMetadata}: ReportDetail
     const participants = useMemo(() => {
         return getParticipantsList(report, personalDetails, shouldOpenRoomMembersPage);
     }, [report, personalDetails, shouldOpenRoomMembersPage]);
-    const shouldShowSubscriptAvatar = shouldReportShowSubscript(report, isReportArchived);
 
     let caseID: CaseID;
     if (isMoneyRequestReport || isInvoiceReport) {
@@ -577,11 +575,9 @@ function ReportDetailsPage({policy, report, route, reportMetadata}: ReportDetail
                     <ReportAvatar
                         subscriptNoMargin
                         subscriptAvatarSize={CONST.AVATAR_SIZE.HEADER}
-                        shouldShowSubscript={shouldShowSubscriptAvatar}
                         singleAvatarSize={CONST.AVATAR_SIZE.X_LARGE}
-                        icons={icons}
                         size={CONST.AVATAR_SIZE.LARGE}
-                        iouReportID={moneyRequestReport?.iouReportID}
+                        reportID={moneyRequestReport?.reportID ?? report?.reportID}
                     />
                 </View>
             );
@@ -622,7 +618,6 @@ function ReportDetailsPage({policy, report, route, reportMetadata}: ReportDetail
         styles.mt6,
         styles.w100,
         styles.mb3,
-        shouldShowSubscriptAvatar,
         moneyRequestReport,
     ]);
 

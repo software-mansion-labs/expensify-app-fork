@@ -3,7 +3,6 @@ import {View} from 'react-native';
 import Checkbox from '@components/Checkbox';
 import ReportAvatar from '@components/ReportAvatar';
 import type {ListItem, TransactionCardGroupListItemType} from '@components/SelectionList/types';
-import type {SubIcon} from '@components/SubscriptAvatar';
 import TextWithTooltip from '@components/TextWithTooltip';
 import useLocalize from '@hooks/useLocalize';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -14,9 +13,7 @@ import {getCardFeedIcon} from '@libs/CardUtils';
 import {formatPhoneNumber} from '@libs/LocalePhoneNumber';
 import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 import variables from '@styles/variables';
-import CONST from '@src/CONST';
 import type {CompanyCardFeed} from '@src/types/onyx/CardFeeds';
-import type {Icon} from '@src/types/onyx/OnyxCommon';
 
 type CardListItemHeaderProps<TItem extends ListItem> = {
     /** The card currently being looked at */
@@ -44,22 +41,13 @@ function CardListItemHeader<TItem extends ListItem>({card: cardItem, onCheckboxP
 
     const formattedDisplayName = useMemo(() => formatPhoneNumber(getDisplayNameOrDefault(cardItem)), [cardItem]);
 
-    const [memberAvatar, cardIcon] = useMemo(() => {
-        const avatar: Icon = {
-            source: cardItem.avatar,
-            type: CONST.ICON_TYPE_AVATAR,
-            name: formattedDisplayName,
-            id: cardItem.accountID,
-        };
-
-        const icon: SubIcon = {
+    const cardIcon = useMemo(() => {
+        return {
             source: getCardFeedIcon(cardItem.bank as CompanyCardFeed, illustrations),
             width: variables.cardAvatarWidth,
             height: variables.cardAvatarHeight,
         };
-
-        return [avatar, icon];
-    }, [formattedDisplayName, illustrations, cardItem]);
+    }, [illustrations, cardItem]);
 
     const backgroundColor =
         StyleUtils.getItemBackgroundColorStyle(!!cardItem.isSelected, !!isFocused, !!isDisabled, theme.activeComponentBG, theme.hoverComponentBG)?.backgroundColor ?? theme.highlightBG;
@@ -80,11 +68,10 @@ function CardListItemHeader<TItem extends ListItem>({card: cardItem, onCheckboxP
                     )}
                     <View style={[styles.flexRow, styles.gap3]}>
                         <ReportAvatar
-                            icons={[memberAvatar]}
-                            shouldShowSubscript
                             subIcon={cardIcon}
                             subscriptBorderColor={backgroundColor}
                             subscriptNoMargin
+                            reportID={cardItem.reportID}
                         />
                         <View style={[styles.gapHalf]}>
                             <TextWithTooltip

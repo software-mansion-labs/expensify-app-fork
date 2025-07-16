@@ -90,8 +90,6 @@ function ReportActionItemSingle({
     const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
     const actorAccountID = getReportActionActorAccountID(action, iouReport, report, delegatePersonalDetails);
 
-    // console.log("OUTSIDE", action, actorAccountID, iouReport, report, delegatePersonalDetails);
-
     const {primaryAvatar, accountID, secondaryAvatar, displayName, shouldDisplayAllActors, isWorkspaceActor, actorHint} = useReportAvatarDetails({iouReport, chatReport: report});
 
     const {login, pendingFields, status} = personalDetails?.[accountID] ?? {};
@@ -163,16 +161,13 @@ function ReportActionItemSingle({
             >
                 <OfflineWithFeedback pendingAction={pendingFields?.avatar ?? undefined}>
                     <ReportAvatar
-                        icons={[primaryAvatar, secondaryAvatar]}
-                        shouldShowSubscript={shouldShowSubscriptAvatar}
                         singleAvatarContainerStyle={[styles.actionAvatar]}
                         subscriptBorderColor={getBackgroundColor()}
                         subscriptNoMargin
                         isInReportAction
                         shouldShowTooltip
                         secondAvatarStyle={[StyleUtils.getBackgroundAndBorderStyle(theme.appBG), isHovered ? StyleUtils.getBackgroundAndBorderStyle(theme.hoverComponentBG) : undefined]}
-                        iouReportID={iouReportID}
-                        chatReportID={reportID}
+                        reportID={iouReportID ?? reportID}
                     />
                 </OfflineWithFeedback>
             </PressableWithoutFeedback>

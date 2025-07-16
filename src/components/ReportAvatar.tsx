@@ -4,6 +4,8 @@ import {View} from 'react-native';
 import type {ValueOf} from 'type-fest';
 import useOnyx from '@hooks/useOnyx';
 import useReportAvatarDetails from '@hooks/useReportAvatarDetails';
+import useReportIsArchived from '@hooks/useReportIsArchived';
+import {isChatReport, shouldReportShowSubscript} from '@libs/ReportUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Icon} from '@src/types/onyx/OnyxCommon';
@@ -13,23 +15,16 @@ import MultipleAvatars from './MultipleAvatars';
 import type {SubIcon} from './SubscriptAvatar';
 import SubscriptAvatar from './SubscriptAvatar';
 import UserDetailsTooltip from './UserDetailsTooltip';
-import useReportIsArchived from "@hooks/useReportIsArchived";
-import {isMoneyRequestReport, shouldReportShowSubscript} from "@libs/ReportUtils";
 
 type ReportAvatarProps = MultipleAvatarsProps & {
     /** IOU Report ID for single avatar */
     reportID?: string;
-
-
 
     /** Single avatar size */
     singleAvatarSize?: ValueOf<typeof CONST.AVATAR_SIZE>;
 
     /** Single avatar container styles */
     singleAvatarContainerStyle?: ViewStyle[];
-
-    /** Whether to show the subscript avatar */
-    shouldShowSubscript: boolean;
 
     /** Border color for the subscript avatar */
     subscriptBorderColor?: ColorValue;
@@ -49,53 +44,43 @@ type ReportAvatarProps = MultipleAvatarsProps & {
 
 function ReportAvatar({
     reportID,
-
     singleAvatarContainerStyle,
     singleAvatarSize,
-    shouldShowSubscript,
     subscriptBorderColor,
     subscriptNoMargin,
     subIcon,
     subscriptFallbackIcon,
     subscriptAvatarSize,
     ...multipleAvatarsProps
-}: ReportAvatarProps) {
-    const {icons = [], size = CONST.AVATAR_SIZE.DEFAULT, shouldShowTooltip = true} = multipleAvatarsProps;
+}: Omit<ReportAvatarProps, 'icons'>) {
+    const {size = CONST.AVATAR_SIZE.DEFAULT, shouldShowTooltip = true} = multipleAvatarsProps;
 
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {canBeMissing: true});
+
     const [chatReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`, {canBeMissing: true});
-
-
-    // const [iouReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${iouReportID}`, {canBeMissing: true});
-    // const [chatReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${chatReportID ?? iouReport?.chatReportID}`, {canBeMissing: true});
 
     const {
         primaryAvatar,
+        secondaryAvatar,
         reportPreviewSenderID,
         isWorkspaceActor,
         fallbackIcon: reportFallbackIcon,
         reportPreviewAction,
         delegatePersonalDetails,
         actorAccountID,
-        accountID,
         shouldDisplayAllActors,
-    } = useReportAvatarDetails(isMoneyRequestReport(report) ? {iouReport: report, chatReport} : {chatReport: report, iouReport: undefined});
+    } = useReportAvatarDetails(isChatReport(report) ? {chatReport: report, iouReport: undefined} : {iouReport: report, chatReport});
 
     const isReportArchived = useReportIsArchived(reportID);
     const shouldShowSubscriptAvatar = shouldReportShowSubscript(report, isReportArchived);
-    
-    const shouldShowSingleAvatar = !!reportPreviewSenderID && !shouldDisplayAllActors && !shouldShowSubscript;
 
-    const subscriptMainAvatar = icons.at(0) ?? subscriptFallbackIcon;
-
-    if (shouldShowSubscript) {
-
+    if (shouldShowSubscriptAvatar) {
         return (
             <SubscriptAvatar
                 showTooltip={shouldShowTooltip}
                 size={size}
-                mainAvatar={subscriptMainAvatar}
-                secondaryAvatar={icons.at(1)}
+                mainAvatar={primaryAvatar ?? subscriptFallbackIcon}
+                secondaryAvatar={secondaryAvatar}
                 backgroundColor={subscriptBorderColor}
                 noMargin={subscriptNoMargin}
                 subscriptIcon={subIcon}
@@ -104,12 +89,12 @@ function ReportAvatar({
         );
     }
 
-    if (shouldDisplayAllActors) {
-        console.log("MHM")
+    if (shouldDisplayAllActors && !reportPreviewSenderID) {
         return (
             <MultipleAvatars
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...multipleAvatarsProps}
+                icons={[primaryAvatar, secondaryAvatar]}
             />
         );
     }

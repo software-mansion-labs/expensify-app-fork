@@ -456,8 +456,8 @@ function MenuItem(
         rightComponent,
         floatRightAvatars = [],
         floatRightAvatarSize,
-        shouldShowSubscriptRightAvatar = false,
-        shouldShowSubscriptAvatar: shouldShowSubscriptAvatarProp = false,
+        // shouldShowSubscriptRightAvatar = false,
+        // shouldShowSubscriptAvatar: shouldShowSubscriptAvatarProp = false,
         avatarSize = CONST.AVATAR_SIZE.DEFAULT,
         isSmallAvatarSubscriptMenu = false,
         brickRoadIndicator,
@@ -535,8 +535,8 @@ function MenuItem(
         titleStyle ?? {},
     );
     const shouldShowAvatar = !!icon && Array.isArray(icon);
-    const firstIcon = Array.isArray(icon) && !!icon.length ? icon.at(0) : undefined;
-    const shouldShowSubscriptAvatar = shouldShowSubscriptAvatarProp && !!firstIcon;
+    // const firstIcon = Array.isArray(icon) && !!icon.length ? icon.at(0) : undefined;
+    // const shouldShowSubscriptAvatar = shouldShowSubscriptAvatarProp && !!firstIcon;
     const descriptionTextStyles = StyleUtils.combineStyles<TextStyle>([
         styles.textLabelSupporting,
         icon && !Array.isArray(icon) ? styles.ml3 : {},
@@ -718,11 +718,12 @@ function MenuItem(
                                                 <View style={[styles.flexRow, styles.pointerEventsAuto, disabled && !shouldUseDefaultCursorWhenDisabled && styles.cursorDisabled]}>
                                                     {shouldShowAvatar && (
                                                         <ReportAvatar
-                                                            shouldShowSubscript={shouldShowSubscriptAvatar}
+                                                            // shouldShowSubscript={shouldShowSubscriptAvatar}
                                                             subscriptBorderColor={getSubscriptAvatarBackgroundColor(isHovered, pressed, theme.hoverComponentBG, theme.buttonHoveredBG)}
                                                             isHovered={isHovered}
                                                             isPressed={pressed}
-                                                            icons={icon as IconType[]}
+                                                            // icons={icon as IconType[]}
+                                                            singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
                                                             size={avatarSize}
                                                             secondAvatarStyle={[
                                                                 StyleUtils.getBackgroundAndBorderStyle(theme.sidebar),
@@ -906,11 +907,11 @@ function MenuItem(
                                                 {floatRightAvatars?.length > 0 && !!firstRightIcon && (
                                                     <View style={[styles.alignItemsCenter, styles.justifyContentCenter, brickRoadIndicator ? styles.mr2 : styles.mrn2]}>
                                                         <ReportAvatar
-                                                            shouldShowSubscript={shouldShowSubscriptRightAvatar}
+                                                            // shouldShowSubscript={shouldShowSubscriptRightAvatar}
                                                             subscriptBorderColor={isHovered ? theme.activeComponentBG : theme.componentBG}
                                                             isHovered={isHovered}
                                                             isPressed={pressed}
-                                                            icons={shouldShowSubscriptRightAvatar ? [firstRightIcon, ...floatRightAvatars.slice(1)] : floatRightAvatars}
+                                                            // icons={shouldShowSubscriptRightAvatar ? [firstRightIcon, ...floatRightAvatars.slice(1)] : floatRightAvatars}
                                                             size={floatRightAvatarSize ?? fallbackAvatarSize}
                                                             fallbackIcon={defaultWorkspaceAvatars.WorkspaceBuilding}
                                                             shouldStackHorizontally={shouldStackHorizontally}

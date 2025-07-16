@@ -3,9 +3,7 @@ import {View} from 'react-native';
 import type {ColorValue, TextStyle} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import ReportAvatar from '@components/ReportAvatar';
 import useOnyx from '@hooks/useOnyx';
-import useReportIsArchived from '@hooks/useReportIsArchived';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -15,7 +13,6 @@ import type {DisplayNameWithTooltips} from '@libs/ReportUtils';
 import {
     getChatRoomSubtitle,
     getDisplayNamesWithTooltips,
-    getIcons,
     getParentNavigationSubtitle,
     getReportName,
     isChatThread,
@@ -26,7 +23,6 @@ import {
     isMoneyRequestReport,
     isTrackExpenseReport,
     navigateToDetailsPage,
-    shouldReportShowSubscript,
 } from '@libs/ReportUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -39,6 +35,7 @@ import type DisplayNamesProps from './DisplayNames/types';
 import {FallbackAvatar} from './Icon/Expensicons';
 import ParentNavigationSubtitle from './ParentNavigationSubtitle';
 import PressableWithoutFeedback from './Pressable/PressableWithoutFeedback';
+import ReportAvatar from './ReportAvatar';
 import type {TransactionListItemType} from './SelectionList/types';
 import Text from './Text';
 
@@ -158,7 +155,6 @@ function getCustomDisplayName(
 }
 
 function AvatarWithDisplayName({
-    policy,
     report,
     isAnonymous = false,
     size = CONST.AVATAR_SIZE.DEFAULT,
@@ -185,11 +181,8 @@ function AvatarWithDisplayName({
     const subtitle = getChatRoomSubtitle(report, {isCreateExpenseFlow: true});
     const parentNavigationSubtitleData = getParentNavigationSubtitle(report);
     const isMoneyRequestOrReport = isMoneyRequestReport(report) || isMoneyRequest(report) || isTrackExpenseReport(report) || isInvoiceReport(report);
-    const icons = getIcons(report, personalDetails, null, '', -1, policy, invoiceReceiverPolicy);
     const ownerPersonalDetails = getPersonalDetailsForAccountIDs(report?.ownerAccountID ? [report.ownerAccountID] : [], personalDetails);
     const displayNamesWithTooltips = getDisplayNamesWithTooltips(Object.values(ownerPersonalDetails), false);
-    const isReportArchived = useReportIsArchived(report?.reportID);
-    const shouldShowSubscriptAvatar = shouldReportShowSubscript(report, isReportArchived);
     const avatarBorderColor = avatarBorderColorProp ?? (isAnonymous ? theme.highlightBG : theme.componentBG);
 
     const actorAccountID = useRef<number | null>(null);
@@ -241,13 +234,11 @@ function AvatarWithDisplayName({
     const multipleAvatars = (
         <ReportAvatar
             singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
-            shouldShowSubscript={shouldShowSubscriptAvatar}
             subscriptBorderColor={avatarBorderColor}
             subscriptFallbackIcon={fallbackIcon}
-            icons={icons}
             size={size}
             secondAvatarStyle={[StyleUtils.getBackgroundAndBorderStyle(avatarBorderColor)]}
-            iouReportID={report?.reportID}
+            reportID={report?.reportID}
         />
     );
 

@@ -2,7 +2,6 @@ import {deepEqual} from 'fast-equals';
 import React, {useEffect, useRef, useState} from 'react';
 import type {StyleProp, TextStyle, ViewStyle} from 'react-native';
 import {InteractionManager, StyleSheet, View} from 'react-native';
-import ReportAvatar from '@components/ReportAvatar';
 import useLocalize from '@hooks/useLocalize';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
@@ -19,6 +18,7 @@ import * as Expensicons from './Icon/Expensicons';
 import MoneyRequestAmountInput from './MoneyRequestAmountInput';
 import OfflineWithFeedback from './OfflineWithFeedback';
 import PressableWithFeedback from './Pressable/PressableWithFeedback';
+import ReportAvatar from './ReportAvatar';
 import SelectCircle from './SelectCircle';
 import Text from './Text';
 
@@ -209,8 +209,7 @@ function OptionRow({
                                 {!!option.icons?.length && !!firstIcon && (
                                     <ReportAvatar
                                         subscriptBorderColor={hovered && !optionIsFocused ? hoveredBackgroundColor : subscriptColor}
-                                        shouldShowSubscript={!!option.shouldShowSubscript}
-                                        icons={option.icons}
+                                        reportID={option.iouReportID ?? option.reportID}
                                         size={CONST.AVATAR_SIZE.DEFAULT}
                                         secondAvatarStyle={[StyleUtils.getBackgroundAndBorderStyle(hovered && !optionIsFocused ? hoveredBackgroundColor : subscriptColor)]}
                                         shouldShowTooltip={showTitleTooltip && shouldOptionShowTooltip(option)}

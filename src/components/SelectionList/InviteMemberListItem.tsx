@@ -113,15 +113,14 @@ function InviteMemberListItem<TItem extends ListItem>({
                         {!!item.icons && (
                             <ReportAvatar
                                 subscriptFallbackIcon={fallbackIcon}
-                                shouldShowSubscript={!!item.shouldShowSubscript}
                                 subscriptBorderColor={hovered && !isFocused ? hoveredBackgroundColor : subscriptAvatarBorderColor}
-                                icons={item.icons}
                                 shouldShowTooltip={showTooltip}
                                 secondAvatarStyle={[
                                     StyleUtils.getBackgroundAndBorderStyle(theme.sidebar),
                                     isFocused ? StyleUtils.getBackgroundAndBorderStyle(focusedBackgroundColor) : undefined,
                                     hovered && !isFocused ? StyleUtils.getBackgroundAndBorderStyle(hoveredBackgroundColor) : undefined,
                                 ]}
+                                reportID={item.reportID}
                             />
                         )}
                         <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch, styles.optionRow]}>
