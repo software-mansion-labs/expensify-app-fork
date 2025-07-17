@@ -1,15 +1,14 @@
 import React, {useCallback, useMemo} from 'react';
 import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
-import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
-import MultipleAvatars from '@components/MultipleAvatars';
+import type {OnyxEntry} from 'react-native-onyx';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
+import ReportAvatar from '@components/ReportAvatar';
 import Text from '@components/Text';
 import Tooltip from '@components/Tooltip';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import usePolicy from '@hooks/usePolicy';
 import useReportAvatarDetails from '@hooks/useReportAvatarDetails';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
@@ -23,7 +22,7 @@ import {getReportActionActorAccountID, isOptimisticPersonalDetail} from '@libs/R
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {Policy, Report, ReportAction} from '@src/types/onyx';
+import type {Report, ReportAction} from '@src/types/onyx';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 import ReportActionItemDate from './ReportActionItemDate';
 import ReportActionItemFragment from './ReportActionItemFragment';
@@ -55,9 +54,6 @@ type ReportActionItemSingleProps = Partial<ChildrenProps> & {
 
     /** If the action is active */
     isActive?: boolean;
-
-    /** Policies */
-    policies?: OnyxCollection<Policy>;
 };
 
 const showUserDetails = (accountID: number | undefined) => {
@@ -82,7 +78,6 @@ function ReportActionItemSingle({
     iouReport,
     isHovered = false,
     isActive = false,
-    policies,
 }: ReportActionItemSingleProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -92,27 +87,10 @@ function ReportActionItemSingle({
         canBeMissing: true,
     });
 
-    const [innerPolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {
-        canBeMissing: true,
-    });
-
-    const policy = usePolicy(report?.policyID);
-
     const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
     const actorAccountID = getReportActionActorAccountID(action, iouReport, report, delegatePersonalDetails);
 
-    const reportPreviewDetails = useReportAvatarDetails({
-        action,
-        report,
-        iouReport,
-        policies,
-        personalDetails,
-        innerPolicies,
-        policy,
-    });
-
-    const {primaryAvatar, secondaryAvatar, displayName, shouldDisplayAllActors, isWorkspaceActor, reportPreviewSenderID, actorHint} = reportPreviewDetails;
-    const accountID = reportPreviewSenderID ?? actorAccountID ?? CONST.DEFAULT_NUMBER_ID;
+    const {primaryAvatar, accountID, secondaryAvatar, displayName, shouldDisplayAllActors, isWorkspaceActor, actorHint} = useReportAvatarDetails({iouReport, chatReport: report, action});
 
     const {login, pendingFields, status} = personalDetails?.[accountID] ?? {};
     const accountOwnerDetails = getPersonalDetailByEmail(login ?? '');
@@ -182,23 +160,15 @@ function ReportActionItemSingle({
                 role={CONST.ROLE.BUTTON}
             >
                 <OfflineWithFeedback pendingAction={pendingFields?.avatar ?? undefined}>
-                    <MultipleAvatars
-                        icons={[primaryAvatar, secondaryAvatar]}
-                        singleReportAvatar={{
-                            shouldShow: !shouldDisplayAllActors && !shouldShowSubscriptAvatar,
-                            personalDetails,
-                            reportPreviewDetails,
-                            containerStyles: [styles.actionAvatar],
-                            actorAccountID,
-                        }}
-                        subscript={{
-                            shouldShow: shouldShowSubscriptAvatar,
-                            borderColor: getBackgroundColor(),
-                            noMargin: true,
-                        }}
+                    <ReportAvatar
+                        singleAvatarContainerStyle={[styles.actionAvatar]}
+                        subscriptBorderColor={getBackgroundColor()}
+                        subscriptNoMargin
                         isInReportAction
                         shouldShowTooltip
                         secondAvatarStyle={[StyleUtils.getBackgroundAndBorderStyle(theme.appBG), isHovered ? StyleUtils.getBackgroundAndBorderStyle(theme.hoverComponentBG) : undefined]}
+                        reportID={iouReportID}
+                        action={action}
                     />
                 </OfflineWithFeedback>
             </PressableWithoutFeedback>
