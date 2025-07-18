@@ -119,6 +119,7 @@ function UserListItem<TItem extends ListItem>({
                                 hovered && !isFocused ? StyleUtils.getBackgroundAndBorderStyle(hoveredBackgroundColor) : undefined,
                             ]}
                             reportID={item.reportID}
+                            accountIDs={[Number(item.accountID)]}
                             singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
                         />
                     )}

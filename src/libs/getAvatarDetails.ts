@@ -1,8 +1,12 @@
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import {FallbackAvatar} from '@components/Icon/Expensicons';
-import {selectAllTransactionsForReport} from '@libs/MoneyRequestReportUtils';
-import {getPersonalDetailByEmail} from '@libs/PersonalDetailsUtils';
-import {getOriginalMessage, isMoneyRequestAction} from '@libs/ReportActionsUtils';
+import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
+import type {PersonalDetails, PersonalDetailsList, Policy, Report, ReportAction, ReportActions, Transaction} from '@src/types/onyx';
+import type {Icon} from '@src/types/onyx/OnyxCommon';
+import {selectAllTransactionsForReport} from './MoneyRequestReportUtils';
+import {getPersonalDetailByEmail} from './PersonalDetailsUtils';
+import {getOriginalMessage, isMoneyRequestAction} from './ReportActionsUtils';
 import {
     getDefaultWorkspaceAvatar,
     getDisplayNameForParticipant,
@@ -16,12 +20,7 @@ import {
     isInvoiceRoom,
     isPolicyExpenseChat,
     isTripRoom as isTripRoomReportUtils,
-} from '@libs/ReportUtils';
-import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
-import type {PersonalDetails, PersonalDetailsList, Policy, Report, ReportAction, Transaction} from '@src/types/onyx';
-import type {Icon} from '@src/types/onyx/OnyxCommon';
-import useOnyx from './useOnyx';
+} from './ReportUtils';
 
 type ReportAvatarDetails = {
     reportPreviewSenderID: number | undefined;
@@ -54,31 +53,40 @@ function getSplitAuthor(transaction: Transaction, splits?: Array<ReportAction<ty
     return splitAction.actorAccountID;
 }
 
-function getIconDetails({
-    action,
+function getAvatarDetails({
+    action: passedAction,
     chatReport,
     iouReport,
     policies,
     personalDetails,
-    reportPreviewSenderID,
-    usePersonalDetailsAvatars,
-    policy,
+    chatReportActions,
+    reportActions,
+    allTransactions,
 }: {
     action: OnyxEntry<ReportAction>;
     chatReport: OnyxEntry<Report>;
     iouReport: OnyxEntry<Report>;
-    policy: OnyxEntry<Policy>;
-    usePersonalDetailsAvatars?: boolean;
-    reportPreviewSenderID: number | undefined;
     personalDetails: OnyxEntry<PersonalDetailsList>;
     policies: OnyxCollection<Policy>;
-}) {
+    chatReportActions: OnyxEntry<ReportActions>;
+    reportActions: OnyxEntry<ReportActions>;
+    allTransactions: OnyxCollection<Transaction>;
+}): ReportAvatarDetails {
+    const action = passedAction ?? (iouReport?.parentReportActionID ? chatReportActions?.[iouReport?.parentReportActionID] : undefined);
+
+    const reportPreviewSenderID = getReportPreviewSenderID({action, chatReportActions, iouReport, chatReport, reportActions, allTransactions});
+
     const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
     const actorAccountID = getReportActionActorAccountID(action, iouReport, chatReport, delegatePersonalDetails);
     const accountID = reportPreviewSenderID ?? actorAccountID ?? CONST.DEFAULT_NUMBER_ID;
 
     const ownerAccountID = iouReport?.ownerAccountID ?? action?.childOwnerAccountID;
     const isReportPreviewAction = action?.actionName === CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW;
+
+    const usePersonalDetailsAvatars = !iouReport && chatReport;
+
+    const policyID = chatReport?.policyID === CONST.POLICY.ID_FAKE || !chatReport?.policyID ? iouReport?.policyID : chatReport?.policyID;
+    const policy = policies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
 
     const invoiceReceiverPolicy =
         chatReport?.invoiceReceiver && 'policyID' in chatReport.invoiceReceiver ? policies?.[`${ONYXKEYS.COLLECTION.POLICY}${chatReport.invoiceReceiver.policyID}`] : undefined;
@@ -87,24 +95,22 @@ function getIconDetails({
 
     const isTripRoom = isTripRoomReportUtils(chatReport);
     // We want to display only the sender's avatar next to the report preview if it only contains one person's expenses.
-    // console.log(action, isReportPreviewAction, isTripRoom, isPolicyExpenseChat(chatReport), reportPreviewSenderID);
     const displayAllActors = isReportPreviewAction && !isTripRoom && !isPolicyExpenseChat(chatReport) && !reportPreviewSenderID;
     const isInvoiceReport = isInvoiceReportUtils(iouReport ?? null);
     const isWorkspaceActor = isInvoiceReport || (isPolicyExpenseChat(chatReport) && (!actorAccountID || displayAllActors));
 
+    const defaultDisplayName = getDisplayNameForParticipant({accountID, personalDetailsData: personalDetails}) ?? '';
+    const defaultAvatar = {
+        source: avatar ?? FallbackAvatar,
+        id: accountID,
+        name: defaultDisplayName,
+        type: CONST.ICON_TYPE_AVATAR,
+    };
+    const defaultSecondaryAvatar = {name: '', source: '', type: CONST.ICON_TYPE_AVATAR, id: 0};
+
     const getPrimaryAvatar = () => {
-        const defaultDisplayName = getDisplayNameForParticipant({accountID, personalDetailsData: personalDetails});
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         const actorHint = isWorkspaceActor ? getPolicyName({report: chatReport, policy}) : (login || (defaultDisplayName ?? '')).replace(CONST.REGEX.MERGED_ACCOUNT_PREFIX, '');
-
-        const defaultAvatar = {
-            source: avatar ?? FallbackAvatar,
-            id: accountID,
-            name: defaultDisplayName,
-            type: CONST.ICON_TYPE_AVATAR,
-        };
-
-        // console.log(arguments[0])
 
         if (isWorkspaceActor) {
             return {
@@ -150,8 +156,6 @@ function getIconDetails({
     };
 
     const getSecondaryAvatar = () => {
-        const defaultAvatar = {name: '', source: '', type: CONST.ICON_TYPE_AVATAR, id: 0};
-
         // If this is a report preview, display names and avatars of both people involved
         if (displayAllActors) {
             const secondaryAccountId = ownerAccountID === actorAccountID || isInvoiceReport ? actorAccountID : ownerAccountID;
@@ -180,7 +184,7 @@ function getIconDetails({
             const avatarIconIndex = chatReport?.isOwnPolicyExpenseChat || isPolicyExpenseChat(chatReport) ? 0 : 1;
             const reportIcons = getIcons(chatReport, personalDetails, undefined, undefined, undefined, policy);
 
-            return reportIcons.at(avatarIconIndex) ?? defaultAvatar;
+            return reportIcons.at(avatarIconIndex) ?? defaultSecondaryAvatar;
         }
 
         if (isInvoiceReportUtils(iouReport)) {
@@ -196,7 +200,7 @@ function getIconDetails({
             };
         }
 
-        return defaultAvatar;
+        return defaultSecondaryAvatar;
     };
 
     const {avatar: primaryAvatar, actorHint} = getPrimaryAvatar();
@@ -205,93 +209,47 @@ function getIconDetails({
     const icons = getIcons(chatReport ?? iouReport, personalDetails);
 
     return {
-        primaryAvatar: usePersonalDetailsAvatars ? icons.at(0) : primaryAvatar,
-        secondaryAvatar: usePersonalDetailsAvatars ? icons.at(1) : secondaryAvatar,
+        primaryAvatar: (usePersonalDetailsAvatars ? icons.at(0) : primaryAvatar) ?? defaultAvatar,
+        secondaryAvatar: (usePersonalDetailsAvatars ? icons.at(1) : secondaryAvatar) ?? defaultSecondaryAvatar,
         shouldDisplayAllActors: displayAllActors,
-        displayName: usePersonalDetailsAvatars ? icons.at(0)?.name : primaryAvatar.name,
+        displayName: (usePersonalDetailsAvatars ? icons.at(0)?.name : primaryAvatar.name) ?? '',
         isWorkspaceActor,
         actorHint,
         fallbackIcon,
         accountID,
+        actorAccountID,
+        delegatePersonalDetails,
+        reportPreviewSenderID,
+        reportPreviewAction: reportPreviewSenderID ? action : undefined,
     };
 }
 
-/**
- * This hook is used to determine the ID of the sender, as well as the avatars of the actors and some additional data, for the report preview action.
- * It was originally based on actions; now, it uses transactions and unique emails as a fallback.
- * For a reason why, see https://github.com/Expensify/App/pull/64802 discussion.
- */
-function useReportAvatarDetails({
+function getReportPreviewSenderID({
     iouReport,
+    action,
     chatReport,
-    action: passedAction,
-    usePersonalDetailsAvatars,
+    chatReportActions,
+    reportActions,
+    allTransactions,
 }: {
-    iouReport: OnyxEntry<Report>;
+    action: OnyxEntry<ReportAction>;
     chatReport: OnyxEntry<Report>;
-    action?: OnyxEntry<ReportAction>;
-    usePersonalDetailsAvatars?: boolean;
-}): ReportAvatarDetails {
-    const [iouActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${iouReport?.reportID}`, {
-        canBeMissing: true,
-        selector: (actions) => Object.values(actions ?? {}).filter(isMoneyRequestAction),
-    });
+    iouReport: OnyxEntry<Report>;
+    chatReportActions: OnyxEntry<ReportActions>;
+    reportActions: OnyxEntry<ReportActions>;
+    allTransactions: OnyxCollection<Transaction>;
+}) {
+    const iouActions = Object.values(reportActions ?? {}).filter(isMoneyRequestAction);
 
-    const [onyxAction] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${iouReport?.parentReportID ?? chatReport?.reportID}`, {
-        selector: (actions) => (iouReport?.parentReportActionID ? actions?.[iouReport?.parentReportActionID] : undefined),
-        canBeMissing: true,
-    });
-
-    const action = passedAction ?? onyxAction;
-
-    const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {
-        canBeMissing: true,
-    });
-
-    const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {canBeMissing: true});
-
-    const policyID = chatReport?.policyID === CONST.POLICY.ID_FAKE || !chatReport?.policyID ? iouReport?.policyID : chatReport?.policyID;
-    const policy = policies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
-
-    const [transactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION, {
-        canBeMissing: true,
-        selector: (allTransactions) => selectAllTransactionsForReport(allTransactions, action?.childReportID ?? iouReport?.reportID, iouActions ?? []),
-    });
-
-    const [splits] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${chatReport?.reportID}`, {
-        canBeMissing: true,
-        selector: (actions) =>
-            Object.values(actions ?? {})
-                .filter(isMoneyRequestAction)
-                .filter((act) => getOriginalMessage(act)?.type === CONST.IOU.REPORT_ACTION_TYPE.SPLIT),
-    });
-
-    const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
-    const actorAccountID = getReportActionActorAccountID(action, iouReport, chatReport, delegatePersonalDetails);
+    const transactions = selectAllTransactionsForReport(allTransactions, action?.childReportID ?? iouReport?.reportID, iouActions ?? []);
 
     if (action?.actionName !== CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW) {
-        const reportPreviewSenderID = undefined;
-
-        // eslint-disable-next-line react-compiler/react-compiler
-        const iconDetails = getIconDetails({
-            policies,
-            personalDetails,
-            action,
-            policy,
-            chatReport,
-            usePersonalDetailsAvatars,
-            iouReport,
-            reportPreviewSenderID,
-        });
-
-        return {
-            reportPreviewSenderID,
-            reportPreviewAction: undefined,
-            actorAccountID,
-            delegatePersonalDetails,
-            ...iconDetails,
-        };
+        return undefined;
     }
+
+    const splits = Object.values(chatReportActions ?? {})
+        .filter(isMoneyRequestAction)
+        .filter((act) => getOriginalMessage(act)?.type === CONST.IOU.REPORT_ACTION_TYPE.SPLIT);
 
     // 1. If all amounts have the same sign - either all amounts are positive or all amounts are negative.
     // We have to do it this way because there can be a case when actions are not available
@@ -315,26 +273,7 @@ function useReportAvatarDetails({
     const isSendMoneyFlow = action?.childMoneyRequestCount === 0 && transactions?.length === 1 && isDM(chatReport);
     const singleAvatarAccountID = isSendMoneyFlow ? action.childManagerAccountID : action?.childOwnerAccountID;
 
-    const reportPreviewSenderID = areAmountsSignsTheSame && isThereOnlyOneAttendee ? singleAvatarAccountID : undefined;
-
-    return {
-        reportPreviewSenderID,
-        reportPreviewAction: action,
-        actorAccountID,
-        delegatePersonalDetails,
-        ...getIconDetails({
-            policies,
-            usePersonalDetailsAvatars,
-            personalDetails,
-            action,
-            policy,
-            chatReport,
-            iouReport,
-            reportPreviewSenderID,
-        }),
-    };
+    return areAmountsSignsTheSame && isThereOnlyOneAttendee ? singleAvatarAccountID : undefined;
 }
 
-export default useReportAvatarDetails;
-export type {ReportAvatarDetails};
-export {getIconDetails};
+export default getAvatarDetails;

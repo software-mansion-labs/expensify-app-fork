@@ -1,6 +1,6 @@
 import {renderHook} from '@testing-library/react-native';
 import Onyx from 'react-native-onyx';
-import useReportAvatarDetails from '@hooks/useReportAvatarDetails';
+import getAvatarDetails from '@libs/getAvatarDetails';
 import CONST from '@src/CONST';
 import * as PersonalDetailsUtils from '@src/libs/PersonalDetailsUtils';
 import ONYXKEYS from '@src/ONYXKEYS';

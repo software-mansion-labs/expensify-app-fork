@@ -1,7 +1,7 @@
-import React, {useCallback, useMemo} from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
-import {View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
+import React, { useCallback, useMemo } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
+import { View } from 'react-native';
+import type { OnyxEntry } from 'react-native-onyx';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import ReportAvatar from '@components/ReportAvatar';
@@ -9,23 +9,24 @@ import Text from '@components/Text';
 import Tooltip from '@components/Tooltip';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import useReportAvatarDetails from '@hooks/useReportAvatarDetails';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ControlSelection from '@libs/ControlSelection';
 import DateUtils from '@libs/DateUtils';
+import getAvatarDetails from '@libs/getAvatarDetails';
 import Navigation from '@libs/Navigation/Navigation';
-import {getPersonalDetailByEmail} from '@libs/PersonalDetailsUtils';
-import {getReportActionMessage} from '@libs/ReportActionsUtils';
-import {getReportActionActorAccountID, isOptimisticPersonalDetail} from '@libs/ReportUtils';
+import { getPersonalDetailByEmail } from '@libs/PersonalDetailsUtils';
+import { getReportActionMessage } from '@libs/ReportActionsUtils';
+import { getReportActionActorAccountID, isOptimisticPersonalDetail } from '@libs/ReportUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {Report, ReportAction} from '@src/types/onyx';
+import type { Report, ReportAction } from '@src/types/onyx';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 import ReportActionItemDate from './ReportActionItemDate';
 import ReportActionItemFragment from './ReportActionItemFragment';
+
 
 type ReportActionItemSingleProps = Partial<ChildrenProps> & {
     /** All the data of the action */
@@ -87,10 +88,23 @@ function ReportActionItemSingle({
         canBeMissing: true,
     });
 
-    const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
-    const actorAccountID = getReportActionActorAccountID(action, iouReport, report, delegatePersonalDetails);
+    const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {canBeMissing: true});
+    const [chatReportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report?.reportID ?? iouReport?.chatReportID}`, {canBeMissing: true});
+    const [reportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${iouReport?.reportID}`, {canBeMissing: true});
+    const [transactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION, {
+        canBeMissing: true,
+    });
 
-    const {primaryAvatar, accountID, secondaryAvatar, displayName, shouldDisplayAllActors, isWorkspaceActor, actorHint} = useReportAvatarDetails({iouReport, chatReport: report, action});
+    const {primaryAvatar, accountID, secondaryAvatar, displayName, shouldDisplayAllActors, isWorkspaceActor, actorHint, actorAccountID, delegatePersonalDetails} = getAvatarDetails({
+        policies,
+        personalDetails,
+        action,
+        chatReport: report,
+        iouReport,
+        reportActions,
+        allTransactions: transactions,
+        chatReportActions,
+    });
 
     const {login, pendingFields, status} = personalDetails?.[accountID] ?? {};
     const accountOwnerDetails = getPersonalDetailByEmail(login ?? '');
