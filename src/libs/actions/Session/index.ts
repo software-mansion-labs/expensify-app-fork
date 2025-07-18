@@ -49,7 +49,6 @@ import {KEYS_TO_PRESERVE, openApp} from '@userActions/App';
 import {KEYS_TO_PRESERVE_DELEGATE_ACCESS} from '@userActions/Delegate';
 import * as Device from '@userActions/Device';
 import * as HybridAppActions from '@userActions/HybridApp';
-import {setClosingReactNativeApp} from '@userActions/HybridApp';
 import type HybridAppSettings from '@userActions/HybridApp/types';
 import redirectToSignIn from '@userActions/SignInRedirect';
 import Timing from '@userActions/Timing';
@@ -57,7 +56,7 @@ import * as Welcome from '@userActions/Welcome';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {HybridAppRoute, Route} from '@src/ROUTES';
+import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import type {TryNewDot} from '@src/types/onyx';
@@ -73,8 +72,8 @@ const INVALID_TOKEN = 'pizza';
 
 let session: Session = {};
 let authPromiseResolver: ((value: boolean) => void) | null = null;
-let isSetUpReady = false;
 
+let isHybridAppSetupFinished = false;
 let hasSwitchedAccountInHybridMode = false;
 
 Onyx.connect({
@@ -88,7 +87,7 @@ Onyx.connect({
             authPromiseResolver(true);
             authPromiseResolver = null;
         }
-        if (CONFIG.IS_HYBRID_APP && session.authToken && session.authToken !== INVALID_TOKEN && isSetUpReady) {
+        if (CONFIG.IS_HYBRID_APP && isHybridAppSetupFinished && session.authToken && session.authToken !== INVALID_TOKEN && !isAnonymousUser(value)) {
             HybridAppModule.sendAuthToken({authToken: session.authToken});
         }
     },
@@ -151,7 +150,7 @@ function setSupportAuthToken(supportAuthToken: string, email: string, accountID:
     Onyx.set(ONYXKEYS.LAST_VISITED_PATH, '');
 }
 
-function getShortLivedLoginParams() {
+function getShortLivedLoginParams(isSupportAuthTokenUsed = false) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -168,6 +167,7 @@ function getShortLivedLoginParams() {
             value: {
                 signedInWithShortLivedAuthToken: true,
                 isAuthenticatingWithShortLivedToken: true,
+                isSupportAuthTokenUsed,
             },
         },
     ];
@@ -186,6 +186,7 @@ function getShortLivedLoginParams() {
             key: ONYXKEYS.SESSION,
             value: {
                 signedInWithShortLivedAuthToken: null,
+                isSupportAuthTokenUsed: null,
                 isAuthenticatingWithShortLivedToken: false,
             },
         },
@@ -198,7 +199,7 @@ function getShortLivedLoginParams() {
  * This method should be used when we are being redirected from oldDot to NewDot on a supportal request
  */
 function signInWithSupportAuthToken(authToken: string) {
-    const {optimisticData, finallyData} = getShortLivedLoginParams();
+    const {optimisticData, finallyData} = getShortLivedLoginParams(true);
     API.read(READ_COMMANDS.SIGN_IN_WITH_SUPPORT_AUTH_TOKEN, {authToken}, {optimisticData, finallyData});
 }
 
@@ -457,7 +458,11 @@ function beginSignIn(email: string) {
 
     const params: BeginSignInParams = {email};
 
-    API.read(READ_COMMANDS.BEGIN_SIGNIN, params, {optimisticData, successData, failureData});
+    // eslint-disable-next-line rulesdir/no-api-side-effects-method
+    API.makeRequestWithSideEffects(READ_COMMANDS.BEGIN_SIGNIN, params, {optimisticData, successData, failureData}).then(() => {
+        // TODO: this is only a temporary change until we fix things on backend side
+        Onyx.merge(ONYXKEYS.NVP_TRY_NEW_DOT, null);
+    });
 }
 
 /**
@@ -587,19 +592,12 @@ function setupNewDotAfterTransitionFromOldDot(hybridAppSettings: HybridAppSettin
         .then(resetDidUserLoginDuringSessionIfNeeded)
         .then(() => Promise.all(Object.entries(newDotOnyxValues).map(([key, value]) => Onyx.merge(key as OnyxKey, value ?? {}))))
         .then(() => {
-            isSetUpReady = true;
+            isHybridAppSetupFinished = true;
             return Promise.resolve();
         })
         .catch((error) => {
             Log.hmmm('[HybridApp] Initialization of HybridApp has failed. Forcing transition', {error});
         });
-}
-
-function closeReactNativeApp({shouldSignOut, shouldSetNVP}: {shouldSignOut: boolean; shouldSetNVP: boolean}) {
-    if (CONFIG.IS_HYBRID_APP) {
-        setClosingReactNativeApp(true);
-    }
-    HybridAppModule.closeReactNativeApp({shouldSignOut, shouldSetNVP});
 }
 
 /**
@@ -1180,19 +1178,18 @@ function waitForUserSignIn(): Promise<boolean> {
     });
 }
 
-function handleExitToNavigation(exitTo: Route | HybridAppRoute) {
+function handleExitToNavigation(exitTo: Route) {
     InteractionManager.runAfterInteractions(() => {
         waitForUserSignIn().then(() => {
             Navigation.waitForProtectedRoutes().then(() => {
-                const url = CONFIG.IS_HYBRID_APP ? Navigation.parseHybridAppUrl(exitTo) : (exitTo as Route);
                 Navigation.goBack();
-                Navigation.navigate(url);
+                Navigation.navigate(exitTo);
             });
         });
     });
 }
 
-function signInWithValidateCodeAndNavigate(accountID: number, validateCode: string, twoFactorAuthCode = '', exitTo?: Route | HybridAppRoute) {
+function signInWithValidateCodeAndNavigate(accountID: number, validateCode: string, twoFactorAuthCode = '', exitTo?: Route) {
     signInWithValidateCode(accountID, validateCode, twoFactorAuthCode);
     if (exitTo) {
         handleExitToNavigation(exitTo);
@@ -1246,7 +1243,6 @@ function AddWorkEmail(workEmail: string) {
             onyxMethod: Onyx.METHOD.MERGE,
             key: ONYXKEYS.FORMS.ONBOARDING_WORK_EMAIL_FORM,
             value: {
-                onboardingWorkEmail: workEmail,
                 isLoading: false,
             },
         },
@@ -1257,8 +1253,14 @@ function AddWorkEmail(workEmail: string) {
             onyxMethod: Onyx.METHOD.MERGE,
             key: ONYXKEYS.FORMS.ONBOARDING_WORK_EMAIL_FORM,
             value: {
-                onboardingWorkEmail: null,
                 isLoading: false,
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.NVP_ONBOARDING,
+            value: {
+                isMergingAccountBlocked: true,
             },
         },
     ];
@@ -1445,5 +1447,4 @@ export {
     MergeIntoAccountAndLogin,
     resetSMSDeliveryFailureStatus,
     clearDisableTwoFactorAuthErrors,
-    closeReactNativeApp,
 };
