@@ -1,3 +1,4 @@
+import lodashSortBy from 'lodash/sortBy';
 import React from 'react';
 import type {ColorValue, ViewStyle} from 'react-native';
 import {View} from 'react-native';
@@ -81,6 +82,12 @@ type ReportAvatarProps = MultipleAvatarsProps & {
     subscriptAvatarSize?: ValueOf<typeof CONST.AVATAR_SIZE>;
 
     accountIDs?: number[];
+
+    reverseAvatars?: boolean;
+
+    convertSubscriptToMultiple?: boolean;
+
+    sortAvatarsByID?: boolean;
 };
 
 function getPrimaryAndSecondaryAvatar({
@@ -100,14 +107,15 @@ function getPrimaryAndSecondaryAvatar({
 }) {
     const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
     const actorAccountID = getReportActionActorAccountID(action, iouReport, chatReport, delegatePersonalDetails);
-    const accountID = reportPreviewSenderID ?? actorAccountID ?? CONST.DEFAULT_NUMBER_ID;
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    const accountID = reportPreviewSenderID || (actorAccountID ?? CONST.DEFAULT_NUMBER_ID);
 
     const usePersonalDetailsAvatars = !iouReport && chatReport && (!action || action?.actionName === CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW);
 
     const ownerAccountID = iouReport?.ownerAccountID ?? action?.childOwnerAccountID;
     const isReportPreviewAction = action?.actionName === CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW;
 
-    const policyID = chatReport?.policyID === CONST.POLICY.ID_FAKE || !chatReport?.policyID ? iouReport?.policyID : chatReport?.policyID;
+    const policyID = chatReport?.policyID === CONST.POLICY.ID_FAKE || !chatReport?.policyID ? (iouReport?.policyID ?? chatReport?.policyID) : chatReport?.policyID;
     const policy = policies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
 
     const invoiceReceiverPolicy =
@@ -240,9 +248,12 @@ function ReportAvatar({
     subscriptAvatarSize = CONST.AVATAR_SIZE.SUBSCRIPT,
     accountIDs: passedAccountIDs,
     action: passedAction,
+    reverseAvatars,
+    convertSubscriptToMultiple,
+    sortAvatarsByID,
     ...multipleAvatarsProps
 }: Omit<ReportAvatarProps, 'icons'>) {
-    const {size = CONST.AVATAR_SIZE.DEFAULT, shouldShowTooltip = true} = multipleAvatarsProps;
+    const {size = CONST.AVATAR_SIZE.DEFAULT, shouldShowTooltip = true, shouldStackHorizontally} = multipleAvatarsProps;
     const theme = useTheme();
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
@@ -265,7 +276,8 @@ function ReportAvatar({
 
     const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
     const actorAccountID = getReportActionActorAccountID(action, iouReport, chatReport, delegatePersonalDetails);
-    const accountID = reportPreviewSenderID ?? actorAccountID ?? CONST.DEFAULT_NUMBER_ID;
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    const accountID = reportPreviewSenderID || (actorAccountID ?? CONST.DEFAULT_NUMBER_ID);
 
     const isReportPreviewAction = action?.actionName === CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW;
 
@@ -289,7 +301,7 @@ function ReportAvatar({
     const isReportArchived = useReportIsArchived(reportID);
     const shouldShowSubscriptAvatar = shouldReportShowSubscript(report, isReportArchived);
 
-    if (shouldShowSubscriptAvatar) {
+    if (shouldShowSubscriptAvatar && !shouldStackHorizontally) {
         const isSmall = size === CONST.AVATAR_SIZE.SMALL;
         const subscriptStyle = size === CONST.AVATAR_SIZE.SMALL_NORMAL ? styles.secondAvatarSubscriptSmallNormal : styles.secondAvatarSubscript;
         const containerStyle = StyleUtils.getContainerStyles(size);
@@ -378,14 +390,17 @@ function ReportAvatar({
     }
 
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-    if (passedAccountIDs || (shouldDisplayAllActors && !reportPreviewSenderID)) {
-        const icons = getAvatarsForAccountIDs(passedAccountIDs ?? [], personalDetails);
+    if (passedAccountIDs || (shouldDisplayAllActors && !reportPreviewSenderID) || (convertSubscriptToMultiple && shouldShowSubscriptAvatar && !reportPreviewSenderID)) {
+        const avatarsForAccountIDs = getAvatarsForAccountIDs(passedAccountIDs ?? [], personalDetails);
+        const icons = avatarsForAccountIDs.length > 0 ? avatarsForAccountIDs : [primaryAvatar, secondaryAvatar];
+        const sortedIcons = sortAvatarsByID ? lodashSortBy(icons, (icon) => icon.id) : icons;
+        const potentiallyReversedIcons = reverseAvatars ? sortedIcons.reverse() : sortedIcons;
 
         return (
             <MultipleAvatars
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...multipleAvatarsProps}
-                icons={icons.length > 0 ? icons : [primaryAvatar, secondaryAvatar]}
+                icons={potentiallyReversedIcons}
             />
         );
     }

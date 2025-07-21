@@ -106,6 +106,8 @@ function ReportActionItemSingle({
 
     const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {canBeMissing: true});
 
+    // console.log(action, iouReport);
+
     const reportPreviewSenderID = useReportPreviewSenderID({
         iouReport,
         action,
@@ -125,7 +127,8 @@ function ReportActionItemSingle({
 
     const delegatePersonalDetails = action?.delegateAccountID ? personalDetails?.[action?.delegateAccountID] : undefined;
     const actorAccountID = getReportActionActorAccountID(action, iouReport, chatReport, delegatePersonalDetails);
-    const accountID = reportPreviewSenderID ?? actorAccountID ?? CONST.DEFAULT_NUMBER_ID;
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    const accountID = reportPreviewSenderID || (actorAccountID ?? CONST.DEFAULT_NUMBER_ID);
 
     const isReportPreviewAction = action?.actionName === CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW;
     const isTripRoom = isTripRoomReportUtils(chatReport);

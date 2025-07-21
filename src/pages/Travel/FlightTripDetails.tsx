@@ -120,6 +120,7 @@ function FlightTripDetails({reservation, prevReservation, personalDetails}: Flig
                 )}
             </View>
             {!!displayName && (
+                <>
                 <MenuItem
                     label={translate('travel.flightDetails.passenger')}
                     title={displayName}
@@ -129,6 +130,8 @@ function FlightTripDetails({reservation, prevReservation, personalDetails}: Flig
                     interactive={false}
                     wrapperStyle={styles.pb3}
                 />
+                    DEBUGMEME FlightTripDetails
+                    </>
             )}
         </>
     );

@@ -1,17 +1,19 @@
 import React from 'react';
-import type {GestureResponderEvent} from 'react-native';
-import {View} from 'react-native';
+import type { GestureResponderEvent } from 'react-native';
+import { View } from 'react-native';
 import MultipleAvatars from '@components/MultipleAvatars';
 import PressableWithSecondaryInteraction from '@components/PressableWithSecondaryInteraction';
+import ReportAvatar from '@components/ReportAvatar';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {navigateToAndOpenChildReport} from '@libs/actions/Report';
+import { navigateToAndOpenChildReport } from '@libs/actions/Report';
 import Timing from '@libs/actions/Timing';
 import Performance from '@libs/Performance';
 import CONST from '@src/CONST';
 import type {ReportAction} from '@src/types/onyx';
-import type {Icon} from '@src/types/onyx/OnyxCommon';
+import type { Icon } from '@src/types/onyx/OnyxCommon';
+
 
 type ReportActionItemThreadProps = {
     /** List of participant icons for the thread */
@@ -35,11 +37,13 @@ type ReportActionItemThreadProps = {
     /** Whether the thread item / message is active */
     isActive?: boolean;
 
+    accountIDs: number[];
+
     /** The function that should be called when the thread is LongPressed or right-clicked */
     onSecondaryInteraction: (event: GestureResponderEvent | MouseEvent) => void;
 };
 
-function ReportActionItemThread({numberOfReplies, icons, mostRecentReply, reportID, reportAction, isHovered, onSecondaryInteraction, isActive}: ReportActionItemThreadProps) {
+function ReportActionItemThread({numberOfReplies, accountIDs, icons, mostRecentReply, reportID, reportAction, isHovered, onSecondaryInteraction, isActive}: ReportActionItemThreadProps) {
     const styles = useThemeStyles();
 
     const {translate, datetimeToCalendarTime} = useLocalize();
@@ -62,9 +66,10 @@ function ReportActionItemThread({numberOfReplies, icons, mostRecentReply, report
                 onSecondaryInteraction={onSecondaryInteraction}
             >
                 <View style={[styles.flexRow, styles.alignItemsCenter, styles.mt2]}>
-                    <MultipleAvatars
+                    <ReportAvatar
                         size={CONST.AVATAR_SIZE.SMALL}
-                        icons={icons}
+                        // reportID={reportID}
+                        accountIDs={accountIDs}
                         shouldStackHorizontally
                         isHovered={isHovered}
                         isActive={isActive}

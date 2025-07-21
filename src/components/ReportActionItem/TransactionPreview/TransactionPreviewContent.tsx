@@ -1,13 +1,14 @@
 import lodashSortBy from 'lodash/sortBy';
 import truncate from 'lodash/truncate';
-import React, {useMemo} from 'react';
-import {View} from 'react-native';
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
 import Button from '@components/Button';
 import Icon from '@components/Icon';
-import {DotIndicator, Folder, Tag} from '@components/Icon/Expensicons';
+import { DotIndicator, Folder, Tag } from '@components/Icon/Expensicons';
 import MultipleAvatars from '@components/MultipleAvatars';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ReportActionItemImages from '@components/ReportActionItem/ReportActionItemImages';
+import ReportAvatar from '@components/ReportAvatar';
 import UserInfoCellsWithArrow from '@components/SelectionList/Search/UserInfoCellsWithArrow';
 import Text from '@components/Text';
 import TransactionPreviewSkeletonView from '@components/TransactionPreviewSkeletonView';
@@ -15,25 +16,26 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {convertToDisplayString} from '@libs/CurrencyUtils';
+import { convertToDisplayString } from '@libs/CurrencyUtils';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
-import {calculateAmount} from '@libs/IOUUtils';
-import {getAvatarsForAccountIDs} from '@libs/OptionsListUtils';
+import { calculateAmount } from '@libs/IOUUtils';
+import { getAvatarsForAccountIDs } from '@libs/OptionsListUtils';
 import Parser from '@libs/Parser';
-import {getCleanedTagName} from '@libs/PolicyUtils';
-import {getThumbnailAndImageURIs} from '@libs/ReceiptUtils';
-import {getOriginalMessage, isMoneyRequestAction} from '@libs/ReportActionsUtils';
-import type {TransactionDetails} from '@libs/ReportUtils';
-import {canEditMoneyRequest, getTransactionDetails, getWorkspaceIcon, isPolicyExpenseChat, isReportApproved, isSettled} from '@libs/ReportUtils';
+import { getCleanedTagName } from '@libs/PolicyUtils';
+import { getThumbnailAndImageURIs } from '@libs/ReceiptUtils';
+import { getOriginalMessage, isMoneyRequestAction } from '@libs/ReportActionsUtils';
+import type { TransactionDetails } from '@libs/ReportUtils';
+import { canEditMoneyRequest, getTransactionDetails, getWorkspaceIcon, isPolicyExpenseChat, isReportApproved, isSettled } from '@libs/ReportUtils';
 import StringUtils from '@libs/StringUtils';
-import type {TranslationPathOrText} from '@libs/TransactionPreviewUtils';
-import {createTransactionPreviewConditionals, getIOUPayerAndReceiver, getTransactionPreviewTextAndTranslationPaths} from '@libs/TransactionPreviewUtils';
-import {isCardTransaction as isCardTransactionUtils, isScanning} from '@libs/TransactionUtils';
+import type { TranslationPathOrText } from '@libs/TransactionPreviewUtils';
+import { createTransactionPreviewConditionals, getIOUPayerAndReceiver, getTransactionPreviewTextAndTranslationPaths } from '@libs/TransactionPreviewUtils';
+import { isCardTransaction as isCardTransactionUtils, isScanning } from '@libs/TransactionUtils';
 import ViolationsUtils from '@libs/Violations/ViolationsUtils';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {TransactionPreviewContentProps} from './types';
+import type { TransactionPreviewContentProps } from './types';
+
 
 function TransactionPreviewContent({
     action,
@@ -249,10 +251,12 @@ function TransactionPreviewContent({
                                         <Text style={[isDeleted && styles.lineThrough, styles.textLabelSupporting, styles.flex1, styles.lh16, previewTextMargin]}>{previewHeaderText}</Text>
                                         {isBillSplit && (
                                             <View style={styles.moneyRequestPreviewBoxAvatar}>
-                                                <MultipleAvatars
-                                                    icons={sortedParticipantAvatars}
+                                                <ReportAvatar
+                                                    // icons={sortedParticipantAvatars}
+                                                    accountIDs={participantAccountIDs}
+                                                    sortAvatarsByID={true}
                                                     shouldStackHorizontally
-                                                    size="subscript"
+                                                    size={CONST.AVATAR_SIZE.SUBSCRIPT}
                                                     shouldUseCardBackground
                                                 />
                                             </View>

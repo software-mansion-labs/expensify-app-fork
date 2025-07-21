@@ -1288,12 +1288,15 @@ function PureReportActionItem({
 
                 {shouldDisplayThreadReplies && (
                     <View style={draftMessageRightAlign}>
+
+                        // TO BYLO SORTOWANE PRZEZ getIconsForParticipants a juz nie jest - to naprawic
                         <ReportActionItemThread
                             reportAction={action}
                             reportID={reportID}
                             numberOfReplies={numberOfThreadReplies}
                             mostRecentReply={`${action.childLastVisibleActionCreated}`}
                             isHovered={hovered || isContextMenuActive}
+                            accountIDs={oldestFourAccountIDs}
                             icons={getIconsForParticipants(oldestFourAccountIDs, personalDetails)}
                             onSecondaryInteraction={showPopover}
                             isActive={isReportActionActive && !isContextMenuActive}

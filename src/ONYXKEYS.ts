@@ -847,6 +847,7 @@ const ONYXKEYS = {
     DERIVED: {
         REPORT_ATTRIBUTES: 'reportAttributes',
         REPORT_TRANSACTIONS_AND_VIOLATIONS: 'reportTransactionsAndViolations',
+        ACTION_AVATARS: 'actionAvatars',
     },
 
     /** Stores HybridApp specific state required to interoperate with OldDot */

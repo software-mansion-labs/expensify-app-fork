@@ -81,6 +81,7 @@ function CarTripDetails({reservation, personalDetails}: CarTripDetailsProps) {
                     copyValue={reservation.confirmations?.at(0)?.value ?? reservation.reservationID}
                 />
             )}
+            DEBUGMEME CarTripDetails
             {!!displayName && (
                 <MenuItem
                     label={translate('travel.carDetails.driver')}

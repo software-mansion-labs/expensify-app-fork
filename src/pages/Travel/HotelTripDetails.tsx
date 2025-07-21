@@ -80,6 +80,7 @@ function HotelTripDetails({reservation, personalDetails}: HotelTripDetailsProps)
                     copyValue={reservation.confirmations?.at(0)?.value}
                 />
             )}
+            DEBUGMEME HotelTripDetails
             {!!displayName && (
                 <MenuItem
                     label={translate('travel.hotelDetails.guest')}

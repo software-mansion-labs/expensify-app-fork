@@ -157,6 +157,7 @@ function NewTaskPage({route}: NewTaskPageProps) {
                                 shouldShowRightIcon
                                 titleWithTooltips={assigneeTooltipDetails}
                             />
+                            DEBUGMEME NewTaskPage
                             <MenuItem
                                 label={shareDestination?.displayName ? translate('common.share') : ''}
                                 title={shareDestination?.displayName ?? ''}

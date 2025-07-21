@@ -1,46 +1,48 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {InteractionManager, Keyboard, View} from 'react-native';
-import type {GestureResponderEvent} from 'react-native/Libraries/Types/CoreEventTypes';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { InteractionManager, Keyboard, View } from 'react-native';
+import type { GestureResponderEvent } from 'react-native/Libraries/Types/CoreEventTypes';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
-import type {FormInputErrors} from '@components/Form/types';
+import type { FormInputErrors } from '@components/Form/types';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import MultipleAvatars from '@components/MultipleAvatars';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
-import type {AnimatedTextInputRef} from '@components/RNTextInput';
+import ReportAvatar from '@components/ReportAvatar';
+import type { AnimatedTextInputRef } from '@components/RNTextInput';
 import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
-import type {WithCurrentUserPersonalDetailsProps} from '@components/withCurrentUserPersonalDetails';
+import type { WithCurrentUserPersonalDetailsProps } from '@components/withCurrentUserPersonalDetails';
 import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalDetails';
 import useAutoFocusInput from '@hooks/useAutoFocusInput';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useViewportOffsetTop from '@hooks/useViewportOffsetTop';
-import {clearDraftValues} from '@libs/actions/FormActions';
-import {openExternalLink} from '@libs/actions/Link';
-import {addMembersToWorkspace, clearWorkspaceInviteRoleDraft} from '@libs/actions/Policy/Member';
-import {setWorkspaceInviteMessageDraft} from '@libs/actions/Policy/Policy';
+import { clearDraftValues } from '@libs/actions/FormActions';
+import { openExternalLink } from '@libs/actions/Link';
+import { addMembersToWorkspace, clearWorkspaceInviteRoleDraft } from '@libs/actions/Policy/Member';
+import { setWorkspaceInviteMessageDraft } from '@libs/actions/Policy/Policy';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import Navigation from '@libs/Navigation/Navigation';
-import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
-import {getAvatarsForAccountIDs} from '@libs/OptionsListUtils';
-import {getMemberAccountIDsForWorkspace, goBackFromInvalidPolicy} from '@libs/PolicyUtils';
+import type { PlatformStackScreenProps } from '@libs/Navigation/PlatformStackNavigation/types';
+import { getAvatarsForAccountIDs } from '@libs/OptionsListUtils';
+import { getMemberAccountIDsForWorkspace, goBackFromInvalidPolicy } from '@libs/PolicyUtils';
 import updateMultilineInputRange from '@libs/updateMultilineInputRange';
-import type {SettingsNavigatorParamList} from '@navigation/types';
+import type { SettingsNavigatorParamList } from '@navigation/types';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/WorkspaceInviteMessageForm';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import { isEmptyObject } from '@src/types/utils/EmptyObject';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 import AccessOrNotFoundWrapper from './AccessOrNotFoundWrapper';
 import withPolicyAndFullscreenLoading from './withPolicyAndFullscreenLoading';
 import type {WithPolicyAndFullscreenLoadingProps} from './withPolicyAndFullscreenLoading';
+
 
 type WorkspaceInviteMessagePageProps = WithPolicyAndFullscreenLoadingProps &
     WithCurrentUserPersonalDetailsProps &
@@ -187,9 +189,10 @@ function WorkspaceInviteMessagePage({policy, route, currentUserPersonalDetails}:
                     }
                 >
                     <View style={[styles.mv4, styles.justifyContentCenter, styles.alignItemsCenter]}>
-                        <MultipleAvatars
+                        <ReportAvatar
                             size={CONST.AVATAR_SIZE.LARGE}
-                            icons={getAvatarsForAccountIDs(Object.values(invitedEmailsToAccountIDsDraft ?? {}), allPersonalDetails ?? {}, invitedEmailsToAccountIDsDraft ?? {})}
+                            accountIDs={Object.values(invitedEmailsToAccountIDsDraft ?? {})}
+                            convertSubscriptToMultiple={true}
                             shouldStackHorizontally
                             shouldDisplayAvatarsInRows
                             secondAvatarStyle={[styles.secondAvatarInline]}

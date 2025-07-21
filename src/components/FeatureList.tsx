@@ -94,6 +94,7 @@ function FeatureList({
             contentPaddingOnLargeScreens={contentPaddingOnLargeScreens}
         >
             <View style={styles.flex1}>
+                DEBUGMEME FeatureList
                 <View style={[styles.flex1, styles.flexRow, styles.flexWrap, styles.rowGap4, styles.pv4, styles.pl1]}>
                     {menuItems.map(({translationKey, icon}) => (
                         <View

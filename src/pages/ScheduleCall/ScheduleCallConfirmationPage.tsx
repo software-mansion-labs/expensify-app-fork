@@ -31,7 +31,17 @@ import type {PersonalDetails} from '@src/types/onyx';
 function ScheduleCallConfirmationPage() {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const [scheduleCallDraft] = useOnyx(`${ONYXKEYS.SCHEDULE_CALL_DRAFT}`, {canBeMissing: false});
+    // const [scheduleCallDraft] = useOnyx(`${ONYXKEYS.SCHEDULE_CALL_DRAFT}`, {canBeMissing: false});
+    const scheduleCallDraft = {
+        date: "2023-10-01",
+        timeSlot: "2023-10-01T10:00:00Z",
+        guide: {
+            scheduleURL: "",
+            accountID: 19844674,
+            email: "blazej.kustra+heavy@swmansion.com",
+        },
+        reportID: "8230487519835237",
+    }
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
     const userTimezone = currentUserPersonalDetails?.timezone?.selected ? currentUserPersonalDetails?.timezone.selected : CONST.DEFAULT_TIME_ZONE.selected;
 
@@ -106,14 +116,7 @@ function ScheduleCallConfirmationPage() {
                         description={guideDetails?.login}
                         label={translate('scheduledCall.confirmation.setupSpecialist')}
                         interactive={false}
-                        icon={[
-                            {
-                                id: guideDetails?.accountID,
-                                source: guideDetails?.avatarThumbnail ?? guideDetails?.avatar ?? guideDetails?.fallbackIcon ?? FallbackAvatar,
-                                name: guideDetails?.login,
-                                type: CONST.ICON_TYPE_AVATAR,
-                            },
-                        ]}
+                        iconAccountID={guideDetails?.accountID || 0}
                     />
                     <MenuItemWithTopDescription
                         title={dateTimeString}

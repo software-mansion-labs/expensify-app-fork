@@ -14,6 +14,7 @@ import {clearCreateChatError} from '@userActions/Report';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import AnimatedEmptyStateBackground from './AnimatedEmptyStateBackground';
+import ReportAvatar from "@components/ReportAvatar";
 
 type ReportActionItemCreatedProps = {
     /** The id of the report */
@@ -67,11 +68,14 @@ function ReportActionItemCreated({reportID, policyID}: ReportActionItemCreatedPr
                             role={CONST.ROLE.BUTTON}
                             disabled={shouldDisableDetailPage}
                         >
-                            <MultipleAvatars
-                                icons={icons}
+                            <ReportAvatar
+                                // icons={icons}
+                                reportID={reportID}
+                                reverseAvatars={isInvoiceRoom(report) && isCurrentUserInvoiceReceiver(report)}
                                 size={CONST.AVATAR_SIZE.X_LARGE}
                                 overlapDivider={4}
                                 shouldStackHorizontally
+                                convertSubscriptToMultiple={true}
                                 shouldDisplayAvatarsInRows={shouldUseNarrowLayout}
                                 maxAvatarsInRow={shouldUseNarrowLayout ? CONST.AVATAR_ROW_SIZE.DEFAULT : CONST.AVATAR_ROW_SIZE.LARGE_SCREEN}
                             />
