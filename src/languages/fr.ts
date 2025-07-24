@@ -35,9 +35,13 @@ import type {
     AuthenticationErrorParams,
     AutoPayApprovedReportsLimitErrorParams,
     BadgeFreeTrialParams,
-    BeginningOfChatHistoryAdminRoomPartOneParams,
-    BeginningOfChatHistoryAnnounceRoomPartOneParams,
-    BeginningOfChatHistoryDomainRoomPartOneParams,
+    BeginningOfArchivedRoomParams,
+    BeginningOfChatHistoryAdminRoomParams,
+    BeginningOfChatHistoryAnnounceRoomParams,
+    BeginningOfChatHistoryDomainRoomParams,
+    BeginningOfChatHistoryInvoiceRoomParams,
+    BeginningOfChatHistoryPolicyExpenseChatParams,
+    BeginningOfChatHistoryUserRoomParams,
     BillingBannerCardAuthenticationRequiredParams,
     BillingBannerCardExpiredParams,
     BillingBannerCardOnDisputeParams,
@@ -183,6 +187,7 @@ import type {
     SetTheRequestParams,
     SettledAfterAddedBankAccountParams,
     SettleExpensifyCardParams,
+    SettlementAccountInfoParams,
     SettlementDateParams,
     ShareParams,
     SignUpNewFaceCodeParams,
@@ -276,6 +281,8 @@ import type {
     WorkspaceLockedPlanTypeParams,
     WorkspaceMemberList,
     WorkspaceOwnerWillNeedToAddOrUpdatePaymentCardParams,
+    WorkspaceRouteParams,
+    WorkspacesListRouteParams,
     WorkspaceYouMayJoin,
     YourPlanPriceParams,
     YourPlanPriceValueParams,
@@ -468,6 +475,7 @@ const translations = {
         message: 'Message',
         leaveThread: 'Quitter le fil de discussion',
         you: 'Vous',
+        me: 'moi',
         youAfterPreposition: 'vous',
         your: 'votre',
         conciergeHelp: "Veuillez contacter Concierge pour obtenir de l'aide.",
@@ -550,6 +558,7 @@ const translations = {
         userID: 'ID utilisateur',
         disable: 'Désactiver',
         export: 'Exportation',
+        basicExport: 'Exportation basique',
         initialValue: 'Valeur initiale',
         currentDate: 'Current date',
         value: 'Valeur',
@@ -561,6 +570,7 @@ const translations = {
         longID: 'ID long',
         bankAccounts: 'Comptes bancaires',
         chooseFile: 'Choisir un fichier',
+        chooseFiles: 'Choisir des fichiers',
         dropTitle: 'Laisse tomber',
         dropMessage: 'Déposez votre fichier ici',
         ignore: 'Ignore',
@@ -675,6 +685,7 @@ const translations = {
     },
     dropzone: {
         addAttachments: 'Ajouter des pièces jointes',
+        addReceipt: 'Ajouter un reçu',
         scanReceipts: 'Scanner les reçus',
         replaceReceipt: 'Remplacer le reçu',
     },
@@ -823,25 +834,21 @@ const translations = {
         reactedWith: 'a réagi avec',
     },
     reportActionsView: {
-        beginningOfArchivedRoomPartOne: 'Vous avez manqué la fête à',
-        beginningOfArchivedRoomPartTwo: ", il n'y a rien à voir ici.",
-        beginningOfChatHistoryDomainRoomPartOne: ({domainRoom}: BeginningOfChatHistoryDomainRoomPartOneParams) =>
-            `Cette discussion est avec tous les membres d'Expensify sur le domaine ${domainRoom}.`,
-        beginningOfChatHistoryDomainRoomPartTwo: 'Utilisez-le pour discuter avec des collègues, partager des conseils et poser des questions.',
-        beginningOfChatHistoryAdminRoomPartOneFirst: 'Ce chat est avec',
-        beginningOfChatHistoryAdminRoomPartOneLast: 'admin.',
-        beginningOfChatHistoryAdminRoomWorkspaceName: ({workspaceName}: BeginningOfChatHistoryAdminRoomPartOneParams) => ` ${workspaceName} `,
-        beginningOfChatHistoryAdminRoomPartTwo: "Utilisez-le pour discuter de l'installation de l'espace de travail et plus encore.",
-        beginningOfChatHistoryAnnounceRoomPartOne: ({workspaceName}: BeginningOfChatHistoryAnnounceRoomPartOneParams) => `Cette discussion est avec tout le monde dans ${workspaceName}.`,
-        beginningOfChatHistoryAnnounceRoomPartTwo: `Utilisez-le pour les annonces les plus importantes.`,
-        beginningOfChatHistoryUserRoomPartOne: 'Ce salon de discussion est pour tout.',
-        beginningOfChatHistoryUserRoomPartTwo: 'related.',
-        beginningOfChatHistoryInvoiceRoomPartOne: `Ce chat est pour les factures entre`,
-        beginningOfChatHistoryInvoiceRoomPartTwo: `. Utilisez le bouton + pour envoyer une facture.`,
+        beginningOfArchivedRoom: ({reportName, reportDetailsLink}: BeginningOfArchivedRoomParams) =>
+            `Vous avez raté la fête à <strong><a class="no-style-link" href="${reportDetailsLink}">${reportName}</a></strong>, il n'y a rien à voir ici.`,
+        beginningOfChatHistoryDomainRoom: ({domainRoom}: BeginningOfChatHistoryDomainRoomParams) =>
+            `Ce chat est destiné à tous les membres d'Expensify sur le domaine <strong>${domainRoom}</strong>. Utilisez-le pour discuter avec vos collègues, partager des astuces et poser des questions.`,
+        beginningOfChatHistoryAdminRoom: ({workspaceName}: BeginningOfChatHistoryAdminRoomParams) =>
+            `Ce chat est avec l'administrateur <strong>${workspaceName}</strong>. Utilisez-le pour discuter de la configuration de l'espace de travail et d'autres sujets.`,
+        beginningOfChatHistoryAnnounceRoom: ({workspaceName}: BeginningOfChatHistoryAnnounceRoomParams) =>
+            `Cette discussion est ouverte à tous les membres de <strong>${workspaceName}</strong>. Utilisez-le pour les annonces les plus importantes.`,
+        beginningOfChatHistoryUserRoom: ({reportName, reportDetailsLink}: BeginningOfChatHistoryUserRoomParams) =>
+            `Ce salon de discussion est destiné à tout ce qui concerne <strong><a class="no-style-link" href="${reportDetailsLink}">${reportName}</a></strong>.`,
+        beginningOfChatHistoryInvoiceRoom: ({invoicePayer, invoiceReceiver}: BeginningOfChatHistoryInvoiceRoomParams) =>
+            `Ce chat concerne les factures entre <strong>${invoicePayer}</strong> et <strong>${invoiceReceiver}</strong>. Utilisez le bouton + pour envoyer une facture.`,
         beginningOfChatHistory: 'Ce chat est avec',
-        beginningOfChatHistoryPolicyExpenseChatPartOne: "C'est ici que",
-        beginningOfChatHistoryPolicyExpenseChatPartTwo: 'va soumettre des dépenses à',
-        beginningOfChatHistoryPolicyExpenseChatPartThree: ". Il suffit d'utiliser le bouton +.",
+        beginningOfChatHistoryPolicyExpenseChat: ({workspaceName, submitterDisplayName}: BeginningOfChatHistoryPolicyExpenseChatParams) =>
+            `C'est ici que <strong>${submitterDisplayName}</strong> soumettra ses dépenses à <strong>${workspaceName}</strong>. Il suffit d'utiliser le bouton +.`,
         beginningOfChatHistorySelfDM: "C'est votre espace personnel. Utilisez-le pour des notes, des tâches, des brouillons et des rappels.",
         beginningOfChatHistorySystemDM: 'Bienvenue ! Commençons votre configuration.',
         chatWithAccountManager: 'Discutez avec votre gestionnaire de compte ici',
@@ -925,8 +932,11 @@ const translations = {
     },
     spreadsheet: {
         upload: 'Télécharger une feuille de calcul',
+        import: 'Importer une feuille de calcul',
         dragAndDrop: 'Faites glisser et déposez votre feuille de calcul ici, ou choisissez un fichier ci-dessous. Formats pris en charge : .csv, .txt, .xls et .xlsx.',
+        dragAndDropMultiLevelTag: `<muted-link>Faites glisser et déposez votre feuille de calcul ici, ou choisissez un fichier ci-dessous. <a href="${CONST.IMPORT_SPREADSHEET.MULTI_LEVEL_TAGS_ARTICLE_LINK}">En savoir plus</a> sur les formats de fichier pris en charge.</muted-link>`,
         chooseSpreadsheet: 'Sélectionnez un fichier de feuille de calcul à importer. Formats pris en charge : .csv, .txt, .xls et .xlsx.',
+        chooseSpreadsheetMultiLevelTag: `<muted-link>Sélectionnez un fichier de feuille de calcul à importer. <a href="${CONST.IMPORT_SPREADSHEET.MULTI_LEVEL_TAGS_ARTICLE_LINK}">En savoir plus</a> sur les formats de fichier pris en charge.</muted-link>`,
         fileContainsHeader: 'Le fichier contient des en-têtes de colonnes',
         column: ({name}: SpreadSheetColumnParams) => `Colonne ${name}`,
         fieldNotMapped: ({fieldName}: SpreadFieldNameParams) => `Oups ! Un champ requis (« ${fieldName} ») n'a pas été mappé. Veuillez vérifier et réessayer.`,
@@ -961,9 +971,13 @@ const translations = {
     },
     receipt: {
         upload: 'Télécharger le reçu',
+        uploadMultiple: 'Télécharger des reçus',
         dragReceiptBeforeEmail: 'Faites glisser un reçu sur cette page, transférez un reçu à',
+        dragReceiptsBeforeEmail: 'Faites glisser des reçus sur cette page, transférez des reçus à',
         dragReceiptAfterEmail: 'ou choisissez un fichier à télécharger ci-dessous.',
+        dragReceiptsAfterEmail: 'ou choisissez des fichiers à télécharger ci-dessous.',
         chooseReceipt: 'Choisissez un reçu à télécharger ou transférez un reçu à',
+        chooseReceipts: 'Choisissez des reçus à télécharger ou transférez des reçus à',
         takePhoto: 'Prendre une photo',
         cameraAccess: "L'accès à la caméra est requis pour prendre des photos des reçus.",
         deniedCameraAccess: "L'accès à la caméra n'a toujours pas été accordé, veuillez suivre",
@@ -1031,6 +1045,9 @@ const translations = {
         createExpense: 'Créer une dépense',
         trackDistance: 'Suivre la distance',
         createExpenses: ({expensesNumber}: CreateExpensesParams) => `Créer ${expensesNumber} dépenses`,
+        removeExpense: 'Supprimer une dépense',
+        removeThisExpense: 'Supprimer cette dépense',
+        removeExpenseConfirmation: 'Êtes-vous sûr de vouloir supprimer ce reçu ? Cette action est irréversible.',
         addExpense: 'Ajouter une dépense',
         chooseRecipient: 'Choisir le destinataire',
         createExpenseWithAmount: ({amount}: {amount: string}) => `Créer une dépense de ${amount}`,
@@ -1152,8 +1169,7 @@ const translations = {
         automaticallyForwarded: `approuvé via les <a href="${CONST.CONFIGURE_EXPENSE_REPORT_RULES_HELP_URL}">règles de l'espace de travail</a>`,
         forwarded: `approuvé`,
         rejectedThisReport: 'a rejeté ce rapport',
-        waitingOnBankAccount: ({submitterDisplayName}: WaitingOnBankAccountParams) =>
-            `a commencé à régler. Le paiement est en attente jusqu'à ce que ${submitterDisplayName} ajoute un compte bancaire.`,
+        waitingOnBankAccount: ({submitterDisplayName}: WaitingOnBankAccountParams) => `a commencé le paiement, mais attend que ${submitterDisplayName} ajoute un compte bancaire.`,
         adminCanceledRequest: ({manager}: AdminCanceledRequestParams) => `${manager ? `${manager}: ` : ''} a annulé le paiement`,
         canceledRequest: ({amount, submitterDisplayName}: CanceledRequestParams) =>
             `a annulé le paiement de ${amount}, car ${submitterDisplayName} n'a pas activé leur Expensify Wallet dans les 30 jours`,
@@ -1228,7 +1244,6 @@ const translations = {
         unheldExpense: 'débloqué cette dépense',
         moveUnreportedExpense: 'Déplacer la dépense non déclarée',
         addUnreportedExpense: 'Ajouter une dépense non déclarée',
-        createNewExpense: 'Créer une nouvelle dépense',
         selectUnreportedExpense: 'Sélectionnez au moins une dépense à ajouter au rapport.',
         emptyStateUnreportedExpenseTitle: 'Aucune dépense non déclarée',
         emptyStateUnreportedExpenseSubtitle: "Il semble que vous n'ayez aucune dépense non déclarée. Essayez d'en créer une ci-dessous.",
@@ -1517,6 +1532,8 @@ const translations = {
             invalidFileDescription: "Le fichier que vous essayez d'importer n'est pas valide. Veuillez réessayer.",
             invalidateWithDelay: 'Invalider avec délai',
             recordTroubleshootData: 'Enregistrement des données de dépannage',
+            softKillTheApp: "Supprimer l'application",
+            kill: 'Tuer',
         },
         debugConsole: {
             saveLog: 'Enregistrer le journal',
@@ -1541,6 +1558,7 @@ const translations = {
             phrase4: 'Confidentialité',
         },
         help: 'Aide',
+        whatIsNew: 'Quoi de neuf',
         accountSettings: 'Paramètres du compte',
         account: 'Compte',
         general: 'Général',
@@ -1630,9 +1648,10 @@ const translations = {
             afterEmail: "dans d'autres comptes. Veuillez fusionner les autres comptes avec celui-ci à la place.",
         },
         mergeFailureInvoicedAccount: {
-            beforeEmail: 'Vous ne pouvez pas fusionner',
-            afterEmail: "dans d'autres comptes car c'est le propriétaire de facturation d'un compte facturé. Veuillez plutôt fusionner d'autres comptes avec celui-ci.",
+            beforeEmail: 'Vous ne pouvez pas fusionner des comptes avec ',
+            afterEmail: ' car ce compte possède une relation de facturation facturée.',
         },
+
         mergeFailureTooManyAttempts: {
             heading: 'Réessayez plus tard',
             description: 'Il y a eu trop de tentatives de fusion de comptes. Veuillez réessayer plus tard.',
@@ -1778,7 +1797,7 @@ const translations = {
         nameOnCard: 'Nom sur la carte',
         paymentCardNumber: 'Numéro de carte',
         expiration: "Date d'expiration",
-        expirationDate: 'MMYY',
+        expirationDate: 'MM/YY',
         cvv: 'CVV',
         billingAddress: 'Adresse de facturation',
         growlMessageOnSave: 'Votre carte de paiement a été ajoutée avec succès',
@@ -2193,6 +2212,11 @@ const translations = {
             title: 'Utilisez-vous un logiciel de comptabilité ?',
             none: 'Aucun',
         },
+        interestedFeatures: {
+            title: 'Quelles fonctionnalités vous intéressent ?',
+            featuresAlreadyEnabled: 'Votre espace de travail a déjà activé les éléments suivants :',
+            featureYouMayBeInterestedIn: 'Activez des fonctionnalités supplémentaires qui pourraient vous intéresser :',
+        },
         error: {
             requiredFirstName: 'Veuillez entrer votre prénom pour continuer',
         },
@@ -2256,7 +2280,7 @@ const translations = {
                 title: 'Soumettre une dépense',
                 description:
                     '*Soumettez une dépense* en saisissant un montant ou en scannant un reçu.\n\n' +
-                    '1. Cliquez sur le bouton vert *+*.\n' +
+                    `1. Cliquez sur le bouton ${CONST.CUSTOM_EMOJIS.GLOBAL_CREATE}.\n` +
                     '2. Choisissez *Créer une dépense*.\n' +
                     '3. Saisissez un montant ou scannez un reçu.\n' +
                     `4. Ajoutez l’email ou numéro de téléphone de votre responsable.\n` +
@@ -2267,7 +2291,7 @@ const translations = {
                 title: 'Soumettre une dépense',
                 description:
                     '*Soumettez une dépense* en saisissant un montant ou en scannant un reçu.\n\n' +
-                    '1. Cliquez sur le bouton vert *+*.\n' +
+                    `1. Cliquez sur le bouton ${CONST.CUSTOM_EMOJIS.GLOBAL_CREATE}.\n` +
                     '2. Choisissez *Créer une dépense*.\n' +
                     '3. Saisissez un montant ou scannez un reçu.\n' +
                     '4. Confirmez les détails.\n' +
@@ -2278,7 +2302,7 @@ const translations = {
                 title: 'Suivre une dépense',
                 description:
                     '*Suivez une dépense* dans n’importe quelle devise, avec ou sans reçu.\n\n' +
-                    '1. Cliquez sur le bouton vert *+*.\n' +
+                    `1. Cliquez sur le bouton ${CONST.CUSTOM_EMOJIS.GLOBAL_CREATE}.\n` +
                     '2. Choisissez *Créer une dépense*.\n' +
                     '3. Saisissez un montant ou scannez un reçu.\n' +
                     '4. Choisissez votre espace *personnel*.\n' +
@@ -2361,7 +2385,7 @@ const translations = {
                 title: 'Démarrer un chat',
                 description:
                     '*Démarrez un chat* avec quelqu’un grâce à son email ou numéro.\n\n' +
-                    '1. Cliquez sur le bouton vert *+*.\n' +
+                    `1. Cliquez sur le bouton ${CONST.CUSTOM_EMOJIS.GLOBAL_CREATE}.\n` +
                     '2. Choisissez *Démarrer un chat*.\n' +
                     '3. Entrez un email ou numéro de téléphone.\n\n' +
                     'S’ils ne sont pas encore sur Expensify, une invitation sera envoyée automatiquement.\n\n' +
@@ -2371,7 +2395,7 @@ const translations = {
                 title: 'Partager une dépense',
                 description:
                     '*Partagez une dépense* avec une ou plusieurs personnes.\n\n' +
-                    '1. Cliquez sur le bouton vert *+*.\n' +
+                    `1. Cliquez sur le bouton ${CONST.CUSTOM_EMOJIS.GLOBAL_CREATE}.\n` +
                     '2. Choisissez *Démarrer un chat*.\n' +
                     '3. Entrez des emails ou numéros de téléphone.\n' +
                     '4. Cliquez sur le bouton gris *+* > *Partager une dépense*.\n' +
@@ -2390,7 +2414,7 @@ const translations = {
                 title: 'Créer votre premier rapport',
                 description:
                     'Voici comment créer un rapport :\n\n' +
-                    '1. Cliquez sur le bouton vert *+*.\n' +
+                    `1. Cliquez sur le bouton ${CONST.CUSTOM_EMOJIS.GLOBAL_CREATE}.\n` +
                     '2. Choisissez *Créer un rapport*.\n' +
                     '3. Cliquez sur *Ajouter une dépense*.\n' +
                     '4. Ajoutez votre première dépense.\n\n' +
@@ -2633,11 +2657,8 @@ const translations = {
         hasPhoneLoginError: ({contactMethodRoute}: ContactMethodParams) =>
             `Pour connecter un compte bancaire, veuillez <a href="${contactMethodRoute}">ajoutez un e-mail comme identifiant principal</a> et réessayez. Vous pouvez ajouter votre numéro de téléphone comme connexion secondaire.`,
         hasBeenThrottledError: "Une erreur s'est produite lors de l'ajout de votre compte bancaire. Veuillez attendre quelques minutes et réessayer.",
-        hasCurrencyError: {
-            phrase1: "Oups ! Il semble que la devise de votre espace de travail soit différente de l'USD. Pour continuer, veuillez aller sur",
-            link: "vos paramètres d'espace de travail",
-            phrase2: 'pour le régler sur USD et réessayer.',
-        },
+        hasCurrencyError: ({workspaceRoute}: WorkspaceRouteParams) =>
+            `Oups ! Il semble que la devise de votre espace de travail soit différente de l'USD. Pour continuer, veuillez aller sur <a href="${workspaceRoute}">vos paramètres d'espace de travail</a> pour le régler sur USD et réessayer.`,
         error: {
             youNeedToSelectAnOption: 'Veuillez sélectionner une option pour continuer',
             noBankAccountAvailable: "Désolé, aucun compte bancaire n'est disponible.",
@@ -2671,6 +2692,8 @@ const translations = {
             validationAmounts: 'Les montants de validation que vous avez saisis sont incorrects. Veuillez vérifier votre relevé bancaire et réessayer.',
             fullName: 'Veuillez entrer un nom complet valide',
             ownershipPercentage: 'Veuillez entrer un nombre en pourcentage valide',
+            deletePaymentBankAccount:
+                'Ce compte bancaire ne peut pas être supprimé car il est utilisé pour les paiements par carte Expensify. Si vous souhaitez toujours supprimer ce compte, veuillez contacter le Concierge.',
         },
     },
     addPersonalBankAccount: {
@@ -3187,6 +3210,18 @@ const translations = {
             consent: "Veuillez consentir à l'avis de confidentialité",
         },
     },
+    docusignStep: {
+        subheader: 'Formulaire Docusign',
+        pleaseComplete:
+            'Veuillez remplir le formulaire d’autorisation ACH via le lien Docusign ci-dessous, puis téléversez une copie signée ici afin que nous puissions prélever les fonds directement de votre compte bancaire.',
+        pleaseCompleteTheBusinessAccount: 'Veuillez remplir la demande de compte professionnel et l’accord de prélèvement automatique.',
+        pleaseCompleteTheDirect:
+            'Veuillez remplir l’accord de prélèvement automatique via le lien Docusign ci-dessous, puis téléversez une copie signée ici afin que nous puissions prélever les fonds directement de votre compte bancaire.',
+        takeMeTo: 'Aller à Docusign',
+        uploadAdditional: 'Téléverser des documents supplémentaires',
+        pleaseUpload: 'Veuillez téléverser le formulaire DEFT et la page de signature Docusign.',
+        pleaseUploadTheDirect: 'Veuillez téléverser les accords de prélèvement automatique et la page de signature Docusign.',
+    },
     finishStep: {
         connect: 'Connecter un compte bancaire',
         letsFinish: 'Terminons dans le chat !',
@@ -3219,10 +3254,8 @@ const translations = {
         termsAndConditions: {
             header: 'Avant de continuer...',
             title: 'Termes et conditions',
-            subtitle: 'Veuillez accepter les conditions de Expensify Travel.',
-            termsAndConditions: 'termes et conditions',
-            travelTermsAndConditions: 'termes et conditions',
-            agree: "J'accepte les",
+            label: "J'accepte les termes et conditions",
+            subtitle: `Veuillez accepter les <a href="${CONST.TRAVEL_TERMS_URL}">conditions générales</a> d'Expensify Travel.`,
             error: 'Vous devez accepter les conditions générales de Expensify Travel pour continuer.',
             defaultWorkspaceError:
                 "Vous devez définir un espace de travail par défaut pour activer Expensify Travel. Allez dans Paramètres > Espaces de travail > cliquez sur les trois points verticaux à côté d'un espace de travail > Définir comme espace de travail par défaut, puis réessayez !",
@@ -3417,7 +3450,7 @@ const translations = {
             welcomeNote: 'Veuillez utiliser Expensify pour soumettre vos reçus pour remboursement, merci !',
             subscription: 'Abonnement',
             markAsEntered: 'Marquer comme saisi manuellement',
-            markAsExported: 'Marquer comme exporté manuellement',
+            markAsExported: 'Marquer comme exporté',
             exportIntegrationSelected: ({connectionName}: ExportIntegrationSelectedParams) => `Exporter vers ${CONST.POLICY.CONNECTIONS.NAME_USER_FRIENDLY[connectionName]}`,
             letsDoubleCheck: 'Vérifions que tout est correct.',
             lineItemLevel: 'Niveau des postes de dépense',
@@ -3800,6 +3833,18 @@ const translations = {
             },
             noAccountsFound: 'Aucun compte trouvé',
             noAccountsFoundDescription: 'Veuillez ajouter le compte dans Xero et synchroniser à nouveau la connexion.',
+            accountingMethods: {
+                label: 'Quand exporter',
+                description: 'Choisissez quand exporter les dépenses :',
+                values: {
+                    [COMMON_CONST.INTEGRATIONS.ACCOUNTING_METHOD.ACCRUAL]: 'Accrual',
+                    [COMMON_CONST.INTEGRATIONS.ACCOUNTING_METHOD.CASH]: 'Espèces',
+                },
+                alternateText: {
+                    [COMMON_CONST.INTEGRATIONS.ACCOUNTING_METHOD.ACCRUAL]: 'Les dépenses hors de la poche seront exportées une fois approuvées définitivement.',
+                    [COMMON_CONST.INTEGRATIONS.ACCOUNTING_METHOD.CASH]: "Les dépenses personnelles seront exportées lorsqu'elles seront payées.",
+                },
+            },
         },
         sageIntacct: {
             preferredExporter: 'Exportateur préféré',
@@ -4287,6 +4332,11 @@ const translations = {
                     pleaseSelectFeedType: 'Veuillez sélectionner un type de flux avant de continuer',
                 },
             },
+            statementCloseDate: {
+                [CONST.COMPANY_CARDS.STATEMENT_CLOSE_DATE.LAST_DAY_OF_MONTH]: 'Dernier jour du mois',
+                [CONST.COMPANY_CARDS.STATEMENT_CLOSE_DATE.LAST_BUSINESS_DAY_OF_MONTH]: 'Dernier jour ouvrable du mois',
+                [CONST.COMPANY_CARDS.STATEMENT_CLOSE_DATE.CUSTOM_DAY_OF_MONTH]: 'Jour personnalisé du mois',
+            },
             assignCard: 'Attribuer la carte',
             findCard: 'Trouver la carte',
             cardNumber: 'Numéro de carte',
@@ -4303,6 +4353,7 @@ const translations = {
             startDateDescription: "Nous importerons toutes les transactions à partir de cette date. Si aucune date n'est spécifiée, nous remonterons aussi loin que votre banque le permet.",
             fromTheBeginning: 'Depuis le début',
             customStartDate: 'Date de début personnalisé',
+            customCloseDate: 'Date de clôture personnalisée',
             letsDoubleCheck: 'Vérifions que tout est correct.',
             confirmationDescription: 'Nous commencerons à importer les transactions immédiatement.',
             cardholder: 'Titulaire de carte',
@@ -4349,9 +4400,8 @@ const translations = {
             addNewBankAccount: 'Ajouter un nouveau compte bancaire',
             settlementAccount: 'Compte de règlement',
             settlementAccountDescription: 'Choisissez un compte pour payer le solde de votre carte Expensify.',
-            settlementAccountInfoPt1: 'Assurez-vous que ce compte correspond au vôtre',
-            settlementAccountInfoPt2: 'afin que la Réconciliation Continue fonctionne correctement.',
-            reconciliationAccount: 'Compte de réconciliation',
+            settlementAccountInfo: ({reconciliationAccountSettingsLink, accountNumber}: SettlementAccountInfoParams) =>
+                `Assurez-vous que ce compte correspond à votre <a href="${reconciliationAccountSettingsLink}">compte de réconciliation</a> (${accountNumber}) afin que le réconciliation continu fonctionne correctement.`,
             settlementFrequency: 'Fréquence de règlement',
             settlementFrequencyDescription: 'Choisissez la fréquence à laquelle vous paierez le solde de votre Expensify Card.',
             settlementFrequencyInfo:
@@ -4530,6 +4580,7 @@ const translations = {
                 removeCardFeedDescription: 'Êtes-vous sûr de vouloir supprimer ce flux de cartes ? Cela désassignera toutes les cartes.',
                 error: {
                     feedNameRequired: 'Le nom du flux de carte est requis',
+                    statementCloseDateRequired: 'Veuillez sélectionner une date de clôture du relevé.',
                 },
                 corporate: 'Restreindre la suppression des transactions',
                 personal: 'Autoriser la suppression des transactions',
@@ -4557,6 +4608,8 @@ const translations = {
                 expensifyCardBannerSubtitle:
                     "Profitez de remises en argent sur chaque achat aux États-Unis, jusqu'à 50 % de réduction sur votre facture Expensify, des cartes virtuelles illimitées, et bien plus encore.",
                 expensifyCardBannerLearnMoreButton: 'En savoir plus',
+                statementCloseDateTitle: 'Date de clôture du relevé',
+                statementCloseDateDescription: 'Indiquez-nous la date de clôture de votre relevé de carte et nous créerons un relevé correspondant dans Expensify.',
             },
             workflows: {
                 title: 'Workflows',
@@ -5907,11 +5960,16 @@ const translations = {
                 title: 'Aucune dépense à exporter',
                 subtitle: 'Il est temps de se détendre, beau travail.',
             },
+            emptyStatementsResults: {
+                title: 'Aucun relevé à afficher',
+                subtitle: "Aucun résultat. Veuillez essayer d'ajuster vos filtres.",
+            },
             emptyUnapprovedResults: {
                 title: 'Aucune dépense à approuver',
                 subtitle: 'Zéro dépenses. Détente maximale. Bien joué !',
             },
         },
+        statements: 'Relevés',
         unapproved: 'Non approuvé',
         unapprovedCash: 'Espèces non approuvées',
         unapprovedCompanyCards: "Cartes d'entreprise non approuvées",
@@ -5938,6 +5996,7 @@ const translations = {
                 presets: {
                     [CONST.SEARCH.DATE_PRESETS.NEVER]: 'Jamais',
                     [CONST.SEARCH.DATE_PRESETS.LAST_MONTH]: 'Le mois dernier',
+                    [CONST.SEARCH.DATE_PRESETS.LAST_STATEMENT]: 'Dernière relevé',
                 },
             },
             status: 'Statut',
@@ -5976,6 +6035,7 @@ const translations = {
                 members: 'Membre',
                 cards: 'Carte',
             },
+            feed: 'Flux',
         },
         groupBy: 'Groupe par',
         moneyRequestReport: {
@@ -6106,8 +6166,12 @@ const translations = {
             type: {
                 changeField: ({oldValue, newValue, fieldName}: ChangeFieldParams) => `modifié ${fieldName} de ${oldValue} à ${newValue}`,
                 changeFieldEmpty: ({newValue, fieldName}: ChangeFieldParams) => `changé ${fieldName} en ${newValue}`,
-                changeReportPolicy: ({fromPolicyName, toPolicyName}: ChangeReportPolicyParams) =>
-                    `a changé l'espace de travail en ${toPolicyName}${fromPolicyName ? `(anciennement ${fromPolicyName})` : ''}`,
+                changeReportPolicy: ({fromPolicyName, toPolicyName}: ChangeReportPolicyParams) => {
+                    if (!toPolicyName) {
+                        return `Espace de travail modifié${fromPolicyName ? ` (auparavant ${fromPolicyName})` : ''}`;
+                    }
+                    return `Espace de travail modifié en ${toPolicyName}${fromPolicyName ? ` (auparavant ${fromPolicyName})` : ''}`;
+                },
                 changeType: ({oldType, newType}: ChangeTypeParams) => `changé le type de ${oldType} à ${newType}`,
                 delegateSubmit: ({delegateUser, originalManager}: DelegateSubmitParams) => `a envoyé ce rapport à ${delegateUser} puisque ${originalManager} est en vacances`,
                 exportedToCSV: `exporté en CSV`,
@@ -6334,7 +6398,7 @@ const translations = {
         addressError: "L'adresse est requise",
         reasonError: 'La raison est requise',
         successTitle: 'Ihre neue Karte ist auf dem Weg!',
-        successDescription: 'Sie müssen sie aktivieren, sobald sie in wenigen Werktagen ankommt. In der Zwischenzeit ist Ihre virtuelle Karte einsatzbereit.',
+        successDescription: "Vous devrez l'activer une fois qu'elle arrivera dans quelques jours ouvrables. En attendant, vous pouvez utiliser une carte virtuelle.",
     },
     eReceipt: {
         guaranteed: 'eReçu garanti',
@@ -6412,7 +6476,7 @@ const translations = {
         overLimitAttendee: ({formattedLimit}: ViolationsOverLimitParams) => `Montant au-delà de la limite de ${formattedLimit}/personne`,
         perDayLimit: ({formattedLimit}: ViolationsPerDayLimitParams) => `Montant dépassant la limite quotidienne de ${formattedLimit}/personne pour la catégorie`,
         receiptNotSmartScanned:
-            'Détails de la dépense et reçu ajoutés manuellement. Veuillez vérifier les détails. <a href="https://help.expensify.com/articles/expensify-classic/reports/Automatic-Receipt-Audit">En savoir plus</a> sur l\'audit automatique pour tous les reçus.',
+            'Reçu et détails de la dépense ajoutés manuellement. <a href="https://help.expensify.com/articles/expensify-classic/reports/Automatic-Receipt-Audit">En savoir plus.</a>',
         receiptRequired: ({formattedLimit, category}: ViolationsReceiptRequiredParams) => {
             let message = 'Reçu requis';
             if (formattedLimit ?? category) {
@@ -6777,11 +6841,8 @@ const translations = {
                 title: 'Abonnement annulé',
                 subtitle: 'Votre abonnement annuel a été annulé.',
                 info: "Si vous souhaitez continuer à utiliser votre/vos espace(s) de travail sur une base de paiement à l'utilisation, vous êtes prêt.",
-                preventFutureActivity: {
-                    part1: 'Si vous souhaitez éviter toute activité et frais futurs, vous devez',
-                    link: 'supprimer votre/vos espace(s) de travail',
-                    part2: '. Notez que lorsque vous supprimez votre(vos) espace(s) de travail, vous serez facturé pour toute activité en cours qui a été engagée au cours du mois civil en cours.',
-                },
+                preventFutureActivity: ({workspacesListRoute}: WorkspacesListRouteParams) =>
+                    `Si vous souhaitez éviter toute activité et frais futurs, vous devez <a href="${workspacesListRoute}">supprimer votre/vos espace(s) de travail</a>. Notez que lorsque vous supprimez votre(vos) espace(s) de travail, vous serez facturé pour toute activité en cours qui a été engagée au cours du mois civil en cours.`,
             },
             requestSubmitted: {
                 title: 'Demande soumise',
@@ -6946,66 +7007,23 @@ const translations = {
     productTrainingTooltip: {
         // TODO: CONCIERGE_LHN_GBR tooltip will be replaced by a tooltip in the #admins room
         // https://github.com/Expensify/App/issues/57045#issuecomment-2701455668
-        conciergeLHNGBR: {
-            part1: 'Commencer',
-            part2: 'ici !',
-        },
-        saveSearchTooltip: {
-            part1: 'Renommez vos recherches enregistrées',
-            part2: 'ici !',
-        },
-        bottomNavInboxTooltip: {
-            part1: 'Vérifier quoi',
-            part2: 'nécessite votre attention',
-            part3: 'et',
-            part4: 'discuter des dépenses.',
-        },
-        workspaceChatTooltip: {
-            part1: 'Discuter avec',
-            part2: 'approbateurs',
-        },
-        globalCreateTooltip: {
-            part1: 'Créer des dépenses',
-            part2: ', commencer à discuter,',
-            part3: 'et plus.',
-            part4: 'Essayez-le !',
-        },
-        GBRRBRChat: {
-            part1: 'Vous verrez 🟢 sur',
-            part2: 'actions à entreprendre',
-            part3: ',\net 🔴 sur',
-            part4: 'éléments à examiner.',
-        },
-        accountSwitcher: {
-            part1: 'Accédez à votre',
-            part2: 'Comptes Copilot',
-            part3: 'ici',
-        },
-        expenseReportsFilter: {
-            part1: 'Bienvenue ! Trouvez tous vos',
-            part2: "rapports de l'entreprise",
-            part3: 'ici.',
-        },
+        conciergeLHNGBR: '<tooltip>Commencer <strong>ici !</strong></tooltip>',
+        saveSearchTooltip: '<tooltip><strong>Renommez vos recherches enregistrées</strong> ici !</tooltip>',
+        globalCreateTooltip: '<tooltip><strong>Créer des dépenses</strong>, commencer à discuter, et plus. Essayez-le !</tooltip>',
+        bottomNavInboxTooltip: '<tooltip>Vérifier quoi <strong>nécessite votre attention</strong> et <strong>discuter des dépenses.</strong></tooltip>',
+        workspaceChatTooltip: '<tooltip>Discuter avec <strong>approbateurs</strong></tooltip>',
+        GBRRBRChat: '<tooltip>Vous verrez 🟢 sur <strong>actions à entreprendre</strong>,\net 🔴 sur <strong>éléments à examiner.</strong></tooltip>',
+        accountSwitcher: '<tooltip>Accédez à votre <strong>Comptes Copilot</strong> ici</tooltip>',
+        expenseReportsFilter: "<tooltip>Bienvenue ! Trouvez tous vos <strong>rapports de l'entreprise</strong> ici.</tooltip>",
         scanTestTooltip: {
-            part1: 'Vous voulez voir comment fonctionne Scan ?',
-            part2: 'Essayez un reçu de test !',
-            part3: 'Choisissez notre',
-            part4: 'responsable des tests',
-            part5: "pour l'essayer !",
-            part6: 'Maintenant,',
-            part7: 'soumettez votre dépense',
-            part8: 'et regardez la magie opérer !',
+            main: '<tooltip><strong>Vous voulez voir comment fonctionne Scan ?</strong> Essayez un reçu de test !</tooltip>',
+            manager: "<tooltip>Choisissez notre <strong>responsable des tests</strong> pour l'essayer !</tooltip>",
+            confirmation: '<tooltip>Maintenant, <strong>soumettez votre dépense</strong> et regardez la magie opérer !</tooltip>',
             tryItOut: 'Essayez-le',
             noThanks: 'Non merci',
         },
-        outstandingFilter: {
-            part1: 'Filtrer les dépenses qui',
-            part2: "besoin d'approbation",
-        },
-        scanTestDriveTooltip: {
-            part1: 'Envoyer ce reçu à',
-            part2: "complétez l'essai !",
-        },
+        outstandingFilter: "<tooltip>Filtrer les dépenses qui <strong>besoin d'approbation</strong></tooltip>",
+        scanTestDriveTooltip: "<tooltip>Envoyer ce reçu à<strong>complétez l'essai !</strong></tooltip>",
     },
     discardChangesConfirmation: {
         title: 'Annuler les modifications ?',
