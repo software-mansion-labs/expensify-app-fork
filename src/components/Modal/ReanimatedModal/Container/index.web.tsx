@@ -39,10 +39,7 @@ function Container({
             getModalOutAnimation(animationOut)
                 .duration(animationOutTiming)
                 // eslint-disable-next-line react-compiler/react-compiler
-                .withCallback(() => {
-                    console.log('callback!');
-                    onCloseCallbackRef.current();
-                }),
+                .withCallback(() => onCloseCallbackRef.current()),
         [animationOutTiming, animationOut],
     );
 
