@@ -11,7 +11,6 @@ import CONST from '@src/CONST';
 import Backdrop from './Backdrop';
 import Container from './Container';
 import type ReanimatedModalProps from './types';
-import type {AnimationInType, AnimationOutType} from './types';
 
 function ReanimatedModal({
     testID,
@@ -24,9 +23,7 @@ function ReanimatedModal({
     coverScreen = true,
     children,
     hasBackdrop = true,
-    backdropColor = 'black',
     backdropOpacity = variables.overlayOpacity,
-    customBackdrop = null,
     isVisible = false,
     onModalWillShow = noop,
     onModalShow = noop,
@@ -117,8 +114,8 @@ function ReanimatedModal({
 
     const backdropStyle: ViewStyle = useMemo(() => {
         const {width, height} = Dimensions.get('screen');
-        return {width, height, backgroundColor: backdropColor};
-    }, [backdropColor]);
+        return {width, height};
+    }, []);
 
     const onOpenCallBack = useCallback(() => {
         setIsTransitioning(false);
@@ -148,8 +145,8 @@ function ReanimatedModal({
             animationInDelay={animationInDelay}
             onOpenCallBack={onOpenCallBack}
             onCloseCallBack={onCloseCallBack}
-            animationIn={animationIn as AnimationInType}
-            animationOut={animationOut as AnimationOutType}
+            animationIn={animationIn}
+            animationOut={animationOut}
             style={style}
             type={type}
             onSwipeComplete={onSwipeComplete}
@@ -163,7 +160,6 @@ function ReanimatedModal({
         <Backdrop
             isBackdropVisible={isVisible}
             style={backdropStyle}
-            customBackdrop={customBackdrop}
             onBackdropPress={onBackdropPress}
             animationInTiming={animationInTiming}
             animationOutTiming={animationOutTiming}

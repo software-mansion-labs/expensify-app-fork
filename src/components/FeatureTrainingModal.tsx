@@ -404,7 +404,6 @@ function FeatureTrainingModal({
                 }
                 onHelp();
             }}
-            shouldUseReanimatedModal
             shouldDisableBottomSafeAreaPadding={shouldUseScrollView}
         >
             <Wrapper

@@ -696,7 +696,7 @@ const CONST = {
         LEFT: 'left',
         RIGHT: 'right',
         UP: 'up',
-    },
+    } as const,
     DESKTOP_DEEPLINK_APP_STATE: {
         CHECKING: 'checking',
         INSTALLED: 'installed',

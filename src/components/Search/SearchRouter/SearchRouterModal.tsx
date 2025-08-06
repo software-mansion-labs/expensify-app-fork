@@ -4,7 +4,7 @@ import Modal from '@components/Modal';
 import ScreenWrapperContainer from '@components/ScreenWrapper/ScreenWrapperContainer';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useViewportOffsetTop from '@hooks/useViewportOffsetTop';
-import {isMobileChrome, isMobileIOS} from '@libs/Browser';
+import {isMobileIOS} from '@libs/Browser';
 import CONST from '@src/CONST';
 import SearchRouter from './SearchRouter';
 import {useSearchRouterContext} from './SearchRouterContext';
@@ -20,7 +20,7 @@ function SearchRouterModal() {
     const [shouldHideInputCaret, setShouldHideInputCaret] = useState(isMobileWebIOS);
 
     const modalType = shouldUseNarrowLayout ? CONST.MODAL.MODAL_TYPE.CENTERED_SWIPEABLE_TO_RIGHT : CONST.MODAL.MODAL_TYPE.POPOVER;
-    // For now were only enabling shouldUseReanimatedModal narrow layouts. On wide ones it's a popover and it is not migrated yet.
+
     return (
         <Modal
             type={modalType}
@@ -35,7 +35,6 @@ function SearchRouterModal() {
             onModalShow={() => setShouldHideInputCaret(false)}
             shouldApplySidePanelOffset={!shouldUseNarrowLayout}
             enableEdgeToEdgeBottomSafeAreaPadding
-            shouldUseReanimatedModal={shouldUseNarrowLayout && !isMobileChrome()}
         >
             <ScreenWrapperContainer
                 testID={SearchRouterModal.displayName}

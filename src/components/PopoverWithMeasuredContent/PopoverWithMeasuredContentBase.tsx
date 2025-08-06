@@ -39,7 +39,6 @@ function PopoverWithMeasuredContentBase({
     statusBarTranslucent = true,
     navigationBarTranslucent = true,
     avoidKeyboard = false,
-    hideModalContentWhileAnimating = false,
     anchorDimensions = {
         height: 0,
         width: 0,
@@ -190,7 +189,6 @@ function PopoverWithMeasuredContentBase({
             statusBarTranslucent={statusBarTranslucent}
             navigationBarTranslucent={navigationBarTranslucent}
             avoidKeyboard={avoidKeyboard}
-            hideModalContentWhileAnimating={hideModalContentWhileAnimating}
             modalId={modalId}
             shouldEnableNewFocusManagement={shouldEnableNewFocusManagement}
             // eslint-disable-next-line react/jsx-props-no-spreading
