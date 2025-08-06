@@ -33,7 +33,6 @@ function PopoverWithMeasuredContentBase({
     },
     children,
     withoutOverlay = false,
-    fullscreen = true,
     shouldCloseOnOutsideClick = false,
     shouldSetModalVisibility = true,
     statusBarTranslucent = true,
@@ -183,7 +182,6 @@ function PopoverWithMeasuredContentBase({
             anchorAlignment={anchorAlignment}
             isVisible={isVisible}
             withoutOverlay={withoutOverlay}
-            fullscreen={fullscreen}
             shouldCloseOnOutsideClick={shouldCloseOnOutsideClick}
             shouldSetModalVisibility={shouldSetModalVisibility}
             statusBarTranslucent={statusBarTranslucent}

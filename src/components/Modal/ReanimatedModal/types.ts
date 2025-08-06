@@ -74,9 +74,6 @@ type ReanimatedModalProps = ViewProps &
         /** Whether to avoid keyboard overlap during modal display */
         avoidKeyboard?: boolean;
 
-        /** Whether the modal should cover the entire screen */
-        coverScreen?: boolean;
-
         /** Whether the modal should have a backdrop */
         hasBackdrop?: boolean;
 

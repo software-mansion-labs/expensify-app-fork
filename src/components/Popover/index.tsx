@@ -17,7 +17,6 @@ function Popover(props: PopoverProps) {
     const {
         isVisible,
         onClose,
-        fullscreen,
         animationInTiming = CONST.ANIMATED_TRANSITION,
         onLayout,
         animationOutTiming,
@@ -62,25 +61,6 @@ function Popover(props: PopoverProps) {
         onClose?.();
     };
 
-    if (!fullscreen && !shouldUseNarrowLayout) {
-        return createPortal(
-            <Modal
-                // eslint-disable-next-line react/jsx-props-no-spreading
-                {...props}
-                onClose={onCloseWithPopoverContext}
-                type={CONST.MODAL.MODAL_TYPE.POPOVER}
-                popoverAnchorPosition={anchorPosition}
-                animationInTiming={disableAnimation ? 1 : animationInTiming}
-                animationOutTiming={disableAnimation ? 1 : animationOutTiming}
-                shouldCloseOnOutsideClick
-                onLayout={onLayout}
-                animationIn={animationIn}
-                animationOut={animationOut}
-            />,
-            document.body,
-        );
-    }
-
     if (withoutOverlay && !shouldUseNarrowLayout) {
         return createPortal(
             <PopoverWithoutOverlay
@@ -102,7 +82,6 @@ function Popover(props: PopoverProps) {
             shouldHandleNavigationBack={props.shouldHandleNavigationBack}
             type={isSmallScreenWidth ? CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED : CONST.MODAL.MODAL_TYPE.POPOVER}
             popoverAnchorPosition={isSmallScreenWidth ? undefined : anchorPosition}
-            fullscreen={shouldUseNarrowLayout ? true : fullscreen}
             animationInTiming={disableAnimation && !shouldUseNarrowLayout ? 1 : animationInTiming}
             animationOutTiming={disableAnimation && !shouldUseNarrowLayout ? 1 : animationOutTiming}
             onLayout={onLayout}

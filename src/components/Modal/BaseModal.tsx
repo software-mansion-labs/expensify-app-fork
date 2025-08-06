@@ -39,7 +39,6 @@ function BaseModal(
         onModalShow = () => {},
         onModalWillShow,
         onModalWillHide,
-        fullscreen = true,
         animationIn,
         animationOut,
         animationInTiming,
@@ -333,8 +332,7 @@ function BaseModal(
                         isVisible={isVisible}
                         backdropOpacity={backdropOpacityAdjusted}
                         backdropTransitionOutTiming={0}
-                        hasBackdrop={hasBackdrop ?? fullscreen}
-                        coverScreen={fullscreen}
+                        hasBackdrop={hasBackdrop ?? true}
                         style={modalStyle}
                         deviceHeight={windowHeight}
                         deviceWidth={windowWidth}

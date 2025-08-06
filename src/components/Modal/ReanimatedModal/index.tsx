@@ -1,10 +1,9 @@
 import noop from 'lodash/noop';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeEventSubscription, ViewStyle} from 'react-native';
-import {BackHandler, Dimensions, InteractionManager, Modal, View} from 'react-native';
+import {BackHandler, Dimensions, InteractionManager, Modal} from 'react-native';
 import {LayoutAnimationConfig} from 'react-native-reanimated';
 import KeyboardAvoidingView from '@components/KeyboardAvoidingView';
-import useThemeStyles from '@hooks/useThemeStyles';
 import getPlatform from '@libs/getPlatform';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
@@ -20,7 +19,6 @@ function ReanimatedModal({
     animationIn = 'fadeIn',
     animationOut = 'fadeOut',
     avoidKeyboard = false,
-    coverScreen = true,
     children,
     hasBackdrop = true,
     backdropOpacity = variables.overlayOpacity,
@@ -45,8 +43,6 @@ function ReanimatedModal({
     const [isTransitioning, setIsTransitioning] = useState(false);
     const backHandlerListener = useRef<NativeEventSubscription | null>(null);
     const handleRef = useRef<number | undefined>(undefined);
-
-    const styles = useThemeStyles();
 
     const onBackButtonPressHandler = useCallback(() => {
         if (isVisibleState) {
@@ -168,18 +164,6 @@ function ReanimatedModal({
         />
     );
 
-    if (!coverScreen && isVisibleState) {
-        return (
-            <View
-                pointerEvents="box-none"
-                style={[styles.modalBackdrop, styles.modalContainerBox]}
-            >
-                {hasBackdrop && backdropView}
-                {containerView}
-            </View>
-        );
-    }
-    const isBackdropMounted = isVisibleState || ((isTransitioning || isContainerOpen !== isVisibleState) && getPlatform() === CONST.PLATFORM.WEB);
     return (
         <LayoutAnimationConfig skipExiting={getPlatform() !== CONST.PLATFORM.WEB}>
             <Modal
@@ -199,7 +183,7 @@ function ReanimatedModal({
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...props}
             >
-                {isBackdropMounted && hasBackdrop && backdropView}
+                {hasBackdrop && backdropView}
                 {avoidKeyboard ? (
                     <KeyboardAvoidingView
                         behavior="padding"
