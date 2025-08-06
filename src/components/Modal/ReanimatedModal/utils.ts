@@ -4,62 +4,32 @@ import type {AnimationIn, AnimationOut} from './types';
 
 const easing = Easing.bezier(0.76, 0.0, 0.24, 1.0).factory();
 
-const SlideInRight = new Keyframe({
-    from: {transform: [{translateX: '100%'}]},
-    to: {
-        transform: [{translateX: '0%'}],
-        easing,
-    },
-});
-
-const SlideInUp = new Keyframe({
-    from: {transform: [{translateY: '100%'}]},
-    to: {
-        transform: [{translateY: '0%'}],
-        easing,
-    },
-});
-
-const FadeIn = new Keyframe({
-    from: {opacity: 0},
-    to: {
-        opacity: 1,
-        easing,
-    },
-});
-
-const SlideOutRight = new Keyframe({
-    from: {transform: [{translateX: '0%'}]},
-    to: {
-        transform: [{translateX: '100%'}],
-        easing,
-    },
-});
-
-const SlideOutDown = new Keyframe({
-    from: {transform: [{translateY: '0%'}]},
-    to: {
-        transform: [{translateY: '100%'}],
-        easing,
-    },
-});
-
-const FadeOut = new Keyframe({
-    from: {opacity: 1},
-    to: {
-        opacity: 0,
-        easing,
-    },
-});
-
 function getModalInAnimation(animationType: AnimationIn): ReanimatedKeyframe {
     switch (animationType) {
         case 'slideInRight':
-            return SlideInRight;
+            return new Keyframe({
+                from: {transform: [{translateX: '100%'}]},
+                to: {
+                    transform: [{translateX: '0%'}],
+                    easing,
+                },
+            });
         case 'slideInUp':
-            return SlideInUp;
+            return new Keyframe({
+                from: {transform: [{translateY: '100%'}]},
+                to: {
+                    transform: [{translateY: '0%'}],
+                    easing,
+                },
+            });
         case 'fadeIn':
-            return FadeIn;
+            return new Keyframe({
+                from: {opacity: 0},
+                to: {
+                    opacity: 1,
+                    easing,
+                },
+            });
         default:
             throw new Error('Unknown animation type');
     }
@@ -68,11 +38,29 @@ function getModalInAnimation(animationType: AnimationIn): ReanimatedKeyframe {
 function getModalOutAnimation(animationType: AnimationOut): ReanimatedKeyframe {
     switch (animationType) {
         case 'slideOutRight':
-            return SlideOutRight;
+            return new Keyframe({
+                from: {transform: [{translateX: '0%'}]},
+                to: {
+                    transform: [{translateX: '100%'}],
+                    easing,
+                },
+            });
         case 'slideOutDown':
-            return SlideOutDown;
+            return new Keyframe({
+                from: {transform: [{translateY: '0%'}]},
+                to: {
+                    transform: [{translateY: '100%'}],
+                    easing,
+                },
+            });
         case 'fadeOut':
-            return FadeOut;
+            return new Keyframe({
+                from: {opacity: 1},
+                to: {
+                    opacity: 0,
+                    easing,
+                },
+            });
         default:
             throw new Error('Unknown animation type');
     }
