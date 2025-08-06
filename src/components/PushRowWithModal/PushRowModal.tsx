@@ -76,8 +76,6 @@ function PushRowModal({isVisible, selectedOption, onOptionChange, onClose, optio
             isVisible={isVisible}
             type={CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED}
             onModalHide={handleClose}
-            shouldUseCustomBackdrop
-            shouldUseReanimatedModal
         >
             <ScreenWrapper
                 includePaddingTop={false}

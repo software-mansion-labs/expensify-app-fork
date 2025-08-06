@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import {View} from 'react-native';
-import Animated, {Keyframe, runOnJS} from 'react-native-reanimated';
+import Animated, {runOnJS} from 'react-native-reanimated';
 import type ReanimatedModalProps from '@components/Modal/ReanimatedModal/types';
 import type {ContainerProps} from '@components/Modal/ReanimatedModal/types';
 import {getModalInAnimation, getModalOutAnimation} from '@components/Modal/ReanimatedModal/utils';
@@ -24,25 +24,29 @@ function Container({
 }: Partial<ReanimatedModalProps> & ContainerProps) {
     const styles = useThemeStyles();
 
-    const Entering = useMemo(() => {
-        const AnimationIn = new Keyframe(getModalInAnimation(animationIn));
+    const Entering = useMemo(
+        () =>
+            getModalInAnimation(animationIn)
+                .duration(animationInTiming)
+                .withCallback(() => {
+                    'worklet';
 
-        return AnimationIn.duration(animationInTiming).withCallback(() => {
-            'worklet';
+                    runOnJS(onOpenCallBack)();
+                }),
+        [animationIn, animationInTiming, onOpenCallBack],
+    );
 
-            runOnJS(onOpenCallBack)();
-        });
-    }, [animationIn, animationInTiming, onOpenCallBack]);
+    const Exiting = useMemo(
+        () =>
+            getModalOutAnimation(animationOut)
+                .duration(animationOutTiming)
+                .withCallback(() => {
+                    'worklet';
 
-    const Exiting = useMemo(() => {
-        const AnimationOut = new Keyframe(getModalOutAnimation(animationOut));
-
-        return AnimationOut.duration(animationOutTiming).withCallback(() => {
-            'worklet';
-
-            runOnJS(onCloseCallBack)();
-        });
-    }, [animationOutTiming, onCloseCallBack, animationOut]);
+                    runOnJS(onCloseCallBack)();
+                }),
+        [animationOutTiming, onCloseCallBack, animationOut],
+    );
 
     return (
         <View

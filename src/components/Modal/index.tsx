@@ -7,18 +7,12 @@ import BaseModal from './BaseModal';
 import type BaseModalProps from './types';
 import type {WindowState} from './types';
 
-function Modal({fullscreen = true, onModalHide = () => {}, type, onModalShow = () => {}, children, shouldHandleNavigationBack, ...rest}: BaseModalProps) {
+function Modal({onModalHide = () => {}, type, onModalShow = () => {}, children, shouldHandleNavigationBack, ...rest}: BaseModalProps) {
     const theme = useTheme();
     const StyleUtils = useStyleUtils();
     const [previousStatusBarColor, setPreviousStatusBarColor] = useState<string>();
 
-    const setStatusBarColor = (color = theme.appBG) => {
-        if (!fullscreen) {
-            return;
-        }
-
-        StatusBar.setBackgroundColor(color);
-    };
+    const setStatusBarColor = (color = theme.appBG) => StatusBar.setBackgroundColor(color);
 
     const hideModal = () => {
         onModalHide();
@@ -77,9 +71,6 @@ function Modal({fullscreen = true, onModalHide = () => {}, type, onModalShow = (
             onModalWillShow={onModalWillShow}
             onModalWillHide={onModalWillHide}
             avoidKeyboard={false}
-            fullscreen={fullscreen}
-            useNativeDriver={false}
-            useNativeDriverForBackdrop={false}
             type={type}
         >
             {children}

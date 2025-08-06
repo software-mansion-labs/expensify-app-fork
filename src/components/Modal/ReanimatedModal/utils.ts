@@ -1,87 +1,69 @@
-import type {ViewStyle} from 'react-native';
-import {Easing} from 'react-native-reanimated';
-import type {ValidKeyframeProps} from 'react-native-reanimated/lib/typescript/commonTypes';
-import variables from '@styles/variables';
-import type {AnimationInType, AnimationOutType} from './types';
+import {Easing, Keyframe} from 'react-native-reanimated';
+import type {ReanimatedKeyframe} from 'react-native-reanimated';
+import type {AnimationIn, AnimationOut} from './types';
 
 const easing = Easing.bezier(0.76, 0.0, 0.24, 1.0).factory();
 
-function getModalInAnimation(animationType: AnimationInType): ValidKeyframeProps {
+function getModalInAnimation(animationType: AnimationIn): ReanimatedKeyframe {
     switch (animationType) {
         case 'slideInRight':
-            return {
+            return new Keyframe({
                 from: {transform: [{translateX: '100%'}]},
                 to: {
                     transform: [{translateX: '0%'}],
                     easing,
                 },
-            };
+            });
         case 'slideInUp':
-            return {
+            return new Keyframe({
                 from: {transform: [{translateY: '100%'}]},
                 to: {
                     transform: [{translateY: '0%'}],
                     easing,
                 },
-            };
+            });
         case 'fadeIn':
-            return {
+            return new Keyframe({
                 from: {opacity: 0},
                 to: {
-                    opacity: variables.overlayOpacity,
+                    opacity: 1,
                     easing,
                 },
-            };
+            });
         default:
             throw new Error('Unknown animation type');
     }
 }
 
-/**
- * @returns A function that takes a number between 0 and 1 and returns a ViewStyle object.
- */
-function getModalInAnimationStyle(animationType: AnimationInType): (progress: number) => ViewStyle {
-    switch (animationType) {
-        case 'slideInRight':
-            return (progress) => ({transform: [{translateX: `${100 * (1 - progress)}%`}]});
-        case 'slideInUp':
-            return (progress) => ({transform: [{translateY: `${100 * (1 - progress)}%`}]});
-        case 'fadeIn':
-            return (progress) => ({opacity: progress});
-        default:
-            throw new Error('Unknown animation type');
-    }
-}
-
-function getModalOutAnimation(animationType: AnimationOutType): ValidKeyframeProps {
+function getModalOutAnimation(animationType: AnimationOut): ReanimatedKeyframe {
     switch (animationType) {
         case 'slideOutRight':
-            return {
+            return new Keyframe({
                 from: {transform: [{translateX: '0%'}]},
                 to: {
                     transform: [{translateX: '100%'}],
                     easing,
                 },
-            };
+            });
         case 'slideOutDown':
-            return {
+            return new Keyframe({
                 from: {transform: [{translateY: '0%'}]},
                 to: {
                     transform: [{translateY: '100%'}],
                     easing,
                 },
-            };
+            });
         case 'fadeOut':
-            return {
-                from: {opacity: variables.overlayOpacity},
+            return new Keyframe({
+                from: {opacity: 1},
                 to: {
                     opacity: 0,
                     easing,
                 },
-            };
+            });
         default:
             throw new Error('Unknown animation type');
     }
 }
 
-export {getModalInAnimation, getModalOutAnimation, getModalInAnimationStyle, easing};
+export {getModalInAnimation, getModalOutAnimation, easing};

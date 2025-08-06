@@ -1,5 +1,4 @@
 import React, {useCallback, useContext, useEffect, useState} from 'react';
-import {InteractionManager} from 'react-native';
 import Modal from '@components/Modal';
 import Navigation from '@libs/Navigation/Navigation';
 import type {OnCloseOptions} from '@pages/media/AttachmentModalScreen/AttachmentModalBaseContent';
@@ -11,7 +10,6 @@ import type AttachmentModalContainerProps from './types';
 function AttachmentModalContainer({contentProps, modalType, onShow, onClose, shouldHandleNavigationBack}: AttachmentModalContainerProps) {
     const [isVisible, setIsVisible] = useState(true);
     const attachmentsContext = useContext(AttachmentModalContext);
-    const [shouldDisableAnimationAfterInitialMount, setShouldDisableAnimationAfterInitialMount] = useState(false);
 
     /**
      * Closes the modal.
@@ -35,22 +33,12 @@ function AttachmentModalContainer({contentProps, modalType, onShow, onClose, sho
         [attachmentsContext, onClose],
     );
 
-    // After the modal has initially been mounted and animated in,
-    // we don't want to show another animation when the modal type changes or
-    // when the browser switches to narrow layout.
-    useEffect(() => {
-        InteractionManager.runAfterInteractions(() => {
-            setShouldDisableAnimationAfterInitialMount(true);
-        });
-    }, []);
-
     useEffect(() => {
         onShow?.();
     }, [onShow]);
 
     return (
         <Modal
-            disableAnimationIn={shouldDisableAnimationAfterInitialMount}
             isVisible={isVisible}
             type={modalType ?? CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
             propagateSwipe

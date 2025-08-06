@@ -349,10 +349,8 @@ function AvatarCropModal({imageUri = '', imageName = '', imageType = '', onClose
             isVisible={isVisible}
             type={CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED}
             onModalHide={resetState}
-            shouldUseCustomBackdrop
             shouldHandleNavigationBack
             enableEdgeToEdgeBottomSafeAreaPadding
-            shouldUseReanimatedModal
         >
             <ScreenWrapper
                 style={[styles.pb0]}

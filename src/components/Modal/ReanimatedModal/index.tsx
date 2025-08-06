@@ -1,17 +1,15 @@
 import noop from 'lodash/noop';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeEventSubscription, ViewStyle} from 'react-native';
-import {BackHandler, Dimensions, InteractionManager, Modal, View} from 'react-native';
+import {BackHandler, Dimensions, InteractionManager, Modal} from 'react-native';
 import {LayoutAnimationConfig} from 'react-native-reanimated';
 import KeyboardAvoidingView from '@components/KeyboardAvoidingView';
-import useThemeStyles from '@hooks/useThemeStyles';
 import getPlatform from '@libs/getPlatform';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import Backdrop from './Backdrop';
 import Container from './Container';
 import type ReanimatedModalProps from './types';
-import type {AnimationInType, AnimationOutType} from './types';
 
 function ReanimatedModal({
     testID,
@@ -21,12 +19,9 @@ function ReanimatedModal({
     animationIn = 'fadeIn',
     animationOut = 'fadeOut',
     avoidKeyboard = false,
-    coverScreen = true,
     children,
     hasBackdrop = true,
-    backdropColor = 'black',
     backdropOpacity = variables.overlayOpacity,
-    customBackdrop = null,
     isVisible = false,
     onModalWillShow = noop,
     onModalShow = noop,
@@ -48,8 +43,6 @@ function ReanimatedModal({
     const [isTransitioning, setIsTransitioning] = useState(false);
     const backHandlerListener = useRef<NativeEventSubscription | null>(null);
     const handleRef = useRef<number | undefined>(undefined);
-
-    const styles = useThemeStyles();
 
     const onBackButtonPressHandler = useCallback(() => {
         if (isVisibleState) {
@@ -117,8 +110,8 @@ function ReanimatedModal({
 
     const backdropStyle: ViewStyle = useMemo(() => {
         const {width, height} = Dimensions.get('screen');
-        return {width, height, backgroundColor: backdropColor};
-    }, [backdropColor]);
+        return {width, height};
+    }, []);
 
     const onOpenCallBack = useCallback(() => {
         setIsTransitioning(false);
@@ -148,8 +141,8 @@ function ReanimatedModal({
             animationInDelay={animationInDelay}
             onOpenCallBack={onOpenCallBack}
             onCloseCallBack={onCloseCallBack}
-            animationIn={animationIn as AnimationInType}
-            animationOut={animationOut as AnimationOutType}
+            animationIn={animationIn}
+            animationOut={animationOut}
             style={style}
             type={type}
             onSwipeComplete={onSwipeComplete}
@@ -163,7 +156,6 @@ function ReanimatedModal({
         <Backdrop
             isBackdropVisible={isVisible}
             style={backdropStyle}
-            customBackdrop={customBackdrop}
             onBackdropPress={onBackdropPress}
             animationInTiming={animationInTiming}
             animationOutTiming={animationOutTiming}
@@ -172,18 +164,6 @@ function ReanimatedModal({
         />
     );
 
-    if (!coverScreen && isVisibleState) {
-        return (
-            <View
-                pointerEvents="box-none"
-                style={[styles.modalBackdrop, styles.modalContainerBox]}
-            >
-                {hasBackdrop && backdropView}
-                {containerView}
-            </View>
-        );
-    }
-    const isBackdropMounted = isVisibleState || ((isTransitioning || isContainerOpen !== isVisibleState) && getPlatform() === CONST.PLATFORM.WEB);
     return (
         <LayoutAnimationConfig skipExiting={getPlatform() !== CONST.PLATFORM.WEB}>
             <Modal
@@ -203,7 +183,7 @@ function ReanimatedModal({
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...props}
             >
-                {isBackdropMounted && hasBackdrop && backdropView}
+                {hasBackdrop && backdropView}
                 {avoidKeyboard ? (
                     <KeyboardAvoidingView
                         behavior="padding"

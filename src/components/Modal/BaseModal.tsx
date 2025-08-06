@@ -3,9 +3,6 @@ import type {LayoutChangeEvent} from 'react-native';
 // Animated required for side panel navigation
 // eslint-disable-next-line no-restricted-imports
 import {Animated, View} from 'react-native';
-import type {ModalProps as ReactNativeModalProps} from 'react-native-modal';
-import ReactNativeModal from 'react-native-modal';
-import type {ValueOf} from 'type-fest';
 import ColorSchemeWrapper from '@components/ColorSchemeWrapper';
 import FocusTrapForModal from '@components/FocusTrap/FocusTrapForModal';
 import NavigationBar from '@components/NavigationBar';
@@ -16,44 +13,18 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
 import useSidePanel from '@hooks/useSidePanel';
 import useStyleUtils from '@hooks/useStyleUtils';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import ComposerFocusManager from '@libs/ComposerFocusManager';
 import {canUseTouchScreen as canUseTouchScreenCheck} from '@libs/DeviceCapabilities';
 import NarrowPaneContext from '@libs/Navigation/AppNavigator/Navigators/NarrowPaneContext';
-import Overlay from '@libs/Navigation/AppNavigator/Navigators/Overlay';
 import Navigation from '@libs/Navigation/Navigation';
 import {areAllModalsHidden, closeTop, onModalDidClose, setCloseModal, setModalVisibility, willAlertModalBecomeVisible} from '@userActions/Modal';
 import CONST from '@src/CONST';
 import ModalContent from './ModalContent';
 import ModalContext from './ModalContext';
 import ReanimatedModal from './ReanimatedModal';
-import type ReanimatedModalProps from './ReanimatedModal/types';
 import type BaseModalProps from './types';
-
-const REANIMATED_MODAL_TYPES: Array<ValueOf<typeof CONST.MODAL.MODAL_TYPE>> = [CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED, CONST.MODAL.MODAL_TYPE.FULLSCREEN];
-
-type ModalComponentProps = (ReactNativeModalProps | ReanimatedModalProps) & {
-    type?: ValueOf<typeof CONST.MODAL.MODAL_TYPE>;
-    shouldUseReanimatedModal?: boolean;
-};
-
-function ModalComponent({type, shouldUseReanimatedModal, ...props}: ModalComponentProps) {
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-    if ((type && REANIMATED_MODAL_TYPES.includes(type)) || shouldUseReanimatedModal) {
-        return (
-            <ReanimatedModal
-                // eslint-disable-next-line react/jsx-props-no-spreading
-                {...(props as ReanimatedModalProps)}
-                type={type}
-            />
-        );
-    }
-
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    return <ReactNativeModal {...(props as ReactNativeModalProps)} />;
-}
 
 function BaseModal(
     {
@@ -68,13 +39,8 @@ function BaseModal(
         onModalShow = () => {},
         onModalWillShow,
         onModalWillHide,
-        propagateSwipe,
-        fullscreen = true,
         animationIn,
         animationOut,
-        useNativeDriver,
-        useNativeDriverForBackdrop,
-        hideModalContentWhileAnimating = false,
         animationInTiming,
         animationOutTiming,
         animationInDelay,
@@ -83,7 +49,6 @@ function BaseModal(
         onLayout,
         avoidKeyboard = false,
         children,
-        shouldUseCustomBackdrop = false,
         onBackdropPress,
         modalId,
         shouldEnableNewFocusManagement = false,
@@ -93,19 +58,16 @@ function BaseModal(
         swipeThreshold = 150,
         swipeDirection,
         shouldPreventScrollOnFocus = false,
-        disableAnimationIn = false,
         enableEdgeToEdgeBottomSafeAreaPadding,
         shouldApplySidePanelOffset = type === CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED,
         hasBackdrop,
         backdropOpacity,
-        shouldUseReanimatedModal = false,
         shouldDisableBottomSafeAreaPadding = false,
     }: BaseModalProps,
     ref: React.ForwardedRef<View>,
 ) {
     // When the `enableEdgeToEdgeBottomSafeAreaPadding` prop is explicitly set, we enable edge-to-edge mode.
     const isUsingEdgeToEdgeMode = enableEdgeToEdgeBottomSafeAreaPadding !== undefined;
-    const theme = useTheme();
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {windowWidth, windowHeight} = useWindowDimensions();
@@ -115,9 +77,7 @@ function BaseModal(
     const {isSmallScreenWidth, shouldUseNarrowLayout, isInNarrowPaneModal} = useResponsiveLayout();
 
     const {sidePanelOffset} = useSidePanel();
-    const sidePanelStyle = !shouldUseReanimatedModal && shouldApplySidePanelOffset && !isSmallScreenWidth ? {paddingRight: sidePanelOffset.current} : undefined;
-    const sidePanelReanimatedStyle =
-        shouldUseReanimatedModal && shouldApplySidePanelOffset && !isSmallScreenWidth ? {transform: [{translateX: Animated.multiply(sidePanelOffset.current, -1)}]} : undefined;
+    const sidePanelReanimatedStyle = shouldApplySidePanelOffset && !isSmallScreenWidth ? {transform: [{translateX: Animated.multiply(sidePanelOffset.current, -1)}]} : undefined;
     const keyboardStateContextValue = useKeyboardState();
 
     const [modalOverlapsWithTopSafeArea, setModalOverlapsWithTopSafeArea] = useState(false);
@@ -270,7 +230,6 @@ function BaseModal(
                     modalOverlapsWithTopSafeArea,
                     shouldDisableBottomSafeAreaPadding: !!shouldDisableBottomSafeAreaPadding,
                 },
-                shouldUseReanimatedModal,
             ),
         [
             StyleUtils,
@@ -285,7 +244,6 @@ function BaseModal(
             shouldUseModalPaddingStyle,
             modalOverlapsWithTopSafeArea,
             shouldDisableBottomSafeAreaPadding,
-            shouldUseReanimatedModal,
         ],
     );
 
@@ -322,22 +280,14 @@ function BaseModal(
         [isVisible, type],
     );
 
-    const animationInProps = useMemo(() => {
-        if (disableAnimationIn) {
-            // We need to apply these animation props to completely disable the "animation in". Simply setting it to 0 and undefined will not work.
-            // Based on: https://github.com/react-native-modal/react-native-modal/issues/191
-            return {
-                animationIn: {from: {opacity: 1}, to: {opacity: 1}},
-                animationInTiming: 0,
-            };
-        }
-
-        return {
+    const animationInProps = useMemo(
+        () => ({
             animationIn: animationIn ?? modalStyleAnimationIn,
             animationInDelay,
             animationInTiming,
-        };
-    }, [animationIn, animationInDelay, animationInTiming, disableAnimationIn, modalStyleAnimationIn]);
+        }),
+        [animationIn, animationInDelay, animationInTiming, modalStyleAnimationIn],
+    );
 
     // In Modals we need to reset the ScreenWrapperOfflineIndicatorContext to allow nested ScreenWrapper components to render offline indicators,
     // except if we are in a narrow pane navigator. In this case, we use the narrow pane's original values.
@@ -361,7 +311,7 @@ function BaseModal(
                     collapsable={false}
                     style={[styles.pAbsolute, {zIndex: 1}]}
                 >
-                    <ModalComponent
+                    <ReanimatedModal
                         // Prevent the parent element to capture a click. This is useful when the modal component is put inside a pressable.
                         onClick={(e) => e.stopPropagation()}
                         onBackdropPress={handleBackdropPress}
@@ -369,7 +319,6 @@ function BaseModal(
                         // eslint-disable-next-line react/jsx-props-no-multi-spaces
                         onBackButtonPress={closeTop}
                         onModalShow={handleShowModal}
-                        propagateSwipe={propagateSwipe}
                         onModalHide={hideModal}
                         onModalWillShow={() => {
                             saveFocusState();
@@ -381,28 +330,21 @@ function BaseModal(
                         swipeDirection={swipeDirection}
                         swipeThreshold={swipeThreshold}
                         isVisible={isVisible}
-                        backdropColor={theme.overlay}
                         backdropOpacity={backdropOpacityAdjusted}
                         backdropTransitionOutTiming={0}
-                        hasBackdrop={hasBackdrop ?? fullscreen}
-                        coverScreen={fullscreen}
-                        style={[modalStyle, sidePanelStyle]}
+                        hasBackdrop={hasBackdrop ?? true}
+                        style={modalStyle}
                         deviceHeight={windowHeight}
                         deviceWidth={windowWidth}
                         // eslint-disable-next-line react/jsx-props-no-spreading
                         {...animationInProps}
                         animationOut={animationOut ?? modalStyleAnimationOut}
                         animationOutTiming={animationOutTiming}
-                        useNativeDriver={useNativeDriver}
-                        useNativeDriverForBackdrop={useNativeDriverForBackdrop}
-                        hideModalContentWhileAnimating={hideModalContentWhileAnimating}
                         statusBarTranslucent={statusBarTranslucent}
                         navigationBarTranslucent={navigationBarTranslucent}
                         onLayout={onLayout}
                         avoidKeyboard={avoidKeyboard}
-                        customBackdrop={shouldUseCustomBackdrop ? <Overlay onPress={handleBackdropPress} /> : undefined}
                         type={type}
-                        shouldUseReanimatedModal={shouldUseReanimatedModal}
                     >
                         <ModalContent
                             onModalWillShow={saveFocusState}
@@ -423,7 +365,7 @@ function BaseModal(
                             </FocusTrapForModal>
                         </ModalContent>
                         {!keyboardStateContextValue?.isKeyboardActive && <NavigationBar />}
-                    </ModalComponent>
+                    </ReanimatedModal>
                 </View>
             </ScreenWrapperOfflineIndicatorContext.Provider>
         </ModalContext.Provider>

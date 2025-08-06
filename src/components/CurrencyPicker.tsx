@@ -107,7 +107,6 @@ function CurrencyPicker({
                 shouldUseModalPaddingStyle={false}
                 shouldHandleNavigationBack
                 enableEdgeToEdgeBottomSafeAreaPadding
-                shouldUseReanimatedModal
             >
                 <ScreenWrapper
                     style={[styles.pb0]}

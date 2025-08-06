@@ -33,13 +33,11 @@ function PopoverWithMeasuredContentBase({
     },
     children,
     withoutOverlay = false,
-    fullscreen = true,
     shouldCloseOnOutsideClick = false,
     shouldSetModalVisibility = true,
     statusBarTranslucent = true,
     navigationBarTranslucent = true,
     avoidKeyboard = false,
-    hideModalContentWhileAnimating = false,
     anchorDimensions = {
         height: 0,
         width: 0,
@@ -184,13 +182,11 @@ function PopoverWithMeasuredContentBase({
             anchorAlignment={anchorAlignment}
             isVisible={isVisible}
             withoutOverlay={withoutOverlay}
-            fullscreen={fullscreen}
             shouldCloseOnOutsideClick={shouldCloseOnOutsideClick}
             shouldSetModalVisibility={shouldSetModalVisibility}
             statusBarTranslucent={statusBarTranslucent}
             navigationBarTranslucent={navigationBarTranslucent}
             avoidKeyboard={avoidKeyboard}
-            hideModalContentWhileAnimating={hideModalContentWhileAnimating}
             modalId={modalId}
             shouldEnableNewFocusManagement={shouldEnableNewFocusManagement}
             // eslint-disable-next-line react/jsx-props-no-spreading

@@ -1,0 +1,55 @@
+diff --git a/node_modules/react-native-reanimated/Common/cpp/reanimated/LayoutAnimations/LayoutAnimationsProxy.cpp b/node_modules/react-native-reanimated/Common/cpp/reanimated/LayoutAnimations/LayoutAnimationsProxy.cpp
+index 29e3359..716529e 100644
+--- a/node_modules/react-native-reanimated/Common/cpp/reanimated/LayoutAnimations/LayoutAnimationsProxy.cpp
++++ b/node_modules/react-native-reanimated/Common/cpp/reanimated/LayoutAnimations/LayoutAnimationsProxy.cpp
+@@ -853,7 +853,7 @@ void LayoutAnimationsProxy::transferConfigFromNativeID(
+     auto nativeId = stoi(nativeIdString);
+     layoutAnimationsManager_->transferConfigFromNativeID(nativeId, tag);
+   } catch (std::invalid_argument) {
+-  } catch (std::out_of_range) {
++  } catch (...) {
+   }
+ }
+ 
+diff --git a/node_modules/react-native-reanimated/lib/module/layoutReanimation/web/componentUtils.js b/node_modules/react-native-reanimated/lib/module/layoutReanimation/web/componentUtils.js
+index c3623f9..3ed22fe 100644
+--- a/node_modules/react-native-reanimated/lib/module/layoutReanimation/web/componentUtils.js
++++ b/node_modules/react-native-reanimated/lib/module/layoutReanimation/web/componentUtils.js
+@@ -149,7 +149,7 @@ export function setElementAnimation(element, animationConfig, shouldSavePosition
+   if (!(animationName in Animations)) {
+     scheduleAnimationCleanup(animationName, duration + delay, () => {
+       if (shouldSavePosition) {
+-        setElementPosition(element, snapshots.get(element));
++        // setElementPosition(element, snapshots.get(element));
+       }
+     });
+   }
+diff --git a/node_modules/react-native-reanimated/scripts/reanimated_utils.rb b/node_modules/react-native-reanimated/scripts/reanimated_utils.rb
+index ec240a0..7b6a690 100644
+--- a/node_modules/react-native-reanimated/scripts/reanimated_utils.rb
++++ b/node_modules/react-native-reanimated/scripts/reanimated_utils.rb
+@@ -17,7 +17,11 @@ def find_config()
+     :react_native_reanimated_dir_from_pods_root => nil,
+   }
+ 
+-  react_native_node_modules_dir = File.join(File.dirname(`cd "#{Pod::Config.instance.installation_root.to_s}" && node --print "require.resolve('react-native/package.json')"`), '..')
++  root_project = Pod::Config.instance.installation_root.to_s
++  if(ENV['PROJECT_ROOT_DIR'])
++    root_project = ENV['PROJECT_ROOT_DIR']
++  end
++  react_native_node_modules_dir = File.join(File.dirname(`cd "#{root_project}" && node --print "require.resolve('react-native/package.json')"`), '..')
+   react_native_json = try_to_parse_react_native_package_json(react_native_node_modules_dir)
+ 
+   if react_native_json == nil
+diff --git a/node_modules/react-native-reanimated/src/component/PerformanceMonitor.tsx b/node_modules/react-native-reanimated/src/component/PerformanceMonitor.tsx
+index ff8fc8a..a08935b 100644
+--- a/node_modules/react-native-reanimated/src/component/PerformanceMonitor.tsx
++++ b/node_modules/react-native-reanimated/src/component/PerformanceMonitor.tsx
+@@ -46,7 +46,6 @@ function createCircularDoublesBuffer(size: number) {
+ }
+ 
+ const DEFAULT_BUFFER_SIZE = 20;
+-addWhitelistedNativeProps({ text: true });
+ const AnimatedTextInput = createAnimatedComponent(TextInput);
+ 
+ function loopAnimationFrame(fn: (lastTime: number, time: number) => void) {

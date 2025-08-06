@@ -12,6 +12,7 @@ import UserListItem from '@components/SelectionList/UserListItem';
 import useDebounce from '@hooks/useDebounce';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {getCardFeedsForDisplay} from '@libs/CardFeedUtils';
@@ -613,9 +614,11 @@ function SearchAutocompleteList(
     const additionalSections = useMemo(() => {
         return getAdditionalSections?.(searchOptions);
     }, [getAdditionalSections, searchOptions]);
+    const previousAdditionalSections = usePrevious(additionalSections);
 
-    if (additionalSections) {
-        sections.push(...additionalSections);
+    if (additionalSections ?? previousAdditionalSections) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        sections.push(...(additionalSections ?? previousAdditionalSections)!);
     }
 
     if (!autocompleteQueryValue && recentSearchesData && recentSearchesData.length > 0) {
