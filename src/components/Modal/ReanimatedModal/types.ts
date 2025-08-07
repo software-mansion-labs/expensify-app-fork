@@ -1,6 +1,5 @@
 import type {ReactNode} from 'react';
 import type {NativeSyntheticEvent, StyleProp, ViewProps, ViewStyle} from 'react-native';
-import type {SharedValue} from 'react-native-reanimated';
 import type {ValueOf} from 'type-fest';
 import type CONST from '@src/CONST';
 
@@ -74,17 +73,8 @@ type ReanimatedModalProps = ViewProps &
         /** Whether to avoid keyboard overlap during modal display */
         avoidKeyboard?: boolean;
 
-        /** Whether the modal should have a backdrop */
-        hasBackdrop?: boolean;
-
         /** Opacity of the backdrop */
         backdropOpacity?: number;
-
-        /** Duration of backdrop transition when modal appears */
-        backdropTransitionInTiming?: number;
-
-        /** Duration of backdrop transition when modal disappears */
-        backdropTransitionOutTiming?: number;
 
         /** Whether the modal is visible */
         isVisible?: boolean;
@@ -148,9 +138,6 @@ type ContainerProps = {
 
     /** This function is called by close animation callback */
     onCloseCallBack: () => void;
-
-    /** Position animated by pan gesture */
-    panPosition?: {translateX: SharedValue<number>; translateY: SharedValue<number>};
 
     /** Animation played when modal shows */
     animationIn: AnimationIn;

@@ -20,7 +20,6 @@ function ReanimatedModal({
     animationOut = 'fadeOut',
     avoidKeyboard = false,
     children,
-    hasBackdrop = true,
     backdropOpacity = variables.overlayOpacity,
     isVisible = false,
     onModalWillShow = noop,
@@ -147,21 +146,10 @@ function ReanimatedModal({
             type={type}
             onSwipeComplete={onSwipeComplete}
             swipeDirection={swipeDirection}
+            swipeThreshold={swipeThreshold}
         >
             {children}
         </Container>
-    );
-
-    const backdropView = (
-        <Backdrop
-            isBackdropVisible={isVisible}
-            style={backdropStyle}
-            onBackdropPress={onBackdropPress}
-            animationInTiming={animationInTiming}
-            animationOutTiming={animationOutTiming}
-            animationInDelay={animationInDelay}
-            backdropOpacity={backdropOpacity}
-        />
     );
 
     return (
@@ -183,7 +171,15 @@ function ReanimatedModal({
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...props}
             >
-                {hasBackdrop && backdropView}
+                <Backdrop
+                    isBackdropVisible={isVisible}
+                    style={backdropStyle}
+                    onBackdropPress={onBackdropPress}
+                    animationInTiming={animationInTiming}
+                    animationOutTiming={animationOutTiming}
+                    animationInDelay={animationInDelay}
+                    backdropOpacity={backdropOpacity}
+                />
                 {avoidKeyboard ? (
                     <KeyboardAvoidingView
                         behavior="padding"

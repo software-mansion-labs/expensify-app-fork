@@ -8,7 +8,6 @@ import FocusTrapForModal from '@components/FocusTrap/FocusTrapForModal';
 import NavigationBar from '@components/NavigationBar';
 import ScreenWrapperOfflineIndicatorContext from '@components/ScreenWrapper/ScreenWrapperOfflineIndicatorContext';
 import useKeyboardState from '@hooks/useKeyboardState';
-import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
 import useSidePanel from '@hooks/useSidePanel';
@@ -59,7 +58,6 @@ function BaseModal(
         shouldPreventScrollOnFocus = false,
         enableEdgeToEdgeBottomSafeAreaPadding,
         shouldApplySidePanelOffset = type === CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED,
-        hasBackdrop,
         backdropOpacity,
         shouldDisableBottomSafeAreaPadding = false,
     }: BaseModalProps,
@@ -76,7 +74,7 @@ function BaseModal(
     const {isSmallScreenWidth, shouldUseNarrowLayout, isInNarrowPaneModal} = useResponsiveLayout();
 
     const {sidePanelOffset} = useSidePanel();
-    const sidePanelReanimatedStyle = shouldApplySidePanelOffset && !isSmallScreenWidth ? {transform: [{translateX: Animated.multiply(sidePanelOffset.current, -1)}]} : undefined;
+    const sidePanelAnimatedStyle = shouldApplySidePanelOffset && !isSmallScreenWidth ? {transform: [{translateX: Animated.multiply(sidePanelOffset.current, -1)}]} : undefined;
     const keyboardStateContextValue = useKeyboardState();
 
     const [modalOverlapsWithTopSafeArea, setModalOverlapsWithTopSafeArea] = useState(false);
@@ -86,8 +84,6 @@ function BaseModal(
 
     const shouldCallHideModalOnUnmount = useRef(false);
     const hideModalCallbackRef = useRef<(callHideCallback: boolean) => void>(undefined);
-
-    const wasVisible = usePrevious(isVisible);
 
     const uniqueModalId = useMemo(() => modalId ?? ComposerFocusManager.getId(), [modalId]);
     const saveFocusState = useCallback(() => {
@@ -129,13 +125,8 @@ function BaseModal(
             }
         }
 
-        return () => {
-            if (!removeOnCloseListener) {
-                return;
-            }
-            removeOnCloseListener();
-        };
-    }, [isVisible, wasVisible, onClose, type]);
+        return () => removeOnCloseListener?.();
+    }, [isVisible, onClose, type]);
 
     useEffect(() => {
         hideModalCallbackRef.current = hideModal;
@@ -148,7 +139,6 @@ function BaseModal(
             }
             hideModalCallbackRef.current?.(true);
         },
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
         [],
     );
 
@@ -328,8 +318,6 @@ function BaseModal(
                         swipeThreshold={swipeThreshold}
                         isVisible={isVisible}
                         backdropOpacity={backdropOpacityAdjusted}
-                        backdropTransitionOutTiming={0}
-                        hasBackdrop={hasBackdrop ?? true}
                         style={modalStyle}
                         deviceHeight={windowHeight}
                         deviceWidth={windowWidth}
@@ -354,7 +342,7 @@ function BaseModal(
                             >
                                 <Animated.View
                                     onLayout={onViewLayout}
-                                    style={[styles.defaultModalContainer, modalContainerStyle, modalPaddingStyles, !isVisible && styles.pointerEventsNone, sidePanelReanimatedStyle]}
+                                    style={[styles.defaultModalContainer, modalContainerStyle, modalPaddingStyles, !isVisible && styles.pointerEventsNone, sidePanelAnimatedStyle]}
                                     ref={ref}
                                 >
                                     <ColorSchemeWrapper>{children}</ColorSchemeWrapper>
