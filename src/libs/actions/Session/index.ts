@@ -65,6 +65,7 @@ import type Locale from '@src/types/onyx/Locale';
 import type Response from '@src/types/onyx/Response';
 import type Session from '@src/types/onyx/Session';
 import type {AutoAuthState} from '@src/types/onyx/Session';
+import {migrateToNewPartnerName} from '@libs/actions/HybridApp';
 import clearCache from './clearCache';
 import updateSessionAuthTokens from './updateSessionAuthTokens';
 
@@ -79,7 +80,40 @@ let hasSwitchedAccountInHybridMode = false;
 Onyx.connect({
     key: ONYXKEYS.SESSION,
     callback: (value) => {
+
+        console.debug("IN SESSION CALLBACK");
+
+        if(value === undefined) {
+            console.debug("SESSION IS UNDEFINED");
+        }
+
+        if(value === null) {
+            console.debug("SESSION IS NULL");
+        }
+
+        if(value?.authToken === undefined) {
+            console.debug("SESSION AUTH TOKEN IS UNDEFINED");
+        }
+
+        if(value?.authToken === null) {
+            console.debug("SESSION AUTH TOKEN IS NULL");
+        }
+
+        if(value?.authToken === "") {
+            console.debug("SESSION AUTH TOKEN IS EMPTY STRING");
+        }
+
+        if(value?.authToken && value?.authToken?.length > 0) {
+            console.debug("SESSION AUTH TOKEN IS NOT EMPTY STRING");
+        }
+
         session = value ?? {};
+
+        // After migration to NewDot SignInPage, we also started to use NewDot's commands that assume new partner name. To prevent sign-out after update of SignInPage, we need to migrate to new partner name gradually.
+        if(!session?.authToken && CONFIG.IS_HYBRID_APP) {
+            migrateToNewPartnerName();
+        }
+
         if (!session.creationDate) {
             session.creationDate = new Date().getTime();
         }

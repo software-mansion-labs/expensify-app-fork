@@ -61,6 +61,8 @@ export default {
         DEFAULT_SECURE_API_ROOT: secureURLRoot,
         STAGING_API_ROOT: stagingExpensifyURL,
         STAGING_SECURE_API_ROOT: stagingSecureExpensifyUrl,
+        LEGACY_PARTNER_NAME: 'android',
+        LEGACY_PARTNER_PASSWORD: 'c3a9ac418ea3f152aae2',
         PARTNER_NAME: get(Config, 'EXPENSIFY_PARTNER_NAME', 'chat-expensify-com'),
         PARTNER_PASSWORD: get(Config, 'EXPENSIFY_PARTNER_PASSWORD', 'e21965746fd75f82bb66'),
         EXPENSIFY_CASH_REFERER: 'ecash',

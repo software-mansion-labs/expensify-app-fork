@@ -4,6 +4,7 @@ import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type Credentials from '@src/types/onyx/Credentials';
+import type { HybridApp } from '@src/types/onyx';
 
 let credentials: Credentials | null | undefined;
 let authToken: string | null | undefined;
@@ -11,6 +12,7 @@ let authTokenType: ValueOf<typeof CONST.AUTH_TOKEN_TYPES> | null;
 let currentUserEmail: string | null = null;
 let offline = false;
 let authenticating = false;
+let hybridApp: HybridApp | null | undefined;
 
 // Allow code that is outside of the network listen for when a reconnection happens so that it can execute any side-effects (like flushing the sequential network queue)
 let reconnectCallback: () => void;
@@ -35,7 +37,7 @@ let isReadyPromise = new Promise((resolve) => {
  * If the values are undefined we haven't read them yet. If they are null or have a value then we have and the network is "ready".
  */
 function checkRequiredData() {
-    if (authToken === undefined || credentials === undefined) {
+    if (authToken === undefined || credentials === undefined || hybridApp === undefined) {
         return;
     }
 
@@ -67,6 +69,14 @@ Onyx.connect({
     },
 });
 
+Onyx.connect({
+    key: ONYXKEYS.HYBRID_APP,
+    callback: (val) => {
+        hybridApp = val ?? null;
+        checkRequiredData();
+    },
+});
+
 // We subscribe to the online/offline status of the network to determine when we should fire off API calls
 // vs queueing them for later.
 Onyx.connect({
@@ -87,6 +97,10 @@ Onyx.connect({
 
 function getCredentials(): Credentials | null | undefined {
     return credentials;
+}
+
+function getHybridApp(): HybridApp | null | undefined {
+    return hybridApp;
 }
 
 function isOffline(): boolean {
@@ -154,6 +168,7 @@ function setIsAuthenticating(val: boolean) {
 
 export {
     getAuthToken,
+    getHybridApp,
     setAuthToken,
     getCurrentUserEmail,
     hasReadRequiredDataFromStorage,

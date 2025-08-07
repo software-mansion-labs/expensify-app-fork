@@ -3,6 +3,7 @@ import Onyx from 'react-native-onyx';
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {HybridApp} from '@src/types/onyx';
+import Log from '@libs/Log';
 import type HybridAppSettings from './types';
 
 function closeReactNativeApp({shouldSetNVP}: {shouldSetNVP: boolean}) {
@@ -80,4 +81,11 @@ function prepareHybridAppAfterTransitionToNewDot(hybridApp: HybridApp) {
     });
 }
 
-export {parseHybridAppSettings, setReadyToShowAuthScreens, resetSignInFlow, prepareHybridAppAfterTransitionToNewDot, setUseNewDotSignInPage, setClosingReactNativeApp, closeReactNativeApp};
+function migrateToNewPartnerName() {
+    Log.info('[HybridApp] Migrating to new partner name');
+    Onyx.merge(ONYXKEYS.HYBRID_APP, {
+        shouldUseNewPartnerName: true,
+    });
+}
+
+export {parseHybridAppSettings, setReadyToShowAuthScreens, resetSignInFlow, prepareHybridAppAfterTransitionToNewDot, setUseNewDotSignInPage, setClosingReactNativeApp, closeReactNativeApp, migrateToNewPartnerName};
