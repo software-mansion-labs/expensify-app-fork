@@ -40,7 +40,6 @@ function BasePopoverReactionList({emojiName, reportActionID, currentUserPersonal
             animationIn="fadeIn"
             disableAnimation={false}
             shouldSetModalVisibility={false}
-            fullscreen
             anchorRef={reactionListRef}
         >
             <BaseReactionList

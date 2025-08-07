@@ -19,12 +19,10 @@ function HelpOverlay({isRHPVisible, onBackdropPress}: HelpOverlayProps) {
     const {translate} = useLocalize();
 
     const CustomFadeIn = useMemo(() => getModalInAnimation('fadeIn').duration(CONST.MODAL.ANIMATION_TIMING.DEFAULT_IN), []);
-
     const CustomFadeOut = useMemo(() => getModalOutAnimation('fadeOut').duration(CONST.MODAL.ANIMATION_TIMING.DEFAULT_OUT), []);
 
     return (
         <Animated.View
-            style={styles.sidePanelOverlay(isRHPVisible)}
             entering={isRHPVisible ? undefined : CustomFadeIn}
             exiting={isRHPVisible ? undefined : CustomFadeOut}
         >
@@ -32,7 +30,7 @@ function HelpOverlay({isRHPVisible, onBackdropPress}: HelpOverlayProps) {
                 accessible
                 accessibilityLabel={translate('modal.backdropLabel')}
                 onPress={onBackdropPress}
-                style={styles.flex1}
+                style={[styles.flex1, styles.sidePanelOverlay(isRHPVisible)]}
             />
         </Animated.View>
     );

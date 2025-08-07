@@ -357,7 +357,6 @@ function PopoverReportActionContextMenu(_props: unknown, ref: ForwardedRef<Repor
                 animationIn="fadeIn"
                 disableAnimation={false}
                 shouldSetModalVisibility={false}
-                fullscreen
                 withoutOverlay={isWithoutOverlay}
                 anchorDimensions={contextMenuDimensions.current}
                 anchorRef={anchorRef}

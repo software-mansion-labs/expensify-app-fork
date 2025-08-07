@@ -1,5 +1,5 @@
 import type {FocusTrapProps} from 'focus-trap-react';
-import type {GestureResponderEvent, PanResponderGestureState, ViewStyle} from 'react-native';
+import type {ViewStyle} from 'react-native';
 import type {ValueOf} from 'type-fest';
 import type CONST from '@src/CONST';
 import type ReanimatedModalProps from './ReanimatedModal/types';
@@ -18,12 +18,6 @@ type WindowState = {
 };
 
 type BaseModalProps = Partial<ReanimatedModalProps> & {
-    /** Decides whether the modal should cover fullscreen. FullScreen modal has backdrop */
-    fullscreen?: boolean;
-
-    /** Should we close modal on outside click */
-    shouldCloseOnOutsideClick?: boolean;
-
     /** Should we announce the Modal visibility changes? */
     shouldSetModalVisibility?: boolean;
 
@@ -44,9 +38,6 @@ type BaseModalProps = Partial<ReanimatedModalProps> & {
 
     /** Style of modal to display */
     type?: ValueOf<typeof CONST.MODAL.MODAL_TYPE>;
-
-    /** The anchor position of a popover modal. Has no effect on other modal types. */
-    popoverAnchorPosition?: PopoverAnchorPosition;
 
     outerStyle?: ViewStyle;
 
@@ -79,9 +70,6 @@ type BaseModalProps = Partial<ReanimatedModalProps> & {
 
     /** Should we apply padding style in modal itself. If this value is false, we will handle it in ScreenWrapper */
     shouldUseModalPaddingStyle?: boolean;
-
-    /** Whether swipe gestures should propagate to parent components */
-    propagateSwipe?: boolean | ((event?: GestureResponderEvent, gestureState?: PanResponderGestureState) => boolean);
 
     /** After swipe more than threshold modal will close */
     swipeThreshold?: number;

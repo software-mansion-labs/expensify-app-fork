@@ -26,9 +26,7 @@ function SearchRouterModal() {
             type={modalType}
             isVisible={isSearchRouterDisplayed}
             innerContainerStyle={{paddingTop: viewportOffsetTop}}
-            popoverAnchorPosition={{right: 6, top: 6}}
-            fullscreen
-            propagateSwipe
+            outerStyle={{right: 6, top: 6}}
             swipeDirection={shouldUseNarrowLayout ? CONST.SWIPE_DIRECTION.RIGHT : undefined}
             onClose={closeSearchRouter}
             onModalHide={() => setShouldHideInputCaret(isMobileWebIOS)}

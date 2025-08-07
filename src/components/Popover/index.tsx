@@ -81,7 +81,7 @@ function Popover(props: PopoverProps) {
             onClose={onCloseWithPopoverContext}
             shouldHandleNavigationBack={props.shouldHandleNavigationBack}
             type={isSmallScreenWidth ? CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED : CONST.MODAL.MODAL_TYPE.POPOVER}
-            popoverAnchorPosition={isSmallScreenWidth ? undefined : anchorPosition}
+            outerStyle={isSmallScreenWidth ? undefined : anchorPosition}
             animationInTiming={disableAnimation && !shouldUseNarrowLayout ? 1 : animationInTiming}
             animationOutTiming={disableAnimation && !shouldUseNarrowLayout ? 1 : animationOutTiming}
             onLayout={onLayout}

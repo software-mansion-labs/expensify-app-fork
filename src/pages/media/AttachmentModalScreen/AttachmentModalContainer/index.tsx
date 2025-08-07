@@ -41,7 +41,6 @@ function AttachmentModalContainer({contentProps, modalType, onShow, onClose, sho
         <Modal
             isVisible={isVisible}
             type={modalType ?? CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
-            propagateSwipe
             initialFocus={() => {
                 if (!contentProps.submitRef?.current) {
                     return false;

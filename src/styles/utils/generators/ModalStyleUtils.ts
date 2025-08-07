@@ -40,7 +40,6 @@ type GetModalStylesStyleUtil = {
     getModalStyles: (
         type: ModalType | undefined,
         windowDimensions: WindowDimensions,
-        popoverAnchorPosition?: ViewStyle,
         innerContainerStyle?: ViewStyle,
         outerStyle?: ViewStyle,
         shouldUseModalPaddingStyle?: boolean,
@@ -55,7 +54,6 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({the
     getModalStyles: (
         type,
         windowDimensions,
-        popoverAnchorPosition = {},
         innerContainerStyle = {},
         outerStyle = {},
         shouldUseModalPaddingStyle = true,
@@ -93,6 +91,7 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({the
                     ...modalStyle,
                     ...{
                         alignItems: 'center',
+                        justifyContent: 'center',
                     },
                 };
                 modalContainerStyle = {
@@ -254,7 +253,6 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({the
             case CONST.MODAL.MODAL_TYPE.POPOVER:
                 modalStyle = {
                     ...modalStyle,
-                    ...popoverAnchorPosition,
                     ...{
                         position: 'absolute',
                         alignItems: 'center',

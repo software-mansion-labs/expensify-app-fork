@@ -15,18 +15,7 @@ import type PopoverWithoutOverlayProps from './types';
 const NOOP = () => {};
 
 function PopoverWithoutOverlay(
-    {
-        anchorPosition = {},
-        anchorRef,
-        withoutOverlayRef,
-        innerContainerStyle = {},
-        outerStyle,
-        onModalShow = () => {},
-        isVisible,
-        onClose,
-        onModalHide = () => {},
-        children,
-    }: PopoverWithoutOverlayProps,
+    {anchorRef, withoutOverlayRef, innerContainerStyle = {}, outerStyle, onModalShow = () => {}, isVisible, onClose, onModalHide = () => {}, children}: PopoverWithoutOverlayProps,
     ref: ForwardedRef<View>,
 ) {
     const styles = useThemeStyles();
@@ -42,7 +31,6 @@ function PopoverWithoutOverlay(
                 windowHeight,
                 isSmallScreenWidth: false,
             },
-            anchorPosition,
             innerContainerStyle,
             outerStyle,
         );

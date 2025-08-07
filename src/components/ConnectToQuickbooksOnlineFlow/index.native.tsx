@@ -32,7 +32,6 @@ function ConnectToQuickbooksOnlineFlow({policyID}: ConnectToQuickbooksOnlineFlow
     return (
         <Modal
             onClose={() => setIsWebViewOpen(false)}
-            fullscreen
             isVisible={isWebViewOpen}
             type={CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
         >

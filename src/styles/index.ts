@@ -2691,12 +2691,6 @@ const styles = (theme: ThemeColors) =>
 
         modalAnimatedContainer: {width: '100%'},
 
-        modalContainerBox: {
-            zIndex: 2,
-            opacity: 1,
-            backgroundColor: 'transparent',
-        },
-
         modalBackdrop: {
             position: 'absolute',
             top: 0,

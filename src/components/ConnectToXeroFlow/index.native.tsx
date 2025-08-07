@@ -53,7 +53,6 @@ function ConnectToXeroFlow({policyID}: ConnectToXeroFlowProps) {
             )}
             <Modal
                 onClose={() => setIsWebViewOpen(false)}
-                fullscreen
                 isVisible={isWebViewOpen}
                 type={CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
             >
