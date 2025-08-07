@@ -436,7 +436,9 @@ function endSignOnTransition() {
  * @param [currency] Optional, selected currency for the workspace
  * @param [file], avatar file for workspace
  * @param [routeToNavigateAfterCreate], Optional, route to navigate after creating a workspace
+ * @param [isAnnualSubscription] Optional, does user have an annual subscription
  */
+// eslint-disable-next-line @typescript-eslint/max-params
 function createWorkspaceWithPolicyDraftAndNavigateToIt(
     policyOwnerEmail = '',
     policyName = '',
@@ -448,6 +450,7 @@ function createWorkspaceWithPolicyDraftAndNavigateToIt(
     file?: File,
     routeToNavigateAfterCreate?: Route,
     lastUsedPaymentMethod?: OnyxTypes.LastPaymentMethodType,
+    isAnnualSubscription = false,
 ) {
     const policyIDWithDefault = policyID || generatePolicyID();
     createDraftInitialWorkspace(policyOwnerEmail, policyName, policyIDWithDefault, makeMeAdmin, currency, file);
@@ -458,7 +461,7 @@ function createWorkspaceWithPolicyDraftAndNavigateToIt(
                 Navigation.goBack();
             }
             const routeToNavigate = routeToNavigateAfterCreate ?? ROUTES.WORKSPACE_INITIAL.getRoute(policyIDWithDefault, backTo);
-            savePolicyDraftByNewWorkspace(policyIDWithDefault, policyName, policyOwnerEmail, makeMeAdmin, currency, file, lastUsedPaymentMethod);
+            savePolicyDraftByNewWorkspace(policyIDWithDefault, policyName, policyOwnerEmail, makeMeAdmin, currency, file, lastUsedPaymentMethod, isAnnualSubscription);
             Navigation.navigate(routeToNavigate, {forceReplace: !transitionFromOldDot});
         })
         .then(endSignOnTransition);
@@ -473,6 +476,7 @@ function createWorkspaceWithPolicyDraftAndNavigateToIt(
  * @param [makeMeAdmin] Optional, leave the calling account as an admin on the policy
  * @param [currency] Optional, selected currency for the workspace
  * @param [file] Optional, avatar file for workspace
+ * @param [isAnnualSubscription] Optional, does user have an annual subscription
  */
 function savePolicyDraftByNewWorkspace(
     policyID?: string,
@@ -482,6 +486,7 @@ function savePolicyDraftByNewWorkspace(
     currency = '',
     file?: File,
     lastUsedPaymentMethod?: OnyxTypes.LastPaymentMethodType,
+    isAnnualSubscription = false,
 ) {
     createWorkspace({
         policyOwnerEmail,
@@ -492,6 +497,7 @@ function savePolicyDraftByNewWorkspace(
         currency,
         file,
         lastUsedPaymentMethod,
+        isAnnualSubscription,
     });
 }
 
