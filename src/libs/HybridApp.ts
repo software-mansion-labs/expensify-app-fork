@@ -23,6 +23,13 @@ Onyx.connect({
     key: ONYXKEYS.HYBRID_APP,
     callback: (hybridApp) => {
         currentHybridApp = hybridApp;
+        if(!hybridApp?.shouldUseNewPartnerName) {
+            Log.info('[HybridApp] User should use old partner name for now');
+        }
+        else {
+            Log.info('[HybridApp] User should use new partner name');
+        }
+
         handleChangeInHybridAppSignInFlow(hybridApp, currentTryNewDot, currentCredentials, currentSession);
     },
 });
