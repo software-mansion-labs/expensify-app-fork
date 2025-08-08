@@ -73,10 +73,6 @@ function shouldUseOldApp(tryNewDot: TryNewDot) {
     return tryNewDot.classicRedirect.dismissed;
 }
 
-function shouldUseNewPartnerName() {
-    return currentHybridApp?.shouldUseNewPartnerName ?? false;
-}
-
 function handleChangeInHybridAppSignInFlow(hybridApp: OnyxEntry<HybridApp>, tryNewDot: OnyxEntry<TryNewDot>, credentials: OnyxEntry<Credentials>, session: OnyxEntry<Session>) {
     if (!CONFIG.IS_HYBRID_APP) {
         return;
@@ -116,7 +112,3 @@ function handleChangeInHybridAppSignInFlow(hybridApp: OnyxEntry<HybridApp>, tryN
         });
     }
 }
-
-export default {
-    shouldUseNewPartnerName,
-};

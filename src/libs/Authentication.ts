@@ -9,7 +9,7 @@ import redirectToSignIn from './actions/SignInRedirect';
 import {getAuthenticateErrorMessage} from './ErrorUtils';
 import Log from './Log';
 import {post} from './Network';
-import {getCredentials, getHybridApp, hasReadRequiredDataFromStorage, setAuthToken, setIsAuthenticating} from './Network/NetworkStore';
+import {getCredentials, getShouldUseNewPartnerName, hasReadRequiredDataFromStorage, setAuthToken, setIsAuthenticating} from './Network/NetworkStore';
 import requireParameters from './requireParameters';
 
 type Parameters = {
@@ -98,8 +98,8 @@ function reauthenticate(command = ''): Promise<boolean> {
     return hasReadRequiredDataFromStorage().then(() => {
         const credentials = getCredentials();
 
-        // We need to use new partner name if user used new SignInPage
-        const shouldUseNewPartnerName = getHybridApp()?.shouldUseNewPartnerName ?? false;
+        // We need to use new partner name if user used new SignInPage, this is only true for HybridApp
+        const shouldUseNewPartnerName = getShouldUseNewPartnerName();
         const partnerName = shouldUseNewPartnerName ? CONFIG.EXPENSIFY.PARTNER_NAME : CONFIG.EXPENSIFY.LEGACY_PARTNER_NAME;
         const partnerPassword = shouldUseNewPartnerName ? CONFIG.EXPENSIFY.PARTNER_PASSWORD : CONFIG.EXPENSIFY.LEGACY_PARTNER_PASSWORD;
 

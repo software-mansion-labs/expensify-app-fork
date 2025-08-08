@@ -82,6 +82,10 @@ function prepareHybridAppAfterTransitionToNewDot(hybridApp: HybridApp) {
 }
 
 function migrateToNewPartnerName() {
+    if (!CONFIG.IS_HYBRID_APP) {
+        return;
+    }
+
     Log.info('[HybridApp] Migrating to new partner name');
     Onyx.merge(ONYXKEYS.HYBRID_APP, {
         shouldUseNewPartnerName: true,

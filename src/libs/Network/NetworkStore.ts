@@ -2,6 +2,7 @@ import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import CONST from '@src/CONST';
+import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type Credentials from '@src/types/onyx/Credentials';
 import type { HybridApp } from '@src/types/onyx';
@@ -37,7 +38,11 @@ let isReadyPromise = new Promise((resolve) => {
  * If the values are undefined we haven't read them yet. If they are null or have a value then we have and the network is "ready".
  */
 function checkRequiredData() {
-    if (authToken === undefined || credentials === undefined || hybridApp === undefined) {
+    if (authToken === undefined || credentials === undefined) {
+        return;
+    }
+
+    if(CONFIG.IS_HYBRID_APP && hybridApp === undefined) {
         return;
     }
 
@@ -69,13 +74,15 @@ Onyx.connect({
     },
 });
 
-Onyx.connect({
-    key: ONYXKEYS.HYBRID_APP,
-    callback: (val) => {
-        hybridApp = val ?? null;
-        checkRequiredData();
-    },
-});
+if(CONFIG.IS_HYBRID_APP) {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.HYBRID_APP,
+        callback: (val) => {
+            hybridApp = val ?? null;
+            checkRequiredData();
+        },
+    });
+}
 
 // We subscribe to the online/offline status of the network to determine when we should fire off API calls
 // vs queueing them for later.
@@ -99,8 +106,12 @@ function getCredentials(): Credentials | null | undefined {
     return credentials;
 }
 
-function getHybridApp(): HybridApp | null | undefined {
-    return hybridApp;
+function getShouldUseNewPartnerName(): boolean {
+    if(!CONFIG.IS_HYBRID_APP) {
+        return true;
+    }
+
+    return hybridApp?.shouldUseNewPartnerName ?? false;
 }
 
 function isOffline(): boolean {
@@ -168,7 +179,7 @@ function setIsAuthenticating(val: boolean) {
 
 export {
     getAuthToken,
-    getHybridApp,
+    getShouldUseNewPartnerName,
     setAuthToken,
     getCurrentUserEmail,
     hasReadRequiredDataFromStorage,
