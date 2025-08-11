@@ -13,7 +13,7 @@ const get = (config: NativeConfig, key: string, defaultValue: string): string =>
 const getDefaultLegacyPartnerName = () => {
     // eslint-disable-next-line no-restricted-properties
     if (!HybridAppModule.isHybridApp()) {
-        return ''
+        return '';
     }
 
     if (Platform.OS === 'ios') {
@@ -27,7 +27,7 @@ const getDefaultLegacyPartnerName = () => {
 const getDefaultLegacyPartnerPassword = () => {
     // eslint-disable-next-line no-restricted-properties
     if (!HybridAppModule.isHybridApp()) {
-        return ''
+        return '';
     }
 
     if (Platform.OS === 'ios') {

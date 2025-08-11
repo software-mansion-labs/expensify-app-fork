@@ -1,11 +1,11 @@
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-import CONST from '@src/CONST';
 import CONFIG from '@src/CONFIG';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type Credentials from '@src/types/onyx/Credentials';
-import type { HybridApp } from '@src/types/onyx';
+import Log from '@libs/Log';
 
 let credentials: Credentials | null | undefined;
 let authToken: string | null | undefined;
@@ -13,7 +13,7 @@ let authTokenType: ValueOf<typeof CONST.AUTH_TOKEN_TYPES> | null;
 let currentUserEmail: string | null = null;
 let offline = false;
 let authenticating = false;
-let hybridApp: HybridApp | null | undefined;
+let shouldUseNewPartnerName: boolean | undefined;
 
 // Allow code that is outside of the network listen for when a reconnection happens so that it can execute any side-effects (like flushing the sequential network queue)
 let reconnectCallback: () => void;
@@ -33,16 +33,21 @@ let isReadyPromise = new Promise((resolve) => {
     resolveIsReadyPromise = resolve;
 });
 
+let resolvePartnerNameInfoIsReadyPromise: (args?: unknown[]) => void;
+const partnerNameInfoIsReadyPromise = new Promise((resolve) => {
+    resolvePartnerNameInfoIsReadyPromise = resolve;
+    // On non-hybrid app variants we can resolve immediately.
+    if (!CONFIG.IS_HYBRID_APP) {
+        resolvePartnerNameInfoIsReadyPromise();
+    }
+});
+
 /**
  * This is a hack to workaround the fact that Onyx may not yet have read these values from storage by the time Network starts processing requests.
  * If the values are undefined we haven't read them yet. If they are null or have a value then we have and the network is "ready".
  */
 function checkRequiredData() {
     if (authToken === undefined || credentials === undefined) {
-        return;
-    }
-
-    if(CONFIG.IS_HYBRID_APP && hybridApp === undefined) {
         return;
     }
 
@@ -74,12 +79,14 @@ Onyx.connect({
     },
 });
 
-if(CONFIG.IS_HYBRID_APP) {
+if (CONFIG.IS_HYBRID_APP) {
     Onyx.connectWithoutView({
         key: ONYXKEYS.HYBRID_APP,
         callback: (val) => {
-            hybridApp = val ?? null;
-            checkRequiredData();
+            // If this value is not set, we can assume that we are using old partner name.
+            shouldUseNewPartnerName = val?.shouldUseNewPartnerName ?? false;
+            Log.info(`[HybridApp] User requests should use ${val?.shouldUseNewPartnerName ? 'new' : 'old'} partner name`);
+            resolvePartnerNameInfoIsReadyPromise();
         },
     });
 }
@@ -104,14 +111,6 @@ Onyx.connect({
 
 function getCredentials(): Credentials | null | undefined {
     return credentials;
-}
-
-function getShouldUseNewPartnerName(): boolean {
-    if(!CONFIG.IS_HYBRID_APP) {
-        return true;
-    }
-
-    return hybridApp?.shouldUseNewPartnerName ?? false;
 }
 
 function isOffline(): boolean {
@@ -177,13 +176,26 @@ function setIsAuthenticating(val: boolean) {
     authenticating = val;
 }
 
+function getPartnerNameInfo(): boolean | undefined {
+    if (!CONFIG.IS_HYBRID_APP) {
+        return true;
+    }
+
+    return shouldUseNewPartnerName;
+}
+
+function hasReadPartnerNameInfoFromStorage(): Promise<unknown> {
+    return partnerNameInfoIsReadyPromise;
+}
+
 export {
+    getPartnerNameInfo,
     getAuthToken,
-    getShouldUseNewPartnerName,
     setAuthToken,
     getCurrentUserEmail,
     hasReadRequiredDataFromStorage,
     resetHasReadRequiredDataFromStorage,
+    hasReadPartnerNameInfoFromStorage,
     isOffline,
     onReconnection,
     isAuthenticating,

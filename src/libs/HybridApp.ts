@@ -19,22 +19,15 @@ let currentTryNewDot: OnyxEntry<TryNewDot>;
 let currentCredentials: OnyxEntry<Credentials>;
 let currentSession: OnyxEntry<Session>;
 
-Onyx.connect({
+Onyx.connectWithoutView({
     key: ONYXKEYS.HYBRID_APP,
     callback: (hybridApp) => {
         currentHybridApp = hybridApp;
-        if(!hybridApp?.shouldUseNewPartnerName) {
-            Log.info('[HybridApp] User should use old partner name for now');
-        }
-        else {
-            Log.info('[HybridApp] User should use new partner name');
-        }
-
         handleChangeInHybridAppSignInFlow(hybridApp, currentTryNewDot, currentCredentials, currentSession);
     },
 });
 
-Onyx.connect({
+Onyx.connectWithoutView({
     key: ONYXKEYS.NVP_TRY_NEW_DOT,
     callback: (tryNewDot) => {
         currentTryNewDot = tryNewDot;
@@ -42,7 +35,7 @@ Onyx.connect({
     },
 });
 
-Onyx.connect({
+Onyx.connectWithoutView({
     key: ONYXKEYS.CREDENTIALS,
     callback: (credentials) => {
         currentCredentials = credentials;
@@ -50,7 +43,7 @@ Onyx.connect({
     },
 });
 
-Onyx.connect({
+Onyx.connectWithoutView({
     key: ONYXKEYS.SESSION,
     callback: (session: OnyxEntry<Session>) => {
         currentSession = session;
@@ -59,7 +52,7 @@ Onyx.connect({
 });
 
 let activePolicyID: OnyxEntry<string>;
-Onyx.connect({
+Onyx.connectWithoutView({
     key: ONYXKEYS.NVP_ACTIVE_POLICY_ID,
     callback: (newActivePolicyID) => {
         activePolicyID = newActivePolicyID;
