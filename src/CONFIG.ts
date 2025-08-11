@@ -10,32 +10,24 @@ import * as Url from './libs/Url';
 // add a trim() call to prevent headaches
 const get = (config: NativeConfig, key: string, defaultValue: string): string => (config?.[key] ?? defaultValue).trim();
 
-const getDefaultLegacyPartnerName = () => {
+const getDefaultLegacyPartnerConfig = () => {
     // eslint-disable-next-line no-restricted-properties
     if (!HybridAppModule.isHybridApp()) {
-        return '';
+        return { name: '', password: '' };
     }
 
     if (Platform.OS === 'ios') {
-        return 'iphone';
+        return {
+            name: 'iphone',
+            password: 'e88ed31140a66c73b36a',
+        };
     }
 
-    // Android partner name
-    return 'android';
-};
-
-const getDefaultLegacyPartnerPassword = () => {
-    // eslint-disable-next-line no-restricted-properties
-    if (!HybridAppModule.isHybridApp()) {
-        return '';
-    }
-
-    if (Platform.OS === 'ios') {
-        return 'e88ed31140a66c73b36a';
-    }
-
-    // Android partner password
-    return 'c3a9ac418ea3f152aae2';
+    // Android partner config
+    return {
+        name: 'android',
+        password: 'c3a9ac418ea3f152aae2',
+    };
 };
 
 // Set default values to contributor friendly values to make development work out of the box without an .env file
@@ -89,8 +81,8 @@ export default {
         DEFAULT_SECURE_API_ROOT: secureURLRoot,
         STAGING_API_ROOT: stagingExpensifyURL,
         STAGING_SECURE_API_ROOT: stagingSecureExpensifyUrl,
-        LEGACY_PARTNER_NAME: get(Config, 'LEGACY_EXPENSIFY_PARTNER_NAME', getDefaultLegacyPartnerName()),
-        LEGACY_PARTNER_PASSWORD: get(Config, 'LEGACY_EXPENSIFY_PARTNER_PASSWORD', getDefaultLegacyPartnerPassword()),
+        LEGACY_PARTNER_NAME: get(Config, 'LEGACY_EXPENSIFY_PARTNER_NAME', getDefaultLegacyPartnerConfig().name),
+        LEGACY_PARTNER_PASSWORD: get(Config, 'LEGACY_EXPENSIFY_PARTNER_PASSWORD', getDefaultLegacyPartnerConfig().password),
         PARTNER_NAME: get(Config, 'EXPENSIFY_PARTNER_NAME', 'chat-expensify-com'),
         PARTNER_PASSWORD: get(Config, 'EXPENSIFY_PARTNER_PASSWORD', 'e21965746fd75f82bb66'),
         EXPENSIFY_CASH_REFERER: 'ecash',
