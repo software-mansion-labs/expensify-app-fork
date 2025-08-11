@@ -213,9 +213,9 @@ function signInWithSupportAuthToken(authToken: string) {
  * Clears the Onyx store and redirects user to the sign in page
  */
 function signOut(): Promise<void | Response> {
-    return NetworkStore.hasReadPartnerNameInfoFromStorage().then(() => {
+    return NetworkStore.hasReadShouldUseNewPartnerNameFromStorage().then(() => {
         Log.info('Flushing logs before signing out', true, {}, true);
-        const shouldUseNewPartnerName = NetworkStore.getPartnerNameInfo();
+        const shouldUseNewPartnerName = NetworkStore.getShouldUseNewPartnerName();
 
         const params: LogOutParams = {
             // Send current authToken because we will immediately clear it once triggering this command

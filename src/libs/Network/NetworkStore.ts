@@ -33,12 +33,12 @@ let isReadyPromise = new Promise((resolve) => {
     resolveIsReadyPromise = resolve;
 });
 
-let resolvePartnerNameInfoIsReadyPromise: (args?: unknown[]) => void;
-const partnerNameInfoIsReadyPromise = new Promise((resolve) => {
-    resolvePartnerNameInfoIsReadyPromise = resolve;
+let resolveShouldUseNewPartnerNamePromise: (args?: unknown[]) => void;
+const shouldUseNewPartnerNamePromise = new Promise((resolve) => {
+    resolveShouldUseNewPartnerNamePromise = resolve;
     // On non-hybrid app variants we can resolve immediately.
     if (!CONFIG.IS_HYBRID_APP) {
-        resolvePartnerNameInfoIsReadyPromise();
+        resolveShouldUseNewPartnerNamePromise();
     }
 });
 
@@ -86,7 +86,7 @@ if (CONFIG.IS_HYBRID_APP) {
             // If this value is not set, we can assume that we are using old partner name.
             shouldUseNewPartnerName = val?.shouldUseNewPartnerName ?? false;
             Log.info(`[HybridApp] User requests should use ${val?.shouldUseNewPartnerName ? 'new' : 'old'} partner name`);
-            resolvePartnerNameInfoIsReadyPromise();
+            resolveShouldUseNewPartnerNamePromise();
         },
     });
 }
@@ -176,7 +176,7 @@ function setIsAuthenticating(val: boolean) {
     authenticating = val;
 }
 
-function getPartnerNameInfo(): boolean | undefined {
+function getShouldUseNewPartnerName(): boolean | undefined {
     if (!CONFIG.IS_HYBRID_APP) {
         return true;
     }
@@ -184,18 +184,18 @@ function getPartnerNameInfo(): boolean | undefined {
     return shouldUseNewPartnerName;
 }
 
-function hasReadPartnerNameInfoFromStorage(): Promise<unknown> {
-    return partnerNameInfoIsReadyPromise;
+function hasReadShouldUseNewPartnerNameFromStorage(): Promise<unknown> {
+    return shouldUseNewPartnerNamePromise;
 }
 
 export {
-    getPartnerNameInfo,
+    getShouldUseNewPartnerName,
     getAuthToken,
     setAuthToken,
     getCurrentUserEmail,
     hasReadRequiredDataFromStorage,
     resetHasReadRequiredDataFromStorage,
-    hasReadPartnerNameInfoFromStorage,
+    hasReadShouldUseNewPartnerNameFromStorage,
     isOffline,
     onReconnection,
     isAuthenticating,

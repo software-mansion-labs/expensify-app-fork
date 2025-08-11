@@ -9,7 +9,7 @@ import redirectToSignIn from './actions/SignInRedirect';
 import {getAuthenticateErrorMessage} from './ErrorUtils';
 import Log from './Log';
 import {post} from './Network';
-import {getCredentials, hasReadRequiredDataFromStorage, hasReadPartnerNameInfoFromStorage, getPartnerNameInfo, setAuthToken, setIsAuthenticating} from './Network/NetworkStore';
+import {getCredentials, hasReadRequiredDataFromStorage, hasReadShouldUseNewPartnerNameFromStorage, getShouldUseNewPartnerName, setAuthToken, setIsAuthenticating} from './Network/NetworkStore';
 import requireParameters from './requireParameters';
 
 type Parameters = {
@@ -95,10 +95,10 @@ function reauthenticate(command = ''): Promise<boolean> {
     });
 
     return hasReadRequiredDataFromStorage()
-        .then(hasReadPartnerNameInfoFromStorage)
+        .then(hasReadShouldUseNewPartnerNameFromStorage)
         .then(() => {
             const credentials = getCredentials();
-            const shouldUseNewPartnerName = getPartnerNameInfo();
+            const shouldUseNewPartnerName = getShouldUseNewPartnerName();
 
             const partnerName = shouldUseNewPartnerName ? CONFIG.EXPENSIFY.PARTNER_NAME : CONFIG.EXPENSIFY.LEGACY_PARTNER_NAME;
             const partnerPassword = shouldUseNewPartnerName ? CONFIG.EXPENSIFY.PARTNER_PASSWORD : CONFIG.EXPENSIFY.LEGACY_PARTNER_PASSWORD;
