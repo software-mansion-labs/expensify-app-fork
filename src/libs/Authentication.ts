@@ -100,7 +100,6 @@ function reauthenticate(command = ''): Promise<boolean> {
             const credentials = getCredentials();
             const shouldUseNewPartnerName = getPartnerNameInfo();
 
-            // We need to use new partner name if user used new SignInPage, this is only true for HybridApp
             const partnerName = shouldUseNewPartnerName ? CONFIG.EXPENSIFY.PARTNER_NAME : CONFIG.EXPENSIFY.LEGACY_PARTNER_NAME;
             const partnerPassword = shouldUseNewPartnerName ? CONFIG.EXPENSIFY.PARTNER_PASSWORD : CONFIG.EXPENSIFY.LEGACY_PARTNER_PASSWORD;
 

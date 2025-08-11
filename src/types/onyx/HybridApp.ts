@@ -39,7 +39,11 @@ type HybridApp = {
     /** Indicates if NewDot is being closed */
     closingReactNativeApp?: boolean;
 
-    /** Indicates if the NewDot partner name should be used, it is critical to prevent sign-out after update of SignInPage */
+    /** Indicates if the NewDot partner name should be used.
+     * It is critical to prevent sign-out after update of SignInPage as authentication methods
+     * from OldDot were using old partner names and NewDot's SignInPage 
+     * assumes that we use the new partner name.
+     */
     shouldUseNewPartnerName?: boolean;
 };
 
