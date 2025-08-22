@@ -1,4 +1,4 @@
-import {useEffect, useState, useTransition} from 'react';
+import {startTransition, useEffect, useState} from 'react';
 import type {ListItem} from '@components/SelectionList/types';
 import CONST from '@src/CONST';
 import usePrevious from './usePrevious';
@@ -11,7 +11,7 @@ import usePrevious from './usePrevious';
 function useSearchResults<TValue extends ListItem>(
     data: TValue[],
     filterData: (datum: TValue, searchInput: string) => boolean,
-    sortData: (data: TValue[]) => TValue[] = (d) => d,
+    sortData: (data: TValue[]) => TValue[],
     /**
      * Whether to sort data immediately on mount to prevent briefly displaying unsorted data,
      * since sorting is handled inside startTransition.
@@ -21,7 +21,7 @@ function useSearchResults<TValue extends ListItem>(
     const [inputValue, setInputValue] = useState('');
     const [result, setResult] = useState(() => (shouldSortInitialData ? sortData(data) : data));
     const prevData = usePrevious(data);
-    const [, startTransition] = useTransition();
+
     useEffect(() => {
         startTransition(() => {
             const normalizedSearchQuery = inputValue.trim().toLowerCase();
@@ -31,7 +31,7 @@ function useSearchResults<TValue extends ListItem>(
             // the original data array would be mutated. This breaks React's reference equality check in setResult,
             // preventing re-renders even when the sort order changes (e.g., on page refresh).
             const filtered = normalizedSearchQuery.length ? data.filter((item) => filterData(item, normalizedSearchQuery)) : [...data];
-            const sorted = sortData(filtered);
+            const sorted = sortData ? sortData(filtered) : filtered;
             setResult(sorted);
         });
     }, [data, filterData, inputValue, sortData]);
