@@ -43,6 +43,11 @@ type ReportMetadata = {
 
     /** Pending members of the report */
     pendingChatMembers?: PendingChatMember[];
+
+    /**
+     * if transactions is still loading
+     */
+    isLoadingTransactions?: boolean;
 };
 
 export default ReportMetadata;

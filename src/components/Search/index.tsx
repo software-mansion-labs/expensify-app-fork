@@ -520,6 +520,7 @@ function Search({queryJSON, searchResults, onSearchListScroll, contentContainerS
 
     const openReport = useCallback(
         (item: SearchListItem) => {
+            debugger;
             if (isMobileSelectionModeEnabled) {
                 toggleTransaction(item);
                 return;
@@ -563,6 +564,7 @@ function Search({queryJSON, searchResults, onSearchListScroll, contentContainerS
             Timing.start(CONST.TIMING.OPEN_REPORT_SEARCH);
 
             if (isTransactionGroupListItemType(item)) {
+                // tutaj w transactions mamy je ewidentnie w onyx, bo są przypisane
                 Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID}));
                 return;
             }

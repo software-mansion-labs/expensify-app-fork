@@ -1006,6 +1006,7 @@ function openReport(
                 hasLoadingOlderReportActionsError: false,
                 isLoadingNewerReportActions: false,
                 hasLoadingNewerReportActionsError: false,
+                isLoadingTransactions: true,
             },
         },
     ];
@@ -1092,6 +1093,14 @@ function openReport(
                 parameters.moneyRequestPreviewReportActionID = generatedReportActionID;
             }
         }
+
+        successData.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`,
+            value: {
+                isLoadingTransactions: false,
+            },
+        });
     }
 
     const isInviteOnboardingComplete = introSelected?.isInviteOnboardingComplete ?? false;
@@ -1294,7 +1303,6 @@ function openReport(
     }
 
     parameters.clientLastReadTime = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]?.lastReadTime ?? '';
-
     const paginationConfig = {
         resourceID: reportID,
         cursorID: reportActionID,
