@@ -101,7 +101,7 @@ function SearchRouter({onRouterClose, shouldHideInputCaret, isSearchRouterDispla
     const listRef = useRef<SelectionListHandle>(null);
 
     // The actual input text that the user sees
-    const [textInputValue, , setTextInputValue] = useDebouncedState('', 500);
+    const [textInputValue, setTextInputValue] = useState('');
     // The input text that was last used for autocomplete; needed for the SearchAutocompleteList when browsing list via arrow keys
     const [autocompleteQueryValue, setAutocompleteQueryValue] = useState(textInputValue);
     const [selection, setSelection] = useState({start: textInputValue.length, end: textInputValue.length});

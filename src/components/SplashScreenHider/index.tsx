@@ -4,7 +4,13 @@ import type {SplashScreenHiderProps, SplashScreenHiderReturnType} from './types'
 
 function SplashScreenHider({onHide = () => {}}: SplashScreenHiderProps): SplashScreenHiderReturnType {
     useEffect(() => {
-        BootSplash.hide().then(() => onHide());
+        BootSplash.hide().then(() => {
+            // Measure duration since app-start
+            const duration = performance.now() - performance.getEntriesByName('app-start')[0].startTime;
+            console.log(`[App Load Timer] Splash hidden after ${Math.round(duration)} ms`);
+
+            onHide();
+        });
     }, [onHide]);
 
     return null;

@@ -14,6 +14,8 @@ export default function useNetwork({onReconnect = () => {}}: UseNetworkProps = {
     // eslint-disable-next-line react-compiler/react-compiler
     callback.current = onReconnect;
 
+    console.log(`%%% why`);
+
     const [network] = useOnyx(ONYXKEYS.NETWORK, {
         selector: (networkData) => {
             if (!networkData) {

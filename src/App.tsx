@@ -1,9 +1,11 @@
+/* eslint-disable no-console */
 import {PortalProvider} from '@gorhom/portal';
 import React from 'react';
 import {LogBox, View} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {PickerStateProvider} from 'react-native-picker-select';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {onCLS, onFCP, onINP, onLCP, onTTFB} from 'web-vitals';
 import '../wdyr';
 import {ActionSheetAwareScrollViewProvider} from './components/ActionSheetAwareScrollView';
 import ActiveElementRoleProvider from './components/ActiveElementRoleProvider';
@@ -126,3 +128,5 @@ function App() {
 App.displayName = 'App';
 
 export default App;
+
+performance.mark('app-start');
