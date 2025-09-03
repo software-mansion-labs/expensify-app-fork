@@ -16,6 +16,7 @@
 #include <NitroModules/HybridObjectRegistry.hpp>
 
 #include "JHybridContactsModuleSpec.hpp"
+#include "JHybridNavBarManagerModuleSpec.hpp"
 #include <NitroModules/DefaultConstructableObject.hpp>
 
 namespace margelo::nitro::utils {
@@ -28,12 +29,21 @@ int initialize(JavaVM* vm) {
   return facebook::jni::initialize(vm, [] {
     // Register native JNI methods
     margelo::nitro::utils::JHybridContactsModuleSpec::registerNatives();
+    margelo::nitro::utils::JHybridNavBarManagerModuleSpec::registerNatives();
 
     // Register Nitro Hybrid Objects
     HybridObjectRegistry::registerHybridObjectConstructor(
       "ContactsModule",
       []() -> std::shared_ptr<HybridObject> {
         static DefaultConstructableObject<JHybridContactsModuleSpec::javaobject> object("com/margelo/nitro/utils/HybridContactsModule");
+        auto instance = object.create();
+        return instance->cthis()->shared();
+      }
+    );
+    HybridObjectRegistry::registerHybridObjectConstructor(
+      "NavBarManagerModule",
+      []() -> std::shared_ptr<HybridObject> {
+        static DefaultConstructableObject<JHybridNavBarManagerModuleSpec::javaobject> object("com/margelo/nitro/utils/HybridNavBarManagerModule");
         auto instance = object.create();
         return instance->cthis()->shared();
       }
