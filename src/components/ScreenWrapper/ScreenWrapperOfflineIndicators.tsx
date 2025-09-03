@@ -9,7 +9,7 @@ import useNetwork from '@hooks/useNetwork';
 import useSafeAreaPaddings from '@hooks/useSafeAreaPaddings';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
-import CONST from '@src/CONST';
+import {NAVIGATION_BAR_TYPE} from '@expensify/nitro-utils';
 
 type ScreenWrapperOfflineIndicatorsProps = {
     /** Styles for the offline indicator */
@@ -53,7 +53,7 @@ function ScreenWrapperOfflineIndicators({
 
     const {insets} = useSafeAreaPaddings(true);
     const navigationBarType = useMemo(() => StyleUtils.getNavigationBarType(insets), [StyleUtils, insets]);
-    const isSoftKeyNavigation = navigationBarType === CONST.NAVIGATION_BAR_TYPE.SOFT_KEYS;
+    const isSoftKeyNavigation = navigationBarType === NAVIGATION_BAR_TYPE.SOFT_KEYS;
 
     /**
      * This style applies the background color of the small screen offline indicator.
