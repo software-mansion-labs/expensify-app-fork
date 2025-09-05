@@ -1,4 +1,4 @@
-import {findFocusedRoute, useNavigationState} from '@react-navigation/native';
+import {findFocusedRoute, StackActions, useNavigationState} from '@react-navigation/native';
 import React, {memo, useCallback, useEffect, useState} from 'react';
 import {View} from 'react-native';
 import type {ValueOf} from 'type-fest';
@@ -27,7 +27,7 @@ import interceptAnonymousUser from '@libs/interceptAnonymousUser';
 import {getPreservedNavigatorState} from '@libs/Navigation/AppNavigator/createSplitNavigator/usePreserveNavigatorState';
 import navigateToWorkspacesPage, {getWorkspaceNavigationRouteState} from '@libs/Navigation/helpers/navigateToWorkspacesPage';
 import Navigation from '@libs/Navigation/Navigation';
-import {buildCannedSearchQuery, buildSearchQueryJSON, buildSearchQueryString} from '@libs/SearchQueryUtils';
+import {buildCannedSearchQuery} from '@libs/SearchQueryUtils';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 import {getChatTabBrickRoad} from '@libs/WorkspacesSettingsUtils';
 import navigationRef from '@navigation/navigationRef';
@@ -126,17 +126,22 @@ function NavigationTabBar({selectedTab, isTooltipAllowed = false, isTopLevelBar 
             const rootState = navigationRef.getRootState() as State<RootNavigatorParamList>;
             const lastSearchNavigator = rootState.routes.findLast((route) => route.name === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR);
             const lastSearchNavigatorState = lastSearchNavigator && lastSearchNavigator.key ? getPreservedNavigatorState(lastSearchNavigator?.key) : undefined;
-            const lastSearchRoute = lastSearchNavigatorState?.routes.findLast((route) => route.name === SCREENS.SEARCH.ROOT);
-
-            if (lastSearchRoute) {
-                const {q, ...rest} = lastSearchRoute.params as SearchFullscreenNavigatorParamList[typeof SCREENS.SEARCH.ROOT];
-                const queryJSON = buildSearchQueryJSON(q);
-                if (queryJSON) {
-                    const query = buildSearchQueryString(queryJSON);
-                    Navigation.navigate(
-                        ROUTES.SEARCH_ROOT.getRoute({
-                            query,
-                            ...rest,
+            const lastSearchRoute = lastSearchNavigatorState?.routes.at(-1);
+            if (lastSearchRoute && lastSearchRoute.params) {
+                if (lastSearchRoute.name === SCREENS.SEARCH.ROOT) {
+                    navigationRef.dispatch(
+                        StackActions.push(NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR, {
+                            screen: SCREENS.SEARCH.ROOT,
+                            params: lastSearchRoute.params as SearchFullscreenNavigatorParamList[typeof SCREENS.SEARCH.ROOT],
+                        }),
+                    );
+                    return;
+                }
+                if (lastSearchRoute.name === SCREENS.SEARCH.MONEY_REQUEST_REPORT) {
+                    navigationRef.dispatch(
+                        StackActions.push(NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR, {
+                            screen: SCREENS.SEARCH.MONEY_REQUEST_REPORT,
+                            params: lastSearchRoute.params as SearchFullscreenNavigatorParamList[typeof SCREENS.SEARCH.MONEY_REQUEST_REPORT],
                         }),
                     );
                     return;
