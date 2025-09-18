@@ -1,3 +1,4 @@
+/* eslint-disable @lwc/lwc/no-async-await */
 import {PermissionsAndroid, Platform} from 'react-native';
 import type {FetchBlobResponse} from 'react-native-blob-util';
 import RNFetchBlob from 'react-native-blob-util';
@@ -96,49 +97,49 @@ function handleDownload(url: string, fileName?: string, successMessage?: string,
     });
 }
 
-const postDownloadFile = (url: string, fileName?: string, formData?: FormData, onDownloadFailed?: () => void): Promise<void> => {
-    const fetchOptions: RequestInit = {
-        method: 'POST',
-        body: formData,
-    };
+const postDownloadFile = async (url: string, fileName?: string, formData?: FormData, onDownloadFailed?: () => void): Promise<void> => {
+    try {
+        const fetchOptions: RequestInit = {
+            method: 'POST',
+            body: formData,
+        };
 
-    return fetch(url, fetchOptions)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Failed to download file');
-            }
-            const contentType = response.headers.get('content-type');
-            if (contentType === 'application/json' && fileName?.includes('.csv')) {
-                throw new Error();
-            }
-            return response.text();
-        })
-        .then((fileData) => {
-            const finalFileName = appendTimeToFileName(fileName ?? 'Expensify');
-            const downloadPath = `${RNFS.DownloadDirectoryPath}/${finalFileName}`;
-            return RNFS.writeFile(downloadPath, fileData, 'utf8').then(() => downloadPath);
-        })
-        .then((downloadPath) =>
-            RNFetchBlob.MediaCollection.copyToMediaStore(
-                {
-                    name: getFileName(downloadPath),
-                    parentFolder: 'Expensify',
-                    mimeType: null,
-                },
-                'Download',
-                downloadPath,
-            ).then(() => downloadPath),
-        )
-        .then((downloadPath) => {
-            RNFetchBlob.fs.unlink(downloadPath);
-            showSuccessAlert();
-        })
-        .catch(() => {
-            if (!onDownloadFailed) {
-                showGeneralErrorAlert();
-            }
-            onDownloadFailed?.();
-        });
+        const response = await fetch(url, fetchOptions);
+
+        if (!response.ok) {
+            throw new Error('Failed to download file');
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (contentType === 'application/json' && fileName?.includes('.csv')) {
+            throw new Error();
+        }
+
+        const fileData = await response.text();
+        const finalFileName = appendTimeToFileName(fileName ?? 'Expensify');
+        const downloadPath = `${RNFS.DownloadDirectoryPath}/${finalFileName}`;
+
+        await RNFS.writeFile(downloadPath, fileData, 'utf8');
+
+        await RNFetchBlob.MediaCollection.copyToMediaStore(
+            {
+                name: getFileName(downloadPath),
+                parentFolder: 'Expensify',
+                mimeType: null,
+            },
+            'Download',
+            downloadPath,
+        );
+
+        await RNFetchBlob.fs.unlink(downloadPath);
+
+        showSuccessAlert();
+    } catch (error) {
+        if (!onDownloadFailed) {
+            showGeneralErrorAlert();
+        }
+        onDownloadFailed?.();
+    }
 };
 
 /**
