@@ -32,9 +32,9 @@ export default function (): Promise<void> {
                         Promise.all([
                             // @ts-expect-error isOptimisticReport is not a valid property of Report anymore
                             // eslint-disable-next-line rulesdir/prefer-actions-set-data
-                            Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {isOptimisticReport: null}),
+                            void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {isOptimisticReport: null}),
                             // eslint-disable-next-line rulesdir/prefer-actions-set-data
-                            Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {isOptimisticReport: report.isOptimisticReport}),
+                            void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {isOptimisticReport: report.isOptimisticReport}),
                         ]).then(() => {
                             Log.info(`[Migrate Onyx] Successfully moved isOptimisticReport to reportMetadata for ${reportID}`);
                         }),

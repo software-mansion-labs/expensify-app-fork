@@ -34,7 +34,7 @@ function TestDriveDemo() {
     });
 
     useEffect(() => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setIsVisible(true);
             completeTestDriveTask();
         });
@@ -46,7 +46,7 @@ function TestDriveDemo() {
 
     const closeModal = useCallback(() => {
         setIsVisible(false);
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             Navigation.goBack();
 
             if (isAdminRoom(onboardingReport)) {

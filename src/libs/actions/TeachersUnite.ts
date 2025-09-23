@@ -56,7 +56,7 @@ function referTeachersUniteVolunteer(partnerUserID: string, firstName: string, l
         partnerUserID,
     };
 
-    API.write(WRITE_COMMANDS.REFER_TEACHERS_UNITE_VOLUNTEER, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.REFER_TEACHERS_UNITE_VOLUNTEER, parameters, {optimisticData});
     Navigation.dismissModalWithReport({reportID: publicRoomReportID});
 }
 
@@ -198,7 +198,7 @@ function addSchoolPrincipal(
         reportCreationData: JSON.stringify(reportCreationData),
     };
 
-    API.write(WRITE_COMMANDS.ADD_SCHOOL_PRINCIPAL, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.ADD_SCHOOL_PRINCIPAL, parameters, {optimisticData, successData, failureData});
     Navigation.dismissModalWithReport({reportID: expenseChatReportID});
 }
 

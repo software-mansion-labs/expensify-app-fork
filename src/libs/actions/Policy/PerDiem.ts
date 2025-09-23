@@ -85,7 +85,7 @@ function enablePerDiem(policyID: string, enabled: boolean, customUnitID?: string
 
     const parameters = {policyID, enabled, customUnitID: finalCustomUnitID};
 
-    API.write(WRITE_COMMANDS.TOGGLE_POLICY_PER_DIEM, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.TOGGLE_POLICY_PER_DIEM, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout() && shouldGoBack) {
         goBackWhenEnableFeature(policyID);
@@ -142,7 +142,7 @@ function importPerDiemRates(policyID: string, customUnitID: string, rates: Rate[
         customUnitRates: JSON.stringify(rates),
     };
 
-    API.write(WRITE_COMMANDS.IMPORT_PER_DIEM_RATES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.IMPORT_PER_DIEM_RATES, parameters, onyxData);
 }
 
 function downloadPerDiemCSV(policyID: string, onDownloadFailed: () => void) {
@@ -157,11 +157,11 @@ function downloadPerDiemCSV(policyID: string, onDownloadFailed: () => void) {
         formData.append(key, String(value));
     });
 
-    fileDownload(getCommandURL({command: WRITE_COMMANDS.EXPORT_PER_DIEM_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
+    void fileDownload(getCommandURL({command: WRITE_COMMANDS.EXPORT_PER_DIEM_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
 }
 
 function clearPolicyPerDiemRatesErrorFields(policyID: string, customUnitID: string, updatedErrorFields: ErrorFields) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         customUnits: {
             [customUnitID]: {
                 errorFields: updatedErrorFields,
@@ -231,7 +231,7 @@ function deleteWorkspacePerDiemRates(policyID: string, customUnit: CustomUnit | 
         customUnit: JSON.stringify(newCustomUnit),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
 }
 
 function editPerDiemRateDestination(policyID: string, rateID: string, customUnit: CustomUnit | undefined, newDestination: string) {
@@ -261,7 +261,7 @@ function editPerDiemRateDestination(policyID: string, rateID: string, customUnit
         customUnit: JSON.stringify(newCustomUnit),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
 }
 
 function editPerDiemRateSubrate(policyID: string, rateID: string, subRateID: string, customUnit: CustomUnit | undefined, newSubrate: string) {
@@ -296,7 +296,7 @@ function editPerDiemRateSubrate(policyID: string, rateID: string, subRateID: str
         customUnit: JSON.stringify(newCustomUnit),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
 }
 
 function editPerDiemRateAmount(policyID: string, rateID: string, subRateID: string, customUnit: CustomUnit | undefined, newAmount: number) {
@@ -331,7 +331,7 @@ function editPerDiemRateAmount(policyID: string, rateID: string, subRateID: stri
         customUnit: JSON.stringify(newCustomUnit),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
 }
 
 function editPerDiemRateCurrency(policyID: string, rateID: string, customUnit: CustomUnit | undefined, newCurrency: string) {
@@ -361,7 +361,7 @@ function editPerDiemRateCurrency(policyID: string, rateID: string, customUnit: C
         customUnit: JSON.stringify(newCustomUnit),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_CUSTOM_UNIT, parameters, onyxData);
 }
 
 export {

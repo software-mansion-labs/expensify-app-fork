@@ -132,7 +132,7 @@ function useSearchHighlightAndScroll({
             triggeredByHookRef.current = true;
 
             // Trigger the search
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 search({queryJSON, searchKey, offset, shouldCalculateTotals});
             });
 

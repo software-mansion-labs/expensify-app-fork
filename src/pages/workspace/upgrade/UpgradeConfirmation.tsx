@@ -32,7 +32,7 @@ function UpgradeConfirmation({policyName, afterUpgradeAcknowledged, isReporting,
     }, [environmentURL]);
 
     useEffect(() => {
-        Navigation.isNavigationReady().then(() => updateSubscriptionLink());
+        void Navigation.isNavigationReady().then(() => updateSubscriptionLink());
     }, [updateSubscriptionLink]);
 
     const description = useMemo(() => {

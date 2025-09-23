@@ -154,7 +154,7 @@ describe('ReportAttachments', () => {
     beforeEach(async () => {
         global.fetch = getGlobalFetchMock();
         wrapOnyxWithWaitForBatchedUpdates(Onyx);
-        Onyx.merge(ONYXKEYS.IS_LOADING_APP, false);
+        void Onyx.merge(ONYXKEYS.IS_LOADING_APP, false);
 
         // Given a test user is signed in with Onyx setup and some initial data
         await signInWithTestUser(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN);

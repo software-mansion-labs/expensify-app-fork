@@ -31,7 +31,7 @@ describe('canEditFieldOfMoneyRequest', () => {
             Onyx.init({keys: ONYXKEYS});
 
             const policyCollectionDataSet = toCollectionDataSet(ONYXKEYS.COLLECTION.POLICY, [policy], (current) => current.id);
-            Onyx.multiSet({
+            void Onyx.multiSet({
                 [ONYXKEYS.SESSION]: {email: currentUserEmail, accountID: currentUserAccountID},
                 ...policyCollectionDataSet,
             });
@@ -91,15 +91,15 @@ describe('canEditFieldOfMoneyRequest', () => {
             };
 
             beforeEach(() => {
-                Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${IOUTransactionID}`, moneyRequestTransaction);
-                Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${IOUReportID}`, invoiceReport);
-                Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${483}`, outstandingExpenseReport);
-                Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, policy1);
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${IOUTransactionID}`, moneyRequestTransaction);
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${IOUReportID}`, invoiceReport);
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${483}`, outstandingExpenseReport);
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, policy1);
                 return waitForBatchedUpdates();
             });
 
             afterEach(() => {
-                Onyx.clear();
+                void Onyx.clear();
                 return waitForBatchedUpdates();
             });
 
@@ -184,7 +184,7 @@ describe('canEditFieldOfMoneyRequest', () => {
 
             beforeEach(() => {
                 const policyCollectionDataSet = toCollectionDataSet(ONYXKEYS.COLLECTION.POLICY, [expensePolicy], (current) => current.id);
-                Onyx.multiSet({
+                void Onyx.multiSet({
                     [`${ONYXKEYS.COLLECTION.TRANSACTION}${IOUTransactionID}`]: moneyRequestTransaction,
                     ...policyCollectionDataSet,
                 });
@@ -192,7 +192,7 @@ describe('canEditFieldOfMoneyRequest', () => {
             });
 
             afterEach(() => {
-                Onyx.clear();
+                void Onyx.clear();
                 return waitForBatchedUpdates();
             });
 

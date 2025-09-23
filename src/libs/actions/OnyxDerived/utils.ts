@@ -21,7 +21,7 @@ const hasKeyTriggeredCompute = <K extends OnyxKey, Deps extends NonEmptyTuple<Ex
  * Also, null may be a legitimate result of the computation, so pruning it is unnecessary
  */
 const setDerivedValue = (key: OnyxDerivedKey, value: OnyxInput<OnyxDerivedKey>) =>
-    Onyx.set(key, value, {
+    void Onyx.set(key, value, {
         skipCacheCheck: true,
     });
 

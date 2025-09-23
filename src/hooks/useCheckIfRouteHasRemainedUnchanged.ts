@@ -49,7 +49,7 @@ function useCheckIfRouteHasRemainedUnchanged(videoUrl: string) {
 
     // Initialize and check if starting with the attachment modal
     useEffect(() => {
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             if (isOnInitialRenderedRouteRef.current !== undefined) {
                 return;
             }

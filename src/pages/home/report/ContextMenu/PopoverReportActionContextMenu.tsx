@@ -302,7 +302,7 @@ function PopoverReportActionContextMenu(_props: unknown, ref: ForwardedRef<Repor
                 deleteMoneyRequest(originalMessage?.IOUTransactionID, reportAction, duplicateTransactions, duplicateTransactionViolations);
             }
         } else if (reportAction) {
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 deleteReportComment(reportIDRef.current, reportAction, isReportArchived);
             });
         }

@@ -221,10 +221,10 @@ describe('TransactionPreviewUtils', () => {
 
     describe('createTransactionPreviewConditionals', () => {
         beforeAll(() => {
-            Onyx.merge(ONYXKEYS.SESSION, {accountID: 999});
+            void Onyx.merge(ONYXKEYS.SESSION, {accountID: 999});
         });
         afterAll(() => {
-            Onyx.clear([ONYXKEYS.SESSION]);
+            void Onyx.clear([ONYXKEYS.SESSION]);
         });
 
         it('should determine RBR visibility according to violation and hold conditions', () => {

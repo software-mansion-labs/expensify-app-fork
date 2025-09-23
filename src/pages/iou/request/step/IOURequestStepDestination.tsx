@@ -163,7 +163,7 @@ function IOURequestStepDestination({
                                     success
                                     style={[styles.w100]}
                                     onPress={() => {
-                                        InteractionManager.runAfterInteractions(() => {
+                                        void InteractionManager.runAfterInteractions(() => {
                                             Navigation.navigate(ROUTES.WORKSPACE_PER_DIEM.getRoute(policy.id, Navigation.getActiveRoute()));
                                         });
                                     }}

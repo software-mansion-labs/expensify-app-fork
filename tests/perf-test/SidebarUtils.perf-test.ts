@@ -57,14 +57,14 @@ describe('SidebarUtils', () => {
             evictableKeys: [ONYXKEYS.COLLECTION.REPORT_ACTIONS],
         });
 
-        Onyx.multiSet({
+        void Onyx.multiSet({
             [ONYXKEYS.PERSONAL_DETAILS_LIST]: personalDetails,
             [ONYXKEYS.NVP_PREFERRED_LOCALE]: 'en',
         });
     });
 
     afterAll(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     test('[SidebarUtils] getOptionData', async () => {

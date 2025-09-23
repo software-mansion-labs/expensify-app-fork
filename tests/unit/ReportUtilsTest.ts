@@ -326,7 +326,7 @@ describe('ReportUtils', () => {
         Onyx.init({keys: ONYXKEYS});
 
         const policyCollectionDataSet = toCollectionDataSet(ONYXKEYS.COLLECTION.POLICY, [policy], (current) => current.id);
-        Onyx.multiSet({
+        void Onyx.multiSet({
             [ONYXKEYS.PERSONAL_DETAILS_LIST]: participantsPersonalDetails,
             [ONYXKEYS.SESSION]: {email: currentUserEmail, accountID: currentUserAccountID},
             [ONYXKEYS.COUNTRY_CODE]: 1,
@@ -1968,7 +1968,7 @@ describe('ReportUtils', () => {
 
         beforeAll(() => {
             const reportCollectionDataSet = toCollectionDataSet(ONYXKEYS.COLLECTION.REPORT, reports, (report) => report.reportID);
-            Onyx.multiSet({
+            void Onyx.multiSet({
                 ...reportCollectionDataSet,
             });
             return waitForBatchedUpdates();
@@ -2010,7 +2010,7 @@ describe('ReportUtils', () => {
                 ...LHNTestUtils.getFakeReport(),
                 iouReportID: '1',
             };
-            Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}1`, {
+            void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}1`, {
                 reportID: '1',
                 ownerAccountID: 99,
             }).then(() => {
@@ -2237,7 +2237,7 @@ describe('ReportUtils', () => {
         const participantsAccountIDs = Object.keys(participantsPersonalDetails).map(Number);
 
         beforeAll(() => {
-            Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
+            void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
                 [currentUserAccountID]: {
                     accountID: currentUserAccountID,
                     login: currentUserEmail,
@@ -2327,7 +2327,7 @@ describe('ReportUtils', () => {
             });
 
             it('it is an expense report tied to a policy expense chat user does not own', () => {
-                Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}100`, {
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}100`, {
                     reportID: '100',
                     isOwnPolicyExpenseChat: false,
                 }).then(() => {
@@ -2436,7 +2436,7 @@ describe('ReportUtils', () => {
 
         describe('return only submit expense and track expense options if', () => {
             it("it is an expense report tied to user's own policy expense chat", () => {
-                Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}102`, {
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}102`, {
                     reportID: '102',
                     chatType: CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT,
                     isOwnPolicyExpenseChat: true,
@@ -2456,7 +2456,7 @@ describe('ReportUtils', () => {
             });
 
             it("it is an open expense report tied to user's own policy expense chat", () => {
-                Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}103`, {
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}103`, {
                     reportID: '103',
                     chatType: CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT,
                     isOwnPolicyExpenseChat: true,
@@ -2531,8 +2531,8 @@ describe('ReportUtils', () => {
                     },
                 };
                 Promise.all([
-                    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${paidPolicy.id}`, paidPolicy),
-                    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}101`, {
+                    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${paidPolicy.id}`, paidPolicy),
+                    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}101`, {
                         reportID: '101',
                         chatType: CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT,
                         isOwnPolicyExpenseChat: true,
@@ -2584,8 +2584,8 @@ describe('ReportUtils', () => {
                     isPolicyExpenseChatEnabled: false,
                 };
                 Promise.all([
-                    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${paidPolicy.id}`, paidPolicy),
-                    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}101`, {
+                    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${paidPolicy.id}`, paidPolicy),
+                    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}101`, {
                         reportID: '101',
                         chatType: CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT,
                         isOwnPolicyExpenseChat: true,
@@ -2953,7 +2953,7 @@ describe('ReportUtils', () => {
                 reportActions.map((reportAction) => ({[reportAction.reportActionID]: reportAction})),
                 (actions) => Object.values(actions).at(0)?.reportActionID,
             );
-            Onyx.multiSet({
+            void Onyx.multiSet({
                 ...reportCollectionDataSet,
                 ...reportActionCollectionDataSet,
             });
@@ -4414,7 +4414,7 @@ describe('ReportUtils', () => {
                         ownerAccountID: employeeAccountID,
                         type: CONST.REPORT.TYPE.EXPENSE,
                     };
-                    Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
+                    void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
                         const result = ['owner@test.com'];
                         expect(getApprovalChain(policyTest, expenseReport)).toStrictEqual(result);
                     });
@@ -4433,7 +4433,7 @@ describe('ReportUtils', () => {
                         ownerAccountID: employeeAccountID,
                         type: CONST.REPORT.TYPE.EXPENSE,
                     };
-                    Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
+                    void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
                         const result = ['admin@test.com'];
                         expect(getApprovalChain(policyTest, expenseReport)).toStrictEqual(result);
                     });
@@ -4472,7 +4472,7 @@ describe('ReportUtils', () => {
                             created: DateUtils.subtractMillisecondsFromDateTime(testDate, 1),
                             reportID: expenseReport.reportID,
                         };
-                        Onyx.multiSet({
+                        void Onyx.multiSet({
                             [ONYXKEYS.PERSONAL_DETAILS_LIST]: personalDetails,
                             [ONYXKEYS.COLLECTION.TRANSACTION]: {
                                 [transaction1.transactionID]: transaction1,
@@ -4533,7 +4533,7 @@ describe('ReportUtils', () => {
                             inserted: DateUtils.subtractMillisecondsFromDateTime(testDate, 2),
                         };
 
-                        Onyx.mergeCollection(ONYXKEYS.COLLECTION.TRANSACTION, {
+                        void Onyx.mergeCollection(ONYXKEYS.COLLECTION.TRANSACTION, {
                             transactions_1: transaction1,
                             transactions_2: transaction2,
                             transactions_3: transaction3,
@@ -6741,7 +6741,7 @@ describe('ReportUtils', () => {
                 ...createRandomReport(40002),
                 participants: buildParticipantsFromAccountIDs([currentUserAccountID, 8]),
             };
-            Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
+            void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
                 expect(canSeeDefaultRoom(report, betas, false)).toBe(true);
             });
         });
@@ -6751,7 +6751,7 @@ describe('ReportUtils', () => {
                 ...createRandomReport(40002),
                 chatType: CONST.REPORT.CHAT_TYPE.POLICY_ADMINS,
             };
-            Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
+            void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails).then(() => {
                 expect(canSeeDefaultRoom(report, betas, false)).toBe(true);
             });
         });

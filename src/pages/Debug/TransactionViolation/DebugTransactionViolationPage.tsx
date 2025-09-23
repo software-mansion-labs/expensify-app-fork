@@ -49,7 +49,7 @@ function DebugTransactionViolationPage({
         Navigation.goBack();
         // We need to wait for navigation animations to finish before deleting a violation,
         // otherwise the user will see a not found page briefly.
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             Debug.setDebugData(`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transactionID}`, updatedTransactionViolations);
         });
     }, [index, transactionID, transactionViolations]);

@@ -56,7 +56,7 @@ function WalletStatementPage({route}: WalletStatementPageProps) {
             const downloadFileName = `Expensify_Statement_${yearMonth}.pdf`;
             const fileName = walletStatement[yearMonth];
             const pdfURL = `${baseURL}secure?secureType=pdfreport&filename=${fileName}&downloadName=${downloadFileName}`;
-            fileDownload(pdfURL, downloadFileName).finally(() => setIsDownloading(false));
+            void fileDownload(pdfURL, downloadFileName).finally(() => setIsDownloading(false));
             return;
         }
 

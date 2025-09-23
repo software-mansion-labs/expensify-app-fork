@@ -1005,7 +1005,7 @@ function MoneyRequestConfirmationList({
     useFocusEffect(
         useCallback(() => {
             focusTimeoutRef.current = setTimeout(() => {
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     blurActiveElement();
                 });
             }, CONST.ANIMATED_TRANSITION);

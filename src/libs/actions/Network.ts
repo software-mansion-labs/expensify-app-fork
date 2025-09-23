@@ -5,7 +5,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {ConnectionChanges} from '@src/types/onyx/Network';
 
 function setNetworkLastOffline(lastOfflineAt: string) {
-    Onyx.merge(ONYXKEYS.NETWORK, {lastOfflineAt});
+    void Onyx.merge(ONYXKEYS.NETWORK, {lastOfflineAt});
 }
 
 function setIsOffline(isNetworkOffline: boolean, reason = '') {
@@ -15,43 +15,43 @@ function setIsOffline(isNetworkOffline: boolean, reason = '') {
         textToLog += ` because: ${reason}`;
         Log.info(textToLog);
     }
-    Onyx.merge(ONYXKEYS.NETWORK, {isOffline: isNetworkOffline});
+    void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: isNetworkOffline});
 }
 
 function setNetWorkStatus(status: NetworkStatus) {
-    Onyx.merge(ONYXKEYS.NETWORK, {networkStatus: status});
+    void Onyx.merge(ONYXKEYS.NETWORK, {networkStatus: status});
 }
 
 function setTimeSkew(skew: number) {
-    Onyx.merge(ONYXKEYS.NETWORK, {timeSkew: skew});
+    void Onyx.merge(ONYXKEYS.NETWORK, {timeSkew: skew});
 }
 
 function setShouldForceOffline(shouldForceOffline: boolean) {
-    Onyx.merge(ONYXKEYS.NETWORK, {shouldForceOffline});
+    void Onyx.merge(ONYXKEYS.NETWORK, {shouldForceOffline});
 }
 
 /**
  * Test tool that will fail all network requests when enabled
  */
 function setShouldFailAllRequests(shouldFailAllRequests: boolean) {
-    Onyx.merge(ONYXKEYS.NETWORK, {shouldFailAllRequests});
+    void Onyx.merge(ONYXKEYS.NETWORK, {shouldFailAllRequests});
 }
 
 function setPoorConnectionTimeoutID(poorConnectionTimeoutID: NodeJS.Timeout | undefined) {
-    Onyx.merge(ONYXKEYS.NETWORK, {poorConnectionTimeoutID});
+    void Onyx.merge(ONYXKEYS.NETWORK, {poorConnectionTimeoutID});
 }
 
 function setShouldSimulatePoorConnection(shouldSimulatePoorConnection: boolean, poorConnectionTimeoutID: NodeJS.Timeout | undefined) {
     if (!shouldSimulatePoorConnection) {
         clearTimeout(poorConnectionTimeoutID);
-        Onyx.merge(ONYXKEYS.NETWORK, {shouldSimulatePoorConnection, poorConnectionTimeoutID: undefined});
+        void Onyx.merge(ONYXKEYS.NETWORK, {shouldSimulatePoorConnection, poorConnectionTimeoutID: undefined});
         return;
     }
-    Onyx.merge(ONYXKEYS.NETWORK, {shouldSimulatePoorConnection});
+    void Onyx.merge(ONYXKEYS.NETWORK, {shouldSimulatePoorConnection});
 }
 
 function setConnectionChanges(connectionChanges: ConnectionChanges) {
-    Onyx.merge(ONYXKEYS.NETWORK, {connectionChanges});
+    void Onyx.merge(ONYXKEYS.NETWORK, {connectionChanges});
 }
 
 export {

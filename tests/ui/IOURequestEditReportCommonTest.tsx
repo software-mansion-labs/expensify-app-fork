@@ -70,7 +70,7 @@ describe('IOURequestEditReportCommon', () => {
         });
 
         beforeEach(() => {
-            Onyx.multiSet({
+            void Onyx.multiSet({
                 [`${ONYXKEYS.COLLECTION.POLICY}${FAKE_POLICY_ID}` as const]: createRandomPolicy(Number(FAKE_POLICY_ID), CONST.POLICY.TYPE.TEAM),
                 [`${ONYXKEYS.COLLECTION.REPORT}${FAKE_REPORT_ID}` as const]: {
                     reportID: FAKE_REPORT_ID,
@@ -86,7 +86,7 @@ describe('IOURequestEditReportCommon', () => {
         });
 
         afterEach(() => {
-            Onyx.clear();
+            void Onyx.clear();
             jest.clearAllMocks();
             return waitForBatchedUpdates();
         });
@@ -100,7 +100,7 @@ describe('IOURequestEditReportCommon', () => {
                 policyID: FAKE_POLICY_ID,
             };
 
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${mockTransactionReport.reportID}`, mockTransactionReport);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${mockTransactionReport.reportID}`, mockTransactionReport);
             await waitForBatchedUpdates();
 
             // When the component is rendered with the transaction reports
@@ -129,7 +129,7 @@ describe('IOURequestEditReportCommon', () => {
         });
 
         beforeEach(() => {
-            Onyx.multiSet({
+            void Onyx.multiSet({
                 [`${ONYXKEYS.COLLECTION.POLICY}${FAKE_POLICY_ID}` as const]: {
                     ...createRandomPolicy(Number(FAKE_POLICY_ID), CONST.POLICY.TYPE.TEAM),
                     role: CONST.POLICY.ROLE.USER,
@@ -148,7 +148,7 @@ describe('IOURequestEditReportCommon', () => {
         });
 
         afterEach(() => {
-            Onyx.clear();
+            void Onyx.clear();
             jest.clearAllMocks();
             return waitForBatchedUpdates();
         });
@@ -164,7 +164,7 @@ describe('IOURequestEditReportCommon', () => {
                 statusNum: CONST.REPORT.STATUS_NUM.OPEN,
             };
 
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${mockTransactionReport.reportID}`, mockTransactionReport);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${mockTransactionReport.reportID}`, mockTransactionReport);
             await waitForBatchedUpdates();
 
             // When the component is rendered with the transaction reports

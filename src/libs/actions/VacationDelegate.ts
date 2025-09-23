@@ -99,11 +99,11 @@ function deleteVacationDelegate(vacationDelegate?: VacationDelegate) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.DELETE_VACATION_DELEGATE, null, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.DELETE_VACATION_DELEGATE, null, {optimisticData, successData, failureData});
 }
 
 function clearVacationDelegateError(previousDelegate?: string) {
-    Onyx.merge(ONYXKEYS.NVP_PRIVATE_VACATION_DELEGATE, {
+    void Onyx.merge(ONYXKEYS.NVP_PRIVATE_VACATION_DELEGATE, {
         errors: null,
         pendingAction: null,
         delegate: previousDelegate ?? null,

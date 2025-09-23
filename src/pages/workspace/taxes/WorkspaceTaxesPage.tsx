@@ -246,7 +246,7 @@ function WorkspaceTaxesPage({
         deletePolicyTaxes(policy, selectedTaxesIDs, localeCompare);
         setIsDeleteModalVisible(false);
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedTaxesIDs([]);
         });
     }, [policy, selectedTaxesIDs, localeCompare]);

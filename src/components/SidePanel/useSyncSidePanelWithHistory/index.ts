@@ -8,7 +8,7 @@ import navigationRef from '@libs/Navigation/navigationRef';
 import CONST from '@src/CONST';
 
 function toggleSidePanelWithHistory(isVisible: boolean) {
-    Navigation.isNavigationReady().then(() => {
+    void Navigation.isNavigationReady().then(() => {
         navigationRef.dispatch({
             type: CONST.NAVIGATION.ACTION_TYPE.TOGGLE_SIDE_PANEL_WITH_HISTORY,
             payload: {isVisible},

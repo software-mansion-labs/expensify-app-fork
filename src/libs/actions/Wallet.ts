@@ -48,14 +48,14 @@ function openOnfidoFlow() {
 }
 
 function setAdditionalDetailsQuestions(questions: WalletAdditionalQuestionDetails[] | null, idNumber?: string) {
-    Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {questions, idNumber});
+    void Onyx.merge(ONYXKEYS.WALLET_ADDITIONAL_DETAILS, {questions, idNumber});
 }
 
 /**
  * Save the source that triggered the KYC wall and optionally the chat report ID associated with the IOU
  */
 function setKYCWallSource(source?: ValueOf<typeof CONST.KYC_WALL_SOURCE>, chatReportID = '') {
-    Onyx.merge(ONYXKEYS.WALLET_TERMS, {source, chatReportID});
+    void Onyx.merge(ONYXKEYS.WALLET_TERMS, {source, chatReportID});
 }
 
 /**
@@ -84,7 +84,7 @@ function updatePersonalDetails(personalDetails: UpdatePersonalDetailsForWalletPa
         },
     ];
 
-    API.write(WRITE_COMMANDS.UPDATE_PERSONAL_DETAILS_FOR_WALLET, personalDetails, {
+    void API.write(WRITE_COMMANDS.UPDATE_PERSONAL_DETAILS_FOR_WALLET, personalDetails, {
         optimisticData,
         finallyData,
     });
@@ -137,7 +137,7 @@ function verifyIdentity(parameters: VerifyIdentityParams) {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.VERIFY_IDENTITY, parameters, {
+    void API.write(WRITE_COMMANDS.VERIFY_IDENTITY, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -191,7 +191,7 @@ function acceptWalletTerms(parameters: AcceptWalletTermsParams) {
 
     const requestParams: AcceptWalletTermsParams = {hasAcceptedTerms: parameters.hasAcceptedTerms, reportID: parameters.reportID};
 
-    API.write(WRITE_COMMANDS.ACCEPT_WALLET_TERMS, requestParams, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.ACCEPT_WALLET_TERMS, requestParams, {optimisticData, successData, failureData});
 }
 
 /**
@@ -209,7 +209,7 @@ function openEnablePaymentsPage() {
 }
 
 function updateCurrentStep(currentStep: ValueOf<typeof CONST.WALLET.STEP> | null) {
-    Onyx.merge(ONYXKEYS.USER_WALLET, {currentStep});
+    void Onyx.merge(ONYXKEYS.USER_WALLET, {currentStep});
 }
 
 function answerQuestionsForWallet(answers: WalletQuestionAnswer[], idNumber: string) {
@@ -240,14 +240,14 @@ function answerQuestionsForWallet(answers: WalletQuestionAnswer[], idNumber: str
         idNumber,
     };
 
-    API.write(WRITE_COMMANDS.ANSWER_QUESTIONS_FOR_WALLET, requestParams, {
+    void API.write(WRITE_COMMANDS.ANSWER_QUESTIONS_FOR_WALLET, requestParams, {
         optimisticData,
         finallyData,
     });
 }
 
 function resetWalletAdditionalDetailsDraft() {
-    Onyx.set(ONYXKEYS.FORMS.WALLET_ADDITIONAL_DETAILS_DRAFT, null);
+    void Onyx.set(ONYXKEYS.FORMS.WALLET_ADDITIONAL_DETAILS_DRAFT, null);
 }
 
 function issuerEncryptPayloadCallback(nonce: string, nonceSignature: string, certificates: string[]): Promise<IOSEncryptPayload> {

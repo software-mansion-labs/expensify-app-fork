@@ -5720,7 +5720,7 @@ function navigateBackOnDeleteTransaction(backRoute: Route | undefined, isFromRHP
     if (isFromRHP) {
         Navigation.dismissModal();
     }
-    Navigation.isNavigationReady().then(() => {
+    void Navigation.isNavigationReady().then(() => {
         Navigation.goBack(backRoute);
     });
 }
@@ -10432,7 +10432,7 @@ function prepareOnboardingOnyxData(
         assignedGuideAccountID = generateAccountID(assignedGuideEmail);
         isOptimisticAssignedGuide = !assignedGuidePersonalDetail;
         // eslint-disable-next-line rulesdir/prefer-actions-set-data
-        Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
+        void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
             [assignedGuideAccountID]: {
                 isOptimisticPersonalDetail: !assignedGuidePersonalDetail,
                 login: assignedGuideEmail,

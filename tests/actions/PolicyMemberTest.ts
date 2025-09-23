@@ -45,10 +45,10 @@ describe('actions/PolicyMember', () => {
                 actionName: CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_JOIN_REQUEST,
             } as ReportAction<typeof CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_JOIN_REQUEST>;
 
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${fakeReport.reportID}`, fakeReport);
-            Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${fakeReport.reportID}`, {
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${fakeReport.reportID}`, fakeReport);
+            void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${fakeReport.reportID}`, {
                 [fakeReportAction.reportActionID]: fakeReportAction,
             });
             Member.acceptJoinRequest(fakeReport.reportID, fakeReportAction);
@@ -104,10 +104,10 @@ describe('actions/PolicyMember', () => {
             };
             const adminRoom: Report = {...createRandomReport(1), chatType: CONST.REPORT.CHAT_TYPE.POLICY_ADMINS, policyID: fakePolicy.id};
 
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${adminRoom.reportID}`, adminRoom);
-            Onyx.set(`${ONYXKEYS.PERSONAL_DETAILS_LIST}`, {[fakeUser2.accountID]: fakeUser2});
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${adminRoom.reportID}`, adminRoom);
+            void Onyx.set(`${ONYXKEYS.PERSONAL_DETAILS_LIST}`, {[fakeUser2.accountID]: fakeUser2});
             await waitForBatchedUpdates();
             // When a user's role is set as admin on a policy
             Member.updateWorkspaceMembersRole(fakePolicy.id, [fakeUser2.accountID], CONST.POLICY.ROLE.ADMIN);
@@ -187,9 +187,9 @@ describe('actions/PolicyMember', () => {
             const fakeEmail = 'fake@gmail.com';
             const fakeAccountID = 1;
 
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.merge(ONYXKEYS.SESSION, {email: fakeEmail, accountID: fakeAccountID});
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.merge(ONYXKEYS.SESSION, {email: fakeEmail, accountID: fakeAccountID});
             Member.requestWorkspaceOwnerChange(fakePolicy.id);
             await waitForBatchedUpdates();
             await new Promise<void>((resolve) => {
@@ -238,9 +238,9 @@ describe('actions/PolicyMember', () => {
             };
             const fakeAccountID = 1;
 
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.merge(ONYXKEYS.SESSION, {email: fakeEmail, accountID: fakeAccountID});
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.merge(ONYXKEYS.SESSION, {email: fakeEmail, accountID: fakeAccountID});
             Policy.addBillingCardAndRequestPolicyOwnerChange(fakePolicy.id, fakeCard);
             await waitForBatchedUpdates();
             await new Promise<void>((resolve) => {
@@ -286,7 +286,7 @@ describe('actions/PolicyMember', () => {
                 approver: defaultApprover,
             });
 
-            mockFetch?.pause?.();
+            void mockFetch?.pause?.();
             Member.addMembersToWorkspace({[newUserEmail]: 1234}, 'Welcome', policyID, [], CONST.POLICY.ROLE.USER, TestHelper.formatPhoneNumber);
 
             await waitForBatchedUpdates();
@@ -458,7 +458,7 @@ describe('actions/PolicyMember', () => {
             });
 
             // When removing am admin, auditor, and user members
-            mockFetch?.pause?.();
+            void mockFetch?.pause?.();
             Member.removeMembers([adminAccountID, auditorAccountID, userAccountID], policyID);
 
             await waitForBatchedUpdates();
@@ -517,7 +517,7 @@ describe('actions/PolicyMember', () => {
             });
 
             // When removing a member from the workspace
-            mockFetch?.pause?.();
+            void mockFetch?.pause?.();
             Member.removeMembers([userAccountID], policyID);
 
             await waitForBatchedUpdates();

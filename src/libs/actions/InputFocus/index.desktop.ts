@@ -5,7 +5,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {Modal} from '@src/types/onyx';
 
 function inputFocusChange(focus: boolean) {
-    Onyx.set(ONYXKEYS.INPUT_FOCUSED, focus);
+    void Onyx.set(ONYXKEYS.INPUT_FOCUSED, focus);
 }
 
 let refSave: HTMLElement | undefined;
@@ -19,7 +19,7 @@ function composerFocusKeepFocusOn(ref: HTMLElement, isFocused: boolean, modal: M
     }
     if (!isFocused && !onyxFocused && !modal.willAlertModalBecomeVisible && !modal.isVisible && refSave) {
         if (!ReportActionComposeFocusManager.isFocused()) {
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 refSave?.focus();
             });
         } else {

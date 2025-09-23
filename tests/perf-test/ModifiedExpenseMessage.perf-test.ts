@@ -20,7 +20,7 @@ beforeAll(() =>
 
 // Clear out Onyx after each test so that each test starts with a clean state
 afterEach(() => {
-    Onyx.clear();
+    void Onyx.clear();
 });
 
 const getMockedReports = (length = 500) =>

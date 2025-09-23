@@ -76,7 +76,7 @@ describe('WorkspacePageWithSections', () => {
             Onyx.init({
                 keys: ONYXKEYS,
             });
-            Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${POLICY_ID}`, mockPolicy);
+            void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${POLICY_ID}`, mockPolicy);
             return waitForBatchedUpdates();
         });
 

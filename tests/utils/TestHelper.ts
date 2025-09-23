@@ -311,7 +311,7 @@ function expectAPICommandToHaveBeenCalledWith<TCommand extends ApiCommand>(comma
 }
 
 function setPersonalDetails(login: string, accountID: number) {
-    Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
+    void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
         [accountID]: buildPersonalDetails(login, accountID),
     });
     return waitForBatchedUpdates();

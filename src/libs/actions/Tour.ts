@@ -11,7 +11,7 @@ function startTestDrive(
     hasUserBeenAddedToNudgeMigration: boolean,
     isUserPaidPolicyMember: boolean,
 ) {
-    InteractionManager.runAfterInteractions(() => {
+    void InteractionManager.runAfterInteractions(() => {
         if (
             hasUserBeenAddedToNudgeMigration ||
             isUserPaidPolicyMember ||

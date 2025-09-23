@@ -59,7 +59,7 @@ describe('SidebarUtils', () => {
     });
 
     afterAll(async () => {
-        Onyx.clear();
+        void Onyx.clear();
         await waitForBatchedUpdates();
     });
 
@@ -756,10 +756,11 @@ describe('SidebarUtils', () => {
             return (
                 waitForBatchedUpdates()
                     // When Onyx is updated to contain that report
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                            }),
                     )
                     .then(() => {
                         const result = SidebarUtils.getWelcomeMessage(MOCK_REPORT, undefined, participantPersonalDetailList, localeCompare);
@@ -946,7 +947,7 @@ describe('SidebarUtils', () => {
 
         describe('Alternative text', () => {
             afterEach(async () => {
-                Onyx.clear();
+                void Onyx.clear();
                 await waitForBatchedUpdates();
             });
             it('The text should not contain the policy name at prefix if the report is not related to a workspace', async () => {

@@ -261,7 +261,7 @@ function WorkspacePerDiemPage({route}: WorkspacePerDiemPageProps) {
         deleteWorkspacePerDiemRates(policyID, customUnit, selectedPerDiem);
         setDeletePerDiemConfirmModalVisible(false);
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedPerDiem([]);
         });
     };

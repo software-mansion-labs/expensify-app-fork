@@ -26,7 +26,7 @@ describe('usePermissions', () => {
     });
 
     it('should handle empty betas gracefully via Onyx', async () => {
-        Onyx.set(ONYXKEYS.BETAS, []);
+        void Onyx.set(ONYXKEYS.BETAS, []);
         await waitForBatchedUpdatesWithAct();
 
         const {result} = renderHook(() => usePermissions(), {wrapper: Wrapper});
@@ -39,7 +39,7 @@ describe('usePermissions', () => {
     it('should return correct permissions when betas are provided via Onyx', async () => {
         const mockBetas = [CONST.BETAS.ALL];
 
-        Onyx.set(ONYXKEYS.BETAS, mockBetas);
+        void Onyx.set(ONYXKEYS.BETAS, mockBetas);
         await waitForBatchedUpdatesWithAct();
 
         const {result} = renderHook(() => usePermissions(), {wrapper: Wrapper});
@@ -55,7 +55,7 @@ describe('usePermissions', () => {
         const initialBetas = [CONST.BETAS.DEFAULT_ROOMS, CONST.BETAS.PER_DIEM, CONST.BETAS.PREVENT_SPOTNANA_TRAVEL];
         const updatedBetas = [CONST.BETAS.ALL];
 
-        Onyx.set(ONYXKEYS.BETAS, initialBetas);
+        void Onyx.set(ONYXKEYS.BETAS, initialBetas);
         await waitForBatchedUpdatesWithAct();
 
         const {result} = renderHook(() => usePermissions(), {wrapper: Wrapper});
@@ -67,7 +67,7 @@ describe('usePermissions', () => {
         expect(result.current.isBetaEnabled(CONST.BETAS.PREVENT_SPOTNANA_TRAVEL)).toBe(true);
         expect(result.current.isBetaEnabled(CONST.BETAS.ALL)).toBe(false);
 
-        Onyx.merge(ONYXKEYS.BETAS, updatedBetas);
+        void Onyx.merge(ONYXKEYS.BETAS, updatedBetas);
 
         await waitForBatchedUpdatesWithAct();
 
@@ -87,8 +87,8 @@ describe('usePermissions', () => {
 
         // Test explicit only beta behavior
         // Given: Account with 'all' beta enabled, but not the explicit only beta
-        Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL]);
-        Onyx.set(ONYXKEYS.BETA_CONFIGURATION, betaConfiguration);
+        void Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL]);
+        void Onyx.set(ONYXKEYS.BETA_CONFIGURATION, betaConfiguration);
         await waitForBatchedUpdatesWithAct();
 
         const {result} = renderHook(() => usePermissions(), {wrapper: Wrapper});
@@ -99,7 +99,7 @@ describe('usePermissions', () => {
         expect(result.current.isBetaEnabled(explicitOnlyBeta)).toBe(false);
 
         // Given: The explicit only beta is explicitly enabled
-        Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL, explicitOnlyBeta]);
+        void Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL, explicitOnlyBeta]);
         await waitForBatchedUpdatesWithAct();
 
         // When: Checking if the account is in the explicit only beta
@@ -108,7 +108,7 @@ describe('usePermissions', () => {
 
         // Test exclusion beta behavior
         // Given: Account with 'all' beta enabled, but not the exclusion beta
-        Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL]);
+        void Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL]);
         await waitForBatchedUpdatesWithAct();
 
         // When: Checking if the account is in the exclusion beta
@@ -116,7 +116,7 @@ describe('usePermissions', () => {
         expect(result.current.isBetaEnabled(exclusionBeta)).toBe(false);
 
         // Given: The exclusion beta is explicitly enabled
-        Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL, exclusionBeta]);
+        void Onyx.set(ONYXKEYS.BETAS, [CONST.BETAS.ALL, exclusionBeta]);
         await waitForBatchedUpdatesWithAct();
 
         // When: Checking if the account is in the exclusion beta
@@ -124,7 +124,7 @@ describe('usePermissions', () => {
         expect(result.current.isBetaEnabled(exclusionBeta)).toBe(true);
 
         // Given: Neither 'all' nor the exclusion beta are enabled
-        Onyx.set(ONYXKEYS.BETAS, []);
+        void Onyx.set(ONYXKEYS.BETAS, []);
         await waitForBatchedUpdatesWithAct();
 
         // When: Checking if the account is in the exclusion beta

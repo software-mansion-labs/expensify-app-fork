@@ -22,7 +22,7 @@ import type zhHans from './zh-hans';
 // This function was added here to avoid circular dependencies
 function setAreTranslationsLoading(areTranslationsLoading: boolean) {
     // eslint-disable-next-line rulesdir/prefer-actions-set-data
-    Onyx.set(ONYXKEYS.ARE_TRANSLATIONS_LOADING, areTranslationsLoading);
+    void Onyx.set(ONYXKEYS.ARE_TRANSLATIONS_LOADING, areTranslationsLoading);
 }
 
 class IntlStore {

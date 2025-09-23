@@ -28,7 +28,7 @@ describe('PerDiemRequestUtils', () => {
     );
 
     beforeEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     it('getDestinationListSections()', () => {

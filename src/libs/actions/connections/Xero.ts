@@ -337,7 +337,7 @@ function updateXeroImportTrackingCategories(
         oldImportTrackingCategories,
     );
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_IMPORT_TRACKING_CATEGORIES, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_IMPORT_TRACKING_CATEGORIES, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroImportTaxRates(
@@ -353,7 +353,7 @@ function updateXeroImportTaxRates(
 
     const {optimisticData, failureData, successData} = prepareXeroOptimisticData(policyID, CONST.XERO_CONFIG.IMPORT_TAX_RATES, importTaxesRate, oldImportTaxesRate);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_IMPORT_TAX_RATES, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_IMPORT_TAX_RATES, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroTenantID(policyID: string | undefined, settingValue: string, oldSettingValue?: string) {
@@ -368,7 +368,7 @@ function updateXeroTenantID(policyID: string | undefined, settingValue: string, 
 
     const {optimisticData, successData, failureData} = prepareXeroOptimisticData(policyID, CONST.XERO_CONFIG.TENANT_ID, settingValue, oldSettingValue);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_TENANT_ID, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_TENANT_ID, parameters, {optimisticData, successData, failureData});
 }
 
 function updateXeroMappings(policyID: string, mappingValue: Partial<Connections['xero']['config']['mappings']>, oldMappingValue?: Partial<Connections['xero']['config']['mappings']>) {
@@ -380,7 +380,7 @@ function updateXeroMappings(policyID: string, mappingValue: Partial<Connections[
 
     const {optimisticData, failureData, successData} = prepareXeroOptimisticData(policyID, CONST.XERO_CONFIG.MAPPINGS, mappingValue, oldMappingValue);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_MAPPING, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_MAPPING, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroImportCustomers(
@@ -396,7 +396,7 @@ function updateXeroImportCustomers(
 
     const {optimisticData, failureData, successData} = prepareXeroOptimisticData(policyID, CONST.XERO_CONFIG.IMPORT_CUSTOMERS, importCustomers, oldImportCustomers);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_IMPORT_CUSTOMERS, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_IMPORT_CUSTOMERS, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroEnableNewCategories(
@@ -412,7 +412,7 @@ function updateXeroEnableNewCategories(
 
     const {optimisticData, failureData, successData} = prepareXeroOptimisticData(policyID, CONST.XERO_CONFIG.ENABLE_NEW_CATEGORIES, enableNewCategories, oldEnableNewCategories);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_ENABLE_NEW_CATEGORIES, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_ENABLE_NEW_CATEGORIES, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroAutoSync(policyID: string | undefined, autoSync: Partial<Connections['xero']['config']['autoSync']>, oldAutoSync?: Partial<Connections['xero']['config']['autoSync']>) {
@@ -428,7 +428,7 @@ function updateXeroAutoSync(policyID: string | undefined, autoSync: Partial<Conn
 
     const {optimisticData, failureData, successData} = prepareXeroOptimisticData(policyID, CONST.XERO_CONFIG.AUTO_SYNC, autoSync, oldAutoSync);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_AUTO_SYNC, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_AUTO_SYNC, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroExportBillStatus(
@@ -444,7 +444,7 @@ function updateXeroExportBillStatus(
 
     const {optimisticData, failureData, successData} = prepareXeroExportOptimisticData(policyID, CONST.XERO_CONFIG.BILL_STATUS, billStatus, oldBillStatus);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_BILL_STATUS, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_BILL_STATUS, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroExportExporter(
@@ -460,7 +460,7 @@ function updateXeroExportExporter(
 
     const {optimisticData, failureData, successData} = prepareXeroExportOptimisticData(policyID, CONST.XERO_CONFIG.EXPORTER, exporter, oldExporter);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_EXPORTER, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_EXPORTER, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroExportBillDate(
@@ -476,7 +476,7 @@ function updateXeroExportBillDate(
 
     const {optimisticData, failureData, successData} = prepareXeroExportOptimisticData(policyID, CONST.XERO_CONFIG.BILL_DATE, billDate, oldBillDate);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_BILL_DATE, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_BILL_DATE, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroExportNonReimbursableAccount(
@@ -497,7 +497,7 @@ function updateXeroExportNonReimbursableAccount(
         oldNonReimbursableAccount,
     );
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_NON_REIMBURSABLE_ACCOUNT, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_EXPORT_NON_REIMBURSABLE_ACCOUNT, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroSyncInvoiceCollectionsAccountID(
@@ -521,7 +521,7 @@ function updateXeroSyncInvoiceCollectionsAccountID(
         oldInvoiceCollectionsAccountID,
     );
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_SYNC_INVOICE_COLLECTIONS_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_SYNC_INVOICE_COLLECTIONS_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroSyncReimbursementAccountID(
@@ -540,7 +540,7 @@ function updateXeroSyncReimbursementAccountID(
 
     const {optimisticData, failureData, successData} = prepareXeroSyncOptimisticData(policyID, CONST.XERO_CONFIG.REIMBURSEMENT_ACCOUNT_ID, reimbursementAccountID, oldReimbursementAccountID);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_SYNC_REIMBURSEMENT_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_SYNC_REIMBURSEMENT_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroSyncSyncReimbursedReports(
@@ -560,7 +560,7 @@ function updateXeroSyncSyncReimbursedReports(
 
     const {optimisticData, failureData, successData} = prepareXeroSyncOptimisticData(policyID, CONST.XERO_CONFIG.SYNC_REIMBURSED_REPORTS, syncReimbursedReports, oldSyncReimbursedReports);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_SYNC_SYNC_REIMBURSED_REPORTS, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_SYNC_SYNC_REIMBURSED_REPORTS, parameters, {optimisticData, failureData, successData});
 }
 
 function updateXeroAccountingMethod(
@@ -579,7 +579,7 @@ function updateXeroAccountingMethod(
 
     const {optimisticData, failureData, successData} = prepareXeroExportOptimisticData(policyID, CONST.XERO_CONFIG.ACCOUNTING_METHOD, accountingMethod, oldAccountingMethod);
 
-    API.write(WRITE_COMMANDS.UPDATE_XERO_ACCOUNTING_METHOD, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_XERO_ACCOUNTING_METHOD, parameters, {optimisticData, failureData, successData});
 }
 
 export {

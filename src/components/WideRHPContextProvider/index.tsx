@@ -237,7 +237,7 @@ function useShowWideRHPVersion(condition: boolean) {
      */
     useEffect(() => {
         return navigation.addListener('beforeRemove', () => {
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 cleanWideRHPRouteKey(route);
             });
         });

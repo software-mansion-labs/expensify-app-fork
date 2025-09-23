@@ -215,7 +215,7 @@ function WorkspaceViewTagsPage({route}: WorkspaceViewTagsProps) {
         deletePolicyTags(policyID, selectedTags, policyTags);
         setIsDeleteTagsConfirmModalVisible(false);
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedTags([]);
         });
     };

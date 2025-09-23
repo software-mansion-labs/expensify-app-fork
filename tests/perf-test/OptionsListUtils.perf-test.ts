@@ -94,14 +94,14 @@ describe('OptionsListUtils', () => {
             keys: ONYXKEYS,
         });
 
-        Onyx.multiSet({
+        void Onyx.multiSet({
             ...mockedReportsMap,
             ...mockedPersonalDetailsMap,
         });
     });
 
     afterAll(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     /* Testing getSearchOptions */

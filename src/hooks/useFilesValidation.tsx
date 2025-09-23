@@ -90,7 +90,7 @@ function useFilesValidation(proceedWithFilesAction: (files: FileObject[]) => voi
 
     const hideModalAndReset = useCallback(() => {
         setIsErrorModalVisible(false);
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             resetValidationState();
         });
     }, [resetValidationState]);
@@ -305,7 +305,7 @@ function useFilesValidation(proceedWithFilesAction: (files: FileObject[]) => voi
         // the error modal is dismissed before opening the attachment modal
         if (!isValidatingReceipts && fileError) {
             setIsErrorModalVisible(false);
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 if (sortedFiles.length !== 0) {
                     proceedWithFilesAction(sortedFiles);
                 }

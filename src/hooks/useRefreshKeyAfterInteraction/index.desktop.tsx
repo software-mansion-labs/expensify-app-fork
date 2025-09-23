@@ -5,7 +5,7 @@ function useRefreshKeyAfterInteraction(defaultValue: string) {
     const [counter, setCounter] = useState(0);
 
     useEffect(() => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setCounter((prev) => prev + 1);
         });
     }, []);

@@ -251,7 +251,7 @@ function saveSearch({queryJSON, newName}: {queryJSON: SearchQueryJSON; newName?:
             },
         },
     ];
-    API.write(WRITE_COMMANDS.SAVE_SEARCH, {jsonQuery, newName: saveSearchName}, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SAVE_SEARCH, {jsonQuery, newName: saveSearchName}, {optimisticData, failureData, successData});
 }
 
 function deleteSavedSearch(hash: number) {
@@ -287,7 +287,7 @@ function deleteSavedSearch(hash: number) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.DELETE_SAVED_SEARCH, {hash}, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.DELETE_SAVED_SEARCH, {hash}, {optimisticData, failureData, successData});
 }
 
 function openSearchPage() {
@@ -330,7 +330,7 @@ function updateSearchResultsWithTransactionThreadReportID(hash: number, transact
             },
         },
     };
-    Onyx.merge(`${ONYXKEYS.COLLECTION.SNAPSHOT}${hash}`, onyxUpdate);
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.SNAPSHOT}${hash}`, onyxUpdate);
 }
 
 function holdMoneyRequestOnSearch(hash: number, transactionIDList: string[], comment: string, allTransactions: OnyxCollection<Transaction>, allReportActions: OnyxCollection<ReportActions>) {
@@ -352,7 +352,7 @@ function holdMoneyRequestOnSearch(hash: number, transactionIDList: string[], com
         }
     });
 
-    API.write(WRITE_COMMANDS.HOLD_MONEY_REQUEST_ON_SEARCH, {hash, transactionIDList, comment}, {optimisticData, finallyData});
+    void API.write(WRITE_COMMANDS.HOLD_MONEY_REQUEST_ON_SEARCH, {hash, transactionIDList, comment}, {optimisticData, finallyData});
 }
 
 function submitMoneyRequestOnSearch(hash: number, reportList: SearchReport[], policy: SearchPolicy[], transactionIDList?: string[], currentSearchKey?: SearchKey) {
@@ -382,7 +382,7 @@ function submitMoneyRequestOnSearch(hash: number, reportList: SearchReport[], po
 
     // The SubmitReport command is not 1:1:1 yet, which means creating a separate SubmitMoneyRequestOnSearch command is not feasible until https://github.com/Expensify/Expensify/issues/451223 is done.
     // In the meantime, we'll call SubmitReport which works for a single expense only, so not bulk actions are possible.
-    API.write(WRITE_COMMANDS.SUBMIT_REPORT, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.SUBMIT_REPORT, parameters, {optimisticData, successData, failureData});
 }
 
 function approveMoneyRequestOnSearch(hash: number, reportIDList: string[], transactionIDList?: string[], currentSearchKey?: SearchKey) {
@@ -406,8 +406,8 @@ function approveMoneyRequestOnSearch(hash: number, reportIDList: string[], trans
 
     const successData: OnyxUpdate[] = approveActionSuggestedSearches.includes(currentSearchKey) ? createOnyxData(null) : createOnyxData({isActionLoading: false});
 
-    playSound(SOUNDS.SUCCESS);
-    API.write(WRITE_COMMANDS.APPROVE_MONEY_REQUEST_ON_SEARCH, {hash, reportIDList}, {optimisticData, failureData, successData});
+    void playSound(SOUNDS.SUCCESS);
+    void API.write(WRITE_COMMANDS.APPROVE_MONEY_REQUEST_ON_SEARCH, {hash, reportIDList}, {optimisticData, failureData, successData});
 }
 
 function exportToIntegrationOnSearch(hash: number, reportID: string, connectionName: ConnectionName, currentSearchKey?: SearchKey) {
@@ -448,7 +448,7 @@ function exportToIntegrationOnSearch(hash: number, reportID: string, connectionN
         }),
     } satisfies ReportExportParams;
 
-    API.write(WRITE_COMMANDS.REPORT_EXPORT, params, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.REPORT_EXPORT, params, {optimisticData, failureData, successData});
 }
 
 function payMoneyRequestOnSearch(hash: number, paymentData: PaymentData[], transactionIDList?: string[], currentSearchKey?: SearchKey) {
@@ -470,7 +470,7 @@ function payMoneyRequestOnSearch(hash: number, paymentData: PaymentData[], trans
     const successData: OnyxUpdate[] = currentSearchKey === CONST.SEARCH.SEARCH_KEYS.PAY ? createOnyxData(null) : createOnyxData({isActionLoading: false});
 
     // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.makeRequestWithSideEffects(
+    void API.makeRequestWithSideEffects(
         SIDE_EFFECT_REQUEST_COMMANDS.PAY_MONEY_REQUEST_ON_SEARCH,
         {hash, paymentData: JSON.stringify(paymentData)},
         {optimisticData, failureData, successData},
@@ -478,14 +478,14 @@ function payMoneyRequestOnSearch(hash: number, paymentData: PaymentData[], trans
         if (response?.jsonCode !== CONST.JSON_CODE.SUCCESS) {
             return;
         }
-        playSound(SOUNDS.SUCCESS);
+        void playSound(SOUNDS.SUCCESS);
     });
 }
 
 function unholdMoneyRequestOnSearch(hash: number, transactionIDList: string[]) {
     const {optimisticData, finallyData} = getOnyxLoadingData(hash);
 
-    API.write(WRITE_COMMANDS.UNHOLD_MONEY_REQUEST_ON_SEARCH, {hash, transactionIDList}, {optimisticData, finallyData});
+    void API.write(WRITE_COMMANDS.UNHOLD_MONEY_REQUEST_ON_SEARCH, {hash, transactionIDList}, {optimisticData, finallyData});
 }
 
 function deleteMoneyRequestOnSearch(hash: number, transactionIDList: string[]) {
@@ -513,7 +513,7 @@ function deleteMoneyRequestOnSearch(hash: number, transactionIDList: string[]) {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.DELETE_MONEY_REQUEST_ON_SEARCH, {hash, transactionIDList}, {optimisticData, failureData, finallyData});
+    void API.write(WRITE_COMMANDS.DELETE_MONEY_REQUEST_ON_SEARCH, {hash, transactionIDList}, {optimisticData, failureData, finallyData});
 }
 
 type Params = Record<string, ExportSearchItemsToCSVParams>;
@@ -535,7 +535,7 @@ function exportSearchItemsToCSV({query, jsonQuery, reportIDList, transactionIDLi
         }
     });
 
-    fileDownload(getCommandURL({command: WRITE_COMMANDS.EXPORT_SEARCH_ITEMS_TO_CSV}), 'Expensify.csv', '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
+    void fileDownload(getCommandURL({command: WRITE_COMMANDS.EXPORT_SEARCH_ITEMS_TO_CSV}), 'Expensify.csv', '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
 }
 
 function queueExportSearchItemsToCSV({query, jsonQuery, reportIDList, transactionIDList}: ExportSearchItemsToCSVParams) {
@@ -546,7 +546,7 @@ function queueExportSearchItemsToCSV({query, jsonQuery, reportIDList, transactio
         transactionIDList,
     }) as ExportSearchItemsToCSVParams;
 
-    API.write(WRITE_COMMANDS.QUEUE_EXPORT_SEARCH_ITEMS_TO_CSV, finalParameters);
+    void API.write(WRITE_COMMANDS.QUEUE_EXPORT_SEARCH_ITEMS_TO_CSV, finalParameters);
 }
 
 function queueExportSearchWithTemplate({templateName, templateType, jsonQuery, reportIDList, transactionIDList, policyID}: ExportSearchWithTemplateParams) {
@@ -559,24 +559,24 @@ function queueExportSearchWithTemplate({templateName, templateType, jsonQuery, r
         policyID,
     }) as ExportSearchWithTemplateParams;
 
-    API.write(WRITE_COMMANDS.QUEUE_EXPORT_SEARCH_WITH_TEMPLATE, finalParameters);
+    void API.write(WRITE_COMMANDS.QUEUE_EXPORT_SEARCH_WITH_TEMPLATE, finalParameters);
 }
 /**
  * Updates the form values for the advanced filters search form.
  */
 function updateAdvancedFilters(values: Nullable<Partial<FormOnyxValues<typeof ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM>>>, shouldUseOnyxSetMethod = false) {
     if (shouldUseOnyxSetMethod) {
-        Onyx.set(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, values);
+        void Onyx.set(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, values);
         return;
     }
-    Onyx.merge(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, values);
+    void Onyx.merge(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, values);
 }
 
 /**
  * Clears all values for the advanced filters search form.
  */
 function clearAllFilters() {
-    Onyx.set(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, null);
+    void Onyx.set(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, null);
 }
 
 function clearAdvancedFilters() {
@@ -597,7 +597,7 @@ function clearAdvancedFilters() {
             values[key] = null;
         });
 
-    Onyx.merge(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, values);
+    void Onyx.merge(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, values);
 }
 
 export {

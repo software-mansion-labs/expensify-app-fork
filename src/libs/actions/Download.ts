@@ -9,7 +9,7 @@ function setDownload(sourceID: string, isDownloading: boolean): Promise<void | v
 }
 
 function clearDownloads() {
-    Onyx.setCollection(ONYXKEYS.COLLECTION.DOWNLOAD, {});
+    void Onyx.setCollection(ONYXKEYS.COLLECTION.DOWNLOAD, {});
 }
 
 export {setDownload, clearDownloads};

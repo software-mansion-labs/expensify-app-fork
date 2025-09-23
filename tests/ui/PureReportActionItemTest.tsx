@@ -56,20 +56,21 @@ describe('PureReportActionItem', () => {
 
     beforeEach(() => {
         wrapOnyxWithWaitForBatchedUpdates(Onyx);
-        return Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false}).then(() =>
-            Onyx.merge(`${ONYXKEYS.PERSONAL_DETAILS_LIST}`, {
-                [ACTOR_ACCOUNT_ID]: {
-                    accountID: ACTOR_ACCOUNT_ID,
-                    avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/default-avatar_9.png',
-                    displayName: actorEmail,
-                    login: actorEmail,
-                },
-            }),
+        return Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false}).then(
+            () =>
+                void Onyx.merge(`${ONYXKEYS.PERSONAL_DETAILS_LIST}`, {
+                    [ACTOR_ACCOUNT_ID]: {
+                        accountID: ACTOR_ACCOUNT_ID,
+                        avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/default-avatar_9.png',
+                        displayName: actorEmail,
+                        login: actorEmail,
+                    },
+                }),
         );
     });
 
     afterEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     function renderItemWithAction(action: ReportAction) {

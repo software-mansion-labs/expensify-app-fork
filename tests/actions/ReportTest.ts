@@ -203,8 +203,8 @@ describe('actions/Report', () => {
         const REPORT: OnyxTypes.Report = {...createRandomReport(1), errorFields: {createChat: {error: 'error'}}};
         const REPORT_METADATA: OnyxTypes.ReportMetadata = {isOptimisticReport: false};
 
-        Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${REPORT.reportID}`, REPORT);
-        Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${REPORT.reportID}`, REPORT_METADATA);
+        void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${REPORT.reportID}`, REPORT);
+        void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${REPORT.reportID}`, REPORT_METADATA);
 
         return waitForBatchedUpdates()
             .then(() => {
@@ -895,7 +895,7 @@ describe('actions/Report', () => {
         const TEN_MINUTES_AGO = subMinutes(new Date(), 10);
         const created = format(addSeconds(TEN_MINUTES_AGO, 10), CONST.DATE.FNS_DB_FORMAT_STRING);
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: true});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: true});
 
         Report.addComment(REPORT_ID, 'Testing a comment', CONST.DEFAULT_TIME_ZONE);
         // Need the reportActionID to delete the comments
@@ -950,7 +950,7 @@ describe('actions/Report', () => {
             },
         });
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -998,7 +998,7 @@ describe('actions/Report', () => {
         await waitForBatchedUpdates();
         expect(PersistedRequests.getAll().length).toBe(1);
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -1119,7 +1119,7 @@ describe('actions/Report', () => {
             },
         });
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -1188,7 +1188,7 @@ describe('actions/Report', () => {
             },
         });
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -1285,7 +1285,7 @@ describe('actions/Report', () => {
             },
         });
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -1358,7 +1358,7 @@ describe('actions/Report', () => {
         await waitForBatchedUpdates();
         expect(PersistedRequests.getAll().length).toBe(1);
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -1418,7 +1418,7 @@ describe('actions/Report', () => {
             });
         });
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -1435,7 +1435,7 @@ describe('actions/Report', () => {
         const TEN_MINUTES_AGO = subMinutes(new Date(), 10);
         const created = format(addSeconds(TEN_MINUTES_AGO, 10), CONST.DATE.FNS_DB_FORMAT_STRING);
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: true});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: true});
 
         Report.addComment(REPORT_ID, 'Testing a comment', CONST.DEFAULT_TIME_ZONE);
         // Need the reportActionID to delete the comments
@@ -1462,7 +1462,7 @@ describe('actions/Report', () => {
         await waitForBatchedUpdates();
         expect(PersistedRequests.getAll().length).toBe(1);
 
-        Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NETWORK, {isOffline: false});
         await waitForBatchedUpdates();
 
         // Checking no requests were or will be made
@@ -1560,7 +1560,7 @@ describe('actions/Report', () => {
         };
         await Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, policy);
 
-        mockFetchData.pause();
+        void mockFetchData.pause();
         const reportID = Report.createNewReport({accountID}, policyID);
         const parentReport = ReportUtils.getPolicyExpenseChat(accountID, policyID);
 
@@ -1598,7 +1598,7 @@ describe('actions/Report', () => {
         });
 
         // When the request fails
-        mockFetchData.fail();
+        void mockFetchData.fail();
         await mockFetchData.resume();
         await waitForBatchedUpdates();
 
@@ -1760,7 +1760,7 @@ describe('actions/Report', () => {
 
             await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`, report);
 
-            mockFetch?.fail?.();
+            void mockFetch?.fail?.();
             Report.updateDescription('1', '<h1>test</h1>', '# test1');
 
             await waitForBatchedUpdates();
@@ -1771,7 +1771,7 @@ describe('actions/Report', () => {
                 callback: (val) => (updateReport = val),
             });
             expect(updateReport?.description).toBe('<h1>test</h1>');
-            mockFetch.mockReset();
+            void mockFetch.mockReset();
         });
     });
 

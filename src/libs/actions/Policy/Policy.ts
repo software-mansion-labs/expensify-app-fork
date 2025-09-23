@@ -216,8 +216,8 @@ Onyx.connect({
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`] = null;
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${reportID}`] = null;
             });
-            Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT, cleanUpMergeQueries);
-            Onyx.multiSet(cleanUpSetQueries);
+            void Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT, cleanUpMergeQueries);
+            void Onyx.multiSet(cleanUpSetQueries);
             delete allPolicies[key];
             return;
         }
@@ -295,7 +295,7 @@ Onyx.connect({
  * Stores in Onyx the policy ID of the last workspace that was accessed by the user
  */
 function updateLastAccessedWorkspace(policyID: OnyxEntry<string>) {
-    Onyx.set(ONYXKEYS.LAST_ACCESSED_WORKSPACE_POLICY_ID, policyID ?? null);
+    void Onyx.set(ONYXKEYS.LAST_ACCESSED_WORKSPACE_POLICY_ID, policyID ?? null);
 }
 
 /**
@@ -595,7 +595,7 @@ function deleteWorkspace(
 
     const params: DeleteWorkspaceParams = {policyID};
 
-    API.write(WRITE_COMMANDS.DELETE_WORKSPACE, params, {optimisticData, finallyData, failureData});
+    void API.write(WRITE_COMMANDS.DELETE_WORKSPACE, params, {optimisticData, finallyData, failureData});
 
     // Reset the lastAccessedWorkspacePolicyID
     if (policyID === lastAccessedWorkspacePolicyID) {
@@ -662,7 +662,7 @@ function setWorkspaceAutoReportingFrequency(policyID: string, frequency: ValueOf
     ];
 
     const params: SetWorkspaceAutoReportingFrequencyParams = {policyID, frequency};
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_AUTO_REPORTING_FREQUENCY, params, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_AUTO_REPORTING_FREQUENCY, params, {optimisticData, failureData, successData});
 }
 
 function setWorkspaceAutoReportingMonthlyOffset(policyID: string | undefined, autoReportingOffset: number | ValueOf<typeof CONST.POLICY.AUTO_REPORTING_OFFSET>) {
@@ -708,7 +708,7 @@ function setWorkspaceAutoReportingMonthlyOffset(policyID: string | undefined, au
     ];
 
     const params: SetWorkspaceAutoReportingMonthlyOffsetParams = {policyID, value};
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_AUTO_REPORTING_MONTHLY_OFFSET, params, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_AUTO_REPORTING_MONTHLY_OFFSET, params, {optimisticData, failureData, successData});
 }
 
 function setWorkspaceApprovalMode(policyID: string, approver: string, approvalMode: ValueOf<typeof CONST.POLICY.APPROVAL_MODE>) {
@@ -776,7 +776,7 @@ function setWorkspaceApprovalMode(policyID: string, approver: string, approvalMo
             isAutoApprovalEnabled: false,
         }),
     };
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_APPROVAL_MODE, params, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_APPROVAL_MODE, params, {optimisticData, failureData, successData});
 }
 
 function setWorkspacePayer(policyID: string, reimburserEmail: string) {
@@ -822,52 +822,52 @@ function setWorkspacePayer(policyID: string, reimburserEmail: string) {
 
     const params: SetWorkspacePayerParams = {policyID, reimburserEmail};
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_PAYER, params, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_PAYER, params, {optimisticData, failureData, successData});
 }
 
 function clearPolicyErrorField(policyID: string | undefined, fieldName: string) {
     if (!policyID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errorFields: {[fieldName]: null}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errorFields: {[fieldName]: null}});
 }
 
 function clearQBOErrorField(policyID: string | undefined, fieldName: string) {
     if (!policyID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {quickbooksOnline: {config: {errorFields: {[fieldName]: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {quickbooksOnline: {config: {errorFields: {[fieldName]: null}}}}});
 }
 
 function clearQBDErrorField(policyID: string | undefined, fieldName: string) {
     if (!policyID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {quickbooksDesktop: {config: {errorFields: {[fieldName]: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {quickbooksDesktop: {config: {errorFields: {[fieldName]: null}}}}});
 }
 
 function clearXeroErrorField(policyID: string | undefined, fieldName: string) {
     if (!policyID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {xero: {config: {errorFields: {[fieldName]: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {xero: {config: {errorFields: {[fieldName]: null}}}}});
 }
 
 function clearNetSuiteErrorField(policyID: string | undefined, fieldName: string) {
     if (!policyID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {netsuite: {options: {config: {errorFields: {[fieldName]: null}}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {netsuite: {options: {config: {errorFields: {[fieldName]: null}}}}}});
 }
 
 function clearNetSuitePendingField(policyID: string, fieldName: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {netsuite: {options: {config: {pendingFields: {[fieldName]: null}}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {netsuite: {options: {config: {pendingFields: {[fieldName]: null}}}}}});
 }
 
 function removeNetSuiteCustomFieldByIndex(allRecords: NetSuiteCustomSegment[] | NetSuiteCustomList[], policyID: string, importCustomField: string, valueIndex: number) {
     // We allow multiple custom list records with the same internalID. Hence it is safe to remove by index.
     const filteredRecords = allRecords.filter((_, index) => index !== Number(valueIndex));
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         connections: {
             netsuite: {
                 options: {
@@ -886,15 +886,15 @@ function clearSageIntacctErrorField(policyID: string | undefined, fieldName: str
     if (!policyID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {errorFields: {[fieldName]: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {errorFields: {[fieldName]: null}}}}});
 }
 
 function clearNetSuiteAutoSyncErrorField(policyID: string | undefined) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {netsuite: {config: {errorFields: {autoSync: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {netsuite: {config: {errorFields: {autoSync: null}}}}});
 }
 
 function clearQuickbooksOnlineAutoSyncErrorField(policyID: string | undefined) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {quickbooksOnline: {config: {errorFields: {autoSync: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {quickbooksOnline: {config: {errorFields: {autoSync: null}}}}});
 }
 
 function setWorkspaceReimbursement({policyID, reimbursementChoice, bankAccountID, reimburserEmail}: SetWorkspaceReimbursementActionParams) {
@@ -945,7 +945,7 @@ function setWorkspaceReimbursement({policyID, reimbursementChoice, bankAccountID
 
     const params: SetWorkspaceReimbursementParams = {policyID, reimbursementChoice, bankAccountID};
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_REIMBURSEMENT, params, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_REIMBURSEMENT, params, {optimisticData, failureData, successData});
 }
 
 function leaveWorkspace(policyID?: string) {
@@ -1040,7 +1040,7 @@ function leaveWorkspace(policyID?: string) {
         policyID,
         email: sessionEmail,
     };
-    API.write(WRITE_COMMANDS.LEAVE_POLICY, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.LEAVE_POLICY, params, {optimisticData, successData, failureData});
 }
 
 function addBillingCardAndRequestPolicyOwnerChange(
@@ -1124,7 +1124,7 @@ function addBillingCardAndRequestPolicyOwnerChange(
             currency: currency as ValueOf<typeof CONST.PAYMENT_CARD_CURRENCY>,
         };
         // eslint-disable-next-line rulesdir/no-multiple-api-calls
-        API.write(WRITE_COMMANDS.ADD_BILLING_CARD_AND_REQUEST_WORKSPACE_OWNER_CHANGE, params, {optimisticData, successData, failureData});
+        void API.write(WRITE_COMMANDS.ADD_BILLING_CARD_AND_REQUEST_WORKSPACE_OWNER_CHANGE, params, {optimisticData, successData, failureData});
     }
 }
 
@@ -1171,7 +1171,7 @@ function verifySetupIntentAndRequestPolicyOwnerChange(policyID: string) {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.VERIFY_SETUP_INTENT_AND_REQUEST_POLICY_OWNER_CHANGE, {accountID: sessionAccountID, policyID}, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.VERIFY_SETUP_INTENT_AND_REQUEST_POLICY_OWNER_CHANGE, {accountID: sessionAccountID, policyID}, {optimisticData, successData, failureData});
 }
 
 /**
@@ -1394,7 +1394,7 @@ function updateWorkspaceAvatar(policyID: string, file: File) {
         file,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_AVATAR, params, {optimisticData, finallyData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_AVATAR, params, {optimisticData, finallyData, failureData});
 }
 
 /**
@@ -1447,14 +1447,14 @@ function deleteWorkspaceAvatar(policyID: string) {
 
     const params: DeleteWorkspaceAvatarParams = {policyID};
 
-    API.write(WRITE_COMMANDS.DELETE_WORKSPACE_AVATAR, params, {optimisticData, finallyData, failureData});
+    void API.write(WRITE_COMMANDS.DELETE_WORKSPACE_AVATAR, params, {optimisticData, finallyData, failureData});
 }
 
 /**
  * Clear error and pending fields for the workspace avatar
  */
 function clearAvatarErrors(policyID: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         errorFields: {
             avatarURL: null,
         },
@@ -1610,7 +1610,7 @@ function updateGeneralSettings(policyID: string | undefined, name: string, curre
                 policyName: name,
             },
         };
-        Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
             name,
         });
 
@@ -1618,7 +1618,7 @@ function updateGeneralSettings(policyID: string | undefined, name: string, curre
         return;
     }
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_GENERAL_SETTINGS, params, {
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_GENERAL_SETTINGS, params, {
         optimisticData,
         finallyData,
         failureData,
@@ -1674,7 +1674,7 @@ function updateWorkspaceDescription(policyID: string, description: string, curre
         description: parsedDescription,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_DESCRIPTION, params, {
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_DESCRIPTION, params, {
         optimisticData,
         finallyData,
         failureData,
@@ -1686,8 +1686,8 @@ function setWorkspaceErrors(policyID: string, errors: Errors) {
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errors: null});
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errors});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errors: null});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errors});
 }
 
 function hideWorkspaceAlertMessage(policyID: string) {
@@ -1695,7 +1695,7 @@ function hideWorkspaceAlertMessage(policyID: string) {
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {alertMessage: ''});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {alertMessage: ''});
 }
 
 function updateAddress(policyID: string, newAddress: CompanyAddress) {
@@ -1740,7 +1740,7 @@ function updateAddress(policyID: string, newAddress: CompanyAddress) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_ADDRESS, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_ADDRESS, parameters, {
         optimisticData,
         finallyData,
     });
@@ -1750,7 +1750,7 @@ function updateAddress(policyID: string, newAddress: CompanyAddress) {
  * Removes an error after trying to delete a workspace
  */
 function clearDeleteWorkspaceError(policyID: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         pendingAction: null,
         errors: null,
     });
@@ -1760,15 +1760,15 @@ function clearDeleteWorkspaceError(policyID: string) {
  * Removes the workspace after failure to create.
  */
 function removeWorkspace(policyID: string) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, null);
 }
 
 function setDuplicateWorkspaceData(data: Partial<DuplicateWorkspace>) {
-    Onyx.merge(ONYXKEYS.DUPLICATE_WORKSPACE, {...data});
+    void Onyx.merge(ONYXKEYS.DUPLICATE_WORKSPACE, {...data});
 }
 
 function clearDuplicateWorkspace() {
-    Onyx.set(ONYXKEYS.DUPLICATE_WORKSPACE, {});
+    void Onyx.set(ONYXKEYS.DUPLICATE_WORKSPACE, {});
 }
 
 /**
@@ -2398,7 +2398,7 @@ function createWorkspace(options: BuildPolicyDataOptions = {}): CreateWorkspaceP
 
     const {optimisticData, failureData, successData, params} = buildPolicyData(optionsWithDefaults);
 
-    API.write(WRITE_COMMANDS.CREATE_WORKSPACE, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.CREATE_WORKSPACE, params, {optimisticData, successData, failureData});
 
     // Publish a workspace created event if this is their first policy
     if (getAdminPolicies().length === 0) {
@@ -2801,7 +2801,7 @@ function buildDuplicatePolicyData(policy: Policy, options: DuplicatePolicyDataOp
 function duplicateWorkspace(policy: Policy, options: DuplicatePolicyDataOptions): DuplicateWorkspaceParams {
     const {optimisticData, failureData, successData, params} = buildDuplicatePolicyData(policy, options);
 
-    API.write(WRITE_COMMANDS.DUPLICATE_POLICY, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.DUPLICATE_POLICY, params, {optimisticData, successData, failureData});
 
     return params;
 }
@@ -2899,7 +2899,7 @@ function removePolicyReceiptPartnersConnection(policyID: string, partnerName: st
         policyID,
         partnerName,
     };
-    API.write(WRITE_COMMANDS.DISCONNECT_WORKSPACE_RECEIPT_PARTNER, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.DISCONNECT_WORKSPACE_RECEIPT_PARTNER, parameters, {optimisticData, failureData, successData});
 }
 
 function togglePolicyUberAutoInvite(policyID: string | undefined, enabled: boolean) {
@@ -2934,7 +2934,7 @@ function togglePolicyUberAutoInvite(policyID: string | undefined, enabled: boole
 
     const params: TogglePolicyUberAutoInvitePageParams = {policyID, enabled};
 
-    API.write(WRITE_COMMANDS.TOGGLE_WORKSPACE_UBER_AUTO_INVITE, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.TOGGLE_WORKSPACE_UBER_AUTO_INVITE, params, {optimisticData, successData, failureData});
 }
 
 function togglePolicyUberAutoRemove(policyID: string | undefined, enabled: boolean) {
@@ -2969,7 +2969,7 @@ function togglePolicyUberAutoRemove(policyID: string | undefined, enabled: boole
 
     const params: TogglePolicyUberAutoRemovePageParams = {policyID, enabled};
 
-    API.write(WRITE_COMMANDS.TOGGLE_WORKSPACE_UBER_AUTO_REMOVE, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.TOGGLE_WORKSPACE_UBER_AUTO_REMOVE, params, {optimisticData, successData, failureData});
 }
 
 /**
@@ -3041,7 +3041,7 @@ function inviteWorkspaceEmployeesToUber(policyID: string, emails: string[]) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.INVITE_WORKSPACE_EMPLOYEES_TO_UBER, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.INVITE_WORKSPACE_EMPLOYEES_TO_UBER, params, {optimisticData, successData, failureData});
 }
 
 /**
@@ -3164,7 +3164,7 @@ function requestExpensifyCardLimitIncrease(settlementBankAccountID?: number) {
         settlementBankAccountID,
     };
 
-    API.write(WRITE_COMMANDS.REQUEST_EXPENSIFY_CARD_LIMIT_INCREASE, params);
+    void API.write(WRITE_COMMANDS.REQUEST_EXPENSIFY_CARD_LIMIT_INCREASE, params);
 }
 
 function updateMemberCustomField(policyID: string, login: string, customFieldType: CustomFieldType, value: string) {
@@ -3208,15 +3208,15 @@ function updateMemberCustomField(policyID: string, login: string, customFieldTyp
 
     const params: UpdatePolicyMembersCustomFieldsParams = {policyID, employees: JSON.stringify([{email: login, [customFieldType]: value}])};
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_MEMBERS_CUSTOM_FIELDS, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_MEMBERS_CUSTOM_FIELDS, params, {optimisticData, successData, failureData});
 }
 
 function setWorkspaceInviteMessageDraft(policyID: string, message: string | null) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_MESSAGE_DRAFT}${policyID}`, message);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_MESSAGE_DRAFT}${policyID}`, message);
 }
 
 function clearErrors(policyID: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errors: null});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {errors: null});
     hideWorkspaceAlertMessage(policyID);
 }
 
@@ -3224,7 +3224,7 @@ function clearErrors(policyID: string) {
  * Dismiss the informative messages about which policy members were added with primary logins when invited with their secondary login.
  */
 function dismissAddedWithPrimaryLoginMessages(policyID: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {primaryLoginsInvited: null});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {primaryLoginsInvited: null});
 }
 
 function buildOptimisticRecentlyUsedCurrencies(currency?: string) {
@@ -3705,7 +3705,7 @@ function createWorkspaceFromIOUPayment(iouReport: OnyxEntry<Report>): WorkspaceF
         expenseMovedReportActionID: movedIouReportAction.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.CREATE_WORKSPACE_FROM_IOU_PAYMENT, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.CREATE_WORKSPACE_FROM_IOU_PAYMENT, params, {optimisticData, successData, failureData});
 
     return {policyID, workspaceChatReportID: memberData.workspaceChatReportID, reportPreviewReportActionID: reportPreview?.reportActionID, adminsChatReportID};
 }
@@ -3751,7 +3751,7 @@ function enablePolicyConnections(policyID: string, enabled: boolean) {
 
     const parameters: EnablePolicyConnectionsParams = {policyID, enabled};
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_CONNECTIONS, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_CONNECTIONS, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout()) {
         goBackWhenEnableFeature(policyID);
@@ -3805,7 +3805,7 @@ function enablePolicyReceiptPartners(policyID: string, enabled: boolean, shouldN
 
     const parameters: TogglePolicyReceiptPartnersParams = {policyID, enabled};
 
-    API.write(WRITE_COMMANDS.TOGGLE_RECEIPT_PARTNERS, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.TOGGLE_RECEIPT_PARTNERS, parameters, onyxData);
 
     if (enabled && shouldNavigateToReceiptPartnersPage) {
         navigateToReceiptPartnersPage(policyID);
@@ -3819,7 +3819,7 @@ function enablePolicyReceiptPartners(policyID: string, enabled: boolean, shouldN
 
 /** Save the preferred export method for a policy */
 function savePreferredExportMethod(policyID: string, exportMethod: ReportExportType) {
-    Onyx.merge(`${ONYXKEYS.LAST_EXPORT_METHOD}`, {[policyID]: exportMethod});
+    void Onyx.merge(`${ONYXKEYS.LAST_EXPORT_METHOD}`, {[policyID]: exportMethod});
 }
 
 function enableExpensifyCard(policyID: string, enabled: boolean, shouldNavigateToExpensifyCardPage = false) {
@@ -3867,7 +3867,7 @@ function enableExpensifyCard(policyID: string, enabled: boolean, shouldNavigateT
 
     const parameters: EnablePolicyExpensifyCardsParams = {authToken, policyID, enabled};
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_EXPENSIFY_CARDS, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_EXPENSIFY_CARDS, parameters, onyxData);
 
     if (enabled && shouldNavigateToExpensifyCardPage) {
         navigateToExpensifyCardPage(policyID);
@@ -3922,7 +3922,7 @@ function enableCompanyCards(policyID: string, enabled: boolean, shouldGoBack = t
 
     const parameters: EnablePolicyCompanyCardsParams = {authToken, policyID, enabled};
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_COMPANY_CARDS, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_COMPANY_CARDS, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout() && shouldGoBack) {
         goBackWhenEnableFeature(policyID);
@@ -3970,7 +3970,7 @@ function enablePolicyReportFields(policyID: string, enabled: boolean) {
 
     const parameters: EnablePolicyReportFieldsParams = {policyID, enabled};
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_REPORT_FIELDS, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_REPORT_FIELDS, parameters, onyxData);
 }
 
 function enablePolicyTaxes(policyID: string, enabled: boolean) {
@@ -4088,7 +4088,7 @@ function enablePolicyTaxes(policyID: string, enabled: boolean) {
     if (shouldAddDefaultTaxRatesData) {
         parameters.taxFields = JSON.stringify(defaultTaxRates);
     }
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_TAXES, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_TAXES, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout()) {
         goBackWhenEnableFeature(policyID);
@@ -4191,7 +4191,7 @@ function enablePolicyWorkflows(policyID: string, enabled: boolean) {
         setWorkspaceAutoReportingFrequency(policyID, CONST.POLICY.AUTO_REPORTING_FREQUENCIES.INSTANT);
     }
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_WORKFLOWS, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_WORKFLOWS, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout()) {
         goBackWhenEnableFeature(policyID);
@@ -4264,7 +4264,7 @@ function enablePolicyRules(policyID: string, enabled: boolean, shouldGoBack = tr
     }
 
     const parameters: SetPolicyRulesEnabledParams = {policyID, enabled};
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.SET_POLICY_RULES_ENABLED, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.SET_POLICY_RULES_ENABLED, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout() && shouldGoBack) {
         goBackWhenEnableFeature(policyID);
@@ -4333,7 +4333,7 @@ function enableDistanceRequestTax(policyID: string, customUnitName: string, cust
             attributes,
         }),
     };
-    API.write(WRITE_COMMANDS.ENABLE_DISTANCE_REQUEST_TAX, params, onyxData);
+    void API.write(WRITE_COMMANDS.ENABLE_DISTANCE_REQUEST_TAX, params, onyxData);
 }
 
 function enablePolicyInvoicing(policyID: string, enabled: boolean) {
@@ -4377,7 +4377,7 @@ function enablePolicyInvoicing(policyID: string, enabled: boolean) {
 
     const parameters: EnablePolicyInvoicingParams = {policyID, enabled};
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_INVOICING, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_INVOICING, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout()) {
         goBackWhenEnableFeature(policyID);
@@ -4459,7 +4459,7 @@ function setPolicyCustomTaxName(policyID: string, customTaxName: string) {
         customTaxName,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_CUSTOM_TAX_NAME, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_CUSTOM_TAX_NAME, parameters, onyxData);
 }
 
 function setWorkspaceCurrencyDefault(policyID: string, taxCode: string) {
@@ -4513,7 +4513,7 @@ function setWorkspaceCurrencyDefault(policyID: string, taxCode: string) {
         taxCode,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_TAXES_CURRENCY_DEFAULT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_TAXES_CURRENCY_DEFAULT, parameters, onyxData);
 }
 
 function setForeignCurrencyDefault(policyID: string, taxCode: string) {
@@ -4567,7 +4567,7 @@ function setForeignCurrencyDefault(policyID: string, taxCode: string) {
         taxCode,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_TAXES_FOREIGN_CURRENCY_DEFAULT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_TAXES_FOREIGN_CURRENCY_DEFAULT, parameters, onyxData);
 }
 
 function upgradeToCorporate(policyID: string, featureName?: string) {
@@ -4622,7 +4622,7 @@ function upgradeToCorporate(policyID: string, featureName?: string) {
 
     const parameters: UpgradeToCorporateParams = {policyID, ...(featureName ? {featureName} : {})};
 
-    API.write(WRITE_COMMANDS.UPGRADE_TO_CORPORATE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPGRADE_TO_CORPORATE, parameters, {optimisticData, successData, failureData});
 }
 
 function downgradeToTeam(policyID: string) {
@@ -4665,7 +4665,7 @@ function downgradeToTeam(policyID: string) {
 
     const parameters: DowngradeToTeamParams = {policyID};
 
-    API.write(WRITE_COMMANDS.DOWNGRADE_TO_TEAM, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.DOWNGRADE_TO_TEAM, parameters, {optimisticData, successData, failureData});
 }
 
 function setWorkspaceDefaultSpendCategory(policyID: string, groupID: string, category: string) {
@@ -4731,7 +4731,7 @@ function setWorkspaceDefaultSpendCategory(policyID: string, groupID: string, cat
           ]
         : [];
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_DEFAULT_SPEND_CATEGORY, {policyID, groupID, category}, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_DEFAULT_SPEND_CATEGORY, {policyID, groupID, category}, {optimisticData, successData, failureData});
 }
 /**
  * Call the API to set the receipt required amount for the given policy
@@ -4786,7 +4786,7 @@ function setPolicyMaxExpenseAmountNoReceipt(policyID: string, maxExpenseAmountNo
         maxExpenseAmountNoReceipt: parsedMaxExpenseAmountNoReceipt,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_EXPENSE_MAX_AMOUNT_NO_RECEIPT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_EXPENSE_MAX_AMOUNT_NO_RECEIPT, parameters, onyxData);
 }
 
 /**
@@ -4842,7 +4842,7 @@ function setPolicyMaxExpenseAmount(policyID: string, maxExpenseAmount: string) {
         maxExpenseAmount: parsedMaxExpenseAmount,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_EXPENSE_MAX_AMOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_EXPENSE_MAX_AMOUNT, parameters, onyxData);
 }
 
 /**
@@ -4908,7 +4908,7 @@ function setPolicyProhibitedExpense(policyID: string, prohibitedExpense: keyof P
         prohibitedExpenses: JSON.stringify(prohibitedExpensesWithoutPendingFields),
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_PROHIBITED_EXPENSES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_PROHIBITED_EXPENSES, parameters, onyxData);
 }
 
 /**
@@ -4965,7 +4965,7 @@ function setPolicyMaxExpenseAge(policyID: string, maxExpenseAge: string) {
         maxExpenseAge: parsedMaxExpenseAge,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_EXPENSE_MAX_AGE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_EXPENSE_MAX_AGE, parameters, onyxData);
 }
 
 /**
@@ -5030,7 +5030,7 @@ function updateCustomRules(policyID: string, customRules: string) {
         description: parsedCustomRules,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_CUSTOM_RULES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_CUSTOM_RULES, parameters, onyxData);
 }
 
 /**
@@ -5098,7 +5098,7 @@ function setPolicyBillableMode(policyID: string, defaultBillable: boolean) {
         }),
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_BILLABLE_MODE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_BILLABLE_MODE, parameters, onyxData);
 }
 
 function getCashExpenseReimbursableMode(policyID: string): PolicyCashExpenseMode | undefined {
@@ -5191,7 +5191,7 @@ function setPolicyReimbursableMode(policyID: string, reimbursableMode: PolicyCas
         }),
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_REIMBURSABLE_MODE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_REIMBURSABLE_MODE, parameters, onyxData);
 }
 
 /**
@@ -5246,7 +5246,7 @@ function disableWorkspaceBillableExpenses(policyID: string) {
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.DISABLE_POLICY_BILLABLE_MODE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.DISABLE_POLICY_BILLABLE_MODE, parameters, onyxData);
 }
 
 function getWorkspaceEReceiptsEnabledOnyxData(policyID: string, enabled: boolean): OnyxData {
@@ -5302,7 +5302,7 @@ function setWorkspaceEReceiptsEnabled(policyID: string, enabled: boolean) {
         enabled,
     };
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_ERECEIPTS_ENABLED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_ERECEIPTS_ENABLED, parameters, onyxData);
 }
 
 function setPolicyAttendeeTrackingEnabled(policyID: string, isAttendeeTrackingEnabled: boolean) {
@@ -5355,7 +5355,7 @@ function setPolicyAttendeeTrackingEnabled(policyID: string, isAttendeeTrackingEn
         enabled: isAttendeeTrackingEnabled,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_ATTENDEE_TRACKING_ENABLED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_ATTENDEE_TRACKING_ENABLED, parameters, onyxData);
 }
 
 function getAdminPolicies(): Policy[] {
@@ -5438,7 +5438,7 @@ function setPolicyDefaultReportTitle(policyID: string, customName: string) {
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_DEFAULT_REPORT_TITLE, parameters, {
+    void API.write(WRITE_COMMANDS.SET_POLICY_DEFAULT_REPORT_TITLE, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -5506,7 +5506,7 @@ function setPolicyPreventMemberCreatedTitle(policyID: string, enforced: boolean)
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_PREVENT_MEMBER_CREATED_TITLE, parameters, {
+    void API.write(WRITE_COMMANDS.SET_POLICY_PREVENT_MEMBER_CREATED_TITLE, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -5574,7 +5574,7 @@ function setPolicyPreventSelfApproval(policyID: string, preventSelfApproval: boo
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_PREVENT_SELF_APPROVAL, parameters, {
+    void API.write(WRITE_COMMANDS.SET_POLICY_PREVENT_SELF_APPROVAL, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -5649,7 +5649,7 @@ function setPolicyAutomaticApprovalLimit(policyID: string, limit: string) {
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_AUTOMATIC_APPROVAL_LIMIT, parameters, {
+    void API.write(WRITE_COMMANDS.SET_POLICY_AUTOMATIC_APPROVAL_LIMIT, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -5726,7 +5726,7 @@ function setPolicyAutomaticApprovalRate(policyID: string, auditRate: string) {
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_AUTOMATIC_APPROVAL_RATE, parameters, {
+    void API.write(WRITE_COMMANDS.SET_POLICY_AUTOMATIC_APPROVAL_RATE, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -5804,7 +5804,7 @@ function enableAutoApprovalOptions(policyID: string, enabled: boolean) {
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.ENABLE_POLICY_AUTO_APPROVAL_OPTIONS, parameters, {
+    void API.write(WRITE_COMMANDS.ENABLE_POLICY_AUTO_APPROVAL_OPTIONS, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -5876,7 +5876,7 @@ function setPolicyAutoReimbursementLimit(policyID: string, limit: string) {
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_AUTO_REIMBURSEMENT_LIMIT, parameters, {
+    void API.write(WRITE_COMMANDS.SET_POLICY_AUTO_REIMBURSEMENT_LIMIT, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -5952,7 +5952,7 @@ function enablePolicyAutoReimbursementLimit(policyID: string, enabled: boolean) 
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.ENABLE_POLICY_AUTO_REIMBURSEMENT_LIMIT, parameters, {
+    void API.write(WRITE_COMMANDS.ENABLE_POLICY_AUTO_REIMBURSEMENT_LIMIT, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -6027,7 +6027,7 @@ function updateInvoiceCompanyName(policyID: string, companyName: string) {
         companyName,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_INVOICE_COMPANY_NAME, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_INVOICE_COMPANY_NAME, parameters, {optimisticData, successData, failureData});
 }
 
 function updateInvoiceCompanyWebsite(policyID: string, companyWebsite: string) {
@@ -6091,7 +6091,7 @@ function updateInvoiceCompanyWebsite(policyID: string, companyWebsite: string) {
         companyWebsite,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_INVOICE_COMPANY_WEBSITE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_INVOICE_COMPANY_WEBSITE, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -6132,14 +6132,14 @@ function getAccessiblePolicies(validateCode?: string) {
 
     const command = validateCode ? WRITE_COMMANDS.VALIDATE_USER_AND_GET_ACCESSIBLE_POLICIES : WRITE_COMMANDS.GET_ACCESSIBLE_POLICIES;
 
-    API.write(command, validateCode ? {validateCode} : null, {optimisticData, successData, failureData});
+    void API.write(command, validateCode ? {validateCode} : null, {optimisticData, successData, failureData});
 }
 
 /**
  * Clear the errors from the get accessible policies request
  */
 function clearGetAccessiblePoliciesErrors() {
-    Onyx.merge(ONYXKEYS.VALIDATE_USER_AND_GET_ACCESSIBLE_POLICIES, {errors: null});
+    void Onyx.merge(ONYXKEYS.VALIDATE_USER_AND_GET_ACCESSIBLE_POLICIES, {errors: null});
 }
 
 /**
@@ -6169,7 +6169,7 @@ function calculateBillNewDot() {
     ];
 
     // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.CALCULATE_BILL_NEW_DOT, null, {
+    void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.CALCULATE_BILL_NEW_DOT, null, {
         optimisticData,
         successData,
         failureData,
@@ -6209,19 +6209,19 @@ function payAndDowngrade() {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.PAY_AND_DOWNGRADE, null, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.PAY_AND_DOWNGRADE, null, {optimisticData, successData, failureData});
 }
 
 function clearBillingReceiptDetailsErrors() {
-    Onyx.merge(ONYXKEYS.BILLING_RECEIPT_DETAILS, {errors: null});
+    void Onyx.merge(ONYXKEYS.BILLING_RECEIPT_DETAILS, {errors: null});
 }
 
 function setIsForcedToChangeCurrency(value: boolean) {
-    Onyx.set(ONYXKEYS.IS_FORCED_TO_CHANGE_CURRENCY, value);
+    void Onyx.set(ONYXKEYS.IS_FORCED_TO_CHANGE_CURRENCY, value);
 }
 
 function setIsComingFromGlobalReimbursementsFlow(value: boolean) {
-    Onyx.set(ONYXKEYS.IS_COMING_FROM_GLOBAL_REIMBURSEMENTS_FLOW, value);
+    void Onyx.set(ONYXKEYS.IS_COMING_FROM_GLOBAL_REIMBURSEMENTS_FLOW, value);
 }
 
 function updateFeature(
@@ -6232,7 +6232,7 @@ function updateFeature(
     policyID: string,
 ) {
     if (request.endpoint === WRITE_COMMANDS.TOGGLE_POLICY_PER_DIEM) {
-        API.write(WRITE_COMMANDS.TOGGLE_POLICY_PER_DIEM, {
+        void API.write(WRITE_COMMANDS.TOGGLE_POLICY_PER_DIEM, {
             policyID,
             enabled: request.parameters.enabled,
             customUnitID: generateCustomUnitID(),
@@ -6240,7 +6240,7 @@ function updateFeature(
         return;
     }
     // eslint-disable-next-line rulesdir/no-multiple-api-calls
-    API.writeWithNoDuplicatesEnableFeatureConflicts(request.endpoint, request.parameters);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(request.endpoint, request.parameters);
 }
 
 function updateInterestedFeatures(features: Feature[], policyID: string, type: string | undefined) {
@@ -6279,7 +6279,7 @@ function updateInterestedFeatures(features: Feature[], policyID: string, type: s
 
     const isCorporate = type === CONST.POLICY.TYPE.CORPORATE;
     if (shouldUpgradeToCorporate && !isCorporate) {
-        API.write(WRITE_COMMANDS.UPGRADE_TO_CORPORATE, {policyID});
+        void API.write(WRITE_COMMANDS.UPGRADE_TO_CORPORATE, {policyID});
     }
 
     requests.forEach((request) => {
@@ -6291,7 +6291,7 @@ function clearPolicyTitleFieldError(policyID: string) {
     if (!policyID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         errorFields: {
             fieldList: {
                 [CONST.POLICY.FIELDS.FIELD_LIST_TITLE]: null,

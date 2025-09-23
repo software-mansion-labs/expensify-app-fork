@@ -233,7 +233,7 @@ function IOURequestStepScan({
                     .catch(() => setCameraPermissionStatus(RESULTS.UNAVAILABLE));
             };
 
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 // Check initial camera permission status
                 refreshCameraPermissionStatus();
             });
@@ -559,7 +559,7 @@ function IOURequestStepScan({
     }, [initialTransactionID, isEditing, navigateToConfirmationStep]);
 
     const dismissMultiScanEducationalPopup = () => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             dismissProductTraining(CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.MULTI_SCAN_EDUCATIONAL_MODAL);
             setShouldShowMultiScanEducationalPopup(false);
         });

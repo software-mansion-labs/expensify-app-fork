@@ -18,7 +18,7 @@ function hide(): Promise<void> {
             splash.style.opacity = '0';
         }
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             Timing.end(CONST.TIMING.SPLASH_SCREEN);
         });
 

@@ -53,7 +53,7 @@ function WorkspaceWorkflowsApprovalsEditPage({policy, isLoadingReportData = true
         const membersToRemove = initialApprovalWorkflow.members.filter((initialMember) => !approvalWorkflow.members.some((member) => member.email === initialMember.email));
         const approversToRemove = initialApprovalWorkflow.approvers.filter((initialApprover) => !approvalWorkflow.approvers.some((approver) => approver.email === initialApprover.email));
         Navigation.dismissModal();
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             updateApprovalWorkflow(route.params.policyID, approvalWorkflow, membersToRemove, approversToRemove);
         });
     }, [approvalWorkflow, initialApprovalWorkflow, route.params.policyID]);
@@ -65,7 +65,7 @@ function WorkspaceWorkflowsApprovalsEditPage({policy, isLoadingReportData = true
 
         setIsDeleteModalVisible(false);
         Navigation.dismissModal();
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             // Remove the approval workflow using the initial data as it could be already edited
             removeApprovalWorkflow(route.params.policyID, initialApprovalWorkflow);
         });

@@ -63,12 +63,12 @@ describe('SidebarLinks', () => {
         wrapOnyxWithWaitForBatchedUpdates(Onyx);
 
         // Initialize the network key for OfflineWithFeedback
-        Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
         TestHelper.signInWithTestUser(1, 'email1@test.com', undefined, undefined, 'One').then(waitForBatchedUpdates);
     });
 
     afterEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     test('[SidebarLinks] should render Sidebar with 500 reports stored', async () => {
@@ -81,7 +81,7 @@ describe('SidebarLinks', () => {
 
         await waitForBatchedUpdates();
 
-        Onyx.multiSet({
+        void Onyx.multiSet({
             [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
             [ONYXKEYS.BETAS]: [CONST.BETAS.DEFAULT_ROOMS],
             [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.GSD,

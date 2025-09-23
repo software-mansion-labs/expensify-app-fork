@@ -189,7 +189,7 @@ function updateQuickbooksOnlineAutoSync<TSettingValue extends Connections['quick
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.AUTO_SYNC),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_AUTO_SYNC, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_AUTO_SYNC, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineEnableNewCategories<TSettingValue extends Connections['quickbooksOnline']['config']['enableNewCategories']>(policyID: string, settingValue: TSettingValue) {
@@ -200,7 +200,7 @@ function updateQuickbooksOnlineEnableNewCategories<TSettingValue extends Connect
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.ENABLE_NEW_CATEGORIES),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_ENABLE_NEW_CATEGORIES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_ENABLE_NEW_CATEGORIES, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineAutoCreateVendor<TConfigUpdate extends Partial<Connections['quickbooksOnline']['config']>>(
@@ -220,7 +220,7 @@ function updateQuickbooksOnlineAutoCreateVendor<TConfigUpdate extends Partial<Co
         idempotencyKey: CONST.QUICKBOOKS_CONFIG.AUTO_CREATE_VENDOR,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_AUTO_CREATE_VENDOR, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_AUTO_CREATE_VENDOR, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineSyncPeople<TSettingValue extends Connections['quickbooksOnline']['config']['syncPeople']>(policyID: string | undefined, settingValue: TSettingValue) {
@@ -234,7 +234,7 @@ function updateQuickbooksOnlineSyncPeople<TSettingValue extends Connections['qui
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.SYNC_PEOPLE),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_PEOPLE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_PEOPLE, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineReimbursableExpensesAccount<TSettingValue extends Connections['quickbooksOnline']['config']['reimbursableExpensesAccount']>(
@@ -249,7 +249,7 @@ function updateQuickbooksOnlineReimbursableExpensesAccount<TSettingValue extends
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.REIMBURSABLE_EXPENSES_ACCOUNT),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineSyncLocations<TSettingValue extends Connections['quickbooksOnline']['config']['syncLocations']>(
@@ -267,7 +267,7 @@ function updateQuickbooksOnlineSyncLocations<TSettingValue extends Connections['
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.SYNC_LOCATIONS),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_LOCATIONS, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_LOCATIONS, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineSyncCustomers<TSettingValue extends Connections['quickbooksOnline']['config']['syncCustomers']>(
@@ -285,7 +285,7 @@ function updateQuickbooksOnlineSyncCustomers<TSettingValue extends Connections['
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.SYNC_CUSTOMERS),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_CUSTOMERS, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_CUSTOMERS, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineSyncClasses<TSettingValue extends Connections['quickbooksOnline']['config']['syncClasses']>(
@@ -302,7 +302,7 @@ function updateQuickbooksOnlineSyncClasses<TSettingValue extends Connections['qu
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.SYNC_CLASSES),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_CLASSES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_CLASSES, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineNonReimbursableBillDefaultVendor<TSettingValue extends Connections['quickbooksOnline']['config']['nonReimbursableBillDefaultVendor']>(
@@ -320,7 +320,7 @@ function updateQuickbooksOnlineNonReimbursableBillDefaultVendor<TSettingValue ex
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.NON_REIMBURSABLE_BILL_DEFAULT_VENDOR),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_NON_REIMBURSABLE_BILL_DEFAULT_VENDOR, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_NON_REIMBURSABLE_BILL_DEFAULT_VENDOR, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineReceivableAccount<TSettingValue extends QBOConnectionConfig['receivableAccount']>(
@@ -338,7 +338,7 @@ function updateQuickbooksOnlineReceivableAccount<TSettingValue extends QBOConnec
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.RECEIVABLE_ACCOUNT),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_RECEIVABLE_ACCOUNT, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_RECEIVABLE_ACCOUNT, parameters, {optimisticData, failureData, successData});
 }
 
 function updateQuickbooksOnlineExportDate<TSettingValue extends QBOConnectionConfig['exportDate']>(policyID: string, settingValue: TSettingValue, oldSettingValue?: TSettingValue) {
@@ -349,7 +349,7 @@ function updateQuickbooksOnlineExportDate<TSettingValue extends QBOConnectionCon
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.EXPORT_DATE),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_EXPORT_DATE, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_EXPORT_DATE, parameters, {optimisticData, failureData, successData});
 }
 
 function updateQuickbooksOnlineNonReimbursableExpensesAccount<TSettingValue extends QBOConnectionConfig['nonReimbursableExpensesAccount']>(
@@ -369,7 +369,7 @@ function updateQuickbooksOnlineNonReimbursableExpensesAccount<TSettingValue exte
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.NON_REIMBURSABLE_EXPENSES_ACCOUNT),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_NON_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_NON_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, {optimisticData, failureData, successData});
 }
 
 function updateQuickbooksOnlineCollectionAccountID<TSettingValue extends QBOConnectionConfig['collectionAccountID']>(
@@ -388,7 +388,7 @@ function updateQuickbooksOnlineCollectionAccountID<TSettingValue extends QBOConn
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.COLLECTION_ACCOUNT_ID),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_COLLECTION_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_COLLECTION_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
 }
 
 function updateQuickbooksOnlineAccountingMethod(
@@ -406,7 +406,7 @@ function updateQuickbooksOnlineAccountingMethod(
         accountingMethod,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_ACCOUNTING_METHOD, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_ACCOUNTING_METHOD, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineSyncTax<TSettingValue extends Connections['quickbooksOnline']['config']['syncTax']>(policyID: string, settingValue: TSettingValue) {
@@ -417,7 +417,7 @@ function updateQuickbooksOnlineSyncTax<TSettingValue extends Connections['quickb
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.SYNC_TAX),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_TAX, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_SYNC_TAX, parameters, onyxData);
 }
 
 function updateQuickbooksOnlineReimbursementAccountID<TSettingValue extends Connections['quickbooksOnline']['config']['reimbursementAccountID']>(
@@ -438,7 +438,7 @@ function updateQuickbooksOnlineReimbursementAccountID<TSettingValue extends Conn
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.REIMBURSEMENT_ACCOUNT_ID),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_REIMBURSEMENT_ACCOUNT_ID, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_REIMBURSEMENT_ACCOUNT_ID, parameters, onyxData);
 }
 
 function updateQuickbooksOnlinePreferredExporter<TSettingValue extends Connections['quickbooksOnline']['config']['export']>(
@@ -456,7 +456,7 @@ function updateQuickbooksOnlinePreferredExporter<TSettingValue extends Connectio
         settingValue: settingValue.exporter,
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.EXPORT),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_EXPORT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_ONLINE_EXPORT, parameters, onyxData);
 }
 
 export {

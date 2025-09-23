@@ -66,7 +66,7 @@ function ReceiptView({route}: ReceiptViewProps) {
             return;
         }
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             if (currentReceipt.transactionID === CONST.IOU.OPTIMISTIC_TRANSACTION_ID) {
                 if (receipts.length === 1) {
                     removeTransactionReceipt(currentReceipt.transactionID);

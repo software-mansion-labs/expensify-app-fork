@@ -142,7 +142,7 @@ function WorkspaceWorkflowsPage({policy, route}: WorkspaceWorkflowsPageProps) {
     const {isAccountLocked, showLockedAccountModal} = useContext(LockedAccountContext);
 
     useEffect(() => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             fetchData();
         });
         // eslint-disable-next-line react-compiler/react-compiler

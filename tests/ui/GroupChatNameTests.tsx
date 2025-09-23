@@ -89,7 +89,7 @@ function signInAndGetApp(reportName = '', participantAccountIDs?: number[]): Pro
         .then(async () => {
             // Simulate setting an unread report and personal details
             await Promise.all([
-                Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${REPORT_ID}`, {
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${REPORT_ID}`, {
                     reportID: REPORT_ID,
                     reportName,
                     lastMessageText: 'Test',
@@ -98,7 +98,7 @@ function signInAndGetApp(reportName = '', participantAccountIDs?: number[]): Pro
                     type: CONST.REPORT.TYPE.CHAT,
                     chatType: CONST.REPORT.CHAT_TYPE.GROUP,
                 }),
-                Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
+                void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
                     [USER_A_ACCOUNT_ID]: TestHelper.buildPersonalDetails(USER_A_EMAIL, USER_A_ACCOUNT_ID, 'A'),
                     [USER_B_ACCOUNT_ID]: TestHelper.buildPersonalDetails(USER_B_EMAIL, USER_B_ACCOUNT_ID, 'B'),
                     [USER_C_ACCOUNT_ID]: TestHelper.buildPersonalDetails(USER_C_EMAIL, USER_C_ACCOUNT_ID, 'C'),

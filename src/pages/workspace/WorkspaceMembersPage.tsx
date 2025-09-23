@@ -293,7 +293,7 @@ function WorkspaceMembersPage({personalDetails, route, policy}: WorkspaceMembers
         }
 
         setRemoveMembersConfirmModalVisible(false);
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedEmployees([]);
             removeMembers(accountIDsToRemove, route.params.policyID);
         });
@@ -775,7 +775,7 @@ function WorkspaceMembersPage({personalDetails, route, policy}: WorkspaceMembers
                         confirmText={translate('common.remove')}
                         cancelText={translate('common.cancel')}
                         onModalHide={() => {
-                            InteractionManager.runAfterInteractions(() => {
+                            void InteractionManager.runAfterInteractions(() => {
                                 if (!textInputRef.current) {
                                     return;
                                 }

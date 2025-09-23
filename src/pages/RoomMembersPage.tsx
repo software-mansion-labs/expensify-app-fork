@@ -135,7 +135,7 @@ function RoomMembersPage({report, policy}: RoomMembersPageProps) {
         }
         setSearchValue('');
         setRemoveMembersConfirmModalVisible(false);
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedMembers([]);
             clearUserSearchPhrase();
         });

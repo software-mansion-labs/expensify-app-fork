@@ -126,8 +126,8 @@ describe('SidebarLinksData', () => {
     beforeEach(() => {
         wrapOnyxWithWaitForBatchedUpdates(Onyx);
         // Initialize the network key for OfflineWithFeedback
-        Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
-        Onyx.set(ONYXKEYS.NVP_PREFERRED_LOCALE, CONST.LOCALES.EN);
+        void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.set(ONYXKEYS.NVP_PREFERRED_LOCALE, CONST.LOCALES.EN);
         signUpWithTestUser();
     });
 
@@ -139,7 +139,7 @@ describe('SidebarLinksData', () => {
     describe('Report that should be included in the LHN', () => {
         it('should display the current active report', async () => {
             // Given the SidebarLinks are rendered without a specified report ID.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report = createReport();
 
             // When the Onyx state is initialized with a report.
@@ -163,7 +163,7 @@ describe('SidebarLinksData', () => {
 
         it('should display draft report', async () => {
             // Given SidebarLinks are rendered initially.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const draftReport = {
                 ...createReport(false, [1, 2], 0),
                 writeCapability: CONST.REPORT.WRITE_CAPABILITIES.ALL,
@@ -188,7 +188,7 @@ describe('SidebarLinksData', () => {
 
         it('should display pinned report', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report = createReport(false);
 
             // When the report is initialized in Onyx.
@@ -212,7 +212,7 @@ describe('SidebarLinksData', () => {
 
         it('should display the report with violations', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
 
             // When the report is initialized in Onyx.
             const report: Report = {
@@ -255,7 +255,7 @@ describe('SidebarLinksData', () => {
 
         it('should display the report awaiting user action', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report: Report = {
                 ...createReport(false),
                 hasOutstandingChildRequest: true,
@@ -277,7 +277,7 @@ describe('SidebarLinksData', () => {
 
         it('should display the archived report in the default mode', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const archivedReport: Report = {
                 ...createReport(false),
             };
@@ -302,7 +302,7 @@ describe('SidebarLinksData', () => {
 
         it('should display the selfDM report by default', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report = createReport(true, undefined, undefined, undefined, CONST.REPORT.CHAT_TYPE.SELF_DM, undefined);
 
             // When the selfDM is initialized in Onyx
@@ -318,7 +318,7 @@ describe('SidebarLinksData', () => {
 
         it('should display the unread report in the focus mode with the bold text', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report: Report = {
                 ...createReport(undefined, undefined, undefined, undefined, undefined, true),
                 lastMessageText: 'fake last message',
@@ -356,7 +356,7 @@ describe('SidebarLinksData', () => {
     describe('Report that should NOT be included in the LHN', () => {
         it('should not display report with no participants', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report = LHNTestUtils.getFakeReport([]);
 
             // When a report with no participants is initialized in Onyx.
@@ -370,7 +370,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display empty chat', async () => {
             // Given the SidebarLinks are rendered.
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report = LHNTestUtils.getFakeReport([1, 2], 0);
 
             // When a report with no messages is initialized in Onyx
@@ -384,7 +384,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display the report marked as hidden', async () => {
             // Given the SidebarLinks are rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report: Report = {
                 ...createReport(),
                 participants: {
@@ -405,7 +405,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display the report has empty notification preference', async () => {
             // Given the SidebarLinks are rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report = createReport(false, [2]);
 
             // When a report with empty notification preference is initialized in Onyx
@@ -419,7 +419,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display the report the user cannot access due to policy restrictions', async () => {
             // Given the SidebarLinks are rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report: Report = {
                 ...createReport(),
                 chatType: CONST.REPORT.CHAT_TYPE.DOMAIN_ALL,
@@ -440,7 +440,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display the single transaction thread', async () => {
             // Given the SidebarLinks are rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const expenseReport = buildOptimisticExpenseReport(chatReportR14932.reportID, '123', 100, 122, 'USD');
             const expenseTransaction = buildOptimisticTransaction({
                 transactionParams: {
@@ -478,7 +478,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display the report with parent message is pending removal', async () => {
             // Given the SidebarLinks are rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const parentReport = createReport();
             const report = createReport();
             const parentReportAction: ReportAction = {
@@ -516,7 +516,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display the read report in the focus mode', async () => {
             // Given the SidebarLinks are rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
             const report: Report = {
                 ...createReport(),
                 lastMessageText: 'fake last message',
@@ -547,7 +547,7 @@ describe('SidebarLinksData', () => {
 
         it('should not display an empty submitted report having only a CREATED action', async () => {
             // Given the SidebarLinks are rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
 
             // When creating a report with total = 0, stateNum = SUBMITTED, statusNum = SUBMITTED
             const report = {

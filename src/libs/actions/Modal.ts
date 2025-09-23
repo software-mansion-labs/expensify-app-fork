@@ -71,14 +71,14 @@ function onModalDidClose() {
  * Allows other parts of the app to know when a modal has been opened or closed
  */
 function setModalVisibility(isVisible: boolean, type: ModalType | null = null) {
-    Onyx.merge(ONYXKEYS.MODAL, {isVisible, type});
+    void Onyx.merge(ONYXKEYS.MODAL, {isVisible, type});
 }
 
 /**
  * Allows other parts of the app to set whether modals should be dismissible using the Escape key
  */
 function setDisableDismissOnEscape(disableDismissOnEscape: boolean) {
-    Onyx.merge(ONYXKEYS.MODAL, {disableDismissOnEscape});
+    void Onyx.merge(ONYXKEYS.MODAL, {disableDismissOnEscape});
 }
 
 /**
@@ -90,7 +90,7 @@ function willAlertModalBecomeVisible(isVisible: boolean, isPopover = false) {
     // We cancel the pending and active tooltips here instead of in setModalVisibility because
     // we want to do it when a modal is going to show. If we do it when the modal is fully shown,
     // the tooltip in that modal won't show.
-    Onyx.merge(ONYXKEYS.MODAL, {willAlertModalBecomeVisible: isVisible, isPopover});
+    void Onyx.merge(ONYXKEYS.MODAL, {willAlertModalBecomeVisible: isVisible, isPopover});
 }
 
 function areAllModalsHidden() {

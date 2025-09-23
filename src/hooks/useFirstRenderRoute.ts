@@ -12,7 +12,7 @@ function useFirstRenderRoute(focusExceptionRoutes?: ((initialRoute: string | nul
     const initialRoute = useRef<string | null>(null);
 
     useEffect(() => {
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             if (initialRoute.current) {
                 return;
             }

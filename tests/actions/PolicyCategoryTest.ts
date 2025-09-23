@@ -29,8 +29,8 @@ describe('actions/PolicyCategory', () => {
             const fakePolicy = createRandomPolicy(0);
             fakePolicy.requiresCategory = false;
 
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
             Category.setWorkspaceRequiresCategory(fakePolicy.id, true);
             await waitForBatchedUpdates();
             await new Promise<void>((resolve) => {
@@ -68,9 +68,9 @@ describe('actions/PolicyCategory', () => {
             const fakePolicy = createRandomPolicy(0);
             const fakeCategories = createRandomPolicyCategories(3);
             const newCategoryName = 'New category';
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
             Category.createPolicyCategory(fakePolicy.id, newCategoryName);
             await waitForBatchedUpdates();
             await new Promise<void>((resolve) => {
@@ -113,9 +113,9 @@ describe('actions/PolicyCategory', () => {
             const fakeCategories = createRandomPolicyCategories(3);
             const oldCategoryName = Object.keys(fakeCategories).at(0);
             const newCategoryName = 'Updated category';
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
             Category.renamePolicyCategory(fakePolicy.id, {
                 oldName: oldCategoryName ?? '',
                 newName: newCategoryName,
@@ -166,9 +166,9 @@ describe('actions/PolicyCategory', () => {
                     enabled: true,
                 },
             };
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
             Category.setWorkspaceCategoryEnabled(fakePolicy.id, categoriesToUpdate);
             await waitForBatchedUpdates();
             await new Promise<void>((resolve) => {
@@ -211,9 +211,9 @@ describe('actions/PolicyCategory', () => {
             const fakeCategories = createRandomPolicyCategories(3);
             const categoryNameToDelete = Object.keys(fakeCategories).at(0) ?? '';
             const categoriesToDelete = [categoryNameToDelete];
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${fakePolicy.id}`, fakeCategories);
             Category.deleteWorkspaceCategories(fakePolicy.id, categoriesToDelete);
             await waitForBatchedUpdates();
             await new Promise<void>((resolve) => {

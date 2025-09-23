@@ -463,7 +463,7 @@ function MoneyRequestParticipantsSelector(
 
     const initiateContactImportAndSetState = useCallback(() => {
         setContactPermissionState(RESULTS.GRANTED);
-        InteractionManager.runAfterInteractions(importAndSaveContacts);
+        void InteractionManager.runAfterInteractions(importAndSaveContacts);
     }, [importAndSaveContacts, setContactPermissionState]);
 
     const footerContent = useMemo(() => {

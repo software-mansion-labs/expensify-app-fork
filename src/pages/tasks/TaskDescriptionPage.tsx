@@ -65,7 +65,7 @@ function TaskDescriptionPage({report, currentUserPersonalDetails}: TaskDescripti
     );
 
     if (!isTaskReport(report)) {
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             Navigation.dismissModalWithReport({reportID: report?.reportID});
         });
     }

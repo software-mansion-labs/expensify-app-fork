@@ -22,7 +22,7 @@ describe('WorkspacesSettingsUtils', () => {
 
     beforeEach(() => {
         global.fetch = TestHelper.getGlobalFetchMock();
-        Onyx.clear([ONYXKEYS.NVP_PREFERRED_LOCALE]).then(waitForBatchedUpdates);
+        void Onyx.clear([ONYXKEYS.NVP_PREFERRED_LOCALE]).then(waitForBatchedUpdates);
         IntlStore.load(CONST.LOCALES.EN);
         return waitForBatchedUpdates();
     });

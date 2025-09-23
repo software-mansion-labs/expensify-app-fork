@@ -301,7 +301,7 @@ function ReportDetailsPage({policy, report, route, reportMetadata}: ReportDetail
 
     const leaveChat = useCallback(() => {
         Navigation.dismissModal();
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             if (isRootGroupChat) {
                 leaveGroupChat(report.reportID);
                 return;

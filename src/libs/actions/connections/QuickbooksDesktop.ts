@@ -348,7 +348,7 @@ function updateQuickbooksDesktopExpensesExportDestination<TConfigUpdate extends 
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.REIMBURSABLE),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
 }
 
 function updateQuickbooksCompanyCardExpenseAccount<
@@ -364,7 +364,7 @@ function updateQuickbooksCompanyCardExpenseAccount<
         idempotencyKey: String(CONST.QUICKBOOKS_CONFIG.NON_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_NON_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_NON_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopShouldAutoCreateVendor<TSettingValue extends Connections['quickbooksDesktop']['config']['shouldAutoCreateVendor']>(
@@ -382,7 +382,7 @@ function updateQuickbooksDesktopShouldAutoCreateVendor<TSettingValue extends Con
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.SHOULD_AUTO_CREATE_VENDOR),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_AUTO_CREATE_VENDOR, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_AUTO_CREATE_VENDOR, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopMarkChecksToBePrinted<TSettingValue extends Connections['quickbooksDesktop']['config']['markChecksToBePrinted']>(
@@ -396,7 +396,7 @@ function updateQuickbooksDesktopMarkChecksToBePrinted<TSettingValue extends Conn
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.MARK_CHECKS_TO_BE_PRINTED),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_MARK_CHECKS_TO_BE_PRINTED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_MARK_CHECKS_TO_BE_PRINTED, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopReimbursableExpensesAccount<TSettingValue extends Connections['quickbooksDesktop']['config']['export']['reimbursableAccount']>(
@@ -411,7 +411,7 @@ function updateQuickbooksDesktopReimbursableExpensesAccount<TSettingValue extend
         settingValue,
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.REIMBURSABLE_ACCOUNT),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopEnableNewCategories<TSettingValue extends Connections['quickbooksDesktop']['config']['enableNewCategories']>(policyID: string, settingValue: TSettingValue) {
@@ -422,7 +422,7 @@ function updateQuickbooksDesktopEnableNewCategories<TSettingValue extends Connec
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.ENABLE_NEW_CATEGORIES),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_ENABLE_NEW_CATEGORIES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_ENABLE_NEW_CATEGORIES, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopSyncClasses<TSettingValue extends Connections['quickbooksDesktop']['config']['mappings']['classes']>(
@@ -439,7 +439,7 @@ function updateQuickbooksDesktopSyncClasses<TSettingValue extends Connections['q
         settingValue,
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.MAPPINGS.CLASSES),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_SYNC_CLASSES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_SYNC_CLASSES, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopSyncCustomers<TSettingValue extends Connections['quickbooksDesktop']['config']['mappings']['customers']>(
@@ -456,7 +456,7 @@ function updateQuickbooksDesktopSyncCustomers<TSettingValue extends Connections[
         settingValue,
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.MAPPINGS.CUSTOMERS),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_SYNC_CUSTOMERS, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_SYNC_CUSTOMERS, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopSyncItems<TSettingValue extends Connections['quickbooksDesktop']['config']['importItems']>(
@@ -470,7 +470,7 @@ function updateQuickbooksDesktopSyncItems<TSettingValue extends Connections['qui
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.IMPORT_ITEMS),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_SYNC_ITEMS, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_SYNC_ITEMS, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopPreferredExporter<TSettingValue extends Connections['quickbooksDesktop']['config']['export']['exporter']>(
@@ -485,7 +485,7 @@ function updateQuickbooksDesktopPreferredExporter<TSettingValue extends Connecti
         settingValue,
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.EXPORTER),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_EXPORT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_EXPORT, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopNonReimbursableExpensesAccount<TSettingValue extends Connections['quickbooksDesktop']['config']['export']['nonReimbursableAccount']>(
@@ -500,7 +500,7 @@ function updateQuickbooksDesktopNonReimbursableExpensesAccount<TSettingValue ext
         settingValue,
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.NON_REIMBURSABLE_ACCOUNT),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_NON_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_NON_REIMBURSABLE_EXPENSES_ACCOUNT, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopNonReimbursableBillDefaultVendor<TSettingValue extends Connections['quickbooksDesktop']['config']['export']['nonReimbursableBillDefaultVendor']>(
@@ -518,7 +518,7 @@ function updateQuickbooksDesktopNonReimbursableBillDefaultVendor<TSettingValue e
         settingValue,
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.NON_REIMBURSABLE_BILL_DEFAULT_VENDOR),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_NON_REIMBURSABLE_BILL_DEFAULT_VENDOR, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_NON_REIMBURSABLE_BILL_DEFAULT_VENDOR, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopExportDate<TSettingValue extends Connections['quickbooksDesktop']['config']['export']['exportDate']>(
@@ -533,7 +533,7 @@ function updateQuickbooksDesktopExportDate<TSettingValue extends Connections['qu
         settingValue,
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.EXPORT_DATE),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_EXPORT_DATE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_EXPORT_DATE, parameters, onyxData);
 }
 
 function updateQuickbooksDesktopAutoSync<TSettingValue extends Connections['quickbooksDesktop']['config']['autoSync']['enabled']>(policyID: string, settingValue: TSettingValue) {
@@ -544,7 +544,7 @@ function updateQuickbooksDesktopAutoSync<TSettingValue extends Connections['quic
         settingValue: JSON.stringify(settingValue),
         idempotencyKey: String(CONST.QUICKBOOKS_DESKTOP_CONFIG.AUTO_SYNC),
     };
-    API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_AUTO_SYNC, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_QUICKBOOKS_DESKTOP_AUTO_SYNC, parameters, onyxData);
 }
 
 export {

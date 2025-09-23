@@ -8,16 +8,16 @@ import type {Route} from '@src/ROUTES';
  * Clear 2FA data if the flow is interrupted without finishing
  */
 function clearTwoFactorAuthData() {
-    Onyx.merge(ONYXKEYS.ACCOUNT, {recoveryCodes: null, twoFactorAuthSecretKey: null, codesAreCopied: false});
+    void Onyx.merge(ONYXKEYS.ACCOUNT, {recoveryCodes: null, twoFactorAuthSecretKey: null, codesAreCopied: false});
 }
 
 function setCodesAreCopied() {
-    Onyx.merge(ONYXKEYS.ACCOUNT, {codesAreCopied: true});
+    void Onyx.merge(ONYXKEYS.ACCOUNT, {codesAreCopied: true});
 }
 
 function quitAndNavigateBack(backTo?: Route) {
     Navigation.goBack(backTo);
-    InteractionManager.runAfterInteractions(clearTwoFactorAuthData);
+    void InteractionManager.runAfterInteractions(clearTwoFactorAuthData);
 }
 
 export {clearTwoFactorAuthData, quitAndNavigateBack, setCodesAreCopied};

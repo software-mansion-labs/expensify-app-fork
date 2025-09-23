@@ -3,7 +3,7 @@ import type ReportActionItemEventHandler from './types';
 
 const reportActionItemEventHandler: ReportActionItemEventHandler = {
     handleComposerLayoutChange: (reportScrollManager, index) => () => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             requestAnimationFrame(() => {
                 reportScrollManager.scrollToIndex(index, true);
             });

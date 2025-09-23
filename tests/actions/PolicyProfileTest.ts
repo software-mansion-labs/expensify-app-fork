@@ -31,8 +31,8 @@ describe('actions/PolicyProfile', () => {
             const oldDescription = fakePolicy.description ?? '';
             const newDescription = 'Updated description';
             const parsedDescription = ReportUtils.getParsedComment(newDescription);
-            mockFetch?.pause?.();
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void mockFetch?.pause?.();
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
             Policy.updateWorkspaceDescription(fakePolicy.id, newDescription, oldDescription);
             await waitForBatchedUpdates();
             await new Promise<void>((resolve) => {

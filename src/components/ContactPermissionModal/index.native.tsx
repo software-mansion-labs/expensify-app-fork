@@ -34,7 +34,7 @@ function ContactPermissionModal({onDeny, onGrant, onFocusTextInput}: ContactPerm
 
     const handleGrantPermission = () => {
         setIsModalVisible(false);
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             requestContactPermission().then((status) => {
                 onFocusTextInput();
                 if (status !== RESULTS.GRANTED) {
@@ -50,7 +50,7 @@ function ContactPermissionModal({onDeny, onGrant, onFocusTextInput}: ContactPerm
         onDeny(RESULTS.DENIED);
         // Sometimes, the input gains focus when the modal closes, but the keyboard doesn't appear.
         // To fix this, we need to call the focus function after the modal has finished closing.
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             onFocusTextInput();
         });
     };

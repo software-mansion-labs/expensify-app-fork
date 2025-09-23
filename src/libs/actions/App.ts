@@ -143,9 +143,9 @@ Onyx.connectWithoutView({
             return;
         }
 
-        Onyx.clear(KEYS_TO_PRESERVE).then(() => {
+        void Onyx.clear(KEYS_TO_PRESERVE).then(() => {
             // Set this to false to reset the flag for this client
-            Onyx.set(ONYXKEYS.RESET_REQUIRED, false);
+            void Onyx.set(ONYXKEYS.RESET_REQUIRED, false);
 
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             openApp();
@@ -176,7 +176,7 @@ function setLocale(locale: Locale, currentPreferredLocale: Locale | undefined) {
 
     // If user is not signed in, change just locally.
     if (!currentSessionData.accountID) {
-        Onyx.merge(ONYXKEYS.NVP_PREFERRED_LOCALE, locale);
+        void Onyx.merge(ONYXKEYS.NVP_PREFERRED_LOCALE, locale);
         return;
     }
 
@@ -193,7 +193,7 @@ function setLocale(locale: Locale, currentPreferredLocale: Locale | undefined) {
         value: locale,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_PREFERRED_LOCALE, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.UPDATE_PREFERRED_LOCALE, parameters, {optimisticData});
 }
 
 function setSidebarLoaded() {
@@ -201,12 +201,12 @@ function setSidebarLoaded() {
         return;
     }
 
-    Onyx.set(ONYXKEYS.IS_SIDEBAR_LOADED, true);
+    void Onyx.set(ONYXKEYS.IS_SIDEBAR_LOADED, true);
     Performance.markEnd(CONST.TIMING.SIDEBAR_LOADED);
 }
 
 function setAppLoading(isLoading: boolean) {
-    Onyx.set(ONYXKEYS.IS_LOADING_APP, isLoading);
+    void Onyx.set(ONYXKEYS.IS_LOADING_APP, isLoading);
 }
 
 /**
@@ -384,7 +384,7 @@ function reconnectApp(updateIDFrom: OnyxEntry<number> = 0) {
             }
 
             const isFullReconnect = !updateIDFrom;
-            API.writeWithNoDuplicatesConflictAction(WRITE_COMMANDS.RECONNECT_APP, params, getOnyxDataForOpenOrReconnect(false, isFullReconnect, isSidebarLoaded));
+            void API.writeWithNoDuplicatesConflictAction(WRITE_COMMANDS.RECONNECT_APP, params, getOnyxDataForOpenOrReconnect(false, isFullReconnect, isSidebarLoaded));
         });
     });
 }
@@ -472,7 +472,7 @@ function createWorkspaceWithPolicyDraftAndNavigateToIt(
 ) {
     const policyIDWithDefault = policyID || generatePolicyID();
     createDraftInitialWorkspace(policyOwnerEmail, policyName, policyIDWithDefault, makeMeAdmin, currency, file);
-    Navigation.isNavigationReady()
+    void Navigation.isNavigationReady()
         .then(() => {
             if (transitionFromOldDot) {
                 // We must call goBack() to remove the /transition route from history
@@ -579,7 +579,7 @@ function redirectThirdPartyDesktopSignIn() {
     const url = new URL(currentUrl);
 
     if (url.pathname === `/${ROUTES.GOOGLE_SIGN_IN}` || url.pathname === `/${ROUTES.APPLE_SIGN_IN}`) {
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             Navigation.goBack();
             Navigation.navigate(ROUTES.DESKTOP_SIGN_IN_REDIRECT);
         });
@@ -605,7 +605,7 @@ function beginDeepLinkRedirect(shouldAuthenticateWithCurrentAccount = true, isMa
     const parameters: OpenOldDotLinkParams = {shouldRetry: false};
 
     // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.OPEN_OLD_DOT_LINK, parameters, {}).then((response) => {
+    void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.OPEN_OLD_DOT_LINK, parameters, {}).then((response) => {
         if (!response) {
             Log.alert(
                 'Trying to redirect via deep link, but the response is empty. User likely not authenticated.',
@@ -629,23 +629,23 @@ function beginDeepLinkRedirectAfterTransition(shouldAuthenticateWithCurrentAccou
 function handleRestrictedEvent(eventName: string) {
     const parameters: HandleRestrictedEventParams = {eventName};
 
-    API.write(WRITE_COMMANDS.HANDLE_RESTRICTED_EVENT, parameters);
+    void API.write(WRITE_COMMANDS.HANDLE_RESTRICTED_EVENT, parameters);
 }
 
 function updateLastVisitedPath(path: string) {
-    Onyx.merge(ONYXKEYS.LAST_VISITED_PATH, path);
+    void Onyx.merge(ONYXKEYS.LAST_VISITED_PATH, path);
 }
 
 function updateLastRoute(screen: string) {
-    Onyx.set(ONYXKEYS.LAST_ROUTE, screen);
+    void Onyx.set(ONYXKEYS.LAST_ROUTE, screen);
 }
 
 function setIsUsingImportedState(usingImportedState: boolean) {
-    Onyx.set(ONYXKEYS.IS_USING_IMPORTED_STATE, usingImportedState);
+    void Onyx.set(ONYXKEYS.IS_USING_IMPORTED_STATE, usingImportedState);
 }
 
 function setPreservedUserSession(session: OnyxTypes.Session) {
-    Onyx.set(ONYXKEYS.PRESERVED_USER_SESSION, session);
+    void Onyx.set(ONYXKEYS.PRESERVED_USER_SESSION, session);
 }
 
 function clearOnyxAndResetApp(shouldNavigateToHomepage?: boolean) {
@@ -655,7 +655,7 @@ function clearOnyxAndResetApp(shouldNavigateToHomepage?: boolean) {
 
     rollbackOngoingRequest();
     Navigation.clearPreloadedRoutes();
-    Onyx.clear(KEYS_TO_PRESERVE)
+    void Onyx.clear(KEYS_TO_PRESERVE)
         .then(() => {
             // Network key is preserved, so when using imported state, we should stop forcing offline mode so that the app can re-fetch the network
             if (isStateImported) {
@@ -667,8 +667,8 @@ function clearOnyxAndResetApp(shouldNavigateToHomepage?: boolean) {
             }
 
             if (preservedUserSession) {
-                Onyx.set(ONYXKEYS.SESSION, preservedUserSession);
-                Onyx.set(ONYXKEYS.PRESERVED_USER_SESSION, null);
+                void Onyx.set(ONYXKEYS.SESSION, preservedUserSession);
+                void Onyx.set(ONYXKEYS.PRESERVED_USER_SESSION, null);
             }
         })
         .then(() => {

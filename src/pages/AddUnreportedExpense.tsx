@@ -207,7 +207,7 @@ function AddUnreportedExpense({route}: AddUnreportedExpensePageType) {
                         return;
                     }
                     Navigation.dismissModal();
-                    InteractionManager.runAfterInteractions(() => {
+                    void InteractionManager.runAfterInteractions(() => {
                         if (report && isIOUReport(report)) {
                             convertBulkTrackedExpensesToIOU([...selectedIds], report.reportID);
                         } else {

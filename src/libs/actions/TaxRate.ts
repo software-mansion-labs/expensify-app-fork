@@ -169,11 +169,11 @@ function createPolicyTax(policyID: string, taxRate: TaxRate) {
         }),
     } satisfies CreatePolicyTaxParams;
 
-    API.write(WRITE_COMMANDS.CREATE_POLICY_TAX, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.CREATE_POLICY_TAX, parameters, onyxData);
 }
 
 function clearTaxRateFieldError(policyID: string, taxID: string, field: keyof TaxRate) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         taxRates: {
             taxes: {
                 [taxID]: {
@@ -191,7 +191,7 @@ function clearTaxRateFieldError(policyID: string, taxID: string, field: keyof Ta
 
 function clearTaxRateError(policyID: string, taxID: string, pendingAction?: OnyxCommon.PendingAction) {
     if (pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
-        Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
             taxRates: {
                 taxes: {
                     [taxID]: null,
@@ -200,7 +200,7 @@ function clearTaxRateError(policyID: string, taxID: string, pendingAction?: Onyx
         });
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         taxRates: {
             taxes: {
                 [taxID]: {pendingAction: null, errors: null, errorFields: null},
@@ -278,7 +278,7 @@ function setPolicyTaxesEnabled(policy: OnyxEntry<Policy>, taxesIDsToUpdate: stri
         taxFieldsArray: JSON.stringify(taxesIDsToUpdate.map((taxID) => ({taxCode: taxID, enabled: isEnabled}))),
     } satisfies SetPolicyTaxesEnabledParams;
 
-    API.write(WRITE_COMMANDS.SET_POLICY_TAXES_ENABLED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_TAXES_ENABLED, parameters, onyxData);
 }
 
 type TaxRateDeleteMap = Record<
@@ -411,7 +411,7 @@ function deletePolicyTaxes(policy: OnyxEntry<Policy>, taxesToDelete: string[], l
         taxNames: JSON.stringify(taxesToDelete.map((taxID) => policyTaxRates[taxID].name)),
     } satisfies DeletePolicyTaxesParams;
 
-    API.write(WRITE_COMMANDS.DELETE_POLICY_TAXES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.DELETE_POLICY_TAXES, parameters, onyxData);
 }
 
 function updatePolicyTaxValue(policyID: string, taxID: string, taxValue: number, originalTaxRate: TaxRate) {
@@ -475,7 +475,7 @@ function updatePolicyTaxValue(policyID: string, taxID: string, taxValue: number,
         taxRate: stringTaxValue,
     } satisfies UpdatePolicyTaxValueParams;
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_TAX_VALUE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_TAX_VALUE, parameters, onyxData);
 }
 
 function renamePolicyTax(policyID: string, taxID: string, newName: string, originalTaxRate: TaxRate) {
@@ -537,7 +537,7 @@ function renamePolicyTax(policyID: string, taxID: string, newName: string, origi
         newName,
     } satisfies RenamePolicyTaxParams;
 
-    API.write(WRITE_COMMANDS.RENAME_POLICY_TAX, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.RENAME_POLICY_TAX, parameters, onyxData);
 }
 
 function setPolicyTaxCode(
@@ -647,7 +647,7 @@ function setPolicyTaxCode(
         taxID: originalTaxRate.name ?? '',
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_TAX_CODE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_TAX_CODE, parameters, onyxData);
 }
 
 export {

@@ -39,7 +39,7 @@ function ManageTrips() {
     const scrollViewRef = useRef<RNScrollView>(null);
 
     const scrollToBottom = () => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             scrollViewRef.current?.scrollToEnd({animated: true});
         });
     };

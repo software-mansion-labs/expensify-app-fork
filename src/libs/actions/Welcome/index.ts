@@ -89,35 +89,35 @@ function checkOnboardingDataReady() {
 }
 
 function setOnboardingPurposeSelected(value: OnboardingPurpose) {
-    Onyx.set(ONYXKEYS.ONBOARDING_PURPOSE_SELECTED, value ?? null);
+    void Onyx.set(ONYXKEYS.ONBOARDING_PURPOSE_SELECTED, value ?? null);
 }
 
 function setOnboardingCompanySize(value: OnboardingCompanySize) {
-    Onyx.set(ONYXKEYS.ONBOARDING_COMPANY_SIZE, value);
+    void Onyx.set(ONYXKEYS.ONBOARDING_COMPANY_SIZE, value);
 }
 
 function setOnboardingUserReportedIntegration(value: OnboardingAccounting | null) {
-    Onyx.set(ONYXKEYS.ONBOARDING_USER_REPORTED_INTEGRATION, value);
+    void Onyx.set(ONYXKEYS.ONBOARDING_USER_REPORTED_INTEGRATION, value);
 }
 
 function setOnboardingErrorMessage(value: string) {
-    Onyx.set(ONYXKEYS.ONBOARDING_ERROR_MESSAGE, value ?? null);
+    void Onyx.set(ONYXKEYS.ONBOARDING_ERROR_MESSAGE, value ?? null);
 }
 
 function setOnboardingAdminsChatReportID(adminsChatReportID?: string) {
-    Onyx.set(ONYXKEYS.ONBOARDING_ADMINS_CHAT_REPORT_ID, adminsChatReportID ?? null);
+    void Onyx.set(ONYXKEYS.ONBOARDING_ADMINS_CHAT_REPORT_ID, adminsChatReportID ?? null);
 }
 
 function setOnboardingPolicyID(policyID?: string) {
-    Onyx.set(ONYXKEYS.ONBOARDING_POLICY_ID, policyID ?? null);
+    void Onyx.set(ONYXKEYS.ONBOARDING_POLICY_ID, policyID ?? null);
 }
 
 function updateOnboardingLastVisitedPath(path: string) {
-    Onyx.merge(ONYXKEYS.ONBOARDING_LAST_VISITED_PATH, path);
+    void Onyx.merge(ONYXKEYS.ONBOARDING_LAST_VISITED_PATH, path);
 }
 
 function updateOnboardingValuesAndNavigation(onboardingValues: Onboarding | undefined) {
-    Onyx.set(ONYXKEYS.NVP_ONBOARDING, {...onboardingValues, shouldValidate: undefined});
+    void Onyx.set(ONYXKEYS.NVP_ONBOARDING, {...onboardingValues, shouldValidate: undefined});
 
     // We need to have the Onyx values updated before navigating back
     // Because we navigate based no useEffect logic and we need to clear `shouldValidate` value before going back
@@ -127,11 +127,11 @@ function updateOnboardingValuesAndNavigation(onboardingValues: Onboarding | unde
 }
 
 function setOnboardingMergeAccountStepValue(value: boolean, skipped = false) {
-    Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {isMergeAccountStepCompleted: value, isMergeAccountStepSkipped: skipped});
+    void Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {isMergeAccountStepCompleted: value, isMergeAccountStepSkipped: skipped});
 }
 
 function setOnboardingTestDriveModalDismissed() {
-    Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {testDriveModalDismissed: true});
+    void Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {testDriveModalDismissed: true});
 }
 
 function completeHybridAppOnboarding() {
@@ -152,7 +152,7 @@ function completeHybridAppOnboarding() {
     ];
 
     // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.COMPLETE_HYBRID_APP_ONBOARDING, {}, {optimisticData}).then((response) => {
+    void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.COMPLETE_HYBRID_APP_ONBOARDING, {}, {optimisticData}).then((response) => {
         if (!response) {
             return;
         }
@@ -197,7 +197,7 @@ function resetAllChecks() {
 
 function setSelfTourViewed(shouldUpdateOnyxDataOnlyLocally = false) {
     if (shouldUpdateOnyxDataOnlyLocally) {
-        Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {selfTourViewed: true});
+        void Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {selfTourViewed: true});
         return;
     }
 
@@ -211,7 +211,7 @@ function setSelfTourViewed(shouldUpdateOnyxDataOnlyLocally = false) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.SELF_TOUR_VIEWED, null, {optimisticData});
+    void API.write(WRITE_COMMANDS.SELF_TOUR_VIEWED, null, {optimisticData});
 }
 
 function dismissProductTraining(elementName: string, isDismissedUsingCloseButton = false) {
@@ -229,7 +229,7 @@ function dismissProductTraining(elementName: string, isDismissedUsingCloseButton
             },
         },
     ];
-    API.write(WRITE_COMMANDS.DISMISS_PRODUCT_TRAINING, {name: elementName, dismissedMethod}, {optimisticData});
+    void API.write(WRITE_COMMANDS.DISMISS_PRODUCT_TRAINING, {name: elementName, dismissedMethod}, {optimisticData});
 }
 
 export {

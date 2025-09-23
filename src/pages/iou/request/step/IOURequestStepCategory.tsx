@@ -181,7 +181,7 @@ function IOURequestStepCategory({
                                     if (!policy.areCategoriesEnabled) {
                                         enablePolicyCategories(policy.id, true, policyTagLists, allTransactionViolations, false);
                                     }
-                                    InteractionManager.runAfterInteractions(() => {
+                                    void InteractionManager.runAfterInteractions(() => {
                                         Navigation.navigate(
                                             ROUTES.SETTINGS_CATEGORIES_ROOT.getRoute(
                                                 policy.id,

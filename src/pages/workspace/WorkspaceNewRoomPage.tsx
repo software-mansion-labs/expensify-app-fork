@@ -125,7 +125,7 @@ function WorkspaceNewRoomPage(_: unknown, ref: React.Ref<WorkspaceNewRoomPageRef
             description: parsedDescription,
         });
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             requestAnimationFrame(() => {
                 addPolicyReport(policyReport);
             });

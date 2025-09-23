@@ -242,7 +242,7 @@ function ReportParticipantsPage({report, route}: ReportParticipantsPageProps) {
         removeFromGroupChat(report.reportID, accountIDsToRemove);
         setSearchValue('');
         setRemoveMembersConfirmModalVisible(false);
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedMembers([]);
             clearUserSearchPhrase();
         });
@@ -428,7 +428,7 @@ function ReportParticipantsPage({report, route}: ReportParticipantsPageProps) {
                     confirmText={translate('common.remove')}
                     cancelText={translate('common.cancel')}
                     onModalHide={() => {
-                        InteractionManager.runAfterInteractions(() => {
+                        void InteractionManager.runAfterInteractions(() => {
                             if (!textInputRef.current) {
                                 return;
                             }

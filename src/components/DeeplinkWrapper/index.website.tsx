@@ -68,7 +68,7 @@ function DeeplinkWrapper({children, isAuthenticated, autoAuthState, initialUrl}:
 
         if (isAuthenticated === false) {
             setHasShownPrompt(false);
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 // Get initial route
                 const initialRoute = navigationRef.current?.getCurrentRoute();
                 setCurrentScreen(initialRoute?.name);

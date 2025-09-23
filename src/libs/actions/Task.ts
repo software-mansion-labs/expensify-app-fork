@@ -106,9 +106,9 @@ Onyx.connect({
  */
 function clearOutTaskInfo(skipConfirmation = false) {
     if (skipConfirmation) {
-        Onyx.set(ONYXKEYS.TASK, {skipConfirmation: true});
+        void Onyx.set(ONYXKEYS.TASK, {skipConfirmation: true});
     } else {
-        Onyx.set(ONYXKEYS.TASK, null);
+        void Onyx.set(ONYXKEYS.TASK, null);
     }
 }
 
@@ -348,11 +348,11 @@ function createTaskAndNavigate(
         assigneeChatCreatedReportActionID: assigneeChatReportOnyxData?.optimisticChatCreatedReportAction?.reportActionID,
     };
 
-    playSound(SOUNDS.DONE);
-    API.write(WRITE_COMMANDS.CREATE_TASK, parameters, {optimisticData, successData, failureData});
+    void playSound(SOUNDS.DONE);
+    void API.write(WRITE_COMMANDS.CREATE_TASK, parameters, {optimisticData, successData, failureData});
 
     if (!isCreatedUsingMarkdown) {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             clearOutTaskInfo();
         });
         Navigation.dismissModalWithReport({reportID: parentReportID});
@@ -475,8 +475,8 @@ function completeTask(taskReport: OnyxEntry<OnyxTypes.Report>, reportIDFromActio
 
     const {optimisticData, successData, failureData, parameters} = buildTaskData(taskReport, taskReportID);
 
-    playSound(SOUNDS.SUCCESS);
-    API.write(WRITE_COMMANDS.COMPLETE_TASK, parameters, {optimisticData, successData, failureData});
+    void playSound(SOUNDS.SUCCESS);
+    void API.write(WRITE_COMMANDS.COMPLETE_TASK, parameters, {optimisticData, successData, failureData});
     return {optimisticData, successData, failureData};
 }
 
@@ -563,7 +563,7 @@ function reopenTask(taskReport: OnyxEntry<OnyxTypes.Report>, reportIDFromAction?
         reopenedTaskReportActionID: reopenedTaskReportAction.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.REOPEN_TASK, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.REOPEN_TASK, parameters, {optimisticData, successData, failureData});
 }
 
 function editTask(report: OnyxTypes.Report, {title, description}: OnyxTypes.Task) {
@@ -643,7 +643,7 @@ function editTask(report: OnyxTypes.Report, {title, description}: OnyxTypes.Task
         editedTaskReportActionID: editTaskReportAction.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.EDIT_TASK, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.EDIT_TASK, parameters, {optimisticData, successData, failureData});
 }
 
 function editTaskAssignee(report: OnyxTypes.Report, sessionAccountID: number, assigneeEmail: string, assigneeAccountID: number | null = 0, assigneeChatReport?: OnyxEntry<OnyxTypes.Report>) {
@@ -782,14 +782,14 @@ function editTaskAssignee(report: OnyxTypes.Report, sessionAccountID: number, as
         assigneeChatCreatedReportActionID: assigneeChatReportOnyxData?.optimisticChatCreatedReportAction?.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.EDIT_TASK_ASSIGNEE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.EDIT_TASK_ASSIGNEE, parameters, {optimisticData, successData, failureData});
 }
 
 /**
  * Sets the report info for the task being viewed
  */
 function setTaskReport(report: OnyxEntry<OnyxTypes.Report>) {
-    Onyx.merge(ONYXKEYS.TASK, {report});
+    void Onyx.merge(ONYXKEYS.TASK, {report});
 }
 
 /**
@@ -797,21 +797,21 @@ function setTaskReport(report: OnyxEntry<OnyxTypes.Report>) {
  */
 function setDetailsValue(title: string, description: string) {
     // This is only needed for creation of a new task and so it should only be stored locally
-    Onyx.merge(ONYXKEYS.TASK, {title: title.trim(), description: description.trim()});
+    void Onyx.merge(ONYXKEYS.TASK, {title: title.trim(), description: description.trim()});
 }
 
 /**
  * Sets the title value for the task
  */
 function setTitleValue(title: string) {
-    Onyx.merge(ONYXKEYS.TASK, {title: title.trim()});
+    void Onyx.merge(ONYXKEYS.TASK, {title: title.trim()});
 }
 
 /**
  * Sets the description value for the task
  */
 function setDescriptionValue(description: string) {
-    Onyx.merge(ONYXKEYS.TASK, {description: description.trim()});
+    void Onyx.merge(ONYXKEYS.TASK, {description: description.trim()});
 }
 
 /**
@@ -819,16 +819,16 @@ function setDescriptionValue(description: string) {
  */
 function setShareDestinationValue(shareDestination: string | undefined) {
     // This is only needed for creation of a new task and so it should only be stored locally
-    Onyx.merge(ONYXKEYS.TASK, {shareDestination});
+    void Onyx.merge(ONYXKEYS.TASK, {shareDestination});
 }
 
 /* Sets the assigneeChatReport details for the task
  */
 function setAssigneeChatReport(chatReport: OnyxTypes.Report, isOptimisticReport = false) {
-    Onyx.merge(ONYXKEYS.TASK, {assigneeChatReport: chatReport});
+    void Onyx.merge(ONYXKEYS.TASK, {assigneeChatReport: chatReport});
 
     if (isOptimisticReport) {
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${chatReport.reportID}`, {isOptimisticReport});
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${chatReport.reportID}`, {isOptimisticReport});
     }
 }
 
@@ -841,7 +841,7 @@ function setNewOptimisticAssignee(assigneeLogin: string, assigneeAccountID: numb
         notificationPreference: CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN,
     });
 
-    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`, report);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`, report);
 
     const optimisticPersonalDetailsListAction: OnyxTypes.PersonalDetails = {
         accountID: assigneeAccountID,
@@ -849,7 +849,7 @@ function setNewOptimisticAssignee(assigneeLogin: string, assigneeAccountID: numb
         displayName: allPersonalDetails?.[assigneeAccountID]?.displayName ?? assigneeLogin,
         login: assigneeLogin,
     };
-    Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {[assigneeAccountID]: optimisticPersonalDetailsListAction});
+    void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {[assigneeAccountID]: optimisticPersonalDetailsListAction});
     return {assignee: optimisticPersonalDetailsListAction, assigneeReport: report};
 }
 
@@ -904,7 +904,7 @@ function setAssigneeValue(
     }
 
     // This is only needed for creation of a new task and so it should only be stored locally
-    Onyx.merge(ONYXKEYS.TASK, {assignee: assigneeEmail, assigneeAccountID});
+    void Onyx.merge(ONYXKEYS.TASK, {assignee: assigneeEmail, assigneeAccountID});
 
     // When we're editing the assignee, we immediately call editTaskAssignee. Since setting the assignee is async,
     // the chatReport is not yet set when editTaskAssignee is called. So we return the chatReport here so that
@@ -917,7 +917,7 @@ function setAssigneeValue(
  */
 function setParentReportID(parentReportID: string) {
     // This is only needed for creation of a new task and so it should only be stored locally
-    Onyx.merge(ONYXKEYS.TASK, {parentReportID});
+    void Onyx.merge(ONYXKEYS.TASK, {parentReportID});
 }
 
 /**
@@ -1203,7 +1203,7 @@ function deleteTask(report: OnyxEntry<OnyxTypes.Report>, isReportArchived: boole
         taskReportID: report.reportID,
     };
 
-    API.write(WRITE_COMMANDS.CANCEL_TASK, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.CANCEL_TASK, parameters, {optimisticData, successData, failureData});
     notifyNewAction(report.reportID, currentUserAccountID);
 
     const urlToNavigateBack = getNavigationUrlOnTaskDelete(report);
@@ -1300,13 +1300,13 @@ function clearTaskErrors(reportID: string | undefined) {
 
     // Delete the task preview in the parent report
     if (report?.pendingFields?.createChat === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.parentReportID}`, report.parentReportActionID ? {[report.parentReportActionID]: null} : {});
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.parentReportID}`, report.parentReportActionID ? {[report.parentReportActionID]: null} : {});
 
         navigateToConciergeChatAndDeleteReport(reportID);
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
         pendingFields: null,
         errorFields: null,
     });

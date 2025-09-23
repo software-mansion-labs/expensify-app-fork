@@ -182,7 +182,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
             const reportActionID = route?.params?.reportActionID;
             const isValidReportActionID = reportActionID && isNumeric(reportActionID);
             if (reportActionID && !isValidReportActionID) {
-                Navigation.isNavigationReady().then(() => navigation.setParams({reportActionID: ''}));
+                void Navigation.isNavigationReady().then(() => navigation.setParams({reportActionID: ''}));
             }
             return;
         }
@@ -436,7 +436,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
             return;
         }
         // Clear the URL after all interactions are processed to ensure all updates are completed before hiding the skeleton
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             requestAnimationFrame(() => {
                 clearDeleteTransactionNavigateBackUrl();
             });
@@ -650,7 +650,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
             }
             Navigation.dismissModal();
             if (Navigation.getTopmostReportId() === prevOnyxReportID) {
-                Navigation.isNavigationReady().then(() => {
+                void Navigation.isNavigationReady().then(() => {
                     Navigation.popToSidebar();
                 });
             }
@@ -659,13 +659,13 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
                 if (isMoneyRequestReportPendingDeletion(prevReport.parentReportID)) {
                     return;
                 }
-                Navigation.isNavigationReady().then(() => {
+                void Navigation.isNavigationReady().then(() => {
                     Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(prevReport.parentReportID));
                 });
                 return;
             }
 
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 navigateToConciergeChat();
             });
             return;
@@ -730,7 +730,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
 
     // This helps in tracking from the moment 'route' triggers useMemo until isLoadingInitialReportActions becomes true. It prevents blinking when loading reportActions from cache.
     useEffect(() => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setIsLinkingToMessage(false);
         });
     }, [reportMetadata?.isLoadingInitialReportActions]);
@@ -765,7 +765,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
         if (!isLinkedActionInaccessibleWhisper) {
             return;
         }
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             Navigation.setParams({reportActionID: ''});
         });
     }, [isLinkedActionInaccessibleWhisper]);

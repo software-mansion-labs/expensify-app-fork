@@ -153,8 +153,8 @@ const transactionData = {
     },
 } as CollectionDataSet<typeof ONYXKEYS.COLLECTION.TRANSACTION>;
 
-Onyx.mergeCollection(ONYXKEYS.COLLECTION.TRANSACTION, transactionData);
-Onyx.merge('cardList', {
+void Onyx.mergeCollection(ONYXKEYS.COLLECTION.TRANSACTION, transactionData);
+void Onyx.merge('cardList', {
     4: {bank: 'Expensify Card', lastFourPAN: '1000'},
     5: {bank: 'Expensify Card', lastFourPAN: '4444'},
 });

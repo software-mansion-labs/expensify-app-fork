@@ -31,7 +31,7 @@ function WorkspaceJoinUserPage({route}: WorkspaceJoinUserPageProps) {
             return;
         }
         if (!isEmptyObject(policy) && !policy?.isJoinRequestPending && !isPendingDeletePolicy(policy)) {
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 if (Navigation.getShouldPopToSidebar()) {
                     Navigation.popToSidebar();
                 } else {
@@ -42,7 +42,7 @@ function WorkspaceJoinUserPage({route}: WorkspaceJoinUserPageProps) {
             return;
         }
         inviteMemberToWorkspace(policyID, inviterEmail);
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             if (isUnmounted.current) {
                 return;
             }

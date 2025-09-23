@@ -133,7 +133,7 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
      */
     const toggleDeleteModal = useCallback((isOpen: boolean) => {
         if (canUseTouchScreen() && isOpen) {
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 setIsDeleteModalOpen(isOpen);
             });
             Keyboard.dismiss();
@@ -217,7 +217,7 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
             onConfirm={confirmDeleteAndHideModal}
             onCancel={() => toggleDeleteModal(false)}
             onModalHide={() => {
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     validateCodeFormRef.current?.focusLastSelected?.();
                 });
             }}
@@ -280,7 +280,7 @@ function ContactMethodDetailsPage({route}: ContactMethodDetailsPageProps) {
         <ScreenWrapper
             shouldEnableMaxHeight
             onEntryTransitionEnd={() => {
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     validateCodeFormRef.current?.focus?.();
                 });
             }}

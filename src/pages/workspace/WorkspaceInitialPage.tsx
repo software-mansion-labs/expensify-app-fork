@@ -432,7 +432,7 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, route}: Workspac
         }
         wasRendered.current = true;
         // We are dismissing any modals that are open when the NotFound view is shown
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             Navigation.closeRHPFlow();
         });
     }, [canAccessRoute, shouldShowNotFoundPage]);

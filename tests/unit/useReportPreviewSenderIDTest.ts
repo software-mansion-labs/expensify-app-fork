@@ -46,7 +46,7 @@ describe('useReportPreviewSenderID', () => {
     });
 
     beforeEach(() => {
-        Onyx.multiSet({
+        void Onyx.multiSet({
             ...reportActionCollectionDataSet,
             ...transactionCollectionDataSet,
         });
@@ -54,7 +54,7 @@ describe('useReportPreviewSenderID', () => {
     });
 
     afterEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
         return waitForBatchedUpdates();
     });
 

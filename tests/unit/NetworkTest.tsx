@@ -283,8 +283,8 @@ describe('NetworkTests', () => {
         expect(spyHttpUtilsXhr).not.toHaveBeenCalled();
 
         // Once credentials are set and we wait for promises to resolve
-        Onyx.merge(ONYXKEYS.CREDENTIALS, {login: 'test-login'});
-        Onyx.merge(ONYXKEYS.SESSION, {authToken: 'test-auth-token'});
+        void Onyx.merge(ONYXKEYS.CREDENTIALS, {login: 'test-login'});
+        void Onyx.merge(ONYXKEYS.SESSION, {authToken: 'test-auth-token'});
         return waitForBatchedUpdates().then(() => {
             // Then we should expect the request to have been made since the network is now ready
             expect(spyHttpUtilsXhr).not.toHaveBeenCalled();
@@ -294,7 +294,7 @@ describe('NetworkTests', () => {
     test('Non-retryable request will not be retried if connection is lost in flight', () => {
         // Given a xhr mock that will fail as if network connection dropped
         const xhr = jest.spyOn(HttpUtils, 'xhr').mockImplementationOnce(() => {
-            Onyx.merge(ONYXKEYS.NETWORK, {isOffline: true});
+            void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: true});
             return Promise.reject(new Error(CONST.ERROR.FAILED_TO_FETCH));
         });
 
@@ -304,7 +304,7 @@ describe('NetworkTests', () => {
         return waitForBatchedUpdates()
             .then(() => {
                 // When network connection is recovered
-                Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
+                void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
                 return waitForBatchedUpdates();
             })
             .then(() => {
@@ -429,7 +429,7 @@ describe('NetworkTests', () => {
         const logSpy = jest.spyOn(Log, 'info');
 
         // Given tracked connection changes started at least an hour ago
-        Onyx.merge(ONYXKEYS.NETWORK, {connectionChanges: {amount: 5, startTime: dateSubtract(new Date(), {hours: 1}).getTime()}});
+        void Onyx.merge(ONYXKEYS.NETWORK, {connectionChanges: {amount: 5, startTime: dateSubtract(new Date(), {hours: 1}).getTime()}});
         await waitForBatchedUpdates();
 
         // When the connection is changed one more time

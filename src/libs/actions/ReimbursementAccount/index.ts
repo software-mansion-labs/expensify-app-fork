@@ -25,37 +25,37 @@ function setBankAccountState(state: string): Promise<void | void[]> {
 }
 
 function hideBankAccountErrors() {
-    Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {error: '', errors: null});
+    void Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {error: '', errors: null});
 }
 
 function updateReimbursementAccountDraft(bankAccountData: Partial<ReimbursementAccountForm>) {
-    Onyx.merge(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT, bankAccountData);
-    Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {draftStep: undefined});
+    void Onyx.merge(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT, bankAccountData);
+    void Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {draftStep: undefined});
 }
 
 function clearReimbursementAccountDraft() {
-    Onyx.set(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT, {});
+    void Onyx.set(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT, {});
 }
 
 /**
  * Triggers a modal to open allowing the user to reset their bank account
  */
 function requestResetBankAccount() {
-    Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {shouldShowResetModal: true});
+    void Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {shouldShowResetModal: true});
 }
 
 /**
  * Hides modal allowing the user to reset their bank account
  */
 function cancelResetBankAccount() {
-    Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {shouldShowResetModal: false});
+    void Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {shouldShowResetModal: false});
 }
 
 /**
  *  Sets pressed option during connecting reimbursement account
  */
 function setReimbursementAccountOptionPressed(optionPressed: ValueOf<typeof CONST.BANK_ACCOUNT.SETUP_TYPE>) {
-    Onyx.set(ONYXKEYS.REIMBURSEMENT_ACCOUNT_OPTION_PRESSED, optionPressed);
+    void Onyx.set(ONYXKEYS.REIMBURSEMENT_ACCOUNT_OPTION_PRESSED, optionPressed);
 }
 
 export {

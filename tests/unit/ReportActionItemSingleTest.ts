@@ -25,7 +25,7 @@ describe('ReportActionItemSingle', () => {
 
     // Clear out Onyx after each test so that each test starts with a clean slate
     afterEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     describe('when the Report is a DM chat', () => {
@@ -47,20 +47,21 @@ describe('ReportActionItemSingle', () => {
             function setup() {
                 const policyCollectionDataSet = toCollectionDataSet(ONYXKEYS.COLLECTION.POLICY, [fakePolicy], (item) => item.id);
                 return waitForBatchedUpdates()
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_REPORT_DATA]: false,
-                            [ONYXKEYS.COLLECTION.REPORT_ACTIONS]: {
-                                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${fakeReport.reportID}`]: {
-                                    [fakeReportAction.reportActionID]: fakeReportAction,
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_REPORT_DATA]: false,
+                                [ONYXKEYS.COLLECTION.REPORT_ACTIONS]: {
+                                    [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${fakeReport.reportID}`]: {
+                                        [fakeReportAction.reportActionID]: fakeReportAction,
+                                    },
                                 },
-                            },
-                            [ONYXKEYS.COLLECTION.REPORT]: {
-                                [fakeReport.reportID]: fakeReport,
-                            },
-                            ...policyCollectionDataSet,
-                        }),
+                                [ONYXKEYS.COLLECTION.REPORT]: {
+                                    [fakeReport.reportID]: fakeReport,
+                                },
+                                ...policyCollectionDataSet,
+                            }),
                     )
                     .then(() => {
                         LHNTestUtils.getDefaultRenderedReportActionItemSingle(fakeReport, fakeReportAction);

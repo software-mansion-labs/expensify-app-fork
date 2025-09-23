@@ -323,7 +323,7 @@ function PolicyDistanceRatesPage({
         deletePolicyDistanceRates(policyID, customUnit, selectedDistanceRates, transactionIDsAffected, transactionViolations);
         setIsDeleteModalVisible(false);
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedDistanceRates([]);
         });
     };

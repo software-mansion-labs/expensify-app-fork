@@ -104,7 +104,7 @@ function createApprovalWorkflow(policyID: string, approvalWorkflow: ApprovalWork
     ];
 
     const parameters: CreateWorkspaceApprovalParams = {policyID, authToken, employees: JSON.stringify(Object.values(updatedEmployees))};
-    API.write(WRITE_COMMANDS.CREATE_WORKSPACE_APPROVAL, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.CREATE_WORKSPACE_APPROVAL, parameters, {optimisticData, failureData, successData});
 }
 
 function updateApprovalWorkflow(policyID: string, approvalWorkflow: ApprovalWorkflow, membersToRemove: Member[], approversToRemove: Approver[]) {
@@ -174,7 +174,7 @@ function updateApprovalWorkflow(policyID: string, approvalWorkflow: ApprovalWork
         employees: JSON.stringify(Object.values(updatedEmployees)),
         defaultApprover: newDefaultApprover,
     };
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_APPROVAL, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_APPROVAL, parameters, {optimisticData, failureData, successData});
 }
 
 function removeApprovalWorkflow(policyID: string, approvalWorkflow: ApprovalWorkflow) {
@@ -230,12 +230,12 @@ function removeApprovalWorkflow(policyID: string, approvalWorkflow: ApprovalWork
     ];
 
     const parameters: RemoveWorkspaceApprovalParams = {policyID, authToken, employees: JSON.stringify(Object.values(updatedEmployees))};
-    API.write(WRITE_COMMANDS.REMOVE_WORKSPACE_APPROVAL, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.REMOVE_WORKSPACE_APPROVAL, parameters, {optimisticData, failureData, successData});
 }
 
 /** Set the members of the approval workflow that is currently edited */
 function setApprovalWorkflowMembers(members: Member[]) {
-    Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {members, errors: null});
+    void Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {members, errors: null});
 }
 
 /**
@@ -282,7 +282,7 @@ function setApprovalWorkflowApprover({approver, approverIndex, policyID, current
         };
     });
 
-    Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {approvers: updatedApprovers, errors});
+    void Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {approvers: updatedApprovers, errors});
 }
 
 /** Clear one approver at the specified index in the approval workflow that is currently edited */
@@ -294,20 +294,20 @@ function clearApprovalWorkflowApprover({approverIndex, currentApprovalWorkflow}:
     const approvers: Array<Approver | undefined> = [...currentApprovalWorkflow.approvers];
     approvers[approverIndex] = undefined;
 
-    Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {approvers: lodashDropRightWhile(approvers, (approver) => !approver), errors: null});
+    void Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {approvers: lodashDropRightWhile(approvers, (approver) => !approver), errors: null});
 }
 
 /** Clear all approvers of the approval workflow that is currently edited */
 function clearApprovalWorkflowApprovers() {
-    Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {approvers: []});
+    void Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {approvers: []});
 }
 
 function setApprovalWorkflow(approvalWorkflow: NullishDeep<ApprovalWorkflowOnyx>) {
-    Onyx.set(ONYXKEYS.APPROVAL_WORKFLOW, approvalWorkflow);
+    void Onyx.set(ONYXKEYS.APPROVAL_WORKFLOW, approvalWorkflow);
 }
 
 function clearApprovalWorkflow() {
-    Onyx.set(ONYXKEYS.APPROVAL_WORKFLOW, null);
+    void Onyx.set(ONYXKEYS.APPROVAL_WORKFLOW, null);
 }
 
 type ApprovalWorkflowOnyxValidated = Omit<ApprovalWorkflowOnyx, 'approvers'> & {approvers: Approver[]};
@@ -338,7 +338,7 @@ function validateApprovalWorkflow(approvalWorkflow: ApprovalWorkflowOnyx): appro
         errors.additionalApprover = 'common.error.fieldRequired';
     }
 
-    Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {errors});
+    void Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, {errors});
     return isEmptyObject(errors);
 }
 

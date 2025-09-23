@@ -23,7 +23,7 @@ function useSearchSelector(config: UseSearchSelectorConfig): UseSearchSelectorRe
 
     const initiateContactImportAndSetState = useCallback(() => {
         setContactPermissionState(RESULTS.GRANTED);
-        InteractionManager.runAfterInteractions(importAndSaveContacts);
+        void InteractionManager.runAfterInteractions(importAndSaveContacts);
     }, [importAndSaveContacts, setContactPermissionState]);
 
     // Use base hook with contact options

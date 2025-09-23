@@ -114,7 +114,7 @@ function usePreloadFullScreenNavigators() {
                 return;
             }
             navigation.reset({...navigation.getState(), preloadedRoutes: preloadedRoutes.filter((preloadedRoute) => preloadedRoute.name !== NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR)});
-            Navigation.isNavigationReady().then(() => setTimeout(() => preloadAccountTab(navigation, subscriptionPlan), TIMING_TO_CALL_PRELOAD));
+            void Navigation.isNavigationReady().then(() => setTimeout(() => preloadAccountTab(navigation, subscriptionPlan), TIMING_TO_CALL_PRELOAD));
         }, [hasSubscriptionPlanTurnedOff, navigation, preloadedRoutes, subscriptionPlan]),
     );
 

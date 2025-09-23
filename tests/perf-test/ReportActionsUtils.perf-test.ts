@@ -42,13 +42,13 @@ describe('ReportActionsUtils', () => {
             evictableKeys: [ONYXKEYS.COLLECTION.REPORT_ACTIONS],
         });
 
-        Onyx.multiSet({
+        void Onyx.multiSet({
             ...mockedReportActionsMap,
         });
     });
 
     afterAll(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     /**

@@ -813,7 +813,7 @@ function IOURequestStepScan({
     );
 
     const dismissMultiScanEducationalPopup = () => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             dismissProductTraining(CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.MULTI_SCAN_EDUCATIONAL_MODAL);
             setShouldShowMultiScanEducationalPopup(false);
         });

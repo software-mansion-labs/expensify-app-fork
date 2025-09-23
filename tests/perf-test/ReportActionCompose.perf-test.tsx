@@ -74,7 +74,7 @@ beforeAll(() =>
 
 // Initialize the network key for OfflineWithFeedback
 beforeEach(() => {
-    Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
+    void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
 });
 
 function ReportActionComposeWrapper() {

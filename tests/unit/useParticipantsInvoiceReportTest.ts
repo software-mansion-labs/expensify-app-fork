@@ -50,7 +50,7 @@ describe('useParticipantsInvoiceReport', () => {
         });
 
         afterEach(() => {
-            Onyx.clear();
+            void Onyx.clear();
         });
 
         it('should return the invoice report when there is an active individual invoice report', async () => {
@@ -104,7 +104,7 @@ describe('useParticipantsInvoiceReport', () => {
         });
 
         afterAll(() => {
-            Onyx.clear();
+            void Onyx.clear();
         });
 
         it('should return the invoice report when there is an active business invoice report', async () => {

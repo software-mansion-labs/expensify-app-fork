@@ -70,7 +70,7 @@ function push(
             tag,
         });
         if (!silent) {
-            playSound(SOUNDS.RECEIVE);
+            void playSound(SOUNDS.RECEIVE);
         }
         notificationCache[notificationID].onclick = () => {
             onClick();

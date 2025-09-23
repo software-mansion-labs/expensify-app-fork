@@ -1638,7 +1638,7 @@ describe('SearchUIUtils', () => {
             expect(action).toStrictEqual(CONST.SEARCH.ACTION_TYPES.REVIEW);
         });
         test('Should return `Pay` action for an IOU report ready to be paid', async () => {
-            Onyx.merge(ONYXKEYS.SESSION, {accountID: adminAccountID});
+            void Onyx.merge(ONYXKEYS.SESSION, {accountID: adminAccountID});
             await waitForBatchedUpdates();
             const iouReportKey = `report_${reportID3}`;
             const action = SearchUIUtils.getActions(searchResults.data, {}, iouReportKey, CONST.SEARCH.SEARCH_KEYS.EXPENSES, adminAccountID).at(0);
@@ -2273,7 +2273,7 @@ describe('SearchUIUtils', () => {
     });
 
     test('Should show `View` to overlimit approver', () => {
-        Onyx.merge(ONYXKEYS.SESSION, {accountID: overlimitApproverAccountID});
+        void Onyx.merge(ONYXKEYS.SESSION, {accountID: overlimitApproverAccountID});
         searchResults.data[`policy_${policyID}`].role = CONST.POLICY.ROLE.USER;
         return waitForBatchedUpdates().then(() => {
             let action = SearchUIUtils.getActions(searchResults.data, allViolations, `report_${reportID2}`, CONST.SEARCH.SEARCH_KEYS.EXPENSES, overlimitApproverAccountID).at(0);
@@ -2285,7 +2285,7 @@ describe('SearchUIUtils', () => {
     });
 
     test('Should show `Approve` for report', () => {
-        Onyx.merge(ONYXKEYS.SESSION, {accountID: adminAccountID});
+        void Onyx.merge(ONYXKEYS.SESSION, {accountID: adminAccountID});
 
         const result: OnyxTypes.SearchResults = {
             data: {

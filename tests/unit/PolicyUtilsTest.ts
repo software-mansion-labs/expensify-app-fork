@@ -283,7 +283,7 @@ describe('PolicyUtils', () => {
     describe('getSubmitToAccountID', () => {
         beforeEach(() => {
             wrapOnyxWithWaitForBatchedUpdates(Onyx);
-            Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
+            void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
         });
         afterEach(async () => {
             await Onyx.clear();
@@ -575,7 +575,7 @@ describe('PolicyUtils', () => {
     describe('getManagerAccountID', () => {
         beforeEach(() => {
             wrapOnyxWithWaitForBatchedUpdates(Onyx);
-            Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
+            void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
         });
         afterEach(async () => {
             await Onyx.clear();
@@ -656,7 +656,7 @@ describe('PolicyUtils', () => {
     describe('isWorkspaceEligibleForReportChange', () => {
         beforeEach(() => {
             wrapOnyxWithWaitForBatchedUpdates(Onyx);
-            Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
+            void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
         });
         afterEach(async () => {
             await Onyx.clear();
@@ -899,7 +899,7 @@ describe('PolicyUtils', () => {
     describe('getPolicyEmployeeAccountIDs', () => {
         beforeEach(() => {
             wrapOnyxWithWaitForBatchedUpdates(Onyx);
-            Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
+            void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, personalDetails);
         });
         afterEach(async () => {
             await Onyx.clear();

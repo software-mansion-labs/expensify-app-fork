@@ -21,7 +21,7 @@ function openSidePanel(shouldOpenOnNarrowScreen: boolean) {
 
     const params: OpenSidePanelParams = {isNarrowScreen: shouldOpenOnNarrowScreen};
 
-    API.write(WRITE_COMMANDS.OPEN_SIDE_PANEL, params, {optimisticData});
+    void API.write(WRITE_COMMANDS.OPEN_SIDE_PANEL, params, {optimisticData});
 }
 
 /**
@@ -40,7 +40,7 @@ function closeSidePanel(shouldCloseOnNarrowScreen: boolean) {
 
     const params: CloseSidePanelParams = {isNarrowScreen: shouldCloseOnNarrowScreen};
 
-    API.write(WRITE_COMMANDS.CLOSE_SIDE_PANEL, params, {optimisticData});
+    void API.write(WRITE_COMMANDS.CLOSE_SIDE_PANEL, params, {optimisticData});
 }
 
 export default {openSidePanel, closeSidePanel};

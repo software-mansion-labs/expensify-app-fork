@@ -335,7 +335,7 @@ function SearchPage({route}: SearchPageProps) {
                         ? Object.values(selectedTransactions).map((transaction) => transaction.reportID)
                         : (selectedReports?.filter((report) => !!report).map((report) => report.reportID) ?? []);
                     approveMoneyRequestOnSearch(hash, reportIDList, transactionIDList);
-                    InteractionManager.runAfterInteractions(() => {
+                    void InteractionManager.runAfterInteractions(() => {
                         clearSelectedTransactions();
                     });
                 },
@@ -414,7 +414,7 @@ function SearchPage({route}: SearchPageProps) {
                     ) as PaymentData[];
 
                     payMoneyRequestOnSearch(hash, paymentData, transactionIDList);
-                    InteractionManager.runAfterInteractions(() => {
+                    void InteractionManager.runAfterInteractions(() => {
                         clearSelectedTransactions();
                     });
                 },
@@ -457,7 +457,7 @@ function SearchPage({route}: SearchPageProps) {
                     }
 
                     unholdMoneyRequestOnSearch(hash, selectedTransactionsKeys);
-                    InteractionManager.runAfterInteractions(() => {
+                    void InteractionManager.runAfterInteractions(() => {
                         clearSelectedTransactions();
                     });
                 },
@@ -494,7 +494,7 @@ function SearchPage({route}: SearchPageProps) {
                     }
 
                     // Use InteractionManager to ensure this runs after the dropdown modal closes
-                    InteractionManager.runAfterInteractions(() => {
+                    void InteractionManager.runAfterInteractions(() => {
                         setIsDeleteExpensesConfirmModalVisible(true);
                     });
                 },
@@ -551,7 +551,7 @@ function SearchPage({route}: SearchPageProps) {
 
         // Translations copy for delete modal depends on amount of selected items,
         // We need to wait for modal to fully disappear before clearing them to avoid translation flicker between singular vs plural
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             deleteMoneyRequestOnSearch(hash, selectedTransactionsKeys);
             clearSelectedTransactions();
         });

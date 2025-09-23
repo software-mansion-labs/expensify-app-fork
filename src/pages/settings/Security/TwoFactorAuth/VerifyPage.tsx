@@ -75,7 +75,7 @@ function VerifyPage({route}: VerifyPageProps) {
 
     const scrollViewRef = useRef<RNScrollView>(null);
     const handleInputFocus = useCallback(() => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             requestAnimationFrame(() => {
                 scrollViewRef.current?.scrollToEnd({animated: true});
             });

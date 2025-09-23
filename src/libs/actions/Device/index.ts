@@ -43,7 +43,7 @@ function setDeviceID() {
         .then(generateDeviceID)
         .then((uniqueID: string) => {
             Log.info('Got new deviceID', false, uniqueID);
-            Onyx.set(ONYXKEYS.DEVICE_ID, uniqueID);
+            void Onyx.set(ONYXKEYS.DEVICE_ID, uniqueID);
         })
         .catch((error: Error) => Log.info('Found existing deviceID', false, error.message));
 }

@@ -61,14 +61,14 @@ describe('Sidebar', () => {
 
     // Clear out Onyx after each test so that each test starts with a clean slate
     afterEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     describe('in default mode', () => {
         it('is rendered with empty state when no reports are available', () => {
             // Given all the default props are passed to SidebarLinks
             // When it is rendered
-            LHNTestUtils.getDefaultRenderedSidebarLinks();
+            void LHNTestUtils.getDefaultRenderedSidebarLinks();
 
             // Then it should render with the empty state message and not show the reports list
             expect(screen.getByText(translateLocal('common.emptyLHN.title'))).toBeOnTheScreen();
@@ -81,11 +81,12 @@ describe('Sidebar', () => {
                 .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks())
 
                 // When Onyx is updated with some personal details
-                .then(() =>
-                    Onyx.multiSet({
-                        [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                        [ONYXKEYS.IS_LOADING_APP]: false,
-                    }),
+                .then(
+                    () =>
+                        void Onyx.multiSet({
+                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                            [ONYXKEYS.IS_LOADING_APP]: false,
+                        }),
                 )
 
                 // Then the component should be rendered with an empty list since it will get past the early return
@@ -107,13 +108,14 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks(report.reportID))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the component should be rendered with an item for the report
@@ -145,13 +147,14 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks())
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the component should be rendered with the mostly recently updated report first
@@ -194,14 +197,15 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks(currentReportId))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report1.reportID}`]: 'report1 draft',
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report1.reportID}`]: 'report1 draft',
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then there should be a pencil icon and report one should be the first one because putting a draft on the active report should change its location
@@ -242,20 +246,22 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks())
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // When a new comment is added to report 1 (eg. it's lastVisibleActionCreated is updated)
-                    .then(() =>
-                        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${report1.reportID}`, {
-                            lastVisibleActionCreated: DateUtils.getDBTime(),
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${report1.reportID}`, {
+                                lastVisibleActionCreated: DateUtils.getDBTime(),
+                            }),
                     )
 
                     // Then the order of the reports should be 1 > 3 > 2
@@ -305,13 +311,14 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks(taskReport.reportID))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the order of the reports should be 4 > 3 > 2 > 1
@@ -379,13 +386,14 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks(iouReport.reportID))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the order of the reports should be 4 > 3 > 2 > 1
@@ -458,14 +466,15 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks(expenseReport.reportID))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            [`${ONYXKEYS.COLLECTION.POLICY}${fakeReport.policyID}`]: fakePolicy,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                [`${ONYXKEYS.COLLECTION.POLICY}${fakeReport.policyID}`]: fakePolicy,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the order of the reports should be 4 > 3 > 2 > 1
@@ -509,21 +518,22 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks(currentReportId))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            [ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT + report2.reportID]: 'This is a draft',
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                [ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT + report2.reportID]: 'This is a draft',
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // When the currently active chat is switched to report 1 (the one on the bottom)
                     .then(() => {
                         // The changing of a route itself will re-render the component in the App, but since we are not performing this test
                         // inside the navigator and it has no access to the routes we need to trigger an update to the SidebarLinks manually.
-                        LHNTestUtils.getDefaultRenderedSidebarLinks(report1.reportID);
+                        void LHNTestUtils.getDefaultRenderedSidebarLinks(report1.reportID);
                         return waitForBatchedUpdates();
                     })
 
@@ -556,14 +566,15 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks())
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report.reportID}`]: 'This is a draft',
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report.reportID}`]: 'This is a draft',
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then there should be a pencil icon showing
@@ -598,13 +609,14 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks())
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then there should be a pencil icon showing
@@ -682,14 +694,15 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks(currentReportId))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report2.reportID}`]: 'Report2 draft comment',
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report2.reportID}`]: 'Report2 draft comment',
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the reports are ordered by Pinned / GBR > Draft > Rest
@@ -740,13 +753,14 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks('0'))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the reports are in alphabetical order
@@ -802,14 +816,15 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks('0'))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportDraftCommentCollectionDataSet,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportDraftCommentCollectionDataSet,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the reports are in alphabetical order
@@ -823,13 +838,14 @@ describe('Sidebar', () => {
                     })
 
                     // When a new report is added
-                    .then(() =>
-                        Onyx.multiSet({
-                            ...reportDraftCommentCollectionDataSet,
-                            [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report4.reportID}`]: 'report4 draft',
-                            [`${ONYXKEYS.COLLECTION.REPORT}${report4.reportID}`]: report4,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                ...reportDraftCommentCollectionDataSet,
+                                [`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report4.reportID}`]: 'report4 draft',
+                                [`${ONYXKEYS.COLLECTION.REPORT}${report4.reportID}`]: report4,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then they are still in alphabetical order
@@ -873,15 +889,16 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks('0'))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.BETAS]: betas,
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportNameValuePairsCollectionDataSet,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.BETAS]: betas,
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportNameValuePairsCollectionDataSet,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the first report is in last position
@@ -918,13 +935,14 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks('0'))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.DEFAULT,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the reports are ordered alphabetically since their lastVisibleActionCreated are the same
@@ -959,12 +977,13 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks('0'))
                     // Given the sidebar is rendered in #focus mode (hides read chats)
                     // with all reports having unread comments
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.GSD,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.GSD,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the reports are in alphabetical order
@@ -1020,15 +1039,16 @@ describe('Sidebar', () => {
                     .then(() => LHNTestUtils.getDefaultRenderedSidebarLinks('0'))
 
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [ONYXKEYS.BETAS]: betas,
-                            [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.GSD,
-                            [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
-                            [ONYXKEYS.IS_LOADING_APP]: false,
-                            ...reportNameValuePairsCollectionDataSet,
-                            ...reportCollectionDataSet,
-                        }),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [ONYXKEYS.BETAS]: betas,
+                                [ONYXKEYS.NVP_PRIORITY_MODE]: CONST.PRIORITY_MODE.GSD,
+                                [ONYXKEYS.PERSONAL_DETAILS_LIST]: LHNTestUtils.fakePersonalDetails,
+                                [ONYXKEYS.IS_LOADING_APP]: false,
+                                ...reportNameValuePairsCollectionDataSet,
+                                ...reportCollectionDataSet,
+                            }),
                     )
 
                     // Then the first report is in last position

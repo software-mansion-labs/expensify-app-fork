@@ -51,7 +51,7 @@ function acceptSpotnanaTerms(domain?: string) {
 
     const params: AcceptSpotnanaTermsParams = {domain};
 
-    API.write(WRITE_COMMANDS.ACCEPT_SPOTNANA_TERMS, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.ACCEPT_SPOTNANA_TERMS, params, {optimisticData, successData, failureData});
 }
 
 function requestTravelAccess() {
@@ -64,11 +64,11 @@ function requestTravelAccess() {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.TRAVEL_SIGNUP_REQUEST, null, {optimisticData});
+    void API.write(WRITE_COMMANDS.TRAVEL_SIGNUP_REQUEST, null, {optimisticData});
 }
 
 function cleanupTravelProvisioningSession() {
-    Onyx.merge(ONYXKEYS.TRAVEL_PROVISIONING, null);
+    void Onyx.merge(ONYXKEYS.TRAVEL_PROVISIONING, null);
 }
 
 export {acceptSpotnanaTerms, cleanupTravelProvisioningSession, requestTravelAccess};

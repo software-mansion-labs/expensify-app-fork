@@ -222,7 +222,7 @@ function BaseOnboardingInterestedFeatures({shouldUseNativeStyles}: BaseOnboardin
         }
 
         // Avoid creating new WS because onboardingPolicyID is cleared before unmounting
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setOnboardingAdminsChatReportID();
             setOnboardingPolicyID();
         });

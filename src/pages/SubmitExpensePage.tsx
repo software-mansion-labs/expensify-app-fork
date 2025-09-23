@@ -24,7 +24,7 @@ function SubmitExpensePage() {
     useFocusEffect(() => {
         interceptAnonymousUser(() => {
             App.confirmReadyToOpenApp();
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 if (isUnmounted.current) {
                     return;
                 }

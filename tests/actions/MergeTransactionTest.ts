@@ -82,7 +82,7 @@ describe('mergeTransactionRequest', () => {
         await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${sourceExpenseReport.reportID}`, sourceExpenseReport);
         await Onyx.set(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${mergeTransactionID}`, mergeTransaction);
 
-        mockFetch?.pause?.();
+        void mockFetch?.pause?.();
 
         // When: The merge transaction request is initiated
         // This should immediately update the UI with optimistic values
@@ -183,7 +183,7 @@ describe('mergeTransactionRequest', () => {
 
         const mockViolations = createMockViolations();
 
-        mockFetch?.pause?.();
+        void mockFetch?.pause?.();
 
         // Set up initial state in Onyx
         await Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION}${targetTransaction.transactionID}`, targetTransaction);
@@ -195,7 +195,7 @@ describe('mergeTransactionRequest', () => {
         await waitForBatchedUpdates();
 
         // When: The merge request is executed but the API will return an error
-        mockFetch?.fail?.();
+        void mockFetch?.fail?.();
 
         mergeTransactionRequest(mergeTransactionID, mergeTransaction, targetTransaction, sourceTransaction);
 
@@ -278,7 +278,7 @@ describe('mergeTransactionRequest', () => {
         await Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${targetTransaction.transactionID}`, mockViolations);
         await Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${sourceTransaction.transactionID}`, mockViolations);
 
-        mockFetch?.pause?.();
+        void mockFetch?.pause?.();
 
         // When: The merge request is executed, which should handle violation updates
         // - Optimistically remove DUPLICATED_TRANSACTION violations since transactions are being merged
@@ -348,7 +348,7 @@ describe('mergeTransactionRequest', () => {
             await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${sourceReport.reportID}`, sourceReport);
             await Onyx.set(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${mergeTransactionID}`, mergeTransaction);
 
-            mockFetch?.pause?.();
+            void mockFetch?.pause?.();
 
             // When: The merge request is executed
             mergeTransactionRequest(mergeTransactionID, mergeTransaction, targetTransaction, sourceTransaction);

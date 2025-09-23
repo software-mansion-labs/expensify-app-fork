@@ -144,7 +144,7 @@ function apply({lastUpdateID, type, request, response, updates}: OnyxUpdatesFrom
         return Promise.resolve();
     }
     if (lastUpdateID && (lastUpdateIDAppliedToClient === undefined || Number(lastUpdateID) > lastUpdateIDAppliedToClient)) {
-        Onyx.merge(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT, Number(lastUpdateID));
+        void Onyx.merge(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT, Number(lastUpdateID));
     }
     if (type === CONST.ONYX_UPDATE_TYPES.HTTPS && request && response) {
         return applyHTTPSOnyxUpdates(request, response, Number(lastUpdateID));
@@ -170,7 +170,7 @@ function saveUpdateInformation(updateParams: OnyxUpdatesFromServer) {
         modifiedUpdateParams = {...modifiedUpdateParams, request: {...updateParams.request, data: {apiRequestType: updateParams.request?.data?.apiRequestType}}};
     }
     // Always use set() here so that the updateParams are never merged and always unique to the request that came in
-    Onyx.set(ONYXKEYS.ONYX_UPDATES_FROM_SERVER, modifiedUpdateParams);
+    void Onyx.set(ONYXKEYS.ONYX_UPDATES_FROM_SERVER, modifiedUpdateParams);
 }
 
 type DoesClientNeedToBeUpdatedParams = {

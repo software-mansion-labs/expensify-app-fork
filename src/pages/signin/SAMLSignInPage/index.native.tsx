@@ -76,7 +76,7 @@ function SAMLSignInPage() {
                 clearSignInData();
                 setAccountError(searchParams.get('error') ?? '');
 
-                Navigation.isNavigationReady().then(() => {
+                void Navigation.isNavigationReady().then(() => {
                     // We must call goBack() to remove the /transition route from history
                     Navigation.goBack();
                     Navigation.navigate(ROUTES.HOME);
@@ -97,7 +97,7 @@ function SAMLSignInPage() {
                     title=""
                     onBackButtonPress={() => {
                         clearSignInData();
-                        Navigation.isNavigationReady().then(() => {
+                        void Navigation.isNavigationReady().then(() => {
                             Navigation.goBack();
                         });
                     }}

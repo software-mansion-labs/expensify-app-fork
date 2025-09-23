@@ -11,7 +11,7 @@ const useRestoreInputFocus = (isLostFocus: boolean) => {
         }
 
         if (!isLostFocus && keyboardVisibleBeforeLoosingFocusRef.current) {
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 KeyboardController.setFocusTo('current');
             });
         }
