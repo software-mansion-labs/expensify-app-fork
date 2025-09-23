@@ -40,7 +40,7 @@ function ValidateLoginPage({
     useEffect(() => {
         if (isUserClickedSignIn) {
             // The user clicked the option to sign in the current tab
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 Navigation.goBack();
             });
             return;
@@ -73,7 +73,7 @@ function ValidateLoginPage({
         }
 
         // The user clicked the option to sign in the current tab
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             Navigation.goBack();
         });
     }, [login, cachedAccountID, is2FARequired, exitTo]);

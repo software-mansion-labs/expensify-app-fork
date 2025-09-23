@@ -41,7 +41,7 @@ describe('useSidebarOrderedReports', () => {
 
     beforeEach(async () => {
         jest.clearAllMocks();
-        Onyx.clear();
+        void Onyx.clear();
 
         // Set up basic session data for each test
         await Onyx.set(ONYXKEYS.SESSION, {
@@ -71,7 +71,7 @@ describe('useSidebarOrderedReports', () => {
     });
 
     afterAll(async () => {
-        Onyx.clear();
+        void Onyx.clear();
         await waitForBatchedUpdates();
     });
 

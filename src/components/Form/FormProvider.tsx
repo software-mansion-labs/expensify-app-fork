@@ -417,7 +417,7 @@ function FormProvider({
                     }
                     inputProps.onBlur?.(event);
                     if (isSafari()) {
-                        InteractionManager.runAfterInteractions(() => {
+                        void InteractionManager.runAfterInteractions(() => {
                             setIsBlurred(true);
                         });
                     }

@@ -246,12 +246,12 @@ const mockLastPaymentMethod: OnyxEntry<LastPaymentMethod> = {
 describe('handleActionButtonPress', () => {
     const searchHash = 1;
     beforeAll(() => {
-        Onyx.merge(
+        void Onyx.merge(
             `${ONYXKEYS.COLLECTION.SNAPSHOT}${searchHash}`,
             // @ts-expect-error: Allow partial record in snapshot update for testing
             mockSnapshotForItem,
         );
-        Onyx.merge(ONYXKEYS.NVP_LAST_PAYMENT_METHOD, mockLastPaymentMethod);
+        void Onyx.merge(ONYXKEYS.NVP_LAST_PAYMENT_METHOD, mockLastPaymentMethod);
     });
 
     const snapshotReport = mockSnapshotForItem?.data?.[`${ONYXKEYS.COLLECTION.REPORT}${mockReportItemWithHold.reportID}`] ?? {};

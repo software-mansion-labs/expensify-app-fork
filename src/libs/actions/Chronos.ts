@@ -53,7 +53,7 @@ const removeEvent = (reportID: string | undefined, reportActionID: string, event
         reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.CHRONOS_REMOVE_OOO_EVENT, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.CHRONOS_REMOVE_OOO_EVENT, parameters, {optimisticData, successData, failureData});
 };
 
 export {

@@ -72,7 +72,7 @@ describe('actions/App', () => {
         expect(await getOnyxValue(ONYXKEYS.LAST_FULL_RECONNECT_TIME)).toBeTruthy();
 
         // And when a new reconnectAppIfFullReconnectBefore is received
-        Onyx.set(ONYXKEYS.NVP_RECONNECT_APP_IF_FULL_RECONNECT_BEFORE, DateUtils.getDBTime());
+        void Onyx.set(ONYXKEYS.NVP_RECONNECT_APP_IF_FULL_RECONNECT_BEFORE, DateUtils.getDBTime());
         await waitForBatchedUpdates();
 
         // Then ReconnectApp should get called with no updateIDFrom to perform a full reconnect
@@ -94,7 +94,7 @@ describe('actions/App', () => {
         // And when a reconnectAppIfFullReconnectBefore is received with a timestamp in the past
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        Onyx.set(ONYXKEYS.NVP_RECONNECT_APP_IF_FULL_RECONNECT_BEFORE, DateUtils.getDBTime(yesterday.toISOString()));
+        void Onyx.set(ONYXKEYS.NVP_RECONNECT_APP_IF_FULL_RECONNECT_BEFORE, DateUtils.getDBTime(yesterday.toISOString()));
         await waitForBatchedUpdates();
 
         // Then ReconnectApp should NOT get called

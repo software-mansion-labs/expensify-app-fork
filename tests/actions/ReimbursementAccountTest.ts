@@ -30,7 +30,7 @@ describe('ReimbursementAccount', () => {
     });
     describe('resetUSDBankAccount', () => {
         afterEach(() => {
-            mockFetch?.resume?.();
+            void mockFetch?.resume?.();
         });
 
         it('should reset the USDBankAccount', async () => {

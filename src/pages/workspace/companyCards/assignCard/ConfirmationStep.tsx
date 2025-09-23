@@ -65,7 +65,7 @@ function ConfirmationStep({policyID, feed, backTo}: ConfirmationStepProps) {
         } else {
             Navigation.navigate(ROUTES.WORKSPACE_COMPANY_CARDS.getRoute(policyID), {forceReplace: true});
         }
-        InteractionManager.runAfterInteractions(() => clearAssignCardStepAndData());
+        void InteractionManager.runAfterInteractions(() => clearAssignCardStepAndData());
     }, [assignCard, backTo, policyID, currentFullScreenRoute?.state?.routes]);
 
     const submit = () => {

@@ -171,7 +171,7 @@ function IOURequestStepDescription({
             </FormProvider>
             <DiscardChangesConfirmation
                 onCancel={() => {
-                    InteractionManager.runAfterInteractions(() => {
+                    void InteractionManager.runAfterInteractions(() => {
                         inputRef.current?.focus();
                     });
                 }}

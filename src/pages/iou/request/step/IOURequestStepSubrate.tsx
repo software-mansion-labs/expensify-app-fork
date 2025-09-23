@@ -229,7 +229,7 @@ function IOURequestStepSubrate({
                             items={validOptions}
                             onValueChange={(value) => {
                                 setSubrateValue(value as string);
-                                InteractionManager.runAfterInteractions(() => {
+                                void InteractionManager.runAfterInteractions(() => {
                                     textInputRef.current?.focus();
                                 });
                             }}

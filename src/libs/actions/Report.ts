@@ -447,7 +447,7 @@ Onyx.connect({
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`] = null;
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${reportID}`] = null;
             });
-            Onyx.multiSet(cleanUpSetQueries);
+            void Onyx.multiSet(cleanUpSetQueries);
             delete allPolicies[key];
             return;
         }
@@ -490,7 +490,7 @@ registerPaginationConfig({
 });
 
 function clearGroupChat() {
-    Onyx.set(ONYXKEYS.NEW_GROUP_CHAT_DRAFT, null);
+    void Onyx.set(ONYXKEYS.NEW_GROUP_CHAT_DRAFT, null);
 }
 
 function startNewChat() {
@@ -537,7 +537,7 @@ function subscribeToReportTypingEvents(reportID: string) {
     }
 
     // Make sure we have a clean Typing indicator before subscribing to typing events
-    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, {});
+    void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, {});
 
     const pusherChannelName = getReportChannelName(reportID);
     Pusher.subscribe(pusherChannelName, Pusher.TYPE.USER_IS_TYPING, (typingStatus) => {
@@ -559,7 +559,7 @@ function subscribeToReportTypingEvents(reportID: string) {
         // Use a combo of the reportID and the accountID or login as a key for holding our timers.
         const reportUserIdentifier = `${reportID}-${accountIDOrLogin}`;
         clearTimeout(typingWatchTimers[reportUserIdentifier]);
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, normalizedTypingStatus);
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, normalizedTypingStatus);
 
         // Regular user typing indicators: time out after 1.5s of inactivity.
         // Concierge (AgentZero-initiated): use a longer 10s timeout. AgentZero sends a single typing event for Concierge, not a stream, so client holds the indicator longer.
@@ -571,7 +571,7 @@ function subscribeToReportTypingEvents(reportID: string) {
             typingWatchTimers[reportUserIdentifier] = setTimeout(() => {
                 const typingStoppedStatus: ReportUserIsTyping = {};
                 typingStoppedStatus[accountIDOrLogin] = false;
-                Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, typingStoppedStatus);
+                void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, typingStoppedStatus);
                 delete typingWatchTimers[reportUserIdentifier];
             }, timeoutDuration);
         }
@@ -587,7 +587,7 @@ function subscribeToReportLeavingEvents(reportID: string | undefined) {
     }
 
     // Make sure we have a clean Leaving indicator before subscribing to leaving events
-    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_LEAVING_ROOM}${reportID}`, false);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_LEAVING_ROOM}${reportID}`, false);
 
     const pusherChannelName = getReportChannelName(reportID);
     Pusher.subscribe(pusherChannelName, Pusher.TYPE.USER_IS_LEAVING_ROOM, (leavingStatus: UserIsLeavingRoomEvent) => {
@@ -605,7 +605,7 @@ function subscribeToReportLeavingEvents(reportID: string | undefined) {
             return;
         }
 
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_LEAVING_ROOM}${reportID}`, true);
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_LEAVING_ROOM}${reportID}`, true);
     }).catch((error: ReportError) => {
         Log.hmmm('[Report] Failed to initially subscribe to Pusher channel', {errorType: error.type, pusherChannelName});
     });
@@ -620,7 +620,7 @@ function unsubscribeFromReportChannel(reportID: string) {
     }
 
     const pusherChannelName = getReportChannelName(reportID);
-    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, {});
+    void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_TYPING}${reportID}`, {});
     Pusher.unsubscribe(pusherChannelName, Pusher.TYPE.USER_IS_TYPING);
 }
 
@@ -633,7 +633,7 @@ function unsubscribeFromLeavingRoomReportChannel(reportID: string | undefined) {
     }
 
     const pusherChannelName = getReportChannelName(reportID);
-    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_LEAVING_ROOM}${reportID}`, false);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_USER_IS_LEAVING_ROOM}${reportID}`, false);
     Pusher.unsubscribe(pusherChannelName, Pusher.TYPE.USER_IS_LEAVING_ROOM);
 }
 
@@ -830,7 +830,7 @@ function addActions(reportID: string, timezoneParam: Timezone, text = '', file?:
         DateUtils.setTimezoneUpdated();
     }
 
-    API.write(commandName, parameters, {
+    void API.write(commandName, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -841,7 +841,7 @@ function addActions(reportID: string, timezoneParam: Timezone, text = '', file?:
 /** Add an attachment and optional comment. */
 function addAttachment(reportID: string, file: FileObject, timezoneParam: Timezone, text = '', shouldPlaySound?: boolean) {
     if (shouldPlaySound) {
-        playSound(SOUNDS.DONE);
+        void playSound(SOUNDS.DONE);
     }
     addActions(reportID, timezoneParam, text, file);
 }
@@ -849,7 +849,7 @@ function addAttachment(reportID: string, file: FileObject, timezoneParam: Timezo
 /** Add a single comment to a report */
 function addComment(reportID: string, text: string, timezoneParam: Timezone, shouldPlaySound?: boolean) {
     if (shouldPlaySound) {
-        playSound(SOUNDS.DONE);
+        void playSound(SOUNDS.DONE);
     }
     addActions(reportID, timezoneParam, text);
 }
@@ -902,7 +902,7 @@ function updateChatName(reportID: string, reportName: string, type: typeof CONST
     const command = type === CONST.REPORT.CHAT_TYPE.GROUP ? WRITE_COMMANDS.UPDATE_GROUP_CHAT_NAME : WRITE_COMMANDS.UPDATE_TRIP_ROOM_NAME;
     const parameters: UpdateChatNameParams = {reportName, reportID};
 
-    API.write(command, parameters, {optimisticData, successData, failureData});
+    void API.write(command, parameters, {optimisticData, successData, failureData});
 }
 
 function updateGroupChatAvatar(reportID: string, file?: File | CustomRNImageManipulatorResult) {
@@ -949,14 +949,14 @@ function updateGroupChatAvatar(reportID: string, file?: File | CustomRNImageMani
         },
     ];
     const parameters: UpdateGroupChatAvatarParams = {file, reportID};
-    API.write(WRITE_COMMANDS.UPDATE_GROUP_CHAT_AVATAR, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_GROUP_CHAT_AVATAR, parameters, {optimisticData, failureData, successData});
 }
 
 /**
  * Clear error and pending fields for the report avatar
  */
 function clearAvatarErrors(reportID: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
         errorFields: {
             avatar: null,
         },
@@ -1153,7 +1153,7 @@ function openReport(
             parameters.file = avatar;
         }
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             clearGroupChat();
         });
     }
@@ -1399,7 +1399,7 @@ function navigateToAndOpenReport(
     }
     // In some cases when RHP modal gets hidden and then we navigate to report Composer focus breaks, wrapping navigation in setTimeout fixes this
     setTimeout(() => {
-        Navigation.isNavigationReady().then(() => Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(report?.reportID)));
+        void Navigation.isNavigationReady().then(() => Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(report?.reportID)));
     }, 0);
 }
 
@@ -1456,7 +1456,7 @@ function navigateToAndOpenChildReport(childReportID: string | undefined, parentR
             const participantLogins = PersonalDetailsUtils.getLoginsByAccountIDs(Object.keys(newChat.participants ?? {}).map(Number));
             openReport(newChat.reportID, '', participantLogins, newChat, parentReportAction.reportActionID);
         } else {
-            Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${childReportID}`, newChat);
+            void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${childReportID}`, newChat);
         }
 
         Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(newChat.reportID, undefined, undefined, Navigation.getActiveRoute()));
@@ -1621,7 +1621,7 @@ function readNewestAction(reportID: string | undefined, shouldResetUnreadMarker 
         lastReadTime,
     };
 
-    API.writeWithNoDuplicatesConflictAction(
+    void API.writeWithNoDuplicatesConflictAction(
         WRITE_COMMANDS.READ_NEWEST_ACTION,
         parameters,
         {optimisticData},
@@ -1688,7 +1688,7 @@ function markAllMessagesAsRead() {
         reportIDList,
     };
 
-    API.write(WRITE_COMMANDS.MARK_ALL_MESSAGES_AS_READ, parameters, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.MARK_ALL_MESSAGES_AS_READ, parameters, {optimisticData, failureData});
 }
 
 /**
@@ -1746,7 +1746,7 @@ function markCommentAsUnread(reportID: string | undefined, reportAction: ReportA
         reportActionID: reportAction?.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.MARK_AS_UNREAD, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.MARK_AS_UNREAD, parameters, {optimisticData});
     DeviceEventEmitter.emit(`unreadAction_${reportID}`, lastReadTime);
 }
 
@@ -1772,7 +1772,7 @@ function togglePinnedState(reportID: string | undefined, isPinnedChat: boolean) 
         pinnedValue,
     };
 
-    API.write(WRITE_COMMANDS.TOGGLE_PINNED_CHAT, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.TOGGLE_PINNED_CHAT, parameters, {optimisticData});
 }
 
 /** Saves the report draft to Onyx */
@@ -1786,7 +1786,7 @@ function saveReportDraft(reportID: string, report: Report) {
  * When empty string or null is passed, it will delete the draft comment from Onyx store.
  */
 function saveReportDraftComment(reportID: string, comment: string | null, callback: () => void = () => {}) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`, prepareDraftComment(comment)).then(callback);
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`, prepareDraftComment(comment)).then(callback);
 }
 
 /** Broadcasts whether or not a user is typing on a report over the report's private pusher channel. */
@@ -1817,10 +1817,10 @@ function handleReportChanged(report: OnyxEntry<Report>) {
 
     // Handle cleanup of stale optimistic IOU report and its report preview separately
     if (reportID && preexistingReportID && isMoneyRequestReport(report) && parentReportActionID) {
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${parentReportID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${parentReportID}`, {
             [parentReportActionID]: null,
         });
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, null);
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, null);
         return;
     }
 
@@ -1831,15 +1831,15 @@ function handleReportChanged(report: OnyxEntry<Report>) {
         let callback = () => {
             const existingReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${preexistingReportID}`];
 
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, null);
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${preexistingReportID}`, {
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, null);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${preexistingReportID}`, {
                 ...report,
                 reportID: preexistingReportID,
                 preexistingReportID: null,
                 // Replacing the existing report's participants to avoid duplicates
                 participants: existingReport?.participants ?? report.participants,
             });
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`, null);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`, null);
         };
         // Only re-route them if they are still looking at the optimistically created report
         if (Navigation.getActiveRoute().includes(`/r/${reportID}`)) {
@@ -1997,7 +1997,7 @@ function deleteReportComment(reportID: string | undefined, reportAction: ReportA
 
     clearByKey(reportActionID);
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.DELETE_COMMENT,
         parameters,
         {optimisticData, successData, failureData},
@@ -2173,7 +2173,7 @@ function editReportComment(reportID: string | undefined, originalReportAction: O
         reportActionID,
     };
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.UPDATE_COMMENT,
         parameters,
         {optimisticData, successData, failureData},
@@ -2192,13 +2192,13 @@ function editReportComment(reportID: string | undefined, originalReportAction: O
 /** Deletes the draft for a comment report action. */
 function deleteReportActionDraft(reportID: string | undefined, reportAction: ReportAction) {
     const originalReportID = getOriginalReportID(reportID, reportAction);
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${originalReportID}`, {[reportAction.reportActionID]: null});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${originalReportID}`, {[reportAction.reportActionID]: null});
 }
 
 /** Saves the draft for a comment report action. This will put the comment into "edit mode" */
 function saveReportActionDraft(reportID: string | undefined, reportAction: ReportAction, draftMessage: string) {
     const originalReportID = getOriginalReportID(reportID, reportAction);
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${originalReportID}`, {[reportAction.reportActionID]: {message: draftMessage}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${originalReportID}`, {[reportAction.reportActionID]: {message: draftMessage}});
 }
 
 function updateNotificationPreference(
@@ -2256,7 +2256,7 @@ function updateNotificationPreference(
 
     const parameters: UpdateReportNotificationPreferenceParams = {reportID, notificationPreference: newValue};
 
-    API.write(WRITE_COMMANDS.UPDATE_REPORT_NOTIFICATION_PREFERENCE, parameters, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_REPORT_NOTIFICATION_PREFERENCE, parameters, {optimisticData, failureData});
 }
 
 function updateRoomVisibility(reportID: string, previousValue: RoomVisibility | undefined, newValue: RoomVisibility) {
@@ -2282,7 +2282,7 @@ function updateRoomVisibility(reportID: string, previousValue: RoomVisibility | 
 
     const parameters: UpdateRoomVisibilityParams = {reportID, visibility: newValue};
 
-    API.write(WRITE_COMMANDS.UPDATE_ROOM_VISIBILITY, parameters, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_ROOM_VISIBILITY, parameters, {optimisticData, failureData});
 }
 
 /**
@@ -2377,11 +2377,11 @@ function updateReportName(reportID: string, value: string, previousValue: string
         reportName: value,
     };
 
-    API.write(WRITE_COMMANDS.SET_REPORT_NAME, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SET_REPORT_NAME, parameters, {optimisticData, failureData, successData});
 }
 
 function clearReportFieldKeyErrors(reportID: string | undefined, fieldKey: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
         pendingFields: {
             [fieldKey]: null,
         },
@@ -2518,7 +2518,7 @@ function updateReportField(report: Report, reportField: PolicyReportField, previ
         reportFieldsActionIDs: JSON.stringify({[fieldKey]: optimisticChangeFieldAction.reportActionID}),
     };
 
-    API.write(WRITE_COMMANDS.SET_REPORT_FIELD, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.SET_REPORT_FIELD, parameters, {optimisticData, failureData, successData});
 }
 
 function deleteReportField(reportID: string, reportField: PolicyReportField) {
@@ -2577,7 +2577,7 @@ function deleteReportField(reportID: string, reportField: PolicyReportField) {
         fieldID: fieldKey,
     };
 
-    API.write(WRITE_COMMANDS.DELETE_REPORT_FIELD, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.DELETE_REPORT_FIELD, parameters, {optimisticData, failureData, successData});
 }
 
 function updateDescription(reportID: string, currentDescription: string, newMarkdownValue: string) {
@@ -2647,7 +2647,7 @@ function updateDescription(reportID: string, currentDescription: string, newMark
 
     const parameters: UpdateRoomDescriptionParams = {reportID, description: parsedDescription, reportActionID: optimisticDescriptionUpdatedReportAction.reportActionID};
 
-    API.write(WRITE_COMMANDS.UPDATE_ROOM_DESCRIPTION, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_ROOM_DESCRIPTION, parameters, {optimisticData, failureData, successData});
 }
 
 function updateWriteCapability(report: Report, newValue: WriteCapability) {
@@ -2673,7 +2673,7 @@ function updateWriteCapability(report: Report, newValue: WriteCapability) {
 
     const parameters: UpdateReportWriteCapabilityParams = {reportID: report.reportID, writeCapability: newValue};
 
-    API.write(WRITE_COMMANDS.UPDATE_REPORT_WRITE_CAPABILITY, parameters, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_REPORT_WRITE_CAPABILITY, parameters, {optimisticData, failureData});
 }
 
 /**
@@ -2868,7 +2868,7 @@ function createNewReport(creatorPersonalDetails: PersonalDetails, policyID?: str
         reportPreviewReportActionID,
     );
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.CREATE_APP_REPORT,
         {reportName: optimisticReportName, type: CONST.REPORT.TYPE.EXPENSE, policyID, reportID: optimisticReportID, reportActionID, reportPreviewReportActionID},
         {optimisticData, successData, failureData},
@@ -2884,9 +2884,9 @@ function createNewReport(creatorPersonalDetails: PersonalDetails, policyID?: str
  * Removes the report after failure to create. Also removes it's related report actions and next step from Onyx.
  */
 function removeFailedReport(reportID: string | undefined) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, null);
-    Onyx.set(`${ONYXKEYS.COLLECTION.NEXT_STEP}${reportID}`, null);
-    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.NEXT_STEP}${reportID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`, null);
 }
 
 /** Add a policy report (workspace room) optimistically and navigate to it. */
@@ -2991,7 +2991,7 @@ function addPolicyReport(policyReport: OptimisticChatReport) {
         description: policyReport.description,
     };
 
-    API.write(WRITE_COMMANDS.ADD_WORKSPACE_ROOM, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.ADD_WORKSPACE_ROOM, parameters, {optimisticData, successData, failureData});
     Navigation.dismissModalWithReport({reportID: policyReport.reportID});
 }
 
@@ -3018,7 +3018,7 @@ function deleteReport(reportID: string | undefined, shouldDeleteChildReports = f
         onyxData[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`] = null;
     });
 
-    Onyx.multiSet(onyxData);
+    void Onyx.multiSet(onyxData);
 
     if (shouldDeleteChildReports) {
         Object.values(reportActionsForReport ?? {}).forEach((reportAction) => {
@@ -3046,7 +3046,7 @@ function navigateToConciergeChatAndDeleteReport(reportID: string | undefined, sh
         Navigation.goBack();
     }
     navigateToConciergeChat();
-    InteractionManager.runAfterInteractions(() => {
+    void InteractionManager.runAfterInteractions(() => {
         deleteReport(reportID, shouldDeleteChildReports);
     });
 }
@@ -3136,14 +3136,14 @@ function updatePolicyRoomName(policyRoomReport: Report, policyRoomName: string) 
         renamedRoomReportActionID: optimisticRenamedAction.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_ROOM_NAME, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_ROOM_NAME, parameters, {optimisticData, successData, failureData});
 }
 
 /**
  * @param reportID The reportID of the policy room.
  */
 function clearPolicyRoomNameErrors(reportID: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
         errorFields: {
             reportName: null,
         },
@@ -3154,7 +3154,7 @@ function clearPolicyRoomNameErrors(reportID: string) {
 }
 
 function setIsComposerFullSize(reportID: string, isComposerFullSize: boolean) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_IS_COMPOSER_FULL_SIZE}${reportID}`, isComposerFullSize);
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_IS_COMPOSER_FULL_SIZE}${reportID}`, isComposerFullSize);
 }
 
 /**
@@ -3255,7 +3255,7 @@ function showReportActionNotification(reportID: string, reportAction: ReportActi
 
 /** Clear the errors associated with the IOUs of a given report. */
 function clearIOUError(reportID: string | undefined) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {errorFields: {iou: null}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {errorFields: {iou: null}});
 }
 
 /**
@@ -3316,7 +3316,7 @@ function addEmojiReaction(reportID: string, reportActionID: string, emoji: Emoji
         createdAt,
     };
 
-    API.write(WRITE_COMMANDS.ADD_EMOJI_REACTION, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.ADD_EMOJI_REACTION, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -3344,7 +3344,7 @@ function removeEmojiReaction(reportID: string, reportActionID: string, emoji: Em
         emojiCode: emoji.name,
     };
 
-    API.write(WRITE_COMMANDS.REMOVE_EMOJI_REACTION, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.REMOVE_EMOJI_REACTION, parameters, {optimisticData});
 }
 
 /**
@@ -3388,7 +3388,7 @@ function toggleEmojiReaction(
 }
 
 function doneCheckingPublicRoom() {
-    Onyx.set(ONYXKEYS.IS_CHECKING_PUBLIC_ROOM, false);
+    void Onyx.set(ONYXKEYS.IS_CHECKING_PUBLIC_ROOM, false);
 }
 
 function openReportFromDeepLink(
@@ -3432,7 +3432,7 @@ function openReportFromDeepLink(
     }
 
     // Navigate to the report after sign-in/sign-up.
-    InteractionManager.runAfterInteractions(() => {
+    void InteractionManager.runAfterInteractions(() => {
         waitForUserSignIn().then(() => {
             const connection = Onyx.connect({
                 key: ONYXKEYS.NVP_ONBOARDING,
@@ -3640,7 +3640,7 @@ function leaveGroupChat(reportID: string) {
     ];
 
     navigateToMostRecentReport(report);
-    API.write(WRITE_COMMANDS.LEAVE_GROUP_CHAT, {reportID}, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.LEAVE_GROUP_CHAT, {reportID}, {optimisticData, successData, failureData});
 }
 
 /** Leave a report by setting the state to submitted and closed */
@@ -3743,7 +3743,7 @@ function leaveRoom(reportID: string, isWorkspaceMemberLeavingWorkspaceRoom = fal
         reportID,
     };
 
-    API.write(WRITE_COMMANDS.LEAVE_ROOM, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.LEAVE_ROOM, parameters, {optimisticData, successData, failureData});
 
     // If this is the leave action from a workspace room, simply dismiss the modal, i.e., allow the user to view the room and join again immediately.
     // If this is the leave action from a chat thread (even if the chat thread is in a room), do not allow the user to stay in the thread after leaving.
@@ -3863,7 +3863,7 @@ function inviteToRoom(reportID: string, inviteeEmailsToAccountIDs: InvitedEmails
             accountIDList: newAccountIDs.join(),
         };
 
-        API.write(WRITE_COMMANDS.INVITE_TO_GROUP_CHAT, parameters, {optimisticData, successData, failureData});
+        void API.write(WRITE_COMMANDS.INVITE_TO_GROUP_CHAT, parameters, {optimisticData, successData, failureData});
         return;
     }
 
@@ -3874,20 +3874,20 @@ function inviteToRoom(reportID: string, inviteeEmailsToAccountIDs: InvitedEmails
     };
 
     // eslint-disable-next-line rulesdir/no-multiple-api-calls
-    API.write(WRITE_COMMANDS.INVITE_TO_ROOM, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.INVITE_TO_ROOM, parameters, {optimisticData, successData, failureData});
 }
 
 function clearAddRoomMemberError(reportID: string, invitedAccountID: string) {
     const reportMetadata = getReportMetadata(reportID);
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {
         participants: {
             [invitedAccountID]: null,
         },
     });
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {
         pendingChatMembers: reportMetadata?.pendingChatMembers?.filter((pendingChatMember) => pendingChatMember.accountID !== invitedAccountID),
     });
-    Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
+    void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
         [invitedAccountID]: null,
     });
 }
@@ -3930,7 +3930,7 @@ function updateGroupChatMemberRoles(reportID: string, accountIDList: number[], r
         },
     ];
     const parameters: UpdateGroupChatMemberRolesParams = {reportID, memberRoles: JSON.stringify(memberRoles)};
-    API.write(WRITE_COMMANDS.UPDATE_GROUP_CHAT_MEMBER_ROLES, parameters, {optimisticData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_GROUP_CHAT_MEMBER_ROLES, parameters, {optimisticData, successData});
 }
 
 /** Invites people to a group chat */
@@ -3998,7 +3998,7 @@ function removeFromRoom(reportID: string, targetAccountIDs: number[]) {
             reportID,
             accountIDList: targetAccountIDs.join(),
         };
-        API.write(WRITE_COMMANDS.REMOVE_FROM_GROUP_CHAT, parameters, {optimisticData, failureData, successData});
+        void API.write(WRITE_COMMANDS.REMOVE_FROM_GROUP_CHAT, parameters, {optimisticData, failureData, successData});
         return;
     }
 
@@ -4008,7 +4008,7 @@ function removeFromRoom(reportID: string, targetAccountIDs: number[]) {
     };
 
     // eslint-disable-next-line rulesdir/no-multiple-api-calls
-    API.write(WRITE_COMMANDS.REMOVE_FROM_ROOM, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.REMOVE_FROM_ROOM, parameters, {optimisticData, failureData, successData});
 }
 
 function removeFromGroupChat(reportID: string, accountIDList: number[]) {
@@ -4142,7 +4142,7 @@ function flagComment(reportID: string | undefined, reportAction: OnyxEntry<Repor
         isDevRequest: Environment.isDevelopment(),
     };
 
-    API.write(WRITE_COMMANDS.FLAG_COMMENT, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.FLAG_COMMENT, parameters, {optimisticData, successData, failureData});
 }
 
 /** Updates a given user's private notes on a report */
@@ -4194,7 +4194,7 @@ const updatePrivateNotes = (reportID: string, accountID: number, note: string) =
 
     const parameters: UpdateReportPrivateNoteParams = {reportID, privateNotes: note};
 
-    API.write(WRITE_COMMANDS.UPDATE_REPORT_PRIVATE_NOTE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_REPORT_PRIVATE_NOTE, parameters, {optimisticData, successData, failureData});
 };
 
 /** Fetches all the private notes for a given report */
@@ -4343,7 +4343,7 @@ function completeOnboarding({
         });
     }
 
-    API.write(WRITE_COMMANDS.COMPLETE_GUIDED_SETUP, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.COMPLETE_GUIDED_SETUP, parameters, {optimisticData, successData, failureData});
 }
 
 /** Loads necessary data for rendering the RoomMembersPage */
@@ -4365,7 +4365,7 @@ function hasErrorInPrivateNotes(report: OnyxEntry<Report>): boolean {
 
 /** Clears all errors associated with a given private note */
 function clearPrivateNotesError(reportID: string, accountID: number) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {privateNotes: {[accountID]: {errors: null}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {privateNotes: {[accountID]: {errors: null}}});
 }
 
 function getDraftPrivateNote(reportID: string): string {
@@ -4377,13 +4377,13 @@ function getDraftPrivateNote(reportID: string): string {
  * tab, refresh etc without worrying about loosing what they typed out.
  */
 function savePrivateNotesDraft(reportID: string, note: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.PRIVATE_NOTES_DRAFT}${reportID}`, note);
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.PRIVATE_NOTES_DRAFT}${reportID}`, note);
 }
 
 function searchForReports(searchInput: string, policyID?: string) {
     // We do not try to make this request while offline because it sets a loading indicator optimistically
     if (isNetworkOffline) {
-        Onyx.set(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, false);
+        void Onyx.set(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, false);
         return;
     }
 
@@ -4419,14 +4419,14 @@ function searchForReports(searchInput: string, policyID?: string) {
 
 function searchInServer(searchInput: string, policyID?: string) {
     if (isNetworkOffline || !searchInput.trim().length) {
-        Onyx.set(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, false);
+        void Onyx.set(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, false);
         return;
     }
 
     // Why not set this in optimistic data? It won't run until the API request happens and while the API request is debounced
     // we want to show the loading state right away. Otherwise, we will see a flashing UI where the client options are sorted and
     // tell the user there are no options, then we start searching, and tell them there are no options again.
-    Onyx.set(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, true);
+    void Onyx.set(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, true);
     searchForReports(searchInput, policyID);
 }
 
@@ -4434,18 +4434,18 @@ function updateLastVisitTime(reportID: string) {
     if (!isValidReportIDFromPath(reportID)) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {lastVisitTime: DateUtils.getDBTime()});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {lastVisitTime: DateUtils.getDBTime()});
 }
 
 function updateLoadingInitialReportAction(reportID: string) {
     if (!isValidReportIDFromPath(reportID)) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {isLoadingInitialReportActions: false});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {isLoadingInitialReportActions: false});
 }
 
 function setNewRoomFormLoading(isLoading = true) {
-    Onyx.merge(`${ONYXKEYS.FORMS.NEW_ROOM_FORM}`, {isLoading});
+    void Onyx.merge(`${ONYXKEYS.FORMS.NEW_ROOM_FORM}`, {isLoading});
 }
 
 function clearNewRoomFormError() {
@@ -4568,7 +4568,7 @@ function resolveActionableMentionWhisper(
         resolution,
     };
 
-    API.write(WRITE_COMMANDS.RESOLVE_ACTIONABLE_MENTION_WHISPER, parameters, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.RESOLVE_ACTIONABLE_MENTION_WHISPER, parameters, {optimisticData, failureData});
 }
 
 function resolveActionableMentionConfirmWhisper(
@@ -4650,7 +4650,7 @@ function resolveActionableReportMentionWhisper(
         resolution,
     };
 
-    API.write(WRITE_COMMANDS.RESOLVE_ACTIONABLE_REPORT_MENTION_WHISPER, parameters, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.RESOLVE_ACTIONABLE_REPORT_MENTION_WHISPER, parameters, {optimisticData, failureData});
 }
 
 function dismissTrackExpenseActionableWhisper(reportID: string | undefined, reportAction: OnyxEntry<ReportAction>): void {
@@ -4699,11 +4699,11 @@ function dismissTrackExpenseActionableWhisper(reportID: string | undefined, repo
         reportActionID: reportAction.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.DISMISS_TRACK_EXPENSE_ACTIONABLE_WHISPER, params, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.DISMISS_TRACK_EXPENSE_ACTIONABLE_WHISPER, params, {optimisticData, failureData});
 }
 
 function setGroupDraft(newGroupDraft: Partial<NewGroupChatDraft>) {
-    Onyx.merge(ONYXKEYS.NEW_GROUP_CHAT_DRAFT, newGroupDraft);
+    void Onyx.merge(ONYXKEYS.NEW_GROUP_CHAT_DRAFT, newGroupDraft);
 }
 
 function exportToIntegration(reportID: string, connectionName: ConnectionName) {
@@ -4741,7 +4741,7 @@ function exportToIntegration(reportID: string, connectionName: ConnectionName) {
         }),
     } satisfies ReportExportParams;
 
-    API.write(WRITE_COMMANDS.REPORT_EXPORT, params, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.REPORT_EXPORT, params, {optimisticData, failureData});
 }
 
 function markAsManuallyExported(reportID: string, connectionName: ConnectionName) {
@@ -4794,7 +4794,7 @@ function markAsManuallyExported(reportID: string, connectionName: ConnectionName
         ]),
     } satisfies MarkAsExportedParams;
 
-    API.write(WRITE_COMMANDS.MARK_AS_EXPORTED, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.MARK_AS_EXPORTED, params, {optimisticData, successData, failureData});
 }
 
 function exportReportToCSV({reportID, transactionIDList}: ExportReportCSVParams, onDownloadFailed: () => void) {
@@ -4812,7 +4812,7 @@ function exportReportToCSV({reportID, transactionIDList}: ExportReportCSVParams,
         }
     });
 
-    fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_REPORT_TO_CSV}), 'Expensify.csv', '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
+    void fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_REPORT_TO_CSV}), 'Expensify.csv', '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
 }
 
 function exportReportToPDF({reportID}: ExportReportPDFParams) {
@@ -4835,7 +4835,7 @@ function exportReportToPDF({reportID}: ExportReportPDFParams) {
         reportID,
     } satisfies ExportReportPDFParams;
 
-    API.write(WRITE_COMMANDS.EXPORT_REPORT_TO_PDF, params, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.EXPORT_REPORT_TO_PDF, params, {optimisticData, failureData});
 }
 
 function downloadReportPDF(fileName: string, reportName: string) {
@@ -4848,15 +4848,15 @@ function downloadReportPDF(fileName: string, reportName: string) {
     // The shouldOpenExternalLink parameter must always be set to
     // true to avoid CORS errors for as long as we use the OD URL.
     // See https://github.com/Expensify/App/issues/61937
-    fileDownload(addEncryptedAuthTokenToURL(pdfURL, true), downloadFileName, '', true).then(() => setDownload(fileName, false));
+    void fileDownload(addEncryptedAuthTokenToURL(pdfURL, true), downloadFileName, '', true).then(() => setDownload(fileName, false));
 }
 
 function setDeleteTransactionNavigateBackUrl(url: string) {
-    Onyx.set(ONYXKEYS.NVP_DELETE_TRANSACTION_NAVIGATE_BACK_URL, url);
+    void Onyx.set(ONYXKEYS.NVP_DELETE_TRANSACTION_NAVIGATE_BACK_URL, url);
 }
 
 function clearDeleteTransactionNavigateBackUrl() {
-    Onyx.merge(ONYXKEYS.NVP_DELETE_TRANSACTION_NAVIGATE_BACK_URL, null);
+    void Onyx.merge(ONYXKEYS.NVP_DELETE_TRANSACTION_NAVIGATE_BACK_URL, null);
 }
 
 /** Deletes a report and un-reports all transactions on the report along with its reportActions, any linked reports and any linked IOU report actions. */
@@ -5177,7 +5177,7 @@ function deleteAppReport(reportID: string | undefined) {
         selfDMCreatedReportActionID: selfDMParameters.createdReportActionID,
     };
 
-    API.write(WRITE_COMMANDS.DELETE_APP_REPORT, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.DELETE_APP_REPORT, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -5371,7 +5371,7 @@ function moveIOUReportToPolicy(reportID: string, policyID: string, isFromSettlem
         optimisticReportID: expenseChatReportId,
     };
 
-    API.write(WRITE_COMMANDS.MOVE_IOU_REPORT_TO_EXISTING_POLICY, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.MOVE_IOU_REPORT_TO_EXISTING_POLICY, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -5630,7 +5630,7 @@ function moveIOUReportToPolicyAndInviteSubmitter(
         dmMovedReportActionID: movedReportAction.reportActionID,
     };
 
-    API.write(WRITE_COMMANDS.MOVE_IOU_REPORT_TO_POLICY_AND_INVITE_SUBMITTER, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.MOVE_IOU_REPORT_TO_POLICY_AND_INVITE_SUBMITTER, parameters, {optimisticData, successData, failureData});
     return {policyExpenseChatReportID: optimisticPolicyExpenseChatReportID};
 }
 
@@ -5651,7 +5651,7 @@ function dismissChangePolicyModal() {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.DISMISS_PRODUCT_TRAINING, {name: CONST.CHANGE_POLICY_TRAINING_MODAL, dismissedMethod: 'click'}, {optimisticData});
+    void API.write(WRITE_COMMANDS.DISMISS_PRODUCT_TRAINING, {name: CONST.CHANGE_POLICY_TRAINING_MODAL, dismissedMethod: 'click'}, {optimisticData});
 }
 
 /**
@@ -5711,7 +5711,7 @@ function navigateToTrainingModal(dismissedProductTrainingNVP: OnyxEntry<Dismisse
         return;
     }
 
-    InteractionManager.runAfterInteractions(() => {
+    void InteractionManager.runAfterInteractions(() => {
         Navigation.navigate(ROUTES.CHANGE_POLICY_EDUCATIONAL.getRoute(ROUTES.REPORT_WITH_ID.getRoute(reportID)));
     });
 }
@@ -5975,7 +5975,7 @@ function changeReportPolicy(report: Report, policy: Policy, reportNextStep?: Rep
         reportPreviewReportActionID: optimisticReportPreviewAction.reportActionID,
         changePolicyReportActionID: optimisticMovedReportAction.reportActionID,
     };
-    API.write(WRITE_COMMANDS.CHANGE_REPORT_POLICY, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.CHANGE_REPORT_POLICY, params, {optimisticData, successData, failureData});
 
     // If the dismissedProductTraining.changeReportModal is not set,
     // navigate to CHANGE_POLICY_EDUCATIONAL and a backTo param for the report page.
@@ -6036,7 +6036,7 @@ function changeReportPolicyAndInviteSubmitter(
         policyExpenseChatReportID: optimisticPolicyExpenseChatReportID,
         policyExpenseCreatedReportActionID: optimisticPolicyExpenseChatCreatedReportActionID,
     };
-    API.write(WRITE_COMMANDS.CHANGE_REPORT_POLICY_AND_INVITE_SUBMITTER, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.CHANGE_REPORT_POLICY_AND_INVITE_SUBMITTER, params, {optimisticData, successData, failureData});
 
     // If the dismissedProductTraining.changeReportModal is not set,
     // navigate to CHANGE_POLICY_EDUCATIONAL and a backTo param for the report page.
@@ -6063,7 +6063,7 @@ function resolveConciergeCategoryOptions(
 
     addComment(reportID, selectedCategory, timezoneParam);
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${actionReportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${actionReportID}`, {
         [reportActionID]: {
             originalMessage: {
                 selectedCategory,

@@ -122,7 +122,7 @@ function clear(options?: ClearDeferredOnyxUpdatesOptions) {
     }
 
     if (options?.shouldUnpauseSequentialQueue ?? true) {
-        Onyx.set(ONYXKEYS.ONYX_UPDATES_FROM_SERVER, null);
+        void Onyx.set(ONYXKEYS.ONYX_UPDATES_FROM_SERVER, null);
         SequentialQueue.unpause();
     }
 }

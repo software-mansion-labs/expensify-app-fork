@@ -182,7 +182,7 @@ function createPolicyTag(policyID: string, tagName: string) {
         tags: JSON.stringify([{name: newTagName}]),
     };
 
-    API.write(WRITE_COMMANDS.CREATE_POLICY_TAG, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.CREATE_POLICY_TAG, parameters, onyxData);
 }
 
 function importPolicyTags(policyID: string, tags: PolicyTag[]) {
@@ -194,7 +194,7 @@ function importPolicyTags(policyID: string, tags: PolicyTag[]) {
         tags: JSON.stringify(tags.map((tag) => ({name: tag.name, enabled: tag.enabled, 'GL Code': tag['GL Code']}))),
     };
 
-    API.write(WRITE_COMMANDS.IMPORT_TAGS_SPREADSHEET, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.IMPORT_TAGS_SPREADSHEET, parameters, onyxData);
 }
 
 function setWorkspaceTagEnabled(policyID: string, tagsToUpdate: Record<string, {name: string; enabled: boolean}>, tagListIndex: number) {
@@ -292,7 +292,7 @@ function setWorkspaceTagEnabled(policyID: string, tagsToUpdate: Record<string, {
         tagListIndex,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_TAGS_ENABLED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_TAGS_ENABLED, parameters, onyxData);
 }
 
 function setWorkspaceTagRequired(policyID: string, tagListIndexes: number[], isRequired: boolean, policyTags: OnyxEntry<PolicyTagLists>) {
@@ -376,7 +376,7 @@ function setWorkspaceTagRequired(policyID: string, tagListIndexes: number[], isR
         isRequired,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_TAG_LISTS_REQUIRED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_TAG_LISTS_REQUIRED, parameters, onyxData);
 }
 
 function deletePolicyTags(policyID: string, tagsToDelete: string[], policyTags: OnyxEntry<PolicyTagLists>) {
@@ -446,7 +446,7 @@ function deletePolicyTags(policyID: string, tagsToDelete: string[], policyTags: 
         tags: JSON.stringify(tagsToDelete),
     };
 
-    API.write(WRITE_COMMANDS.DELETE_POLICY_TAGS, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.DELETE_POLICY_TAGS, parameters, onyxData);
 }
 
 type ClearPolicyTagErrorsProps = {
@@ -464,7 +464,7 @@ function clearPolicyTagErrors({policyID, tagName, tagListIndex, policyTags}: Cle
     }
 
     if (tag.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
-        Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
             [tagListName]: {
                 tags: {
                     [tagName]: null,
@@ -474,7 +474,7 @@ function clearPolicyTagErrors({policyID, tagName, tagListIndex, policyTags}: Cle
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
         [tagListName]: {
             tags: {
                 [tagName]: {
@@ -497,7 +497,7 @@ function clearPolicyTagListErrorField(policyID: string, tagListIndex: number, er
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
         [policyTag.name]: {
             errorFields: {
                 [errorField]: null,
@@ -517,7 +517,7 @@ function clearPolicyTagListErrors(policyID: string, tagListIndex: number) {
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
         [policyTag.name]: {
             errors: null,
         },
@@ -639,7 +639,7 @@ function renamePolicyTag(policyID: string, policyTag: {oldName: string; newName:
         tagListIndex,
     };
 
-    API.write(WRITE_COMMANDS.RENAME_POLICY_TAG, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.RENAME_POLICY_TAG, parameters, onyxData);
 }
 
 function enablePolicyTags(policyID: string, enabled: boolean) {
@@ -737,7 +737,7 @@ function enablePolicyTags(policyID: string, enabled: boolean) {
 
     const parameters: EnablePolicyTagsParams = {policyID, enabled};
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_TAGS, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_TAGS, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout()) {
         goBackWhenEnableFeature(policyID);
@@ -746,27 +746,27 @@ function enablePolicyTags(policyID: string, enabled: boolean) {
 
 function cleanPolicyTags(policyID: string) {
     // We do not have any optimistic data or success data for this command as this action cannot be done offline
-    API.write(WRITE_COMMANDS.CLEAN_POLICY_TAGS, {policyID});
+    void API.write(WRITE_COMMANDS.CLEAN_POLICY_TAGS, {policyID});
 }
 
 function setImportedSpreadsheetIsImportingMultiLevelTags(isImportingMultiLevelTags: boolean) {
-    Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {isImportingMultiLevelTags});
+    void Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {isImportingMultiLevelTags});
 }
 
 function setImportedSpreadsheetIsImportingIndependentMultiLevelTags(isImportingIndependentMultiLevelTags: boolean) {
-    Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {isImportingIndependentMultiLevelTags});
+    void Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {isImportingIndependentMultiLevelTags});
 }
 
 function setImportedSpreadsheetIsFirstLineHeader(containsHeader: boolean) {
-    Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {containsHeader});
+    void Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {containsHeader});
 }
 
 function setImportedSpreadsheetIsGLAdjacent(isGLAdjacent: boolean) {
-    Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {isGLAdjacent});
+    void Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {isGLAdjacent});
 }
 
 function setImportedSpreadsheetFileURI(fileURI: string) {
-    Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {fileURI});
+    void Onyx.merge(ONYXKEYS.IMPORTED_SPREADSHEET, {fileURI});
 }
 
 function importMultiLevelTags(policyID: string, spreadsheet: ImportedSpreadsheet | undefined) {
@@ -823,7 +823,7 @@ function importMultiLevelTags(policyID: string, spreadsheet: ImportedSpreadsheet
                 file,
             };
 
-            API.write(WRITE_COMMANDS.IMPORT_MULTI_LEVEL_TAGS, parameters, onyxData);
+            void API.write(WRITE_COMMANDS.IMPORT_MULTI_LEVEL_TAGS, parameters, onyxData);
         },
         () => {},
         spreadsheet?.fileType ?? CONST.SHARE_FILE_MIMETYPE.CSV,
@@ -877,7 +877,7 @@ function renamePolicyTagList(policyID: string, policyTagListName: {oldName: stri
         tagListIndex,
     };
 
-    API.write(WRITE_COMMANDS.RENAME_POLICY_TAG_LIST, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.RENAME_POLICY_TAG_LIST, parameters, onyxData);
 }
 
 function setPolicyRequiresTag(policyID: string, requiresTag: boolean) {
@@ -949,7 +949,7 @@ function setPolicyRequiresTag(policyID: string, requiresTag: boolean) {
         requiresTag,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_REQUIRES_TAG, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_REQUIRES_TAG, parameters, onyxData);
 }
 
 function setPolicyTagsRequired(policyID: string, requiresTag: boolean, tagListIndex: number) {
@@ -1011,7 +1011,7 @@ function setPolicyTagsRequired(policyID: string, requiresTag: boolean, tagListIn
         requireTagList: requiresTag,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_TAGS_REQUIRED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_TAGS_REQUIRED, parameters, onyxData);
 }
 
 function setPolicyTagGLCode(policyID: string, tagName: string, tagListIndex: number, glCode: string) {
@@ -1086,7 +1086,7 @@ function setPolicyTagGLCode(policyID: string, tagName: string, tagListIndex: num
         glCode,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_TAG_GL_CODE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_TAG_GL_CODE, parameters, onyxData);
 }
 
 function setPolicyTagApprover(policyID: string, tag: string, approver: string) {
@@ -1156,7 +1156,7 @@ function setPolicyTagApprover(policyID: string, tag: string, approver: string) {
         approver: toBeUnselected ? null : approver,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_TAG_APPROVER, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_TAG_APPROVER, parameters, onyxData);
 }
 
 function downloadTagsCSV(policyID: string, onDownloadFailed: () => void) {
@@ -1170,7 +1170,7 @@ function downloadTagsCSV(policyID: string, onDownloadFailed: () => void) {
         formData.append(key, String(value));
     });
 
-    fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_TAGS_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
+    void fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_TAGS_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
 }
 
 function downloadMultiLevelIndependentTagsCSV(policyID: string, onDownloadFailed: () => void) {
@@ -1184,7 +1184,7 @@ function downloadMultiLevelIndependentTagsCSV(policyID: string, onDownloadFailed
         formData.append(key, String(value));
     });
 
-    fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_MULTI_LEVEL_TAGS_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
+    void fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_MULTI_LEVEL_TAGS_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
 }
 
 function getPolicyTagsData(policyID: string | undefined) {

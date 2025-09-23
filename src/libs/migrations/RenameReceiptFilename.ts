@@ -46,7 +46,7 @@ export default function () {
                 );
 
                 // eslint-disable-next-line rulesdir/prefer-actions-set-data
-                Onyx.mergeCollection(ONYXKEYS.COLLECTION.TRANSACTION, dataToSave).then(() => {
+                void Onyx.mergeCollection(ONYXKEYS.COLLECTION.TRANSACTION, dataToSave).then(() => {
                     Log.info(`[Migrate Onyx] Ran migration RenameReceiptFilename and renamed ${Object.keys(dataToSave)?.length} properties`);
                     resolve();
                 });

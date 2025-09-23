@@ -228,7 +228,7 @@ function FormWrapper({
                     if (!shouldScrollToEnd) {
                         return;
                     }
-                    InteractionManager.runAfterInteractions(() => {
+                    void InteractionManager.runAfterInteractions(() => {
                         requestAnimationFrame(() => {
                             formRef.current?.scrollToEnd({animated: true});
                         });

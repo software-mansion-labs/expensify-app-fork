@@ -27,13 +27,13 @@ describe('ReportActionsUtils', () => {
         wrapOnyxWithWaitForBatchedUpdates(Onyx);
         IntlStore.load(CONST.LOCALES.DEFAULT);
         // Initialize the network key for OfflineWithFeedback
-        Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
+        void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
         return waitForBatchedUpdates();
     });
 
     // Clear out Onyx after each test so that each test starts with a clean slate
     afterEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     describe('getSortedReportActions', () => {
@@ -912,7 +912,7 @@ describe('ReportActionsUtils', () => {
         };
 
         beforeEach(() => {
-            Onyx.multiSet({
+            void Onyx.multiSet({
                 [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${deletedIOUReportID}`]: {[deletedIOUReportAction.reportActionID]: deletedIOUReportAction},
                 [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${activeIOUReportID}`]: {[activeIOUReportAction.reportActionID]: activeIOUReportAction},
             } as unknown as KeyValueMapping);
@@ -959,11 +959,12 @@ describe('ReportActionsUtils', () => {
             return (
                 waitForBatchedUpdates()
                     // When Onyx is updated with the data and the sidebar re-renders
-                    .then(() =>
-                        Onyx.multiSet({
-                            [`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`]: report,
-                            [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.reportID}`]: {[action.reportActionID]: action, [action2.reportActionID]: action2},
-                        } as unknown as KeyValueMapping),
+                    .then(
+                        () =>
+                            void Onyx.multiSet({
+                                [`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`]: report,
+                                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.reportID}`]: {[action.reportActionID]: action, [action2.reportActionID]: action2},
+                            } as unknown as KeyValueMapping),
                     )
                     .then(
                         () =>

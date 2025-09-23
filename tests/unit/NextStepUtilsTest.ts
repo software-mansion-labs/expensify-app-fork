@@ -43,7 +43,7 @@ describe('libs/NextStepUtils', () => {
         beforeAll(() => {
             const policyCollectionDataSet = toCollectionDataSet(ONYXKEYS.COLLECTION.POLICY, [policy], (item) => item.id);
 
-            Onyx.multiSet({
+            void Onyx.multiSet({
                 [ONYXKEYS.SESSION]: {email: currentUserEmail, accountID: currentUserAccountID},
                 [ONYXKEYS.PERSONAL_DETAILS_LIST]: {
                     [strangeAccountID]: {
@@ -72,7 +72,7 @@ describe('libs/NextStepUtils', () => {
             optimisticNextStep.icon = CONST.NEXT_STEP.ICONS.HOURGLASS;
             optimisticNextStep.message = [];
 
-            Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, policy).then(waitForBatchedUpdates);
+            void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, policy).then(waitForBatchedUpdates);
         });
 
         describe('it generates and optimistic nextStep once a report has been created', () => {
@@ -513,7 +513,7 @@ describe('libs/NextStepUtils', () => {
                     expect(result).toMatchObject(optimisticNextStep);
 
                     // restore to previous state
-                    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+                    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
                         achAccount: null,
                     });
                 });

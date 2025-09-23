@@ -190,7 +190,7 @@ function ReportFieldsListValuesPage({
 
         setDeleteValuesConfirmModalVisible(false);
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedValues({});
         });
     };

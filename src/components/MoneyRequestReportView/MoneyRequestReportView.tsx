@@ -122,7 +122,7 @@ function MoneyRequestReportView({report, policy, reportMetadata, shouldDisplayRe
 
     const dismissReportCreationError = useCallback(() => {
         goBackFromSearchMoneyRequest();
-        InteractionManager.runAfterInteractions(() => removeFailedReport(reportID));
+        void InteractionManager.runAfterInteractions(() => removeFailedReport(reportID));
     }, [reportID]);
 
     // Special case handling a report that is a transaction thread

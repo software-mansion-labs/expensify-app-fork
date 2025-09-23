@@ -316,7 +316,7 @@ function AvatarCropModal({imageUri = '', imageName = '', imageType = '', onClose
 
         cropOrRotateImage(imageUri, [{rotate: rotation.get() % 360}, {crop}], {compress: 1, name, type})
             .then((newImage) => {
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     onClose?.();
                 });
                 onSave?.(newImage);

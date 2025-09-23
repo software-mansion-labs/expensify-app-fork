@@ -1413,7 +1413,7 @@ function PureReportActionItem({
                                 if (isAnonymousUser()) {
                                     hideContextMenu(false);
 
-                                    InteractionManager.runAfterInteractions(() => {
+                                    void InteractionManager.runAfterInteractions(() => {
                                         signOutAndRedirectToSignIn();
                                     });
                                 } else {

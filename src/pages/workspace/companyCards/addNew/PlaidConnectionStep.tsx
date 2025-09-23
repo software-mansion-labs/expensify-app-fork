@@ -132,7 +132,7 @@ function PlaidConnectionStep({feed, policyID}: {feed?: CompanyCardFeed; policyID
                                     addNewCard.data.statementPeriodEnd,
                                     addNewCard.data.statementPeriodEndDay,
                                 );
-                                InteractionManager.runAfterInteractions(() => {
+                                void InteractionManager.runAfterInteractions(() => {
                                     setAssignCardStepAndData({
                                         data: {
                                             plaidAccessToken: publicToken,

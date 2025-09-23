@@ -80,7 +80,7 @@ describe('[OptimisticReportNames] Performance Tests', () => {
     });
 
     afterAll(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     describe('Single Report Name Computation', () => {

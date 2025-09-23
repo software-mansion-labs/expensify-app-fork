@@ -732,7 +732,7 @@ describe('DebugUtils', () => {
             });
         });
         beforeEach(() => {
-            Onyx.clear();
+            void Onyx.clear();
         });
         it('returns null when report is not defined', () => {
             const reason = DebugUtils.getReasonForShowingRowInLHN({report: undefined, chatReport: chatReportR14932, doesReportHaveViolations: false});
@@ -956,7 +956,7 @@ describe('DebugUtils', () => {
             });
         });
         beforeEach(() => {
-            Onyx.clear();
+            void Onyx.clear();
         });
         it('returns undefined reason when report is not defined', () => {
             const {reason} = DebugUtils.getReasonAndReportActionForGBRInLHNRow(undefined) ?? {};
@@ -1132,7 +1132,7 @@ describe('DebugUtils', () => {
         });
         describe('reportAction', () => {
             beforeEach(() => {
-                Onyx.clear();
+                void Onyx.clear();
             });
             it('returns undefined when report has no RBR', () => {
                 const {reportAction} =

@@ -153,7 +153,7 @@ function resetUSDBankAccount(
         });
     }
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.RESTART_BANK_ACCOUNT_SETUP,
         {
             bankAccountID,

@@ -82,8 +82,8 @@ Onyx.connect({
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`] = null;
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${reportID}`] = null;
             });
-            Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT, cleanUpMergeQueries);
-            Onyx.multiSet(cleanUpSetQueries);
+            void Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT, cleanUpMergeQueries);
+            void Onyx.multiSet(cleanUpSetQueries);
             delete allPolicies[key];
             return;
         }
@@ -670,7 +670,7 @@ function removeMembers(accountIDs: number[], policyID: string) {
         policyID,
     };
 
-    API.write(WRITE_COMMANDS.DELETE_MEMBERS_FROM_WORKSPACE, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.DELETE_MEMBERS_FROM_WORKSPACE, params, {optimisticData, successData, failureData});
 }
 
 function buildUpdateWorkspaceMembersRoleOnyxData(policyID: string, accountIDs: number[], newRole: ValueOf<typeof CONST.POLICY.ROLE>) {
@@ -793,7 +793,7 @@ function updateWorkspaceMembersRole(policyID: string, accountIDs: number[], newR
         employees: JSON.stringify(memberRoles.map((item) => ({email: item.email, role: item.role}))),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_MEMBERS_ROLE, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_MEMBERS_ROLE, params, {optimisticData, successData, failureData});
 }
 
 function requestWorkspaceOwnerChange(policyID: string | undefined) {
@@ -826,7 +826,7 @@ function requestWorkspaceOwnerChange(policyID: string | undefined) {
             ownershipChecks.shouldTransferSingleSubscription = true;
         }
 
-        Onyx.merge(ONYXKEYS.POLICY_OWNERSHIP_CHANGE_CHECKS, {
+        void Onyx.merge(ONYXKEYS.POLICY_OWNERSHIP_CHANGE_CHECKS, {
             [policyID]: ownershipChecks,
         });
     }
@@ -875,7 +875,7 @@ function requestWorkspaceOwnerChange(policyID: string | undefined) {
         ...ownershipChecks,
     };
 
-    API.write(WRITE_COMMANDS.REQUEST_WORKSPACE_OWNER_CHANGE, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.REQUEST_WORKSPACE_OWNER_CHANGE, params, {optimisticData, successData, failureData});
 }
 
 function clearWorkspaceOwnerChangeFlow(policyID: string | undefined) {
@@ -883,8 +883,8 @@ function clearWorkspaceOwnerChangeFlow(policyID: string | undefined) {
         return;
     }
 
-    Onyx.merge(ONYXKEYS.POLICY_OWNERSHIP_CHANGE_CHECKS, null);
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(ONYXKEYS.POLICY_OWNERSHIP_CHANGE_CHECKS, null);
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         errorFields: null,
         isLoading: false,
         isChangeOwnerSuccessful: false,
@@ -1021,7 +1021,7 @@ function addMembersToWorkspace(
     if (!isEmptyObject(membersChats.reportCreationData)) {
         params.reportCreationData = JSON.stringify(membersChats.reportCreationData);
     }
-    API.write(WRITE_COMMANDS.ADD_MEMBERS_TO_WORKSPACE, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.ADD_MEMBERS_TO_WORKSPACE, params, {optimisticData, successData, failureData});
 }
 
 type PolicyMember = {
@@ -1056,7 +1056,7 @@ function importPolicyMembers(policyID: string, members: PolicyMember[]) {
         employees: JSON.stringify(members.map((member) => ({email: member.email, role: member.role, submitsTo: member.submitsTo, forwardsTo: member.forwardsTo}))),
     };
 
-    API.write(WRITE_COMMANDS.IMPORT_MEMBERS_SPREADSHEET, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.IMPORT_MEMBERS_SPREADSHEET, parameters, onyxData);
 }
 
 /**
@@ -1087,7 +1087,7 @@ function inviteMemberToWorkspace(policyID: string, inviterEmail?: string) {
 
     const params = {policyID, inviterEmail};
 
-    API.write(WRITE_COMMANDS.JOIN_POLICY_VIA_INVITE_LINK, params, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.JOIN_POLICY_VIA_INVITE_LINK, params, {optimisticData, failureData});
 }
 
 /**
@@ -1112,7 +1112,7 @@ function joinAccessiblePolicy(policyID: string) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.JOIN_ACCESSIBLE_POLICY, {policyID}, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.JOIN_ACCESSIBLE_POLICY, {policyID}, {optimisticData, failureData});
 }
 
 /**
@@ -1137,7 +1137,7 @@ function askToJoinPolicy(policyID: string) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.ASK_TO_JOIN_POLICY, {policyID}, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.ASK_TO_JOIN_POLICY, {policyID}, {optimisticData, failureData});
 }
 
 /**
@@ -1145,7 +1145,7 @@ function askToJoinPolicy(policyID: string) {
  */
 function clearDeleteMemberError(policyID: string, accountID: number) {
     const email = allPersonalDetails?.[accountID]?.login ?? '';
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         employeeList: {
             [email]: {
                 pendingAction: null,
@@ -1160,12 +1160,12 @@ function clearDeleteMemberError(policyID: string, accountID: number) {
  */
 function clearAddMemberError(policyID: string, accountID: number) {
     const email = allPersonalDetails?.[accountID]?.login ?? '';
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         employeeList: {
             [email]: null,
         },
     });
-    Onyx.merge(`${ONYXKEYS.PERSONAL_DETAILS_LIST}`, {
+    void Onyx.merge(`${ONYXKEYS.PERSONAL_DETAILS_LIST}`, {
         [accountID]: null,
     });
 }
@@ -1194,15 +1194,15 @@ function openPolicyMemberProfilePage(policyID: string, accountID: number) {
 }
 
 function setWorkspaceInviteMembersDraft(policyID: string, invitedEmailsToAccountIDs: InvitedEmailsToAccountIDs) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_MEMBERS_DRAFT}${policyID}`, invitedEmailsToAccountIDs);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_MEMBERS_DRAFT}${policyID}`, invitedEmailsToAccountIDs);
 }
 
 function setWorkspaceInviteRoleDraft(policyID: string, role: ValueOf<typeof CONST.POLICY.ROLE>) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_ROLE_DRAFT}${policyID}`, role);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_ROLE_DRAFT}${policyID}`, role);
 }
 
 function clearWorkspaceInviteRoleDraft(policyID: string) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_ROLE_DRAFT}${policyID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_ROLE_DRAFT}${policyID}`, null);
 }
 
 /**
@@ -1265,7 +1265,7 @@ function acceptJoinRequest(reportID: string | undefined, reportAction: OnyxEntry
         }),
     };
 
-    API.write(WRITE_COMMANDS.ACCEPT_JOIN_REQUEST, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.ACCEPT_JOIN_REQUEST, parameters, {optimisticData, failureData, successData});
 }
 
 /**
@@ -1327,7 +1327,7 @@ function declineJoinRequest(reportID: string | undefined, reportAction: OnyxEntr
         }),
     };
 
-    API.write(WRITE_COMMANDS.DECLINE_JOIN_REQUEST, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.DECLINE_JOIN_REQUEST, parameters, {optimisticData, failureData, successData});
 }
 
 function downloadMembersCSV(policyID: string, onDownloadFailed: () => void) {
@@ -1342,7 +1342,7 @@ function downloadMembersCSV(policyID: string, onDownloadFailed: () => void) {
         formData.append(key, String(value));
     });
 
-    fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_MEMBERS_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
+    void fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_MEMBERS_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
 }
 
 function clearInviteDraft(policyID: string) {
@@ -1351,11 +1351,11 @@ function clearInviteDraft(policyID: string) {
 }
 
 function setImportedSpreadsheetMemberData(memberData: ImportedSpreadsheetMemberData[]) {
-    Onyx.set(ONYXKEYS.IMPORTED_SPREADSHEET_MEMBER_DATA, memberData);
+    void Onyx.set(ONYXKEYS.IMPORTED_SPREADSHEET_MEMBER_DATA, memberData);
 }
 
 function clearImportedSpreadsheetMemberData() {
-    Onyx.set(ONYXKEYS.IMPORTED_SPREADSHEET_MEMBER_DATA, null);
+    void Onyx.set(ONYXKEYS.IMPORTED_SPREADSHEET_MEMBER_DATA, null);
 }
 
 export {

@@ -124,7 +124,7 @@ function TaskAssigneeSelectorModal() {
         }
         const reportOnyx = reports?.[`${ONYXKEYS.COLLECTION.REPORT}${route.params?.reportID}`];
         if (reportOnyx && !isTaskReport(reportOnyx)) {
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 Navigation.dismissModalWithReport({reportID: reportOnyx.reportID});
             });
         }
@@ -196,7 +196,7 @@ function TaskAssigneeSelectorModal() {
                     // Pass through the selected assignee
                     editTaskAssignee(report, session?.accountID ?? CONST.DEFAULT_NUMBER_ID, option?.login ?? '', option?.accountID, assigneeChatReport);
                 }
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     Navigation.dismissModalWithReport({reportID: report?.reportID});
                 });
                 // If there's no report, we're creating a new task
@@ -208,7 +208,7 @@ function TaskAssigneeSelectorModal() {
                     undefined, // passing null as report is null in this condition
                     isCurrentUser({...option, accountID: option?.accountID ?? CONST.DEFAULT_NUMBER_ID, login: option?.login ?? undefined}),
                 );
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     Navigation.goBack(ROUTES.NEW_TASK.getRoute(backTo));
                 });
             }

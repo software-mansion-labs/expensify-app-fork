@@ -221,7 +221,7 @@ function SignInPage({ref}: SignInPageProps) {
 
     if (shouldInitiateSAMLLogin) {
         setHasInitiatedSAMLLogin(true);
-        Navigation.isNavigationReady().then(() => Navigation.navigate(ROUTES.SAML_SIGN_IN));
+        void Navigation.isNavigationReady().then(() => Navigation.navigate(ROUTES.SAML_SIGN_IN));
     }
 
     let welcomeHeader = '';

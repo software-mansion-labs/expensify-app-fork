@@ -32,7 +32,7 @@ describe('useIOUUtils', () => {
         });
 
         it('returns true when lastLocationPermissionPrompt is null', async () => {
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, null);
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, null);
             await waitForBatchedUpdatesWithAct();
 
             const {result} = renderHook(() => useIOUUtils());
@@ -42,7 +42,7 @@ describe('useIOUUtils', () => {
         });
 
         it('returns true when lastLocationPermissionPrompt is empty string', async () => {
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, '');
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, '');
             await waitForBatchedUpdatesWithAct();
 
             const {result} = renderHook(() => useIOUUtils());
@@ -53,7 +53,7 @@ describe('useIOUUtils', () => {
 
         it('returns false when lastLocationPermissionPrompt is a valid date string within threshold', async () => {
             const recentDate = daysAgo(CONST.IOU.LOCATION_PERMISSION_PROMPT_THRESHOLD_DAYS - 1);
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, recentDate);
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, recentDate);
             await waitForBatchedUpdatesWithAct();
 
             const {result} = renderHook(() => useIOUUtils());
@@ -64,7 +64,7 @@ describe('useIOUUtils', () => {
 
         it('returns true when lastLocationPermissionPrompt is a valid date string outside threshold', async () => {
             const oldDate = daysAgo(CONST.IOU.LOCATION_PERMISSION_PROMPT_THRESHOLD_DAYS + 1);
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, oldDate);
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, oldDate);
             await waitForBatchedUpdatesWithAct();
 
             const {result} = renderHook(() => useIOUUtils());
@@ -74,7 +74,7 @@ describe('useIOUUtils', () => {
         });
 
         it('returns false when lastLocationPermissionPrompt is an invalid date string', async () => {
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, 'not-a-date');
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, 'not-a-date');
             await waitForBatchedUpdatesWithAct();
 
             const {result} = renderHook(() => useIOUUtils());
@@ -85,7 +85,7 @@ describe('useIOUUtils', () => {
 
         it('returns false when lastLocationPermissionPrompt is exactly at threshold', async () => {
             const thresholdDate = daysAgo(CONST.IOU.LOCATION_PERMISSION_PROMPT_THRESHOLD_DAYS);
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, thresholdDate);
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, thresholdDate);
             await waitForBatchedUpdatesWithAct();
 
             const {result} = renderHook(() => useIOUUtils());
@@ -101,13 +101,13 @@ describe('useIOUUtils', () => {
             expect(result.current.shouldStartLocationPermissionFlow()).toBe(true);
 
             const recentDate = daysAgo(CONST.IOU.LOCATION_PERMISSION_PROMPT_THRESHOLD_DAYS - 1);
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, recentDate);
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, recentDate);
             await waitForBatchedUpdatesWithAct();
 
             expect(result.current.shouldStartLocationPermissionFlow()).toBe(false);
 
             const oldDate = daysAgo(CONST.IOU.LOCATION_PERMISSION_PROMPT_THRESHOLD_DAYS + 1);
-            Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, oldDate);
+            void Onyx.set(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT, oldDate);
             await waitForBatchedUpdatesWithAct();
 
             expect(result.current.shouldStartLocationPermissionFlow()).toBe(true);

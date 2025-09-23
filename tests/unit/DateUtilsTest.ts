@@ -45,7 +45,7 @@ describe('DateUtils', () => {
     afterEach(() => {
         jest.restoreAllMocks();
         jest.useRealTimers();
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     const datetime = '2022-11-07 00:00:00';
@@ -104,7 +104,7 @@ describe('DateUtils', () => {
                     resolvedOptions: () => ({timeZone: 'America/Chicago'}),
                 }) as Intl.DateTimeFormat,
         );
-        Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, {'999': {accountID: 999, timezone: {selected: 'Europe/London', automatic: true}}});
+        void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, {'999': {accountID: 999, timezone: {selected: 'Europe/London', automatic: true}}});
         await waitForBatchedUpdates();
         const result = DateUtils.getCurrentTimezone({selected: 'Europe/London', automatic: true});
         expect(result).toEqual({
@@ -120,7 +120,7 @@ describe('DateUtils', () => {
                     resolvedOptions: () => ({timeZone: UTC}),
                 }) as Intl.DateTimeFormat,
         );
-        Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, {'999': {accountID: 999, timezone: {selected: 'Europe/London', automatic: true}}});
+        void Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, {'999': {accountID: 999, timezone: {selected: 'Europe/London', automatic: true}}});
         await waitForBatchedUpdates();
         const result = DateUtils.getCurrentTimezone({selected: 'Europe/London', automatic: true});
         expect(result).toEqual({

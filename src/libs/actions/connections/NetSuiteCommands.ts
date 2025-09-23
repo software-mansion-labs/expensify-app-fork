@@ -29,7 +29,7 @@ function connectPolicyToNetSuite(policyID: string, credentials: Omit<ConnectPoli
         policyID,
         ...credentials,
     };
-    API.write(WRITE_COMMANDS.CONNECT_POLICY_TO_NETSUITE, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.CONNECT_POLICY_TO_NETSUITE, parameters, {optimisticData});
 }
 
 function createPendingFields<TSettingName extends keyof Connections['netsuite']['options']['config']>(
@@ -323,7 +323,7 @@ function updateNetSuiteSubsidiary(
         policyID,
         ...newSubsidiary,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SUBSIDIARY, params, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SUBSIDIARY, params, onyxData);
 }
 
 function updateNetSuiteImportMapping<TMappingName extends keyof Connections['netsuite']['options']['config']['syncOptions']['mapping']>(
@@ -445,7 +445,7 @@ function updateNetSuiteImportMapping<TMappingName extends keyof Connections['net
             return;
     }
 
-    API.write(commandName, params, onyxData);
+    void API.write(commandName, params, onyxData);
 }
 
 function updateNetSuiteCustomersJobsMapping(
@@ -560,7 +560,7 @@ function updateNetSuiteCustomersJobsMapping(
         ...mappingValue,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_CUSTOMERS_JOBS_MAPPING, params, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_CUSTOMERS_JOBS_MAPPING, params, onyxData);
 }
 
 function updateNetSuiteSyncTaxConfiguration(policyID: string, isSyncTaxEnabled: boolean) {
@@ -570,7 +570,7 @@ function updateNetSuiteSyncTaxConfiguration(policyID: string, isSyncTaxEnabled: 
         policyID,
         enabled: isSyncTaxEnabled,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SYNC_TAX_CONFIGURATION, params, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SYNC_TAX_CONFIGURATION, params, onyxData);
 }
 
 function updateNetSuiteCrossSubsidiaryCustomersConfiguration(policyID: string | undefined, isCrossSubsidiaryCustomersEnabled: boolean) {
@@ -588,7 +588,7 @@ function updateNetSuiteCrossSubsidiaryCustomersConfiguration(policyID: string | 
         policyID,
         enabled: isCrossSubsidiaryCustomersEnabled,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_CROSS_SUBSIDIARY_CUSTOMER_CONFIGURATION, params, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_CROSS_SUBSIDIARY_CUSTOMER_CONFIGURATION, params, onyxData);
 }
 
 function updateNetSuiteCustomSegments(
@@ -600,7 +600,7 @@ function updateNetSuiteCustomSegments(
 ) {
     const onyxData = updateNetSuiteSyncOptionsOnyxData(policyID, CONST.NETSUITE_CONFIG.IMPORT_CUSTOM_FIELDS.CUSTOM_SEGMENTS, records, oldRecords, modifiedSegmentID, pendingAction);
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.UPDATE_NETSUITE_CUSTOM_SEGMENTS,
         {
             policyID,
@@ -612,7 +612,7 @@ function updateNetSuiteCustomSegments(
 
 function updateNetSuiteCustomLists(policyID: string, records: NetSuiteCustomList[], oldRecords: NetSuiteCustomList[], modifiedListID: string, pendingAction: OnyxCommon.PendingAction) {
     const onyxData = updateNetSuiteSyncOptionsOnyxData(policyID, CONST.NETSUITE_CONFIG.IMPORT_CUSTOM_FIELDS.CUSTOM_LISTS, records, oldRecords, modifiedListID, pendingAction);
-    API.write(
+    void API.write(
         WRITE_COMMANDS.UPDATE_NETSUITE_CUSTOM_LISTS,
         {
             policyID,
@@ -629,7 +629,7 @@ function updateNetSuiteExporter(policyID: string, exporter: string, oldExporter:
         policyID,
         email: exporter,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORTER, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORTER, parameters, onyxData);
 }
 
 function updateNetSuiteExportDate(policyID: string, date: ValueOf<typeof CONST.NETSUITE_EXPORT_DATE>, oldDate?: ValueOf<typeof CONST.NETSUITE_EXPORT_DATE>) {
@@ -639,7 +639,7 @@ function updateNetSuiteExportDate(policyID: string, date: ValueOf<typeof CONST.N
         policyID,
         value: date,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORT_DATE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORT_DATE, parameters, onyxData);
 }
 
 function updateNetSuiteReimbursableExpensesExportDestination(
@@ -653,7 +653,7 @@ function updateNetSuiteReimbursableExpensesExportDestination(
         policyID,
         value: destination,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
 }
 
 function updateNetSuiteNonReimbursableExpensesExportDestination(
@@ -667,7 +667,7 @@ function updateNetSuiteNonReimbursableExpensesExportDestination(
         policyID,
         value: destination,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_NONREIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_NONREIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, onyxData);
 }
 
 function updateNetSuiteDefaultVendor(policyID: string, vendorID: string, oldVendorID?: string) {
@@ -677,7 +677,7 @@ function updateNetSuiteDefaultVendor(policyID: string, vendorID: string, oldVend
         policyID,
         vendorID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_DEFAULT_VENDOR, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_DEFAULT_VENDOR, parameters, onyxData);
 }
 
 function updateNetSuiteReimbursablePayableAccount(policyID: string, bankAccountID: string, oldBankAccountID: string) {
@@ -687,7 +687,7 @@ function updateNetSuiteReimbursablePayableAccount(policyID: string, bankAccountI
         policyID,
         bankAccountID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_REIMBURSABLE_PAYABLE_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_REIMBURSABLE_PAYABLE_ACCOUNT, parameters, onyxData);
 }
 
 function updateNetSuitePayableAcct(policyID: string, bankAccountID: string, oldBankAccountID: string) {
@@ -697,7 +697,7 @@ function updateNetSuitePayableAcct(policyID: string, bankAccountID: string, oldB
         policyID,
         bankAccountID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_PAYABLE_ACCT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_PAYABLE_ACCT, parameters, onyxData);
 }
 
 function updateNetSuiteJournalPostingPreference(
@@ -711,7 +711,7 @@ function updateNetSuiteJournalPostingPreference(
         policyID,
         value: postingPreference,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_JOURNAL_POSTING_PREFERENCE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_JOURNAL_POSTING_PREFERENCE, parameters, onyxData);
 }
 
 function updateNetSuiteReceivableAccount(policyID: string, bankAccountID: string, oldBankAccountID?: string) {
@@ -721,7 +721,7 @@ function updateNetSuiteReceivableAccount(policyID: string, bankAccountID: string
         policyID,
         bankAccountID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_RECEIVABLE_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_RECEIVABLE_ACCOUNT, parameters, onyxData);
 }
 
 function updateNetSuiteInvoiceItemPreference(
@@ -735,7 +735,7 @@ function updateNetSuiteInvoiceItemPreference(
         policyID,
         value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_INVOICE_ITEM_PREFERENCE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_INVOICE_ITEM_PREFERENCE, parameters, onyxData);
 }
 
 function updateNetSuiteInvoiceItem(policyID: string, itemID: string, oldItemID?: string) {
@@ -745,7 +745,7 @@ function updateNetSuiteInvoiceItem(policyID: string, itemID: string, oldItemID?:
         policyID,
         itemID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_INVOICE_ITEM, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_INVOICE_ITEM, parameters, onyxData);
 }
 
 function updateNetSuiteTaxPostingAccount(policyID: string, bankAccountID: string, oldBankAccountID?: string) {
@@ -755,7 +755,7 @@ function updateNetSuiteTaxPostingAccount(policyID: string, bankAccountID: string
         policyID,
         bankAccountID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_TAX_POSTING_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_TAX_POSTING_ACCOUNT, parameters, onyxData);
 }
 
 function updateNetSuiteProvincialTaxPostingAccount(policyID: string, bankAccountID: string, oldBankAccountID?: string) {
@@ -765,7 +765,7 @@ function updateNetSuiteProvincialTaxPostingAccount(policyID: string, bankAccount
         policyID,
         bankAccountID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_PROVINCIAL_TAX_POSTING_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_PROVINCIAL_TAX_POSTING_ACCOUNT, parameters, onyxData);
 }
 
 function updateNetSuiteAllowForeignCurrency(policyID: string, value: boolean, oldValue?: boolean) {
@@ -775,7 +775,7 @@ function updateNetSuiteAllowForeignCurrency(policyID: string, value: boolean, ol
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_ALLOW_FOREIGN_CURRENCY, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_ALLOW_FOREIGN_CURRENCY, parameters, onyxData);
 }
 
 function updateNetSuiteExportToNextOpenPeriod(policyID: string, value: boolean, oldValue: boolean) {
@@ -785,7 +785,7 @@ function updateNetSuiteExportToNextOpenPeriod(policyID: string, value: boolean, 
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORT_TO_NEXT_OPEN_PERIOD, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORT_TO_NEXT_OPEN_PERIOD, parameters, onyxData);
 }
 
 function updateNetSuiteAutoSync(policyID: string | undefined, value: boolean) {
@@ -868,7 +868,7 @@ function updateNetSuiteAutoSync(policyID: string | undefined, value: boolean) {
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_AUTO_SYNC, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_AUTO_SYNC, parameters, {optimisticData, failureData, successData});
 }
 
 function updateNetSuiteSyncReimbursedReports(policyID: string, value: boolean) {
@@ -878,7 +878,7 @@ function updateNetSuiteSyncReimbursedReports(policyID: string, value: boolean) {
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SYNC_REIMBURSED_REPORTS, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SYNC_REIMBURSED_REPORTS, parameters, onyxData);
 }
 
 function updateNetSuiteSyncPeople(policyID: string, value: boolean) {
@@ -888,7 +888,7 @@ function updateNetSuiteSyncPeople(policyID: string, value: boolean) {
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SYNC_PEOPLE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_SYNC_PEOPLE, parameters, onyxData);
 }
 
 function updateNetSuiteAutoCreateEntities(policyID: string, value: boolean) {
@@ -898,7 +898,7 @@ function updateNetSuiteAutoCreateEntities(policyID: string, value: boolean) {
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_AUTO_CREATE_ENTITIES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_AUTO_CREATE_ENTITIES, parameters, onyxData);
 }
 
 function updateNetSuiteEnableNewCategories(policyID: string, value: boolean) {
@@ -908,7 +908,7 @@ function updateNetSuiteEnableNewCategories(policyID: string, value: boolean) {
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_ENABLE_NEW_CATEGORIES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_ENABLE_NEW_CATEGORIES, parameters, onyxData);
 }
 
 function updateNetSuiteCustomFormIDOptionsEnabled(policyID: string, value: boolean) {
@@ -924,7 +924,7 @@ function updateNetSuiteCustomFormIDOptionsEnabled(policyID: string, value: boole
         policyID,
         enabled: value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_CUSTOM_FORM_ID_OPTIONS_ENABLED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_CUSTOM_FORM_ID_OPTIONS_ENABLED, parameters, onyxData);
 }
 
 function updateNetSuiteReimbursementAccountID(policyID: string, bankAccountID: string, oldBankAccountID?: string) {
@@ -934,7 +934,7 @@ function updateNetSuiteReimbursementAccountID(policyID: string, bankAccountID: s
         policyID,
         bankAccountID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_REIMBURSEMENT_ACCOUNT_ID, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_REIMBURSEMENT_ACCOUNT_ID, parameters, onyxData);
 }
 
 function updateNetSuiteCollectionAccount(policyID: string, bankAccountID: string, oldBankAccountID?: string) {
@@ -944,7 +944,7 @@ function updateNetSuiteCollectionAccount(policyID: string, bankAccountID: string
         policyID,
         bankAccountID,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_COLLECTION_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_COLLECTION_ACCOUNT, parameters, onyxData);
 }
 
 function updateNetSuiteExportReportsTo(
@@ -958,7 +958,7 @@ function updateNetSuiteExportReportsTo(
         policyID,
         value: approvalLevel,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORT_REPORTS_TO, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_EXPORT_REPORTS_TO, parameters, onyxData);
 }
 
 function updateNetSuiteAccountingMethod(
@@ -977,7 +977,7 @@ function updateNetSuiteAccountingMethod(
         accountingMethod,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_ACCOUNTING_METHOD, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_ACCOUNTING_METHOD, parameters, onyxData);
 }
 
 function updateNetSuiteExportVendorBillsTo(
@@ -991,7 +991,7 @@ function updateNetSuiteExportVendorBillsTo(
         policyID,
         value: approvalLevel,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_VENDOR_BILLS_TO, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_VENDOR_BILLS_TO, parameters, onyxData);
 }
 
 function updateNetSuiteExportJournalsTo(
@@ -1005,7 +1005,7 @@ function updateNetSuiteExportJournalsTo(
         policyID,
         value: approvalLevel,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_JOURNALS_TO, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_JOURNALS_TO, parameters, onyxData);
 }
 
 function updateNetSuiteApprovalAccount(policyID: string, value: string, oldValue: string) {
@@ -1015,7 +1015,7 @@ function updateNetSuiteApprovalAccount(policyID: string, value: string, oldValue
         policyID,
         value,
     };
-    API.write(WRITE_COMMANDS.UPDATE_NETSUITE_APPROVAL_ACCOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_NETSUITE_APPROVAL_ACCOUNT, parameters, onyxData);
 }
 
 function updateNetSuiteCustomFormIDOptions(
@@ -1042,7 +1042,7 @@ function updateNetSuiteCustomFormIDOptions(
         formType: CONST.NETSUITE_MAP_EXPORT_DESTINATION[exportDestination],
         formID: value,
     };
-    API.write(commandName, parameters, onyxData);
+    void API.write(commandName, parameters, onyxData);
 }
 
 export {

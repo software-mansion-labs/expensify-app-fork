@@ -121,7 +121,7 @@ function WorkspaceInviteMessagePage({policy, route, currentUserPersonalDetails}:
 
         Navigation.setNavigationActionToMicrotaskQueue(() => {
             Navigation.dismissModal();
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 Navigation.navigate(ROUTES.WORKSPACE_MEMBERS.getRoute(route.params.policyID));
             });
         });

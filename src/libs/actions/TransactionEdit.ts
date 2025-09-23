@@ -31,11 +31,11 @@ function createBackupTransaction(transaction: OnyxEntry<Transaction>, isDraft: b
             if (transactionBackup) {
                 // If the transactionBackup exists it means we haven't properly restored original value on unmount
                 // such as on page refresh, so we will just restore the transaction from the transactionBackup here.
-                Onyx.set(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`, transactionBackup);
+                void Onyx.set(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`, transactionBackup);
                 return;
             }
             // Use set so that it will always fully overwrite any backup transaction that could have existed before
-            Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_BACKUP}${transaction.transactionID}`, newTransaction);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_BACKUP}${transaction.transactionID}`, newTransaction);
         },
     });
 }
@@ -48,7 +48,7 @@ function removeBackupTransaction(transactionID: string | undefined) {
         return;
     }
 
-    Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_BACKUP}${transactionID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_BACKUP}${transactionID}`, null);
 }
 
 function restoreOriginalTransactionFromBackup(transactionID: string | undefined, isDraft: boolean) {
@@ -62,7 +62,7 @@ function restoreOriginalTransactionFromBackup(transactionID: string | undefined,
             Onyx.disconnect(connection);
 
             // Use set to completely overwrite the original transaction
-            Onyx.set(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, backupTransaction ?? null);
+            void Onyx.set(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, backupTransaction ?? null);
             removeBackupTransaction(transactionID);
         },
     });
@@ -78,7 +78,7 @@ function createDraftTransaction(transaction: OnyxEntry<Transaction>) {
     };
 
     // Use set so that it will always fully overwrite any backup transaction that could have existed before
-    Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transaction.transactionID}`, newTransaction);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transaction.transactionID}`, newTransaction);
 }
 
 function removeDraftTransaction(transactionID: string | undefined) {
@@ -86,7 +86,7 @@ function removeDraftTransaction(transactionID: string | undefined) {
         return;
     }
 
-    Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, null);
 }
 
 function removeDraftSplitTransaction(transactionID: string | undefined) {
@@ -94,7 +94,7 @@ function removeDraftSplitTransaction(transactionID: string | undefined) {
         return;
     }
 
-    Onyx.set(`${ONYXKEYS.COLLECTION.SPLIT_TRANSACTION_DRAFT}${transactionID}`, null);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.SPLIT_TRANSACTION_DRAFT}${transactionID}`, null);
 }
 
 function removeDraftTransactions(shouldExcludeInitialTransaction = false, allTransactionDrafts?: OnyxCollection<Transaction>) {
@@ -109,7 +109,7 @@ function removeDraftTransactions(shouldExcludeInitialTransaction = false, allTra
         },
         {} as Record<string, null>,
     );
-    Onyx.multiSet(draftTransactionsSet);
+    void Onyx.multiSet(draftTransactionsSet);
 }
 
 function replaceDefaultDraftTransaction(transaction: OnyxEntry<Transaction>) {
@@ -138,7 +138,7 @@ function removeTransactionReceipt(transactionID: string | undefined) {
     if (!transactionID) {
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {receipt: null});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {receipt: null});
 }
 
 type BuildOptimisticTransactionParams = {

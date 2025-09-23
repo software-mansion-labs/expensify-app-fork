@@ -151,7 +151,7 @@ function makeDefaultPaymentMethod(bankAccountID: number, fundID: number, previou
         fundID,
     };
 
-    API.write(WRITE_COMMANDS.MAKE_DEFAULT_PAYMENT_METHOD, parameters, {
+    void API.write(WRITE_COMMANDS.MAKE_DEFAULT_PAYMENT_METHOD, parameters, {
         optimisticData: getMakeDefaultPaymentOnyxData(bankAccountID, fundID, previousPaymentMethod, currentPaymentMethod, true),
         failureData: getMakeDefaultPaymentOnyxData(bankAccountID, fundID, previousPaymentMethod, currentPaymentMethod, false),
     });
@@ -200,7 +200,7 @@ function addPaymentCard(accountID: number, params: PaymentCardParams) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.ADD_PAYMENT_CARD, parameters, {
+    void API.write(WRITE_COMMANDS.ADD_PAYMENT_CARD, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -267,7 +267,7 @@ function addSubscriptionPaymentCard(
         addPaymentCardSCA(parameters, {optimisticData, successData, failureData});
     } else {
         // eslint-disable-next-line rulesdir/no-multiple-api-calls
-        API.write(WRITE_COMMANDS.ADD_PAYMENT_CARD, parameters, {
+        void API.write(WRITE_COMMANDS.ADD_PAYMENT_CARD, parameters, {
             optimisticData,
             successData,
             failureData,
@@ -285,14 +285,14 @@ function addSubscriptionPaymentCard(
  * Updates verify3dsSubscription Onyx key with a new authentication link for 3DS.
  */
 function addPaymentCardSCA(params: AddPaymentCardParams, onyxData: OnyxData = {}) {
-    API.write(WRITE_COMMANDS.ADD_PAYMENT_CARD_SCA, params, onyxData);
+    void API.write(WRITE_COMMANDS.ADD_PAYMENT_CARD_SCA, params, onyxData);
 }
 
 /**
  * Resets the values for the add payment card form back to their initial states
  */
 function clearPaymentCardFormErrorAndSubmit() {
-    Onyx.set(ONYXKEYS.FORMS.ADD_PAYMENT_CARD_FORM, {
+    void Onyx.set(ONYXKEYS.FORMS.ADD_PAYMENT_CARD_FORM, {
         isLoading: false,
         errors: undefined,
         [INPUT_IDS.SETUP_COMPLETE]: false,
@@ -313,7 +313,7 @@ function clearPaymentCardFormErrorAndSubmit() {
  *
  */
 function clearPaymentCard3dsVerification() {
-    Onyx.set(ONYXKEYS.VERIFY_3DS_SUBSCRIPTION, '');
+    void Onyx.set(ONYXKEYS.VERIFY_3DS_SUBSCRIPTION, '');
 }
 
 /**
@@ -321,7 +321,7 @@ function clearPaymentCard3dsVerification() {
  *
  */
 function verifySetupIntent(accountID: number, isVerifying = true) {
-    API.write(WRITE_COMMANDS.VERIFY_SETUP_INTENT, {accountID, isVerifying});
+    void API.write(WRITE_COMMANDS.VERIFY_SETUP_INTENT, {accountID, isVerifying});
 }
 
 /**
@@ -329,7 +329,7 @@ function verifySetupIntent(accountID: number, isVerifying = true) {
  *
  */
 function setPaymentMethodCurrency(currency: ValueOf<typeof CONST.PAYMENT_CARD_CURRENCY>) {
-    Onyx.merge(ONYXKEYS.FORMS.ADD_PAYMENT_CARD_FORM, {
+    void Onyx.merge(ONYXKEYS.FORMS.ADD_PAYMENT_CARD_FORM, {
         [INPUT_IDS.CURRENCY]: currency,
     });
 }
@@ -380,7 +380,7 @@ function transferWalletBalance(paymentMethod: PaymentMethod) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.TRANSFER_WALLET_BALANCE, parameters, {
+    void API.write(WRITE_COMMANDS.TRANSFER_WALLET_BALANCE, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -388,7 +388,7 @@ function transferWalletBalance(paymentMethod: PaymentMethod) {
 }
 
 function resetWalletTransferData() {
-    Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {
+    void Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {
         selectedAccountType: '',
         selectedAccountID: null,
         filterPaymentMethodType: null,
@@ -398,7 +398,7 @@ function resetWalletTransferData() {
 }
 
 function saveWalletTransferAccountTypeAndID(selectedAccountType: string | undefined, selectedAccountID: string | undefined) {
-    Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {selectedAccountType, selectedAccountID});
+    void Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {selectedAccountType, selectedAccountID});
 }
 
 /**
@@ -406,11 +406,11 @@ function saveWalletTransferAccountTypeAndID(selectedAccountType: string | undefi
  *
  */
 function saveWalletTransferMethodType(filterPaymentMethodType?: FilterMethodPaymentType) {
-    Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {filterPaymentMethodType});
+    void Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {filterPaymentMethodType});
 }
 
 function dismissSuccessfulTransferBalancePage() {
-    Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {shouldShowSuccess: false});
+    void Onyx.merge(ONYXKEYS.WALLET_TRANSFER, {shouldShowSuccess: false});
     Navigation.goBack();
 }
 
@@ -436,7 +436,7 @@ type PaymentListKey =
  * @param paymentMethodID
  */
 function clearDeletePaymentMethodError(paymentListKey: PaymentListKey, paymentMethodID: number) {
-    Onyx.merge(paymentListKey, {
+    void Onyx.merge(paymentListKey, {
         [paymentMethodID]: {
             pendingAction: null,
             errors: null,
@@ -450,7 +450,7 @@ function clearDeletePaymentMethodError(paymentListKey: PaymentListKey, paymentMe
  * @param paymentMethodID
  */
 function clearAddPaymentMethodError(paymentListKey: PaymentListKey, paymentMethodID: number) {
-    Onyx.merge(paymentListKey, {
+    void Onyx.merge(paymentListKey, {
         [paymentMethodID]: null,
     });
 }
@@ -459,14 +459,14 @@ function clearAddPaymentMethodError(paymentListKey: PaymentListKey, paymentMetho
  * Clear any error(s) related to the user's wallet
  */
 function clearWalletError() {
-    Onyx.merge(ONYXKEYS.USER_WALLET, {errors: null});
+    void Onyx.merge(ONYXKEYS.USER_WALLET, {errors: null});
 }
 
 /**
  * Clear any error(s) related to the user's wallet terms
  */
 function clearWalletTermsError() {
-    Onyx.merge(ONYXKEYS.WALLET_TERMS, {errors: null});
+    void Onyx.merge(ONYXKEYS.WALLET_TERMS, {errors: null});
 }
 
 function deletePaymentCard(fundID: number) {
@@ -482,7 +482,7 @@ function deletePaymentCard(fundID: number) {
         },
     ];
 
-    API.write(WRITE_COMMANDS.DELETE_PAYMENT_CARD, parameters, {
+    void API.write(WRITE_COMMANDS.DELETE_PAYMENT_CARD, parameters, {
         optimisticData,
     });
 }
@@ -528,7 +528,7 @@ function updateBillingCurrency(currency: ValueOf<typeof CONST.PAYMENT_CARD_CURRE
         },
     ];
 
-    API.write(WRITE_COMMANDS.UPDATE_BILLING_CARD_CURRENCY, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_BILLING_CARD_CURRENCY, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -573,7 +573,7 @@ function setInvoicingTransferBankAccount(bankAccountID: number, policyID: string
         },
     ];
 
-    API.write(WRITE_COMMANDS.SET_INVOICING_TRANSFER_BANK_ACCOUNT, parameters, {
+    void API.write(WRITE_COMMANDS.SET_INVOICING_TRANSFER_BANK_ACCOUNT, parameters, {
         optimisticData,
         failureData,
     });

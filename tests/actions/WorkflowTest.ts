@@ -53,7 +53,7 @@ describe('actions/Workflow', () => {
 
     describe('clearApprovalWorkflowApprover', () => {
         it('should clear an approver', async () => {
-            mockFetch.pause();
+            void mockFetch.pause();
 
             const currentApprovalWorkflow: ApprovalWorkflowOnyx = {
                 ...INITIAL_APPROVAL_WORKFLOW,
@@ -65,7 +65,7 @@ describe('actions/Workflow', () => {
                     },
                 ],
             };
-            Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, currentApprovalWorkflow);
+            void Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, currentApprovalWorkflow);
             await waitForBatchedUpdates();
 
             clearApprovalWorkflowApprover({approverIndex: 0, currentApprovalWorkflow});
@@ -82,7 +82,7 @@ describe('actions/Workflow', () => {
 
     describe('setApprovalWorkflowApprover', () => {
         it('should add an approver at an empty index', async () => {
-            mockFetch.pause();
+            void mockFetch.pause();
 
             const policyID = generatePolicyID();
             const newApprover: Approver = {
@@ -96,14 +96,14 @@ describe('actions/Workflow', () => {
                 approvers: [],
                 errors: undefined,
             };
-            Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, currentApprovalWorkflow);
+            void Onyx.merge(ONYXKEYS.APPROVAL_WORKFLOW, currentApprovalWorkflow);
 
             const fakePolicy: PolicyType = {
                 ...createRandomPolicy(1),
                 id: policyID,
                 employeeList: {},
             };
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, fakePolicy);
             await waitForBatchedUpdates();
 
             setApprovalWorkflowApprover({approver: newApprover, approverIndex, policyID, currentApprovalWorkflow});

@@ -54,11 +54,11 @@ function requestValidationCodeForAccountMerge(email: string, validateCodeResent 
         email,
     };
 
-    API.write(WRITE_COMMANDS.GET_VALIDATE_CODE_FOR_ACCOUNT_MERGE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.GET_VALIDATE_CODE_FOR_ACCOUNT_MERGE, parameters, {optimisticData, successData, failureData});
 }
 
 function clearGetValidateCodeForAccountMerge() {
-    Onyx.merge(ONYXKEYS.ACCOUNT, {
+    void Onyx.merge(ONYXKEYS.ACCOUNT, {
         getValidateCodeForAccountMerge: {
             errors: null,
             validateCodeSent: false,
@@ -115,11 +115,11 @@ function mergeWithValidateCode(email: string, validateCode: string) {
         validateCode,
     };
 
-    API.write(WRITE_COMMANDS.MERGE_WITH_VALIDATE_CODE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.MERGE_WITH_VALIDATE_CODE, parameters, {optimisticData, successData, failureData});
 }
 
 function clearMergeWithValidateCode() {
-    Onyx.merge(ONYXKEYS.ACCOUNT, {
+    void Onyx.merge(ONYXKEYS.ACCOUNT, {
         mergeWithValidateCode: {
             errors: null,
             isLoading: false,

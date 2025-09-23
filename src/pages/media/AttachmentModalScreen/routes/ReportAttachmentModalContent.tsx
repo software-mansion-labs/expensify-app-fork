@@ -222,7 +222,7 @@ function ReportAttachmentModalContent({route, navigation}: AttachmentModalScreen
             return;
         }
 
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             if (reportID) {
                 Navigation.goBack(ROUTES.REPORT_WITH_ID.getRoute(reportID));
             } else {

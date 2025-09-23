@@ -64,7 +64,7 @@ describe('ContactMethodDetailsPage', () => {
 
     it('should not call resetContactMethodValidateCodeSentState when we got a delete pending field', async () => {
         // Given a login list with a validated contact method
-        Onyx.merge(ONYXKEYS.LOGIN_LIST, mockLoginList);
+        void Onyx.merge(ONYXKEYS.LOGIN_LIST, mockLoginList);
         await waitForBatchedUpdates();
 
         // Given the page is rendered
@@ -75,9 +75,9 @@ describe('ContactMethodDetailsPage', () => {
         await waitForBatchedUpdatesWithAct();
 
         // When the deletion is successful
-        mockFetch?.succeed();
+        void mockFetch?.succeed();
         await waitForBatchedUpdates();
-        mockFetch?.resume();
+        void mockFetch?.resume();
         await waitForBatchedUpdates();
 
         // Then resetContactMethodValidateCodeSentState should not be called
@@ -86,7 +86,7 @@ describe('ContactMethodDetailsPage', () => {
 
     it('should not call resetContactMethodValidateCodeSentState when the login data has no partnerUserID', async () => {
         // Given a login list with a contact method that has no partnerUserID
-        Onyx.merge(ONYXKEYS.LOGIN_LIST, {
+        void Onyx.merge(ONYXKEYS.LOGIN_LIST, {
             [fakeEmail]: {
                 partnerName: 'expensify.com',
                 partnerUserID: '',

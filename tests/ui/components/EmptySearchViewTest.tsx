@@ -97,7 +97,7 @@ describe('EmptySearchView', () => {
             });
 
             afterEach(() => {
-                Onyx.clear();
+                void Onyx.clear();
             });
 
             it('should display "Create Report" button when user has a paid group policy with expense chat enabled', async () => {

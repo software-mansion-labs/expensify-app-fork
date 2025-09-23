@@ -61,11 +61,11 @@ function getGuideCallAvailabilitySchedule(reportID: string) {
 }
 
 function saveBookingDraft(data: ScheduleCallDraft) {
-    Onyx.merge(`${ONYXKEYS.SCHEDULE_CALL_DRAFT}`, data);
+    void Onyx.merge(`${ONYXKEYS.SCHEDULE_CALL_DRAFT}`, data);
 }
 
 function clearBookingDraft() {
-    Onyx.set(`${ONYXKEYS.SCHEDULE_CALL_DRAFT}`, null);
+    void Onyx.set(`${ONYXKEYS.SCHEDULE_CALL_DRAFT}`, null);
 }
 
 function confirmBooking(data: Required<ScheduleCallDraft>, currentUser: PersonalDetails, timezone?: SelectedTimezone) {
@@ -99,7 +99,7 @@ function sendScheduleCallNudge(accountID: number, reportID: string) {
         accountID,
         reportID,
     };
-    API.write(WRITE_COMMANDS.SEND_SCHEDULE_CALL_NUDGE, params);
+    void API.write(WRITE_COMMANDS.SEND_SCHEDULE_CALL_NUDGE, params);
 }
 
 export {getGuideCallAvailabilitySchedule, saveBookingDraft, clearBookingDraft, confirmBooking, rescheduleBooking, cancelBooking, sendScheduleCallNudge};

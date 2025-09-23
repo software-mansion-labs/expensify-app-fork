@@ -189,7 +189,7 @@ function OptionRow({
                                 result = Promise.resolve();
                             }
 
-                            InteractionManager.runAfterInteractions(() => {
+                            void InteractionManager.runAfterInteractions(() => {
                                 result?.finally(() => setIsDisabled(isOptionDisabled));
                             });
                         }}

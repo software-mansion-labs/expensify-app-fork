@@ -30,7 +30,7 @@ function connectToSageIntacct(policyID: string, credentials: SageIntacctCredenti
         intacctUserID: credentials.userID,
         intacctPassword: credentials.password,
     };
-    API.write(WRITE_COMMANDS.CONNECT_POLICY_TO_SAGE_INTACCT, parameters, {});
+    void API.write(WRITE_COMMANDS.CONNECT_POLICY_TO_SAGE_INTACCT, parameters, {});
 }
 
 function prepareOnyxDataForMappingUpdate(
@@ -119,7 +119,7 @@ function updateSageIntacctBillable(policyID: string | undefined, enabled: boolea
         policyID,
         enabled,
     };
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_BILLABLE, parameters, prepareOnyxDataForMappingUpdate(policyID, CONST.SAGE_INTACCT_CONFIG.SYNC_ITEMS, enabled, !enabled));
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_BILLABLE, parameters, prepareOnyxDataForMappingUpdate(policyID, CONST.SAGE_INTACCT_CONFIG.SYNC_ITEMS, enabled, !enabled));
 }
 
 function getCommandForMapping(mappingName: ValueOf<typeof CONST.SAGE_INTACCT_CONFIG.MAPPINGS>) {
@@ -146,7 +146,7 @@ function updateSageIntacctMappingValue(policyID: string | undefined, mappingName
     }
 
     const onyxData = prepareOnyxDataForMappingUpdate(policyID, mappingName, mappingValue, oldMappingValue);
-    API.write(
+    void API.write(
         command,
         {
             policyID,
@@ -241,7 +241,7 @@ function UpdateSageIntacctTaxSolutionID(policyID: string | undefined, taxSolutio
         },
     ];
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_TAX_SOLUTION_ID, {policyID, taxSolutionID}, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_TAX_SOLUTION_ID, {policyID, taxSolutionID}, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctSyncTaxConfiguration(policyID: string | undefined, enabled: boolean) {
@@ -316,7 +316,7 @@ function updateSageIntacctSyncTaxConfiguration(policyID: string | undefined, ena
             },
         },
     ];
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_SYNC_TAX_CONFIGURATION, {policyID, enabled}, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_SYNC_TAX_CONFIGURATION, {policyID, enabled}, {optimisticData, failureData, successData});
 }
 
 function prepareOnyxDataForUserDimensionUpdate(
@@ -402,7 +402,7 @@ function addSageIntacctUserDimensions(
 ) {
     const newDimensions = [...existingUserDimensions, {mapping, dimension: dimensionName}];
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.UPDATE_SAGE_INTACCT_USER_DIMENSION,
         {policyID, dimensions: JSON.stringify(newDimensions)},
         prepareOnyxDataForUserDimensionUpdate(policyID, dimensionName, newDimensions, newDimensions, dimensionName, CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD),
@@ -423,7 +423,7 @@ function editSageIntacctUserDimensions(
         return userDimension;
     });
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.UPDATE_SAGE_INTACCT_USER_DIMENSION,
         {policyID, dimensions: JSON.stringify(newDimensions)},
         prepareOnyxDataForUserDimensionUpdate(policyID, name, newDimensions, existingUserDimensions, previousName, CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE),
@@ -433,7 +433,7 @@ function editSageIntacctUserDimensions(
 function removeSageIntacctUserDimensions(policyID: string, dimensionName: string, existingUserDimensions: SageIntacctDimension[]) {
     const newDimensions = existingUserDimensions.filter((userDimension) => dimensionName !== userDimension.dimension);
 
-    API.write(
+    void API.write(
         WRITE_COMMANDS.UPDATE_SAGE_INTACCT_USER_DIMENSION,
         {policyID, dimensions: JSON.stringify(newDimensions)},
         prepareOnyxDataForUserDimensionUpdate(policyID, dimensionName, newDimensions, existingUserDimensions, dimensionName, CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE),
@@ -525,7 +525,7 @@ function updateSageIntacctExporter(policyID: string, exporter: string, oldExport
         email: exporter,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_EXPORTER, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_EXPORTER, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctExportDate(policyID: string, date: ValueOf<typeof CONST.SAGE_INTACCT_EXPORT_DATE>, oldDate?: ValueOf<typeof CONST.SAGE_INTACCT_EXPORT_DATE>) {
@@ -535,7 +535,7 @@ function updateSageIntacctExportDate(policyID: string, date: ValueOf<typeof CONS
         value: date,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_EXPORT_DATE, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_EXPORT_DATE, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctReimbursableExpensesExportDestination(
@@ -549,7 +549,7 @@ function updateSageIntacctReimbursableExpensesExportDestination(
         value: reimbursable,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctNonreimbursableExpensesExportDestination(
@@ -563,7 +563,7 @@ function updateSageIntacctNonreimbursableExpensesExportDestination(
         value: nonReimbursable,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_EXPORT_DESTINATION, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctReimbursableExpensesReportExportDefaultVendor(policyID: string, vendor: string, oldVendor?: string) {
@@ -573,7 +573,7 @@ function updateSageIntacctReimbursableExpensesReportExportDefaultVendor(policyID
         vendorID: vendor,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_REIMBURSABLE_EXPENSES_REPORT_EXPORT_DEFAULT_VENDOR, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_REIMBURSABLE_EXPENSES_REPORT_EXPORT_DEFAULT_VENDOR, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctNonreimbursableExpensesCreditCardChargeExportDefaultVendor(policyID: string, vendor: string, oldVendor?: string) {
@@ -583,7 +583,7 @@ function updateSageIntacctNonreimbursableExpensesCreditCardChargeExportDefaultVe
         vendorID: vendor,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_CREDIT_CARD_CHARGE_EXPORT_DEFAULT_VENDOR, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_CREDIT_CARD_CHARGE_EXPORT_DEFAULT_VENDOR, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctNonreimbursableExpensesExportAccount(policyID: string, nonReimbursableAccount: string, oldReimbursableAccount?: string) {
@@ -598,7 +598,7 @@ function updateSageIntacctNonreimbursableExpensesExportAccount(policyID: string,
         creditCardAccountID: nonReimbursableAccount,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_EXPORT_ACCOUNT, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_EXPORT_ACCOUNT, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctNonreimbursableExpensesExportVendor(policyID: string, vendor: string, oldVendor?: string) {
@@ -608,7 +608,7 @@ function updateSageIntacctNonreimbursableExpensesExportVendor(policyID: string, 
         vendorID: vendor,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_EXPORT_VENDOR, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_NON_REIMBURSABLE_EXPENSES_EXPORT_VENDOR, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctDefaultVendor(policyID: string, settingName: keyof SageIntacctExportConfig, vendor: string, oldVendor?: string) {
@@ -622,16 +622,16 @@ function updateSageIntacctDefaultVendor(policyID: string, settingName: keyof Sag
 }
 
 function clearSageIntacctErrorField(policyID: string | undefined, key: SageIntacctOfflineStateKeys | keyof SageIntacctConnectionsConfig) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {errorFields: {[key]: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {errorFields: {[key]: null}}}}});
 }
 
 function clearSageIntacctPendingField(policyID: string, key: SageIntacctOfflineStateKeys | keyof SageIntacctConnectionsConfig) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {pendingFields: {[key]: null}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {pendingFields: {[key]: null}}}}});
 }
 
 function removeSageIntacctUserDimensionsByName(dimensions: SageIntacctDimension[], policyID: string, dimensionName: string) {
     const Dimensions = dimensions.filter((dimension) => dimension.dimension !== dimensionName);
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {mappings: {dimensions: Dimensions}}}}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {connections: {intacct: {config: {mappings: {dimensions: Dimensions}}}}});
 }
 
 function prepareOnyxDataForConfigUpdate(policyID: string, settingName: keyof SageIntacctConnectionsConfig, settingValue: string | boolean | null, oldSettingValue?: string | boolean | null) {
@@ -860,7 +860,7 @@ function updateSageIntacctAutoSync(policyID: string | undefined, enabled: boolea
         enabled,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_AUTO_SYNC, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_AUTO_SYNC, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctImportEmployees(policyID: string | undefined, enabled: boolean) {
@@ -874,7 +874,7 @@ function updateSageIntacctImportEmployees(policyID: string | undefined, enabled:
         enabled,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_IMPORT_EMPLOYEES, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_IMPORT_EMPLOYEES, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctApprovalMode(policyID: string | undefined, enabled: boolean) {
@@ -895,7 +895,7 @@ function updateSageIntacctApprovalMode(policyID: string | undefined, enabled: bo
         value: approvalModeSettingValue,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_APPROVAL_MODE, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_APPROVAL_MODE, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctSyncReimbursedReports(policyID: string | undefined, enabled: boolean) {
@@ -909,7 +909,7 @@ function updateSageIntacctSyncReimbursedReports(policyID: string | undefined, en
         enabled,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_SYNC_REIMBURSED_REPORTS, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_SYNC_REIMBURSED_REPORTS, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctSyncReimbursementAccountID(policyID: string | undefined, vendorID: string | undefined, oldVendorID?: string) {
@@ -923,7 +923,7 @@ function updateSageIntacctSyncReimbursementAccountID(policyID: string | undefine
         vendorID,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_SYNC_REIMBURSEMENT_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_SYNC_REIMBURSEMENT_ACCOUNT_ID, parameters, {optimisticData, failureData, successData});
 }
 
 function updateSageIntacctEntity(policyID: string | undefined, entity: string, oldEntity: string) {
@@ -934,7 +934,7 @@ function updateSageIntacctEntity(policyID: string | undefined, entity: string, o
         policyID,
         entity,
     };
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_ENTITY, parameters, prepareOnyxDataForConfigUpdate(policyID, CONST.SAGE_INTACCT_CONFIG.ENTITY, entity, oldEntity));
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_ENTITY, parameters, prepareOnyxDataForConfigUpdate(policyID, CONST.SAGE_INTACCT_CONFIG.ENTITY, entity, oldEntity));
 }
 
 function updateSageIntacctAccountingMethod(
@@ -953,7 +953,7 @@ function updateSageIntacctAccountingMethod(
 
     const {optimisticData, failureData, successData} = prepareOnyxDataForExportUpdate(policyID, CONST.SAGE_INTACCT_CONFIG.ACCOUNTING_METHOD, accountingMethod, oldAccountingMethod);
 
-    API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_ACCOUNTING_METHOD, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_SAGE_INTACCT_ACCOUNTING_METHOD, parameters, {optimisticData, failureData, successData});
 }
 
 export {

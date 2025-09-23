@@ -13,7 +13,7 @@ test('Enhance parameters adds correct parameters for Log command with no authTok
     const parameters = {testParameter: 'test'};
     const email = 'test-user@test.com';
     const authToken = 'test-token';
-    Onyx.merge(ONYXKEYS.SESSION, {email, authToken});
+    void Onyx.merge(ONYXKEYS.SESSION, {email, authToken});
     return waitForBatchedUpdates().then(() => {
         const finalParameters = enhanceParameters(command, parameters);
         expect(finalParameters).toEqual({
@@ -34,7 +34,7 @@ test('Enhance parameters adds correct parameters for a command that requires aut
     const parameters = {testParameter: 'test'};
     const email = 'test-user@test.com';
     const authToken = 'test-token';
-    Onyx.merge(ONYXKEYS.SESSION, {email, authToken});
+    void Onyx.merge(ONYXKEYS.SESSION, {email, authToken});
     return waitForBatchedUpdates().then(() => {
         const finalParameters = enhanceParameters(command, parameters);
         expect(finalParameters).toEqual({

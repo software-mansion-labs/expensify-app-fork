@@ -16,7 +16,7 @@ describe('LoginUtils', () => {
 
     afterEach(() => {
         jest.useRealTimers();
-        Onyx.clear();
+        void Onyx.clear();
     });
     describe('getPhoneNumberWithoutSpecialChars', () => {
         it('Should return valid phone number', () => {

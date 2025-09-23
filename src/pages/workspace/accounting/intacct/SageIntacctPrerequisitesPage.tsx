@@ -41,7 +41,7 @@ function SageIntacctPrerequisitesPage({route}: SageIntacctPrerequisitesPageProps
                 iconRight: Expensicons.NewWindow,
                 shouldShowRightIcon: true,
                 onPress: () => {
-                    fileDownload(CONST.EXPENSIFY_PACKAGE_FOR_SAGE_INTACCT, CONST.EXPENSIFY_PACKAGE_FOR_SAGE_INTACCT_FILE_NAME, '', true);
+                    void fileDownload(CONST.EXPENSIFY_PACKAGE_FOR_SAGE_INTACCT, CONST.EXPENSIFY_PACKAGE_FOR_SAGE_INTACCT_FILE_NAME, '', true);
                 },
                 onSecondaryInteraction: (event: GestureResponderEvent | MouseEvent) =>
                     showContextMenu({

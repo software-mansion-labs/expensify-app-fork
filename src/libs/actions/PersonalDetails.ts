@@ -41,7 +41,7 @@ function updatePronouns(pronouns: string, currentUserAccountID: number) {
 
     const parameters: UpdatePronounsParams = {pronouns};
 
-    API.write(WRITE_COMMANDS.UPDATE_PRONOUNS, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_PRONOUNS, parameters, {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
@@ -61,7 +61,7 @@ function setDisplayName(firstName: string, lastName: string, formatPhoneNumber: 
         return;
     }
 
-    Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
+    void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
         [currentUserAccountID]: {
             firstName,
             lastName,
@@ -84,7 +84,7 @@ function updateDisplayName(firstName: string, lastName: string, formatPhoneNumbe
 
     const parameters: UpdateDisplayNameParams = {firstName, lastName};
 
-    API.write(WRITE_COMMANDS.UPDATE_DISPLAY_NAME, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_DISPLAY_NAME, parameters, {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
@@ -146,7 +146,7 @@ function updateLegalName(
             },
         });
     }
-    API.write(WRITE_COMMANDS.UPDATE_LEGAL_NAME, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_LEGAL_NAME, parameters, {
         optimisticData,
     });
     Navigation.goBack();
@@ -158,7 +158,7 @@ function updateLegalName(
 function updateDateOfBirth({dob}: DateOfBirthForm) {
     const parameters: UpdateDateOfBirthParams = {dob};
 
-    API.write(WRITE_COMMANDS.UPDATE_DATE_OF_BIRTH, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_DATE_OF_BIRTH, parameters, {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
@@ -175,7 +175,7 @@ function updateDateOfBirth({dob}: DateOfBirthForm) {
 
 function updatePhoneNumber(phoneNumber: string, currentPhoneNumber: string) {
     const parameters: UpdatePhoneNumberParams = {phoneNumber};
-    API.write(WRITE_COMMANDS.UPDATE_PHONE_NUMBER, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_PHONE_NUMBER, parameters, {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
@@ -201,7 +201,7 @@ function updatePhoneNumber(phoneNumber: string, currentPhoneNumber: string) {
 }
 
 function clearPhoneNumberError() {
-    Onyx.merge(ONYXKEYS.PRIVATE_PERSONAL_DETAILS, {
+    void Onyx.merge(ONYXKEYS.PRIVATE_PERSONAL_DETAILS, {
         errorFields: {
             phoneNumber: null,
         },
@@ -224,7 +224,7 @@ function updateAddress(addresses: Address[], street: string, street2: string, ci
         parameters.addressStateLong = state;
     }
 
-    API.write(WRITE_COMMANDS.UPDATE_HOME_ADDRESS, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_HOME_ADDRESS, parameters, {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
@@ -263,7 +263,7 @@ function updateAutomaticTimezone(timezone: Timezone, currentUserAccountID: numbe
         timezone: JSON.stringify(formattedTimezone),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE, parameters, {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,
@@ -292,7 +292,7 @@ function updateSelectedTimezone(selectedTimezone: SelectedTimezone, currentUserA
     };
 
     if (currentUserAccountID) {
-        API.write(WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE, parameters, {
+        void API.write(WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE, parameters, {
             optimisticData: [
                 {
                     onyxMethod: Onyx.METHOD.MERGE,
@@ -417,7 +417,7 @@ function updateAvatar(file: File | CustomRNImageManipulatorResult, currentUserPe
 
     const parameters: UpdateUserAvatarParams = {file};
 
-    API.write(WRITE_COMMANDS.UPDATE_USER_AVATAR, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_USER_AVATAR, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -456,7 +456,7 @@ function deleteAvatar(currentUserPersonalDetails: Pick<CurrentUserPersonalDetail
         },
     ];
 
-    API.write(WRITE_COMMANDS.DELETE_USER_AVATAR, null, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.DELETE_USER_AVATAR, null, {optimisticData, failureData});
 }
 
 /**
@@ -467,7 +467,7 @@ function clearAvatarErrors(currentUserAccountID: number) {
         return;
     }
 
-    Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
+    void Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
         [currentUserAccountID]: {
             errorFields: {
                 avatar: null,
@@ -483,7 +483,7 @@ function clearAvatarErrors(currentUserAccountID: number) {
  * Clear errors for the current user's personal details
  */
 function clearPersonalDetailsErrors() {
-    Onyx.merge(ONYXKEYS.PRIVATE_PERSONAL_DETAILS, {
+    void Onyx.merge(ONYXKEYS.PRIVATE_PERSONAL_DETAILS, {
         errors: null,
     });
 }
@@ -503,7 +503,7 @@ function updatePersonalDetailsAndShipExpensifyCards(values: FormOnyxValues<typeo
         validateCode,
     };
 
-    API.write(WRITE_COMMANDS.SET_PERSONAL_DETAILS_AND_SHIP_EXPENSIFY_CARDS, parameters, {
+    void API.write(WRITE_COMMANDS.SET_PERSONAL_DETAILS_AND_SHIP_EXPENSIFY_CARDS, parameters, {
         optimisticData: [
             {
                 onyxMethod: Onyx.METHOD.MERGE,

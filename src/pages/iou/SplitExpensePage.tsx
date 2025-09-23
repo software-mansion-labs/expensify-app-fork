@@ -240,7 +240,7 @@ function SplitExpensePage({route}: SplitExpensePageProps) {
                         )}
                         onSelectRow={(item) => {
                             Keyboard.dismiss();
-                            InteractionManager.runAfterInteractions(() => {
+                            void InteractionManager.runAfterInteractions(() => {
                                 initDraftSplitExpenseDataForEdit(draftTransaction, item.transactionID, reportID);
                             });
                         }}

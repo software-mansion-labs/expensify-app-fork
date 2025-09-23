@@ -8,7 +8,7 @@ let isNewAppLaunch = true;
  * @param log the log to add
  */
 function addLog(log: Log) {
-    Onyx.merge(ONYXKEYS.LOGS, {
+    void Onyx.merge(ONYXKEYS.LOGS, {
         [log.time.getTime()]: log,
     });
 }
@@ -18,7 +18,7 @@ function addLog(log: Log) {
  * @param store whether or not to store logs
  */
 function setShouldStoreLogs(store: boolean) {
-    Onyx.set(ONYXKEYS.SHOULD_STORE_LOGS, store);
+    void Onyx.set(ONYXKEYS.SHOULD_STORE_LOGS, store);
 }
 
 /**
@@ -26,7 +26,7 @@ function setShouldStoreLogs(store: boolean) {
  */
 function disableLoggingAndFlushLogs() {
     setShouldStoreLogs(false);
-    Onyx.set(ONYXKEYS.LOGS, null);
+    void Onyx.set(ONYXKEYS.LOGS, null);
 }
 
 /**

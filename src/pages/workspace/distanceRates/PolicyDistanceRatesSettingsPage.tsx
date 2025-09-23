@@ -159,7 +159,7 @@ function PolicyDistanceRatesSettingsPage({route}: PolicyDistanceRatesSettingsPag
                                             <TextLink
                                                 onPress={() => {
                                                     Navigation.dismissModal();
-                                                    Navigation.isNavigationReady().then(() => {
+                                                    void Navigation.isNavigationReady().then(() => {
                                                         Navigation.goBack(ROUTES.WORKSPACE_MORE_FEATURES.getRoute(policyID));
                                                     });
                                                 }}

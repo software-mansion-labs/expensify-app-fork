@@ -34,14 +34,14 @@ describe('Sidebar', () => {
     beforeEach(() => {
         // Wrap Onyx each onyx action with waitForBatchedUpdates
         wrapOnyxWithWaitForBatchedUpdates(Onyx);
-        Onyx.set(ONYXKEYS.NVP_PREFERRED_LOCALE, CONST.LOCALES.EN);
+        void Onyx.set(ONYXKEYS.NVP_PREFERRED_LOCALE, CONST.LOCALES.EN);
         // Initialize the network key for OfflineWithFeedback
         return TestHelper.signInWithTestUser(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN).then(() => Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false}));
     });
 
     // Clear out Onyx after each test so that each test starts with a clean slate
     afterEach(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     describe('archived chats', () => {

@@ -68,9 +68,9 @@ describe('OnyxUpdateManager', () => {
     });
 
     it('should fetch missing Onyx updates once, defer updates and apply after missing updates', () => {
-        OnyxUpdateManager.handleMissingOnyxUpdates(update3);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update4);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update5);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update4);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update5);
 
         return OnyxUpdateManager.queryPromise.then(() => {
             // After all missing and deferred updates have been applied, the lastUpdateIDAppliedToClient should be 6.
@@ -99,9 +99,9 @@ describe('OnyxUpdateManager', () => {
     });
 
     it('should only apply deferred updates that are newer than the last locally applied update (pending deferred updates)', async () => {
-        OnyxUpdateManager.handleMissingOnyxUpdates(update4);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update5);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update6);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update4);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update5);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update6);
 
         OnyxUpdateManagerUtils.mockValues.beforeValidateAndApplyDeferredUpdates = async () => {
             // We manually update the lastUpdateIDAppliedToClient to 5, to simulate local updates being applied,
@@ -142,9 +142,9 @@ describe('OnyxUpdateManager', () => {
     });
 
     it('should re-fetch missing updates if the deferred updates have a gap', async () => {
-        OnyxUpdateManager.handleMissingOnyxUpdates(update3);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update5);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update6);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update5);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update6);
 
         return OnyxUpdateManager.queryPromise.then(() => {
             // After all missing and deferred updates have been applied, the lastUpdateIDAppliedToClient should be 6.
@@ -183,10 +183,10 @@ describe('OnyxUpdateManager', () => {
     });
 
     it('should re-fetch missing deferred updates only once per batch', async () => {
-        OnyxUpdateManager.handleMissingOnyxUpdates(update3);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update4);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update6);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update8);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update4);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update6);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update8);
 
         return OnyxUpdateManager.queryPromise.then(() => {
             // After all missing and deferred updates have been applied, the lastUpdateIDAppliedToClient should be 6.
@@ -221,10 +221,10 @@ describe('OnyxUpdateManager', () => {
     });
 
     it('should not re-fetch missing updates if the lastUpdateIDFromClient has been updated', async () => {
-        OnyxUpdateManager.handleMissingOnyxUpdates(update3);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update5);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update6);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update7);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update5);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update6);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update7);
 
         ApplyUpdates.mockValues.beforeApplyUpdates = async () => {
             // We manually update the lastUpdateIDAppliedToClient to 5, to simulate local updates being applied,
@@ -268,8 +268,8 @@ describe('OnyxUpdateManager', () => {
     });
 
     it('should re-fetch missing updates if the lastUpdateIDFromClient has increased, but there are still gaps after the locally applied update', async () => {
-        OnyxUpdateManager.handleMissingOnyxUpdates(update3);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update7);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update7);
 
         ApplyUpdates.mockValues.beforeApplyUpdates = async () => {
             // We manually update the lastUpdateIDAppliedToClient to 4, to simulate local updates being applied,
@@ -318,8 +318,8 @@ describe('OnyxUpdateManager', () => {
     });
 
     it('should only fetch missing updates that are not outdated (older than already locally applied update)', () => {
-        OnyxUpdateManager.handleMissingOnyxUpdates(offsetUpdate3);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update4);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(offsetUpdate3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update4);
 
         return OnyxUpdateManager.queryPromise.then(() => {
             // After all missing and deferred updates have been applied, the lastUpdateIDAppliedToClient should be 4.
@@ -350,7 +350,7 @@ describe('OnyxUpdateManager', () => {
     it('should fetch a single pending update if `hasPendingOnyxUpdates flag is true`', () => {
         App.mockValues.missingOnyxUpdatesToBeApplied = [update2];
 
-        OnyxUpdateManager.handleMissingOnyxUpdates(pendingUpdateUpTo2);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(pendingUpdateUpTo2);
 
         return OnyxUpdateManager.queryPromise.then(() => {
             // After all the pending update has been applied, the lastUpdateIDAppliedToClient should be 2.
@@ -376,7 +376,7 @@ describe('OnyxUpdateManager', () => {
     it('should fetch multiple pending updates if `hasPendingOnyxUpdates flag is true`', () => {
         App.mockValues.missingOnyxUpdatesToBeApplied = [update2, update3];
 
-        OnyxUpdateManager.handleMissingOnyxUpdates(pendingUpdateUpTo3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(pendingUpdateUpTo3);
 
         return OnyxUpdateManager.queryPromise.then(() => {
             // After all the pending update has been applied, the lastUpdateIDAppliedToClient should be 3.
@@ -402,8 +402,8 @@ describe('OnyxUpdateManager', () => {
     it('should apply deferred updates after fetching pending updates', () => {
         App.mockValues.missingOnyxUpdatesToBeApplied = [update2, update3];
 
-        OnyxUpdateManager.handleMissingOnyxUpdates(pendingUpdateUpTo3);
-        OnyxUpdateManager.handleMissingOnyxUpdates(update4);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(pendingUpdateUpTo3);
+        void OnyxUpdateManager.handleMissingOnyxUpdates(update4);
 
         return OnyxUpdateManager.queryPromise.then(() => {
             // After all missing and deferred updates have been applied, the lastUpdateIDAppliedToClient should be 4.

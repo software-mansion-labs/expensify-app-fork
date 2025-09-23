@@ -56,8 +56,8 @@ Onyx.connect({
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`] = null;
                 cleanUpSetQueries[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${reportID}`] = null;
             });
-            Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT, cleanUpMergeQueries);
-            Onyx.multiSet(cleanUpSetQueries);
+            void Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT, cleanUpMergeQueries);
+            void Onyx.multiSet(cleanUpSetQueries);
             delete allPolicies[key];
             return;
         }
@@ -113,7 +113,7 @@ function openPolicyReportFieldsPage(policyID: string) {
  * Sets the initial form values for the workspace report fields form.
  */
 function setInitialCreateReportFieldsForm() {
-    Onyx.set(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
+    void Onyx.set(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
         [INPUT_IDS.INITIAL_VALUE]: '',
     });
 }
@@ -122,7 +122,7 @@ function setInitialCreateReportFieldsForm() {
  * Creates a new list value in the workspace report fields form.
  */
 function createReportFieldsListValue({valueName, listValues, disabledListValues}: CreateReportFieldsListValueParams) {
-    Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
+    void Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
         [INPUT_IDS.LIST_VALUES]: [...listValues, valueName],
         [INPUT_IDS.DISABLED_LIST_VALUES]: [...disabledListValues, false],
     });
@@ -135,7 +135,7 @@ function renameReportFieldsListValue({valueIndex, newValueName, listValues}: Ren
     const listValuesCopy = [...listValues];
     listValuesCopy[valueIndex] = newValueName;
 
-    Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
+    void Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
         [INPUT_IDS.LIST_VALUES]: listValuesCopy,
     });
 }
@@ -150,7 +150,7 @@ function setReportFieldsListValueEnabled({valueIndexes, enabled, disabledListVal
         disabledListValuesCopy[valueIndex] = !enabled;
     });
 
-    Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
+    void Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
         [INPUT_IDS.DISABLED_LIST_VALUES]: disabledListValuesCopy,
     });
 }
@@ -169,7 +169,7 @@ function deleteReportFieldsListValue({valueIndexes, listValues, disabledListValu
             disabledListValuesCopy.splice(valueIndex, 1);
         });
 
-    Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
+    void Onyx.merge(ONYXKEYS.FORMS.WORKSPACE_REPORT_FIELDS_FORM_DRAFT, {
         [INPUT_IDS.LIST_VALUES]: listValuesCopy,
         [INPUT_IDS.DISABLED_LIST_VALUES]: disabledListValuesCopy,
     });
@@ -267,7 +267,7 @@ function createReportField({name, type, initialValue, listValues, disabledListVa
         reportFields: JSON.stringify([optimisticReportFieldDataForPolicy]),
     };
 
-    API.write(WRITE_COMMANDS.CREATE_WORKSPACE_REPORT_FIELD, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.CREATE_WORKSPACE_REPORT_FIELD, parameters, onyxData);
 }
 
 function deleteReportFields(policyID: string, reportFieldsToUpdate: string[]) {
@@ -329,7 +329,7 @@ function deleteReportFields(policyID: string, reportFieldsToUpdate: string[]) {
         reportFields: JSON.stringify(Object.values(updatedReportFields)),
     };
 
-    API.write(WRITE_COMMANDS.DELETE_POLICY_REPORT_FIELD, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.DELETE_POLICY_REPORT_FIELD, parameters, onyxData);
 }
 
 /**
@@ -387,7 +387,7 @@ function updateReportFieldInitialValue(policyID: string, reportFieldID: string, 
         reportFields: JSON.stringify([updatedReportField]),
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_REPORT_FIELD_INITIAL_VALUE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_WORKSPACE_REPORT_FIELD_INITIAL_VALUE, parameters, onyxData);
 }
 
 function updateReportFieldListValueEnabled(policyID: string, reportFieldID: string, valueIndexes: number[], enabled: boolean) {
@@ -426,7 +426,7 @@ function updateReportFieldListValueEnabled(policyID: string, reportFieldID: stri
         reportFields: JSON.stringify([updatedReportField]),
     };
 
-    API.write(WRITE_COMMANDS.ENABLE_WORKSPACE_REPORT_FIELD_LIST_VALUE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.ENABLE_WORKSPACE_REPORT_FIELD_LIST_VALUE, parameters, onyxData);
 }
 
 /**
@@ -461,7 +461,7 @@ function addReportFieldListValue(policyID: string, reportFieldID: string, valueN
         reportFields: JSON.stringify([updatedReportField]),
     };
 
-    API.write(WRITE_COMMANDS.CREATE_WORKSPACE_REPORT_FIELD_LIST_VALUE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.CREATE_WORKSPACE_REPORT_FIELD_LIST_VALUE, parameters, onyxData);
 }
 
 /**
@@ -506,7 +506,7 @@ function removeReportFieldListValue(policyID: string, reportFieldID: string, val
         reportFields: JSON.stringify([updatedReportField]),
     };
 
-    API.write(WRITE_COMMANDS.REMOVE_WORKSPACE_REPORT_FIELD_LIST_VALUE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.REMOVE_WORKSPACE_REPORT_FIELD_LIST_VALUE, parameters, onyxData);
 }
 
 export type {CreateReportFieldParams};

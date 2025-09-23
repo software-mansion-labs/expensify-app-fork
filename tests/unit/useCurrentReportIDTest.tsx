@@ -30,12 +30,12 @@ describe('useCurrentReportID', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        Onyx.clear();
+        void Onyx.clear();
         return waitForBatchedUpdates();
     });
 
     afterAll(async () => {
-        Onyx.clear();
+        void Onyx.clear();
         await waitForBatchedUpdates();
     });
 

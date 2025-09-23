@@ -61,7 +61,7 @@ function updateSubscriptionType(type: SubscriptionType) {
         type,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_TYPE, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_TYPE, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -115,7 +115,7 @@ function updateSubscriptionAutoRenew(autoRenew: boolean, disableAutoRenewReason?
         disableAutoRenewAdditionalNote,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_AUTO_RENEW, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_AUTO_RENEW, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -167,7 +167,7 @@ function updateSubscriptionAddNewUsersAutomatically(addNewUsersAutomatically: bo
         addNewUsersAutomatically,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_ADD_NEW_USERS_AUTOMATICALLY, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_ADD_NEW_USERS_AUTOMATICALLY, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -220,11 +220,11 @@ function updateSubscriptionSize(newSubscriptionSize: number, currentSubscription
         ],
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_SIZE, {userCount: newSubscriptionSize}, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_SUBSCRIPTION_SIZE, {userCount: newSubscriptionSize}, onyxData);
 }
 
 function clearUpdateSubscriptionSizeError() {
-    Onyx.merge(ONYXKEYS.NVP_PRIVATE_SUBSCRIPTION, {
+    void Onyx.merge(ONYXKEYS.NVP_PRIVATE_SUBSCRIPTION, {
         errorFields: {
             userCount: null,
         },
@@ -276,7 +276,7 @@ function clearOutstandingBalance() {
         ],
     };
 
-    API.write(WRITE_COMMANDS.CLEAR_OUTSTANDING_BALANCE, null, onyxData);
+    void API.write(WRITE_COMMANDS.CLEAR_OUTSTANDING_BALANCE, null, onyxData);
 }
 
 function cancelBillingSubscription(cancellationReason: FeedbackSurveyOptionID, cancellationNote: string) {
@@ -285,11 +285,11 @@ function cancelBillingSubscription(cancellationReason: FeedbackSurveyOptionID, c
         cancellationNote,
     };
 
-    API.write(WRITE_COMMANDS.CANCEL_BILLING_SUBSCRIPTION, parameters);
+    void API.write(WRITE_COMMANDS.CANCEL_BILLING_SUBSCRIPTION, parameters);
 }
 
 function requestTaxExempt() {
-    API.write(WRITE_COMMANDS.REQUEST_TAX_EXEMPTION, null);
+    void API.write(WRITE_COMMANDS.REQUEST_TAX_EXEMPTION, null);
 }
 
 export {

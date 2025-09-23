@@ -111,7 +111,7 @@ function isViolationWithName(violation: unknown): violation is {name: string} {
 }
 
 function saveWaypoint(transactionID: string, index: string, waypoint: RecentWaypoint | null, isDraft = false) {
-    Onyx.merge(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {
+    void Onyx.merge(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {
         comment: {
             waypoints: {
                 [`waypoint${index}`]: waypoint,
@@ -157,7 +157,7 @@ function saveWaypoint(transactionID: string, index: string, waypoint: RecentWayp
         const clonedWaypoints = lodashClone(recentWaypoints);
         const updatedWaypoint = {...waypoint, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD};
         clonedWaypoints.unshift(updatedWaypoint);
-        Onyx.merge(ONYXKEYS.NVP_RECENT_WAYPOINTS, clonedWaypoints.slice(0, CONST.RECENT_WAYPOINTS_NUMBER));
+        void Onyx.merge(ONYXKEYS.NVP_RECENT_WAYPOINTS, clonedWaypoints.slice(0, CONST.RECENT_WAYPOINTS_NUMBER));
     }
 }
 
@@ -486,7 +486,7 @@ function dismissDuplicateTransactionViolation(transactionIDs: string[], dismisse
         reportActionIDList: optimisticDismissedViolationReportActions.map(() => NumberUtils.rand64()).join(','),
     };
 
-    API.write(WRITE_COMMANDS.DISMISS_VIOLATION, params, {
+    void API.write(WRITE_COMMANDS.DISMISS_VIOLATION, params, {
         optimisticData,
         successData,
         failureData,
@@ -494,17 +494,17 @@ function dismissDuplicateTransactionViolation(transactionIDs: string[], dismisse
 }
 
 function setReviewDuplicatesKey(values: Partial<ReviewDuplicates>) {
-    Onyx.merge(`${ONYXKEYS.REVIEW_DUPLICATES}`, {
+    void Onyx.merge(`${ONYXKEYS.REVIEW_DUPLICATES}`, {
         ...values,
     });
 }
 
 function abandonReviewDuplicateTransactions() {
-    Onyx.set(ONYXKEYS.REVIEW_DUPLICATES, null);
+    void Onyx.set(ONYXKEYS.REVIEW_DUPLICATES, null);
 }
 
 function clearError(transactionID: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {errors: null, errorFields: {route: null, waypoints: null, routes: null}});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {errors: null, errorFields: {route: null, waypoints: null, routes: null}});
 }
 
 function getLastModifiedExpense(reportID?: string): OriginalMessageModifiedExpense | undefined {
@@ -518,7 +518,7 @@ function revert(transaction?: OnyxEntry<Transaction>, originalMessage?: Original
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`, {
         modifiedAmount: transaction?.amount && transaction?.amount < 0 ? -Math.abs(originalMessage.oldAmount) : originalMessage.oldAmount,
         modifiedCurrency: originalMessage.oldCurrency,
     });
@@ -602,7 +602,7 @@ function generateTransactionID(): string {
 }
 
 function setTransactionReport(transactionID: string, transaction: Partial<Transaction>, isDraft: boolean) {
-    Onyx.merge(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, transaction);
+    void Onyx.merge(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, transaction);
 }
 
 function changeTransactionsReport(
@@ -1182,7 +1182,7 @@ function changeTransactionsReport(
         transactionIDToReportActionAndThreadData: JSON.stringify(transactionIDToReportActionAndThreadData),
     };
 
-    API.write(WRITE_COMMANDS.CHANGE_TRANSACTIONS_REPORT, parameters, {
+    void API.write(WRITE_COMMANDS.CHANGE_TRANSACTIONS_REPORT, parameters, {
         optimisticData,
         successData,
         failureData,

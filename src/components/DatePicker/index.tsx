@@ -95,7 +95,7 @@ function DatePicker(
     };
 
     useEffect(() => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             calculatePopoverPosition();
         });
     }, [calculatePopoverPosition, windowWidth]);
@@ -105,7 +105,7 @@ function DatePicker(
             return;
         }
         isAutoFocused.current = true;
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             handlePress();
         });
     }, [handlePress, autoFocus]);

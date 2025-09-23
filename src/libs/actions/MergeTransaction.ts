@@ -16,14 +16,14 @@ import type {MergeTransaction, Policy, Report, Transaction} from '@src/types/ony
  * Setup merge transaction data for merging flow
  */
 function setupMergeTransactionData(transactionID: string, values: Partial<MergeTransaction>) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, values);
+    void Onyx.set(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, values);
 }
 
 /**
  * Sets merge transaction data for a specific transaction
  */
 function setMergeTransactionKey(transactionID: string, values: Partial<MergeTransaction>) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, values);
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, values);
 }
 
 /**
@@ -77,7 +77,7 @@ function getTransactionsForMergingLocally(transactionID: string, targetTransacti
         );
     });
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, {
         eligibleTransactions,
     });
 }
@@ -118,7 +118,7 @@ function getTransactionsForMerging({
             return areTransactionsEligibleForMerge(targetTransaction, transaction);
         });
 
-        Onyx.merge(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.MERGE_TRANSACTION}${transactionID}`, {
             eligibleTransactions,
         });
         return;
@@ -311,7 +311,7 @@ function mergeTransactionRequest(mergeTransactionID: string, mergeTransaction: M
         ...failureSourceReportActionData,
     ];
 
-    API.write(WRITE_COMMANDS.MERGE_TRANSACTION, params, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.MERGE_TRANSACTION, params, {optimisticData, failureData});
 }
 
 export {setupMergeTransactionData, setMergeTransactionKey, getTransactionsForMerging, mergeTransactionRequest};

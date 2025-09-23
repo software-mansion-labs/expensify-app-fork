@@ -138,7 +138,7 @@ function importPlaidAccounts(
         statementPeriodEndDay,
     };
 
-    API.write(WRITE_COMMANDS.IMPORT_PLAID_ACCOUNTS, parameters);
+    void API.write(WRITE_COMMANDS.IMPORT_PLAID_ACCOUNTS, parameters);
 }
 
 export {openPlaidBankAccountSelector, openPlaidBankLogin, openPlaidCompanyCardLogin, importPlaidAccounts};

@@ -258,7 +258,7 @@ function WorkspaceCategoriesPage({route}: WorkspaceCategoriesPageProps) {
         deleteWorkspaceCategories(policyId, selectedCategories, policyTagLists, allTransactionViolations);
         setDeleteCategoriesConfirmModalVisible(false);
 
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setSelectedCategories([]);
         });
     };

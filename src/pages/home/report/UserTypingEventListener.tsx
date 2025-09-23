@@ -29,7 +29,7 @@ function UserTypingEventListener({report}: UserTypingEventListenerProps) {
 
             // unsubscribe from report typing events when the component unmounts
             didSubscribeToReportTypingEvents.current = false;
-            InteractionManager.runAfterInteractions(() => {
+            void InteractionManager.runAfterInteractions(() => {
                 Report.unsubscribeFromReportChannel(reportID);
             });
         },
@@ -61,7 +61,7 @@ function UserTypingEventListener({report}: UserTypingEventListenerProps) {
 
             if (topmostReportId !== reportID && didSubscribeToReportTypingEvents.current) {
                 didSubscribeToReportTypingEvents.current = false;
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     Report.unsubscribeFromReportChannel(reportID);
                 });
             }

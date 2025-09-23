@@ -79,7 +79,7 @@ function PlaybackContextProvider({children}: ChildrenProps) {
     );
 
     useEffect(() => {
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             // This logic ensures that resetVideoPlayerData is only called when currentReportID
             // changes from one valid value (i.e., not an empty string or '-1') to another valid value.
             // This prevents the video that plays when the app opens from being interrupted when currentReportID

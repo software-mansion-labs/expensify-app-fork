@@ -44,7 +44,7 @@ describe('actions/Policy', () => {
 
     describe('createWorkspace', () => {
         afterEach(() => {
-            mockFetch?.resume?.();
+            void mockFetch?.resume?.();
         });
 
         it('creates a new workspace', async () => {
@@ -753,13 +753,13 @@ describe('actions/Policy', () => {
     describe('enablePolicyRules', () => {
         it('should disable preventSelfApproval when the rule feature is turned off', async () => {
             (fetch as MockFetch)?.pause?.();
-            Onyx.set(ONYXKEYS.SESSION, {email: ESH_EMAIL, accountID: ESH_ACCOUNT_ID});
+            void Onyx.set(ONYXKEYS.SESSION, {email: ESH_EMAIL, accountID: ESH_ACCOUNT_ID});
             const fakePolicy: PolicyType = {
                 ...createRandomPolicy(0, CONST.POLICY.TYPE.TEAM),
                 areRulesEnabled: true,
                 preventSelfApproval: true,
             };
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
             await waitForBatchedUpdates();
 
             // Disable the rule feature
@@ -816,7 +816,7 @@ describe('actions/Policy', () => {
             await Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, fakeReimbursementAccount);
 
             // When deleting a workspace fails
-            mockFetch?.fail?.();
+            void mockFetch?.fail?.();
             Policy.deleteWorkspace(fakePolicy.id, fakePolicy.name, undefined, undefined);
 
             await waitForBatchedUpdates();
@@ -999,7 +999,7 @@ describe('actions/Policy', () => {
 
     describe('generateDefaultWorkspaceName', () => {
         beforeAll(() => {
-            Onyx.set(ONYXKEYS.COLLECTION.POLICY, {});
+            void Onyx.set(ONYXKEYS.COLLECTION.POLICY, {});
         });
 
         it('should generate a workspace name based on the email domain when the domain is not public', () => {
@@ -1105,14 +1105,14 @@ describe('actions/Policy', () => {
     describe('enablePolicyWorkflows', () => {
         it('should update delayed submission to instant when disabling the workflows feature', async () => {
             (fetch as MockFetch)?.pause?.();
-            Onyx.set(ONYXKEYS.SESSION, {email: ESH_EMAIL, accountID: ESH_ACCOUNT_ID});
+            void Onyx.set(ONYXKEYS.SESSION, {email: ESH_EMAIL, accountID: ESH_ACCOUNT_ID});
             const fakePolicy: PolicyType = {
                 ...createRandomPolicy(0, CONST.POLICY.TYPE.TEAM),
                 areWorkflowsEnabled: true,
                 autoReporting: true,
                 autoReportingFrequency: CONST.POLICY.AUTO_REPORTING_FREQUENCIES.IMMEDIATE,
             };
-            Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${fakePolicy.id}`, fakePolicy);
             await waitForBatchedUpdates();
 
             // Disable the workflow feature

@@ -59,7 +59,7 @@ function NewTaskPage({route}: NewTaskPageProps) {
     useFocusEffect(
         useCallback(() => {
             focusTimeoutRef.current = setTimeout(() => {
-                InteractionManager.runAfterInteractions(() => {
+                void InteractionManager.runAfterInteractions(() => {
                     blurActiveElement();
                 });
             }, CONST.ANIMATED_TRANSITION);

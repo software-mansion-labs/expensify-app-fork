@@ -21,7 +21,7 @@ Onyx.connectWithoutView({
 
 const apply = jest.fn(({lastUpdateID, request, response}: OnyxUpdatesFromServer): Promise<void | Response> | undefined => {
     if (lastUpdateID && (lastUpdateIDAppliedToClient === undefined || Number(lastUpdateID) > lastUpdateIDAppliedToClient)) {
-        Onyx.merge(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT, Number(lastUpdateID));
+        void Onyx.merge(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT, Number(lastUpdateID));
     }
 
     if (request && response) {

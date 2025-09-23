@@ -58,7 +58,7 @@ export default function (): Promise<boolean> {
                             if (!response) {
                                 return;
                             }
-                            Onyx.merge(ONYXKEYS.SESSION, {
+                            void Onyx.merge(ONYXKEYS.SESSION, {
                                 authToken: response.authToken,
                                 creationDate: new Date().getTime(),
                                 email: e2eUserCredentials.email,

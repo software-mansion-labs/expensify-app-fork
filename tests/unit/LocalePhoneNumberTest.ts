@@ -16,11 +16,12 @@ describe('LocalePhoneNumber utils', () => {
     );
 
     describe('formatPhoneNumber function', () => {
-        beforeEach(() =>
-            Onyx.multiSet({
-                [ONYXKEYS.SESSION]: {email: 'current@user.com'},
-                [ONYXKEYS.COUNTRY_CODE]: 1,
-            }).then(waitForBatchedUpdates),
+        beforeEach(
+            () =>
+                void Onyx.multiSet({
+                    [ONYXKEYS.SESSION]: {email: 'current@user.com'},
+                    [ONYXKEYS.COUNTRY_CODE]: 1,
+                }).then(waitForBatchedUpdates),
         );
 
         afterEach(() => Onyx.clear());

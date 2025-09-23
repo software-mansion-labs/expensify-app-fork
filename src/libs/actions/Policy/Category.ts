@@ -405,7 +405,7 @@ function setWorkspaceCategoryEnabled(
         categories: JSON.stringify(Object.keys(categoriesToUpdate).map((key) => categoriesToUpdate[key])),
     };
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_CATEGORIES_ENABLED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_CATEGORIES_ENABLED, parameters, onyxData);
 }
 
 function setPolicyCategoryDescriptionRequired(policyID: string, categoryName: string, areCommentsRequired: boolean) {
@@ -474,7 +474,7 @@ function setPolicyCategoryDescriptionRequired(policyID: string, categoryName: st
         areCommentsRequired,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_DESCRIPTION_REQUIRED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_DESCRIPTION_REQUIRED, parameters, onyxData);
 }
 
 function setPolicyCategoryReceiptsRequired(policyID: string, categoryName: string, maxAmountNoReceipt: number) {
@@ -535,7 +535,7 @@ function setPolicyCategoryReceiptsRequired(policyID: string, categoryName: strin
         maxExpenseAmountNoReceipt: maxAmountNoReceipt,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_RECEIPTS_REQUIRED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_RECEIPTS_REQUIRED, parameters, onyxData);
 }
 
 function removePolicyCategoryReceiptsRequired(policyID: string, categoryName: string) {
@@ -595,7 +595,7 @@ function removePolicyCategoryReceiptsRequired(policyID: string, categoryName: st
         categoryName,
     };
 
-    API.write(WRITE_COMMANDS.REMOVE_POLICY_CATEGORY_RECEIPTS_REQUIRED, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.REMOVE_POLICY_CATEGORY_RECEIPTS_REQUIRED, parameters, onyxData);
 }
 
 function createPolicyCategory(policyID: string, categoryName: string) {
@@ -606,7 +606,7 @@ function createPolicyCategory(policyID: string, categoryName: string) {
         categories: JSON.stringify([{name: categoryName}]),
     };
 
-    API.write(WRITE_COMMANDS.CREATE_WORKSPACE_CATEGORIES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.CREATE_WORKSPACE_CATEGORIES, parameters, onyxData);
 }
 
 function importPolicyCategories(policyID: string, categories: PolicyCategory[]) {
@@ -626,7 +626,7 @@ function importPolicyCategories(policyID: string, categories: PolicyCategory[]) 
         categories: JSON.stringify([...categories.map((category) => ({name: category.name, enabled: category.enabled, 'GL Code': String(category['GL Code'])}))]),
     };
 
-    API.write(WRITE_COMMANDS.IMPORT_CATEGORIES_SPREADSHEET, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.IMPORT_CATEGORIES_SPREADSHEET, parameters, onyxData);
 }
 
 function renamePolicyCategory(policyID: string, policyCategory: {oldName: string; newName: string}) {
@@ -753,7 +753,7 @@ function renamePolicyCategory(policyID: string, policyCategory: {oldName: string
         categories: JSON.stringify({[policyCategory.oldName]: policyCategory.newName}),
     };
 
-    API.write(WRITE_COMMANDS.RENAME_WORKSPACE_CATEGORY, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.RENAME_WORKSPACE_CATEGORY, parameters, onyxData);
 }
 
 function setPolicyCategoryPayrollCode(policyID: string, categoryName: string, payrollCode: string) {
@@ -821,7 +821,7 @@ function setPolicyCategoryPayrollCode(policyID: string, categoryName: string, pa
         payrollCode,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_CATEGORY_PAYROLL_CODE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_CATEGORY_PAYROLL_CODE, parameters, onyxData);
 }
 
 function setPolicyCategoryGLCode(policyID: string, categoryName: string, glCode: string) {
@@ -889,7 +889,7 @@ function setPolicyCategoryGLCode(policyID: string, categoryName: string, glCode:
         glCode,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_POLICY_CATEGORY_GL_CODE, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.UPDATE_POLICY_CATEGORY_GL_CODE, parameters, onyxData);
 }
 
 function setWorkspaceRequiresCategory(
@@ -951,7 +951,7 @@ function setWorkspaceRequiresCategory(
         requiresCategory,
     };
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_REQUIRES_CATEGORY, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_REQUIRES_CATEGORY, parameters, onyxData);
 }
 
 function clearCategoryErrors(policyID: string, categoryName: string) {
@@ -962,13 +962,13 @@ function clearCategoryErrors(policyID: string, categoryName: string) {
     }
 
     if (category.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
-        Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`, {
             [category.name]: null,
         });
         return;
     }
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`, {
         [category.name]: {
             errors: null,
         },
@@ -1034,7 +1034,7 @@ function deleteWorkspaceCategories(
         categories: JSON.stringify(categoryNamesToDelete),
     };
 
-    API.write(WRITE_COMMANDS.DELETE_WORKSPACE_CATEGORIES, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.DELETE_WORKSPACE_CATEGORIES, parameters, onyxData);
 }
 
 function enablePolicyCategories(
@@ -1128,7 +1128,7 @@ function enablePolicyCategories(
 
     const parameters: EnablePolicyCategoriesParams = {policyID, enabled};
 
-    API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_CATEGORIES, parameters, onyxData);
+    void API.writeWithNoDuplicatesEnableFeatureConflicts(WRITE_COMMANDS.ENABLE_POLICY_CATEGORIES, parameters, onyxData);
 
     if (enabled && getIsNarrowLayout() && shouldGoBack) {
         goBackWhenEnableFeature(policyID);
@@ -1187,7 +1187,7 @@ function setPolicyCustomUnitDefaultCategory(policyID: string, customUnitID: stri
         category,
     };
 
-    API.write(WRITE_COMMANDS.SET_CUSTOM_UNIT_DEFAULT_CATEGORY, params, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.SET_CUSTOM_UNIT_DEFAULT_CATEGORY, params, {optimisticData, successData, failureData});
 }
 
 function downloadCategoriesCSV(policyID: string, onDownloadFailed: () => void) {
@@ -1202,7 +1202,7 @@ function downloadCategoriesCSV(policyID: string, onDownloadFailed: () => void) {
         formData.append(key, String(value));
     });
 
-    fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_CATEGORIES_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
+    void fileDownload(ApiUtils.getCommandURL({command: WRITE_COMMANDS.EXPORT_CATEGORIES_CSV}), fileName, '', false, formData, CONST.NETWORK.METHOD.POST, onDownloadFailed);
 }
 
 function setWorkspaceCategoryDescriptionHint(policyID: string, categoryName: string, commentHint: string) {
@@ -1263,7 +1263,7 @@ function setWorkspaceCategoryDescriptionHint(policyID: string, categoryName: str
         commentHint,
     };
 
-    API.write(WRITE_COMMANDS.SET_WORKSPACE_CATEGORY_DESCRIPTION_HINT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_WORKSPACE_CATEGORY_DESCRIPTION_HINT, parameters, onyxData);
 }
 
 function setPolicyCategoryMaxAmount(policyID: string, categoryName: string, maxExpenseAmount: string, expenseLimitType: PolicyCategoryExpenseLimitType) {
@@ -1334,7 +1334,7 @@ function setPolicyCategoryMaxAmount(policyID: string, categoryName: string, maxE
         expenseLimitType,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_MAX_AMOUNT, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_MAX_AMOUNT, parameters, onyxData);
 }
 
 function setPolicyCategoryApprover(policyID: string, categoryName: string, approver: string, approvalRules: ApprovalRule[]) {
@@ -1397,7 +1397,7 @@ function setPolicyCategoryApprover(policyID: string, categoryName: string, appro
         approver: newApprover,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_APPROVER, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_APPROVER, parameters, onyxData);
 }
 
 function setPolicyCategoryTax(policyID: string, categoryName: string, taxID: string) {
@@ -1464,7 +1464,7 @@ function setPolicyCategoryTax(policyID: string, categoryName: string, taxID: str
         taxID,
     };
 
-    API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_TAX, parameters, onyxData);
+    void API.write(WRITE_COMMANDS.SET_POLICY_CATEGORY_TAX, parameters, onyxData);
 }
 
 function getPolicyCategoriesData(policyID: string | undefined) {

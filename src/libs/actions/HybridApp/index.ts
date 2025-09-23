@@ -27,7 +27,7 @@ function getHybridAppSettings(): Promise<HybridAppSettings | null> {
 function closeReactNativeApp({shouldSetNVP}: {shouldSetNVP: boolean}) {
     Navigation.clearPreloadedRoutes();
     if (CONFIG.IS_HYBRID_APP) {
-        Onyx.merge(ONYXKEYS.HYBRID_APP, {closingReactNativeApp: true});
+        void Onyx.merge(ONYXKEYS.HYBRID_APP, {closingReactNativeApp: true});
     }
     // eslint-disable-next-line no-restricted-properties
     HybridAppModule.closeReactNativeApp({shouldSetNVP});
@@ -41,7 +41,7 @@ function setReadyToShowAuthScreens(readyToShowAuthScreens: boolean) {
     if (!CONFIG.IS_HYBRID_APP) {
         return;
     }
-    Onyx.merge(ONYXKEYS.HYBRID_APP, {readyToShowAuthScreens});
+    void Onyx.merge(ONYXKEYS.HYBRID_APP, {readyToShowAuthScreens});
 }
 
 function setUseNewDotSignInPage(useNewDotSignInPage: boolean) {
@@ -57,7 +57,7 @@ function setClosingReactNativeApp(closingReactNativeApp: boolean) {
     if (!CONFIG.IS_HYBRID_APP) {
         return;
     }
-    Onyx.merge(ONYXKEYS.HYBRID_APP, {closingReactNativeApp});
+    void Onyx.merge(ONYXKEYS.HYBRID_APP, {closingReactNativeApp});
 }
 
 /*
@@ -99,7 +99,7 @@ function migrateHybridAppToNewPartnerName() {
     }
 
     Log.info('[HybridApp] Migrating to new partner name');
-    Onyx.merge(ONYXKEYS.HYBRID_APP, {
+    void Onyx.merge(ONYXKEYS.HYBRID_APP, {
         shouldUseNewPartnerName: true,
     });
 }

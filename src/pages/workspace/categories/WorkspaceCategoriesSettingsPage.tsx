@@ -90,7 +90,7 @@ function WorkspaceCategoriesSettingsPage({policy, route}: WorkspaceCategoriesSet
         }
 
         Keyboard.dismiss();
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setIsSelectorModalVisible(false);
         });
     };

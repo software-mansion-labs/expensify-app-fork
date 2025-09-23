@@ -46,7 +46,7 @@ export default function () {
                 );
 
                 // eslint-disable-next-line rulesdir/prefer-actions-set-data
-                Onyx.merge(ONYXKEYS.CARD_LIST, dataToSave).then(() => {
+                void Onyx.merge(ONYXKEYS.CARD_LIST, dataToSave).then(() => {
                     Log.info(`[Migrate Onyx] Ran migration RenameCardIsVirtual and renamed ${Object.keys(dataToSave)?.length} properties`);
                     resolve();
                 });

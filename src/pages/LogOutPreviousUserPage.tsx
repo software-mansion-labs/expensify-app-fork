@@ -41,7 +41,7 @@ function LogOutPreviousUserPage({route}: LogOutPreviousUserPageProps) {
 
         if (isSupportalLogin) {
             signInWithSupportAuthToken(shortLivedAuthToken);
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 // We must call goBack() to remove the /transition route from history
                 Navigation.goBack();
                 Navigation.navigate(ROUTES.HOME);
@@ -66,7 +66,7 @@ function LogOutPreviousUserPage({route}: LogOutPreviousUserPageProps) {
         // which is already called when AuthScreens mounts.
         // For HybridApp we have separate logic to handle transitions.
         if (!CONFIG.IS_HYBRID_APP && exitTo !== ROUTES.WORKSPACE_NEW && !isAccountLoading && !isLoggingInAsNewUser) {
-            Navigation.isNavigationReady().then(() => {
+            void Navigation.isNavigationReady().then(() => {
                 // remove this screen and navigate to exit route
                 Navigation.goBack();
                 if (exitTo) {

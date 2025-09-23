@@ -84,13 +84,13 @@ const parentReportAction = createRandomReportAction(1);
 
 beforeEach(() => {
     // Initialize the network key for OfflineWithFeedback
-    Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
+    void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
     wrapOnyxWithWaitForBatchedUpdates(Onyx);
     signUpWithTestUser();
 });
 
 afterEach(() => {
-    Onyx.clear();
+    void Onyx.clear();
 });
 
 function ReportActionsListWrapper() {

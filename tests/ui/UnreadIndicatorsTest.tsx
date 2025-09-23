@@ -45,7 +45,7 @@ TestHelper.setupApp();
 TestHelper.setupGlobalFetchMock();
 
 beforeEach(() => {
-    Onyx.set(ONYXKEYS.NVP_ONBOARDING, {hasCompletedGuidedSetupFlow: true});
+    void Onyx.set(ONYXKEYS.NVP_ONBOARDING, {hasCompletedGuidedSetupFlow: true});
 });
 
 function scrollUpToRevealNewMessagesBadge() {
@@ -519,7 +519,7 @@ describe.skip('Unread Indicators', () => {
                 .then(() => {
                     // Simulate the response from the server so that the comment can be deleted in this test
                     lastReportAction = reportActions ? lastItem(reportActions) : undefined;
-                    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${REPORT_ID}`, {
+                    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${REPORT_ID}`, {
                         lastMessageText: getReportActionText(lastReportAction),
                         lastActorAccountID: lastReportAction?.actorAccountID,
                         reportID: REPORT_ID,

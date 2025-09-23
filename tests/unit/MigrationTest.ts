@@ -22,7 +22,7 @@ describe('Migrations', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        Onyx.clear();
+        void Onyx.clear();
         return waitForBatchedUpdates();
     });
 

@@ -70,7 +70,7 @@ describe('ReportUtils', () => {
     });
 
     afterAll(() => {
-        Onyx.clear();
+        void Onyx.clear();
     });
 
     test('[ReportUtils] findLastAccessedReport on 2k reports and policies', async () => {

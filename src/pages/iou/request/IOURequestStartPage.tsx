@@ -201,7 +201,7 @@ function IOURequestStartPage({
     const onTabSelectFocusHandler = ({index}: {index: number}) => {
         // We runAfterInteractions since the function is called in the animate block on web-based
         // implementation, this fixes an animation glitch and matches the native internal delay
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             // 0 - Amount, 3 - PerDiem
             if (index === 0) {
                 amountInputRef.current?.focus();

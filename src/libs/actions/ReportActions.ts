@@ -35,7 +35,7 @@ function clearReportActionErrors(reportID: string, reportAction: ReportAction, k
 
     if (reportAction.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD || reportAction.isOptimisticAction) {
         // Delete the optimistic action
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${originalReportID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${originalReportID}`, {
             [reportAction.reportActionID]: null,
         });
 
@@ -43,8 +43,8 @@ function clearReportActionErrors(reportID: string, reportAction: ReportAction, k
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         const linkedTransactionID = getLinkedTransactionID(reportAction.reportActionID, originalReportID);
         if (linkedTransactionID) {
-            Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION}${linkedTransactionID}`, null);
-            Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${reportAction.childReportID}`, null);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION}${linkedTransactionID}`, null);
+            void Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${reportAction.childReportID}`, null);
         }
 
         // Delete the failed task report too
@@ -62,14 +62,14 @@ function clearReportActionErrors(reportID: string, reportAction: ReportAction, k
             errors[key] = null;
         });
 
-        Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${originalReportID}`, {
+        void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${originalReportID}`, {
             [reportAction.reportActionID]: {
                 errors,
             },
         });
         return;
     }
-    Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${originalReportID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${originalReportID}`, {
         [reportAction.reportActionID]: {
             errors: null,
         },

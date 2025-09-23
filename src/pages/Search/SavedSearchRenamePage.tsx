@@ -26,7 +26,7 @@ function SavedSearchRenamePage({route}: {route: {params: {q: string; name: strin
     const applyFiltersAndNavigate = () => {
         clearAdvancedFilters();
         Navigation.dismissModal();
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             Navigation.navigate(
                 ROUTES.SEARCH_ROOT.getRoute({
                     query: q,

@@ -73,7 +73,7 @@ function openOldDotLink(url: string, shouldOpenInSameTab = false) {
     // If shortLivedAuthToken is not accessible, fallback to opening the link without the token.
     asyncOpenURL(
         // eslint-disable-next-line rulesdir/no-api-side-effects-method
-        API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.OPEN_OLD_DOT_LINK, {}, {})
+        void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.OPEN_OLD_DOT_LINK, {}, {})
             .then((response) => (response ? buildOldDotURL(url, response.shortLivedAuthToken) : buildOldDotURL(url)))
             .catch(() => buildOldDotURL(url)),
         (oldDotURL) => oldDotURL,
@@ -113,7 +113,7 @@ function openTravelDotLink(policyID: OnyxEntry<string>, postLoginPath?: string) 
 
         asyncOpenURL(
             // eslint-disable-next-line rulesdir/no-api-side-effects-method
-            API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.GENERATE_SPOTNANA_TOKEN, parameters, {})
+            void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.GENERATE_SPOTNANA_TOKEN, parameters, {})
                 .then((response) => {
                     if (!response?.spotnanaToken) {
                         reject(error);
@@ -214,7 +214,7 @@ function buildURLWithAuthToken(url: string, shortLivedAuthToken?: string) {
 function openExternalLinkWithToken(url: string, shouldSkipCustomSafariLogic = false) {
     asyncOpenURL(
         // eslint-disable-next-line rulesdir/no-api-side-effects-method
-        API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.OPEN_OLD_DOT_LINK, {}, {})
+        void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.OPEN_OLD_DOT_LINK, {}, {})
             .then((response) => (response ? buildURLWithAuthToken(url, response.shortLivedAuthToken) : buildURLWithAuthToken(url)))
             .catch(() => buildURLWithAuthToken(url)),
         (link) => link,

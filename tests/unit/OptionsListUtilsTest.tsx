@@ -822,13 +822,14 @@ describe('OptionsListUtils', () => {
 
         it('should exclude Manager McTest from results if user dismissed the tooltip', () => {
             return waitForBatchedUpdates()
-                .then(() =>
-                    // Given that the user has dismissed the tooltip
-                    Onyx.set(ONYXKEYS.NVP_DISMISSED_PRODUCT_TRAINING, {
-                        [CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.SCAN_TEST_TOOLTIP]: {
-                            timestamp: DateUtils.getDBTime(new Date().valueOf()),
-                        },
-                    }),
+                .then(
+                    () =>
+                        // Given that the user has dismissed the tooltip
+                        void Onyx.set(ONYXKEYS.NVP_DISMISSED_PRODUCT_TRAINING, {
+                            [CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.SCAN_TEST_TOOLTIP]: {
+                                timestamp: DateUtils.getDBTime(new Date().valueOf()),
+                            },
+                        }),
                 )
                 .then(() => {
                     // When we call getValidOptions()

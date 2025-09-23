@@ -38,7 +38,7 @@ Onyx.connectWithoutView({
  */
 function clear() {
     ongoingRequest = null;
-    Onyx.set(ONYXKEYS.PERSISTED_ONGOING_REQUESTS, null);
+    void Onyx.set(ONYXKEYS.PERSISTED_ONGOING_REQUESTS, null);
     return Onyx.set(ONYXKEYS.PERSISTED_REQUESTS, []);
 }
 
@@ -51,7 +51,7 @@ function save(requestToPersist: Request) {
     // If the command is not in the keepLastInstance array, add the new request as usual
     const requests = [...persistedRequests, requestToPersist];
     persistedRequests = requests;
-    Onyx.set(ONYXKEYS.PERSISTED_REQUESTS, requests).then(() => {
+    void Onyx.set(ONYXKEYS.PERSISTED_REQUESTS, requests).then(() => {
         Log.info(`[SequentialQueue] '${requestToPersist.command}' command queued. Queue length is ${getLength()}`);
     });
 }
@@ -71,7 +71,7 @@ function endRequestAndRemoveFromQueue(requestToRemove: Request) {
 
     persistedRequests = requests;
 
-    Onyx.multiSet({
+    void Onyx.multiSet({
         [ONYXKEYS.PERSISTED_REQUESTS]: persistedRequests,
         [ONYXKEYS.PERSISTED_ONGOING_REQUESTS]: null,
     }).then(() => {
@@ -87,7 +87,7 @@ function deleteRequestsByIndices(indices: number[]) {
     persistedRequests = persistedRequests.filter((_, index) => !indicesSet.has(index));
 
     // Update the persisted requests in storage or state as necessary
-    Onyx.set(ONYXKEYS.PERSISTED_REQUESTS, persistedRequests).then(() => {
+    void Onyx.set(ONYXKEYS.PERSISTED_REQUESTS, persistedRequests).then(() => {
         Log.info(`Multiple (${indices.length}) requests removed from the queue. Queue length is ${persistedRequests.length}`);
     });
 }
@@ -98,7 +98,7 @@ function update(oldRequestIndex: number, newRequest: Request) {
     Log.info('[PersistedRequests] Updating a request', false, {oldRequest, newRequest, oldRequestIndex});
     requests.splice(oldRequestIndex, 1, newRequest);
     persistedRequests = requests;
-    Onyx.set(ONYXKEYS.PERSISTED_REQUESTS, requests);
+    void Onyx.set(ONYXKEYS.PERSISTED_REQUESTS, requests);
 }
 
 function updateOngoingRequest(newRequest: Request) {
@@ -106,7 +106,7 @@ function updateOngoingRequest(newRequest: Request) {
     ongoingRequest = newRequest;
 
     if (newRequest.persistWhenOngoing) {
-        Onyx.set(ONYXKEYS.PERSISTED_ONGOING_REQUESTS, newRequest);
+        void Onyx.set(ONYXKEYS.PERSISTED_ONGOING_REQUESTS, newRequest);
     }
 }
 
@@ -124,7 +124,7 @@ function processNextRequest(): Request | null {
     ongoingRequest = persistedRequests.shift() ?? null;
 
     if (ongoingRequest && ongoingRequest.persistWhenOngoing) {
-        Onyx.set(ONYXKEYS.PERSISTED_ONGOING_REQUESTS, ongoingRequest);
+        void Onyx.set(ONYXKEYS.PERSISTED_ONGOING_REQUESTS, ongoingRequest);
     }
 
     return ongoingRequest;

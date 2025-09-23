@@ -102,12 +102,12 @@ beforeAll(() =>
 beforeEach(() => {
     global.fetch = TestHelper.getGlobalFetchMock();
     wrapOnyxWithWaitForBatchedUpdates(Onyx);
-    Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
+    void Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
 });
 
 // Clear out Onyx after each test so that each test starts with a clean state
 afterEach(() => {
-    Onyx.clear();
+    void Onyx.clear();
 });
 
 const mockOnClose = jest.fn();
@@ -142,13 +142,14 @@ test('[SearchRouter] should render list with cached options', async () => {
     };
 
     return waitForBatchedUpdates()
-        .then(() =>
-            Onyx.multiSet({
-                ...mockedReports,
-                [ONYXKEYS.PERSONAL_DETAILS_LIST]: mockedPersonalDetails,
-                [ONYXKEYS.BETAS]: mockedBetas,
-                [ONYXKEYS.IS_SEARCHING_FOR_REPORTS]: true,
-            }),
+        .then(
+            () =>
+                void Onyx.multiSet({
+                    ...mockedReports,
+                    [ONYXKEYS.PERSONAL_DETAILS_LIST]: mockedPersonalDetails,
+                    [ONYXKEYS.BETAS]: mockedBetas,
+                    [ONYXKEYS.IS_SEARCHING_FOR_REPORTS]: true,
+                }),
         )
         .then(() => measureRenders(<SearchRouterWrapperWithCachedOptions />, {scenario}));
 });
@@ -162,13 +163,14 @@ test('[SearchRouter] should react to text input changes', async () => {
     };
 
     return waitForBatchedUpdates()
-        .then(() =>
-            Onyx.multiSet({
-                ...mockedReports,
-                [ONYXKEYS.PERSONAL_DETAILS_LIST]: mockedPersonalDetails,
-                [ONYXKEYS.BETAS]: mockedBetas,
-                [ONYXKEYS.IS_SEARCHING_FOR_REPORTS]: true,
-            }),
+        .then(
+            () =>
+                void Onyx.multiSet({
+                    ...mockedReports,
+                    [ONYXKEYS.PERSONAL_DETAILS_LIST]: mockedPersonalDetails,
+                    [ONYXKEYS.BETAS]: mockedBetas,
+                    [ONYXKEYS.IS_SEARCHING_FOR_REPORTS]: true,
+                }),
         )
         .then(() => measureRenders(<SearchAutocompleteInputWrapper />, {scenario}));
 });

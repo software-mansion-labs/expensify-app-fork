@@ -35,7 +35,7 @@ function AutoSubmitModal() {
     const StyleUtils = useStyleUtils();
 
     const onClose = useCallback((willShowAgain: boolean) => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             if (!willShowAgain) {
                 dismissASAPSubmitExplanation(true);
             } else {

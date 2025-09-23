@@ -9,7 +9,7 @@ import type {BankAccountStep} from '@src/types/onyx/ReimbursementAccount';
  * Navigate to a specific step in the VBA flow
  */
 function goToWithdrawalAccountSetupStep(stepID: BankAccountStep) {
-    Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {achData: {currentStep: stepID}});
+    void Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {achData: {currentStep: stepID}});
 }
 
 /**

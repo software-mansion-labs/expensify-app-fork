@@ -8,11 +8,11 @@ import type {ExitReason} from '@src/types/form/ExitSurveyReasonForm';
 import RESPONSE_INPUT_IDS from '@src/types/form/ExitSurveyResponseForm';
 
 function saveExitReason(reason: ExitReason) {
-    Onyx.set(ONYXKEYS.FORMS.EXIT_SURVEY_REASON_FORM, {[REASON_INPUT_IDS.REASON]: reason});
+    void Onyx.set(ONYXKEYS.FORMS.EXIT_SURVEY_REASON_FORM, {[REASON_INPUT_IDS.REASON]: reason});
 }
 
 function saveResponse(response: string) {
-    Onyx.set(ONYXKEYS.FORMS.EXIT_SURVEY_RESPONSE_FORM, {[RESPONSE_INPUT_IDS.RESPONSE]: response});
+    void Onyx.set(ONYXKEYS.FORMS.EXIT_SURVEY_RESPONSE_FORM, {[RESPONSE_INPUT_IDS.RESPONSE]: response});
 }
 
 /**
@@ -43,7 +43,7 @@ function switchToOldDot(exitReason: ExitReason | undefined, exitSurveyResponse: 
     ];
 
     // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.write(
+    void API.write(
         WRITE_COMMANDS.SWITCH_TO_OLD_DOT,
         {
             reason: exitReason,
@@ -57,7 +57,7 @@ function switchToOldDot(exitReason: ExitReason | undefined, exitSurveyResponse: 
  * Clear the exit survey form data.
  */
 function resetExitSurveyForm(callback: () => void) {
-    Onyx.multiSet({
+    void Onyx.multiSet({
         [ONYXKEYS.FORMS.EXIT_SURVEY_REASON_FORM]: null,
         [ONYXKEYS.FORMS.EXIT_SURVEY_REASON_FORM_DRAFT]: null,
         [ONYXKEYS.FORMS.EXIT_SURVEY_RESPONSE_FORM]: null,

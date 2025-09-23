@@ -114,7 +114,7 @@ function closeAccount(reason: string) {
 
     const parameters: CloseAccountParams = {message: reason};
 
-    API.write(WRITE_COMMANDS.CLOSE_ACCOUNT, parameters, {
+    void API.write(WRITE_COMMANDS.CLOSE_ACCOUNT, parameters, {
         optimisticData,
         failureData,
     });
@@ -191,7 +191,7 @@ function requestContactMethodValidateCode(contactMethod: string) {
 
     const parameters: RequestContactMethodValidateCodeParams = {email: contactMethod};
 
-    API.write(WRITE_COMMANDS.REQUEST_CONTACT_METHOD_VALIDATE_CODE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.REQUEST_CONTACT_METHOD_VALIDATE_CODE, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -215,7 +215,7 @@ function updateNewsletterSubscription(isSubscribed: boolean) {
 
     const parameters: UpdateNewsletterSubscriptionParams = {isSubscribed};
 
-    API.write(WRITE_COMMANDS.UPDATE_NEWSLETTER_SUBSCRIPTION, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_NEWSLETTER_SUBSCRIPTION, parameters, {
         optimisticData,
         failureData,
     });
@@ -274,7 +274,7 @@ function deleteContactMethod(contactMethod: string, loginList: Record<string, Lo
 
     const parameters: DeleteContactMethodParams = {partnerUserID: contactMethod};
 
-    API.write(WRITE_COMMANDS.DELETE_CONTACT_METHOD, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.DELETE_CONTACT_METHOD, parameters, {optimisticData, successData, failureData});
     Navigation.goBack(ROUTES.SETTINGS_CONTACT_METHODS.getRoute(backTo));
 }
 
@@ -282,7 +282,7 @@ function deleteContactMethod(contactMethod: string, loginList: Record<string, Lo
  * Clears a contact method optimistically. this is used when the contact method fails to be added to the backend
  */
 function clearContactMethod(contactMethod: string) {
-    Onyx.merge(ONYXKEYS.LOGIN_LIST, {
+    void Onyx.merge(ONYXKEYS.LOGIN_LIST, {
         [contactMethod]: null,
     });
 }
@@ -291,7 +291,7 @@ function clearContactMethod(contactMethod: string) {
  * Clears error for a specific field on validate action code.
  */
 function clearValidateCodeActionError(fieldName: string) {
-    Onyx.merge(ONYXKEYS.VALIDATE_ACTION_CODE, {
+    void Onyx.merge(ONYXKEYS.VALIDATE_ACTION_CODE, {
         errorFields: {
             [fieldName]: null,
         },
@@ -302,7 +302,7 @@ function clearValidateCodeActionError(fieldName: string) {
  * Reset validateCodeSent on validate action code.
  */
 function resetValidateActionCodeSent() {
-    Onyx.merge(ONYXKEYS.VALIDATE_ACTION_CODE, {
+    void Onyx.merge(ONYXKEYS.VALIDATE_ACTION_CODE, {
         validateCodeSent: false,
     });
 }
@@ -311,7 +311,7 @@ function resetValidateActionCodeSent() {
  * Clears any possible stored errors for a specific field on a contact method
  */
 function clearContactMethodErrors(contactMethod: string, fieldName: string) {
-    Onyx.merge(ONYXKEYS.LOGIN_LIST, {
+    void Onyx.merge(ONYXKEYS.LOGIN_LIST, {
         [contactMethod]: {
             errorFields: {
                 [fieldName]: null,
@@ -329,7 +329,7 @@ function clearContactMethodErrors(contactMethod: string, fieldName: string) {
  * @param contactMethod - The identifier of the contact method to reset.
  */
 function resetContactMethodValidateCodeSentState(contactMethod: string) {
-    Onyx.merge(ONYXKEYS.LOGIN_LIST, {
+    void Onyx.merge(ONYXKEYS.LOGIN_LIST, {
         [contactMethod]: {
             validateCodeSent: false,
         },
@@ -340,11 +340,11 @@ function resetContactMethodValidateCodeSentState(contactMethod: string) {
  * Clears unvalidated new contact method action
  */
 function clearUnvalidatedNewContactMethodAction() {
-    Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, null);
+    void Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, null);
 }
 
 function clearPendingContactActionErrors() {
-    Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, {
+    void Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, {
         errorFields: null,
     });
 }
@@ -354,7 +354,7 @@ function clearPendingContactActionErrors() {
  * So we add the temporary contact method to Onyx to use it later, after user verified magic code.
  */
 function addPendingContactMethod(contactMethod: string) {
-    Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, {
+    void Onyx.merge(ONYXKEYS.PENDING_CONTACT_ACTION, {
         contactMethod,
     });
 }
@@ -417,7 +417,7 @@ function addNewContactMethod(contactMethod: string, validateCode = '') {
 
     const parameters: AddNewContactMethodParams = {partnerUserID: contactMethod, validateCode};
 
-    API.write(WRITE_COMMANDS.ADD_NEW_CONTACT_METHOD, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.ADD_NEW_CONTACT_METHOD, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -474,7 +474,7 @@ function requestValidateCodeAction() {
         },
     ];
 
-    API.write(WRITE_COMMANDS.RESEND_VALIDATE_CODE, null, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.RESEND_VALIDATE_CODE, null, {optimisticData, successData, failureData});
 }
 
 /**
@@ -640,7 +640,7 @@ function validateSecondaryLogin(
 
     const parameters: ValidateSecondaryLoginParams = {partnerUserID: contactMethod, validateCode};
 
-    API.write(WRITE_COMMANDS.VALIDATE_SECONDARY_LOGIN, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.VALIDATE_SECONDARY_LOGIN, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -826,7 +826,7 @@ function pingPusher() {
     lastPingSentTimestamp = pingTimestamp;
 
     const parameters: PusherPingParams = {pingID, pingTimestamp};
-    API.writeWithNoDuplicatesConflictAction(WRITE_COMMANDS.PUSHER_PING, parameters);
+    void API.writeWithNoDuplicatesConflictAction(WRITE_COMMANDS.PUSHER_PING, parameters);
     Log.info(`[Pusher PINGPONG] Sending a PING to the server: ${pingID} timestamp: ${pingTimestamp}`);
     Timing.start(CONST.TIMING.PUSHER_PING_PONG);
 }
@@ -982,7 +982,7 @@ function updatePreferredSkinTone(skinTone: number) {
 
     const parameters: UpdatePreferredEmojiSkinToneParams = {value: skinTone};
 
-    API.write(WRITE_COMMANDS.UPDATE_PREFERRED_EMOJI_SKIN_TONE, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.UPDATE_PREFERRED_EMOJI_SKIN_TONE, parameters, {optimisticData});
 }
 
 /**
@@ -1011,7 +1011,7 @@ function updateChatPriorityMode(mode: ValueOf<typeof CONST.PRIORITY_MODE>, autom
         automatic,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_CHAT_PRIORITY_MODE, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.UPDATE_CHAT_PRIORITY_MODE, parameters, {optimisticData});
 
     if (!autoSwitchedToFocusMode) {
         Navigation.goBack();
@@ -1022,7 +1022,7 @@ function setShouldUseStagingServer(shouldUseStagingServer: boolean) {
     if (CONFIG.IS_HYBRID_APP) {
         HybridAppModule.shouldUseStaging(shouldUseStagingServer);
     }
-    Onyx.set(ONYXKEYS.SHOULD_USE_STAGING_SERVER, shouldUseStagingServer);
+    void Onyx.set(ONYXKEYS.SHOULD_USE_STAGING_SERVER, shouldUseStagingServer);
 }
 
 function togglePlatformMute(platform: Platform, mutedPlatforms: Partial<Record<Platform, true>>) {
@@ -1047,7 +1047,7 @@ function togglePlatformMute(platform: Platform, mutedPlatforms: Partial<Record<P
 
     const parameters: TogglePlatformMuteParams = {platformToMute: platform};
 
-    API.write(WRITE_COMMANDS.TOGGLE_PLATFORM_MUTE, parameters, {
+    void API.write(WRITE_COMMANDS.TOGGLE_PLATFORM_MUTE, parameters, {
         optimisticData,
         failureData,
     });
@@ -1057,7 +1057,7 @@ function togglePlatformMute(platform: Platform, mutedPlatforms: Partial<Record<P
  * Clear the data about a screen share request from Onyx.
  */
 function clearScreenShareRequest() {
-    Onyx.set(ONYXKEYS.SCREEN_SHARE_REQUEST, null);
+    void Onyx.set(ONYXKEYS.SCREEN_SHARE_REQUEST, null);
 }
 
 /**
@@ -1260,7 +1260,7 @@ function setContactMethodAsDefault(newDefaultContactMethod: string, formatPhoneN
         partnerUserID: newDefaultContactMethod,
     };
 
-    API.write(WRITE_COMMANDS.SET_CONTACT_METHOD_AS_DEFAULT, parameters, {
+    void API.write(WRITE_COMMANDS.SET_CONTACT_METHOD_AS_DEFAULT, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -1281,7 +1281,7 @@ function updateTheme(theme: ValueOf<typeof CONST.THEME>) {
         value: theme,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_THEME, parameters, {optimisticData});
+    void API.write(WRITE_COMMANDS.UPDATE_THEME, parameters, {optimisticData});
 
     Navigation.goBack();
 }
@@ -1304,7 +1304,7 @@ function updateCustomStatus(status: Status) {
 
     const parameters: UpdateStatusParams = {text: status.text, emojiCode: status.emojiCode, clearAfter: status.clearAfter};
 
-    API.write(WRITE_COMMANDS.UPDATE_STATUS, parameters, {
+    void API.write(WRITE_COMMANDS.UPDATE_STATUS, parameters, {
         optimisticData,
     });
 }
@@ -1324,7 +1324,7 @@ function clearCustomStatus() {
             },
         },
     ];
-    API.write(WRITE_COMMANDS.CLEAR_STATUS, null, {optimisticData});
+    void API.write(WRITE_COMMANDS.CLEAR_STATUS, null, {optimisticData});
 }
 
 /**
@@ -1335,14 +1335,14 @@ function clearCustomStatus() {
  * @param status.clearAfter - ISO 8601 format string, which represents the time when the status should be cleared
  */
 function updateDraftCustomStatus(status: CustomStatusDraft) {
-    Onyx.merge(ONYXKEYS.CUSTOM_STATUS_DRAFT, status);
+    void Onyx.merge(ONYXKEYS.CUSTOM_STATUS_DRAFT, status);
 }
 
 /**
  * Clear the custom draft status
  */
 function clearDraftCustomStatus() {
-    Onyx.merge(ONYXKEYS.CUSTOM_STATUS_DRAFT, {text: '', emojiCode: '', clearAfter: ''});
+    void Onyx.merge(ONYXKEYS.CUSTOM_STATUS_DRAFT, {text: '', emojiCode: '', clearAfter: ''});
 }
 
 function dismissReferralBanner(type: ValueOf<typeof CONST.REFERRAL_PROGRAM.CONTENT_TYPES>) {
@@ -1355,7 +1355,7 @@ function dismissReferralBanner(type: ValueOf<typeof CONST.REFERRAL_PROGRAM.CONTE
             },
         },
     ];
-    API.write(
+    void API.write(
         WRITE_COMMANDS.DISMISS_REFERRAL_BANNER,
         {type},
         {
@@ -1386,7 +1386,7 @@ function setNameValuePair(name: OnyxKey, value: SetNameValuePairParams['value'],
         },
     ];
 
-    API.write(WRITE_COMMANDS.SET_NAME_VALUE_PAIR, parameters, {
+    void API.write(WRITE_COMMANDS.SET_NAME_VALUE_PAIR, parameters, {
         optimisticData,
         failureData,
     });
@@ -1397,19 +1397,19 @@ function setNameValuePair(name: OnyxKey, value: SetNameValuePairParams['value'],
  * @param shouldDismiss Whether the user selected "Don't show again"
  */
 function dismissASAPSubmitExplanation(shouldDismiss: boolean) {
-    Onyx.merge(ONYXKEYS.NVP_DISMISSED_ASAP_SUBMIT_EXPLANATION, shouldDismiss);
+    void Onyx.merge(ONYXKEYS.NVP_DISMISSED_ASAP_SUBMIT_EXPLANATION, shouldDismiss);
 }
 
 function requestRefund() {
-    API.write(WRITE_COMMANDS.REQUEST_REFUND, null);
+    void API.write(WRITE_COMMANDS.REQUEST_REFUND, null);
 }
 
 function setIsDebugModeEnabled(isDebugModeEnabled: boolean) {
-    Onyx.set(ONYXKEYS.IS_DEBUG_MODE_ENABLED, isDebugModeEnabled);
+    void Onyx.set(ONYXKEYS.IS_DEBUG_MODE_ENABLED, isDebugModeEnabled);
 }
 
 function setShouldBlockTransactionThreadReportCreation(shouldBlockTransactionThreadReportCreation: boolean) {
-    Onyx.merge(ONYXKEYS.ACCOUNT, {shouldBlockTransactionThreadReportCreation});
+    void Onyx.merge(ONYXKEYS.ACCOUNT, {shouldBlockTransactionThreadReportCreation});
 }
 
 function lockAccount() {

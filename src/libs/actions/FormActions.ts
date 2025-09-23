@@ -4,23 +4,23 @@ import type {OnyxFormDraftKey, OnyxFormKey} from '@src/ONYXKEYS';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
 
 function setIsLoading(formID: OnyxFormKey, isLoading: boolean) {
-    Onyx.merge(formID, {isLoading});
+    void Onyx.merge(formID, {isLoading});
 }
 
 function setErrors(formID: OnyxFormKey, errors: OnyxCommon.Errors) {
-    Onyx.merge(formID, {errors});
+    void Onyx.merge(formID, {errors});
 }
 
 function setErrorFields(formID: OnyxFormKey, errorFields: OnyxCommon.ErrorFields) {
-    Onyx.merge(formID, {errorFields});
+    void Onyx.merge(formID, {errorFields});
 }
 
 function clearErrors(formID: OnyxFormKey) {
-    Onyx.merge(formID, {errors: null});
+    void Onyx.merge(formID, {errors: null});
 }
 
 function clearErrorFields(formID: OnyxFormKey) {
-    Onyx.merge(formID, {errorFields: null});
+    void Onyx.merge(formID, {errorFields: null});
 }
 
 function setDraftValues(formID: OnyxFormKey, draftValues: NullishDeep<OnyxValue<OnyxFormDraftKey>>): Promise<void> {
@@ -28,7 +28,7 @@ function setDraftValues(formID: OnyxFormKey, draftValues: NullishDeep<OnyxValue<
 }
 
 function clearDraftValues(formID: OnyxFormKey) {
-    Onyx.set(`${formID}Draft`, null);
+    void Onyx.set(`${formID}Draft`, null);
 }
 
 export {clearDraftValues, clearErrorFields, clearErrors, setDraftValues, setErrorFields, setErrors, setIsLoading};

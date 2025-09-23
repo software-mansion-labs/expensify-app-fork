@@ -70,7 +70,7 @@ function TaskTitlePage({report, currentUserPersonalDetails}: TaskTitlePageProps)
     );
 
     if (!isTaskReport(report)) {
-        Navigation.isNavigationReady().then(() => {
+        void Navigation.isNavigationReady().then(() => {
             Navigation.dismissModalWithReport({reportID: report?.reportID});
         });
     }

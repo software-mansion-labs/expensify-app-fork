@@ -86,13 +86,13 @@ describe('OnboardingHelpDropdownButton', () => {
     });
 
     beforeEach(() => {
-        Onyx.merge(ONYXKEYS.SESSION, {accountID: currentUserAccountID});
+        void Onyx.merge(ONYXKEYS.SESSION, {accountID: currentUserAccountID});
         return waitForBatchedUpdates();
     });
 
     afterEach(() => {
         jest.clearAllMocks();
-        Onyx.clear();
+        void Onyx.clear();
         return waitForBatchedUpdates();
     });
 
@@ -193,7 +193,7 @@ describe('OnboardingHelpDropdownButton', () => {
             hasActiveScheduledCall: true,
         };
         beforeEach(() => {
-            Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${props.reportID}`, {
+            void Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${props.reportID}`, {
                 calendlyCalls: [mockScheduledCall],
             });
             return waitForBatchedUpdates();

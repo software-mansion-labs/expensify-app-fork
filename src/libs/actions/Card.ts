@@ -84,7 +84,7 @@ function reportVirtualExpensifyCardFraud(card: Card, validateCode: string) {
         validateCode,
     };
 
-    API.write(WRITE_COMMANDS.REPORT_VIRTUAL_EXPENSIFY_CARD_FRAUD, parameters, {
+    void API.write(WRITE_COMMANDS.REPORT_VIRTUAL_EXPENSIFY_CARD_FRAUD, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -141,7 +141,7 @@ function requestReplacementExpensifyCard(cardID: number, reason: ReplacementReas
         validateCode,
     };
 
-    API.write(WRITE_COMMANDS.REQUEST_REPLACEMENT_EXPENSIFY_CARD, parameters, {
+    void API.write(WRITE_COMMANDS.REQUEST_REPLACEMENT_EXPENSIFY_CARD, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -195,7 +195,7 @@ function activatePhysicalExpensifyCard(cardLastFourDigits: string, cardID: numbe
     };
 
     // eslint-disable-next-line rulesdir/no-api-side-effects-method
-    API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.ACTIVATE_PHYSICAL_EXPENSIFY_CARD, parameters, {
+    void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.ACTIVATE_PHYSICAL_EXPENSIFY_CARD, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -204,7 +204,7 @@ function activatePhysicalExpensifyCard(cardLastFourDigits: string, cardID: numbe
             return;
         }
         if (response.pin) {
-            Onyx.set(ONYXKEYS.ACTIVATED_CARD_PIN, response.pin);
+            void Onyx.set(ONYXKEYS.ACTIVATED_CARD_PIN, response.pin);
         }
     });
 }
@@ -213,18 +213,18 @@ function activatePhysicalExpensifyCard(cardLastFourDigits: string, cardID: numbe
  * Clears errors for a specific cardID
  */
 function clearCardListErrors(cardID: number) {
-    Onyx.merge(ONYXKEYS.CARD_LIST, {[cardID]: {errors: null, isLoading: false}});
+    void Onyx.merge(ONYXKEYS.CARD_LIST, {[cardID]: {errors: null, isLoading: false}});
 }
 
 /**
  * Clears the PIN for an activated card
  */
 function clearActivatedCardPin() {
-    Onyx.set(ONYXKEYS.ACTIVATED_CARD_PIN, '');
+    void Onyx.set(ONYXKEYS.ACTIVATED_CARD_PIN, '');
 }
 
 function clearReportVirtualCardFraudForm() {
-    Onyx.merge(ONYXKEYS.FORMS.REPORT_VIRTUAL_CARD_FRAUD, {cardID: null, isLoading: false, errors: null});
+    void Onyx.merge(ONYXKEYS.FORMS.REPORT_VIRTUAL_CARD_FRAUD, {cardID: null, isLoading: false, errors: null});
 }
 
 /**
@@ -266,7 +266,7 @@ function revealVirtualCardDetails(cardID: number, validateCode: string): Promise
         ];
 
         // eslint-disable-next-line rulesdir/no-api-side-effects-method
-        API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REVEAL_EXPENSIFY_CARD_DETAILS, parameters, {
+        void API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REVEAL_EXPENSIFY_CARD_DETAILS, parameters, {
             optimisticData,
             successData,
             failureData,
@@ -328,7 +328,7 @@ function updateSettlementFrequency(workspaceAccountID: number, settlementFrequen
         settlementFrequency,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_CARD_SETTLEMENT_FREQUENCY, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_CARD_SETTLEMENT_FREQUENCY, parameters, {optimisticData, successData, failureData});
 }
 
 function updateSettlementAccount(domainName: string, workspaceAccountID: number, policyID: string, settlementBankAccountID?: number, currentSettlementBankAccountID?: number) {
@@ -375,7 +375,7 @@ function updateSettlementAccount(domainName: string, workspaceAccountID: number,
         settlementBankAccountID,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_CARD_SETTLEMENT_ACCOUNT, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_CARD_SETTLEMENT_ACCOUNT, parameters, {optimisticData, successData, failureData});
 }
 
 function getCardDefaultName(userName?: string) {
@@ -386,7 +386,7 @@ function getCardDefaultName(userName?: string) {
 }
 
 function setIssueNewCardStepAndData({data, isEditing, step, policyID, isChangeAssigneeDisabled}: IssueNewCardFlowData) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.ISSUE_NEW_EXPENSIFY_CARD}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.ISSUE_NEW_EXPENSIFY_CARD}${policyID}`, {
         data,
         isEditing,
         currentStep: step,
@@ -396,18 +396,18 @@ function setIssueNewCardStepAndData({data, isEditing, step, policyID, isChangeAs
 }
 
 function clearIssueNewCardFlow(policyID: string | undefined) {
-    Onyx.set(`${ONYXKEYS.COLLECTION.ISSUE_NEW_EXPENSIFY_CARD}${policyID}`, {
+    void Onyx.set(`${ONYXKEYS.COLLECTION.ISSUE_NEW_EXPENSIFY_CARD}${policyID}`, {
         currentStep: null,
         data: {},
     });
 }
 
 function clearIssueNewCardFormData() {
-    Onyx.set(ONYXKEYS.FORMS.ISSUE_NEW_EXPENSIFY_CARD_FORM, {});
+    void Onyx.set(ONYXKEYS.FORMS.ISSUE_NEW_EXPENSIFY_CARD_FORM, {});
 }
 
 function clearIssueNewCardError(policyID: string | undefined) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.ISSUE_NEW_EXPENSIFY_CARD}${policyID}`, {errors: null});
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.ISSUE_NEW_EXPENSIFY_CARD}${policyID}`, {errors: null});
 }
 
 function updateExpensifyCardLimit(workspaceAccountID: number, cardID: number, newLimit: number, newAvailableSpend: number, oldLimit?: number, oldAvailableSpend?: number) {
@@ -480,7 +480,7 @@ function updateExpensifyCardLimit(workspaceAccountID: number, cardID: number, ne
         limit: newLimit,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_EXPENSIFY_CARD_LIMIT, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_EXPENSIFY_CARD_LIMIT, parameters, {optimisticData, successData, failureData});
 }
 
 function updateExpensifyCardTitle(workspaceAccountID: number, cardID: number, newCardTitle: string, oldCardTitle?: string) {
@@ -548,7 +548,7 @@ function updateExpensifyCardTitle(workspaceAccountID: number, cardID: number, ne
         cardTitle: newCardTitle,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_EXPENSIFY_CARD_TITLE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_EXPENSIFY_CARD_TITLE, parameters, {optimisticData, successData, failureData});
 }
 
 function updateExpensifyCardLimitType(workspaceAccountID: number, cardID: number, newLimitType: CardLimitType, oldLimitType?: CardLimitType) {
@@ -619,7 +619,7 @@ function updateExpensifyCardLimitType(workspaceAccountID: number, cardID: number
         limitType: newLimitType,
     };
 
-    API.write(WRITE_COMMANDS.UPDATE_EXPENSIFY_CARD_LIMIT_TYPE, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.UPDATE_EXPENSIFY_CARD_LIMIT_TYPE, parameters, {optimisticData, successData, failureData});
 }
 
 function deactivateCard(workspaceAccountID: number, card?: Card) {
@@ -699,7 +699,7 @@ function deactivateCard(workspaceAccountID: number, card?: Card) {
         cardID,
     };
 
-    API.write(WRITE_COMMANDS.CARD_DEACTIVATE, parameters, {optimisticData, failureData});
+    void API.write(WRITE_COMMANDS.CARD_DEACTIVATE, parameters, {optimisticData, failureData});
 }
 
 function startIssueNewCardFlow(policyID: string | undefined) {
@@ -777,7 +777,7 @@ function configureExpensifyCardsForPolicy(policyID: string, bankAccountID?: numb
         bankAccountID,
     };
 
-    API.write(WRITE_COMMANDS.CONFIGURE_EXPENSIFY_CARDS_FOR_POLICY, parameters, {
+    void API.write(WRITE_COMMANDS.CONFIGURE_EXPENSIFY_CARDS_FOR_POLICY, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -835,7 +835,7 @@ function issueExpensifyCard(domainAccountID: number, policyID: string | undefine
     };
 
     if (cardType === CONST.EXPENSIFY_CARD.CARD_TYPE.PHYSICAL) {
-        API.write(
+        void API.write(
             WRITE_COMMANDS.CREATE_EXPENSIFY_CARD,
             {...parameters, feedCountry},
             {
@@ -848,7 +848,7 @@ function issueExpensifyCard(domainAccountID: number, policyID: string | undefine
     }
 
     // eslint-disable-next-line rulesdir/no-multiple-api-calls
-    API.write(
+    void API.write(
         WRITE_COMMANDS.CREATE_ADMIN_ISSUED_VIRTUAL_CARD,
         {...parameters, policyID},
         {
@@ -925,7 +925,7 @@ function toggleContinuousReconciliation(workspaceAccountID: number, shouldUseCon
         },
     ];
 
-    API.write(WRITE_COMMANDS.TOGGLE_CARD_CONTINUOUS_RECONCILIATION, parameters, {
+    void API.write(WRITE_COMMANDS.TOGGLE_CARD_CONTINUOUS_RECONCILIATION, parameters, {
         optimisticData,
         successData,
         failureData,
@@ -966,7 +966,7 @@ function queueExpensifyCardForBilling(feedCountry: string, domainAccountID: numb
         domainAccountID,
     };
 
-    API.write(WRITE_COMMANDS.QUEUE_EXPENSIFY_CARD_FOR_BILLING, parameters);
+    void API.write(WRITE_COMMANDS.QUEUE_EXPENSIFY_CARD_FOR_BILLING, parameters);
 }
 
 export {

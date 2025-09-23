@@ -52,7 +52,7 @@ describe('AddressPageTest', () => {
         Onyx.init({
             keys: ONYXKEYS,
         });
-        Onyx.set(ONYXKEYS.NVP_PREFERRED_LOCALE, CONST.LOCALES.EN);
+        void Onyx.set(ONYXKEYS.NVP_PREFERRED_LOCALE, CONST.LOCALES.EN);
     });
     it('should not reset state', async () => {
         await TestHelper.signInWithTestUser();

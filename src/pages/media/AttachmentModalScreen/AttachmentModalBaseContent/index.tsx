@@ -169,7 +169,7 @@ function AttachmentModalBaseContent({
 
         if (typeof sourceURL === 'string') {
             const fileName = type === CONST.ATTACHMENT_TYPE.SEARCH ? getFileName(`${sourceURL}`) : file?.name;
-            fileDownload(sourceURL, fileName ?? '', undefined, undefined, undefined, undefined, undefined, !draftTransactionID);
+            void fileDownload(sourceURL, fileName ?? '', undefined, undefined, undefined, undefined, undefined, !draftTransactionID);
         }
 
         // At ios, if the keyboard is open while opening the attachment, then after downloading
@@ -233,7 +233,7 @@ function AttachmentModalBaseContent({
                 text: translate('common.replace'),
                 onSelected: () => {
                     const goToScanScreen = () => {
-                        InteractionManager.runAfterInteractions(() => {
+                        void InteractionManager.runAfterInteractions(() => {
                             Navigation.navigate(
                                 ROUTES.MONEY_REQUEST_STEP_SCAN.getRoute(
                                     iouAction ?? CONST.IOU.ACTION.EDIT,

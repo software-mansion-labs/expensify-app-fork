@@ -67,7 +67,7 @@ function signInAppAndEnterTestFlow(dismissedValue?: boolean): Promise<void> {
 describe('Switch to Expensify Classic flow', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        Onyx.clear();
+        void Onyx.clear();
 
         // Unsubscribe to pusher channels
         PusherHelper.teardown();

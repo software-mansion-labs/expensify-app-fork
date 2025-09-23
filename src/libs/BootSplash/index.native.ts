@@ -9,7 +9,7 @@ function hide(): Promise<void> {
     Log.info('[BootSplash] hiding splash screen', false);
 
     return BootSplash.hide().finally(() => {
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             Timing.end(CONST.TIMING.SPLASH_SCREEN);
         });
     });

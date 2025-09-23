@@ -4,15 +4,15 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxCollectionKey, OnyxKey} from '@src/ONYXKEYS';
 
 function resetDebugDetailsDraftForm() {
-    Onyx.set(ONYXKEYS.FORMS.DEBUG_DETAILS_FORM_DRAFT, null);
+    void Onyx.set(ONYXKEYS.FORMS.DEBUG_DETAILS_FORM_DRAFT, null);
 }
 
 function setDebugData<TKey extends OnyxKey | `${OnyxCollectionKey}${string}`>(onyxKey: TKey, onyxValue: OnyxMergeInput<TKey>) {
-    Onyx.set(onyxKey, onyxValue);
+    void Onyx.set(onyxKey, onyxValue);
 }
 
 function mergeDebugData<TKey extends OnyxKey | `${OnyxCollectionKey}${string}`>(onyxKey: TKey, onyxValue: OnyxMergeInput<TKey>) {
-    Onyx.merge(onyxKey, onyxValue);
+    void Onyx.merge(onyxKey, onyxValue);
 }
 
 export default {

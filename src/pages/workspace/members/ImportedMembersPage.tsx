@@ -189,7 +189,7 @@ function ImportedMembersPage({route}: ImportedMembersPageProps) {
                 shouldShowCancelButton={false}
                 shouldHandleNavigationBack
                 onModalHide={() => {
-                    InteractionManager.runAfterInteractions(() => Navigation.goBack(ROUTES.WORKSPACE_MEMBERS.getRoute(policyID)));
+                    void InteractionManager.runAfterInteractions(() => Navigation.goBack(ROUTES.WORKSPACE_MEMBERS.getRoute(policyID)));
                 }}
             />
         </ScreenWrapper>

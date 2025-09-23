@@ -97,7 +97,7 @@ function IOURequestStepReport({route, transaction}: IOURequestStepReportProps) {
         }
 
         handleGoBack();
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             setTransactionReport(
                 transaction.transactionID,
                 {
@@ -147,7 +147,7 @@ function IOURequestStepReport({route, transaction}: IOURequestStepReportProps) {
             return;
         }
         Navigation.dismissModal();
-        InteractionManager.runAfterInteractions(() => {
+        void InteractionManager.runAfterInteractions(() => {
             changeTransactionsReport(
                 [transaction.transactionID],
                 CONST.REPORT.UNREPORTED_REPORT_ID,

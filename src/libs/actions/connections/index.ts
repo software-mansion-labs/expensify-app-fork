@@ -87,7 +87,7 @@ function removePolicyConnection(policy: Policy, connectionName: PolicyConnection
         policyID,
         connectionName,
     };
-    API.write(WRITE_COMMANDS.REMOVE_POLICY_CONNECTION, parameters, {optimisticData, successData, failureData});
+    void API.write(WRITE_COMMANDS.REMOVE_POLICY_CONNECTION, parameters, {optimisticData, successData, failureData});
 }
 
 /**
@@ -240,7 +240,7 @@ function updateManyPolicyConnectionConfigs<TConnectionName extends ConnectionNam
         configUpdate: JSON.stringify(configUpdate),
         idempotencyKey: Object.keys(configUpdate).join(','),
     };
-    API.write(WRITE_COMMANDS.UPDATE_MANY_POLICY_CONNECTION_CONFIGS, parameters, {optimisticData, failureData, successData});
+    void API.write(WRITE_COMMANDS.UPDATE_MANY_POLICY_CONNECTION_CONFIGS, parameters, {optimisticData, failureData, successData});
 }
 
 function hasSynchronizationErrorMessage(policy: OnyxEntry<Policy>, connectionName: PolicyConnectionName, isSyncInProgress: boolean): boolean {
@@ -274,7 +274,7 @@ function isConnectionUnverified(policy: OnyxEntry<Policy>, connectionName: Polic
 }
 
 function setConnectionError(policyID: string, connectionName: PolicyConnectionName, errorMessage?: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
+    void Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         connections: {
             [connectionName]: {
                 lastSync: {
@@ -312,7 +312,7 @@ function copyExistingPolicyConnection(connectedPolicyID: string, targetPolicyID:
             },
         },
     ];
-    API.write(
+    void API.write(
         WRITE_COMMANDS.COPY_EXISTING_POLICY_CONNECTION,
         {
             policyID: connectedPolicyID,
