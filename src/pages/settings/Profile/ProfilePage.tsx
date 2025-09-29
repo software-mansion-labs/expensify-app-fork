@@ -35,6 +35,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import ELECTRON_EVENTS from '../../../../desktop/ELECTRON_EVENTS';
 
 function ProfilePage() {
     const theme = useTheme();
@@ -216,6 +217,43 @@ function ProfilePage() {
                                     </MenuItemGroup>
                                 )}
                             </View>
+                            <MenuItemWithTopDescription
+                                shouldShowRightIcon
+                                title="set test keychain"
+                                wrapperStyle={styles.sectionMenuItemTopDescription}
+                                onPress={async () => {
+                                    if (window.electron) {
+                                        try {
+                                            await window.electron.invoke(ELECTRON_EVENTS.KEYCHAIN_SET_PASSWORD, {
+                                                account: 'test',
+                                                service: 'com.expensify.new.dev',
+                                                password: 'testpassword'
+                                            });
+                                            console.log('Password saved successfully');
+                                        } catch (err) {
+                                            console.error('Error saving password:', err);
+                                        }
+                                    }
+                                }}
+                            />
+                            <MenuItemWithTopDescription
+                                shouldShowRightIcon
+                                title="get test keychain"
+                                wrapperStyle={styles.sectionMenuItemTopDescription}
+                                onPress={async () => {
+                                    if (window.electron) {
+                                        try {
+                                            const password = await window.electron.invoke(ELECTRON_EVENTS.KEYCHAIN_GET_PASSWORD, {
+                                                account: 'test',
+                                                service: 'com.expensify.new.dev'
+                                            });
+                                            console.log('Password is', password);
+                                        } catch (err) {
+                                            console.error('Error retrieving password:', err);
+                                        }
+                                    }
+                                }}
+                            />
                             {publicOptions.map((detail, index) => (
                                 <MenuItemWithTopDescription
                                     // eslint-disable-next-line react/no-array-index-key

@@ -15,6 +15,8 @@ const ELECTRON_EVENTS = {
     DOWNLOAD_CANCELED: 'download-canceled',
     SILENT_UPDATE: 'silent-update',
     OPEN_LOCATION_SETTING: 'open-location-setting',
+    KEYCHAIN_SET_PASSWORD: 'keychain-set-password',
+    KEYCHAIN_GET_PASSWORD: 'keychain-get-password',
 } as const;
 
 export default ELECTRON_EVENTS;

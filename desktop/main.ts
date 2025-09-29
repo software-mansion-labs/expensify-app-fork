@@ -18,6 +18,8 @@ import type {Locale} from '@src/types/onyx';
 import type {CreateDownloadQueueModule, DownloadItem} from './createDownloadQueue';
 import serve from './electron-serve';
 import ELECTRON_EVENTS from './ELECTRON_EVENTS';
+import SecureKeychain from './secureKeychain';
+import type {KeychainOptions} from './secureKeychain';
 
 const createDownloadQueue = require<CreateDownloadQueueModule>('./createDownloadQueue').default;
 
@@ -355,6 +357,36 @@ const mainWindow = (): Promise<void> => {
                 });
 
                 ipcMain.handle(ELECTRON_EVENTS.REQUEST_DEVICE_ID, () => machineId());
+
+                // Initialize SecureKeychain instance
+                const keychain = new SecureKeychain();
+
+                // Keychain handlers with authentication requirement
+                ipcMain.handle(ELECTRON_EVENTS.KEYCHAIN_SET_PASSWORD, async (event, data: KeychainOptions) => {
+                    try {
+                        // Force authentication requirement by default
+                        const options: KeychainOptions = {
+                            ...data,
+                            requireAuth: data.requireAuth !== false // Default to true
+                        };
+                        const result = await keychain.setPassword(options);
+                        return result;
+                    } catch (error) {
+                        console.error('Error setting password:', error);
+                        throw error;
+                    }
+                });
+
+                ipcMain.handle(ELECTRON_EVENTS.KEYCHAIN_GET_PASSWORD, async (event, data: Omit<KeychainOptions, 'password'>) => {
+                    try {
+                        const password = await keychain.getPassword(data);
+                        return password;
+                    } catch (error) {
+                        console.error('Error getting password:', error);
+                        throw error;
+                    }
+                });
+
                 ipcMain.handle(ELECTRON_EVENTS.OPEN_LOCATION_SETTING, () => {
                     if (process.platform !== 'darwin') {
                         // Platform not supported for location settings
