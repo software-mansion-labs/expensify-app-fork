@@ -73,196 +73,198 @@ function SearchPageNarrow({
     latestBankItems,
     confirmPayment,
 }: SearchPageNarrowProps) {
-    const {translate} = useLocalize();
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
-    const {windowHeight} = useWindowDimensions();
+    // const {translate} = useLocalize();
+    // const {shouldUseNarrowLayout} = useResponsiveLayout();
+    // const {windowHeight} = useWindowDimensions();
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
-    const {clearSelectedTransactions} = useSearchContext();
-    const [searchRouterListVisible, setSearchRouterListVisible] = useState(false);
-    const {isOffline} = useNetwork();
-    const currentSearchResultsKey = queryJSON?.hash ?? CONST.DEFAULT_NUMBER_ID;
-    const [currentSearchResults] = useOnyx(`${ONYXKEYS.COLLECTION.SNAPSHOT}${currentSearchResultsKey}`, {canBeMissing: true});
-    // Controls the visibility of the educational tooltip based on user scrolling.
-    // Hides the tooltip when the user is scrolling and displays it once scrolling stops.
-    const triggerScrollEvent = useScrollEventEmitter();
-    const route = useRoute();
-    const {saveScrollOffset} = useContext(ScrollOffsetContext);
-
-    const scrollOffset = useSharedValue(0);
-    const topBarOffset = useSharedValue<number>(StyleUtils.searchHeaderDefaultOffset);
-
-    const handleBackButtonPress = useCallback(() => {
-        if (!isMobileSelectionModeEnabled) {
-            return false;
-        }
-        topBarOffset.set(StyleUtils.searchHeaderDefaultOffset);
-        clearSelectedTransactions();
-        turnOffMobileSelectionMode();
-        return true;
-    }, [isMobileSelectionModeEnabled, clearSelectedTransactions, topBarOffset, StyleUtils.searchHeaderDefaultOffset]);
-
-    useHandleBackButton(handleBackButtonPress);
-
-    const topBarAnimatedStyle = useAnimatedStyle(() => ({
-        top: topBarOffset.get(),
-    }));
-
-    const scrollHandler = useAnimatedScrollHandler(
-        {
-            onScroll: (event) => {
-                runOnJS(triggerScrollEvent)();
-                const {contentOffset, layoutMeasurement, contentSize} = event;
-                if (windowHeight > contentSize.height) {
-                    topBarOffset.set(StyleUtils.searchHeaderDefaultOffset);
-                    return;
-                }
-                const currentOffset = contentOffset.y;
-                const isScrollingDown = currentOffset > scrollOffset.get();
-                const distanceScrolled = currentOffset - scrollOffset.get();
-
-                runOnJS(saveScrollOffset)(route, currentOffset);
-
-                if (isScrollingDown && contentOffset.y > TOO_CLOSE_TO_TOP_DISTANCE) {
-                    topBarOffset.set(clamp(topBarOffset.get() - distanceScrolled, variables.minimalTopBarOffset, StyleUtils.searchHeaderDefaultOffset));
-                } else if (!isScrollingDown && distanceScrolled < 0 && contentOffset.y + layoutMeasurement.height < contentSize.height - TOO_CLOSE_TO_BOTTOM_DISTANCE) {
-                    topBarOffset.set(withTiming(StyleUtils.searchHeaderDefaultOffset, {duration: ANIMATION_DURATION_IN_MS}));
-                }
-                scrollOffset.set(currentOffset);
-            },
-        },
-        [],
-    );
-
-    const handleOnBackButtonPress = () => Navigation.goBack(ROUTES.SEARCH_ROOT.getRoute({query: buildCannedSearchQuery()}));
-
-    const shouldDisplayCancelSearch = shouldUseNarrowLayout && searchRouterListVisible;
-    const cancelSearchCallback = useCallback(() => {
-        setSearchRouterListVisible(false);
-    }, []);
-
-    const handleSearchAction = useCallback((value: SearchParams | string) => {
-        if (typeof value === 'string') {
-            searchInServer(value);
-        } else {
-            search(value);
-        }
-    }, []);
-
-    if (!queryJSON) {
-        return (
-            <ScreenWrapper
-                testID={SearchPageNarrow.displayName}
-                style={styles.pv0}
-                offlineIndicatorStyle={styles.mtAuto}
-                shouldShowOfflineIndicator={!!searchResults}
-            >
-                <FullPageNotFoundView
-                    shouldShow={!queryJSON}
-                    onBackButtonPress={handleOnBackButtonPress}
-                    shouldShowLink={false}
-                />
-            </ScreenWrapper>
-        );
-    }
-
-    const shouldShowFooter = !!metadata?.count;
-    const isDataLoaded = isSearchDataLoaded(searchResults, queryJSON);
-    const shouldShowLoadingState = !isOffline && (!isDataLoaded || !!currentSearchResults?.search?.isLoading);
+    // const StyleUtils = useStyleUtils();
+    // const {clearSelectedTransactions} = useSearchContext();
+    // const [searchRouterListVisible, setSearchRouterListVisible] = useState(false);
+    // const {isOffline} = useNetwork();
+    // const currentSearchResultsKey = queryJSON?.hash ?? CONST.DEFAULT_NUMBER_ID;
+    // const [currentSearchResults] = useOnyx(`${ONYXKEYS.COLLECTION.SNAPSHOT}${currentSearchResultsKey}`, {canBeMissing: true});
+    // // Controls the visibility of the educational tooltip based on user scrolling.
+    // // Hides the tooltip when the user is scrolling and displays it once scrolling stops.
+    // const triggerScrollEvent = useScrollEventEmitter();
+    // const route = useRoute();
+    // const {saveScrollOffset} = useContext(ScrollOffsetContext);
+    //
+    // const scrollOffset = useSharedValue(0);
+    // const topBarOffset = useSharedValue<number>(StyleUtils.searchHeaderDefaultOffset);
+    //
+    // const handleBackButtonPress = useCallback(() => {
+    //     if (!isMobileSelectionModeEnabled) {
+    //         return false;
+    //     }
+    //     topBarOffset.set(StyleUtils.searchHeaderDefaultOffset);
+    //     clearSelectedTransactions();
+    //     turnOffMobileSelectionMode();
+    //     return true;
+    // }, [isMobileSelectionModeEnabled, clearSelectedTransactions, topBarOffset, StyleUtils.searchHeaderDefaultOffset]);
+    //
+    // useHandleBackButton(handleBackButtonPress);
+    //
+    // const topBarAnimatedStyle = useAnimatedStyle(() => ({
+    //     top: topBarOffset.get(),
+    // }));
+    //
+    // const scrollHandler = useAnimatedScrollHandler(
+    //     {
+    //         onScroll: (event) => {
+    //             runOnJS(triggerScrollEvent)();
+    //             const {contentOffset, layoutMeasurement, contentSize} = event;
+    //             if (windowHeight > contentSize.height) {
+    //                 topBarOffset.set(StyleUtils.searchHeaderDefaultOffset);
+    //                 return;
+    //             }
+    //             const currentOffset = contentOffset.y;
+    //             const isScrollingDown = currentOffset > scrollOffset.get();
+    //             const distanceScrolled = currentOffset - scrollOffset.get();
+    //
+    //             runOnJS(saveScrollOffset)(route, currentOffset);
+    //
+    //             if (isScrollingDown && contentOffset.y > TOO_CLOSE_TO_TOP_DISTANCE) {
+    //                 topBarOffset.set(clamp(topBarOffset.get() - distanceScrolled, variables.minimalTopBarOffset, StyleUtils.searchHeaderDefaultOffset));
+    //             } else if (!isScrollingDown && distanceScrolled < 0 && contentOffset.y + layoutMeasurement.height < contentSize.height - TOO_CLOSE_TO_BOTTOM_DISTANCE) {
+    //                 topBarOffset.set(withTiming(StyleUtils.searchHeaderDefaultOffset, {duration: ANIMATION_DURATION_IN_MS}));
+    //             }
+    //             scrollOffset.set(currentOffset);
+    //         },
+    //     },
+    //     [],
+    // );
+    //
+    // const handleOnBackButtonPress = () => Navigation.goBack(ROUTES.SEARCH_ROOT.getRoute({query: buildCannedSearchQuery()}));
+    //
+    // const shouldDisplayCancelSearch = shouldUseNarrowLayout && searchRouterListVisible;
+    // const cancelSearchCallback = useCallback(() => {
+    //     setSearchRouterListVisible(false);
+    // }, []);
+    //
+    // const handleSearchAction = useCallback((value: SearchParams | string) => {
+    //     if (typeof value === 'string') {
+    //         searchInServer(value);
+    //     } else {
+    //         search(value);
+    //     }
+    // }, []);
+    //
+    // if (!queryJSON) {
+    //     return (
+    //         <ScreenWrapper
+    //             testID={SearchPageNarrow.displayName}
+    //             style={styles.pv0}
+    //             offlineIndicatorStyle={styles.mtAuto}
+    //             shouldShowOfflineIndicator={!!searchResults}
+    //         >
+    //             <FullPageNotFoundView
+    //                 shouldShow={!queryJSON}
+    //                 onBackButtonPress={handleOnBackButtonPress}
+    //                 shouldShowLink={false}
+    //             />
+    //         </ScreenWrapper>
+    //     );
+    // }
+    //
+    // const shouldShowFooter = !!metadata?.count;
+    // const isDataLoaded = isSearchDataLoaded(searchResults, queryJSON);
+    // const shouldShowLoadingState = !isOffline && (!isDataLoaded || !!currentSearchResults?.search?.isLoading);
 
     return (
         <ScreenWrapper
             testID={SearchPageNarrow.displayName}
             shouldEnableMaxHeight
             offlineIndicatorStyle={styles.mtAuto}
-            bottomContent={<NavigationTabBar selectedTab={NAVIGATION_TABS.SEARCH} />}
+            // bottomContent={<NavigationTabBar selectedTab={NAVIGATION_TABS.SEARCH} />}
             headerGapStyles={styles.searchHeaderGap}
             shouldShowOfflineIndicator={!!searchResults}
         >
-            <View style={[styles.flex1, styles.overflowHidden]}>
-                {!isMobileSelectionModeEnabled ? (
-                    <View style={[StyleUtils.getSearchPageNarrowHeaderStyles(), searchRouterListVisible && styles.flex1, styles.mh100]}>
-                        <View style={[styles.zIndex10, styles.appBG]}>
-                            <TopBar
-                                shouldShowLoadingBar={shouldShowLoadingState}
-                                breadcrumbLabel={translate('common.reports')}
-                                shouldDisplaySearch={false}
-                                cancelSearch={shouldDisplayCancelSearch ? cancelSearchCallback : undefined}
-                            />
-                        </View>
-                        <View style={[styles.flex1]}>
-                            <Animated.View style={[topBarAnimatedStyle, !searchRouterListVisible && styles.narrowSearchRouterInactiveStyle, styles.flex1, styles.bgTransparent]}>
-                                <View style={[styles.flex1, styles.pt2, styles.appBG]}>
-                                    <SearchPageHeader
-                                        queryJSON={queryJSON}
-                                        searchRouterListVisible={searchRouterListVisible}
-                                        hideSearchRouterList={() => {
-                                            setSearchRouterListVisible(false);
-                                        }}
-                                        onSearchRouterFocus={() => {
-                                            topBarOffset.set(StyleUtils.searchHeaderDefaultOffset);
-                                            setSearchRouterListVisible(true);
-                                        }}
-                                        headerButtonsOptions={headerButtonsOptions}
-                                        handleSearch={handleSearchAction}
-                                        isMobileSelectionModeEnabled={isMobileSelectionModeEnabled}
-                                    />
-                                </View>
-                                <View style={[styles.appBG]}>
-                                    {!searchRouterListVisible && (
-                                        <SearchFiltersBar
-                                            queryJSON={queryJSON}
-                                            headerButtonsOptions={headerButtonsOptions}
-                                            isMobileSelectionModeEnabled={isMobileSelectionModeEnabled}
-                                        />
-                                    )}
-                                </View>
-                            </Animated.View>
-                        </View>
-                    </View>
-                ) : (
-                    <>
-                        <HeaderWithBackButton
-                            title={translate('common.selectMultiple')}
-                            onBackButtonPress={() => {
-                                topBarOffset.set(StyleUtils.searchHeaderDefaultOffset);
-                                clearSelectedTransactions();
-                                turnOffMobileSelectionMode();
-                            }}
-                        />
-                        <SearchPageHeader
-                            queryJSON={queryJSON}
-                            headerButtonsOptions={headerButtonsOptions}
-                            handleSearch={handleSearchAction}
-                            isMobileSelectionModeEnabled={isMobileSelectionModeEnabled}
-                            currentSelectedPolicyID={currentSelectedPolicyID}
-                            currentSelectedReportID={currentSelectedReportID}
-                            latestBankItems={latestBankItems}
-                            confirmPayment={confirmPayment}
-                        />
-                    </>
-                )}
-                {!searchRouterListVisible && (
-                    <View style={[styles.flex1]}>
-                        <Search
-                            searchResults={searchResults}
-                            key={queryJSON.hash}
-                            queryJSON={queryJSON}
-                            onSearchListScroll={scrollHandler}
-                            contentContainerStyle={!isMobileSelectionModeEnabled ? styles.searchListContentContainerStyles : undefined}
-                            handleSearch={handleSearchAction}
-                            isMobileSelectionModeEnabled={isMobileSelectionModeEnabled}
-                        />
-                    </View>
-                )}
-                {shouldShowFooter && (
-                    <SearchPageFooter
-                        count={footerData.count}
-                        total={footerData.total}
-                        currency={footerData.currency}
-                    />
-                )}
-            </View>
+            {/* eslint-disable-next-line react/jsx-no-useless-fragment */}
+            <></>
+            {/* <View style={[styles.flex1, styles.overflowHidden]}> */}
+            {/*     {!isMobileSelectionModeEnabled ? ( */}
+            {/*         <View style={[StyleUtils.getSearchPageNarrowHeaderStyles(), searchRouterListVisible && styles.flex1, styles.mh100]}> */}
+            {/*             <View style={[styles.zIndex10, styles.appBG]}> */}
+            {/*                 <TopBar */}
+            {/*                     shouldShowLoadingBar={shouldShowLoadingState} */}
+            {/*                     breadcrumbLabel={translate('common.reports')} */}
+            {/*                     shouldDisplaySearch={false} */}
+            {/*                     cancelSearch={shouldDisplayCancelSearch ? cancelSearchCallback : undefined} */}
+            {/*                 /> */}
+            {/*             </View> */}
+            {/*             <View style={[styles.flex1]}> */}
+            {/*                 <Animated.View style={[topBarAnimatedStyle, !searchRouterListVisible && styles.narrowSearchRouterInactiveStyle, styles.flex1, styles.bgTransparent]}> */}
+            {/*                     <View style={[styles.flex1, styles.pt2, styles.appBG]}> */}
+            {/*                         <SearchPageHeader */}
+            {/*                             queryJSON={queryJSON} */}
+            {/*                             searchRouterListVisible={searchRouterListVisible} */}
+            {/*                             hideSearchRouterList={() => { */}
+            {/*                                 setSearchRouterListVisible(false); */}
+            {/*                             }} */}
+            {/*                             onSearchRouterFocus={() => { */}
+            {/*                                 topBarOffset.set(StyleUtils.searchHeaderDefaultOffset); */}
+            {/*                                 setSearchRouterListVisible(true); */}
+            {/*                             }} */}
+            {/*                             headerButtonsOptions={headerButtonsOptions} */}
+            {/*                             handleSearch={handleSearchAction} */}
+            {/*                             isMobileSelectionModeEnabled={isMobileSelectionModeEnabled} */}
+            {/*                         /> */}
+            {/*                     </View> */}
+            {/*                     <View style={[styles.appBG]}> */}
+            {/*                         {!searchRouterListVisible && ( */}
+            {/*                             <SearchFiltersBar */}
+            {/*                                 queryJSON={queryJSON} */}
+            {/*                                 headerButtonsOptions={headerButtonsOptions} */}
+            {/*                                 isMobileSelectionModeEnabled={isMobileSelectionModeEnabled} */}
+            {/*                             /> */}
+            {/*                         )} */}
+            {/*                     </View> */}
+            {/*                 </Animated.View> */}
+            {/*             </View> */}
+            {/*         </View> */}
+            {/*     ) : ( */}
+            {/*         <> */}
+            {/*             <HeaderWithBackButton */}
+            {/*                 title={translate('common.selectMultiple')} */}
+            {/*                 onBackButtonPress={() => { */}
+            {/*                     topBarOffset.set(StyleUtils.searchHeaderDefaultOffset); */}
+            {/*                     clearSelectedTransactions(); */}
+            {/*                     turnOffMobileSelectionMode(); */}
+            {/*                 }} */}
+            {/*             /> */}
+            {/*             <SearchPageHeader */}
+            {/*                 queryJSON={queryJSON} */}
+            {/*                 headerButtonsOptions={headerButtonsOptions} */}
+            {/*                 handleSearch={handleSearchAction} */}
+            {/*                 isMobileSelectionModeEnabled={isMobileSelectionModeEnabled} */}
+            {/*                 currentSelectedPolicyID={currentSelectedPolicyID} */}
+            {/*                 currentSelectedReportID={currentSelectedReportID} */}
+            {/*                 latestBankItems={latestBankItems} */}
+            {/*                 confirmPayment={confirmPayment} */}
+            {/*             /> */}
+            {/*         </> */}
+            {/*     )} */}
+            {/*     {!searchRouterListVisible && ( */}
+            {/*         <View style={[styles.flex1]}> */}
+            {/*             <Search */}
+            {/*                 searchResults={searchResults} */}
+            {/*                 key={queryJSON.hash} */}
+            {/*                 queryJSON={queryJSON} */}
+            {/*                 onSearchListScroll={scrollHandler} */}
+            {/*                 contentContainerStyle={!isMobileSelectionModeEnabled ? styles.searchListContentContainerStyles : undefined} */}
+            {/*                 handleSearch={handleSearchAction} */}
+            {/*                 isMobileSelectionModeEnabled={isMobileSelectionModeEnabled} */}
+            {/*             /> */}
+            {/*         </View> */}
+            {/*     )} */}
+            {/*     {shouldShowFooter && ( */}
+            {/*         <SearchPageFooter */}
+            {/*             count={footerData.count} */}
+            {/*             total={footerData.total} */}
+            {/*             currency={footerData.currency} */}
+            {/*         /> */}
+            {/*     )} */}
+            {/* </View> */}
         </ScreenWrapper>
     );
 }

@@ -81,16 +81,16 @@ function SidebarLinks({insets, optionListItems, isLoading, priorityMode = CONST.
     return (
         <View style={[styles.flex1, styles.h100]}>
             <View style={[styles.pRelative, styles.flex1]}>
-                <LHNOptionsList
-                    style={styles.flex1}
-                    contentContainerStyles={contentContainerStyles}
-                    data={optionListItems}
-                    onSelectRow={showReportPage}
-                    shouldDisableFocusOptions={shouldUseNarrowLayout}
-                    optionMode={viewMode}
-                    onFirstItemRendered={setSidebarLoaded}
-                />
-                {!!isLoading && optionListItems?.length === 0 && (
+                {/* <LHNOptionsList */}
+                {/*     style={styles.flex1} */}
+                {/*     contentContainerStyles={contentContainerStyles} */}
+                {/*     data={optionListItems} */}
+                {/*     onSelectRow={showReportPage} */}
+                {/*     shouldDisableFocusOptions={shouldUseNarrowLayout} */}
+                {/*     optionMode={viewMode} */}
+                {/*     onFirstItemRendered={setSidebarLoaded} */}
+                {/* /> */}
+                {true && (
                     <View style={[StyleSheet.absoluteFillObject, styles.appBG, styles.mt3]}>
                         <OptionsListSkeletonView shouldAnimate />
                     </View>
