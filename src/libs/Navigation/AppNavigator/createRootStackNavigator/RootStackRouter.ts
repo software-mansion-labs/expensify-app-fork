@@ -7,25 +7,16 @@ import isSideModalNavigator from '@libs/Navigation/helpers/isSideModalNavigator'
 import * as Welcome from '@userActions/Welcome';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
+import SCREENS from '@src/SCREENS';
 import {
     handleDismissModalAction,
     handleNavigatingToModalFromModal,
     handleOpenWorkspaceSplitAction,
     handlePushFullscreenAction,
     handleReplaceReportsSplitNavigatorAction,
-    handleToggleSidePanelWithHistoryAction,
 } from './GetStateForActionHandlers';
 import syncBrowserHistory from './syncBrowserHistory';
-import type {
-    DismissModalActionType,
-    OpenWorkspaceSplitActionType,
-    PreloadActionType,
-    PushActionType,
-    ReplaceActionType,
-    RootStackNavigatorAction,
-    RootStackNavigatorRouterOptions,
-    ToggleSidePanelWithHistoryActionType,
-} from './types';
+import type {DismissModalActionType, OpenWorkspaceSplitActionType, PushActionType, ReplaceActionType, RootStackNavigatorAction, RootStackNavigatorRouterOptions} from './types';
 
 function isOpenWorkspaceSplitAction(action: RootStackNavigatorAction): action is OpenWorkspaceSplitActionType {
     return action.type === CONST.NAVIGATION.ACTION_TYPE.OPEN_WORKSPACE_SPLIT;
@@ -41,14 +32,6 @@ function isReplaceAction(action: RootStackNavigatorAction): action is ReplaceAct
 
 function isDismissModalAction(action: RootStackNavigatorAction): action is DismissModalActionType {
     return action.type === CONST.NAVIGATION.ACTION_TYPE.DISMISS_MODAL;
-}
-
-function isToggleSidePanelWithHistoryAction(action: RootStackNavigatorAction): action is ToggleSidePanelWithHistoryActionType {
-    return action.type === CONST.NAVIGATION.ACTION_TYPE.TOGGLE_SIDE_PANEL_WITH_HISTORY;
-}
-
-function isPreloadAction(action: RootStackNavigatorAction): action is PreloadActionType {
-    return action.type === CONST.NAVIGATION.ACTION_TYPE.PRELOAD;
 }
 
 function shouldPreventReset(state: StackNavigationState<ParamListBase>, action: CommonActions.Action | StackActionType) {
@@ -79,20 +62,20 @@ function isNavigatingToModalFromModal(state: StackNavigationState<ParamListBase>
     return isSideModalNavigator(lastRoute?.name) && isSideModalNavigator(action.payload.name);
 }
 
+const TAB_ROUTES = [
+    NAVIGATORS.REPORTS_SPLIT_NAVIGATOR,
+    NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR,
+    SCREENS.WORKSPACES_LIST,
+    NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,
+    NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR,
+] as const;
+
 function RootStackRouter(options: RootStackNavigatorRouterOptions) {
     const stackRouter = StackRouter(options);
 
     return {
         ...stackRouter,
         getStateForAction(state: StackNavigationState<ParamListBase>, action: RootStackNavigatorAction, configOptions: RouterConfigOptions) {
-            if (isPreloadAction(action) && action.payload.name === state.routes.at(-1)?.name) {
-                return state;
-            }
-
-            if (isToggleSidePanelWithHistoryAction(action)) {
-                return handleToggleSidePanelWithHistoryAction(state, action);
-            }
-
             if (isOpenWorkspaceSplitAction(action)) {
                 return handleOpenWorkspaceSplitAction(state, action, configOptions, stackRouter);
             }

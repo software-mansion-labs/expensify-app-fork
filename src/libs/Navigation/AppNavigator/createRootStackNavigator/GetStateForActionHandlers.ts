@@ -105,6 +105,16 @@ function handlePushFullscreenAction(
 
     const lastFullScreenRoute = stateWithNavigator.routes.at(-1);
 
+    // If the last full screen route has a name that is already in the routes array, replace the key with the last
+    if (lastFullScreenRoute?.name) {
+        const existingRoute = stateWithNavigator.routes.find((route) => route.name === lastFullScreenRoute.name);
+        if (existingRoute) {
+            console.log('test', existingRoute, lastFullScreenRoute);
+            // @ts-ignore
+            lastFullScreenRoute.key = existingRoute.key;
+        }
+    }
+
     // Transitioning to all central screens in each split should be animated
     if (lastFullScreenRoute?.key && targetScreen && !SCREENS_WITH_NAVIGATION_TAB_BAR.includes(targetScreen)) {
         screensWithEnteringAnimation.add(lastFullScreenRoute.key);
