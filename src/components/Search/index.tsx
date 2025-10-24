@@ -410,7 +410,6 @@ function Search({queryJSON, searchResults, onSearchListScroll, contentContainerS
         /** We only want to display the skeleton for the status filters the first time we load them for a specific data type */
         setShouldShowFiltersBarLoading(shouldShowLoadingState && lastSearchType !== type);
     }, [lastSearchType, setShouldShowFiltersBarLoading, shouldShowLoadingState, type]);
-
     useEffect(() => {
         const focusedRoute = findFocusedRoute(navigationRef.getRootState());
         const isMigratedModalDisplayed = focusedRoute?.name === NAVIGATORS.MIGRATED_USER_MODAL_NAVIGATOR || focusedRoute?.name === SCREENS.MIGRATED_USER_WELCOME_MODAL.ROOT;
@@ -421,11 +420,9 @@ function Search({queryJSON, searchResults, onSearchListScroll, contentContainerS
         }
 
         handleSearch({queryJSON, searchKey, offset, shouldCalculateTotals, prevReportsLength: dataLength});
-
-        // We don't need to run the effect on change of isFocused.
         // eslint-disable-next-line react-compiler/react-compiler
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [handleSearch, isOffline, offset, queryJSON, searchKey, shouldCalculateTotals]);
+    }, [handleSearch, isOffline, offset, queryJSON, searchKey, shouldCalculateTotals, isFocused]);
 
     // When new data load, selectedTransactions is updated in next effect. We use this flag to whether selection is updated
     const isRefreshingSelection = useRef(false);
