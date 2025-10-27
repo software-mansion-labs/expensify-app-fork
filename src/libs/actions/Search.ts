@@ -346,6 +346,7 @@ function search({
     shouldCalculateTotals = false,
     prevReportsLength,
     isOffline = false,
+    setIsSearching,
 }: {
     queryJSON: SearchQueryJSON;
     searchKey: SearchKey | undefined;
@@ -353,7 +354,11 @@ function search({
     shouldCalculateTotals?: boolean;
     prevReportsLength?: number;
     isOffline?: boolean;
+    setIsSearching?: (isSearching: boolean) => void;
 }) {
+    if (setIsSearching) {
+        setIsSearching(true);
+    }
     const {optimisticData, finallyData, failureData} = getOnyxLoadingData(queryJSON.hash, queryJSON, offset, isOffline);
     const {flatFilters, ...queryJSONWithoutFlatFilters} = queryJSON;
     const query = {
@@ -373,6 +378,9 @@ function search({
     waitForWrites(READ_COMMANDS.SEARCH).then(() => {
         // eslint-disable-next-line rulesdir/no-api-side-effects-method
         API.makeRequestWithSideEffects(READ_COMMANDS.SEARCH, {hash: queryJSON.hash, jsonQuery}, {optimisticData, finallyData, failureData}).then((result) => {
+            if (setIsSearching) {
+                setIsSearching(false);
+            }
             const response = result?.onyxData?.[0]?.value as OnyxSearchResponse;
             const reports = Object.keys(response?.data ?? {})
                 .filter((key) => key.startsWith(ONYXKEYS.COLLECTION.REPORT))

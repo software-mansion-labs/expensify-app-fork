@@ -636,6 +636,8 @@ function SearchPage({route}: SearchPageProps) {
         validateFiles(files, Array.from(e.dataTransfer?.items ?? []));
     };
 
+    const [isSearching, setIsSearching] = React.useState(false);
+
     const createExportAll = useCallback(() => {
         if (selectedTransactionsKeys.length === 0 || status == null || !hash) {
             return [];
