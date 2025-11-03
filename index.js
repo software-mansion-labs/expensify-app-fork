@@ -21,3 +21,10 @@ if (!process.env.EXPO_OS && __DEV__) {
 
 AppRegistry.registerComponent(Config.APP_NAME, () => App);
 additionalAppSetup();
+
+// For web, manually run the application
+if (typeof document !== 'undefined') {
+    AppRegistry.runApplication(Config.APP_NAME, {
+        rootTag: document.getElementById('root'),
+    });
+}

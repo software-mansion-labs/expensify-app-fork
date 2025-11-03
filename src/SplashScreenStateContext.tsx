@@ -1,11 +1,9 @@
 import React, {useContext, useMemo, useState} from 'react';
-import type {ValueOf} from 'type-fest';
 import CONST from './CONST';
-import type ChildrenProps from './types/utils/ChildrenProps';
 
 type SplashScreenStateContextType = {
-    splashScreenState: ValueOf<typeof CONST.BOOT_SPLASH_STATE>;
-    setSplashScreenState: React.Dispatch<React.SetStateAction<ValueOf<typeof CONST.BOOT_SPLASH_STATE>>>;
+    splashScreenState: string;
+    setSplashScreenState: React.Dispatch<React.SetStateAction<string>>;
 };
 
 const SplashScreenStateContext = React.createContext<SplashScreenStateContextType>({
@@ -13,8 +11,12 @@ const SplashScreenStateContext = React.createContext<SplashScreenStateContextTyp
     setSplashScreenState: () => {},
 });
 
+type ChildrenProps = {
+    children: React.ReactNode;
+};
+
 function SplashScreenStateContextProvider({children}: ChildrenProps) {
-    const [splashScreenState, setSplashScreenState] = useState<ValueOf<typeof CONST.BOOT_SPLASH_STATE>>(CONST.BOOT_SPLASH_STATE.VISIBLE);
+    const [splashScreenState, setSplashScreenState] = useState<string>(CONST.BOOT_SPLASH_STATE.VISIBLE);
     const splashScreenStateContext = useMemo(
         () => ({
             splashScreenState,
