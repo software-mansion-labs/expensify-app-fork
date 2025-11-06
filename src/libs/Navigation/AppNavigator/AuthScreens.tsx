@@ -41,11 +41,11 @@ import PusherConnectionManager from '@libs/PusherConnectionManager';
 import {getReportIDFromLink} from '@libs/ReportUtils';
 import * as SessionUtils from '@libs/SessionUtils';
 import {getSearchParamFromUrl} from '@libs/Url';
-import ConnectionCompletePage from '@pages/ConnectionCompletePage';
-import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
-import RequireTwoFactorAuthenticationPage from '@pages/RequireTwoFactorAuthenticationPage';
-import DesktopSignInRedirectPage from '@pages/signin/DesktopSignInRedirectPage';
-import WorkspacesListPage from '@pages/workspace/WorkspacesListPage';
+const ConnectionCompletePage = React.lazy(() => import('@pages/ConnectionCompletePage'));
+const NotFoundPage = React.lazy(() => import('@pages/ErrorPage/NotFoundPage'));
+const RequireTwoFactorAuthenticationPage = React.lazy(() => import('@pages/RequireTwoFactorAuthenticationPage'));
+const DesktopSignInRedirectPage = React.lazy(() => import('@pages/signin/DesktopSignInRedirectPage'));
+const WorkspacesListPage = React.lazy(() => import('@pages/workspace/WorkspacesListPage'));
 import * as App from '@userActions/App';
 import * as Download from '@userActions/Download';
 import * as Modal from '@userActions/Modal';
@@ -76,13 +76,13 @@ import TestDriveDemoNavigator from './TestDriveDemoNavigator';
 import useModalCardStyleInterpolator from './useModalCardStyleInterpolator';
 import useRootNavigatorScreenOptions from './useRootNavigatorScreenOptions';
 
-const loadAttachmentModalScreen = () => require<ReactComponentModule>('../../../pages/media/AttachmentModalScreen').default;
-const loadValidateLoginPage = () => require<ReactComponentModule>('../../../pages/ValidateLoginPage').default;
-const loadLogOutPreviousUserPage = () => require<ReactComponentModule>('../../../pages/LogOutPreviousUserPage').default;
-const loadConciergePage = () => require<ReactComponentModule>('../../../pages/ConciergePage').default;
-const loadTrackExpensePage = () => require<ReactComponentModule>('../../../pages/TrackExpensePage').default;
-const loadSubmitExpensePage = () => require<ReactComponentModule>('../../../pages/SubmitExpensePage').default;
-const loadWorkspaceJoinUser = () => require<ReactComponentModule>('@pages/workspace/WorkspaceJoinUserPage').default;
+const AttachmentModalScreen = React.lazy(() => import('../../../pages/media/AttachmentModalScreen'));
+const ValidateLoginPage = React.lazy(() => import('../../../pages/ValidateLoginPage'));
+const LogOutPreviousUserPage = React.lazy(() => import('../../../pages/LogOutPreviousUserPage'));
+const ConciergePage = React.lazy(() => import('../../../pages/ConciergePage'));
+const TrackExpensePage = React.lazy(() => import('../../../pages/TrackExpensePage'));
+const SubmitExpensePage = React.lazy(() => import('../../../pages/SubmitExpensePage'));
+const WorkspaceJoinUserPage = React.lazy(() => import('@pages/workspace/WorkspaceJoinUserPage'));
 
 const loadReportSplitNavigator = () => require<ReactComponentModule>('./Navigators/ReportsSplitNavigator').default;
 const loadSettingsSplitNavigator = () => require<ReactComponentModule>('./Navigators/SettingsSplitNavigator').default;
@@ -509,7 +509,7 @@ function AuthScreens() {
                         title: 'New Expensify',
                     }}
                     listeners={fullScreenListeners}
-                    getComponent={loadValidateLoginPage}
+                    component={ValidateLoginPage}
                 />
                 <RootStack.Screen
                     name={SCREENS.WORKSPACES_LIST}
@@ -519,63 +519,63 @@ function AuthScreens() {
                 <RootStack.Screen
                     name={SCREENS.TRANSITION_BETWEEN_APPS}
                     options={defaultScreenOptions}
-                    getComponent={loadLogOutPreviousUserPage}
+                    component={LogOutPreviousUserPage}
                 />
                 <RootStack.Screen
                     name={SCREENS.CONCIERGE}
                     options={defaultScreenOptions}
-                    getComponent={loadConciergePage}
+                    component={ConciergePage}
                 />
                 <RootStack.Screen
                     name={SCREENS.TRACK_EXPENSE}
                     options={defaultScreenOptions}
-                    getComponent={loadTrackExpensePage}
+                    component={TrackExpensePage}
                 />
                 <RootStack.Screen
                     name={SCREENS.SUBMIT_EXPENSE}
                     options={defaultScreenOptions}
-                    getComponent={loadSubmitExpensePage}
+                    component={SubmitExpensePage}
                 />
                 <RootStack.Screen
                     name={SCREENS.REPORT_ATTACHMENTS}
                     options={attachmentModalScreenOptions}
-                    getComponent={loadAttachmentModalScreen}
+                    component={AttachmentModalScreen}
                     listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
                     name={SCREENS.REPORT_ADD_ATTACHMENT}
                     options={attachmentModalScreenOptions}
-                    getComponent={loadAttachmentModalScreen}
+                    component={AttachmentModalScreen}
                     listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
                     name={SCREENS.REPORT_AVATAR}
                     options={attachmentModalScreenOptions}
-                    getComponent={loadAttachmentModalScreen}
+                    component={AttachmentModalScreen}
                     listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
                     name={SCREENS.PROFILE_AVATAR}
                     options={attachmentModalScreenOptions}
-                    getComponent={loadAttachmentModalScreen}
+                    component={AttachmentModalScreen}
                     listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
                     name={SCREENS.WORKSPACE_AVATAR}
                     options={attachmentModalScreenOptions}
-                    getComponent={loadAttachmentModalScreen}
+                    component={AttachmentModalScreen}
                     listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
                     name={SCREENS.TRANSACTION_RECEIPT}
                     options={attachmentModalScreenOptions}
-                    getComponent={loadAttachmentModalScreen}
+                    component={AttachmentModalScreen}
                     listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
                     name={SCREENS.MONEY_REQUEST.RECEIPT_PREVIEW}
                     options={attachmentModalScreenOptions}
-                    getComponent={loadAttachmentModalScreen}
+                    component={AttachmentModalScreen}
                     listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
@@ -651,7 +651,7 @@ function AuthScreens() {
                         headerShown: false,
                     }}
                     listeners={modalScreenListeners}
-                    getComponent={loadWorkspaceJoinUser}
+                    component={WorkspaceJoinUserPage}
                 />
                 <RootStack.Screen
                     name={SCREENS.CONNECTION_COMPLETE}

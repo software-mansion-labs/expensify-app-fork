@@ -13,10 +13,9 @@ import CONST from '@src/CONST';
 import type NAVIGATORS from '@src/NAVIGATORS';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
-const loadReportScreen = () => require<ReactComponentModule>('@pages/home/ReportScreen').default;
-const loadSidebarScreen = () => require<ReactComponentModule>('@pages/home/sidebar/BaseSidebarScreen').default;
+const ReportScreen = React.lazy(() => import('@pages/home/ReportScreen'));
+const BaseSidebarScreen = React.lazy(() => import('@pages/home/sidebar/BaseSidebarScreen'));
 const Split = createSplitNavigator<ReportsSplitNavigatorParamList>();
 
 /**
@@ -65,13 +64,13 @@ function ReportsSplitNavigator({route}: PlatformStackScreenProps<AuthScreensPara
             >
                 <Split.Screen
                     name={SCREENS.HOME}
-                    getComponent={loadSidebarScreen}
+                    component={BaseSidebarScreen}
                     options={splitNavigatorScreenOptions.sidebarScreen}
                 />
                 <Split.Screen
                     name={SCREENS.REPORT}
                     initialParams={{reportID: initialReportID, openOnAdminRoom: shouldOpenOnAdminRoom() ? true : undefined}}
-                    getComponent={loadReportScreen}
+                    component={ReportScreen}
                 />
             </Split.Navigator>
         </FreezeWrapper>

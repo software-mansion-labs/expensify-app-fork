@@ -9,10 +9,9 @@ import createSearchFullscreenNavigator from '@navigation/AppNavigator/createSear
 import FreezeWrapper from '@navigation/AppNavigator/FreezeWrapper';
 import type NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
-import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
-const loadSearchPage = () => require<ReactComponentModule>('@pages/Search/SearchPage').default;
-const loadSearchMoneyReportPage = () => require<ReactComponentModule>('@pages/Search/SearchMoneyRequestReportPage').default;
+const SearchPage = React.lazy(() => import('@pages/Search/SearchPage'));
+const SearchMoneyRequestReportPage = React.lazy(() => import('@pages/Search/SearchMoneyRequestReportPage'));
 
 const Stack = createSearchFullscreenNavigator<SearchFullscreenNavigatorParamList>();
 
@@ -32,13 +31,13 @@ function SearchFullscreenNavigator({route}: PlatformStackScreenProps<AuthScreens
             >
                 <Stack.Screen
                     name={SCREENS.SEARCH.ROOT}
-                    getComponent={loadSearchPage}
+                    component={SearchPage}
                     initialParams={{q: SearchQueryUtils.buildSearchQueryString()}}
                     options={{animation: Animations.NONE}}
                 />
                 <Stack.Screen
                     name={SCREENS.SEARCH.MONEY_REQUEST_REPORT}
-                    getComponent={loadSearchMoneyReportPage}
+                    component={SearchMoneyRequestReportPage}
                 />
             </Stack.Navigator>
         </FreezeWrapper>

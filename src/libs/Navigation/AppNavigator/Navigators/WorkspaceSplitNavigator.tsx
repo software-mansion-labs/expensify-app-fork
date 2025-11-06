@@ -10,29 +10,29 @@ import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavig
 import type {AuthScreensParamList, WorkspaceSplitNavigatorParamList} from '@libs/Navigation/types';
 import type NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
-import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
-type Screens = Partial<Record<keyof WorkspaceSplitNavigatorParamList, () => React.ComponentType>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Screens = Partial<Record<keyof WorkspaceSplitNavigatorParamList, React.ComponentType<any>>>;
 
-const loadWorkspaceInitialPage = () => require<ReactComponentModule>('../../../../pages/workspace/WorkspaceInitialPage').default;
+const WorkspaceInitialPage = React.lazy(() => import('../../../../pages/workspace/WorkspaceInitialPage'));
 
 const CENTRAL_PANE_WORKSPACE_SCREENS = {
-    [SCREENS.WORKSPACE.PROFILE]: () => require<ReactComponentModule>('../../../../pages/workspace/WorkspaceOverviewPage').default,
-    [SCREENS.WORKSPACE.WORKFLOWS]: () => require<ReactComponentModule>('../../../../pages/workspace/workflows/WorkspaceWorkflowsPage').default,
-    [SCREENS.WORKSPACE.INVOICES]: () => require<ReactComponentModule>('../../../../pages/workspace/invoices/WorkspaceInvoicesPage').default,
-    [SCREENS.WORKSPACE.MEMBERS]: () => require<ReactComponentModule>('../../../../pages/workspace/WorkspaceMembersPage').default,
-    [SCREENS.WORKSPACE.ACCOUNTING.ROOT]: () => require<ReactComponentModule>('../../../../pages/workspace/accounting/PolicyAccountingPage').default,
-    [SCREENS.WORKSPACE.CATEGORIES]: () => require<ReactComponentModule>('../../../../pages/workspace/categories/WorkspaceCategoriesPage').default,
-    [SCREENS.WORKSPACE.MORE_FEATURES]: () => require<ReactComponentModule>('../../../../pages/workspace/WorkspaceMoreFeaturesPage').default,
-    [SCREENS.WORKSPACE.TAGS]: () => require<ReactComponentModule>('../../../../pages/workspace/tags/WorkspaceTagsPage').default,
-    [SCREENS.WORKSPACE.TAXES]: () => require<ReactComponentModule>('../../../../pages/workspace/taxes/WorkspaceTaxesPage').default,
-    [SCREENS.WORKSPACE.REPORTS]: () => require<ReactComponentModule>('../../../../pages/workspace/reports/WorkspaceReportsPage').default,
-    [SCREENS.WORKSPACE.EXPENSIFY_CARD]: () => require<ReactComponentModule>('../../../../pages/workspace/expensifyCard/WorkspaceExpensifyCardPage').default,
-    [SCREENS.WORKSPACE.COMPANY_CARDS]: () => require<ReactComponentModule>('../../../../pages/workspace/companyCards/WorkspaceCompanyCardsPage').default,
-    [SCREENS.WORKSPACE.PER_DIEM]: () => require<ReactComponentModule>('../../../../pages/workspace/perDiem/WorkspacePerDiemPage').default,
-    [SCREENS.WORKSPACE.RECEIPT_PARTNERS]: () => require<ReactComponentModule>('../../../../pages/workspace/receiptPartners/WorkspaceReceiptPartnersPage').default,
-    [SCREENS.WORKSPACE.DISTANCE_RATES]: () => require<ReactComponentModule>('../../../../pages/workspace/distanceRates/PolicyDistanceRatesPage').default,
-    [SCREENS.WORKSPACE.RULES]: () => require<ReactComponentModule>('../../../../pages/workspace/rules/PolicyRulesPage').default,
+    [SCREENS.WORKSPACE.PROFILE]: React.lazy(() => import('../../../../pages/workspace/WorkspaceOverviewPage')),
+    [SCREENS.WORKSPACE.WORKFLOWS]: React.lazy(() => import('../../../../pages/workspace/workflows/WorkspaceWorkflowsPage')),
+    [SCREENS.WORKSPACE.INVOICES]: React.lazy(() => import('../../../../pages/workspace/invoices/WorkspaceInvoicesPage')),
+    [SCREENS.WORKSPACE.MEMBERS]: React.lazy(() => import('../../../../pages/workspace/WorkspaceMembersPage')),
+    [SCREENS.WORKSPACE.ACCOUNTING.ROOT]: React.lazy(() => import('../../../../pages/workspace/accounting/PolicyAccountingPage')),
+    [SCREENS.WORKSPACE.CATEGORIES]: React.lazy(() => import('../../../../pages/workspace/categories/WorkspaceCategoriesPage')),
+    [SCREENS.WORKSPACE.MORE_FEATURES]: React.lazy(() => import('../../../../pages/workspace/WorkspaceMoreFeaturesPage')),
+    [SCREENS.WORKSPACE.TAGS]: React.lazy(() => import('../../../../pages/workspace/tags/WorkspaceTagsPage')),
+    [SCREENS.WORKSPACE.TAXES]: React.lazy(() => import('../../../../pages/workspace/taxes/WorkspaceTaxesPage')),
+    [SCREENS.WORKSPACE.REPORTS]: React.lazy(() => import('../../../../pages/workspace/reports/WorkspaceReportsPage')),
+    [SCREENS.WORKSPACE.EXPENSIFY_CARD]: React.lazy(() => import('../../../../pages/workspace/expensifyCard/WorkspaceExpensifyCardPage')),
+    [SCREENS.WORKSPACE.COMPANY_CARDS]: React.lazy(() => import('../../../../pages/workspace/companyCards/WorkspaceCompanyCardsPage')),
+    [SCREENS.WORKSPACE.PER_DIEM]: React.lazy(() => import('../../../../pages/workspace/perDiem/WorkspacePerDiemPage')),
+    [SCREENS.WORKSPACE.RECEIPT_PARTNERS]: React.lazy(() => import('../../../../pages/workspace/receiptPartners/WorkspaceReceiptPartnersPage')),
+    [SCREENS.WORKSPACE.DISTANCE_RATES]: React.lazy(() => import('../../../../pages/workspace/distanceRates/PolicyDistanceRatesPage')),
+    [SCREENS.WORKSPACE.RULES]: React.lazy(() => import('../../../../pages/workspace/rules/PolicyRulesPage')),
 } satisfies Screens;
 
 const Split = createSplitNavigator<WorkspaceSplitNavigatorParamList>();
@@ -72,14 +72,15 @@ function WorkspaceSplitNavigator({route, navigation}: PlatformStackScreenProps<A
                 >
                     <Split.Screen
                         name={SCREENS.WORKSPACE.INITIAL}
-                        getComponent={loadWorkspaceInitialPage}
+                        component={WorkspaceInitialPage}
                         options={splitNavigatorScreenOptions.sidebarScreen}
                     />
-                    {Object.entries(CENTRAL_PANE_WORKSPACE_SCREENS).map(([screenName, componentGetter]) => (
+                    {Object.entries(CENTRAL_PANE_WORKSPACE_SCREENS).map(([screenName, Component]) => (
                         <Split.Screen
                             key={screenName}
                             name={screenName as keyof Screens}
-                            getComponent={componentGetter}
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            component={Component as React.ComponentType<any>}
                         />
                     ))}
                 </Split.Navigator>

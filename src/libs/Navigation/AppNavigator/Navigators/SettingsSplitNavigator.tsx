@@ -7,21 +7,21 @@ import usePreloadFullScreenNavigators from '@libs/Navigation/AppNavigator/usePre
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
 import type {SettingsSplitNavigatorParamList} from '@libs/Navigation/types';
 import SCREENS from '@src/SCREENS';
-import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
-const loadInitialSettingsPage = () => require<ReactComponentModule>('../../../../pages/settings/InitialSettingsPage').default;
+const InitialSettingsPage = React.lazy(() => import('../../../../pages/settings/InitialSettingsPage'));
 
-type Screens = Partial<Record<keyof SettingsSplitNavigatorParamList, () => React.ComponentType>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Screens = Partial<Record<keyof SettingsSplitNavigatorParamList, React.ComponentType<any>>>;
 
 const CENTRAL_PANE_SETTINGS_SCREENS = {
-    [SCREENS.SETTINGS.PREFERENCES.ROOT]: () => require<ReactComponentModule>('../../../../pages/settings/Preferences/PreferencesPage').default,
-    [SCREENS.SETTINGS.SECURITY]: () => require<ReactComponentModule>('../../../../pages/settings/Security/SecuritySettingsPage').default,
-    [SCREENS.SETTINGS.PROFILE.ROOT]: () => require<ReactComponentModule>('../../../../pages/settings/Profile/ProfilePage').default,
-    [SCREENS.SETTINGS.WALLET.ROOT]: () => require<ReactComponentModule>('../../../../pages/settings/Wallet/WalletPage').default,
-    [SCREENS.SETTINGS.ABOUT]: () => require<ReactComponentModule>('../../../../pages/settings/AboutPage/AboutPage').default,
-    [SCREENS.SETTINGS.TROUBLESHOOT]: () => require<ReactComponentModule>('../../../../pages/settings/Troubleshoot/TroubleshootPage').default,
-    [SCREENS.SETTINGS.SAVE_THE_WORLD]: () => require<ReactComponentModule>('../../../../pages/TeachersUnite/SaveTheWorldPage').default,
-    [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: () => require<ReactComponentModule>('../../../../pages/settings/Subscription/SubscriptionSettingsPage').default,
+    [SCREENS.SETTINGS.PREFERENCES.ROOT]: React.lazy(() => import('../../../../pages/settings/Preferences/PreferencesPage')),
+    [SCREENS.SETTINGS.SECURITY]: React.lazy(() => import('../../../../pages/settings/Security/SecuritySettingsPage')),
+    [SCREENS.SETTINGS.PROFILE.ROOT]: React.lazy(() => import('../../../../pages/settings/Profile/ProfilePage')),
+    [SCREENS.SETTINGS.WALLET.ROOT]: React.lazy(() => import('../../../../pages/settings/Wallet/WalletPage')),
+    [SCREENS.SETTINGS.ABOUT]: React.lazy(() => import('../../../../pages/settings/AboutPage/AboutPage')),
+    [SCREENS.SETTINGS.TROUBLESHOOT]: React.lazy(() => import('../../../../pages/settings/Troubleshoot/TroubleshootPage')),
+    [SCREENS.SETTINGS.SAVE_THE_WORLD]: React.lazy(() => import('../../../../pages/TeachersUnite/SaveTheWorldPage')),
+    [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: React.lazy(() => import('../../../../pages/settings/Subscription/SubscriptionSettingsPage')),
 } satisfies Screens;
 
 const Split = createSplitNavigator<SettingsSplitNavigatorParamList>();
@@ -45,15 +45,16 @@ function SettingsSplitNavigator() {
                 >
                     <Split.Screen
                         name={SCREENS.SETTINGS.ROOT}
-                        getComponent={loadInitialSettingsPage}
+                        component={InitialSettingsPage}
                         options={splitNavigatorScreenOptions.sidebarScreen}
                     />
-                    {Object.entries(CENTRAL_PANE_SETTINGS_SCREENS).map(([screenName, componentGetter]) => {
+                    {Object.entries(CENTRAL_PANE_SETTINGS_SCREENS).map(([screenName, Component]) => {
                         return (
                             <Split.Screen
                                 key={screenName}
                                 name={screenName as keyof Screens}
-                                getComponent={componentGetter}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                component={Component as React.ComponentType<any>}
                             />
                         );
                     })}

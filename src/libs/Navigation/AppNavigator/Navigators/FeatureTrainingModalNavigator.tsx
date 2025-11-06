@@ -5,10 +5,11 @@ import NoDropZone from '@components/DragAndDrop/NoDropZone';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {FeatureTrainingNavigatorParamList} from '@libs/Navigation/types';
-import ChangePolicyEducationalModal from '@pages/ChangePolicyEducationalModal';
-import ProcessMoneyRequestHoldPage from '@pages/ProcessMoneyRequestHoldPage';
-import TrackTrainingPage from '@pages/TrackTrainingPage';
 import SCREENS from '@src/SCREENS';
+
+const ChangePolicyEducationalModal = React.lazy(() => import('@pages/ChangePolicyEducationalModal'));
+const ProcessMoneyRequestHoldPage = React.lazy(() => import('@pages/ProcessMoneyRequestHoldPage'));
+const TrackTrainingPage = React.lazy(() => import('@pages/TrackTrainingPage'));
 
 const Stack = createPlatformStackNavigator<FeatureTrainingNavigatorParamList>();
 

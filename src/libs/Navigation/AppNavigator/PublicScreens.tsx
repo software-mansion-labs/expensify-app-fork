@@ -4,20 +4,21 @@ import useTheme from '@hooks/useTheme';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations, {InternalPlatformAnimations} from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {PublicScreensParamList} from '@navigation/types';
-import ConnectionCompletePage from '@pages/ConnectionCompletePage';
-import LogInWithShortLivedAuthTokenPage from '@pages/LogInWithShortLivedAuthTokenPage';
-import AppleSignInDesktopPage from '@pages/signin/AppleSignInDesktopPage';
-import GoogleSignInDesktopPage from '@pages/signin/GoogleSignInDesktopPage';
-import SAMLSignInPage from '@pages/signin/SAMLSignInPage';
-import SignInPage from '@pages/signin/SignInPage';
-import UnlinkLoginPage from '@pages/UnlinkLoginPage';
-import ValidateLoginPage from '@pages/ValidateLoginPage';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
 import defaultScreenOptions from './defaultScreenOptions';
 import PublicRightModalNavigator from './Navigators/PublicRightModalNavigator';
 import TestToolsModalNavigator from './Navigators/TestToolsModalNavigator';
 import useRootNavigatorScreenOptions from './useRootNavigatorScreenOptions';
+
+const ConnectionCompletePage = React.lazy(() => import('@pages/ConnectionCompletePage'));
+const LogInWithShortLivedAuthTokenPage = React.lazy(() => import('@pages/LogInWithShortLivedAuthTokenPage'));
+const AppleSignInDesktopPage = React.lazy(() => import('@pages/signin/AppleSignInDesktopPage'));
+const GoogleSignInDesktopPage = React.lazy(() => import('@pages/signin/GoogleSignInDesktopPage'));
+const SAMLSignInPage = React.lazy(() => import('@pages/signin/SAMLSignInPage'));
+const SignInPage = React.lazy(() => import('@pages/signin/SignInPage'));
+const UnlinkLoginPage = React.lazy(() => import('@pages/UnlinkLoginPage'));
+const ValidateLoginPage = React.lazy(() => import('@pages/ValidateLoginPage'));
 
 const RootStack = createPlatformStackNavigator<PublicScreensParamList>();
 
