@@ -13,9 +13,10 @@ import CONST from '@src/CONST';
 import type NAVIGATORS from '@src/NAVIGATORS';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
+import lazyWithSuspense from '../lazyWithSuspense';
 
-const ReportScreen = React.lazy(() => import('@pages/home/ReportScreen'));
-const BaseSidebarScreen = React.lazy(() => import('@pages/home/sidebar/BaseSidebarScreen'));
+const ReportScreen = lazyWithSuspense(() => import('@pages/home/ReportScreen'));
+const BaseSidebarScreen = lazyWithSuspense(() => import('@pages/home/sidebar/BaseSidebarScreen'));
 const Split = createSplitNavigator<ReportsSplitNavigatorParamList>();
 
 /**

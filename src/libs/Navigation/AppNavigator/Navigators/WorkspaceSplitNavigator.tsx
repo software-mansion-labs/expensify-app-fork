@@ -10,29 +10,30 @@ import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavig
 import type {AuthScreensParamList, WorkspaceSplitNavigatorParamList} from '@libs/Navigation/types';
 import type NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
+import lazyWithSuspense from '../lazyWithSuspense';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Screens = Partial<Record<keyof WorkspaceSplitNavigatorParamList, React.ComponentType<any>>>;
 
-const WorkspaceInitialPage = React.lazy(() => import('../../../../pages/workspace/WorkspaceInitialPage'));
+const WorkspaceInitialPage = lazyWithSuspense(() => import('../../../../pages/workspace/WorkspaceInitialPage'));
 
 const CENTRAL_PANE_WORKSPACE_SCREENS = {
-    [SCREENS.WORKSPACE.PROFILE]: React.lazy(() => import('../../../../pages/workspace/WorkspaceOverviewPage')),
-    [SCREENS.WORKSPACE.WORKFLOWS]: React.lazy(() => import('../../../../pages/workspace/workflows/WorkspaceWorkflowsPage')),
-    [SCREENS.WORKSPACE.INVOICES]: React.lazy(() => import('../../../../pages/workspace/invoices/WorkspaceInvoicesPage')),
-    [SCREENS.WORKSPACE.MEMBERS]: React.lazy(() => import('../../../../pages/workspace/WorkspaceMembersPage')),
-    [SCREENS.WORKSPACE.ACCOUNTING.ROOT]: React.lazy(() => import('../../../../pages/workspace/accounting/PolicyAccountingPage')),
-    [SCREENS.WORKSPACE.CATEGORIES]: React.lazy(() => import('../../../../pages/workspace/categories/WorkspaceCategoriesPage')),
-    [SCREENS.WORKSPACE.MORE_FEATURES]: React.lazy(() => import('../../../../pages/workspace/WorkspaceMoreFeaturesPage')),
-    [SCREENS.WORKSPACE.TAGS]: React.lazy(() => import('../../../../pages/workspace/tags/WorkspaceTagsPage')),
-    [SCREENS.WORKSPACE.TAXES]: React.lazy(() => import('../../../../pages/workspace/taxes/WorkspaceTaxesPage')),
-    [SCREENS.WORKSPACE.REPORTS]: React.lazy(() => import('../../../../pages/workspace/reports/WorkspaceReportsPage')),
-    [SCREENS.WORKSPACE.EXPENSIFY_CARD]: React.lazy(() => import('../../../../pages/workspace/expensifyCard/WorkspaceExpensifyCardPage')),
-    [SCREENS.WORKSPACE.COMPANY_CARDS]: React.lazy(() => import('../../../../pages/workspace/companyCards/WorkspaceCompanyCardsPage')),
-    [SCREENS.WORKSPACE.PER_DIEM]: React.lazy(() => import('../../../../pages/workspace/perDiem/WorkspacePerDiemPage')),
-    [SCREENS.WORKSPACE.RECEIPT_PARTNERS]: React.lazy(() => import('../../../../pages/workspace/receiptPartners/WorkspaceReceiptPartnersPage')),
-    [SCREENS.WORKSPACE.DISTANCE_RATES]: React.lazy(() => import('../../../../pages/workspace/distanceRates/PolicyDistanceRatesPage')),
-    [SCREENS.WORKSPACE.RULES]: React.lazy(() => import('../../../../pages/workspace/rules/PolicyRulesPage')),
+    [SCREENS.WORKSPACE.PROFILE]: lazyWithSuspense(() => import('../../../../pages/workspace/WorkspaceOverviewPage')),
+    [SCREENS.WORKSPACE.WORKFLOWS]: lazyWithSuspense(() => import('../../../../pages/workspace/workflows/WorkspaceWorkflowsPage')),
+    [SCREENS.WORKSPACE.INVOICES]: lazyWithSuspense(() => import('../../../../pages/workspace/invoices/WorkspaceInvoicesPage')),
+    [SCREENS.WORKSPACE.MEMBERS]: lazyWithSuspense(() => import('../../../../pages/workspace/WorkspaceMembersPage')),
+    [SCREENS.WORKSPACE.ACCOUNTING.ROOT]: lazyWithSuspense(() => import('../../../../pages/workspace/accounting/PolicyAccountingPage')),
+    [SCREENS.WORKSPACE.CATEGORIES]: lazyWithSuspense(() => import('../../../../pages/workspace/categories/WorkspaceCategoriesPage')),
+    [SCREENS.WORKSPACE.MORE_FEATURES]: lazyWithSuspense(() => import('../../../../pages/workspace/WorkspaceMoreFeaturesPage')),
+    [SCREENS.WORKSPACE.TAGS]: lazyWithSuspense(() => import('../../../../pages/workspace/tags/WorkspaceTagsPage')),
+    [SCREENS.WORKSPACE.TAXES]: lazyWithSuspense(() => import('../../../../pages/workspace/taxes/WorkspaceTaxesPage')),
+    [SCREENS.WORKSPACE.REPORTS]: lazyWithSuspense(() => import('../../../../pages/workspace/reports/WorkspaceReportsPage')),
+    [SCREENS.WORKSPACE.EXPENSIFY_CARD]: lazyWithSuspense(() => import('../../../../pages/workspace/expensifyCard/WorkspaceExpensifyCardPage')),
+    [SCREENS.WORKSPACE.COMPANY_CARDS]: lazyWithSuspense(() => import('../../../../pages/workspace/companyCards/WorkspaceCompanyCardsPage')),
+    [SCREENS.WORKSPACE.PER_DIEM]: lazyWithSuspense(() => import('../../../../pages/workspace/perDiem/WorkspacePerDiemPage')),
+    [SCREENS.WORKSPACE.RECEIPT_PARTNERS]: lazyWithSuspense(() => import('../../../../pages/workspace/receiptPartners/WorkspaceReceiptPartnersPage')),
+    [SCREENS.WORKSPACE.DISTANCE_RATES]: lazyWithSuspense(() => import('../../../../pages/workspace/distanceRates/PolicyDistanceRatesPage')),
+    [SCREENS.WORKSPACE.RULES]: lazyWithSuspense(() => import('../../../../pages/workspace/rules/PolicyRulesPage')),
 } satisfies Screens;
 
 const Split = createSplitNavigator<WorkspaceSplitNavigatorParamList>();

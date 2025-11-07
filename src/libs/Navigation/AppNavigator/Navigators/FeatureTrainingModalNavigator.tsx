@@ -6,10 +6,11 @@ import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigati
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {FeatureTrainingNavigatorParamList} from '@libs/Navigation/types';
 import SCREENS from '@src/SCREENS';
+import lazyWithSuspense from '../lazyWithSuspense';
 
-const ChangePolicyEducationalModal = React.lazy(() => import('@pages/ChangePolicyEducationalModal'));
-const ProcessMoneyRequestHoldPage = React.lazy(() => import('@pages/ProcessMoneyRequestHoldPage'));
-const TrackTrainingPage = React.lazy(() => import('@pages/TrackTrainingPage'));
+const ChangePolicyEducationalModal = lazyWithSuspense(() => import('@pages/ChangePolicyEducationalModal'));
+const ProcessMoneyRequestHoldPage = lazyWithSuspense(() => import('@pages/ProcessMoneyRequestHoldPage'));
+const TrackTrainingPage = lazyWithSuspense(() => import('@pages/TrackTrainingPage'));
 
 const Stack = createPlatformStackNavigator<FeatureTrainingNavigatorParamList>();
 

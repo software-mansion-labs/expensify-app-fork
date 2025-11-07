@@ -7,21 +7,22 @@ import usePreloadFullScreenNavigators from '@libs/Navigation/AppNavigator/usePre
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
 import type {SettingsSplitNavigatorParamList} from '@libs/Navigation/types';
 import SCREENS from '@src/SCREENS';
+import lazyWithSuspense from '../lazyWithSuspense';
 
-const InitialSettingsPage = React.lazy(() => import('../../../../pages/settings/InitialSettingsPage'));
+const InitialSettingsPage = lazyWithSuspense(() => import('../../../../pages/settings/InitialSettingsPage'));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Screens = Partial<Record<keyof SettingsSplitNavigatorParamList, React.ComponentType<any>>>;
 
 const CENTRAL_PANE_SETTINGS_SCREENS = {
-    [SCREENS.SETTINGS.PREFERENCES.ROOT]: React.lazy(() => import('../../../../pages/settings/Preferences/PreferencesPage')),
-    [SCREENS.SETTINGS.SECURITY]: React.lazy(() => import('../../../../pages/settings/Security/SecuritySettingsPage')),
-    [SCREENS.SETTINGS.PROFILE.ROOT]: React.lazy(() => import('../../../../pages/settings/Profile/ProfilePage')),
-    [SCREENS.SETTINGS.WALLET.ROOT]: React.lazy(() => import('../../../../pages/settings/Wallet/WalletPage')),
-    [SCREENS.SETTINGS.ABOUT]: React.lazy(() => import('../../../../pages/settings/AboutPage/AboutPage')),
-    [SCREENS.SETTINGS.TROUBLESHOOT]: React.lazy(() => import('../../../../pages/settings/Troubleshoot/TroubleshootPage')),
-    [SCREENS.SETTINGS.SAVE_THE_WORLD]: React.lazy(() => import('../../../../pages/TeachersUnite/SaveTheWorldPage')),
-    [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: React.lazy(() => import('../../../../pages/settings/Subscription/SubscriptionSettingsPage')),
+    [SCREENS.SETTINGS.PREFERENCES.ROOT]: lazyWithSuspense(() => import('../../../../pages/settings/Preferences/PreferencesPage')),
+    [SCREENS.SETTINGS.SECURITY]: lazyWithSuspense(() => import('../../../../pages/settings/Security/SecuritySettingsPage')),
+    [SCREENS.SETTINGS.PROFILE.ROOT]: lazyWithSuspense(() => import('../../../../pages/settings/Profile/ProfilePage')),
+    [SCREENS.SETTINGS.WALLET.ROOT]: lazyWithSuspense(() => import('../../../../pages/settings/Wallet/WalletPage')),
+    [SCREENS.SETTINGS.ABOUT]: lazyWithSuspense(() => import('../../../../pages/settings/AboutPage/AboutPage')),
+    [SCREENS.SETTINGS.TROUBLESHOOT]: lazyWithSuspense(() => import('../../../../pages/settings/Troubleshoot/TroubleshootPage')),
+    [SCREENS.SETTINGS.SAVE_THE_WORLD]: lazyWithSuspense(() => import('../../../../pages/TeachersUnite/SaveTheWorldPage')),
+    [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]: lazyWithSuspense(() => import('../../../../pages/settings/Subscription/SubscriptionSettingsPage')),
 } satisfies Screens;
 
 const Split = createSplitNavigator<SettingsSplitNavigatorParamList>();

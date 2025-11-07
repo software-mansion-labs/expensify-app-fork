@@ -7,18 +7,19 @@ import type {PublicScreensParamList} from '@navigation/types';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
 import defaultScreenOptions from './defaultScreenOptions';
+import lazyWithSuspense from './lazyWithSuspense';
 import PublicRightModalNavigator from './Navigators/PublicRightModalNavigator';
 import TestToolsModalNavigator from './Navigators/TestToolsModalNavigator';
 import useRootNavigatorScreenOptions from './useRootNavigatorScreenOptions';
 
-const ConnectionCompletePage = React.lazy(() => import('@pages/ConnectionCompletePage'));
-const LogInWithShortLivedAuthTokenPage = React.lazy(() => import('@pages/LogInWithShortLivedAuthTokenPage'));
-const AppleSignInDesktopPage = React.lazy(() => import('@pages/signin/AppleSignInDesktopPage'));
-const GoogleSignInDesktopPage = React.lazy(() => import('@pages/signin/GoogleSignInDesktopPage'));
-const SAMLSignInPage = React.lazy(() => import('@pages/signin/SAMLSignInPage'));
-const SignInPage = React.lazy(() => import('@pages/signin/SignInPage'));
-const UnlinkLoginPage = React.lazy(() => import('@pages/UnlinkLoginPage'));
-const ValidateLoginPage = React.lazy(() => import('@pages/ValidateLoginPage'));
+const ConnectionCompletePage = lazyWithSuspense(() => import('@pages/ConnectionCompletePage'));
+const LogInWithShortLivedAuthTokenPage = lazyWithSuspense(() => import('@pages/LogInWithShortLivedAuthTokenPage'));
+const AppleSignInDesktopPage = lazyWithSuspense(() => import('@pages/signin/AppleSignInDesktopPage'));
+const GoogleSignInDesktopPage = lazyWithSuspense(() => import('@pages/signin/GoogleSignInDesktopPage'));
+const SAMLSignInPage = lazyWithSuspense(() => import('@pages/signin/SAMLSignInPage'));
+const SignInPage = lazyWithSuspense(() => import('@pages/signin/SignInPage'));
+const UnlinkLoginPage = lazyWithSuspense(() => import('@pages/UnlinkLoginPage'));
+const ValidateLoginPage = lazyWithSuspense(() => import('@pages/ValidateLoginPage'));
 
 const RootStack = createPlatformStackNavigator<PublicScreensParamList>();
 
