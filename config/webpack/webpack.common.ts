@@ -12,6 +12,7 @@ import type {Configuration, WebpackPluginInstance} from 'webpack';
 import {DefinePlugin, EnvironmentPlugin, IgnorePlugin, ProvidePlugin} from 'webpack';
 import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
 import CustomVersionFilePlugin from './CustomVersionFilePlugin';
+import InlineSvgSymbolsPlugin from './InlineSvgSymbolsPlugin';
 import type Environment from './types';
 
 dotenv.config();
@@ -105,6 +106,8 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
                 isStaging: file === '.env.staging',
                 useThirdPartyScripts: process.env.USE_THIRD_PARTY_SCRIPTS === 'true' || (platform === 'web' && ['.env.production', '.env.staging'].includes(file)),
             }),
+            // Inline all used SVG files as symbols in HTML for better performance
+            new InlineSvgSymbolsPlugin(),
             new PreloadWebpackPlugin({
                 rel: 'preload',
                 as: 'font',
@@ -247,14 +250,14 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
                     type: 'asset',
                 },
 
-                // Load svg images
+                // Load svg images - converts to symbol IDs for use with inline symbols
                 {
                     test: /\.svg$/,
                     resourceQuery: {not: [/raw/]},
                     exclude: /node_modules/,
                     use: [
                         {
-                            loader: '@svgr/webpack',
+                            loader: path.resolve(__dirname, 'svg-symbol-loader.ts'),
                         },
                     ],
                 },
