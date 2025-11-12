@@ -270,7 +270,7 @@ function Lightbox({attachmentID, isAuthTokenRequired = false, uri, onScaleChange
                     )}
 
                     {/* Show activity indicator while the lightbox is still loading the image. */}
-                    {true && <FullScreenLoadingIndicator style={styles.bgTransparent} />}
+                    {isLoading && (!isOffline || isALocalFile) && <FullScreenLoadingIndicator style={styles.bgTransparent} />}
                     {isLoading && !isALocalFile && <AttachmentOfflineIndicator />}
                 </>
             )}
