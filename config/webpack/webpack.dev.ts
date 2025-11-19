@@ -58,6 +58,7 @@ const getConfiguration = (environment: Environment): Promise<Configuration> =>
                 },
                 headers: {
                     'Document-Policy': 'js-profiling',
+                    'Cache-Control': 'public, max-age=600',
                 },
             },
             plugins: [

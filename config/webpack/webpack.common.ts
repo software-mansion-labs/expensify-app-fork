@@ -117,6 +117,12 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
                 fileWhitelist: [/\.lottie$/],
                 include: 'allAssets',
             }),
+            new PreloadWebpackPlugin({
+                rel: 'prefetch',
+                as: 'style',
+                fileWhitelist: [/\.css$/],
+                include: 'allAssets',
+            }),
             new ProvidePlugin({
                 process: 'process/browser',
             }),
@@ -224,6 +230,11 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
                      * use JSX/JS that needs to be transformed by babel.
                      */
                     exclude: [new RegExp(`node_modules/(?!(${includeModules})/).*|.native.js$`)],
+                    parser: {
+                        javascript: {
+                            dynamicImportPrefetch: true,
+                        },
+                    },
                 },
                 // We are importing this worker as a string by using asset/source otherwise it will default to loading via an HTTPS request later.
                 // This causes issues if we have gone offline before the pdfjs web worker is set up as we won't be able to load it from the server.
@@ -374,33 +385,6 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
             runtimeChunk: 'single',
             splitChunks: {
                 cacheGroups: {
-                    // We have to load the whole lottie player to get the player to work in offline mode
-                    lottiePlayer: {
-                        test: /[\\/]node_modules[\\/](@dotlottie\/react-player)[\\/]/,
-                        name: 'lottiePlayer',
-                        chunks: 'all',
-                    },
-                    // heic-to library is used sparsely and we want to load it as a separate chunk
-                    // to reduce the potential bundled size of the initial chunk
-                    heicTo: {
-                        test: /[\\/]node_modules[\\/](heic-to)[\\/]/,
-                        name: 'heicTo',
-                        chunks: 'all',
-                    },
-                    // react-fast-pdf library had a pdfjs-dist peer dependency that increases the size of vendors bundle
-                    // we want to load it separately to decrease the bundle size
-                    reactFastPdf: {
-                        test: /[\\/]node_modules[\\/](react-fast-pdf)[\\/]/,
-                        name: 'reactFastPdf',
-                        chunks: 'all',
-                    },
-                    // react-pdf library had a pdfjs-dist peer dependency that increases the size of vendors bundle
-                    // we want to load it separately to decrease the bundle size
-                    reactPdf: {
-                        test: /[\\/]node_modules[\\/](react-pdf)[\\/]/,
-                        name: 'reactPdf',
-                        chunks: 'all',
-                    },
                     // ExpensifyIcons chunk - separate chunk loaded eagerly for offline support
                     expensifyIcons: {
                         test: /[\\/]src[\\/]components[\\/]Icon[\\/]chunks[\\/]expensify-icons\.chunk\.ts$/,
@@ -419,7 +403,7 @@ const getCommonConfiguration = ({file = '.env', platform = 'web'}: Environment):
                     // After App update end users would download just the main source and resolve the rest from cache
                     // When dependencies do change cache is invalidated and users download everything - same as before
                     vendor: {
-                        test: /[\\/]node_modules[\\/]/,
+                        test: /[\\/]node_modules[\\/](?!(react-fast-pdf|react-pdf|heic-to|@dotlottie\/react-player)[\\/])/,
                         name: 'vendors',
 
                         // Capture only the scripts needed for the initial load, so any async imports
