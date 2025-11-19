@@ -1,4 +1,6 @@
-import React, {useEffect} from 'react';
+import {useNavigation} from '@react-navigation/native';
+import type {Ref} from 'react';
+import React, {useEffect, useImperativeHandle, useRef} from 'react';
 import {InteractionManager, View} from 'react-native';
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
@@ -6,6 +8,7 @@ import Button from '@components/Button';
 import DestinationPicker from '@components/DestinationPicker';
 import FixedFooter from '@components/FixedFooter';
 import * as Illustrations from '@components/Icon/Illustrations';
+import type {AnimatedTextInputRef} from '@components/RNTextInput';
 import ScreenWrapper from '@components/ScreenWrapper';
 import type {ListItem} from '@components/SelectionListWithSections/types';
 import WorkspaceEmptyStateSection from '@components/WorkspaceEmptyStateSection';
@@ -43,10 +46,15 @@ import withFullTransactionOrNotFound from './withFullTransactionOrNotFound';
 import type {WithWritableReportOrNotFoundProps} from './withWritableReportOrNotFound';
 import withWritableReportOrNotFound from './withWritableReportOrNotFound';
 
+type IOURequestStepDestinationRef = {
+    focus?: () => void;
+};
+
 type IOURequestStepDestinationProps = WithWritableReportOrNotFoundProps<typeof SCREENS.MONEY_REQUEST.STEP_DESTINATION | typeof SCREENS.MONEY_REQUEST.CREATE> &
     WithFullTransactionOrNotFoundProps<typeof SCREENS.MONEY_REQUEST.STEP_DESTINATION | typeof SCREENS.MONEY_REQUEST.CREATE> & {
         openedFromStartPage?: boolean;
         explicitPolicyID?: string;
+        ref: Ref<IOURequestStepDestinationRef>;
     };
 
 function IOURequestStepDestination({
@@ -57,6 +65,7 @@ function IOURequestStepDestination({
     transaction,
     openedFromStartPage = false,
     explicitPolicyID,
+    ref,
 }: IOURequestStepDestinationProps) {
     const [policy, policyMetadata] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${explicitPolicyID ?? getIOURequestPolicyID(transaction, report)}`, {canBeMissing: false});
     const personalPolicy = usePersonalPolicy();
@@ -65,6 +74,8 @@ function IOURequestStepDestination({
     const {top} = useSafeAreaInsets();
     const customUnit = getPerDiemCustomUnit(policy);
     const selectedDestination = transaction?.comment?.customUnit?.customUnitRateID;
+    const selectionListRef = useRef<AnimatedTextInputRef | null>(null);
+    const navigation = useNavigation();
 
     const styles = useThemeStyles();
     const {translate} = useLocalize();
@@ -76,6 +87,18 @@ function IOURequestStepDestination({
     const isLoading = !isOffline && isLoadingOnyxValue(policyMetadata);
     const shouldShowEmptyState = isEmptyObject(customUnit?.rates) && !isOffline;
     const shouldShowOfflineView = isEmptyObject(customUnit?.rates) && isOffline;
+
+    useImperativeHandle(ref, () => ({
+        focus: selectionListRef.current?.focus,
+    }));
+
+    useEffect(() => {
+        return navigation.addListener('transitionEnd', (e) => {
+            if (!e.data.closing) {
+                selectionListRef.current?.focus();
+            }
+        });
+    }, [navigation]);
 
     const navigateBack = () => {
         Navigation.goBack(backTo);
@@ -194,6 +217,7 @@ function IOURequestStepDestination({
                 )}
                 {!shouldShowEmptyState && !isLoading && !shouldShowOfflineView && !!policy?.id && (
                     <DestinationPicker
+                        ref={selectionListRef}
                         selectedDestination={selectedDestination}
                         policyID={policy.id}
                         onSubmit={updateDestination}

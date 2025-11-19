@@ -1,4 +1,5 @@
-import React, {useMemo} from 'react';
+import type {Ref} from 'react';
+import React, {useImperativeHandle, useMemo, useRef} from 'react';
 import useDebouncedState from '@hooks/useDebouncedState';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
@@ -11,18 +12,28 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SelectionList from './SelectionListWithSections';
 import RadioListItem from './SelectionListWithSections/RadioListItem';
-import type {ListItem} from './SelectionListWithSections/types';
+import type {ListItem, SelectionListHandle} from './SelectionListWithSections/types';
+
+type DestinationPickerRef = {
+    focus?: () => void;
+};
 
 type DestinationPickerProps = {
     policyID: string;
     selectedDestination?: string;
     onSubmit: (item: ListItem & {currency: string}) => void;
+    ref: Ref<DestinationPickerRef>;
 };
 
-function DestinationPicker({selectedDestination, policyID, onSubmit}: DestinationPickerProps) {
+function DestinationPicker({selectedDestination, policyID, onSubmit, ref}: DestinationPickerProps) {
     const policy = usePolicy(policyID);
     const customUnit = getPerDiemCustomUnit(policy);
     const [policyRecentlyUsedDestinations] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_RECENTLY_USED_DESTINATIONS}${policyID}`, {canBeMissing: true});
+    const selectionListRef = useRef<SelectionListHandle | null>(null);
+
+    useImperativeHandle(ref, () => ({
+        focus: selectionListRef.current?.focusTextInput,
+    }));
 
     const {translate} = useLocalize();
     const [searchValue, debouncedSearchValue, setSearchValue] = useDebouncedState('');
@@ -70,6 +81,7 @@ function DestinationPicker({selectedDestination, policyID, onSubmit}: Destinatio
 
     return (
         <SelectionList
+            ref={selectionListRef}
             sections={sections}
             headerMessage={headerMessage}
             textInputValue={searchValue}
@@ -80,6 +92,7 @@ function DestinationPicker({selectedDestination, policyID, onSubmit}: Destinatio
             initiallyFocusedOptionKey={selectedOptionKey ?? undefined}
             isRowMultilineSupported
             shouldHideKeyboardOnScroll={false}
+            textInputAutoFocus={false}
         />
     );
 }

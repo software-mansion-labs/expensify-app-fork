@@ -6,6 +6,7 @@ import DragAndDropProvider from '@components/DragAndDrop/Provider';
 import FocusTrapContainerElement from '@components/FocusTrap/FocusTrapContainerElement';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useProductTrainingContext} from '@components/ProductTrainingContext';
+import {AnimatedTextInputRef} from '@components/RNTextInput';
 import ScreenWrapper from '@components/ScreenWrapper';
 import TabSelector from '@components/TabSelector/TabSelector';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -81,6 +82,7 @@ function IOURequestStartPage({
     const [currentDate] = useOnyx(ONYXKEYS.CURRENT_DATE, {canBeMissing: true});
     const {isOffline} = useNetwork();
     const [nvpDismissedProductTraining] = useOnyx(ONYXKEYS.NVP_DISMISSED_PRODUCT_TRAINING, {canBeMissing: true});
+    const perDiemInputRef = useRef<AnimatedTextInputRef | null>(null);
 
     const tabTitles = {
         [CONST.IOU.TYPE.REQUEST]: translate('iou.createExpense'),
@@ -275,6 +277,11 @@ function IOURequestStartPage({
                                 lazyLoadEnabled
                                 // We're disabling swipe on mWeb fo the Per Diem tab because the keyboard will hang on the other tab after switching
                                 disableSwipe={(isMultiScanEnabled && selectedTab === CONST.TAB_REQUEST.SCAN) || (selectedTab === CONST.TAB_REQUEST.PER_DIEM && isMobile())}
+                                onTabSelect={({index}: {index: number}) => {
+                                    if (index === 2) {
+                                        perDiemInputRef.current?.focus();
+                                    }
+                                }}
                             >
                                 <TopTab.Screen name={CONST.TAB_REQUEST.MANUAL}>
                                     {() => (
@@ -330,6 +337,7 @@ function IOURequestStartPage({
                                                         explicitPolicyID={moreThanOnePerDiemExist ? undefined : policiesWithPerDiemEnabled.at(0)?.id}
                                                         route={route}
                                                         navigation={navigation}
+                                                        ref={perDiemInputRef}
                                                     />
                                                 )}
                                             </TabScreenWithFocusTrapWrapper>
