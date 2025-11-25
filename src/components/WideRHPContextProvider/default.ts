@@ -18,6 +18,7 @@ const defaultWideRHPContextValue: WideRHPContextType = {
     shouldRenderTertiaryOverlay: false,
     superWideRHPRouteKeys: [],
     showSuperWideRHPVersion: () => {},
+    cleanSuperWideRHPRouteKey: () => {},
     syncWideRHPKeys: () => {},
     syncSuperWideRHPKeys: () => {},
     clearWideRHPKeys: () => {},

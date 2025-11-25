@@ -1,5 +1,5 @@
 import {findFocusedRoute, StackActions, useNavigation, useRoute} from '@react-navigation/native';
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 // We use Animated for all functionality related to wide RHP to make it easier
 // to interact with react-navigation components (e.g., CardContainer, interpolator), which also use Animated.
 // eslint-disable-next-line no-restricted-imports
@@ -65,6 +65,26 @@ const expenseReportSelector = (reports: OnyxCollection<Report>) => {
         ]),
     );
 };
+
+function showRHPRoute(route: NavigationRoute, setAllRHPRouteKeys: React.Dispatch<React.SetStateAction<string[]>>) {
+    if (!route.key) {
+        console.error(`The route passed to showRHPRoute should have the "key" property defined.`);
+        return;
+    }
+
+    const newKey = route.key;
+    setAllRHPRouteKeys((prev) => (prev.includes(newKey) ? prev : [newKey, ...prev]));
+}
+
+function cleanRHPRouteKey(route: NavigationRoute, setAllRHPRouteKeys: React.Dispatch<React.SetStateAction<string[]>>) {
+    if (!route.key) {
+        console.error(`The route passed to cleanRHPRouteKey should have the "key" property defined.`);
+        return;
+    }
+
+    const keyToRemove = route.key;
+    setAllRHPRouteKeys((prev) => (prev.includes(keyToRemove) ? prev.filter((key) => key !== keyToRemove) : prev));
+}
 
 function WideRHPContextProvider({children}: React.PropsWithChildren) {
     // We have a separate containers for allWideRHPRouteKeys and wideRHPRouteKeys because we may have two or more RHPs on the stack.
@@ -174,55 +194,22 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     /**
      * Adds a route to the wide RHP route keys list, enabling wide RHP display for that route.
      */
-    const showWideRHPVersion = useCallback((route: NavigationRoute) => {
-        if (!route.key) {
-            console.error(`The route passed to showWideRHPVersion should have the "key" property defined.`);
-            return;
-        }
+    const showWideRHPVersion = useCallback((route: NavigationRoute) => showRHPRoute(route, setAllWideRHPRouteKeys), []);
 
-        const newKey = route.key;
+    /**
+     * Adds a route to the super wide RHP route keys list, enabling wide RHP display for that route.
+     */
+    const showSuperWideRHPVersion = useCallback((route: NavigationRoute) => showRHPRoute(route, setAllSuperWideRHPRouteKeys), []);
 
-        // If the key is in the array, don't add it.
-        // Ensure mutual exclusivity: remove key from other array if present
-        setAllSuperWideRHPRouteKeys((prev) => (prev.includes(newKey) ? prev.filter((key) => key !== newKey) : prev));
-        setAllWideRHPRouteKeys((prev) => (prev.includes(newKey) ? prev : [newKey, ...prev]));
-    }, []);
-
-    const showSuperWideRHPVersion = useCallback((route: NavigationRoute) => {
-        if (!route.key) {
-            console.error(`The route passed to showWideRHPVersion should have the "key" property defined.`);
-            return;
-        }
-
-        const newKey = route.key;
-        // If the key is in the array, don't add it.
-        // Ensure mutual exclusivity: remove key from other array if present
-        setAllWideRHPRouteKeys((prev) => (prev.includes(newKey) ? prev.filter((key) => key !== newKey) : prev));
-        setAllSuperWideRHPRouteKeys((prev) => (prev.includes(newKey) ? prev : [newKey, ...prev]));
-    }, []);
+    /**
+     * Removes a route from the super wide RHP route keys list, disabling wide RHP display for that route.
+     */
+    const cleanSuperWideRHPRouteKey = useCallback((route: NavigationRoute) => cleanRHPRouteKey(route, setAllSuperWideRHPRouteKeys), []);
 
     /**
      * Removes a route from the wide RHP route keys list, disabling wide RHP display for that route.
      */
-    const cleanWideRHPRouteKey = useCallback(
-        (route: NavigationRoute) => {
-            if (!route.key) {
-                console.error(`The route passed to cleanWideRHPRouteKey should have the "key" property defined.`);
-                return;
-            }
-
-            const keyToRemove = route.key;
-
-            // Do nothing, the key is not here
-            if (!allWideRHPRouteKeys.includes(keyToRemove) && !superWideRHPRouteKeys.includes(keyToRemove)) {
-                return;
-            }
-
-            setAllWideRHPRouteKeys((prev) => (prev.includes(keyToRemove) ? prev.filter((key) => key !== keyToRemove) : prev));
-            setAllSuperWideRHPRouteKeys((prev) => (prev.includes(keyToRemove) ? prev.filter((key) => key !== keyToRemove) : prev));
-        },
-        [allWideRHPRouteKeys, superWideRHPRouteKeys],
-    );
+    const cleanWideRHPRouteKey = useCallback((route: NavigationRoute) => cleanRHPRouteKey(route, setAllWideRHPRouteKeys), []);
 
     /**
      * Dismiss top layer modal and go back to the wide RHP.
@@ -445,6 +432,7 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
             showWideRHPVersion,
             showSuperWideRHPVersion,
             cleanWideRHPRouteKey,
+            cleanSuperWideRHPRouteKey,
             shouldRenderSecondaryOverlay,
             shouldRenderTertiaryOverlay,
             dismissToFirstRHP,
@@ -467,6 +455,7 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
             showWideRHPVersion,
             showSuperWideRHPVersion,
             cleanWideRHPRouteKey,
+            cleanSuperWideRHPRouteKey,
             shouldRenderSecondaryOverlay,
             shouldRenderTertiaryOverlay,
             dismissToFirstRHP,
@@ -534,7 +523,8 @@ function useShowSuperWideRHPVersion(condition: boolean) {
     const navigation = useNavigation();
     const route = useRoute();
     const reportID = route.params && 'reportID' in route.params && typeof route.params.reportID === 'string' ? route.params.reportID : '';
-    const {showWideRHPVersion, showSuperWideRHPVersion, cleanWideRHPRouteKey, isReportIDMarkedAsExpense, isReportIDMarkedAsMultiTransactionExpense} = useContext(WideRHPContext);
+    const {showWideRHPVersion, showSuperWideRHPVersion, cleanWideRHPRouteKey, cleanSuperWideRHPRouteKey, isReportIDMarkedAsExpense, isReportIDMarkedAsMultiTransactionExpense} =
+        useContext(WideRHPContext);
 
     /**
      * Effect that sets up cleanup when the screen is about to be removed.
@@ -545,9 +535,10 @@ function useShowSuperWideRHPVersion(condition: boolean) {
             // eslint-disable-next-line @typescript-eslint/no-deprecated
             InteractionManager.runAfterInteractions(() => {
                 cleanWideRHPRouteKey(route);
+                cleanSuperWideRHPRouteKey(route);
             });
         });
-    }, [cleanWideRHPRouteKey, navigation, route]);
+    }, [cleanSuperWideRHPRouteKey, cleanWideRHPRouteKey, navigation, route]);
 
     /**
      * Effect that determines whether to show wide RHP based on condition or optimistic state.
