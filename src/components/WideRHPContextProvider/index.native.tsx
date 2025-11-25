@@ -38,21 +38,11 @@ function useShowWideRHPVersion(condition: boolean) {}
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function useShowSuperWideRHPVersion(condition: boolean) {}
 
-// Wide RHP is not displayed on native platforms
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const calculateReceiptPaneRHPWidth = (windowWidth: number) => {};
-
-// Super Wide RHP is not displayed on native platforms
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const calculateSuperWideRHPWidth = (windowWidth: number) => {};
-
 WideRHPContextProvider.displayName = 'WideRHPContextProvider';
 
 export default WideRHPContextProvider;
 export type {WideRHPContextType};
 export {
-    calculateReceiptPaneRHPWidth,
-    calculateSuperWideRHPWidth,
     animatedSuperWideRHPWidth,
     modalStackOverlaySuperWideRHPWidth,
     modalStackOverlayWideRHPWidth,
