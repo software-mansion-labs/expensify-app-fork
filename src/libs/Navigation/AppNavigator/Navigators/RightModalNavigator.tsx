@@ -24,6 +24,7 @@ import hideKeyboardOnSwipe from '@libs/Navigation/AppNavigator/hideKeyboardOnSwi
 import * as ModalStackNavigators from '@libs/Navigation/AppNavigator/ModalStackNavigators';
 import useModalCardStyleInterpolator from '@libs/Navigation/AppNavigator/useModalCardStyleInterpolator';
 import useRHPScreenOptions from '@libs/Navigation/AppNavigator/useRHPScreenOptions';
+import {isFullScreenName} from '@libs/Navigation/helpers/isNavigatorName';
 import {navigationRef} from '@libs/Navigation/Navigation';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -107,19 +108,23 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
         }, CONST.ANIMATED_TRANSITION);
     }, [navigation]);
 
+    const clearWideRHPKeysAfterTabChanged = useCallback(() => {
+        const isRhpOpened = navigationRef?.getRootState()?.routes?.some((rootStateRoute) => rootStateRoute.key === route.key);
+        const isFullScreenTopmostRoute = isFullScreenName(navigationRef.getRootState()?.routes?.at(-1)?.name);
+        const hasTabChanged = isRhpOpened && isFullScreenTopmostRoute;
+        if (!hasTabChanged) {
+            return;
+        }
+        clearWideRHPKeys();
+    }, [clearWideRHPKeys, route.key]);
+
     useFocusEffect(
         useCallback(() => {
             syncWideRHPKeys();
             syncSuperWideRHPKeys();
 
-            return () => {
-                const isRhpClosed = !navigationRef?.getRootState()?.routes?.some((rootStateRoute) => rootStateRoute.key === route.key);
-                if (isRhpClosed) {
-                    return;
-                }
-                clearWideRHPKeys();
-            };
-        }, [syncWideRHPKeys, syncSuperWideRHPKeys, clearWideRHPKeys, route.key]),
+            return () => clearWideRHPKeysAfterTabChanged();
+        }, [syncWideRHPKeys, syncSuperWideRHPKeys, clearWideRHPKeysAfterTabChanged]),
     );
 
     return (
