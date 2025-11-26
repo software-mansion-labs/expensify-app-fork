@@ -1,17 +1,14 @@
-import {findFocusedRoute, StackActions, useRoute} from '@react-navigation/native';
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {findFocusedRoute, StackActions} from '@react-navigation/native';
+import React, {createContext, useCallback, useEffect, useMemo, useState} from 'react';
 // We use Animated for all functionality related to wide RHP to make it easier
 // to interact with react-navigation components (e.g., CardContainer, interpolator), which also use Animated.
 // eslint-disable-next-line no-restricted-imports
-import {Animated, Dimensions, InteractionManager} from 'react-native';
+import {Animated, Dimensions} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
-import useBeforeRemove from '@hooks/useBeforeRemove';
 import useOnyx from '@hooks/useOnyx';
 import useRootNavigationState from '@hooks/useRootNavigationState';
 import calculateReceiptPaneRHPWidth from '@libs/Navigation/helpers/calculateReceiptPaneRHPWidth';
 import calculateSuperWideRHPWidth from '@libs/Navigation/helpers/calculateSuperWideRHPWidth';
-import getIsWideRHPOpenedBelow from '@libs/Navigation/helpers/getIsWideRHPOpenedBelow';
-import getVisibleWideRHPKeys from '@libs/Navigation/helpers/getVisibleRHPRouteKeys';
 import navigationRef from '@libs/Navigation/navigationRef';
 import type {NavigationRoute} from '@libs/Navigation/types';
 import variables from '@styles/variables';
@@ -21,6 +18,8 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
 import type {Report} from '@src/types/onyx';
 import defaultWideRHPContextValue from './default';
+import getIsWideRHPOpenedBelow from './getIsWideRHPOpenedBelow';
+import getVisibleWideRHPKeys from './getVisibleRHPRouteKeys';
 import type {WideRHPContextType} from './types';
 import useShouldRenderOverlay from './useShouldRenderOverlay';
 
@@ -375,82 +374,6 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     return <WideRHPContext.Provider value={value}>{children}</WideRHPContext.Provider>;
 }
 
-/**
- * Hook that manages wide RHP display for a screen based on condition or optimistic state.
- * Automatically registers the route for wide RHP when condition is met or report is marked as expense.
- * Cleans up the route registration when the screen is removed.
- *
- * @param condition - Boolean condition determining if the screen should display as wide RHP
- */
-function useShowWideRHPVersion(condition: boolean) {
-    const route = useRoute();
-    const reportID = route.params && 'reportID' in route.params && typeof route.params.reportID === 'string' ? route.params.reportID : '';
-    const {showWideRHPVersion, removeWideRHPRouteKey, isReportIDMarkedAsExpense, setIsWideRHPClosing} = useContext(WideRHPContext);
-
-    // beforeRemove event is not called when closing nested Wide RHP using the browser back button.
-    // This hook removes the route key from the array in the following case.
-    useEffect(() => () => removeWideRHPRouteKey(route), [removeWideRHPRouteKey, route]);
-
-    const onWideRHPClose = useCallback(() => {
-        setIsWideRHPClosing(true);
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        InteractionManager.runAfterInteractions(() => {
-            removeWideRHPRouteKey(route);
-            setIsWideRHPClosing(false);
-        });
-    }, [removeWideRHPRouteKey, route, setIsWideRHPClosing]);
-
-    /**
-     * Effect that sets up cleanup when the screen is about to be removed.
-     * Uses InteractionManager to ensure cleanup happens after closing animation.
-     */
-    useBeforeRemove(onWideRHPClose);
-
-    /**
-     * Effect that determines whether to show wide RHP based on condition or optimistic state.
-     * Shows wide RHP if either the condition is true OR the reportID is marked as an expense.
-     */
-    useEffect(() => {
-        // Check if we should show wide RHP based on condition OR if reportID is in optimistic set
-        const shouldShow = condition || (reportID && isReportIDMarkedAsExpense(reportID));
-
-        if (!shouldShow) {
-            return;
-        }
-        showWideRHPVersion(route);
-    }, [condition, reportID, isReportIDMarkedAsExpense, route, showWideRHPVersion]);
-}
-
-function useShowSuperWideRHPVersion(condition: boolean) {
-    const route = useRoute();
-    const reportID = route.params && 'reportID' in route.params && typeof route.params.reportID === 'string' ? route.params.reportID : '';
-    const {showWideRHPVersion, showSuperWideRHPVersion, removeWideRHPRouteKey, removeSuperWideRHPRouteKey, isReportIDMarkedAsExpense, isReportIDMarkedAsMultiTransactionExpense} =
-        useContext(WideRHPContext);
-
-    const onSuperWideRHPClose = useCallback(() => {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        InteractionManager.runAfterInteractions(() => {
-            removeWideRHPRouteKey(route);
-            removeSuperWideRHPRouteKey(route);
-        });
-    }, [removeSuperWideRHPRouteKey, removeWideRHPRouteKey, route]);
-
-    useBeforeRemove(onSuperWideRHPClose);
-
-    /**
-     * Effect that determines whether to show wide RHP based on condition or optimistic state.
-     * Shows wide RHP if either the condition is true OR the reportID is marked as an expense.
-     */
-    useEffect(() => {
-        // Check if we should show wide RHP based on condition OR if reportID is in optimistic set
-        if (condition || (reportID && isReportIDMarkedAsMultiTransactionExpense(reportID))) {
-            showSuperWideRHPVersion(route);
-            return;
-        }
-        showWideRHPVersion(route);
-    }, [condition, reportID, isReportIDMarkedAsExpense, route, showWideRHPVersion, showSuperWideRHPVersion, isReportIDMarkedAsMultiTransactionExpense]);
-}
-
 WideRHPContextProvider.displayName = 'WideRHPContextProvider';
 
 export default WideRHPContextProvider;
@@ -459,17 +382,13 @@ export {
     animatedReceiptPaneRHPWidth,
     animatedSuperWideRHPWidth,
     animatedWideRHPWidth,
-    calculateReceiptPaneRHPWidth,
-    calculateSuperWideRHPWidth,
     expandedRHPProgress,
     innerRHPProgress,
     modalStackOverlaySuperWideRHPWidth,
     modalStackOverlayWideRHPWidth,
     secondOverlayProgress,
-    SUPER_WIDE_RIGHT_MODALS,
     thirdOverlayProgress,
-    useShowSuperWideRHPVersion,
-    useShowWideRHPVersion,
-    WIDE_RIGHT_MODALS,
     WideRHPContext,
+    WIDE_RIGHT_MODALS,
+    SUPER_WIDE_RIGHT_MODALS,
 };

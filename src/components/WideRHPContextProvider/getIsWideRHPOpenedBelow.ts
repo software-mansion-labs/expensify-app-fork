@@ -7,8 +7,8 @@ function getIsWideRHPOpenedBelow(focusedRoute: NavigationRoute | undefined, allW
         return false;
     }
 
-    const currentWideRHPRouteKeys = getVisibleWideRHPKeys(allWideRHPKeys);
-    return currentWideRHPRouteKeys.length > 0 && !currentWideRHPRouteKeys.includes(focusedRoute.key);
+    const visibleWideRHPRouteKeys = getVisibleWideRHPKeys(allWideRHPKeys);
+    return visibleWideRHPRouteKeys.length > 0 && !visibleWideRHPRouteKeys.includes(focusedRoute.key);
 }
 
 export default getIsWideRHPOpenedBelow;

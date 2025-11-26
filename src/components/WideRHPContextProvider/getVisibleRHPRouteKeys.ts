@@ -1,6 +1,6 @@
+import extractNavigationKeys from '@libs/Navigation/helpers/extractNavigationKeys';
+import getLastVisibleRHPRouteKey from '@libs/Navigation/helpers/getLastVisibleRHPRouteKey';
 import {navigationRef} from '@libs/Navigation/Navigation';
-import extractNavigationKeys from './extractNavigationKeys';
-import getLastVisibleRHPRouteKey from './getLastVisibleRHPRouteKey';
 
 function getVisibleWideRHPKeys(allWideRHPKeys: string[]) {
     const rootState = navigationRef.getRootState();

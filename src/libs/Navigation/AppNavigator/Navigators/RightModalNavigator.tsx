@@ -5,16 +5,7 @@ import React, {useCallback, useContext, useMemo, useRef} from 'react';
 // eslint-disable-next-line no-restricted-imports
 import {Animated, InteractionManager} from 'react-native';
 import NoDropZone from '@components/DragAndDrop/NoDropZone';
-import {
-    animatedWideRHPWidth,
-    calculateReceiptPaneRHPWidth,
-    calculateSuperWideRHPWidth,
-    expandedRHPProgress,
-    innerRHPProgress,
-    secondOverlayProgress,
-    thirdOverlayProgress,
-    WideRHPContext,
-} from '@components/WideRHPContextProvider';
+import {animatedWideRHPWidth, expandedRHPProgress, innerRHPProgress, secondOverlayProgress, thirdOverlayProgress, WideRHPContext} from '@components/WideRHPContextProvider';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -24,6 +15,8 @@ import hideKeyboardOnSwipe from '@libs/Navigation/AppNavigator/hideKeyboardOnSwi
 import * as ModalStackNavigators from '@libs/Navigation/AppNavigator/ModalStackNavigators';
 import useModalCardStyleInterpolator from '@libs/Navigation/AppNavigator/useModalCardStyleInterpolator';
 import useRHPScreenOptions from '@libs/Navigation/AppNavigator/useRHPScreenOptions';
+import calculateReceiptPaneRHPWidth from '@libs/Navigation/helpers/calculateReceiptPaneRHPWidth';
+import calculateSuperWideRHPWidth from '@libs/Navigation/helpers/calculateSuperWideRHPWidth';
 import {isFullScreenName} from '@libs/Navigation/helpers/isNavigatorName';
 import {navigationRef} from '@libs/Navigation/Navigation';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';

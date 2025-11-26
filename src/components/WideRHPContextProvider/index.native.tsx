@@ -30,31 +30,21 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     return <WideRHPContext.Provider value={defaultWideRHPContextValue}>{children}</WideRHPContext.Provider>;
 }
 
-// Wide RHP is not displayed on native platforms
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function useShowWideRHPVersion(condition: boolean) {}
-
-// Super Wide RHP is not displayed on native platforms
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function useShowSuperWideRHPVersion(condition: boolean) {}
-
 WideRHPContextProvider.displayName = 'WideRHPContextProvider';
 
 export default WideRHPContextProvider;
 export type {WideRHPContextType};
 export {
+    animatedReceiptPaneRHPWidth,
     animatedSuperWideRHPWidth,
+    animatedWideRHPWidth,
+    expandedRHPProgress,
+    innerRHPProgress,
     modalStackOverlaySuperWideRHPWidth,
     modalStackOverlayWideRHPWidth,
-    animatedReceiptPaneRHPWidth,
     secondOverlayProgress,
     thirdOverlayProgress,
-    useShowSuperWideRHPVersion,
-    useShowWideRHPVersion,
     WideRHPContext,
-    animatedWideRHPWidth,
-    innerRHPProgress,
-    expandedRHPProgress,
     WIDE_RIGHT_MODALS,
     SUPER_WIDE_RIGHT_MODALS,
 };
