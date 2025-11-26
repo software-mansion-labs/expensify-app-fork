@@ -20,10 +20,10 @@ type WideRHPContextType = {
     showSuperWideRHPVersion: (route: NavigationRoute) => void;
 
     // Remove given route from the array
-    cleanWideRHPRouteKey: (route: NavigationRoute) => void;
+    removeWideRHPRouteKey: (route: NavigationRoute) => void;
 
     // Remove given route from the array
-    cleanSuperWideRHPRouteKey: (route: NavigationRoute) => void;
+    removeSuperWideRHPRouteKey: (route: NavigationRoute) => void;
 
     // Mark reportID as expense before condition check
     markReportIDAsExpense: (reportID: string) => void;

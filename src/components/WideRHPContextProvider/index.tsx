@@ -1,10 +1,11 @@
-import {findFocusedRoute, StackActions, useNavigation, useRoute} from '@react-navigation/native';
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import {findFocusedRoute, StackActions, useRoute} from '@react-navigation/native';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 // We use Animated for all functionality related to wide RHP to make it easier
 // to interact with react-navigation components (e.g., CardContainer, interpolator), which also use Animated.
 // eslint-disable-next-line no-restricted-imports
 import {Animated, Dimensions, InteractionManager} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
+import useBeforeRemove from '@hooks/useBeforeRemove';
 import useOnyx from '@hooks/useOnyx';
 import useRootNavigationState from '@hooks/useRootNavigationState';
 import calculateReceiptPaneRHPWidth from '@libs/Navigation/helpers/calculateReceiptPaneRHPWidth';
@@ -21,6 +22,7 @@ import SCREENS from '@src/SCREENS';
 import type {Report} from '@src/types/onyx';
 import defaultWideRHPContextValue from './default';
 import type {WideRHPContextType} from './types';
+import useShouldRenderOverlay from './useShouldRenderOverlay';
 
 // 0 is folded/hidden, 1 is expanded/shown
 const expandedRHPProgress = new Animated.Value(0);
@@ -28,16 +30,10 @@ const innerRHPProgress = new Animated.Value(0);
 const secondOverlayProgress = new Animated.Value(0);
 const thirdOverlayProgress = new Animated.Value(0);
 
-const OVERLAY_TIMING_DURATION = 300;
-
 // This array includes wide and super wide right modals
 const WIDE_RIGHT_MODALS = new Set<string>([SCREENS.RIGHT_MODAL.SEARCH_MONEY_REQUEST_REPORT, SCREENS.RIGHT_MODAL.EXPENSE_REPORT, SCREENS.RIGHT_MODAL.SEARCH_REPORT]);
 
 const SUPER_WIDE_RIGHT_MODALS = new Set<string>([SCREENS.RIGHT_MODAL.SEARCH_MONEY_REQUEST_REPORT, SCREENS.RIGHT_MODAL.EXPENSE_REPORT]);
-
-function isSuperWideRHPRouteName(routeName: string) {
-    return routeName === SCREENS.SEARCH.MONEY_REQUEST_REPORT || routeName === SCREENS.EXPENSE_REPORT_RHP;
-}
 
 const singleRHPWidth = variables.sideBarWidth;
 
@@ -76,9 +72,9 @@ function showRHPRoute(route: NavigationRoute, setAllRHPRouteKeys: React.Dispatch
     setAllRHPRouteKeys((prev) => (prev.includes(newKey) ? prev : [newKey, ...prev]));
 }
 
-function cleanRHPRouteKey(route: NavigationRoute, setAllRHPRouteKeys: React.Dispatch<React.SetStateAction<string[]>>) {
+function removeRHPRouteKey(route: NavigationRoute, setAllRHPRouteKeys: React.Dispatch<React.SetStateAction<string[]>>) {
     if (!route.key) {
-        console.error(`The route passed to cleanRHPRouteKey should have the "key" property defined.`);
+        console.error(`The route passed to removeRHPRouteKey should have the "key" property defined.`);
         return;
     }
 
@@ -93,12 +89,10 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     const [wideRHPRouteKeys, setWideRHPRouteKeys] = useState<string[]>([]);
     const [allSuperWideRHPRouteKeys, setAllSuperWideRHPRouteKeys] = useState<string[]>([]);
     const [superWideRHPRouteKeys, setSuperWideRHPRouteKeys] = useState<string[]>([]);
-    const [shouldRenderSecondaryOverlay, setShouldRenderSecondaryOverlay] = useState(false);
-    const [shouldRenderTertiaryOverlay, setShouldRenderTertiaryOverlay] = useState(false);
     const [expenseReportIDs, setExpenseReportIDs] = useState<Set<string>>(new Set());
     const [multiTransactionExpenseReportIDs, setMultiTransactionExpenseReportIDs] = useState<Set<string>>(new Set());
     const [isWideRHPClosing, setIsWideRHPClosing] = useState(false);
-    const focusedRouteKey = useRootNavigationState((state) => (state ? findFocusedRoute(state)?.key : undefined));
+    const focusedRoute = useRootNavigationState((state) => (state ? findFocusedRoute(state) : undefined));
     const [allReports] = useOnyx(ONYXKEYS.COLLECTION.REPORT, {selector: expenseReportSelector, canBeMissing: true});
 
     const syncWideRHPKeys = useCallback(() => {
@@ -123,73 +117,41 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     }, [allSuperWideRHPRouteKeys, syncSuperWideRHPKeys]);
 
     const isWideRHPFocused = useMemo(() => {
-        return !!focusedRouteKey && wideRHPRouteKeys.includes(focusedRouteKey);
-    }, [focusedRouteKey, wideRHPRouteKeys]);
+        return !!focusedRoute?.key && wideRHPRouteKeys.includes(focusedRoute.key);
+    }, [focusedRoute?.key, wideRHPRouteKeys]);
+
+    const isWideRHPBelow = useMemo(() => getIsWideRHPOpenedBelow(focusedRoute, allWideRHPRouteKeys), [allWideRHPRouteKeys, focusedRoute]);
+
+    const isSuperWideRHPBelow = useMemo(() => getIsWideRHPOpenedBelow(focusedRoute, allSuperWideRHPRouteKeys), [allSuperWideRHPRouteKeys, focusedRoute]);
 
     /**
-     * Determines whether the secondary overlay should be displayed.
+     * Effect that manages the secondary overlay animation and rendering state.
      */
-    const shouldShowSecondaryOverlay = useRootNavigationState((state) => {
-        const isRHPLastRootRoute = state?.routes.at(-1)?.name === NAVIGATORS.RIGHT_MODAL_NAVIGATOR;
-
-        if (!isRHPLastRootRoute || !state) {
-            return false;
-        }
-
-        const focusedRoute = findFocusedRoute(state);
-
-        // Shouldn't ever happen but for type safety
-        if (!focusedRoute?.key) {
-            return false;
-        }
-
-        // For this screen the secondary overlay should never be shown, it is always displayed as 1 RHP in the order
-        if (isSuperWideRHPRouteName(focusedRoute.name)) {
-            return false;
-        }
-
-        const isWideRHPBelow = getIsWideRHPOpenedBelow(state, allWideRHPRouteKeys);
-
-        if (isWideRHPBelow) {
-            return true;
-        }
-
-        const isSuperWideRHPBelow = getIsWideRHPOpenedBelow(state, allSuperWideRHPRouteKeys);
-        return isSuperWideRHPBelow;
-    });
+    const shouldRenderSecondaryOverlay = useShouldRenderOverlay(isWideRHPBelow || isSuperWideRHPBelow, secondOverlayProgress);
 
     /**
-     * Determines whether the tertiary overlay should be displayed.
+     * Effect that manages the tertiary overlay animation and rendering state.
      */
-    const shouldShowTertiaryOverlay = useRootNavigationState((state) => {
-        const isRHPLastRootRoute = state?.routes.at(-1)?.name === NAVIGATORS.RIGHT_MODAL_NAVIGATOR;
+    const shouldRenderTertiaryOverlay = useShouldRenderOverlay(isWideRHPBelow && isSuperWideRHPBelow, thirdOverlayProgress);
 
-        if (!isRHPLastRootRoute) {
-            return false;
+    /**
+     * Effect that shows/hides the expanded RHP progress based on the number of wide RHP routes.
+     */
+    useEffect(() => {
+        const numberOfSuperWideRoutes = superWideRHPRouteKeys.length;
+        const numberOfWideRoutes = wideRHPRouteKeys.length;
+
+        if (numberOfSuperWideRoutes > 0) {
+            expandedRHPProgress.setValue(2);
+            innerRHPProgress.setValue(numberOfWideRoutes > 0 ? 1 : 0);
+        } else if (numberOfWideRoutes > 0) {
+            expandedRHPProgress.setValue(1);
+            innerRHPProgress.setValue(0);
+        } else {
+            expandedRHPProgress.setValue(0);
+            innerRHPProgress.setValue(0);
         }
-
-        const rhpState = state?.routes?.at(-1)?.state;
-
-        // Shouldn't ever happen but for type safety
-        if (!rhpState?.key) {
-            return false;
-        }
-
-        const lastSuperWideRHPIndex = rhpState?.routes?.findLastIndex((route) => SUPER_WIDE_RIGHT_MODALS.has(route.name)) ?? -1;
-        const isSuperWideRHPDirectlyBelowFocusedScreen = lastSuperWideRHPIndex === rhpState.routes.length - 2;
-
-        if (isSuperWideRHPDirectlyBelowFocusedScreen) {
-            return false;
-        }
-
-        const isWideRHPBelow = getIsWideRHPOpenedBelow(state, allWideRHPRouteKeys);
-        if (!isWideRHPBelow) {
-            return false;
-        }
-
-        const isSuperWideRHPBelow = getIsWideRHPOpenedBelow(state, allSuperWideRHPRouteKeys);
-        return isSuperWideRHPBelow;
-    });
+    }, [superWideRHPRouteKeys.length, wideRHPRouteKeys.length]);
 
     /**
      * Adds a route to the wide RHP route keys list, enabling wide RHP display for that route.
@@ -204,12 +166,12 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     /**
      * Removes a route from the super wide RHP route keys list, disabling wide RHP display for that route.
      */
-    const cleanSuperWideRHPRouteKey = useCallback((route: NavigationRoute) => cleanRHPRouteKey(route, setAllSuperWideRHPRouteKeys), []);
+    const removeSuperWideRHPRouteKey = useCallback((route: NavigationRoute) => removeRHPRouteKey(route, setAllSuperWideRHPRouteKeys), []);
 
     /**
      * Removes a route from the wide RHP route keys list, disabling wide RHP display for that route.
      */
-    const cleanWideRHPRouteKey = useCallback((route: NavigationRoute) => cleanRHPRouteKey(route, setAllWideRHPRouteKeys), []);
+    const removeWideRHPRouteKey = useCallback((route: NavigationRoute) => removeRHPRouteKey(route, setAllWideRHPRouteKeys), []);
 
     /**
      * Dismiss top layer modal and go back to the wide RHP.
@@ -335,69 +297,6 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     );
 
     /**
-     * Effect that shows/hides the expanded RHP progress based on the number of wide RHP routes.
-     */
-    useEffect(() => {
-        const numberOfSuperWideRoutes = superWideRHPRouteKeys.length;
-        const numberOfWideRoutes = wideRHPRouteKeys.length;
-
-        if (numberOfSuperWideRoutes > 0) {
-            expandedRHPProgress.setValue(2);
-            innerRHPProgress.setValue(numberOfWideRoutes > 0 ? 1 : 0);
-        } else if (numberOfWideRoutes > 0) {
-            expandedRHPProgress.setValue(1);
-            innerRHPProgress.setValue(0);
-        } else {
-            expandedRHPProgress.setValue(0);
-            innerRHPProgress.setValue(0);
-        }
-    }, [superWideRHPRouteKeys.length, wideRHPRouteKeys.length]);
-
-    /**
-     * Effect that manages the secondary overlay animation and rendering state.
-     */
-    useEffect(() => {
-        if (shouldShowSecondaryOverlay) {
-            setShouldRenderSecondaryOverlay(true);
-            Animated.timing(secondOverlayProgress, {
-                toValue: 1,
-                duration: OVERLAY_TIMING_DURATION,
-                useNativeDriver: false,
-            }).start();
-        } else {
-            Animated.timing(secondOverlayProgress, {
-                toValue: 0,
-                duration: OVERLAY_TIMING_DURATION,
-                useNativeDriver: false,
-            }).start(() => {
-                setShouldRenderSecondaryOverlay(false);
-            });
-        }
-    }, [shouldShowSecondaryOverlay]);
-
-    /**
-     * Effect that manages the secondary overlay animation and rendering state.
-     */
-    useEffect(() => {
-        if (shouldShowTertiaryOverlay) {
-            setShouldRenderTertiaryOverlay(true);
-            Animated.timing(thirdOverlayProgress, {
-                toValue: 1,
-                duration: OVERLAY_TIMING_DURATION,
-                useNativeDriver: false,
-            }).start();
-        } else {
-            Animated.timing(thirdOverlayProgress, {
-                toValue: 0,
-                duration: OVERLAY_TIMING_DURATION,
-                useNativeDriver: false,
-            }).start(() => {
-                setShouldRenderTertiaryOverlay(false);
-            });
-        }
-    }, [shouldShowTertiaryOverlay]);
-
-    /**
      * Effect that handles responsive RHP width calculation when window dimensions change.
      * Listens for dimension changes and recalculates the optimal RHP width accordingly.
      */
@@ -431,8 +330,8 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
             superWideRHPRouteKeys,
             showWideRHPVersion,
             showSuperWideRHPVersion,
-            cleanWideRHPRouteKey,
-            cleanSuperWideRHPRouteKey,
+            removeWideRHPRouteKey,
+            removeSuperWideRHPRouteKey,
             shouldRenderSecondaryOverlay,
             shouldRenderTertiaryOverlay,
             dismissToFirstRHP,
@@ -454,8 +353,8 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
             superWideRHPRouteKeys,
             showWideRHPVersion,
             showSuperWideRHPVersion,
-            cleanWideRHPRouteKey,
-            cleanSuperWideRHPRouteKey,
+            removeWideRHPRouteKey,
+            removeSuperWideRHPRouteKey,
             shouldRenderSecondaryOverlay,
             shouldRenderTertiaryOverlay,
             dismissToFirstRHP,
@@ -484,25 +383,28 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
  * @param condition - Boolean condition determining if the screen should display as wide RHP
  */
 function useShowWideRHPVersion(condition: boolean) {
-    const navigation = useNavigation();
     const route = useRoute();
     const reportID = route.params && 'reportID' in route.params && typeof route.params.reportID === 'string' ? route.params.reportID : '';
-    const {showWideRHPVersion, cleanWideRHPRouteKey, isReportIDMarkedAsExpense, setIsWideRHPClosing} = useContext(WideRHPContext);
+    const {showWideRHPVersion, removeWideRHPRouteKey, isReportIDMarkedAsExpense, setIsWideRHPClosing} = useContext(WideRHPContext);
+
+    // beforeRemove event is not called when closing nested Wide RHP using the browser back button.
+    // This hook removes the route key from the array in the following case.
+    useEffect(() => () => removeWideRHPRouteKey(route), [removeWideRHPRouteKey, route]);
+
+    const onWideRHPClose = useCallback(() => {
+        setIsWideRHPClosing(true);
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        InteractionManager.runAfterInteractions(() => {
+            removeWideRHPRouteKey(route);
+            setIsWideRHPClosing(false);
+        });
+    }, [removeWideRHPRouteKey, route, setIsWideRHPClosing]);
 
     /**
      * Effect that sets up cleanup when the screen is about to be removed.
      * Uses InteractionManager to ensure cleanup happens after closing animation.
      */
-    useEffect(() => {
-        return navigation.addListener('beforeRemove', () => {
-            setIsWideRHPClosing(true);
-            // eslint-disable-next-line @typescript-eslint/no-deprecated
-            InteractionManager.runAfterInteractions(() => {
-                cleanWideRHPRouteKey(route);
-                setIsWideRHPClosing(false);
-            });
-        });
-    }, [cleanWideRHPRouteKey, navigation, route, setIsWideRHPClosing]);
+    useBeforeRemove(onWideRHPClose);
 
     /**
      * Effect that determines whether to show wide RHP based on condition or optimistic state.
@@ -520,25 +422,20 @@ function useShowWideRHPVersion(condition: boolean) {
 }
 
 function useShowSuperWideRHPVersion(condition: boolean) {
-    const navigation = useNavigation();
     const route = useRoute();
     const reportID = route.params && 'reportID' in route.params && typeof route.params.reportID === 'string' ? route.params.reportID : '';
-    const {showWideRHPVersion, showSuperWideRHPVersion, cleanWideRHPRouteKey, cleanSuperWideRHPRouteKey, isReportIDMarkedAsExpense, isReportIDMarkedAsMultiTransactionExpense} =
+    const {showWideRHPVersion, showSuperWideRHPVersion, removeWideRHPRouteKey, removeSuperWideRHPRouteKey, isReportIDMarkedAsExpense, isReportIDMarkedAsMultiTransactionExpense} =
         useContext(WideRHPContext);
 
-    /**
-     * Effect that sets up cleanup when the screen is about to be removed.
-     * Uses InteractionManager to ensure cleanup happens after closing animation.
-     */
-    useEffect(() => {
-        return navigation.addListener('beforeRemove', () => {
-            // eslint-disable-next-line @typescript-eslint/no-deprecated
-            InteractionManager.runAfterInteractions(() => {
-                cleanWideRHPRouteKey(route);
-                cleanSuperWideRHPRouteKey(route);
-            });
+    const onSuperWideRHPClose = useCallback(() => {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        InteractionManager.runAfterInteractions(() => {
+            removeWideRHPRouteKey(route);
+            removeSuperWideRHPRouteKey(route);
         });
-    }, [cleanSuperWideRHPRouteKey, cleanWideRHPRouteKey, navigation, route]);
+    }, [removeSuperWideRHPRouteKey, removeWideRHPRouteKey, route]);
+
+    useBeforeRemove(onSuperWideRHPClose);
 
     /**
      * Effect that determines whether to show wide RHP based on condition or optimistic state.
