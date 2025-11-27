@@ -1,25 +1,26 @@
 import React from 'react';
 import useSidePanel from '@hooks/useSidePanel';
+import ReportScreen from '@pages/home/ReportScreen';
 import Help from './HelpModal';
 import useSyncSidePanelWithHistory from './useSyncSidePanelWithHistory';
 
-function SidePanel() {
+function SidePanel({navigation}) {
     const {sidePanelNVP, isSidePanelTransitionEnded, shouldHideSidePanel, sidePanelTranslateX, shouldHideSidePanelBackdrop, closeSidePanel} = useSidePanel();
 
-    // Hide side panel once animation ends
-    // This hook synchronizes the side panel visibility with the browser history when it is displayed as RHP.
-    // This means when you open or close the side panel, an entry connected with it is added to or removed from the browser history,
-    // allowing this modal to be toggled using browser's "go back" and "go forward" buttons.
-    useSyncSidePanelWithHistory();
+    // // Hide side panel once animation ends
+    // // This hook synchronizes the side panel visibility with the browser history when it is displayed as RHP.
+    // // This means when you open or close the side panel, an entry connected with it is added to or removed from the browser history,
+    // // allowing this modal to be toggled using browser's "go back" and "go forward" buttons.
+    // useSyncSidePanelWithHistory();
 
-    // Side panel can't be displayed if NVP is undefined
-    if (!sidePanelNVP) {
-        return null;
-    }
+    // // Side panel can't be displayed if NVP is undefined
+    // if (!sidePanelNVP) {
+    //     return null;
+    // }
 
-    if (isSidePanelTransitionEnded && shouldHideSidePanel) {
-        return null;
-    }
+    // if (isSidePanelTransitionEnded && shouldHideSidePanel) {
+    //     return null;
+    // }
 
     return (
         <Help
@@ -27,6 +28,9 @@ function SidePanel() {
             sidePanelTranslateX={sidePanelTranslateX}
             closeSidePanel={closeSidePanel}
             shouldHideSidePanelBackdrop={shouldHideSidePanelBackdrop}
+            // Replace reportID with a reportID of the concierge chat
+            route={{name: 'Report', params: {reportID: '2695895218659943'}, key: 'Report-Concierge-Key'}}
+            navigation={navigation}
         />
     );
 }

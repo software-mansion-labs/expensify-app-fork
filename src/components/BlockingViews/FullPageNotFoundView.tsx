@@ -91,11 +91,11 @@ function FullPageNotFoundView({
         StatsCounter('FullPageNotFoundView');
         return (
             <ForceFullScreenView shouldForceFullScreen={shouldForceFullScreen}>
-                <HeaderWithBackButton
+                {/* <HeaderWithBackButton
                     onBackButtonPress={onBackButtonPress}
                     shouldShowBackButton={shouldShowBackButton}
                     shouldDisplaySearchRouter={shouldDisplaySearchRouter && (isMediumScreenWidth || isLargeScreenWidth)}
-                />
+                /> */}
                 <View
                     style={[styles.flex1, styles.blockingViewContainer]}
                     testID={testID}

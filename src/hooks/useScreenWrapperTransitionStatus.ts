@@ -7,6 +7,7 @@ import ScreenWrapperStatusContext from '@components/ScreenWrapper/ScreenWrapperS
  * @returns `didScreenTransitionEnd` flag to indicate if navigation transition ended.
  */
 export default function useScreenWrapperTransitionStatus() {
+    return {didScreenTransitionEnd: true};
     const context = useContext(ScreenWrapperStatusContext);
 
     if (context === undefined) {

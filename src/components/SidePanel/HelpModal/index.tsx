@@ -15,11 +15,13 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaPaddings from '@hooks/useSafeAreaPaddings';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ComposerFocusManager from '@libs/ComposerFocusManager';
+import {navigationRef} from '@libs/Navigation/Navigation';
+import ReportScreen from '@pages/home/ReportScreen';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type HelpProps from './types';
 
-function Help({sidePanelTranslateX, closeSidePanel, shouldHideSidePanelBackdrop}: HelpProps) {
+function Help({sidePanelTranslateX, closeSidePanel, shouldHideSidePanelBackdrop, navigation, route}: HelpProps) {
     const styles = useThemeStyles();
     const {isExtraLargeScreenWidth, shouldUseNarrowLayout} = useResponsiveLayout();
     const {paddingTop, paddingBottom} = useSafeAreaPaddings();
@@ -75,7 +77,10 @@ function Help({sidePanelTranslateX, closeSidePanel, shouldHideSidePanelBackdrop}
                                 {transform: [{translateX: sidePanelTranslateX.current}], paddingTop, paddingBottom},
                             ]}
                         >
-                            <HelpContent closeSidePanel={closeSidePanel} />
+                            <ReportScreen
+                                navigation={navigation}
+                                route={route}
+                            />
                         </Animated.View>
                     </ColorSchemeWrapper>
                 </View>

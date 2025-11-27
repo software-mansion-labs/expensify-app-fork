@@ -79,9 +79,10 @@ function ReportActionsView({
     hasNewerActions,
     hasOlderActions,
     isReportTransactionThread,
+    route,
 }: ReportActionsViewProps) {
     useCopySelectionHelper();
-    const route = useRoute<PlatformStackRouteProp<ReportsSplitNavigatorParamList, typeof SCREENS.REPORT>>();
+    // const route = useRoute<PlatformStackRouteProp<ReportsSplitNavigatorParamList, typeof SCREENS.REPORT>>();
     const isReportArchived = useReportIsArchived(report?.reportID);
     const canPerformWriteAction = useMemo(() => canUserPerformWriteAction(report, isReportArchived), [report, isReportArchived]);
 
@@ -333,7 +334,10 @@ function ReportActionsView({
                 shouldEnableAutoScrollToTopThreshold={shouldEnableAutoScroll}
                 hasCreatedActionAdded={shouldAddCreatedAction}
             />
-            <UserTypingEventListener report={report} />
+            <UserTypingEventListener
+                route={route}
+                report={report}
+            />
         </>
     );
 }

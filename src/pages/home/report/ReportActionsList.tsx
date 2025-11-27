@@ -160,6 +160,7 @@ function ReportActionsList({
     shouldEnableAutoScrollToTopThreshold,
     parentReportActionForTransactionThread,
     hasCreatedActionAdded,
+    route,
 }: ReportActionsListProps) {
     const prevHasCreatedActionAdded = usePrevious(hasCreatedActionAdded);
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
@@ -171,7 +172,7 @@ function ReportActionsList({
 
     const {getLocalDateFromDatetime} = useLocalize();
     const {isOffline, lastOfflineAt, lastOnlineAt} = useNetworkWithOfflineStatus();
-    const route = useRoute<PlatformStackRouteProp<ReportsSplitNavigatorParamList, typeof SCREENS.REPORT>>();
+
     const reportScrollManager = useReportScrollManager();
     const userActiveSince = useRef<string>(DateUtils.getDBTime());
     const lastMessageTime = useRef<string | null>(null);

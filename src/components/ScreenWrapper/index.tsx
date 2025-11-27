@@ -172,12 +172,12 @@ function ScreenWrapper({
     const {initialURL} = useContext(InitialURLContext);
     const [isSingleNewDotEntry = false] = useOnyx(ONYXKEYS.HYBRID_APP, {selector: isSingleNewDotEntrySelector, canBeMissing: true});
 
-    usePreventRemove(isSingleNewDotEntry && !!initialURL?.endsWith(Navigation.getActiveRouteWithoutParams()), () => {
-        if (!CONFIG.IS_HYBRID_APP) {
-            return;
-        }
-        closeReactNativeApp({shouldSetNVP: false});
-    });
+    // usePreventRemove(isSingleNewDotEntry && !!initialURL?.endsWith(Navigation.getActiveRouteWithoutParams()), () => {
+    //     if (!CONFIG.IS_HYBRID_APP) {
+    //         return;
+    //     }
+    //     closeReactNativeApp({shouldSetNVP: false});
+    // });
 
     useEffect(() => {
         // On iOS, the transitionEnd event doesn't trigger some times. As such, we need to set a timeout

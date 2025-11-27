@@ -3,12 +3,12 @@ import TopLevelNavigationTabBar from '@components/Navigation/TopLevelNavigationT
 import SidePanel from '@components/SidePanel';
 import type RootNavigatorExtraContentProps from './types';
 
-function RootNavigatorExtraContent({state}: RootNavigatorExtraContentProps) {
+function RootNavigatorExtraContent({state, navigation}: RootNavigatorExtraContentProps) {
     return (
         <>
             <TopLevelNavigationTabBar state={state} />
             {/* On web, the SidePanel is rendered outside of the main navigator so it can be positioned alongside the screen */}
-            <SidePanel />
+            <SidePanel navigation={navigation} />
         </>
     );
 }

@@ -151,6 +151,7 @@ function isEmpty(report: OnyxEntry<OnyxTypes.Report>): boolean {
 }
 
 function ReportScreen({route, navigation}: ReportScreenProps) {
+    console.log('route', route);
     const styles = useThemeStyles();
     const Expensicons = useMemoizedLazyExpensifyIcons(['Lightbulb'] as const);
     const {translate} = useLocalize();
@@ -396,39 +397,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
         [isInNarrowPaneModal, backTo],
     );
 
-    let headerView = (
-        <HeaderView
-            reportID={reportIDFromRoute}
-            onNavigationMenuButtonClicked={onBackButtonPress}
-            report={report}
-            parentReportAction={parentReportAction}
-            shouldUseNarrowLayout={shouldUseNarrowLayout}
-        />
-    );
-
-    if (isTransactionThreadView) {
-        headerView = (
-            <MoneyRequestHeader
-                report={report}
-                policy={policy}
-                parentReportAction={parentReportAction}
-                onBackButtonPress={onBackButtonPress}
-            />
-        );
-    }
-
-    if (isMoneyRequestOrInvoiceReport) {
-        headerView = (
-            <MoneyReportHeader
-                report={report}
-                policy={policy}
-                transactionThreadReportID={transactionThreadReportID}
-                isLoadingInitialReportActions={reportMetadata.isLoadingInitialReportActions}
-                reportActions={reportActions}
-                onBackButtonPress={onBackButtonPress}
-            />
-        );
-    }
+    let headerView = null;
 
     useEffect(() => {
         if (!transactionThreadReportID || !route?.params?.reportActionID || !isOneTransactionThread(childReport, report, linkedAction)) {
@@ -883,7 +852,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
             report?.type === CONST.REPORT.TYPE.EXPENSE ||
             report?.type === CONST.REPORT.TYPE.IOU);
 
-    useShowWideRHPVersion(shouldShowWideRHP);
+    // useShowWideRHPVersion(shouldShowWideRHP);
 
     // Define here because reportActions are recalculated before mount, allowing data to display faster than useEffect can trigger.
     // If we have cached reportActions, they will be shown immediately.
@@ -896,108 +865,109 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
     return (
         <ActionListContext.Provider value={actionListValue}>
             <ReactionListWrapper>
-                <ScreenWrapper
+                {/* <ScreenWrapper
                     navigation={navigation}
                     style={screenWrapperStyle}
                     shouldEnableKeyboardAvoidingView={isTopMostReportId || isInNarrowPaneModal}
                     testID={`report-screen-${reportID}`}
+                > */}
+                <FullPageNotFoundView
+                    shouldShow={shouldShowNotFoundPage}
+                    subtitleKey={shouldShowNotFoundLinkedAction ? 'notFound.commentYouLookingForCannotBeFound' : 'notFound.noAccess'}
+                    subtitleStyle={[styles.textSupporting]}
+                    shouldShowBackButton={shouldUseNarrowLayout}
+                    onBackButtonPress={shouldShowNotFoundLinkedAction ? navigateToEndOfReport : Navigation.goBack}
+                    shouldShowLink={shouldShowNotFoundLinkedAction}
+                    linkTranslationKey="notFound.goToChatInstead"
+                    subtitleKeyBelowLink={shouldShowNotFoundLinkedAction ? 'notFound.contactConcierge' : ''}
+                    onLinkPress={navigateToEndOfReport}
+                    shouldDisplaySearchRouter
                 >
-                    <FullPageNotFoundView
-                        shouldShow={shouldShowNotFoundPage}
-                        subtitleKey={shouldShowNotFoundLinkedAction ? 'notFound.commentYouLookingForCannotBeFound' : 'notFound.noAccess'}
-                        subtitleStyle={[styles.textSupporting]}
-                        shouldShowBackButton={shouldUseNarrowLayout}
-                        onBackButtonPress={shouldShowNotFoundLinkedAction ? navigateToEndOfReport : Navigation.goBack}
-                        shouldShowLink={shouldShowNotFoundLinkedAction}
-                        linkTranslationKey="notFound.goToChatInstead"
-                        subtitleKeyBelowLink={shouldShowNotFoundLinkedAction ? 'notFound.contactConcierge' : ''}
-                        onLinkPress={navigateToEndOfReport}
-                        shouldDisplaySearchRouter
-                    >
-                        <DragAndDropProvider isDisabled={isEditingDisabled}>
-                            <OfflineWithFeedback
-                                pendingAction={reportPendingAction}
-                                errors={reportErrors}
-                                shouldShowErrorMessages={false}
-                                needsOffscreenAlphaCompositing
-                            >
-                                {headerView}
-                            </OfflineWithFeedback>
-                            {!!accountManagerReportID && isConciergeChatReport(report) && isBannerVisible && (
-                                <Banner
-                                    containerStyles={[styles.mh4, styles.mt4, styles.p4, styles.br2]}
-                                    text={chatWithAccountManagerText}
-                                    onClose={dismissBanner}
-                                    onButtonPress={chatWithAccountManager}
-                                    shouldShowCloseButton
-                                    icon={Expensicons.Lightbulb}
-                                    shouldShowIcon
-                                    shouldShowButton
-                                />
+                    <DragAndDropProvider isDisabled={isEditingDisabled}>
+                        <OfflineWithFeedback
+                            pendingAction={reportPendingAction}
+                            errors={reportErrors}
+                            shouldShowErrorMessages={false}
+                            needsOffscreenAlphaCompositing
+                        >
+                            {headerView}
+                        </OfflineWithFeedback>
+                        {!!accountManagerReportID && isConciergeChatReport(report) && isBannerVisible && (
+                            <Banner
+                                containerStyles={[styles.mh4, styles.mt4, styles.p4, styles.br2]}
+                                text={chatWithAccountManagerText}
+                                onClose={dismissBanner}
+                                onButtonPress={chatWithAccountManager}
+                                shouldShowCloseButton
+                                icon={Expensicons.Lightbulb}
+                                shouldShowIcon
+                                shouldShowButton
+                            />
+                        )}
+                        <View style={[styles.flex1, styles.flexRow]}>
+                            {shouldShowWideRHP && (
+                                <Animated.View style={styles.wideRHPMoneyRequestReceiptViewContainer}>
+                                    <ScrollView contentContainerStyle={styles.wideRHPMoneyRequestReceiptViewScrollViewContainer}>
+                                        <MoneyRequestReceiptView
+                                            allReports={allReports}
+                                            report={transactionThreadReport ?? report}
+                                            fillSpace
+                                            isDisplayedInWideRHP
+                                        />
+                                    </ScrollView>
+                                </Animated.View>
                             )}
-                            <View style={[styles.flex1, styles.flexRow]}>
-                                {shouldShowWideRHP && (
-                                    <Animated.View style={styles.wideRHPMoneyRequestReceiptViewContainer}>
-                                        <ScrollView contentContainerStyle={styles.wideRHPMoneyRequestReceiptViewScrollViewContainer}>
-                                            <MoneyRequestReceiptView
-                                                allReports={allReports}
-                                                report={transactionThreadReport ?? report}
-                                                fillSpace
-                                                isDisplayedInWideRHP
-                                            />
-                                        </ScrollView>
-                                    </Animated.View>
-                                )}
-                                <View
-                                    style={[styles.flex1, styles.justifyContentEnd, styles.overflowHidden]}
-                                    testID="report-actions-view-wrapper"
-                                >
-                                    {(!report || shouldWaitForTransactions) && <ReportActionsSkeletonView />}
-                                    {!!report && !shouldDisplayMoneyRequestActionsList && !shouldWaitForTransactions ? (
-                                        <ReportActionsView
-                                            report={report}
-                                            reportActions={reportActions}
-                                            isLoadingInitialReportActions={reportMetadata?.isLoadingInitialReportActions}
-                                            hasNewerActions={hasNewerActions}
-                                            hasOlderActions={hasOlderActions}
-                                            parentReportAction={parentReportAction}
-                                            transactionThreadReportID={transactionThreadReportID}
-                                            isReportTransactionThread={isTransactionThreadView}
-                                        />
-                                    ) : null}
-                                    {!!report && shouldDisplayMoneyRequestActionsList && !shouldWaitForTransactions ? (
-                                        <MoneyRequestReportActionsList
-                                            report={report}
-                                            hasPendingDeletionTransaction={hasPendingDeletionTransaction}
-                                            policy={policy}
-                                            reportActions={reportActions}
-                                            transactions={visibleTransactions}
-                                            newTransactions={newTransactions}
-                                            violations={allReportViolations}
-                                            hasOlderActions={hasOlderActions}
-                                            hasNewerActions={hasNewerActions}
-                                            showReportActionsLoadingState={showReportActionsLoadingState}
-                                        />
-                                    ) : null}
-                                    {isCurrentReportLoadedFromOnyx ? (
-                                        <ReportFooter
-                                            report={report}
-                                            reportMetadata={reportMetadata}
-                                            policy={policy}
-                                            pendingAction={reportPendingAction}
-                                            isComposerFullSize={!!isComposerFullSize}
-                                            lastReportAction={lastReportAction}
-                                            reportTransactions={reportTransactions}
-                                            // If the report is from the 'Send Money' flow, we add the comment to the `iou` report because for these we don't combine reportActions even if there is a single transaction (they always have a single transaction)
-                                            transactionThreadReportID={isSentMoneyReport ? undefined : transactionThreadReportID}
-                                        />
-                                    ) : null}
-                                </View>
+                            <View
+                                style={[styles.flex1, styles.justifyContentEnd, styles.overflowHidden]}
+                                testID="report-actions-view-wrapper"
+                            >
+                                {(!report || shouldWaitForTransactions) && <ReportActionsSkeletonView />}
+                                {!!report && !shouldDisplayMoneyRequestActionsList && !shouldWaitForTransactions ? (
+                                    <ReportActionsView
+                                        report={report}
+                                        reportActions={reportActions}
+                                        isLoadingInitialReportActions={reportMetadata?.isLoadingInitialReportActions}
+                                        hasNewerActions={hasNewerActions}
+                                        hasOlderActions={hasOlderActions}
+                                        parentReportAction={parentReportAction}
+                                        transactionThreadReportID={transactionThreadReportID}
+                                        isReportTransactionThread={isTransactionThreadView}
+                                        route={route}
+                                    />
+                                ) : null}
+                                {!!report && shouldDisplayMoneyRequestActionsList && !shouldWaitForTransactions ? (
+                                    <MoneyRequestReportActionsList
+                                        report={report}
+                                        hasPendingDeletionTransaction={hasPendingDeletionTransaction}
+                                        policy={policy}
+                                        reportActions={reportActions}
+                                        transactions={visibleTransactions}
+                                        newTransactions={newTransactions}
+                                        violations={allReportViolations}
+                                        hasOlderActions={hasOlderActions}
+                                        hasNewerActions={hasNewerActions}
+                                        showReportActionsLoadingState={showReportActionsLoadingState}
+                                    />
+                                ) : null}
+                                {isCurrentReportLoadedFromOnyx ? (
+                                    <ReportFooter
+                                        report={report}
+                                        reportMetadata={reportMetadata}
+                                        policy={policy}
+                                        pendingAction={reportPendingAction}
+                                        isComposerFullSize={!!isComposerFullSize}
+                                        lastReportAction={lastReportAction}
+                                        reportTransactions={reportTransactions}
+                                        // If the report is from the 'Send Money' flow, we add the comment to the `iou` report because for these we don't combine reportActions even if there is a single transaction (they always have a single transaction)
+                                        transactionThreadReportID={isSentMoneyReport ? undefined : transactionThreadReportID}
+                                    />
+                                ) : null}
                             </View>
-                            <PortalHost name="suggestions" />
-                        </DragAndDropProvider>
-                    </FullPageNotFoundView>
-                </ScreenWrapper>
+                        </View>
+                        <PortalHost name="suggestions" />
+                    </DragAndDropProvider>
+                </FullPageNotFoundView>
+                {/* </ScreenWrapper> */}
             </ReactionListWrapper>
         </ActionListContext.Provider>
     );
