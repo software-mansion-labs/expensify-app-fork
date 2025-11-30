@@ -7,7 +7,8 @@ import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView
 import DragAndDropProvider from '@components/DragAndDrop/Provider';
 import MoneyRequestReportView from '@components/MoneyRequestReportView/MoneyRequestReportView';
 import ScreenWrapper from '@components/ScreenWrapper';
-import {useShowSuperWideRHPVersion, WideRHPContext} from '@components/WideRHPContextProvider';
+import {WideRHPContext} from '@components/WideRHPContextProvider';
+import useShowSuperWideRHPVersion from '@components/WideRHPContextProvider/useShowSuperWideRHPVersion';
 import useIsReportReadyToDisplay from '@hooks/useIsReportReadyToDisplay';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
