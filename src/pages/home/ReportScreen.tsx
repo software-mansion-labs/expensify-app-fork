@@ -20,7 +20,8 @@ import MoneyRequestReceiptView from '@components/ReportActionItem/MoneyRequestRe
 import ReportActionsSkeletonView from '@components/ReportActionsSkeletonView';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
-import {useShowWideRHPVersion, WideRHPContext} from '@components/WideRHPContextProvider';
+import {WideRHPContext} from '@components/WideRHPContextProvider';
+import useShowWideRHPVersion from '@components/WideRHPContextProvider/useShowWideRHPVersion';
 import useAppFocusEvent from '@hooks/useAppFocusEvent';
 import useCurrentReportID from '@hooks/useCurrentReportID';
 import useDeepCompareRef from '@hooks/useDeepCompareRef';
