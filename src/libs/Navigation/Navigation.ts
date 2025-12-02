@@ -35,7 +35,17 @@ import setNavigationActionToMicrotaskQueue from './helpers/setNavigationActionTo
 import {linkingConfig} from './linkingConfig';
 import {SPLIT_TO_SIDEBAR} from './linkingConfig/RELATIONS';
 import navigationRef from './navigationRef';
-import type {NavigationPartialRoute, NavigationRoute, NavigationStateRoute, ReportsSplitNavigatorParamList, RootNavigatorParamList, State} from './types';
+import type {
+    ExpenseReportNavigatorParamList,
+    NavigationPartialRoute,
+    NavigationRoute,
+    NavigationStateRoute,
+    ReportsSplitNavigatorParamList,
+    RightModalNavigatorParamList,
+    RootNavigatorParamList,
+    SearchMoneyRequestReportParamList,
+    State,
+} from './types';
 
 // Routes which are part of the flow to set up 2FA
 const SET_UP_2FA_ROUTES = new Set<Route>([
@@ -565,27 +575,32 @@ function getReportRouteByID(reportID?: string, routes: NavigationRoute[] = navig
     return null;
 }
 
-function getSuperWideRHPRouteByID(reportID?: string, routes: NavigationRoute[] = navigationRef.getRootState().routes): NavigationRoute | null {
-    if (!reportID || !routes?.length) {
-        return null;
+function getTopmostSuperWideRHPReportID(state: NavigationState = navigationRef.getRootState()): string | undefined {
+    if (!state) {
+        return;
     }
-    for (const route of routes) {
-        if (
-            (route.name === SCREENS.SEARCH.MONEY_REQUEST_REPORT || route.name === SCREENS.EXPENSE_REPORT_RHP) &&
-            !!route.params &&
-            'reportID' in route.params &&
-            route.params.reportID === reportID
-        ) {
-            return route;
-        }
-        if (route.state?.routes) {
-            const partialRoute = getSuperWideRHPRouteByID(reportID, route.state.routes);
-            if (partialRoute) {
-                return partialRoute;
-            }
-        }
+
+    const topmostRightModalNavigator = state.routes?.at(-1);
+
+    if (!topmostRightModalNavigator || topmostRightModalNavigator.name !== NAVIGATORS.RIGHT_MODAL_NAVIGATOR) {
+        return;
     }
-    return null;
+
+    const topmostSuperWideRHPModalStack = topmostRightModalNavigator.state?.routes.findLast((route) => SUPER_WIDE_RIGHT_MODALS.has(route.name));
+
+    if (!topmostSuperWideRHPModalStack) {
+        return;
+    }
+
+    const topmostSuperWideRHP = topmostSuperWideRHPModalStack.state?.routes.findLast(
+        (route) => route.name === SCREENS.EXPENSE_REPORT_RHP || route.name === SCREENS.SEARCH.MONEY_REQUEST_REPORT,
+    );
+    const topmostReportParams = topmostSuperWideRHP?.params as
+        | SearchMoneyRequestReportParamList[typeof SCREENS.SEARCH.MONEY_REQUEST_REPORT]
+        | ExpenseReportNavigatorParamList[typeof SCREENS.EXPENSE_REPORT_RHP]
+        | undefined;
+
+    return topmostReportParams?.reportID;
 }
 
 /**
@@ -611,8 +626,16 @@ const dismissModal = (ref = navigationRef) => {
  */
 const dismissModalWithReport = ({reportID, reportActionID, referrer, backTo}: ReportsSplitNavigatorParamList[typeof SCREENS.REPORT], ref = navigationRef) => {
     isNavigationReady().then(() => {
+        const topmostSuperWideRHPReportID = getTopmostSuperWideRHPReportID();
+        let areReportsIDsDefined = !!topmostSuperWideRHPReportID && !!reportID;
+
+        if (topmostSuperWideRHPReportID === reportID && areReportsIDsDefined) {
+            dismissToFirstRHP();
+            return;
+        }
+
         const topmostReportID = getTopmostReportId();
-        const areReportsIDsDefined = !!topmostReportID && !!reportID;
+        areReportsIDsDefined = !!topmostReportID && !!reportID;
         const isReportsSplitTopmostFullScreen = ref.getRootState().routes.findLast((route) => isFullScreenName(route.name))?.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR;
         if (topmostReportID === reportID && areReportsIDsDefined && isReportsSplitTopmostFullScreen) {
             dismissModal();
@@ -776,6 +799,14 @@ function dismissToSecondRHP() {
     return dismissToModalStack(WIDE_RIGHT_MODALS);
 }
 
+function dismissToSuperWideRHP() {
+    if (getIsNarrowLayout()) {
+        dismissModal();
+        return;
+    }
+    return dismissToModalStack(SUPER_WIDE_RIGHT_MODALS);
+}
+
 export default {
     setShouldPopToSidebar,
     getShouldPopToSidebar,
@@ -814,8 +845,8 @@ export default {
     fireModalDismissed,
     isValidateLoginFlow,
     dismissToFirstRHP,
-    getSuperWideRHPRouteByID,
     dismissToSecondRHP,
+    dismissToSuperWideRHP,
 };
 
 export {navigationRef};
