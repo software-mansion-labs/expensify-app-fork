@@ -795,10 +795,14 @@ function dismissToFirstRHP() {
 /**
  * Dismiss top layer modal and go back to the Wide RHP.
  */
-function dismissToSecondRHP() {
+function dismissToWideRHP() {
     return dismissToModalStack(WIDE_RIGHT_MODALS);
 }
 
+/**
+ * Dismiss top layer modal and go back to the Super Wide RHP.
+ * Or dismiss the modal if in narrow layout.
+ */
 function dismissToSuperWideRHP() {
     if (getIsNarrowLayout()) {
         dismissModal();
@@ -845,7 +849,7 @@ export default {
     fireModalDismissed,
     isValidateLoginFlow,
     dismissToFirstRHP,
-    dismissToSecondRHP,
+    dismissToWideRHP,
     dismissToSuperWideRHP,
 };
 

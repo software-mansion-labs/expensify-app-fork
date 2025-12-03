@@ -7,7 +7,9 @@ import SCREENS from '@src/SCREENS';
 import defaultWideRHPContextValue from './default';
 import type {WideRHPContextType} from './types';
 
-const secondOverlayProgress = new Animated.Value(0);
+const secondOverlayForWideRHPProgress = new Animated.Value(0);
+const secondOverlayForSingleRHPOnWideRHPProgress = new Animated.Value(0);
+const secondOverlayForSingleRHPOnSuperWideRHPProgress = new Animated.Value(0);
 const thirdOverlayProgress = new Animated.Value(0);
 
 const animatedReceiptPaneRHPWidth = new Animated.Value(0);
@@ -42,7 +44,9 @@ export {
     innerRHPProgress,
     modalStackOverlaySuperWideRHPPositionLeft,
     modalStackOverlayWideRHPPositionLeft,
-    secondOverlayProgress,
+    secondOverlayForWideRHPProgress,
+    secondOverlayForSingleRHPOnWideRHPProgress,
+    secondOverlayForSingleRHPOnSuperWideRHPProgress,
     thirdOverlayProgress,
     WideRHPContext,
     WIDE_RIGHT_MODALS,

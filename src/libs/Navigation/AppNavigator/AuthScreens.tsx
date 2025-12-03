@@ -154,7 +154,8 @@ function AuthScreens() {
     const {initialURL, isAuthenticatedAtStartup, setIsAuthenticatedAtStartup} = useContext(InitialURLContext);
     const modalCardStyleInterpolator = useModalCardStyleInterpolator();
     const archivedReportsIdSet = useArchivedReportsIdSet();
-    const {shouldRenderSecondaryOverlay, shouldRenderTertiaryOverlay} = useContext(WideRHPContext);
+    const {shouldRenderSecondaryOverlayForWideRHP, shouldRenderSecondaryOverlayForSingleRHPOnWideRHP, shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP, shouldRenderTertiaryOverlay} =
+        useContext(WideRHPContext);
 
     // State to track whether the delegator's authentication is completed before displaying data
     const [isDelegatorFromOldDotIsReady, setIsDelegatorFromOldDotIsReady] = useState(false);
@@ -341,13 +342,13 @@ function AuthScreens() {
                     return;
                 }
 
-                if (shouldRenderSecondaryOverlay) {
-                    Navigation.dismissToFirstRHP();
+                if (shouldRenderSecondaryOverlayForWideRHP || shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP) {
+                    Navigation.dismissToSuperWideRHP();
                     return;
                 }
 
-                if (shouldRenderTertiaryOverlay) {
-                    Navigation.dismissToSecondRHP();
+                if (shouldRenderTertiaryOverlay || shouldRenderSecondaryOverlayForSingleRHPOnWideRHP) {
+                    Navigation.dismissToWideRHP();
                     return;
                 }
 
@@ -359,7 +360,14 @@ function AuthScreens() {
             true,
         );
         return () => unsubscribeEscapeKey();
-    }, [modal?.disableDismissOnEscape, modal?.willAlertModalBecomeVisible, shouldRenderSecondaryOverlay, shouldRenderTertiaryOverlay]);
+    }, [
+        modal?.disableDismissOnEscape,
+        modal?.willAlertModalBecomeVisible,
+        shouldRenderSecondaryOverlayForWideRHP,
+        shouldRenderSecondaryOverlayForSingleRHPOnWideRHP,
+        shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP,
+        shouldRenderTertiaryOverlay,
+    ]);
 
     // Animation is disabled when navigating to the sidebar screen
     const getWorkspaceOrDomainSplitNavigatorOptions = ({route}: {route: RouteProp<AuthScreensParamList>}) => {

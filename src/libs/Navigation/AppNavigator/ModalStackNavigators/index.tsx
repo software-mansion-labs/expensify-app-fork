@@ -1,4 +1,4 @@
-import {useIsFocused, useRoute} from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 import type {ParamListBase} from '@react-navigation/routers';
 import React, {useCallback, useContext, useMemo} from 'react';
 import {View} from 'react-native';
@@ -6,7 +6,9 @@ import {
     animatedReceiptPaneRHPWidth,
     modalStackOverlaySuperWideRHPPositionLeft,
     modalStackOverlayWideRHPPositionLeft,
-    secondOverlayProgress,
+    secondOverlayForSingleRHPOnSuperWideRHPProgress,
+    secondOverlayForSingleRHPOnWideRHPProgress,
+    secondOverlayForWideRHPProgress,
     thirdOverlayProgress,
     WideRHPContext,
 } from '@components/WideRHPContextProvider';
@@ -119,10 +121,13 @@ function createModalStackNavigator<ParamList extends ParamListBase>(screens: Scr
     function ModalStack() {
         const styles = useThemeStyles();
         const screenOptions = useModalStackScreenOptions();
-        const {shouldRenderSecondaryOverlay, shouldRenderTertiaryOverlay, isWideRHPFocused, superWideRHPRouteKeys, isWideRHPClosing} = useContext(WideRHPContext);
+        const {
+            shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP,
+            shouldRenderSecondaryOverlayForSingleRHPOnWideRHP,
+            shouldRenderSecondaryOverlayForWideRHP,
+            shouldRenderTertiaryOverlay,
+        } = useContext(WideRHPContext);
         const route = useRoute();
-
-        const isFocused = useIsFocused();
 
         // We have to use the isSmallScreenWidth instead of shouldUseNarrow layout, because we want to have information about screen width without the context of side modal.
         // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
@@ -140,13 +145,18 @@ function createModalStackNavigator<ParamList extends ParamListBase>(screens: Scr
         );
 
         const isRHPDisplayedOnWideRHP = useMemo(
-            () => !isSmallScreenWidth && !isWideRHPFocused && !isWideRHPClosing && shouldRenderSecondaryOverlay && (isSuperWideRHPRouteName(route.name) || isWideRHPRouteName(route.name)),
-            [isSmallScreenWidth, isWideRHPClosing, isWideRHPFocused, route.name, shouldRenderSecondaryOverlay],
+            () => !isSmallScreenWidth && shouldRenderSecondaryOverlayForSingleRHPOnWideRHP && isWideRHPRouteName(route.name),
+            [isSmallScreenWidth, route.name, shouldRenderSecondaryOverlayForSingleRHPOnWideRHP],
+        );
+
+        const isRHPDisplayedOnSuperWideRHP = useMemo(
+            () => !isSmallScreenWidth && shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP && isSuperWideRHPRouteName(route.name),
+            [isSmallScreenWidth, route.name, shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP],
         );
 
         const isWideRHPDisplayedOnSuperWideRHP = useMemo(
-            () => !isSmallScreenWidth && !isFocused && !!isWideRHPFocused && shouldRenderSecondaryOverlay && isSuperWideRHPRouteName(route.name),
-            [isFocused, isSmallScreenWidth, isWideRHPFocused, route.name, shouldRenderSecondaryOverlay],
+            () => !isSmallScreenWidth && shouldRenderSecondaryOverlayForWideRHP && isSuperWideRHPRouteName(route.name),
+            [isSmallScreenWidth, route.name, shouldRenderSecondaryOverlayForWideRHP],
         );
 
         return (
@@ -175,13 +185,19 @@ function createModalStackNavigator<ParamList extends ParamListBase>(screens: Scr
                 {/* There is also a special case where three different RHP widths are displayed at the same time. In this case, an overlay under RHP should be rendered from Wide RHP. */}
                 {isRHPDisplayedOnWideRHP ? (
                     <Overlay
-                        progress={secondOverlayProgress}
-                        positionLeftValue={superWideRHPRouteKeys.length > 0 ? modalStackOverlaySuperWideRHPPositionLeft : animatedReceiptPaneRHPWidth}
+                        progress={secondOverlayForSingleRHPOnWideRHPProgress}
+                        positionLeftValue={animatedReceiptPaneRHPWidth}
+                    />
+                ) : null}
+                {isRHPDisplayedOnSuperWideRHP ? (
+                    <Overlay
+                        progress={secondOverlayForSingleRHPOnSuperWideRHPProgress}
+                        positionLeftValue={modalStackOverlaySuperWideRHPPositionLeft}
                     />
                 ) : null}
                 {isWideRHPDisplayedOnSuperWideRHP ? (
                     <Overlay
-                        progress={secondOverlayProgress}
+                        progress={secondOverlayForWideRHPProgress}
                         positionLeftValue={modalStackOverlayWideRHPPositionLeft}
                     />
                 ) : null}
