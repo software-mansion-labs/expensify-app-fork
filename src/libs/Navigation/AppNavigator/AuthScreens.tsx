@@ -154,7 +154,7 @@ function AuthScreens() {
     const {initialURL, isAuthenticatedAtStartup, setIsAuthenticatedAtStartup} = useContext(InitialURLContext);
     const modalCardStyleInterpolator = useModalCardStyleInterpolator();
     const archivedReportsIdSet = useArchivedReportsIdSet();
-    const {shouldRenderSecondaryOverlayForWideRHP, shouldRenderSecondaryOverlayForSingleRHPOnWideRHP, shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP, shouldRenderTertiaryOverlay} =
+    const {shouldRenderSecondaryOverlayForWideRHP, shouldRenderSecondaryOverlayForRHPOnWideRHP, shouldRenderSecondaryOverlayForRHPOnSuperWideRHP, shouldRenderTertiaryOverlay} =
         useContext(WideRHPContext);
 
     // State to track whether the delegator's authentication is completed before displaying data
@@ -342,12 +342,12 @@ function AuthScreens() {
                     return;
                 }
 
-                if (shouldRenderSecondaryOverlayForWideRHP || shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP) {
+                if (shouldRenderSecondaryOverlayForWideRHP || shouldRenderSecondaryOverlayForRHPOnSuperWideRHP) {
                     Navigation.dismissToSuperWideRHP();
                     return;
                 }
 
-                if (shouldRenderTertiaryOverlay || shouldRenderSecondaryOverlayForSingleRHPOnWideRHP) {
+                if (shouldRenderTertiaryOverlay || shouldRenderSecondaryOverlayForRHPOnWideRHP) {
                     Navigation.dismissToWideRHP();
                     return;
                 }
@@ -364,8 +364,8 @@ function AuthScreens() {
         modal?.disableDismissOnEscape,
         modal?.willAlertModalBecomeVisible,
         shouldRenderSecondaryOverlayForWideRHP,
-        shouldRenderSecondaryOverlayForSingleRHPOnWideRHP,
-        shouldRenderSecondaryOverlayForSingleRHPOnSuperWideRHP,
+        shouldRenderSecondaryOverlayForRHPOnWideRHP,
+        shouldRenderSecondaryOverlayForRHPOnSuperWideRHP,
         shouldRenderTertiaryOverlay,
     ]);
 
