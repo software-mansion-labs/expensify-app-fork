@@ -1,7 +1,8 @@
-import {useRoute} from '@react-navigation/native';
+import {useIsFocused, useRoute} from '@react-navigation/native';
 import type {ParamListBase} from '@react-navigation/routers';
-import React, {useCallback, useContext, useMemo} from 'react';
-import {View} from 'react-native';
+import {set} from 'date-fns';
+import React, {useCallback, useContext, useEffect, useMemo} from 'react';
+import {Animated, View} from 'react-native';
 import {
     animatedReceiptPaneRHPWidth,
     modalStackOverlaySuperWideRHPPositionLeft,
@@ -12,9 +13,12 @@ import {
     thirdOverlayProgress,
     WideRHPContext,
 } from '@components/WideRHPContextProvider';
+import useShouldRenderOverlay from '@components/WideRHPContextProvider/useShouldRenderOverlay';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useRootNavigationState from '@hooks/useRootNavigationState';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Overlay from '@libs/Navigation/AppNavigator/Navigators/Overlay';
+import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {PlatformStackNavigationOptions} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -159,31 +163,66 @@ function createModalStackNavigator<ParamList extends ParamListBase>(screens: Scr
             [isSmallScreenWidth, route.name, shouldRenderSecondaryOverlayForWideRHP],
         );
 
+        function hasRoute(state: NavigationState | undefined, routeName: string): boolean {
+            if (!state) {
+                return true;
+            }
+
+            for (const route of state.routes) {
+                if (route.name === routeName) {
+                    return true;
+                }
+                if (route.state && hasRoute(route.state as NavigationState, routeName)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        const [focusedState, setFocusedState] = React.useState(false);
+
+        useEffect(() => {
+            setFocusedState(true);
+            return () => setFocusedState(false);
+        }, []);
+
+        const progress = new Animated.Value(0);
+        // const focused = hasRoute(navigationRef.getRootState(), route.name);
+        // const focused = useRootNavigationState((state) => hasRoute(state, route.name));
+        // console.log('ModalStack focused:', focused);
+        const shouldRenderOverlay = useShouldRenderOverlay(focusedState, progress);
+
         return (
             // This container is necessary to hide card translation during transition. Without it the user would see un-clipped cards.
-            <View style={[styles.modalStackNavigatorContainer, styles.modalStackNavigatorContainerWidth(isSmallScreenWidth)]}>
-                <ModalStackNavigator.Navigator>
-                    {Object.keys(screens as Required<Screens>).map((name) => (
-                        <ModalStackNavigator.Screen
-                            key={name}
-                            name={name}
-                            getComponent={(screens as Required<Screens>)[name as Screen]}
-                            // For some reason, screenOptions is not working with function as options so we have to pass it to every screen.
-                            options={getScreenOptions}
-                        />
-                    ))}
-                </ModalStackNavigator.Navigator>
-                {/* These overlays are used to cover the space under the narrower RHP screen when more than one RHP width is displayed on the screen */}
-                {/* Their position is calculated as follows: */}
-                {/* The width of the window for which we calculate the overlay positions is the width of the RHP window, for example for Super Wide RHP it will be 1260 px on a wide layout. */}
-                {/* We need to move the overlay left from the left edge of the RHP below to the left edge of the RHP above. */}
-                {/* To calculate this, subtract the width of the widest RHP from the width of the RHP above. */}
-                {/* Two cases were described for the secondary overlay: */}
-                {/* 1. Single RHP is displayed on Wide RHP (Super Wide or Wide) - here we additionally check the length of superWideRHPRouteKeys because Super Wide RHP route can also be displayed in Wide RHP when the number of visible transactions is less than 2.  */}
-                {/* 2. Wide RHP is displayed on Super Wide RHP route. */}
-                {/* Please note that in these cases, the overlay is rendered from the RHP screen displayed below. For example, if we display RHP on Wide RHP, the secondary overlay is rendered from Wide RHP, etc. */}
-                {/* There is also a special case where three different RHP widths are displayed at the same time. In this case, an overlay under RHP should be rendered from Wide RHP. */}
-                {isRHPDisplayedOnWideRHP ? (
+            <>
+                <Overlay
+                    positionLeftValue={-2800}
+                    progress={progress}
+                    onPress={() => Navigation.goBack()}
+                />
+                <View style={[styles.modalStackNavigatorContainer, styles.modalStackNavigatorContainerWidth(isSmallScreenWidth)]}>
+                    <ModalStackNavigator.Navigator>
+                        {Object.keys(screens as Required<Screens>).map((name) => (
+                            <ModalStackNavigator.Screen
+                                key={name}
+                                name={name}
+                                getComponent={(screens as Required<Screens>)[name as Screen]}
+                                // For some reason, screenOptions is not working with function as options so we have to pass it to every screen.
+                                options={getScreenOptions}
+                            />
+                        ))}
+                    </ModalStackNavigator.Navigator>
+                    {/* These overlays are used to cover the space under the narrower RHP screen when more than one RHP width is displayed on the screen */}
+                    {/* Their position is calculated as follows: */}
+                    {/* The width of the window for which we calculate the overlay positions is the width of the RHP window, for example for Super Wide RHP it will be 1260 px on a wide layout. */}
+                    {/* We need to move the overlay left from the left edge of the RHP below to the left edge of the RHP above. */}
+                    {/* To calculate this, subtract the width of the widest RHP from the width of the RHP above. */}
+                    {/* Two cases were described for the secondary overlay: */}
+                    {/* 1. Single RHP is displayed on Wide RHP (Super Wide or Wide) - here we additionally check the length of superWideRHPRouteKeys because Super Wide RHP route can also be displayed in Wide RHP when the number of visible transactions is less than 2.  */}
+                    {/* 2. Wide RHP is displayed on Super Wide RHP route. */}
+                    {/* Please note that in these cases, the overlay is rendered from the RHP screen displayed below. For example, if we display RHP on Wide RHP, the secondary overlay is rendered from Wide RHP, etc. */}
+                    {/* There is also a special case where three different RHP widths are displayed at the same time. In this case, an overlay under RHP should be rendered from Wide RHP. */}
+                    {/* {isRHPDisplayedOnWideRHP ? (
                     <Overlay
                         progress={secondOverlayForSingleRHPOnWideRHPProgress}
                         positionLeftValue={animatedReceiptPaneRHPWidth}
@@ -206,8 +245,9 @@ function createModalStackNavigator<ParamList extends ParamListBase>(screens: Scr
                         progress={thirdOverlayProgress}
                         positionLeftValue={modalStackOverlaySuperWideRHPPositionLeft}
                     />
-                ) : null}
-            </View>
+                ) : null} */}
+                </View>
+            </>
         );
     }
 
