@@ -130,15 +130,15 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
     return (
         <NarrowPaneContextProvider>
             <NoDropZone>
-                {!shouldUseNarrowLayout && (
-                    <Overlay
-                        positionLeftValue={overlayPositionLeft}
-                        onPress={handleOverlayPress}
-                    />
-                )}
+                {/* {!shouldUseNarrowLayout && (
+                    // <Overlay
+                    //     positionLeftValue={overlayPositionLeft}
+                    //     onPress={handleOverlayPress}
+                    // />
+                )} */}
                 {/* This one is to limit the outer Animated.View and allow the background to be pressable */}
                 {/* Without it, the transparent half of the narrow format RHP card would cover the pressable part of the overlay */}
-                <Animated.View style={[styles.pAbsolute, styles.r0, styles.h100, styles.overflowHidden, animatedWidthStyle]}>
+                <Animated.View style={[styles.pAbsolute, styles.r0, styles.h100, animatedWidthStyle]}>
                     <Stack.Navigator
                         screenOptions={screenOptions}
                         screenListeners={screenListeners}
@@ -360,7 +360,7 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                 {/* The third and second overlays are displayed here to cover RHP screens wider than the currently focused screen. */}
                 {/* Clicking on these overlays redirects you to the RHP screen below them. */}
                 {/* The width of these overlays is equal to the width of the screen minus the width of the currently focused RHP screen (positionRightValue) */}
-                {shouldRenderSecondaryOverlayForSingleRHPOnWideRHP && !shouldUseNarrowLayout && (
+                {/* {shouldRenderSecondaryOverlayForSingleRHPOnWideRHP && !shouldUseNarrowLayout && (
                     <Overlay
                         progress={secondOverlayForSingleRHPOnWideRHPProgress}
                         positionRightValue={variables.sideBarWidth}
@@ -387,7 +387,7 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                         positionRightValue={variables.sideBarWidth}
                         onPress={Navigation.dismissToWideRHP}
                     />
-                )}
+                )} */}
             </NoDropZone>
         </NarrowPaneContextProvider>
     );
