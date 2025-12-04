@@ -41,7 +41,6 @@ import type {
     NavigationRoute,
     NavigationStateRoute,
     ReportsSplitNavigatorParamList,
-    RightModalNavigatorParamList,
     RootNavigatorParamList,
     SearchMoneyRequestReportParamList,
     State,
