@@ -45,7 +45,6 @@ function InviteMemberListItem<TItem extends ListItem>({
     const {translate} = useLocalize();
     const {isBetaEnabled} = usePermissions();
     const [nvpDismissedProductTraining] = useOnyx(ONYXKEYS.NVP_DISMISSED_PRODUCT_TRAINING, {canBeMissing: true});
-
     const {renderProductTrainingTooltip, shouldShowProductTrainingTooltip} = useProductTrainingContext(
         CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.SCAN_TEST_TOOLTIP_MANAGER,
         canShowProductTrainingTooltip &&

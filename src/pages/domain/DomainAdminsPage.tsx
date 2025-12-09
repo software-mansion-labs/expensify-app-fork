@@ -16,10 +16,10 @@ import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import DomainSamlPage from './DomainSamlPage';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionListWithSections/TableListItem';
+import DomainSamlPage from './DomainSamlPage';
 
 type DomainSamlPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.SAML>;
 
@@ -42,7 +42,7 @@ function DomainAdminsPage({route}: DomainSamlPageProps) {
             <View style={[styles.flexRow, styles.gap2]}>
                 <Button
                     success
-                    onPress={() => {}}
+                    onPress={() => {Navigation.navigate(ROUTES.DOMAIN_ADD_ADMIN.getRoute(domainID));}}
                     text={translate('domain.admins.addAdmin')}
                     icon={Plus}
                     innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
