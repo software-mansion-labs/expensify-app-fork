@@ -50,7 +50,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     const currentUserAccountID = 16530855;
     const details = personalDetails?.[currentUserAccountID];
     const data: AdminOption[] = [];
-    for (let i = 1; i < 15; i++) {
+    for (let i = 1; i < 20; i++) {
         data.push({
             keyForList: String(i),
             accountID: currentUserAccountID,
@@ -138,9 +138,10 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                     icon={illustrations.Members}
                     shouldShowBackButton={shouldUseNarrowLayout}
                 >
-                    {getHeaderButtons()}
+                    {!shouldUseNarrowLayout && getHeaderButtons()}
                 </HeaderWithBackButton>
 
+                {shouldUseNarrowLayout && <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>}
                 <ScrollViewWithContext
                     keyboardShouldPersistTaps="handled"
                     addBottomSafeAreaPadding
