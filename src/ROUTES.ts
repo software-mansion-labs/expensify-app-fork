@@ -3436,6 +3436,10 @@ const ROUTES = {
         route: 'domain/:domainAccountID/admins/:accountID',
         getRoute: (domainAccountID: number, accountID: number) => `domain/${domainAccountID}/admins/${accountID}` as const,
     },
+    DOMAIN_ADMINS_SETTINGS: {
+        route: 'domain/:accountID/admins/settings',
+        getRoute: (accountID: number) => `domain/${accountID}/admins/settings` as const,
+    },
 } as const;
 
 /**
