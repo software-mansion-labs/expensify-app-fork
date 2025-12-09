@@ -2390,6 +2390,9 @@ type DomainSplitNavigatorParamList = {
     [SCREENS.DOMAIN.SAML]: {
         accountID: number;
     };
+    [SCREENS.DOMAIN.ADMINS]: {
+        accountID: number;
+    };
 };
 
 type OnboardingModalNavigatorParamList = {
