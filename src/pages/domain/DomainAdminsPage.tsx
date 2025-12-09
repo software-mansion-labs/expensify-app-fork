@@ -27,6 +27,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import {getCurrentUserAccountID} from '@userActions/Report';
 
 type DomainAdminsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.SAML>;
 
@@ -41,19 +42,25 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     const styles = useThemeStyles();
     const illustrations = useMemoizedLazyIllustrations(['LaptopOnDeskWithCoffeeAndKey', 'LockClosed', 'OpenSafe', 'ShieldYellow', 'Members'] as const);
 
+    const currentUserAccountID = getCurrentUserAccountID();
+
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
-    const [isAdmin] = useOnyx(`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_ADMIN_ACCESS}${domainID}`, {canBeMissing: false});
+    const adminIDs = Object.entries(domain ?? {})
+        .filter(([key]) =>
+            key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS)
+        )
+        .map(([, value]) => Number(value));
+    const isAdmin = adminIDs.includes(currentUserAccountID);
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
 
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
-    const currentUserAccountID = 16530855;
-    const details = personalDetails?.[currentUserAccountID];
     const data: AdminOption[] = [];
-    for (let i = 1; i < 20; i++) {
+    for (const accountID of adminIDs) {
+        const details = personalDetails?.[accountID];
         data.push({
-            keyForList: String(i),
-            accountID: currentUserAccountID,
+            keyForList: String(accountID),
+            accountID,
             login: details?.login ?? '',
             text: formatPhoneNumber(getDisplayNameOrDefault(details)),
             alternateText: formatPhoneNumber(details?.login ?? ''),
