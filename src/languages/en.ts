@@ -7760,6 +7760,8 @@ const translations = {
         admins: {
             title: 'Admins',
             addAdmin: 'Add admin',
+            findAdmin: 'Find admin',
+            revokeAdminAccess: 'Revoke admin access',
             invite: 'Invite',
         },
     },
