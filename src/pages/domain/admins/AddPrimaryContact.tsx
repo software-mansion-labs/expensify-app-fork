@@ -22,6 +22,7 @@ import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPol
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
+import ROUTES from '@src/ROUTES';
 
 type Sections = SectionListData<OptionData, Section<OptionData>>;
 
@@ -29,12 +30,13 @@ type WorkspaceInvitePageProps = WithPolicyAndFullscreenLoadingProps &
     WithNavigationTransitionEndProps &
     PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.INVITE>;
 
-function AddPrimaryContact({route, policy}: WorkspaceInvitePageProps) {
-    const styles = useThemeStyles();
+function AddPrimaryContact({route}: WorkspaceInvitePageProps) {
     const {translate} = useLocalize();
     const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
     const [isSearchingForReports] = useOnyx(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, {initWithStoredValues: false, canBeMissing: true});
     const [actualSelectedUser, setActualSelectedUser] = useState<OptionData | null>(null);
+
+    const goBackToSettings = () => {Navigation.navigate(ROUTES.DOMAIN_ADMINS_SETTINGS.getRoute(1))}
 
     const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} =
         useSearchSelector({
@@ -45,7 +47,12 @@ function AddPrimaryContact({route, policy}: WorkspaceInvitePageProps) {
             shouldInitialize: didScreenTransitionEnd,
             onSingleSelect: (option) => {
                 const result = {...option, isSelected: true}
-                setActualSelectedUser(result)
+                if (option.accountID === actualSelectedUser?.accountID){
+                    setActualSelectedUser(null)
+                }else{
+                    setActualSelectedUser(result)
+                }
+                goBackToSettings()
             }});
 
         const handleToggleSelection = useCallback(
@@ -92,26 +99,6 @@ function AddPrimaryContact({route, policy}: WorkspaceInvitePageProps) {
         return sectionsArr;
     }, [areOptionsInitialized, actualSelectedUser, availableOptions.personalDetails, availableOptions.userToInvite, translate]);
 
-    const inviteUser = useCallback(() => {
-        console.log(actualSelectedUser)
-    }, [actualSelectedUser]);
-
-
-    const footerContent = useMemo(
-        () => (
-            <FormAlertWithSubmitButton
-                isDisabled={!actualSelectedUser}
-                isAlertVisible={false}
-                buttonText={translate('domain.admins.invite')}
-                onSubmit={inviteUser}
-                message={policy?.alertMessage ?? ''}
-                containerStyles={[styles.flexReset, styles.flexGrow0, styles.flexShrink0, styles.flexBasisAuto]}
-                enabledWhenOffline
-            />
-        ),
-        [actualSelectedUser, inviteUser, policy?.alertMessage, styles.flexBasisAuto, styles.flexGrow0, styles.flexReset, styles.flexShrink0, translate],
-    );
-
     useEffect(() => {
         searchInServer(searchTerm);
     }, [searchTerm]);
@@ -128,7 +115,7 @@ function AddPrimaryContact({route, policy}: WorkspaceInvitePageProps) {
                 title={translate('domain.admins.addPrimaryContact')}
                 onBackButtonPress={() => {
                     clearErrors(route.params.policyID);
-                    Navigation.goBack(route.params.backTo);
+                    goBackToSettings()
                 }}
             />
             <SelectionList
@@ -141,7 +128,6 @@ function AddPrimaryContact({route, policy}: WorkspaceInvitePageProps) {
                     setSearchTerm(value);
                 }}
                 onSelectRow={handleToggleSelection}
-                onConfirm={inviteUser}
                 showScrollIndicator
                 showLoadingPlaceholder={!areOptionsInitialized || !didScreenTransitionEnd}
                 shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}

@@ -31,7 +31,7 @@ function DomainAddAdminPage({route}: WorkspaceInvitePageProps) {
                 title="Settings"
                 onBackButtonPress={() => {
                     clearErrors(route.params.policyID);
-                    Navigation.goBack(route.params.backTo);
+                    Navigation.dismissModal();
                 }}
             />
             <MenuItemWithTopDescription
