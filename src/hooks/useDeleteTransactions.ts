@@ -38,25 +38,16 @@ function useDeleteTransactions({report, reportActions, policy}: UseDeleteTransac
     const archivedReportsIdSet = useArchivedReportsIdSet();
 
     /**
-     * Delete transactions by IDs
-     * @param transactionIDs - Array of transaction IDs to delete
-     * @param duplicateTransactions - Collection of duplicate transactions
-     * @param duplicateTransactionViolations - Collection of duplicate transaction violations
-     * @param currentSearchHash - Current search hash for updating split transactions
-     * @param onClearSelection - Optional callback to clear selection after deletion
-     * @param isSingleTransactionView - Optional flag indicating if the deletion is from a single transaction view
-     * @returns Array of deleted transaction thread report IDs for navigation handling
+     * Prepare transactions for processing by categorizing them into split and non-split transactions
      */
-    const deleteTransactions = useCallback(
-        (
-            transactionIDs: string[],
-            duplicateTransactions: OnyxCollection<Transaction>,
-            duplicateTransactionViolations: OnyxCollection<TransactionViolations>,
-            currentSearchHash?: number,
-            isSingleTransactionView?: boolean,
-        ): string[] => {
+    const prepareTransactionsData = useCallback(
+        (transactionIDs: string[]) => {
             if (!transactionIDs.length) {
-                return [];
+                return {
+                    transactionsWithActions: [],
+                    splitTransactionsByOriginalTransactionID: {},
+                    nonSplitTransactions: [],
+                };
             }
 
             const iouActions = reportActions.filter((action) => isMoneyRequestAction(action));
@@ -69,8 +60,7 @@ function useDeleteTransactions({report, reportActions, policy}: UseDeleteTransac
                     return transactionID === IOUTransactionID;
                 }),
             }));
-            const deletedTransactionIDs: string[] = [];
-            const deletedTransactionThreadReportIDs = new Set<string>();
+
             const {splitTransactionsByOriginalTransactionID, nonSplitTransactions} = transactionsWithActions.reduce(
                 (acc, item) => {
                     const {transaction} = item;
@@ -92,6 +82,37 @@ function useDeleteTransactions({report, reportActions, policy}: UseDeleteTransac
                     nonSplitTransactions: Array<{transactionID: string; action?: ReportAction; transaction?: Transaction}>;
                 },
             );
+
+            return {
+                transactionsWithActions,
+                splitTransactionsByOriginalTransactionID,
+                nonSplitTransactions,
+            };
+        },
+        [reportActions, allTransactions],
+    );
+
+    /**
+     * Delete transactions by IDs
+     * @param transactionIDs - Array of transaction IDs to delete
+     * @param duplicateTransactions - Collection of duplicate transactions
+     * @param duplicateTransactionViolations - Collection of duplicate transaction violations
+     * @param currentSearchHash - Current search hash for updating split transactions
+     * @param onClearSelection - Optional callback to clear selection after deletion
+     * @param isSingleTransactionView - Optional flag indicating if the deletion is from a single transaction view
+     * @returns Array of deleted transaction thread report IDs for navigation handling
+     */
+    const deleteTransactions = useCallback(
+        (
+            transactionIDs: string[],
+            duplicateTransactions: OnyxCollection<Transaction>,
+            duplicateTransactionViolations: OnyxCollection<TransactionViolations>,
+            currentSearchHash?: number,
+            isSingleTransactionView?: boolean,
+        ): string[] => {
+            const {splitTransactionsByOriginalTransactionID, nonSplitTransactions} = prepareTransactionsData(transactionIDs);
+            const deletedTransactionIDs: string[] = [];
+            const deletedTransactionThreadReportIDs = new Set<string>();
 
             for (const transactionID of Object.keys(splitTransactionsByOriginalTransactionID)) {
                 const splitIDs = new Set((splitTransactionsByOriginalTransactionID[transactionID] ?? []).map((transaction) => transaction.transactionID));
@@ -163,7 +184,7 @@ function useDeleteTransactions({report, reportActions, policy}: UseDeleteTransac
             return Array.from(deletedTransactionThreadReportIDs);
         },
         [
-            reportActions,
+            prepareTransactionsData,
             allTransactions,
             allReports,
             report,
@@ -178,8 +199,31 @@ function useDeleteTransactions({report, reportActions, policy}: UseDeleteTransac
         ],
     );
 
+    /**
+     * Get transaction thread report IDs that would be deleted
+     * @param transactionIDs - Array of transaction IDs to check
+     * @returns Array of transaction thread report IDs that would be deleted
+     */
+    const getDeletedTransactionThreadReportIDs = useCallback(
+        (transactionIDs: string[]): string[] => {
+            const {nonSplitTransactions} = prepareTransactionsData(transactionIDs);
+            const deletedTransactionThreadReportIDs = new Set<string>();
+
+            // Only check non-split transactions for thread report IDs
+            for (const {action} of nonSplitTransactions) {
+                if (action?.childReportID) {
+                    deletedTransactionThreadReportIDs.add(action.childReportID);
+                }
+            }
+
+            return Array.from(deletedTransactionThreadReportIDs);
+        },
+        [prepareTransactionsData],
+    );
+
     return {
         deleteTransactions,
+        getDeletedTransactionThreadReportIDs,
     };
 }
 

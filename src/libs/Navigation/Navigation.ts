@@ -723,8 +723,17 @@ function removeScreenByKey(key: string) {
     });
 }
 
-function removeReportScreen(reportIDSet: Set<string>) {
+function removeReportScreen({reportIDSet, callback}: {reportIDSet: Set<string>; callback?: () => void}) {
     isNavigationReady().then(() => {
+        // Callback is executed when modals are closed after removing report screens
+        // For example, it's used for deleting transactions after animation ends
+        if (callback) {
+            const subscription = DeviceEventEmitter.addListener(CONST.MODAL_EVENTS.CLOSED, () => {
+                subscription.remove();
+                callback();
+            });
+        }
+
         navigationRef.current?.dispatch((state) => {
             const routes = state?.routes.filter((route) => {
                 if (route.name === SCREENS.REPORT && route.params && 'reportID' in route.params) {
