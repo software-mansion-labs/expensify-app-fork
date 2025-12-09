@@ -11,8 +11,7 @@ import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPol
 import type SCREENS from '@src/SCREENS';
 import ToggleSettingOptionRow from '@pages/workspace/workflows/ToggleSettingsOptionRow';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
-import {areSettingsInErrorFields} from '@libs/PolicyUtils';
-import CONST from '@src/CONST';
+import ROUTES from '@src/ROUTES';
 
 
 type WorkspaceInvitePageProps = WithPolicyAndFullscreenLoadingProps &
@@ -38,7 +37,7 @@ function DomainAddAdminPage({route}: WorkspaceInvitePageProps) {
             <MenuItemWithTopDescription
                 title="Primary contact"
                 shouldShowRightIcon
-                onPress={()=>{}}
+                onPress={()=>{Navigation.navigate(ROUTES.DOMAIN_ADD_PRIMARY_CONTACT.getRoute(1))}}
             />
             <ToggleSettingOptionRow
                 key="klucz+nowy"

@@ -7763,7 +7763,8 @@ const translations = {
             findAdmin: 'Find admin',
             revokeAdminAccess: 'Revoke admin access',
             invite: 'Invite',
-            settings: 'Settings'
+            settings: 'Settings',
+            addPrimaryContact:"Add primary contact"
         },
     },
 };

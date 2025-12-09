@@ -851,6 +851,7 @@ const SCREENS = {
         ADD_ADMIN: 'Domain_Add_Admin',
         ADMIN_DETAILS: 'Domain_Admin_Details',
         ADMINS_SETTINGS: 'Admins_Settings',
+        ADD_PRIMARY_CONTACT: 'Add_Primary_Contact',
     },
 } as const;
 
