@@ -7696,6 +7696,7 @@ ${
                 `<muted-text><centered-text>Domena <strong>${domainName}</strong> została pomyślnie zweryfikowana i możesz teraz skonfigurować SAML oraz inne funkcje zabezpieczeń.</centered-text></muted-text>`,
         },
         saml: 'SAML',
+        groups : 'Groups',
         samlFeatureList: {
             title: 'Jednokrotne logowanie SAML (SSO)',
             subtitle: ({domainName}: {domainName: string}) =>

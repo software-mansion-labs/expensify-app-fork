@@ -3402,6 +3402,10 @@ const ROUTES = {
         route: 'domain/:accountID/saml',
         getRoute: (accountID: number) => `domain/${accountID}/saml` as const,
     },
+    DOMAIN_GROUPS: {
+        route: 'domain/:accountID/groups',
+        getRoute: (accountID: number) => `domain/${accountID}/groups` as const,
+    },
     DOMAIN_VERIFY: {
         route: 'domain/:accountID/verify',
         getRoute: (accountID: number) => `domain/${accountID}/verify` as const,
