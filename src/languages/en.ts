@@ -7760,6 +7760,7 @@ const translations = {
         admins: {
             title: 'Admins',
             addAdmin: 'Add admin',
+            invite: 'Invite',
         },
     },
 };

@@ -3428,6 +3428,10 @@ const ROUTES = {
         route: 'domain/:accountID/admins',
         getRoute: (accountID: number) => `domain/${accountID}/admins` as const,
     },
+    DOMAIN_ADD_ADMIN: {
+        route: 'domain/:accountID/admins/invite',
+        getRoute: (accountID: number) => `domain/${accountID}/admins/invite` as const,
+    },
 } as const;
 
 /**
