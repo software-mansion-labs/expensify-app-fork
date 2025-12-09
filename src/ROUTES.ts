@@ -3428,9 +3428,21 @@ const ROUTES = {
         route: 'domain/:accountID/admins',
         getRoute: (accountID: number) => `domain/${accountID}/admins` as const,
     },
+    DOMAIN_ADD_ADMIN: {
+        route: 'domain/:accountID/admins/invite',
+        getRoute: (accountID: number) => `domain/${accountID}/admins/invite` as const,
+    },
     DOMAIN_ADMIN_DETAILS: {
         route: 'domain/:domainAccountID/admins/:accountID',
         getRoute: (domainAccountID: number, accountID: number) => `domain/${domainAccountID}/admins/${accountID}` as const,
+    },
+    DOMAIN_ADMINS_SETTINGS: {
+        route: 'domain/:accountID/admins/settings',
+        getRoute: (accountID: number) => `domain/${accountID}/admins/settings` as const,
+    },
+    DOMAIN_ADD_PRIMARY_CONTACT: {
+        route: 'domain/:accountID/admins/settings/primaryContact',
+        getRoute: (accountID: number) => `domain/${accountID}/admins/settings/primaryContact` as const,
     },
 } as const;
 

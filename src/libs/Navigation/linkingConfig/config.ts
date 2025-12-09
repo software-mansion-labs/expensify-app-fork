@@ -1095,11 +1095,20 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         [SCREENS.DOMAIN.VERIFY]: {
                             path: ROUTES.DOMAIN_VERIFY.route,
                         },
+                        [SCREENS.DOMAIN.ADD_ADMIN]: {
+                            path: ROUTES.DOMAIN_ADD_ADMIN.route,
+                        },
+                        [SCREENS.DOMAIN.ADD_PRIMARY_CONTACT]: {
+                            path: ROUTES.DOMAIN_ADD_PRIMARY_CONTACT.route,
+                        },
                         [SCREENS.DOMAIN.VERIFIED]: {
                             path: ROUTES.DOMAIN_VERIFIED.route,
                         },
                         [SCREENS.DOMAIN.ADMIN_DETAILS]: {
                             path: ROUTES.DOMAIN_ADMIN_DETAILS.route,
+                        },
+                        [SCREENS.DOMAIN.ADMINS_SETTINGS]: {
+                            path: ROUTES.DOMAIN_ADMINS_SETTINGS.route,
                         },
                     },
                 },

@@ -3,7 +3,7 @@ import {View} from 'react-native';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import {FallbackAvatar, Plus} from '@components/Icon/Expensicons';
+import {FallbackAvatar, Plus, Gear} from '@components/Icon/Expensicons';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import SearchBar from '@components/SearchBar';
@@ -86,9 +86,17 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
             <View style={[styles.flexRow, styles.gap2]}>
                 <Button
                     success
-                    onPress={() => {}}
+                    onPress={() => {Navigation.navigate(ROUTES.DOMAIN_ADD_ADMIN.getRoute(domainID));}}
                     text={translate('domain.admins.addAdmin')}
                     icon={Plus}
+                    innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
+                    style={[shouldUseNarrowLayout && styles.flexGrow1, shouldUseNarrowLayout && styles.mb3]}
+                />
+
+                <Button
+                    onPress={() => {Navigation.navigate(ROUTES.DOMAIN_ADMINS_SETTINGS.getRoute(domainID));}}
+                    text={translate('domain.admins.settings')}
+                    icon={Gear}
                     innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
                     style={[shouldUseNarrowLayout && styles.flexGrow1, shouldUseNarrowLayout && styles.mb3]}
                 />

@@ -7762,6 +7762,9 @@ const translations = {
             addAdmin: 'Add admin',
             findAdmin: 'Find admin',
             revokeAdminAccess: 'Revoke admin access',
+            invite: 'Invite',
+            settings: 'Settings',
+            addPrimaryContact:"Add primary contact"
         },
     },
 };

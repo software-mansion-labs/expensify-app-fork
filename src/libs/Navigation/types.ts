@@ -1307,8 +1307,17 @@ type SettingsNavigatorParamList = {
     [SCREENS.DOMAIN.VERIFIED]: {
         accountID: number;
     };
+    [SCREENS.DOMAIN.ADD_ADMIN]: {
+        accountID: number;
+    };
     [SCREENS.DOMAIN.ADMIN_DETAILS]: {
         domainAccountID: number;
+        accountID: number;
+    };
+    [SCREENS.DOMAIN.ADMINS_SETTINGS]: {
+        accountID: number;
+    };
+    [SCREENS.DOMAIN.ADD_PRIMARY_CONTACT]: {
         accountID: number;
     };
 } & ReimbursementAccountNavigatorParamList;
