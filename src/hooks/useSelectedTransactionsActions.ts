@@ -67,7 +67,7 @@ function useSelectedTransactionsActions({
     const expensifyIcons = useMemoizedLazyExpensifyIcons(['Stopwatch', 'Trashcan', 'ArrowRight', 'Table', 'DocumentMerge', 'Export', 'ArrowCollapse'] as const);
     const {duplicateTransactions, duplicateTransactionViolations} = useDuplicateTransactionsAndViolations(selectedTransactionIDs);
     const isReportArchived = useReportIsArchived(report?.reportID);
-    const {deleteTransactions} = useDeleteTransactions({report, reportActions, policy});
+    const {deleteTransactions, getDeletedTransactionThreadReportIDs} = useDeleteTransactions({report, reportActions, policy});
     const selectedTransactionsList = useMemo(
         () =>
             selectedTransactionIDs.reduce((acc, transactionID) => {
@@ -137,10 +137,15 @@ function useSelectedTransactionsActions({
     }
 
     const handleDeleteTransactions = useCallback(() => {
-        const deletedThreadReportIDs = deleteTransactions(selectedTransactionIDs, duplicateTransactions, duplicateTransactionViolations, currentSearchHash, false);
+        const deletedThreadReportIDs = getDeletedTransactionThreadReportIDs(selectedTransactionIDs);
         clearSelectedTransactions(true);
         setIsDeleteModalVisible(false);
-        Navigation.removeReportScreen(new Set(deletedThreadReportIDs));
+
+        // Firstly we remove report screens that are now empty, only after that we delete the transactions.
+        Navigation.removeReportScreen({
+            reportIDSet: new Set(deletedThreadReportIDs),
+            callback: () => deleteTransactions(selectedTransactionIDs, duplicateTransactions, duplicateTransactionViolations, currentSearchHash, false),
+        });
     }, [deleteTransactions, selectedTransactionIDs, duplicateTransactions, duplicateTransactionViolations, currentSearchHash, clearSelectedTransactions]);
 
     const showDeleteModal = useCallback(() => {
