@@ -67,9 +67,10 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                     source: details?.avatar ?? FallbackAvatar,
                     name: formatPhoneNumber(details?.login ?? ''),
                     type: CONST.ICON_TYPE_AVATAR,
-                    id: currentUserAccountID,
+                    id: accountID,
                 },
             ],
+            pendingAction: domain?.adminPendingActions?.[accountID],
             errors: {
                 // error1: "Unable to revoke admin access for this user. Please try again.",
             },

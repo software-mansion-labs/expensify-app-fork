@@ -337,23 +337,39 @@ function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string,
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
             value: {
-                [adminPermissionsKey]: null,
+                adminPendingActions: {
+                    [accountID]: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,
+                },
             },
         },
     ];
-    const successData: OnyxUpdate[] = [];
+    const successData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                adminPendingActions: {
+                    [accountID]: null,
+                },
+            },
+        },
+    ];
     const failureData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
             value: {
-                [adminPermissionsKey]: accountID,
+                adminPendingActions: {
+                    [accountID]: null,
+                },
             },
         },
     ];
 
     Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
-        [adminPermissionsKey]: null,
+        adminPendingActions: {
+            [accountID]: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,
+        },
     });
 
     // API.write();
