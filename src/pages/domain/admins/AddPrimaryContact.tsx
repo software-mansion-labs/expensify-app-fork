@@ -21,8 +21,8 @@ import type {SettingsNavigatorParamList} from '@navigation/types';
 import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type SCREENS from '@src/SCREENS';
 import ROUTES from '@src/ROUTES';
+import type SCREENS from '@src/SCREENS';
 
 type Sections = SectionListData<OptionData, Section<OptionData>>;
 
@@ -36,29 +36,33 @@ function AddPrimaryContact({route}: WorkspaceInvitePageProps) {
     const [isSearchingForReports] = useOnyx(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, {initWithStoredValues: false, canBeMissing: true});
     const [actualSelectedUser, setActualSelectedUser] = useState<OptionData | null>(null);
 
-    const goBackToSettings = () => {Navigation.navigate(ROUTES.DOMAIN_ADMINS_SETTINGS.getRoute(1))}
+    const goBackToSettings = () => {
+        Navigation.navigate(ROUTES.DOMAIN_ADMINS_SETTINGS.getRoute(1));
+    };
 
-    const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} =
-        useSearchSelector({
-            selectionMode: CONST.SEARCH_SELECTOR.SELECTION_MODE_SINGLE,
-            searchContext: CONST.SEARCH_SELECTOR.SEARCH_CONTEXT_MEMBER_INVITE,
-            includeUserToInvite: true,
-            includeRecentReports: false,
-            shouldInitialize: didScreenTransitionEnd,
-            onSingleSelect: (option) => {
-                const result = {...option, isSelected: true}
-                if (option.accountID === actualSelectedUser?.accountID){
-                    setActualSelectedUser(null)
-                }else{
-                    setActualSelectedUser(result)
-                }
-                goBackToSettings()
-            }});
+    const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} = useSearchSelector({
+        selectionMode: CONST.SEARCH_SELECTOR.SELECTION_MODE_SINGLE,
+        searchContext: CONST.SEARCH_SELECTOR.SEARCH_CONTEXT_MEMBER_INVITE,
+        includeUserToInvite: true,
+        includeRecentReports: false,
+        shouldInitialize: didScreenTransitionEnd,
+        onSingleSelect: (option) => {
+            const result = {...option, isSelected: true};
+            if (option.accountID === actualSelectedUser?.accountID) {
+                setActualSelectedUser(null);
+            } else {
+                setActualSelectedUser(result);
+            }
+            goBackToSettings();
+        },
+    });
 
-        const handleToggleSelection = useCallback(
+    const handleToggleSelection = useCallback(
         (option: OptionData) => {
             toggleSelection(option);
-        },[toggleSelection],);
+        },
+        [toggleSelection],
+    );
 
     const sections: Sections[] = useMemo(() => {
         const sectionsArr: Sections[] = [];
@@ -74,9 +78,7 @@ function AddPrimaryContact({route}: WorkspaceInvitePageProps) {
             });
         }
 
-        const filteredPersonalDetails = availableOptions.personalDetails.filter(
-            (option) => option.accountID !== actualSelectedUser?.accountID,
-        );
+        const filteredPersonalDetails = availableOptions.personalDetails.filter((option) => option.accountID !== actualSelectedUser?.accountID);
 
         if (filteredPersonalDetails.length > 0) {
             sectionsArr.push({
@@ -115,7 +117,7 @@ function AddPrimaryContact({route}: WorkspaceInvitePageProps) {
                 title={translate('domain.admins.addPrimaryContact')}
                 onBackButtonPress={() => {
                     clearErrors(route.params.policyID);
-                    goBackToSettings()
+                    goBackToSettings();
                 }}
             />
             <SelectionList

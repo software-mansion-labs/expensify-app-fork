@@ -36,22 +36,24 @@ function DomainAddAdminPage({route, policy}: WorkspaceInvitePageProps) {
     const [isSearchingForReports] = useOnyx(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, {initWithStoredValues: false, canBeMissing: true});
     const [actualSelectedUser, setActualSelectedUser] = useState<OptionData | null>(null);
 
-    const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} =
-        useSearchSelector({
-            selectionMode: CONST.SEARCH_SELECTOR.SELECTION_MODE_SINGLE,
-            searchContext: CONST.SEARCH_SELECTOR.SEARCH_CONTEXT_MEMBER_INVITE,
-            includeUserToInvite: true,
-            includeRecentReports: false,
-            shouldInitialize: didScreenTransitionEnd,
-            onSingleSelect: (option) => {
-                const result = {...option, isSelected: true}
-                setActualSelectedUser(result)
-            }});
+    const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} = useSearchSelector({
+        selectionMode: CONST.SEARCH_SELECTOR.SELECTION_MODE_SINGLE,
+        searchContext: CONST.SEARCH_SELECTOR.SEARCH_CONTEXT_MEMBER_INVITE,
+        includeUserToInvite: true,
+        includeRecentReports: false,
+        shouldInitialize: didScreenTransitionEnd,
+        onSingleSelect: (option) => {
+            const result = {...option, isSelected: true};
+            setActualSelectedUser(result);
+        },
+    });
 
-        const handleToggleSelection = useCallback(
+    const handleToggleSelection = useCallback(
         (option: OptionData) => {
             toggleSelection(option);
-        },[toggleSelection],);
+        },
+        [toggleSelection],
+    );
 
     const sections: Sections[] = useMemo(() => {
         const sectionsArr: Sections[] = [];
@@ -67,9 +69,7 @@ function DomainAddAdminPage({route, policy}: WorkspaceInvitePageProps) {
             });
         }
 
-        const filteredPersonalDetails = availableOptions.personalDetails.filter(
-            (option) => option.accountID !== actualSelectedUser?.accountID,
-        );
+        const filteredPersonalDetails = availableOptions.personalDetails.filter((option) => option.accountID !== actualSelectedUser?.accountID);
 
         if (filteredPersonalDetails.length > 0) {
             sectionsArr.push({
@@ -93,9 +93,8 @@ function DomainAddAdminPage({route, policy}: WorkspaceInvitePageProps) {
     }, [areOptionsInitialized, actualSelectedUser, availableOptions.personalDetails, availableOptions.userToInvite, translate]);
 
     const inviteUser = useCallback(() => {
-        console.log(actualSelectedUser)
+        console.log(actualSelectedUser);
     }, [actualSelectedUser]);
-
 
     const footerContent = useMemo(
         () => (

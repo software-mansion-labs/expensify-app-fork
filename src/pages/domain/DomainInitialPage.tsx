@@ -67,6 +67,12 @@ function DomainInitialPage({route}: DomainInitialPageProps) {
                 action: singleExecution(waitForNavigate(() => Navigation.navigate(ROUTES.DOMAIN_SAML.getRoute(accountID)))),
                 screenName: SCREENS.DOMAIN.SAML,
             },
+            {
+                translationKey: 'domain.admins.title',
+                icon: icons.UserLock,
+                action: singleExecution(waitForNavigate(() => Navigation.navigate(ROUTES.DOMAIN_ADMINS.getRoute(accountID)))),
+                screenName: SCREENS.DOMAIN.ADMINS,
+            },
         ];
 
         return menuItems;

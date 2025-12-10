@@ -3,7 +3,7 @@ import {View} from 'react-native';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import {FallbackAvatar, Plus, Gear} from '@components/Icon/Expensicons';
+import {FallbackAvatar, Gear, Plus} from '@components/Icon/Expensicons';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import SearchBar from '@components/SearchBar';
@@ -23,11 +23,11 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
+import {getCurrentUserAccountID} from '@userActions/Report';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import {getCurrentUserAccountID} from '@userActions/Report';
 
 type DomainAdminsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.SAML>;
 
@@ -46,9 +46,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
 
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
     const adminIDs = Object.entries(domain ?? {})
-        .filter(([key]) =>
-            key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS)
-        )
+        .filter(([key]) => key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS))
         .map(([, value]) => Number(value));
     const isAdmin = adminIDs.includes(currentUserAccountID);
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
@@ -86,7 +84,9 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
             <View style={[styles.flexRow, styles.gap2]}>
                 <Button
                     success
-                    onPress={() => {Navigation.navigate(ROUTES.DOMAIN_ADD_ADMIN.getRoute(domainID));}}
+                    onPress={() => {
+                        Navigation.navigate(ROUTES.DOMAIN_ADD_ADMIN.getRoute(domainID));
+                    }}
                     text={translate('domain.admins.addAdmin')}
                     icon={Plus}
                     innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
@@ -94,7 +94,9 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                 />
 
                 <Button
-                    onPress={() => {Navigation.navigate(ROUTES.DOMAIN_ADMINS_SETTINGS.getRoute(domainID));}}
+                    onPress={() => {
+                        Navigation.navigate(ROUTES.DOMAIN_ADMINS_SETTINGS.getRoute(domainID));
+                    }}
                     text={translate('domain.admins.settings')}
                     icon={Gear}
                     innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}

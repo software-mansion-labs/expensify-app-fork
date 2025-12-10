@@ -7764,7 +7764,7 @@ const translations = {
             revokeAdminAccess: 'Revoke admin access',
             invite: 'Invite',
             settings: 'Settings',
-            addPrimaryContact:"Add primary contact"
+            addPrimaryContact: 'Add primary contact',
         },
     },
 };
