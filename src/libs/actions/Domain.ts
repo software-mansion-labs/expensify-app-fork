@@ -331,6 +331,34 @@ function createDomain(domainName: string) {
     API.write(WRITE_COMMANDS.CREATE_DOMAIN, {domainName}, {optimisticData, successData, failureData});
 }
 
+function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string, accountID: string) {
+    const optimisticData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [adminPermissionsKey]: null,
+            },
+        },
+    ];
+    const successData: OnyxUpdate[] = [];
+    const failureData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [adminPermissionsKey]: accountID,
+            },
+        },
+    ];
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
+        [adminPermissionsKey]: null,
+    });
+
+    // API.write();
+}
+
 /**
  * For resetting createDomain form data
  * Resets it only on the client's side, no server call is performed
@@ -353,4 +381,5 @@ export {
     getScimToken,
     createDomain,
     resetCreateDomainForm,
+    revokeAdminAccess,
 };

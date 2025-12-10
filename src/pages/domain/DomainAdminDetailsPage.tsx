@@ -1,6 +1,7 @@
 import {Str} from 'expensify-common';
 import React, {useState} from 'react';
 import {View} from 'react-native';
+import Onyx from 'react-native-onyx';
 import Avatar from '@components/Avatar';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
@@ -30,6 +31,10 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     const styles = useThemeStyles();
     const {translate, formatPhoneNumber} = useLocalize();
 
+    const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {canBeMissing: true});
+    const adminKey = Object.entries(domain ?? {})
+        .find(([, value]) => value === route.params.accountID)
+        ?.at(0);
     const [isRevokingAdminAccess, setIsRevokingAdminAccess] = useState(false);
 
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
@@ -93,8 +98,12 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
                             title={translate('domain.admins.revokeAdminAccess')}
                             isVisible={isRevokingAdminAccess}
                             onConfirm={() => {
-                                setIsRevokingAdminAccess(false);
-                                Navigation.dismissModal();
+                                Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {
+                                    [adminKey]: null,
+                                }).then(() => {
+                                    setIsRevokingAdminAccess(false);
+                                    Navigation.dismissModal();
+                                });
                             }}
                             onCancel={() => setIsRevokingAdminAccess(false)}
                             confirmText={translate('common.remove')}
