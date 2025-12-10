@@ -2,42 +2,46 @@ import React from 'react';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import ScreenWrapper from '@components/ScreenWrapper';
-import type {WithNavigationTransitionEndProps} from '@components/withNavigationTransitionEnd';
+import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {clearErrors} from '@libs/actions/Policy/Policy';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@navigation/types';
-import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
 import ToggleSettingOptionRow from '@pages/workspace/workflows/ToggleSettingsOptionRow';
+import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
-type WorkspaceInvitePageProps = WithPolicyAndFullscreenLoadingProps &
-    WithNavigationTransitionEndProps &
-    PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.INVITE>;
+type DomainSettingsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.ADMINS_SETTINGS>;
 
-function DomainAddAdminPage({route}: WorkspaceInvitePageProps) {
+
+function DomainSettingsPage({route}: DomainSettingsPageProps) {
     const styles = useThemeStyles();
+
+    const [domainSettings] = useOnyx(`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${route.params.accountID}`, {
+        canBeMissing: false,
+    });
+    const currentlySelectedUser = domainSettings?.settings?.technicalContactEmail;
+
     return (
         <ScreenWrapper
             shouldEnableMaxHeight
             shouldUseCachedViewportHeight
-            testID={DomainAddAdminPage.displayName}
+            testID={DomainSettingsPage.displayName}
             enableEdgeToEdgeBottomSafeAreaPadding
         >
             <HeaderWithBackButton
                 title="Settings"
                 onBackButtonPress={() => {
-                    clearErrors(route.params.policyID);
                     Navigation.dismissModal();
                 }}
             />
             <MenuItemWithTopDescription
-                title="Primary contact"
+                description="Primary contact"
+                title={currentlySelectedUser}
                 shouldShowRightIcon
                 onPress={() => {
-                    Navigation.navigate(ROUTES.DOMAIN_ADD_PRIMARY_CONTACT.getRoute(1));
+                    Navigation.navigate(ROUTES.DOMAIN_ADD_PRIMARY_CONTACT.getRoute(route.params.accountID));
                 }}
             />
             <ToggleSettingOptionRow
@@ -54,6 +58,6 @@ function DomainAddAdminPage({route}: WorkspaceInvitePageProps) {
     );
 }
 
-DomainAddAdminPage.displayName = 'WorkspaceInvitePage';
+DomainSettingsPage.displayName = 'WorkspaceInvitePage';
 
-export default DomainAddAdminPage;
+export default DomainSettingsPage;

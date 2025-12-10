@@ -375,6 +375,40 @@ function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string,
     // API.write();
 }
 
+function choosePrimaryContact(domainAccountID: number, technicalContactEmail: string | null, currentTechnicalContactEmail?: string) {
+    const optimisticData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${domainAccountID}`,
+            value: {
+                settings: {
+                    technicalContactEmail
+                },
+            },
+        },
+    ];
+    const successData: OnyxUpdate[] = [];
+    const failureData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${domainAccountID}`,
+            value: {
+                settings: {
+                    technicalContactEmail: currentTechnicalContactEmail,
+                },
+            },
+        },
+    ];
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${domainAccountID}`, {
+        settings: {
+            technicalContactEmail,
+        },
+    });
+
+    // API.write();
+}
+
 /**
  * For resetting createDomain form data
  * Resets it only on the client's side, no server call is performed
@@ -398,4 +432,5 @@ export {
     createDomain,
     resetCreateDomainForm,
     revokeAdminAccess,
+    choosePrimaryContact
 };
