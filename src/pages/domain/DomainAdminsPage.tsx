@@ -28,6 +28,8 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import type * as OnyxTypes from '@src/types/onyx';
+import getEmptyArray from '@src/types/utils/getEmptyArray';
 
 type DomainAdminsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.SAML>;
 
@@ -35,6 +37,23 @@ type AdminOption = Omit<ListItem, 'accountID' | 'login'> & {
     accountID: number;
     login: string;
 };
+
+// to be moved to utils
+function selectAdminIDs(domain: OnyxTypes.Domain | undefined): number[] {
+    if (!domain) {
+        return [];
+    }
+
+    return (
+        Object.entries(domain)
+            .filter(([key]) => key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS))
+            .map(([, value]) => {
+                const rawValue = typeof value === 'object' && value !== null && 'value' in value ? value.value : value;
+                return Number(rawValue);
+            })
+            .filter((id) => !Number.isNaN(id)) ?? getEmptyArray<string>()
+    );
+}
 
 function DomainAdminsPage({route}: DomainAdminsPageProps) {
     const domainID = route.params.accountID;
@@ -45,16 +64,18 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     const currentUserAccountID = getCurrentUserAccountID();
 
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
-    const adminIDs = Object.entries(domain ?? {})
-        .filter(([key]) => key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS))
-        .map(([, value]) => Number(value));
-    const isAdmin = adminIDs.includes(currentUserAccountID);
+    const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
+        canBeMissing: true,
+        selector: selectAdminIDs,
+    });
+    const isAdmin = adminIDs?.includes(currentUserAccountID) ?? false;
+
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
 
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const data: AdminOption[] = [];
-    for (const accountID of adminIDs) {
+    for (const accountID of adminIDs ?? []) {
         const details = personalDetails?.[accountID];
         data.push({
             keyForList: String(accountID),

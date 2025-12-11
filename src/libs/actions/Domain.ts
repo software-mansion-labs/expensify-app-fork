@@ -331,11 +331,11 @@ function createDomain(domainName: string) {
     API.write(WRITE_COMMANDS.CREATE_DOMAIN, {domainName}, {optimisticData, successData, failureData});
 }
 
-function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string, accountID: string) {
+function revokeAdminAccess(accountId: number, adminPermissionsKey: string, accountID: string) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${accountId}`,
             value: {
                 [adminPermissionsKey]: null,
             },
@@ -345,14 +345,14 @@ function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string,
     const failureData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${accountId}`,
             value: {
                 [adminPermissionsKey]: accountID,
             },
         },
     ];
 
-    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${accountId}`, {
         [adminPermissionsKey]: null,
     });
 
@@ -365,6 +365,42 @@ function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string,
  */
 function resetCreateDomainForm() {
     Onyx.merge(ONYXKEYS.FORMS.CREATE_DOMAIN_FORM, null);
+}
+
+function addAdminToDomain(domainAccountID: number, accountID: number, targetEmail: string, domainName: string) {
+    const PERMISSION_KEY = `expensify_adminPermissions_${Math.random() * 10000}`;
+
+    const optimisticData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [PERMISSION_KEY]: String(accountID),
+            },
+        },
+    ];
+
+    const successData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [PERMISSION_KEY]: null,
+            },
+        },
+    ];
+
+    const failureData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [PERMISSION_KEY]: String(accountID),
+            },
+        },
+    ];
+
+    API.write(WRITE_COMMANDS.ADD_DOMAIN_ADMIN, {domainName, targetEmail}, {optimisticData, successData, failureData});
 }
 
 export {
@@ -382,4 +418,5 @@ export {
     createDomain,
     resetCreateDomainForm,
     revokeAdminAccess,
+    addAdminToDomain,
 };

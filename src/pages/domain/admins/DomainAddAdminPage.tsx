@@ -1,7 +1,9 @@
+import {Str} from 'expensify-common';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import type {SectionListData} from 'react-native';
 import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionListWithSections';
 import InviteMemberListItem from '@components/SelectionListWithSections/InviteMemberListItem';
@@ -11,30 +13,31 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useSearchSelector from '@hooks/useSearchSelector';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {clearErrors} from '@libs/actions/Policy/Policy';
 import {searchInServer} from '@libs/actions/Report';
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {OptionData} from '@libs/ReportUtils';
 import type {SettingsNavigatorParamList} from '@navigation/types';
-import type {WithPolicyAndFullscreenLoadingProps} from '@pages/workspace/withPolicyAndFullscreenLoading';
+import {addAdminToDomain} from '@userActions/Domain';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
 type Sections = SectionListData<OptionData, Section<OptionData>>;
 
-type WorkspaceInvitePageProps = WithPolicyAndFullscreenLoadingProps &
-    WithNavigationTransitionEndProps &
-    PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.INVITE>;
+type DomainAddAdminProps = WithNavigationTransitionEndProps & PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.ADD_ADMIN>;
 
-function DomainAddAdminPage({route, policy}: WorkspaceInvitePageProps) {
+function DomainAddAdminPage({route}: DomainAddAdminProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
     const [isSearchingForReports] = useOnyx(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, {initWithStoredValues: false, canBeMissing: true});
     const [actualSelectedUser, setActualSelectedUser] = useState<OptionData | null>(null);
+    const domainID = route.params.accountID;
+    const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
+    const domainName = domain ? Str.extractEmailDomain(domain.email) : undefined;
 
     const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} = useSearchSelector({
         selectionMode: CONST.SEARCH_SELECTOR.SELECTION_MODE_SINGLE,
@@ -93,8 +96,13 @@ function DomainAddAdminPage({route, policy}: WorkspaceInvitePageProps) {
     }, [areOptionsInitialized, actualSelectedUser, availableOptions.personalDetails, availableOptions.userToInvite, translate]);
 
     const inviteUser = useCallback(() => {
-        console.log(actualSelectedUser);
-    }, [actualSelectedUser]);
+        if (!actualSelectedUser || !actualSelectedUser.accountID || !actualSelectedUser.login || !domainName) {
+            return;
+        }
+
+        addAdminToDomain(domainID, actualSelectedUser.accountID, actualSelectedUser.login, domainName);
+        Navigation.dismissModal();
+    }, [actualSelectedUser, domainID, domainName]);
 
     const footerContent = useMemo(
         () => (
@@ -103,12 +111,11 @@ function DomainAddAdminPage({route, policy}: WorkspaceInvitePageProps) {
                 isAlertVisible={false}
                 buttonText={translate('domain.admins.invite')}
                 onSubmit={inviteUser}
-                message={policy?.alertMessage ?? ''}
                 containerStyles={[styles.flexReset, styles.flexGrow0, styles.flexShrink0, styles.flexBasisAuto]}
                 enabledWhenOffline
             />
         ),
-        [actualSelectedUser, inviteUser, policy?.alertMessage, styles.flexBasisAuto, styles.flexGrow0, styles.flexReset, styles.flexShrink0, translate],
+        [actualSelectedUser, inviteUser, styles.flexBasisAuto, styles.flexGrow0, styles.flexReset, styles.flexShrink0, translate],
     );
 
     useEffect(() => {
@@ -126,12 +133,11 @@ function DomainAddAdminPage({route, policy}: WorkspaceInvitePageProps) {
             <HeaderWithBackButton
                 title={translate('domain.admins.addAdmin')}
                 onBackButtonPress={() => {
-                    clearErrors(route.params.policyID);
-                    Navigation.goBack(route.params.backTo);
+                    Navigation.goBack(ROUTES.DOMAIN_ADMINS.getRoute(domainID));
                 }}
             />
             <SelectionList
-                canSelectMultiple={false}
+                canSelectMultiple
                 sections={sections}
                 ListItem={InviteMemberListItem}
                 textInputLabel={translate('selectionList.nameEmailOrPhoneNumber')}
