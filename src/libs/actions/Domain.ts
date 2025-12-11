@@ -551,6 +551,15 @@ function addAdminToDomain(domainAccountID: number, accountID: number, targetEmai
                 [PERMISSION_KEY]: accountID,
             },
         },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                admin: {
+                    [accountID]: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
+                },
+            },
+        },
     ];
 
     const successData: OnyxUpdate[] = [
@@ -571,13 +580,55 @@ function addAdminToDomain(domainAccountID: number, accountID: number, targetEmai
                 // [PERMISSION_KEY]: null,
             },
         },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                admin: {
+                    [accountID]: null,
+                },
+            },
+        },
     ];
 
     Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
         [PERMISSION_KEY]: accountID,
     });
 
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
+        adminErrors: {
+            [accountID]: {
+                12334: 'Adding admin ends with failure, great success!',
+            },
+        },
+    });
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {
+        admin: {
+            [accountID]: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
+        },
+    });
+
     // API.write(WRITE_COMMANDS.ADD_DOMAIN_ADMIN, {domainName, targetEmail}, {optimisticData,successData, failureData});
+}
+
+/**
+ * Removes an error after trying to add a admin
+ */
+function clearAddAdminError(domainAccountID: number, accountID: number) {
+    const PERMISSION_KEY = `${ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS}${accountID}`;
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
+        [PERMISSION_KEY]: null,
+    });
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
+        [accountID]: null,
+    });
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {
+        [accountID]: null,
+    });
 }
 
 export {
@@ -600,4 +651,5 @@ export {
     toggleConsolidatedDomainBilling,
     clearToggleConsolidatedDomainBillingErrors,
     clearChoosePrimaryContactError,
+    clearAddAdminError,
 };

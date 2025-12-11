@@ -17,12 +17,15 @@ import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchResults from '@hooks/useSearchResults';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {getLatestError} from '@libs/ErrorUtils';
 import {sortAlphabetically} from '@libs/OptionsListUtils';
 import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
+import {clearAddAdminError} from '@userActions/Domain';
+import {clearDeleteMemberError} from '@userActions/Policy/Member';
 import {getCurrentUserAccountID} from '@userActions/Report';
 import CONST from '@src/CONST';
 import selectAdminIDs from '@src/libs/DomainUtils';
@@ -56,6 +59,10 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
         canBeMissing: true,
     });
 
+    const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainID}`, {
+        canBeMissing: true,
+    });
+
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
 
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -78,9 +85,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                 },
             ],
             pendingAction: domainPendingActions?.admin?.[accountID],
-            errors: {
-                // error1: "Unable to revoke admin access for this user. Please try again.",
-            },
+            errors: getLatestError(domainErrors?.adminErrors?.[accountID]),
         });
     }
 
@@ -195,8 +200,8 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                         addBottomSafeAreaPadding
                         customListHeader={getCustomListHeader()}
                         onDismissError={(item) => {
-                            if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
-                                // clearDeleteMemberError(route.params.policyID, item.login);
+                            if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
+                                clearAddAdminError(domainID, item.accountID);
                             } else {
                                 // clearAddMemberError(route.params.policyID, item.login, item.accountID);
                             }

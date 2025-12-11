@@ -17,8 +17,7 @@ type DomainErrors = {
     /**
      *
      */
-    admin?: Record<string, OnyxCommon.Errors>;
-
+    adminErrors?: Record<string, OnyxCommon.Errors>;
 };
 
 export default DomainErrors;
