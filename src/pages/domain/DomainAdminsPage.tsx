@@ -1,5 +1,6 @@
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
+import {FetchStatus, ResultMetadata} from 'react-native-onyx/dist/useOnyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -47,7 +48,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
 
     const currentUserAccountID = getCurrentUserAccountID();
 
-    const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
+    const [domain, fetchStatus] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: false});
     const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
         canBeMissing: true,
         selector: selectAdminIDs,
@@ -63,7 +64,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     });
 
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
-
+    const shuldShowLoading = fetchStatus.status !== 'loading' && (!domain || !isAdmin);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const data: AdminOption[] = [];
@@ -157,7 +158,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
         >
             <FullPageNotFoundView
                 onBackButtonPress={() => Navigation.goBack(ROUTES.WORKSPACES_LIST.route)}
-                shouldShow={!domain || !isAdmin}
+                shouldShow={shuldShowLoading}
                 shouldForceFullScreen
                 shouldDisplaySearchRouter
             >
