@@ -1,10 +1,10 @@
 import {Str} from 'expensify-common';
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import Avatar from '@components/Avatar';
-import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import MenuItem from '@components/MenuItem';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -14,16 +14,22 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
+import selectAdminIDs from '@libs/DomainUtils';
 import {getDisplayNameOrDefault, getPhoneNumber} from '@libs/PersonalDetailsUtils';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import {revokeAdminAccess} from '@userActions/Domain';
-import {getCurrentUserAccountID} from '@userActions/Report';
 import CONST from '@src/CONST';
+import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
 import type {PersonalDetails} from '@src/types/onyx';
+
+type BaseMenuItemType = {
+    translationKey: TranslationPaths;
+    action: () => Promise<void> | void;
+};
 
 type DomainAdminDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.ADMIN_DETAILS>;
 
@@ -33,22 +39,48 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
 
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {canBeMissing: true});
     const adminKey = Object.entries(domain ?? {})
-        .find(([, value]) => value === route.params.accountID)
+        .find(([, value]) => value === Number(route.params.accountID))
         ?.at(0);
+    const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {
+        canBeMissing: true,
+        selector: selectAdminIDs,
+    });
     const [isRevokingAdminAccess, setIsRevokingAdminAccess] = useState(false);
+    const [isResettingDomain, setIsResettingDomain] = useState(false);
 
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
-    const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers'] as const);
+    const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers', 'ClosedSign'] as const);
 
     const accountID = Number(route.params.accountID);
     const details = personalDetails?.[accountID] ?? ({} as PersonalDetails);
     const displayName = formatPhoneNumber(getDisplayNameOrDefault(details));
     const phoneNumber = getPhoneNumber(details);
 
-    const currentUserAccountID = getCurrentUserAccountID();
-
     const memberLogin = personalDetails?.[accountID]?.login ?? '';
     const isSMSLogin = Str.isSMSLogin(memberLogin);
+
+    const menuItems = useMemo(() => {
+        const baseMenuItems: BaseMenuItemType[] = [];
+
+        if (!!adminIDs && adminIDs.length > 1) {
+            baseMenuItems.push({
+                translationKey: 'domain.admins.revokeAdminAccess',
+                action: () => setIsRevokingAdminAccess(true),
+            });
+        } else {
+            baseMenuItems.push({
+                translationKey: 'domain.admins.resetDomain',
+                action: () => setIsRevokingAdminAccess(true),
+            });
+        }
+
+        return baseMenuItems.map((item) => ({
+            key: item.translationKey,
+            title: translate(item.translationKey),
+            icon: icons.ClosedSign,
+            onPress: item.action,
+        }));
+    }, [adminIDs, translate, icons.ClosedSign]);
 
     return (
         <ScreenWrapper
@@ -77,37 +109,36 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
                                 {displayName}
                             </Text>
                         )}
-                        <Button
-                            text={translate('domain.admins.revokeAdminAccess')}
-                            onPress={() => setIsRevokingAdminAccess(true)}
-                            isDisabled={accountID === currentUserAccountID}
-                            icon={icons.RemoveMembers}
-                            style={styles.mb5}
-                        />
-                        <View style={styles.w100}>
-                            <MenuItemWithTopDescription
-                                title={isSMSLogin ? formatPhoneNumber(phoneNumber ?? '') : memberLogin}
-                                copyValue={isSMSLogin ? formatPhoneNumber(phoneNumber ?? '') : memberLogin}
-                                description={translate(isSMSLogin ? 'common.phoneNumber' : 'common.email')}
-                                interactive={false}
-                                copyable
-                            />
-                        </View>
-                        <ConfirmModal
-                            danger
-                            title={translate('domain.admins.revokeAdminAccess')}
-                            isVisible={isRevokingAdminAccess}
-                            onConfirm={() => {
-                                revokeAdminAccess(route.params.domainAccountID, adminKey, route.params.accountID);
-                                setIsRevokingAdminAccess(false);
-                                Navigation.dismissModal();
-                            }}
-                            onCancel={() => setIsRevokingAdminAccess(false)}
-                            confirmText={translate('common.remove')}
-                            cancelText={translate('common.cancel')}
-                        />
                     </View>
                 </View>
+                <MenuItemWithTopDescription
+                    title={isSMSLogin ? formatPhoneNumber(phoneNumber ?? '') : memberLogin}
+                    copyValue={isSMSLogin ? formatPhoneNumber(phoneNumber ?? '') : memberLogin}
+                    description={translate(isSMSLogin ? 'common.phoneNumber' : 'common.email')}
+                    interactive={false}
+                    copyable
+                />
+                {menuItems.map((item) => (
+                    <MenuItem
+                        key={item.key}
+                        icon={item.icon}
+                        title={item.title}
+                        onPress={item.onPress}
+                    />
+                ))}
+                <ConfirmModal
+                    danger
+                    title={translate('domain.admins.revokeAdminAccess')}
+                    isVisible={isRevokingAdminAccess}
+                    onConfirm={() => {
+                        revokeAdminAccess(route.params.domainAccountID, adminKey, route.params.accountID);
+                        setIsRevokingAdminAccess(false);
+                        Navigation.dismissModal();
+                    }}
+                    onCancel={() => setIsRevokingAdminAccess(false)}
+                    confirmText={translate('common.remove')}
+                    cancelText={translate('common.cancel')}
+                />
             </ScrollView>
         </ScreenWrapper>
     );

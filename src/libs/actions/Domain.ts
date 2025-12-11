@@ -335,6 +335,13 @@ function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string,
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [adminPermissionsKey]: null,
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
             value: {
                 admin: {
@@ -357,6 +364,13 @@ function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string,
     const failureData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [adminPermissionsKey]: accountID,
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
             value: {
                 admin: {
@@ -366,6 +380,9 @@ function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string,
         },
     ];
 
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
+        [adminPermissionsKey]: null,
+    });
     Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {
         admin: {
             [accountID]: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,

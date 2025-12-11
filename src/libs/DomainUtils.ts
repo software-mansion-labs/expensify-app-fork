@@ -1,5 +1,5 @@
-import type * as OnyxTypes from '@src/types/onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type * as OnyxTypes from '@src/types/onyx';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
 function selectAdminIDs(domain: OnyxTypes.Domain | undefined): number[] {
@@ -19,4 +19,3 @@ function selectAdminIDs(domain: OnyxTypes.Domain | undefined): number[] {
 }
 
 export default selectAdminIDs;
-

@@ -14,6 +14,7 @@ import useSearchSelector from '@hooks/useSearchSelector';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {searchInServer} from '@libs/actions/Report';
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
+import selectAdminIDs from '@libs/DomainUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {OptionData} from '@libs/ReportUtils';
@@ -23,7 +24,6 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import selectAdminIDs from '@libs/DomainUtils';
 
 type Sections = SectionListData<OptionData, Section<OptionData>>;
 
@@ -76,7 +76,9 @@ function DomainAddAdminPage({route}: DomainAddAdminProps) {
             });
         }
 
-        const filteredPersonalDetails = availableOptions.personalDetails.filter((option) => option.accountID !== actualSelectedUser?.accountID).filter((option) => option.accountID && !adminIDs?.includes(option.accountID));
+        const filteredPersonalDetails = availableOptions.personalDetails
+            .filter((option) => option.accountID !== actualSelectedUser?.accountID)
+            .filter((option) => option.accountID && !adminIDs?.includes(option.accountID));
 
         if (filteredPersonalDetails.length > 0) {
             sectionsArr.push({
