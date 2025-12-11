@@ -168,6 +168,11 @@ type CardFeeds = {
          *
          */
         technicalContactEmail?: string;
+
+        /**
+         *
+         */
+        useTechnicalContactBillingCard?: boolean;
     };
 
     /** Whether we are loading the data via the API */

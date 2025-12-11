@@ -45,6 +45,9 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     const currentUserAccountID = getCurrentUserAccountID();
 
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
+    const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainID}`, {
+        canBeMissing: true,
+    });
     const adminIDs = Object.entries(domain ?? {})
         .filter(([key]) => key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS))
         .map(([, value]) => Number(value));
@@ -70,7 +73,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                     id: accountID,
                 },
             ],
-            pendingAction: domain?.adminPendingActions?.[accountID],
+            pendingAction: domainPendingActions?.admin?.[accountID],
             errors: {
                 // error1: "Unable to revoke admin access for this user. Please try again.",
             },

@@ -15,10 +15,10 @@ import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@navigation/types';
+import {choosePrimaryContact} from '@userActions/Domain';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
-import {choosePrimaryContact} from '@userActions/Domain';
 
 type AdminOption = Omit<ListItem, 'accountID' | 'login'> & {
     accountID: number;
@@ -33,6 +33,9 @@ function AddPrimaryContactPage({route}: DomainAddPrimaryContactPage) {
     const adminIDs = Object.entries(domain ?? {})
         .filter(([key]) => key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS))
         .map(([, value]) => Number(value));
+    const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainID}`, {
+        canBeMissing: true,
+    });
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
     const [searchTerm, debouncedSearchTerm, setSearchTerm] = useDebouncedState('');
     const [countryCode = CONST.DEFAULT_COUNTRY_CODE] = useOnyx(ONYXKEYS.COUNTRY_CODE, {canBeMissing: false});
@@ -59,7 +62,7 @@ function AddPrimaryContactPage({route}: DomainAddPrimaryContactPage) {
                     id: accountID,
                 },
             ],
-            pendingAction: domain?.adminPendingActions?.[accountID],
+            pendingAction: domainPendingActions?.admin?.[accountID],
             errors: {
                 // error1: "Unable to revoke admin access for this user. Please try again.",
             },
