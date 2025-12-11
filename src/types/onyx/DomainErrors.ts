@@ -13,6 +13,12 @@ type DomainErrors = {
      *
      */
     technicalContactEmailErrors?: OnyxCommon.Errors;
+
+    /**
+     *
+     */
+    admin?: Record<string, OnyxCommon.Errors>;
+
 };
 
 export default DomainErrors;

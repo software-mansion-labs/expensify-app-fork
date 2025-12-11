@@ -331,7 +331,7 @@ function createDomain(domainName: string) {
     API.write(WRITE_COMMANDS.CREATE_DOMAIN, {domainName}, {optimisticData, successData, failureData});
 }
 
-function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string, accountID: string) {
+function revokeAdminAccess(domainAccountID: number, adminPermissionsKey: string, accountID: number) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -541,14 +541,14 @@ function resetCreateDomainForm() {
 }
 
 function addAdminToDomain(domainAccountID: number, accountID: number, targetEmail: string, domainName: string) {
-    const PERMISSION_KEY = `expensify_adminPermissions_${Math.random() * 10000}`;
+    const PERMISSION_KEY = `${ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS}${accountID}`;
 
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
             value: {
-                [PERMISSION_KEY]: String(accountID),
+                [PERMISSION_KEY]: accountID,
             },
         },
     ];
@@ -558,7 +558,7 @@ function addAdminToDomain(domainAccountID: number, accountID: number, targetEmai
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
             value: {
-                [PERMISSION_KEY]: null,
+                // [PERMISSION_KEY]: null,
             },
         },
     ];
@@ -568,12 +568,16 @@ function addAdminToDomain(domainAccountID: number, accountID: number, targetEmai
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
             value: {
-                [PERMISSION_KEY]: String(accountID),
+                // [PERMISSION_KEY]: null,
             },
         },
     ];
 
-    API.write(WRITE_COMMANDS.ADD_DOMAIN_ADMIN, {domainName, targetEmail}, {optimisticData, successData, failureData});
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
+        [PERMISSION_KEY]: accountID,
+    });
+
+    // API.write(WRITE_COMMANDS.ADD_DOMAIN_ADMIN, {domainName, targetEmail}, {optimisticData,successData, failureData});
 }
 
 export {

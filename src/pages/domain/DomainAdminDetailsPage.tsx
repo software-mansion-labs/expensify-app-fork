@@ -46,7 +46,6 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
         selector: selectAdminIDs,
     });
     const [isRevokingAdminAccess, setIsRevokingAdminAccess] = useState(false);
-    const [isResettingDomain, setIsResettingDomain] = useState(false);
 
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
     const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers', 'ClosedSign'] as const);
