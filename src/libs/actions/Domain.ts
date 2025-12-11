@@ -2,12 +2,12 @@ import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import {getAdminKey} from '@libs/DomainUtils';
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {ScimTokenWithState} from './ScimToken/ScimTokenUtils';
 import {ScimTokenState} from './ScimToken/ScimTokenUtils';
-import {getAdminKey} from '@libs/DomainUtils';
 
 /**
  * Fetches a validation code that the user is supposed to put in the domain's DNS records to verify it
@@ -644,7 +644,7 @@ function clearAddAdminError(domainAccountID: number, accountID: number) {
 /**
  * Removes an error after trying to remove admin
  */
-function clearRemoveAdminError(domainAccountID: number, accountID: number,adminKey: string ) {
+function clearRemoveAdminError(domainAccountID: number, accountID: number, adminKey: string) {
     const PERMISSION_KEY = `${ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS}${accountID}`;
 
     Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
@@ -681,5 +681,5 @@ export {
     clearToggleConsolidatedDomainBillingErrors,
     clearChoosePrimaryContactError,
     clearAddAdminError,
-    clearRemoveAdminError
+    clearRemoveAdminError,
 };

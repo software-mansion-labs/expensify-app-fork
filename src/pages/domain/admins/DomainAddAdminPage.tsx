@@ -1,30 +1,29 @@
-import { Str } from 'expensify-common';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { SectionListData } from 'react-native';
+import {Str} from 'expensify-common';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import type {SectionListData} from 'react-native';
 import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionListWithSections';
 import InviteMemberListItem from '@components/SelectionListWithSections/InviteMemberListItem';
-import type { Section } from '@components/SelectionListWithSections/types';
-import type { WithNavigationTransitionEndProps } from '@components/withNavigationTransitionEnd';
+import type {Section} from '@components/SelectionListWithSections/types';
+import type {WithNavigationTransitionEndProps} from '@components/withNavigationTransitionEnd';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useSearchSelector from '@hooks/useSearchSelector';
 import useThemeStyles from '@hooks/useThemeStyles';
-import { searchInServer } from '@libs/actions/Report';
+import {searchInServer} from '@libs/actions/Report';
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
 import {selectAdminIDs} from '@libs/DomainUtils';
 import Navigation from '@libs/Navigation/Navigation';
-import type { PlatformStackScreenProps } from '@libs/Navigation/PlatformStackNavigation/types';
-import type { OptionData } from '@libs/ReportUtils';
-import type { SettingsNavigatorParamList } from '@navigation/types';
-import { addAdminToDomain } from '@userActions/Domain';
+import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
+import type {OptionData} from '@libs/ReportUtils';
+import type {SettingsNavigatorParamList} from '@navigation/types';
+import {addAdminToDomain} from '@userActions/Domain';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-
 
 type Sections = SectionListData<OptionData, Section<OptionData>>;
 

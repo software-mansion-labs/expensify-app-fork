@@ -1,37 +1,36 @@
-import React, { useCallback } from 'react';
-import { View } from 'react-native';
+import React, {useCallback} from 'react';
+import {View} from 'react-native';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import { FallbackAvatar, Gear, Plus } from '@components/Icon/Expensicons';
+import {FallbackAvatar, Gear, Plus} from '@components/Icon/Expensicons';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import SearchBar from '@components/SearchBar';
 import CustomListHeader from '@components/SelectionListWithModal/CustomListHeader';
 import SelectionList from '@components/SelectionListWithSections';
 import TableListItem from '@components/SelectionListWithSections/TableListItem';
-import type { ListItem } from '@components/SelectionListWithSections/types';
-import { useMemoizedLazyIllustrations } from '@hooks/useLazyAsset';
+import type {ListItem} from '@components/SelectionListWithSections/types';
+import {useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchResults from '@hooks/useSearchResults';
 import useThemeStyles from '@hooks/useThemeStyles';
-import { getLatestError } from '@libs/ErrorUtils';
-import { sortAlphabetically } from '@libs/OptionsListUtils';
-import { getDisplayNameOrDefault } from '@libs/PersonalDetailsUtils';
+import {getLatestError} from '@libs/ErrorUtils';
+import {sortAlphabetically} from '@libs/OptionsListUtils';
+import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
-import type { PlatformStackScreenProps } from '@navigation/PlatformStackNavigation/types';
-import type { DomainSplitNavigatorParamList } from '@navigation/types';
+import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
+import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import {clearAddAdminError, clearRemoveAdminError} from '@userActions/Domain';
-import { getCurrentUserAccountID } from '@userActions/Report';
+import {getCurrentUserAccountID} from '@userActions/Report';
 import CONST from '@src/CONST';
 import {getAdminKey, selectAdminIDs} from '@src/libs/DomainUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-
 
 type DomainAdminsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.SAML>;
 
@@ -200,7 +199,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                         addBottomSafeAreaPadding
                         customListHeader={getCustomListHeader()}
                         onDismissError={(item) => {
-                            const adminKey = getAdminKey(domain,item.accountID)
+                            const adminKey = getAdminKey(domain, item.accountID);
                             if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
                                 clearAddAdminError(domainID, item.accountID);
                             } else if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE && adminKey) {
