@@ -8,6 +8,7 @@ import Button from '@components/Button';
 import ButtonDisabledWhenOffline from '@components/Button/ButtonDisabledWhenOffline';
 import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+// eslint-disable-next-line no-restricted-imports
 import * as Expensicons from '@components/Icon/Expensicons';
 import {LockedAccountContext} from '@components/LockedAccountModalProvider';
 import MenuItem from '@components/MenuItem';
@@ -17,8 +18,10 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useCardFeeds from '@hooks/useCardFeeds';
+import {useCompanyCardFeedIcons} from '@hooks/useCompanyCardIcons';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useExpensifyCardFeeds from '@hooks/useExpensifyCardFeeds';
+import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
@@ -81,10 +84,12 @@ function WorkspaceMemberDetailsPage({personalDetails, policy, route}: WorkspaceM
     const policyID = route.params.policyID;
     const workspaceAccountID = policy?.workspaceAccountID ?? CONST.DEFAULT_NUMBER_ID;
 
+    const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers'] as const);
     const styles = useThemeStyles();
     const {formatPhoneNumber, translate, localeCompare} = useLocalize();
     const StyleUtils = useStyleUtils();
     const illustrations = useThemeIllustrations();
+    const companyCardFeedIcons = useCompanyCardFeedIcons();
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
     const [cardFeeds] = useCardFeeds(policyID);
     const [cardList] = useOnyx(`${ONYXKEYS.COLLECTION.WORKSPACE_CARDS_LIST}`, {canBeMissing: true});
@@ -145,7 +150,7 @@ function WorkspaceMemberDetailsPage({personalDetails, policy, route}: WorkspaceM
             policy?.connections?.quickbooksDesktop?.config?.export?.exporter,
             policy?.connections?.quickbooksOnline?.config?.export?.exporter,
             policy?.connections?.xero?.config?.export?.exporter,
-            policy?.connections?.netsuite?.options.config.exporter,
+            policy?.connections?.netsuite?.options?.config?.exporter,
         ];
         const isUserExporter = exporters.includes(details.login);
 
@@ -222,7 +227,7 @@ function WorkspaceMemberDetailsPage({personalDetails, policy, route}: WorkspaceM
             return;
         }
         navigateAfterInteraction(() => Navigation.goBack());
-    }, [member, prevMember]);
+    }, [member?.pendingAction, prevMember]);
 
     const askForConfirmationToRemove = () => {
         if (isReimburser) {
@@ -340,9 +345,9 @@ function WorkspaceMemberDetailsPage({personalDetails, policy, route}: WorkspaceM
 
     const startChangeOwnershipFlow = useCallback(() => {
         clearWorkspaceOwnerChangeFlow(policyID);
-        requestWorkspaceOwnerChange(policyID);
+        requestWorkspaceOwnerChange(policyID, currentUserPersonalDetails.accountID, currentUserPersonalDetails.login ?? '');
         Navigation.navigate(ROUTES.WORKSPACE_OWNER_CHANGE_CHECK.getRoute(policyID, accountID, 'amountOwed' as ValueOf<typeof CONST.POLICY.OWNERSHIP_ERRORS>));
-    }, [accountID, policyID]);
+    }, [accountID, currentUserPersonalDetails.accountID, currentUserPersonalDetails.login, policyID]);
 
     // eslint-disable-next-line rulesdir/no-negated-variables
     const shouldShowNotFoundPage =
@@ -403,7 +408,7 @@ function WorkspaceMemberDetailsPage({personalDetails, policy, route}: WorkspaceM
                                     text={translate('workspace.people.removeWorkspaceMemberButtonTitle')}
                                     onPress={isAccountLocked ? showLockedAccountModal : askForConfirmationToRemove}
                                     isDisabled={isSelectedMemberOwner || isSelectedMemberCurrentUser}
-                                    icon={Expensicons.RemoveMembers}
+                                    icon={icons.RemoveMembers}
                                     style={styles.mb5}
                                 />
                             )}
@@ -504,7 +509,7 @@ function WorkspaceMemberDetailsPage({personalDetails, policy, route}: WorkspaceM
                                                     }
                                                     description={memberCard?.lastFourPAN ?? lastFourNumbersFromCardName(memberCard?.cardName)}
                                                     badgeText={memberCard.bank === CONST.EXPENSIFY_CARD.BANK ? convertToDisplayString(memberCard.nameValuePairs?.unapprovedExpenseLimit) : ''}
-                                                    icon={getCardFeedIcon(memberCard.bank as CompanyCardFeed, illustrations)}
+                                                    icon={getCardFeedIcon(memberCard.bank as CompanyCardFeed, illustrations, companyCardFeedIcons)}
                                                     plaidUrl={plaidUrl}
                                                     displayInDefaultIconColor
                                                     iconStyles={styles.cardIcon}
