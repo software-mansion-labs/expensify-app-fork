@@ -14,7 +14,7 @@ import useSearchSelector from '@hooks/useSearchSelector';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {searchInServer} from '@libs/actions/Report';
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
-import selectAdminIDs from '@libs/DomainUtils';
+import {selectAdminIDs} from '@libs/DomainUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {OptionData} from '@libs/ReportUtils';

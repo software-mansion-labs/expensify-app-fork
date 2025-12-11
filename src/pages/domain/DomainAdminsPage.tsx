@@ -24,11 +24,10 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
-import {clearAddAdminError} from '@userActions/Domain';
-import {clearDeleteMemberError} from '@userActions/Policy/Member';
+import {clearAddAdminError, clearRemoveAdminError} from '@userActions/Domain';
 import {getCurrentUserAccountID} from '@userActions/Report';
 import CONST from '@src/CONST';
-import selectAdminIDs from '@src/libs/DomainUtils';
+import {getAdminKey, selectAdminIDs} from '@src/libs/DomainUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -200,10 +199,11 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                         addBottomSafeAreaPadding
                         customListHeader={getCustomListHeader()}
                         onDismissError={(item) => {
+                            const adminKey = getAdminKey(domain, item.accountID);
                             if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD) {
                                 clearAddAdminError(domainID, item.accountID);
-                            } else {
-                                // clearAddMemberError(route.params.policyID, item.login, item.accountID);
+                            } else if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE && adminKey) {
+                                clearRemoveAdminError(domainID, item.accountID, adminKey);
                             }
                         }}
                     />

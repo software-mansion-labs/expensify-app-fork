@@ -14,7 +14,7 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
-import selectAdminIDs from '@libs/DomainUtils';
+import {getAdminKey, selectAdminIDs} from '@libs/DomainUtils';
 import {getDisplayNameOrDefault, getPhoneNumber} from '@libs/PersonalDetailsUtils';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
@@ -39,9 +39,8 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     const {translate, formatPhoneNumber} = useLocalize();
 
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {canBeMissing: true});
-    const adminKey = Object.entries(domain ?? {})
-        .find(([, value]) => value === Number(route.params.accountID))
-        ?.at(0);
+    const accountID = route.params.accountID;
+    const adminKey = getAdminKey(domain, accountID) ?? '';
     const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {
         canBeMissing: true,
         selector: selectAdminIDs,
@@ -51,7 +50,6 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
     const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers', 'ClosedSign'] as const);
 
-    const accountID = Number(route.params.accountID);
     const details = personalDetails?.[accountID] ?? ({} as PersonalDetails);
     const displayName = formatPhoneNumber(getDisplayNameOrDefault(details));
     const phoneNumber = getPhoneNumber(details);
