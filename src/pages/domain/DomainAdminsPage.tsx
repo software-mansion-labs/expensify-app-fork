@@ -70,6 +70,10 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     });
     const isAdmin = adminIDs?.includes(currentUserAccountID) ?? false;
 
+    const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainID}`, {
+        canBeMissing: true,
+    });
+
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
 
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -88,9 +92,10 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                     source: details?.avatar ?? FallbackAvatar,
                     name: formatPhoneNumber(details?.login ?? ''),
                     type: CONST.ICON_TYPE_AVATAR,
-                    id: currentUserAccountID,
+                    id: accountID,
                 },
             ],
+            pendingAction: domainPendingActions?.admin?.[accountID],
             errors: {
                 // error1: "Unable to revoke admin access for this user. Please try again.",
             },

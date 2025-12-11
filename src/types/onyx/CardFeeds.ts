@@ -163,6 +163,16 @@ type CardFeeds = {
 
         /** Account details */
         oAuthAccountDetails?: Partial<Record<CompanyCardFeed, DirectCardFeedData>>;
+
+        /**
+         *
+         */
+        technicalContactEmail?: string;
+
+        /**
+         *
+         */
+        useTechnicalContactBillingCard?: boolean;
     };
 
     /** Whether we are loading the data via the API */
