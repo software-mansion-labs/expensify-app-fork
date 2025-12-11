@@ -3,7 +3,6 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import type {SectionListData} from 'react-native';
 import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionListWithSections';
 import InviteMemberListItem from '@components/SelectionListWithSections/InviteMemberListItem';
@@ -24,6 +23,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import selectAdminIDs from '@libs/DomainUtils';
 
 type Sections = SectionListData<OptionData, Section<OptionData>>;
 
@@ -38,6 +38,10 @@ function DomainAddAdminPage({route}: DomainAddAdminProps) {
     const domainID = route.params.accountID;
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
     const domainName = domain ? Str.extractEmailDomain(domain.email) : undefined;
+    const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
+        canBeMissing: true,
+        selector: selectAdminIDs,
+    });
 
     const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} = useSearchSelector({
         selectionMode: CONST.SEARCH_SELECTOR.SELECTION_MODE_SINGLE,
@@ -72,7 +76,7 @@ function DomainAddAdminPage({route}: DomainAddAdminProps) {
             });
         }
 
-        const filteredPersonalDetails = availableOptions.personalDetails.filter((option) => option.accountID !== actualSelectedUser?.accountID);
+        const filteredPersonalDetails = availableOptions.personalDetails.filter((option) => option.accountID !== actualSelectedUser?.accountID).filter((option) => option.accountID && !adminIDs?.includes(option.accountID));
 
         if (filteredPersonalDetails.length > 0) {
             sectionsArr.push({
