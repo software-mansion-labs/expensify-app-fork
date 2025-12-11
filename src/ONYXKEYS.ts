@@ -720,10 +720,13 @@ const ONYXKEYS = {
         /** SAML login metadata for a domain */
         SAML_METADATA: 'saml_metadata_',
 
+        /** Domain admin permissions */
         DOMAIN_ADMIN_PERMISSIONS: 'expensify_adminPermissions_',
 
+        /** Pending actions for a domain */
         DOMAIN_PENDING_ACTIONS: 'domainPendingActions_',
 
+        /** Errors related to a domain */
         DOMAIN_ERRORS: 'domainErrors_',
     },
 
