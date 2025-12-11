@@ -4,7 +4,9 @@ import {View} from 'react-native';
 import ActivityIndicator from '@components/ActivityIndicator';
 import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+// eslint-disable-next-line no-restricted-imports
 import {FallbackAvatar, Hourglass} from '@components/Icon/Expensicons';
+// eslint-disable-next-line no-restricted-imports
 import * as Expensicons from '@components/Icon/Expensicons';
 import ImageSVG from '@components/ImageSVG';
 import MenuItem from '@components/MenuItem';
@@ -15,6 +17,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import useCardFeeds from '@hooks/useCardFeeds';
 import useCardsList from '@hooks/useCardsList';
+import {useCompanyCardFeedIcons} from '@hooks/useCompanyCardIcons';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
@@ -58,7 +61,8 @@ function WorkspaceCompanyCardDetailsPage({route}: WorkspaceCompanyCardDetailsPag
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const illustrations = useThemeIllustrations();
-    const expensifyIcons = useMemoizedLazyExpensifyIcons(['MoneySearch'] as const);
+    const companyCardFeedIcons = useCompanyCardFeedIcons();
+    const expensifyIcons = useMemoizedLazyExpensifyIcons(['MoneySearch', 'RemoveMembers'] as const);
 
     const {isOffline} = useNetwork();
     const accountingIntegrations = Object.values(CONST.POLICY.CONNECTIONS.NAME);
@@ -124,7 +128,7 @@ function WorkspaceCompanyCardDetailsPage({route}: WorkspaceCompanyCardDetailsPag
                         ) : (
                             <ImageSVG
                                 contentFit="contain"
-                                src={getCardFeedIcon(cardBank as CompanyCardFeed, illustrations)}
+                                src={getCardFeedIcon(cardBank as CompanyCardFeed, illustrations, companyCardFeedIcons)}
                                 pointerEvents="none"
                                 height={variables.cardPreviewHeight}
                                 width={variables.cardPreviewWidth}
@@ -232,7 +236,7 @@ function WorkspaceCompanyCardDetailsPage({route}: WorkspaceCompanyCardDetailsPag
                         />
                     </OfflineWithFeedback>
                     <MenuItem
-                        icon={Expensicons.RemoveMembers}
+                        icon={expensifyIcons.RemoveMembers}
                         title={translate('workspace.moreFeatures.companyCards.unassignCard')}
                         style={styles.mb1}
                         onPress={() => setIsUnassignModalVisible(true)}
