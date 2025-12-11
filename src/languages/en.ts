@@ -7766,6 +7766,8 @@ const translations = {
             invite: 'Invite',
             settings: 'Settings',
             addPrimaryContact: 'Add primary contact',
+            resetDomainExplanation: 'Please enter your domain to confirm you wish to reset the domain. Your domain name is:',
+            enterDomainName: 'Enter your domain name here',
         },
     },
 };

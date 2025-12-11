@@ -23,6 +23,7 @@ import {revokeAdminAccess} from '@userActions/Domain';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import type {PersonalDetails} from '@src/types/onyx';
 
@@ -69,7 +70,7 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
         } else {
             baseMenuItems.push({
                 translationKey: 'domain.admins.resetDomain',
-                action: () => setIsRevokingAdminAccess(true),
+                action: () => Navigation.navigate(ROUTES.DOMAIN_RESET_DOMAIN.getRoute(route.params.domainAccountID, route.params.accountID)),
             });
         }
 

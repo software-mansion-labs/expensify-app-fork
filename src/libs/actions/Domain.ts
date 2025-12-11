@@ -659,6 +659,26 @@ function clearRemoveAdminError(domainAccountID: number, accountID: number, ) {
     });
 }
 
+function resetDomain(domainAccountID: number) {
+    const optimisticData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,
+            },
+        },
+    ];
+    const successData: OnyxUpdate[] = [];
+    const failureData: OnyxUpdate[] = [];
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {
+        pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,
+    });
+
+    // API.write();
+}
+
 export {
     getDomainValidationCode,
     validateDomain,
@@ -680,5 +700,6 @@ export {
     clearToggleConsolidatedDomainBillingErrors,
     clearChoosePrimaryContactError,
     clearAddAdminError,
-    clearRemoveAdminError
+    clearRemoveAdminError,
+    resetDomain,
 };

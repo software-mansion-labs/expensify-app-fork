@@ -18,6 +18,11 @@ type DomainPendingAction = {
      *
      */
     admin?: Record<number, OnyxCommon.PendingAction>;
+
+    /**
+     *
+     */
+    pendingAction?: OnyxCommon.PendingAction;
 };
 
 export default DomainPendingAction;
