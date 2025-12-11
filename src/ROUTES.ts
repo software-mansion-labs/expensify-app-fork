@@ -3441,8 +3441,8 @@ const ROUTES = {
         getRoute: (accountID: number) => `domain/${accountID}/admins/settings` as const,
     },
     DOMAIN_ADD_PRIMARY_CONTACT: {
-        route: 'domain/:accountID/admins/settings/primaryContact',
-        getRoute: (accountID: number) => `domain/${accountID}/admins/settings/primaryContact` as const,
+        route: 'domain/:accountID/admins/settings/primary-contact',
+        getRoute: (accountID: number) => `domain/${accountID}/admins/settings/primary-contact` as const,
     },
 } as const;
 

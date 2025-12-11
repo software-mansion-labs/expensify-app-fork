@@ -39,7 +39,7 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     const {translate, formatPhoneNumber} = useLocalize();
 
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {canBeMissing: true});
-    const accountID = Number(route.params.accountID);
+    const accountID = route.params.accountID;
     const adminKey = getAdminKey(domain,accountID)??'';
     const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {
         canBeMissing: true,
