@@ -1,4 +1,5 @@
 type AddAdminToDomainParams = {
+    authToken?: string | null;
     domainName: string;
     targetEmail: string;
 };

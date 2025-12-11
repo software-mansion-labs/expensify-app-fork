@@ -1,3 +1,4 @@
+import {Str} from 'expensify-common';
 import React from 'react';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
@@ -29,6 +30,7 @@ function DomainSettingsPage({route}: DomainSettingsPageProps) {
     const [domainSettings] = useOnyx(`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${route.params.accountID}`, {
         canBeMissing: false,
     });
+    const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.accountID}`, {canBeMissing: true});
     const currentlySelectedUser = domainSettings?.settings?.technicalContactEmail;
 
     return (
@@ -63,7 +65,7 @@ function DomainSettingsPage({route}: DomainSettingsPageProps) {
                 wrapperStyle={[styles.mv3, styles.ph5]}
                 switchAccessibilityLabel="cfcf"
                 isActive={!!domainSettings?.settings?.useTechnicalContactBillingCard}
-                onToggle={(value) => toggleConsolidatedDomainBilling(route.params.accountID, value)}
+                onToggle={(value) => toggleConsolidatedDomainBilling(route.params.accountID, Str.extractEmailDomain(domain?.email), value)}
                 subtitle="When enabled, the Primary Contact will be billed for all workspaces owned by expensify.com users and the billing receipt will be routed to the Primary Contact's account."
                 title="Consolidated Domain Billing"
                 shouldPlaceSubtitleBelowSwitch

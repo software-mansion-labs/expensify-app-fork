@@ -3444,6 +3444,10 @@ const ROUTES = {
         route: 'domain/:accountID/admins/settings/primary-contact',
         getRoute: (accountID: number) => `domain/${accountID}/admins/settings/primary-contact` as const,
     },
+    DOMAIN_RESET_DOMAIN: {
+        route: 'domain/:domainAccountID/admins/:accountID/reset-domain',
+        getRoute: (domainAccountID: number, accountID: number) => `domain/${domainAccountID}/admins/${accountID}/reset-domain` as const,
+    },
 } as const;
 
 /**
