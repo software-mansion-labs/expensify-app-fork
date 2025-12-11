@@ -7,6 +7,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {ScimTokenWithState} from './ScimToken/ScimTokenUtils';
 import {ScimTokenState} from './ScimToken/ScimTokenUtils';
+import {getAdminKey} from '@libs/DomainUtils';
 
 /**
  * Fetches a validation code that the user is supposed to put in the domain's DNS records to verify it
@@ -643,7 +644,7 @@ function clearAddAdminError(domainAccountID: number, accountID: number) {
 /**
  * Removes an error after trying to remove admin
  */
-function clearRemoveAdminError(domainAccountID: number, accountID: number, ) {
+function clearRemoveAdminError(domainAccountID: number, accountID: number,adminKey: string ) {
     const PERMISSION_KEY = `${ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS}${accountID}`;
 
     Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {

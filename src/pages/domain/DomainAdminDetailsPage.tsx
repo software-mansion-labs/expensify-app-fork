@@ -1,6 +1,6 @@
-import {Str} from 'expensify-common';
-import React, {useMemo, useState} from 'react';
-import {View} from 'react-native';
+import { Str } from 'expensify-common';
+import React, { useMemo, useState } from 'react';
+import { View } from 'react-native';
 import Avatar from '@components/Avatar';
 import ConfirmModal from '@components/ConfirmModal';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -10,21 +10,22 @@ import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
-import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
+import { useMemoizedLazyExpensifyIcons } from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
-import selectAdminIDs from '@libs/DomainUtils';
-import {getDisplayNameOrDefault, getPhoneNumber} from '@libs/PersonalDetailsUtils';
+import {selectAdminIDs, getAdminKey} from '@libs/DomainUtils';
+import { getDisplayNameOrDefault, getPhoneNumber } from '@libs/PersonalDetailsUtils';
 import Navigation from '@navigation/Navigation';
-import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
-import type {SettingsNavigatorParamList} from '@navigation/types';
-import {revokeAdminAccess} from '@userActions/Domain';
+import type { PlatformStackScreenProps } from '@navigation/PlatformStackNavigation/types';
+import type { SettingsNavigatorParamList } from '@navigation/types';
+import { revokeAdminAccess } from '@userActions/Domain';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
+import type { TranslationPaths } from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
-import type {PersonalDetails} from '@src/types/onyx';
+import type { PersonalDetails } from '@src/types/onyx';
+
 
 type BaseMenuItemType = {
     translationKey: TranslationPaths;
@@ -38,9 +39,8 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     const {translate, formatPhoneNumber} = useLocalize();
 
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {canBeMissing: true});
-    const adminKey = Object.entries(domain ?? {})
-        .find(([, value]) => value === Number(route.params.accountID))
-        ?.at(0);
+    const accountID = Number(route.params.accountID);
+    const adminKey = getAdminKey(domain,accountID)??'';
     const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${route.params.domainAccountID}`, {
         canBeMissing: true,
         selector: selectAdminIDs,
@@ -50,7 +50,6 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
     const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers', 'ClosedSign'] as const);
 
-    const accountID = Number(route.params.accountID);
     const details = personalDetails?.[accountID] ?? ({} as PersonalDetails);
     const displayName = formatPhoneNumber(getDisplayNameOrDefault(details));
     const phoneNumber = getPhoneNumber(details);

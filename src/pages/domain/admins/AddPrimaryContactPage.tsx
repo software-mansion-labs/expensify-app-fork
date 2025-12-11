@@ -1,24 +1,26 @@
-import React, {useMemo} from 'react';
+import React, { useMemo } from 'react';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import {FallbackAvatar} from '@components/Icon/Expensicons';
+import { FallbackAvatar } from '@components/Icon/Expensicons';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import InviteMemberListItem from '@components/SelectionList/ListItem/InviteMemberListItem';
-import type {ListItem} from '@components/SelectionListWithSections/types';
+import type { ListItem } from '@components/SelectionListWithSections/types';
 import useDebouncedState from '@hooks/useDebouncedState';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
-import {getSearchValueForPhoneOrEmail, sortAlphabetically} from '@libs/OptionsListUtils';
-import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
+import { selectAdminIDs } from '@libs/DomainUtils';
+import type { PlatformStackScreenProps } from '@libs/Navigation/PlatformStackNavigation/types';
+import { getSearchValueForPhoneOrEmail, sortAlphabetically } from '@libs/OptionsListUtils';
+import { getDisplayNameOrDefault } from '@libs/PersonalDetailsUtils';
 import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
-import type {SettingsNavigatorParamList} from '@navigation/types';
-import {choosePrimaryContact} from '@userActions/Domain';
+import type { SettingsNavigatorParamList } from '@navigation/types';
+import { choosePrimaryContact } from '@userActions/Domain';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
+
 
 type AdminOption = Omit<ListItem, 'accountID' | 'login'> & {
     accountID: number;
@@ -29,10 +31,10 @@ type DomainAddPrimaryContactPage = PlatformStackScreenProps<SettingsNavigatorPar
 function AddPrimaryContactPage({route}: DomainAddPrimaryContactPage) {
     const domainID = route.params.accountID;
     const {translate, formatPhoneNumber, localeCompare} = useLocalize();
-    const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
-    const adminIDs = Object.entries(domain ?? {})
-        .filter(([key]) => key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_ADMIN_PERMISSIONS))
-        .map(([, value]) => Number(value));
+    const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
+        canBeMissing: true,
+        selector: selectAdminIDs,
+    });
     const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainID}`, {
         canBeMissing: true,
     });
@@ -45,7 +47,7 @@ function AddPrimaryContactPage({route}: DomainAddPrimaryContactPage) {
     const currentlySelectedUser = domainSettings?.settings?.technicalContactEmail;
 
     const data: AdminOption[] = [];
-    for (const accountID of adminIDs) {
+    for (const accountID of adminIDs??[]) {
         const details = personalDetails?.[accountID];
         data.push({
             isSelected: details?.login === currentlySelectedUser,
