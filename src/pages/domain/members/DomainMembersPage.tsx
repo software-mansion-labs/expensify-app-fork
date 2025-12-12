@@ -1,10 +1,9 @@
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
-import {FetchStatus, ResultMetadata} from 'react-native-onyx/dist/useOnyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import {FallbackAvatar, Gear, Plus} from '@components/Icon/Expensicons';
+import {FallbackAvatar,Plus} from '@components/Icon/Expensicons';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import SearchBar from '@components/SearchBar';
@@ -26,7 +25,6 @@ import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import {clearAddAdminError, clearRemoveAdminError} from '@userActions/Domain';
-import {getCurrentUserAccountID} from '@userActions/Report';
 import CONST from '@src/CONST';
 import {getAdminKey, selectAdminIDs} from '@src/libs/DomainUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -40,20 +38,17 @@ type AdminOption = Omit<ListItem, 'accountID' | 'login'> & {
     login: string;
 };
 
-function DomainAdminsPage({route}: DomainAdminsPageProps) {
+function DomainMembersPage({route}: DomainAdminsPageProps) {
     const domainID = route.params.accountID;
     const {translate, formatPhoneNumber, localeCompare} = useLocalize();
     const styles = useThemeStyles();
     const illustrations = useMemoizedLazyIllustrations(['LaptopOnDeskWithCoffeeAndKey', 'LockClosed', 'OpenSafe', 'ShieldYellow', 'Members'] as const);
 
-    const currentUserAccountID = getCurrentUserAccountID();
-
     const [domain, fetchStatus] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: false});
-    const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
+    const [memberIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
         canBeMissing: true,
         selector: selectAdminIDs,
     });
-    const isAdmin = adminIDs?.includes(currentUserAccountID) ?? false;
 
     const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainID}`, {
         canBeMissing: true,
@@ -64,11 +59,11 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     });
 
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
-    const shuldShowLoading = false;
+    const shuldShowLoading = fetchStatus.status !== 'loading' && (!domain);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const data: AdminOption[] = [];
-    for (const accountID of adminIDs ?? []) {
+    for (const accountID of memberIDs ?? []) {
         const details = personalDetails?.[accountID];
         data.push({
             keyForList: String(accountID),
@@ -90,28 +85,15 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     }
 
     const getHeaderButtons = () => {
-        if (!isAdmin) {
-            return null;
-        }
         return (
             <View style={[styles.flexRow, styles.gap2]}>
                 <Button
                     success
                     onPress={() => {
-                        Navigation.navigate(ROUTES.DOMAIN_ADD_ADMIN.getRoute(domainID));
+                        console.log("add member")
                     }}
-                    text={translate('domain.admins.addAdmin')}
+                    text={translate('domain.members.addMember')}
                     icon={Plus}
-                    innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
-                    style={[shouldUseNarrowLayout && styles.flexGrow1, shouldUseNarrowLayout && styles.mb3]}
-                />
-
-                <Button
-                    onPress={() => {
-                        Navigation.navigate(ROUTES.DOMAIN_ADMINS_SETTINGS.getRoute(domainID));
-                    }}
-                    text={translate('domain.admins.settings')}
-                    icon={Gear}
                     innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
                     style={[shouldUseNarrowLayout && styles.flexGrow1, shouldUseNarrowLayout && styles.mb3]}
                 />
@@ -134,27 +116,17 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
         return (
             <CustomListHeader
                 canSelectMultiple={false}
-                leftHeaderText={translate('domain.admins.title')}
+                leftHeaderText={translate('domain.members.title')}
             />
         );
     };
-
-    /** Opens the member details page */
-    const openMemberDetails = useCallback(
-        (item: AdminOption) => {
-            Navigation.setNavigationActionToMicrotaskQueue(() => {
-                Navigation.navigate(ROUTES.DOMAIN_ADMIN_DETAILS.getRoute(domainID, item.accountID));
-            });
-        },
-        [domainID],
-    );
 
     return (
         <ScreenWrapper
             enableEdgeToEdgeBottomSafeAreaPadding
             shouldEnableMaxHeight
             shouldShowOfflineIndicatorInWideScreen
-            testID={DomainAdminsPage.displayName}
+            testID={DomainMembersPage.displayName}
         >
             <FullPageNotFoundView
                 onBackButtonPress={() => Navigation.goBack(ROUTES.WORKSPACES_LIST.route)}
@@ -163,7 +135,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                 shouldDisplaySearchRouter
             >
                 <HeaderWithBackButton
-                    title={translate('domain.admins.title')}
+                    title={translate('domain.members.title')}
                     onBackButtonPress={Navigation.popToSidebar}
                     icon={illustrations.Members}
                     shouldShowBackButton={shouldUseNarrowLayout}
@@ -186,14 +158,14 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
                                 <SearchBar
                                     inputValue={inputValue}
                                     onChangeText={setInputValue}
-                                    label={translate('domain.admins.findAdmin')}
+                                    label={translate('domain.members.findMember')}
                                     shouldShowEmptyState={!filteredData.length}
                                 />
                             ) : null
                         }
                         listHeaderWrapperStyle={[styles.ph9, styles.pv3, styles.pb5]}
                         ListItem={TableListItem}
-                        onSelectRow={openMemberDetails}
+                        onSelectRow={()=>{}}
                         shouldShowListEmptyContent={false}
                         listItemTitleContainerStyles={shouldUseNarrowLayout ? undefined : [styles.pr3]}
                         showScrollIndicator={false}
@@ -214,6 +186,6 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     );
 }
 
-DomainAdminsPage.displayName = 'DomainAdminsPage';
+DomainMembersPage.displayName = 'DomainAdminsPage';
 
-export default DomainAdminsPage;
+export default DomainMembersPage;

@@ -853,6 +853,7 @@ const SCREENS = {
         ADMINS_SETTINGS: 'Admins_Settings',
         ADD_PRIMARY_CONTACT: 'Add_Primary_Contact',
         RESET_DOMAIN: 'Reset_Domain',
+        MEMBERS: 'Domain_Members',
     },
 } as const;
 
