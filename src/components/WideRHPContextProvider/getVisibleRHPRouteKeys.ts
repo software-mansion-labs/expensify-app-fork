@@ -32,11 +32,7 @@ function getVisibleRHPKeys(allSuperWideRHPKeys: string[], allWideRHPKeys: string
         };
     }
 
-    const superWideRHPIndex =
-        lastRHPRoute.state?.routes.findLastIndex((route) => {
-            const focusedRouteKey = route.state?.routes?.at(0)?.key;
-            return focusedRouteKey && allSuperWideRHPKeys.includes(focusedRouteKey);
-        }) ?? -1;
+    const superWideRHPIndex = lastRHPRoute.state?.routes.findLastIndex((route) => route?.key && allSuperWideRHPKeys.includes(route.key)) ?? -1;
 
     const wideRHPIndex =
         lastRHPRoute.state?.routes.findLastIndex((route) => {

@@ -1,5 +1,6 @@
 import {PortalHost} from '@gorhom/portal';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {useRoute} from '@react-navigation/native';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import type {FlatList} from 'react-native';
 import {View} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
@@ -8,6 +9,15 @@ import DragAndDropProvider from '@components/DragAndDrop/Provider';
 import MoneyRequestReportView from '@components/MoneyRequestReportView/MoneyRequestReportView';
 import ScreenWrapper from '@components/ScreenWrapper';
 import {useSearchContext} from '@components/Search/SearchContext';
+import {
+    animatedReceiptPaneRHPWidth,
+    modalStackOverlaySuperWideRHPPositionLeft,
+    modalStackOverlayWideRHPPositionLeft,
+    secondOverlayRHPOnSuperWideRHPProgress,
+    secondOverlayRHPOnWideRHPProgress,
+    secondOverlayWideRHPProgress,
+    WideRHPContext,
+} from '@components/WideRHPContextProvider';
 import useShowSuperWideRHPVersion from '@components/WideRHPContextProvider/useShowSuperWideRHPVersion';
 import useIsReportReadyToDisplay from '@hooks/useIsReportReadyToDisplay';
 import useNetwork from '@hooks/useNetwork';
@@ -19,8 +29,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useTransactionsAndViolationsForReport from '@hooks/useTransactionsAndViolationsForReport';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {getAllNonDeletedTransactions} from '@libs/MoneyRequestReportUtils';
+import Overlay from '@libs/Navigation/AppNavigator/Navigators/Overlay';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
-import type {ExpenseReportNavigatorParamList, SearchMoneyRequestReportParamList} from '@libs/Navigation/types';
+import type {RightModalNavigatorParamList} from '@libs/Navigation/types';
 import {getFilteredReportActionsForReportView, getIOUActionForTransactionID, getOneTransactionThreadReportID, getOriginalMessage, isMoneyRequestAction} from '@libs/ReportActionsUtils';
 import {isValidReportIDFromPath} from '@libs/ReportUtils';
 import Navigation from '@navigation/Navigation';
@@ -35,8 +46,8 @@ import type {Policy, Transaction, TransactionViolations} from '@src/types/onyx';
 import {getEmptyObject} from '@src/types/utils/EmptyObject';
 
 type SearchMoneyRequestPageProps =
-    | PlatformStackScreenProps<SearchMoneyRequestReportParamList, typeof SCREENS.SEARCH.MONEY_REQUEST_REPORT>
-    | PlatformStackScreenProps<ExpenseReportNavigatorParamList, typeof SCREENS.EXPENSE_REPORT_RHP>;
+    | PlatformStackScreenProps<RightModalNavigatorParamList, typeof SCREENS.RIGHT_MODAL.SEARCH_MONEY_REQUEST_REPORT>
+    | PlatformStackScreenProps<RightModalNavigatorParamList, typeof SCREENS.RIGHT_MODAL.EXPENSE_REPORT>;
 
 const defaultReportMetadata = {
     isLoadingInitialReportActions: true,
@@ -46,6 +57,52 @@ const defaultReportMetadata = {
     hasLoadingNewerReportActionsError: false,
     isOptimisticReport: false,
 };
+
+function SecondaryOverlay() {
+    const {shouldRenderSecondaryOverlayForRHPOnSuperWideRHP, shouldRenderSecondaryOverlayForRHPOnWideRHP, shouldRenderSecondaryOverlayForWideRHP, superWideRHPRouteKeys, wideRHPRouteKeys} =
+        useContext(WideRHPContext);
+
+    const route = useRoute();
+
+    const isWide = !!route?.key && wideRHPRouteKeys.includes(route.key);
+    const isSuperWide = !!route?.key && superWideRHPRouteKeys.includes(route.key);
+
+    const isRHPDisplayedOnWideRHP = shouldRenderSecondaryOverlayForRHPOnWideRHP && isWide;
+
+    const isRHPDisplayedOnSuperWideRHP = shouldRenderSecondaryOverlayForRHPOnSuperWideRHP && isSuperWide;
+
+    const isWideRHPDisplayedOnSuperWideRHP = shouldRenderSecondaryOverlayForWideRHP && isSuperWide;
+
+    if (isRHPDisplayedOnWideRHP) {
+        return (
+            <Overlay
+                progress={secondOverlayRHPOnWideRHPProgress}
+                // If RHP is displayed on Wide RHP which is displayed above the Super Wide RHP, the secondary overlay's position left should be calculated from the left edge of the super wide RHP.
+                positionLeftValue={animatedReceiptPaneRHPWidth}
+            />
+        );
+    }
+
+    if (isWideRHPDisplayedOnSuperWideRHP) {
+        return (
+            <Overlay
+                progress={secondOverlayWideRHPProgress}
+                positionLeftValue={modalStackOverlayWideRHPPositionLeft}
+            />
+        );
+    }
+
+    if (isRHPDisplayedOnSuperWideRHP) {
+        return (
+            <Overlay
+                progress={secondOverlayRHPOnSuperWideRHPProgress}
+                positionLeftValue={modalStackOverlaySuperWideRHPPositionLeft}
+            />
+        );
+    }
+
+    return null;
+}
 
 function SearchMoneyRequestReportPage({route}: SearchMoneyRequestPageProps) {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -208,36 +265,39 @@ function SearchMoneyRequestReportPage({route}: SearchMoneyRequestPageProps) {
 
     if (shouldUseNarrowLayout) {
         return (
-            <ActionListContext.Provider value={actionListValue}>
-                <ReactionListWrapper>
-                    <ScreenWrapper
-                        testID={SearchMoneyRequestReportPage.displayName}
-                        shouldEnableMaxHeight
-                        offlineIndicatorStyle={styles.mtAuto}
-                        headerGapStyles={styles.searchHeaderGap}
-                    >
-                        <FullPageNotFoundView
-                            shouldShow={shouldShowNotFoundPage}
-                            subtitleKey="notFound.noAccess"
-                            subtitleStyle={[styles.textSupporting]}
-                            shouldDisplaySearchRouter
-                            shouldShowBackButton={shouldUseNarrowLayout}
-                            onBackButtonPress={Navigation.goBack}
+            <>
+                <ActionListContext.Provider value={actionListValue}>
+                    <ReactionListWrapper>
+                        <ScreenWrapper
+                            testID={SearchMoneyRequestReportPage.displayName}
+                            shouldEnableMaxHeight
+                            offlineIndicatorStyle={styles.mtAuto}
+                            headerGapStyles={styles.searchHeaderGap}
                         >
-                            <DragAndDropProvider isDisabled={isEditingDisabled}>
-                                <MoneyRequestReportView
-                                    report={reportToUse}
-                                    reportMetadata={reportMetadata}
-                                    policy={policy}
-                                    shouldDisplayReportFooter={isCurrentReportLoadedFromOnyx}
-                                    key={report?.reportID}
-                                    backToRoute={route.params.backTo}
-                                />
-                            </DragAndDropProvider>
-                        </FullPageNotFoundView>
-                    </ScreenWrapper>
-                </ReactionListWrapper>
-            </ActionListContext.Provider>
+                            <FullPageNotFoundView
+                                shouldShow={shouldShowNotFoundPage}
+                                subtitleKey="notFound.noAccess"
+                                subtitleStyle={[styles.textSupporting]}
+                                shouldDisplaySearchRouter
+                                shouldShowBackButton={shouldUseNarrowLayout}
+                                onBackButtonPress={Navigation.goBack}
+                            >
+                                <DragAndDropProvider isDisabled={isEditingDisabled}>
+                                    <MoneyRequestReportView
+                                        report={reportToUse}
+                                        reportMetadata={reportMetadata}
+                                        policy={policy}
+                                        shouldDisplayReportFooter={isCurrentReportLoadedFromOnyx}
+                                        key={report?.reportID}
+                                        backToRoute={route.params.backTo}
+                                    />
+                                </DragAndDropProvider>
+                            </FullPageNotFoundView>
+                        </ScreenWrapper>
+                    </ReactionListWrapper>
+                </ActionListContext.Provider>
+                <SecondaryOverlay />
+            </>
         );
     }
 

@@ -26,7 +26,6 @@ import type {
     DebugParamList,
     EditRequestNavigatorParamList,
     EnablePaymentsNavigatorParamList,
-    ExpenseReportNavigatorParamList,
     FlagCommentNavigatorParamList,
     MergeTransactionNavigatorParamList,
     MissingPersonalDetailsParamList,
@@ -48,7 +47,6 @@ import type {
     RoomMembersNavigatorParamList,
     ScheduleCallParamList,
     SearchAdvancedFiltersParamList,
-    SearchMoneyRequestReportParamList,
     SearchReportActionsParamList,
     SearchReportParamList,
     SearchSavedSearchParamList,
@@ -995,11 +993,6 @@ const SearchReportModalStackNavigator = createModalStackNavigator<SearchReportPa
     [SCREENS.SEARCH.REPORT_RHP]: () => require<ReactComponentModule>('../../../../pages/home/ReportScreen').default,
 });
 
-// // This navigator is reserved for the screen that can be displayed as Super Wide RHP, other screens should not be added here.
-const SearchMoneyRequestReportModalStackNavigator = createModalStackNavigator<SearchMoneyRequestReportParamList>({
-    [SCREENS.SEARCH.MONEY_REQUEST_REPORT]: () => require<ReactComponentModule>('../../../../pages/Search/SearchMoneyRequestReportPage').default,
-});
-
 const SearchAdvancedFiltersModalStackNavigator = createModalStackNavigator<SearchAdvancedFiltersParamList>({
     [SCREENS.SEARCH.ADVANCED_FILTERS_RHP]: () => require<ReactComponentModule>('../../../../pages/Search/SearchAdvancedFiltersPage').default,
     [SCREENS.SEARCH.ADVANCED_FILTERS_TYPE_RHP]: () => require<ReactComponentModule>('../../../../pages/Search/SearchAdvancedFiltersPage/SearchFiltersTypePage').default,
@@ -1084,10 +1077,6 @@ const ScheduleCallModalStackNavigator = createModalStackNavigator<ScheduleCallPa
     [SCREENS.SCHEDULE_CALL.CONFIRMATION]: () => require<ReactComponentModule>('../../../../pages/ScheduleCall/ScheduleCallConfirmationPage').default,
 });
 
-const ExpenseReportModalStackNavigator = createModalStackNavigator<ExpenseReportNavigatorParamList>({
-    [SCREENS.EXPENSE_REPORT_RHP]: () => require<ReactComponentModule>('../../../../pages/Search/SearchMoneyRequestReportPage').default,
-});
-
 const WorkspacesDomainModalStackNavigator = createModalStackNavigator<WorkspacesDomainModalNavigatorParamList>({
     [SCREENS.WORKSPACES_VERIFY_DOMAIN]: () => require<ReactComponentModule>('../../../../pages/domain/WorkspacesVerifyDomainPage').default,
     [SCREENS.WORKSPACES_DOMAIN_VERIFIED]: () => require<ReactComponentModule>('../../../../pages/domain/WorkspacesDomainVerifiedPage').default,
@@ -1145,7 +1134,5 @@ export {
     MergeTransactionStackNavigator,
     ReportCardActivateStackNavigator,
     WorkspacesDomainModalStackNavigator,
-    SearchMoneyRequestReportModalStackNavigator,
-    ExpenseReportModalStackNavigator,
     SearchReportActionsModalStackNavigator,
 };

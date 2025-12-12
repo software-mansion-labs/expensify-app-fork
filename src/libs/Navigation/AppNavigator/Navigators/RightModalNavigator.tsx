@@ -22,6 +22,7 @@ import {abandonReviewDuplicateTransactions} from '@libs/actions/Transaction';
 import {clearTwoFactorAuthData} from '@libs/actions/TwoFactorAuthActions';
 import hideKeyboardOnSwipe from '@libs/Navigation/AppNavigator/hideKeyboardOnSwipe';
 import * as ModalStackNavigators from '@libs/Navigation/AppNavigator/ModalStackNavigators';
+import useModalStackScreenOptions from '@libs/Navigation/AppNavigator/ModalStackNavigators/useModalStackScreenOptions';
 import useModalCardStyleInterpolator from '@libs/Navigation/AppNavigator/useModalCardStyleInterpolator';
 import useRHPScreenOptions from '@libs/Navigation/AppNavigator/useRHPScreenOptions';
 import calculateReceiptPaneRHPWidth from '@libs/Navigation/helpers/calculateReceiptPaneRHPWidth';
@@ -35,6 +36,7 @@ import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
+import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import {NarrowPaneContextProvider} from './NarrowPaneContext';
 import Overlay from './Overlay';
 
@@ -81,6 +83,8 @@ function SecondaryOverlay() {
     return null;
 }
 
+const loadSearchMoneyRequestReportPage = () => require<ReactComponentModule>('../../../../pages/Search/SearchMoneyRequestReportPage').default;
+
 function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
     // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
     const {shouldUseNarrowLayout, isSmallScreenWidth} = useResponsiveLayout();
@@ -89,6 +93,7 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
     const {shouldRenderTertiaryOverlay, clearWideRHPKeys, syncRHPKeys} = useContext(WideRHPContext);
     const {windowWidth} = useWindowDimensions();
     const modalCardStyleInterpolator = useModalCardStyleInterpolator();
+    const modalStackScreenOptions = useModalStackScreenOptions();
     const styles = useThemeStyles();
     const isFocused = useIsFocused();
 
@@ -358,10 +363,6 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                             }}
                         />
                         <Stack.Screen
-                            name={SCREENS.RIGHT_MODAL.SEARCH_MONEY_REQUEST_REPORT}
-                            component={ModalStackNavigators.SearchMoneyRequestReportModalStackNavigator}
-                        />
-                        <Stack.Screen
                             name={SCREENS.RIGHT_MODAL.RESTRICTED_ACTION}
                             component={ModalStackNavigators.RestrictedActionModalStackNavigator}
                         />
@@ -387,7 +388,13 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                         />
                         <Stack.Screen
                             name={SCREENS.RIGHT_MODAL.EXPENSE_REPORT}
-                            component={ModalStackNavigators.ExpenseReportModalStackNavigator}
+                            getComponent={loadSearchMoneyRequestReportPage}
+                            options={modalStackScreenOptions}
+                        />
+                        <Stack.Screen
+                            name={SCREENS.RIGHT_MODAL.SEARCH_MONEY_REQUEST_REPORT}
+                            getComponent={loadSearchMoneyRequestReportPage}
+                            options={modalStackScreenOptions}
                         />
                         <Stack.Screen
                             name={SCREENS.RIGHT_MODAL.DOMAIN}
