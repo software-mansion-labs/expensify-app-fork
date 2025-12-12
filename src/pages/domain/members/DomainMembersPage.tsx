@@ -1,9 +1,8 @@
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
-import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import {FallbackAvatar,Plus} from '@components/Icon/Expensicons';
+import {FallbackAvatar} from '@components/Icon/Expensicons';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import SearchBar from '@components/SearchBar';
@@ -87,16 +86,7 @@ function DomainMembersPage({route}: DomainAdminsPageProps) {
     const getHeaderButtons = () => {
         return (
             <View style={[styles.flexRow, styles.gap2]}>
-                <Button
-                    success
-                    onPress={() => {
-                        console.log("add member")
-                    }}
-                    text={translate('domain.members.addMember')}
-                    icon={Plus}
-                    innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
-                    style={[shouldUseNarrowLayout && styles.flexGrow1, shouldUseNarrowLayout && styles.mb3]}
-                />
+            {/* Will be fill in next pr */}
             </View>
         );
     };
