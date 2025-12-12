@@ -728,6 +728,8 @@ const ONYXKEYS = {
 
         /** Errors related to a domain */
         DOMAIN_ERRORS: 'domainErrors_',
+
+        DOMAIN_SECURITY_GROUP: 'expensify_securityGroup',
     },
 
     /** List of Form ids */

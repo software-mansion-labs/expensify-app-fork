@@ -43,4 +43,23 @@ function getAdminKey(domain: OnyxTypes.Domain | undefined, accountID: number): s
     })?.[0];
 }
 
-export {selectAdminIDs, getAdminKey};
+function selectMemberIDs(domain: OnyxTypes.Domain | undefined): number[] {
+    if (!domain) {
+        return [];
+    }
+
+    const memberIDs = Object.entries(domain)
+        .filter(([key]) => key.startsWith(ONYXKEYS.COLLECTION.DOMAIN_SECURITY_GROUP))
+        .flatMap(([, value]) => {
+            const groupData = value as { shared?: Record<string, string> };
+            if (!groupData?.shared) {
+                return [];
+            }
+            return Object.keys(groupData.shared);
+        })
+        .map((id) => Number(id))
+        .filter((id) => !Number.isNaN(id));
+    return [...new Set(memberIDs)];
+}
+
+export {selectAdminIDs, getAdminKey, selectMemberIDs};

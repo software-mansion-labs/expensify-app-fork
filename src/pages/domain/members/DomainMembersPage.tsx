@@ -26,7 +26,7 @@ import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import {clearAddAdminError, clearRemoveAdminError} from '@userActions/Domain';
 import CONST from '@src/CONST';
-import {getAdminKey, selectAdminIDs} from '@src/libs/DomainUtils';
+import {getAdminKey, selectMemberIDs} from '@src/libs/DomainUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -47,7 +47,7 @@ function DomainMembersPage({route}: DomainAdminsPageProps) {
     const [domain, fetchStatus] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: false});
     const [memberIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
         canBeMissing: true,
-        selector: selectAdminIDs,
+        selector: selectMemberIDs,
     });
 
     const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainID}`, {
