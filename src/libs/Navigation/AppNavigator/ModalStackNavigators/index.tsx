@@ -849,6 +849,7 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
     [SCREENS.DOMAIN.ADD_PRIMARY_CONTACT]: () => require<ReactComponentModule>('@pages/domain/admins/AddPrimaryContactPage').default,
     [SCREENS.DOMAIN.ADMIN_DETAILS]: () => require<ReactComponentModule>('../../../../pages/domain/DomainAdminDetailsPage').default,
     [SCREENS.DOMAIN.RESET_DOMAIN]: () => require<ReactComponentModule>('@pages/domain/DomainResetDomainPage').default,
+    [SCREENS.DOMAIN.MEMBER_DETAILS]: () => require<ReactComponentModule>('../../../../pages/domain/members/MembersDetailsPage').default,
 });
 
 const TwoFactorAuthenticatorStackNavigator = createModalStackNavigator<EnablePaymentsNavigatorParamList>({
