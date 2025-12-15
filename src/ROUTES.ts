@@ -3456,6 +3456,10 @@ const ROUTES = {
         route: 'domain/:domainAccountID/members/:accountID',
         getRoute: (domainAccountID: number, accountID: number) => `domain/${domainAccountID}/members/${accountID}` as const,
     },
+    DOMAIN_ADD_MEMBER: {
+        route: 'domain/:accountID/members/invite',
+        getRoute: (accountID: number) => `domain/${accountID}/members/invite` as const,
+    },
 } as const;
 
 /**

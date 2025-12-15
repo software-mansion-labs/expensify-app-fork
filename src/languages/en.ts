@@ -7773,6 +7773,7 @@ const translations = {
             title: 'Members',
             findMember: 'Find member',
             addMember: 'Add member',
+            invite: 'Invite',
         }
     },
 };

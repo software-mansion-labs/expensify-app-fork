@@ -44,7 +44,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
         <Button
             success
             onPress={() => {
-                console.log("add member");
+                Navigation.navigate(ROUTES.DOMAIN_ADD_MEMBER.getRoute(domainID));
             }}
             text={translate('domain.members.addMember')}
             icon={Plus}

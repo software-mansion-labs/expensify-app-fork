@@ -525,6 +525,7 @@ const WRITE_COMMANDS = {
     UPDATE_SAML_REQUIRED: 'UpdateSAMLRequired',
     CREATE_DOMAIN: 'CreateDomain',
     ADD_DOMAIN_ADMIN: 'AddDomainAdmin',
+    ADD_DOMAIN_MEMBER: 'AddDomainMember',
     SET_CONSOLIDATED_DOMAIN_BILLING_ENABLED: 'SetConsolidatedDomainBillingEnabled',
 } as const;
 
@@ -1072,6 +1073,7 @@ type WriteCommandParameters = {
     [WRITE_COMMANDS.UPDATE_SAML_REQUIRED]: Parameters.UpdateSamlRequiredParams;
     [WRITE_COMMANDS.CREATE_DOMAIN]: Parameters.DomainParams;
     [WRITE_COMMANDS.ADD_DOMAIN_ADMIN]: Parameters.AddAdminToDomainParams;
+    [WRITE_COMMANDS.ADD_DOMAIN_MEMBER]: Parameters.AddMemberToDomainParams;
     [WRITE_COMMANDS.SET_CONSOLIDATED_DOMAIN_BILLING_ENABLED]: Parameters.SetConsolidatedDomainBillingEnabledParams;
 };
 
