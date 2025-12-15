@@ -1,23 +1,14 @@
 import {PortalHost} from '@gorhom/portal';
-import {useRoute} from '@react-navigation/native';
-import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import type {FlatList} from 'react-native';
 import {View} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import DragAndDropProvider from '@components/DragAndDrop/Provider';
 import MoneyRequestReportView from '@components/MoneyRequestReportView/MoneyRequestReportView';
+import SuperWideRHPWrapper from '@components/RHPWrapper/SuperWideRHPWrapper';
 import ScreenWrapper from '@components/ScreenWrapper';
 import {useSearchContext} from '@components/Search/SearchContext';
-import {
-    animatedReceiptPaneRHPWidth,
-    modalStackOverlaySuperWideRHPPositionLeft,
-    modalStackOverlayWideRHPPositionLeft,
-    secondOverlayRHPOnSuperWideRHPProgress,
-    secondOverlayRHPOnWideRHPProgress,
-    secondOverlayWideRHPProgress,
-    WideRHPContext,
-} from '@components/WideRHPContextProvider';
 import useShowSuperWideRHPVersion from '@components/WideRHPContextProvider/useShowSuperWideRHPVersion';
 import useIsReportReadyToDisplay from '@hooks/useIsReportReadyToDisplay';
 import useNetwork from '@hooks/useNetwork';
@@ -29,7 +20,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useTransactionsAndViolationsForReport from '@hooks/useTransactionsAndViolationsForReport';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {getAllNonDeletedTransactions} from '@libs/MoneyRequestReportUtils';
-import Overlay from '@libs/Navigation/AppNavigator/Navigators/Overlay';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {RightModalNavigatorParamList} from '@libs/Navigation/types';
 import {getFilteredReportActionsForReportView, getIOUActionForTransactionID, getOneTransactionThreadReportID, getOriginalMessage, isMoneyRequestAction} from '@libs/ReportActionsUtils';
@@ -58,57 +48,10 @@ const defaultReportMetadata = {
     isOptimisticReport: false,
 };
 
-function SecondaryOverlay() {
-    const {shouldRenderSecondaryOverlayForRHPOnSuperWideRHP, shouldRenderSecondaryOverlayForRHPOnWideRHP, shouldRenderSecondaryOverlayForWideRHP, superWideRHPRouteKeys, wideRHPRouteKeys} =
-        useContext(WideRHPContext);
-
-    const route = useRoute();
-
-    const isWide = !!route?.key && wideRHPRouteKeys.includes(route.key);
-    const isSuperWide = !!route?.key && superWideRHPRouteKeys.includes(route.key);
-
-    const isRHPDisplayedOnWideRHP = shouldRenderSecondaryOverlayForRHPOnWideRHP && isWide;
-
-    const isRHPDisplayedOnSuperWideRHP = shouldRenderSecondaryOverlayForRHPOnSuperWideRHP && isSuperWide;
-
-    const isWideRHPDisplayedOnSuperWideRHP = shouldRenderSecondaryOverlayForWideRHP && isSuperWide;
-
-    if (isRHPDisplayedOnWideRHP) {
-        return (
-            <Overlay
-                progress={secondOverlayRHPOnWideRHPProgress}
-                // If RHP is displayed on Wide RHP which is displayed above the Super Wide RHP, the secondary overlay's position left should be calculated from the left edge of the super wide RHP.
-                positionLeftValue={animatedReceiptPaneRHPWidth}
-            />
-        );
-    }
-
-    if (isWideRHPDisplayedOnSuperWideRHP) {
-        return (
-            <Overlay
-                progress={secondOverlayWideRHPProgress}
-                positionLeftValue={modalStackOverlayWideRHPPositionLeft}
-            />
-        );
-    }
-
-    if (isRHPDisplayedOnSuperWideRHP) {
-        return (
-            <Overlay
-                progress={secondOverlayRHPOnSuperWideRHPProgress}
-                positionLeftValue={modalStackOverlaySuperWideRHPPositionLeft}
-            />
-        );
-    }
-
-    return null;
-}
-
 function SearchMoneyRequestReportPage({route}: SearchMoneyRequestPageProps) {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const styles = useThemeStyles();
     const {isOffline} = useNetwork();
-
     const reportIDFromRoute = getNonEmptyStringOnyxID(route.params?.reportID);
     const {currentSearchHash} = useSearchContext();
     const [snapshot] = useOnyx(`${ONYXKEYS.COLLECTION.SNAPSHOT}${currentSearchHash}`, {canBeMissing: true});
@@ -265,7 +208,7 @@ function SearchMoneyRequestReportPage({route}: SearchMoneyRequestPageProps) {
 
     if (shouldUseNarrowLayout) {
         return (
-            <>
+            <SuperWideRHPWrapper>
                 <ActionListContext.Provider value={actionListValue}>
                     <ReactionListWrapper>
                         <ScreenWrapper
@@ -296,8 +239,7 @@ function SearchMoneyRequestReportPage({route}: SearchMoneyRequestPageProps) {
                         </ScreenWrapper>
                     </ReactionListWrapper>
                 </ActionListContext.Provider>
-                <SecondaryOverlay />
-            </>
+            </SuperWideRHPWrapper>
         );
     }
 
