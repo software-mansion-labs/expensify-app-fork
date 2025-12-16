@@ -23,7 +23,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const [domain, fetchStatus] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: false});
-
+    debugger;
     const [memberIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
         canBeMissing: true,
         selector: selectMemberIDs,

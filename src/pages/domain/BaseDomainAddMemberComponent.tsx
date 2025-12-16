@@ -7,41 +7,57 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionListWithSections';
 import InviteMemberListItem from '@components/SelectionListWithSections/InviteMemberListItem';
 import type {Section} from '@components/SelectionListWithSections/types';
-import type {WithNavigationTransitionEndProps} from '@components/withNavigationTransitionEnd';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useSearchSelector from '@hooks/useSearchSelector';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {searchInServer} from '@libs/actions/Report';
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
-import {selectAdminIDs} from '@libs/DomainUtils';
 import Navigation from '@libs/Navigation/Navigation';
-import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {OptionData} from '@libs/ReportUtils';
-import type {SettingsNavigatorParamList} from '@navigation/types';
-import {addAdminToDomain} from '@userActions/Domain';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
-import type SCREENS from '@src/SCREENS';
 
 type Sections = SectionListData<OptionData, Section<OptionData>>;
 
-type DomainAddAdminProps = WithNavigationTransitionEndProps & PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.ADD_ADMIN>;
+type BaseDomainAddMemberComponentProps = {
+    /** The domain ID */
+    domainID: number;
 
-function DomainAddMemberPage({route}: DomainAddAdminProps) {
+    /** Title for the header */
+    headerTitle: string;
+
+    /** Text for the submit button */
+    submitButtonText: string;
+
+    /** Function called when the back button is pressed */
+    onBackButtonPress: () => void;
+
+    /** Function called when the user confirms the invitation */
+    onInvite: (accountID: number, login: string, domainName: string) => void;
+
+    /** List of accountIDs to exclude from the search results (e.g. existing admins) */
+    excludeAccountIDs?: number[];
+};
+
+function BaseDomainAddMemberComponent({
+                                          domainID,
+                                          headerTitle,
+                                          submitButtonText,
+                                          onBackButtonPress,
+                                          onInvite,
+                                          excludeAccountIDs = [],
+                                      }: BaseDomainAddMemberComponentProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
+
+    // Onyx hooks
     const [isSearchingForReports] = useOnyx(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, {initWithStoredValues: false, canBeMissing: true});
-    const [actualSelectedUser, setActualSelectedUser] = useState<OptionData | null>(null);
-    const domainID = route.params.accountID;
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {canBeMissing: true});
+
     const domainName = domain ? Str.extractEmailDomain(domain.email) : undefined;
-    const [adminIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainID}`, {
-        canBeMissing: true,
-        selector: selectAdminIDs,
-    });
+    const [actualSelectedUser, setActualSelectedUser] = useState<OptionData | null>(null);
 
     const {searchTerm, setSearchTerm, availableOptions, toggleSelection, areOptionsInitialized, onListEndReached} = useSearchSelector({
         selectionMode: CONST.SEARCH_SELECTOR.SELECTION_MODE_SINGLE,
@@ -78,9 +94,7 @@ function DomainAddMemberPage({route}: DomainAddAdminProps) {
 
         const filteredPersonalDetails = availableOptions.personalDetails
             .filter((option) => option.accountID !== actualSelectedUser?.accountID)
-            .filter((option) => Str.extractEmailDomain(option?.login??'') === domainName)
-
-        debugger;
+            .filter((option) => option.accountID && !excludeAccountIDs.includes(option.accountID));
 
         if (filteredPersonalDetails.length > 0) {
             sectionsArr.push({
@@ -91,8 +105,8 @@ function DomainAddMemberPage({route}: DomainAddAdminProps) {
 
         if (availableOptions.userToInvite) {
             const isSelected = actualSelectedUser?.login === availableOptions.userToInvite.login;
-            const isInDomain = Str.extractEmailDomain(availableOptions.userToInvite.login??'') === domainName;
-            if (!isSelected && isInDomain) {
+
+            if (!isSelected) {
                 sectionsArr.push({
                     title: undefined,
                     data: [availableOptions.userToInvite],
@@ -101,25 +115,29 @@ function DomainAddMemberPage({route}: DomainAddAdminProps) {
         }
 
         return sectionsArr;
-    }, [areOptionsInitialized, actualSelectedUser, availableOptions.personalDetails, availableOptions.userToInvite, translate]);
+    }, [areOptionsInitialized, actualSelectedUser, availableOptions.personalDetails, availableOptions.userToInvite, translate, excludeAccountIDs]);
 
     const inviteUser = useCallback(() => {
-        console.log("")
-        console.log(actualSelectedUser)
-    }, [actualSelectedUser]);
+        if (!actualSelectedUser || !actualSelectedUser.accountID || !actualSelectedUser.login || !domainName) {
+            return;
+        }
+
+        onInvite(actualSelectedUser.accountID, actualSelectedUser.login, domainName);
+        Navigation.dismissModal();
+    }, [actualSelectedUser, domainName, onInvite]);
 
     const footerContent = useMemo(
         () => (
             <FormAlertWithSubmitButton
                 isDisabled={!actualSelectedUser}
                 isAlertVisible={false}
-                buttonText={translate('domain.admins.invite')}
+                buttonText={submitButtonText}
                 onSubmit={inviteUser}
                 containerStyles={[styles.flexReset, styles.flexGrow0, styles.flexShrink0, styles.flexBasisAuto]}
                 enabledWhenOffline
             />
         ),
-        [actualSelectedUser, inviteUser, styles.flexBasisAuto, styles.flexGrow0, styles.flexReset, styles.flexShrink0, translate],
+        [actualSelectedUser, inviteUser, styles.flexBasisAuto, styles.flexGrow0, styles.flexReset, styles.flexShrink0, submitButtonText],
     );
 
     useEffect(() => {
@@ -130,15 +148,13 @@ function DomainAddMemberPage({route}: DomainAddAdminProps) {
         <ScreenWrapper
             shouldEnableMaxHeight
             shouldUseCachedViewportHeight
-            testID={DomainAddMemberPage.displayName}
+            testID={BaseDomainAddMemberComponent.displayName}
             enableEdgeToEdgeBottomSafeAreaPadding
             onEntryTransitionEnd={() => setDidScreenTransitionEnd(true)}
         >
             <HeaderWithBackButton
-                title={translate('domain.members.addMember')}
-                onBackButtonPress={() => {
-                    Navigation.goBack(ROUTES.DOMAIN_ADMINS.getRoute(domainID));
-                }}
+                title={headerTitle}
+                onBackButtonPress={onBackButtonPress}
             />
             <SelectionList
                 canSelectMultiple
@@ -158,12 +174,11 @@ function DomainAddMemberPage({route}: DomainAddAdminProps) {
                 isLoadingNewOptions={!!isSearchingForReports}
                 addBottomSafeAreaPadding
                 onEndReached={onListEndReached}
-                errorText={"email "}
             />
         </ScreenWrapper>
     );
 }
 
-DomainAddMemberPage.displayName = 'DomainAddMemberPage';
+BaseDomainAddMemberComponent.displayName = 'BaseDomainAddMemberComponent';
 
-export default DomainAddMemberPage;
+export default BaseDomainAddMemberComponent;

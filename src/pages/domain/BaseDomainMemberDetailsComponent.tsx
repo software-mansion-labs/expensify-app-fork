@@ -17,6 +17,8 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {PersonalDetails} from '@src/types/onyx';
 import type IconAsset from '@src/types/utils/IconAsset';
+import mergeRefs from '@libs/mergeRefs';
+import * as Expensicons from '@components/Icon/Expensicons';
 
 
 type MemberDetailsMenuItem = {
@@ -71,6 +73,16 @@ function BaseDomainMemberDetailsComponent({
                                 size={CONST.AVATAR_SIZE.X_LARGE}
                             />
                         </OfflineWithFeedback>
+                        <MenuItem
+                            key={"1"}
+                            shouldBlockSelection={false}
+                            icon={Expensicons.ClosedSign}
+                            iconWidth={16}
+                            iconHeight={16}
+                            disabled={false}
+                            onPress={()=>{}}
+                            title={"Close acount"}
+                            />
                         {!!(details.displayName ?? '') && (
                             <Text
                                 style={[styles.textHeadline, styles.pre, styles.mb8, styles.w100, styles.textAlignCenter]}
