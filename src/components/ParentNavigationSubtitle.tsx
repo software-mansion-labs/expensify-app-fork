@@ -90,7 +90,7 @@ function ParentNavigationSubtitle({
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${parentReportID}`, {canBeMissing: false});
     const isReportArchived = useReportIsArchived(report?.reportID);
     const canUserPerformWriteAction = canUserPerformWriteActionReportUtils(report, isReportArchived);
-    const isReportInRHP = currentRoute.name === SCREENS.SEARCH.REPORT_RHP;
+    const isReportInRHP = currentRoute.name === SCREENS.RIGHT_MODAL.SEARCH_REPORT;
     const hasAccessToParentReport = currentReport?.hasParentAccess !== false;
     const {currentFullScreenRoute, currentFocusedNavigator} = useRootNavigationState((state) => {
         const fullScreenRoute = state?.routes?.findLast((route) => isFullScreenName(route.name));
@@ -174,7 +174,8 @@ function ParentNavigationSubtitle({
 
             if (previousRoute?.name === SCREENS.RIGHT_MODAL.SEARCH_REPORT && lastRoute?.name === SCREENS.RIGHT_MODAL.EXPENSE_REPORT) {
                 const lastPreviousRoute = previousRoute.state?.routes.at(-1);
-                if (lastPreviousRoute?.name === SCREENS.SEARCH.REPORT_RHP && lastPreviousRoute.params && 'reportID' in lastPreviousRoute.params) {
+                // @TODO: Check this case
+                if (lastPreviousRoute?.name === SCREENS.RIGHT_MODAL.SEARCH_REPORT && lastPreviousRoute.params && 'reportID' in lastPreviousRoute.params) {
                     const reportIDFromParams = lastPreviousRoute.params.reportID;
 
                     if (reportIDFromParams === parentReportID) {

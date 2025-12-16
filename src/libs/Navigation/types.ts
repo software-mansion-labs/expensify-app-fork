@@ -2161,7 +2161,6 @@ type RightModalNavigatorParamList = {
     [SCREENS.RIGHT_MODAL.TRANSACTION_DUPLICATE]: NavigatorScreenParams<TransactionDuplicateNavigatorParamList>;
     [SCREENS.RIGHT_MODAL.TRAVEL]: NavigatorScreenParams<TravelNavigatorParamList>;
     [SCREENS.RIGHT_MODAL.SEARCH_REPORT_ACTIONS]: NavigatorScreenParams<SearchReportActionsParamList>;
-    [SCREENS.RIGHT_MODAL.SEARCH_REPORT]: NavigatorScreenParams<SearchReportParamList>;
     [SCREENS.RIGHT_MODAL.RESTRICTED_ACTION]: NavigatorScreenParams<RestrictedActionParamList>;
     [SCREENS.RIGHT_MODAL.SEARCH_ADVANCED_FILTERS]: NavigatorScreenParams<SearchAdvancedFiltersParamList>;
     [SCREENS.RIGHT_MODAL.SEARCH_SAVED_SEARCH]: NavigatorScreenParams<SearchSavedSearchParamList>;
@@ -2180,6 +2179,12 @@ type RightModalNavigatorParamList = {
     };
     [SCREENS.RIGHT_MODAL.SEARCH_MONEY_REQUEST_REPORT]: {
         reportID: string;
+        // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
+        backTo?: Routes;
+    };
+    [SCREENS.RIGHT_MODAL.SEARCH_REPORT]: {
+        reportID: string;
+        reportActionID?: string;
         // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
         backTo?: Routes;
     };
@@ -2682,23 +2687,6 @@ type SearchReportActionsParamList = {
     };
 };
 
-type SearchReportParamList = {
-    [SCREENS.SEARCH.REPORT_RHP]: {
-        reportID: string;
-        reportActionID?: string;
-        // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
-        backTo?: Routes;
-    };
-};
-
-type SearchMoneyRequestReportParamList = {
-    [SCREENS.SEARCH.MONEY_REQUEST_REPORT]: {
-        reportID: string;
-        // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
-        backTo?: Routes;
-    };
-};
-
 type SearchFullscreenNavigatorParamList = {
     [SCREENS.SEARCH.ROOT]: {
         q: SearchQueryString;
@@ -2813,14 +2801,6 @@ type TestToolsModalModalNavigatorParamList = {
     };
 };
 
-type ExpenseReportNavigatorParamList = {
-    [SCREENS.EXPENSE_REPORT_RHP]: {
-        reportID: string;
-        // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
-        backTo?: Routes;
-    };
-};
-
 type RootNavigatorParamList = PublicScreensParamList & AuthScreensParamList & SearchFullscreenNavigatorParamList;
 
 type OnboardingFlowName = keyof OnboardingModalNavigatorParamList;
@@ -2892,7 +2872,6 @@ export type {
     RoomMembersNavigatorParamList,
     RootNavigatorParamList,
     SearchAdvancedFiltersParamList,
-    SearchReportParamList,
     SearchSavedSearchParamList,
     SearchFullscreenNavigatorParamList,
     SettingsNavigatorParamList,
@@ -2929,8 +2908,6 @@ export type {
     MergeTransactionNavigatorParamList,
     AttachmentModalScreensParamList,
     ReportCardActivateNavigatorParamList,
-    SearchMoneyRequestReportParamList,
-    ExpenseReportNavigatorParamList,
     WorkspacesDomainModalNavigatorParamList,
     DomainSplitNavigatorParamList,
     DomainScreenName,

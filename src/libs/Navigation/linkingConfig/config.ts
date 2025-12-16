@@ -1589,11 +1589,7 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         [SCREENS.TRAVEL.VERIFY_ACCOUNT]: ROUTES.TRAVEL_VERIFY_ACCOUNT.route,
                     },
                 },
-                [SCREENS.RIGHT_MODAL.SEARCH_REPORT]: {
-                    screens: {
-                        [SCREENS.SEARCH.REPORT_RHP]: ROUTES.SEARCH_REPORT.route,
-                    },
-                },
+                [SCREENS.RIGHT_MODAL.SEARCH_REPORT]: ROUTES.SEARCH_REPORT.route,
                 [SCREENS.RIGHT_MODAL.SEARCH_REPORT_ACTIONS]: {
                     screens: {
                         [SCREENS.SEARCH.ROOT_VERIFY_ACCOUNT]: ROUTES.SEARCH_ROOT_VERIFY_ACCOUNT,

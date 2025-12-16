@@ -1,6 +1,5 @@
 import type {NavigatorScreenParams} from '@react-navigation/native';
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
-import type {StackCardInterpolationProps} from '@react-navigation/stack';
 import React, {useCallback, useContext, useEffect, useMemo, useRef} from 'react';
 // eslint-disable-next-line no-restricted-imports
 import {Animated, DeviceEventEmitter, InteractionManager} from 'react-native';
@@ -8,7 +7,6 @@ import NoDropZone from '@components/DragAndDrop/NoDropZone';
 import {
     animatedWideRHPWidth,
     expandedRHPProgress,
-    innerRHPProgress,
     secondOverlayRHPOnSuperWideRHPProgress,
     secondOverlayRHPOnWideRHPProgress,
     secondOverlayWideRHPProgress,
@@ -23,7 +21,6 @@ import {clearTwoFactorAuthData} from '@libs/actions/TwoFactorAuthActions';
 import hideKeyboardOnSwipe from '@libs/Navigation/AppNavigator/hideKeyboardOnSwipe';
 import * as ModalStackNavigators from '@libs/Navigation/AppNavigator/ModalStackNavigators';
 import useModalStackScreenOptions from '@libs/Navigation/AppNavigator/ModalStackNavigators/useModalStackScreenOptions';
-import useModalCardStyleInterpolator from '@libs/Navigation/AppNavigator/useModalCardStyleInterpolator';
 import useRHPScreenOptions from '@libs/Navigation/AppNavigator/useRHPScreenOptions';
 import calculateReceiptPaneRHPWidth from '@libs/Navigation/helpers/calculateReceiptPaneRHPWidth';
 import calculateSuperWideRHPWidth from '@libs/Navigation/helpers/calculateSuperWideRHPWidth';
@@ -84,15 +81,14 @@ function SecondaryOverlay() {
 }
 
 const loadSearchMoneyRequestReportPage = () => require<ReactComponentModule>('../../../../pages/Search/SearchMoneyRequestReportPage').default;
+const loadReportScreen = () => require<ReactComponentModule>('../../../../pages/home/ReportScreen').default;
 
 function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
-    // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
-    const {shouldUseNarrowLayout, isSmallScreenWidth} = useResponsiveLayout();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     const isExecutingRef = useRef<boolean>(false);
     const screenOptions = useRHPScreenOptions();
     const {shouldRenderTertiaryOverlay, clearWideRHPKeys, syncRHPKeys} = useContext(WideRHPContext);
     const {windowWidth} = useWindowDimensions();
-    const modalCardStyleInterpolator = useModalCardStyleInterpolator();
     const modalStackScreenOptions = useModalStackScreenOptions();
     const styles = useThemeStyles();
     const isFocused = useIsFocused();
@@ -344,23 +340,8 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                         />
                         <Stack.Screen
                             name={SCREENS.RIGHT_MODAL.SEARCH_REPORT}
-                            component={ModalStackNavigators.SearchReportModalStackNavigator}
-                            options={{
-                                web: {
-                                    cardStyleInterpolator: (props: StackCardInterpolationProps) =>
-                                        // Add 1 to change range from [0, 1] to [1, 2]
-                                        // Don't use outputMultiplier for the narrow layout
-                                        modalCardStyleInterpolator({
-                                            props,
-                                            shouldAnimateSidePanel: true,
-
-                                            // Adjust output range to match the wide RHP size
-                                            outputRangeMultiplier: isSmallScreenWidth
-                                                ? undefined
-                                                : Animated.add(Animated.multiply(innerRHPProgress, variables.receiptPaneRHPMaxWidth / variables.sideBarWidth), 1),
-                                        }),
-                                },
-                            }}
+                            getComponent={loadReportScreen}
+                            options={modalStackScreenOptions}
                         />
                         <Stack.Screen
                             name={SCREENS.RIGHT_MODAL.RESTRICTED_ACTION}

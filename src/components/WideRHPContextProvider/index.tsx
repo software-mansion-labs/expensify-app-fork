@@ -22,7 +22,6 @@ import useShouldRenderOverlay from './useShouldRenderOverlay';
 
 // 0 is folded/hidden, 1 is expanded/shown
 const expandedRHPProgress = new Animated.Value(0);
-const innerRHPProgress = new Animated.Value(0);
 const secondOverlayWideRHPProgress = new Animated.Value(0);
 const secondOverlayRHPOnWideRHPProgress = new Animated.Value(0);
 const secondOverlayRHPOnSuperWideRHPProgress = new Animated.Value(0);
@@ -151,13 +150,10 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
         const numberOfWideRoutes = wideRHPRouteKeys.length;
         if (numberOfSuperWideRoutes > 0) {
             expandedRHPProgress.setValue(2);
-            innerRHPProgress.setValue(numberOfWideRoutes > 0 ? 1 : 0);
         } else if (numberOfWideRoutes > 0) {
             expandedRHPProgress.setValue(1);
-            innerRHPProgress.setValue(0);
         } else {
             expandedRHPProgress.setValue(0);
-            innerRHPProgress.setValue(0);
         }
     }, [superWideRHPRouteKeys.length, wideRHPRouteKeys.length]);
 
@@ -348,7 +344,6 @@ export {
     animatedSuperWideRHPWidth,
     animatedWideRHPWidth,
     expandedRHPProgress,
-    innerRHPProgress,
     modalStackOverlaySuperWideRHPPositionLeft,
     modalStackOverlayWideRHPPositionLeft,
     secondOverlayWideRHPProgress,
