@@ -10,6 +10,7 @@ import type {FlatList, ViewStyle} from 'react-native';
 import {Animated, DeviceEventEmitter, InteractionManager, View} from 'react-native';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import Banner from '@components/Banner';
+import DeletedReportView from '@components/BlockingViews/DeletedReportView';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import DragAndDropProvider from '@components/DragAndDrop/Provider';
 import MoneyReportHeader from '@components/MoneyReportHeader';
@@ -940,16 +941,12 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
                     shouldEnableKeyboardAvoidingView={isTopMostReportId || isInNarrowPaneModal}
                     testID={`report-screen-${reportID}`}
                 >
-                    <FullPageNotFoundView
-                        shouldShow={shouldShowNotFoundPage}
-                        subtitleKey={shouldShowNotFoundLinkedAction ? 'notFound.commentYouLookingForCannotBeFound' : 'notFound.noAccess'}
-                        subtitleStyle={[styles.textSupporting]}
+                    <DeletedReportView
+                        reportIDFromRoute={reportIDFromRoute}
+                        report={report}
+                        isOptimisticDelete={isOptimisticDelete}
+                        userLeavingStatus={userLeavingStatus}
                         shouldShowBackButton={shouldUseNarrowLayout}
-                        onBackButtonPress={shouldShowNotFoundLinkedAction ? navigateToEndOfReport : Navigation.goBack}
-                        shouldShowLink={shouldShowNotFoundLinkedAction}
-                        linkTranslationKey="notFound.goToChatInstead"
-                        subtitleKeyBelowLink={shouldShowNotFoundLinkedAction ? 'notFound.contactConcierge' : ''}
-                        onLinkPress={navigateToEndOfReport}
                         shouldDisplaySearchRouter
                     >
                         <DragAndDropProvider isDisabled={isEditingDisabled}>
@@ -1035,7 +1032,7 @@ function ReportScreen({route, navigation}: ReportScreenProps) {
                             </View>
                             <PortalHost name="suggestions" />
                         </DragAndDropProvider>
-                    </FullPageNotFoundView>
+                    </DeletedReportView>
                 </ScreenWrapper>
             </ReactionListWrapper>
         </ActionListContext.Provider>
