@@ -6794,6 +6794,9 @@ const translations = {
         },
     },
     report: {
+        deleted: {
+            title: 'This expense has been deleted',
+        },
         newReport: {
             createExpense: 'Create expense',
             createReport: 'Create report',
