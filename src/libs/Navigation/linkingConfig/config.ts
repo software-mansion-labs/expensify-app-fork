@@ -1141,6 +1141,9 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         [SCREENS.DOMAIN.ADD_PRIMARY_CONTACT]: {
                             path: ROUTES.DOMAIN_ADD_PRIMARY_CONTACT.route,
                         },
+                        [SCREENS.DOMAIN.MEMBERS_SETTINGS]: {
+                            path: ROUTES.DOMAIN_MEMBERS_SETTINGS.route,
+                        },
                     },
                 },
                 [SCREENS.RIGHT_MODAL.TWO_FACTOR_AUTH]: {

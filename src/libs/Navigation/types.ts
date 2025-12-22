@@ -1371,6 +1371,9 @@ type SettingsNavigatorParamList = {
     [SCREENS.DOMAIN.ADD_PRIMARY_CONTACT]: {
         domainAccountID: number;
     };
+    [SCREENS.DOMAIN.MEMBERS_SETTINGS]: {
+        domainAccountID: number;
+    };
 } & ReimbursementAccountNavigatorParamList;
 
 type DomainCardNavigatorParamList = {

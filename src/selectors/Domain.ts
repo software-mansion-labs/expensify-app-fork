@@ -4,7 +4,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {CardFeeds, Domain, SamlMetadata} from '@src/types/onyx';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
-const domainMemberSamlSettingsSelector = (domainSettings: OnyxEntry<CardFeeds>) => domainSettings?.settings;
+const domainMemberSettingsSelector = (domainSettings: OnyxEntry<CardFeeds>) => domainSettings?.settings;
 
 const domainSamlSettingsStateSelector = (domain: OnyxEntry<Domain>) =>
     domain
@@ -79,7 +79,7 @@ function selectMemberIDs(domain: OnyxEntry<Domain>): number[] {
 const technicalContactEmailSelector = (domainMemberSharedNVP: OnyxEntry<CardFeeds>) => domainMemberSharedNVP?.settings?.technicalContactEmail;
 
 export {
-    domainMemberSamlSettingsSelector,
+    domainMemberSettingsSelector,
     domainSamlSettingsStateSelector,
     domainNameSelector,
     metaIdentitySelector,

@@ -7869,6 +7869,9 @@ const translations = {
         members: {
             title: 'Members',
             findMember: 'Find member',
+            forceTwoFactorAuth: 'Force two-factor authentication',
+            forceTwoFactorAuthDescription: `<muted-text>Please disable <a href="${CONST.SAML_HELP_URL}">SAML</a> to force two-factor authentication.</muted-text>`,
+            forceTwoFactorAuthError: "Force two-factor authentication couldn't be changed. Please try again later.",
         },
     },
 };
