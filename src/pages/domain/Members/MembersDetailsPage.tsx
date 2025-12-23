@@ -1,14 +1,14 @@
 import React from 'react';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
-import type {SettingsNavigatorParamList} from '@navigation/types';
+import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import BaseDomainMemberDetailsComponent from '@pages/domain/BaseDomainMemberDetailsComponent';
 import type {MemberDetailsMenuItem} from '@pages/domain/BaseDomainMemberDetailsComponent';
 import type SCREENS from '@src/SCREENS';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
-type DomainAdminDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.ADMIN_DETAILS>;
+type DomainMemberDetailsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.MEMBER_DETAILS>;
 
-function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
+function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
     const {domainAccountID, accountID} = route.params;
 
     return (
@@ -20,6 +20,6 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     );
 }
 
-DomainAdminDetailsPage.displayName = 'DomainAdminDetailsPage';
+DomainMemberDetailsPage.displayName = 'DomainMemberDetailsPage';
 
-export default DomainAdminDetailsPage;
+export default DomainMemberDetailsPage;
