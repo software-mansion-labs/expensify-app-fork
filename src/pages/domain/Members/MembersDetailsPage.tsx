@@ -6,9 +6,9 @@ import type {MemberDetailsMenuItem} from '@pages/domain/BaseDomainMemberDetailsC
 import type SCREENS from '@src/SCREENS';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
-type DomainAdminDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.ADMIN_DETAILS>;
+type DomainMemberDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.MEMBER_DETAILS>;
 
-function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
+function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
     const {domainAccountID, accountID} = route.params;
 
     return (
@@ -20,6 +20,6 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     );
 }
 
-DomainAdminDetailsPage.displayName = 'DomainAdminDetailsPage';
+DomainMemberDetailsPage.displayName = 'DomainMemberDetailsPage';
 
-export default DomainAdminDetailsPage;
+export default DomainMemberDetailsPage;

@@ -172,6 +172,9 @@ type CardFeeds = {
 
         /** Whether 2FA is required for all members */
         twoFactorAuthRequired?: boolean;
+
+        /** */
+        twoFactorAuthExemptEmails?: string[];
     };
 
     /** Whether we are loading the data via the API */

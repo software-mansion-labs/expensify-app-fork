@@ -3,11 +3,16 @@ import type * as OnyxCommon from './OnyxCommon';
 /**
  * General pending action structure for domain admins
  */
-type GeneralDomainAdminPendingAction = {
+type GeneralDomainPendingAction = {
     /**
      * Base pending actions
      */
     pendingAction: OnyxCommon.PendingAction;
+
+    /**
+     *
+     */
+    twoFactorAuthExemptEmails: OnyxCommon.PendingAction;
 };
 
 /**
@@ -17,7 +22,12 @@ type DomainPendingAction = {
     /**
      * Pending actions for specific administrators, keyed by their accountID
      */
-    admin?: Record<number, GeneralDomainAdminPendingAction>;
+    admin?: Record<number, GeneralDomainPendingAction>;
+
+    /**
+     *
+     */
+    member?: Record<number, GeneralDomainPendingAction>;
 
     /**
      * Pending action for the technical contact email
