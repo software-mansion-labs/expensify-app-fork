@@ -1,6 +1,7 @@
 import {Str} from 'expensify-common';
 import type {Ref} from 'react';
 import React, {useEffect, useImperativeHandle, useRef, useState} from 'react';
+import ChartKit from '@components/ChartKit';
 import type {OnyxEntry} from 'react-native-onyx';
 import ColorSchemeWrapper from '@components/ColorSchemeWrapper';
 import CustomStatusBarAndBackground from '@components/CustomStatusBarAndBackground';
@@ -309,6 +310,9 @@ function SignInPage({ref}: SignInPageProps) {
                     ref={signInPageLayoutRef}
                     navigateFocus={navigateFocus}
                 >
+                    {/* Demo chart with lazy loading */}
+                    <ChartKit />
+
                     {/* LoginForm must use the isVisible prop. This keeps it mounted, but visually hidden
                         so that password managers can access the values. Conditionally rendering this component will break this feature. */}
                     <LoginForm
