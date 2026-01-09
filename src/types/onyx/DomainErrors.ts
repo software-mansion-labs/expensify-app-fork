@@ -28,6 +28,11 @@ type DomainErrors = {
      * Errors related to the "use technical contact billing card" setting
      */
     useTechnicalContactBillingCardErrors?: OnyxCommon.Errors;
+
+    /**
+     * Errors related to the 2FA toggle
+     */
+    twoFactorAuthRequiredErrors?: OnyxCommon.Errors;
 };
 
 export default DomainErrors;

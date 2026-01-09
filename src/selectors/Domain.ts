@@ -4,7 +4,7 @@ import CONST from '@src/CONST';
 import type {CardFeeds, Domain, DomainSecurityGroup, SamlMetadata} from '@src/types/onyx';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
-const domainMemberSamlSettingsSelector = (domainSettings: OnyxEntry<CardFeeds>) => domainSettings?.settings;
+const domainMemberSettingsSelector = (domainSettings: OnyxEntry<CardFeeds>) => domainSettings?.settings;
 
 const domainSamlSettingsStateSelector = (domain: OnyxEntry<Domain>) =>
     domain
@@ -90,7 +90,7 @@ function memberAccountIDsSelector(domain: OnyxEntry<Domain>): number[] {
 const domainEmailSelector = (domain: OnyxEntry<Domain>) => domain?.email;
 
 export {
-    domainMemberSamlSettingsSelector,
+    domainMemberSettingsSelector,
     domainSamlSettingsStateSelector,
     domainNameSelector,
     metaIdentitySelector,
