@@ -3,9 +3,9 @@ import type * as OnyxCommon from './OnyxCommon';
 /**
  * Basic errors for domain admins
  */
-type GeneralDomainAdminErrors = {
+type GeneralDomainErrors = {
     /**
-     * Base pending actions
+     * Base error
      */
     errors: OnyxCommon.Errors;
 };
@@ -17,7 +17,7 @@ type DomainErrors = {
     /**
      * Errors related to specific domain administrators, keyed by their adminID
      */
-    adminErrors?: Record<number, GeneralDomainAdminErrors>;
+    adminErrors?: Record<number, GeneralDomainErrors>;
 
     /**
      * Errors related to the technical contact email
@@ -28,6 +28,11 @@ type DomainErrors = {
      * Errors related to the "use technical contact billing card" setting
      */
     useTechnicalContactBillingCardErrors?: OnyxCommon.Errors;
+
+    /**
+     * Errors related to specific domain member, keyed by their accountID
+     */
+    memberErrors?: Record<number, GeneralDomainErrors>;
 };
 
 export default DomainErrors;

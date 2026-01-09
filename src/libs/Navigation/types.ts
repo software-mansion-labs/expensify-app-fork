@@ -1384,6 +1384,9 @@ type SettingsNavigatorParamList = {
     [SCREENS.DOMAIN.ADD_ADMIN]: {
         domainAccountID: number;
     };
+    [SCREENS.DOMAIN.ADD_MEMBER]: {
+        domainAccountID: number;
+    };
 } & ReimbursementAccountNavigatorParamList;
 
 type DomainCardNavigatorParamList = {
