@@ -7913,6 +7913,14 @@ const CONST = {
         EXPENSIFY_ADMIN_ACCESS_PREFIX: 'expensify_adminPermissions_',
         /** Onyx prefix for domain security groups */
         DOMAIN_SECURITY_GROUP_PREFIX: 'domain_securityGroup_',
+
+        SECONDARY_ACTIONS: {
+            /** Action for leaving a domain */
+            LEAVE: 'leave',
+
+            /** Action for exporting domain members to a CSV file */
+            SAVE_TO_CSV: 'saveToCSV',
+        },
     },
 } as const;
 
