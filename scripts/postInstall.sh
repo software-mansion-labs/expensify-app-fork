@@ -21,5 +21,9 @@ if [[ "$IS_HYBRID_APP_REPO" == "true" && "$NEW_DOT_FLAG" == "false" ]]; then
   cd "$ROOT_DIR" || exit 1
 fi
 
+# Setup Skia WASM
+echo -e "\n${GREEN}Setting up Skia WASM!${NC}"
+npx setup-skia-web
+
 # Apply packages using patch-package
 scripts/applyPatches.sh
