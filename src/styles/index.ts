@@ -5634,6 +5634,46 @@ const staticStyles = (theme: ThemeColors) =>
             width: 179,
             height: 180,
         },
+
+        // Bar Chart styles
+        barChartContainer: {
+            borderRadius: variables.componentBorderRadiusLarge,
+            padding: variables.qrShareHorizontalPadding,
+        },
+        barChartHeader: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: variables.componentBorderRadius,
+            marginBottom: variables.sectionMargin,
+        },
+        barChartTitle: {
+            fontSize: variables.fontSizeMedium,
+            fontWeight: '600',
+        },
+        barChartChartContainer: {
+            height: 250,
+        },
+        barChartLegend: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: variables.sectionMargin,
+            marginTop: variables.qrShareHorizontalPadding,
+        },
+        barChartLegendItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: variables.componentBorderRadiusMedium,
+        },
+        barChartLegendDot: {
+            width: variables.iconSizeXXSmall,
+            height: variables.iconSizeXXSmall,
+            borderRadius: variables.componentBorderRadiusSmall,
+        },
+        barChartLegendLabel: {
+            fontSize: variables.fontSizeSmall,
+            maxWidth: 150,
+        },
     }) satisfies StaticStyles;
 
 const dynamicStyles = (theme: ThemeColors) =>

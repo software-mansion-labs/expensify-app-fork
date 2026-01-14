@@ -9,7 +9,16 @@ import FullPageErrorView from '@components/BlockingViews/FullPageErrorView';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import ConfirmModal from '@components/ConfirmModal';
 import SearchTableHeader from '@components/SelectionListWithSections/SearchTableHeader';
-import type {ReportActionListItemType, SearchListItem, SelectionListHandle, TransactionGroupListItemType, TransactionListItemType} from '@components/SelectionListWithSections/types';
+import type {
+    ReportActionListItemType,
+    SearchListItem,
+    SelectionListHandle,
+    TransactionCardGroupListItemType,
+    TransactionGroupListItemType,
+    TransactionListItemType,
+    TransactionMemberGroupListItemType,
+    TransactionWithdrawalIDGroupListItemType,
+} from '@components/SelectionListWithSections/types';
 import SearchRowSkeleton from '@components/Skeletons/SearchRowSkeleton';
 import {WideRHPContext} from '@components/WideRHPContextProvider';
 import useArchivedReportsIdSet from '@hooks/useArchivedReportsIdSet';
@@ -74,6 +83,7 @@ import type SearchResults from '@src/types/onyx/SearchResults';
 import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import arraysEqual from '@src/utils/arraysEqual';
+import {BarChart} from '@components/Charts';
 import {useSearchContext} from './SearchContext';
 import SearchList from './SearchList';
 import {SearchScopeProvider} from './SearchScopeProvider';
@@ -199,7 +209,7 @@ function Search({
     searchRequestResponseStatusCode,
     onDEWModalOpen,
 }: SearchProps) {
-    const {type, status, sortBy, sortOrder, hash, similarSearchHash, groupBy} = queryJSON;
+    const {type, status, sortBy, sortOrder, hash, similarSearchHash, groupBy, view} = queryJSON;
     const {isOffline} = useNetwork();
     const prevIsOffline = usePrevious(isOffline);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -964,6 +974,36 @@ function Search({
         endSpan(CONST.TELEMETRY.SPAN_ON_LAYOUT_SKELETON_REPORTS);
     }, []);
 
+    // Transform grouped data for chart view
+    const chartData = useMemo(() => {
+        if (view !== CONST.SEARCH.VIEW.BAR || !sortedData) {
+            return [];
+        }
+
+        return sortedData
+            .filter((item): item is TransactionMemberGroupListItemType | TransactionCardGroupListItemType | TransactionWithdrawalIDGroupListItemType =>
+                isTransactionMemberGroupListItemType(item) || isTransactionCardGroupListItemType(item) || isTransactionWithdrawalIDGroupListItemType(item)
+            )
+            .map((item) => {
+                let label = '';
+                if (isTransactionMemberGroupListItemType(item)) {
+                    label = item.formattedFrom ?? '';
+                } else if (isTransactionCardGroupListItemType(item)) {
+                    label = item.formattedCardName ?? '';
+                } else if (isTransactionWithdrawalIDGroupListItemType(item)) {
+                    label = item.formattedWithdrawalID ?? '';
+                }
+
+                return {
+                    label,
+                    total: (item.total ?? 0) / 100,
+                    currency: item.currency ?? CONST.CURRENCY.USD,
+                };
+            });
+    }, [view, sortedData]);
+
+    const isBarChartView = view === CONST.SEARCH.VIEW.BAR && !!groupBy;
+
     if (shouldShowLoadingState) {
         return (
             <Animated.View
@@ -1035,7 +1075,22 @@ function Search({
     return (
         <SearchScopeProvider>
             <Animated.View style={[styles.flex1, animatedStyle]}>
+                {isBarChartView && (
+                    <View
+                        key="barchart-view"
+                        style={styles.p4}
+                    >
+                        <BarChart
+                            data={chartData}
+                            title={groupBy ? `By ${groupBy}` : undefined}
+                            isLoading={searchResults?.search?.isLoading}
+                            yAxisUnit="$"
+                        />
+                    </View>
+                )}
+                {!isBarChartView && (
                 <SearchList
+                    key="search-list"
                     ref={searchListRef}
                     data={sortedData}
                     ListItem={ListItem}
@@ -1093,6 +1148,7 @@ function Search({
                     newTransactions={newTransactions}
                     customCardNames={customCardNames}
                 />
+                )}
                 <ConfirmModal
                     title={translate('customApprovalWorkflow.title')}
                     isVisible={isDEWModalVisible}
