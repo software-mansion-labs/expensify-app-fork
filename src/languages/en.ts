@@ -7932,6 +7932,7 @@ const translations = {
                     other: (count: number) => `${count} members`,
                 };
             },
+            defaultGroupToggleDescription: 'Default group for new members'
         },
     },
 };

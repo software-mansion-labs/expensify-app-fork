@@ -1165,6 +1165,9 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         [SCREENS.DOMAIN.RESET_DOMAIN]: {
                             path: ROUTES.DOMAIN_RESET_DOMAIN.route,
                         },
+                        [SCREENS.DOMAIN.GROUP_DETAILS]: {
+                            path: ROUTES.DOMAIN_GROUP_DETAILS.route,
+                        }
                     },
                 },
                 [SCREENS.RIGHT_MODAL.TWO_FACTOR_AUTH]: {

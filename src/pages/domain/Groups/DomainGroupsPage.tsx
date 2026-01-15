@@ -1,28 +1,35 @@
-import {groupsSelector} from '@selectors/Domain';
+import { groupsSelector } from '@selectors/Domain';
 import React from 'react';
-import {View} from 'react-native';
+import { View } from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/ListItem/TableListItem';
+import type { ListItem } from '@components/SelectionList/ListItem/types';
 import Text from '@components/Text';
-import {useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
+import { useMemoizedLazyIllustrations } from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@navigation/Navigation';
-import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
-import type {DomainSplitNavigatorParamList} from '@navigation/types';
+import type { PlatformStackScreenProps } from '@navigation/PlatformStackNavigation/types';
+import type { DomainSplitNavigatorParamList } from '@navigation/types';
 import DomainNotFoundPageWrapper from '@pages/domain/DomainNotFoundPageWrapper';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import type {DomainSecurityGroup} from '@src/types/onyx';
+import type { DomainSecurityGroup } from '@src/types/onyx';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
+
 type DomainSecurityGroupWithID = {
-    id: string;
+    id: number;
     details: DomainSecurityGroup;
+};
+
+type GroupOption = Omit<ListItem, 'groupID'> & {
+    groupID: number;
 };
 
 type DomainGroupsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.GROUPS>;
@@ -37,10 +44,11 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
 
     const [groups = getEmptyArray<DomainSecurityGroupWithID>()] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: false, selector: groupsSelector});
 
-    const data = groups.map((group) => {
+    const data: GroupOption[] = groups.map((group) => {
         return {
-            keyForList: group.id,
+            keyForList: String(group.id),
             text: group.details.name,
+            groupID: group.id,
             rightElement: (
                 <View style={[styles.flex1]}>
                     <Text
@@ -90,8 +98,9 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
                 <SelectionList
                     data={data}
                     ListItem={TableListItem}
-                    onSelectRow={() => {}}
+                    onSelectRow={(item: GroupOption) => Navigation.navigate(ROUTES.DOMAIN_GROUP_DETAILS.getRoute(domainAccountID, item.groupID))}
                     customListHeader={getCustomListHeader()}
+                    shouldShowRightCaret
                 />
             </ScreenWrapper>
         </DomainNotFoundPageWrapper>

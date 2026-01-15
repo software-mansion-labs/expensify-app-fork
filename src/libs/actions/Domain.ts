@@ -1,15 +1,23 @@
 import Onyx from 'react-native-onyx';
-import type {OnyxUpdate} from 'react-native-onyx';
+import type { OnyxUpdate } from 'react-native-onyx';
 import * as API from '@libs/API';
-import type {AddAdminToDomainParams, DeleteDomainParams, RemoveDomainAdminParams, SetTechnicalContactEmailParams, ToggleConsolidatedDomainBillingParams} from '@libs/API/parameters';
+import type {
+    AddAdminToDomainParams,
+    DeleteDomainParams,
+    RemoveDomainAdminParams,
+    SetTechnicalContactEmailParams,
+    ToggleConsolidatedDomainBillingParams,
+    UpdateDomainSecurityGroupParams,
+} from '@libs/API/parameters';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
+import { getMicroSecondOnyxErrorWithTranslationKey } from '@libs/ErrorUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Domain} from '@src/types/onyx';
+import type { Domain } from '@src/types/onyx';
 import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
-import type {ScimTokenWithState} from './ScimToken/ScimTokenUtils';
-import {ScimTokenState} from './ScimToken/ScimTokenUtils';
+import type { ScimTokenWithState } from './ScimToken/ScimTokenUtils';
+import { ScimTokenState } from './ScimToken/ScimTokenUtils';
+
 
 /**
  * Fetches a validation code that the user is supposed to put in the domain's DNS records to verify it
@@ -778,6 +786,16 @@ function clearDomainErrors(domainAccountID: number) {
     });
 }
 
+function updateDomainSecurityGroup(domainAccountID: number, groupName: string, value: string) {
+    const params: UpdateDomainSecurityGroupParams = {
+        domainAccountID,
+        name: groupName,
+        value,
+    };
+
+    API.write(WRITE_COMMANDS.UPDATE_DOMAIN_SECURITY_GROUP, params, {});
+}
+
 export {
     getDomainValidationCode,
     validateDomain,
@@ -801,4 +819,5 @@ export {
     revokeDomainAdminAccess,
     resetDomain,
     clearDomainErrors,
+    updateDomainSecurityGroup,
 };

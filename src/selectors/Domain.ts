@@ -101,7 +101,7 @@ function groupsSelector(domain: OnyxEntry<Domain>): DomainSecurityGroupWithID[] 
 
     return Object.entries(domain).reduce<DomainSecurityGroupWithID[]>((acc, [key, value]) => {
         if (key.startsWith(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX)) {
-            acc.push({id: key.replace(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, ''), details: value as DomainSecurityGroup});
+            acc.push({id: Number(key.replace(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, '')), details: value as DomainSecurityGroup});
         }
         return acc;
     }, []);

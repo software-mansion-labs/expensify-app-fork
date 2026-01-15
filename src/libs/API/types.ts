@@ -1,12 +1,13 @@
-import type {ValueOf} from 'type-fest';
+import type { ValueOf } from 'type-fest';
 import type CONST from '@src/CONST';
-import type {SageIntacctMappingValue} from '@src/types/onyx/Policy';
-import type {EmptyObject} from '@src/types/utils/EmptyObject';
+import type { SageIntacctMappingValue } from '@src/types/onyx/Policy';
+import type { EmptyObject } from '@src/types/utils/EmptyObject';
 // We have to disable eslint for this import because otherwise the import will be 300 lines long
 // eslint-disable-next-line no-restricted-syntax
 import type * as Parameters from './parameters';
 import type SignInUserParams from './parameters/SignInUserParams';
 import type UpdateBeneficialOwnersForBankAccountParams from './parameters/UpdateBeneficialOwnersForBankAccountParams';
+
 
 type ApiRequestType = ValueOf<typeof CONST.API_REQUEST_TYPE>;
 
@@ -536,6 +537,7 @@ const WRITE_COMMANDS = {
     ADD_DOMAIN_ADMIN: 'AddDomainAdmin',
     REMOVE_DOMAIN_ADMIN: 'RemoveDomainAdmin',
     DELETE_DOMAIN: 'DeleteDomain',
+    UPDATE_DOMAIN_SECURITY_GROUP: 'UpdateDomainSecurityGroup',
 } as const;
 
 type WriteCommand = ValueOf<typeof WRITE_COMMANDS>;
@@ -1093,6 +1095,7 @@ type WriteCommandParameters = {
     [WRITE_COMMANDS.REMOVE_DOMAIN_ADMIN]: Parameters.RemoveDomainAdminParams;
     [WRITE_COMMANDS.DELETE_DOMAIN]: Parameters.DeleteDomainParams;
     [WRITE_COMMANDS.ADD_DOMAIN_ADMIN]: Parameters.AddAdminToDomainParams;
+    [WRITE_COMMANDS.UPDATE_DOMAIN_SECURITY_GROUP]: Parameters.UpdateDomainSecurityGroupParams;
 };
 
 const READ_COMMANDS = {

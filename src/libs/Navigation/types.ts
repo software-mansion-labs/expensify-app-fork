@@ -1,34 +1,25 @@
 /* eslint-disable @typescript-eslint/naming-convention  */
-import type {
-    CommonActions,
-    NavigationContainerRefWithCurrent,
-    NavigationHelpers,
-    NavigationState,
-    NavigatorScreenParams,
-    ParamListBase,
-    PartialRoute,
-    PartialState,
-    Route,
-} from '@react-navigation/native';
-import type {TupleToUnion, ValueOf} from 'type-fest';
-import type {UpperCaseCharacters} from 'type-fest/source/internal';
-import type {SearchQueryString} from '@components/Search/types';
-import type {ReplacementReason} from '@libs/actions/Card';
-import type {IOURequestType} from '@libs/actions/IOU';
-import type {SaveSearchParams} from '@libs/API/parameters';
-import type {ReimbursementAccountStepToOpen} from '@libs/ReimbursementAccountUtils';
-import type {AvatarSource} from '@libs/UserAvatarUtils';
-import type {AttachmentModalContainerModalProps} from '@pages/media/AttachmentModalScreen/types';
+import type { CommonActions, NavigationContainerRefWithCurrent, NavigationHelpers, NavigationState, NavigatorScreenParams, ParamListBase, PartialRoute, PartialState, Route } from '@react-navigation/native';
+import type { TupleToUnion, ValueOf } from 'type-fest';
+import type { UpperCaseCharacters } from 'type-fest/source/internal';
+import type { SearchQueryString } from '@components/Search/types';
+import type { ReplacementReason } from '@libs/actions/Card';
+import type { IOURequestType } from '@libs/actions/IOU';
+import type { SaveSearchParams } from '@libs/API/parameters';
+import type { ReimbursementAccountStepToOpen } from '@libs/ReimbursementAccountUtils';
+import type { AvatarSource } from '@libs/UserAvatarUtils';
+import type { AttachmentModalContainerModalProps } from '@pages/media/AttachmentModalScreen/types';
 import type CONST from '@src/CONST';
-import type {Country, IOUAction, IOUType} from '@src/CONST';
+import type { Country, IOUAction, IOUType } from '@src/CONST';
 import type NAVIGATORS from '@src/NAVIGATORS';
-import type {Route as ExpensifyRoute, Route as Routes} from '@src/ROUTES';
+import type { Route as ExpensifyRoute, Route as Routes } from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import type {CompanyCardFeedWithDomainID} from '@src/types/onyx';
-import type {ConnectionName, SageIntacctMappingName} from '@src/types/onyx/Policy';
-import type {CustomFieldType} from '@src/types/onyx/PolicyEmployee';
-import type {FileObject} from '@src/types/utils/Attachment';
-import type {SIDEBAR_TO_SPLIT} from './linkingConfig/RELATIONS';
+import type { CompanyCardFeedWithDomainID } from '@src/types/onyx';
+import type { ConnectionName, SageIntacctMappingName } from '@src/types/onyx/Policy';
+import type { CustomFieldType } from '@src/types/onyx/PolicyEmployee';
+import type { FileObject } from '@src/types/utils/Attachment';
+import type { SIDEBAR_TO_SPLIT } from './linkingConfig/RELATIONS';
+
 
 type NavigationRef = NavigationContainerRefWithCurrent<RootNavigatorParamList>;
 
@@ -1399,6 +1390,10 @@ type SettingsNavigatorParamList = {
     [SCREENS.DOMAIN.MEMBER_DETAILS]: {
         domainAccountID: number;
         accountID: number;
+    };
+    [SCREENS.DOMAIN.GROUP_DETAILS]: {
+        domainAccountID: number;
+        groupID: number;
     };
 } & ReimbursementAccountNavigatorParamList;
 

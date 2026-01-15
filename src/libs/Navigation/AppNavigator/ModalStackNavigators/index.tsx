@@ -1,60 +1,17 @@
-import type {ParamListBase} from '@react-navigation/routers';
-import React, {useCallback} from 'react';
-import {View} from 'react-native';
+import type { ParamListBase } from '@react-navigation/routers';
+import React, { useCallback } from 'react';
+import { View } from 'react-native';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
-import type {PlatformStackNavigationOptions} from '@libs/Navigation/PlatformStackNavigation/types';
-import type {
-    AddPersonalBankAccountNavigatorParamList,
-    AddUnreportedExpensesParamList,
-    ConsoleNavigatorParamList,
-    DebugParamList,
-    EditRequestNavigatorParamList,
-    EnablePaymentsNavigatorParamList,
-    FlagCommentNavigatorParamList,
-    MergeTransactionNavigatorParamList,
-    MissingPersonalDetailsParamList,
-    MoneyRequestNavigatorParamList,
-    NewChatNavigatorParamList,
-    NewReportWorkspaceSelectionNavigatorParamList,
-    NewTaskNavigatorParamList,
-    ParticipantsNavigatorParamList,
-    PrivateNotesNavigatorParamList,
-    ProfileNavigatorParamList,
-    ReferralDetailsNavigatorParamList,
-    ReportCardActivateNavigatorParamList,
-    ReportChangeApproverParamList,
-    ReportChangeWorkspaceNavigatorParamList,
-    ReportDescriptionNavigatorParamList,
-    ReportDetailsNavigatorParamList,
-    ReportSettingsNavigatorParamList,
-    ReportVerifyAccountNavigatorParamList,
-    RestrictedActionParamList,
-    RoomMembersNavigatorParamList,
-    ScheduleCallParamList,
-    SearchAdvancedFiltersParamList,
-    SearchColumnsParamList,
-    SearchReportActionsParamList,
-    SearchSavedSearchParamList,
-    SettingsNavigatorParamList,
-    ShareNavigatorParamList,
-    SignInNavigatorParamList,
-    SplitDetailsNavigatorParamList,
-    TaskDetailsNavigatorParamList,
-    TeachersUniteNavigatorParamList,
-    TransactionDuplicateNavigatorParamList,
-    TravelNavigatorParamList,
-    WalletStatementNavigatorParamList,
-    WorkspaceConfirmationNavigatorParamList,
-    WorkspaceDuplicateNavigatorParamList,
-    WorkspacesDomainModalNavigatorParamList,
-} from '@navigation/types';
-import type {Screen} from '@src/SCREENS';
+import type { PlatformStackNavigationOptions } from '@libs/Navigation/PlatformStackNavigation/types';
+import type { AddPersonalBankAccountNavigatorParamList, AddUnreportedExpensesParamList, ConsoleNavigatorParamList, DebugParamList, EditRequestNavigatorParamList, EnablePaymentsNavigatorParamList, FlagCommentNavigatorParamList, MergeTransactionNavigatorParamList, MissingPersonalDetailsParamList, MoneyRequestNavigatorParamList, NewChatNavigatorParamList, NewReportWorkspaceSelectionNavigatorParamList, NewTaskNavigatorParamList, ParticipantsNavigatorParamList, PrivateNotesNavigatorParamList, ProfileNavigatorParamList, ReferralDetailsNavigatorParamList, ReportCardActivateNavigatorParamList, ReportChangeApproverParamList, ReportChangeWorkspaceNavigatorParamList, ReportDescriptionNavigatorParamList, ReportDetailsNavigatorParamList, ReportSettingsNavigatorParamList, ReportVerifyAccountNavigatorParamList, RestrictedActionParamList, RoomMembersNavigatorParamList, ScheduleCallParamList, SearchAdvancedFiltersParamList, SearchColumnsParamList, SearchReportActionsParamList, SearchSavedSearchParamList, SettingsNavigatorParamList, ShareNavigatorParamList, SignInNavigatorParamList, SplitDetailsNavigatorParamList, TaskDetailsNavigatorParamList, TeachersUniteNavigatorParamList, TransactionDuplicateNavigatorParamList, TravelNavigatorParamList, WalletStatementNavigatorParamList, WorkspaceConfirmationNavigatorParamList, WorkspaceDuplicateNavigatorParamList, WorkspacesDomainModalNavigatorParamList } from '@navigation/types';
+import type { Screen } from '@src/SCREENS';
 import SCREENS from '@src/SCREENS';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useModalStackScreenOptions from './useModalStackScreenOptions';
+
 
 const loadAttachmentModalScreen = () => require<ReactComponentModule>('../../../../pages/media/AttachmentModalScreen').default;
 
@@ -813,6 +770,7 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
     [SCREENS.DOMAIN.ADD_ADMIN]: () => require<ReactComponentModule>('../../../../pages/domain/Admins/DomainAddAdminPage').default,
     [SCREENS.DOMAIN.MEMBER_DETAILS]: () => require<ReactComponentModule>('../../../../pages/domain/Members/DomainMemberDetailsPage').default,
     [SCREENS.DOMAIN.RESET_DOMAIN]: () => require<ReactComponentModule>('../../../../pages/domain/DomainResetPage').default,
+    [SCREENS.DOMAIN.GROUP_DETAILS]: () => require<ReactComponentModule>('../../../../pages/domain/Groups/DomainGroupDetailsPage').default,
 });
 
 const TwoFactorAuthenticatorStackNavigator = createModalStackNavigator<EnablePaymentsNavigatorParamList>({

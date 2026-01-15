@@ -881,6 +881,7 @@ const SCREENS = {
         MEMBER_DETAILS: 'Member_Details',
         RESET_DOMAIN: 'Domain_Reset',
         GROUPS: 'Domain_Groups',
+        GROUP_DETAILS: 'Domain_Group_Details',
     },
 } as const;
 
