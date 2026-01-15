@@ -32,6 +32,9 @@ type BarChartProps = {
 
     /** Symbol/unit prefix for Y-axis labels (e.g., '$', '€'). Empty string or undefined shows raw numbers. */
     yAxisUnit?: string;
+
+    /** Minimum width for each bar in pixels. If bars would be smaller, horizontal scrolling is enabled. Default: 40 */
+    minBarWidth?: number;
 };
 
 export type {BarChartDataPoint, BarChartProps};

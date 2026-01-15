@@ -1081,9 +1081,15 @@ function Search({
                         style={styles.p4}
                     >
                         <BarChart
-                            data={chartData}
-                            title={groupBy ? `By ${groupBy}` : undefined}
-                            isLoading={searchResults?.search?.isLoading}
+                            data={Array.from({length: 60}, (_, i) => ({
+                                label: `Cat${i + 1}`,
+                                // First half: small values (100-300), second half: large values (700-1000)
+                                total: i < 30
+                                    ? Math.floor(Math.random() * 200) + 100
+                                    : Math.floor(Math.random() * 300) + 700,
+                                currency: 'USD',
+                            }))}
+                            title="Test 60 bars (small→large)"
                             yAxisUnit="$"
                         />
                     </View>
