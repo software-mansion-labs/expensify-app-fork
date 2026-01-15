@@ -1,12 +1,9 @@
+import type {Base64URLString} from '@src/utils/Base64URL';
+
 /**
  * Hex-encoded string representation of binary data.
  */
 type Hex = string;
-
-/**
- * Base64URL-encoded representation of a value used in WebAuthn-like flows.
- */
-type Base64URL = string;
 
 /**
  * Bitmask flag describing user presence and verification state for a challenge.
@@ -17,12 +14,12 @@ type ChallengeFlags = number;
  * Signed multifactor authentication challenge matching the WebAuthn response shape.
  */
 type SignedChallenge = {
-    rawId: Base64URL;
+    rawId: Base64URLString;
     type: string;
     response: {
-        authenticatorData: Base64URL;
-        clientDataJSON: Base64URL;
-        signature: Base64URL;
+        authenticatorData: Base64URLString;
+        clientDataJSON: Base64URLString;
+        signature: Base64URLString;
     };
 };
 
@@ -44,4 +41,4 @@ type MultifactorAuthenticationChallengeObject = {
     timeout: number;
 };
 
-export type {MultifactorAuthenticationChallengeObject, Hex, Base64URL, ChallengeFlags, SignedChallenge};
+export type {MultifactorAuthenticationChallengeObject, Hex, ChallengeFlags, SignedChallenge};

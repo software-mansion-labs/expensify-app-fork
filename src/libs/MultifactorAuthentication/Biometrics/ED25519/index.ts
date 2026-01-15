@@ -5,23 +5,28 @@ import {utf8ToBytes} from '@noble/hashes/utils';
 import {Buffer} from 'buffer';
 import 'react-native-get-random-values';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
-import type {Base64URL, ChallengeFlags, MultifactorAuthenticationChallengeObject, SignedChallenge} from './types';
+import type {ChallengeFlags, MultifactorAuthenticationChallengeObject, SignedChallenge} from './types';
+import Base64URL, {Base64URLString} from '@src/utils/Base64URL';
 
 /**
  * ED25519 helpers used to construct and sign multifactor authentication challenges.
  * Wraps `@noble/ed25519` to produce WebAuthn-like payloads that the server can verify.
+ */
+
+/**
+ * Required polyfills for React Native to support ED25519 cryptographic operations.
+ * Provides implementations for getRandomValues and SHA-512 hashing.
+ * It is required for internal operations, even if it is not explicitly used in the app code.
+ * @see https://github.com/paulmillr/noble-ed25519?tab=readme-ov-file#react-native-polyfill-getrandomvalues-and-sha512
  */
 hashes.sha512 = sha512;
 hashes.sha512Async = (m: Uint8Array) => Promise.resolve(sha512(m));
 
 const {hexToBytes, concatBytes, bytesToHex, randomBytes} = etc;
 
-/**
- * Converts a string into a URL-safe base64 representation.
- */
-function base64URL(value: string): Base64URL {
-    return Buffer.from(value).toString('base64').replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
-}
+
+
+
 
 /**
  * Generates a new ED25519 key pair encoded as hex strings.
@@ -31,7 +36,7 @@ function generateKeyPair() {
 
     return {
         privateKey: bytesToHex(secretKey),
-        publicKey: bytesToHex(publicKey),
+        publicKey: base64URL(publicKey),
     };
 }
 
@@ -76,11 +81,11 @@ function createBinaryData(rpId: string): Bytes {
  * Returns a WebAuthn-compatible signed challenge structure.
  */
 function signToken(accountID: number, token: MultifactorAuthenticationChallengeObject, key: string): SignedChallenge {
-    const rawId: Base64URL = base64URL(`${accountID}_${VALUES.KEY_ALIASES.PUBLIC_KEY}`);
+    const rawId: Base64URLString = Base64URL.encode(`${accountID}_${VALUES.KEY_ALIASES.PUBLIC_KEY}`);
     const type = VALUES.ED25519_TYPE;
 
     const binaryData = createBinaryData(token.rpId);
-    const authenticatorData: Base64URL = base64URL(bytesToHex(binaryData));
+    const authenticatorData: Base64URLString = Base64URL.encode(binaryData);
 
     const tokenBytes = utf8ToBytes(JSON.stringify(token));
 
@@ -88,14 +93,14 @@ function signToken(accountID: number, token: MultifactorAuthenticationChallengeO
     const keyInBytes = hexToBytes(key);
 
     const signatureRaw = sign(message, keyInBytes);
-    const signature: Base64URL = base64URL(bytesToHex(signatureRaw));
+    const signature: Base64URLString = Base64URL.encode(signatureRaw);
 
     return {
         rawId,
         type,
         response: {
             authenticatorData,
-            clientDataJSON: base64URL(JSON.stringify(token)),
+            clientDataJSON: Base64URL.encode(JSON.stringify(token)),
             signature,
         },
     };

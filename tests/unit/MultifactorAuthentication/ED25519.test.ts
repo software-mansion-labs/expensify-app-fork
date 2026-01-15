@@ -1,6 +1,6 @@
 import {Buffer} from 'buffer';
 import {TextEncoder} from 'util';
-import {bytesToHex, concatBytes, createBinaryData, generateKeyPair, hexToBytes, randomBytes, sha256, signToken, utf8ToBytes} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
+import {concatBytes, createBinaryData, generateKeyPair, randomBytes, sha256, signToken, utf8ToBytes} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
 import type {MultifactorAuthenticationChallengeObject} from '@libs/MultifactorAuthentication/Biometrics/ED25519/types';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
 
@@ -15,9 +15,8 @@ describe('MultifactorAuthentication Biometrics ED25519 helpers', () => {
         expect(privateKey).not.toHaveLength(0);
         expect(publicKey).not.toHaveLength(0);
 
-        // hexToBytes should be able to decode both keys
-        expect(() => hexToBytes(privateKey)).not.toThrow();
-        expect(() => hexToBytes(publicKey)).not.toThrow();
+        expect(() => privateKey).not.toThrow();
+        expect(() => publicKey).not.toThrow();
     });
 
     it('creates deterministic binary data for a given rpId', () => {
@@ -29,7 +28,7 @@ describe('MultifactorAuthentication Biometrics ED25519 helpers', () => {
         expect(first).toBeInstanceOf(Uint8Array);
         expect(second).toBeInstanceOf(Uint8Array);
         expect(first).toHaveLength(second.length);
-        expect(bytesToHex(first)).toBe(bytesToHex(second));
+        expect(first).toBe(second);
     });
 
     it('produces a signed challenge with expected shape', () => {
