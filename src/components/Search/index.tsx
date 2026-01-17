@@ -84,10 +84,68 @@ import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import arraysEqual from '@src/utils/arraysEqual';
 import {BarChart} from '@components/Charts';
+import type {BarChartDataPoint} from '@components/Charts/types';
+import Text from '@components/Text';
+import Button from '@components/Button';
 import {useSearchContext} from './SearchContext';
 import SearchList from './SearchList';
 import {SearchScopeProvider} from './SearchScopeProvider';
 import type {SearchColumnType, SearchParams, SearchQueryJSON, SelectedTransactionInfo, SelectedTransactions, SortOrder} from './types';
+
+// Test component for bar chart with controls
+function TestBarChartWithSlider({
+    mainChartData,
+    mainChartTitle,
+    isLoading,
+}: {
+    mainChartData: BarChartDataPoint[];
+    mainChartTitle?: string;
+    isLoading?: boolean;
+}) {
+    const [barCount, setBarCount] = React.useState(2);
+    const styles = useThemeStyles();
+
+    const testData = React.useMemo(() => {
+        return Array.from({length: barCount}, (_, j) => ({
+            label: `Item ${j + 1}`,
+            total: Math.floor(Math.random() * 900) + 100,
+            currency: 'USD',
+        }));
+    // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+    }, [barCount]);
+
+    return (
+        <View style={styles.p4}>
+            <BarChart
+                data={mainChartData}
+                title={mainChartTitle}
+                isLoading={isLoading}
+                yAxisUnit="$"
+            />
+            <View style={{marginTop: 32}}>
+                <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 16}}>
+                    <Button
+                        text="-"
+                        onPress={() => setBarCount((prev) => Math.max(1, prev - 1))}
+                        isDisabled={barCount <= 1}
+                    />
+                    <Text style={{fontWeight: '600', minWidth: 120, textAlign: 'center'}}>
+                        Test: {barCount} bar{barCount > 1 ? 's' : ''}
+                    </Text>
+                    <Button
+                        text="+"
+                        onPress={() => setBarCount((prev) => Math.min(20, prev + 1))}
+                        isDisabled={barCount >= 20}
+                    />
+                </View>
+                <BarChart
+                    data={testData}
+                    yAxisUnit="$"
+                />
+            </View>
+        </View>
+    );
+}
 
 type SearchProps = {
     queryJSON: SearchQueryJSON;
@@ -1076,17 +1134,11 @@ function Search({
         <SearchScopeProvider>
             <Animated.View style={[styles.flex1, animatedStyle]}>
                 {isBarChartView && (
-                    <View
-                        key="barchart-view"
-                        style={styles.p4}
-                    >
-                        <BarChart
-                            data={chartData}
-                            title={groupBy ? `By ${groupBy}` : undefined}
-                            isLoading={searchResults?.search?.isLoading}
-                            yAxisUnit="$"
-                        />
-                    </View>
+                    <TestBarChartWithSlider
+                        mainChartData={chartData}
+                        mainChartTitle={groupBy ? `By ${groupBy}` : undefined}
+                        isLoading={searchResults?.search?.isLoading}
+                    />
                 )}
                 {!isBarChartView && (
                 <SearchList

@@ -1,0 +1,186 @@
+diff --git a/node_modules/victory-native/dist/types.d.ts b/node_modules/victory-native/dist/types.d.ts
+index efb5207..49ed0f5 100644
+--- a/node_modules/victory-native/dist/types.d.ts
++++ b/node_modules/victory-native/dist/types.d.ts
+@@ -202,14 +202,22 @@ export type YAxisInputProps<RawData extends Record<string, unknown>, YK extends
+     domain?: YAxisDomain;
+     linePathEffect?: DashPathEffectComponent;
+     enableRescaling?: boolean;
++    /** Controls the horizontal extent of grid lines. 'content' extends lines to content edges (e.g., bar edges), 'domain' uses full padded domain (default). */
++    lineExtent?: "domain" | "content";
++    /** Inner padding between chart elements (required for lineExtent='content'). Should match Bar component's innerPadding. */
++    contentInnerPadding?: number;
++    /** Number of data points (required for lineExtent='content'). */
++    dataPointCount?: number;
+ };
+-export type YAxisPropsWithDefaults<RawData extends Record<string, unknown>, YK extends keyof NumericalFields<RawData>> = Required<Omit<YAxisInputProps<RawData, YK>, "font" | "tickValues" | "linePathEffect" | "enableRescaling">> & Partial<Pick<YAxisInputProps<RawData, YK>, "font" | "tickValues" | "linePathEffect" | "enableRescaling">>;
++export type YAxisPropsWithDefaults<RawData extends Record<string, unknown>, YK extends keyof NumericalFields<RawData>> = Required<Omit<YAxisInputProps<RawData, YK>, "font" | "tickValues" | "linePathEffect" | "enableRescaling" | "lineExtent" | "contentInnerPadding" | "dataPointCount">> & Partial<Pick<YAxisInputProps<RawData, YK>, "font" | "tickValues" | "linePathEffect" | "enableRescaling" | "lineExtent" | "contentInnerPadding" | "dataPointCount">>;
+ export type YAxisProps<RawData extends Record<string, unknown>, YK extends keyof NumericalFields<RawData>> = YAxisPropsWithDefaults<RawData, YK> & {
+     xScale: Scale;
+     yScale: Scale;
+     yTicksNormalized: number[];
+     yKeys: YK[];
+     chartBounds: ChartBounds;
++    /** Original data bounds (before domainPadding) for lineExtent='content' */
++    xDataBounds?: [number, number];
+ };
+ export type FrameInputProps = {
+     lineWidth?: SidedNumber;
+diff --git a/node_modules/victory-native/src/cartesian/CartesianChart.tsx b/node_modules/victory-native/src/cartesian/CartesianChart.tsx
+index 9b82b54..09aec65 100644
+--- a/node_modules/victory-native/src/cartesian/CartesianChart.tsx
++++ b/node_modules/victory-native/src/cartesian/CartesianChart.tsx
+@@ -238,12 +238,13 @@ function CartesianChartContent<
+     chartBounds,
+     isNumericalData,
+     xTicksNormalized,
++    xDataBounds,
+     _tData,
+   } = React.useMemo(() => {
+     if (!data.length) {
+       return createFallbackChartState<RawData, XK, YK>(yKeys);
+     }
+-    const { xScale, yAxes, isNumericalData, xTicksNormalized, ..._tData } =
++    const { xScale, yAxes, isNumericalData, xTicksNormalized, xDataBounds, ..._tData } =
+       transformInputData({
+         data,
+         xKey,
+@@ -282,6 +283,7 @@ function CartesianChartContent<
+       xScale,
+       chartBounds,
+       isNumericalData,
++      xDataBounds,
+       _tData,
+     };
+   }, [
+@@ -680,6 +682,7 @@ function CartesianChartContent<
+                   : rescaledTicks
+               }
+               chartBounds={chartBounds}
++              xDataBounds={xDataBounds}
+             />
+           );
+         })
+diff --git a/node_modules/victory-native/src/cartesian/components/YAxis.tsx b/node_modules/victory-native/src/cartesian/components/YAxis.tsx
+index 478f6f0..cdd6b55 100644
+--- a/node_modules/victory-native/src/cartesian/components/YAxis.tsx
++++ b/node_modules/victory-native/src/cartesian/components/YAxis.tsx
+@@ -27,8 +27,32 @@ export const YAxis = <
+   formatYLabel = (label: ValueOf<InputDatum>) => String(label),
+   linePathEffect,
+   chartBounds,
++  lineExtent,
++  xDataBounds,
++  contentInnerPadding,
++  dataPointCount,
+ }: YAxisProps<RawData, YK>) => {
+-  const [x1 = 0, x2 = 0] = xScale.domain();
++  // Calculate line start/end positions based on lineExtent
++  const getLineXPositions = (): [number, number] => {
++    const [domainX1 = 0, domainX2 = 0] = xScale.domain();
++
++    // For 'content' mode with 2+ data points, extend lines to content edges
++    // For single data point, fall back to 'domain' mode for consistent line extent
++    if (lineExtent === "content" && xDataBounds && contentInnerPadding !== undefined && dataPointCount && dataPointCount > 1) {
++      // Lines from left edge of first element to right edge of last element
++      const domainWidth = chartBounds.right - chartBounds.left;
++      const halfElementWidth = (1 - contentInnerPadding) * domainWidth / dataPointCount / 2;
++      return [
++        xScale(xDataBounds[0]) - halfElementWidth,
++        xScale(xDataBounds[1]) + halfElementWidth,
++      ];
++    }
++
++    // Default: use full domain
++    return [xScale(domainX1), xScale(domainX2)];
++  };
++
++  const [lineX1, lineX2] = getLineXPositions();
+   const [_ = 0, y2 = 0] = yScale.domain();
+   const fontSize = font?.getSize() ?? 0;
+   const yAxisNodes = yTicksNormalized.map((tick) => {
+@@ -62,8 +86,8 @@ export const YAxis = <
+         {lineWidth > 0 ? (
+           <Group clip={boundsToClip(chartBounds)}>
+             <Line
+-              p1={vec(xScale(x1), yScale(tick))}
+-              p2={vec(xScale(x2), yScale(tick))}
++              p1={vec(lineX1, yScale(tick))}
++              p2={vec(lineX2, yScale(tick))}
+               color={lineColor}
+               strokeWidth={lineWidth}
+             >
+diff --git a/node_modules/victory-native/src/cartesian/utils/createFallbackChartState.ts b/node_modules/victory-native/src/cartesian/utils/createFallbackChartState.ts
+index b0583cf..b606922 100644
+--- a/node_modules/victory-native/src/cartesian/utils/createFallbackChartState.ts
++++ b/node_modules/victory-native/src/cartesian/utils/createFallbackChartState.ts
+@@ -30,6 +30,7 @@ export function createFallbackChartState<
+     chartBounds: { left: 0, right: 0, top: 0, bottom: 0 },
+     isNumericalData: false,
+     xTicksNormalized: [] as number[],
++    xDataBounds: [0, 0] as [number, number],
+     _tData: {
+       ix: [],
+       ox: [],
+diff --git a/node_modules/victory-native/src/cartesian/utils/transformInputData.ts b/node_modules/victory-native/src/cartesian/utils/transformInputData.ts
+index 8d4403c..a94946d 100644
+--- a/node_modules/victory-native/src/cartesian/utils/transformInputData.ts
++++ b/node_modules/victory-native/src/cartesian/utils/transformInputData.ts
+@@ -74,6 +74,7 @@ export const transformInputData = <
+     yTicksNormalized: number[];
+     yData: Record<string, { i: MaybeNumber[]; o: MaybeNumber[] }>;
+   }>;
++  xDataBounds: [number, number];
+ } => {
+   const data = [..._data];
+   const { xAxisScale = "linear", yAxisScale = "linear" } = axisScales || {};
+@@ -353,5 +354,7 @@ export const transformInputData = <
+     xTicksNormalized: finalXTicksNormalized,
+     // conform to type NonEmptyArray<T>
+     yAxes: [yAxesTransformed[0]!, ...yAxesTransformed.slice(1)],
++    // Original data bounds (before domainPadding) for lineExtent='data'
++    xDataBounds: [ixMin, ixMax] as [number, number],
+   };
+ };
+diff --git a/node_modules/victory-native/src/types.ts b/node_modules/victory-native/src/types.ts
+index a3a4c81..9751079 100644
+--- a/node_modules/victory-native/src/types.ts
++++ b/node_modules/victory-native/src/types.ts
+@@ -253,6 +253,12 @@ export type YAxisInputProps<
+   domain?: YAxisDomain;
+   linePathEffect?: DashPathEffectComponent;
+   enableRescaling?: boolean;
++  /** Controls the horizontal extent of grid lines. 'content' extends lines to content edges (e.g., bar edges), 'domain' uses full padded domain (default). */
++  lineExtent?: "domain" | "content";
++  /** Inner padding between chart elements (required for lineExtent='content'). Should match Bar component's innerPadding. */
++  contentInnerPadding?: number;
++  /** Number of data points (required for lineExtent='content'). */
++  dataPointCount?: number;
+ };
+ 
+ export type YAxisPropsWithDefaults<
+@@ -261,13 +267,13 @@ export type YAxisPropsWithDefaults<
+ > = Required<
+   Omit<
+     YAxisInputProps<RawData, YK>,
+-    "font" | "tickValues" | "linePathEffect" | "enableRescaling"
++    "font" | "tickValues" | "linePathEffect" | "enableRescaling" | "lineExtent" | "contentInnerPadding" | "dataPointCount"
+   >
+ > &
+   Partial<
+     Pick<
+       YAxisInputProps<RawData, YK>,
+-      "font" | "tickValues" | "linePathEffect" | "enableRescaling"
++      "font" | "tickValues" | "linePathEffect" | "enableRescaling" | "lineExtent" | "contentInnerPadding" | "dataPointCount"
+     >
+   >;
+ 
+@@ -280,6 +286,8 @@ export type YAxisProps<
+   yTicksNormalized: number[];
+   yKeys: YK[];
+   chartBounds: ChartBounds;
++  /** Original data bounds (before domainPadding) for lineExtent='data' */
++  xDataBounds?: [number, number];
+ };
+ 
+ export type FrameInputProps = {

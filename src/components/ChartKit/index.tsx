@@ -1,5 +1,6 @@
 import React from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import ActivityIndicator from '@components/ActivityIndicator';
+import {View} from 'react-native';
 import {WithSkiaWeb} from '@shopify/react-native-skia/lib/module/web';
 
 function ChartKit() {

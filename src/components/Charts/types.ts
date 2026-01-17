@@ -32,6 +32,9 @@ type BarChartProps = {
 
     /** Symbol/unit prefix for Y-axis labels (e.g., '$', '€'). Empty string or undefined shows raw numbers. */
     yAxisUnit?: string;
+
+    /** When true, all bars use the same color. When false (default), each bar uses a different color from the palette. */
+    useSingleColor?: boolean;
 };
 
 export type {BarChartDataPoint, BarChartProps};
