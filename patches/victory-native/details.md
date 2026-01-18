@@ -6,3 +6,10 @@
 - Upstream PR/issue: N/A (custom feature for Expensify)
 - E/App issue: N/A
 - PR Introducing Patch: TBD
+
+### [victory-native+41.20.2+002+add-hover-state-support.patch](victory-native+41.20.2+002+add-hover-state-support.patch)
+
+- Reason: Adds hover state support for CartesianChart (web only). Introduces `useChartHoverState` hook (similar to `useChartPressState`) and `Gesture.Hover()` handling in CartesianChart. The hover state tracks cursor position and matched data point index, enabling tooltips on bar chart hover. Also adds `cursor` property to track raw cursor coordinates for hit-testing.
+- Upstream PR/issue: N/A (custom feature for Expensify)
+- E/App issue: N/A
+- PR Introducing Patch: TBD

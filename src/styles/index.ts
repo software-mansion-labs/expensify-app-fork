@@ -5647,8 +5647,10 @@ const staticStyles = (theme: ThemeColors) =>
             marginBottom: variables.sectionMargin,
         },
         barChartTitle: {
-            fontSize: variables.fontSizeMedium,
-            fontWeight: '600',
+            ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+            fontSize: variables.fontSizeNormal,
+            lineHeight: variables.fontSizeNormalHeight,
+            color: theme.text,
         },
         barChartChartContainer: {
             height: 250,
@@ -5673,6 +5675,27 @@ const staticStyles = (theme: ThemeColors) =>
         barChartLegendLabel: {
             fontSize: variables.fontSizeSmall,
             maxWidth: 150,
+        },
+        chartTooltipWrapper: {
+            alignItems: 'center',
+        },
+        chartTooltipBox: {
+            backgroundColor: theme.heading,
+            borderRadius: variables.componentBorderRadiusSmall,
+            paddingVertical: 4,
+            paddingHorizontal: 8,
+        },
+        chartTooltipText: {
+            color: theme.textReversed,
+            fontSize: variables.fontSizeSmall,
+            lineHeight: variables.lineHeightSmall,
+            whiteSpace: 'nowrap',
+        },
+        chartTooltipPointer: {
+            width: 0,
+            height: 0,
+            backgroundColor: theme.transparent,
+            borderStyle: 'solid',
         },
     }) satisfies StaticStyles;
 

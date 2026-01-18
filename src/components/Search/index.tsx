@@ -2,7 +2,7 @@ import {findFocusedRoute, useFocusEffect, useIsFocused, useNavigation} from '@re
 import * as Sentry from '@sentry/react-native';
 import React, {useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle} from 'react-native';
-import {View} from 'react-native';
+import {ScrollView, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import Animated, {FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import FullPageErrorView from '@components/BlockingViews/FullPageErrorView';
@@ -85,12 +85,77 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import arraysEqual from '@src/utils/arraysEqual';
 import {BarChart} from '@components/Charts';
 import type {BarChartDataPoint} from '@components/Charts/types';
+import {FolderInsights} from '@components/Icon/Expensicons';
 import Text from '@components/Text';
 import Button from '@components/Button';
 import {useSearchContext} from './SearchContext';
 import SearchList from './SearchList';
 import {SearchScopeProvider} from './SearchScopeProvider';
 import type {SearchColumnType, SearchParams, SearchQueryJSON, SelectedTransactionInfo, SelectedTransactions, SortOrder} from './types';
+
+// Test data with long labels
+const TEST_LONG_LABELS_5_BARS: BarChartDataPoint[] = [
+    {label: 'Transportation & Commuting', total: 1200, currency: 'USD'},
+    {label: 'Food & Dining Expenses', total: 800, currency: 'USD'},
+    {label: 'Monthly Utility Bills', total: 1500, currency: 'USD'},
+    {label: 'Entertainment & Recreation', total: 600, currency: 'USD'},
+    {label: 'Healthcare & Medical', total: 400, currency: 'USD'},
+];
+
+const TEST_LONG_LABELS_15_BARS: BarChartDataPoint[] = [
+    {label: 'Transportation & Commuting', total: 1200, currency: 'USD'},
+    {label: 'Food & Dining Expenses', total: 800, currency: 'USD'},
+    {label: 'Monthly Utility Bills', total: 1500, currency: 'USD'},
+    {label: 'Entertainment & Recreation', total: 600, currency: 'USD'},
+    {label: 'Healthcare & Medical', total: 400, currency: 'USD'},
+    {label: 'Home Insurance Premium', total: 350, currency: 'USD'},
+    {label: 'Education & Learning', total: 500, currency: 'USD'},
+    {label: 'Clothing & Accessories', total: 300, currency: 'USD'},
+    {label: 'Pet Care & Supplies', total: 250, currency: 'USD'},
+    {label: 'Gym & Fitness Membership', total: 150, currency: 'USD'},
+    {label: 'Mobile Phone Service', total: 100, currency: 'USD'},
+    {label: 'Internet & Streaming', total: 80, currency: 'USD'},
+    {label: 'Home Maintenance', total: 450, currency: 'USD'},
+    {label: 'Personal Care Products', total: 200, currency: 'USD'},
+    {label: 'Charitable Donations', total: 175, currency: 'USD'},
+];
+
+const TEST_VERY_LONG_LABELS_8_BARS: BarChartDataPoint[] = [
+    {label: 'Monthly Transportation and Daily Commuting Expenses', total: 1200, currency: 'USD'},
+    {label: 'Grocery Shopping and Restaurant Dining Combined', total: 800, currency: 'USD'},
+    {label: 'Home Utilities Including Electric Water and Gas', total: 1500, currency: 'USD'},
+    {label: 'Weekend Entertainment and Family Recreation Activities', total: 600, currency: 'USD'},
+    {label: 'Annual Healthcare Insurance and Medical Copays', total: 400, currency: 'USD'},
+    {label: 'Professional Development and Online Course Subscriptions', total: 350, currency: 'USD'},
+    {label: 'Children Education and School Related Expenses', total: 500, currency: 'USD'},
+    {label: 'Home Improvement and Maintenance Service Costs', total: 450, currency: 'USD'},
+];
+
+const TEST_MIXED_LABELS_10_BARS: BarChartDataPoint[] = [
+    {label: 'Food', total: 1200, currency: 'USD'},
+    {label: 'Transportation & Daily Commuting', total: 800, currency: 'USD'},
+    {label: 'Bills', total: 1500, currency: 'USD'},
+    {label: 'Entertainment and Recreation Activities', total: 600, currency: 'USD'},
+    {label: 'Gas', total: 400, currency: 'USD'},
+    {label: 'Monthly Insurance Premium', total: 350, currency: 'USD'},
+    {label: 'Edu', total: 500, currency: 'USD'},
+    {label: 'Clothing & Fashion Accessories', total: 300, currency: 'USD'},
+    {label: 'Pet', total: 250, currency: 'USD'},
+    {label: 'Gym', total: 150, currency: 'USD'},
+];
+
+const TEST_ONE_LONG_LABEL_10_BARS: BarChartDataPoint[] = [
+    {label: 'Food', total: 1200, currency: 'USD'},
+    {label: 'Travel', total: 800, currency: 'USD'},
+    {label: 'Monthly Transportation and Commuting Expenses for Work', total: 1500, currency: 'USD'},
+    {label: 'Fun', total: 600, currency: 'USD'},
+    {label: 'Gas', total: 400, currency: 'USD'},
+    {label: 'Rent', total: 350, currency: 'USD'},
+    {label: 'Gym', total: 500, currency: 'USD'},
+    {label: 'Pet', total: 300, currency: 'USD'},
+    {label: 'Car', total: 250, currency: 'USD'},
+    {label: 'Phone', total: 150, currency: 'USD'},
+];
 
 // Test component for bar chart with controls
 function TestBarChartWithSlider({
@@ -115,10 +180,11 @@ function TestBarChartWithSlider({
     }, [barCount]);
 
     return (
-        <View style={styles.p4}>
+        <ScrollView style={styles.flex1} contentContainerStyle={styles.p4}>
             <BarChart
                 data={mainChartData}
                 title={mainChartTitle}
+                titleIcon={FolderInsights}
                 isLoading={isLoading}
                 yAxisUnit="$"
             />
@@ -134,8 +200,8 @@ function TestBarChartWithSlider({
                     </Text>
                     <Button
                         text="+"
-                        onPress={() => setBarCount((prev) => Math.min(20, prev + 1))}
-                        isDisabled={barCount >= 20}
+                        onPress={() => setBarCount((prev) => Math.min(70, prev + 1))}
+                        isDisabled={barCount >= 70}
                     />
                 </View>
                 <BarChart
@@ -143,7 +209,48 @@ function TestBarChartWithSlider({
                     yAxisUnit="$"
                 />
             </View>
-        </View>
+
+            {/* Test charts with long labels */}
+            <View style={{marginTop: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 5: Long labels (5 bars)</Text>
+                <BarChart
+                    data={TEST_LONG_LABELS_5_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{marginTop: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 6: Long labels (15 bars)</Text>
+                <BarChart
+                    data={TEST_LONG_LABELS_15_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{marginTop: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 7: Very long labels (8 bars)</Text>
+                <BarChart
+                    data={TEST_VERY_LONG_LABELS_8_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{marginTop: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 8: Mixed labels (10 bars)</Text>
+                <BarChart
+                    data={TEST_MIXED_LABELS_10_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{marginTop: 32, marginBottom: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 9: One long label, rest short (10 bars)</Text>
+                <BarChart
+                    data={TEST_ONE_LONG_LABEL_10_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+        </ScrollView>
     );
 }
 
@@ -1136,7 +1243,7 @@ function Search({
                 {isBarChartView && (
                     <TestBarChartWithSlider
                         mainChartData={chartData}
-                        mainChartTitle={groupBy ? `By ${groupBy}` : undefined}
+                        mainChartTitle="Top categories"
                         isLoading={searchResults?.search?.isLoading}
                     />
                 )}
