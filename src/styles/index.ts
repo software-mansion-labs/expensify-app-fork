@@ -5676,6 +5676,21 @@ const staticStyles = (theme: ThemeColors) =>
             fontSize: variables.fontSizeSmall,
             maxWidth: 150,
         },
+
+        // Pie Chart styles
+        pieChartContainer: {
+            borderRadius: variables.componentBorderRadiusLarge,
+            padding: variables.qrShareHorizontalPadding,
+        },
+        pieChartChartContainer: {
+            height: 250,
+            position: 'relative',
+        },
+        pieChartHoverOverlay: {
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: 'transparent',
+        },
+
         chartTooltipWrapper: {
             alignItems: 'center',
         },

@@ -1,5 +1,39 @@
 import type IconAsset from '@src/types/utils/IconAsset';
 
+type PieChartDataPoint = {
+    /** Label displayed in tooltip (e.g., "Amazon", "Travel") */
+    label: string;
+
+    /** Value for this slice */
+    value: number;
+
+    /** Currency code for formatting */
+    currency: string;
+
+    /** Query string for navigation when slice is clicked (optional) */
+    onClickQuery?: string;
+};
+
+type PieChartProps = {
+    /** Data points to display */
+    data: PieChartDataPoint[];
+
+    /** Chart title (e.g., "Top Categories") */
+    title?: string;
+
+    /** Icon displayed next to the title */
+    titleIcon?: IconAsset;
+
+    /** Whether data is loading */
+    isLoading?: boolean;
+
+    /** Callback when a slice is pressed */
+    onSlicePress?: (dataPoint: PieChartDataPoint, index: number) => void;
+
+    /** Symbol/unit prefix for tooltip values (e.g., '$', '€'). */
+    valueUnit?: string;
+};
+
 type BarChartDataPoint = {
     /** Label displayed under the bar (e.g., "Amazon", "Travel", "Nov 2025") */
     label: string;
@@ -37,4 +71,4 @@ type BarChartProps = {
     useSingleColor?: boolean;
 };
 
-export type {BarChartDataPoint, BarChartProps};
+export type {BarChartDataPoint, BarChartProps, PieChartDataPoint, PieChartProps};

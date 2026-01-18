@@ -83,8 +83,8 @@ import type SearchResults from '@src/types/onyx/SearchResults';
 import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import arraysEqual from '@src/utils/arraysEqual';
-import {BarChart} from '@components/Charts';
-import type {BarChartDataPoint} from '@components/Charts/types';
+import {BarChart, PieChart} from '@components/Charts';
+import type {BarChartDataPoint, PieChartDataPoint} from '@components/Charts/types';
 import {FolderInsights} from '@components/Icon/Expensicons';
 import Text from '@components/Text';
 import Button from '@components/Button';
@@ -95,11 +95,11 @@ import type {SearchColumnType, SearchParams, SearchQueryJSON, SelectedTransactio
 
 // Test data with long labels
 const TEST_LONG_LABELS_5_BARS: BarChartDataPoint[] = [
-    {label: 'Transportation & Commuting', total: 1200, currency: 'USD'},
-    {label: 'Food & Dining Expenses', total: 800, currency: 'USD'},
-    {label: 'Monthly Utility Bills', total: 1500, currency: 'USD'},
-    {label: 'Entertainment & Recreation', total: 600, currency: 'USD'},
-    {label: 'Healthcare & Medical', total: 400, currency: 'USD'},
+    {label: 'Transportation & Commuting', total: 1200, currency: 'USD', onClickQuery: 'type:expense category:"Transportation & Commuting"'},
+    {label: 'Food & Dining Expenses', total: 800, currency: 'USD', onClickQuery: 'type:expense category:"Food & Dining Expenses"'},
+    {label: 'Monthly Utility Bills', total: 1500, currency: 'USD', onClickQuery: 'type:expense category:"Monthly Utility Bills"'},
+    {label: 'Entertainment & Recreation', total: 600, currency: 'USD', onClickQuery: 'type:expense category:"Entertainment & Recreation"'},
+    {label: 'Healthcare & Medical', total: 400, currency: 'USD', onClickQuery: 'type:expense category:"Healthcare & Medical"'},
 ];
 
 const TEST_LONG_LABELS_15_BARS: BarChartDataPoint[] = [
@@ -157,6 +157,42 @@ const TEST_ONE_LONG_LABEL_10_BARS: BarChartDataPoint[] = [
     {label: 'Phone', total: 150, currency: 'USD'},
 ];
 
+// PieChart test data
+const TEST_PIE_CHART_5_SLICES: PieChartDataPoint[] = [
+    {label: 'Food & Dining', value: 1200, currency: 'USD', onClickQuery: 'type:expense category:"Food & Dining"'},
+    {label: 'Transportation', value: 800, currency: 'USD', onClickQuery: 'type:expense category:Transportation'},
+    {label: 'Utilities', value: 500, currency: 'USD', onClickQuery: 'type:expense category:Utilities'},
+    {label: 'Entertainment', value: 300, currency: 'USD', onClickQuery: 'type:expense category:Entertainment'},
+    {label: 'Healthcare', value: 200, currency: 'USD', onClickQuery: 'type:expense category:Healthcare'},
+];
+
+const TEST_PIE_CHART_MANY_SLICES: PieChartDataPoint[] = [
+    {label: 'Food & Dining', value: 1200, currency: 'USD'},
+    {label: 'Transportation', value: 800, currency: 'USD'},
+    {label: 'Utilities', value: 500, currency: 'USD'},
+    {label: 'Entertainment', value: 300, currency: 'USD'},
+    {label: 'Healthcare', value: 200, currency: 'USD'},
+    {label: 'Shopping', value: 450, currency: 'USD'},
+    {label: 'Travel', value: 350, currency: 'USD'},
+    {label: 'Education', value: 250, currency: 'USD'},
+    {label: 'Subscriptions', value: 150, currency: 'USD'},
+    {label: 'Gym', value: 80, currency: 'USD'},
+    {label: 'Coffee', value: 60, currency: 'USD'},
+    {label: 'Books', value: 40, currency: 'USD'},
+    {label: 'Parking', value: 30, currency: 'USD'},
+    {label: 'Tips', value: 20, currency: 'USD'},
+    {label: 'Misc', value: 15, currency: 'USD'},
+];
+
+const TEST_PIE_CHART_WITH_SMALL_SLICES: PieChartDataPoint[] = [
+    {label: 'Major Expense', value: 5000, currency: 'USD'},
+    {label: 'Medium Expense', value: 1000, currency: 'USD'},
+    {label: 'Small 1', value: 50, currency: 'USD'},
+    {label: 'Small 2', value: 30, currency: 'USD'},
+    {label: 'Tiny 1', value: 10, currency: 'USD'},
+    {label: 'Tiny 2', value: 5, currency: 'USD'},
+];
+
 // Test component for bar chart with controls
 function TestBarChartWithSlider({
     mainChartData,
@@ -187,6 +223,12 @@ function TestBarChartWithSlider({
                 titleIcon={FolderInsights}
                 isLoading={isLoading}
                 yAxisUnit="$"
+                onBarPress={(dataPoint) => {
+                    if (!dataPoint.onClickQuery) {
+                        return;
+                    }
+                    Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: dataPoint.onClickQuery}));
+                }}
             />
             <View style={{marginTop: 32}}>
                 <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 16}}>
@@ -243,11 +285,59 @@ function TestBarChartWithSlider({
                 />
             </View>
 
-            <View style={{marginTop: 32, marginBottom: 32}}>
+            <View style={{marginTop: 32}}>
                 <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 9: One long label, rest short (10 bars)</Text>
                 <BarChart
                     data={TEST_ONE_LONG_LABEL_10_BARS}
                     yAxisUnit="$"
+                />
+            </View>
+
+            {/* PieChart Tests */}
+            <View style={{marginTop: 48}}>
+                <Text style={{fontWeight: '700', fontSize: 18, marginBottom: 24}}>PIE CHART TESTS</Text>
+            </View>
+
+            <View style={{marginTop: 16}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 1: With navigation (click to search)</Text>
+                <PieChart
+                    data={TEST_PIE_CHART_5_SLICES}
+                    title="Expenses by Category"
+                    titleIcon={FolderInsights}
+                    valueUnit="$"
+                    onSlicePress={(dataPoint) => {
+                        if (!dataPoint.onClickQuery) {
+                            return;
+                        }
+                        Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: dataPoint.onClickQuery}));
+                    }}
+                />
+            </View>
+
+            <View style={{marginTop: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 2: With title only</Text>
+                <PieChart
+                    data={TEST_PIE_CHART_5_SLICES}
+                    title="Pie Chart"
+                    valueUnit="$"
+                />
+            </View>
+
+            <View style={{marginTop: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 3: Many slices (15 slices)</Text>
+                <PieChart
+                    data={TEST_PIE_CHART_MANY_SLICES}
+                    title="Many Categories"
+                    valueUnit="$"
+                />
+            </View>
+
+            <View style={{marginTop: 32, marginBottom: 32}}>
+                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 4: Small slices aggregation (should show Other)</Text>
+                <PieChart
+                    data={TEST_PIE_CHART_WITH_SMALL_SLICES}
+                    title="With Small Slices"
+                    valueUnit="$"
                 />
             </View>
         </ScrollView>

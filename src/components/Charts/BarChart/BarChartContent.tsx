@@ -1,11 +1,13 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import type {LayoutChangeEvent} from 'react-native';
 import {View} from 'react-native';
+import {Gesture} from 'react-native-gesture-handler';
 import Animated, {useAnimatedReaction, useAnimatedStyle, useDerivedValue, useSharedValue} from 'react-native-reanimated';
 import {scheduleOnRN} from 'react-native-worklets';
 import type {ChartBounds, PointsArray} from 'victory-native';
-import {Bar, CartesianChart, useChartHoverState} from 'victory-native';
+import {Bar, CartesianChart} from 'victory-native';
 import {useFont} from '@shopify/react-native-skia';
+import {useChartInteractionState} from '@components/Charts/hooks';
 import ChartTooltip from '@components/Charts/ChartTooltip';
 import ActivityIndicator from '@components/ActivityIndicator';
 import {
@@ -66,13 +68,20 @@ function measureTextWidth(text: string, fontInstance: ReturnType<typeof useFont>
     return glyphWidths.reduce((sum, w) => sum + w, 0);
 }
 
-function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingleColor = false}: BarChartProps) {
+/** Type for Victory's actionsRef handle - uses unknown since Victory accepts ChartPressState-compatible objects */
+type CartesianActionsHandle = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handleTouch: (state: any, x: number, y: number) => void;
+};
+
+function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingleColor = false, onBarPress}: BarChartProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
     const font = useFont(EXPENSIFY_NEUE_FONT_URL, variables.iconSizeExtraSmall);
     const [chartWidth, setChartWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
-    const {state: chartHoverState, isActive: isTooltipActive} = useChartHoverState({x: 0, y: {y: 0}});
+    const {state: chartInteractionState, isActive: isTooltipActive} = useChartInteractionState({x: 0, y: {y: 0}});
+    const actionsRef = useRef<CartesianActionsHandle>(null);
 
     const defaultBarColor = CHART_COLORS.at(DEFAULT_SINGLE_BAR_COLOR_INDEX);
 
@@ -241,19 +250,19 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingl
     );
 
     // Check if cursor is over the matched bar
-    // Uses chartHoverState.x.position (bar center X) and chartHoverState.y.y.position (bar top Y)
+    // Uses chartInteractionState.x.position (bar center X) and chartInteractionState.y.y.position (bar top Y)
     const isCursorOverBar = useDerivedValue(() => {
         const {barWidth, chartBottom} = barGeometry.get();
-        const cursorX = chartHoverState.cursor.x.get();
-        const cursorY = chartHoverState.cursor.y.get();
+        const cursorX = chartInteractionState.cursor.x.get();
+        const cursorY = chartInteractionState.cursor.y.get();
 
         if (barWidth === 0) {
             return false;
         }
 
         // Bar bounds from the matched point's position (already computed by victory-native)
-        const barCenterX = chartHoverState.x.position.get();
-        const barTop = chartHoverState.y.y.position.get();
+        const barCenterX = chartInteractionState.x.position.get();
+        const barTop = chartInteractionState.y.y.position.get();
 
         const barLeft = barCenterX - barWidth / 2;
         const barRight = barCenterX + barWidth / 2;
@@ -262,7 +271,7 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingl
     });
 
     useAnimatedReaction(
-        () => chartHoverState.matchedIndex.get(),
+        () => chartInteractionState.matchedIndex.get(),
         (currentIndex) => {
             scheduleOnRN(setActiveDataIndex, currentIndex);
         },
@@ -293,12 +302,83 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingl
     const tooltipStyle = useAnimatedStyle(() => {
         return {
             position: 'absolute',
-            left: chartHoverState.x.position.get(),
-            top: chartHoverState.y.y.position.get() - TOOLTIP_BAR_GAP,
+            left: chartInteractionState.x.position.get(),
+            top: chartInteractionState.y.y.position.get() - TOOLTIP_BAR_GAP,
             transform: [{translateX: '-50%'}, {translateY: '-100%'}],
-            opacity: chartHoverState.isActive.get() ? 1 : 0,
+            opacity: chartInteractionState.isActive.get() ? 1 : 0,
         };
     });
+
+    // Handle bar press callback
+    const handleBarPress = useCallback(
+        (index: number) => {
+            if (index < 0 || index >= data.length) {
+                return;
+            }
+            const dataPoint = data.at(index);
+            if (dataPoint && onBarPress) {
+                onBarPress(dataPoint, index);
+            }
+        },
+        [data, onBarPress],
+    );
+
+    // Hover gesture for web - shows tooltip on mouse hover
+    const hoverGesture = useMemo(
+        () =>
+            Gesture.Hover()
+                .onBegin((e) => {
+                    'worklet';
+
+                    chartInteractionState.isActive.value = true;
+                    chartInteractionState.cursor.x.value = e.x;
+                    chartInteractionState.cursor.y.value = e.y;
+                    actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
+                })
+                .onUpdate((e) => {
+                    'worklet';
+
+                    chartInteractionState.cursor.x.value = e.x;
+                    chartInteractionState.cursor.y.value = e.y;
+                    actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
+                })
+                .onEnd(() => {
+                    'worklet';
+
+                    chartInteractionState.isActive.value = false;
+                }),
+        [chartInteractionState],
+    );
+
+    // Tap gesture for click/tap - triggers navigation
+    const tapGesture = useMemo(
+        () =>
+            Gesture.Tap().onEnd((e) => {
+                'worklet';
+
+                // Use handleTouch to find which bar was tapped
+                actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
+                const matchedIndex = chartInteractionState.matchedIndex.value;
+
+                // Check if tap is over the bar (not just nearest)
+                const {barWidth, chartBottom} = barGeometry.value;
+                const barCenterX = chartInteractionState.x.position.value;
+                const barTop = chartInteractionState.y.y.position.value;
+                const barLeft = barCenterX - barWidth / 2;
+                const barRight = barCenterX + barWidth / 2;
+
+                const isTapOverBar = e.x >= barLeft && e.x <= barRight && e.y >= barTop && e.y <= chartBottom;
+
+                if (isTapOverBar && matchedIndex >= 0) {
+                    scheduleOnRN(handleBarPress, matchedIndex);
+                }
+            }),
+        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps, rulesdir/prefer-narrow-hook-dependencies -- shared values are stable references
+        [chartInteractionState, barGeometry, handleBarPress],
+    );
+
+    // Combined gestures for the chart - Race allows both hover and tap to work independently
+    const customGestures = useMemo(() => Gesture.Race(hoverGesture, tapGesture), [hoverGesture, tapGesture]);
 
     const renderBar = useCallback(
         (point: PointsArray[number], chartBounds: ChartBounds, barCount: number) => {
@@ -358,7 +438,8 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingl
                         padding={CHART_PADDING}
                         yKeys={['y']}
                         domainPadding={domainPadding}
-                        chartHoverState={chartHoverState}
+                        actionsRef={actionsRef}
+                        customGestures={customGestures}
                         onChartBoundsChange={handleChartBoundsChange}
                         xAxis={{
                             font,
