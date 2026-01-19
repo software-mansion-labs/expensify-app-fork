@@ -1,4 +1,5 @@
 import React, {useCallback, useImperativeHandle, useRef, useState} from 'react';
+import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
@@ -9,21 +10,35 @@ import useNetwork from '@hooks/useNetwork';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
 
-type MultifactorAuthenticationValidateCodeResendButtonHandle = {
+type ValidateCodeResendButtonHandle = {
     resetCountdown: () => void;
 };
 
-type MultifactorAuthenticationValidateCodeResendButtonProps = {
-    ref?: React.Ref<MultifactorAuthenticationValidateCodeResendButtonHandle>;
-    shouldDisableResendCode: boolean;
-    hasError: boolean;
-    resendButtonText: TranslationPaths;
-    onResendValidationCode: () => void;
+type ValidateCodeResendButtonProps = {
+    /** Ref for controlling the countdown */
+    ref?: React.Ref<ValidateCodeResendButtonHandle>;
+
+    /** Callback when resend button is pressed */
+    onResendPress: () => void;
+
+    /** Whether the resend button should be disabled */
+    shouldDisableResend: boolean;
+
+    /** Whether there is an error (shows different text) */
+    hasError?: boolean;
+
+    /** Style for the button */
+    buttonStyle?: StyleProp<ViewStyle>;
 };
 
-function MultifactorAuthenticationValidateCodeResendButton({ref, shouldDisableResendCode, hasError, resendButtonText, onResendValidationCode}: MultifactorAuthenticationValidateCodeResendButtonProps) {
+function ValidateCodeResendButton({
+    ref,
+    onResendPress,
+    shouldDisableResend,
+    hasError = false,
+    buttonStyle,
+}: ValidateCodeResendButtonProps) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
@@ -43,10 +58,12 @@ function MultifactorAuthenticationValidateCodeResendButton({ref, shouldDisableRe
         },
     }));
 
+    const resolvedButtonStyle = buttonStyle ?? styles.mt2;
+
     return (
         <View style={styles.alignItemsStart}>
             {isCountdownRunning && !isOffline ? (
-                <View style={[styles.mt5, styles.flexRow, styles.renderHTML]}>
+                <View style={[resolvedButtonStyle, styles.flexRow, styles.renderHTML]}>
                     <ValidateCodeCountdown
                         ref={countdownRef}
                         onCountdownFinish={handleCountdownFinish}
@@ -54,16 +71,16 @@ function MultifactorAuthenticationValidateCodeResendButton({ref, shouldDisableRe
                 </View>
             ) : (
                 <PressableWithFeedback
-                    style={styles.mt5}
-                    onPress={onResendValidationCode}
-                    disabled={shouldDisableResendCode}
+                    style={resolvedButtonStyle}
+                    onPress={onResendPress}
+                    disabled={shouldDisableResend}
                     hoverDimmingValue={1}
                     pressDimmingValue={0.2}
                     role={CONST.ROLE.BUTTON}
-                    accessibilityLabel={translate(resendButtonText)}
+                    accessibilityLabel={translate('validateCodeForm.magicCodeNotReceived')}
                 >
-                    <Text style={[StyleUtils.getDisabledLinkStyles(shouldDisableResendCode)]}>
-                        {hasError ? translate('validateCodeForm.requestNewCodeAfterErrorOccurred') : translate(resendButtonText)}
+                    <Text style={StyleUtils.getDisabledLinkStyles(shouldDisableResend)}>
+                        {hasError ? translate('validateCodeForm.requestNewCodeAfterErrorOccurred') : translate('validateCodeForm.magicCodeNotReceived')}
                     </Text>
                 </PressableWithFeedback>
             )}
@@ -71,8 +88,8 @@ function MultifactorAuthenticationValidateCodeResendButton({ref, shouldDisableRe
     );
 }
 
-MultifactorAuthenticationValidateCodeResendButton.displayName = 'MultifactorAuthenticationValidateCodeResendButton';
+ValidateCodeResendButton.displayName = 'ValidateCodeResendButton';
 
-export default MultifactorAuthenticationValidateCodeResendButton;
+export default ValidateCodeResendButton;
 
-export type {MultifactorAuthenticationValidateCodeResendButtonHandle};
+export type {ValidateCodeResendButtonHandle};
