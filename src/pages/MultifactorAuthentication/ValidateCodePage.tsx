@@ -6,10 +6,10 @@ import FormHelpMessage from '@components/FormHelpMessage';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MagicCodeInput from '@components/MagicCodeInput';
 import type {MagicCodeInputHandle} from '@components/MagicCodeInput';
-import MultifactorAuthenticationValidateCodeResendButton from '@components/MultifactorAuthentication/ValidateCodeResendButton';
-import type {MultifactorAuthenticationValidateCodeResendButtonHandle} from '@components/MultifactorAuthentication/ValidateCodeResendButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
+import ValidateCodeResendButton from '@components/ValidateCodeResendButton';
+import type {ValidateCodeResendButtonHandle} from '@components/ValidateCodeResendButton';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
@@ -48,7 +48,7 @@ function MultifactorAuthenticationValidateCodePage() {
 
     // Refs
     const inputRef = useRef<MagicCodeInputHandle>(null);
-    const resendButtonRef = useRef<MultifactorAuthenticationValidateCodeResendButtonHandle>(null);
+    const resendButtonRef = useRef<ValidateCodeResendButtonHandle>(null);
     const hasClearedInitialErrorsRef = useRef(false);
 
     // Derived state
@@ -181,12 +181,12 @@ function MultifactorAuthenticationValidateCodePage() {
                         maxLength={CONST.MAGIC_CODE_LENGTH}
                     />
                     {hasError && <FormHelpMessage message={getLatestErrorMessage(account)} />}
-                    <MultifactorAuthenticationValidateCodeResendButton
+                    <ValidateCodeResendButton
                         ref={resendButtonRef}
-                        shouldDisableResendCode={shouldDisableResendCode}
+                        onResendPress={resendValidationCode}
+                        shouldDisableResend={shouldDisableResendCode}
                         hasError={hasError}
-                        resendButtonText="validateCodeForm.magicCodeNotReceived"
-                        onResendValidationCode={resendValidationCode}
+                        buttonStyle={styles.mt5}
                     />
                 </View>
                 <Button

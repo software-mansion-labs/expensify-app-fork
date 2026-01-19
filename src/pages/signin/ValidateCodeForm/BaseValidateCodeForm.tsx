@@ -9,13 +9,14 @@ import MagicCodeInput from '@components/MagicCodeInput';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
+import ValidateCodeResendButton from '@components/ValidateCodeResendButton';
+import type {ValidateCodeResendButtonHandle} from '@components/ValidateCodeResendButton';
 import type {WithToggleVisibilityViewProps} from '@components/withToggleVisibilityView';
 import withToggleVisibilityView from '@components/withToggleVisibilityView';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
-import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import AccountUtils from '@libs/AccountUtils';
 import canFocusInputOnScreenFocus from '@libs/canFocusInputOnScreenFocus';
@@ -23,8 +24,6 @@ import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import {isValidRecoveryCode, isValidTwoFactorCode, isValidValidateCode} from '@libs/ValidationUtils';
 import ChangeExpensifyLoginLink from '@pages/signin/ChangeExpensifyLoginLink';
 import Terms from '@pages/signin/Terms';
-import ValidateCodeCountdown from '@components/ValidateCodeCountdown';
-import type {ValidateCodeCountdownHandle} from '@components/ValidateCodeCountdown/types';
 import {clearAccountMessages, clearSignInData as sessionActionsClearSignInData, signIn, signInWithValidateCode} from '@userActions/Session';
 import {resendValidateCode as userActionsResendValidateCode} from '@userActions/User';
 import CONST from '@src/CONST';
@@ -61,15 +60,13 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
     const [twoFactorAuthCode, setTwoFactorAuthCode] = useState('');
     const [recoveryCode, setRecoveryCode] = useState('');
     const [needToClearError, setNeedToClearError] = useState<boolean>(!!account?.errors);
-    const [isCountdownRunning, setIsCountdownRunning] = useState(true);
-    const StyleUtils = useStyleUtils();
 
     const prevRequiresTwoFactorAuth = usePrevious(account?.requiresTwoFactorAuth);
     const prevValidateCode = usePrevious(credentials?.validateCode);
 
     const inputValidateCodeRef = useRef<MagicCodeInputHandle | undefined>(undefined);
     const input2FARef = useRef<MagicCodeInputHandle | undefined>(undefined);
-    const countdownRef = useRef<ValidateCodeCountdownHandle | null>(null);
+    const resendButtonRef = useRef<ValidateCodeResendButtonHandle>(null);
 
     const hasError = !!account && !isEmptyObject(account?.errors) && !needToClearError;
     const isLoadingResendValidationForm = account?.loadingForm === CONST.FORMS.RESEND_VALIDATE_CODE_FORM;
@@ -87,8 +84,7 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
         if (!inputValidateCodeRef.current || !canFocusInputOnScreenFocus() || !isVisible || !isFocused) {
             return;
         }
-        setIsCountdownRunning(true);
-        countdownRef.current?.resetCountdown();
+        resendButtonRef.current?.resetCountdown();
         inputValidateCodeRef.current.focus();
     }, [isVisible, isFocused]);
 
@@ -148,8 +144,7 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
         userActionsResendValidateCode(credentials?.login ?? '');
         inputValidateCodeRef.current?.clear();
         // Give feedback to the user to let them know the email was sent so that they don't spam the button.
-        countdownRef.current?.resetCountdown();
-        setIsCountdownRunning(true);
+        resendButtonRef.current?.resetCountdown();
     };
 
     /**
@@ -202,14 +197,6 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
             clearAccountMessages();
         }
     };
-
-    useEffect(() => {
-        if (!isCountdownRunning) {
-            return;
-        }
-
-        countdownRef.current?.resetCountdown();
-    }, [isCountdownRunning]);
 
     useEffect(() => {
         if (!isLoadingResendValidationForm) {
@@ -302,10 +289,6 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
         preferredLocale,
     ]);
 
-    const handleCountdownFinish = useCallback(() => {
-        setIsCountdownRunning(false);
-    }, []);
-
     return (
         <SafariFormWrapper>
             {/* At this point, show 2FA only after the user has submitted a magic code and account requires 2FA */}
@@ -377,30 +360,12 @@ function BaseValidateCodeForm({autoComplete, isUsingRecoveryCode, setIsUsingReco
                         testID="validateCode"
                     />
                     {hasError && <FormHelpMessage message={getLatestErrorMessage(account)} />}
-                    <View style={[styles.alignItemsStart]}>
-                        {isCountdownRunning && !isOffline ? (
-                            <View style={[styles.mt2, styles.flexRow, styles.renderHTML]}>
-                                <ValidateCodeCountdown
-                                    ref={countdownRef}
-                                    onCountdownFinish={handleCountdownFinish}
-                                />
-                            </View>
-                        ) : (
-                            <PressableWithFeedback
-                                style={[styles.mt2]}
-                                onPress={resendValidateCode}
-                                disabled={shouldDisableResendValidateCode}
-                                hoverDimmingValue={1}
-                                pressDimmingValue={0.2}
-                                role={CONST.ROLE.BUTTON}
-                                accessibilityLabel={translate('validateCodeForm.magicCodeNotReceived')}
-                            >
-                                <Text style={[StyleUtils.getDisabledLinkStyles(shouldDisableResendValidateCode)]}>
-                                    {hasError ? translate('validateCodeForm.requestNewCodeAfterErrorOccurred') : translate('validateCodeForm.magicCodeNotReceived')}
-                                </Text>
-                            </PressableWithFeedback>
-                        )}
-                    </View>
+                    <ValidateCodeResendButton
+                        ref={resendButtonRef}
+                        onResendPress={resendValidateCode}
+                        shouldDisableResend={shouldDisableResendValidateCode}
+                        hasError={hasError}
+                    />
                 </View>
             )}
             <View>
