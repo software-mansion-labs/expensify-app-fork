@@ -177,7 +177,8 @@ function MultifactorAuthenticationValidateCodePage() {
 
     const onGoBackPress = () => {
         // Temporary navigation, expected behavior: trigger onBack from the MultifactorAuthenticationContext
-        Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_BIOMETRICS_TEST);
+        // Close the RHP instead of returning to the invisible biometrics test screen
+        Navigation.dismissModal();
     };
 
     return (
