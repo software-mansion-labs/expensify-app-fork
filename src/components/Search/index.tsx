@@ -86,6 +86,8 @@ import arraysEqual from '@src/utils/arraysEqual';
 import {BarChart, PieChart} from '@components/Charts';
 import type {BarChartDataPoint, PieChartDataPoint} from '@components/Charts/types';
 import {FolderInsights} from '@components/Icon/Expensicons';
+import {SearchBarChart, isGroupedTransactionItem} from './SearchCharts';
+import type {GroupedTransactionItem} from './SearchCharts';
 import Text from '@components/Text';
 import Button from '@components/Button';
 import {useSearchContext} from './SearchContext';
@@ -1229,33 +1231,57 @@ function Search({
         endSpan(CONST.TELEMETRY.SPAN_ON_LAYOUT_SKELETON_REPORTS);
     }, []);
 
-    // Transform grouped data for chart view
-    const chartData = useMemo(() => {
+    // Filter grouped data for chart view - transformation happens inside SearchBarChart
+    const groupedChartData = useMemo((): GroupedTransactionItem[] => {
         if (view !== CONST.SEARCH.VIEW.BAR || !sortedData) {
             return [];
         }
-
-        return sortedData
-            .filter((item): item is TransactionMemberGroupListItemType | TransactionCardGroupListItemType | TransactionWithdrawalIDGroupListItemType =>
-                isTransactionMemberGroupListItemType(item) || isTransactionCardGroupListItemType(item) || isTransactionWithdrawalIDGroupListItemType(item)
-            )
-            .map((item) => {
-                let label = '';
-                if (isTransactionMemberGroupListItemType(item)) {
-                    label = item.formattedFrom ?? '';
-                } else if (isTransactionCardGroupListItemType(item)) {
-                    label = item.formattedCardName ?? '';
-                } else if (isTransactionWithdrawalIDGroupListItemType(item)) {
-                    label = item.formattedWithdrawalID ?? '';
-                }
-
-                return {
-                    label,
-                    total: (item.total ?? 0) / 100,
-                    currency: item.currency ?? CONST.CURRENCY.USD,
-                };
-            });
+        return sortedData.filter(isGroupedTransactionItem);
     }, [view, sortedData]);
+
+    // Handle bar press in chart - navigates to filtered search (same logic as onSelectRow for grouped items)
+    const handleBarPress = useCallback(
+        (item: GroupedTransactionItem) => {
+            if (isTransactionMemberGroupListItemType(item)) {
+                const newFlatFilters = queryJSON.flatFilters.filter((filter) => filter.key !== CONST.SEARCH.SYNTAX_FILTER_KEYS.FROM);
+                newFlatFilters.push({key: CONST.SEARCH.SYNTAX_FILTER_KEYS.FROM, filters: [{operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.accountID}]});
+                const newQueryJSON: SearchQueryJSON = {...queryJSON, groupBy: undefined, flatFilters: newFlatFilters};
+                const newQuery = buildSearchQueryString(newQueryJSON);
+                const newQueryJSONWithHash = buildSearchQueryJSON(newQuery);
+                if (!newQueryJSONWithHash) {
+                    return;
+                }
+                handleSearch({queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false});
+                return;
+            }
+
+            if (isTransactionCardGroupListItemType(item)) {
+                const newFlatFilters = queryJSON.flatFilters.filter((filter) => filter.key !== CONST.SEARCH.SYNTAX_FILTER_KEYS.CARD_ID);
+                newFlatFilters.push({key: CONST.SEARCH.SYNTAX_FILTER_KEYS.CARD_ID, filters: [{operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.cardID}]});
+                const newQueryJSON: SearchQueryJSON = {...queryJSON, groupBy: undefined, flatFilters: newFlatFilters};
+                const newQuery = buildSearchQueryString(newQueryJSON);
+                const newQueryJSONWithHash = buildSearchQueryJSON(newQuery);
+                if (!newQueryJSONWithHash) {
+                    return;
+                }
+                handleSearch({queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false});
+                return;
+            }
+
+            if (isTransactionWithdrawalIDGroupListItemType(item)) {
+                const newFlatFilters = queryJSON.flatFilters.filter((filter) => filter.key !== CONST.SEARCH.SYNTAX_FILTER_KEYS.WITHDRAWAL_ID);
+                newFlatFilters.push({key: CONST.SEARCH.SYNTAX_FILTER_KEYS.WITHDRAWAL_ID, filters: [{operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.entryID}]});
+                const newQueryJSON: SearchQueryJSON = {...queryJSON, groupBy: undefined, flatFilters: newFlatFilters};
+                const newQuery = buildSearchQueryString(newQueryJSON);
+                const newQueryJSONWithHash = buildSearchQueryJSON(newQuery);
+                if (!newQueryJSONWithHash) {
+                    return;
+                }
+                handleSearch({queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false});
+            }
+        },
+        [queryJSON, handleSearch, searchKey],
+    );
 
     const isBarChartView = view === CONST.SEARCH.VIEW.BAR && !!groupBy;
 
@@ -1330,12 +1356,15 @@ function Search({
     return (
         <SearchScopeProvider>
             <Animated.View style={[styles.flex1, animatedStyle]}>
-                {isBarChartView && (
-                    <TestBarChartWithSlider
-                        mainChartData={chartData}
-                        mainChartTitle="Top categories"
-                        isLoading={searchResults?.search?.isLoading}
-                    />
+                {isBarChartView && validGroupBy && (
+                    <ScrollView style={styles.flex1} contentContainerStyle={styles.p4}>
+                        <SearchBarChart
+                            data={groupedChartData}
+                            groupBy={validGroupBy}
+                            onBarPress={handleBarPress}
+                            isLoading={searchResults?.search?.isLoading}
+                        />
+                    </ScrollView>
                 )}
                 {!isBarChartView && (
                 <SearchList
