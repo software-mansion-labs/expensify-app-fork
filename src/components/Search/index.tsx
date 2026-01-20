@@ -195,6 +195,47 @@ const TEST_PIE_CHART_WITH_SMALL_SLICES: PieChartDataPoint[] = [
     {label: 'Tiny 2', value: 5, currency: 'USD'},
 ];
 
+// Simple interactive test component for bar chart (inline version for use inside ScrollView)
+function InteractiveBarChartTestInline() {
+    const [barCount, setBarCount] = React.useState(5);
+    const styles = useThemeStyles();
+
+    const testData = React.useMemo(() => {
+        return Array.from({length: barCount}, (_, j) => ({
+            label: `Item ${j + 1}`,
+            total: Math.floor(Math.random() * 900) + 100,
+            currency: 'USD',
+        }));
+    // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+    }, [barCount]);
+
+    return (
+        <View style={{marginTop: 32}}>
+            <View style={[styles.flexRow, styles.alignItemsCenter, styles.mb4, styles.gap3]}>
+                <Button
+                    text="-"
+                    onPress={() => setBarCount((prev) => Math.max(1, prev - 1))}
+                    isDisabled={barCount <= 1}
+                />
+                <Text style={[styles.textStrong, {minWidth: 120, textAlign: 'center'}]}>
+                    {barCount} bar{barCount > 1 ? 's' : ''}
+                </Text>
+                <Button
+                    text="+"
+                    onPress={() => setBarCount((prev) => Math.min(70, prev + 1))}
+                    isDisabled={barCount >= 70}
+                />
+            </View>
+            <BarChart
+                data={testData}
+                title="Interactive Test"
+                titleIcon={FolderInsights}
+                yAxisUnit="$"
+            />
+        </View>
+    );
+}
+
 // Test component for bar chart with controls
 function TestBarChartWithSlider({
     mainChartData,
@@ -1364,6 +1405,7 @@ function Search({
                             onBarPress={handleBarPress}
                             isLoading={searchResults?.search?.isLoading}
                         />
+                        <InteractiveBarChartTestInline />
                     </ScrollView>
                 )}
                 {!isBarChartView && (

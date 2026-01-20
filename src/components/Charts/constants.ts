@@ -51,8 +51,6 @@ const DEFAULT_SINGLE_BAR_COLOR_INDEX = 4;
 /** Safety buffer multiplier for domain padding calculation */
 const DOMAIN_PADDING_SAFETY_BUFFER = 1.1;
 
-/** Expensify Neue font path for web builds */
-const EXPENSIFY_NEUE_FONT_URL = '/fonts/ExpensifyNeue-Regular.woff';
 
 /** Y-axis domain starting from zero */
 const Y_AXIS_DOMAIN: [number] = [0];
@@ -84,8 +82,11 @@ const X_AXIS_LABEL_ROTATION_90 = -90;
 /** Sin of 45 degrees - used to calculate effective width of rotated labels */
 const SIN_45_DEGREES = Math.sin(Math.PI / 4); // ≈ 0.707
 
-/** Minimum padding between labels (in pixels) */
+/** Minimum padding between labels (in pixels) - used in availableWidthPerBar calculation */
 const LABEL_PADDING = 4;
+
+/** Minimum gap required between adjacent labels for readability (in pixels) */
+const MIN_LABEL_GAP = 8;
 
 /** Maximum ratio of container height that X-axis labels can occupy.
  * Victory allocates: fontHeight + yLabelOffset * 2 + rotateOffset.
@@ -118,7 +119,6 @@ export {
     CHART_PADDING,
     DEFAULT_SINGLE_BAR_COLOR_INDEX,
     DOMAIN_PADDING_SAFETY_BUFFER,
-    EXPENSIFY_NEUE_FONT_URL,
     Y_AXIS_DOMAIN,
     X_AXIS_LINE_WIDTH,
     Y_AXIS_LINE_WIDTH,
@@ -130,6 +130,7 @@ export {
     X_AXIS_LABEL_ROTATION_90,
     SIN_45_DEGREES,
     LABEL_PADDING,
+    MIN_LABEL_GAP,
     X_AXIS_LABEL_MAX_HEIGHT_RATIO,
     LABEL_ELLIPSIS,
     PIE_CHART_MIN_SLICE_PERCENTAGE,

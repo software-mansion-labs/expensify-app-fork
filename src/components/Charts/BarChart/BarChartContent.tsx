@@ -7,6 +7,7 @@ import {scheduleOnRN} from 'react-native-worklets';
 import type {ChartBounds, PointsArray} from 'victory-native';
 import {Bar, CartesianChart} from 'victory-native';
 import {useFont} from '@shopify/react-native-skia';
+import CHART_FONT_SOURCE from '../font';
 import {useChartInteractionState} from '@components/Charts/hooks';
 import ChartTooltip from '@components/Charts/ChartTooltip';
 import ActivityIndicator from '@components/ActivityIndicator';
@@ -18,10 +19,10 @@ import {
     DEFAULT_SINGLE_BAR_COLOR_INDEX,
     DOMAIN_PADDING,
     DOMAIN_PADDING_SAFETY_BUFFER,
-    EXPENSIFY_NEUE_FONT_URL,
     FRAME_LINE_WIDTH,
     LABEL_ELLIPSIS,
     LABEL_PADDING,
+    MIN_LABEL_GAP,
     SIN_45_DEGREES,
     TOOLTIP_BAR_GAP,
     X_AXIS_LABEL_MAX_HEIGHT_RATIO,
@@ -77,7 +78,7 @@ type CartesianActionsHandle = {
 function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingleColor = false, onBarPress}: BarChartProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
-    const font = useFont(EXPENSIFY_NEUE_FONT_URL, variables.iconSizeExtraSmall);
+    const font = useFont(CHART_FONT_SOURCE, variables.iconSizeExtraSmall);
     const [chartWidth, setChartWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
     const {state: chartInteractionState, isActive: isTooltipActive} = useChartInteractionState({x: 0, y: {y: 0}});
@@ -140,12 +141,13 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingl
             return label.slice(0, maxChars) + LABEL_ELLIPSIS;
         };
 
-        // === DETERMINE ROTATION (based on WIDTH constraint, monotonic: 0° → 45° → 90°) ===
+        // === DETERMINE ROTATION (based on WIDTH constraint + MIN_LABEL_GAP, monotonic: 0° → 45° → 90°) ===
+        // We require MIN_LABEL_GAP between adjacent labels for readability
         let rotation = 0;
-        if (maxLabelWidth > availableWidthPerBar) {
-            // Labels don't fit at 0°, try 45°
+        if (maxLabelWidth + MIN_LABEL_GAP > availableWidthPerBar) {
+            // Labels don't fit at 0° with required gap, try 45°
             const effectiveWidthAt45 = maxLabelWidth * SIN_45_DEGREES;
-            if (effectiveWidthAt45 <= availableWidthPerBar) {
+            if (effectiveWidthAt45 + MIN_LABEL_GAP <= availableWidthPerBar) {
                 rotation = 45;
             } else {
                 // 45° doesn't fit either, use 90°
@@ -184,7 +186,7 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingl
         const finalLabels = data.map((p, i) => truncateToWidth(p.label, labelWidths.at(i) ?? 0, maxAllowedLabelWidth));
 
         // === CALCULATE SKIP INTERVAL ===
-        let skipInterval = 1;
+        // Calculate how many labels can fit in the entire chart width (not per-bar)
         const finalMaxWidth = Math.max(...finalLabels.map((l) => measureTextWidth(l, font)));
         let effectiveWidth: number;
         if (rotation === 0) {
@@ -195,9 +197,10 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, useSingl
             effectiveWidth = lineHeight; // At 90°, width is the line height
         }
 
-        if (effectiveWidth > availableWidthPerBar) {
-            skipInterval = Math.ceil(effectiveWidth / availableWidthPerBar);
-        }
+        // How many labels can fit across the entire chart width?
+        const maxVisibleLabels = Math.max(1, Math.floor(chartWidth / (effectiveWidth + MIN_LABEL_GAP)));
+        // Skip interval to show at most maxVisibleLabels
+        const skipInterval = Math.max(1, Math.ceil(data.length / maxVisibleLabels));
 
         // Convert rotation to negative degrees for Victory chart
         let rotationValue = 0;
