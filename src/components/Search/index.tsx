@@ -1,10 +1,10 @@
-import {findFocusedRoute, useFocusEffect, useIsFocused, useNavigation} from '@react-navigation/native';
+import { findFocusedRoute, useFocusEffect, useIsFocused, useNavigation } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
-import React, {useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
-import type {NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle} from 'react-native';
-import {ScrollView, View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
-import Animated, {FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import type { OnyxEntry } from 'react-native-onyx';
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import FullPageErrorView from '@components/BlockingViews/FullPageErrorView';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import ConfirmModal from '@components/ConfirmModal';
@@ -20,7 +20,7 @@ import type {
     TransactionWithdrawalIDGroupListItemType,
 } from '@components/SelectionListWithSections/types';
 import SearchRowSkeleton from '@components/Skeletons/SearchRowSkeleton';
-import {WideRHPContext} from '@components/WideRHPContextProvider';
+import { WideRHPContext } from '@components/WideRHPContextProvider';
 import useArchivedReportsIdSet from '@hooks/useArchivedReportsIdSet';
 import useCardFeedsForDisplay from '@hooks/useCardFeedsForDisplay';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -33,19 +33,19 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchHighlightAndScroll from '@hooks/useSearchHighlightAndScroll';
 import useSearchShouldCalculateTotals from '@hooks/useSearchShouldCalculateTotals';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {openOldDotLink} from '@libs/actions/Link';
-import {turnOffMobileSelectionMode, turnOnMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
-import type {TransactionPreviewData} from '@libs/actions/Search';
-import {openSearch, setOptimisticDataForTransactionThreadPreview} from '@libs/actions/Search';
+import { openOldDotLink } from '@libs/actions/Link';
+import { turnOffMobileSelectionMode, turnOnMobileSelectionMode } from '@libs/actions/MobileSelectionMode';
+import type { TransactionPreviewData } from '@libs/actions/Search';
+import { openSearch, setOptimisticDataForTransactionThreadPreview } from '@libs/actions/Search';
 import Timing from '@libs/actions/Timing';
-import {canUseTouchScreen} from '@libs/DeviceCapabilities';
+import { canUseTouchScreen } from '@libs/DeviceCapabilities';
 import Log from '@libs/Log';
 import isSearchTopmostFullScreenRoute from '@libs/Navigation/helpers/isSearchTopmostFullScreenRoute';
-import type {PlatformStackNavigationProp} from '@libs/Navigation/PlatformStackNavigation/types';
+import type { PlatformStackNavigationProp } from '@libs/Navigation/PlatformStackNavigation/types';
 import Performance from '@libs/Performance';
-import {isSplitAction} from '@libs/ReportSecondaryActionUtils';
-import {canEditFieldOfMoneyRequest, canHoldUnholdReportAction, canRejectReportAction, isOneTransactionReport, selectFilteredReportActions} from '@libs/ReportUtils';
-import {buildCannedSearchQuery, buildSearchQueryJSON, buildSearchQueryString} from '@libs/SearchQueryUtils';
+import { isSplitAction } from '@libs/ReportSecondaryActionUtils';
+import { canEditFieldOfMoneyRequest, canHoldUnholdReportAction, canRejectReportAction, isOneTransactionReport, selectFilteredReportActions } from '@libs/ReportUtils';
+import { buildCannedSearchQuery, buildSearchQueryJSON, buildSearchQueryString } from '@libs/SearchQueryUtils';
 import {
     createAndOpenSearchTransactionThread,
     getColumnsToShow,
@@ -66,133 +66,166 @@ import {
     shouldShowEmptyState,
     shouldShowYear as shouldShowYearUtil,
 } from '@libs/SearchUIUtils';
-import {cancelSpan, endSpan, startSpan} from '@libs/telemetry/activeSpans';
-import {getOriginalTransactionWithSplitInfo, hasValidModifiedAmount, isOnHold, isTransactionPendingDelete, mergeProhibitedViolations, shouldShowViolation} from '@libs/TransactionUtils';
-import Navigation, {navigationRef} from '@navigation/Navigation';
-import type {SearchFullscreenNavigatorParamList} from '@navigation/types';
+import { cancelSpan, endSpan, startSpan } from '@libs/telemetry/activeSpans';
+import { getOriginalTransactionWithSplitInfo, hasValidModifiedAmount, isOnHold, isTransactionPendingDelete, mergeProhibitedViolations, shouldShowViolation } from '@libs/TransactionUtils';
+import Navigation, { navigationRef } from '@navigation/Navigation';
+import type { SearchFullscreenNavigatorParamList } from '@navigation/types';
 import EmptySearchView from '@pages/Search/EmptySearchView';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-import {columnsSelector} from '@src/selectors/AdvancedSearchFiltersForm';
-import {isActionLoadingSetSelector} from '@src/selectors/ReportMetaData';
-import type {OutstandingReportsByPolicyIDDerivedValue, Transaction} from '@src/types/onyx';
+import { columnsSelector } from '@src/selectors/AdvancedSearchFiltersForm';
+import { isActionLoadingSetSelector } from '@src/selectors/ReportMetaData';
+import type { OutstandingReportsByPolicyIDDerivedValue, Transaction } from '@src/types/onyx';
 import type SearchResults from '@src/types/onyx/SearchResults';
-import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import type { TransactionViolation } from '@src/types/onyx/TransactionViolation';
+import { isEmptyObject } from '@src/types/utils/EmptyObject';
 import arraysEqual from '@src/utils/arraysEqual';
-import {BarChart, PieChart} from '@components/Charts';
-import type {BarChartDataPoint, PieChartDataPoint} from '@components/Charts/types';
-import {FolderInsights} from '@components/Icon/Expensicons';
+import { BarChart, LineChart, PieChart } from '@components/Charts';
+import type { BarChartDataPoint, LineChartDataPoint, PieChartDataPoint } from '@components/Charts/types';
+import { FolderInsights } from '@components/Icon/Expensicons';
 import Text from '@components/Text';
 import Button from '@components/Button';
-import {useSearchContext} from './SearchContext';
+import { useSearchContext } from './SearchContext';
 import SearchList from './SearchList';
-import {SearchScopeProvider} from './SearchScopeProvider';
-import type {SearchColumnType, SearchParams, SearchQueryJSON, SelectedTransactionInfo, SelectedTransactions, SortOrder} from './types';
+import { SearchScopeProvider } from './SearchScopeProvider';
+import type { SearchColumnType, SearchParams, SearchQueryJSON, SelectedTransactionInfo, SelectedTransactions, SortOrder } from './types';
+import styles from '@styles/index';
 
 // Test data with long labels
 const TEST_LONG_LABELS_5_BARS: BarChartDataPoint[] = [
-    {label: 'Transportation & Commuting', total: 1200, currency: 'USD', onClickQuery: 'type:expense category:"Transportation & Commuting"'},
-    {label: 'Food & Dining Expenses', total: 800, currency: 'USD', onClickQuery: 'type:expense category:"Food & Dining Expenses"'},
-    {label: 'Monthly Utility Bills', total: 1500, currency: 'USD', onClickQuery: 'type:expense category:"Monthly Utility Bills"'},
-    {label: 'Entertainment & Recreation', total: 600, currency: 'USD', onClickQuery: 'type:expense category:"Entertainment & Recreation"'},
-    {label: 'Healthcare & Medical', total: 400, currency: 'USD', onClickQuery: 'type:expense category:"Healthcare & Medical"'},
+    { label: 'Transportation & Commuting', total: 1200, currency: 'USD', onClickQuery: 'type:expense category:"Transportation & Commuting"' },
+    { label: 'Food & Dining Expenses', total: 800, currency: 'USD', onClickQuery: 'type:expense category:"Food & Dining Expenses"' },
+    { label: 'Monthly Utility Bills', total: 1500, currency: 'USD', onClickQuery: 'type:expense category:"Monthly Utility Bills"' },
+    { label: 'Entertainment & Recreation', total: 600, currency: 'USD', onClickQuery: 'type:expense category:"Entertainment & Recreation"' },
+    { label: 'Healthcare & Medical', total: 400, currency: 'USD', onClickQuery: 'type:expense category:"Healthcare & Medical"' },
 ];
 
 const TEST_LONG_LABELS_15_BARS: BarChartDataPoint[] = [
-    {label: 'Transportation & Commuting', total: 1200, currency: 'USD'},
-    {label: 'Food & Dining Expenses', total: 800, currency: 'USD'},
-    {label: 'Monthly Utility Bills', total: 1500, currency: 'USD'},
-    {label: 'Entertainment & Recreation', total: 600, currency: 'USD'},
-    {label: 'Healthcare & Medical', total: 400, currency: 'USD'},
-    {label: 'Home Insurance Premium', total: 350, currency: 'USD'},
-    {label: 'Education & Learning', total: 500, currency: 'USD'},
-    {label: 'Clothing & Accessories', total: 300, currency: 'USD'},
-    {label: 'Pet Care & Supplies', total: 250, currency: 'USD'},
-    {label: 'Gym & Fitness Membership', total: 150, currency: 'USD'},
-    {label: 'Mobile Phone Service', total: 100, currency: 'USD'},
-    {label: 'Internet & Streaming', total: 80, currency: 'USD'},
-    {label: 'Home Maintenance', total: 450, currency: 'USD'},
-    {label: 'Personal Care Products', total: 200, currency: 'USD'},
-    {label: 'Charitable Donations', total: 175, currency: 'USD'},
+    { label: 'Transportation & Commuting', total: 1200, currency: 'USD' },
+    { label: 'Food & Dining Expenses', total: 800, currency: 'USD' },
+    { label: 'Monthly Utility Bills', total: 1500, currency: 'USD' },
+    { label: 'Entertainment & Recreation', total: 600, currency: 'USD' },
+    { label: 'Healthcare & Medical', total: 400, currency: 'USD' },
+    { label: 'Home Insurance Premium', total: 350, currency: 'USD' },
+    { label: 'Education & Learning', total: 500, currency: 'USD' },
+    { label: 'Clothing & Accessories', total: 300, currency: 'USD' },
+    { label: 'Pet Care & Supplies', total: 250, currency: 'USD' },
+    { label: 'Gym & Fitness Membership', total: 150, currency: 'USD' },
+    { label: 'Mobile Phone Service', total: 100, currency: 'USD' },
+    { label: 'Internet & Streaming', total: 80, currency: 'USD' },
+    { label: 'Home Maintenance', total: 450, currency: 'USD' },
+    { label: 'Personal Care Products', total: 200, currency: 'USD' },
+    { label: 'Charitable Donations', total: 175, currency: 'USD' },
 ];
 
 const TEST_VERY_LONG_LABELS_8_BARS: BarChartDataPoint[] = [
-    {label: 'Monthly Transportation and Daily Commuting Expenses', total: 1200, currency: 'USD'},
-    {label: 'Grocery Shopping and Restaurant Dining Combined', total: 800, currency: 'USD'},
-    {label: 'Home Utilities Including Electric Water and Gas', total: 1500, currency: 'USD'},
-    {label: 'Weekend Entertainment and Family Recreation Activities', total: 600, currency: 'USD'},
-    {label: 'Annual Healthcare Insurance and Medical Copays', total: 400, currency: 'USD'},
-    {label: 'Professional Development and Online Course Subscriptions', total: 350, currency: 'USD'},
-    {label: 'Children Education and School Related Expenses', total: 500, currency: 'USD'},
-    {label: 'Home Improvement and Maintenance Service Costs', total: 450, currency: 'USD'},
+    { label: 'Monthly Transportation and Daily Commuting Expenses', total: 1200, currency: 'USD' },
+    { label: 'Grocery Shopping and Restaurant Dining Combined', total: 800, currency: 'USD' },
+    { label: 'Home Utilities Including Electric Water and Gas', total: 1500, currency: 'USD' },
+    { label: 'Weekend Entertainment and Family Recreation Activities', total: 600, currency: 'USD' },
+    { label: 'Annual Healthcare Insurance and Medical Copays', total: 400, currency: 'USD' },
+    { label: 'Professional Development and Online Course Subscriptions', total: 350, currency: 'USD' },
+    { label: 'Children Education and School Related Expenses', total: 500, currency: 'USD' },
+    { label: 'Home Improvement and Maintenance Service Costs', total: 450, currency: 'USD' },
 ];
 
 const TEST_MIXED_LABELS_10_BARS: BarChartDataPoint[] = [
-    {label: 'Food', total: 1200, currency: 'USD'},
-    {label: 'Transportation & Daily Commuting', total: 800, currency: 'USD'},
-    {label: 'Bills', total: 1500, currency: 'USD'},
-    {label: 'Entertainment and Recreation Activities', total: 600, currency: 'USD'},
-    {label: 'Gas', total: 400, currency: 'USD'},
-    {label: 'Monthly Insurance Premium', total: 350, currency: 'USD'},
-    {label: 'Edu', total: 500, currency: 'USD'},
-    {label: 'Clothing & Fashion Accessories', total: 300, currency: 'USD'},
-    {label: 'Pet', total: 250, currency: 'USD'},
-    {label: 'Gym', total: 150, currency: 'USD'},
+    { label: 'Food', total: 1200, currency: 'USD' },
+    { label: 'Transportation & Daily Commuting', total: 800, currency: 'USD' },
+    { label: 'Bills', total: 1500, currency: 'USD' },
+    { label: 'Entertainment and Recreation Activities', total: 600, currency: 'USD' },
+    { label: 'Gas', total: 400, currency: 'USD' },
+    { label: 'Monthly Insurance Premium', total: 350, currency: 'USD' },
+    { label: 'Edu', total: 500, currency: 'USD' },
+    { label: 'Clothing & Fashion Accessories', total: 300, currency: 'USD' },
+    { label: 'Pet', total: 250, currency: 'USD' },
+    { label: 'Gym', total: 150, currency: 'USD' },
 ];
 
 const TEST_ONE_LONG_LABEL_10_BARS: BarChartDataPoint[] = [
-    {label: 'Food', total: 1200, currency: 'USD'},
-    {label: 'Travel', total: 800, currency: 'USD'},
-    {label: 'Monthly Transportation and Commuting Expenses for Work', total: 1500, currency: 'USD'},
-    {label: 'Fun', total: 600, currency: 'USD'},
-    {label: 'Gas', total: 400, currency: 'USD'},
-    {label: 'Rent', total: 350, currency: 'USD'},
-    {label: 'Gym', total: 500, currency: 'USD'},
-    {label: 'Pet', total: 300, currency: 'USD'},
-    {label: 'Car', total: 250, currency: 'USD'},
-    {label: 'Phone', total: 150, currency: 'USD'},
+    { label: 'Food', total: 1200, currency: 'USD' },
+    { label: 'Travel', total: 800, currency: 'USD' },
+    { label: 'Monthly Transportation and Commuting Expenses for Work', total: 1500, currency: 'USD' },
+    { label: 'Fun', total: 600, currency: 'USD' },
+    { label: 'Gas', total: 400, currency: 'USD' },
+    { label: 'Rent', total: 350, currency: 'USD' },
+    { label: 'Gym', total: 500, currency: 'USD' },
+    { label: 'Pet', total: 300, currency: 'USD' },
+    { label: 'Car', total: 250, currency: 'USD' },
+    { label: 'Phone', total: 150, currency: 'USD' },
 ];
 
 // PieChart test data
 const TEST_PIE_CHART_5_SLICES: PieChartDataPoint[] = [
-    {label: 'Food & Dining', value: 1200, currency: 'USD', onClickQuery: 'type:expense category:"Food & Dining"'},
-    {label: 'Transportation', value: 800, currency: 'USD', onClickQuery: 'type:expense category:Transportation'},
-    {label: 'Utilities', value: 500, currency: 'USD', onClickQuery: 'type:expense category:Utilities'},
-    {label: 'Entertainment', value: 300, currency: 'USD', onClickQuery: 'type:expense category:Entertainment'},
-    {label: 'Healthcare', value: 200, currency: 'USD', onClickQuery: 'type:expense category:Healthcare'},
+    { label: 'Food & Dining', value: 1200, currency: 'USD', onClickQuery: 'type:expense category:"Food & Dining"' },
+    { label: 'Transportation', value: 800, currency: 'USD', onClickQuery: 'type:expense category:Transportation' },
+    { label: 'Utilities', value: 500, currency: 'USD', onClickQuery: 'type:expense category:Utilities' },
+    { label: 'Entertainment', value: 300, currency: 'USD', onClickQuery: 'type:expense category:Entertainment' },
+    { label: 'Healthcare', value: 200, currency: 'USD', onClickQuery: 'type:expense category:Healthcare' },
 ];
 
 const TEST_PIE_CHART_MANY_SLICES: PieChartDataPoint[] = [
-    {label: 'Food & Dining', value: 1200, currency: 'USD'},
-    {label: 'Transportation', value: 800, currency: 'USD'},
-    {label: 'Utilities', value: 500, currency: 'USD'},
-    {label: 'Entertainment', value: 300, currency: 'USD'},
-    {label: 'Healthcare', value: 200, currency: 'USD'},
-    {label: 'Shopping', value: 450, currency: 'USD'},
-    {label: 'Travel', value: 350, currency: 'USD'},
-    {label: 'Education', value: 250, currency: 'USD'},
-    {label: 'Subscriptions', value: 150, currency: 'USD'},
-    {label: 'Gym', value: 80, currency: 'USD'},
-    {label: 'Coffee', value: 60, currency: 'USD'},
-    {label: 'Books', value: 40, currency: 'USD'},
-    {label: 'Parking', value: 30, currency: 'USD'},
-    {label: 'Tips', value: 20, currency: 'USD'},
-    {label: 'Misc', value: 15, currency: 'USD'},
+    { label: 'Food & Dining', value: 1200, currency: 'USD' },
+    { label: 'Transportation', value: 800, currency: 'USD' },
+    { label: 'Utilities', value: 500, currency: 'USD' },
+    { label: 'Entertainment', value: 300, currency: 'USD' },
+    { label: 'Healthcare', value: 200, currency: 'USD' },
+    { label: 'Shopping', value: 450, currency: 'USD' },
+    { label: 'Travel', value: 350, currency: 'USD' },
+    { label: 'Education', value: 250, currency: 'USD' },
+    { label: 'Subscriptions', value: 150, currency: 'USD' },
+    { label: 'Gym', value: 80, currency: 'USD' },
+    { label: 'Coffee', value: 60, currency: 'USD' },
+    { label: 'Books', value: 40, currency: 'USD' },
+    { label: 'Parking', value: 30, currency: 'USD' },
+    { label: 'Tips', value: 20, currency: 'USD' },
+    { label: 'Misc', value: 15, currency: 'USD' },
 ];
 
 const TEST_PIE_CHART_WITH_SMALL_SLICES: PieChartDataPoint[] = [
-    {label: 'Major Expense', value: 5000, currency: 'USD'},
-    {label: 'Medium Expense', value: 1000, currency: 'USD'},
-    {label: 'Small 1', value: 50, currency: 'USD'},
-    {label: 'Small 2', value: 30, currency: 'USD'},
-    {label: 'Tiny 1', value: 10, currency: 'USD'},
-    {label: 'Tiny 2', value: 5, currency: 'USD'},
+    { label: 'Major Expense', value: 5000, currency: 'USD' },
+    { label: 'Medium Expense', value: 1000, currency: 'USD' },
+    { label: 'Small 1', value: 50, currency: 'USD' },
+    { label: 'Small 2', value: 30, currency: 'USD' },
+    { label: 'Tiny 1', value: 10, currency: 'USD' },
+    { label: 'Tiny 2', value: 5, currency: 'USD' },
 ];
 
+function TestLineChartWithSlider({
+    mainChartData,
+    mainChartTitle,
+    isLoading,
+}:
+    {
+        mainChartData: LineChartDataPoint[];
+        mainChartTitle?: string;
+        isLoading?: boolean;
+    }) {
+    const [pointCount, setPointCount] = React.useState(2);
+    const styles = useThemeStyles();
+
+    const testData = React.useMemo(() => {
+        return Array.from({ length: pointCount }, (_, j) => ({
+            label: `Item ${j + 1}`,
+            total: Math.floor(Math.random() * 900) + 100,
+            currency: 'USD',
+        }));
+    }, [pointCount]);
+
+    return (
+        <ScrollView style={styles.flex1} contentContainerStyle={styles.p4}>
+            <LineChart
+                data={mainChartData}
+                title={mainChartTitle}
+                isLoading={isLoading}
+                yAxisUnit="$"
+            />
+        </ScrollView>
+    );
+}
 // Test component for bar chart with controls
 function TestBarChartWithSlider({
     mainChartData,
@@ -207,12 +240,12 @@ function TestBarChartWithSlider({
     const styles = useThemeStyles();
 
     const testData = React.useMemo(() => {
-        return Array.from({length: barCount}, (_, j) => ({
+        return Array.from({ length: barCount }, (_, j) => ({
             label: `Item ${j + 1}`,
             total: Math.floor(Math.random() * 900) + 100,
             currency: 'USD',
         }));
-    // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
     }, [barCount]);
 
     return (
@@ -227,17 +260,17 @@ function TestBarChartWithSlider({
                     if (!dataPoint.onClickQuery) {
                         return;
                     }
-                    Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: dataPoint.onClickQuery}));
+                    Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({ query: dataPoint.onClickQuery }));
                 }}
             />
-            <View style={{marginTop: 32}}>
-                <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 16}}>
+            <View style={{ marginTop: 32 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 16 }}>
                     <Button
                         text="-"
                         onPress={() => setBarCount((prev) => Math.max(1, prev - 1))}
                         isDisabled={barCount <= 1}
                     />
-                    <Text style={{fontWeight: '600', minWidth: 120, textAlign: 'center'}}>
+                    <Text style={{ fontWeight: '600', minWidth: 120, textAlign: 'center' }}>
                         Test: {barCount} bar{barCount > 1 ? 's' : ''}
                     </Text>
                     <Button
@@ -253,40 +286,40 @@ function TestBarChartWithSlider({
             </View>
 
             {/* Test charts with long labels */}
-            <View style={{marginTop: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 5: Long labels (5 bars)</Text>
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 5: Long labels (5 bars)</Text>
                 <BarChart
                     data={TEST_LONG_LABELS_5_BARS}
                     yAxisUnit="$"
                 />
             </View>
 
-            <View style={{marginTop: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 6: Long labels (15 bars)</Text>
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 6: Long labels (15 bars)</Text>
                 <BarChart
                     data={TEST_LONG_LABELS_15_BARS}
                     yAxisUnit="$"
                 />
             </View>
 
-            <View style={{marginTop: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 7: Very long labels (8 bars)</Text>
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 7: Very long labels (8 bars)</Text>
                 <BarChart
                     data={TEST_VERY_LONG_LABELS_8_BARS}
                     yAxisUnit="$"
                 />
             </View>
 
-            <View style={{marginTop: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 8: Mixed labels (10 bars)</Text>
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 8: Mixed labels (10 bars)</Text>
                 <BarChart
                     data={TEST_MIXED_LABELS_10_BARS}
                     yAxisUnit="$"
                 />
             </View>
 
-            <View style={{marginTop: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>TEST 9: One long label, rest short (10 bars)</Text>
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 9: One long label, rest short (10 bars)</Text>
                 <BarChart
                     data={TEST_ONE_LONG_LABEL_10_BARS}
                     yAxisUnit="$"
@@ -294,12 +327,12 @@ function TestBarChartWithSlider({
             </View>
 
             {/* PieChart Tests */}
-            <View style={{marginTop: 48}}>
-                <Text style={{fontWeight: '700', fontSize: 18, marginBottom: 24}}>PIE CHART TESTS</Text>
+            <View style={{ marginTop: 48 }}>
+                <Text style={{ fontWeight: '700', fontSize: 18, marginBottom: 24 }}>PIE CHART TESTS</Text>
             </View>
 
-            <View style={{marginTop: 16}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 1: With navigation (click to search)</Text>
+            <View style={{ marginTop: 16 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>PIE TEST 1: With navigation (click to search)</Text>
                 <PieChart
                     data={TEST_PIE_CHART_5_SLICES}
                     title="Expenses by Category"
@@ -309,13 +342,13 @@ function TestBarChartWithSlider({
                         if (!dataPoint.onClickQuery) {
                             return;
                         }
-                        Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: dataPoint.onClickQuery}));
+                        Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({ query: dataPoint.onClickQuery }));
                     }}
                 />
             </View>
 
-            <View style={{marginTop: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 2: With title only</Text>
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>PIE TEST 2: With title only</Text>
                 <PieChart
                     data={TEST_PIE_CHART_5_SLICES}
                     title="Pie Chart"
@@ -323,8 +356,8 @@ function TestBarChartWithSlider({
                 />
             </View>
 
-            <View style={{marginTop: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 3: Many slices (15 slices)</Text>
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>PIE TEST 3: Many slices (15 slices)</Text>
                 <PieChart
                     data={TEST_PIE_CHART_MANY_SLICES}
                     title="Many Categories"
@@ -332,8 +365,8 @@ function TestBarChartWithSlider({
                 />
             </View>
 
-            <View style={{marginTop: 32, marginBottom: 32}}>
-                <Text style={{fontWeight: '600', marginBottom: 16}}>PIE TEST 4: Small slices aggregation (should show Other)</Text>
+            <View style={{ marginTop: 32, marginBottom: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>PIE TEST 4: Small slices aggregation (should show Other)</Text>
                 <PieChart
                     data={TEST_PIE_CHART_WITH_SMALL_SLICES}
                     title="With Small Slices"
@@ -363,7 +396,7 @@ function mapTransactionItemToSelectedEntry(
     currentUserLogin: string,
     outstandingReportsByPolicyID?: OutstandingReportsByPolicyIDDerivedValue,
 ): [string, SelectedTransactionInfo] {
-    const {canHoldRequest, canUnholdRequest} = canHoldUnholdReportAction(item.report, item.reportAction, item.holdReportAction, item, item.policy);
+    const { canHoldRequest, canUnholdRequest } = canHoldUnholdReportAction(item.report, item.reportAction, item.holdReportAction, item, item.policy);
     const canRejectRequest = item.report ? canRejectReportAction(currentUserLogin, item.report, item.policy) : false;
 
     return [
@@ -410,12 +443,12 @@ function prepareTransactionsList(
     outstandingReportsByPolicyID?: OutstandingReportsByPolicyIDDerivedValue,
 ) {
     if (selectedTransactions[item.keyForList]?.isSelected) {
-        const {[item.keyForList]: omittedTransaction, ...transactions} = selectedTransactions;
+        const { [item.keyForList]: omittedTransaction, ...transactions } = selectedTransactions;
 
         return transactions;
     }
 
-    const {canHoldRequest, canUnholdRequest} = canHoldUnholdReportAction(item.report, item.reportAction, item.holdReportAction, item, item.policy);
+    const { canHoldRequest, canUnholdRequest } = canHoldUnholdReportAction(item.report, item.reportAction, item.holdReportAction, item, item.policy);
     const canRejectRequest = item.report ? canRejectReportAction(currentUserLogin, item.report, item.policy) : false;
 
     return {
@@ -464,13 +497,13 @@ function Search({
     searchRequestResponseStatusCode,
     onDEWModalOpen,
 }: SearchProps) {
-    const {type, status, sortBy, sortOrder, hash, similarSearchHash, groupBy, view} = queryJSON;
-    const {isOffline} = useNetwork();
+    const { type, status, sortBy, sortOrder, hash, similarSearchHash, groupBy, view } = queryJSON;
+    const { isOffline } = useNetwork();
     const prevIsOffline = usePrevious(isOffline);
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const { shouldUseNarrowLayout } = useResponsiveLayout();
     const styles = useThemeStyles();
     const [isDEWModalVisible, setIsDEWModalVisible] = useState(false);
-    const {isBetaEnabled} = usePermissions();
+    const { isBetaEnabled } = usePermissions();
     const isDEWBetaEnabled = isBetaEnabled(CONST.BETAS.NEW_DOT_DEW);
 
     const handleDEWModalOpen = useCallback(() => {
@@ -482,10 +515,10 @@ function Search({
     }, [onDEWModalOpen]);
     // We need to use isSmallScreenWidth instead of shouldUseNarrowLayout for enabling the selection mode on small screens only
     // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
-    const {isSmallScreenWidth, isLargeScreenWidth} = useResponsiveLayout();
+    const { isSmallScreenWidth, isLargeScreenWidth } = useResponsiveLayout();
     const navigation = useNavigation<PlatformStackNavigationProp<SearchFullscreenNavigatorParamList>>();
     const isFocused = useIsFocused();
-    const {markReportIDAsExpense} = useContext(WideRHPContext);
+    const { markReportIDAsExpense } = useContext(WideRHPContext);
     const {
         currentSearchHash,
         setCurrentSearchHashAndKey,
@@ -504,15 +537,15 @@ function Search({
     } = useSearchContext();
     const [offset, setOffset] = useState(0);
 
-    const [transactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION, {canBeMissing: true});
+    const [transactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION, { canBeMissing: true });
     const previousTransactions = usePrevious(transactions);
-    const [reportActions] = useOnyx(ONYXKEYS.COLLECTION.REPORT_ACTIONS, {canBeMissing: true});
-    const [outstandingReportsByPolicyID] = useOnyx(ONYXKEYS.DERIVED.OUTSTANDING_REPORTS_BY_POLICY_ID, {canBeMissing: true});
-    const [violations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS, {canBeMissing: true});
-    const {accountID, email} = useCurrentUserPersonalDetails();
-    const [isActionLoadingSet = new Set<string>()] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_METADATA}`, {canBeMissing: true, selector: isActionLoadingSetSelector});
-    const [visibleColumns] = useOnyx(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, {canBeMissing: true, selector: columnsSelector});
-    const [customCardNames] = useOnyx(ONYXKEYS.NVP_EXPENSIFY_COMPANY_CARDS_CUSTOM_NAMES, {canBeMissing: true});
+    const [reportActions] = useOnyx(ONYXKEYS.COLLECTION.REPORT_ACTIONS, { canBeMissing: true });
+    const [outstandingReportsByPolicyID] = useOnyx(ONYXKEYS.DERIVED.OUTSTANDING_REPORTS_BY_POLICY_ID, { canBeMissing: true });
+    const [violations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS, { canBeMissing: true });
+    const { accountID, email } = useCurrentUserPersonalDetails();
+    const [isActionLoadingSet = new Set<string>()] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_METADATA}`, { canBeMissing: true, selector: isActionLoadingSetSelector });
+    const [visibleColumns] = useOnyx(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, { canBeMissing: true, selector: columnsSelector });
+    const [customCardNames] = useOnyx(ONYXKEYS.NVP_EXPENSIFY_COMPANY_CARDS_CUSTOM_NAMES, { canBeMissing: true });
 
     const isExpenseReportType = type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT;
 
@@ -560,9 +593,9 @@ function Search({
         selector: selectFilteredReportActions,
     });
 
-    const [cardFeeds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER, {canBeMissing: true});
+    const [cardFeeds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER, { canBeMissing: true });
 
-    const {defaultCardFeed} = useCardFeedsForDisplay();
+    const { defaultCardFeed } = useCardFeedsForDisplay();
     const suggestedSearches = useMemo(() => getSuggestedSearches(accountID, defaultCardFeed?.id), [defaultCardFeed?.id, accountID]);
 
     const searchKey = useMemo(() => Object.values(suggestedSearches).find((search) => search.similarSearchHash === similarSearchHash)?.key, [suggestedSearches, similarSearchHash]);
@@ -570,7 +603,7 @@ function Search({
     const shouldCalculateTotals = useSearchShouldCalculateTotals(searchKey, similarSearchHash, offset === 0);
 
     const previousReportActions = usePrevious(reportActions);
-    const {translate, localeCompare, formatPhoneNumber} = useLocalize();
+    const { translate, localeCompare, formatPhoneNumber } = useLocalize();
     const searchListRef = useRef<SelectionListHandle | null>(null);
 
     const clearTransactionsAndSetHashAndKey = useCallback(() => {
@@ -646,7 +679,7 @@ function Search({
         openSearch();
     }, [isOffline, prevIsOffline]);
 
-    const {newSearchResultKeys, handleSelectionListScroll, newTransactions} = useSearchHighlightAndScroll({
+    const { newSearchResultKeys, handleSelectionListScroll, newTransactions } = useSearchHighlightAndScroll({
         searchResults,
         transactions,
         previousTransactions,
@@ -729,7 +762,7 @@ function Search({
             return;
         }
 
-        handleSearch({queryJSON, searchKey, offset, shouldCalculateTotals, prevReportsLength: filteredDataLength, isLoading: !!searchResults?.search?.isLoading});
+        handleSearch({ queryJSON, searchKey, offset, shouldCalculateTotals, prevReportsLength: filteredDataLength, isLoading: !!searchResults?.search?.isLoading });
 
         // We don't need to run the effect on change of isFocused.
         // eslint-disable-next-line react-compiler/react-compiler
@@ -767,7 +800,7 @@ function Search({
                         continue;
                     }
 
-                    const {canHoldRequest, canUnholdRequest} = canHoldUnholdReportAction(
+                    const { canHoldRequest, canUnholdRequest } = canHoldUnholdReportAction(
                         transactionItem.report,
                         transactionItem.reportAction,
                         transactionItem.holdReportAction,
@@ -820,7 +853,7 @@ function Search({
                     continue;
                 }
 
-                const {canHoldRequest, canUnholdRequest} = canHoldUnholdReportAction(
+                const { canHoldRequest, canUnholdRequest } = canHoldUnholdReportAction(
                     transactionItem.report,
                     transactionItem.reportAction,
                     transactionItem.holdReportAction,
@@ -943,7 +976,7 @@ function Search({
 
             const currentTransactions = itemTransactions ?? item.transactions;
             if (currentTransactions.some((transaction) => selectedTransactions[transaction.keyForList]?.isSelected)) {
-                const reducedSelectedTransactions: SelectedTransactions = {...selectedTransactions};
+                const reducedSelectedTransactions: SelectedTransactions = { ...selectedTransactions };
 
                 for (const transaction of currentTransactions) {
                     delete reducedSelectedTransactions[transaction.keyForList];
@@ -993,40 +1026,40 @@ function Search({
 
             if (isTransactionMemberGroupListItemType(item)) {
                 const newFlatFilters = queryJSON.flatFilters.filter((filter) => filter.key !== CONST.SEARCH.SYNTAX_FILTER_KEYS.FROM);
-                newFlatFilters.push({key: CONST.SEARCH.SYNTAX_FILTER_KEYS.FROM, filters: [{operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.accountID}]});
-                const newQueryJSON: SearchQueryJSON = {...queryJSON, groupBy: undefined, flatFilters: newFlatFilters};
+                newFlatFilters.push({ key: CONST.SEARCH.SYNTAX_FILTER_KEYS.FROM, filters: [{ operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.accountID }] });
+                const newQueryJSON: SearchQueryJSON = { ...queryJSON, groupBy: undefined, flatFilters: newFlatFilters };
                 const newQuery = buildSearchQueryString(newQueryJSON);
                 const newQueryJSONWithHash = buildSearchQueryJSON(newQuery);
                 if (!newQueryJSONWithHash) {
                     return;
                 }
-                handleSearch({queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false});
+                handleSearch({ queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false });
                 return;
             }
 
             if (isTransactionCardGroupListItemType(item)) {
                 const newFlatFilters = queryJSON.flatFilters.filter((filter) => filter.key !== CONST.SEARCH.SYNTAX_FILTER_KEYS.CARD_ID);
-                newFlatFilters.push({key: CONST.SEARCH.SYNTAX_FILTER_KEYS.CARD_ID, filters: [{operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.cardID}]});
-                const newQueryJSON: SearchQueryJSON = {...queryJSON, groupBy: undefined, flatFilters: newFlatFilters};
+                newFlatFilters.push({ key: CONST.SEARCH.SYNTAX_FILTER_KEYS.CARD_ID, filters: [{ operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.cardID }] });
+                const newQueryJSON: SearchQueryJSON = { ...queryJSON, groupBy: undefined, flatFilters: newFlatFilters };
                 const newQuery = buildSearchQueryString(newQueryJSON);
                 const newQueryJSONWithHash = buildSearchQueryJSON(newQuery);
                 if (!newQueryJSONWithHash) {
                     return;
                 }
-                handleSearch({queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false});
+                handleSearch({ queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false });
                 return;
             }
 
             if (isTransactionWithdrawalIDGroupListItemType(item)) {
                 const newFlatFilters = queryJSON.flatFilters.filter((filter) => filter.key !== CONST.SEARCH.SYNTAX_FILTER_KEYS.WITHDRAWAL_ID);
-                newFlatFilters.push({key: CONST.SEARCH.SYNTAX_FILTER_KEYS.WITHDRAWAL_ID, filters: [{operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.entryID}]});
-                const newQueryJSON: SearchQueryJSON = {...queryJSON, groupBy: undefined, flatFilters: newFlatFilters};
+                newFlatFilters.push({ key: CONST.SEARCH.SYNTAX_FILTER_KEYS.WITHDRAWAL_ID, filters: [{ operator: CONST.SEARCH.SYNTAX_OPERATORS.EQUAL_TO, value: item.entryID }] });
+                const newQueryJSON: SearchQueryJSON = { ...queryJSON, groupBy: undefined, flatFilters: newFlatFilters };
                 const newQuery = buildSearchQueryString(newQueryJSON);
                 const newQueryJSONWithHash = buildSearchQueryJSON(newQuery);
                 if (!newQueryJSONWithHash) {
                     return;
                 }
-                handleSearch({queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false});
+                handleSearch({ queryJSON: newQueryJSONWithHash, searchKey, offset: 0, shouldCalculateTotals: false, isLoading: false });
                 return;
             }
 
@@ -1060,13 +1093,13 @@ function Search({
                         setOptimisticDataForTransactionThreadPreview(firstTransaction, transactionPreviewData, firstTransaction?.reportAction?.childReportID);
                     }
                 }
-                requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID, backTo})));
+                requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({ reportID, backTo })));
                 return;
             }
 
             if (isReportActionListItemType(item)) {
                 const reportActionID = item.reportActionID;
-                Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, reportActionID, backTo}));
+                Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({ reportID, reportActionID, backTo }));
                 return;
             }
 
@@ -1076,7 +1109,7 @@ function Search({
                 setOptimisticDataForTransactionThreadPreview(item, transactionPreviewData, item?.reportAction?.childReportID);
             }
 
-            requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, backTo})));
+            requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({ reportID, backTo })));
         },
         [isMobileSelectionModeEnabled, toggleTransaction, queryJSON, handleSearch, searchKey, markReportIDAsExpense],
     );
@@ -1105,9 +1138,9 @@ function Search({
         }
 
         opacity.set(
-            withTiming(0, {duration: CONST.SEARCH.ANIMATION.FADE_DURATION}, () => {
+            withTiming(0, { duration: CONST.SEARCH.ANIMATION.FADE_DURATION }, () => {
                 setColumnsToShow(currentColumns);
-                opacity.set(withTiming(1, {duration: CONST.SEARCH.ANIMATION.FADE_DURATION}));
+                opacity.set(withTiming(1, { duration: CONST.SEARCH.ANIMATION.FADE_DURATION }));
             }),
         );
     }, [previousColumns, currentColumns, setColumnsToShow, opacity, offset, isSmallScreenWidth]);
@@ -1139,7 +1172,7 @@ function Search({
                     return item;
                 }
 
-                return {...item, shouldAnimateInHighlight, hash};
+                return { ...item, shouldAnimateInHighlight, hash };
             }),
         [type, status, filteredData, localeCompare, translate, sortBy, sortOrder, validGroupBy, isChat, newSearchResultKeys, hash],
     );
@@ -1150,7 +1183,7 @@ function Search({
             // Use requestAnimationFrame to safely update navigation params without overriding the current route
             requestAnimationFrame(() => {
                 // We want to explicitly clear stale rawQuery since it’s only used for manually typed-in queries.
-                Navigation.setParams({q: buildCannedSearchQuery(), rawQuery: undefined});
+                Navigation.setParams({ q: buildCannedSearchQuery(), rawQuery: undefined });
             });
             if (shouldResetSearchQuery) {
                 setShouldResetSearchQuery(false);
@@ -1231,7 +1264,10 @@ function Search({
 
     // Transform grouped data for chart view
     const chartData = useMemo(() => {
-        if (view !== CONST.SEARCH.VIEW.BAR || !sortedData) {
+        if (
+            (view !== CONST.SEARCH.VIEW.LINE && view !== CONST.SEARCH.VIEW.BAR) ||
+            !sortedData
+        ) {
             return [];
         }
 
@@ -1258,6 +1294,7 @@ function Search({
     }, [view, sortedData]);
 
     const isBarChartView = view === CONST.SEARCH.VIEW.BAR && !!groupBy;
+    const isLineChartView = view === CONST.SEARCH.VIEW.LINE && !!groupBy;
 
     if (shouldShowLoadingState) {
         return (
@@ -1289,7 +1326,7 @@ function Search({
                 <FullPageErrorView
                     shouldShow
                     subtitleStyle={styles.textSupporting}
-                    title={translate('errorPage.title', {isBreakLine: shouldUseNarrowLayout})}
+                    title={translate('errorPage.title', { isBreakLine: shouldUseNarrowLayout })}
                     subtitle={translate(isInvalidQuery ? 'errorPage.wrongTypeSubtitle' : 'errorPage.subtitle')}
                 />
             </View>
@@ -1313,17 +1350,17 @@ function Search({
 
     const onSortPress = (column: SearchColumnType, order: SortOrder) => {
         clearSelectedTransactions();
-        const newQuery = buildSearchQueryString({...queryJSON, sortBy: column, sortOrder: order});
+        const newQuery = buildSearchQueryString({ ...queryJSON, sortBy: column, sortOrder: order });
         onSortPressedCallback?.();
         // We want to explicitly clear stale rawQuery since it’s only used for manually typed-in queries.
-        navigation.setParams({q: newQuery, rawQuery: undefined});
+        navigation.setParams({ q: newQuery, rawQuery: undefined });
     };
 
-    const {shouldShowYearCreated, shouldShowYearSubmitted, shouldShowYearApproved, shouldShowYearPosted, shouldShowYearExported} = shouldShowYearUtil(
+    const { shouldShowYearCreated, shouldShowYearSubmitted, shouldShowYearApproved, shouldShowYearPosted, shouldShowYearExported } = shouldShowYearUtil(
         searchResults?.data,
         isExpenseReportType ?? false,
     );
-    const {shouldShowAmountInWideColumn, shouldShowTaxAmountInWideColumn} = getWideAmountIndicators(searchResults?.data);
+    const { shouldShowAmountInWideColumn, shouldShowTaxAmountInWideColumn } = getWideAmountIndicators(searchResults?.data);
     const shouldShowTableHeader = isLargeScreenWidth && !isChat;
     const tableHeaderVisible = canSelectMultiple || shouldShowTableHeader;
 
@@ -1337,66 +1374,73 @@ function Search({
                         isLoading={searchResults?.search?.isLoading}
                     />
                 )}
-                {!isBarChartView && (
-                <SearchList
-                    key="search-list"
-                    ref={searchListRef}
-                    data={sortedData}
-                    ListItem={ListItem}
-                    onSelectRow={onSelectRow}
-                    onCheckboxPress={toggleTransaction}
-                    onAllCheckboxPress={toggleAllTransactions}
-                    canSelectMultiple={canSelectMultiple}
-                    selectedTransactions={selectedTransactions}
-                    shouldPreventLongPressRow={isChat || isTask}
-                    onDEWModalOpen={handleDEWModalOpen}
-                    isDEWBetaEnabled={isDEWBetaEnabled}
-                    SearchTableHeader={
-                        !shouldShowTableHeader ? undefined : (
-                            <View style={[!isTask && styles.pr8, styles.flex1]}>
-                                <SearchTableHeader
-                                    canSelectMultiple={canSelectMultiple}
-                                    columns={columnsToShow}
-                                    type={type}
-                                    onSortPress={onSortPress}
-                                    sortOrder={sortOrder}
-                                    sortBy={sortBy}
-                                    shouldShowYear={shouldShowYearCreated}
-                                    shouldShowYearSubmitted={shouldShowYearSubmitted}
-                                    shouldShowYearApproved={shouldShowYearApproved}
-                                    shouldShowYearPosted={shouldShowYearPosted}
-                                    shouldShowYearExported={shouldShowYearExported}
-                                    isAmountColumnWide={shouldShowAmountInWideColumn}
-                                    isTaxAmountColumnWide={shouldShowTaxAmountInWideColumn}
-                                    shouldShowSorting
-                                    groupBy={validGroupBy}
+                {isLineChartView && (
+                    <TestLineChartWithSlider
+                        mainChartData={chartData}
+                        mainChartTitle="Top categories"
+                        isLoading={searchResults?.search?.isLoading}
+                    />
+                )}
+                {!isBarChartView && !isLineChartView && (
+                    <SearchList
+                        key="search-list"
+                        ref={searchListRef}
+                        data={sortedData}
+                        ListItem={ListItem}
+                        onSelectRow={onSelectRow}
+                        onCheckboxPress={toggleTransaction}
+                        onAllCheckboxPress={toggleAllTransactions}
+                        canSelectMultiple={canSelectMultiple}
+                        selectedTransactions={selectedTransactions}
+                        shouldPreventLongPressRow={isChat || isTask}
+                        onDEWModalOpen={handleDEWModalOpen}
+                        isDEWBetaEnabled={isDEWBetaEnabled}
+                        SearchTableHeader={
+                            !shouldShowTableHeader ? undefined : (
+                                <View style={[!isTask && styles.pr8, styles.flex1]}>
+                                    <SearchTableHeader
+                                        canSelectMultiple={canSelectMultiple}
+                                        columns={columnsToShow}
+                                        type={type}
+                                        onSortPress={onSortPress}
+                                        sortOrder={sortOrder}
+                                        sortBy={sortBy}
+                                        shouldShowYear={shouldShowYearCreated}
+                                        shouldShowYearSubmitted={shouldShowYearSubmitted}
+                                        shouldShowYearApproved={shouldShowYearApproved}
+                                        shouldShowYearPosted={shouldShowYearPosted}
+                                        shouldShowYearExported={shouldShowYearExported}
+                                        isAmountColumnWide={shouldShowAmountInWideColumn}
+                                        isTaxAmountColumnWide={shouldShowTaxAmountInWideColumn}
+                                        shouldShowSorting
+                                        groupBy={validGroupBy}
+                                    />
+                                </View>
+                            )
+                        }
+                        contentContainerStyle={[styles.pb3, contentContainerStyle]}
+                        containerStyle={[styles.pv0, !tableHeaderVisible && !isSmallScreenWidth && styles.pt3]}
+                        shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}
+                        onScroll={onSearchListScroll}
+                        onEndReachedThreshold={0.75}
+                        onEndReached={fetchMoreResults}
+                        ListFooterComponent={
+                            shouldShowLoadingMoreItems ? (
+                                <SearchRowSkeleton
+                                    shouldAnimate
+                                    fixedNumItems={5}
                                 />
-                            </View>
-                        )
-                    }
-                    contentContainerStyle={[styles.pb3, contentContainerStyle]}
-                    containerStyle={[styles.pv0, !tableHeaderVisible && !isSmallScreenWidth && styles.pt3]}
-                    shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}
-                    onScroll={onSearchListScroll}
-                    onEndReachedThreshold={0.75}
-                    onEndReached={fetchMoreResults}
-                    ListFooterComponent={
-                        shouldShowLoadingMoreItems ? (
-                            <SearchRowSkeleton
-                                shouldAnimate
-                                fixedNumItems={5}
-                            />
-                        ) : undefined
-                    }
-                    queryJSON={queryJSON}
-                    columns={columnsToShow}
-                    violations={filteredViolations}
-                    onLayout={onLayout}
-                    isMobileSelectionModeEnabled={isMobileSelectionModeEnabled}
-                    shouldAnimate={type === CONST.SEARCH.DATA_TYPES.EXPENSE}
-                    newTransactions={newTransactions}
-                    customCardNames={customCardNames}
-                />
+                            ) : undefined
+                        }
+                        queryJSON={queryJSON}
+                        columns={columnsToShow}
+                        violations={filteredViolations}
+                        onLayout={onLayout}
+                        isMobileSelectionModeEnabled={isMobileSelectionModeEnabled}
+                        shouldAnimate={type === CONST.SEARCH.DATA_TYPES.EXPENSE}
+                        newTransactions={newTransactions}
+                        customCardNames={customCardNames}
+                    />
                 )}
                 <ConfirmModal
                     title={translate('customApprovalWorkflow.title')}
@@ -1417,7 +1461,7 @@ function Search({
 
 Search.displayName = 'Search';
 
-export type {SearchProps};
+export type { SearchProps };
 const WrappedSearch = Sentry.withProfiler(Search) as typeof Search;
 WrappedSearch.displayName = 'Search';
 

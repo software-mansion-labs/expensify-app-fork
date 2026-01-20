@@ -6548,6 +6548,11 @@ const translations = {
         screenShareRequest: 'Expensify is inviting you to a screen share',
     },
     search: {
+        charts: {
+            line: {
+                spendOverTime: 'Spend over time',
+            },
+        },
         resultsAreLimited: 'Search results are limited.',
         viewResults: 'View results',
         resetFilters: 'Reset filters',

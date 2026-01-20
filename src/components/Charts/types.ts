@@ -34,6 +34,37 @@ type PieChartProps = {
     valueUnit?: string;
 };
 
+type LineChartDataPoint = {
+    /** Label displayed in tooltip when hovering over point (e.g., "Jan 2026") */
+    label: string;
+
+    /** Value for this point */
+    total: number;
+
+    /** Query string for navigation when point is clicked (optional) */
+    onClickQuery?: string;
+};
+
+type LineChartProps = {
+    /** Data points to display */
+    data: LineChartDataPoint[];
+
+    /** Chart title (e.g., "Top Categories") */
+    title?: string;
+
+    /** Icon displayed next to the title */
+    titleIcon?: IconAsset;
+
+    /** Whether data is loading */
+    isLoading?: boolean;
+
+    /** Callback when a line is pressed */
+    onPointPress?: (dataPoint: LineChartDataPoint, index: number) => void;
+
+    /** Symbol/unit prefix for Y-axis labels (e.g., '$', '€'). Empty string or undefined shows raw numbers. */
+    yAxisUnit?: string;
+};
+
 type BarChartDataPoint = {
     /** Label displayed under the bar (e.g., "Amazon", "Travel", "Nov 2025") */
     label: string;
@@ -71,4 +102,4 @@ type BarChartProps = {
     useSingleColor?: boolean;
 };
 
-export type {BarChartDataPoint, BarChartProps, PieChartDataPoint, PieChartProps};
+export type {BarChartDataPoint, BarChartProps, LineChartDataPoint, LineChartProps, PieChartDataPoint, PieChartProps};
