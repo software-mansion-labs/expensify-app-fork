@@ -1,13 +1,11 @@
-import type {AVPlaybackStatus} from 'expo-av';
+import type {VideoPlayer} from 'expo-video';
 import type {RefObject} from 'react';
 import type {View} from 'react-native';
-import type {VideoWithOnFullScreenUpdate} from '@components/VideoPlayer/types';
 
 type StatusCallback = (isPlaying: boolean) => void;
 type OriginalParent = View | HTMLDivElement | null;
 type UnloadVideo = () => void;
 type StopVideo = () => void;
-type PlayVideoPromiseRef = RefObject<Promise<AVPlaybackStatus> | undefined>;
 
 type VideoElementData = {
     shouldUseSharedVideoElement: boolean;
@@ -22,7 +20,7 @@ type PlaybackContextValues = {
     originalParent: View | HTMLDivElement | null;
     sharedElement: View | HTMLDivElement | null;
     shareVideoPlayerElements: (
-        ref: VideoWithOnFullScreenUpdate | null,
+        player: VideoPlayer | null,
         parent: View | HTMLDivElement | null,
         child: View | HTMLDivElement | null,
         isUploading: boolean,
@@ -38,8 +36,8 @@ type PlaybackContextVideoRefs = {
     stop: () => void;
     isPlaying: (statusCallback: StatusCallback) => void;
     resumeTryNumberRef: RefObject<number>;
-    ref: RefObject<VideoWithOnFullScreenUpdate | null>;
-    updateRef: (ref: VideoWithOnFullScreenUpdate | null) => void;
+    ref: RefObject<VideoPlayer | null>;
+    updateRef: (player: VideoPlayer | null) => void;
 };
 
 type PlaybackContext = PlaybackContextValues & {
@@ -52,4 +50,4 @@ type PlaybackContext = PlaybackContextValues & {
     currentVideoPlayerRef: PlaybackContextVideoRefs['ref'];
 };
 
-export type {StatusCallback, PlaybackContextValues, OriginalParent, UnloadVideo, StopVideo, PlayVideoPromiseRef, PlaybackContextVideoRefs, PlaybackContext};
+export type {StatusCallback, PlaybackContextValues, OriginalParent, UnloadVideo, StopVideo, PlaybackContextVideoRefs, PlaybackContext};

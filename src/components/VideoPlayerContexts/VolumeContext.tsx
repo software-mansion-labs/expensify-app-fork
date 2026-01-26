@@ -14,10 +14,12 @@ function VolumeContextProvider({children}: ChildrenProps) {
 
     const updateVolume = useCallback(
         (newVolume: number) => {
-            if (!currentVideoPlayerRef.current) {
+            const player = currentVideoPlayerRef.current;
+            if (!player) {
                 return;
             }
-            currentVideoPlayerRef.current.setStatusAsync({volume: newVolume, isMuted: newVolume === 0});
+            player.volume = newVolume;
+            player.muted = newVolume === 0;
 
             volume.set(newVolume);
         },
@@ -25,7 +27,7 @@ function VolumeContextProvider({children}: ChildrenProps) {
     );
 
     // This function ensures mute and unmute functionality. Overwriting lastNonZeroValue
-    // only in the case of mute guarantees that a pan gesture reducing the volume to zero won’t cause
+    // only in the case of mute guarantees that a pan gesture reducing the volume to zero won't cause
     // us to lose this value. As a result, unmute restores the last non-zero value.
     const toggleMute = useCallback(() => {
         if (volume.get() !== 0) {

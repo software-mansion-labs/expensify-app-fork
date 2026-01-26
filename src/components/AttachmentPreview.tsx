@@ -1,5 +1,5 @@
 import {Str} from 'expensify-common';
-import {ResizeMode, Video} from 'expo-av';
+import {useVideoPlayer, VideoView} from 'expo-video';
 import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -37,7 +37,33 @@ function AttachmentPreview({source, aspectRatio = 1, onPress, onLoadError}: Atta
         return cleanFileName(rawFileName);
     }, [source]);
 
-    if (typeof source === 'string' && Str.isVideo(source)) {
+    const isVideo = typeof source === 'string' && Str.isVideo(source);
+
+    // Create video player for video preview
+    const player = useVideoPlayer(isVideo ? source : '', (p) => {
+        // eslint-disable-next-line no-param-reassign
+        p.loop = false;
+        // eslint-disable-next-line no-param-reassign
+        p.muted = true;
+    });
+
+    // Listen for errors on the player
+    React.useEffect(() => {
+        if (!isVideo || !player) {
+            return;
+        }
+
+        const handleError = () => {
+            onLoadError?.();
+        };
+
+        // Check player status for errors
+        if (player.status === 'error') {
+            handleError();
+        }
+    }, [isVideo, player, onLoadError]);
+
+    if (isVideo) {
         return (
             <PressableWithFeedback
                 accessibilityRole="button"
@@ -46,16 +72,11 @@ function AttachmentPreview({source, aspectRatio = 1, onPress, onLoadError}: Atta
                 accessible
                 accessibilityLabel="Attachment Thumbnail"
             >
-                <Video
+                <VideoView
+                    player={player}
                     style={[styles.w100, styles.h100]}
-                    source={{
-                        uri: source,
-                    }}
-                    shouldPlay={false}
-                    useNativeControls={false}
-                    resizeMode={ResizeMode.CONTAIN}
-                    isLooping={false}
-                    onError={onLoadError}
+                    contentFit="contain"
+                    nativeControls={false}
                 />
                 <View style={[styles.h100, styles.w100, styles.pAbsolute, styles.justifyContentCenter, styles.alignItemsCenter]}>
                     <View style={styles.videoThumbnailPlayButton}>

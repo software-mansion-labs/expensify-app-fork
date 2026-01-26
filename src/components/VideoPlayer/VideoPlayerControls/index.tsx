@@ -1,5 +1,4 @@
-import type {Video} from 'expo-av';
-import type {RefObject} from 'react';
+import type {VideoPlayer} from 'expo-video';
 import React, {useCallback, useMemo, useState} from 'react';
 import type {GestureResponderEvent, LayoutChangeEvent, StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
@@ -19,17 +18,17 @@ import ProgressBar from './ProgressBar';
 import VolumeButton from './VolumeButton';
 
 type VideoPlayerControlsProps = {
-    /** Duration of a video. */
+    /** Duration of a video in milliseconds. */
     duration: number;
 
-    /** Position of progress pointer. */
+    /** Position of progress pointer in milliseconds. */
     position: number;
 
     /** Url of a video. */
     url: string;
 
-    /** Ref for video player. */
-    videoPlayerRef: RefObject<Video | null>;
+    /** Video player instance. */
+    videoPlayerRef: VideoPlayer;
 
     /** Is video playing. */
     isPlaying: boolean;
@@ -79,12 +78,15 @@ function VideoPlayerControls({
     const enterFullScreenMode = useCallback(() => {
         isFullScreenRef.current = true;
         updateCurrentURLAndReportID(url, reportID);
-        videoPlayerRef.current?.presentFullscreenPlayer();
+        // The presentFullscreenPlayer method is available on the VideoPlayer but may not be in TS types yet
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (videoPlayerRef as any).presentFullscreenPlayer?.();
     }, [isFullScreenRef, reportID, updateCurrentURLAndReportID, url, videoPlayerRef]);
 
     const seekPosition = useCallback(
-        (newPosition: number) => {
-            videoPlayerRef.current?.setStatusAsync({positionMillis: newPosition});
+        (newPositionMs: number) => {
+            // Convert milliseconds to seconds for expo-video
+            videoPlayerRef.currentTime = newPositionMs / 1000;
         },
         [videoPlayerRef],
     );

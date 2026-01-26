@@ -1,6 +1,6 @@
+import type {VideoPlayer} from 'expo-video';
 import React, {useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import type {View} from 'react-native';
-import type {VideoWithOnFullScreenUpdate} from '@components/VideoPlayer/types';
 import {getReportOrDraftReport, isChatThread} from '@libs/ReportUtils';
 import Navigation from '@navigation/Navigation';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
@@ -64,7 +64,7 @@ function PlaybackContextProvider({children}: ChildrenProps) {
 
     const shareVideoPlayerElements: PlaybackContextValues['shareVideoPlayerElements'] = useCallback(
         (
-            ref: VideoWithOnFullScreenUpdate | null,
+            player: VideoPlayer | null,
             parent: View | HTMLDivElement | null,
             child: View | HTMLDivElement | null,
             shouldNotAutoPlay: boolean,
@@ -74,7 +74,7 @@ function PlaybackContextProvider({children}: ChildrenProps) {
                 return;
             }
 
-            video.updateRef(ref);
+            video.updateRef(player);
             setOriginalParent(parent);
             setSharedElement(child);
             // Prevents autoplay when uploading the attachment
