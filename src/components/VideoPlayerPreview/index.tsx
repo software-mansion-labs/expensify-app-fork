@@ -1,5 +1,4 @@
 import {useNavigation} from '@react-navigation/native';
-import type {VideoReadyForDisplayEvent} from 'expo-av';
 import React, {useEffect, useState} from 'react';
 import type {GestureResponderEvent} from 'react-native';
 import {View} from 'react-native';
@@ -94,9 +93,9 @@ function VideoPlayerPreview({videoUrl, thumbnailUrl, reportID, fileName, videoDi
     const doesUserRemainOnFirstRenderRoute = useCheckIfRouteHasRemainedUnchanged(videoUrl);
 
     // `onVideoLoaded` is passed to VideoPlayerPreview's `Video` element which is displayed only on web.
-    // VideoReadyForDisplayEvent type is lacking srcElement, that's why it's added here
-    const onVideoLoaded = (event: VideoReadyForDisplayEvent & {srcElement: HTMLVideoElement}) => {
-        setMeasuredDimensions({width: event.srcElement.videoWidth, height: event.srcElement.videoHeight});
+    // In expo-video, we already get dimensions from the video metadata loaded above
+    const onVideoLoaded = () => {
+        // Dimensions are handled by the useEffect above that loads video metadata
     };
 
     const handleOnPress = () => {
@@ -131,7 +130,7 @@ function VideoPlayerPreview({videoUrl, thumbnailUrl, reportID, fileName, videoDi
                 <View style={styles.flex1}>
                     <VideoPlayer
                         url={videoUrl}
-                        onVideoLoaded={onVideoLoaded as (event: VideoReadyForDisplayEvent) => void}
+                        onVideoLoaded={onVideoLoaded}
                         videoDuration={videoDuration}
                         shouldUseSmallVideoControls
                         style={[styles.w100, styles.h100]}

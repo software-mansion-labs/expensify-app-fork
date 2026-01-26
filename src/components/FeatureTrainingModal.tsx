@@ -1,4 +1,3 @@
-import type {VideoReadyForDisplayEvent} from 'expo-av';
 import type {ImageContentFit} from 'expo-image';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Image, InteractionManager, View} from 'react-native';
@@ -40,13 +39,6 @@ import VideoPlayer from './VideoPlayer';
 const VIDEO_ASPECT_RATIO = 1280 / 960;
 
 const MODAL_PADDING = variables.spacing2;
-
-type VideoLoadedEventType = {
-    srcElement: {
-        videoWidth: number;
-        videoHeight: number;
-    };
-};
 
 type VideoStatus = 'video' | 'animation';
 
@@ -243,18 +235,6 @@ function FeatureTrainingModal({
         }
     }, [isOffline, isVideoStatusLocked]);
 
-    const setAspectRatio = (event: VideoReadyForDisplayEvent | VideoLoadedEventType | undefined) => {
-        if (!event) {
-            return;
-        }
-
-        if ('naturalSize' in event) {
-            setIllustrationAspectRatio(event.naturalSize.width / event.naturalSize.height);
-        } else {
-            setIllustrationAspectRatio(event.srcElement.videoWidth / event.srcElement.videoHeight);
-        }
-    };
-
     const renderIllustration = useCallback(() => {
         const aspectRatio = illustrationAspectRatio || VIDEO_ASPECT_RATIO;
 
@@ -292,7 +272,6 @@ function FeatureTrainingModal({
                         <VideoPlayer
                             url={videoURL}
                             videoPlayerStyle={[styles.onboardingVideoPlayer, {aspectRatio}]}
-                            onVideoLoaded={setAspectRatio}
                             controlsStatus={CONST.VIDEO_PLAYER.CONTROLS_STATUS.HIDE}
                             shouldUseControlsBottomMargin={false}
                             shouldPlay
