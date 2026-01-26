@@ -1,11 +1,11 @@
-import React, {useCallback, useMemo, useState} from 'react';
-import type {LayoutChangeEvent} from 'react-native';
-import {View} from 'react-native';
-import Animated, {useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
-import {scheduleOnRN} from 'react-native-worklets';
-import {Gesture, GestureDetector} from 'react-native-gesture-handler';
-import {Pie, PolarChart} from 'victory-native';
-import type {Color} from '@shopify/react-native-skia';
+import React, { useCallback, useMemo, useState } from 'react';
+import type { LayoutChangeEvent } from 'react-native';
+import { View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Pie, PolarChart } from 'victory-native';
+import type { Color } from '@shopify/react-native-skia';
 import ChartTooltip from '@components/Charts/ChartTooltip';
 import ActivityIndicator from '@components/ActivityIndicator';
 import {
@@ -16,11 +16,12 @@ import {
     PIE_CHART_START_ANGLE,
     TOOLTIP_BAR_GAP,
 } from '@components/Charts/constants';
-import type {PieChartDataPoint, PieChartProps} from '@components/Charts/types';
+import type { PieChartDataPoint, PieChartProps } from '@components/Charts/types';
 import Icon from '@components/Icon';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
+import { useChartColors } from '@components/Charts/hooks';
 
 type ProcessedSlice = {
     label: string;
@@ -38,7 +39,7 @@ type ProcessedSlice = {
  * - Slices below minPercentage are aggregated into "Other"
  * - If more than maxSlices, smallest are aggregated into "Other"
  */
-function processDataIntoSlices(data: PieChartDataPoint[], startAngle: number): ProcessedSlice[] {
+function processDataIntoSlices(data: PieChartDataPoint[], startAngle: number, getChartColor: (index: number) => string | undefined): ProcessedSlice[] {
     if (data.length === 0) {
         return [];
     }
@@ -89,7 +90,7 @@ function processDataIntoSlices(data: PieChartDataPoint[], startAngle: number): P
             continue;
         }
         const sweepAngle = (slice.value / total) * 360;
-        const color = CHART_COLORS.at(index % CHART_COLORS.length);
+        const color = getChartColor(index);
         finalSlices.push({
             label: slice.label,
             value: slice.value,
@@ -108,7 +109,7 @@ function processDataIntoSlices(data: PieChartDataPoint[], startAngle: number): P
         const otherValue = smallSlices.reduce((sum, s) => sum + s.value, 0);
         const otherPercentage = (otherValue / total) * 100;
         const sweepAngle = (otherValue / total) * 360;
-        const otherColor = CHART_COLORS.at(finalSlices.length % CHART_COLORS.length);
+        const otherColor = getChartColor(finalSlices.length % CHART_COLORS.length);
         finalSlices.push({
             label: PIE_CHART_OTHER_LABEL,
             value: otherValue,
@@ -192,10 +193,11 @@ function findSliceAtPosition(
     return -1;
 }
 
-function PieChartContent({data, title, titleIcon, isLoading, valueUnit, onSlicePress}: PieChartProps) {
+function PieChartContent({ data, title, titleIcon, isLoading, valueUnit, onSlicePress }: PieChartProps) {
     const styles = useThemeStyles();
-    const [canvasSize, setCanvasSize] = useState({width: 0, height: 0});
+    const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
     const [activeSliceIndex, setActiveSliceIndex] = useState(-1);
+    const { getChartColor } = useChartColors();
 
     // Shared values for hover state
     const isHovering = useSharedValue(false);
@@ -203,12 +205,12 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, onSliceP
     const cursorY = useSharedValue(0);
 
     const handleLayout = useCallback((event: LayoutChangeEvent) => {
-        const {width, height} = event.nativeEvent.layout;
-        setCanvasSize({width, height});
+        const { width, height } = event.nativeEvent.layout;
+        setCanvasSize({ width, height });
     }, []);
 
     // Process data into slices with aggregation
-    const processedSlices = useMemo(() => processDataIntoSlices(data, PIE_CHART_START_ANGLE), [data]);
+    const processedSlices = useMemo(() => processDataIntoSlices(data, PIE_CHART_START_ANGLE, getChartColor), [data, getChartColor]);
 
     // Calculate pie geometry
     const pieGeometry = useMemo(() => {
@@ -216,7 +218,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, onSliceP
         const radius = size / 2;
         const centerX = canvasSize.width / 2;
         const centerY = canvasSize.height / 2;
-        return {radius, centerX, centerY};
+        return { radius, centerX, centerY };
     }, [canvasSize.width, canvasSize.height]);
 
     // Transform data for Victory Native PolarChart
@@ -231,7 +233,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, onSliceP
     // Handle hover state updates
     const updateActiveSlice = useCallback(
         (x: number, y: number) => {
-            const {radius, centerX, centerY} = pieGeometry;
+            const { radius, centerX, centerY } = pieGeometry;
             const sliceIndex = findSliceAtPosition(x, y, centerX, centerY, radius, 0, processedSlices);
             setActiveSliceIndex(sliceIndex);
         },
@@ -292,7 +294,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, onSliceP
             Gesture.Tap().onEnd((e) => {
                 'worklet';
 
-                const {radius, centerX, centerY} = pieGeometry;
+                const { radius, centerX, centerY } = pieGeometry;
                 const sliceIndex = findSliceAtPosition(e.x, e.y, centerX, centerY, radius, 0, processedSlices);
 
                 if (sliceIndex >= 0) {
@@ -329,7 +331,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, onSliceP
             position: 'absolute',
             left: cursorX.value,
             top: cursorY.value - TOOLTIP_BAR_GAP,
-            transform: [{translateX: '-50%'}, {translateY: '-100%'}],
+            transform: [{ translateX: '-50%' }, { translateY: '-100%' }],
             opacity: isHovering.value ? 1 : 0,
             pointerEvents: 'none',
         };

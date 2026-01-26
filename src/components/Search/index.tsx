@@ -92,7 +92,6 @@ import { useSearchContext } from './SearchContext';
 import SearchList from './SearchList';
 import { SearchScopeProvider } from './SearchScopeProvider';
 import type { SearchColumnType, SearchParams, SearchQueryJSON, SelectedTransactionInfo, SelectedTransactions, SortOrder } from './types';
-import styles from '@styles/index';
 
 // Test data with long labels
 const TEST_LONG_LABELS_5_BARS: BarChartDataPoint[] = [
@@ -127,9 +126,9 @@ const TEST_VERY_LONG_LABELS_8_BARS: BarChartDataPoint[] = [
     { label: 'Home Utilities Including Electric Water and Gas', total: 1500, currency: 'USD' },
     { label: 'Weekend Entertainment and Family Recreation Activities', total: 600, currency: 'USD' },
     { label: 'Annual Healthcare Insurance and Medical Copays', total: 400, currency: 'USD' },
-    { label: 'Professional Development and Online Course Subscriptions', total: 350, currency: 'USD' },
     { label: 'Children Education and School Related Expenses', total: 500, currency: 'USD' },
     { label: 'Home Improvement and Maintenance Service Costs', total: 450, currency: 'USD' },
+    { label: 'Professional Development and Online Course Subscriptions', total: 350, currency: 'USD' },
 ];
 
 const TEST_MIXED_LABELS_10_BARS: BarChartDataPoint[] = [
@@ -220,9 +219,77 @@ function TestLineChartWithSlider({
             <LineChart
                 data={mainChartData}
                 title={mainChartTitle}
+                onPointPress={(dataPoint) => {
+                    if (!dataPoint.onClickQuery) {
+                        return;
+                    }
+                    Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({ query: dataPoint.onClickQuery }));
+                }}
                 isLoading={isLoading}
                 yAxisUnit="$"
             />
+            <View style={{ marginTop: 32 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 16 }}>
+                    <Button
+                        text="-"
+                        onPress={() => setPointCount((prev) => Math.max(1, prev - 1))}
+                        isDisabled={pointCount <= 1}
+                    />
+                    <Text style={{ fontWeight: '600', minWidth: 120, textAlign: 'center' }}>
+                        Test: {pointCount} point{pointCount > 1 ? 's' : ''}
+                    </Text>
+                    <Button
+                        text="+"
+                        onPress={() => setPointCount((prev) => Math.min(70, prev + 1))}
+                        isDisabled={pointCount >= 70}
+                    />
+                </View>
+                <LineChart
+                    data={testData}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            {/* Test charts with long labels */}
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 5: Long labels (5 points)</Text>
+                <LineChart
+                    data={TEST_LONG_LABELS_5_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 6: Long labels (15 points)</Text>
+                <LineChart
+                    data={TEST_LONG_LABELS_15_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 7: Very long labels (8 points)</Text>
+                <LineChart
+                    data={TEST_VERY_LONG_LABELS_8_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 8: Mixed labels (10 points)</Text>
+                <LineChart
+                    data={TEST_MIXED_LABELS_10_BARS}
+                    yAxisUnit="$"
+                />
+            </View>
+
+            <View style={{ marginTop: 32 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 9: One long label, rest short (10 points)</Text>
+                <LineChart
+                    data={TEST_ONE_LONG_LABEL_10_BARS.slice(0, 4)}
+                    yAxisUnit="$"
+                />
+            </View>
         </ScrollView>
     );
 }
@@ -257,6 +324,7 @@ function TestBarChartWithSlider({
                 isLoading={isLoading}
                 yAxisUnit="$"
                 onBarPress={(dataPoint) => {
+                    console.log('onPointPress', dataPoint);
                     if (!dataPoint.onClickQuery) {
                         return;
                     }
@@ -321,7 +389,7 @@ function TestBarChartWithSlider({
             <View style={{ marginTop: 32 }}>
                 <Text style={{ fontWeight: '600', marginBottom: 16 }}>TEST 9: One long label, rest short (10 bars)</Text>
                 <BarChart
-                    data={TEST_ONE_LONG_LABEL_10_BARS}
+                    data={TEST_ONE_LONG_LABEL_10_BARS.slice(0, 4)}
                     yAxisUnit="$"
                 />
             </View>
@@ -1287,7 +1355,7 @@ function Search({
 
                 return {
                     label,
-                    total: (item.total ?? 0) / 100,
+                    total: (item.total ?? 0) / 100 * 10,
                     currency: item.currency ?? CONST.CURRENCY.USD,
                 };
             });
@@ -1377,7 +1445,7 @@ function Search({
                 {isLineChartView && (
                     <TestLineChartWithSlider
                         mainChartData={chartData}
-                        mainChartTitle="Top categories"
+                        mainChartTitle={undefined}
                         isLoading={searchResults?.search?.isLoading}
                     />
                 )}

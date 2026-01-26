@@ -5653,7 +5653,7 @@ const staticStyles = (theme: ThemeColors) =>
             color: theme.text,
         },
         barChartChartContainer: {
-            height: 250,
+            minHeight: 250,
         },
         barChartLegend: {
             flexDirection: 'row',
@@ -5689,8 +5689,14 @@ const staticStyles = (theme: ThemeColors) =>
             gap: variables.componentBorderRadius,
             marginBottom: variables.sectionMargin,
         },
+        lineChartTitle: {
+            ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+            fontSize: variables.fontSizeNormal,
+            lineHeight: variables.fontSizeNormalHeight,
+            color: theme.text,
+        },
         lineChartChartContainer: {
-            height: 250,
+            minHeight: 250,
         },
 
 

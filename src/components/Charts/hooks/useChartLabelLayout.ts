@@ -12,7 +12,7 @@ import {
 
 type ChartDataPoint = {
     label: string;
-    [key: string]: any;
+    [key: string]: unknown; // todo find something better than unknown / any
 }
 
 type LabelLayoutConfig = {
@@ -22,8 +22,10 @@ type LabelLayoutConfig = {
     containerHeight: number;
 }
 
+
 /**
  * Measure the width of a text string using the font's glyph widths.
+ * Uses getGlyphWidths as measureText is not implemented on React Native Web.
  */
 function measureTextWidth(text: string, font: SkFont): number {
     const glyphIDs = font.getGlyphIDs(text);
@@ -52,7 +54,7 @@ function useChartLabelLayout({
 
         // Measure original labels
         const labelWidths = data.map((p) => measureTextWidth(p.label, font));
-        const maxLabelWidth = Math.max(...labelWidths);
+        const maxLabelLength = Math.max(...labelWidths);
 
         // Helper to truncate a label to fit a max pixel width
         const truncateToWidth = (label: string, labelWidth: number, maxWidth: number): string => {
@@ -70,9 +72,9 @@ function useChartLabelLayout({
 
         // === DETERMINE ROTATION (based on WIDTH constraint, monotonic: 0° → 45° → 90°) ===
         let rotation = 0;
-        if (maxLabelWidth > availableWidthPerBar) {
+        if (maxLabelLength > availableWidthPerBar) {
             // Labels don't fit at 0°, try 45°
-            const effectiveWidthAt45 = maxLabelWidth * SIN_45_DEGREES;
+            const effectiveWidthAt45 = maxLabelLength * SIN_45_DEGREES;
             if (effectiveWidthAt45 <= availableWidthPerBar) {
                 rotation = 45;
             } else {
@@ -135,7 +137,7 @@ function useChartLabelLayout({
             rotationValue = X_AXIS_LABEL_ROTATION_90;
         }
 
-        return { labelRotation: rotationValue, labelSkipInterval: skipInterval, truncatedLabels: finalLabels };
+        return { labelRotation: rotationValue, labelSkipInterval: skipInterval, truncatedLabels: finalLabels, maxLabelLength };
 
     }, [font, chartWidth, containerHeight, data]);
 };

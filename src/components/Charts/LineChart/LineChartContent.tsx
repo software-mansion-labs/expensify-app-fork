@@ -2,56 +2,34 @@ import { useFont } from '@shopify/react-native-skia';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { View } from 'react-native';
-import { CartesianChart, Line, Scatter, useChartPressState } from 'victory-native';
+import { CartesianChart, Line, Scatter } from 'victory-native';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import colors from '@styles/theme/colors';
 import variables from '@styles/variables';
 import type { LineChartProps } from '@components/Charts/types';
-import { useChartLabelLayout } from '@components/Charts/hooks';
-import { CHART_PADDING, Y_AXIS_DOMAIN, Y_AXIS_LABEL_OFFSET, Y_AXIS_TICK_COUNT } from '@components/Charts/constants';
-
-const data1 = [
-    // Generated points
-    ...Array.from({ length: 24 }, (_, i) => {
-        const x = i;
-        const y = 30 + 22 * Math.sin(x / 5) + Math.random() * 10; // Simulated variation
-        return { x, y: Math.round(y * 34) };
-    }),
-];
-
-
-const ticks = [0, 500, 1000, 1500, 2000]
+import type { HitTestArgs } from '@components/Charts/hooks';
+import { useChartInteractions, useChartLabelFormats, useChartLabelLayout } from '@components/Charts/hooks';
+import { CHART_PADDING, DEFAULT_SINGLE_BAR_COLOR_INDEX, CHART_COLORS, EXPENSIFY_NEUE_FONT_URL, Y_AXIS_DOMAIN, Y_AXIS_LABEL_OFFSET, Y_AXIS_TICK_COUNT, DOT_INNER_RADIUS, DOT_OUTER_RADIUS, LINE_CHART_FRAME } from '@components/Charts/constants';
+import Animated, { } from 'react-native-reanimated';
+import ChartTooltip from '@components/Charts/ChartTooltip';
+import ActivityIndicator from '@components/ActivityIndicator';
 
 
 function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit }: LineChartProps) {
-
+    const theme = useTheme();
+    const styles = useThemeStyles();
+    const font = useFont(EXPENSIFY_NEUE_FONT_URL, variables.iconSizeExtraSmall);
     const [chartWidth, setChartWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
     const { translate } = useLocalize();
 
-    const { state, isActive } = useChartPressState({ x: 0, y: { y: 0 } });
+    const defaultDotColor = CHART_COLORS.at(DEFAULT_SINGLE_BAR_COLOR_INDEX);
 
-    const handleLayout = (event: LayoutChangeEvent) => {
-        const { width, height } = event.nativeEvent.layout;
-        setChartWidth(width);
-        setContainerHeight(height);
-    };
-    /** Expensify Neue font path for web builds */
-    const EXPENSIFY_NEUE_FONT_URL = '/fonts/ExpensifyNeue-Regular.woff';
-
-    const styles = useThemeStyles();
-    const theme = useTheme();
-    const font = useFont(EXPENSIFY_NEUE_FONT_URL, 13);
-    const CHART_COLORS = [colors.yellow400, colors.tangerine400, colors.pink400, colors.green400, colors.ice400];
-    const formatYaxisLabel = (value: number) => {
-        return yAxisUnit ? `${yAxisUnit} ${value}` : value.toString();
-    };
-
+    // prepare data for display
     const chartData = useMemo(() => {
         return data.map((point, index) => ({
             x: index,
@@ -59,31 +37,89 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
         }));
     }, [data]);
 
-    const { labelRotation, labelSkipInterval, truncatedLabels } = useChartLabelLayout({
+    const handlePointPress = useCallback((index: number) => {
+        if (index < 0 || index >= data.length) {
+            return;
+        }
+        const dataPoint = data.at(index);
+        if (dataPoint && onPointPress) {
+            onPointPress(dataPoint, index);
+        }
+    }, [data, onPointPress]);
+
+    const handleLayout = useCallback((event: LayoutChangeEvent) => {
+        const { width, height } = event.nativeEvent.layout;
+        setChartWidth(width);
+        setContainerHeight(height);
+    }, []);
+
+    const { labelRotation, labelSkipInterval, truncatedLabels, maxLabelLength } = useChartLabelLayout({
         data,
         font,
         chartWidth,
         containerHeight,
     });
 
-    const formatYAxisLabel = useCallback((value: number) => {
-        const formatted = value.toLocaleString();
-        return yAxisUnit ? `${yAxisUnit} ${formatted}` : formatted;
-    }, [yAxisUnit]);
+    const domainPadding = useMemo(() => {
+        return { top: 20, bottom: 20, left: 20, right: (labelRotation === -90 ? 0 : (maxLabelLength ?? 0) / 2) + 20 };
+    }, [labelRotation, maxLabelLength]);
 
-    const formatXAxisLabel = useCallback((value: number) => {
-        console.log('value', value, 'labelSkipInterval', labelSkipInterval, 'truncatedLabels', truncatedLabels);
-        const index = Math.round(value);
-        if (index % labelSkipInterval !== 0) {
-            return '';
+    const { formatXAxisLabel, formatYAxisLabel } = useChartLabelFormats({
+        data,
+        yAxisUnit,
+        labelSkipInterval,
+        labelRotation,
+        truncatedLabels,
+    });
+
+    const checkIsOverDot = useCallback((args: HitTestArgs) => {
+        'worklet';
+
+        const targetX = args.targetX;
+        const targetY = args.targetY;
+        return (args.cursorX - targetX) ** 2 + (args.cursorY - targetY) ** 2 <= DOT_INNER_RADIUS ** 2;
+    }, []);
+
+    const {
+        actionsRef,
+        customGestures,
+        activeDataIndex,
+        isTooltipActive,
+        tooltipStyle,
+    } = useChartInteractions({
+        handlePress: handlePointPress,
+        checkIsOver: checkIsOverDot,
+    });
+
+    const tooltipData = useMemo(() => {
+        if (activeDataIndex < 0 || activeDataIndex >= data.length) {
+            return null;
         }
-        console.log('truncatedLabels.at(index)', truncatedLabels.at(index));
-        return truncatedLabels.at(index) ?? '';
-    }, [truncatedLabels, labelSkipInterval]);
+        const dataPoint = data.at(activeDataIndex);
+        if (!dataPoint) {
+            return null;
+        }
+        return {
+            label: dataPoint.label,
+            amount: yAxisUnit ? `${yAxisUnit} ${dataPoint.total.toLocaleString()}` : dataPoint.total.toLocaleString(),
+        };
+    }, [activeDataIndex, data, yAxisUnit]);
 
+    const dynamicChartStyle = useMemo(() => ({
+        height: 250 + (maxLabelLength ?? 0) + 100,
+    }), [maxLabelLength]);
 
-    console.log('chartData', chartData);
-    // todo add ticks values computation based on the data
+    if (isLoading || !font) {
+        return (
+            <View style={[styles.lineChartContainer, styles.highlightBG, styles.justifyContentCenter, styles.alignItemsCenter]}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    if (data.length === 0) {
+        return null;
+    }
 
     return (
         <View
@@ -96,10 +132,10 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                     height={variables.iconSizeNormal}
                     fill={theme.icon}
                 />
-                <Text style={[styles.labelStrong, { fontSize: variables.fontSizeNormal, alignSelf: 'center' }]}>{translate('search.charts.line.spendOverTime')}</Text>
+                <Text style={[styles.textLabelSupporting, styles.lineChartTitle]}>{title ?? translate('search.charts.line.spendOverTime')}</Text>
             </View>
             <View
-                style={[styles.lineChartChartContainer]}
+                style={[styles.lineChartChartContainer, labelRotation === -90 ? dynamicChartStyle : undefined]}
                 onLayout={handleLayout}
             >
                 {chartWidth > 0 && (
@@ -108,7 +144,7 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                         padding={CHART_PADDING}
                         data={chartData}
                         yKeys={['y']}
-                        domainPadding={20}
+                        domainPadding={domainPadding}
                         xAxis={{
                             font,
                             tickCount: data.length,
@@ -122,15 +158,16 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                                 font,
                                 labelColor: theme.textSupporting,
                                 formatYLabel: formatYAxisLabel,
-                                // tickCount: Y_AXIS_TICK_COUNT,
-                                tickValues: ticks,
+                                tickCount: Y_AXIS_TICK_COUNT,
                                 lineWidth: 0,
                                 lineColor: theme.border,
                                 labelOffset: Y_AXIS_LABEL_OFFSET,
                                 domain: Y_AXIS_DOMAIN,
                             },
                         ]}
-                        frame={{ lineWidth: 1 }}
+                        frame={LINE_CHART_FRAME}
+                        actionsRef={actionsRef}
+                        customGestures={customGestures}
                     >
                         {({ points }) => (
                             <>
@@ -140,18 +177,17 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                                     strokeWidth={2}
                                 />
                                 {points.y.map((point) => {
-                                    const color = CHART_COLORS.at(4);
                                     return (
                                         <>
                                             <Scatter
                                                 points={[point]}
                                                 color={theme.textBackground}
-                                                radius={8}
+                                                radius={DOT_OUTER_RADIUS}
                                             />
                                             <Scatter
                                                 points={[point]}
-                                                color={color}
-                                                radius={6}
+                                                color={defaultDotColor}
+                                                radius={DOT_INNER_RADIUS}
                                             />
                                         </>
                                     );
@@ -160,8 +196,16 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                         )}
                     </CartesianChart>
                 )}
+                {isTooltipActive && !!tooltipData && (
+                    <Animated.View style={tooltipStyle}>
+                        <ChartTooltip
+                            label={tooltipData.label}
+                            amount={tooltipData.amount}
+                        />
+                    </Animated.View>
+                )}
             </View>
-        </View>
+        </View >
     );
 }
 

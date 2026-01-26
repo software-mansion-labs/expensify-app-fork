@@ -1,7 +1,7 @@
-import {useMemo, useState} from 'react';
-import type {SharedValue} from 'react-native-reanimated';
-import {makeMutable, useAnimatedReaction} from 'react-native-reanimated';
-import {scheduleOnRN} from 'react-native-worklets';
+import { useMemo, useState } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
+import { makeMutable, useAnimatedReaction } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 /**
  * Input field type - matches Victory Native's InputFieldType
@@ -50,10 +50,10 @@ type ChartInteractionState<Init extends ChartInteractionStateInit> = {
  * Hook to track whether interaction is active as React state
  */
 function useIsInteractionActive<Init extends ChartInteractionStateInit>(state: ChartInteractionState<Init>): boolean {
-    const [isInteractionActive, setIsInteractionActive] = useState(() => state.isActive.value);
+    const [isInteractionActive, setIsInteractionActive] = useState(() => state.isActive.get());
 
     useAnimatedReaction(
-        () => state.isActive.value,
+        () => state.isActive.get(),
         (val, oldVal) => {
             if (val === oldVal) {
                 return;
@@ -82,11 +82,11 @@ function useIsInteractionActive<Init extends ChartInteractionStateInit>(state: C
  * // Use with customGestures and actionsRef
  * const hoverGesture = Gesture.Hover()
  *   .onUpdate((e) => {
- *     state.isActive.value = true;
+ *     state.isActive.set(true);
  *     actionsRef.current?.handleTouch(state, e.x, e.y);
  *   })
  *   .onEnd(() => {
- *     state.isActive.value = false;
+ *     state.isActive.set(false);
  *   });
  * ```
  */
@@ -97,7 +97,7 @@ function useChartInteractionState<Init extends ChartInteractionStateInit>(initia
     const keys = Object.keys(initialValues.y).join(',');
 
     const state = useMemo(() => {
-        const yState = {} as Record<keyof Init['y'], {value: SharedValue<number>; position: SharedValue<number>}>;
+        const yState = {} as Record<keyof Init['y'], { value: SharedValue<number>; position: SharedValue<number> }>;
 
         for (const [key, initVal] of Object.entries(initialValues.y)) {
             yState[key as keyof Init['y']] = {
@@ -125,8 +125,8 @@ function useChartInteractionState<Init extends ChartInteractionStateInit>(initia
 
     const isActive = useIsInteractionActive(state);
 
-    return {state, isActive};
+    return { state, isActive };
 }
 
-export {useChartInteractionState};
-export type {ChartInteractionState, ChartInteractionStateInit};
+export { useChartInteractionState };
+export type { ChartInteractionState, ChartInteractionStateInit };
