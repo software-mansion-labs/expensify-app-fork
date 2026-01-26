@@ -250,7 +250,7 @@ function RoomInvitePage({
             !inviteOptions.userToInvite &&
             excludedUsers[parsePhoneNumber(appendCountryCode(searchValue, countryCode)).possible ? addSMSDomainIfPhoneNumber(appendCountryCode(searchValue, countryCode)) : searchValue]
         ) {
-            return translate('messages.userIsAlreadyMember', {login: searchValue, name: reportName});
+            return translate('messages.userIsAlreadyMember', searchValue, reportName);
         }
         return getHeaderMessage((inviteOptions.personalDetails ?? []).length !== 0, !!inviteOptions.userToInvite, debouncedSearchTerm, countryCode);
     }, [debouncedSearchTerm, inviteOptions.userToInvite, inviteOptions.personalDetails, excludedUsers, countryCode, translate, reportName]);

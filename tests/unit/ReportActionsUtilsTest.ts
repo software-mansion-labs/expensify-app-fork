@@ -1548,11 +1548,12 @@ describe('ReportActionsUtils', () => {
                 newValue: customFieldNewValue,
                 previousValue: customFieldOldValue,
             });
-            const expectedRoleMessage = translateLocal('report.actions.type.updateRole', {
-                email: formattedEmail,
-                newRole: translateLocal('workspace.common.roleName', {role: newRole}).toLowerCase(),
-                currentRole: translateLocal('workspace.common.roleName', {role: previousRole}).toLowerCase(),
-            });
+            const expectedRoleMessage = translateLocal(
+                'report.actions.type.updateRole',
+                formattedEmail,
+                translateLocal('workspace.common.roleName', {role: newRole}).toLowerCase(),
+                translateLocal('workspace.common.roleName', {role: previousRole}).toLowerCase(),
+            );
 
             const actual = ReportActionsUtils.getPolicyChangeLogUpdateEmployee(translateLocal, action);
             expect(actual).toBe(`${expectedCustomFieldMessage}, ${expectedRoleMessage}`);

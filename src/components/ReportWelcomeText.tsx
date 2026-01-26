@@ -137,7 +137,7 @@ function ReportWelcomeText({report, policy}: ReportWelcomeTextProps) {
                 {isSelfDM && (
                     <Text>
                         <Text>{welcomeMessage.messageText}</Text>
-                        {shouldShowUsePlusButtonText && <Text>{translate('reportActionsView.usePlusButton', {additionalText})}</Text>}
+                        {shouldShowUsePlusButtonText && <Text>{translate('reportActionsView.usePlusButton', additionalText)}</Text>}
                     </Text>
                 )}
                 {isSystemChat && (
