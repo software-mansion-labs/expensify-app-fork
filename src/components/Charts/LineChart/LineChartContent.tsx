@@ -1,10 +1,10 @@
 import { useFont } from '@shopify/react-native-skia';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { View } from 'react-native';
 import { CartesianChart, Line, Scatter } from 'victory-native';
 import Icon from '@components/Icon';
-import * as Expensicons from '@components/Icon/Expensicons';
+import { useMemoizedLazyAsset } from '@hooks/useLazyAsset';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -17,6 +17,7 @@ import { CHART_PADDING, DEFAULT_SINGLE_BAR_COLOR_INDEX, CHART_COLORS, EXPENSIFY_
 import Animated, { } from 'react-native-reanimated';
 import ChartTooltip from '@components/Charts/ChartTooltip';
 import ActivityIndicator from '@components/ActivityIndicator';
+import { loadExpensifyIcon } from '@components/Icon/ExpensifyIconLoader';
 
 
 function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit }: LineChartProps) {
@@ -26,6 +27,8 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
     const [chartWidth, setChartWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
     const { translate } = useLocalize();
+
+    const { asset: calendarIcon } = useMemoizedLazyAsset(() => loadExpensifyIcon('CalendarSolid'));
 
     const defaultDotColor = CHART_COLORS.at(DEFAULT_SINGLE_BAR_COLOR_INDEX);
 
@@ -127,7 +130,7 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
         >
             <View style={[styles.lineChartHeader]}>
                 <Icon
-                    src={titleIcon ?? Expensicons.CalendarSolid}
+                    src={titleIcon ?? calendarIcon}
                     width={variables.iconSizeNormal}
                     height={variables.iconSizeNormal}
                     fill={theme.icon}
