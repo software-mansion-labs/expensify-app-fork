@@ -17,11 +17,9 @@ import {
     TOOLTIP_BAR_GAP,
 } from '@components/Charts/constants';
 import type { PieChartDataPoint, PieChartProps } from '@components/Charts/types';
-import Icon from '@components/Icon';
-import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
-import variables from '@styles/variables';
 import { useChartColors } from '@components/Charts/hooks';
+import ChartHeader from '@components/Charts/components/ChartHeader';
 
 type ProcessedSlice = {
     label: string;
@@ -333,18 +331,9 @@ function PieChartContent({ data, title, titleIcon, isLoading, valueUnit, onSlice
 
     return (
         <View style={[styles.pieChartContainer, styles.highlightBG]}>
-            {!!title && (
-                <View style={styles.barChartHeader}>
-                    {!!titleIcon && (
-                        <Icon
-                            src={titleIcon}
-                            width={variables.iconSizeNormal}
-                            height={variables.iconSizeNormal}
-                        />
-                    )}
-                    <Text style={[styles.textLabelSupporting, styles.barChartTitle]}>{title}</Text>
-                </View>
-            )}
+            <ChartHeader
+                title={title}
+                titleIcon={titleIcon} />
 
             <View
                 style={styles.pieChartChartContainer}

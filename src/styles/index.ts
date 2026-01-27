@@ -5635,22 +5635,24 @@ const staticStyles = (theme: ThemeColors) =>
             height: 180,
         },
 
-        // Bar Chart styles
-        barChartContainer: {
-            borderRadius: variables.componentBorderRadiusLarge,
-            padding: variables.qrShareHorizontalPadding,
-        },
-        barChartHeader: {
+        // Common chart styles
+        chartHeader: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: variables.componentBorderRadius,
             marginBottom: variables.sectionMargin,
         },
-        barChartTitle: {
+        chartTitle: {
             ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
             fontSize: variables.fontSizeNormal,
             lineHeight: variables.fontSizeNormalHeight,
             color: theme.text,
+        },
+        
+        // Bar Chart styles
+        barChartContainer: {
+            borderRadius: variables.componentBorderRadiusLarge,
+            padding: variables.qrShareHorizontalPadding,
         },
         barChartChartContainer: {
             minHeight: 250,
@@ -5682,18 +5684,6 @@ const staticStyles = (theme: ThemeColors) =>
             borderRadius: variables.componentBorderRadiusLarge,
             paddingTop: variables.qrShareHorizontalPadding,
             paddingHorizontal: variables.qrShareHorizontalPadding,
-        },
-        lineChartHeader: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: variables.componentBorderRadius,
-            marginBottom: variables.sectionMargin,
-        },
-        lineChartTitle: {
-            ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
-            fontSize: variables.fontSizeNormal,
-            lineHeight: variables.fontSizeNormalHeight,
-            color: theme.text,
         },
         lineChartChartContainer: {
             minHeight: 250,

@@ -26,11 +26,10 @@ import {
     Y_AXIS_TICK_COUNT,
 } from '@components/Charts/constants';
 import type { BarChartProps } from '@components/Charts/types';
-import Icon from '@components/Icon';
-import Text from '@components/Text';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
+import ChartHeader from '@components/Charts/components/ChartHeader';
 
 /**
  * Calculate minimum domainPadding required to prevent bars from overflowing chart edges.
@@ -52,7 +51,6 @@ function BarChartContent({ data, title, titleIcon, isLoading, yAxisUnit, useSing
     const styles = useThemeStyles();
     const font = useFont(EXPENSIFY_NEUE_FONT_URL, variables.iconSizeExtraSmall);
     const [chartWidth, setChartWidth] = useState(0);
-
     const [containerHeight, setContainerHeight] = useState(0);
 
     const defaultBarColor = CHART_COLORS.at(DEFAULT_SINGLE_BAR_COLOR_INDEX);
@@ -205,19 +203,10 @@ function BarChartContent({ data, title, titleIcon, isLoading, yAxisUnit, useSing
     }
     return (
         <View style={[styles.barChartContainer, styles.highlightBG]}>
-            {!!title && (
-                <View style={styles.barChartHeader}>
-                    {!!titleIcon && (
-                        <Icon
-                            src={titleIcon}
-                            width={variables.iconSizeNormal}
-                            height={variables.iconSizeNormal}
-                        />
-                    )}
-                    <Text style={[styles.textLabelSupporting, styles.barChartTitle]}>{title}</Text>
-                </View>
-            )}
-
+            <ChartHeader
+                title={title}
+                titleIcon={titleIcon}
+            />
             <View
                 style={[styles.barChartChartContainer, labelRotation === -90 ? dynamicChartStyle : undefined]}
                 onLayout={handleLayout}

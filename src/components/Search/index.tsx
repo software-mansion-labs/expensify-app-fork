@@ -92,6 +92,9 @@ import { useSearchContext } from './SearchContext';
 import SearchList from './SearchList';
 import { SearchScopeProvider } from './SearchScopeProvider';
 import type { SearchColumnType, SearchParams, SearchQueryJSON, SelectedTransactionInfo, SelectedTransactions, SortOrder } from './types';
+import { useMemoizedLazyAsset } from '@hooks/useLazyAsset';
+import { loadExpensifyIcon } from '@components/Icon/ExpensifyIconLoader';
+import IconAsset from '@src/types/utils/IconAsset';
 
 // Test data with long labels
 const TEST_LONG_LABELS_5_BARS: BarChartDataPoint[] = [
@@ -196,11 +199,13 @@ const TEST_PIE_CHART_WITH_SMALL_SLICES: PieChartDataPoint[] = [
 function TestLineChartWithSlider({
     mainChartData,
     mainChartTitle,
+    mainChartIcon,
     isLoading,
 }:
     {
         mainChartData: LineChartDataPoint[];
-        mainChartTitle?: string;
+        mainChartTitle: string;
+        mainChartIcon: IconAsset
         isLoading?: boolean;
     }) {
     const [pointCount, setPointCount] = React.useState(2);
@@ -219,6 +224,7 @@ function TestLineChartWithSlider({
             <LineChart
                 data={mainChartData}
                 title={mainChartTitle}
+                titleIcon={mainChartIcon}
                 onPointPress={(dataPoint) => {
                     if (!dataPoint.onClickQuery) {
                         return;
@@ -297,10 +303,12 @@ function TestLineChartWithSlider({
 function TestBarChartWithSlider({
     mainChartData,
     mainChartTitle,
+    mainChartIcon,
     isLoading,
 }: {
     mainChartData: BarChartDataPoint[];
-    mainChartTitle?: string;
+    mainChartTitle: string;
+    mainChartIcon: IconAsset;
     isLoading?: boolean;
 }) {
     const [barCount, setBarCount] = React.useState(2);
@@ -324,7 +332,6 @@ function TestBarChartWithSlider({
                 isLoading={isLoading}
                 yAxisUnit="$"
                 onBarPress={(dataPoint) => {
-                    console.log('onPointPress', dataPoint);
                     if (!dataPoint.onClickQuery) {
                         return;
                     }
@@ -672,6 +679,11 @@ function Search({
 
     const previousReportActions = usePrevious(reportActions);
     const { translate, localeCompare, formatPhoneNumber } = useLocalize();
+    const { asset: calendarIcon } = useMemoizedLazyAsset(() => loadExpensifyIcon('CalendarSolid'));
+    const lineChartTitle = translate('search.charts.spendOverTime');
+    const { asset: folderIcon } = useMemoizedLazyAsset(() => loadExpensifyIcon('Folder'));
+    const barChartTitle = translate('search.charts.topCategories')
+    const { asset: userIcon } = useMemoizedLazyAsset(() => loadExpensifyIcon('User'));
     const searchListRef = useRef<SelectionListHandle | null>(null);
 
     const clearTransactionsAndSetHashAndKey = useCallback(() => {
@@ -1438,14 +1450,16 @@ function Search({
                 {isBarChartView && (
                     <TestBarChartWithSlider
                         mainChartData={chartData}
-                        mainChartTitle="Top categories"
+                        mainChartTitle={barChartTitle}
+                        mainChartIcon={folderIcon}
                         isLoading={searchResults?.search?.isLoading}
                     />
                 )}
                 {isLineChartView && (
                     <TestLineChartWithSlider
                         mainChartData={chartData}
-                        mainChartTitle={undefined}
+                        mainChartTitle={lineChartTitle}
+                        mainChartIcon={calendarIcon}
                         isLoading={searchResults?.search?.isLoading}
                     />
                 )}

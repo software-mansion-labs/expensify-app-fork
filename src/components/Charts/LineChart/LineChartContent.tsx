@@ -3,10 +3,6 @@ import React, { useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { View } from 'react-native';
 import { CartesianChart, Line, Scatter } from 'victory-native';
-import Icon from '@components/Icon';
-import { useMemoizedLazyAsset } from '@hooks/useLazyAsset';
-import Text from '@components/Text';
-import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
@@ -17,7 +13,7 @@ import { CHART_PADDING, DEFAULT_SINGLE_BAR_COLOR_INDEX, CHART_COLORS, EXPENSIFY_
 import Animated, { } from 'react-native-reanimated';
 import ChartTooltip from '@components/Charts/ChartTooltip';
 import ActivityIndicator from '@components/ActivityIndicator';
-import { loadExpensifyIcon } from '@components/Icon/ExpensifyIconLoader';
+import ChartHeader from '@components/Charts/components/ChartHeader';
 
 
 function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit }: LineChartProps) {
@@ -26,9 +22,6 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
     const font = useFont(EXPENSIFY_NEUE_FONT_URL, variables.iconSizeExtraSmall);
     const [chartWidth, setChartWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
-    const { translate } = useLocalize();
-
-    const { asset: calendarIcon } = useMemoizedLazyAsset(() => loadExpensifyIcon('CalendarSolid'));
 
     const defaultDotColor = CHART_COLORS.at(DEFAULT_SINGLE_BAR_COLOR_INDEX);
 
@@ -128,15 +121,9 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
         <View
             style={[styles.lineChartContainer, styles.highlightBG]}
         >
-            <View style={[styles.lineChartHeader]}>
-                <Icon
-                    src={titleIcon ?? calendarIcon}
-                    width={variables.iconSizeNormal}
-                    height={variables.iconSizeNormal}
-                    fill={theme.icon}
-                />
-                <Text style={[styles.textLabelSupporting, styles.lineChartTitle]}>{title ?? translate('search.charts.line.spendOverTime')}</Text>
-            </View>
+            <ChartHeader
+                title={title}
+                titleIcon={titleIcon} />
             <View
                 style={[
                     styles.lineChartChartContainer,

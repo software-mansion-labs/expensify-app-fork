@@ -102,4 +102,4 @@ type BarChartProps = {
     useSingleColor?: boolean;
 };
 
-export type {BarChartDataPoint, BarChartProps, LineChartDataPoint, LineChartProps, PieChartDataPoint, PieChartProps};
+export type { BarChartDataPoint, BarChartProps, LineChartDataPoint, LineChartProps, PieChartDataPoint, PieChartProps };
