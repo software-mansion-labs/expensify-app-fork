@@ -204,92 +204,76 @@ function PieChartContent({ data, title, titleIcon, isLoading, valueUnit, onSlice
     const cursorX = useSharedValue(0);
     const cursorY = useSharedValue(0);
 
-    const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const handleLayout = (event: LayoutChangeEvent) => {
         const { width, height } = event.nativeEvent.layout;
         setCanvasSize({ width, height });
-    }, []);
+    };
 
-    // Process data into slices with aggregation
-    const processedSlices = useMemo(() => processDataIntoSlices(data, PIE_CHART_START_ANGLE, getChartColor), [data, getChartColor]);
+    // Process data into slices with aggregation, make following code react compiler compatible
+    const processedSlices: ProcessedSlice[] = processDataIntoSlices(data, PIE_CHART_START_ANGLE, getChartColor);
 
-    // Calculate pie geometry
-    const pieGeometry = useMemo(() => {
-        const size = Math.min(canvasSize.width, canvasSize.height);
-        const radius = size / 2;
-        const centerX = canvasSize.width / 2;
-        const centerY = canvasSize.height / 2;
-        return { radius, centerX, centerY };
-    }, [canvasSize.width, canvasSize.height]);
+    // Calculate pie geometry, make following code react compiler compatible
+    const pieGeometry = { radius: Math.min(canvasSize.width, canvasSize.height) / 2, centerX: canvasSize.width / 2, centerY: canvasSize.height / 2 } as const;
 
     // Transform data for Victory Native PolarChart
-    const chartData = useMemo(() => {
-        return processedSlices.map((slice) => ({
-            label: slice.label,
-            value: slice.value,
-            color: slice.color,
-        }));
-    }, [processedSlices]);
+    const chartData = processedSlices.map((slice: { label: string; value: number; color: Color; }) => ({
+        label: slice.label,
+        value: slice.value,
+        color: slice.color,
+    }));
 
     // Handle hover state updates
-    const updateActiveSlice = useCallback(
-        (x: number, y: number) => {
-            const { radius, centerX, centerY } = pieGeometry;
-            const sliceIndex = findSliceAtPosition(x, y, centerX, centerY, radius, 0, processedSlices);
-            setActiveSliceIndex(sliceIndex);
-        },
-        [pieGeometry, processedSlices],
-    );
+    const updateActiveSlice = (
+        x: number, y: number) => {
+        const { radius, centerX, centerY } = pieGeometry;
+        const sliceIndex = findSliceAtPosition(x, y, centerX, centerY, radius, 0, processedSlices);
+        setActiveSliceIndex(sliceIndex);
+    };
 
     // Handle slice press callback
-    const handleSlicePress = useCallback(
-        (sliceIndex: number) => {
-            if (sliceIndex < 0 || sliceIndex >= processedSlices.length) {
-                return;
-            }
-            const slice = processedSlices.at(sliceIndex);
-            if (!slice || slice.isOther) {
-                // Don't navigate for "Other" slice
-                return;
-            }
-            const originalDataPoint = data.at(slice.originalIndex);
-            if (originalDataPoint && onSlicePress) {
-                onSlicePress(originalDataPoint, slice.originalIndex);
-            }
-        },
-        [data, processedSlices, onSlicePress],
-    );
+    const handleSlicePress = (sliceIndex: number) => {
+        if (sliceIndex < 0 || sliceIndex >= processedSlices.length) {
+            return;
+        }
+        const slice = processedSlices.at(sliceIndex);
+        if (!slice || slice.isOther) {
+            // Don't navigate for "Other" slice
+            return;
+        }
+        const originalDataPoint = data.at(slice.originalIndex);
+        if (originalDataPoint && onSlicePress) {
+            onSlicePress(originalDataPoint, slice.originalIndex);
+        }
+    };
 
     // Hover gesture
-    const hoverGesture = useMemo(
+    const hoverGesture =
         () =>
             Gesture.Hover()
                 .onBegin((e) => {
                     'worklet';
 
-                    isHovering.value = true;
-                    cursorX.value = e.x;
-                    cursorY.value = e.y;
+                    isHovering.set(true);
+                    cursorX.set(e.x);
+                    cursorY.set(e.y);
                     scheduleOnRN(updateActiveSlice, e.x, e.y);
                 })
                 .onUpdate((e) => {
                     'worklet';
 
-                    cursorX.value = e.x;
-                    cursorY.value = e.y;
+                    cursorX.set(e.x);
+                    cursorY.set(e.y);
                     scheduleOnRN(updateActiveSlice, e.x, e.y);
                 })
                 .onEnd(() => {
                     'worklet';
 
-                    isHovering.value = false;
+                    isHovering.set(false);
                     scheduleOnRN(setActiveSliceIndex, -1);
-                }),
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps, rulesdir/prefer-narrow-hook-dependencies -- shared values are stable references
-        [isHovering, cursorX, cursorY, updateActiveSlice],
-    );
-
+                })
+        ;
     // Tap gesture for click/tap navigation
-    const tapGesture = useMemo(
+    const tapGesture =
         () =>
             Gesture.Tap().onEnd((e) => {
                 'worklet';
@@ -300,15 +284,13 @@ function PieChartContent({ data, title, titleIcon, isLoading, valueUnit, onSlice
                 if (sliceIndex >= 0) {
                     scheduleOnRN(handleSlicePress, sliceIndex);
                 }
-            }),
-        [pieGeometry, processedSlices, handleSlicePress],
-    );
+            });
 
     // Combined gestures - Race allows both hover and tap to work independently
-    const combinedGesture = useMemo(() => Gesture.Race(hoverGesture, tapGesture), [hoverGesture, tapGesture]);
+    const combinedGesture = Gesture.Race(hoverGesture(), tapGesture());
 
     // Tooltip data
-    const tooltipData = useMemo(() => {
+    const tooltipData = () => {
         if (activeSliceIndex < 0 || activeSliceIndex >= processedSlices.length) {
             return null;
         }
@@ -323,16 +305,16 @@ function PieChartContent({ data, title, titleIcon, isLoading, valueUnit, onSlice
             amount: formattedValue,
             percentage: formattedPercentage,
         };
-    }, [activeSliceIndex, processedSlices, valueUnit]);
+    };
 
     // Tooltip position (at cursor)
     const tooltipStyle = useAnimatedStyle(() => {
         return {
             position: 'absolute',
-            left: cursorX.value,
-            top: cursorY.value - TOOLTIP_BAR_GAP,
+            left: cursorX.get(),
+            top: cursorY.get() - TOOLTIP_BAR_GAP,
             transform: [{ translateX: '-50%' }, { translateY: '-100%' }],
-            opacity: isHovering.value ? 1 : 0,
+            opacity: isHovering.get() ? 1 : 0,
             pointerEvents: 'none',
         };
     });
@@ -388,9 +370,9 @@ function PieChartContent({ data, title, titleIcon, isLoading, valueUnit, onSlice
                 {activeSliceIndex >= 0 && !!tooltipData && (
                     <Animated.View style={tooltipStyle}>
                         <ChartTooltip
-                            label={tooltipData.label}
-                            amount={tooltipData.amount}
-                            percentage={tooltipData.percentage}
+                            label={tooltipData()?.label ?? ''}
+                            amount={tooltipData()?.amount ?? ''}
+                            percentage={tooltipData()?.percentage ?? ''}
                         />
                     </Animated.View>
                 )}
