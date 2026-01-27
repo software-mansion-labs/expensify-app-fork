@@ -30,14 +30,12 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
     const defaultDotColor = CHART_COLORS.at(DEFAULT_SINGLE_BAR_COLOR_INDEX);
 
     // prepare data for display
-    const chartData = useMemo(() => {
-        return data.map((point, index) => ({
-            x: index,
-            y: point.total,
-        }));
-    }, [data]);
+    const chartData = data.map((point, index) => ({
+        x: index,
+        y: point.total,
+    }));
 
-    const handlePointPress = useCallback((index: number) => {
+    const handlePointPress = (index: number) => {
         if (index < 0 || index >= data.length) {
             return;
         }
@@ -45,13 +43,13 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
         if (dataPoint && onPointPress) {
             onPointPress(dataPoint, index);
         }
-    }, [data, onPointPress]);
+    };
 
-    const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const handleLayout = (event: LayoutChangeEvent) => {
         const { width, height } = event.nativeEvent.layout;
         setChartWidth(width);
         setContainerHeight(height);
-    }, []);
+    };
 
     const { labelRotation, labelSkipInterval, truncatedLabels, maxLabelLength } = useChartLabelLayout({
         data,
@@ -60,9 +58,9 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
         containerHeight,
     });
 
-    const domainPadding = useMemo(() => {
+    const domainPadding = () => {
         return { top: 20, bottom: 20, left: 20, right: (labelRotation === -90 ? 0 : (maxLabelLength ?? 0) / 2) + 20 };
-    }, [labelRotation, maxLabelLength]);
+    };
 
     const { formatXAxisLabel, formatYAxisLabel } = useChartLabelFormats({
         data,
@@ -72,13 +70,13 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
         truncatedLabels,
     });
 
-    const checkIsOverDot = useCallback((args: HitTestArgs) => {
+    const checkIsOverDot = (args: HitTestArgs) => {
         'worklet';
 
         const targetX = args.targetX;
         const targetY = args.targetY;
         return (args.cursorX - targetX) ** 2 + (args.cursorY - targetY) ** 2 <= DOT_INNER_RADIUS ** 2;
-    }, []);
+    };
 
     const {
         actionsRef,
@@ -91,7 +89,7 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
         checkIsOver: checkIsOverDot,
     });
 
-    const tooltipData = useMemo(() => {
+    const tooltipData = () => {
         if (activeDataIndex < 0 || activeDataIndex >= data.length) {
             return null;
         }
@@ -103,11 +101,13 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
             label: dataPoint.label,
             amount: yAxisUnit ? `${yAxisUnit} ${dataPoint.total.toLocaleString()}` : dataPoint.total.toLocaleString(),
         };
-    }, [activeDataIndex, data, yAxisUnit]);
+    };
 
-    const dynamicChartStyle = useMemo(() => ({
-        height: 250 + (maxLabelLength ?? 0) + 100,
-    }), [maxLabelLength]);
+    const dynamicChartStyle = () => {
+        return {
+            height: 250 + (maxLabelLength ?? 0) + 100
+        };
+    };
 
     if (isLoading || !font) {
         return (
@@ -135,7 +135,10 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                 <Text style={[styles.textLabelSupporting, styles.lineChartTitle]}>{title ?? translate('search.charts.line.spendOverTime')}</Text>
             </View>
             <View
-                style={[styles.lineChartChartContainer, labelRotation === -90 ? dynamicChartStyle : undefined]}
+                style={[
+                    styles.lineChartChartContainer,
+                    labelRotation === -90 ? dynamicChartStyle() : undefined
+                ]}
                 onLayout={handleLayout}
             >
                 {chartWidth > 0 && (
@@ -144,7 +147,7 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                         padding={CHART_PADDING}
                         data={chartData}
                         yKeys={['y']}
-                        domainPadding={domainPadding}
+                        domainPadding={domainPadding()}
                         xAxis={{
                             font,
                             tickCount: data.length,
@@ -199,8 +202,8 @@ function LineChart({ data, title, titleIcon, isLoading, onPointPress, yAxisUnit 
                 {isTooltipActive && !!tooltipData && (
                     <Animated.View style={tooltipStyle}>
                         <ChartTooltip
-                            label={tooltipData.label}
-                            amount={tooltipData.amount}
+                            label={tooltipData()?.label ?? ''}
+                            amount={tooltipData()?.amount ?? ''}
                         />
                     </Animated.View>
                 )}
