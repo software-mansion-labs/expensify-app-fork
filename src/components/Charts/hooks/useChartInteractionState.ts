@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import type { SharedValue } from 'react-native-reanimated';
-import { makeMutable, useAnimatedReaction } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import {useState} from 'react';
+import type {SharedValue} from 'react-native-reanimated';
+import {makeMutable, useAnimatedReaction} from 'react-native-reanimated';
+import {scheduleOnRN} from 'react-native-worklets';
 
 /**
  * Input field type - matches Victory Native's InputFieldType
@@ -72,13 +72,15 @@ function useIsInteractionActive<Init extends ChartInteractionStateInit>(state: C
  * @param initialValues - Initial x and y values matching your chart data structure
  * @returns Object containing the interaction state and a boolean indicating if interaction is active
  */
-function useChartInteractionState<Init extends ChartInteractionStateInit>(initialValues: Init): {
+function useChartInteractionState<Init extends ChartInteractionStateInit>(
+    initialValues: Init,
+): {
     state: ChartInteractionState<Init>;
     isActive: boolean;
 } {
     // The React Compiler will automatically memoize this object creation.
     // We remove the explicit useMemo and dependency on 'keys'.
-    const yState = {} as Record<keyof Init['y'], { value: SharedValue<number>; position: SharedValue<number> }>;
+    const yState = {} as Record<keyof Init['y'], {value: SharedValue<number>; position: SharedValue<number>}>;
 
     for (const [key, initVal] of Object.entries(initialValues.y)) {
         yState[key as keyof Init['y']] = {
@@ -104,8 +106,8 @@ function useChartInteractionState<Init extends ChartInteractionStateInit>(initia
 
     const isActive = useIsInteractionActive(state);
 
-    return { state, isActive };
+    return {state, isActive};
 }
 
-export { useChartInteractionState };
-export type { ChartInteractionState, ChartInteractionStateInit };
+export {useChartInteractionState};
+export type {ChartInteractionState, ChartInteractionStateInit};
