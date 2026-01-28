@@ -1,8 +1,7 @@
-import {Str} from 'expensify-common';
-import type {Ref} from 'react';
-import React, {useEffect, useImperativeHandle, useRef, useState} from 'react';
-import ChartKit from '@components/ChartKit';
-import type {OnyxEntry} from 'react-native-onyx';
+import { Str } from 'expensify-common';
+import type { Ref } from 'react';
+import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
+import type { OnyxEntry } from 'react-native-onyx';
 import ColorSchemeWrapper from '@components/ColorSchemeWrapper';
 import CustomStatusBarAndBackground from '@components/CustomStatusBarAndBackground';
 import HTMLEngineProvider from '@components/HTMLEngineProvider';
@@ -16,30 +15,30 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {isClientTheLeader as isClientTheLeaderActiveClientManager} from '@libs/ActiveClientManager';
+import { isClientTheLeader as isClientTheLeaderActiveClientManager } from '@libs/ActiveClientManager';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import Performance from '@libs/Performance';
 import Visibility from '@libs/Visibility';
-import {clearSignInData} from '@userActions/Session';
+import { clearSignInData } from '@userActions/Session';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {Account, Credentials} from '@src/types/onyx';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import type { Account, Credentials } from '@src/types/onyx';
+import { isEmptyObject } from '@src/types/utils/EmptyObject';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 import ChooseSSOOrMagicCode from './ChooseSSOOrMagicCode';
 import EmailDeliveryFailurePage from './EmailDeliveryFailurePage';
 import LoginForm from './LoginForm';
-import type {InputHandle} from './LoginForm/types';
-import {LoginProvider} from './SignInLoginContext';
+import type { InputHandle } from './LoginForm/types';
+import { LoginProvider } from './SignInLoginContext';
 import SignInPageLayout from './SignInPageLayout';
-import type {SignInPageLayoutRef} from './SignInPageLayout/types';
+import type { SignInPageLayoutRef } from './SignInPageLayout/types';
 import SignUpWelcomeForm from './SignUpWelcomeForm';
 import SMSDeliveryFailurePage from './SMSDeliveryFailurePage';
 import UnlinkLoginForm from './UnlinkLoginForm';
 import ValidateCodeForm from './ValidateCodeForm';
-import type {BaseValidateCodeFormRef} from './ValidateCodeForm/BaseValidateCodeForm';
+import type { BaseValidateCodeFormRef } from './ValidateCodeForm/BaseValidateCodeForm';
 
 type SignInPageProps = {
     ref?: Ref<SignInPageRef>;
@@ -145,16 +144,16 @@ function getRenderOptions({
     };
 }
 
-function SignInPage({ref}: SignInPageProps) {
-    const {translate, formatPhoneNumber} = useLocalize();
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+function SignInPage({ ref }: SignInPageProps) {
+    const { translate, formatPhoneNumber } = useLocalize();
+    const { shouldUseNarrowLayout } = useResponsiveLayout();
     const signInPageLayoutRef = useRef<SignInPageLayoutRef>(null);
     const loginFormRef = useRef<InputHandle>(null);
     const validateCodeFormRef = useRef<BaseValidateCodeFormRef>(null);
 
-    const [account] = useOnyx(ONYXKEYS.ACCOUNT, {canBeMissing: true});
+    const [account] = useOnyx(ONYXKEYS.ACCOUNT, { canBeMissing: true });
     const isAccountValidated = account?.validated;
-    const [credentials] = useOnyx(ONYXKEYS.CREDENTIALS, {canBeMissing: true});
+    const [credentials] = useOnyx(ONYXKEYS.CREDENTIALS, { canBeMissing: true });
     /**
       This variable is only added to make sure the component is re-rendered
       whenever the activeClients change, so that we call the
@@ -162,7 +161,7 @@ function SignInPage({ref}: SignInPageProps) {
       every time the leader client changes.
       We use that function to prevent repeating code that checks which client is the leader.
     */
-    const [activeClients = getEmptyArray<string>()] = useOnyx(ONYXKEYS.ACTIVE_CLIENTS, {canBeMissing: true});
+    const [activeClients = getEmptyArray<string>()] = useOnyx(ONYXKEYS.ACTIVE_CLIENTS, { canBeMissing: true });
 
     /** This state is needed to keep track of if user is using recovery code instead of 2fa code,
      * and we need it here since welcome text(`welcomeText`) also depends on it */
@@ -251,8 +250,8 @@ function SignInPage({ref}: SignInPageProps) {
         } else {
             welcomeHeader = shouldUseNarrowLayout ? '' : translate('welcomeText.welcome');
             welcomeText = shouldUseNarrowLayout
-                ? `${translate('welcomeText.welcome')} ${translate('welcomeText.welcomeEnterMagicCode', {login: userLoginToDisplay})}`
-                : translate('welcomeText.welcomeEnterMagicCode', {login: userLoginToDisplay});
+                ? `${translate('welcomeText.welcome')} ${translate('welcomeText.welcomeEnterMagicCode', { login: userLoginToDisplay })}`
+                : translate('welcomeText.welcomeEnterMagicCode', { login: userLoginToDisplay });
         }
     } else if (shouldShowUnlinkLoginForm || shouldShowEmailDeliveryFailurePage || shouldShowChooseSSOOrMagicCode || shouldShowSMSDeliveryFailurePage) {
         welcomeHeader = shouldUseNarrowLayout ? headerText : translate('welcomeText.welcome');
@@ -264,8 +263,8 @@ function SignInPage({ref}: SignInPageProps) {
     } else if (shouldShouldSignUpWelcomeForm) {
         welcomeHeader = shouldUseNarrowLayout ? headerText : translate('welcomeText.welcome');
         welcomeText = shouldUseNarrowLayout
-            ? `${translate('welcomeText.welcomeWithoutExclamation')} ${translate('welcomeText.welcomeNewFace', {login: userLoginToDisplay})}`
-            : translate('welcomeText.welcomeNewFace', {login: userLoginToDisplay});
+            ? `${translate('welcomeText.welcomeWithoutExclamation')} ${translate('welcomeText.welcomeNewFace', { login: userLoginToDisplay })}`
+            : translate('welcomeText.welcomeNewFace', { login: userLoginToDisplay });
     } else if (!shouldInitiateSAMLLogin && !hasInitiatedSAMLLogin) {
         Log.warn('SignInPage in unexpected state!');
     }
@@ -310,9 +309,6 @@ function SignInPage({ref}: SignInPageProps) {
                     ref={signInPageLayoutRef}
                     navigateFocus={navigateFocus}
                 >
-                    {/* Demo chart with lazy loading */}
-                    <ChartKit />
-
                     {/* LoginForm must use the isVisible prop. This keeps it mounted, but visually hidden
                         so that password managers can access the values. Conditionally rendering this component will break this feature. */}
                     <LoginForm
@@ -345,11 +341,11 @@ function SignInPage({ref}: SignInPageProps) {
     );
 }
 
-function SignInPageWrapper({ref}: SignInPageProps) {
+function SignInPageWrapper({ ref }: SignInPageProps) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const safeAreaInsets = useSafeAreaInsets();
-    const {isInNarrowPaneModal} = useResponsiveLayout();
+    const { isInNarrowPaneModal } = useResponsiveLayout();
 
     return (
         // Bottom SafeAreaView is removed so that login screen svg displays correctly on mobile.
@@ -357,7 +353,7 @@ function SignInPageWrapper({ref}: SignInPageProps) {
         <ScreenWrapper
             shouldShowOfflineIndicator={false}
             shouldEnableMaxHeight
-            style={[styles.signInPage, StyleUtils.getPlatformSafeAreaPadding({...safeAreaInsets, bottom: 0, top: isInNarrowPaneModal ? 0 : safeAreaInsets.top}, 1)]}
+            style={[styles.signInPage, StyleUtils.getPlatformSafeAreaPadding({ ...safeAreaInsets, bottom: 0, top: isInNarrowPaneModal ? 0 : safeAreaInsets.top }, 1)]}
             testID="SignInPageWrapper"
         >
             <SignInPage ref={ref} />
@@ -367,7 +363,7 @@ function SignInPageWrapper({ref}: SignInPageProps) {
 
 // WithTheme is a HOC that provides theme-related contexts (e.g. to the SignInPageWrapper component since these contexts are required for variable declarations).
 function WithTheme(Component: React.ComponentType<SignInPageProps>) {
-    return ({ref}: SignInPageProps) => (
+    return ({ ref }: SignInPageProps) => (
         <ThemeProvider theme={CONST.THEME.DARK}>
             <ThemeStylesProvider>
                 <HTMLEngineProvider>
@@ -380,8 +376,8 @@ function WithTheme(Component: React.ComponentType<SignInPageProps>) {
 
 const SignInPageThemed = WithTheme(SignInPage);
 
-export {SignInPageThemed as SignInPage};
+export { SignInPageThemed as SignInPage };
 
 export default WithTheme(SignInPageWrapper);
 
-export type {SignInPageRef};
+export type { SignInPageRef };

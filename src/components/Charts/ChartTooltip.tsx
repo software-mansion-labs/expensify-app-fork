@@ -1,9 +1,9 @@
 import React from 'react';
 import {View} from 'react-native';
 import Text from '@components/Text';
-import {TOOLTIP_POINTER_HEIGHT, TOOLTIP_POINTER_WIDTH} from '@components/Charts/constants';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {TOOLTIP_POINTER_HEIGHT, TOOLTIP_POINTER_WIDTH} from './constants';
 
 type ChartTooltipProps = {
     /** Label text (e.g., "Airfare", "Amazon") */

@@ -1,9 +1,9 @@
-import React, {useMemo} from 'react';
-import type {NativeScrollEvent, NativeSyntheticEvent} from 'react-native';
-import {View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
+import React, { useMemo } from 'react';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { View } from 'react-native';
+import type { OnyxEntry } from 'react-native-onyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
-import type {DropdownOption} from '@components/ButtonWithDropdownMenu/types';
+import type { DropdownOption } from '@components/ButtonWithDropdownMenu/types';
 import DragAndDropConsumer from '@components/DragAndDrop/Consumer';
 import DragAndDropProvider from '@components/DragAndDrop/Provider';
 import DropZoneUI from '@components/DropZone/DropZoneUI';
@@ -12,17 +12,17 @@ import Search from '@components/Search';
 import SearchPageFooter from '@components/Search/SearchPageFooter';
 import SearchFiltersBar from '@components/Search/SearchPageHeader/SearchFiltersBar';
 import SearchPageHeader from '@components/Search/SearchPageHeader/SearchPageHeader';
-import type {SearchHeaderOptionValue} from '@components/Search/SearchPageHeader/SearchPageHeader';
-import type {BankAccountMenuItem, SearchParams, SearchQueryJSON} from '@components/Search/types';
-import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
+import type { SearchHeaderOptionValue } from '@components/Search/SearchPageHeader/SearchPageHeader';
+import type { BankAccountMenuItem, SearchParams, SearchQueryJSON } from '@components/Search/types';
+import { useMemoizedLazyExpensifyIcons } from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {buildCannedSearchQuery} from '@libs/SearchQueryUtils';
+import { buildCannedSearchQuery } from '@libs/SearchQueryUtils';
 import Navigation from '@navigation/Navigation';
 import ROUTES from '@src/ROUTES';
-import type {SearchResults} from '@src/types/onyx';
-import type {PaymentMethodType} from '@src/types/onyx/OriginalMessage';
+import type { SearchResults } from '@src/types/onyx';
+import type { PaymentMethodType } from '@src/types/onyx/OriginalMessage';
 
 type SearchPageWideProps = {
     queryJSON?: SearchQueryJSON;
@@ -71,7 +71,7 @@ function SearchPageWide({
 }: SearchPageWideProps) {
     const styles = useThemeStyles();
     const theme = useTheme();
-    const {translate} = useLocalize();
+    const { translate } = useLocalize();
 
     const offlineIndicatorStyle = useMemo(() => {
         if (shouldShowFooter) {
@@ -82,7 +82,7 @@ function SearchPageWide({
     }, [shouldShowFooter, styles]);
 
     const expensifyIcons = useMemoizedLazyExpensifyIcons(['SmartScan']);
-    const handleOnBackButtonPress = () => Navigation.goBack(ROUTES.SEARCH_ROOT.getRoute({query: buildCannedSearchQuery()}));
+    const handleOnBackButtonPress = () => Navigation.goBack(ROUTES.SEARCH_ROOT.getRoute({ query: buildCannedSearchQuery() }));
 
     return (
         <View style={styles.searchSplitContainer}>

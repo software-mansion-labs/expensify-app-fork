@@ -1,5 +1,5 @@
-import type {Color} from '@shopify/react-native-skia';
-import type {RoundedCorners} from 'victory-native';
+import type { Color } from '@shopify/react-native-skia';
+import type { RoundedCorners } from 'victory-native';
 import colors from '@styles/theme/colors';
 
 /**
@@ -108,6 +108,16 @@ const PIE_CHART_OTHER_LABEL = 'Other';
 /** Starting angle for pie chart (0 = 3 o'clock, -90 = 12 o'clock) */
 const PIE_CHART_START_ANGLE = -90;
 
+/** Inner radius for the dot (the part that is visible) */
+const DOT_INNER_RADIUS = 6;
+
+/** Outer radius for the dot (the part that is the same color as background so the lines do not appear as connected
+) */
+const DOT_OUTER_RADIUS = 8;
+
+/** Frame for the line chart (the lines are only on the left and at the bottom) */
+const LINE_CHART_FRAME = { lineWidth: { left: 1, bottom: 1, top: 0, right: 0 } };
+
 export {
     CHART_COLORS,
     Y_AXIS_TICK_COUNT,
@@ -136,4 +146,7 @@ export {
     PIE_CHART_MAX_SLICES,
     PIE_CHART_OTHER_LABEL,
     PIE_CHART_START_ANGLE,
+    DOT_INNER_RADIUS,
+    DOT_OUTER_RADIUS,
+    LINE_CHART_FRAME,
 };

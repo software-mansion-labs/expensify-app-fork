@@ -1,17 +1,17 @@
 import React from 'react';
+import ActivityIndicator from '@components/ActivityIndicator';
 import { View } from 'react-native';
 import { WithSkiaWeb } from '@shopify/react-native-skia/lib/module/web';
-import ActivityIndicator from '@components/ActivityIndicator';
-import type { PieChartProps } from '@components/Charts/types';
 import colors from '@styles/theme/colors';
+import type { LineChartProps } from '@components/Charts/types';
 
-const getPieChartContent = () => import('./PieChartContent');
+const getLineChartContent = () => import('./LineChartContent');
 
-function PieChart(props: PieChartProps) {
+function LineChart(props: LineChartProps) {
     return (
         <WithSkiaWeb
             opts={{ locateFile: (file: string) => `/${file}` }}
-            getComponent={getPieChartContent}
+            getComponent={getLineChartContent}
             componentProps={props}
             fallback={
                 <View style={{
@@ -29,6 +29,6 @@ function PieChart(props: PieChartProps) {
     );
 }
 
-PieChart.displayName = 'PieChart';
+LineChart.displayName = 'LineChart';
 
-export default PieChart;
+export default LineChart;
