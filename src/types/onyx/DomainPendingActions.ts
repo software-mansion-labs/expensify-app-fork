@@ -9,6 +9,11 @@ type GeneralDomainMemberPendingAction = {
      * Base pending actions
      */
     pendingAction: OnyxCommon.PendingAction;
+
+    /**
+     *
+     */
+    twoFactorAuthExemptEmails: OnyxCommon.PendingAction;
 };
 
 /**

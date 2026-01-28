@@ -14,14 +14,15 @@ import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchResults from '@hooks/useSearchResults';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {getLatestError} from '@libs/ErrorUtils';
 import {sortAlphabetically} from '@libs/OptionsListUtils';
 import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Errors, PendingAction} from '@src/types/onyx/OnyxCommon';
+import type {GeneralDomainMemberErrors} from '@src/types/onyx/DomainErrors';
+import type {PendingAction} from '@src/types/onyx/OnyxCommon';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type IconAsset from '@src/types/utils/IconAsset';
 import DomainNotFoundPageWrapper from './DomainNotFoundPageWrapper';
 
@@ -58,7 +59,7 @@ type BaseDomainMembersPageProps = {
     getCustomRightElement?: (accountID: number) => React.ReactNode;
 
     /** Function to return additional row-specific properties like errors or pending actions */
-    getCustomRowProps?: (accountID: number, email?: string) => {errors?: Errors; pendingAction?: PendingAction};
+    getCustomRowProps?: (accountID: number, email?: string) => {errors?: GeneralDomainMemberErrors; pendingAction?: PendingAction};
 
     /** Callback fired when the user dismisses an error message for a specific row */
     onDismissError?: (item: MemberOption) => void;
@@ -103,10 +104,11 @@ function BaseDomainMembersPage({
                 },
             ],
             rightElement: getCustomRightElement?.(accountID),
-            errors: getLatestError(customProps?.errors),
+            errors: customProps?.errors?.errors,
             pendingAction: customProps?.pendingAction,
             isInteractive: !isPendingActionDelete && !details?.isOptimisticPersonalDetail,
             isDisabled: isPendingActionDelete,
+            brickRoadIndicator: !isEmptyObject(customProps?.errors?.twoFactorAuthExemptEmailsError) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
         };
     });
 

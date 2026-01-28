@@ -42,7 +42,7 @@ function DomainMembersSettingsPage({route}: DomainMembersSettingsPageProps) {
         <BaseDomainSettingsPage domainAccountID={domainAccountID}>
             <ToggleSettingOptionRow
                 wrapperStyle={[styles.mv3, styles.ph5]}
-                switchAccessibilityLabel={translate('domain.members.forceTwoFactorAuth')}
+                switchAccessibilityLabel={translate('domain.common.forceTwoFactorAuth')}
                 isActive={!!domainSettings?.twoFactorAuthRequired}
                 disabled={!!domainSettings?.samlEnabled}
                 onToggle={(value) => {
@@ -56,11 +56,11 @@ function DomainMembersSettingsPage({route}: DomainMembersSettingsPageProps) {
                         toggleTwoFactorAuthRequiredForDomain(domainAccountID, domainName, value);
                     }
                 }}
-                title={translate('domain.members.forceTwoFactorAuth')}
+                title={translate('domain.common.forceTwoFactorAuth')}
                 subtitle={
                     <View style={[styles.flexRow, styles.renderHTML, styles.mt1]}>
                         <RenderHTML
-                            html={translate(domainSettings?.samlEnabled ? 'domain.members.forceTwoFactorAuthSAMLEnabledDescription' : 'domain.members.forceTwoFactorAuthDescription')}
+                            html={translate(domainSettings?.samlEnabled ? 'domain.common.forceTwoFactorAuthSAMLEnabledDescription' : 'domain.common.forceTwoFactorAuthDescription')}
                         />
                     </View>
                 }

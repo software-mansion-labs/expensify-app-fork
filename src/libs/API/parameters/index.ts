@@ -472,3 +472,5 @@ export type {default as RegisterAuthenticationKeyParams} from './RegisterAuthent
 export type {default as TroubleshootMultifactorAuthenticationParams} from './TroubleshootMultifactorAuthenticationParams';
 export type {default as RequestAuthenticationChallengeParams} from './RequestAuthenticationChallengeParams';
 export type {default as ToggleTwoFactorAuthRequiredForDomainParams} from './ToggleTwoFactorAuthRequiredForDomainParams';
+export type {default as SetTwoFactorAuthExemptEmailForDomainParams} from './SetTwoFactorAuthExemptEmailForDomainParams';
+export type {default as ResetDomainMemberTwoFactorAuthParams} from './ResetDomainMemberTwoFactorAuthParams';

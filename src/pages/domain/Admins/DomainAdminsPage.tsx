@@ -60,7 +60,7 @@ function DomainAdminsPage({route}: DomainAdminsPageProps) {
     };
 
     const getCustomRowProps = (accountID: number) => ({
-        errors: domainErrors?.adminErrors?.[accountID]?.errors,
+        errors: domainErrors?.adminErrors?.[accountID],
         pendingAction: domainPendingAction?.[accountID]?.pendingAction,
     });
 

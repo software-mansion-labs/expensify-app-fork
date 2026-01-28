@@ -1,12 +1,14 @@
 import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
-import type {
+import {
     AddAdminToDomainParams,
     AddMemberToDomainParams,
     DeleteDomainParams,
     RemoveDomainAdminParams,
+    ResetDomainMemberTwoFactorAuthParams,
     SetTechnicalContactEmailParams,
+    SetTwoFactorAuthExemptEmailForDomainParams,
     ToggleConsolidatedDomainBillingParams,
     ToggleTwoFactorAuthRequiredForDomainParams,
 } from '@libs/API/parameters';
@@ -997,7 +999,7 @@ function toggleTwoFactorAuthRequiredForDomain(domainAccountID: number, domainNam
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
             value: {
-                twoFactorAuthRequiredErrors: getMicroSecondOnyxErrorWithTranslationKey('domain.members.forceTwoFactorAuthError'),
+                twoFactorAuthRequiredErrors: getMicroSecondOnyxErrorWithTranslationKey('domain.common.forceTwoFactorAuthError'),
             },
         },
         {
@@ -1023,6 +1025,134 @@ function clearToggleTwoFactorAuthRequiredForDomainError(domainAccountID: number)
     Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
         twoFactorAuthRequiredErrors: null,
     });
+}
+
+function setTwoFactorAuthExemptEmailForDomain(domainAccountID: number, accountID: number, exemptEmails: string[], targetEmail: string, enabled: boolean) {
+    const newExemptEmails = enabled ? [...new Set([...exemptEmails, targetEmail])] : exemptEmails.filter((email) => email !== targetEmail);
+
+    const optimisticData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${domainAccountID}`,
+            value: {
+                settings: {
+                    twoFactorAuthExemptEmails: newExemptEmails,
+                },
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                member: {
+                    [accountID]: {
+                        twoFactorAuthExemptEmails: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE,
+                    },
+                },
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
+            value: {
+                memberErrors: {
+                    [accountID]: {
+                        twoFactorAuthExemptEmailsError: null,
+                    },
+                },
+            },
+        },
+    ];
+    const successData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                member: {
+                    [accountID]: {
+                        twoFactorAuthExemptEmails: null,
+                    },
+                },
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
+            value: {
+                memberErrors: {
+                    [accountID]: {
+                        twoFactorAuthExemptEmailsError: null,
+                    },
+                },
+            },
+        },
+    ];
+    const failureData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${domainAccountID}`,
+            value: {
+                settings: {
+                    twoFactorAuthExemptEmails: exemptEmails,
+                },
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                member: {
+                    [accountID]: {
+                        twoFactorAuthExemptEmails: null,
+                    },
+                },
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
+            value: {
+                memberErrors: {
+                    [accountID]: {
+                        twoFactorAuthExemptEmailsError: getMicroSecondOnyxErrorWithTranslationKey('domain.common.forceTwoFactorAuthError'),
+                    },
+                },
+            },
+        },
+    ];
+
+    const params: SetTwoFactorAuthExemptEmailForDomainParams = {
+        domainAccountID,
+        targetEmail,
+        enabled,
+    };
+
+    API.write(WRITE_COMMANDS.SET_TWO_FACTOR_AUTH_EXEMPT_EMAIL_FOR_DOMAIN, params, {optimisticData, successData, failureData});
+}
+
+function clearTwoFactorAuthExemptEmailsErrors(domainAccountID: number, accountID: number) {
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
+        memberErrors: {
+            [accountID]: {
+                twoFactorAuthExemptEmailsError: null,
+            },
+        },
+    });
+}
+
+function resetDomainMemberTwoFactorAuth(domainAccountID: number, targetAccountID: number, targetEmail: string, twoFactorAuthCode: string) {
+    const optimisticData: OnyxUpdate[] = [];
+    const failureData: OnyxUpdate[] = [];
+    const successData: OnyxUpdate[] = [];
+
+    const params: ResetDomainMemberTwoFactorAuthParams = {
+        domainAccountID,
+        targetAccountID,
+        targetEmail,
+        twoFactorAuthCode,
+    };
+
+    API.write(WRITE_COMMANDS.RESET_DOMAIN_MEMBER_TWO_FACTOR_AUTH, params, {optimisticData, failureData, successData});
 }
 
 export {
@@ -1052,4 +1182,7 @@ export {
     clearAddMemberError,
     toggleTwoFactorAuthRequiredForDomain,
     clearToggleTwoFactorAuthRequiredForDomainError,
+    setTwoFactorAuthExemptEmailForDomain,
+    clearTwoFactorAuthExemptEmailsErrors,
+    resetDomainMemberTwoFactorAuth,
 };

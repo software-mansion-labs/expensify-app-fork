@@ -67,7 +67,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     );
 
     const getCustomRowProps = (accountID: number, email?: string) => ({
-        errors: getLatestError(domainErrors?.memberErrors?.[email ?? accountID]?.errors),
+        errors: domainErrors?.memberErrors?.[email ?? accountID],
         pendingAction: domainPendingActions?.member?.[email ?? accountID]?.pendingAction,
     });
 

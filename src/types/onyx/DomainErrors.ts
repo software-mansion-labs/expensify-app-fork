@@ -8,6 +8,11 @@ type GeneralDomainMemberErrors = {
      * Base errors
      */
     errors: OnyxCommon.Errors;
+
+    /**
+     *
+     */
+    twoFactorAuthExemptEmailsError: OnyxCommon.Errors;
 };
 
 /**
@@ -44,5 +49,7 @@ type DomainErrors = {
      */
     twoFactorAuthRequiredErrors?: OnyxCommon.Errors;
 };
+
+export type {GeneralDomainMemberErrors};
 
 export default DomainErrors;
