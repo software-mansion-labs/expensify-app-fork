@@ -8,6 +8,7 @@ import { Pie, PolarChart } from 'victory-native';
 import type { Color } from '@shopify/react-native-skia';
 import ChartTooltip from '@components/Charts/ChartTooltip';
 import ActivityIndicator from '@components/ActivityIndicator';
+import Text from '@components/Text';
 import {
     CHART_COLORS,
     PIE_CHART_MAX_SLICES,
@@ -107,7 +108,9 @@ function processDataIntoSlices(data: PieChartDataPoint[], startAngle: number, ge
         const otherValue = smallSlices.reduce((sum, s) => sum + s.value, 0);
         const otherPercentage = (otherValue / total) * 100;
         const sweepAngle = (otherValue / total) * 360;
-        const otherColor = getChartColor(finalSlices.length % CHART_COLORS.length);
+        
+        const otherColor = getChartColor(validSlices.length % CHART_COLORS.length);
+        console.log('otherColor', otherColor);
         finalSlices.push({
             label: PIE_CHART_OTHER_LABEL,
             value: otherValue,
@@ -366,7 +369,30 @@ function PieChartContent({ data, title, titleIcon, isLoading, valueUnit, onSlice
                     </Animated.View>
                 )}
             </View>
-        </View>
+            <View style={[styles.dFlex, styles.justifyContentCenter, styles.alignItemsCenter, styles.mh8, styles.mt8, styles.flexRow, styles.flexWrap]}>
+                {chartData.map((slice) => (
+                    <View
+                        key={`legend-${slice.label}`}
+                        style={[styles.flexRow, styles.alignItemsCenter, styles.mr4, styles.mb2]}
+                    >
+                        {/* The Dot: Background color is pulled directly from the data slice */}
+                        <View
+                            style={{
+                                borderRadius: 6, // 50% of 12px height
+                                width: 12,
+                                height: 12,
+                                backgroundColor: typeof slice.color === "string" ? slice.color : undefined,
+                            }}
+                        />
+
+                        {/* The Label: Text is pulled directly from the data slice label */}
+                        <Text style={[styles.textNormal, styles.ml2]}>
+                            {slice.label}
+                        </Text>
+                    </View>
+                ))}
+            </View>
+        </View >
     );
 }
 
