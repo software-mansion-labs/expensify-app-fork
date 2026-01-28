@@ -1,7 +1,7 @@
-import {useMemo, useState} from 'react';
-import type {SharedValue} from 'react-native-reanimated';
-import {makeMutable, useAnimatedReaction} from 'react-native-reanimated';
-import {scheduleOnRN} from 'react-native-worklets';
+import { useState } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
+import { makeMutable, useAnimatedReaction } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 /**
  * Input field type - matches Victory Native's InputFieldType
@@ -71,62 +71,41 @@ function useIsInteractionActive<Init extends ChartInteractionStateInit>(state: C
  *
  * @param initialValues - Initial x and y values matching your chart data structure
  * @returns Object containing the interaction state and a boolean indicating if interaction is active
- *
- * @example
- * ```tsx
- * const { state, isActive } = useChartInteractionState({
- *   x: '',
- *   y: { value: 0 }
- * });
- *
- * // Use with customGestures and actionsRef
- * const hoverGesture = Gesture.Hover()
- *   .onUpdate((e) => {
- *     state.isActive.set(true);
- *     actionsRef.current?.handleTouch(state, e.x, e.y);
- *   })
- *   .onEnd(() => {
- *     state.isActive.set(false);
- *   });
- * ```
  */
 function useChartInteractionState<Init extends ChartInteractionStateInit>(initialValues: Init): {
     state: ChartInteractionState<Init>;
     isActive: boolean;
 } {
-    const keys = Object.keys(initialValues.y).join(',');
+    // The React Compiler will automatically memoize this object creation.
+    // We remove the explicit useMemo and dependency on 'keys'.
+    const yState = {} as Record<keyof Init['y'], { value: SharedValue<number>; position: SharedValue<number> }>;
 
-    const state = useMemo(() => {
-        const yState = {} as Record<keyof Init['y'], {value: SharedValue<number>; position: SharedValue<number>}>;
-
-        for (const [key, initVal] of Object.entries(initialValues.y)) {
-            yState[key as keyof Init['y']] = {
-                value: makeMutable(initVal),
-                position: makeMutable(0),
-            };
-        }
-
-        return {
-            isActive: makeMutable(false),
-            matchedIndex: makeMutable(-1),
-            x: {
-                value: makeMutable(initialValues.x),
-                position: makeMutable(0),
-            },
-            y: yState,
-            yIndex: makeMutable(-1),
-            cursor: {
-                x: makeMutable(0),
-                y: makeMutable(0),
-            },
+    for (const [key, initVal] of Object.entries(initialValues.y)) {
+        yState[key as keyof Init['y']] = {
+            value: makeMutable(initVal),
+            position: makeMutable(0),
         };
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps -- keys is a stable string representation of y keys
-    }, [keys]);
+    }
+
+    const state: ChartInteractionState<Init> = {
+        isActive: makeMutable(false),
+        matchedIndex: makeMutable(-1),
+        x: {
+            value: makeMutable(initialValues.x),
+            position: makeMutable(0),
+        },
+        y: yState,
+        yIndex: makeMutable(-1),
+        cursor: {
+            x: makeMutable(0),
+            y: makeMutable(0),
+        },
+    };
 
     const isActive = useIsInteractionActive(state);
 
-    return {state, isActive};
+    return { state, isActive };
 }
 
-export {useChartInteractionState};
-export type {ChartInteractionState, ChartInteractionStateInit};
+export { useChartInteractionState };
+export type { ChartInteractionState, ChartInteractionStateInit };

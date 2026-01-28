@@ -1,10 +1,10 @@
-import {useMemo, useRef, useState} from 'react';
-import {Gesture} from 'react-native-gesture-handler';
-import type {SharedValue} from 'react-native-reanimated';
-import {useAnimatedReaction, useAnimatedStyle, useDerivedValue} from 'react-native-reanimated';
-import {scheduleOnRN} from 'react-native-worklets';
-import {TOOLTIP_BAR_GAP} from '@components/Charts/constants';
-import {useChartInteractionState} from './useChartInteractionState';
+import { useRef, useState } from 'react';
+import { Gesture } from 'react-native-gesture-handler';
+import type { SharedValue } from 'react-native-reanimated';
+import { useAnimatedReaction, useAnimatedStyle, useDerivedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import { TOOLTIP_BAR_GAP } from '@components/Charts/constants';
+import { useChartInteractionState } from './useChartInteractionState';
 
 /**
  * Arguments passed to the checkIsOver callback for hit-testing
@@ -34,7 +34,7 @@ type UseChartInteractionsProps = {
      */
     checkIsOver: (args: HitTestArgs) => boolean;
     /** Optional shared value containing bar dimensions used for hit-testing in bar charts */
-    barGeometry?: SharedValue<{barWidth: number; chartBottom: number; yZero: number}>;
+    barGeometry?: SharedValue<{ barWidth: number; chartBottom: number; yZero: number }>;
 };
 
 /**
@@ -74,29 +74,18 @@ type CartesianActionsHandle = {
  * );
  * ```
  */
-function useChartInteractions({handlePress, checkIsOver, barGeometry}: UseChartInteractionsProps) {
-    /** Interaction state compatible with Victory Native's internal logic */
-    const {state: chartInteractionState, isActive: isTooltipActiveState} = useChartInteractionState({x: 0, y: {y: 0}});
-
-    /** Ref passed to CartesianChart to allow manual touch injection */
+function useChartInteractions({ handlePress, checkIsOver, barGeometry }: UseChartInteractionsProps) {
+    const { state: chartInteractionState, isActive: isTooltipActiveState } = useChartInteractionState({ x: 0, y: { y: 0 } });
     const actionsRef = useRef<CartesianActionsHandle>(null);
 
-    /** React state for the index of the point currently being interacted with */
     const [activeDataIndex, setActiveDataIndex] = useState(-1);
-
-    /** React state indicating if the cursor is currently "hitting" a target based on checkIsOver */
     const [isOverTarget, setIsOverTarget] = useState(false);
 
-    /**
-     * Derived value performing the hit-test on the UI thread.
-     * Runs whenever cursor position or matched data points change.
-     */
     const isCursorOverTarget = useDerivedValue(() => {
         const cursorX = chartInteractionState.cursor.x.get();
         const cursorY = chartInteractionState.cursor.y.get();
         const targetX = chartInteractionState.x.position.get();
         const targetY = chartInteractionState.y.y.position.get();
-
         const chartBottom = barGeometry?.get().chartBottom ?? 0;
 
         return checkIsOver({
@@ -108,7 +97,6 @@ function useChartInteractions({handlePress, checkIsOver, barGeometry}: UseChartI
         });
     });
 
-    /** Syncs the matched data index from the UI thread to React state */
     useAnimatedReaction(
         () => chartInteractionState.matchedIndex.get(),
         (currentIndex) => {
@@ -116,7 +104,6 @@ function useChartInteractions({handlePress, checkIsOver, barGeometry}: UseChartI
         },
     );
 
-    /** Syncs the hit-test result from the UI thread to React state */
     useAnimatedReaction(
         () => isCursorOverTarget.get(),
         (isOver) => {
@@ -124,97 +111,71 @@ function useChartInteractions({handlePress, checkIsOver, barGeometry}: UseChartI
         },
     );
 
-    /**
-     * Hover gesture configuration.
-     * Primarily used for web/desktop to track mouse movement without clicking.
-     */
-    const hoverGesture = useMemo(
-        () =>
-            Gesture.Hover()
-                .onBegin((e) => {
-                    'worklet';
+    // React Compiler automatycznie zmemoizuje te obiekty gestów
+    const hoverGesture = Gesture.Hover()
+        .onBegin((e) => {
+            'worklet';
 
-                    chartInteractionState.isActive.set(true);
-                    chartInteractionState.cursor.x.set(e.x);
-                    chartInteractionState.cursor.y.set(e.y);
-                    actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
-                })
-                .onUpdate((e) => {
-                    'worklet';
+            chartInteractionState.isActive.set(true);
+            chartInteractionState.cursor.x.set(e.x);
+            chartInteractionState.cursor.y.set(e.y);
+            actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
+        })
+        .onUpdate((e) => {
+            'worklet';
 
-                    chartInteractionState.cursor.x.set(e.x);
-                    chartInteractionState.cursor.y.set(e.y);
-                    actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
-                })
-                .onEnd(() => {
-                    'worklet';
+            chartInteractionState.cursor.x.set(e.x);
+            chartInteractionState.cursor.y.set(e.y);
+            actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
+        })
+        .onEnd(() => {
+            'worklet';
 
-                    chartInteractionState.isActive.set(false);
-                }),
-        [chartInteractionState],
-    );
+            chartInteractionState.isActive.set(false);
+        });
 
-    /**
-     * Tap gesture configuration.
-     * Handles clicks/touches and triggers handlePress if Victory matched a data point.
-     */
-    const tapGesture = useMemo(
-        () =>
-            Gesture.Tap().onEnd((e) => {
-                'worklet';
+    const tapGesture = Gesture.Tap().onEnd((e) => {
+        'worklet';
 
-                // Update cursor position
-                chartInteractionState.cursor.x.set(e.x);
-                chartInteractionState.cursor.y.set(e.y);
+        chartInteractionState.cursor.x.set(e.x);
+        chartInteractionState.cursor.y.set(e.y);
 
-                // Let Victory calculate which data point was tapped
-                actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
-                const matchedIndex = chartInteractionState.matchedIndex.get();
+        actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
+        const matchedIndex = chartInteractionState.matchedIndex.get();
+        const isOver = isCursorOverTarget.get();
 
-                // If Victory matched a valid data point, trigger the press handler
-                if (matchedIndex >= 0) {
-                    scheduleOnRN(handlePress, matchedIndex);
-                }
-            }),
-        [chartInteractionState, handlePress],
-    );
+        if (matchedIndex >= 0 && isOver) {
+            scheduleOnRN(handlePress, matchedIndex);
+        }
+    });
 
-    /** Combined gesture object to be passed to CartesianChart's customGestures prop */
-    const customGestures = useMemo(() => Gesture.Race(hoverGesture, tapGesture), [hoverGesture, tapGesture]);
+    const customGestures = Gesture.Race(hoverGesture, tapGesture);
 
-    /**
-     * Animated style for positioning a tooltip relative to the matched data point.
-     * Automatically applies vertical offset and centering.
-     * For negative bars, positions tooltip at yZero (top of bar) instead of targetY (bottom of bar).
-     */
     const tooltipStyle = useAnimatedStyle(() => {
+        const posX = chartInteractionState.x.position.get();
         const targetY = chartInteractionState.y.y.position.get();
         const yZero = barGeometry?.get().yZero ?? targetY;
-        // Position tooltip at the top of the bar (min of targetY and yZero)
         const barTopY = Math.min(targetY, yZero);
+
+        const isVisible = chartInteractionState.isActive.get() && isCursorOverTarget.get();
 
         return {
             position: 'absolute',
-            left: chartInteractionState.x.position.get(),
+            left: posX,
             top: barTopY - TOOLTIP_BAR_GAP,
-            transform: [{translateX: '-50%'}, {translateY: '-100%'}],
-            opacity: chartInteractionState.isActive.get() ? 1 : 0,
+            transform: [{ translateX: '-50%' }, { translateY: '-100%' }],
+            opacity: isVisible ? 1 : 0,
         };
     });
 
     return {
-        /** Ref to be passed to CartesianChart */
         actionsRef,
-        /** Gestures to be passed to CartesianChart */
         customGestures,
-        /** The currently active data index (React state) */
         activeDataIndex,
-        /** Whether the tooltip should currently be rendered and visible */
-        isTooltipActive: isOverTarget && isTooltipActiveState,
-        /** Animated styles for the tooltip container */
+        isTooltipActive: isTooltipActiveState && isOverTarget,
         tooltipStyle,
     };
 }
 
-export {useChartInteractions};
-export type {HitTestArgs};
+export { useChartInteractions };
+export type { HitTestArgs };
