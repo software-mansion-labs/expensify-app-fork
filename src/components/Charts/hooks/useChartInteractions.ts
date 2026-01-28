@@ -1,10 +1,12 @@
-import {useMemo, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import {Gesture} from 'react-native-gesture-handler';
 import type {SharedValue} from 'react-native-reanimated';
 import {useAnimatedReaction, useAnimatedStyle, useDerivedValue} from 'react-native-reanimated';
 import {scheduleOnRN} from 'react-native-worklets';
 import {TOOLTIP_BAR_GAP} from '@components/Charts/constants';
 import {useChartInteractionState} from './useChartInteractionState';
+
+const INITIAL_INTERACTION_STATE = {x: 0, y: {y: 0}};
 
 /**
  * Arguments passed to the checkIsOver callback for hit-testing
@@ -76,11 +78,15 @@ type CartesianActionsHandle = {
  */
 function useChartInteractions({handlePress, checkIsOver, barGeometry}: UseChartInteractionsProps) {
     /** Interaction state compatible with Victory Native's internal logic */
-    const {state: chartInteractionState, isActive: isTooltipActiveState} = useChartInteractionState({x: 0, y: {y: 0}});
+    const {state: chartInteractionState, isActive: isTooltipActiveState} = useChartInteractionState(INITIAL_INTERACTION_STATE);
 
     /** Ref passed to CartesianChart to allow manual touch injection */
     const actionsRef = useRef<CartesianActionsHandle>(null);
 
+    /** To allow for react compiler compliance we mustn't access actionsRef directly */
+    const handleTouchWorklet = useDerivedValue(() => {
+        return actionsRef.current?.handleTouch;
+    });
     /** React state for the index of the point currently being interacted with */
     const [activeDataIndex, setActiveDataIndex] = useState(-1);
 
@@ -128,59 +134,62 @@ function useChartInteractions({handlePress, checkIsOver, barGeometry}: UseChartI
      * Hover gesture configuration.
      * Primarily used for web/desktop to track mouse movement without clicking.
      */
-    const hoverGesture = useMemo(
-        () =>
-            Gesture.Hover()
-                .onBegin((e) => {
-                    'worklet';
+    const hoverGesture = Gesture.Hover()
+        .onBegin((e) => {
+            'worklet';
 
-                    chartInteractionState.isActive.set(true);
-                    chartInteractionState.cursor.x.set(e.x);
-                    chartInteractionState.cursor.y.set(e.y);
-                    actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
-                })
-                .onUpdate((e) => {
-                    'worklet';
+            chartInteractionState.isActive.set(true);
+            chartInteractionState.cursor.x.set(e.x);
+            chartInteractionState.cursor.y.set(e.y);
 
-                    chartInteractionState.cursor.x.set(e.x);
-                    chartInteractionState.cursor.y.set(e.y);
-                    actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
-                })
-                .onEnd(() => {
-                    'worklet';
+            const touchFn = handleTouchWorklet.get();
+            if (touchFn) {
+                touchFn(chartInteractionState, e.x, e.y);
+            }
+        })
+        .onUpdate((e) => {
+            'worklet';
 
-                    chartInteractionState.isActive.set(false);
-                }),
-        [chartInteractionState],
-    );
+            chartInteractionState.cursor.x.set(e.x);
+            chartInteractionState.cursor.y.set(e.y);
+
+            const touchFn = handleTouchWorklet.get();
+            if (touchFn) {
+                touchFn(chartInteractionState, e.x, e.y);
+            }
+        })
+        .onEnd(() => {
+            'worklet';
+
+            chartInteractionState.isActive.set(false);
+        });
 
     /**
      * Tap gesture configuration.
      * Handles clicks/touches and triggers handlePress if Victory matched a data point.
      */
-    const tapGesture = useMemo(
-        () =>
-            Gesture.Tap().onEnd((e) => {
-                'worklet';
 
-                // Update cursor position
-                chartInteractionState.cursor.x.set(e.x);
-                chartInteractionState.cursor.y.set(e.y);
+    const tapGesture = Gesture.Tap().onEnd((e) => {
+        'worklet';
 
-                // Let Victory calculate which data point was tapped
-                actionsRef.current?.handleTouch(chartInteractionState, e.x, e.y);
-                const matchedIndex = chartInteractionState.matchedIndex.get();
+        // Update cursor position
+        chartInteractionState.cursor.x.set(e.x);
+        chartInteractionState.cursor.y.set(e.y);
 
-                // If Victory matched a valid data point, trigger the press handler
-                if (matchedIndex >= 0) {
-                    scheduleOnRN(handlePress, matchedIndex);
-                }
-            }),
-        [chartInteractionState, handlePress],
-    );
+        // Let Victory calculate which data point was tapped
+        const touchFn = handleTouchWorklet.get();
+        if (touchFn) {
+            touchFn(chartInteractionState, e.x, e.y);
+        }
+
+        const matchedIndex = chartInteractionState.matchedIndex.get();
+        if (matchedIndex >= 0 && isCursorOverTarget.get()) {
+            scheduleOnRN(handlePress, matchedIndex);
+        }
+    });
 
     /** Combined gesture object to be passed to CartesianChart's customGestures prop */
-    const customGestures = useMemo(() => Gesture.Race(hoverGesture, tapGesture), [hoverGesture, tapGesture]);
+    const customGestures = Gesture.Race(hoverGesture, tapGesture);
 
     /**
      * Animated style for positioning a tooltip relative to the matched data point.
