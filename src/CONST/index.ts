@@ -7276,6 +7276,7 @@ const CONST = {
             REPORT_FIELD: 'report-field',
             COLUMNS: 'columns',
             LIMIT: 'limit',
+            VIEW: 'view',
         },
         get SEARCH_USER_FRIENDLY_VALUES_MAP() {
             return {

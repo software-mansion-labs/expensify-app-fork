@@ -120,6 +120,7 @@ autocompleteKey "key"
       / reportFieldDynamic
       / columns
       / limit
+      / view
     )
 
 filterKey

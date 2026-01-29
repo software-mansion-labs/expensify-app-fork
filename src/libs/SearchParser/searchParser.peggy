@@ -263,6 +263,7 @@ key "key"
       / purchaseCurrency
       / purchaseAmount
       / reportFieldDynamic
+      / view
     )
 
 filterKey

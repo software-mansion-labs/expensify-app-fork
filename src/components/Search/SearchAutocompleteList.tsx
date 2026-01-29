@@ -322,6 +322,10 @@ function SearchAutocompleteList({
     }, [allPoliciesTags]);
     const recentTagsAutocompleteList = useMemo(() => getAutocompleteRecentTags(allRecentTags), [allRecentTags]);
 
+    const viewAutocompleteList = useMemo(() => {
+        return Object.values(CONST.SEARCH.VIEW).map((value) => getUserFriendlyValue(value));
+    }, []);
+
     const [autocompleteParsedQuery, autocompleteQueryWithoutFilters] = useMemo(() => {
         const queryWithoutFilters = getQueryWithoutFilters(autocompleteQueryValue);
         return [parsedQuery, queryWithoutFilters];
@@ -495,6 +499,12 @@ function SearchAutocompleteList({
                 );
                 return filteredGroupBy.map((groupByValue) => ({filterKey: CONST.SEARCH.SEARCH_USER_FRIENDLY_KEYS.GROUP_BY, text: groupByValue}));
             }
+            case CONST.SEARCH.SYNTAX_ROOT_KEYS.VIEW: {
+                const filteredView = viewAutocompleteList.filter(
+                    (viewValue) => viewValue.toLowerCase().includes(autocompleteValue.toLowerCase()) && !alreadyAutocompletedKeys.has(viewValue.toLowerCase()),
+                );
+                return filteredView.map((viewValue) => ({filterKey: CONST.SEARCH.SEARCH_USER_FRIENDLY_KEYS.VIEW, text: viewValue}));
+            }
             case CONST.SEARCH.SYNTAX_ROOT_KEYS.STATUS: {
                 const filteredStatuses = statusAutocompleteList
                     .filter((status) => status.includes(autocompleteValue.toLowerCase()) && !alreadyAutocompletedKeys.has(status))
@@ -642,6 +652,7 @@ function SearchAutocompleteList({
         statusAutocompleteList,
         feedAutoCompleteList,
         cardAutocompleteList,
+        viewAutocompleteList,
         translate,
         workspaceList,
         hasAutocompleteList,
