@@ -6,6 +6,8 @@ import {scheduleOnRN} from 'react-native-worklets';
 import {TOOLTIP_BAR_GAP} from '@components/Charts/constants';
 import {useChartInteractionState} from './useChartInteractionState';
 
+const INITIAL_INTERACTION_STATE = {x: 0, y: {y: 0}};
+
 /**
  * Arguments passed to the checkIsOver callback for hit-testing
  */
@@ -76,8 +78,7 @@ type CartesianActionsHandle = {
  */
 function useChartInteractions({handlePress, checkIsOver, barGeometry}: UseChartInteractionsProps) {
     /** Interaction state compatible with Victory Native's internal logic */
-    const {state: chartInteractionState, isActive: isTooltipActiveState} = useChartInteractionState({x: 0, y: {y: 0}});
-
+    const {state: chartInteractionState, isActive: isTooltipActiveState} = useChartInteractionState(INITIAL_INTERACTION_STATE);
     /** Ref passed to CartesianChart to allow manual touch injection */
     const actionsRef = useRef<CartesianActionsHandle>(null);
 

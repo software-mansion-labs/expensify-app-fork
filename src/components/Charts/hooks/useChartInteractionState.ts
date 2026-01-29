@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 import type {SharedValue} from 'react-native-reanimated';
 import {makeMutable, useAnimatedReaction} from 'react-native-reanimated';
 import {scheduleOnRN} from 'react-native-worklets';
@@ -96,34 +96,29 @@ function useChartInteractionState<Init extends ChartInteractionStateInit>(
     state: ChartInteractionState<Init>;
     isActive: boolean;
 } {
-    const keys = Object.keys(initialValues.y).join(',');
+    const yState = {} as Record<keyof Init['y'], {value: SharedValue<number>; position: SharedValue<number>}>;
 
-    const state = useMemo(() => {
-        const yState = {} as Record<keyof Init['y'], {value: SharedValue<number>; position: SharedValue<number>}>;
-
-        for (const [key, initVal] of Object.entries(initialValues.y)) {
-            yState[key as keyof Init['y']] = {
-                value: makeMutable(initVal),
-                position: makeMutable(0),
-            };
-        }
-
-        return {
-            isActive: makeMutable(false),
-            matchedIndex: makeMutable(-1),
-            x: {
-                value: makeMutable(initialValues.x),
-                position: makeMutable(0),
-            },
-            y: yState,
-            yIndex: makeMutable(-1),
-            cursor: {
-                x: makeMutable(0),
-                y: makeMutable(0),
-            },
+    for (const [key, initVal] of Object.entries(initialValues.y)) {
+        yState[key as keyof Init['y']] = {
+            value: makeMutable(initVal),
+            position: makeMutable(0),
         };
-        // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps -- keys is a stable string representation of y keys
-    }, [keys]);
+    }
+
+    const state: ChartInteractionState<Init> = {
+        isActive: makeMutable(false),
+        matchedIndex: makeMutable(-1),
+        x: {
+            value: makeMutable(initialValues.x),
+            position: makeMutable(0),
+        },
+        y: yState,
+        yIndex: makeMutable(-1),
+        cursor: {
+            x: makeMutable(0),
+            y: makeMutable(0),
+        },
+    };
 
     const isActive = useIsInteractionActive(state);
 
