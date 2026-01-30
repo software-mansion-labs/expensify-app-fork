@@ -1,9 +1,18 @@
+import {defaultSecurityGroupIDSelector, memberAccountIDsSelector} from '@selectors/Domain';
+import React from 'react';
+import Button from '@components/Button';
+import {useMemoizedLazyExpensifyIcons, useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import  {memberAccountIDsSelector} from '@selectors/Domain';
 import React, {useState} from 'react';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
 import {useMemoizedLazyExpensifyIcons, useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useThemeStyles from '@hooks/useThemeStyles';
+import {clearAddMemberError} from '@libs/actions/Domain';
+import {getLatestError} from '@libs/ErrorUtils';
+import Navigation from '@navigation/Navigation';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
@@ -33,6 +42,13 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const styles = useThemeStyles();
     const {isOffline} = useNetwork();
     const [isOfflineModalVisible, setIsOfflineModalVisible] = useState(false);
+    const icons = useMemoizedLazyExpensifyIcons(['Plus']);
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const styles = useThemeStyles();
+
+    const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {canBeMissing: true});
+    const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {canBeMissing: true});
+    const [defaultSecurityGroupID] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true, selector: defaultSecurityGroupIDSelector});
 
     const [memberIDs] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
         canBeMissing: true,
@@ -40,38 +56,53 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     });
 
     const headerContent = (
-        <ButtonWithDropdownMenu
-            success={false}
-            onPress={() => {}}
-            shouldAlwaysShowDropdownMenu
-            customText={translate('common.more')}
-            options={[
-                {
-                    text: translate('domain.admins.settings'),
-                    icon: icons.Gear,
-                    onSelected: () => Navigation.navigate(ROUTES.DOMAIN_MEMBERS_SETTINGS.getRoute(domainAccountID)),
-                    value: CONST.DOMAIN.SECONDARY_ACTIONS.LEAVE,
-                },
-                {
-                    text: translate('spreadsheet.downloadCSV'),
-                    icon: icons.Download,
-                    onSelected: () => {
-                            if (isOffline) {
-                                close(() => setIsOfflineModalVisible(true));
-                                return;
-                            }
-
-                            close(() => {
-                                // API call responsible for downloading members as a CSV file
-                            });
+        <>
+            <Button
+                success
+                onPress={() => Navigation.navigate(ROUTES.DOMAIN_ADD_MEMBER.getRoute(domainAccountID))}
+                text={translate('domain.members.addMember')}
+                icon={icons.Plus}
+                innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
+                style={shouldUseNarrowLayout ? [styles.flexGrow1, styles.mb3] : undefined}
+            />
+            <ButtonWithDropdownMenu
+                success={false}
+                onPress={() => {}}
+                shouldAlwaysShowDropdownMenu
+                customText={translate('common.more')}
+                options={[
+                    {
+                        text: translate('domain.admins.settings'),
+                        icon: icons.Gear,
+                        onSelected: () => Navigation.navigate(ROUTES.DOMAIN_MEMBERS_SETTINGS.getRoute(domainAccountID)),
+                        value: CONST.DOMAIN.SECONDARY_ACTIONS.LEAVE,
                     },
-                    value: CONST.DOMAIN.SECONDARY_ACTIONS.SAVE_TO_CSV,
-                },
-            ]}
-            isSplitButton={false}
-            wrapperStyle={styles.flexGrow1}
-        />
+                    {
+                        text: translate('spreadsheet.downloadCSV'),
+                        icon: icons.Download,
+                        onSelected: () => {
+                                if (isOffline) {
+                                    close(() => setIsOfflineModalVisible(true));
+                                    return;
+                                }
+
+                                close(() => {
+                                    // API call responsible for downloading members as a CSV file
+                                });
+                        },
+                        value: CONST.DOMAIN.SECONDARY_ACTIONS.SAVE_TO_CSV,
+                    },
+                ]}
+                isSplitButton={false}
+                wrapperStyle={styles.flexGrow1}
+            />
+        </>
     );
+
+    const getCustomRowProps = (accountID: number, email?: string) => ({
+        errors: getLatestError(domainErrors?.memberErrors?.[email ?? accountID]?.errors),
+        pendingAction: domainPendingActions?.member?.[email ?? accountID]?.pendingAction,
+    });
 
     return (
         <BaseDomainMembersPage
@@ -80,8 +111,16 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
             headerTitle={translate('domain.members.title')}
             headerContent={headerContent}
             searchPlaceholder={translate('domain.members.findMember')}
-            onSelectRow={() => {}}
+            onSelectRow={(item) => Navigation.navigate(ROUTES.DOMAIN_MEMBER_DETAILS.getRoute(domainAccountID, item.accountID))}
             headerIcon={illustrations.Profile}
+            getCustomRowProps={getCustomRowProps}
+            onDismissError={(item) => {
+                if (!defaultSecurityGroupID) {
+                    return;
+                }
+                clearAddMemberError(domainAccountID, item.accountID, item.login, defaultSecurityGroupID);
+            }}
+        />
         >
             <ConfirmModal
                     isVisible={isOfflineModalVisible}
