@@ -8,8 +8,8 @@ import type {
     RemoveDomainAdminParams,
     SetTechnicalContactEmailParams,
     ToggleConsolidatedDomainBillingParams,
+    ToggleTwoFactorAuthRequiredForDomainParams,
 } from '@libs/API/parameters';
-import type {AddAdminToDomainParams, RemoveDomainAdminParams, SetTechnicalContactEmailParams, ToggleConsolidatedDomainBillingParams, ToggleTwoFactorAuthRequiredForDomainParams} from '@libs/API/parameters';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {generateAccountID} from '@libs/UserUtils';
@@ -1051,5 +1051,5 @@ export {
     addMemberToDomain,
     clearAddMemberError,
     toggleTwoFactorAuthRequiredForDomain,
-    clearToggleTwoFactorAuthRequiredForDomainError
+    clearToggleTwoFactorAuthRequiredForDomainError,
 };
