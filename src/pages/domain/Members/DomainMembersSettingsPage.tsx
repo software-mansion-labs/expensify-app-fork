@@ -3,6 +3,7 @@ import React from 'react';
 import {View} from 'react-native';
 import RenderHTML from '@components/RenderHTML';
 import useLocalize from '@hooks/useLocalize';
+import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {getLatestError} from '@libs/ErrorUtils';
@@ -23,6 +24,7 @@ function DomainMembersSettingsPage({route}: DomainMembersSettingsPageProps) {
 
     const {translate} = useLocalize();
     const styles = useThemeStyles();
+    const {isOffline} = useNetwork();
 
     const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {
         canBeMissing: true,
@@ -35,20 +37,22 @@ function DomainMembersSettingsPage({route}: DomainMembersSettingsPageProps) {
         selector: domainMemberSettingsSelector,
     });
     const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true, selector: domainNameSelector});
+    const [account] = useOnyx(ONYXKEYS.ACCOUNT, {canBeMissing: false});
+    const is2FAEnabled = account?.requiresTwoFactorAuth;
 
     return (
         <BaseDomainSettingsPage domainAccountID={domainAccountID}>
             <ToggleSettingOptionRow
-                wrapperStyle={[styles.mv3, styles.ph5]}
+                wrapperStyle={[styles.ph5]}
                 switchAccessibilityLabel={translate('domain.members.forceTwoFactorAuth')}
                 isActive={!!domainSettings?.twoFactorAuthRequired}
-                disabled={!!domainSettings?.samlEnabled}
+                disabled={!!domainSettings?.samlEnabled || isOffline}
                 onToggle={(value) => {
                     if (!domainName) {
                         return;
                     }
 
-                    if (!value) {
+                    if (!value && is2FAEnabled) {
                         Navigation.navigate(ROUTES.DOMAIN_MEMBERS_SETTINGS_TWO_FACTOR_AUTH.getRoute(domainAccountID));
                     } else {
                         toggleTwoFactorAuthRequiredForDomain(domainAccountID, domainName, value);
@@ -64,7 +68,7 @@ function DomainMembersSettingsPage({route}: DomainMembersSettingsPageProps) {
                 }
                 shouldPlaceSubtitleBelowSwitch
                 pendingAction={domainPendingActions?.twoFactorAuthRequired}
-                errors={getLatestError(domainErrors?.twoFactorAuthRequiredErrors)}
+                errors={getLatestError(domainErrors?.setTwoFactorAuthRequiredError)}
                 onCloseError={() => clearToggleTwoFactorAuthRequiredForDomainError(domainAccountID)}
             />
         </BaseDomainSettingsPage>

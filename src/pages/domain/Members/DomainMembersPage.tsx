@@ -15,8 +15,8 @@ import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import BaseDomainMembersPage from '@pages/domain/BaseDomainMembersPage';
-import {close} from '@userActions/Modal';
 import CONST from '@src/CONST';
+import {close} from '@userActions/Modal';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -27,7 +27,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const {domainAccountID} = route.params;
     const {translate} = useLocalize();
     const illustrations = useMemoizedLazyIllustrations(['Profile']);
-    const icons = useMemoizedLazyExpensifyIcons(['Gear', 'Download', 'Plus']);
+    const icons = useMemoizedLazyExpensifyIcons(['Plus', 'Gear', 'Download']);
     const [isOfflineModalVisible, setIsOfflineModalVisible] = useState(false);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const styles = useThemeStyles();
@@ -59,10 +59,10 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                 customText={translate('common.more')}
                 options={[
                     {
-                        text: translate('domain.admins.settings'),
+                        value: CONST.DOMAIN.MEMBERS.SECONDARY_ACTIONS.SETTINGS,
+                        text: translate('domain.common.settings'),
                         icon: icons.Gear,
                         onSelected: () => Navigation.navigate(ROUTES.DOMAIN_MEMBERS_SETTINGS.getRoute(domainAccountID)),
-                        value: CONST.DOMAIN.SECONDARY_ACTIONS.LEAVE,
                     },
                     {
                         text: translate('spreadsheet.downloadCSV'),
@@ -81,7 +81,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                     },
                 ]}
                 isSplitButton={false}
-                wrapperStyle={styles.flexGrow1}
+                wrapperStyle={shouldUseNarrowLayout && [styles.flexGrow1, styles.mb3]}
             />
         </>
     );

@@ -1,8 +1,10 @@
 import type {ReactNode} from 'react';
 import React from 'react';
+import {View} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@navigation/Navigation';
 import DomainNotFoundPageWrapper from './DomainNotFoundPageWrapper';
 
@@ -15,6 +17,7 @@ type BaseDomainSettingsPageProps = {
 };
 
 function BaseDomainSettingsPage({domainAccountID, children}: BaseDomainSettingsPageProps) {
+    const styles = useThemeStyles();
     const {translate} = useLocalize();
 
     return (
@@ -23,15 +26,17 @@ function BaseDomainSettingsPage({domainAccountID, children}: BaseDomainSettingsP
                 shouldEnableMaxHeight
                 shouldUseCachedViewportHeight
                 testID={BaseDomainSettingsPage.displayName}
-                enableEdgeToEdgeBottomSafeAreaPadding
+                includeSafeAreaPaddingBottom={false}
+                shouldShowOfflineIndicator
+                shouldShowOfflineIndicatorInWideScreen
             >
                 <HeaderWithBackButton
-                    title={translate('domain.admins.settings')}
+                    title={translate('domain.common.settings')}
                     onBackButtonPress={() => {
                         Navigation.dismissModal();
                     }}
                 />
-                {children}
+                <View style={styles.flex1}>{children}</View>
             </ScreenWrapper>
         </DomainNotFoundPageWrapper>
     );
