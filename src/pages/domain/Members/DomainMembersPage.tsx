@@ -2,8 +2,10 @@ import {defaultSecurityGroupIDSelector, memberAccountIDsSelector} from '@selecto
 import React from 'react';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
+import useConfirmModal from '@hooks/useConfirmModal';
 import {useMemoizedLazyExpensifyIcons, useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
+import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -13,6 +15,7 @@ import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import BaseDomainMembersPage from '@pages/domain/BaseDomainMembersPage';
+import {close} from '@userActions/Modal';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -24,9 +27,10 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const {domainAccountID} = route.params;
     const {translate} = useLocalize();
     const illustrations = useMemoizedLazyIllustrations(['Profile']);
-    const icons = useMemoizedLazyExpensifyIcons(['Plus', 'Gear']);
+    const icons = useMemoizedLazyExpensifyIcons(['Plus', 'Gear', 'Download']);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const styles = useThemeStyles();
+    const {isOffline} = useNetwork();
 
     const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {canBeMissing: true});
     const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {canBeMissing: true});
@@ -37,7 +41,9 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
         selector: memberAccountIDsSelector,
     });
 
-    const renderHeaderButtons = (
+    const {showConfirmModal} = useConfirmModal();
+
+    const headerContent = (
         <>
             <Button
                 success
@@ -59,6 +65,29 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                         icon: icons.Gear,
                         onSelected: () => Navigation.navigate(ROUTES.DOMAIN_MEMBERS_SETTINGS.getRoute(domainAccountID)),
                     },
+                    {
+                        text: translate('spreadsheet.downloadCSV'),
+                        icon: icons.Download,
+                        onSelected: () => {
+                            if (isOffline) {
+                                close(() => {
+                                    showConfirmModal({
+                                        title: translate('common.youAppearToBeOffline'),
+                                        prompt: translate('common.thisFeatureRequiresInternet'),
+                                        confirmText: translate('common.buttonConfirm'),
+                                        shouldShowCancelButton: false,
+                                        shouldHandleNavigationBack: true,
+                                    });
+                                });
+                                return;
+                            }
+
+                            close(() => {
+                                // API call responsible for downloading members as a CSV file
+                            });
+                        },
+                        value: CONST.DOMAIN.MEMBERS.SECONDARY_ACTIONS.SAVE_TO_CSV,
+                    },
                 ]}
                 isSplitButton={false}
                 wrapperStyle={shouldUseNarrowLayout && [styles.flexGrow1, styles.mb3]}
@@ -76,10 +105,10 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
             domainAccountID={domainAccountID}
             accountIDs={memberIDs ?? []}
             headerTitle={translate('domain.members.title')}
+            headerContent={headerContent}
             searchPlaceholder={translate('domain.members.findMember')}
             onSelectRow={(item) => Navigation.navigate(ROUTES.DOMAIN_MEMBER_DETAILS.getRoute(domainAccountID, item.accountID))}
             headerIcon={illustrations.Profile}
-            headerContent={renderHeaderButtons}
             getCustomRowProps={getCustomRowProps}
             onDismissError={(item) => {
                 if (!defaultSecurityGroupID) {

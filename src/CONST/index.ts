@@ -8252,6 +8252,7 @@ const CONST = {
         MEMBERS: {
             SECONDARY_ACTIONS: {
                 SETTINGS: 'settings',
+                SAVE_TO_CSV: 'saveToCSV',
             },
         },
     },
