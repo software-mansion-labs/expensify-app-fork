@@ -62,9 +62,6 @@ type BaseDomainMembersPageProps = {
 
     /** Callback fired when the user dismisses an error message for a specific row */
     onDismissError?: (item: MemberOption) => void;
-
-    /** Actual content wrapped by this component */
-    children: React.ReactNode;
 };
 
 function BaseDomainMembersPage({
@@ -78,7 +75,6 @@ function BaseDomainMembersPage({
     getCustomRightElement,
     getCustomRowProps,
     onDismissError,
-    children,
 }: BaseDomainMembersPageProps) {
     const {formatPhoneNumber, localeCompare} = useLocalize();
     const styles = useThemeStyles();
@@ -184,7 +180,6 @@ function BaseDomainMembersPage({
                     customListHeaderContent={listHeaderContent}
                     disableMaintainingScrollPosition
                 />
-                {children}
             </ScreenWrapper>
         </DomainNotFoundPageWrapper>
     );

@@ -1,8 +1,8 @@
 import {defaultSecurityGroupIDSelector, memberAccountIDsSelector} from '@selectors/Domain';
-import React, {useState} from 'react';
+import React from 'react';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
-import ConfirmModal from '@components/ConfirmModal';
+import useConfirmModal from '@hooks/useConfirmModal';
 import {useMemoizedLazyExpensifyIcons, useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
@@ -15,8 +15,8 @@ import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import BaseDomainMembersPage from '@pages/domain/BaseDomainMembersPage';
-import CONST from '@src/CONST';
 import {close} from '@userActions/Modal';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -28,7 +28,6 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const {translate} = useLocalize();
     const illustrations = useMemoizedLazyIllustrations(['Profile']);
     const icons = useMemoizedLazyExpensifyIcons(['Plus', 'Gear', 'Download']);
-    const [isOfflineModalVisible, setIsOfflineModalVisible] = useState(false);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const styles = useThemeStyles();
     const {isOffline} = useNetwork();
@@ -41,6 +40,8 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
         canBeMissing: true,
         selector: memberAccountIDsSelector,
     });
+
+    const {showConfirmModal} = useConfirmModal();
 
     const headerContent = (
         <>
@@ -69,7 +70,15 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                         icon: icons.Download,
                         onSelected: () => {
                             if (isOffline) {
-                                close(() => setIsOfflineModalVisible(true));
+                                close(() => {
+                                    showConfirmModal({
+                                        title: translate('common.youAppearToBeOffline'),
+                                        prompt: translate('common.thisFeatureRequiresInternet'),
+                                        confirmText: translate('common.buttonConfirm'),
+                                        shouldShowCancelButton: false,
+                                        shouldHandleNavigationBack: true,
+                                    });
+                                });
                                 return;
                             }
 
@@ -77,7 +86,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                                 // API call responsible for downloading members as a CSV file
                             });
                         },
-                        value: CONST.DOMAIN.SECONDARY_ACTIONS.SAVE_TO_CSV,
+                        value: CONST.DOMAIN.MEMBERS.SECONDARY_ACTIONS.SAVE_TO_CSV,
                     },
                 ]}
                 isSplitButton={false}
@@ -107,18 +116,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                 }
                 clearAddMemberError(domainAccountID, item.accountID, item.login, defaultSecurityGroupID);
             }}
-        >
-            <ConfirmModal
-                isVisible={isOfflineModalVisible}
-                onConfirm={() => setIsOfflineModalVisible(false)}
-                title={translate('common.youAppearToBeOffline')}
-                prompt={translate('common.thisFeatureRequiresInternet')}
-                confirmText={translate('common.buttonConfirm')}
-                shouldShowCancelButton={false}
-                onCancel={() => setIsOfflineModalVisible(false)}
-                shouldHandleNavigationBack
-            />
-        </BaseDomainMembersPage>
+        />
     );
 }
 
