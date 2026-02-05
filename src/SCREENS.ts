@@ -949,8 +949,6 @@ const SCREENS = {
         PROMPT: 'Multifactor_Authentication_Prompt',
         NOT_FOUND: 'Multifactor_Authentication_Not_Found',
         REVOKE: 'Multifactor_Authentication_Revoke',
-        MEMBERS_SETTINGS: 'Members_Settings',
-        MEMBERS_SETTINGS_TWO_FACTOR_AUTH: 'Members_Settings_Two_Factor_Auth',
     },
 } as const;
 
