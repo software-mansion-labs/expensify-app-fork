@@ -718,9 +718,11 @@ const translations: TranslationDeepObject<typeof en> = {
         letsAuthenticateYou: '認証を行っています…',
         verifyYourself: {
             biometrics: '顔または指紋で本人確認を行ってください',
+            passkeys: '',
         },
         enableQuickVerification: {
             biometrics: '顔や指紋を使って、素早く安全に認証できます。パスワードやコードは不要です。',
+            passkeys: '',
         },
         revoke: {
             remove: '削除',

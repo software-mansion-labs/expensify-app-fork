@@ -6,6 +6,7 @@ import type {
 } from '@components/MultifactorAuthentication/config/types';
 import type {MarqetaAuthTypeName, MultifactorAuthenticationKeyInfo, MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/Biometrics/types';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
+import type {PasskeyRegistrationResponse} from '@libs/MultifactorAuthentication/Passkeys/WebAuthn/types';
 import CONST from '@src/CONST';
 import Base64URL from '@src/utils/Base64URL';
 import {registerAuthenticationKey} from './index';
@@ -137,5 +138,40 @@ async function processScenario<T extends MultifactorAuthenticationScenario>(
     };
 }
 
-export {processRegistration, processScenario};
-export type {ProcessResult, RegistrationParams};
+type PasskeyRegistrationParams = {
+    registrationResponse: PasskeyRegistrationResponse;
+    authenticationMethod: MarqetaAuthTypeName;
+    challenge: string;
+};
+
+/**
+ * Processes a passkey (WebAuthn) registration request.
+ * Unlike ED25519 biometrics, the WebAuthn registration response from the browser
+ * is already in the correct format (rawId, type, response with clientDataJSON and attestationObject)
+ * and is sent directly as keyInfo without wrapping.
+ */
+async function processPasskeyRegistration(params: PasskeyRegistrationParams): Promise<ProcessResult> {
+    if (!params.challenge) {
+        return {
+            success: false,
+            reason: VALUES.REASON.CHALLENGE.CHALLENGE_MISSING,
+        };
+    }
+
+    // Send the WebAuthn registration response directly as keyInfo.
+    // The backend distinguishes the format by the `type` field: 'public-key' (passkey) vs 'ed25519' (native biometrics).
+    const {httpCode, reason} = await registerAuthenticationKey({
+        keyInfo: params.registrationResponse as unknown as MultifactorAuthenticationKeyInfo,
+        authenticationMethod: params.authenticationMethod,
+    });
+
+    const success = isHttpSuccess(httpCode);
+
+    return {
+        success,
+        reason,
+    };
+}
+
+export {processRegistration, processPasskeyRegistration, processScenario};
+export type {ProcessResult, RegistrationParams, PasskeyRegistrationParams};

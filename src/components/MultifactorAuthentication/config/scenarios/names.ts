@@ -11,10 +11,19 @@ const SCENARIO_NAMES = {
 } as const;
 
 /**
+ * Authentication method type identifiers.
+ */
+const AUTHENTICATION_METHOD_NAMES = {
+    BIOMETRICS: 'BIOMETRICS',
+    PASSKEYS: 'PASSKEYS',
+} as const;
+
+/**
  * Prompt identifiers for multifactor authentication scenarios.
  */
 const PROMPT_NAMES = {
     ENABLE_BIOMETRICS: 'enable-biometrics',
+    ENABLE_PASSKEYS: 'enable-passkeys',
 };
 
-export {SCENARIO_NAMES, PROMPT_NAMES};
+export {SCENARIO_NAMES, AUTHENTICATION_METHOD_NAMES, PROMPT_NAMES};

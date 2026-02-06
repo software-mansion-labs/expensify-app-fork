@@ -9,9 +9,10 @@ import useNetwork from '@hooks/useNetwork';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import getPlatform from '@libs/getPlatform';
 import type {ChallengeType, MultifactorAuthenticationReason, OutcomePaths} from '@libs/MultifactorAuthentication/Biometrics/types';
+import {REASON as PASSKEY_REASON} from '@libs/MultifactorAuthentication/Passkeys/VALUES';
 import Navigation from '@navigation/Navigation';
 import {clearLocalMFAPublicKeyList, requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
-import {processRegistration, processScenario} from '@userActions/MultifactorAuthentication/processing';
+import {processPasskeyRegistration, processRegistration, processScenario} from '@userActions/MultifactorAuthentication/processing';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -19,6 +20,8 @@ import type {DeviceBiometrics} from '@src/types/onyx';
 import {useMultifactorAuthenticationState} from './State';
 import useNativeBiometrics from './useNativeBiometrics';
 import type {AuthorizeResult, RegisterResult} from './useNativeBiometrics';
+import usePasskeysBiometrics from './usePasskeysBiometrics';
+import type {AuthorizeResult as PasskeyAuthorizeResult, PasskeyRegisterResult} from './usePasskeysBiometrics';
 
 let deviceBiometricsState: OnyxEntry<DeviceBiometrics>;
 
@@ -70,6 +73,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
     const {state, dispatch} = useMultifactorAuthenticationState();
 
     const biometrics = useNativeBiometrics();
+    const passkeys = usePasskeysBiometrics();
     const {isOffline} = useNetwork();
     const platform = getPlatform();
     const isWeb = useMemo(() => platform === CONST.PLATFORM.WEB || platform === CONST.PLATFORM.MOBILE_WEB, [platform]);
@@ -121,29 +125,48 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             return;
         }
 
-        // 2. Check if device is compatible
-        if (!biometrics.doesDeviceSupportBiometrics()) {
-            const {allowedAuthenticationMethods = [] as string[]} = scenario ? MULTIFACTOR_AUTHENTICATION_SCENARIO_CONFIG[scenario] : {};
+        // Determine which authentication factor to use based on platform:
+        // Web → passkeys (WebAuthn), Native → biometrics (expo-local-authentication)
+        const scenarioConfig = scenario ? MULTIFACTOR_AUTHENTICATION_SCENARIO_CONFIG[scenario] : undefined;
+        const usePasskeysAsFactor = isWeb;
+        const activeFactor = usePasskeysAsFactor ? passkeys : biometrics;
+        const promptName = usePasskeysAsFactor ? CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.ENABLE_PASSKEYS : CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.ENABLE_BIOMETRICS;
 
-            let reason: MultifactorAuthenticationReason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.UNSUPPORTED_DEVICE;
-
-            // If the user is using mobile app and the scenario allows native biometrics as a form of authentication,
-            // then they need to enable it in the system settings as well for doesDeviceSupportBiometrics to return true.
-            if (!isWeb && allowedAuthenticationMethods.includes(CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS)) {
-                reason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.NO_ELIGIBLE_METHODS;
+        // 2. Check if device is compatible - separate logic for web and native
+        if (isWeb) {
+            if (!passkeys.doesDeviceSupportBiometrics()) {
+                dispatch({
+                    type: 'SET_ERROR',
+                    payload: {
+                        reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.UNSUPPORTED_DEVICE,
+                    },
+                });
+                return;
             }
+        } else {
+            if (!biometrics.doesDeviceSupportBiometrics()) {
+                const {allowedAuthenticationMethods = [] as string[]} = scenarioConfig ?? {};
 
-            dispatch({
-                type: 'SET_ERROR',
-                payload: {
-                    reason,
-                },
-            });
-            return;
+                let reason: MultifactorAuthenticationReason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.UNSUPPORTED_DEVICE;
+
+                // If the user is using mobile app and the scenario allows native biometrics,
+                // they need to enable it in system settings for doesDeviceSupportBiometrics to return true.
+                if (allowedAuthenticationMethods.includes(CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS)) {
+                    reason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.NO_ELIGIBLE_METHODS;
+                }
+
+                dispatch({
+                    type: 'SET_ERROR',
+                    payload: {
+                        reason,
+                    },
+                });
+                return;
+            }
         }
 
         // 3. Check if registration is required (local credentials not known to server yet)
-        const isRegistrationRequired = !(await biometrics.areLocalCredentialsKnownToServer()) && !isRegistrationComplete;
+        const isRegistrationRequired = !(await activeFactor.areLocalCredentialsKnownToServer()) && !isRegistrationComplete;
 
         if (isRegistrationRequired) {
             // Need validate code before registration
@@ -180,55 +203,92 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             // Check if a soft prompt is needed
             if (!softPromptApproved) {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.ENABLE_BIOMETRICS), {forceReplace: true});
+                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(promptName), {forceReplace: true});
                 return;
             }
 
-            await biometrics.register(async (result: RegisterResult) => {
-                if (!result.success) {
-                    dispatch({
-                        type: 'SET_ERROR',
-                        payload: {
-                            reason: result.reason,
-                        },
-                    });
-                    return;
-                }
+            if (usePasskeysAsFactor) {
+                // Passkeys: pass the registration challenge to the WebAuthn API
+                await passkeys.register(registrationChallenge, async (result: PasskeyRegisterResult) => {
+                    if (!result.success) {
+                        dispatch({
+                            type: 'SET_ERROR',
+                            payload: {
+                                reason: result.reason as MultifactorAuthenticationReason,
+                            },
+                        });
+                        return;
+                    }
 
-                // Call backend to register the public key
-                const registrationResponse = await processRegistration({
-                    publicKey: result.publicKey,
-                    authenticationMethod: result.authenticationMethod.marqetaValue,
-                    challenge: registrationChallenge.challenge,
+                    // Call backend to register the passkey credential.
+                    // Unlike ED25519, the WebAuthn response is sent directly as keyInfo (not wrapped).
+                    const backendResponse = await processPasskeyRegistration({
+                        registrationResponse: result.registrationResponse,
+                        authenticationMethod: result.authenticationMethod.marqetaValue,
+                        challenge: registrationChallenge.challenge,
+                    });
+
+                    if (!backendResponse.success) {
+                        dispatch({
+                            type: 'SET_ERROR',
+                            payload: {
+                                reason: backendResponse.reason,
+                            },
+                        });
+                        return;
+                    }
+
+                    dispatch({type: 'SET_REGISTRATION_COMPLETE', payload: true});
                 });
+            } else {
+                // Native biometrics: generate key pair locally
+                await biometrics.register(async (result: RegisterResult) => {
+                    if (!result.success) {
+                        dispatch({
+                            type: 'SET_ERROR',
+                            payload: {
+                                reason: result.reason,
+                            },
+                        });
+                        return;
+                    }
 
-                if (!registrationResponse.success) {
-                    dispatch({
-                        type: 'SET_ERROR',
-                        payload: {
-                            reason: registrationResponse.reason,
-                        },
+                    // Call backend to register the public key
+                    const registrationResponse = await processRegistration({
+                        publicKey: result.publicKey,
+                        authenticationMethod: result.authenticationMethod.marqetaValue,
+                        challenge: registrationChallenge.challenge,
                     });
-                    return;
-                }
 
-                dispatch({type: 'SET_REGISTRATION_COMPLETE', payload: true});
-            });
+                    if (!registrationResponse.success) {
+                        dispatch({
+                            type: 'SET_ERROR',
+                            payload: {
+                                reason: registrationResponse.reason,
+                            },
+                        });
+                        return;
+                    }
+
+                    dispatch({type: 'SET_REGISTRATION_COMPLETE', payload: true});
+                });
+            }
             return;
         }
 
-        // Registration isn't required, but they have never seen the soft prompt
-        // this happens on ios if they delete and reinstall the app. Their keys are preserved in the secure store, but
-        // they'll be shown the "do you want to enable FaceID again" system prompt, so we want to show them the soft prompt
-        if (!deviceBiometricsState?.hasAcceptedSoftPrompt) {
-            Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.ENABLE_BIOMETRICS), {forceReplace: true});
+        // Registration isn't required, but on native they may have never seen the soft prompt.
+        // This happens on iOS if they delete and reinstall the app. Their keys are preserved in the secure store,
+        // but they'll be shown the "do you want to enable FaceID again" system prompt, so we want to show them the soft prompt.
+        // On web this doesn't apply - passkey credentials are managed through the browser's WebAuthn API.
+        if (!isWeb && !deviceBiometricsState?.hasAcceptedSoftPrompt) {
+            Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(promptName), {forceReplace: true});
             return;
         }
 
         // 4. Authorize the user if that has not already been done
         if (!isAuthorizationComplete) {
-            if (!Navigation.isActiveRoute(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute('enable-biometrics'))) {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute('enable-biometrics'), {forceReplace: true});
+            if (!Navigation.isActiveRoute(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(promptName))) {
+                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(promptName), {forceReplace: true});
             }
 
             // Request authorization challenge if not already fetched
@@ -251,25 +311,29 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                 return;
             }
 
-            await biometrics.authorize(
+            await activeFactor.authorize(
                 {
                     scenario,
                     challenge: authorizationChallenge,
                 },
-                async (result: AuthorizeResult) => {
+                async (result: AuthorizeResult | PasskeyAuthorizeResult) => {
                     if (!result.success) {
                         // Re-registration may be needed even though we checked credentials above, because:
                         // - The local public key was deleted between the check and authorization
                         // - The server no longer accepts the local public key (not in allowCredentials)
-                        if (result.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.KEYSTORE.REGISTRATION_REQUIRED) {
-                            await biometrics.resetKeysForAccount();
+                        const requiresReRegistration = usePasskeysAsFactor
+                            ? result.reason === PASSKEY_REASON.WEBAUTHN.NO_CREDENTIAL_FOUND
+                            : result.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.KEYSTORE.REGISTRATION_REQUIRED;
+
+                        if (requiresReRegistration) {
+                            await activeFactor.resetKeysForAccount();
                             dispatch({type: 'SET_REGISTRATION_COMPLETE', payload: false});
                             dispatch({type: 'SET_AUTHORIZATION_CHALLENGE', payload: undefined});
                         } else {
                             dispatch({
                                 type: 'SET_ERROR',
                                 payload: {
-                                    reason: result.reason,
+                                    reason: result.reason as MultifactorAuthenticationReason,
                                 },
                             });
                         }
@@ -303,7 +367,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         // 5. All steps completed - success
         Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_OUTCOME.getRoute(paths.successOutcome), {forceReplace: true});
         dispatch({type: 'SET_FLOW_COMPLETE', payload: true});
-    }, [biometrics, dispatch, isOffline, state, isWeb]);
+    }, [biometrics, passkeys, dispatch, isOffline, state, isWeb]);
 
     /**
      * Drives the MFA state machine forward whenever relevant state changes occur.
