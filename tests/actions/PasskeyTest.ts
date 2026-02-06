@@ -171,7 +171,9 @@ describe('actions/Passkey', () => {
 
         it('should preserve transports from local credentials', () => {
             // Backend doesn't store transports, only local storage does
-            const localCredentials: PasskeyCredential[] = [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL, CONST.PASSKEY_TRANSPORT.HYBRID]}];
+            const localCredentials: PasskeyCredential[] = [
+                {id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL, CONST.PASSKEY_TRANSPORT.HYBRID]},
+            ];
             const backendPasskeyCredentials: BackendPasskeyCredential[] = [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE}];
 
             const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentialIds: localCredentials}});

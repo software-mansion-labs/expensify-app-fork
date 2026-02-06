@@ -1,0 +1,236 @@
+import {useCallback, useMemo} from 'react';
+import type {OnyxEntry} from 'react-native-onyx';
+import type {MultifactorAuthenticationScenario} from '@components/MultifactorAuthentication/config/types';
+import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
+import useOnyx from '@hooks/useOnyx';
+import type {AuthenticationChallenge, RegistrationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519/types';
+import type {AuthTypeInfo} from '@libs/MultifactorAuthentication/Biometrics/types';
+import {PASSKEY_AUTH_TYPE, REASON} from '@libs/MultifactorAuthentication/Passkeys/VALUES';
+import {buildCreationOptions, buildRequestOptions, createPasskey, getPasskeyAssertion, isWebAuthnSupported} from '@libs/MultifactorAuthentication/Passkeys/WebAuthn';
+import normalizeWebAuthnError from '@libs/MultifactorAuthentication/Passkeys/WebAuthn/errors';
+import type {PasskeyRegistrationResponse} from '@libs/MultifactorAuthentication/Passkeys/WebAuthn/types';
+import {addLocalPasskeyCredential, deleteLocalPasskeyCredentials, getPasskeyOnyxKey, reconcileLocalPasskeysWithBackend} from '@userActions/Passkey';
+import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
+import type {Account, LocalPasskeyEntry} from '@src/types/onyx';
+import type {PasskeyCredential} from '@src/types/onyx/LocalPasskeyEntry';
+
+type PasskeyRegisterResult =
+    | {
+          success: true;
+          reason: string;
+          registrationResponse: PasskeyRegistrationResponse;
+          credentialId: string;
+          transports?: string[];
+          authenticationMethod: AuthTypeInfo;
+      }
+    | {
+          success: false;
+          reason: string;
+      };
+
+type AuthorizeParams<T extends MultifactorAuthenticationScenario> = {
+    scenario: T;
+    challenge: AuthenticationChallenge;
+};
+
+type AuthorizeResultSuccess = {
+    success: true;
+    reason: string;
+    signedChallenge: SignedChallenge;
+    authenticationMethod: AuthTypeInfo;
+};
+
+type AuthorizeResultFailure = {
+    success: false;
+    reason: string;
+};
+
+type AuthorizeResult = AuthorizeResultSuccess | AuthorizeResultFailure;
+
+type UsePasskeysBiometricsReturn = {
+    serverHasAnyCredentials: boolean;
+    serverKnownCredentialIDs: string[];
+    doesDeviceSupportBiometrics: () => boolean;
+    hasLocalCredentials: () => Promise<boolean>;
+    areLocalCredentialsKnownToServer: () => Promise<boolean>;
+    register: (challenge: RegistrationChallenge, onResult: (result: PasskeyRegisterResult) => Promise<void> | void) => Promise<void>;
+    authorize: <T extends MultifactorAuthenticationScenario>(params: AuthorizeParams<T>, onResult: (result: AuthorizeResult) => Promise<void> | void) => Promise<void>;
+    resetKeysForAccount: () => Promise<void>;
+};
+
+function getMultifactorAuthenticationPublicKeyIDs(data: OnyxEntry<Account>) {
+    return data?.multifactorAuthenticationPublicKeyIDs;
+}
+
+function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
+    const {accountID} = useCurrentUserPersonalDetails();
+    const accountIDStr = String(accountID);
+
+    const [multifactorAuthenticationPublicKeyIDs] = useOnyx(ONYXKEYS.ACCOUNT, {selector: getMultifactorAuthenticationPublicKeyIDs, canBeMissing: true});
+    const serverKnownCredentialIDs = useMemo(() => multifactorAuthenticationPublicKeyIDs ?? [], [multifactorAuthenticationPublicKeyIDs]);
+    const serverHasAnyCredentials = serverKnownCredentialIDs.length > 0;
+
+    const [allPasskeys] = useOnyx(ONYXKEYS.COLLECTION.PASSKEYS, {canBeMissing: true});
+
+    const authType = useMemo(
+        () => ({
+            code: PASSKEY_AUTH_TYPE.CODE as AuthTypeInfo['code'],
+            name: PASSKEY_AUTH_TYPE.NAME as AuthTypeInfo['name'],
+            marqetaValue: PASSKEY_AUTH_TYPE.MARQETA_VALUE as AuthTypeInfo['marqetaValue'],
+        }),
+        [],
+    );
+
+    /**
+     * Gets all local credential IDs for the current account across all relying parties.
+     */
+    const getLocalCredentialIds = useCallback((): string[] => {
+        if (!allPasskeys) {
+            return [];
+        }
+        const prefix = `${ONYXKEYS.COLLECTION.PASSKEYS}${accountIDStr}@`;
+        return Object.entries(allPasskeys)
+            .filter(([key]) => key.startsWith(prefix))
+            .flatMap(([, entry]) => (entry as LocalPasskeyEntry | null)?.credentialIds?.map((c: PasskeyCredential) => c.id) ?? []);
+    }, [allPasskeys, accountIDStr]);
+
+    /**
+     * Gets the local passkey entry for a specific relying party.
+     */
+    const getLocalEntry = useCallback(
+        (rpId: string): LocalPasskeyEntry | null => {
+            if (!allPasskeys) {
+                return null;
+            }
+            const key = getPasskeyOnyxKey(accountIDStr, rpId);
+            return (allPasskeys as Record<string, LocalPasskeyEntry | null>)[key] ?? null;
+        },
+        [allPasskeys, accountIDStr],
+    );
+
+    const doesDeviceSupportBiometrics = useCallback(() => {
+        return isWebAuthnSupported();
+    }, []);
+
+    const hasLocalCredentials = useCallback(async () => {
+        return getLocalCredentialIds().length > 0;
+    }, [getLocalCredentialIds]);
+
+    const areLocalCredentialsKnownToServer = useCallback(async () => {
+        const localIds = getLocalCredentialIds();
+        if (localIds.length === 0) {
+            return false;
+        }
+        return localIds.some((id) => serverKnownCredentialIDs.includes(id));
+    }, [getLocalCredentialIds, serverKnownCredentialIDs]);
+
+    const resetKeysForAccount = useCallback(async () => {
+        if (!allPasskeys) {
+            return;
+        }
+        const prefix = `${ONYXKEYS.COLLECTION.PASSKEYS}${accountIDStr}@`;
+        Object.keys(allPasskeys).forEach((key) => {
+            if (!key.startsWith(prefix)) {
+                return;
+            }
+            const rpId = key.slice(prefix.length);
+            deleteLocalPasskeyCredentials(accountIDStr, rpId);
+        });
+    }, [allPasskeys, accountIDStr]);
+
+    const register = useCallback(
+        async (challenge: RegistrationChallenge, onResult: (result: PasskeyRegisterResult) => Promise<void> | void) => {
+            try {
+                const options = buildCreationOptions(challenge);
+                const registrationResponse = await createPasskey(options);
+
+                const credentialId = registrationResponse.rawId;
+                const rpId = challenge.rp.id;
+
+                const credential: PasskeyCredential = {
+                    id: credentialId,
+                    type: CONST.PASSKEY_CREDENTIAL_TYPE,
+                };
+
+                const existingEntry = getLocalEntry(rpId);
+                addLocalPasskeyCredential({userId: accountIDStr, rpId, credential, existingEntry});
+
+                await onResult({
+                    success: true,
+                    reason: REASON.WEBAUTHN.REGISTRATION_COMPLETE,
+                    registrationResponse,
+                    credentialId,
+                    authenticationMethod: authType,
+                });
+            } catch (error) {
+                const reason = normalizeWebAuthnError(error);
+                onResult({
+                    success: false,
+                    reason,
+                });
+            }
+        },
+        [accountIDStr, authType, getLocalEntry],
+    );
+
+    const authorize = useCallback(
+        async <T extends MultifactorAuthenticationScenario>(params: AuthorizeParams<T>, onResult: (result: AuthorizeResult) => Promise<void> | void) => {
+            try {
+                const {challenge} = params;
+                const rpId = challenge.rpId;
+                const localEntry = getLocalEntry(rpId);
+
+                const backendPasskeyCredentials = challenge.allowCredentials?.map((cred) => ({id: cred.id, type: cred.type as typeof CONST.PASSKEY_CREDENTIAL_TYPE})) ?? [];
+
+                const reconciledCredentials = reconcileLocalPasskeysWithBackend({
+                    userId: accountIDStr,
+                    rpId,
+                    backendPasskeyCredentials,
+                    localEntry,
+                });
+
+                const reconciledIds = reconciledCredentials.map((c) => c.id);
+
+                if (reconciledIds.length === 0) {
+                    onResult({
+                        success: false,
+                        reason: REASON.WEBAUTHN.NO_CREDENTIAL_FOUND,
+                    });
+                    return;
+                }
+
+                const options = buildRequestOptions(challenge, reconciledIds);
+                const signedChallenge = await getPasskeyAssertion(options);
+
+                await onResult({
+                    success: true,
+                    reason: REASON.WEBAUTHN.REGISTRATION_COMPLETE,
+                    signedChallenge,
+                    authenticationMethod: authType,
+                });
+            } catch (error) {
+                const reason = normalizeWebAuthnError(error);
+                onResult({
+                    success: false,
+                    reason,
+                });
+            }
+        },
+        [accountIDStr, authType, getLocalEntry],
+    );
+
+    return {
+        serverHasAnyCredentials,
+        serverKnownCredentialIDs,
+        doesDeviceSupportBiometrics,
+        hasLocalCredentials,
+        areLocalCredentialsKnownToServer,
+        register,
+        authorize,
+        resetKeysForAccount,
+    };
+}
+
+export default usePasskeysBiometrics;
+export type {PasskeyRegisterResult, AuthorizeParams, AuthorizeResult, UsePasskeysBiometricsReturn};

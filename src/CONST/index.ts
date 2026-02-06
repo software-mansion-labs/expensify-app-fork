@@ -4,6 +4,7 @@ import {sub as dateSubtract} from 'date-fns/sub';
 import Config from 'react-native-config';
 import * as KeyCommand from 'react-native-key-command';
 import type {ValueOf} from 'type-fest';
+import {AUTHENTICATION_METHOD_NAMES} from '@components/MultifactorAuthentication/config/scenarios/names';
 import type {SearchFilterKey} from '@components/Search/types';
 import type ResponsiveLayoutResult from '@hooks/useResponsiveLayout/types';
 import type {MileageRate} from '@libs/DistanceRequestUtils';
@@ -434,7 +435,13 @@ const CONST = {
         MAX_AGE: 150,
     },
 
-    MULTIFACTOR_AUTHENTICATION: MULTIFACTOR_AUTHENTICATION_VALUES,
+    MULTIFACTOR_AUTHENTICATION: {
+        ...MULTIFACTOR_AUTHENTICATION_VALUES,
+        TYPE: {
+            ...MULTIFACTOR_AUTHENTICATION_VALUES.TYPE,
+            ...AUTHENTICATION_METHOD_NAMES,
+        },
+    },
 
     /** WebAuthn/Passkey credential type */
     PASSKEY_CREDENTIAL_TYPE: 'public-key',
