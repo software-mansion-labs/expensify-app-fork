@@ -8,7 +8,6 @@ import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {clearDomainMemberError} from '@libs/actions/Domain';
-import {getLatestError} from '@libs/ErrorUtils';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
@@ -66,15 +65,6 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
         </>
     );
 
-    const getCustomRowProps = (accountID: number, email?: string) => {
-        const emailError = email ? getLatestError(domainErrors?.memberErrors?.[email]?.errors) : undefined;
-        const accountIDError = getLatestError(domainErrors?.memberErrors?.[accountID]?.errors);
-        const emailPendingAction = email ? domainPendingActions?.[email]?.pendingAction : undefined;
-        const accountIDPendingAction = domainPendingActions?.[accountID]?.pendingAction;
-
-        return {errors: emailError ?? accountIDError, pendingAction: emailPendingAction ?? accountIDPendingAction};
-    };
-
     return (
         <BaseDomainMembersPage
             domainAccountID={domainAccountID}
@@ -83,7 +73,8 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
             searchPlaceholder={translate('domain.members.findMember')}
             onSelectRow={(item) => Navigation.navigate(ROUTES.DOMAIN_MEMBER_DETAILS.getRoute(domainAccountID, item.accountID))}
             headerIcon={illustrations.Profile}
-            getCustomRowProps={getCustomRowProps}
+            memberErrors={domainErrors?.memberErrors}
+            memberPendingActions={domainPendingActions}
             headerContent={renderHeaderButtons}
             onDismissError={(item) => {
                 if (!defaultSecurityGroupID) {

@@ -1,8 +1,9 @@
-import {domainNameSelector, selectSecurityGroupForAccount} from '@selectors/Domain';
+import {domainMemberSettingsSelector, domainNameSelector, selectSecurityGroupForAccount} from '@selectors/Domain';
 import {personalDetailsSelector} from '@selectors/PersonalDetails';
 import React, {useState} from 'react';
 import Button from '@components/Button';
 import DecisionModal from '@components/DecisionModal';
+import MenuItem from '@components/MenuItem';
 import {ModalActions} from '@components/Modal/Global/ModalContext';
 import useConfirmModal from '@hooks/useConfirmModal';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
@@ -10,12 +11,15 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {closeUserAccount} from '@libs/actions/Domain';
+import {clearTwoFactorAuthExemptEmailsErrors, closeUserAccount, setTwoFactorAuthExemptEmailForDomain} from '@libs/actions/Domain';
+import {getLatestError} from '@libs/ErrorUtils';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import BaseDomainMemberDetailsComponent from '@pages/domain/BaseDomainMemberDetailsComponent';
+import ToggleSettingOptionRow from '@pages/workspace/workflows/ToggleSettingsOptionRow';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
 type DomainMemberDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.MEMBER_DETAILS>;
@@ -24,7 +28,7 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
     const {domainAccountID, accountID} = route.params;
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers']);
+    const icons = useMemoizedLazyExpensifyIcons(['RemoveMembers', 'Flag']);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [shouldForceCloseAccount, setShouldForceCloseAccount] = useState<boolean>();
     // We need to use isSmallScreenWidth here because the DecisionModal is opening from RHP and ShouldUseNarrowLayout layout will not work in this place
@@ -43,6 +47,21 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
     });
 
     const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: false, selector: domainNameSelector});
+
+    const [domainSettings] = useOnyx(`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER}${domainAccountID}`, {
+        canBeMissing: false,
+        selector: domainMemberSettingsSelector,
+    });
+
+    const [account] = useOnyx(ONYXKEYS.ACCOUNT);
+    const is2FAEnabled = account?.requiresTwoFactorAuth;
+
+    const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {
+        canBeMissing: true,
+    });
+    const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
+        canBeMissing: true,
+    });
 
     const memberLogin = personalDetails?.login ?? '';
 
@@ -94,7 +113,37 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
                 domainAccountID={domainAccountID}
                 accountID={accountID}
                 avatarButton={avatarButton}
-            />
+            >
+                <ToggleSettingOptionRow
+                    wrapperStyle={[styles.mv3, styles.ph5]}
+                    switchAccessibilityLabel={translate('domain.common.forceTwoFactorAuth')}
+                    isActive={!domainSettings?.twoFactorAuthExemptEmails?.includes(memberLogin)}
+                    onToggle={(value) => {
+                        if (!personalDetails?.login) {
+                            return;
+                        }
+
+                        if (!value && is2FAEnabled) {
+                            Navigation.navigate(ROUTES.DOMAIN_MEMBER_FORCE_TWO_FACTOR_AUTH.getRoute(domainAccountID, accountID));
+                        } else {
+                            setTwoFactorAuthExemptEmailForDomain(domainAccountID, accountID, domainSettings?.twoFactorAuthExemptEmails ?? [], personalDetails.login, value);
+                        }
+                    }}
+                    title={translate('domain.common.forceTwoFactorAuth')}
+                    pendingAction={domainPendingActions?.member?.[accountID]?.twoFactorAuthExemptEmails}
+                    errors={getLatestError(domainErrors?.memberErrors?.[memberLogin]?.twoFactorAuthExemptEmailsError)}
+                    onCloseError={() => clearTwoFactorAuthExemptEmailsErrors(domainAccountID, memberLogin)}
+                />
+
+                {!!account?.requiresTwoFactorAuth && (
+                    <MenuItem
+                        style={styles.mb5}
+                        title={translate('domain.common.resetTwoFactorAuth')}
+                        icon={icons.Flag}
+                        onPress={() => Navigation.navigate(ROUTES.DOMAIN_MEMBER_RESET_TWO_FACTOR_AUTH.getRoute(domainAccountID, accountID))}
+                    />
+                )}
+            </BaseDomainMemberDetailsComponent>
             <DecisionModal
                 title={translate('domain.members.closeAccount')}
                 prompt={translate('domain.members.closeAccountInfo')}

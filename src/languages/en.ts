@@ -8406,13 +8406,14 @@ const translations = {
                 addMember: 'Unable to add this member. Please try again.',
                 removeMember: 'Unable to remove this user. Please try again.',
             },
+        },
+        common: {
+            settings: 'Settings',
             forceTwoFactorAuth: 'Force two-factor authentication',
             forceTwoFactorAuthSAMLEnabledDescription: `<muted-text>Please disable <a href="${CONST.SAML_HELP_URL}">SAML</a> to force two-factor authentication.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Require Two-Factor Authentication for all members of this domain. Domain members will be prompted to set up Two-Factor Authentication on their account when they sign in.</muted-text>`,
             forceTwoFactorAuthError: "Force two-factor authentication couldn't be changed. Please try again later.",
-        },
-        common: {
-            settings: 'Settings',
+            resetTwoFactorAuth: 'Reset two-factor authentication',
         },
     },
 };

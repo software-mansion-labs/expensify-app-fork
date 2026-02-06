@@ -21,7 +21,9 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 import Navigation from '@navigation/Navigation';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Errors, PendingAction} from '@src/types/onyx/OnyxCommon';
+import type {GeneralDomainMemberErrors} from '@src/types/onyx/DomainErrors';
+import type {GeneralDomainMemberPendingAction} from '@src/types/onyx/DomainPendingActions';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type IconAsset from '@src/types/utils/IconAsset';
 import DomainNotFoundPageWrapper from './DomainNotFoundPageWrapper';
 
@@ -57,8 +59,11 @@ type BaseDomainMembersPageProps = {
     /** Function to render a custom right element for a row */
     getCustomRightElement?: (accountID: number) => React.ReactNode;
 
-    /** Function to return additional row-specific properties like errors or pending actions */
-    getCustomRowProps?: (accountID: number, accountEmail?: string) => {errors?: Errors; pendingAction?: PendingAction};
+    /** Errors for each member, keyed by accountID or email */
+    memberErrors?: Record<string | number, GeneralDomainMemberErrors>;
+
+    /** Pending actions for each member, keyed by accountID or email */
+    memberPendingActions?: Record<string | number, GeneralDomainMemberPendingAction>;
 
     /** Callback fired when the user dismisses an error message for a specific row */
     onDismissError?: (item: MemberOption) => void;
@@ -73,7 +78,8 @@ function BaseDomainMembersPage({
     onSelectRow,
     headerIcon,
     getCustomRightElement,
-    getCustomRowProps,
+    memberErrors,
+    memberPendingActions,
     onDismissError,
 }: BaseDomainMembersPageProps) {
     const {formatPhoneNumber, localeCompare} = useLocalize();
@@ -85,8 +91,18 @@ function BaseDomainMembersPage({
     const data: MemberOption[] = accountIDs.map((accountID) => {
         const details = personalDetails?.[accountID];
         const login = details?.login ?? '';
-        const customProps = getCustomRowProps?.(accountID, login);
-        const isPendingActionDelete = customProps?.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE;
+
+        const emailErrors = login ? memberErrors?.[login] : undefined;
+        const accountIDErrors = memberErrors?.[accountID];
+        const mergedErrors: GeneralDomainMemberErrors = {
+            errors: {...accountIDErrors?.errors, ...emailErrors?.errors},
+            twoFactorAuthExemptEmailsError: {...accountIDErrors?.twoFactorAuthExemptEmailsError, ...emailErrors?.twoFactorAuthExemptEmailsError},
+        };
+
+        const emailPendingAction = login ? memberPendingActions?.[login] : undefined;
+        const accountIDPendingAction = memberPendingActions?.[accountID];
+        const pendingAction = emailPendingAction?.pendingAction ?? accountIDPendingAction?.pendingAction;
+        const isPendingActionDelete = pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE;
 
         return {
             keyForList: String(accountID),
@@ -103,10 +119,11 @@ function BaseDomainMembersPage({
                 },
             ],
             rightElement: getCustomRightElement?.(accountID),
-            errors: getLatestError(customProps?.errors),
-            pendingAction: customProps?.pendingAction,
+            errors: getLatestError(mergedErrors.errors),
+            pendingAction,
             isInteractive: !isPendingActionDelete && !details?.isOptimisticPersonalDetail,
             isDisabled: isPendingActionDelete,
+            brickRoadIndicator: !isEmptyObject(mergedErrors.twoFactorAuthExemptEmailsError) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined,
         };
     });
 
