@@ -745,12 +745,13 @@ const CONST = {
         IS_TRAVEL_VERIFIED: 'isTravelVerified',
         TRAVEL_INVOICING: 'travelInvoicing',
         EXPENSIFY_CARD_EU_UK: 'expensifyCardEuUk',
-        TIME_TRACKING: 'timeTracking',
         EUR_BILLING: 'eurBilling',
         NO_OPTIMISTIC_TRANSACTION_THREADS: 'noOptimisticTransactionThreads',
         UBER_FOR_BUSINESS: 'uberForBusiness',
         NEW_DOT_DEW: 'newDotDEW',
         GPS_MILEAGE: 'gpsMileage',
+        NEW_DOT_HOME: 'newDotHome',
+        SINGLE_USE_AND_EXPIRE_BY_CARDS: 'singleUseAndExpireByCards',
         PERSONAL_CARD_IMPORT: 'personalCardImport',
         SUGGESTED_FOLLOWUPS: 'suggestedFollowups',
     },
@@ -1723,7 +1724,12 @@ const CONST = {
     },
     TELEMETRY: {
         CONTEXT_FULLSTORY: 'Fullstory',
+        CONTEXT_MEMORY: 'Memory',
         CONTEXT_POLICIES: 'Policies',
+        // Breadcrumb names
+        BREADCRUMB_CATEGORY_MEMORY: 'system.memory',
+        BREADCRUMB_MEMORY_PERIODIC: 'Periodic memory check',
+        BREADCRUMB_MEMORY_FOREGROUND: 'App foreground - memory check',
         TAG_ACTIVE_POLICY: 'active_policy_id',
         TAG_POLICIES_COUNT: 'policies_count',
         TAG_REPORTS_COUNT: 'reports_count',
@@ -1782,6 +1788,19 @@ const CONST = {
         ATTRIBUTE_FINISHED_MANUALLY: 'finished_manually',
         CONFIG: {
             SKELETON_MIN_DURATION: 10_000,
+            MEMORY_TRACKING_INTERVAL: 2 * 60 * 1000,
+
+            // Web Memory Thresholds (% of jsHeapSizeLimit)
+            MEMORY_THRESHOLD_WEB_CRITICAL: 85,
+            MEMORY_THRESHOLD_WEB_WARNING: 70,
+
+            // Android Memory Thresholds (% of device RAM - temporary solution)
+            MEMORY_THRESHOLD_ANDROID_CRITICAL: 85, // > 85% of device RAM
+            MEMORY_THRESHOLD_ANDROID_WARNING: 70, // > 70% of device RAM
+
+            // iOS Memory Thresholds (absolute MB - no heap limit API available)
+            MEMORY_THRESHOLD_IOS_CRITICAL_MB: 600, // > 600MB approaching jetsam on older devices
+            MEMORY_THRESHOLD_IOS_WARNING_MB: 300, // > 300MB monitor closely
         },
     },
     PRIORITY_MODE: {
@@ -3522,6 +3541,7 @@ const CONST = {
             AMEX_DIRECT: 'oauth.americanexpressfdx.com',
             AMEX_FILE_DOWNLOAD: 'americanexpressfd.us',
             CSV: 'ccupload',
+            MOCK_BANK: 'oauth.mockbank.com',
         },
         FEED_KEY_SEPARATOR: '#',
         CARD_NUMBER_MASK_CHAR: 'X',
@@ -3569,18 +3589,21 @@ const CONST = {
             SMART: 'smart',
             MONTHLY: 'monthly',
             FIXED: 'fixed',
+            SINGLE_USE: 'singleUse',
         },
         LIMIT_VALUE: 21474836,
         STEP_NAMES: ['1', '2', '3', '4', '5'],
         ASSIGNEE_EXCLUDED_STEP_NAMES: ['1', '2', '3', '4'],
+        SINGLE_USE_DISABLED_STEP_NAMES: ['1', '2', '3', '4'],
+        SINGLE_USE_AND_ASSIGNEE_EXCLUDED_STEP_NAMES: ['1', '2', '3'],
         STEP: {
             ASSIGNEE: 'Assignee',
             CARD_TYPE: 'CardType',
             LIMIT_TYPE: 'LimitType',
-            LIMIT: 'Limit',
             CARD_NAME: 'CardName',
             CONFIRMATION: 'Confirmation',
             INVITE_NEW_MEMBER: 'InviteNewMember',
+            EXPIRY_OPTIONS: 'ExpiryOptions',
         },
         CARD_TYPE: {
             PHYSICAL: 'physical',
@@ -3636,6 +3659,7 @@ const CONST = {
             CITI_BANK: 'Citibank',
             STRIPE: 'Stripe',
             WELLS_FARGO: 'Wells Fargo',
+            MOCK_BANK: 'Mock Bank',
             OTHER: 'Other',
         },
         BANK_CONNECTIONS: {
@@ -3646,6 +3670,7 @@ const CONST = {
             CAPITAL_ONE: 'capitalone',
             CITI_BANK: 'citibank',
             AMEX: 'americanexpressfdx',
+            MOCK_BANK: 'mockbank',
         },
         AMEX_CUSTOM_FEED: {
             CORPORATE: 'American Express Corporate Cards',
@@ -5567,10 +5592,6 @@ const CONST = {
         DISABLED: 'DISABLED',
         DISABLE: 'DISABLE',
     },
-    MULTIFACTOR_AUTHENTICATION_OUTCOME_TYPE: {
-        SUCCESS: 'success',
-        FAILURE: 'failure',
-    },
     MERGE_ACCOUNT_RESULTS: {
         SUCCESS: 'success',
         ERR_2FA: 'err_2fa',
@@ -7470,7 +7491,14 @@ const CONST = {
         CASH_BACK: 'earnedCashback',
     },
 
-    EXCLUDE_FROM_LAST_VISITED_PATH: [SCREENS.NOT_FOUND, SCREENS.SAML_SIGN_IN, SCREENS.VALIDATE_LOGIN, SCREENS.MIGRATED_USER_WELCOME_MODAL.ROOT, SCREENS.MONEY_REQUEST.STEP_SCAN] as string[],
+    EXCLUDE_FROM_LAST_VISITED_PATH: [
+        SCREENS.NOT_FOUND,
+        SCREENS.SAML_SIGN_IN,
+        SCREENS.VALIDATE_LOGIN,
+        SCREENS.MIGRATED_USER_WELCOME_MODAL.ROOT,
+        SCREENS.MONEY_REQUEST.STEP_SCAN,
+        ...Object.values(SCREENS.MULTIFACTOR_AUTHENTICATION),
+    ] as string[],
 
     CANCELLATION_TYPE: {
         MANUAL: 'manual',
@@ -7759,6 +7787,7 @@ const CONST = {
         HAS_PARTIALLY_SETUP_BANK_ACCOUNT_INFO: 'hasPartiallySetupBankAccountInfo',
         HAS_EMPLOYEE_CARD_FEED_ERRORS: 'hasEmployeeCardFeedErrors',
         HAS_POLICY_ADMIN_CARD_FEED_ERRORS: 'hasPolicyAdminCardFeedErrors',
+        HAS_DOMAIN_ERRORS: 'hasDomainErrors',
     },
 
     DEBUG: {
@@ -8262,6 +8291,10 @@ const CONST = {
         },
         WORKSPACE: {
             TOGGLE_SETTINGS_ROW: 'Workspace-ToggleSettingsRow',
+            WORKSPACE_MENU_ITEM: 'Workspace-WorkspaceMenuItem',
+        },
+        ACCOUNT_SWITCHER: {
+            SHOW_ACCOUNTS: 'AccountSwitcher-ShowAccounts',
         },
     },
 

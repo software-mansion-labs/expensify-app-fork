@@ -696,6 +696,9 @@ describe('OnyxDerived', () => {
                                     jobID: 'job123',
                                     enabled: false, // Auto-sync disabled so manual export is available
                                 },
+                                export: {
+                                    exporter: CURRENT_USER_EMAIL, // Current user is the preferred exporter
+                                },
                             },
                         },
                     },
