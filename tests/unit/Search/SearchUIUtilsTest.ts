@@ -2173,6 +2173,11 @@ describe('SearchUIUtils', () => {
                     connections: {
                         [CONST.POLICY.CONNECTIONS.NAME.NETSUITE]: {
                             verified: true,
+                            options: {
+                                config: {
+                                    exporter: adminEmail,
+                                },
+                            },
                             lastSync: {
                                 errorDate: '',
                                 errorMessage: '',
