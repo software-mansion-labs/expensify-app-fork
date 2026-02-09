@@ -1,28 +1,29 @@
-import {REASON} from '@libs/MultifactorAuthentication/Passkeys/VALUES';
+import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/Biometrics/types';
+import CONST from '@src/CONST';
 
 /**
  * Normalizes WebAuthn DOMException errors to our passkey reason codes.
  * Maps standard WebAuthn error names to consistent internal reason strings.
  */
-function normalizeWebAuthnError(error: unknown): string {
+function normalizeWebAuthnError(error: unknown): MultifactorAuthenticationReason {
     if (error instanceof DOMException) {
         switch (error.name) {
             case 'NotAllowedError':
-                return REASON.WEBAUTHN.CANCELED;
+                return CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.CANCELED;
             case 'InvalidStateError':
-                return REASON.WEBAUTHN.CREDENTIAL_EXISTS;
+                return CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.CREDENTIAL_EXISTS;
             case 'SecurityError':
-                return REASON.WEBAUTHN.SECURITY_ERROR;
+                return CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.SECURITY_ERROR;
             case 'NotSupportedError':
-                return REASON.WEBAUTHN.NOT_SUPPORTED;
+                return CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.NOT_SUPPORTED;
             case 'AbortError':
-                return REASON.WEBAUTHN.ABORTED;
+                return CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.ABORTED;
             default:
-                return REASON.WEBAUTHN.GENERIC;
+                return CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.GENERIC;
         }
     }
 
-    return REASON.WEBAUTHN.GENERIC;
+    return CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.GENERIC;
 }
 
 export default normalizeWebAuthnError;

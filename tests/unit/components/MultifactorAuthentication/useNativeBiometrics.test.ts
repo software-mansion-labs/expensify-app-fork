@@ -218,15 +218,20 @@ describe('useNativeBiometrics hook', () => {
             });
         });
 
-        // Note: Challenge fetching is now done in Main.tsx, not in useNativeBiometrics
-        // These tests verify the register function with challenge passed as a parameter
+        const mockRegistrationChallenge = {
+            challenge: 'test-challenge-string',
+            rp: {id: 'expensify.com'},
+            user: {id: '12345', displayName: 'Test User'},
+            pubKeyCredParams: [{type: 'public-key', alg: -8}],
+            timeout: 60000,
+        };
 
         it('should generate key pair', async () => {
             const {result} = renderHook(() => useNativeBiometrics());
             const onResult = jest.fn();
 
             await act(async () => {
-                await result.current.register(onResult);
+                await result.current.register(mockRegistrationChallenge, onResult);
             });
 
             expect(generateKeyPair).toHaveBeenCalled();
@@ -237,7 +242,7 @@ describe('useNativeBiometrics hook', () => {
             const onResult = jest.fn();
 
             await act(async () => {
-                await result.current.register(onResult);
+                await result.current.register(mockRegistrationChallenge, onResult);
             });
 
             // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -249,7 +254,7 @@ describe('useNativeBiometrics hook', () => {
             const onResult = jest.fn();
 
             await act(async () => {
-                await result.current.register(onResult);
+                await result.current.register(mockRegistrationChallenge, onResult);
             });
 
             // Verify both stores were called
@@ -264,7 +269,7 @@ describe('useNativeBiometrics hook', () => {
             const onResult = jest.fn();
 
             await act(async () => {
-                await result.current.register(onResult);
+                await result.current.register(mockRegistrationChallenge, onResult);
             });
 
             // Verify the full flow was triggered

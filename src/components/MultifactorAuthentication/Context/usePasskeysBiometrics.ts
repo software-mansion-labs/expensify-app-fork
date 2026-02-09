@@ -4,11 +4,10 @@ import type {MultifactorAuthenticationScenario} from '@components/MultifactorAut
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnyx from '@hooks/useOnyx';
 import type {AuthenticationChallenge, RegistrationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519/types';
-import type {AuthTypeInfo} from '@libs/MultifactorAuthentication/Biometrics/types';
-import {PASSKEY_AUTH_TYPE, REASON} from '@libs/MultifactorAuthentication/Passkeys/VALUES';
+import type {AuthTypeInfo, MultifactorAuthenticationReason, PasskeyRegistrationResponse} from '@libs/MultifactorAuthentication/Biometrics/types';
+import {PASSKEY_AUTH_TYPE} from '@libs/MultifactorAuthentication/Passkeys/VALUES';
 import {buildCreationOptions, buildRequestOptions, createPasskey, getPasskeyAssertion, isWebAuthnSupported} from '@libs/MultifactorAuthentication/Passkeys/WebAuthn';
 import normalizeWebAuthnError from '@libs/MultifactorAuthentication/Passkeys/WebAuthn/errors';
-import type {PasskeyRegistrationResponse} from '@libs/MultifactorAuthentication/Passkeys/WebAuthn/types';
 import {addLocalPasskeyCredential, deleteLocalPasskeyCredentials, getPasskeyOnyxKey, reconcileLocalPasskeysWithBackend} from '@userActions/Passkey';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -18,7 +17,7 @@ import type {PasskeyCredential} from '@src/types/onyx/LocalPasskeyEntry';
 type PasskeyRegisterResult =
     | {
           success: true;
-          reason: string;
+          reason: MultifactorAuthenticationReason;
           registrationResponse: PasskeyRegistrationResponse;
           credentialId: string;
           transports?: string[];
@@ -26,7 +25,7 @@ type PasskeyRegisterResult =
       }
     | {
           success: false;
-          reason: string;
+          reason: MultifactorAuthenticationReason;
       };
 
 type AuthorizeParams<T extends MultifactorAuthenticationScenario> = {
@@ -36,14 +35,14 @@ type AuthorizeParams<T extends MultifactorAuthenticationScenario> = {
 
 type AuthorizeResultSuccess = {
     success: true;
-    reason: string;
+    reason: MultifactorAuthenticationReason;
     signedChallenge: SignedChallenge;
     authenticationMethod: AuthTypeInfo;
 };
 
 type AuthorizeResultFailure = {
     success: false;
-    reason: string;
+    reason: MultifactorAuthenticationReason;
 };
 
 type AuthorizeResult = AuthorizeResultSuccess | AuthorizeResultFailure;
@@ -130,13 +129,13 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
             return;
         }
         const prefix = `${ONYXKEYS.COLLECTION.PASSKEYS}${accountIDStr}@`;
-        Object.keys(allPasskeys).forEach((key) => {
+        for (const key of Object.keys(allPasskeys)) {
             if (!key.startsWith(prefix)) {
-                return;
+                continue;
             }
             const rpId = key.slice(prefix.length);
             deleteLocalPasskeyCredentials(accountIDStr, rpId);
-        });
+        }
     }, [allPasskeys, accountIDStr]);
 
     const register = useCallback(
@@ -158,7 +157,7 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
 
                 await onResult({
                     success: true,
-                    reason: REASON.WEBAUTHN.REGISTRATION_COMPLETE,
+                    reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.REGISTRATION_COMPLETE,
                     registrationResponse,
                     credentialId,
                     authenticationMethod: authType,
@@ -195,7 +194,7 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
                 if (reconciledIds.length === 0) {
                     onResult({
                         success: false,
-                        reason: REASON.WEBAUTHN.NO_CREDENTIAL_FOUND,
+                        reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.NO_CREDENTIAL_FOUND,
                     });
                     return;
                 }
@@ -205,7 +204,7 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
 
                 await onResult({
                     success: true,
-                    reason: REASON.WEBAUTHN.REGISTRATION_COMPLETE,
+                    reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.WEBAUTHN.REGISTRATION_COMPLETE,
                     signedChallenge,
                     authenticationMethod: authType,
                 });

@@ -3,6 +3,7 @@
  */
 import type {ValueOf} from 'type-fest';
 import type {AllMultifactorAuthenticationOutcomeType} from '@components/MultifactorAuthentication/config/types';
+import type {NativeBiometricRegistrationResponse, PasskeyRegistrationResponse, RegistrationResponseInfo} from '@libs/MultifactorAuthentication/types';
 import type {SignedChallenge} from './ED25519/types';
 import type {SECURE_STORE_VALUES} from './SecureStore';
 import type VALUES from './VALUES';
@@ -70,18 +71,6 @@ type MultifactorAuthenticationKeyType = ValueOf<typeof VALUES.KEY_ALIASES>;
 type MultifactorAuthenticationActionParams<T extends Record<string, unknown>, R extends keyof AllMultifactorAuthenticationBaseParameters> = T &
     Pick<AllMultifactorAuthenticationBaseParameters, R> & {authenticationMethod: MarqetaAuthTypeName};
 
-type MultifactorAuthenticationKeyInfo = {
-    rawId: Base64URLString;
-    type: typeof VALUES.ED25519_TYPE;
-    response: {
-        clientDataJSON: Base64URLString;
-        biometric: {
-            publicKey: Base64URLString;
-            algorithm: -8;
-        };
-    };
-};
-
 /**
  * Configuration options for multifactor key store operations.
  */
@@ -98,7 +87,9 @@ export type {
     MultifactorAuthenticationKeyType,
     AllMultifactorAuthenticationBaseParameters,
     MultifactorAuthenticationKeyStoreStatus,
-    MultifactorAuthenticationKeyInfo,
+    NativeBiometricRegistrationResponse,
+    PasskeyRegistrationResponse,
+    RegistrationResponseInfo,
     MultifactorAuthenticationActionParams,
     MultifactorKeyStoreOptions,
     MultifactorAuthenticationReason,

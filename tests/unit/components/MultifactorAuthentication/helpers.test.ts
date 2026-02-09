@@ -75,6 +75,18 @@ describe('MultifactorAuthentication helpers', () => {
     });
 
     describe('processRegistration', () => {
+        const mockRegistrationResponse = {
+            rawId: 'public-key-123',
+            type: 'biometric' as const,
+            response: {
+                clientDataJSON: 'encoded-client-data',
+                biometric: {
+                    publicKey: 'public-key-123',
+                    algorithm: -8 as const,
+                },
+            },
+        };
+
         beforeEach(() => {
             (registerAuthenticationKey as jest.Mock).mockResolvedValue({
                 httpCode: 200,
@@ -87,7 +99,7 @@ describe('MultifactorAuthentication helpers', () => {
         // Then it should return failure because a challenge is required to prove the registration request is legitimate and came from the server
         it('should return failure when challenge is missing', async () => {
             const result = await processRegistration({
-                publicKey: 'public-key-123',
+                registrationResponse: mockRegistrationResponse,
                 authenticationMethod: 'BIOMETRIC_FACE',
                 challenge: '',
             });
@@ -95,21 +107,18 @@ describe('MultifactorAuthentication helpers', () => {
             expect(result.success).toBe(false);
         });
 
-        // Given all required registration parameters including a valid challenge
+        // Given all required registration parameters including a valid registrationResponse
         // When processRegistration is called with these parameters
-        // Then it should pass the correct keyInfo object and metadata to registerAuthenticationKey because the backend needs specific formatting for the public key and challenge to properly register the credential
+        // Then it should pass the registrationResponse as keyInfo to registerAuthenticationKey
         it('should call registerAuthenticationKey with correct parameters', async () => {
             await processRegistration({
-                publicKey: 'public-key-123',
+                registrationResponse: mockRegistrationResponse,
                 authenticationMethod: 'BIOMETRIC_FACE',
                 challenge: 'challenge-123',
             });
 
             expect(registerAuthenticationKey).toHaveBeenCalledWith({
-                keyInfo: expect.objectContaining({
-                    rawId: 'public-key-123',
-                    type: 'biometric',
-                }),
+                keyInfo: mockRegistrationResponse,
                 authenticationMethod: 'BIOMETRIC_FACE',
             });
         });
@@ -124,7 +133,7 @@ describe('MultifactorAuthentication helpers', () => {
             });
 
             const result = await processRegistration({
-                publicKey: 'public-key-123',
+                registrationResponse: mockRegistrationResponse,
                 authenticationMethod: 'BIOMETRIC_FACE',
                 challenge: 'challenge-123',
             });
@@ -142,7 +151,7 @@ describe('MultifactorAuthentication helpers', () => {
             });
 
             const result = await processRegistration({
-                publicKey: 'public-key-123',
+                registrationResponse: mockRegistrationResponse,
                 authenticationMethod: 'BIOMETRIC_FACE',
                 challenge: 'challenge-123',
             });

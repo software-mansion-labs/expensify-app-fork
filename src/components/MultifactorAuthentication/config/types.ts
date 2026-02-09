@@ -8,8 +8,8 @@ import type DotLottieAnimation from '@components/LottieAnimations/types';
 import type {
     AllMultifactorAuthenticationBaseParameters,
     MultifactorAuthenticationActionParams,
-    MultifactorAuthenticationKeyInfo,
     MultifactorAuthenticationReason,
+    RegistrationResponseInfo,
 } from '@libs/MultifactorAuthentication/Biometrics/types';
 import type CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
@@ -214,7 +214,7 @@ type MultifactorAuthenticationPromptType = keyof typeof MULTIFACTOR_AUTHENTICATI
  */
 type RegisterBiometricsParams = MultifactorAuthenticationActionParams<
     {
-        keyInfo: MultifactorAuthenticationKeyInfo;
+        keyInfo: RegistrationResponseInfo;
     },
     'validateCode'
 >;

@@ -1,6 +1,6 @@
 import type {AuthenticationChallenge, RegistrationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519/types';
+import type {PasskeyRegistrationResponse} from '@libs/MultifactorAuthentication/Biometrics/types';
 import {arrayBufferToBase64URL, base64URLToArrayBuffer} from './encoding';
-import type {PasskeyRegistrationResponse} from './types';
 
 /**
  * Checks if the browser supports the WebAuthn API.
