@@ -177,8 +177,9 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
         ref,
         () => ({
             focusTextInput,
+            scrollToIndex,
         }),
-        [focusTextInput],
+        [focusTextInput, scrollToIndex],
     );
 
     // Disable `Enter` shortcut if the active element is a button or checkbox
