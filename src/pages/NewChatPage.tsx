@@ -12,7 +12,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import SelectCircle from '@components/SelectCircle';
 import UserListItem from '@components/SelectionList/ListItem/UserListItem';
 import SelectionListWithSections from '@components/SelectionList/SelectionListWithSections';
-import {Section} from '@components/SelectionList/SelectionListWithSections/types';
+import type {Section} from '@components/SelectionList/SelectionListWithSections/types';
 import type {ListItem, SelectionListWithSectionsHandle} from '@components/SelectionList/types';
 import useContactImport from '@hooks/useContactImport';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -39,7 +39,7 @@ import {
     getUserToInviteOption,
     getValidOptions,
 } from '@libs/OptionsListUtils';
-import {OptionWithKey} from '@libs/OptionsListUtils/types';
+import type {OptionWithKey} from '@libs/OptionsListUtils/types';
 import type {OptionData} from '@libs/ReportUtils';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
@@ -263,7 +263,7 @@ function NewChatPage({ref}: NewChatPageProps) {
         areOptionsInitialized,
     } = useOptions();
 
-    const sections: Section<OptionWithKey>[] = [];
+    const sections: Array<Section<OptionWithKey>> = [];
     let firstKeyForList = '';
 
     const formatResults = formatSectionsFromSearchTerm(
