@@ -38,9 +38,6 @@ function ChartTooltip({label, amount, percentage, chartWidth, initialTooltipPosi
 
     const content = percentage ? `${label} • ${amount} (${percentage})` : `${label} • ${amount}`;
 
-    // Measure the tooltip width synchronously before paint to prevent flicker.
-    // On Fabric, measure() fires its callback synchronously within useLayoutEffect,
-    // so we get the new width before the browser/native paints the frame.
     useLayoutEffect(() => {
         tooltipWrapperRef.current?.measure((_x, _y, width) => {
             if (width <= 0) {
