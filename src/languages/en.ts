@@ -8389,6 +8389,7 @@ const translations = {
             title: 'Members',
             findMember: 'Find member',
             addMember: 'Add member',
+            allMembers: 'All members',
             email: 'Email address',
             closeAccount: 'Close account',
             closeAccountPrompt: 'Are you sure? This action is permanent.',

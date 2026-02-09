@@ -54,14 +54,12 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
             return null;
         }
 
-        const header = (
-            <View style={[styles.flex1, styles.flexRow, styles.justifyContentBetween]}>
+        return (
+            <View style={[styles.flex1, styles.flexRow, styles.justifyContentBetween, styles.ph9, styles.pv3]}>
                 <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.name')}</Text>
                 <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.members')}</Text>
             </View>
         );
-
-        return <View style={[styles.ph9, styles.pv3, styles.pb5]}>{header}</View>;
     };
 
     return (

@@ -7,7 +7,6 @@ import SearchBar from '@components/SearchBar';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/ListItem/TableListItem';
 import type {ListItem} from '@components/SelectionList/types';
-import CustomListHeader from '@components/SelectionListWithModal/CustomListHeader';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
@@ -42,6 +41,9 @@ type BaseDomainMembersPageProps = {
     /** The title of the header */
     headerTitle: string;
 
+    /** Function to render a custom list header row. */
+    getCustomListHeader: () => React.ReactNode;
+
     /** Placeholder text for the search bar */
     searchPlaceholder: string;
 
@@ -62,12 +64,16 @@ type BaseDomainMembersPageProps = {
 
     /** Callback fired when the user dismisses an error message for a specific row */
     onDismissError?: (item: MemberOption) => void;
+
+    /** Optional accessory element to display next to the search bar (e.g., filter dropdown) */
+    searchBarAccessory?: React.ReactNode;
 };
 
 function BaseDomainMembersPage({
     domainAccountID,
     accountIDs,
     headerTitle,
+    getCustomListHeader,
     searchPlaceholder,
     headerContent,
     onSelectRow,
@@ -75,6 +81,7 @@ function BaseDomainMembersPage({
     getCustomRightElement,
     getCustomRowProps,
     onDismissError,
+    searchBarAccessory,
 }: BaseDomainMembersPageProps) {
     const {formatPhoneNumber, localeCompare} = useLocalize();
     const styles = useThemeStyles();
@@ -119,27 +126,30 @@ function BaseDomainMembersPage({
 
     const [inputValue, setInputValue, filteredData] = useSearchResults(data, filterMember, sortMembers);
 
-    const getCustomListHeader = () => {
+    const getFilteredListHeader = () => {
         if (filteredData.length === 0) {
             return null;
         }
-        return (
-            <CustomListHeader
-                canSelectMultiple={false}
-                leftHeaderText={headerTitle}
-            />
-        );
+        return getCustomListHeader();
     };
 
-    const listHeaderContent =
-        data.length > CONST.SEARCH_ITEM_LIMIT ? (
-            <SearchBar
-                inputValue={inputValue}
-                onChangeText={setInputValue}
-                label={searchPlaceholder}
-                shouldShowEmptyState={!filteredData.length}
-            />
-        ) : null;
+    const showSearchBar = data.length > CONST.SEARCH_ITEM_LIMIT;
+    const listHeaderContent = (
+        <View style={[styles.mh5, styles.gap4, shouldUseNarrowLayout ? styles.flexColumnReverse : styles.flexRow, showSearchBar ? styles.justifyContentBetween : styles.justifyContentEnd]}>
+            {showSearchBar ? (
+                <View style={styles.flexColumn}>
+                    <SearchBar
+                        inputValue={inputValue}
+                        onChangeText={setInputValue}
+                        label={searchPlaceholder}
+                        shouldShowEmptyState={!filteredData.length}
+                        style={[styles.flex1, styles.mh0, styles.mb0]}
+                    />
+                </View>
+            ) : undefined}
+            <View style={showSearchBar ? styles.pt2 : undefined}>{searchBarAccessory}</View>
+        </View>
+    );
 
     return (
         <DomainNotFoundPageWrapper domainAccountID={domainAccountID}>
@@ -177,7 +187,7 @@ function BaseDomainMembersPage({
                     showScrollIndicator={false}
                     addBottomSafeAreaPadding
                     shouldHeaderBeInsideList
-                    customListHeader={getCustomListHeader()}
+                    customListHeader={getFilteredListHeader()}
                     customListHeaderContent={listHeaderContent}
                     disableMaintainingScrollPosition
                 />
