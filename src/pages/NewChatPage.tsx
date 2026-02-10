@@ -509,6 +509,7 @@ function NewChatPage({ref}: NewChatPageProps) {
                 isLoadingNewOptions={!!isSearchingForReports || isLoadingMore}
                 onEndReached={handleEndReached}
                 onEndReachedThreshold={0.75}
+                disableMaintainingScrollPosition
                 // shouldTextInputInterceptSwipe
                 addBottomSafeAreaPadding
             />
