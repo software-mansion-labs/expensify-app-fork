@@ -173,7 +173,14 @@ function IOURequestStepDistanceManual({
                     return;
                 }
 
-                if (distance !== distanceAsFloat) {
+                const transactionDistanceUnit = transaction?.comment?.customUnit?.distanceUnit;
+
+                const isDistanceChanged = distance !== distanceAsFloat;
+                const isDistanceUnitChanged = transactionDistanceUnit && transactionDistanceUnit !== unit;
+
+                const shouldUpdateTransaction = isDistanceChanged || isDistanceUnitChanged;
+
+                if (shouldUpdateTransaction) {
                     updateMoneyRequestDistance({
                         transactionID: transaction?.transactionID,
                         transactionThreadReport: report,
