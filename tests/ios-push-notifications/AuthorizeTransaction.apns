@@ -4,9 +4,10 @@
    "alert": "Approve transaction",
  },
  "payload": {
-   "type":"transaction",
+   "type":"approveTransaction",
    "reportID": <REPORT_ID_NUMBER>,
    "transactionID": <TRANSACTION_ID_STRING>,
+   "onyxData": <ONYX_UPDATES_ARRAY>,
    "app":"new"
  }
 }

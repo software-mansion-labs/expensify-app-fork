@@ -1,12 +1,13 @@
 {
  "Simulator Target Bundle": "com.expensify.chat.dev",
  "aps": {
-   "alert": "Approve transaction",
+   "alert": "Authorize transaction",
  },
  "payload": {
-   "type":"transaction",
+   "type":"authorizeTransaction",
    "reportID": <REPORT_ID_NUMBER>,
    "transactionID": <TRANSACTION_ID_STRING>,
+   "onyxData": <ONYX_UPDATES_ARRAY>,
    "app":"new"
  }
 }

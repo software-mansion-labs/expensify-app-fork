@@ -8,6 +8,7 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {MultifactorAuthenticationParamList} from '@libs/Navigation/types';
+import Navigation from '@navigation/Navigation';
 import type SCREENS from '@src/SCREENS';
 import MultifactorAuthenticationAuthorizeTransactionActions from './AuthorizeTransactionActions';
 import MultifactorAuthenticationAuthorizeTransactionContent from './AuthorizeTransactionContent';
@@ -46,6 +47,7 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
             hideConfirmModal();
         }
         // TODO: Use context here when merged
+        Navigation.closeRHPFlow();
         // cancel();
     };
 
