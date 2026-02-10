@@ -91,7 +91,7 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
         const prefix = `${ONYXKEYS.COLLECTION.PASSKEYS}${accountIDStr}@`;
         return Object.entries(allPasskeys)
             .filter(([key]) => key.startsWith(prefix))
-            .flatMap(([, entry]) => (entry as LocalPasskeyEntry | null)?.credentialIds?.map((c: PasskeyCredential) => c.id) ?? []);
+            .flatMap(([, entry]) => (entry as LocalPasskeyEntry | null)?.credentials?.map((c: PasskeyCredential) => c.id) ?? []);
     }, [allPasskeys, accountIDStr]);
 
     /**
