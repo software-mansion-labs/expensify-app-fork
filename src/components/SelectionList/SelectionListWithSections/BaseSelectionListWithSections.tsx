@@ -187,7 +187,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
 
     useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ENTER, selectFocusedItem, {
         captureOnInputs: true,
-        shouldBubble: !getFocusedItem(),
+        shouldBubble: itemsCount > 0 && !getFocusedItem(),
         shouldStopPropagation,
         isActive: !disableKeyboardShortcuts && isScreenFocused && focusedIndex >= 0 && !disableEnterShortcut,
     });
@@ -204,7 +204,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
         },
         {
             captureOnInputs: true,
-            shouldBubble: !getFocusedItem(),
+            shouldBubble: itemsCount > 0 && !getFocusedItem(),
             isActive: !disableKeyboardShortcuts && isScreenFocused && !confirmButtonOptions?.isDisabled,
         },
     );
