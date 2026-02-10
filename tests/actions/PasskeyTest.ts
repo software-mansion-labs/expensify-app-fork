@@ -43,28 +43,23 @@ describe('actions/Passkey', () => {
             await waitForBatchedUpdates();
 
             const value = await getOnyxValue(getPasskeyOnyxKey(userId, rpId));
-            expect(value).toEqual({credentialIds: [credential]});
+            expect(value).toEqual({credentials: [credential]});
         });
 
         it('should add credential to existing entry', async () => {
-            const existingEntry: LocalPasskeyEntry = {credentialIds: [{id: 'existing', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]};
+            const existingEntry: LocalPasskeyEntry = {credentials: [{id: 'existing', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]};
 
             addLocalPasskeyCredential({userId, rpId, credential, existingEntry});
             await waitForBatchedUpdates();
 
             const value = await getOnyxValue(getPasskeyOnyxKey(userId, rpId));
-            expect(value).toEqual({credentialIds: [{id: 'existing', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}, credential]});
+            expect(value).toEqual({credentials: [{id: 'existing', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}, credential]});
         });
 
-        it('should update existing credential when id matches', async () => {
-            const existingEntry: LocalPasskeyEntry = {credentialIds: [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]};
-            const updatedCredential: PasskeyCredential = {id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL, CONST.PASSKEY_TRANSPORT.HYBRID]};
+        it('should throw error when credential with same id already exists', () => {
+            const existingEntry: LocalPasskeyEntry = {credentials: [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]};
 
-            addLocalPasskeyCredential({userId, rpId, credential: updatedCredential, existingEntry});
-            await waitForBatchedUpdates();
-
-            const value = await getOnyxValue(getPasskeyOnyxKey(userId, rpId));
-            expect(value).toEqual({credentialIds: [updatedCredential]});
+            expect(() => addLocalPasskeyCredential({userId, rpId, credential, existingEntry})).toThrow();
         });
     });
 
@@ -81,7 +76,7 @@ describe('actions/Passkey', () => {
         });
 
         it('should delete existing passkey entry from Onyx', async () => {
-            const entry: LocalPasskeyEntry = {credentialIds: [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]};
+            const entry: LocalPasskeyEntry = {credentials: [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]};
             await Onyx.set(`${ONYXKEYS.COLLECTION.PASSKEYS}${userId}@${rpId}`, entry);
             await waitForBatchedUpdates();
 
@@ -89,7 +84,7 @@ describe('actions/Passkey', () => {
             await waitForBatchedUpdates();
 
             const value = await getOnyxValue(`${ONYXKEYS.COLLECTION.PASSKEYS}${userId}@${rpId}`);
-            expect(value).toBeUndefined();
+            expect(value).toEqual({credentials: []});
         });
 
         it('should handle deletion of non-existent entry gracefully', async () => {
@@ -97,7 +92,7 @@ describe('actions/Passkey', () => {
             await waitForBatchedUpdates();
 
             const value = await getOnyxValue(`${ONYXKEYS.COLLECTION.PASSKEYS}${userId}@${rpId}`);
-            expect(value).toBeUndefined();
+            expect(value).toEqual({credentials: []});
         });
     });
 
@@ -120,7 +115,7 @@ describe('actions/Passkey', () => {
         });
 
         it('should return empty array when localEntry has no credentials', () => {
-            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials: [], localEntry: {credentialIds: []}});
+            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials: [], localEntry: {credentials: []}});
 
             expect(result).toEqual([]);
         });
@@ -135,7 +130,7 @@ describe('actions/Passkey', () => {
                 {id: 'cred-2', type: CONST.PASSKEY_CREDENTIAL_TYPE},
             ];
 
-            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentialIds: localCredentials}});
+            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentials: localCredentials}});
 
             expect(result).toEqual(localCredentials);
         });
@@ -147,26 +142,26 @@ describe('actions/Passkey', () => {
             ];
             const backendPasskeyCredentials: BackendPasskeyCredential[] = [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE}];
 
-            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentialIds: localCredentials}});
+            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentials: localCredentials}});
             await waitForBatchedUpdates();
 
             expect(result).toEqual([{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]);
 
             const value = await getOnyxValue(getPasskeyOnyxKey(userId, rpId));
-            expect(value).toEqual({credentialIds: [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]});
+            expect(value).toEqual({credentials: [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}]});
         });
 
-        it('should delete entire entry when no credentials match backend', async () => {
+        it('should set empty credentials when no credentials match backend', async () => {
             const localCredentials: PasskeyCredential[] = [{id: 'old-cred', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL]}];
             const backendPasskeyCredentials: BackendPasskeyCredential[] = [{id: 'new-cred', type: CONST.PASSKEY_CREDENTIAL_TYPE}];
 
-            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentialIds: localCredentials}});
+            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentials: localCredentials}});
             await waitForBatchedUpdates();
 
             expect(result).toEqual([]);
 
             const value = await getOnyxValue(getPasskeyOnyxKey(userId, rpId));
-            expect(value).toBeUndefined();
+            expect(value).toEqual({credentials: []});
         });
 
         it('should preserve transports from local credentials', () => {
@@ -176,9 +171,9 @@ describe('actions/Passkey', () => {
             ];
             const backendPasskeyCredentials: BackendPasskeyCredential[] = [{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE}];
 
-            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentialIds: localCredentials}});
+            const result = reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry: {credentials: localCredentials}});
 
-            expect(result).toEqual([{id: 'cred-1', type: CONST.PASSKEY_CREDENTIAL_TYPE, transports: [CONST.PASSKEY_TRANSPORT.INTERNAL, CONST.PASSKEY_TRANSPORT.HYBRID]}]);
+            expect(result).toEqual(localCredentials);
         });
     });
 });

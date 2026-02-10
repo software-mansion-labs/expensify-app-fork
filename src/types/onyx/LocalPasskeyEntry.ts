@@ -23,7 +23,7 @@ type PasskeyCredential = {
  */
 type LocalPasskeyEntry = {
     /** Array of credentials registered for this user on this device/browser */
-    credentialIds: PasskeyCredential[];
+    credentials: PasskeyCredential[];
 };
 
 export default LocalPasskeyEntry;

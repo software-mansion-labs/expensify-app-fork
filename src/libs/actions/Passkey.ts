@@ -2,14 +2,18 @@ import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {LocalPasskeyEntry, PasskeyCredential} from '@src/types/onyx';
 
+/** Identifies a passkey storage scope: a specific user on a specific relying party */
+type PasskeyScope = {
+    userId: string;
+    rpId: string;
+};
+
 /** Returns Onyx key: passkey_${userId}@${rpId} */
 function getPasskeyOnyxKey(userId: string, rpId: string): `${typeof ONYXKEYS.COLLECTION.PASSKEYS}${string}` {
     return `${ONYXKEYS.COLLECTION.PASSKEYS}${userId}@${rpId}`;
 }
 
-type SetLocalPasskeyCredentialsParams = {
-    userId: string;
-    rpId: string;
+type SetLocalPasskeyCredentialsParams = PasskeyScope & {
     entry: LocalPasskeyEntry;
 };
 
@@ -25,23 +29,19 @@ function setLocalPasskeyCredentials({userId, rpId, entry}: SetLocalPasskeyCreden
     Onyx.set(getPasskeyOnyxKey(userId, rpId), entry);
 }
 
-type AddLocalPasskeyCredentialParams = {
-    userId: string;
-    rpId: string;
+type AddLocalPasskeyCredentialParams = PasskeyScope & {
     credential: PasskeyCredential;
     existingEntry: LocalPasskeyEntry | null;
 };
 
 function addLocalPasskeyCredential({userId, rpId, credential, existingEntry}: AddLocalPasskeyCredentialParams): void {
-    const existingCredentials = existingEntry?.credentialIds ?? [];
-    const credentialExists = existingCredentials.some((c) => c.id === credential.id);
+    const existingCredentials = existingEntry?.credentials ?? [];
 
-    if (credentialExists) {
-        const updatedCredentials = existingCredentials.map((c) => (c.id === credential.id ? credential : c));
-        setLocalPasskeyCredentials({userId, rpId, entry: {credentialIds: updatedCredentials}});
-    } else {
-        setLocalPasskeyCredentials({userId, rpId, entry: {credentialIds: [...existingCredentials, credential]}});
+    if (existingCredentials.some((c) => c.id === credential.id)) {
+        throw new Error(`Passkey credential with id "${credential.id}" already exists for ${userId}@${rpId}`);
     }
+
+    setLocalPasskeyCredentials({userId, rpId, entry: {credentials: [...existingCredentials, credential]}});
 }
 
 /** Deletes all passkey credentials for a user/rpId from Onyx storage */
@@ -49,15 +49,13 @@ function deleteLocalPasskeyCredentials(userId: string, rpId: string): void {
     if (!userId || !rpId) {
         throw new Error('userId and rpId are required to delete passkey credentials');
     }
-    Onyx.set(getPasskeyOnyxKey(userId, rpId), null);
+    Onyx.set(getPasskeyOnyxKey(userId, rpId), {credentials: []});
 }
 
 /** Backend returns simplified format without transports */
 type BackendPasskeyCredential = Omit<PasskeyCredential, 'transports'>;
 
-type ReconcileLocalPasskeysWithBackendParams = {
-    userId: string;
-    rpId: string;
+type ReconcileLocalPasskeysWithBackendParams = PasskeyScope & {
     backendPasskeyCredentials: BackendPasskeyCredential[];
     localEntry: LocalPasskeyEntry | null;
 };
@@ -70,19 +68,15 @@ function reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredenti
     if (!userId || !rpId) {
         throw new Error('userId and rpId are required to reconcile passkey credentials');
     }
-    if (!localEntry || localEntry.credentialIds.length === 0) {
+    if (!localEntry || localEntry.credentials.length === 0) {
         return [];
     }
 
     const backendCredentialIds = new Set(backendPasskeyCredentials.map((c) => c.id));
-    const matchedCredentials = localEntry.credentialIds.filter((c) => backendCredentialIds.has(c.id));
+    const matchedCredentials = localEntry.credentials.filter((c) => backendCredentialIds.has(c.id));
 
-    if (matchedCredentials.length !== localEntry.credentialIds.length) {
-        if (matchedCredentials.length === 0) {
-            deleteLocalPasskeyCredentials(userId, rpId);
-        } else {
-            setLocalPasskeyCredentials({userId, rpId, entry: {credentialIds: matchedCredentials}});
-        }
+    if (matchedCredentials.length !== localEntry.credentials.length) {
+        setLocalPasskeyCredentials({userId, rpId, entry: {credentials: matchedCredentials}});
     }
 
     return matchedCredentials;
