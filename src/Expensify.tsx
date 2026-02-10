@@ -46,9 +46,9 @@ import './libs/Notification/PushNotification/subscribeToPushNotifications';
 // This lib needs to be imported, but it has nothing to export since all it contains is an Onyx connection
 import './libs/registerPaginationConfig';
 import setCrashlyticsUserId from './libs/setCrashlyticsUserId';
+import StartupTimer from './libs/StartupTimer';
 import {endSpan, getSpan, startSpan} from './libs/telemetry/activeSpans';
-// This lib needs to be imported, but it has nothing to export since all it contains is an Onyx connection
-import './libs/telemetry/TelemetrySynchronizer';
+import {cleanupMemoryTrackingTelemetry, initializeMemoryTrackingTelemetry} from './libs/telemetry/TelemetrySynchronizer';
 // This lib needs to be imported, but it has nothing to export since all it contains is an Onyx connection
 import './libs/UnreadIndicatorUpdater';
 import Visibility from './libs/Visibility';
@@ -131,6 +131,13 @@ function Expensify() {
 
     useDebugShortcut();
     usePriorityMode();
+
+    useEffect(() => {
+        initializeMemoryTrackingTelemetry();
+        return () => {
+            cleanupMemoryTrackingTelemetry();
+        };
+    }, []);
 
     const bootsplashSpan = useRef<Sentry.Span>(null);
 
@@ -294,6 +301,10 @@ function Expensify() {
                 Log.alert('[BootSplash] splash screen is still visible', {propsToLog}, false);
             }
         }, 30 * 1000);
+
+        // This timer is set in the native layer when launching the app and we stop it here so we can measure how long
+        // it took for the main app itself to load.
+        StartupTimer.stop();
 
         // Run any Onyx schema migrations and then continue loading the main app
         migrateOnyx().then(() => {

@@ -16,6 +16,7 @@ import {getCommandURL} from '@libs/ApiUtils';
 import {convertToDisplayString} from '@libs/CurrencyUtils';
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import fileDownload from '@libs/fileDownload';
+import Log from '@libs/Log';
 import isSearchTopmostFullScreenRoute from '@libs/Navigation/helpers/isSearchTopmostFullScreenRoute';
 import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import type {SearchFullscreenNavigatorParamList} from '@libs/Navigation/types';
@@ -559,9 +560,24 @@ function submitMoneyRequestOnSearch(hash: number, reportList: Report[], policy: 
     ];
 
     const report = (reportList.at(0) ?? {}) as Report;
+    const policyForReport = policy.at(0);
+    const submitToAccountID = getSubmitToAccountID(policyForReport, report);
+    const managerAccountIDParam = submitToAccountID ?? report?.managerID;
+    Log.info('[submitMoneyRequestOnSearch] Submitting report with approval chain diagnostic', false, {
+        reportID: report.reportID,
+        reportOwnerAccountID: report.ownerAccountID,
+        reportExistingManagerID: report.managerID,
+        getSubmitToAccountIDResult: submitToAccountID,
+        managerAccountIDSentToAPI: managerAccountIDParam,
+        hasPolicyData: !!policyForReport,
+        policyID: policyForReport?.id,
+        policyApprovalMode: policyForReport?.approvalMode,
+        policyOwner: policyForReport?.owner,
+        policyApprover: policyForReport?.approver,
+    });
     const parameters: SubmitReportParams = {
         reportID: report.reportID,
-        managerAccountID: getSubmitToAccountID(policy.at(0), report) ?? report?.managerID,
+        managerAccountID: managerAccountIDParam,
         reportActionID: rand64(),
     };
 
@@ -788,6 +804,8 @@ function unholdMoneyRequestOnSearch(hash: number, transactionIDList: string[]) {
 }
 
 function bulkDeleteReports(
+    reports: OnyxCollection<Report>,
+    selfDMReport: OnyxEntry<Report>,
     hash: number,
     selectedTransactions: Record<string, SelectedTransactionInfo>,
     currentUserEmailParam: string,
@@ -814,7 +832,8 @@ function bulkDeleteReports(
 
     if (reportIDList.length > 0) {
         for (const reportID of reportIDList) {
-            deleteAppReport(reportID, currentUserEmailParam, currentUserAccountIDParam, reportTransactions, transactionsViolations, bankAccountList);
+            const report = reports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
+            deleteAppReport(report, selfDMReport, currentUserEmailParam, currentUserAccountIDParam, reportTransactions, transactionsViolations, bankAccountList);
         }
     }
 }
@@ -1245,10 +1264,9 @@ function handleBulkPayItemSelected(params: {
         showDelegateNoAccessModal,
         confirmPayment,
     } = params;
-    const {paymentType, selectedPolicy, shouldSelectPaymentMethod} = getActivePaymentType(item.key, activeAdminPolicies, latestBankItems, policy?.id);
-    const isPolicyBasedPaymentOption = activeAdminPolicies.some((activePolicy) => activePolicy.id === item.key);
+    const {paymentType, policyFromPaymentMethod, policyFromContext, shouldSelectPaymentMethod} = getActivePaymentType(item.key, activeAdminPolicies, latestBankItems, policy?.id);
     // Early return if item is not a valid payment method and not a policy-based payment option
-    if (!isValidBulkPayOption(item) && !isPolicyBasedPaymentOption) {
+    if (!isValidBulkPayOption(item) && !policyFromPaymentMethod) {
         return;
     }
 
@@ -1272,12 +1290,12 @@ function handleBulkPayItemSelected(params: {
         return;
     }
 
-    if ((!!selectedPolicy || shouldSelectPaymentMethod) && item.key !== CONST.IOU.PAYMENT_TYPE.ELSEWHERE) {
+    if ((!!policyFromPaymentMethod || shouldSelectPaymentMethod) && item.key !== CONST.IOU.PAYMENT_TYPE.ELSEWHERE) {
         triggerKYCFlow({
             event: undefined,
             iouPaymentType: paymentType,
             paymentMethod: item.key as PaymentMethod,
-            policy: selectedPolicy,
+            policy: policyFromPaymentMethod ?? policyFromContext,
         });
 
         if (paymentType === CONST.IOU.PAYMENT_TYPE.EXPENSIFY || paymentType === CONST.IOU.PAYMENT_TYPE.VBBA) {
