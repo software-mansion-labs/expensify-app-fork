@@ -238,6 +238,9 @@ type TextInputOptions = {
     /** Whether the text input autofocus should be disabled */
     disableAutoFocus?: boolean;
 
+    /** Whether the text input should intercept swipes */
+    shouldInterceptSwipe?: boolean;
+
     /** Styles for the text input */
     style?: {
         /** Styles for the text input container */

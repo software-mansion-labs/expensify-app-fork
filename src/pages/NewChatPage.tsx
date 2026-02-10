@@ -476,6 +476,7 @@ function NewChatPage({ref}: NewChatPageProps) {
         onChangeText: setSearchTerm,
         headerMessage,
         disableAutoFocus: true,
+        shouldInterceptSwipe: true,
     };
 
     return (
@@ -510,7 +511,6 @@ function NewChatPage({ref}: NewChatPageProps) {
                 onEndReached={handleEndReached}
                 onEndReachedThreshold={0.75}
                 disableMaintainingScrollPosition
-                // shouldTextInputInterceptSwipe
                 addBottomSafeAreaPadding
             />
         </ScreenWrapper>

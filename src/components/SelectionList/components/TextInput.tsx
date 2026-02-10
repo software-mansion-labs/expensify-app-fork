@@ -65,7 +65,7 @@ function TextInput({
 }: TextInputProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const {label, value, onChangeText, errorText, headerMessage, hint, disableAutoFocus, placeholder, maxLength, inputMode, ref: optionsRef, style} = options ?? {};
+    const {label, value, onChangeText, errorText, headerMessage, hint, disableAutoFocus, placeholder, maxLength, inputMode, ref: optionsRef, style, shouldInterceptSwipe} = options ?? {};
     const resultsFound = headerMessage !== translate('common.noResultsFound');
     const noData = dataLength === 0 && !showLoadingPlaceholder;
     const shouldShowHeaderMessage = !!headerMessage && (!isLoadingNewOptions || resultsFound || noData);
@@ -134,7 +134,7 @@ function TextInput({
                     isLoading={isLoading}
                     testID="selection-list-text-input"
                     errorText={errorText}
-                    shouldInterceptSwipe={false}
+                    shouldInterceptSwipe={shouldInterceptSwipe ?? false}
                 />
             </View>
             {shouldShowHeaderMessage && (
