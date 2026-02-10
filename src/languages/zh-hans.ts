@@ -885,7 +885,7 @@ const translations: TranslationDeepObject<typeof en> = {
         yourSpace: '你的空间',
         welcomeToRoom: ({roomName}: WelcomeToRoomParams) => `欢迎来到 ${roomName}！`,
         usePlusButton: ({additionalText}: UsePlusButtonParams) => `使用 + 按钮来${additionalText}一笔费用。`,
-        askConcierge: '尽管问我任何问题！',
+        askConcierge: '这是您与 Concierge（您的个人 AI 代理）的聊天。我几乎什么都能做，来试试吧！',
         conciergeSupport: '您的专属AI助手',
         create: '创建',
         iouTypes: {
@@ -7354,9 +7354,9 @@ ${reportName}
         },
     },
     cardTransactions: {
-        notActivated: '未激活',
-        outOfPocket: '可报销',
-        companySpend: '不可报销',
+        notActivated: '未启用',
+        outOfPocket: '个人垫付支出',
+        companySpend: '公司支出',
     },
     distance: {
         addStop: '添加站点',

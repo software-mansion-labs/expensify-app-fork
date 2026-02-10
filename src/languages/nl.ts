@@ -895,7 +895,7 @@ const translations: TranslationDeepObject<typeof en> = {
         yourSpace: 'Jouw ruimte',
         welcomeToRoom: ({roomName}: WelcomeToRoomParams) => `Welkom bij ${roomName}!`,
         usePlusButton: ({additionalText}: UsePlusButtonParams) => `Gebruik de +-knop om een uitgave te ${additionalText}.`,
-        askConcierge: 'Vraag me alles!',
+        askConcierge: 'Dit is je chat met Concierge, je persoonlijke AI-agent. Ik kan bijna alles, probeer het maar!',
         conciergeSupport: 'Jouw persoonlijke AI-agent',
         create: 'maken',
         iouTypes: {
@@ -7516,8 +7516,8 @@ Vereis onkostendetails zoals bonnen en beschrijvingen, stel limieten en standaar
     },
     cardTransactions: {
         notActivated: 'Niet geactiveerd',
-        outOfPocket: 'Vergoedbaar',
-        companySpend: 'Niet vergoedbaar',
+        outOfPocket: 'Uitgaven uit eigen zak',
+        companySpend: 'Uitgaven van het bedrijf',
     },
     distance: {
         addStop: 'Stop toevoegen',

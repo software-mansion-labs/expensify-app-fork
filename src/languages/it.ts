@@ -896,7 +896,7 @@ const translations: TranslationDeepObject<typeof en> = {
         yourSpace: 'Il tuo spazio',
         welcomeToRoom: ({roomName}: WelcomeToRoomParams) => `Benvenuto in ${roomName}!`,
         usePlusButton: ({additionalText}: UsePlusButtonParams) => `Usa il pulsante + per ${additionalText} una spesa.`,
-        askConcierge: 'Chiedimi qualsiasi cosa!',
+        askConcierge: 'Questa è la tua chat con Concierge, il tuo agente IA personale. Posso fare quasi tutto, mettimi alla prova!',
         conciergeSupport: 'Il tuo agente IA personale',
         create: 'crea',
         iouTypes: {
@@ -7527,8 +7527,8 @@ Richiedi dettagli sulle spese come ricevute e descrizioni, imposta limiti e valo
     },
     cardTransactions: {
         notActivated: 'Non attivato',
-        outOfPocket: 'Rimborsabile',
-        companySpend: 'Non rimborsabile',
+        outOfPocket: 'Spesa personale',
+        companySpend: 'Spese aziendali',
     },
     distance: {
         addStop: 'Aggiungi fermata',
