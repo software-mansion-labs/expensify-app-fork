@@ -1535,6 +1535,9 @@ type SettingsNavigatorParamList = {
     [SCREENS.DOMAIN.ADD_MEMBER]: {
         domainAccountID: number;
     };
+    [SCREENS.DOMAIN.MOVE_USERS]: {
+        domainAccountID: number;
+    };
 } & ReimbursementAccountNavigatorParamList;
 
 type DomainCardNavigatorParamList = {

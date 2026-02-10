@@ -4,6 +4,7 @@ import * as API from '@libs/API';
 import type {
     AddAdminToDomainParams,
     AddMemberToDomainParams,
+    ChangeDomainSecurityGroupParams,
     DeleteDomainMemberParams,
     DeleteDomainParams,
     RemoveDomainAdminParams,
@@ -16,6 +17,7 @@ import {generateAccountID} from '@libs/UserUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Domain, DomainSecurityGroup, UserSecurityGroupData} from '@src/types/onyx';
+import type {SecurityGroupKey} from '@src/types/onyx/Domain';
 import type {PendingAction} from '@src/types/onyx/OnyxCommon';
 import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
 import type {ScimTokenWithState} from './ScimToken/ScimTokenUtils';
@@ -1040,6 +1042,113 @@ function closeUserAccount(domainAccountID: number, domain: string, targetEmail: 
     API.write(WRITE_COMMANDS.DELETE_DOMAIN_MEMBER, parameters, {optimisticData, successData, failureData});
 }
 
+function changeDomainSecurityGroup(
+    domainAccountID: number,
+    domainName: string,
+    employeeEmail: string,
+    accountID: number,
+    currentSecurityGroupKey: SecurityGroupKey,
+    currentSecurityGroup: Partial<DomainSecurityGroup>,
+    targetSecurityGroupKey: SecurityGroupKey,
+) {
+    const accountIDStr = String(accountID);
+
+    const optimisticData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [currentSecurityGroupKey]: {
+                    shared: {
+                        [accountIDStr]: null,
+                    },
+                },
+                [targetSecurityGroupKey]: {
+                    shared: {
+                        [accountIDStr]: 'read',
+                    },
+                },
+            } as PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, Partial<DomainSecurityGroup>>,
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                member: {[employeeEmail]: {pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE as PendingAction}},
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
+            value: {
+                memberErrors: {[employeeEmail]: null},
+            },
+        },
+    ];
+
+    const successData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                member: {[employeeEmail]: null},
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
+            value: {
+                memberErrors: {[employeeEmail]: null},
+            },
+        },
+    ];
+
+    const failureData: OnyxUpdate[] = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
+            value: {
+                [currentSecurityGroupKey]: currentSecurityGroup,
+            } as PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, Partial<DomainSecurityGroup>>,
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
+            value: {
+                member: {[employeeEmail]: null},
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
+            value: {
+                memberErrors: {
+                    [employeeEmail]: {errors: getMicroSecondOnyxErrorWithTranslationKey('domain.members.error.moveError')},
+                },
+            },
+        },
+    ];
+
+    const newID = targetSecurityGroupKey.replace(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, '');
+
+    const parameters: ChangeDomainSecurityGroupParams = {
+        domainName,
+        newID,
+        employeeEmail,
+        domainAccountID,
+    };
+
+    API.write(WRITE_COMMANDS.CHANGE_DOMAIN_SECURITY_GROUP, parameters, {optimisticData, successData, failureData});
+}
+
+function setDomainMembersSelectedForMove(memberAccountIDs: string[]) {
+    Onyx.set(ONYXKEYS.DOMAIN_MEMBERS_SELECTED_FOR_MOVE, memberAccountIDs);
+}
+
+function clearDomainMembersSelectedForMove() {
+    Onyx.set(ONYXKEYS.DOMAIN_MEMBERS_SELECTED_FOR_MOVE, []);
+}
+
 export {
     getDomainValidationCode,
     validateDomain,
@@ -1066,4 +1175,7 @@ export {
     addMemberToDomain,
     clearDomainMemberError,
     closeUserAccount,
+    changeDomainSecurityGroup,
+    setDomainMembersSelectedForMove,
+    clearDomainMembersSelectedForMove,
 };

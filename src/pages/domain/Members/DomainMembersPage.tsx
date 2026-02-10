@@ -1,5 +1,5 @@
 import {defaultSecurityGroupIDSelector, domainNameSelector, memberAccountIDsSelector, memberPendingActionSelector, selectSecurityGroupForAccount} from '@selectors/Domain';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
 import type {DomainMemberBulkActionType, DropdownOption} from '@components/ButtonWithDropdownMenu/types';
@@ -13,7 +13,7 @@ import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchBackPress from '@hooks/useSearchBackPress';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {clearDomainMemberError, closeUserAccount} from '@libs/actions/Domain';
+import {clearDomainMemberError, closeUserAccount, setDomainMembersSelectedForMove} from '@libs/actions/Domain';
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import {getLatestError} from '@libs/ErrorUtils';
 import Navigation from '@navigation/Navigation';
@@ -32,7 +32,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const illustrations = useMemoizedLazyIllustrations(['Profile']);
-    const icons = useMemoizedLazyExpensifyIcons(['Plus', 'RemoveMembers']);
+    const icons = useMemoizedLazyExpensifyIcons(['Plus', 'RemoveMembers', 'Transfer']);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
     const clearSelectedMembers = () => setSelectedMembers([]);
@@ -58,6 +58,16 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
         canBeMissing: true,
         selector: memberAccountIDsSelector,
     });
+    const [membersSelectedForMove] = useOnyx(ONYXKEYS.DOMAIN_MEMBERS_SELECTED_FOR_MOVE, {canBeMissing: true});
+
+    useEffect(() => {
+        if (!membersSelectedForMove || membersSelectedForMove.length > 0) {
+            return;
+        }
+        // State change syncs onyx to local state after the move members request has been submitted in MoveUsersBetweenGroupsPage
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        clearSelectedMembers();
+    }, [membersSelectedForMove]);
 
     useSearchBackPress({
         onClearSelection: clearSelectedMembers,
@@ -113,6 +123,15 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
             icon: icons.RemoveMembers,
             onSelected: () => {
                 setIsModalVisible(true);
+            },
+        },
+        {
+            text: translate('domain.members.moveToGroup'),
+            value: CONST.DOMAIN.MEMBERS_BULK_ACTION_TYPES.MOVE_TO_GROUP,
+            icon: icons.Transfer,
+            onSelected: () => {
+                setDomainMembersSelectedForMove(selectedMembers);
+                Navigation.navigate(ROUTES.DOMAIN_MOVE_USERS.getRoute(domainAccountID));
             },
         },
     ];
