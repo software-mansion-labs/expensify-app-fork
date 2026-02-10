@@ -42,14 +42,12 @@ function MoveUsersBetweenGroupsPage({route}: MoveUsersBetweenGroupsPageProps) {
 
     const memberCount = selectedMemberAccountIDs?.length ?? 0;
 
-    const data = (): SecurityGroupItem[] => {
-        return (securityGroups ?? []).map((group) => ({
-            text: group.name,
-            keyForList: group.key,
-            value: group.key,
-            isSelected: group.key === selectedGroupKey,
-        }));
-    };
+    const data: SecurityGroupItem[] = (securityGroups ?? []).map((group) => ({
+        text: group.name,
+        keyForList: group.key,
+        value: group.key,
+        isSelected: group.key === selectedGroupKey,
+    }));
 
     const handleSelectRow = (item: SecurityGroupItem) => {
         setSelectedGroupKey(item.value);
@@ -89,7 +87,7 @@ function MoveUsersBetweenGroupsPage({route}: MoveUsersBetweenGroupsPageProps) {
                 />
                 <Text style={[styles.ph5, styles.pb3, styles.textSupporting]}>{translate('domain.members.chooseWhereToMove', {count: memberCount})}</Text>
                 <SelectionList<SecurityGroupItem>
-                    data={data()}
+                    data={data}
                     onSelectRow={handleSelectRow}
                     ListItem={SingleSelectListItem}
                     initiallyFocusedItemKey={selectedGroupKey}

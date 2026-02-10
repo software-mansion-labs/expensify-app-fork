@@ -8416,7 +8416,7 @@ const translations = {
             error: {
                 addMember: 'Unable to add this member. Please try again.',
                 removeMember: 'Unable to remove this user. Please try again.',
-                moveError: 'Unable to move this member. Please try again.',
+                moveMember: 'Unable to move this member. Please try again.',
             },
         },
     },

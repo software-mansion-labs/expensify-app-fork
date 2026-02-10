@@ -1123,7 +1123,7 @@ function changeDomainSecurityGroup(
             key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
             value: {
                 memberErrors: {
-                    [employeeEmail]: {errors: getMicroSecondOnyxErrorWithTranslationKey('domain.members.error.moveError')},
+                    [employeeEmail]: {errors: getMicroSecondOnyxErrorWithTranslationKey('domain.members.error.moveMember')},
                 },
             },
         },
