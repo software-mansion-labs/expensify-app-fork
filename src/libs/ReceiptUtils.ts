@@ -7,6 +7,7 @@ import type {ShareTempFile, Transaction} from '@src/types/onyx';
 import type {ReceiptError, ReceiptSource} from '@src/types/onyx/Transaction';
 import {isLocalFile as isLocalFileUtils, splitExtensionFromFileName} from './fileDownload/FileUtils';
 import {hasReceipt, hasReceiptSource, isFetchingWaypointsFromServer} from './TransactionUtils';
+import CONFIG from '@src/CONFIG';
 
 type ThumbnailAndImageURI = {
     image?: ReceiptSource;
@@ -39,7 +40,7 @@ function getThumbnailAndImageURIs(transaction: OnyxEntry<Transaction>, receiptPa
     // URI to image, i.e. blob:new.expensify.com/9ef3a018-4067-47c6-b29f-5f1bd35f213d or expensify.com/receipts/w_e616108497ef940b7210ec6beb5a462d01a878f4.jpg
     // When receipt.source is missing but filename exists (e.g. receipts added via email or billing), fall back to constructing the URL from the filename
     const receiptFilename = transaction?.receipt?.filename;
-    const fallbackSource = !transaction?.receipt?.source && receiptFilename ? `https://www.expensify.com/receipts/${receiptFilename}` : undefined;
+    const fallbackSource = !transaction?.receipt?.source && receiptFilename ? `${CONFIG.EXPENSIFY.RECEIPTS_URL}${receiptFilename}` : undefined;
     const path = errors?.source ?? transaction?.receipt?.source ?? fallbackSource ?? receiptPath ?? '';
     // filename of uploaded image or last part of remote URI
     const filename = errors?.filename ?? receiptFilename ?? receiptFileName ?? '';

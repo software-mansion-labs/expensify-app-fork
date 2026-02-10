@@ -32,8 +32,8 @@ import {
     isTimeRequest,
     isTransactionPendingDelete,
 } from './TransactionUtils';
+import CONFIG from '@src/CONFIG';
 
-const RECEIPT_SOURCE_URL = 'https://www.expensify.com/receipts/';
 
 // Define the specific merge fields we want to handle
 const MERGE_FIELDS = ['amount', 'merchant', 'created', 'category', 'tag', 'description', 'reimbursable', 'billable', 'attendees', 'reportID'] as const;
@@ -90,7 +90,7 @@ function fillMissingReceiptSource(transaction: Transaction) {
         ...transaction,
         receipt: {
             ...transaction.receipt,
-            source: `${RECEIPT_SOURCE_URL}${transaction.receipt.filename}`,
+            source: `${CONFIG.EXPENSIFY.RECEIPTS_URL}${transaction.receipt.filename}`,
         },
     };
 }
