@@ -3,6 +3,7 @@ import type {Bytes} from '@noble/ed25519';
 import {sha256, sha512} from '@noble/hashes/sha2';
 import {utf8ToBytes} from '@noble/hashes/utils';
 import 'react-native-get-random-values';
+import type {NativeBiometricRegistrationResponse} from '@libs/MultifactorAuthentication/Biometrics/types';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
 import Base64URL from '@src/utils/Base64URL';
 import type {Base64URLString} from '@src/utils/Base64URL';
@@ -154,4 +155,26 @@ function signToken(credentialRequestOptions: MultifactorAuthenticationChallengeO
     };
 }
 
-export {generateKeyPair, signToken, createAuthenticatorData, concatBytes, sha256, utf8ToBytes, verify, randomBytes};
+/**
+ * Creates a NativeBiometricRegistrationResponse object from a public key and challenge.
+ * Constructs the required clientDataJSON with base64URL encoding and embeds the public key
+ * with ED25519 algorithm information for registration.
+ */
+function createKeyInfoObject({publicKey, challenge}: {publicKey: string; challenge: string}): NativeBiometricRegistrationResponse {
+    const rawId: Base64URLString = publicKey;
+    const clientDataJSON = JSON.stringify({challenge});
+
+    return {
+        rawId,
+        type: VALUES.ED25519_TYPE,
+        response: {
+            clientDataJSON: Base64URL.encode(clientDataJSON),
+            biometric: {
+                publicKey,
+                algorithm: -8 as const,
+            },
+        },
+    };
+}
+
+export {generateKeyPair, signToken, createKeyInfoObject, createAuthenticatorData, concatBytes, sha256, utf8ToBytes, verify, randomBytes};

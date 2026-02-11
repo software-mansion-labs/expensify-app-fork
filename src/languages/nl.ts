@@ -718,9 +718,11 @@ const translations: TranslationDeepObject<typeof en> = {
         letsAuthenticateYou: 'We gaan je authenticeren...',
         verifyYourself: {
             biometrics: 'Verifieer jezelf met je gezicht of vingerafdruk',
+            passkeys: '',
         },
         enableQuickVerification: {
             biometrics: 'Schakel snelle, veilige verificatie in met je gezicht of vingerafdruk. Geen wachtwoorden of codes nodig.',
+            passkeys: '',
         },
         revoke: {
             remove: 'Verwijderen',

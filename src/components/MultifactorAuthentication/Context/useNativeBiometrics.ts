@@ -4,31 +4,27 @@ import type {MultifactorAuthenticationScenario} from '@components/MultifactorAut
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import {generateKeyPair, signToken as signTokenED25519} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
-import type {AuthenticationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519/types';
+import {createKeyInfoObject, generateKeyPair, signToken as signTokenED25519} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
+import type {AuthenticationChallenge, RegistrationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519/types';
 import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/Biometrics/KeyStore';
 import {SECURE_STORE_VALUES} from '@libs/MultifactorAuthentication/Biometrics/SecureStore';
-import type {AuthTypeInfo, MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/Biometrics/types';
+import type {AuthTypeInfo, MultifactorAuthenticationReason, NativeBiometricRegistrationResponse} from '@libs/MultifactorAuthentication/Biometrics/types';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Account} from '@src/types/onyx';
 
-type BaseRegisterResult = {
-    privateKey: string;
-    publicKey: string;
-    authenticationMethod: AuthTypeInfo;
-};
-
 type RegisterResult =
-    | ({
+    | {
           success: true;
           reason: MultifactorAuthenticationReason;
-      } & BaseRegisterResult)
-    | ({
+          registrationResponse: NativeBiometricRegistrationResponse;
+          authenticationMethod: AuthTypeInfo;
+      }
+    | {
           success: false;
           reason: MultifactorAuthenticationReason;
-      } & Partial<BaseRegisterResult>);
+      };
 
 type AuthorizeParams<T extends MultifactorAuthenticationScenario> = {
     scenario: T;
@@ -69,7 +65,7 @@ type UseNativeBiometricsReturn = {
     areLocalCredentialsKnownToServer: () => Promise<boolean>;
 
     /** Register biometrics on device */
-    register: (onResult: (result: RegisterResult) => Promise<void> | void) => Promise<void>;
+    register: (challenge: RegistrationChallenge, onResult: (result: RegisterResult) => Promise<void> | void) => Promise<void>;
 
     /** Authorize using biometrics */
     authorize: <T extends MultifactorAuthenticationScenario>(params: AuthorizeParams<T>, onResult: (result: AuthorizeResult) => Promise<void> | void) => Promise<void>;
@@ -146,7 +142,7 @@ function useNativeBiometrics(): UseNativeBiometricsReturn {
         await resetKeys(accountID);
     }, [accountID]);
 
-    const register = async (onResult: (result: RegisterResult) => Promise<void> | void) => {
+    const register = async (challenge: RegistrationChallenge, onResult: (result: RegisterResult) => Promise<void> | void) => {
         // Generate key pair
         const {privateKey, publicKey} = generateKeyPair();
 
@@ -188,12 +184,13 @@ function useNativeBiometrics(): UseNativeBiometricsReturn {
             return;
         }
 
-        // Return success with keys - challenge is passed from Main.tsx
+        // Build the keyInfo object for backend registration
+        const registrationResponse = createKeyInfoObject({publicKey, challenge: challenge.challenge});
+
         await onResult({
             success: true,
             reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.LOCAL_REGISTRATION_COMPLETE,
-            privateKey,
-            publicKey,
+            registrationResponse,
             authenticationMethod: authType,
         });
     };

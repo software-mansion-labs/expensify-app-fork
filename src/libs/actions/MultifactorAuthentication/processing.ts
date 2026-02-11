@@ -4,10 +4,8 @@ import type {
     MultifactorAuthenticationScenario,
     MultifactorAuthenticationScenarioConfig,
 } from '@components/MultifactorAuthentication/config/types';
-import type {MarqetaAuthTypeName, MultifactorAuthenticationKeyInfo, MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/Biometrics/types';
+import type {MarqetaAuthTypeName, MultifactorAuthenticationReason, RegistrationResponseInfo} from '@libs/MultifactorAuthentication/Biometrics/types';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
-import CONST from '@src/CONST';
-import Base64URL from '@src/utils/Base64URL';
 import {registerAuthenticationKey} from './index';
 
 type ProcessResult = {
@@ -27,53 +25,19 @@ function isHttpSuccess(httpCode: number | undefined): boolean {
 }
 
 type RegistrationParams = {
-    publicKey: string;
+    registrationResponse: RegistrationResponseInfo;
     authenticationMethod: MarqetaAuthTypeName;
     challenge: string;
 };
 
 /**
- * Creates a MultifactorAuthenticationKeyInfo object from a public key and challenge.
- * Constructs the required clientDataJSON with base64URL encoding and embeds the public key
- * with ED25519 algorithm information for registration.
+ * Processes a registration request for both native biometrics (ED25519) and passkeys (WebAuthn).
+ * The registrationResponse is already in the correct format for the backend - each platform's
+ * hook is responsible for constructing it:
+ * - Native: ED25519 keyInfo with publicKey and algorithm
+ * - Web: WebAuthn registration response with attestationObject
  *
- * @param params - Parameters object
- * @param params.publicKey - The public key as a base64URL string
- * @param params.challenge - The challenge string to be embedded in clientDataJSON
- * @returns Key info object with encoded challenge and public key
- */
-function createKeyInfoObject({publicKey, challenge}: {publicKey: string; challenge: string}): MultifactorAuthenticationKeyInfo {
-    const rawId: Base64URLString = publicKey;
-
-    // Create clientDataJSON with the challenge
-    const clientDataJSON = JSON.stringify({challenge});
-    const clientDataJSONBase64 = Base64URL.encode(clientDataJSON);
-
-    return {
-        rawId,
-        type: CONST.MULTIFACTOR_AUTHENTICATION.ED25519_TYPE,
-        response: {
-            clientDataJSON: clientDataJSONBase64,
-            biometric: {
-                publicKey,
-                algorithm: -8 as const,
-            },
-        },
-    };
-}
-
-/**
- * Processes a biometric registration request.
- * Validates the challenge, constructs the key info object, and registers the authentication key
- * with the backend API. Returns success status and reason code.
- *
- * @async
- * @param params - Registration parameters including:
- *   - publicKey: The public key from biometric registration
- *   - authenticationMethod: The biometric method used (face, fingerprint, etc.)
- *   - challenge: The registration challenge from the backend
- *   - currentPublicKeyIDs: Existing public key IDs for this account
- * @returns Object with success status and reason code
+ * The backend distinguishes the format by the `type` field: 'public-key' (passkey) vs 'ed25519' (native biometrics).
  */
 async function processRegistration(params: RegistrationParams): Promise<ProcessResult> {
     if (!params.challenge) {
@@ -83,13 +47,8 @@ async function processRegistration(params: RegistrationParams): Promise<ProcessR
         };
     }
 
-    const keyInfo = createKeyInfoObject({
-        publicKey: params.publicKey,
-        challenge: params.challenge,
-    });
-
     const {httpCode, reason} = await registerAuthenticationKey({
-        keyInfo,
+        keyInfo: params.registrationResponse,
         authenticationMethod: params.authenticationMethod,
     });
 

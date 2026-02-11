@@ -69,6 +69,16 @@ const REASON = {
         KEY_NOT_FOUND: 'Key not found in SecureStore',
         UNABLE_TO_RETRIEVE_KEY: 'Failed to retrieve key from SecureStore',
     },
+    WEBAUTHN: {
+        CANCELED: 'WebAuthn: Authentication canceled by user',
+        CREDENTIAL_EXISTS: 'WebAuthn: Credential already registered',
+        SECURITY_ERROR: 'WebAuthn: Security error',
+        NOT_SUPPORTED: 'WebAuthn: No authenticator supports the requested algorithm',
+        ABORTED: 'WebAuthn: Operation was aborted',
+        GENERIC: 'WebAuthn: An error occurred',
+        NO_CREDENTIAL_FOUND: 'WebAuthn: No matching credential found locally',
+        REGISTRATION_COMPLETE: 'WebAuthn: Registration complete',
+    },
 } as const;
 
 // Disables ESLint rule because it throws an error when a key is a number like 401.

@@ -2,13 +2,11 @@ import React, {createContext, useCallback, useContext, useEffect, useMemo} from 
 import type {ReactNode} from 'react';
 import Onyx from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
-import {MULTIFACTOR_AUTHENTICATION_SCENARIO_CONFIG} from '@components/MultifactorAuthentication/config';
 import {getOutcomePaths} from '@components/MultifactorAuthentication/config/outcomePaths';
 import type {MultifactorAuthenticationScenario, MultifactorAuthenticationScenarioParams} from '@components/MultifactorAuthentication/config/types';
 import useNetwork from '@hooks/useNetwork';
 import {requestValidateCodeAction} from '@libs/actions/User';
-import getPlatform from '@libs/getPlatform';
-import type {ChallengeType, MultifactorAuthenticationReason, OutcomePaths} from '@libs/MultifactorAuthentication/Biometrics/types';
+import type {ChallengeType, OutcomePaths} from '@libs/MultifactorAuthentication/Biometrics/types';
 import Navigation from '@navigation/Navigation';
 import {clearLocalMFAPublicKeyList, requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
 import {processRegistration, processScenario} from '@userActions/MultifactorAuthentication/processing';
@@ -17,8 +15,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {DeviceBiometrics} from '@src/types/onyx';
 import {useMultifactorAuthenticationState} from './State';
-import useNativeBiometrics from './useNativeBiometrics';
-import type {AuthorizeResult, RegisterResult} from './useNativeBiometrics';
+import useBiometrics from './useBiometrics';
 
 let deviceBiometricsState: OnyxEntry<DeviceBiometrics>;
 
@@ -69,10 +66,8 @@ function getChallengeType(challenge: unknown): ChallengeType | undefined {
 function MultifactorAuthenticationContextProvider({children}: MultifactorAuthenticationContextProviderProps) {
     const {state, dispatch} = useMultifactorAuthenticationState();
 
-    const biometrics = useNativeBiometrics();
+    const biometrics = useBiometrics();
     const {isOffline} = useNetwork();
-    const platform = getPlatform();
-    const isWeb = useMemo(() => platform === CONST.PLATFORM.WEB || platform === CONST.PLATFORM.MOBILE_WEB, [platform]);
 
     /**
      * Internal process function that runs after each step.
@@ -123,20 +118,10 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
         // 2. Check if device is compatible
         if (!biometrics.doesDeviceSupportBiometrics()) {
-            const {allowedAuthenticationMethods = [] as string[]} = scenario ? MULTIFACTOR_AUTHENTICATION_SCENARIO_CONFIG[scenario] : {};
-
-            let reason: MultifactorAuthenticationReason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.UNSUPPORTED_DEVICE;
-
-            // If the user is using mobile app and the scenario allows native biometrics as a form of authentication,
-            // then they need to enable it in the system settings as well for doesDeviceSupportBiometrics to return true.
-            if (!isWeb && allowedAuthenticationMethods.includes(CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS)) {
-                reason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.GENERIC.NO_ELIGIBLE_METHODS;
-            }
-
             dispatch({
                 type: 'SET_ERROR',
                 payload: {
-                    reason,
+                    reason: biometrics.getDeviceUnsupportedReason(scenario),
                 },
             });
             return;
@@ -180,11 +165,11 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             // Check if a soft prompt is needed
             if (!softPromptApproved) {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.ENABLE_BIOMETRICS), {forceReplace: true});
+                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(biometrics.promptName), {forceReplace: true});
                 return;
             }
 
-            await biometrics.register(async (result: RegisterResult) => {
+            await biometrics.register(registrationChallenge, async (result) => {
                 if (!result.success) {
                     dispatch({
                         type: 'SET_ERROR',
@@ -195,9 +180,9 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                     return;
                 }
 
-                // Call backend to register the public key
+                // Call backend to register the credential
                 const registrationResponse = await processRegistration({
-                    publicKey: result.publicKey,
+                    registrationResponse: result.registrationResponse,
                     authenticationMethod: result.authenticationMethod.marqetaValue,
                     challenge: registrationChallenge.challenge,
                 });
@@ -217,18 +202,19 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             return;
         }
 
-        // Registration isn't required, but they have never seen the soft prompt
-        // this happens on ios if they delete and reinstall the app. Their keys are preserved in the secure store, but
-        // they'll be shown the "do you want to enable FaceID again" system prompt, so we want to show them the soft prompt
-        if (!deviceBiometricsState?.hasAcceptedSoftPrompt) {
-            Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.ENABLE_BIOMETRICS), {forceReplace: true});
+        // Registration isn't required, but returning users may need a soft prompt.
+        // On native (iOS), this happens if they delete and reinstall the app - their keys are preserved
+        // in the secure store, but they'll be shown the system biometric prompt, so we show the soft prompt first.
+        // On web, passkey credentials are managed through the browser's WebAuthn API, so this doesn't apply.
+        if (biometrics.requiresSoftPromptForReturningUsers && !deviceBiometricsState?.hasAcceptedSoftPrompt) {
+            Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(biometrics.promptName), {forceReplace: true});
             return;
         }
 
         // 4. Authorize the user if that has not already been done
         if (!isAuthorizationComplete) {
-            if (!Navigation.isActiveRoute(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute('enable-biometrics'))) {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute('enable-biometrics'), {forceReplace: true});
+            if (!Navigation.isActiveRoute(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(biometrics.promptName))) {
+                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(biometrics.promptName), {forceReplace: true});
             }
 
             // Request authorization challenge if not already fetched
@@ -256,12 +242,12 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                     scenario,
                     challenge: authorizationChallenge,
                 },
-                async (result: AuthorizeResult) => {
+                async (result) => {
                     if (!result.success) {
                         // Re-registration may be needed even though we checked credentials above, because:
                         // - The local public key was deleted between the check and authorization
                         // - The server no longer accepts the local public key (not in allowCredentials)
-                        if (result.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.KEYSTORE.REGISTRATION_REQUIRED) {
+                        if (result.reason === biometrics.reRegistrationReason) {
                             await biometrics.resetKeysForAccount();
                             dispatch({type: 'SET_REGISTRATION_COMPLETE', payload: false});
                             dispatch({type: 'SET_AUTHORIZATION_CHALLENGE', payload: undefined});
@@ -303,7 +289,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         // 5. All steps completed - success
         Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_OUTCOME.getRoute(paths.successOutcome), {forceReplace: true});
         dispatch({type: 'SET_FLOW_COMPLETE', payload: true});
-    }, [biometrics, dispatch, isOffline, state, isWeb]);
+    }, [biometrics, dispatch, isOffline, state]);
 
     /**
      * Drives the MFA state machine forward whenever relevant state changes occur.
