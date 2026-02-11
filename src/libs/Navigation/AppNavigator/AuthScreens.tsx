@@ -1,52 +1,53 @@
-import type {RouteProp} from '@react-navigation/native';
-import {useNavigationState} from '@react-navigation/native';
-import type {StackCardInterpolationProps} from '@react-navigation/stack';
-import React, {memo, useEffect, useRef, useState} from 'react';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigationState } from '@react-navigation/native';
+import type { StackCardInterpolationProps } from '@react-navigation/stack';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import ComposeProviders from '@components/ComposeProviders';
 import OpenConfirmNavigateExpensifyClassicModal from '@components/ConfirmNavigateExpensifyClassicModal';
-import {CurrencyListContextProvider} from '@components/CurrencyListContextProvider';
+import { CurrencyListContextProvider } from '@components/CurrencyListContextProvider';
 import DelegateNoAccessModalProvider from '@components/DelegateNoAccessModalProvider';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import GPSInProgressModal from '@components/GPSInProgressModal';
 import GPSTripStateChecker from '@components/GPSTripStateChecker';
-import {useInitialURLActions, useInitialURLState} from '@components/InitialURLContextProvider';
+import { useInitialURLActions, useInitialURLState } from '@components/InitialURLContextProvider';
 import LockedAccountModalProvider from '@components/LockedAccountModalProvider';
 import OpenAppFailureModal from '@components/OpenAppFailureModal';
 import OptionsListContextProvider from '@components/OptionListContextProvider';
+import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import PriorityModeController from '@components/PriorityModeController';
-import {SearchContextProvider} from '@components/Search/SearchContext';
-import {useSearchRouterActions} from '@components/Search/SearchRouter/SearchRouterContext';
+import { SearchContextProvider } from '@components/Search/SearchContext';
+import { useSearchRouterActions } from '@components/Search/SearchRouter/SearchRouterContext';
 import SearchRouterModal from '@components/Search/SearchRouter/SearchRouterModal';
 import SupportalPermissionDeniedModalProvider from '@components/SupportalPermissionDeniedModalProvider';
-import {useWideRHPState} from '@components/WideRHPContextProvider';
+import { useWideRHPState } from '@components/WideRHPContextProvider';
 import useArchivedReportsIdSet from '@hooks/useArchivedReportsIdSet';
 import useAutoUpdateTimezone from '@hooks/useAutoUpdateTimezone';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnboardingFlowRouter from '@hooks/useOnboardingFlow';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
-import {SidebarOrderedReportsContextProvider} from '@hooks/useSidebarOrderedReports';
+import { SidebarOrderedReportsContextProvider } from '@hooks/useSidebarOrderedReports';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
-import {connect} from '@libs/actions/Delegate';
+import { connect } from '@libs/actions/Delegate';
 import setFullscreenVisibility from '@libs/actions/setFullscreenVisibility';
-import {init, isClientTheLeader} from '@libs/ActiveClientManager';
-import {READ_COMMANDS} from '@libs/API/types';
+import { init, isClientTheLeader } from '@libs/ActiveClientManager';
+import { READ_COMMANDS } from '@libs/API/types';
 import HttpUtils from '@libs/HttpUtils';
 import KeyboardShortcut from '@libs/KeyboardShortcut';
 import Log from '@libs/Log';
 import NavBarManager from '@libs/NavBarManager';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
-import Navigation, {getDeepestFocusedScreenName, isTwoFactorSetupScreen} from '@libs/Navigation/Navigation';
-import Animations, {InternalPlatformAnimations} from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
-import type {AuthScreensParamList} from '@libs/Navigation/types';
+import Navigation, { getDeepestFocusedScreenName, isTwoFactorSetupScreen } from '@libs/Navigation/Navigation';
+import Animations, { InternalPlatformAnimations } from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
+import type { AuthScreensParamList } from '@libs/Navigation/types';
 import NetworkConnection from '@libs/NetworkConnection';
 import Pusher from '@libs/Pusher';
 import PusherConnectionManager from '@libs/PusherConnectionManager';
-import {getReportIDFromLink} from '@libs/ReportUtils';
+import { getReportIDFromLink } from '@libs/ReportUtils';
 import * as SessionUtils from '@libs/SessionUtils';
-import {endSpan, getSpan, startSpan} from '@libs/telemetry/activeSpans';
-import {getSearchParamFromUrl} from '@libs/Url';
+import { endSpan, getSpan, startSpan } from '@libs/telemetry/activeSpans';
+import { getSearchParamFromUrl } from '@libs/Url';
 import ConnectionCompletePage from '@pages/ConnectionCompletePage';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import RequireTwoFactorAuthenticationPage from '@pages/RequireTwoFactorAuthenticationPage';
@@ -67,9 +68,9 @@ import SCREENS from '@src/SCREENS';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import attachmentModalScreenOptions from './attachmentModalScreenOptions';
 import createRootStackNavigator from './createRootStackNavigator';
-import {screensWithEnteringAnimation, workspaceOrDomainSplitsWithoutEnteringAnimation} from './createRootStackNavigator/GetStateForActionHandlers';
+import { screensWithEnteringAnimation, workspaceOrDomainSplitsWithoutEnteringAnimation } from './createRootStackNavigator/GetStateForActionHandlers';
 import defaultScreenOptions from './defaultScreenOptions';
-import {ShareModalStackNavigator} from './ModalStackNavigators';
+import { ShareModalStackNavigator } from './ModalStackNavigators';
 import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
 import FeatureTrainingModalNavigator from './Navigators/FeatureTrainingModalNavigator';
 import MigratedUserWelcomeModalNavigator from './Navigators/MigratedUserWelcomeModalNavigator';
@@ -80,6 +81,7 @@ import TestToolsModalNavigator from './Navigators/TestToolsModalNavigator';
 import TestDriveDemoNavigator from './TestDriveDemoNavigator';
 import useModalCardStyleInterpolator from './useModalCardStyleInterpolator';
 import useRootNavigatorScreenOptions from './useRootNavigatorScreenOptions';
+
 
 const loadAttachmentModalScreen = () => require<ReactComponentModule>('../../../pages/media/AttachmentModalScreen').default;
 const loadValidateLoginPage = () => require<ReactComponentModule>('../../../pages/ValidateLoginPage').default;
@@ -164,12 +166,14 @@ function AuthScreens() {
     const {shouldRenderSecondaryOverlayForWideRHP, shouldRenderSecondaryOverlayForRHPOnWideRHP, shouldRenderSecondaryOverlayForRHPOnSuperWideRHP, shouldRenderTertiaryOverlay} =
         useWideRHPState();
 
-    // Check if the user is currently on a 2FA setup screen
-    // We can't rely on useRoute in this component because we're not a child of a Navigator, so we must sift through nav state by hand
-    const isIn2FASetupFlow = useNavigationState((state) => {
-        const focusedScreenName = getDeepestFocusedScreenName(state);
-        return isTwoFactorSetupScreen(focusedScreenName);
-    });
+    // // Check if the user is currently on a 2FA setup screen
+    // // We can't rely on useRoute in this component because we're not a child of a Navigator, so we must sift through nav state by hand
+    // const isIn2FASetupFlow = useNavigationState((state) => {
+    //     const focusedScreenName = getDeepestFocusedScreenName(state);
+    //     return isTwoFactorSetupScreen(focusedScreenName);
+    // });
+
+    const isIn2FASetupFlow = false;
 
     // State to track whether the delegator's authentication is completed before displaying data
     const [isDelegatorFromOldDotIsReady, setIsDelegatorFromOldDotIsReady] = useState(false);

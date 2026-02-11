@@ -1,15 +1,16 @@
-import type {CommonActions, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
-import {StackActions} from '@react-navigation/native';
-import type {ParamListBase, Router} from '@react-navigation/routers';
+import type { CommonActions, RouterConfigOptions, StackActionType, StackNavigationState } from '@react-navigation/native';
+import { StackActions } from '@react-navigation/native';
+import type { ParamListBase, Router } from '@react-navigation/routers';
 import SCREENS_WITH_NAVIGATION_TAB_BAR from '@components/Navigation/TopLevelNavigationTabBar/SCREENS_WITH_NAVIGATION_TAB_BAR';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import Log from '@libs/Log';
-import {isSplitNavigatorName} from '@libs/Navigation/helpers/isNavigatorName';
-import {SPLIT_TO_SIDEBAR} from '@libs/Navigation/linkingConfig/RELATIONS';
+import { isSplitNavigatorName } from '@libs/Navigation/helpers/isNavigatorName';
+import { SPLIT_TO_SIDEBAR } from '@libs/Navigation/linkingConfig/RELATIONS';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
-import type {OpenDomainSplitActionType, OpenWorkspaceSplitActionType, PushActionType, ReplaceActionType, ToggleSidePanelWithHistoryActionType} from './types';
+import type { OpenDomainSplitActionType, OpenWorkspaceSplitActionType, PushActionType, ReplaceActionType, ToggleSidePanelWithHistoryActionType } from './types';
+
 
 const MODAL_ROUTES_TO_DISMISS = new Set<string>([
     NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,
@@ -139,6 +140,15 @@ function handlePushFullscreenAction(
     }
 
     const lastFullScreenRoute = stateWithNavigator.routes.at(-1);
+
+    // If the last full screen route has a name that is already in the routes array, replace the key with the last
+    if (lastFullScreenRoute?.name) {
+        const existingRoute = stateWithNavigator.routes.find((route) => route.name === lastFullScreenRoute.name);
+        if (existingRoute) {
+            console.log('test', existingRoute, lastFullScreenRoute);
+            lastFullScreenRoute.key = existingRoute.key;
+        }
+    }
 
     // Transitioning to all central screens in each split should be animated
     if (lastFullScreenRoute?.key && targetScreen && !SCREENS_WITH_NAVIGATION_TAB_BAR.includes(targetScreen)) {

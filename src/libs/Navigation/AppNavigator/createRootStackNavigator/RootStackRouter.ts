@@ -1,32 +1,15 @@
-import type {CommonActions, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
-import {findFocusedRoute, StackRouter} from '@react-navigation/native';
-import type {ParamListBase} from '@react-navigation/routers';
-import {isFullScreenName, isOnboardingFlowName} from '@libs/Navigation/helpers/isNavigatorName';
+import type { CommonActions, RouterConfigOptions, StackActionType, StackNavigationState } from '@react-navigation/native';
+import { findFocusedRoute, StackRouter } from '@react-navigation/native';
+import type { ParamListBase } from '@react-navigation/routers';
+import { isFullScreenName, isOnboardingFlowName } from '@libs/Navigation/helpers/isNavigatorName';
 import isSideModalNavigator from '@libs/Navigation/helpers/isSideModalNavigator';
 import * as Welcome from '@userActions/Welcome';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
-import {
-    handleDismissModalAction,
-    handleNavigatingToModalFromModal,
-    handleOpenDomainSplitAction,
-    handleOpenWorkspaceSplitAction,
-    handlePushFullscreenAction,
-    handleReplaceReportsSplitNavigatorAction,
-    handleToggleSidePanelWithHistoryAction,
-} from './GetStateForActionHandlers';
+import { handleDismissModalAction, handleNavigatingToModalFromModal, handleOpenDomainSplitAction, handleOpenWorkspaceSplitAction, handlePushFullscreenAction, handleReplaceReportsSplitNavigatorAction, handleToggleSidePanelWithHistoryAction } from './GetStateForActionHandlers';
 import syncBrowserHistory from './syncBrowserHistory';
-import type {
-    DismissModalActionType,
-    OpenDomainSplitActionType,
-    OpenWorkspaceSplitActionType,
-    PreloadActionType,
-    PushActionType,
-    ReplaceActionType,
-    RootStackNavigatorAction,
-    RootStackNavigatorRouterOptions,
-    ToggleSidePanelWithHistoryActionType,
-} from './types';
+import type { DismissModalActionType, OpenDomainSplitActionType, OpenWorkspaceSplitActionType, PreloadActionType, PushActionType, ReplaceActionType, RootStackNavigatorAction, RootStackNavigatorRouterOptions, ToggleSidePanelWithHistoryActionType } from './types';
+
 
 function isOpenWorkspaceSplitAction(action: RootStackNavigatorAction): action is OpenWorkspaceSplitActionType {
     return action.type === CONST.NAVIGATION.ACTION_TYPE.OPEN_WORKSPACE_SPLIT;
