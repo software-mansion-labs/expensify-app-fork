@@ -1,8 +1,8 @@
 import {useCallback, useMemo} from 'react';
 import type {MultifactorAuthenticationScenario} from '@components/MultifactorAuthentication/config/types';
+import usePasskeysBiometrics from '@components/MultifactorAuthentication/Context/usePasskeysBiometrics';
 import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
-import usePasskeysBiometrics from '@components/MultifactorAuthentication/Context/usePasskeysBiometrics';
 import type {UseBiometricsReturn} from './types';
 
 function useBiometrics(): UseBiometricsReturn {

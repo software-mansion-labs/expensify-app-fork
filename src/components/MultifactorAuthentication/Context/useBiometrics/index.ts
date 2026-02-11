@@ -1,10 +1,10 @@
 import {useCallback, useMemo} from 'react';
 import {MULTIFACTOR_AUTHENTICATION_SCENARIO_CONFIG} from '@components/MultifactorAuthentication/config';
 import type {MultifactorAuthenticationScenario} from '@components/MultifactorAuthentication/config/types';
+import useNativeBiometrics from '@components/MultifactorAuthentication/Context/useNativeBiometrics';
 import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/Biometrics/types';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
 import CONST from '@src/CONST';
-import useNativeBiometrics from '@components/MultifactorAuthentication/Context/useNativeBiometrics';
 import type {UseBiometricsReturn} from './types';
 
 function useBiometrics(): UseBiometricsReturn {

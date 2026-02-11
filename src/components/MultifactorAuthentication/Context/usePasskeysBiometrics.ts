@@ -11,8 +11,8 @@ import normalizeWebAuthnError from '@libs/MultifactorAuthentication/Passkeys/Web
 import {addLocalPasskeyCredential, deleteLocalPasskeyCredentials, getPasskeyOnyxKey, reconcileLocalPasskeysWithBackend} from '@userActions/Passkey';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Account, LocalPasskeyEntry} from '@src/types/onyx';
-import type {PasskeyCredential} from '@src/types/onyx/LocalPasskeyEntry';
+import type {Account} from '@src/types/onyx';
+import type {PasskeyCredential} from '@src/types/onyx/LocalPasskeyCredentialsEntry';
 
 type PasskeyRegisterResult =
     | {
@@ -70,7 +70,7 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
     const serverKnownCredentialIDs = useMemo(() => multifactorAuthenticationPublicKeyIDs ?? [], [multifactorAuthenticationPublicKeyIDs]);
     const serverHasAnyCredentials = serverKnownCredentialIDs.length > 0;
 
-    const [allPasskeys] = useOnyx(ONYXKEYS.COLLECTION.PASSKEYS, {canBeMissing: true});
+    const [localCredentials] = useOnyx(getPasskeyOnyxKey(accountIDStr), {canBeMissing: true});
 
     const authType = useMemo(
         () => ({
@@ -81,32 +81,12 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
         [],
     );
 
-    /**
-     * Gets all local credential IDs for the current account across all relying parties.
-     */
     const getLocalCredentialIds = useCallback((): string[] => {
-        if (!allPasskeys) {
+        if (!localCredentials) {
             return [];
         }
-        const prefix = `${ONYXKEYS.COLLECTION.PASSKEYS}${accountIDStr}@`;
-        return Object.entries(allPasskeys)
-            .filter(([key]) => key.startsWith(prefix))
-            .flatMap(([, entry]) => (entry as LocalPasskeyEntry | null)?.credentials?.map((c: PasskeyCredential) => c.id) ?? []);
-    }, [allPasskeys, accountIDStr]);
-
-    /**
-     * Gets the local passkey entry for a specific relying party.
-     */
-    const getLocalEntry = useCallback(
-        (rpId: string): LocalPasskeyEntry | null => {
-            if (!allPasskeys) {
-                return null;
-            }
-            const key = getPasskeyOnyxKey(accountIDStr, rpId);
-            return (allPasskeys as Record<string, LocalPasskeyEntry | null>)[key] ?? null;
-        },
-        [allPasskeys, accountIDStr],
-    );
+        return localCredentials.map((c) => c.id);
+    }, [localCredentials]);
 
     const doesDeviceSupportBiometrics = useCallback(() => {
         return isWebAuthnSupported();
@@ -125,18 +105,8 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
     }, [getLocalCredentialIds, serverKnownCredentialIDs]);
 
     const resetKeysForAccount = useCallback(async () => {
-        if (!allPasskeys) {
-            return;
-        }
-        const prefix = `${ONYXKEYS.COLLECTION.PASSKEYS}${accountIDStr}@`;
-        for (const key of Object.keys(allPasskeys)) {
-            if (!key.startsWith(prefix)) {
-                continue;
-            }
-            const rpId = key.slice(prefix.length);
-            deleteLocalPasskeyCredentials(accountIDStr, rpId);
-        }
-    }, [allPasskeys, accountIDStr]);
+        deleteLocalPasskeyCredentials(accountIDStr);
+    }, [accountIDStr]);
 
     const register = useCallback(
         async (challenge: RegistrationChallenge, onResult: (result: PasskeyRegisterResult) => Promise<void> | void) => {
@@ -145,15 +115,13 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
                 const registrationResponse = await createPasskey(options);
 
                 const credentialId = registrationResponse.rawId;
-                const rpId = challenge.rp.id;
 
                 const credential: PasskeyCredential = {
                     id: credentialId,
                     type: CONST.PASSKEY_CREDENTIAL_TYPE,
                 };
 
-                const existingEntry = getLocalEntry(rpId);
-                addLocalPasskeyCredential({userId: accountIDStr, rpId, credential, existingEntry});
+                addLocalPasskeyCredential({userId: accountIDStr, credential, existingCredentials: localCredentials ?? null});
 
                 await onResult({
                     success: true,
@@ -170,23 +138,20 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
                 });
             }
         },
-        [accountIDStr, authType, getLocalEntry],
+        [accountIDStr, authType, localCredentials],
     );
 
     const authorize = useCallback(
         async <T extends MultifactorAuthenticationScenario>(params: AuthorizeParams<T>, onResult: (result: AuthorizeResult) => Promise<void> | void) => {
             try {
                 const {challenge} = params;
-                const rpId = challenge.rpId;
-                const localEntry = getLocalEntry(rpId);
 
-                const backendPasskeyCredentials = challenge.allowCredentials?.map((cred) => ({id: cred.id, type: cred.type as typeof CONST.PASSKEY_CREDENTIAL_TYPE})) ?? [];
+                const backendCredentials = challenge.allowCredentials?.map((cred) => ({id: cred.id, type: cred.type as typeof CONST.PASSKEY_CREDENTIAL_TYPE})) ?? [];
 
                 const reconciledCredentials = reconcileLocalPasskeysWithBackend({
                     userId: accountIDStr,
-                    rpId,
-                    backendPasskeyCredentials,
-                    localEntry,
+                    backendCredentials,
+                    localCredentials: localCredentials ?? null,
                 });
 
                 const reconciledIds = reconciledCredentials.map((c) => c.id);
@@ -216,7 +181,7 @@ function usePasskeysBiometrics(): UsePasskeysBiometricsReturn {
                 });
             }
         },
-        [accountIDStr, authType, getLocalEntry],
+        [accountIDStr, authType, localCredentials],
     );
 
     return {
