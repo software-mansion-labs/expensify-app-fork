@@ -17,14 +17,11 @@ type PasskeyCredential = {
 };
 
 /**
- * Represents a locally stored passkey entry for a specific user and relying party combination.
+ * Represents locally stored passkey credentials for a specific user.
  * These entries are stored in Onyx to track which passkeys have been registered on this browser/device.
- * The storage key format is: passkey_${userId}@${rpId}
+ * The storage key format is: passkey_${userId}
  */
-type LocalPasskeyEntry = {
-    /** Array of credentials registered for this user on this device/browser */
-    credentials: PasskeyCredential[];
-};
+type LocalPasskeyCredentialsEntry = PasskeyCredential[];
 
-export default LocalPasskeyEntry;
+export default LocalPasskeyCredentialsEntry;
 export type {PasskeyCredential, PasskeyTransport};

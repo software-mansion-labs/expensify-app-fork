@@ -76,8 +76,8 @@ import type LastExportMethod from './LastExportMethod';
 import type {LastPaymentMethod, LastPaymentMethodType} from './LastPaymentMethod';
 import type LastSelectedDistanceRates from './LastSelectedDistanceRates';
 import type Locale from './Locale';
-import type LocalPasskeyEntry from './LocalPasskeyEntry';
-import type {PasskeyCredential, PasskeyTransport} from './LocalPasskeyEntry';
+import type LocalPasskeyCredentialsEntry from './LocalPasskeyCredentialsEntry';
+import type {PasskeyCredential, PasskeyTransport} from './LocalPasskeyCredentialsEntry';
 import type LockAccountDetails from './LockAccountDetails';
 import type {LoginList} from './Login';
 import type Login from './Login';
@@ -212,7 +212,7 @@ export type {
     CompanyCardFeedWithDomainID,
     LastExportMethod,
     Locale,
-    LocalPasskeyEntry,
+    LocalPasskeyCredentialsEntry,
     LockAccountDetails,
     Login,
     LoginList,

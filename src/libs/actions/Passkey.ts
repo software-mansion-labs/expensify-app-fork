@@ -1,20 +1,19 @@
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {LocalPasskeyEntry, PasskeyCredential} from '@src/types/onyx';
+import type {LocalPasskeyCredentialsEntry, PasskeyCredential} from '@src/types/onyx';
 
-/** Identifies a passkey storage scope: a specific user on a specific relying party */
+/** Identifies a passkey storage scope for a specific user */
 type PasskeyScope = {
     userId: string;
-    rpId: string;
 };
 
-/** Returns Onyx key: passkey_${userId}@${rpId} */
-function getPasskeyOnyxKey(userId: string, rpId: string): `${typeof ONYXKEYS.COLLECTION.PASSKEYS}${string}` {
-    return `${ONYXKEYS.COLLECTION.PASSKEYS}${userId}@${rpId}`;
+/** Returns Onyx key: passkey_${userId} */
+function getPasskeyOnyxKey(userId: string): `${typeof ONYXKEYS.COLLECTION.PASSKEY_CREDENTIALS}${string}` {
+    return `${ONYXKEYS.COLLECTION.PASSKEY_CREDENTIALS}${userId}`;
 }
 
 type SetLocalPasskeyCredentialsParams = PasskeyScope & {
-    entry: LocalPasskeyEntry;
+    entry: LocalPasskeyCredentialsEntry;
 };
 
 /**
@@ -22,61 +21,64 @@ type SetLocalPasskeyCredentialsParams = PasskeyScope & {
  * We use Onyx.set() instead of Onyx.merge() because passkey entries contain an array of credentials
  * that needs to be fully replaced, not merged. Using merge() would append to the array instead of replacing it.
  */
-function setLocalPasskeyCredentials({userId, rpId, entry}: SetLocalPasskeyCredentialsParams): void {
-    if (!userId || !rpId) {
-        throw new Error('userId and rpId are required to store passkey credentials');
+function setLocalPasskeyCredentials({userId, entry}: SetLocalPasskeyCredentialsParams): void {
+    if (!userId) {
+        throw new Error('userId is required to store passkey credentials');
     }
-    Onyx.set(getPasskeyOnyxKey(userId, rpId), entry);
+    Onyx.set(getPasskeyOnyxKey(userId), entry);
 }
 
 type AddLocalPasskeyCredentialParams = PasskeyScope & {
     credential: PasskeyCredential;
-    existingEntry: LocalPasskeyEntry | null;
+    existingCredentials: LocalPasskeyCredentialsEntry | null;
 };
 
-function addLocalPasskeyCredential({userId, rpId, credential, existingEntry}: AddLocalPasskeyCredentialParams): void {
-    const existingCredentials = existingEntry?.credentials ?? [];
+function addLocalPasskeyCredential({userId, credential, existingCredentials}: AddLocalPasskeyCredentialParams): void {
+    const credentials = existingCredentials ?? [];
 
-    if (existingCredentials.some((c) => c.id === credential.id)) {
-        throw new Error(`Passkey credential with id "${credential.id}" already exists for ${userId}@${rpId}`);
+    if (credentials.some((c) => c.id === credential.id)) {
+        throw new Error(`Passkey credential with id "${credential.id}" already exists for user ${userId}`);
     }
 
-    setLocalPasskeyCredentials({userId, rpId, entry: {credentials: [...existingCredentials, credential]}});
+    setLocalPasskeyCredentials({userId, entry: [...credentials, credential]});
 }
 
-/** Deletes all passkey credentials for a user/rpId from Onyx storage */
-function deleteLocalPasskeyCredentials(userId: string, rpId: string): void {
-    if (!userId || !rpId) {
-        throw new Error('userId and rpId are required to delete passkey credentials');
+/** Deletes all passkey credentials for a user from Onyx storage */
+function deleteLocalPasskeyCredentials(userId: string): void {
+    if (!userId) {
+        throw new Error('userId is required to delete passkey credentials');
     }
-    Onyx.set(getPasskeyOnyxKey(userId, rpId), {credentials: []});
+    Onyx.set(getPasskeyOnyxKey(userId), []);
 }
 
 /** Backend returns simplified format without transports */
 type BackendPasskeyCredential = Omit<PasskeyCredential, 'transports'>;
 
 type ReconcileLocalPasskeysWithBackendParams = PasskeyScope & {
-    backendPasskeyCredentials: BackendPasskeyCredential[];
-    localEntry: LocalPasskeyEntry | null;
+    backendCredentials: BackendPasskeyCredential[];
+    localCredentials: LocalPasskeyCredentialsEntry | null;
 };
 
 /**
  * Reconciles local Onyx passkeys with backend allowCredentials.
- * Removes local credentials that no longer exist on backend.
+ * Removes local credentials that no longer exist on backend and updates Onyx accordingly.
+ *
+ * Returns the matched credentials (with locally preserved transports) so the caller
+ * can pass them directly as `allowCredentials` to `navigator.credentials.get()`.
  */
-function reconcileLocalPasskeysWithBackend({userId, rpId, backendPasskeyCredentials, localEntry}: ReconcileLocalPasskeysWithBackendParams): PasskeyCredential[] {
-    if (!userId || !rpId) {
-        throw new Error('userId and rpId are required to reconcile passkey credentials');
+function reconcileLocalPasskeysWithBackend({userId, backendCredentials, localCredentials}: ReconcileLocalPasskeysWithBackendParams): PasskeyCredential[] {
+    if (!userId) {
+        throw new Error('userId is required to reconcile passkey credentials');
     }
-    if (!localEntry || localEntry.credentials.length === 0) {
+    if (!localCredentials || localCredentials.length === 0) {
         return [];
     }
 
-    const backendCredentialIds = new Set(backendPasskeyCredentials.map((c) => c.id));
-    const matchedCredentials = localEntry.credentials.filter((c) => backendCredentialIds.has(c.id));
+    const backendCredentialIds = new Set(backendCredentials.map((c) => c.id));
+    const matchedCredentials = localCredentials.filter((c) => backendCredentialIds.has(c.id));
 
-    if (matchedCredentials.length !== localEntry.credentials.length) {
-        setLocalPasskeyCredentials({userId, rpId, entry: {credentials: matchedCredentials}});
+    if (matchedCredentials.length !== localCredentials.length) {
+        setLocalPasskeyCredentials({userId, entry: matchedCredentials});
     }
 
     return matchedCredentials;
