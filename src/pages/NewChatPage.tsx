@@ -32,7 +32,6 @@ import {
     filterAndOrderOptions,
     filterSelectedOptions,
     formatSectionsFromSearchTerm,
-    getFirstKeyForList,
     getHeaderMessage,
     getPersonalDetailSearchTerms,
     getUserToInviteOption,
@@ -267,7 +266,6 @@ function NewChatPage({ref}: NewChatPageProps) {
     } = useOptions(reportAttributesDerived);
 
     const sections: Array<Section<OptionWithKey>> = [];
-    let firstKeyForList = '';
 
     const formatResults = formatSectionsFromSearchTerm(
         debouncedSearchTerm,
@@ -282,27 +280,17 @@ function NewChatPage({ref}: NewChatPageProps) {
     );
     sections.push({...formatResults.section, title: undefined, sectionIndex: 0});
 
-    if (!firstKeyForList) {
-        firstKeyForList = getFirstKeyForList(formatResults.section.data);
-    }
-
     sections.push({
         title: translate('common.recents'),
         data: selectedOptions.length ? recentReports.filter((option) => !option.isSelfDM) : recentReports,
         sectionIndex: 1,
     });
-    if (!firstKeyForList) {
-        firstKeyForList = getFirstKeyForList(recentReports);
-    }
 
     sections.push({
         title: translate('common.contacts'),
         data: personalDetails,
         sectionIndex: 2,
     });
-    if (!firstKeyForList) {
-        firstKeyForList = getFirstKeyForList(personalDetails);
-    }
 
     if (userToInvite) {
         sections.push({
@@ -310,9 +298,6 @@ function NewChatPage({ref}: NewChatPageProps) {
             data: [userToInvite],
             sectionIndex: 3,
         });
-        if (!firstKeyForList) {
-            firstKeyForList = getFirstKeyForList([userToInvite]);
-        }
     }
 
     /**
@@ -499,7 +484,6 @@ function NewChatPage({ref}: NewChatPageProps) {
                 shouldShowTextInput
                 textInputOptions={textInputOptions}
                 shouldSingleExecuteRowSelect
-                initiallyFocusedItemKey={firstKeyForList}
                 confirmButtonOptions={{
                     onConfirm: (e, option) => (selectedOptions.length > 0 ? createGroup() : selectOption(option)),
                 }}
