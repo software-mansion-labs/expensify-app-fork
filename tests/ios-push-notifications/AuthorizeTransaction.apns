@@ -4,9 +4,10 @@
    "alert": "Approve transaction",
  },
  "payload": {
-   "type":"approveTransaction",
+   "type": "approveTransaction",
+   "actionName": "ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL",
    "reportID": <REPORT_ID_NUMBER>,
-   "transactionID": <TRANSACTION_ID_STRING>,
+   "reportActionID": <REPORT_ACTION_ID_STRING>,
    "onyxData": <ONYX_UPDATES_ARRAY>,
    "app":"new"
  }

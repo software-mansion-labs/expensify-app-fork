@@ -22,7 +22,7 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
     // TODO: Use context here when merged
     // const {executeScenario, cancel} = useMultifactorAuthenticationContext();
 
-    const transactionID = route.params.transactionID;
+    const transactionID = route.params.reportActionID;
     const [isConfirmModalVisible, setConfirmModalVisibility] = useState(false);
 
     const showConfirmModal = () => {
@@ -60,7 +60,7 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
             />
             <FullPageOfflineBlockingView>
                 <View style={[styles.flex1, styles.flexColumn, styles.justifyContentBetween]}>
-                    <MultifactorAuthenticationAuthorizeTransactionContent transactionID={transactionID} />
+                    <MultifactorAuthenticationAuthorizeTransactionContent reportActionID={reportActionID} />
                     <MultifactorAuthenticationAuthorizeTransactionActions
                         onAuthorize={approveTransaction}
                         onDeny={showConfirmModal}

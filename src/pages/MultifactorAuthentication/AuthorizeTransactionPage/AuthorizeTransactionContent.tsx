@@ -21,14 +21,18 @@ import ROUTES from '@src/ROUTES';
 import type {Report} from '@src/types/onyx';
 
 type MultifactorAuthenticationAuthorizeTransactionContentProps = {
-    transactionID: string;
+    reportActionID: string;
 };
 
-function MultifactorAuthenticationAuthorizeTransactionContent({transactionID}: MultifactorAuthenticationAuthorizeTransactionContentProps) {
+function MultifactorAuthenticationAuthorizeTransactionContent({reportActionID}: MultifactorAuthenticationAuthorizeTransactionContentProps) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
+
+    // TODO: replace with reportActionID from props
+    console.log(reportActionID);
+    const transactionID = '1234';
 
     // Fetch transaction and related data
     const [transaction] = useOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {canBeMissing: true});

@@ -1,18 +1,20 @@
-import {NativeModules} from 'react-native';
-import Onyx from 'react-native-onyx';
+import { NativeModules } from 'react-native';
+import Onyx, { OnyxEntry } from 'react-native-onyx';
 import applyOnyxUpdatesReliably from '@libs/actions/applyOnyxUpdatesReliably';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import Visibility from '@libs/Visibility';
-import {updateLastVisitedPath} from '@userActions/App';
+import { updateLastVisitedPath } from '@userActions/App';
 import * as Modal from '@userActions/Modal';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {OnyxUpdatesFromServer} from '@src/types/onyx';
+import type { OnyxUpdatesFromServer } from '@src/types/onyx';
 import PushNotification from '.';
-import type {AuthorizeTransactionPushNotificationData, PushNotificationData} from './NotificationType';
+import type {BlockingModalPushNotificationData, BlockingModalType, PushNotificationData} from './NotificationType';
+
+let conciergeReportID: OnyxEntry<string>;
 
 /**
  * Manage push notification subscriptions on sign-in/sign-out.
@@ -35,14 +37,21 @@ Onyx.connectWithoutView({
             PushNotification.onReceived(PushNotification.TYPE.TRANSACTION, applyOnyxData);
             PushNotification.onSelected(PushNotification.TYPE.TRANSACTION, navigateToReport);
 
-            PushNotification.onReceived(PushNotification.TYPE.AUTHORIZE_TRANSACTION, applyOnyxData);
-            PushNotification.onSelected(PushNotification.TYPE.AUTHORIZE_TRANSACTION, navigateToTransactionApproval);
+            PushNotification.onReceived(PushNotification.TYPE.BLOCKING_MODAL, applyOnyxData);
+            PushNotification.onSelected(PushNotification.TYPE.BLOCKING_MODAL, parseBlockingModal);
         } else {
             PushNotification.deregister();
             PushNotification.clearNotifications();
         }
     },
 });
+
+Onyx.connectWithoutView(({
+    key: ONYXKEYS.CONCIERGE_REPORT_ID,
+    callback: (reportID) => {
+        conciergeReportID = reportID;
+    }
+}))
 
 let isSingleNewDotEntry: boolean | undefined;
 // Hybrid app config is not determined by changes in the UI, so we can use `connectWithoutView` here.
@@ -113,15 +122,31 @@ function applyOnyxData({reportID, onyxData, lastUpdateID, previousUpdateID, hasP
         .then(() => NativeModules.PushNotificationBridge?.finishBackgroundProcessing());
 }
 
-function navigateToTransactionApproval({transactionID}: AuthorizeTransactionPushNotificationData): Promise<void> {
-    Log.info('[PushNotification] Navigating to transaction approval screen', false, {transactionID});
+async function parseBlockingModal(data: PushNotificationData): Promise<void> {
+    if (!('actionName' in data)) {
+        return;
+    }
+
+    switch (data.actionName) {
+        case CONST.REPORT.ACTIONS.TYPE.MULTIFACTOR_AUTHENTICATION.TRANSACTION_APPROVAL:
+            await navigateToTransactionApproval(data);
+            break;
+        default:
+            break;
+    }
+}
+
+function navigateToTransactionApproval({reportActionID}: BlockingModalPushNotificationData<typeof BlockingModalType.APPROVE_TRANSACTION>): Promise<void> {
+    Log.info('[PushNotification] Navigating to transaction approval screen', false, {reportActionID});
 
     Navigation.waitForProtectedRoutes().then(() => {
         try {
-            Log.info('[PushNotification] onSelected() - Navigation is ready. Navigating...', false, {transactionID});
+            Log.info('[PushNotification] onSelected() - Navigation is ready. Navigating...', false, {reportActionID});
 
-            const route = ROUTES.MULTIFACTOR_AUTHENTICATION_AUTHORIZE_TRANSACTION.getRoute(transactionID);
+            const route = ROUTES.MULTIFACTOR_AUTHENTICATION_AUTHORIZE_TRANSACTION.getRoute(reportActionID);
 
+            // We can do double navigation here since the authorize transaction screen is always in the RHP
+            Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(conciergeReportID, reportActionID));
             Navigation.navigate(route);
             updateLastVisitedPath(route);
         } catch (error) {
@@ -130,7 +155,7 @@ function navigateToTransactionApproval({transactionID}: AuthorizeTransactionPush
                 errorMessage = error.message;
             }
 
-            Log.alert('[PushNotification] onSelected() - failed', {transactionID, error: errorMessage});
+            Log.alert('[PushNotification] onSelected() - failed', {reportActionID, error: errorMessage});
         }
     });
 

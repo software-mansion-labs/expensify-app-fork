@@ -3107,7 +3107,7 @@ type MultifactorAuthenticationParamList = {
         promptType: MultifactorAuthenticationPromptType;
     };
     [SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION]: {
-        transactionID: string;
+        reportActionID: string;
     };
 };
 
