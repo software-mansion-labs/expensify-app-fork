@@ -8478,7 +8478,6 @@ const CONST = {
         SMS_OTP: 'sms-otp',
         ONE_TIME_CODE: 'one-time-code',
         OFF: 'off',
- 
     },
 
     HOME: {

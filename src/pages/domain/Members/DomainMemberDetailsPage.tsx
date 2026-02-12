@@ -154,6 +154,4 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
     );
 }
 
-DomainMemberDetailsPage.displayName = 'DomainMemberDetailsPage';
-
 export default DomainMemberDetailsPage;
