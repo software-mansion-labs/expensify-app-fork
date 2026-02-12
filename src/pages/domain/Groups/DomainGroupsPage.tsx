@@ -55,7 +55,7 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
         }
 
         return (
-            <View style={[styles.flex1, styles.flexRow, styles.justifyContentBetween, styles.ph9, styles.pv3]}>
+            <View style={[styles.flexRow, styles.justifyContentBetween, styles.ph9, styles.pv3]}>
                 <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.name')}</Text>
                 <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.members')}</Text>
             </View>
@@ -68,7 +68,7 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
                 enableEdgeToEdgeBottomSafeAreaPadding
                 shouldEnableMaxHeight
                 shouldShowOfflineIndicatorInWideScreen
-                testID={DomainGroupsPage.displayName}
+                testID="DomainGroupsPage"
             >
                 <HeaderWithBackButton
                     title={translate('domain.groups.title')}
@@ -87,7 +87,5 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
         </DomainNotFoundPageWrapper>
     );
 }
-
-DomainGroupsPage.displayName = 'DomainGroupsPage';
 
 export default DomainGroupsPage;

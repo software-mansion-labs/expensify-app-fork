@@ -125,10 +125,9 @@ function DomainInitialPage({route}: DomainInitialPageProps) {
                     title={domainName}
                     onBackButtonPress={() => Navigation.goBack(ROUTES.WORKSPACES_LIST.route)}
                     shouldDisplayHelpButton={shouldUseNarrowLayout}
-                    shouldUseHeadlineHeader
                 />
 
-                <ScrollView contentContainerStyle={[styles.flexColumn]}>
+                <ScrollView contentContainerStyle={styles.flexColumn}>
                     <View style={[styles.pb4, styles.mh3, styles.mt3]}>
                         {/*
                             Ideally we should use MenuList component for MenuItems with singleExecution/Navigation actions.
