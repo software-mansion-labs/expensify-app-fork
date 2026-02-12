@@ -55,13 +55,11 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
         }
 
         return (
-            <View style={[styles.flexRow, styles.justifyContentBetween, styles.ph9, styles.pv3]}>
+            <View style={[styles.flexRow, styles.justifyContentBetween, styles.baseListHeaderWrapperStyle]}>
                 <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.name')}</Text>
                 <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.members')}</Text>
             </View>
         );
-
-        return <View style={styles.baseListHeaderWrapperStyle}>{header}</View>;
     };
 
     return (

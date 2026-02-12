@@ -8453,6 +8453,7 @@ Ecco una *ricevuta di prova* per mostrarti come funziona:`,
             title: 'Membri',
             findMember: 'Trova membro',
             addMember: 'Aggiungi membro',
+            allMembers: 'Tutti i membri',
             email: 'Indirizzo email',
             closeAccount: () => ({
                 one: 'Chiudi account',

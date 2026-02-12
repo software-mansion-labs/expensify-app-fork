@@ -8438,6 +8438,7 @@ Hier is een *proefbon* om je te laten zien hoe het werkt:`,
             title: 'Leden',
             findMember: 'Lid zoeken',
             addMember: 'Lid toevoegen',
+            allMembers: 'Alle leden',
             email: 'E-mailadres',
             closeAccount: () => ({
                 one: 'Account sluiten',

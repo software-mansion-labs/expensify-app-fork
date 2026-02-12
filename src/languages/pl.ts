@@ -8418,6 +8418,7 @@ Oto *paragon testowy*, żeby pokazać Ci, jak to działa:`,
             title: 'Członkowie',
             findMember: 'Znajdź członka',
             addMember: 'Dodaj członka',
+            allMembers: 'Wszyscy członkowie',
             email: 'Adres e-mail',
             closeAccount: () => ({
                 one: 'Zamknij konto',
