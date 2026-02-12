@@ -146,7 +146,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense policyID:12345 amount<100');
+            expect(result).toEqual('type:expense policyID:12345 amount<100');
         });
 
         test('with Policy ID', () => {
@@ -156,7 +156,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc policyID:12345');
+            expect(result).toEqual('policyID:12345');
         });
 
         test('with keywords', () => {
@@ -172,7 +172,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense policyID:67890 merchant:Amazon description:Electronics laptop category:electronics,gadgets');
+            expect(result).toEqual('type:expense policyID:67890 merchant:Amazon description:Electronics laptop category:electronics,gadgets');
         });
 
         test('currencies and categories', () => {
@@ -185,7 +185,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense category:services,consulting currency:USD,EUR');
+            expect(result).toEqual('type:expense category:services,consulting currency:USD,EUR');
         });
 
         test('has empty category values', () => {
@@ -197,7 +197,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense category:equipment,consulting,none,Uncategorized');
+            expect(result).toEqual('type:expense category:equipment,consulting,none,Uncategorized');
         });
 
         test('empty filter values', () => {
@@ -205,7 +205,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc');
+            expect(result).toEqual('');
         });
 
         test('array of from', () => {
@@ -216,7 +216,7 @@ describe('SearchQueryUtils', () => {
             };
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense from:user1@gmail.com,user2@gmail.com to:user3@gmail.com');
+            expect(result).toEqual('type:expense from:user1@gmail.com,user2@gmail.com to:user3@gmail.com');
         });
 
         test('complex filter values', () => {
@@ -233,7 +233,7 @@ describe('SearchQueryUtils', () => {
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
             expect(result).toEqual(
-                'sortBy:date sortOrder:desc type:expense from:user1@gmail.com,user2@gmail.com to:user3@gmail.com category:finance,insurance date>2025-03-01 date<2025-03-10 amount>1 amount<1000',
+                'type:expense from:user1@gmail.com,user2@gmail.com to:user3@gmail.com category:finance,insurance date>2025-03-01 date<2025-03-10 amount>1 amount<1000',
             );
             expect(result).not.toMatch(CONST.VALIDATE_FOR_HTML_TAG_REGEX);
         });
@@ -246,7 +246,7 @@ describe('SearchQueryUtils', () => {
             };
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense total>1 total<1000');
+            expect(result).toEqual('type:expense total>1 total<1000');
         });
 
         test('equal to filter values', () => {
@@ -257,7 +257,7 @@ describe('SearchQueryUtils', () => {
             };
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense amount:500 total:750');
+            expect(result).toEqual('type:expense amount:500 total:750');
         });
 
         test('combined equal to and range filter values', () => {
@@ -269,7 +269,7 @@ describe('SearchQueryUtils', () => {
             };
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense amount:100 total>50 total<200');
+            expect(result).toEqual('type:expense amount:100 total>50 total<200');
         });
 
         test('with withdrawal type filter', () => {
@@ -281,7 +281,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense withdrawalType:expensify-card');
+            expect(result).toEqual('type:expense withdrawalType:expensify-card');
         });
 
         test('with withdrawn filter', () => {
@@ -293,7 +293,7 @@ describe('SearchQueryUtils', () => {
 
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual('sortBy:date sortOrder:desc type:expense withdrawn:last-month');
+            expect(result).toEqual('type:expense withdrawn:last-month');
         });
 
         describe('limit option', () => {
@@ -304,7 +304,7 @@ describe('SearchQueryUtils', () => {
 
                 const result = buildQueryStringFromFilterFormValues(filterValues, {limit: 10});
 
-                expect(result).toEqual('sortBy:date sortOrder:desc type:expense limit:10');
+                expect(result).toEqual('type:expense limit:10');
             });
 
             test('combines limit with sort options', () => {
@@ -350,7 +350,7 @@ describe('SearchQueryUtils', () => {
 
                 const result = buildQueryStringFromFilterFormValues(filterValues);
 
-                expect(result).toEqual('sortBy:date sortOrder:desc type:expense groupBy:category view:bar');
+                expect(result).toEqual('type:expense groupBy:category view:bar');
             });
 
             test('with view parameter set to table', () => {
@@ -362,7 +362,7 @@ describe('SearchQueryUtils', () => {
 
                 const result = buildQueryStringFromFilterFormValues(filterValues);
 
-                expect(result).toEqual('sortBy:date sortOrder:desc type:expense groupBy:category view:table');
+                expect(result).toEqual('type:expense groupBy:category view:table');
             });
 
             test('without view parameter omits view from query', () => {
@@ -400,7 +400,7 @@ describe('SearchQueryUtils', () => {
                 const result = buildQueryStringFromFilterFormValues(filterValues);
 
                 expect(result).not.toContain('view:');
-                expect(result).toEqual('sortBy:date sortOrder:desc type:expense');
+                expect(result).toEqual('type:expense');
             });
         });
     });
