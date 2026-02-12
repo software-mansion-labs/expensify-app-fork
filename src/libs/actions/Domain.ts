@@ -1131,7 +1131,7 @@ function requestUnlockAccount(domainAccountID: number, accountID: number) {
         accountID,
     };
 
-    const userLockKey = `${CONST.DOMAIN.EXPENSIFY_LOCKED_ACCOUNT_PREFIX}${accountID}`;
+    const userLockKey = `${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`;
 
     const optimisticData: OnyxUpdate[] = [
         {
@@ -1139,7 +1139,7 @@ function requestUnlockAccount(domainAccountID: number, accountID: number) {
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
             value: {
                 [userLockKey]: false,
-            } as PrefixedRecord<typeof CONST.DOMAIN.EXPENSIFY_LOCKED_ACCOUNT_PREFIX, boolean>,
+            } as PrefixedRecord<typeof CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX, boolean>,
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -1196,7 +1196,7 @@ function requestUnlockAccount(domainAccountID: number, accountID: number) {
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
             value: {
                 [userLockKey]: true,
-            } as PrefixedRecord<typeof CONST.DOMAIN.EXPENSIFY_LOCKED_ACCOUNT_PREFIX, boolean>,
+            } as PrefixedRecord<typeof CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX, boolean>,
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,

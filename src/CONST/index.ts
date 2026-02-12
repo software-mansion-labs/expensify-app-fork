@@ -8462,7 +8462,7 @@ const CONST = {
         /** Onyx prefix for domain security groups */
         DOMAIN_SECURITY_GROUP_PREFIX: 'domain_securityGroup_',
         /** Onyx prefix for lock account IDs */
-        EXPENSIFY_LOCKED_ACCOUNT_PREFIX: 'expensify_lockAccountDetails_',
+        PRIVATE_LOCKED_ACCOUNT_PREFIX: 'private_lockAccountDetails_',
 
         MEMBERS: {
             SECONDARY_ACTIONS: {

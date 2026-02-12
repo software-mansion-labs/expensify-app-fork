@@ -97,7 +97,7 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
 
     const unlockDomainError = getLatestErrorMessage(domainErrors?.lockAccountErrors?.[accountID]?.errors);
 
-    const isAccountLocked = domain?.[`${CONST.DOMAIN.EXPENSIFY_LOCKED_ACCOUNT_PREFIX}${accountID}`] ?? false;
+    const isAccountLocked = domain?.[`${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`] ?? false;
 
     const showUnlockAccountModal = () => {
         showConfirmModal({
