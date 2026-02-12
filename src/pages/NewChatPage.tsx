@@ -315,7 +315,7 @@ function NewChatPage({ref}: NewChatPageProps) {
             selectionListRef?.current?.scrollToIndex(0);
         }
 
-        // selectionListRef?.current?.clearInputAfterSelect?.();
+        selectionListRef.current?.clearInputAfterSelect();
         if (!canUseTouchScreen()) {
             selectionListRef.current?.focusTextInput();
         }

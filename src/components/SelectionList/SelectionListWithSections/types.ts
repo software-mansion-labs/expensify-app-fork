@@ -47,6 +47,7 @@ type SelectionListWithSectionsProps<TItem extends ListItem> = BaseSelectionListP
 type SelectionListWithSectionsHandle = {
     focusTextInput: () => void;
     scrollToIndex: (index: number) => void;
+    clearInputAfterSelect: () => void;
 };
 
 type SectionHeader = {
