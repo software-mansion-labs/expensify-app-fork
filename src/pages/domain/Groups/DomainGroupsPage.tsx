@@ -60,6 +60,8 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
                 <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.members')}</Text>
             </View>
         );
+
+        return <View style={styles.baseListHeaderWrapperStyle}>{header}</View>;
     };
 
     return (
