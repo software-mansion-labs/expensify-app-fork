@@ -1077,6 +1077,7 @@ const keywordTests = [
             status: CONST.SEARCH.STATUS.EXPENSE.ALL,
             sortBy: 'date',
             sortOrder: 'desc',
+            groupBy: 'category',
             view: 'bar',
             filters: null,
         },
@@ -1110,6 +1111,7 @@ const keywordTests = [
             status: CONST.SEARCH.STATUS.EXPENSE.ALL,
             sortBy: 'date',
             sortOrder: 'desc',
+            groupBy: 'category',
             view: 'bar',
             filters: {
                 operator: 'eq',
@@ -1124,7 +1126,8 @@ const keywordTests = [
             type: 'expense',
             status: CONST.SEARCH.STATUS.EXPENSE.ALL,
             sortBy: 'date',
-            sortOrder: 'desc',
+            sortOrder: 'asc',
+            groupBy: 'month',
             view: 'line',
             filters: {
                 operator: 'eq',
@@ -1140,12 +1143,304 @@ const keywordTests = [
             status: CONST.SEARCH.STATUS.EXPENSE.ALL,
             sortBy: 'date',
             sortOrder: 'desc',
+            groupBy: 'category',
             view: 'pie',
             filters: {
                 operator: 'eq',
                 left: 'category',
                 right: 'travel',
             },
+        },
+    },
+    // ==========================================
+    // Keyword ordering independence tests
+    // ==========================================
+
+    // --- Case 1: view:line alone (defaults to groupBy:month, sortOrder:asc) ---
+    {
+        query: 'type:expense view:line',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'date',
+            sortOrder: 'asc',
+            groupBy: 'month',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'view:line type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'date',
+            sortOrder: 'asc',
+            groupBy: 'month',
+            view: 'line',
+            filters: null,
+        },
+    },
+
+    // --- Case 2: groupBy without view:line (sortOrder stays desc) ---
+    {
+        query: 'type:expense groupBy:week',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'table',
+            filters: null,
+        },
+    },
+    {
+        query: 'groupBy:week type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'table',
+            filters: null,
+        },
+    },
+    {
+        query: 'type:expense groupBy:category',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupCategory',
+            sortOrder: 'asc',
+            groupBy: 'category',
+            view: 'table',
+            filters: null,
+        },
+    },
+    {
+        query: 'groupBy:category type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupCategory',
+            sortOrder: 'asc',
+            groupBy: 'category',
+            view: 'table',
+            filters: null,
+        },
+    },
+
+    // --- Case 3: groupBy + view:line (sortOrder:asc, all orderings) ---
+    {
+        query: 'type:expense view:line groupBy:week',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'asc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'type:expense groupBy:week view:line',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'asc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'view:line groupBy:week type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'asc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'groupBy:week view:line type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'asc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'view:line type:expense groupBy:month',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupmonth',
+            sortOrder: 'asc',
+            groupBy: 'month',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'groupBy:month view:line type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupmonth',
+            sortOrder: 'asc',
+            groupBy: 'month',
+            view: 'line',
+            filters: null,
+        },
+    },
+    // groupBy:category + view:line — non-time groupBy keeps its own default sortOrder
+    {
+        query: 'type:expense view:line groupBy:category',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupCategory',
+            sortOrder: 'asc',
+            groupBy: 'category',
+            view: 'line',
+            filters: null,
+        },
+    },
+    // groupBy:withdrawal-id + view:line — non-time groupBy keeps its own default sortOrder (desc)
+    {
+        query: 'type:expense view:line groupBy:withdrawal-id',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupWithdrawn',
+            sortOrder: 'desc',
+            groupBy: 'withdrawal-id',
+            view: 'line',
+            filters: null,
+        },
+    },
+    // groupBy + view:bar (NOT line) — sortOrder stays desc
+    {
+        query: 'type:expense view:bar groupBy:week',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'bar',
+            filters: null,
+        },
+    },
+    {
+        query: 'type:expense groupBy:week view:bar',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'bar',
+            filters: null,
+        },
+    },
+
+    // --- Case 4: groupBy + view:line + explicit sortOrder (all orderings) ---
+    // User explicitly sets sortOrder:desc — should be respected even with view:line
+    {
+        query: 'type:expense view:line sortOrder:desc',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'date',
+            sortOrder: 'desc',
+            groupBy: 'month',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'sortOrder:desc type:expense view:line',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'date',
+            sortOrder: 'desc',
+            groupBy: 'month',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'view:line sortOrder:desc type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'date',
+            sortOrder: 'desc',
+            groupBy: 'month',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'type:expense view:line groupBy:week sortOrder:desc',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'sortOrder:desc groupBy:week view:line type:expense',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'groupBy:week sortOrder:desc type:expense view:line',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
+        },
+    },
+    {
+        query: 'view:line groupBy:week type:expense sortOrder:desc',
+        expected: {
+            type: 'expense',
+            status: CONST.SEARCH.STATUS.EXPENSE.ALL,
+            sortBy: 'groupweek',
+            sortOrder: 'desc',
+            groupBy: 'week',
+            view: 'line',
+            filters: null,
         },
     },
 ];

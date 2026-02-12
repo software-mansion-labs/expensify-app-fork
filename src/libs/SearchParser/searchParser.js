@@ -4520,6 +4520,8 @@ function peg$parse(input, options) {
 
   const DEFAULT_SORT_BY_VALUES = new Set([...Object.values(GROUP_BY_DEFAULT_SORT), "date"]);
 
+  const TIME_BASED_GROUP_BY = new Set(["week", "month", "year", "quarter"]);
+
   const defaultValues = {
     type: "expense",
     status: "",
@@ -4529,6 +4531,7 @@ function peg$parse(input, options) {
   };
   let rawFilterList = [];
   let userProvidedSortBy = false;
+  let userProvidedSortOrder = false;
 
   // List fields where you cannot prefix it with "-" to negate it
   const nonNegatableKeys = new Set([
@@ -4548,6 +4551,19 @@ function peg$parse(input, options) {
   }
 
   function applyDefaults(filters) {
+    // Apply chart view defaults (runs after all tokens are parsed, so ordering doesn't matter)
+    if (defaultValues.view && defaultValues.view !== "table") {
+      // Default groupBy when not explicitly set: "month" for line charts, "category" for others
+      if (!defaultValues.groupBy) {
+        defaultValues.groupBy = defaultValues.view === "line" ? "month" : "category";
+      }
+
+      // Default sortOrder to ASC for LINE view with time-based groupBy, only if not explicitly set by the user
+      if (defaultValues.view === "line" && TIME_BASED_GROUP_BY.has(defaultValues.groupBy) && !userProvidedSortOrder) {
+        defaultValues.sortOrder = "asc";
+      }
+    }
+
     return {
       ...defaultValues,
       filters,
@@ -4564,6 +4580,11 @@ function peg$parse(input, options) {
     // Track if user explicitly provided a custom (non-default) sortBy
     if (field === "sortBy" && !isDefaultSortValue(value)) {
       userProvidedSortBy = true;
+    }
+
+    // Track if user explicitly provided sortOrder
+    if (field === "sortOrder") {
+      userProvidedSortOrder = true;
     }
 
     // Auto-update sortBy and sortOrder when groupBy changes
