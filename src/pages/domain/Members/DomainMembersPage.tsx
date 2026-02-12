@@ -1,17 +1,17 @@
 import {defaultSecurityGroupIDSelector, domainNameSelector, groupsSelector, memberAccountIDsSelector, memberPendingActionSelector, selectSecurityGroupForAccount} from '@selectors/Domain';
-import React, {useState}, {useMemo, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
 import type {DomainMemberBulkActionType, DropdownOption} from '@components/ButtonWithDropdownMenu/types';
 import DecisionModal from '@components/DecisionModal';
 import {ModalActions} from '@components/Modal/Global/ModalContext';
-import useConfirmModal from '@hooks/useConfirmModal';
 import type {PopoverComponentProps} from '@components/Search/FilterDropdowns/DropdownButton';
 import DropdownButton from '@components/Search/FilterDropdowns/DropdownButton';
 import type {SingleSelectItem} from '@components/Search/FilterDropdowns/SingleSelectPopup';
 import SingleSelectPopup from '@components/Search/FilterDropdowns/SingleSelectPopup';
 import Text from '@components/Text';
+import useConfirmModal from '@hooks/useConfirmModal';
 import {useMemoizedLazyExpensifyIcons, useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useMobileSelectionMode from '@hooks/useMobileSelectionMode';
@@ -64,88 +64,6 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
         canBeMissing: true,
         selector: memberAccountIDsSelector,
     });
-
-    const [groups] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
-        canBeMissing: true,
-        selector: groupsSelector,
-    });
-
-    const ALL_MEMBERS_VALUE = 'all';
-
-    const [selectedGroup, setSelectedGroup] = useState<SingleSelectItem<string> | null>(null);
-
-    const allMembersLabel = translate('domain.members.allMembers');
-
-    const groupOptions = useMemo<Array<SingleSelectItem<string>>>(
-        () => [{text: allMembersLabel, value: ALL_MEMBERS_VALUE}, ...(groups ?? []).map((group) => ({text: group.details.name ?? '', value: group.id}))],
-        [groups, allMembersLabel],
-    );
-
-    const filteredMemberIDs = useMemo(() => {
-        if (!selectedGroup || selectedGroup.value === ALL_MEMBERS_VALUE || !groups) {
-            return memberIDs ?? [];
-        }
-        const group = groups.find((g) => g.id === selectedGroup.value);
-        if (!group) {
-            return memberIDs ?? [];
-        }
-        return Object.keys(group.details.shared)
-            .map(Number)
-            .filter((id) => !Number.isNaN(id));
-    }, [selectedGroup, groups, memberIDs]);
-
-    const handleGroupChange = (item: SingleSelectItem<string> | null) => {
-        if (!item || item.value === ALL_MEMBERS_VALUE) {
-            setSelectedGroup(null);
-        } else {
-            setSelectedGroup(item);
-        }
-    };
-
-    const dropdownLabel = selectedGroup?.text ?? allMembersLabel;
-
-    const groupPopoverComponent = ({closeOverlay}: PopoverComponentProps) => (
-        <SingleSelectPopup
-            label={translate('common.group')}
-            items={groupOptions}
-            value={selectedGroup ?? {text: allMembersLabel, value: ALL_MEMBERS_VALUE}}
-            closeOverlay={closeOverlay}
-            onChange={handleGroupChange}
-            defaultValue={ALL_MEMBERS_VALUE}
-            selectionListStyle={{listItemWrapperStyle: {minHeight: 40}}}
-        />
-    );
-
-    const groupFilterDropdown =
-        groupOptions.length > 1 ? (
-            <DropdownButton
-                label={dropdownLabel}
-                value={null}
-                PopoverComponent={groupPopoverComponent}
-                innerStyles={[styles.gap2, shouldUseNarrowLayout && styles.mw100]}
-                wrapperStyle={shouldUseNarrowLayout && styles.w100}
-                labelStyle={styles.fontSizeLabel}
-                caretWrapperStyle={styles.gap2}
-                medium
-            />
-        ) : null;
-
-    const getGroupRightElement = (accountID: number) => {
-        if (!groups) {
-            return undefined;
-        }
-        const group = groups.find((g) => String(accountID) in g.details.shared);
-        return <Text style={styles.flex1}>{group?.details.name ?? '-'}</Text>;
-    };
-
-    const getCustomListHeader = () => {
-        return (
-            <View style={[styles.ph9, styles.pv3, styles.flex1, styles.flexRow, styles.justifyContentBetween]}>
-                <Text style={[styles.textMicroSupporting, styles.flex1, styles.pr8]}>{translate('domain.members.title')}</Text>
-                <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.group')}</Text>
-            </View>
-        );
-    };
 
     const [groups] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
         canBeMissing: true,
