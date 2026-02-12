@@ -10,7 +10,7 @@ type DomainSecurityGroupWithID = {
     details: DomainSecurityGroup;
 };
 
-const domainMemberSamlSettingsSelector = (domainSettings: OnyxEntry<CardFeeds>) => domainSettings?.settings;
+const domainMemberSettingsSelector = (domainSettings: OnyxEntry<CardFeeds>) => domainSettings?.settings;
 
 const domainSamlSettingsStateSelector = (domain: OnyxEntry<Domain>) =>
     domain
@@ -160,7 +160,7 @@ function groupsSelector(domain: OnyxEntry<Domain>): DomainSecurityGroupWithID[] 
 }
 
 export {
-    domainMemberSamlSettingsSelector,
+    domainMemberSettingsSelector,
     domainSettingsPrimaryContactSelector,
     domainSamlSettingsStateSelector,
     domainNameSelector,
