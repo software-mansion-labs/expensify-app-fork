@@ -102,7 +102,7 @@ function enqueue<TKey extends OnyxKey>(updates: OnyxUpdatesFromServer<TKey> | De
                 continue;
             }
 
-            deferredUpdates[lastUpdateID] = update as OnyxUpdatesFromServer<OnyxKey>;
+            deferredUpdates[lastUpdateID] = update as OnyxUpdatesFromServer<TKey>;
         }
     }
 }

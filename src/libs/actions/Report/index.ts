@@ -3,7 +3,7 @@ import {format as timezoneFormat, toZonedTime} from 'date-fns-tz';
 import {Str} from 'expensify-common';
 import isEmpty from 'lodash/isEmpty';
 import {DeviceEventEmitter, InteractionManager, Linking} from 'react-native';
-import type {NullishDeep, OnyxCollection, OnyxCollectionInputValue, OnyxEntry, OnyxKey, OnyxUpdate} from 'react-native-onyx';
+import type {NullishDeep, OnyxCollection, OnyxCollectionInputValue, OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {PartialDeep, ValueOf} from 'type-fest';
 import type {Emoji} from '@assets/emojis/types';
@@ -28,7 +28,6 @@ import type {
     InviteToGroupChatParams,
     InviteToRoomParams,
     LeaveRoomParams,
-    MarkAllMessagesAsReadParams,
     MarkAsExportedParams,
     MarkAsUnreadParams,
     MoveIOUReportToExistingPolicyParams,
@@ -157,12 +156,10 @@ import {
     isProcessingReport,
     isReportManuallyReimbursed,
     isSelfDM,
-    isUnread,
     isValidReportIDFromPath,
     prepareOnboardingOnyxData,
 } from '@libs/ReportUtils';
 import {getCurrentSearchQueryJSON} from '@libs/SearchQueryUtils';
-import type {ArchivedReportsIDSet} from '@libs/SearchUIUtils';
 import playSound, {SOUNDS} from '@libs/Sound';
 import {getAmount, getCurrency, hasValidModifiedAmount, isOnHold, shouldClearConvertedAmount} from '@libs/TransactionUtils';
 import addTrailingForwardSlash from '@libs/UrlUtils';
@@ -1932,75 +1929,14 @@ function readNewestAction(reportID: string | undefined, shouldResetUnreadMarker 
     }
 }
 
-function markAllMessagesAsRead(archivedReportsIdSet: ArchivedReportsIDSet) {
-    if (isAnonymousUser()) {
-        return;
-    }
-
-    const newLastReadTime = NetworkConnection.getDBTimeWithSkew();
-
-    type PartialReport = {
-        lastReadTime: Report['lastReadTime'] | null;
-    };
-    const optimisticReports: Record<string, PartialReport> = {};
-    const failureReports: Record<string, PartialReport> = {};
-    const reportIDList: string[] = [];
-    for (const report of Object.values(allReports ?? {})) {
-        if (!report) {
-            continue;
-        }
-
-        const chatReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report.chatReportID}`];
-        const oneTransactionThreadReportID = ReportActionsUtils.getOneTransactionThreadReportID(report, chatReport, allReportActions?.[report.reportID]);
-        const oneTransactionThreadReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${oneTransactionThreadReportID}`];
-        const isArchivedReport = archivedReportsIdSet.has(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${report.reportID}`);
-        if (!isUnread(report, oneTransactionThreadReport, isArchivedReport)) {
-            continue;
-        }
-
-        const reportKey = `${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`;
-        optimisticReports[reportKey] = {lastReadTime: newLastReadTime};
-        failureReports[reportKey] = {lastReadTime: report.lastReadTime ?? null};
-        reportIDList.push(report.reportID);
-    }
-
-    if (reportIDList.length === 0) {
-        return;
-    }
-
-    const optimisticData = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE_COLLECTION,
-            key: ONYXKEYS.COLLECTION.REPORT,
-            value: optimisticReports,
-        },
-    ];
-
-    const failureData = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE_COLLECTION,
-            key: ONYXKEYS.COLLECTION.REPORT,
-            value: failureReports,
-        },
-    ];
-
-    const parameters: MarkAllMessagesAsReadParams = {
-        reportIDList,
-    };
-
-    API.write(WRITE_COMMANDS.MARK_ALL_MESSAGES_AS_READ, parameters, {optimisticData, failureData});
-}
-
 /**
  * Sets the last read time on a report
  */
-function markCommentAsUnread(reportID: string | undefined, reportAction: ReportAction, currentUserAccountID: number) {
+function markCommentAsUnread(reportID: string | undefined, reportActions: OnyxEntry<ReportActions>, reportAction: ReportAction, currentUserAccountID: number) {
     if (!reportID) {
         Log.warn('7339cd6c-3263-4f89-98e5-730f0be15784 Invalid report passed to MarkCommentAsUnread. Not calling the API because it wil fail.');
         return;
     }
-
-    const reportActions = allReportActions?.[reportID];
 
     // Find the latest report actions from other users
     const latestReportActionFromOtherUsers = Object.values(reportActions ?? {}).reduce((latest: ReportAction | null, current: ReportAction) => {
@@ -5095,14 +5031,14 @@ function exportReportToPDF({reportID}: ExportReportPDFParams) {
     API.write(WRITE_COMMANDS.EXPORT_REPORT_TO_PDF, params, {optimisticData, failureData});
 }
 
-function downloadReportPDF(fileName: string, reportName: string, translate: LocalizedTranslate, currentUserLogin: string) {
+function downloadReportPDF(fileName: string, reportName: string, translate: LocalizedTranslate, currentUserLogin: string, encryptedAuthToken: string) {
     const baseURL = addTrailingForwardSlash(getOldDotURLFromEnvironment(environment));
     const downloadFileName = `${reportName}.pdf`;
     setDownload(fileName, true);
     const pdfURL = `${baseURL}secure?secureType=pdfreport&filename=${encodeURIComponent(fileName)}&downloadName=${encodeURIComponent(downloadFileName)}&email=${encodeURIComponent(
         currentUserLogin,
     )}`;
-    fileDownload(translate, addEncryptedAuthTokenToURL(pdfURL, true), downloadFileName, '', Browser.isMobileSafari()).then(() => setDownload(fileName, false));
+    fileDownload(translate, addEncryptedAuthTokenToURL(pdfURL, encryptedAuthToken, true), downloadFileName, '', Browser.isMobileSafari()).then(() => setDownload(fileName, false));
 }
 
 function setDeleteTransactionNavigateBackUrl(url: string) {
@@ -5917,14 +5853,31 @@ function buildReportIDToThreadsReportIDsMap(): Record<string, string[]> {
  * @private
  * Recursively updates the policyID for a report and all its child reports.
  */
-function updatePolicyIdForReportAndThreads<TKey extends OnyxKey>(
+function updatePolicyIdForReportAndThreads(
     currentReportID: string,
     policyID: string,
     reportIDToThreadsReportIDsMap: Record<string, string[]>,
-    optimisticData: Array<OnyxUpdate<TKey | typeof ONYXKEYS.COLLECTION.REPORT>>,
-    failureData: Array<OnyxUpdate<TKey | typeof ONYXKEYS.COLLECTION.REPORT>>,
+    optimisticData: Array<
+        OnyxUpdate<
+            | typeof ONYXKEYS.COLLECTION.REPORT
+            | typeof ONYXKEYS.COLLECTION.SNAPSHOT
+            | typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS
+            | typeof ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS
+            | typeof ONYXKEYS.COLLECTION.NEXT_STEP
+            | typeof ONYXKEYS.COLLECTION.TRANSACTION
+        >
+    >,
+    failureData: Array<
+        OnyxUpdate<
+            | typeof ONYXKEYS.COLLECTION.REPORT
+            | typeof ONYXKEYS.COLLECTION.NEXT_STEP
+            | typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS
+            | typeof ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS
+            | typeof ONYXKEYS.COLLECTION.TRANSACTION
+        >
+    >,
 ) {
-    const reportKey = `${ONYXKEYS.COLLECTION.REPORT}${currentReportID}`;
+    const reportKey = `${ONYXKEYS.COLLECTION.REPORT}${currentReportID}` as const;
     const currentReport = allReports?.[reportKey];
     const originalPolicyID = currentReport?.policyID;
 
@@ -5933,12 +5886,12 @@ function updatePolicyIdForReportAndThreads<TKey extends OnyxKey>(
             onyxMethod: Onyx.METHOD.MERGE,
             key: reportKey,
             value: {policyID},
-        } as OnyxUpdate<TKey | typeof ONYXKEYS.COLLECTION.REPORT>);
+        });
         failureData.push({
             onyxMethod: Onyx.METHOD.MERGE,
             key: reportKey,
             value: {policyID: originalPolicyID},
-        } as OnyxUpdate<TKey | typeof ONYXKEYS.COLLECTION.REPORT>);
+        });
     }
 
     // Recursively process child reports for the current report
@@ -6727,7 +6680,6 @@ export {
     openReport,
     openRoomMembersPage,
     readNewestAction,
-    markAllMessagesAsRead,
     removeFromGroupChat,
     removeFromRoom,
     resolveActionableMentionWhisper,

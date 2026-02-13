@@ -36,13 +36,8 @@ type OnyxUpdateEvent<TKey extends OnyxKey> = {
     data: Array<OnyxServerUpdate<TKey>>;
 };
 
-/**
- * Model of onyx server updates
- *
- * This type was created as a solution during the migration away from the large OnyxKey union and is useful for contexts where the specific Onyx keys are not known ahead of time.
- * It should only be used in legacy code where providing exact key types would require major restructuring.
- */
-type AnyOnyxUpdatesFromServer = {
+/** Generic base for types of onyx server updates */
+type OnyxUpdatesFromServerBase<TKey extends OnyxKey, TRequest> = {
     /** Delivery method of onyx updates */
     type: 'https' | 'pusher' | 'airship';
 
@@ -56,33 +51,7 @@ type AnyOnyxUpdatesFromServer = {
     shouldFetchPendingUpdates?: boolean;
 
     /** Request data sent to the server */
-    request?: AnyRequest;
-
-    /** Response data from server */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response?: Response<any>;
-
-    /** Collection of onyx updates */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updates?: Array<OnyxUpdateEvent<any>>;
-};
-
-/** Model of onyx server updates */
-type OnyxUpdatesFromServer<TKey extends OnyxKey> = {
-    /** Delivery method of onyx updates */
-    type: 'https' | 'pusher' | 'airship';
-
-    /** Last update ID from server */
-    lastUpdateID: number | string;
-
-    /** Previous update ID from server */
-    previousUpdateID?: number | string;
-
-    /** Whether the client should fetch pending updates from the server */
-    shouldFetchPendingUpdates?: boolean;
-
-    /** Request data sent to the server */
-    request?: Request<TKey>;
+    request?: TRequest;
 
     /** Response data from server */
     response?: Response<TKey>;
@@ -90,6 +59,18 @@ type OnyxUpdatesFromServer<TKey extends OnyxKey> = {
     /** Collection of onyx updates */
     updates?: Array<OnyxUpdateEvent<TKey>>;
 };
+
+/**
+ * Model of onyx server updates
+ *
+ * This type was created as a solution during the migration away from the large OnyxKey union and is useful for contexts where the specific Onyx keys are not known ahead of time.
+ * It should only be used in legacy code where providing exact key types would require major restructuring.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyOnyxUpdatesFromServer = OnyxUpdatesFromServerBase<any, AnyRequest>;
+
+/** Model of onyx server updates */
+type OnyxUpdatesFromServer<TKey extends OnyxKey> = OnyxUpdatesFromServerBase<TKey, Request<TKey>>;
 
 /**
  * Helper function to determine if onyx update received from server is valid

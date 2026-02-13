@@ -217,6 +217,7 @@ function MoneyReportHeader({
     const [transactionThreadReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${transactionThreadReportID}`, {canBeMissing: true});
     const [reportPDFFilename] = useOnyx(`${ONYXKEYS.COLLECTION.NVP_EXPENSIFY_REPORT_PDF_FILENAME}${moneyRequestReport?.reportID}`, {canBeMissing: true}) ?? null;
     const [session] = useOnyx(ONYXKEYS.SESSION, {canBeMissing: false});
+    const encryptedAuthToken = session?.encryptedAuthToken ?? '';
     const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST, {canBeMissing: true});
     const [activePolicyID] = useOnyx(ONYXKEYS.NVP_ACTIVE_POLICY_ID, {canBeMissing: true});
     const activePolicy = usePolicy(activePolicyID);
@@ -248,7 +249,7 @@ function MoneyReportHeader({
         'Table',
         'Info',
         'Export',
-        'Document',
+        'Download',
         'XeroSquare',
         'QBOSquare',
         'NetSuiteSquare',
@@ -1244,7 +1245,7 @@ function MoneyReportHeader({
         [CONST.REPORT.SECONDARY_ACTIONS.DOWNLOAD_PDF]: {
             value: CONST.REPORT.SECONDARY_ACTIONS.DOWNLOAD_PDF,
             text: translate('common.downloadAsPDF'),
-            icon: expensifyIcons.Document,
+            icon: expensifyIcons.Download,
             sentryLabel: CONST.SENTRY_LABEL.MORE_MENU.DOWNLOAD_PDF,
             onSelected: () => {
                 if (!moneyRequestReport) {
@@ -1599,11 +1600,11 @@ function MoneyReportHeader({
             },
         },
         [CONST.REPORT.SECONDARY_ACTIONS.PAY]: {
-            text: translate('iou.settlePayment', {formattedAmount: totalAmount}),
+            text: translate('iou.settlePayment', totalAmount),
             icon: expensifyIcons.Cash,
             rightIcon: expensifyIcons.ArrowRight,
             value: CONST.REPORT.SECONDARY_ACTIONS.PAY,
-            backButtonText: translate('iou.settlePayment', {formattedAmount: totalAmount}),
+            backButtonText: translate('iou.settlePayment', totalAmount),
             sentryLabel: CONST.SENTRY_LABEL.MORE_MENU.PAY,
             subMenuItems: Object.values(paymentButtonOptions),
         },
@@ -1624,9 +1625,9 @@ function MoneyReportHeader({
         if (!hasFinishedPDFDownload || !canTriggerAutomaticPDFDownload.current) {
             return;
         }
-        downloadReportPDF(reportPDFFilename, moneyRequestReport?.reportName ?? '', translate, currentUserLogin ?? '');
+        downloadReportPDF(reportPDFFilename, moneyRequestReport?.reportName ?? '', translate, currentUserLogin ?? '', encryptedAuthToken);
         canTriggerAutomaticPDFDownload.current = false;
-    }, [hasFinishedPDFDownload, reportPDFFilename, moneyRequestReport?.reportName, translate, currentUserLogin]);
+    }, [hasFinishedPDFDownload, reportPDFFilename, moneyRequestReport?.reportName, translate, currentUserLogin, encryptedAuthToken]);
 
     const shouldShowBackButton = shouldDisplayBackButton || shouldUseNarrowLayout;
 
@@ -1965,7 +1966,7 @@ function MoneyReportHeader({
                                 if (!hasFinishedPDFDownload) {
                                     setIsPDFModalVisible(false);
                                 } else {
-                                    downloadReportPDF(reportPDFFilename, moneyRequestReport?.reportName ?? '', translate, currentUserLogin ?? '');
+                                    downloadReportPDF(reportPDFFilename, moneyRequestReport?.reportName ?? '', translate, currentUserLogin ?? '', encryptedAuthToken);
                                 }
                             }}
                             text={hasFinishedPDFDownload ? translate('common.download') : translate('common.cancel')}

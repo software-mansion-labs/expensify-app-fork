@@ -35,7 +35,6 @@ import type {ApprovalRule} from '@src/types/onyx/Policy';
 import type {NotificationPreference, Participant} from '@src/types/onyx/Report';
 import type {OnyxData} from '@src/types/onyx/Request';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import type {WorkspaceMembersChats} from './Policy';
 import {createPolicyExpenseChats} from './Policy';
 
 type WorkspaceMembersRoleData = {
@@ -899,10 +898,11 @@ function buildAddMembersToWorkspaceOnyxData(
         OnyxUpdate<
             | typeof ONYXKEYS.COLLECTION.POLICY
             | typeof ONYXKEYS.PERSONAL_DETAILS_LIST
-            | WorkspaceMembersChats['onyxOptimisticData'][number]['key']
-            | ReportUtils.OptimisticAnnounceChat['announceChatData']['onyxOptimisticData'][number]['key']
+            | typeof ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS
+            | typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS
             | typeof ONYXKEYS.COLLECTION.REPORT_METADATA
             | typeof ONYXKEYS.COLLECTION.REPORT
+            | typeof ONYXKEYS.COLLECTION.REPORT_DRAFT
         >
     > = [
         {
@@ -927,8 +927,7 @@ function buildAddMembersToWorkspaceOnyxData(
         OnyxUpdate<
             | typeof ONYXKEYS.COLLECTION.POLICY
             | typeof ONYXKEYS.PERSONAL_DETAILS_LIST
-            | WorkspaceMembersChats['onyxSuccessData'][number]['key']
-            | ReportUtils.OptimisticAnnounceChat['announceChatData']['onyxSuccessData'][number]['key']
+            | typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS
             | typeof ONYXKEYS.COLLECTION.REPORT_METADATA
             | typeof ONYXKEYS.COLLECTION.REPORT
         >
@@ -953,8 +952,8 @@ function buildAddMembersToWorkspaceOnyxData(
         OnyxUpdate<
             | typeof ONYXKEYS.COLLECTION.POLICY
             | typeof ONYXKEYS.PERSONAL_DETAILS_LIST
-            | WorkspaceMembersChats['onyxFailureData'][number]['key']
-            | ReportUtils.OptimisticAnnounceChat['announceChatData']['onyxFailureData'][number]['key']
+            | typeof ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS
+            | typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS
             | typeof ONYXKEYS.COLLECTION.REPORT_METADATA
             | typeof ONYXKEYS.COLLECTION.REPORT
         >

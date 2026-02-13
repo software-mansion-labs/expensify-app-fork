@@ -270,4 +270,4 @@ type PaginatedRequest<TKey extends OnyxKey> = Request<TKey> &
     };
 
 export default Request;
-export type {AnyOnyxUpdate, OnyxData, RequestType, PaginationConfig, PaginatedRequest, RequestConflictResolver, ConflictActionData, ConflictData, AnyRequest};
+export type {AnyOnyxUpdate, OnyxData, AnyOnyxData, RequestType, PaginationConfig, PaginatedRequest, RequestConflictResolver, ConflictActionData, ConflictData, AnyRequest};

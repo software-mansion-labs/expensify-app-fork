@@ -777,6 +777,7 @@ const CONST = {
         ODOMETER_EXPENSES: 'odometerExpenses',
         NEW_DOT_HOME: 'newDotHome',
         SINGLE_USE_AND_EXPIRE_BY_CARDS: 'singleUseAndExpireByCards',
+        PAY_INVOICE_VIA_EXPENSIFY: 'payInvoiceViaExpensify',
         PERSONAL_CARD_IMPORT: 'personalCardImport',
         SUGGESTED_FOLLOWUPS: 'suggestedFollowups',
     },
@@ -1163,6 +1164,7 @@ const CONST = {
         REQUEST_MANUAL: 'requestManual',
         REQUEST_SCAN: 'requestScan',
         REQUEST_DISTANCE: 'requestDistance',
+        REQUEST_TIME: 'requestTime',
         PER_DIEM: 'perDiem',
         SPLIT_MANUAL: 'splitManual',
         SPLIT_SCAN: 'splitScan',
@@ -1766,6 +1768,24 @@ const CONST = {
         TAG_AUTHENTICATION_FUNCTION: 'authentication_function',
         TAG_AUTHENTICATION_ERROR_TYPE: 'authentication_error_type',
         TAG_AUTHENTICATION_JSON_CODE: 'authentication_json_code',
+        TAG_EXPENSE_ERROR_TYPE: 'expense_error_type',
+        TAG_EXPENSE_ERROR_SOURCE: 'expense_error_source',
+        EXPENSE_ERROR_TYPE: {
+            REPORT_CREATION_FAILED: 'report_creation_failed',
+            TRANSACTION_MISSING: 'transaction_missing',
+            API_ERROR: 'api_error',
+            OPEN_REPORT_FAILED: 'open_report_failed',
+        },
+        EXPENSE_ERROR_SOURCE: {
+            TRANSACTION: 'transaction',
+            REPORT_ACTION: 'report_action',
+            REPORT_CREATION: 'report_creation',
+            API_RESPONSE: 'api_response',
+        },
+        TAG_EXPENSE_IS_REQUEST_PENDING: 'expense_is_request_pending',
+        TAG_EXPENSE_HAS_RECEIPT: 'expense_has_receipt',
+        TAG_EXPENSE_COMMAND: 'expense_command',
+        TAG_EXPENSE_JSON_CODE: 'expense_json_code',
         // Span names
         SPAN_OPEN_REPORT: 'ManualOpenReport',
         SPAN_APP_STARTUP: 'ManualAppStartup',
@@ -8442,6 +8462,9 @@ const CONST = {
         ONBOARDING: {
             INTERESTED_FEATURES_ITEM: 'Onboarding-InterestedFeaturesItem',
         },
+        BASE_ANCHOR_FOR_ATTACHMENTS_ONLY: {
+            DOWNLOAD_BUTTON: 'BaseAnchorForAttachmentsOnly-DownloadButton',
+        },
         REPORT_HEADER_SKELETON: {
             GO_BACK: 'ReportHeaderSkeleton-GoBack',
         },
@@ -8453,6 +8476,12 @@ const CONST = {
         VALIDATE_CODE: {
             RESEND_CODE: 'ValidateCode-ResendCode',
             RECOVERY_CODE: 'ValidateCode-RecoveryCode',
+        },
+        INTERACTIVE_STEP_SUB_HEADER: {
+            STEP_BUTTON: 'InteractiveStepSubHeader-StepButton',
+        },
+        SOCIALS: {
+            LINK: 'Socials',
         },
     },
 
