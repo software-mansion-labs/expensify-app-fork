@@ -24,6 +24,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {
     createDistanceRequest,
     getMoneyRequestParticipantsFromReport,
+    removeMoneyRequestOdometerImage,
     setCustomUnitRateID,
     setMoneyRequestDistance,
     setMoneyRequestMerchant,
@@ -251,6 +252,8 @@ function IOURequestStepDistanceOdometer({
 
     const startImageSource = useMemo(() => getImageSource(odometerStartImage), [getImageSource, odometerStartImage]);
     const endImageSource = useMemo(() => getImageSource(odometerEndImage), [getImageSource, odometerEndImage]);
+    const hasStartOdometerImage = !!startImageSource;
+    const hasEndOdometerImage = !!endImageSource;
 
     useEffect(() => {
         return () => {
@@ -269,6 +272,34 @@ function IOURequestStepDistanceOdometer({
             URL.revokeObjectURL(endImageSource);
         };
     }, [endImageSource]);
+
+    const validateOdometerBlobSource = useCallback(
+        (imageSource: string | undefined, imageType: OdometerImageType) => {
+            if (!imageSource?.startsWith('blob:')) {
+                return;
+            }
+
+            // Blob URLs are process-local and can become stale after refresh.
+            // If the blob cannot be fetched anymore, clear it from transaction state.
+            fetch(imageSource).catch(() => {
+                if (imageType === CONST.IOU.ODOMETER_IMAGE_TYPE.START) {
+                    initialStartImageRef.current = undefined;
+                } else {
+                    initialEndImageRef.current = undefined;
+                }
+                removeMoneyRequestOdometerImage(transactionID, imageType, isTransactionDraft);
+            });
+        },
+        [isTransactionDraft, transactionID],
+    );
+
+    useEffect(() => {
+        validateOdometerBlobSource(startImageSource, CONST.IOU.ODOMETER_IMAGE_TYPE.START);
+    }, [startImageSource, validateOdometerBlobSource]);
+
+    useEffect(() => {
+        validateOdometerBlobSource(endImageSource, CONST.IOU.ODOMETER_IMAGE_TYPE.END);
+    }, [endImageSource, validateOdometerBlobSource]);
 
     const buttonText = (() => {
         if (shouldSkipConfirmation) {
@@ -329,6 +360,17 @@ function IOURequestStepDistanceOdometer({
             Navigation.navigate(ROUTES.MONEY_REQUEST_RECEIPT_PREVIEW.getRoute(reportID, transactionID, action, iouType, imageType));
         },
         [reportID, transactionID, action, iouType],
+    );
+
+    const handleOdometerImagePress = useCallback(
+        (imageType: OdometerImageType, hasImage: boolean) => {
+            if (!hasImage) {
+                handleCaptureImage(imageType);
+                return;
+            }
+            handleViewOdometerImage(imageType);
+        },
+        [handleCaptureImage, handleViewOdometerImage],
     );
 
     // Navigate to confirmation page helper - following Manual tab pattern
@@ -593,11 +635,7 @@ function IOURequestStepDistanceOdometer({
                             accessibilityRole="button"
                             sentryLabel={CONST.SENTRY_LABEL.ODOMETER_EXPENSE.CAPTURE_IMAGE_START}
                             onPress={() => {
-                                if (odometerStartImage) {
-                                    handleViewOdometerImage(CONST.IOU.ODOMETER_IMAGE_TYPE.START);
-                                } else {
-                                    handleCaptureImage(CONST.IOU.ODOMETER_IMAGE_TYPE.START);
-                                }
+                                handleOdometerImagePress(CONST.IOU.ODOMETER_IMAGE_TYPE.START, hasStartOdometerImage);
                             }}
                             style={[
                                 StyleUtils.getWidthAndHeightStyle(variables.inputHeight, variables.inputHeight),
@@ -639,11 +677,7 @@ function IOURequestStepDistanceOdometer({
                             accessibilityRole="button"
                             sentryLabel={CONST.SENTRY_LABEL.ODOMETER_EXPENSE.CAPTURE_IMAGE_END}
                             onPress={() => {
-                                if (odometerEndImage) {
-                                    handleViewOdometerImage(CONST.IOU.ODOMETER_IMAGE_TYPE.END);
-                                } else {
-                                    handleCaptureImage(CONST.IOU.ODOMETER_IMAGE_TYPE.END);
-                                }
+                                handleOdometerImagePress(CONST.IOU.ODOMETER_IMAGE_TYPE.END, hasEndOdometerImage);
                             }}
                             style={[
                                 StyleUtils.getWidthAndHeightStyle(variables.inputHeight, variables.inputHeight),

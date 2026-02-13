@@ -8,6 +8,7 @@ import {config} from '@libs/Navigation/linkingConfig/config';
 import {RHP_TO_DOMAIN, RHP_TO_SEARCH, RHP_TO_SETTINGS, RHP_TO_SIDEBAR, RHP_TO_WORKSPACE, RHP_TO_WORKSPACES_LIST} from '@libs/Navigation/linkingConfig/RELATIONS';
 import type {NavigationPartialRoute, RootNavigatorParamList} from '@libs/Navigation/types';
 import CONST from '@src/CONST';
+import type {IOUAction, IOUType} from '@src/CONST';
 import {getSearchParamFromPath} from '@src/libs/Url';
 import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -43,6 +44,28 @@ function isRouteWithBackToParam(route: NavigationPartialRoute): route is Route<s
 
 function isRouteWithReportID(route: NavigationPartialRoute): route is Route<string, {reportID: string}> {
     return route.params !== undefined && 'reportID' in route.params && typeof route.params.reportID === 'string';
+}
+
+function isValidReportID(reportID: string): boolean {
+    return !!allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]?.reportID;
+}
+
+function isRouteWithOdometerReceiptPreviewParams(
+    route: NavigationPartialRoute,
+): route is Route<string, {action: IOUAction; iouType: IOUType; transactionID: string; reportID: string; imageType: string}> {
+    return (
+        route.params !== undefined &&
+        'action' in route.params &&
+        typeof route.params.action === 'string' &&
+        'iouType' in route.params &&
+        typeof route.params.iouType === 'string' &&
+        'transactionID' in route.params &&
+        typeof route.params.transactionID === 'string' &&
+        'reportID' in route.params &&
+        typeof route.params.reportID === 'string' &&
+        'imageType' in route.params &&
+        typeof route.params.imageType === 'string'
+    );
 }
 
 /**
@@ -180,7 +203,7 @@ function getDefaultFullScreenRoute(route?: NavigationPartialRoute) {
     if (route && isRouteWithReportID(route)) {
         const reportID = route.params.reportID;
 
-        if (!allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]?.reportID) {
+        if (!isValidReportID(reportID)) {
             return {name: NAVIGATORS.REPORTS_SPLIT_NAVIGATOR};
         }
 
@@ -214,7 +237,7 @@ function getOnboardingAdaptedState(state: PartialState<NavigationState>): Partia
     return getRoutesWithIndex(routes);
 }
 
-function getAdaptedState(state: PartialState<NavigationState<RootNavigatorParamList>>): GetAdaptedStateReturnType {
+function getAdaptedState(state: PartialState<NavigationState<RootNavigatorParamList>>, defaultFullScreenRouteSource?: NavigationPartialRoute): GetAdaptedStateReturnType {
     const fullScreenRoute = state.routes.find((route) => isFullScreenName(route.name));
     const onboardingNavigator = state.routes.find((route) => route.name === NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR);
     const isWorkspaceSplitNavigator = fullScreenRoute?.name === NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR;
@@ -252,7 +275,12 @@ function getAdaptedState(state: PartialState<NavigationState<RootNavigatorParamL
             return getRoutesWithIndex([{name: SCREENS.HOME}, adaptedOnboardingNavigator]);
         }
 
-        const defaultFullScreenRoute = getDefaultFullScreenRoute(focusedRoute);
+        let routeForDefaultFullScreen = focusedRoute as NavigationPartialRoute | undefined;
+        if ((!routeForDefaultFullScreen || !isRouteWithReportID(routeForDefaultFullScreen)) && defaultFullScreenRouteSource && isRouteWithReportID(defaultFullScreenRouteSource)) {
+            routeForDefaultFullScreen = defaultFullScreenRouteSource;
+        }
+
+        const defaultFullScreenRoute = getDefaultFullScreenRoute(routeForDefaultFullScreen);
 
         // If not, add the default full screen route.
         return getRoutesWithIndex([defaultFullScreenRoute, ...state.routes]);
@@ -275,12 +303,27 @@ function getAdaptedState(state: PartialState<NavigationState<RootNavigatorParamL
  */
 const getAdaptedStateFromPath: GetAdaptedStateFromPath = (path, options, shouldReplacePathInNestedState = true) => {
     let normalizedPath = !path.startsWith('/') ? `/${path}` : path;
+    let defaultFullScreenRouteSource: NavigationPartialRoute | undefined;
     normalizedPath = getRedirectedPath(normalizedPath);
     normalizedPath = getMatchingNewRoute(normalizedPath) ?? normalizedPath;
 
     // Bing search results still link to /signin when searching for “Expensify”, but the /signin route no longer exists in our repo, so we redirect it to the home page to avoid showing a Not Found page.
     if (normalizedPath === CONST.SIGNIN_ROUTE) {
         normalizedPath = '/';
+    }
+
+    if (normalizedPath.includes('/receipt/')) {
+        const stateWithOdometerReceiptPreview = getStateFromPath(normalizedPath, options) as PartialState<NavigationState<RootNavigatorParamList>>;
+        const focusedRoute = stateWithOdometerReceiptPreview ? findFocusedRoute(stateWithOdometerReceiptPreview) : undefined;
+        const focusedRouteAsPartial = focusedRoute as NavigationPartialRoute | undefined;
+
+        if (focusedRouteAsPartial?.name === SCREENS.MONEY_REQUEST.RECEIPT_PREVIEW && isRouteWithOdometerReceiptPreviewParams(focusedRouteAsPartial)) {
+            const {action, iouType, transactionID, reportID} = focusedRouteAsPartial.params;
+            if (isValidReportID(reportID)) {
+                defaultFullScreenRouteSource = focusedRouteAsPartial;
+            }
+            normalizedPath = `/${ROUTES.DISTANCE_REQUEST_CREATE_TAB_ODOMETER.getRoute(action, iouType, transactionID, reportID)}`;
+        }
     }
 
     const state = getStateFromPath(normalizedPath, options) as PartialState<NavigationState<RootNavigatorParamList>>;
@@ -292,7 +335,7 @@ const getAdaptedStateFromPath: GetAdaptedStateFromPath = (path, options, shouldR
         throw new Error(`[getAdaptedStateFromPath] Unable to get state from path: ${path}`);
     }
 
-    return getAdaptedState(state);
+    return getAdaptedState(state, defaultFullScreenRouteSource);
 };
 
 export default getAdaptedStateFromPath;
