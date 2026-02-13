@@ -1784,6 +1784,8 @@ const translations: TranslationDeepObject<typeof en> = {
         reportSuspiciousActivity: 'Informar de actividad sospechosa',
         lockAccount: 'Bloquear cuenta',
         unlockAccount: 'Desbloquear cuenta',
+        unlockTitle: 'Hemos recibido tu solicitud',
+        unlockDescription: 'Revisaremos la cuenta para verificar que sea seguro desbloquearla y nos comunicaremos a través de Concierge si tenemos alguna pregunta.',
         compromisedDescription:
             '¿Notas algo extraño en tu cuenta? Informarlo bloqueará tu cuenta de inmediato, detendrá nuevas transacciones con la Tarjeta Expensify y evitará cualquier cambio en la cuenta.',
         domainAdminsDescription: 'Para administradores de dominio: Esto también detiene toda la actividad de la Tarjeta Expensify y las acciones administrativas en tus dominios.',
@@ -8592,6 +8594,10 @@ ${amount} para ${merchant} - ${date}`,
                 `<muted-text>Por favor, deshabilita <a href="${samlPageUrl}">SAML</a> para forzar la autenticación de dos factores.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Requiere la autenticación de dos factores para todos los miembros de este dominio. Se les pedirá a los miembros del dominio que configuren la autenticación de dos factores en su cuenta cuando inicien sesión.</muted-text>`,
             forceTwoFactorAuthError: 'No se pudo cambiar la autenticación de dos factores forzada. Por favor, inténtalo de nuevo más tarde.',
+            reportSuspiciousActivityPrompt: (email: string) =>
+                `¿Estás seguro? Esto bloqueará la cuenta de <strong>${email}</strong>. <br /><br /> Nuestro equipo revisará la cuenta y eliminará cualquier acceso no autorizado. Para recuperar el acceso, deberá comunicarse con Concierge.`,
+            reportSuspiciousActivityConfirmationPrompt:
+                'Revisaremos la cuenta para verificar que sea seguro desbloquearla y nos comunicaremos a través de Concierge si tenemos alguna pregunta.',
         },
         common: {
             settings: 'Configuración',
