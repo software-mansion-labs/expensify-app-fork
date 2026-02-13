@@ -257,21 +257,27 @@ function IOURequestStepDistanceOdometer({
 
     useEffect(() => {
         return () => {
+            if (isEditingConfirmation) {
+                return;
+            }
             if (!startImageSource?.startsWith('blob:')) {
                 return;
             }
             URL.revokeObjectURL(startImageSource);
         };
-    }, [startImageSource]);
+    }, [startImageSource, isEditingConfirmation]);
 
     useEffect(() => {
         return () => {
+            if (isEditingConfirmation) {
+                return;
+            }
             if (!endImageSource?.startsWith('blob:')) {
                 return;
             }
             URL.revokeObjectURL(endImageSource);
         };
-    }, [endImageSource]);
+    }, [endImageSource, isEditingConfirmation]);
 
     const validateOdometerBlobSource = useCallback(
         (imageSource: string | undefined, imageType: OdometerImageType) => {
