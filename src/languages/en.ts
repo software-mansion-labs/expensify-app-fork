@@ -8381,7 +8381,6 @@ const translations = {
             }),
             error: {
                 addMember: 'Unable to add this member. Please try again.',
-                unlockAccount: 'Unable request account unlock. Please try again.',
                 removeMember: 'Unable to remove this user. Please try again.',
             },
             forceTwoFactorAuth: 'Force two-factor authentication',
