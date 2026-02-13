@@ -16,7 +16,6 @@ fi
 IOS_MODE="DebugDevelopment"
 ANDROID_MODE="developmentDebug"
 SCHEME="New Expensify Dev"
-APP_ID="com.expensify.chat.dev"
 
 # Function to print error message and exit
 function print_error_and_exit {
@@ -46,7 +45,6 @@ if [[ "$IS_HYBRID_APP_REPO" == "true" && "$NEW_DOT_FLAG" == "false" ]]; then
     IOS_MODE="Debug"
     ANDROID_MODE="Debug"
     SCHEME="Expensify Dev"
-    APP_ID="org.me.mobiexpensifyg.dev"
 
     # Build Yapl JS
     cd Mobile-Expensify && npm run grunt:build:shared && cd ..
