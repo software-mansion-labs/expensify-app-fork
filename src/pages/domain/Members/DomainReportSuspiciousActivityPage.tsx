@@ -10,6 +10,7 @@ import BaseLockAccountComponent from '@pages/settings/Security/LockAccount/LockA
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import {domainNameSelector} from '@src/selectors/Domain';
 
 type DomainReportSuspiciousActivityPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.MEMBER_LOCK_ACCOUNT>;
 
@@ -17,6 +18,7 @@ function DomainReportSuspiciousActivityPage({route}: DomainReportSuspiciousActiv
     const {domainAccountID, accountID} = route.params;
 
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
+    const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: false, selector: domainNameSelector});
     const memberLogin = personalDetails?.[accountID]?.login ?? '';
 
     const {translate} = useLocalize();
@@ -36,6 +38,8 @@ function DomainReportSuspiciousActivityPage({route}: DomainReportSuspiciousActiv
                 lockAccountPagePrompt={lockAccountPagePrompt}
                 handleLockRequestFinish={handleLockRequestFinish}
                 accountID={accountID}
+                domainAccountID={domainAccountID}
+                domainName={domainName}
             />
         </DomainNotFoundPageWrapper>
     );

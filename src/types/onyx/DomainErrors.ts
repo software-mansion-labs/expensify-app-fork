@@ -11,6 +11,16 @@ type GeneralDomainMemberErrors = {
 };
 
 /**
+ * Errors for a member.
+ */
+type DomainMemberErrors = {
+    /**
+     * Errors related to specific domain member lock account status.
+     */
+    lockAccountErrors: OnyxCommon.Errors;
+} & GeneralDomainMemberErrors;
+
+/**
  * Collection of errors related to domain operations received from the backend
  */
 type DomainErrors = {
@@ -32,12 +42,7 @@ type DomainErrors = {
     /**
      * Errors related to specific domain member, keyed by their user email, (NOT accountID)
      */
-    memberErrors?: Record<string | number, GeneralDomainMemberErrors>;
-
-    /**
-     * Errors related to specific domain member lock account status, keyed by their accountID.
-     */
-    lockAccountErrors?: Record<number, GeneralDomainMemberErrors>;
+    memberErrors?: Record<string | number, DomainMemberErrors>;
 
     /**
      * Errors for the domain itself

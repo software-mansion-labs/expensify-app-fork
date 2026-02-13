@@ -18,9 +18,20 @@ type BaseLockAccountComponentProps = {
     testID: string;
     onBackButtonPress: () => void;
     handleLockRequestFinish: (response: void | Response) => void;
+    domainAccountID?: number;
+    domainName?: string;
     accountID?: number;
 };
-function BaseLockAccountComponent({confirmModalPrompt, lockAccountPagePrompt, testID, onBackButtonPress, handleLockRequestFinish, accountID}: BaseLockAccountComponentProps) {
+function BaseLockAccountComponent({
+    confirmModalPrompt,
+    lockAccountPagePrompt,
+    testID,
+    onBackButtonPress,
+    handleLockRequestFinish,
+    domainAccountID,
+    domainName,
+    accountID,
+}: BaseLockAccountComponentProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {isOffline} = useNetwork();
@@ -50,7 +61,7 @@ function BaseLockAccountComponent({confirmModalPrompt, lockAccountPagePrompt, te
         }
 
         setIsLoading(true);
-        const response = await lockAccount(accountID);
+        const response = await lockAccount(accountID, domainAccountID, domainName);
         setIsLoading(false);
 
         handleLockRequestFinish(response);

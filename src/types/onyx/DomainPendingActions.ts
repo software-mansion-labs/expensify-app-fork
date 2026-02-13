@@ -12,6 +12,16 @@ type GeneralDomainMemberPendingAction = {
 };
 
 /**
+ * Pending actions for a member.
+ */
+type DomainMemberPendingActions = {
+    /**
+     * Pending actions for specific domain member lock account action.
+     */
+    lockAccount: OnyxCommon.PendingAction;
+} & GeneralDomainMemberPendingAction;
+
+/**
  * Pending actions triggered by user operations on the domain
  */
 type DomainPendingAction = {
@@ -33,17 +43,12 @@ type DomainPendingAction = {
     /**
      * Pending actions for specific domain member, keyed by their email
      */
-    member?: Record<string | number, GeneralDomainMemberPendingAction>;
+    member?: Record<string | number, DomainMemberPendingActions>;
 
     /**
      * Pending action for the 2FA toggle
      */
     twoFactorAuthRequired?: OnyxCommon.PendingAction;
-
-    /**
-     * Pending actions for specific domain member lock account action, keyed by their accountID
-     */
-    lockAccount?: Record<number, GeneralDomainMemberPendingAction>;
 
     /**
      * Pending action for the domain itself

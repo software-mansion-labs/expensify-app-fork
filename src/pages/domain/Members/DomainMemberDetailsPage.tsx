@@ -12,7 +12,8 @@ import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {closeUserAccount} from '@libs/actions/Domain';
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
+import {requestUnlockAccount} from '@libs/actions/User';
+import {getLatestError} from '@libs/ErrorUtils';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@navigation/types';
@@ -94,12 +95,13 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
     );
     const [domain] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true});
     const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {canBeMissing: true});
-
-    const unlockDomainError = getLatestErrorMessage(domainErrors?.lockAccountErrors?.[accountID]?.errors);
+    const lockDomainError = getLatestError(domainErrors?.memberErrors?.[accountID]?.lockAccountErrors);
+    const lockDomainErrorMessage = Object.values(lockDomainError).at(0);
 
     const isAccountLocked = domain?.[`${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`] ?? false;
 
     const showUnlockAccountModal = () => {
+        requestUnlockAccount(accountID);
         showConfirmModal({
             title: translate('lockAccountPage.unlockTitle'),
             prompt: translate('lockAccountPage.unlockDescription'),
@@ -121,8 +123,6 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
                         title={translate('lockAccountPage.unlockAccount')}
                         icon={icons.Unlock}
                         onPress={showUnlockAccountModal}
-                        brickRoadIndicator={unlockDomainError ? 'error' : undefined}
-                        errorText={unlockDomainError}
                     />
                 ) : (
                     <MenuItem
@@ -131,6 +131,8 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
                         icon={icons.Flag}
                         onPress={() => Navigation.navigate(ROUTES.DOMAIN_LOCK_ACCOUNT.getRoute(domainAccountID, accountID))}
                         shouldShowRightIcon
+                        brickRoadIndicator={lockDomainErrorMessage ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
+                        errorText={lockDomainErrorMessage}
                     />
                 )}
             </BaseDomainMemberDetailsComponent>

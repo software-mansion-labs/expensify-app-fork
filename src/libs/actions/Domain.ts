@@ -6,7 +6,6 @@ import type {
     AddMemberToDomainParams,
     DeleteDomainMemberParams,
     DeleteDomainParams,
-    LockAccountParams,
     RemoveDomainAdminParams,
     SetTechnicalContactEmailParams,
     ToggleConsolidatedDomainBillingParams,
@@ -1130,105 +1129,6 @@ function clearToggleTwoFactorAuthRequiredForDomainError(domainAccountID: number)
     });
 }
 
-function requestUnlockAccount(domainAccountID: number, accountID: number) {
-    const params: LockAccountParams = {
-        accountID,
-    };
-
-    const userLockKey = `${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`;
-
-    const optimisticData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
-            value: {
-                [userLockKey]: false,
-            } as PrefixedRecord<typeof CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX, boolean>,
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
-            value: {
-                lockAccount: {
-                    [accountID]: {
-                        pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE,
-                    },
-                },
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
-            value: {
-                lockAccountErrors: {
-                    [accountID]: {
-                        errors: null,
-                    },
-                },
-            },
-        },
-    ];
-
-    const successData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
-            value: {
-                lockAccount: {
-                    [accountID]: {
-                        pendingAction: null,
-                    },
-                },
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
-            value: {
-                lockAccountErrors: {
-                    [accountID]: {
-                        errors: null,
-                    },
-                },
-            },
-        },
-    ];
-
-    const failureData: OnyxUpdate[] = [
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
-            value: {
-                [userLockKey]: true,
-            } as PrefixedRecord<typeof CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX, boolean>,
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
-            value: {
-                lockAccountErrors: {
-                    [accountID]: {
-                        errors: getMicroSecondOnyxErrorWithTranslationKey('domain.members.error.unlockAccount'),
-                    },
-                },
-            },
-        },
-        {
-            onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
-            value: {
-                lockAccount: {
-                    [accountID]: {
-                        pendingAction: null,
-                    },
-                },
-            },
-        },
-    ];
-
-    API.write(WRITE_COMMANDS.REQUEST_UNLOCK_ACCOUNT, params, {optimisticData, successData, failureData});
-}
-
 export {
     getDomainValidationCode,
     validateDomain,
@@ -1254,7 +1154,6 @@ export {
     clearDomainErrors,
     addMemberToDomain,
     clearDomainMemberError,
-    requestUnlockAccount,
     closeUserAccount,
     toggleTwoFactorAuthRequiredForDomain,
     clearToggleTwoFactorAuthRequiredForDomainError,
