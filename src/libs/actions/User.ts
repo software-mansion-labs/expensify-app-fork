@@ -81,6 +81,20 @@ Onyx.connect({
     callback: (value) => (allPolicies = value),
 });
 
+type DomainOnyxUpdate =
+    | OnyxUpdate<`${typeof ONYXKEYS.COLLECTION.DOMAIN}${string}`>
+    | OnyxUpdate<`${typeof ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${string}`>
+    | OnyxUpdate<`${typeof ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${string}`>;
+
+type AccountOnyxUpdate = OnyxUpdate<typeof ONYXKEYS.ACCOUNT>;
+
+type LockAccountOnyxUpdate = DomainOnyxUpdate | AccountOnyxUpdate;
+type LockAccountOnyxKey =
+    | typeof ONYXKEYS.ACCOUNT
+    | `${typeof ONYXKEYS.COLLECTION.DOMAIN}${string}`
+    | `${typeof ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${string}`
+    | `${typeof ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${string}`;
+
 /**
  * Attempt to close the user's account
  */
@@ -1458,9 +1472,9 @@ function setIsDebugModeEnabled(isDebugModeEnabled: boolean) {
 }
 
 function lockAccount(accountID?: number, domainAccountID?: number, domainName?: string) {
-    let domainOptimisticData: OnyxUpdate[] = [];
-    let domainFailureData: OnyxUpdate[] = [];
-    let domainSuccessData: OnyxUpdate[] = [];
+    let domainOptimisticData: DomainOnyxUpdate[] = [];
+    let domainFailureData: DomainOnyxUpdate[] = [];
+    let domainSuccessData: DomainOnyxUpdate[] = [];
     if (accountID && domainAccountID) {
         const userLockKey = `${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`;
 
@@ -1543,9 +1557,9 @@ function lockAccount(accountID?: number, domainAccountID?: number, domainName?: 
         ];
     }
 
-    let currentUserOptimisticData: OnyxUpdate[] = [];
-    let currentUserFailureData: OnyxUpdate[] = [];
-    let currentUserSuccessData: OnyxUpdate[] = [];
+    let currentUserOptimisticData: AccountOnyxUpdate[] = [];
+    let currentUserFailureData: AccountOnyxUpdate[] = [];
+    let currentUserSuccessData: AccountOnyxUpdate[] = [];
     if (!accountID || accountID === currentUserAccountID) {
         currentUserOptimisticData = [
             {
@@ -1583,11 +1597,11 @@ function lockAccount(accountID?: number, domainAccountID?: number, domainName?: 
         ];
     }
 
-    const optimisticData: OnyxUpdate[] = domainOptimisticData.concat(currentUserOptimisticData);
+    const optimisticData: LockAccountOnyxUpdate[] = [...domainOptimisticData, ...currentUserOptimisticData];
 
-    const successData: OnyxUpdate[] = domainSuccessData.concat(currentUserSuccessData);
+    const successData: LockAccountOnyxUpdate[] = [...domainSuccessData, ...currentUserSuccessData];
 
-    const failureData: OnyxUpdate[] = domainFailureData.concat(currentUserFailureData);
+    const failureData: LockAccountOnyxUpdate[] = [...domainFailureData, ...currentUserFailureData];
 
     const params: LockAccountParams = {
         accountID: accountID ?? currentUserAccountID,
@@ -1998,3 +2012,5 @@ export {
     clearDraftMerchantRule,
     openTroubleshootSettingsPage,
 };
+
+export {type LockAccountOnyxKey};

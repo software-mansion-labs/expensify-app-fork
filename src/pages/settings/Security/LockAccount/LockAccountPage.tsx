@@ -2,6 +2,7 @@ import React from 'react';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import type {LockAccountOnyxKey} from '@libs/actions/User';
 import Navigation from '@libs/Navigation/Navigation';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
@@ -12,7 +13,7 @@ function LockAccountPage() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
-    const handleLockRequestFinish = (response: void | Response) => {
+    const handleLockRequestFinish = (response: void | Response<LockAccountOnyxKey>) => {
         if (response?.jsonCode === CONST.JSON_CODE.SUCCESS) {
             Navigation.navigate(ROUTES.SETTINGS_UNLOCK_ACCOUNT);
         } else {

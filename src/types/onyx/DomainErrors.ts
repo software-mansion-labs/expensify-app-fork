@@ -17,7 +17,7 @@ type DomainMemberErrors = {
     /**
      * Errors related to specific domain member lock account status.
      */
-    lockAccountErrors: OnyxCommon.Errors;
+    lockAccountErrors?: OnyxCommon.Errors;
 } & GeneralDomainMemberErrors;
 
 /**

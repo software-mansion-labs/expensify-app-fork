@@ -8,6 +8,7 @@ import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
+import type {LockAccountOnyxKey} from '@userActions/User';
 import {lockAccount} from '@userActions/User';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type Response from '@src/types/onyx/Response';
@@ -17,7 +18,7 @@ type BaseLockAccountComponentProps = {
     lockAccountPagePrompt: React.JSX.Element | string;
     testID: string;
     onBackButtonPress: () => void;
-    handleLockRequestFinish: (response: void | Response) => void;
+    handleLockRequestFinish: (response: void | Response<LockAccountOnyxKey>) => void;
     domainAccountID?: number;
     domainName?: string;
     accountID?: number;
