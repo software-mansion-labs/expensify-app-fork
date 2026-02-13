@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Hybrid",
+            "type": "radon-ide",
+            "request": "launch",
+            "appRoot": "./",
+            "customBuild": {
+                "ios": {
+                    "buildCommand": "./scripts/radon/build.sh --ios",
+                    "fingerprintCommand": "./scripts/radon/fingerprint.sh --ios"
+                },
+                "android": {
+                    "buildCommand": "./scripts/radon/build.sh --android",
+                    "fingerprintCommand": "./scripts/radon/fingerprint.sh --android"
+                }
+            },
+            "env": {},
+            "isExpo": false,
+            "usePrebuild": false,
+            "metroPort": 8081,
+            "disableNativeBuildStaleChecks": true
+        }
+    ]
+}

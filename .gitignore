@@ -44,7 +44,9 @@ android/app/src/main/java/com/expensify/chat/generated/
 *~
 
 # Vscode
-.vscode
+.vscode/*
+# Radon IDE
+!.vscode/launch.json
 
 # Fleet
 .fleet
