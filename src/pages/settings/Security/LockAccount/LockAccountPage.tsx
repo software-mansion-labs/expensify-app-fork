@@ -7,13 +7,16 @@ import Navigation from '@libs/Navigation/Navigation';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import type Response from '@src/types/onyx/Response';
-import BaseLockAccountComponent from './LockAccountPageBase';
+import LockAccountPageBase from './LockAccountPageBase';
 
 function LockAccountPage() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
     const handleLockRequestFinish = (response: void | Response<LockAccountOnyxKey>) => {
+        if (!response?.jsonCode) {
+            return;
+        }
         if (response?.jsonCode === CONST.JSON_CODE.SUCCESS) {
             Navigation.navigate(ROUTES.SETTINGS_UNLOCK_ACCOUNT);
         } else {
@@ -35,7 +38,7 @@ function LockAccountPage() {
     );
 
     return (
-        <BaseLockAccountComponent
+        <LockAccountPageBase
             testID="LockAccountPage"
             onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_LOCK_ACCOUNT)}
             confirmModalPrompt={confirmModalPrompt}

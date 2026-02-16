@@ -23,7 +23,7 @@ type BaseLockAccountComponentProps = {
     domainName?: string;
     accountID?: number;
 };
-function BaseLockAccountComponent({
+function LockAccountPageBase({
     confirmModalPrompt,
     lockAccountPagePrompt,
     testID,
@@ -95,4 +95,4 @@ function BaseLockAccountComponent({
     );
 }
 
-export default BaseLockAccountComponent;
+export default LockAccountPageBase;

@@ -6,7 +6,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import DomainNotFoundPageWrapper from '@pages/domain/DomainNotFoundPageWrapper';
-import BaseLockAccountComponent from '@pages/settings/Security/LockAccount/LockAccountPageBase';
+import LockAccountPageBase from '@pages/settings/Security/LockAccount/LockAccountPageBase';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -31,7 +31,7 @@ function DomainReportSuspiciousActivityPage({route}: DomainReportSuspiciousActiv
 
     return (
         <DomainNotFoundPageWrapper domainAccountID={domainAccountID}>
-            <BaseLockAccountComponent
+            <LockAccountPageBase
                 testID="DomainReportSuspiciousActivityPage"
                 onBackButtonPress={handleLockRequestFinish}
                 confirmModalPrompt={confirmModalPrompt}
