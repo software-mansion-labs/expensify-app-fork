@@ -1,7 +1,7 @@
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import reject from 'lodash/reject';
 import type {Ref} from 'react';
-import React, {useEffect, useImperativeHandle, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {Keyboard} from 'react-native';
 import Button from '@components/Button';
 import {usePersonalDetails} from '@components/OnyxListItemProvider';
@@ -37,6 +37,7 @@ import {
     getUserToInviteOption,
     getValidOptions,
 } from '@libs/OptionsListUtils';
+import reportsSelector from '@selectors/Attributes';
 import type {OptionWithKey} from '@libs/OptionsListUtils/types';
 import type {OptionData} from '@libs/ReportUtils';
 import variables from '@styles/variables';
@@ -70,6 +71,7 @@ function useOptions(reportAttributesDerived: ReportAttributesDerivedValue['repor
     const {contacts} = useContactImport();
     const [draftComments] = useOnyx(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT, {canBeMissing: true});
     const allPersonalDetails = usePersonalDetails();
+    const isScreenFocused = useIsFocused();
 
     const {
         options: listOptions,
@@ -201,7 +203,7 @@ function useOptions(reportAttributesDerived: ReportAttributesDerivedValue['repor
     }, [draftSelectedOptions, setSelectedOptions]);
 
     const handleEndReached = () => {
-        if (!hasMore || isLoadingMore || !areOptionsInitialized) {
+        if (!hasMore || isLoadingMore || !areOptionsInitialized || !isScreenFocused) {
             return;
         }
         loadMore();
@@ -240,8 +242,10 @@ function NewChatPage({ref}: NewChatPageProps) {
     const {top} = useSafeAreaInsets();
     const [isSearchingForReports] = useOnyx(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, {initWithStoredValues: false, canBeMissing: true});
     const selectionListRef = useRef<SelectionListWithSectionsHandle | null>(null);
-    const [reportAttributesDerivedFull] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {canBeMissing: true});
-    const reportAttributesDerived = reportAttributesDerivedFull?.reports;
+    const [reportAttributesDerived] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {
+        canBeMissing: true,
+        selector: reportsSelector,
+    });
 
     const allPersonalDetails = usePersonalDetails();
     const {singleExecution} = useSingleExecution();
@@ -249,6 +253,25 @@ function NewChatPage({ref}: NewChatPageProps) {
     useImperativeHandle(ref, () => ({
         focus: selectionListRef.current?.focusTextInput,
     }));
+
+    // Opacity toggle to fix FlashList layout issue when navigating back.
+    // FlashList compacts its layout when the screen is hidden but still mounted.
+    // Briefly setting opacity to 0 when the screen regains focus triggers a re-render
+    // that forces FlashList to recalculate its layout without a full remount.
+    const [listOpacity, setListOpacity] = useState(1);
+    const isFirstRender = useRef(true);
+    useFocusEffect(
+        useCallback(() => {
+            if (isFirstRender.current) {
+                isFirstRender.current = false;
+                return;
+            }
+            setListOpacity(0);
+            requestAnimationFrame(() => {
+                setListOpacity(1);
+            });
+        }, []),
+    );
 
     const {
         headerMessage,
@@ -496,6 +519,7 @@ function NewChatPage({ref}: NewChatPageProps) {
                 onEndReachedThreshold={0.75}
                 disableMaintainingScrollPosition
                 addBottomSafeAreaPadding
+                style={{listStyle: {opacity: listOpacity}}}
             />
         </ScreenWrapper>
     );
