@@ -3,6 +3,7 @@ import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import useThemeStyles from '@hooks/useThemeStyles';
 import createSplitNavigator from '@libs/Navigation/AppNavigator/createSplitNavigator';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import usePreloadFullScreenNavigators from '@libs/Navigation/AppNavigator/usePreloadFullScreenNavigators';
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
 import useEnableBackAnimationWhenOpenedFromTabBar from '@libs/Navigation/helpers/useEnableBackAnimationWhenOpenedFromTabBar';
@@ -52,6 +53,7 @@ function WorkspaceSplitNavigator({route, navigation}: PlatformStackScreenProps<A
         <FocusTrapForScreens>
             <View style={styles.flex1}>
                 <Split.Navigator
+                    screenLayout={(props) => <InteractionManagerLayout {...props} />}
                     persistentScreens={[SCREENS.WORKSPACE.INITIAL]}
                     sidebarScreen={SCREENS.WORKSPACE.INITIAL}
                     defaultCentralScreen={SCREENS.WORKSPACE.PROFILE}

@@ -4,7 +4,7 @@ import {CommonActions, getPathFromState, StackActions} from '@react-navigation/n
 import {Str} from 'expensify-common';
 // eslint-disable-next-line you-dont-need-lodash-underscore/omit
 import omit from 'lodash/omit';
-import {DeviceEventEmitter, Dimensions, InteractionManager} from 'react-native';
+import {DeviceEventEmitter, Dimensions} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {Writable} from 'type-fest';
@@ -39,6 +39,7 @@ import setNavigationActionToMicrotaskQueue from './helpers/setNavigationActionTo
 import {linkingConfig} from './linkingConfig';
 import {SPLIT_TO_SIDEBAR} from './linkingConfig/RELATIONS';
 import navigationRef from './navigationRef';
+import {runAfterTransition} from './TransitionTracker';
 import type {
     NavigationPartialRoute,
     NavigationRef,
@@ -313,6 +314,10 @@ function navigate(route: Route, options?: LinkToOptions) {
     }
     linkTo(navigationRef.current, route, options);
     closeSidePanelOnNarrowScreen();
+
+    if (options?.afterTransition) {
+        runAfterTransition(options.afterTransition);
+    }
 }
 /**
  * When routes are compared to determine whether the fallback route passed to the goUp function is in the state,
@@ -377,10 +382,13 @@ type GoBackOptions = {
      * In that case we want to goUp to a country picker with any params so we don't compare them.
      */
     compareParams?: boolean;
+    // Callback to execute after the navigation transition animation completes.
+    afterTransition?: () => void | undefined;
 };
 
 const defaultGoBackOptions: Required<GoBackOptions> = {
     compareParams: true,
+    afterTransition: () => {},
 };
 
 /**
@@ -455,6 +463,9 @@ function goBack(backToRoute?: Route, options?: GoBackOptions) {
 
     if (backToRoute) {
         goUp(backToRoute, options);
+        if (options?.afterTransition) {
+            runAfterTransition(options.afterTransition);
+        }
         return;
     }
 
@@ -464,6 +475,9 @@ function goBack(backToRoute?: Route, options?: GoBackOptions) {
     }
 
     navigationRef.current?.goBack();
+    if (options?.afterTransition) {
+        runAfterTransition(options.afterTransition);
+    }
 }
 
 /**
@@ -696,13 +710,13 @@ function getTopmostSuperWideRHPReportID(state: NavigationState = navigationRef.g
  *
  * @param options - Configuration object
  * @param options.ref - Navigation ref to use (defaults to navigationRef)
- * @param options.callback - Optional callback to execute after the modal has finished closing.
- *                           The callback fires when RightModalNavigator unmounts.
+ * @param options.callback - Optional callback to execute when the modal unmounts (fires on MODAL_EVENTS.CLOSED).
+ * @param options.afterTransition - Optional callback to execute after the navigation transition animation completes.
  *
  * For detailed information about dismissing modals,
  * see the NAVIGATION.md documentation.
  */
-const dismissModal = ({ref = navigationRef, callback}: {ref?: NavigationRef; callback?: () => void} = {}) => {
+const dismissModal = ({ref = navigationRef, callback, afterTransition}: {ref?: NavigationRef; callback?: () => void; afterTransition?: () => void} = {}) => {
     clearSelectedText();
     isNavigationReady().then(() => {
         if (callback) {
@@ -713,6 +727,10 @@ const dismissModal = ({ref = navigationRef, callback}: {ref?: NavigationRef; cal
         }
 
         ref.dispatch({type: CONST.NAVIGATION.ACTION_TYPE.DISMISS_MODAL});
+
+        if (afterTransition) {
+            runAfterTransition(afterTransition);
+        }
     });
 };
 
@@ -743,10 +761,10 @@ const dismissModalWithReport = ({reportID, reportActionID, referrer, backTo}: Re
             navigate(reportRoute, {forceReplace: true});
             return;
         }
-        dismissModal();
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        InteractionManager.runAfterInteractions(() => {
-            navigate(reportRoute);
+        dismissModal({
+            afterTransition: () => {
+                navigate(reportRoute);
+            },
         });
     });
 };
@@ -952,6 +970,7 @@ export default {
     getTopmostSuperWideRHPReportID,
     getTopmostSearchReportRouteParams,
     navigateBackToLastSuperWideRHPScreen,
+    runAfterTransition,
 };
 
 export {navigationRef, getDeepestFocusedScreenName, isTwoFactorSetupScreen, shouldShowRequire2FAPage};

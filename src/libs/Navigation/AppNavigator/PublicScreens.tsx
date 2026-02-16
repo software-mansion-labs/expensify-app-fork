@@ -1,6 +1,7 @@
 import React from 'react';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations, {InternalPlatformAnimations} from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {PublicScreensParamList} from '@navigation/types';
@@ -24,7 +25,10 @@ function PublicScreens() {
     const theme = useTheme();
     const StyleUtils = useStyleUtils();
     return (
-        <RootStack.Navigator screenOptions={defaultScreenOptions}>
+        <RootStack.Navigator
+            screenOptions={defaultScreenOptions}
+            screenLayout={(props) => <InteractionManagerLayout {...props} />}
+        >
             {/* The structure for the HOME route has to be the same in public and auth screens. That's why the name for SignInPage is SCREENS.HOME. */}
             <RootStack.Screen
                 name={SCREENS.HOME}

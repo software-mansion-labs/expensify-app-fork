@@ -2,6 +2,7 @@ import React from 'react';
 import {View} from 'react-native';
 import AutoSubmitModal from '@components/AutoSubmitModal';
 import NoDropZone from '@components/DragAndDrop/NoDropZone';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {FeatureTrainingNavigatorParamList} from '@libs/Navigation/types';
@@ -15,7 +16,10 @@ function FeatureTrainingModalNavigator() {
     return (
         <NoDropZone>
             <View>
-                <Stack.Navigator screenOptions={{headerShown: false, animation: Animations.SLIDE_FROM_RIGHT}}>
+                <Stack.Navigator
+                    screenLayout={(props) => <InteractionManagerLayout {...props} />}
+                    screenOptions={{headerShown: false, animation: Animations.SLIDE_FROM_RIGHT}}
+                >
                     <Stack.Screen
                         name={SCREENS.FEATURE_TRAINING_ROOT}
                         component={TrackTrainingPage}

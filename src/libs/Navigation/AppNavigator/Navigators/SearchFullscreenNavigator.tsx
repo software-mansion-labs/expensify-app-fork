@@ -1,4 +1,5 @@
 import React from 'react';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import usePreloadFullScreenNavigators from '@libs/Navigation/AppNavigator/usePreloadFullScreenNavigators';
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
@@ -25,6 +26,7 @@ function SearchFullscreenNavigator({route}: PlatformStackScreenProps<AuthScreens
     return (
         <FreezeWrapper>
             <Stack.Navigator
+                screenLayout={(props) => <InteractionManagerLayout {...props} />}
                 screenOptions={centralScreenOptions}
                 defaultCentralScreen={SCREENS.SEARCH.ROOT}
                 parentRoute={route}

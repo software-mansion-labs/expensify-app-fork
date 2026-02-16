@@ -4,6 +4,7 @@ import NoDropZone from '@components/DragAndDrop/NoDropZone';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ModalStackNavigators from '@libs/Navigation/AppNavigator/ModalStackNavigators';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import useRHPScreenOptions from '@libs/Navigation/AppNavigator/useRHPScreenOptions';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -29,6 +30,7 @@ function PublicRightModalNavigatorComponent({navigation}: PublicRightModalNaviga
                 {!shouldUseNarrowLayout && <Overlay onPress={navigation.goBack} />}
                 <View style={[styles.RHPNavigatorContainer(shouldUseNarrowLayout), styles.r0]}>
                     <Stack.Navigator
+                        screenLayout={(props) => <InteractionManagerLayout {...props} />}
                         screenOptions={screenOptions}
                         id={NAVIGATORS.PUBLIC_RIGHT_MODAL_NAVIGATOR}
                     >

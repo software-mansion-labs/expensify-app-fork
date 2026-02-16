@@ -3,6 +3,7 @@ import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import useThemeStyles from '@hooks/useThemeStyles';
 import createSplitNavigator from '@libs/Navigation/AppNavigator/createSplitNavigator';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
 import useEnableBackAnimationWhenOpenedFromTabBar from '@libs/Navigation/helpers/useEnableBackAnimationWhenOpenedFromTabBar';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -28,6 +29,7 @@ function DomainSplitNavigator({route, navigation}: PlatformStackScreenProps<Auth
         <FocusTrapForScreens>
             <View style={styles.flex1}>
                 <Split.Navigator
+                    screenLayout={(props) => <InteractionManagerLayout {...props} />}
                     persistentScreens={[SCREENS.DOMAIN.INITIAL]}
                     sidebarScreen={SCREENS.DOMAIN.INITIAL}
                     defaultCentralScreen={SCREENS.DOMAIN.ADMINS}

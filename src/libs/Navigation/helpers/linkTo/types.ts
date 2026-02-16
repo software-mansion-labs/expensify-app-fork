@@ -10,7 +10,9 @@ type ActionPayload = {
 
 type LinkToOptions = {
     // To explicitly set the action type to replace.
-    forceReplace: boolean;
+    forceReplace?: boolean;
+    // Callback to execute after the navigation transition animation completes.
+    afterTransition?: () => void;
 };
 
 export type {ActionPayload, LinkToOptions};

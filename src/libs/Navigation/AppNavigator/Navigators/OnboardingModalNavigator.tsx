@@ -11,6 +11,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {isMobileSafari} from '@libs/Browser';
 import GoogleTagManager from '@libs/GoogleTagManager';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import useModalCardStyleInterpolator from '@libs/Navigation/AppNavigator/useModalCardStyleInterpolator';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
@@ -119,6 +120,7 @@ function OnboardingModalNavigator() {
                         style={[styles.maxHeight100Percentage, styles.overflowHidden, styles.OnboardingNavigatorInnerView(onboardingIsMediumOrLargerScreenWidth)]}
                     >
                         <Stack.Navigator
+                            screenLayout={(props) => <InteractionManagerLayout {...props} />}
                             screenOptions={defaultScreenOptions}
                             initialRouteName={initialRouteName}
                         >

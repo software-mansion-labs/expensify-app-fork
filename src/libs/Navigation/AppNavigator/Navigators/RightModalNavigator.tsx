@@ -23,6 +23,7 @@ import {clearTwoFactorAuthData} from '@libs/actions/TwoFactorAuthActions';
 import hideKeyboardOnSwipe from '@libs/Navigation/AppNavigator/hideKeyboardOnSwipe';
 import * as ModalStackNavigators from '@libs/Navigation/AppNavigator/ModalStackNavigators';
 import useModalStackScreenOptions from '@libs/Navigation/AppNavigator/ModalStackNavigators/useModalStackScreenOptions';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import useRHPScreenOptions from '@libs/Navigation/AppNavigator/useRHPScreenOptions';
 import calculateReceiptPaneRHPWidth from '@libs/Navigation/helpers/calculateReceiptPaneRHPWidth';
 import calculateSuperWideRHPWidth from '@libs/Navigation/helpers/calculateSuperWideRHPWidth';
@@ -183,6 +184,7 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                 {/* Without it, the transparent half of the narrow format RHP card would cover the pressable part of the overlay */}
                 <Animated.View style={[styles.pAbsolute, styles.r0, styles.h100, styles.overflowHidden, animatedWidthStyle]}>
                     <Stack.Navigator
+                        screenLayout={(props) => <InteractionManagerLayout {...props} />}
                         screenOptions={screenOptions}
                         screenListeners={screenListeners}
                         id={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}

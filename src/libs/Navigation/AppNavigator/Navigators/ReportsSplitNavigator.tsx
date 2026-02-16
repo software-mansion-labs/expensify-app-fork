@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import usePermissions from '@hooks/usePermissions';
 import createSplitNavigator from '@libs/Navigation/AppNavigator/createSplitNavigator';
 import FreezeWrapper from '@libs/Navigation/AppNavigator/FreezeWrapper';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import usePreloadFullScreenNavigators from '@libs/Navigation/AppNavigator/usePreloadFullScreenNavigators';
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
@@ -61,6 +62,7 @@ function ReportsSplitNavigator({route}: PlatformStackScreenProps<AuthScreensPara
     return (
         <FreezeWrapper>
             <Split.Navigator
+                screenLayout={(props) => <InteractionManagerLayout {...props} />}
                 persistentScreens={[SCREENS.INBOX]}
                 sidebarScreen={SCREENS.INBOX}
                 defaultCentralScreen={SCREENS.REPORT}

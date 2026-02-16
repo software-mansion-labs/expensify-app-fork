@@ -2,6 +2,7 @@ import React from 'react';
 import {View} from 'react-native';
 import NoDropZone from '@components/DragAndDrop/NoDropZone';
 import TestDriveModal from '@components/TestDrive/Modal';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {TestDriveModalNavigatorParamList} from '@libs/Navigation/types';
@@ -13,7 +14,10 @@ function TestDriveModalNavigator() {
     return (
         <NoDropZone>
             <View>
-                <Stack.Navigator screenOptions={{headerShown: false, animation: Animations.SLIDE_FROM_RIGHT}}>
+                <Stack.Navigator
+                    screenLayout={(props) => <InteractionManagerLayout {...props} />}
+                    screenOptions={{headerShown: false, animation: Animations.SLIDE_FROM_RIGHT}}
+                >
                     <Stack.Screen
                         name={SCREENS.TEST_DRIVE_MODAL.ROOT}
                         component={TestDriveModal}

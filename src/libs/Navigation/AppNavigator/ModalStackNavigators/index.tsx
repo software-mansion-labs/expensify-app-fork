@@ -3,6 +3,7 @@ import React, {useCallback} from 'react';
 import {View} from 'react-native';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import type {PlatformStackNavigationOptions} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -121,7 +122,7 @@ function createModalStackNavigator<ParamList extends ParamListBase>(screens: Scr
         return (
             // This container is necessary to hide card translation during transition. Without it the user would see un-clipped cards.
             <View style={[styles.modalStackNavigatorContainer, styles.modalStackNavigatorContainerWidth(isSmallScreenWidth)]}>
-                <ModalStackNavigator.Navigator>
+                <ModalStackNavigator.Navigator screenLayout={(props) => <InteractionManagerLayout {...props} />}>
                     {Object.keys(screens as Required<Screens>).map((name) => (
                         <ModalStackNavigator.Screen
                             key={name}

@@ -10,6 +10,7 @@ import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import blurActiveElement from '@libs/Accessibility/blurActiveElement';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import type {TestToolsModalModalNavigatorParamList} from '@libs/Navigation/types';
 import toggleTestToolsModal from '@userActions/TestTool';
@@ -54,7 +55,10 @@ function TestToolsModalNavigator() {
                         onClick={handleInnerClick}
                         style={styles.getTestToolsNavigatorInnerView(shouldUseNarrowLayout, isAuthenticated)}
                     >
-                        <Stack.Navigator screenOptions={{headerShown: false}}>
+                        <Stack.Navigator
+                            screenLayout={(props) => <InteractionManagerLayout {...props} />}
+                            screenOptions={{headerShown: false}}
+                        >
                             <Stack.Screen
                                 name={SCREENS.TEST_TOOLS_MODAL.ROOT}
                                 component={TestToolsModalPage}

@@ -35,6 +35,7 @@ function createPlatformStackNavigatorComponent<RouterOptions extends PlatformSta
         defaultCentralScreen,
         parentRoute,
         persistentScreens,
+        screenLayout,
         ...props
     }: PlatformStackNavigatorProps<ParamListBase>) {
         const {
@@ -62,6 +63,7 @@ function createPlatformStackNavigatorComponent<RouterOptions extends PlatformSta
                 sidebarScreen,
                 parentRoute,
                 persistentScreens,
+                screenLayout,
             },
             convertToWebNavigationOptions,
         );

@@ -35,6 +35,7 @@ import HttpUtils from '@libs/HttpUtils';
 import KeyboardShortcut from '@libs/KeyboardShortcut';
 import Log from '@libs/Log';
 import NavBarManager from '@libs/NavBarManager';
+import InteractionManagerLayout from '@libs/Navigation/AppNavigator/Navigators/InteractionManagerLayout';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation, {getDeepestFocusedScreenName, isTwoFactorSetupScreen} from '@libs/Navigation/Navigation';
 import Animations, {InternalPlatformAnimations} from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
@@ -517,6 +518,7 @@ function AuthScreens() {
             ]}
         >
             <RootStack.Navigator
+                screenLayout={(props) => <InteractionManagerLayout {...props} />}
                 persistentScreens={[
                     NAVIGATORS.REPORTS_SPLIT_NAVIGATOR,
                     NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR,
