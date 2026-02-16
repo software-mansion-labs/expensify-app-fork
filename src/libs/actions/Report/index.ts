@@ -3160,7 +3160,6 @@ function buildNewReportOptimisticData(
             value: {
                 [reportActionID]: {
                     pendingAction: null,
-                    errors: null,
                 },
             },
         },
