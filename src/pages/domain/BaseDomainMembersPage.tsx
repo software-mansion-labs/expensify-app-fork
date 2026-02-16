@@ -84,6 +84,9 @@ type BaseDomainMembersPageProps = {
 
     /** Optional accessory element to display next to the search bar (e.g., filter dropdown) */
     searchBarAccessory?: React.ReactNode;
+
+    /** Optional filter applied unconditionally before text search (e.g. group filter). */
+    preFilter?: (item: MemberOption) => boolean;
 };
 
 function BaseDomainMembersPage({
@@ -105,6 +108,7 @@ function BaseDomainMembersPage({
     turnOnSelectionModeOnLongPress = false,
     onBackButtonPress,
     searchBarAccessory,
+    preFilter,
 }: BaseDomainMembersPageProps) {
     const {formatPhoneNumber, localeCompare, translate} = useLocalize();
     const styles = useThemeStyles();
@@ -148,7 +152,7 @@ function BaseDomainMembersPage({
 
     const sortMembers = (options: MemberOption[]) => sortAlphabetically(options, 'text', localeCompare);
 
-    const [inputValue, setInputValue, filteredData] = useSearchResults(data, filterMember, sortMembers);
+    const [inputValue, setInputValue, filteredData] = useSearchResults(data, filterMember, sortMembers, preFilter);
 
     const isUserToggleEnabled = setSelectedMembers && filteredData.length > 0;
 
