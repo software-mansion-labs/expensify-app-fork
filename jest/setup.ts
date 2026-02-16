@@ -3,6 +3,7 @@ import * as core from '@actions/core';
 import '@shopify/flash-list/jestSetup';
 import type {ReactNode} from 'react';
 import {useMemo} from 'react';
+import {TextDecoder, TextEncoder} from 'util';
 import type * as RNAppLogs from 'react-native-app-logs';
 import type {ReadDirItem} from 'react-native-fs';
 import 'react-native-gesture-handler/jestSetup';
@@ -22,6 +23,8 @@ if (!('GITHUB_REPOSITORY' in process.env)) {
 
 setupMockImages();
 mockFSLibrary();
+
+Object.assign(global, {TextDecoder, TextEncoder});
 
 // This mock is required as per setup instructions for react-navigation testing
 // https://reactnavigation.org/docs/testing/#mocking-native-modules
