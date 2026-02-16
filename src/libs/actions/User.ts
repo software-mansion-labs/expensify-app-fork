@@ -943,6 +943,7 @@ function subscribeToUserEvents(currentUserAccountIDParam: number) {
         const updates = {
             type: CONST.ONYX_UPDATE_TYPES.PUSHER,
             lastUpdateID: Number(pushEventData.lastUpdateID ?? CONST.DEFAULT_NUMBER_ID),
+            // specific key type is not known from the Pusher event data
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             updates: (pushEventData.updates as Array<OnyxUpdateEvent<any>>) ?? [],
             previousUpdateID: Number(pushJSON.previousUpdateID ?? CONST.DEFAULT_NUMBER_ID),

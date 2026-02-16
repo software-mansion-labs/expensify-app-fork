@@ -62,8 +62,7 @@ type AnyOnyxData = OnyxDataBase<AnyOnyxUpdate>;
 type RequestType = 'get' | 'post';
 
 /** Generic base model for API requests containing common metadata and handlers */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RequestDataBase<TKey extends OnyxKey = any> = {
+type RequestDataBase<TKey extends OnyxKey> = {
     /** Name of the API command */
     command: string;
 
@@ -80,7 +79,6 @@ type RequestDataBase<TKey extends OnyxKey = any> = {
     shouldUseSecure?: boolean;
 
     /** Promise resolve handler */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolve?: (value: Response<TKey>) => void;
 
     /** Promise reject handler */
@@ -112,7 +110,8 @@ type RequestData<TKey extends OnyxKey> = RequestDataBase<TKey> & OnyxData<TKey>;
  * This type was created as a solution during the migration away from the large OnyxKey union.
  * It should only be used in legacy code where providing exact key types would require major restructuring.
  */
-type AnyRequestData = RequestDataBase & AnyOnyxData;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRequestData = RequestDataBase<any> & AnyOnyxData;
 
 /**
  * Represents the possible actions to take in case of a conflict in the request queue.
