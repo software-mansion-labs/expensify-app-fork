@@ -235,8 +235,6 @@ describe('useDomainGroupFilter', () => {
             const {result} = renderHook(() => useDomainGroupFilter(DOMAIN_ACCOUNT_ID));
             expect(result.current.groups).toEqual([]);
         });
-    });
-    describe('groups 1', () => {
         it('should return parsed security groups from Onyx', async () => {
             const domain = buildDomain({
                 '1': {members: {'100': 'read'}, name: 'Engineering'},
