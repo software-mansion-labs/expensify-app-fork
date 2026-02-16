@@ -1573,6 +1573,20 @@ function shouldSkipSuggestedSearchNavigation(queryJSON?: SearchQueryJSON) {
     return !!queryJSON.rawFilterList || hasKeywordFilter || hasContextFilter || hasInlineKeywordFilter || hasInlineContextFilter || isChatSearch;
 }
 
+/**
+ * Determines whether sortOrder should be reset (not passed to query builder) when filters change.
+ * Line view uses sortOrder:asc for time-based groupBy, which differs from other views.
+ * When crossing the line/non-line boundary or changing groupBy within line view,
+ * we reset sortOrder so the parser can determine the correct default.
+ */
+function shouldResetSortOrder(newView: string | undefined, oldView: string | undefined, newGroupBy: string | undefined, oldGroupBy: string | undefined): boolean {
+    const isLineView = newView === CONST.SEARCH.VIEW.LINE;
+    const wasLineView = oldView === CONST.SEARCH.VIEW.LINE;
+    const crossedLineBoundary = isLineView !== wasLineView;
+    const groupByChanged = newGroupBy !== oldGroupBy;
+    return crossedLineBoundary || (isLineView && groupByChanged);
+}
+
 export {
     isSearchDatePreset,
     isFilterSupported,
@@ -1597,4 +1611,5 @@ export {
     getUserFriendlyValue,
     getUserFriendlyKey,
     shouldSkipSuggestedSearchNavigation,
+    shouldResetSortOrder,
 };

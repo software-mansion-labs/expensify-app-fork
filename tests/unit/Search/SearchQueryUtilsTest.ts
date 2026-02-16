@@ -14,6 +14,7 @@ import {
     getFilterDisplayValue,
     getQueryWithUpdatedValues,
     shouldHighlight,
+    shouldResetSortOrder,
     sortOptionsWithEmptyValue,
 } from '@src/libs/SearchQueryUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -232,9 +233,7 @@ describe('SearchQueryUtils', () => {
             };
             const result = buildQueryStringFromFilterFormValues(filterValues);
 
-            expect(result).toEqual(
-                'type:expense from:user1@gmail.com,user2@gmail.com to:user3@gmail.com category:finance,insurance date>2025-03-01 date<2025-03-10 amount>1 amount<1000',
-            );
+            expect(result).toEqual('type:expense from:user1@gmail.com,user2@gmail.com to:user3@gmail.com category:finance,insurance date>2025-03-01 date<2025-03-10 amount>1 amount<1000');
             expect(result).not.toMatch(CONST.VALIDATE_FOR_HTML_TAG_REGEX);
         });
 
@@ -1253,6 +1252,77 @@ describe('SearchQueryUtils', () => {
 
             expect(result).toContain('view:pie');
             expect(result).toContain('merchant:Amazon');
+        });
+    });
+
+    describe('shouldResetSortOrder', () => {
+        // Crossing line/non-line boundary
+        test('returns true when switching from table to line view', () => {
+            expect(shouldResetSortOrder('line', 'table', undefined, undefined)).toBe(true);
+        });
+
+        test('returns true when switching from bar to line view', () => {
+            expect(shouldResetSortOrder('line', 'bar', undefined, undefined)).toBe(true);
+        });
+
+        test('returns true when switching from line to table view', () => {
+            expect(shouldResetSortOrder('table', 'line', undefined, undefined)).toBe(true);
+        });
+
+        test('returns true when switching from line to bar view', () => {
+            expect(shouldResetSortOrder('bar', 'line', undefined, undefined)).toBe(true);
+        });
+
+        // groupBy changes within line view
+        test('returns true when groupBy changes while in line view (month -> week)', () => {
+            expect(shouldResetSortOrder('line', 'line', 'week', 'month')).toBe(true);
+        });
+
+        test('returns true when groupBy changes while in line view (month -> category)', () => {
+            expect(shouldResetSortOrder('line', 'line', 'category', 'month')).toBe(true);
+        });
+
+        test('returns true when groupBy changes while in line view (undefined -> month)', () => {
+            expect(shouldResetSortOrder('line', 'line', 'month', undefined)).toBe(true);
+        });
+
+        test('returns true when groupBy changes while in line view (month -> undefined)', () => {
+            expect(shouldResetSortOrder('line', 'line', undefined, 'month')).toBe(true);
+        });
+
+        // No reset cases
+        test('returns false when view stays as table and groupBy does not change', () => {
+            expect(shouldResetSortOrder('table', 'table', 'category', 'category')).toBe(false);
+        });
+
+        test('returns false when view stays as bar and groupBy does not change', () => {
+            expect(shouldResetSortOrder('bar', 'bar', 'month', 'month')).toBe(false);
+        });
+
+        test('returns false when view stays as line and groupBy does not change', () => {
+            expect(shouldResetSortOrder('line', 'line', 'month', 'month')).toBe(false);
+        });
+
+        test('returns false when groupBy changes in table view', () => {
+            expect(shouldResetSortOrder('table', 'table', 'week', 'month')).toBe(false);
+        });
+
+        test('returns false when groupBy changes in bar view', () => {
+            expect(shouldResetSortOrder('bar', 'bar', 'category', 'month')).toBe(false);
+        });
+
+        // Boundary + groupBy change at the same time (e.g. switching to line with a different groupBy)
+        test('returns true when switching to line view and groupBy also changes', () => {
+            expect(shouldResetSortOrder('line', 'table', 'week', 'category')).toBe(true);
+        });
+
+        // undefined view handling
+        test('returns false when both views are undefined and groupBy does not change', () => {
+            expect(shouldResetSortOrder(undefined, undefined, undefined, undefined)).toBe(false);
+        });
+
+        test('returns false when both views are undefined and groupBy changes', () => {
+            expect(shouldResetSortOrder(undefined, undefined, 'week', 'month')).toBe(false);
         });
     });
 });

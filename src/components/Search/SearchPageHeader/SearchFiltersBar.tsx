@@ -43,7 +43,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 import {getActiveAdminWorkspaces} from '@libs/PolicyUtils';
 import {isExpenseReport} from '@libs/ReportUtils';
-import {buildQueryStringFromFilterFormValues, getQueryWithUpdatedValues, isFilterSupported, isSearchDatePreset} from '@libs/SearchQueryUtils';
+import {buildQueryStringFromFilterFormValues, getQueryWithUpdatedValues, isFilterSupported, isSearchDatePreset, shouldResetSortOrder} from '@libs/SearchQueryUtils';
 import {
     filterValidHasValues,
     getDatePresets,
@@ -319,10 +319,11 @@ function SearchFiltersBar({
                 updatedFilterFormValues.columns = [];
             }
 
-            // Preserve the current sortBy, sortOrder, and limit from queryJSON when updating filters
+            const resetSortOrder = shouldResetSortOrder(updatedFilterFormValues.view, searchAdvancedFiltersForm.view, updatedFilterFormValues.groupBy, searchAdvancedFiltersForm.groupBy);
+
             let queryString = buildQueryStringFromFilterFormValues(updatedFilterFormValues, {
                 sortBy: queryJSON.sortBy,
-                sortOrder: queryJSON.sortOrder,
+                sortOrder: resetSortOrder ? undefined : queryJSON.sortOrder,
                 limit: queryJSON.limit,
             });
 

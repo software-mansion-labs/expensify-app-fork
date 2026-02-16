@@ -17,6 +17,7 @@ import useAdvancedSearchFilters from '@hooks/useAdvancedSearchFilters';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import usePrevious from '@hooks/usePrevious';
 import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
@@ -37,6 +38,7 @@ import {
     getCurrentSearchQueryJSON,
     isCannedSearchQuery,
     isSearchDatePreset,
+    shouldResetSortOrder,
     sortOptionsWithEmptyValue,
 } from '@libs/SearchQueryUtils';
 import {getStatusOptions} from '@libs/SearchUIUtils';
@@ -589,14 +591,18 @@ function AdvancedSearchFilters() {
 
     const {currentType, typeFiltersKeys} = useAdvancedSearchFilters();
 
+    const prevView = usePrevious(searchAdvancedFilters.view);
+    const prevGroupBy = usePrevious(searchAdvancedFilters.groupBy);
+
     const queryString = useMemo(() => {
         const currentQueryJSON = getCurrentSearchQueryJSON();
+        const resetSort = shouldResetSortOrder(searchAdvancedFilters.view, prevView, searchAdvancedFilters.groupBy, prevGroupBy);
         return buildQueryStringFromFilterFormValues(searchAdvancedFilters, {
             sortBy: currentQueryJSON?.sortBy,
-            sortOrder: currentQueryJSON?.sortOrder,
+            sortOrder: resetSort ? undefined : currentQueryJSON?.sortOrder,
             limit: currentQueryJSON?.limit,
         });
-    }, [searchAdvancedFilters]);
+    }, [searchAdvancedFilters, prevView, prevGroupBy]);
     const queryJSON = useMemo(() => buildSearchQueryJSON(queryString || buildCannedSearchQuery()), [queryString]);
 
     const applyFiltersAndNavigate = () => {
