@@ -127,6 +127,18 @@ type TranslationPathOrText = {
 
 const dotSeparator: TranslationPathOrText = {text: ` ${CONST.DOT_SEPARATOR} `};
 
+/**
+ * Normalize the last four digits to always return 4 characters.
+ * This keeps leading zeros when the value is stored as a number.
+ */
+function formatLastFourPAN(lastFourPAN?: number | string): string {
+    if (lastFourPAN === undefined || lastFourPAN === null) {
+        return '';
+    }
+    const digitsOnly = String(lastFourPAN).replaceAll(/\D/g, '');
+    return digitsOnly ? digitsOnly.slice(-4).padStart(4, '0') : '';
+}
+
 function getMultiLevelTagViolationsCount(violations: OnyxTypes.TransactionViolations): number {
     return violations?.reduce((acc, violation) => {
         if (violation.type === CONST.VIOLATION_TYPES.VIOLATION && violation.name === CONST.VIOLATIONS.SOME_TAG_LEVELS_REQUIRED) {
@@ -456,5 +468,6 @@ export {
     createTransactionPreviewConditionals,
     getViolationTranslatePath,
     getUniqueActionErrorsForTransaction,
+    formatLastFourPAN,
 };
 export type {TranslationPathOrText};

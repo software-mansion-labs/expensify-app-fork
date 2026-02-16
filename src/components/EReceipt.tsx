@@ -1,6 +1,7 @@
 import {filterOutPersonalCards} from '@selectors/Card';
 import React, {useEffect, useRef} from 'react';
 import {View} from 'react-native';
+import type {SvgProps} from 'react-native-svg';
 import useCurrencyList from '@hooks/useCurrencyList';
 import useEReceipt from '@hooks/useEReceipt';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
@@ -17,10 +18,34 @@ import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type Transaction from '@src/types/onyx/Transaction';
+import type IconAsset from '@src/types/utils/IconAsset';
 import Icon from './Icon';
 import ImageSVG from './ImageSVG';
 import type {TransactionListItemType} from './SelectionListWithSections/types';
 import Text from './Text';
+
+type OverrideThemeProps = {
+    /** Overrides primary color set by default by useReceipt */
+    primaryColor?: string;
+
+    /** Overrides secondary color set by default by useReceipt */
+    secondaryColor?: string;
+
+    /** Overrides title color set by default by useReceipt */
+    titleColor?: string;
+
+    /** Overrides MCC icon set by default by useReceipt */
+    MCCIcon?: IconAsset;
+
+    /** Overrides trip icon set by default by useReceipt */
+    tripIcon?: IconAsset;
+
+    /** Overrides background image set by default by useReceipt */
+    backgroundImage?: React.FC<SvgProps>;
+
+    /** Overrides title text */
+    titleText?: string;
+};
 
 type EReceiptProps = {
     /* TransactionID of the transaction this EReceipt corresponds to */
@@ -34,11 +59,14 @@ type EReceiptProps = {
 
     /** Callback to be called when the image loads */
     onLoad?: () => void;
+
+    /** Overrides theme props set by default by useReceipt */
+    overrideTheme?: OverrideThemeProps;
 };
 
 const receiptMCCSize: number = variables.eReceiptMCCHeightWidthMedium;
 const backgroundImageMinWidth: number = variables.eReceiptBackgroundImageMinWidth;
-function EReceipt({transactionID, transactionItem, onLoad, isThumbnail = false}: EReceiptProps) {
+function EReceipt({transactionID, transactionItem, onLoad, isThumbnail = false, overrideTheme}: EReceiptProps) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
@@ -48,7 +76,21 @@ function EReceipt({transactionID, transactionItem, onLoad, isThumbnail = false}:
     const [cardList] = useOnyx(ONYXKEYS.CARD_LIST, {selector: filterOutPersonalCards, canBeMissing: true});
     const [transaction] = useOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION}${getNonEmptyStringOnyxID(transactionID)}`, {canBeMissing: true});
 
-    const {primaryColor, secondaryColor, titleColor, MCCIcon, tripIcon, backgroundImage} = useEReceipt(transactionItem ?? transaction);
+    const {
+        primaryColor: defaultPrimaryColor,
+        secondaryColor: defaultSecondaryColor,
+        titleColor: defaultTitleColor,
+        MCCIcon: defaultMCCIcon,
+        tripIcon: defaultTripIcon,
+        backgroundImage: defaultBackgroundImage,
+    } = useEReceipt(transactionItem ?? transaction);
+    const primaryColor = overrideTheme?.primaryColor ?? defaultPrimaryColor;
+    const secondaryColor = overrideTheme?.secondaryColor ?? defaultSecondaryColor;
+    const titleColor = overrideTheme?.titleColor ?? defaultTitleColor;
+    const MCCIcon = overrideTheme?.MCCIcon ?? defaultMCCIcon;
+    const tripIcon = overrideTheme?.tripIcon ?? defaultTripIcon;
+    const backgroundImage = overrideTheme?.backgroundImage ?? defaultBackgroundImage;
+    const titleText = overrideTheme?.titleText ?? translate('eReceipt.guaranteed');
 
     const isLoadedRef = useRef(false);
 
@@ -137,7 +179,7 @@ function EReceipt({transactionID, transactionItem, onLoad, isThumbnail = false}:
                                         ) : null}
                                     </View>
                                 </View>
-                                <Text style={[styles.eReceiptGuaranteed, primaryTextColorStyle]}>{translate('eReceipt.guaranteed')}</Text>
+                                <Text style={[styles.eReceiptGuaranteed, primaryTextColorStyle]}>{titleText}</Text>
                                 <View style={[styles.alignItemsCenter]}>
                                     <View style={[StyleUtils.getWidthAndHeightStyle(variables.eReceiptIconWidth, variables.h40)]} />
                                 </View>
@@ -189,4 +231,4 @@ function EReceipt({transactionID, transactionItem, onLoad, isThumbnail = false}:
 }
 
 export default EReceipt;
-export type {EReceiptProps};
+export type {EReceiptProps, OverrideThemeProps};

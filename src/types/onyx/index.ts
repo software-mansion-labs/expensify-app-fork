@@ -5,6 +5,8 @@ import type AccountData from './AccountData';
 import type AppReview from './AppReview';
 import type {ApprovalWorkflowOnyx} from './ApprovalWorkflow';
 import type {AssignCard, AssignCardData} from './AssignCard';
+// TODO: AUTHORIZE_TRANSACTION should be reavluated/removed when we finally decide from where comes the data use in AuthorizeTransactionPage
+import type AuthorizeTransaction from './AuthorizeTransaction';
 import type {BankAccountList} from './BankAccount';
 import type BankAccount from './BankAccount';
 import type BankAccountShareDetails from './BankAccountShareDetails';
@@ -171,6 +173,8 @@ export type {
     Account,
     AccountData,
     AssignCard,
+    // TODO: AUTHORIZE_TRANSACTION should be reavluated/removed when we finally decide from where comes the data use in AuthorizeTransactionPage
+    AuthorizeTransaction,
     BankAccount,
     BankAccountList,
     Beta,

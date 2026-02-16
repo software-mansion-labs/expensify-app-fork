@@ -736,6 +736,7 @@ const translations = {
             pleaseReview: 'Please review this transaction',
             requiresYourReview: 'An Expensify Card transaction requires your review below.',
             transactionDetails: 'Transaction details',
+            attemptedTransaction: 'Attempted transaction',
             deny: 'Deny',
             approve: 'Approve',
             denyTransaction: 'Deny transaction',
