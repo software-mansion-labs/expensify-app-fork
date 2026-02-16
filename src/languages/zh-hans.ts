@@ -1949,6 +1949,8 @@ const translations: TranslationDeepObject<typeof en> = {
         domainAdminsDescription: '针对域管理员：这也会暂停您域中的所有 Expensify Card 活动和管理员操作。',
         areYouSure: '你确定要锁定你的 Expensify 账户吗？',
         onceLocked: '一旦被锁定，您的账户将受到限制，直至提交解锁请求并完成安全审查',
+        unlockTitle: '我们已收到您的请求',
+        unlockDescription: '我们会审核账户以确认解锁是否安全，如有任何问题将通过 Concierge 与您联系。',
     },
     failedToLockAccountPage: {
         failedToLockAccount: '锁定账号失败',
@@ -8242,6 +8244,9 @@ ${reportName}
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) => `<muted-text>请禁用<a href="${samlPageUrl}">SAML</a>以强制启用双重身份验证。</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>要求此域的所有成员使用双重身份验证。域成员在登录时将被提示为其账户设置双重身份验证。</muted-text>`,
             forceTwoFactorAuthError: '无法更改强制启用双重身份验证设置。请稍后再试。',
+            reportSuspiciousActivityPrompt: (email: string) =>
+                `你确定要这样做吗？这将锁定 <strong>${email}</strong> 的账户。<br /><br />我们的团队随后会审核该账户并移除任何未经授权的访问。若要重新获得访问权限，他们需要与 Concierge 配合处理。`,
+            reportSuspiciousActivityConfirmationPrompt: '我们会审核账户以确认解锁是否安全，如有任何问题将通过 Concierge 与您联系。',
         },
         common: {settings: '设置'},
         groups: {title: '群组', memberCount: () => ({one: '1 名成员', other: (count: number) => `${count} 名成员`})},
