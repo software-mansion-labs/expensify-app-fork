@@ -41,6 +41,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
     initiallyFocusedItemKey,
     confirmButtonOptions,
     initialScrollIndex,
+    onLayout,
     onSelectRow,
     onDismissError,
     onScrollBeginDrag,
@@ -173,23 +174,36 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
         selectRow(focusedItem);
     };
 
-    const focusTextInput = useCallback(() => {
+    const focusTextInput = () => {
         innerTextInputRef.current?.focus();
-    }, []);
+    };
 
-    const clearInputAfterSelect = useCallback(() => {
+    const clearInputAfterSelect = () => {
         textInputOptions?.onChangeText?.('');
-    }, [textInputOptions]);
+    };
 
-    useImperativeHandle(
-        ref,
-        () => ({
-            focusTextInput,
-            scrollToIndex,
-            clearInputAfterSelect,
-        }),
-        [focusTextInput, scrollToIndex, clearInputAfterSelect],
-    );
+    const updateAndScrollToFocusedIndex = (index: number, shouldScroll = true) => {
+        setFocusedIndex(index);
+        if (shouldScroll) {
+            scrollToIndex(index);
+        }
+    };
+
+    /**
+     * Handles isTextInputFocusedRef value when using external TextInput, so external TextInput does not lose focus when typing in it.
+     */
+    const updateExternalTextInputFocus = (isTextInputFocused: boolean) => {
+        isTextInputFocusedRef.current = isTextInputFocused;
+    };
+
+    useImperativeHandle(ref, () => ({
+        focusTextInput,
+        scrollToIndex,
+        clearInputAfterSelect,
+        updateAndScrollToFocusedIndex,
+        updateExternalTextInputFocus,
+        getFocusedOption: getFocusedItem,
+    }));
 
     // Disable `Enter` shortcut if the active element is a button or checkbox
     const disableEnterShortcut = activeElementRole && [CONST.ROLE.BUTTON, CONST.ROLE.CHECKBOX].includes(activeElementRole as ButtonOrCheckBoxRoles);
@@ -290,7 +304,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
 
                 return (
                     <View style={[styles.optionsListSectionHeader, styles.justifyContentCenter]}>
-                        <Text style={[styles.ph5, styles.textLabelSupporting]}>{item.title}</Text>
+                        <Text style={[styles.ph5, styles.textLabelSupporting, style?.sectionTitleStyles]}>{item.title}</Text>
                     </View>
                 );
             }
@@ -329,7 +343,10 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
     };
 
     return (
-        <View style={[styles.flex1, addBottomSafeAreaPadding && paddingBottomStyle, style?.containerStyle]}>
+        <View
+            style={[styles.flex1, addBottomSafeAreaPadding && paddingBottomStyle, style?.containerStyle]}
+            onLayout={onLayout}
+        >
             {textInputComponent()}
             {itemsCount === 0 && (showLoadingPlaceholder || showListEmptyContent) ? (
                 renderListEmptyContent()
@@ -353,6 +370,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
                         keyboardShouldPersistTaps="always"
                         ListFooterComponent={listFooterContent}
                         style={style?.listStyle}
+                        contentContainerStyle={style?.contentContainerStyle}
                         maintainVisibleContentPosition={{disabled: disableMaintainingScrollPosition}}
                     />
                 </>
