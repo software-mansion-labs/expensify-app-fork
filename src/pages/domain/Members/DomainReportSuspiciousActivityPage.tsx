@@ -11,21 +11,21 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import {domainNameSelector} from '@src/selectors/Domain';
+import {personalDetailsLoginSelector} from '@src/selectors/PersonalDetails';
 
 type DomainReportSuspiciousActivityPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.MEMBER_LOCK_ACCOUNT>;
 
 function DomainReportSuspiciousActivityPage({route}: DomainReportSuspiciousActivityPageProps) {
     const {domainAccountID, accountID} = route.params;
 
-    const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true});
+    const [memberLogin] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {canBeMissing: true, selector: personalDetailsLoginSelector(accountID)});
     const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: false, selector: domainNameSelector});
-    const memberLogin = personalDetails?.[accountID]?.login ?? '';
 
     const {translate} = useLocalize();
 
     const confirmModalPrompt = translate('domain.members.reportSuspiciousActivityConfirmationPrompt');
 
-    const lockAccountPagePrompt = <RenderHTML html={translate('domain.members.reportSuspiciousActivityPrompt', memberLogin)} />;
+    const lockAccountPagePrompt = <RenderHTML html={translate('domain.members.reportSuspiciousActivityPrompt', memberLogin ?? '')} />;
 
     const handleLockRequestFinish = () => Navigation.goBack(ROUTES.DOMAIN_MEMBER_DETAILS.getRoute(domainAccountID, accountID));
 

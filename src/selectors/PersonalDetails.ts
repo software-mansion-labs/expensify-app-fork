@@ -13,4 +13,6 @@ const personalDetailsByEmailSelector = (personalDetails: OnyxEntry<PersonalDetai
 
 const personalDetailsSelector = (accountID: number) => (personalDetailsList: OnyxEntry<PersonalDetailsList>) => personalDetailsList?.[accountID];
 
-export {createPersonalDetailsSelector, personalDetailsByEmailSelector, personalDetailsSelector};
+const personalDetailsLoginSelector = (accountID: number) => (personalDetailsList: OnyxEntry<PersonalDetailsList>) => personalDetailsList?.[accountID]?.login;
+
+export {createPersonalDetailsSelector, personalDetailsByEmailSelector, personalDetailsSelector, personalDetailsLoginSelector};

@@ -1,4 +1,5 @@
 import {
+    accountLockSelector,
     adminAccountIDsSelector,
     adminPendingActionSelector,
     defaultSecurityGroupIDSelector,
@@ -427,6 +428,34 @@ describe('domainSelectors', () => {
             const expectedGroups = [{id: '123', details: {name: 'Group 1'}}];
 
             expect(groupsSelector(domain)).toEqual(expectedGroups);
+        });
+    });
+
+    describe('accountLockSelector', () => {
+        it('Should return lock state for the given account ID', () => {
+            const accountID = 123;
+            const domain = {
+                [`${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`]: true,
+            } as unknown as OnyxEntry<Domain>;
+
+            expect(accountLockSelector(accountID)(domain)).toBe(true);
+        });
+
+        it('Should return false when the lock state is false', () => {
+            const accountID = 123;
+            const domain = {
+                [`${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`]: false,
+            } as unknown as OnyxEntry<Domain>;
+
+            expect(accountLockSelector(accountID)(domain)).toBe(false);
+        });
+
+        it('Should return undefined when the domain object is undefined or account key does not exist', () => {
+            const accountID = 123;
+            const domain = {} as OnyxEntry<Domain>;
+
+            expect(accountLockSelector(accountID)(undefined)).toBeUndefined();
+            expect(accountLockSelector(accountID)(domain)).toBeUndefined();
         });
     });
 });
