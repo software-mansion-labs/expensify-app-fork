@@ -1,5 +1,5 @@
 diff --git a/node_modules/@types/react-native-web/index.d.ts b/node_modules/@types/react-native-web/index.d.ts
-index 8d88bb5..d97ca3c 100644
+index dd91bb1..d97ca3c 100644
 --- a/node_modules/@types/react-native-web/index.d.ts
 +++ b/node_modules/@types/react-native-web/index.d.ts
 @@ -1389,14 +1389,36 @@ declare module "react-native" {
@@ -45,3 +45,11 @@ index 8d88bb5..d97ca3c 100644
      }
  
      /**
+@@ -1481,6 +1503,7 @@ declare module "react-native" {
+         paddingRight?: CSSProperties["paddingRight"] | DimensionValue | undefined;
+         paddingBottom?: CSSProperties["paddingBottom"] | DimensionValue | undefined;
+         paddingLeft?: CSSProperties["paddingLeft"] | DimensionValue | undefined;
++        userSelect?: CSSProperties["userSelect"] | 'contain' | undefined;
+     }
+ 
+     interface TextStyle extends WebStyle {
