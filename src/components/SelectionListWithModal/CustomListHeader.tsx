@@ -1,5 +1,6 @@
 import React from 'react';
-import {View} from 'react-native';
+import type {StyleProp, ViewStyle} from 'react-native';
+import { View} from 'react-native';
 import Text from '@components/Text';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -11,6 +12,7 @@ type CustomListHeaderProps = {
     rightHeaderMinimumWidth?: number;
     shouldDivideEqualWidth?: boolean;
     shouldShowRightCaret?: boolean;
+    containerStyles?: StyleProp<ViewStyle>;
 };
 
 function CustomListHeader({
@@ -20,6 +22,7 @@ function CustomListHeader({
     rightHeaderMinimumWidth = 60,
     shouldDivideEqualWidth = false,
     shouldShowRightCaret = false,
+    containerStyles,
 }: CustomListHeaderProps) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
@@ -32,6 +35,7 @@ function CustomListHeader({
                 styles.justifyContentBetween,
                 // Required padding accounting for the checkbox in multi-select mode
                 canSelectMultiple && styles.pl3,
+                containerStyles,
             ]}
         >
             <Text style={[styles.textMicroSupporting, shouldDivideEqualWidth && styles.flex1]}>{leftHeaderText}</Text>

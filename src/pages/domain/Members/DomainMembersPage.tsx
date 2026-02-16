@@ -1,6 +1,5 @@
 import {defaultSecurityGroupIDSelector, domainNameSelector, groupsSelector, memberAccountIDsSelector, memberPendingActionSelector, selectSecurityGroupForAccount} from '@selectors/Domain';
 import React, {useMemo, useState} from 'react';
-import {View} from 'react-native';
 import Button from '@components/Button';
 import ButtonWithDropdownMenu from '@components/ButtonWithDropdownMenu';
 import type {DomainMemberBulkActionType, DropdownOption} from '@components/ButtonWithDropdownMenu/types';
@@ -30,6 +29,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import CustomListHeader from '@components/SelectionListWithModal/CustomListHeader';
 
 type DomainMembersPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.MEMBERS>;
 
@@ -140,10 +140,14 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
 
     const getCustomListHeader = () => {
         return (
-            <View style={[styles.ph9, styles.pv3, styles.flex1, styles.flexRow, styles.justifyContentBetween]}>
-                <Text style={[styles.textMicroSupporting, styles.flex1, styles.pr8]}>{translate('domain.members.title')}</Text>
-                <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.group')}</Text>
-            </View>
+            <CustomListHeader
+                canSelectMultiple={canSelectMultiple}
+                leftHeaderText={translate('domain.members.title')}
+                rightHeaderText={translate('common.group')}
+                shouldDivideEqualWidth
+                shouldShowRightCaret
+                containerStyles={styles.gap12}
+            />
         );
     };
 
