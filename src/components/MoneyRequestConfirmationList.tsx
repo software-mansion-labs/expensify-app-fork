@@ -54,7 +54,6 @@ import {
     hasMissingSmartscanFields,
     hasRoute as hasRouteUtil,
     isMerchantMissing,
-    isScanning,
     isScanRequest as isScanRequestUtil,
 } from '@libs/TransactionUtils';
 import {getIsViolationFixed} from '@libs/Violations/ViolationsUtils';
@@ -276,7 +275,6 @@ function MoneyRequestConfirmationList({
         selector: mileageRateSelector,
         canBeMissing: true,
     });
-    const {policyForMovingExpenses} = usePolicyForMovingExpenses();
     const isMovingTransactionFromTrackExpense = isMovingTransactionFromTrackExpenseUtil(action);
     const [defaultMileageRateReal] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         selector: mileageRateSelector,
@@ -346,7 +344,7 @@ function MoneyRequestConfirmationList({
     const prevCurrency = usePrevious(currency);
     const prevSubRates = usePrevious(subRates);
 
-    const {shouldSelectPolicy} = usePolicyForMovingExpenses();
+    const {shouldSelectPolicy, policyForMovingExpenses} = usePolicyForMovingExpenses();
 
     // A flag for showing the categories field
     const shouldShowCategories = isTrackExpense
@@ -391,12 +389,7 @@ function MoneyRequestConfirmationList({
         amountToBeUsed = perDiemRequestAmount;
     }
 
-    let formattedAmount = convertToDisplayString(amountToBeUsed, isDistanceRequest ? currency : iouCurrencyCode);
-    if (isDistanceRequestWithPendingRoute) {
-        formattedAmount = '';
-    } else if (isScanning(transaction)) {
-        formattedAmount = translate('iou.receiptStatusTitle');
-    }
+    const formattedAmount = isDistanceRequestWithPendingRoute ? '' : convertToDisplayString(amountToBeUsed, isDistanceRequest ? currency : iouCurrencyCode);
     const formattedAmountPerAttendee =
         isDistanceRequestWithPendingRoute || isScanRequest
             ? ''

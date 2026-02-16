@@ -233,7 +233,10 @@ type SettingsNavigatorParamList = {
         bankAccountID: string;
     };
     [SCREENS.SETTINGS.ADD_DEBIT_CARD]: undefined;
-    [SCREENS.SETTINGS.ADD_BANK_ACCOUNT]: undefined;
+    [SCREENS.SETTINGS.ADD_BANK_ACCOUNT]: {
+        // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
+        backTo?: Routes;
+    };
     [SCREENS.SETTINGS.ADD_BANK_ACCOUNT_VERIFY_ACCOUNT]: {
         // TODO will be removed once dynamic routes are implemented https://github.com/Expensify/App/issues/73825
         // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
@@ -241,12 +244,15 @@ type SettingsNavigatorParamList = {
     };
     [SCREENS.SETTINGS.ADD_US_BANK_ACCOUNT]: undefined;
     [SCREENS.SETTINGS.ADD_US_BANK_ACCOUNT_ENTRY_POINT]: undefined;
+    [SCREENS.SETTINGS.BANK_ACCOUNT_PURPOSE]: undefined;
     [SCREENS.SETTINGS.ADD_BANK_ACCOUNT_SELECT_COUNTRY_VERIFY_ACCOUNT]: undefined;
     [SCREENS.SETTINGS.RULES.ADD]: undefined;
     [SCREENS.SETTINGS.RULES.ADD_MERCHANT]: undefined;
     [SCREENS.SETTINGS.RULES.ADD_RENAME_MERCHANT]: undefined;
     [SCREENS.SETTINGS.RULES.ADD_CATEGORY]: undefined;
-    [SCREENS.SETTINGS.RULES.ADD_TAG]: undefined;
+    [SCREENS.SETTINGS.RULES.ADD_TAG]: {
+        index: number;
+    };
     [SCREENS.SETTINGS.RULES.ADD_TAX]: undefined;
     [SCREENS.SETTINGS.RULES.ADD_DESCRIPTION]: undefined;
     [SCREENS.SETTINGS.RULES.ADD_REIMBURSABLE]: undefined;
@@ -267,6 +273,7 @@ type SettingsNavigatorParamList = {
     };
     [SCREENS.SETTINGS.RULES.EDIT_TAG]: {
         hash: string;
+        index: number;
     };
     [SCREENS.SETTINGS.RULES.EDIT_TAX]: {
         hash: string;
@@ -1447,6 +1454,7 @@ type SettingsNavigatorParamList = {
     [SCREENS.WORKSPACE.RULES_MERCHANT_TAG]: {
         policyID: string;
         ruleID: string;
+        orderWeight: number;
     };
     [SCREENS.WORKSPACE.RULES_MERCHANT_TAX]: {
         policyID: string;
@@ -2213,6 +2221,7 @@ type ReimbursementAccountNavigatorParamList = {
         // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
         backTo?: Routes;
         policyID?: string;
+        bankAccountID?: string;
         subStep?: typeof CONST.BANK_ACCOUNT.STEP.COUNTRY;
     };
     [SCREENS.REIMBURSEMENT_ACCOUNT_VERIFY_ACCOUNT]: {
@@ -2721,6 +2730,9 @@ type DomainSplitNavigatorParamList = {
         domainAccountID: number;
         accountID: number;
     };
+    [SCREENS.DOMAIN.GROUPS]: {
+        domainAccountID: number;
+    };
 };
 
 type OnboardingModalNavigatorParamList = {
@@ -2812,6 +2824,7 @@ type SharedScreensParamList = {
         shouldForceLogin: string;
         domain?: Routes;
         delegatorEmail?: string;
+        isSAML?: boolean;
     };
     [SCREENS.VALIDATE_LOGIN]: {
         accountID: string;
