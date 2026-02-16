@@ -376,7 +376,10 @@ function BaseVideoPlayer({
 
         if (!shouldUseSharedVideoElement) {
             if (newParentRef && 'childNodes' in newParentRef && newParentRef.childNodes[0]) {
-                newParentRef.childNodes[0]?.remove();
+                const child = newParentRef.childNodes[0];
+                if (child && 'remove' in child) {
+                    child.remove();
+                }
             }
             return;
         }
@@ -404,7 +407,10 @@ function BaseVideoPlayer({
             if (mountedVideoPlayersCurrentRef.current.filter((u) => u === url).length > 0) {
                 return;
             }
-            newParentRef.childNodes[0]?.remove();
+            const child = newParentRef.childNodes[0];
+            if (child && 'remove' in child) {
+                child.remove();
+            }
         };
     }, [currentVideoPlayerRef, currentVideoViewRef, currentlyPlayingURL, isFullScreenRef, mountedVideoPlayersRef, originalParent, reportID, sharedElement, shouldUseSharedVideoElement, url]);
 
