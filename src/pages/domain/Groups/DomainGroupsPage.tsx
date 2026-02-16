@@ -6,6 +6,7 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/ListItem/TableListItem';
+import CustomListHeader from '@components/SelectionListWithModal/CustomListHeader';
 import Text from '@components/Text';
 import {useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
@@ -55,10 +56,12 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
         }
 
         return (
-            <View style={[styles.flexRow, styles.justifyContentBetween, styles.baseListHeaderWrapperStyle]}>
-                <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.name')}</Text>
-                <Text style={[styles.textMicroSupporting, styles.flex1]}>{translate('common.members')}</Text>
-            </View>
+            <CustomListHeader
+                canSelectMultiple={false}
+                leftHeaderText={translate('common.name')}
+                rightHeaderText={translate('common.members')}
+                shouldDivideEqualWidth
+            />
         );
     };
 
