@@ -77,6 +77,8 @@ Onyx.registerLogger(({level, message, parameters}) => {
     }
 });
 
+global.CurrentStack = Navigation.isInMultifactorAuthenticationFlow;
+
 type ExpensifyProps = {
     /** Whether the app is waiting for the server's response to determine if a room is public */
     isCheckingPublicRoom: OnyxEntry<boolean>;

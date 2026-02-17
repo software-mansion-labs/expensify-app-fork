@@ -892,6 +892,18 @@ function getTopmostSearchReportRouteParams(state = navigationRef.getRootState())
     return lastSearchReport?.params as RightModalNavigatorParamList[typeof SCREENS.RIGHT_MODAL.SEARCH_REPORT] | undefined;
 }
 
+function isInMultifactorAuthenticationFlow(state = navigationRef.getRootState()): boolean {
+    const RHPNavigator = state.routes?.at(-1);
+
+    if (RHPNavigator?.name !== NAVIGATORS.RIGHT_MODAL_NAVIGATOR) {
+        return false;
+    }
+
+    const MFANavigator = RHPNavigator.state?.routes.at(-1);
+
+    return MFANavigator?.name === SCREENS.RIGHT_MODAL.MULTIFACTOR_AUTHENTICATION;
+}
+
 function getTopmostSearchReportID(state = navigationRef.getRootState()): string | undefined {
     const params = getTopmostSearchReportRouteParams(state);
     return params?.reportID;
@@ -929,6 +941,7 @@ export default {
     replaceWithSplitNavigator,
     isTopmostRouteModalScreen,
     isOnboardingFlow,
+    isInMultifactorAuthenticationFlow,
     clearPreloadedRoutes,
     isValidateLoginFlow,
     dismissToPreviousRHP,

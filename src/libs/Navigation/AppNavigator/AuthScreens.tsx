@@ -81,6 +81,7 @@ import TestToolsModalNavigator from './Navigators/TestToolsModalNavigator';
 import TestDriveDemoNavigator from './TestDriveDemoNavigator';
 import useModalCardStyleInterpolator from './useModalCardStyleInterpolator';
 import useRootNavigatorScreenOptions from './useRootNavigatorScreenOptions';
+import AuthorizeTransactionPage from '@pages/MultifactorAuthentication/AuthorizeTransactionPage';
 
 const loadAttachmentModalScreen = () => require<ReactComponentModule>('../../../pages/media/AttachmentModalScreen').default;
 const loadValidateLoginPage = () => require<ReactComponentModule>('../../../pages/ValidateLoginPage').default;
@@ -401,6 +402,9 @@ function AuthScreens() {
         shouldRenderSecondaryOverlayForRHPOnSuperWideRHP,
         shouldRenderTertiaryOverlay,
     ]);
+
+
+
 
     // Animation is disabled when navigating to the sidebar screen
     const getWorkspaceOrDomainSplitNavigatorOptions = ({route}: {route: RouteProp<AuthScreensParamList>}) => {
@@ -733,6 +737,10 @@ function AuthScreens() {
                     listeners={modalScreenListeners}
                 />
             </RootStack.Navigator>
+          <AuthorizeTransactionPage route={{
+            params: {
+             transactionID: '123455',
+          }}}></AuthorizeTransactionPage>
             {/* Full-screen 2FA enforcement overlay - blocks all interaction until 2FA is set up */}
             {shouldShowRequire2FAPage && !isIn2FASetupFlow && <RequireTwoFactorAuthenticationPage />}
             <SearchRouterModal />

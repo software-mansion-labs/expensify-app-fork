@@ -94,24 +94,27 @@ function MultifactorAuthenticationAuthorizeTransactionContent({transactionID}: M
             <View style={styles.mb2}>
                 <Text style={styles.textMicroSupporting}>{translate('multifactorAuthentication.reviewTransaction.transactionDetails')}</Text>
             </View>
-            <TransactionPreview
-                allReports={allReports}
-                chatReportID={chatReportID}
-                action={action}
-                contextAction={action}
-                reportID={reportID}
-                isBillSplit={isSplitBillAction}
-                isTrackExpense={isTrackExpenseAction}
-                contextMenuAnchor={contextMenuAnchor}
-                iouReportID={iouReportID}
-                containerStyles={[reportPreviewStyles.transactionPreviewStandaloneStyle]}
-                shouldDisplayContextMenu={shouldDisplayContextMenu}
-                transactionPreviewWidth={reportPreviewStyles.transactionPreviewStandaloneStyle.width}
-                transactionID={transactionID}
-                reportPreviewAction={action}
-                onPreviewPressed={handlePreviewPressed}
-                shouldShowPayerAndReceiver={shouldShowPayerAndReceiver}
-            />
+            <View>
+                <Text>{transactionID}</Text>
+            </View>
+            {/*<TransactionPreview*/}
+            {/*    allReports={allReports}*/}
+            {/*    chatReportID={chatReportID}*/}
+            {/*    action={action}*/}
+            {/*    contextAction={action}*/}
+            {/*    reportID={reportID}*/}
+            {/*    isBillSplit={isSplitBillAction}*/}
+            {/*    isTrackExpense={isTrackExpenseAction}*/}
+            {/*    contextMenuAnchor={contextMenuAnchor}*/}
+            {/*    iouReportID={iouReportID}*/}
+            {/*    containerStyles={[reportPreviewStyles.transactionPreviewStandaloneStyle]}*/}
+            {/*    shouldDisplayContextMenu={shouldDisplayContextMenu}*/}
+            {/*    transactionPreviewWidth={reportPreviewStyles.transactionPreviewStandaloneStyle.width}*/}
+            {/*    transactionID={transactionID}*/}
+            {/*    reportPreviewAction={action}*/}
+            {/*    onPreviewPressed={handlePreviewPressed}*/}
+            {/*    shouldShowPayerAndReceiver={shouldShowPayerAndReceiver}*/}
+            {/*/>*/}
         </View>
     );
 }
