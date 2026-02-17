@@ -290,12 +290,11 @@ function getOnyxLoadingData(hash: number, queryJSON?: SearchQueryJSON, offset?: 
     ];
 
     const failureData: Array<OnyxUpdate<typeof ONYXKEYS.COLLECTION.SNAPSHOT>> = [
-        // @ts-expect-error - will be solved in https://github.com/Expensify/App/issues/73830
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.SNAPSHOT}${hash}`,
             value: {
-                ...(isOffline ? {} : {data: []}),
+                ...(isOffline ? {} : {data: {}}),
                 search: {
                     status: queryJSON?.status,
                     type: queryJSON?.type,
@@ -828,9 +827,11 @@ function bulkDeleteReports(
 function deleteMoneyRequestOnSearch(hash: number, transactionIDList: string[], transactions?: OnyxCollection<Transaction>) {
     const {optimisticData: loadingOptimisticData, finallyData} = getOnyxLoadingData(hash);
 
-    const optimisticData: OnyxUpdate[] = [...(loadingOptimisticData ?? [])];
-    const failureData: OnyxUpdate[] = [];
-    const successData: OnyxUpdate[] = [];
+    const optimisticData: Array<
+        OnyxUpdate<typeof ONYXKEYS.COLLECTION.REPORT | typeof ONYXKEYS.COLLECTION.SNAPSHOT | typeof ONYXKEYS.COLLECTION.TRANSACTION | typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS>
+    > = [...(loadingOptimisticData ?? [])];
+    const failureData: Array<OnyxUpdate<typeof ONYXKEYS.COLLECTION.TRANSACTION | typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS>> = [];
+    const successData: Array<OnyxUpdate<typeof ONYXKEYS.COLLECTION.REPORT_ACTIONS | typeof ONYXKEYS.COLLECTION.REPORT>> = [];
 
     let pendingDeleteTransactionsCount = transactionIDList.length;
 
@@ -1407,11 +1408,10 @@ function setOptimisticDataForTransactionThreadPreview(item: TransactionListItemT
 
     // Set optimistic parent report
     if (!hasParentReport) {
-        // @ts-expect-error - will be solved in https://github.com/Expensify/App/issues/73830
         onyxUpdates.push({
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.REPORT}${reportID}`,
-            value: report,
+            value: report ?? {},
         });
     }
 

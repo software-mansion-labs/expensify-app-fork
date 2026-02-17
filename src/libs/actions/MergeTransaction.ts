@@ -397,14 +397,13 @@ function mergeTransactionRequest({
                   ]
                 : [];
 
-        // @ts-expect-error - will be solved in https://github.com/Expensify/App/issues/73830
         const failureSourceReportData: Array<OnyxUpdate<typeof ONYXKEYS.COLLECTION.REPORT>> =
             transactionsOfSourceReport.length === 1
                 ? [
                       {
                           onyxMethod: Onyx.METHOD.SET,
                           key: `${ONYXKEYS.COLLECTION.REPORT}${sourceTransaction.reportID}`,
-                          value: getReportOrDraftReport(sourceTransaction.reportID),
+                          value: getReportOrDraftReport(sourceTransaction.reportID) ?? null,
                       },
                   ]
                 : [];
