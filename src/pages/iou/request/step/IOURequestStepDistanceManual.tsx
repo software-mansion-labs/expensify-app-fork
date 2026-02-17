@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {useFocusEffect} from '@react-navigation/native';
-import reportsSelector from '@selectors/Attributes';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {OnyxEntry} from 'react-native-onyx';
 import Button from '@components/Button';
@@ -14,6 +13,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
+import useReportAttributes from '@hooks/useReportAttributes';
 import usePolicy from '@hooks/usePolicy';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -81,7 +81,7 @@ function IOURequestStepDistanceManual({
     const {policyForMovingExpenses} = usePolicyForMovingExpenses();
     const [skipConfirmation] = useOnyx(`${ONYXKEYS.COLLECTION.SKIP_CONFIRMATION}${transactionID}`, {canBeMissing: true});
     const [lastSelectedDistanceRates] = useOnyx(ONYXKEYS.NVP_LAST_SELECTED_DISTANCE_RATES, {canBeMissing: true});
-    const [reportAttributesDerived] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {canBeMissing: true, selector: reportsSelector});
+    const reportAttributesDerived = useReportAttributes();
     const [transactionViolations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS, {canBeMissing: true});
     const [quickAction] = useOnyx(ONYXKEYS.NVP_QUICK_ACTION_GLOBAL_CREATE, {canBeMissing: true});
     const [policyRecentlyUsedCurrencies] = useOnyx(ONYXKEYS.RECENTLY_USED_CURRENCIES, {canBeMissing: true});
@@ -104,7 +104,11 @@ function IOURequestStepDistanceManual({
     // to make sure the correct distance amount and unit will be shown we use distance unit
     // from defaultExpensePolicy or current report's policy instead of from transaction and
     // then we use transaction data (distanceUnit and quantity) for conversions
-    const unit = DistanceRequestUtils.getRate({transaction, policy: shouldUseDefaultExpensePolicy ? defaultExpensePolicy : policy, useTransactionDistanceUnit: false}).unit;
+    const unit = DistanceRequestUtils.getRate({
+        transaction,
+        policy: shouldUseDefaultExpensePolicy ? defaultExpensePolicy : policy,
+        useTransactionDistanceUnit: false,
+    }).unit;
     const distanceInMeters = getDistanceInMeters(transaction, transaction?.comment?.customUnit?.distanceUnit ? transaction.comment.customUnit.distanceUnit : unit);
     const distance = typeof transaction?.comment?.customUnit?.quantity === 'number' ? roundToTwoDecimalPlaces(DistanceRequestUtils.convertDistanceUnit(distanceInMeters, unit)) : undefined;
     const isASAPSubmitBetaEnabled = isBetaEnabled(CONST.BETAS.ASAP_SUBMIT);
@@ -156,7 +160,14 @@ function IOURequestStepDistanceManual({
             setMoneyRequestDistance(transactionID, distanceAsFloat, isTransactionDraft, unit);
 
             if (action === CONST.IOU.ACTION.EDIT) {
-                if (distance !== distanceAsFloat) {
+                const transactionDistanceUnit = transaction?.comment?.customUnit?.distanceUnit;
+
+                const isDistanceChanged = distance !== distanceAsFloat;
+                const isDistanceUnitChanged = transactionDistanceUnit && transactionDistanceUnit !== unit;
+
+                const shouldUpdateTransaction = isDistanceChanged || isDistanceUnitChanged;
+
+                if (shouldUpdateTransaction) {
                     updateMoneyRequestDistance({
                         transactionID: transaction?.transactionID,
                         transactionThreadReport: report,
@@ -320,6 +331,7 @@ function IOURequestStepDistanceManual({
                         onPress={submitAndNavigateToNextPage}
                         text={buttonText}
                         testID="next-button"
+                        sentryLabel={CONST.SENTRY_LABEL.IOU_REQUEST_STEP.DISTANCE_MANUAL_NEXT_BUTTON}
                     />
                 }
             />
