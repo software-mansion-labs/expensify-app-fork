@@ -1,6 +1,6 @@
 import {useIsFocused} from '@react-navigation/native';
 import {hasSeenTourSelector, tryNewDotOnyxSelector} from '@selectors/Onboarding';
-import {createPoliciesSelector, groupPaidPoliciesWithExpenseChatEnabledSelector} from '@selectors/Policy';
+import {groupPaidPoliciesWithExpenseChatEnabledSelector} from '@selectors/Policy';
 import {Str} from 'expensify-common';
 import type {ImageContentFit} from 'expo-image';
 import type {ForwardedRef} from 'react';
@@ -22,6 +22,7 @@ import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
+import useMappedPolicies from '@hooks/useMappedPolicies';
 import usePreferredPolicy from '@hooks/usePreferredPolicy';
 import usePrevious from '@hooks/usePrevious';
 import useReportIsArchived from '@hooks/useReportIsArchived';
@@ -89,7 +90,7 @@ type FloatingActionButtonAndPopoverRef = {
     hideCreateMenu: () => void;
 };
 
-const policySelector = (policy: OnyxEntry<OnyxTypes.Policy>): PolicySelector =>
+const policyMapper = (policy: OnyxEntry<OnyxTypes.Policy>): PolicySelector =>
     (policy && {
         type: policy.type,
         role: policy.role,
@@ -100,8 +101,6 @@ const policySelector = (policy: OnyxEntry<OnyxTypes.Policy>): PolicySelector =>
         name: policy.name,
         areInvoicesEnabled: policy.areInvoicesEnabled,
     }) as PolicySelector;
-
-const policiesSelector = (policies: OnyxCollection<OnyxTypes.Policy>) => createPoliciesSelector(policies, policySelector);
 
 const sessionSelector = (session: OnyxEntry<OnyxTypes.Session>) => ({email: session?.email, accountID: session?.accountID});
 
@@ -159,7 +158,7 @@ function FloatingActionButtonAndPopover({onHideCreateMenu, onShowCreateMenu, ref
     }, [activePolicy, activePolicyID, session?.accountID, allReports]);
     const quickActionPolicyID = quickAction?.action === CONST.QUICK_ACTIONS.TRACK_PER_DIEM && quickAction?.perDiemPolicyID ? quickAction?.perDiemPolicyID : quickActionReport?.policyID;
     const [quickActionPolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${quickActionPolicyID}`, {canBeMissing: true});
-    const [allPolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {selector: policiesSelector, canBeMissing: true});
+    const [allPolicies] = useMappedPolicies(policyMapper);
     const [lastDistanceExpenseType] = useOnyx(ONYXKEYS.NVP_LAST_DISTANCE_EXPENSE_TYPE, {canBeMissing: true});
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
     const {isDelegateAccessRestricted, showDelegateNoAccessModal} = useContext(DelegateNoAccessContext);
