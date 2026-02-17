@@ -711,6 +711,7 @@ function AdvancedSearchFilters() {
                                             description={item.description}
                                             shouldShowRightIcon
                                             onPress={item.onPress}
+                                            sentryLabel={CONST.SENTRY_LABEL.SEARCH.ADVANCED_FILTER_ITEM}
                                         />
                                     );
                                 })}
@@ -725,6 +726,7 @@ function AdvancedSearchFilters() {
                     onPress={onSaveSearch}
                     style={[styles.mh4, styles.mt4]}
                     large
+                    sentryLabel={CONST.SENTRY_LABEL.SEARCH.SAVE_SEARCH_BUTTON}
                 />
             )}
             <FormAlertWithSubmitButton
@@ -732,6 +734,7 @@ function AdvancedSearchFilters() {
                 containerStyles={[styles.m4, styles.mb5]}
                 onSubmit={applyFiltersAndNavigate}
                 enabledWhenOffline
+                sentryLabel={CONST.SENTRY_LABEL.SEARCH.VIEW_RESULTS_BUTTON}
             />
         </>
     );

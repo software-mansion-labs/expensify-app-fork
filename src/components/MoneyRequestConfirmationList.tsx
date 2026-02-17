@@ -275,6 +275,7 @@ function MoneyRequestConfirmationList({
         selector: mileageRateSelector,
         canBeMissing: true,
     });
+    const {policyForMovingExpenses} = usePolicyForMovingExpenses();
     const isMovingTransactionFromTrackExpense = isMovingTransactionFromTrackExpenseUtil(action);
     const [defaultMileageRateReal] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`, {
         selector: mileageRateSelector,
@@ -344,7 +345,7 @@ function MoneyRequestConfirmationList({
     const prevCurrency = usePrevious(currency);
     const prevSubRates = usePrevious(subRates);
 
-    const {shouldSelectPolicy, policyForMovingExpenses} = usePolicyForMovingExpenses();
+    const {shouldSelectPolicy} = usePolicyForMovingExpenses();
 
     // A flag for showing the categories field
     const shouldShowCategories = isTrackExpense

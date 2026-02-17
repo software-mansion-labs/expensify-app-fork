@@ -3,7 +3,14 @@ import dedent from '@libs/StringUtils/dedent';
 import CONST from '@src/CONST';
 import type {OriginalMessageSettlementAccountLocked, PolicyRulesModifiedFields} from '@src/types/onyx/OriginalMessage';
 import type en from './en';
-import type {CreatedReportForUnapprovedTransactionsParams, PaidElsewhereParams, SplitDateRangeParams, UpdatedPolicyTagParams, ViolationsRterParams} from './params';
+import type {
+    CreatedReportForUnapprovedTransactionsParams,
+    PaidElsewhereParams,
+    SplitDateRangeParams,
+    SubscriptionSettingsSummaryParams,
+    UpdatedPolicyTagParams,
+    ViolationsRterParams,
+} from './params';
 import type {TranslationDeepObject} from './types';
 
 /* eslint-disable max-len */
@@ -400,6 +407,14 @@ const translations: TranslationDeepObject<typeof en> = {
         week: 'Semana',
         year: 'Año',
         quarter: 'Trimestre',
+        expensifyLogo: 'Logo de Expensify',
+    },
+    socials: {
+        podcast: 'Síguenos en Podcast',
+        twitter: 'Síguenos en Twitter',
+        instagram: 'Síguenos en Instagram',
+        facebook: 'Síguenos en Facebook',
+        linkedin: 'Síguenos en LinkedIn',
     },
     supportalNoAccess: {
         title: 'No tan rápido',
@@ -507,7 +522,17 @@ const translations: TranslationDeepObject<typeof en> = {
             rejectAuthentication: 'Rechazar autenticación',
             test: 'Prueba',
             biometricsAuthentication: 'Autenticación biométrica',
+            authType: {
+                unknown: 'Desconocido',
+                none: 'Ninguno',
+                credentials: 'Credenciales',
+                biometrics: 'Biometría',
+                faceId: 'Face ID',
+                touchId: 'Touch ID',
+                opticId: 'Optic ID',
+            },
         },
+        verificationFailed: 'Verificación fallida',
         pleaseEnableInSystemSettings: {
             start: 'Por favor, activa la verificación de rostro/huella digital o establece un código de acceso en tus ',
             link: 'ajustes del sistema',
@@ -526,7 +551,7 @@ const translations: TranslationDeepObject<typeof en> = {
             biometrics: 'Activa la verificación rápida y segura usando tu rostro o huella dactilar. No se requieren contraseñas ni códigos.',
         },
         revoke: {
-            remove: 'Eliminar',
+            revoke: 'Revocar',
             title: 'Reconocimiento facial/huella digital y claves de acceso',
             explanation:
                 'La verificación mediante reconocimiento facial, huella digital o clave de acceso está habilitada en uno o más dispositivos. Revocar el acceso requerirá un código mágico para la próxima verificación en cualquier dispositivo.',
@@ -5164,8 +5189,8 @@ ${amount} para ${merchant} - ${date}`,
             editTags: 'Editar etiquetas',
             findTag: 'Encontrar etiquetas',
             subtitle: 'Las etiquetas añaden formas más detalladas de clasificar los costos.',
-            subtitleWithDependentTags: (importSpreadsheetLink) =>
-                `<muted-text>Las etiquetas añaden formas más detalladas de clasificar los costos. Estás usando <a href="${CONST.IMPORT_TAGS_EXPENSIFY_URL_DEPENDENT_TAGS}">etiquetas dependientes</a>. Puedes <a href="${importSpreadsheetLink}">reimportar una hoja de cálculo</a> para actualizar tus etiquetas.</muted-text>`,
+            dependentMultiLevelTagsSubtitle: (importSpreadsheetLink) =>
+                `<muted-text>Estás usando <a href="${CONST.IMPORT_TAGS_EXPENSIFY_URL_DEPENDENT_TAGS}">etiquetas dependientes</a>. Puedes <a href="${importSpreadsheetLink}">reimportar una hoja de cálculo</a> para actualizar tus etiquetas.</muted-text>`,
             emptyTags: {
                 title: 'No has creado ninguna etiqueta',
                 subtitle: 'Añade una etiqueta para realizar el seguimiento de proyectos, ubicaciones, departamentos y otros.',
@@ -7662,6 +7687,7 @@ ${amount} para ${merchant} - ${date}`,
         parentNavigationSummary: ({reportName, workspaceName}) => `De ${reportName}${workspaceName ? ` en ${workspaceName}` : ''}`,
     },
     qrCodes: {
+        qrCode: 'Código QR',
         copy: 'Copiar URL',
         copied: '¡Copiado!',
     },
@@ -8186,10 +8212,19 @@ ${amount} para ${merchant} - ${date}`,
             security: 'Expensify es PCI-DSS obediente, utiliza cifrado a nivel bancario, y emplea infraestructura redundante para proteger tus datos.',
             learnMoreAboutSecurity: 'Obtén más información sobre nuestra seguridad.',
         },
+        expensifyCode: {
+            title: 'Código Expensify',
+            discountCode: 'Código de descuento',
+            enterCode: 'Introduce un código Expensify para aplicarlo a tu suscripción.',
+            apply: 'Aplicar',
+            error: {
+                invalid: 'Este código no es válido',
+            },
+        },
         subscriptionSettings: {
             title: 'Configuración de suscripción',
-            summary: ({subscriptionType, subscriptionSize, autoRenew, autoIncrease}) =>
-                `Tipo de suscripción: ${subscriptionType}, Tamaño de suscripción: ${subscriptionSize}, Renovación automática: ${autoRenew}, Aumento automático de asientos anuales: ${autoIncrease}`,
+            summary: ({subscriptionType, subscriptionSize, expensifyCode, autoRenew, autoIncrease}: SubscriptionSettingsSummaryParams) =>
+                `Tipo de suscripción: ${subscriptionType}, Tamaño de suscripción: ${subscriptionSize}${expensifyCode ? `, Código Expensify: ${expensifyCode}` : ''}, Renovación automática: ${autoRenew}, Aumento automático de asientos anuales: ${autoIncrease}`,
             none: 'ninguno',
             on: 'activado',
             off: 'desactivado',

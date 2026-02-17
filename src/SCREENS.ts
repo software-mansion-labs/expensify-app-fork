@@ -234,6 +234,7 @@ const SCREENS = {
         SUBSCRIPTION: {
             ROOT: 'Settings_Subscription',
             SIZE: 'Settings_Subscription_Size',
+            EXPENSIFY_CODE: 'Settings_Subscription_ExpensifyCode',
             SETTINGS_DETAILS: 'Settings_Subscription_Details',
             ADD_PAYMENT_CARD: 'Settings_Subscription_Add_Payment_Card',
             DISABLE_AUTO_RENEW_SURVEY: 'Settings_Subscription_DisableAutoRenewSurvey',
@@ -951,7 +952,8 @@ const SCREENS = {
     MULTIFACTOR_AUTHENTICATION: {
         MAGIC_CODE: 'Multifactor_Authentication_Magic_Code',
         BIOMETRICS_TEST: 'Multifactor_Authentication_Biometrics_Test',
-        OUTCOME: 'Multifactor_Authentication_Outcome',
+        OUTCOME_SUCCESS: 'Multifactor_Authentication_Outcome_Success',
+        OUTCOME_FAILURE: 'Multifactor_Authentication_Outcome_Failure',
         PROMPT: 'Multifactor_Authentication_Prompt',
         NOT_FOUND: 'Multifactor_Authentication_Not_Found',
         REVOKE: 'Multifactor_Authentication_Revoke',

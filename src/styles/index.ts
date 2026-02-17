@@ -1648,6 +1648,7 @@ const staticStyles = (theme: ThemeColors) =>
             borderRadius: 999,
             alignItems: 'center',
             justifyContent: 'center',
+            boxShadow: theme.shadow,
         },
 
         floatingSecondaryActionButton: {
@@ -1662,6 +1663,7 @@ const staticStyles = (theme: ThemeColors) =>
         floatingActionButtonSmall: {
             width: variables.componentSizeNormal,
             height: variables.componentSizeNormal,
+            boxShadow: 'none',
         },
 
         floatingCameraButton: {

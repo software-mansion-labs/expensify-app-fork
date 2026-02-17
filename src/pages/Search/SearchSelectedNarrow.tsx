@@ -106,6 +106,7 @@ function SearchSelectedNarrow({options, itemsLength, currentSelectedPolicyID, cu
                             vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.BOTTOM,
                         }}
                         shouldUseModalPaddingStyle
+                        sentryLabel={CONST.SENTRY_LABEL.SEARCH.NARROW_BULK_ACTIONS_DROPDOWN}
                     />
                 </View>
             )}

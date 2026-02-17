@@ -13251,6 +13251,7 @@ export {
     getBillableAndTaxTotal,
     getReportForHeader,
     isReportOpenOrUnsubmitted,
+    getIconsForExpenseReport,
 };
 
 export type {
