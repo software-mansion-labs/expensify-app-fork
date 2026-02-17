@@ -50,6 +50,11 @@ function useDomainGroupFilter(domainAccountID: number): UseDomainGroupFilterResu
     ];
 
     const matchedGroup = selectedGroup && selectedGroup.value !== ALL_MEMBERS_VALUE ? groups?.find((g) => g.id === selectedGroup.value) : undefined;
+
+    // If the selected group no longer exists in Onyx data, reset to "All Members"
+    // to avoid a stale label while the filter is effectively inactive.
+    const effectiveSelection = selectedGroup && selectedGroup.value !== ALL_MEMBERS_VALUE && !matchedGroup ? null : selectedGroup;
+
     const selectedGroupMemberIDs = matchedGroup
         ? new Set(
               Object.keys(matchedGroup.details.shared)
@@ -68,12 +73,12 @@ function useDomainGroupFilter(domainAccountID: number): UseDomainGroupFilterResu
         }
     };
 
-    const dropdownLabel = selectedGroup?.text ?? allMembersLabel;
+    const dropdownLabel = effectiveSelection?.text ?? allMembersLabel;
 
     return {
         groupPreFilter,
         groupOptions,
-        selectedGroup,
+        selectedGroup: effectiveSelection,
         handleGroupChange,
         dropdownLabel,
         allMembersLabel,
