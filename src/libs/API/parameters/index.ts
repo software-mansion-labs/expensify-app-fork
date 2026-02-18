@@ -483,3 +483,5 @@ export type {default as RequestAuthenticationChallengeParams} from './RequestAut
 export type {default as GetTransactionsMatchingCodingRuleParams} from './GetTransactionsMatchingCodingRuleParams';
 export type {default as SetPolicyTimeTrackingDefaultRateParams} from './SetPolicyTimeTrackingDefaultRateParams';
 export type {default as ToggleTwoFactorAuthRequiredForDomainParams} from './ToggleTwoFactorAuthRequiredForDomainParams';
+export type {default as UpdateDomainSecurityGroupParams} from './UpdateDomainSecurityGroupParams';
+export type {default as SetDefaultDomainSecurityGroupParams} from './SetDefaultDomainSecurityGroupParams';

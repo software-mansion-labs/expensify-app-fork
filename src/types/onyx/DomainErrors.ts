@@ -1,3 +1,5 @@
+import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
+import type CONST from '@src/CONST';
 import type * as OnyxCommon from './OnyxCommon';
 
 /**
@@ -8,6 +10,16 @@ type GeneralDomainMemberErrors = {
      * Base errors
      */
     errors: OnyxCommon.Errors;
+};
+
+/**
+ *
+ */
+type DomainSecurityGroupErrors = {
+    /**
+     *
+     */
+    nameErrors?: OnyxCommon.Errors;
 };
 
 /**
@@ -43,6 +55,6 @@ type DomainErrors = {
      * Errors related to the 2FA toggle
      */
     setTwoFactorAuthRequiredError?: OnyxCommon.Errors;
-};
+} & PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroupErrors>;
 
 export default DomainErrors;

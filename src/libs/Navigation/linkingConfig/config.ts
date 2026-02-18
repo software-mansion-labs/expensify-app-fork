@@ -1304,6 +1304,12 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         [SCREENS.DOMAIN.MEMBERS_SETTINGS_TWO_FACTOR_AUTH]: {
                             path: ROUTES.DOMAIN_MEMBERS_SETTINGS_TWO_FACTOR_AUTH.route,
                         },
+                        [SCREENS.DOMAIN.GROUP_DETAILS]: {
+                            path: ROUTES.DOMAIN_GROUP_DETAILS.route,
+                        },
+                        [SCREENS.DOMAIN.GROUP_EDIT_NAME]: {
+                            path: ROUTES.DOMAIN_GROUP_EDIT_NAME.route,
+                        },
                     },
                 },
                 [SCREENS.RIGHT_MODAL.TWO_FACTOR_AUTH]: {

@@ -18,8 +18,15 @@ import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation
 import type {DomainSplitNavigatorParamList} from '@navigation/types';
 import DomainNotFoundPageWrapper from '@pages/domain/DomainNotFoundPageWrapper';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
+import type {ListItem} from '@components/SelectionList/ListItem/types';
+
+type GroupOption = Omit<ListItem, 'groupID'> & {
+    /** Group ID */
+    groupID: string;
+};
 
 type DomainGroupsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.GROUPS>;
 
@@ -36,6 +43,7 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
     const data = groups.map((group) => {
         return {
             keyForList: group.id,
+            groupID: group.id,
             text: group.details.name ?? '',
             rightElement: (
                 <View style={styles.flex1}>
@@ -83,8 +91,9 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
                 <SelectionList
                     data={data}
                     ListItem={TableListItem}
-                    onSelectRow={() => null}
+                    onSelectRow={(item: GroupOption) => Navigation.navigate(ROUTES.DOMAIN_GROUP_DETAILS.getRoute(domainAccountID, item.groupID))}
                     customListHeader={getCustomListHeader()}
+                    shouldShowRightCaret
                 />
             </ScreenWrapper>
         </DomainNotFoundPageWrapper>

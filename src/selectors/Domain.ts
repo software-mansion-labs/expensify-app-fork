@@ -146,6 +146,16 @@ const adminPendingActionSelector = (pendingAction: OnyxEntry<DomainPendingAction
 
 const defaultSecurityGroupIDSelector = (domain: OnyxEntry<Domain>) => domain?.domain_defaultSecurityGroupID;
 
+/**
+ * Creates a selector that finds a single security group by its ID.
+ */
+function selectGroupByID(groupID: string) {
+    return (domain: OnyxEntry<Domain>): DomainSecurityGroup | undefined => {
+        const key: SecurityGroupKey = `${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`;
+        return domain?.[key];
+    };
+}
+
 function groupsSelector(domain: OnyxEntry<Domain>): DomainSecurityGroupWithID[] {
     if (!domain) {
         return getEmptyArray<DomainSecurityGroupWithID>();
@@ -175,6 +185,7 @@ export {
     memberPendingActionSelector,
     isSecurityGroupEntry,
     groupsSelector,
+    selectGroupByID,
 };
 
 export {type DomainSecurityGroupWithID};

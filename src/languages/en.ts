@@ -8433,6 +8433,7 @@ const translations = {
                     other: (count: number) => `${count} members`,
                 };
             },
+            defaultGroup: 'Default group for new members',
         },
     },
 };
