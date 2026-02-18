@@ -323,10 +323,7 @@ function isExpiredSession(sessionCreationDate: number): boolean {
     return new Date().getTime() - sessionCreationDate >= CONST.SESSION_EXPIRATION_TIME_MS;
 }
 
-const KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT = [
-    ...KEYS_TO_PRESERVE_SUPPORTAL_LOGIN,
-    ONYXKEYS.SESSION,
-];
+const KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT = [...KEYS_TO_PRESERVE_SUPPORTAL_LOGIN, ONYXKEYS.SESSION];
 
 function signOutAndRedirectToSignIn(shouldResetToHome?: boolean, shouldStashSession?: boolean, shouldSignOutFromOldDot = true, shouldForceUseStashedSession?: boolean) {
     Log.info('Redirecting to Sign In because signOut() was called');

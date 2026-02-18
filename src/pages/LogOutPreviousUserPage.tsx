@@ -32,7 +32,7 @@ function LogOutPreviousUserPage({route}: LogOutPreviousUserPageProps) {
         const transitionURL = CONFIG.IS_HYBRID_APP ? `${CONST.DEEPLINK_BASE_URL}${initialURL ?? ''}` : initialURL;
         const isLoggingInAsNewUser = isLoggingInAsNewUserSessionUtils(transitionURL ?? undefined, sessionEmail);
         const isSupportalLogin = authTokenType === CONST.AUTH_TOKEN_TYPES.SUPPORT;
-        
+
         if (isLoggingInAsNewUser) {
             // We don't want to close react-native app in this particular case.
             signOutAndRedirectToSignIn(false, isSupportalLogin);
