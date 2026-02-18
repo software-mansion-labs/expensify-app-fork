@@ -189,7 +189,10 @@ type ReceiptPartners = OnyxCommon.OnyxValueWithOfflineFeedback<
     {
         /** Whether receipt partners are enabled */
         enabled?: boolean;
-    } & Record<string, OnyxCommon.OnyxValueWithOfflineFeedback<UberReceiptPartner>>
+
+        /** uber partner */
+        [CONST.POLICY.RECEIPT_PARTNERS.NAME.UBER]: OnyxCommon.OnyxValueWithOfflineFeedback<UberReceiptPartner>
+    } 
 >;
 
 /** Policy disabled fields */
