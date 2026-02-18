@@ -232,11 +232,20 @@ const KEYS_TO_PRESERVE_SUPPORTAL_LOGIN = [
     ONYXKEYS.PREFERRED_THEME,
     ONYXKEYS.NVP_PREFERRED_LOCALE,
     ONYXKEYS.ARE_TRANSLATIONS_LOADING,
-    ONYXKEYS.ACTIVE_CLIENTS,
-    ONYXKEYS.DEVICE_ID,
+    ONYXKEYS.STASHED_SESSION,
+    ONYXKEYS.HAS_LOADED_APP,
+    ONYXKEYS.STASHED_CREDENTIALS,
+    ONYXKEYS.HYBRID_APP,
+
+    // We need to preserve the sidebar loaded state since we never unmount the sidebar when connecting as a delegate
+    // This allows the report screen to load correctly when the delegate token expires and the delegate is returned to their original account.
+    ONYXKEYS.IS_SIDEBAR_LOADED,
     ONYXKEYS.NETWORK,
     ONYXKEYS.SHOULD_USE_STAGING_SERVER,
     ONYXKEYS.IS_DEBUG_MODE_ENABLED,
+
+    // Preserve IS_USING_IMPORTED_STATE so that when transitioning to/from supportal,
+    // we know if we're in imported state mode and should skip API calls that would cause infinite loading
     ONYXKEYS.IS_USING_IMPORTED_STATE,
 ];
 
@@ -315,26 +324,8 @@ function isExpiredSession(sessionCreationDate: number): boolean {
 }
 
 const KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT = [
-    ONYXKEYS.NVP_TRY_FOCUS_MODE,
-    ONYXKEYS.PREFERRED_THEME,
-    ONYXKEYS.NVP_PREFERRED_LOCALE,
-    ONYXKEYS.ARE_TRANSLATIONS_LOADING,
+    ...KEYS_TO_PRESERVE_SUPPORTAL_LOGIN,
     ONYXKEYS.SESSION,
-    ONYXKEYS.STASHED_SESSION,
-    ONYXKEYS.HAS_LOADED_APP,
-    ONYXKEYS.STASHED_CREDENTIALS,
-    ONYXKEYS.HYBRID_APP,
-
-    // We need to preserve the sidebar loaded state since we never unmount the sidebar when connecting as a delegate
-    // This allows the report screen to load correctly when the delegate token expires and the delegate is returned to their original account.
-    ONYXKEYS.IS_SIDEBAR_LOADED,
-    ONYXKEYS.NETWORK,
-    ONYXKEYS.SHOULD_USE_STAGING_SERVER,
-    ONYXKEYS.IS_DEBUG_MODE_ENABLED,
-
-    // Preserve IS_USING_IMPORTED_STATE so that when transitioning to/from supportal,
-    // we know if we're in imported state mode and should skip API calls that would cause infinite loading
-    ONYXKEYS.IS_USING_IMPORTED_STATE,
 ];
 
 function signOutAndRedirectToSignIn(shouldResetToHome?: boolean, shouldStashSession?: boolean, shouldSignOutFromOldDot = true, shouldForceUseStashedSession?: boolean) {
