@@ -101,7 +101,7 @@ describe('SearchQueryUtils', () => {
 
             const result = getQueryWithUpdatedValues(userQuery);
 
-            expect(result).toEqual(`type:expense sortBy:${CONST.SEARCH.TABLE_COLUMNS.GROUP_CATEGORY} sortOrder:asc view:bar groupBy:category from:12345`);
+            expect(result).toEqual('type:expense sortBy:groupCategory sortOrder:asc view:bar groupBy:category from:12345');
         });
 
         test('returns query with view:line', () => {
@@ -109,7 +109,7 @@ describe('SearchQueryUtils', () => {
 
             const result = getQueryWithUpdatedValues(userQuery);
 
-            expect(result).toEqual(`type:expense sortBy:${CONST.SEARCH.TABLE_COLUMNS.GROUP_MONTH} sortOrder:asc view:line groupBy:month category:travel`);
+            expect(result).toEqual('type:expense sortBy:groupmonth sortOrder:asc view:line groupBy:month category:travel');
         });
 
         test('returns query with view:pie', () => {
@@ -117,7 +117,7 @@ describe('SearchQueryUtils', () => {
 
             const result = getQueryWithUpdatedValues(userQuery);
 
-            expect(result).toEqual(`type:expense sortBy:${CONST.SEARCH.TABLE_COLUMNS.GROUP_CATEGORY} sortOrder:asc view:pie groupBy:category merchant:Amazon`);
+            expect(result).toEqual('type:expense sortBy:groupCategory sortOrder:asc view:pie groupBy:category merchant:Amazon');
         });
 
         test('deduplicates conflicting type filters keeping the last occurrence', () => {
