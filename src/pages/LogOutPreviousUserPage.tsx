@@ -28,9 +28,6 @@ function LogOutPreviousUserPage({route}: LogOutPreviousUserPageProps) {
     const {authTokenType, shortLivedAuthToken = '', exitTo} = route?.params ?? {};
 
     useEffect(() => {
-        const sessionEmail = session?.email;
-        const transitionURL = CONFIG.IS_HYBRID_APP ? `${CONST.DEEPLINK_BASE_URL}${initialURL ?? ''}` : initialURL;
-        const isLoggingInAsNewUser = isLoggingInAsNewUserSessionUtils(transitionURL ?? undefined, sessionEmail);
         const isSupportalLogin = authTokenType === CONST.AUTH_TOKEN_TYPES.SUPPORT;
 
         if (isSupportalLogin) {
