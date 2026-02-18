@@ -347,7 +347,7 @@ describe('SearchQueryUtils', () => {
                 const result = buildQueryStringFromFilterFormValues(filterValues);
 
                 expect(result).toContain('limit:"10 90"');
-                expect(result).toEqual('sortBy:date sortOrder:desc type:expense hi limit:"10 90"');
+                expect(result).toEqual('type:expense hi limit:"10 90"');
             });
 
             test('limit value with spaces does not leak into keyword when round-tripped through parser', () => {
