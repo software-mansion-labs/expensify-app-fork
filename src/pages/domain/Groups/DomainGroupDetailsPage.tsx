@@ -18,6 +18,8 @@ import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import CONST from '@src/CONST';
+import useConfirmModal from '@hooks/useConfirmModal';
+import {ModalActions} from '@components/Modal/Global/ModalContext';
 
 type DomainGroupDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.GROUP_DETAILS>;
 
@@ -36,6 +38,10 @@ function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
         canBeMissing: true,
         selector: defaultSecurityGroupIDSelector,
     });
+    const [defaultSecurityGroup] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
+       canBeMissing: true,
+       selector:  selectGroupByID(defaultSecurityGroupID)
+    });
 
     const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
         canBeMissing: true,
@@ -45,6 +51,28 @@ function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
     const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {canBeMissing: true});
 
     const isDefault = defaultSecurityGroupID === groupID;
+
+    const {showConfirmModal} = useConfirmModal();
+
+    const onDefaultGroupToggle = async () => {
+        if (!domainName || !defaultSecurityGroup?.name || !group?.name) {
+            return;
+        }
+
+        const result = await showConfirmModal({
+            title: translate('domain.groups.defaultGroup'),
+            prompt: translate('domain.groups.defaultGroupPrompt', defaultSecurityGroup.name, group.name),
+            confirmText: translate('domain.groups.makeDefault'),
+            cancelText: translate('domain.groups.nevermind'),
+            shouldShowCancelButton: true,
+        });
+
+        if (result.action !== ModalActions.CONFIRM) {
+            return;
+        }
+
+        setDefaultSecurityGroup(domainAccountID, groupID, domainName, defaultSecurityGroupID);
+    };
 
     return (
         <DomainNotFoundPageWrapper domainAccountID={domainAccountID}>
@@ -75,11 +103,9 @@ function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
                         wrapperStyle={[styles.mv3, styles.ph5]}
                         switchAccessibilityLabel={translate('domain.groups.defaultGroup')}
                         isActive={isDefault}
+                        disabled={isDefault}
                         onToggle={() => {
-                            if (!domainName) {
-                                return;
-                            }
-                            setDefaultSecurityGroup(domainAccountID, groupID, domainName, defaultSecurityGroupID);
+                            onDefaultGroupToggle();
                         }}
                         title={translate('domain.groups.defaultGroup')}
                     />

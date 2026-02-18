@@ -149,7 +149,7 @@ const defaultSecurityGroupIDSelector = (domain: OnyxEntry<Domain>) => domain?.do
 /**
  * Creates a selector that finds a single security group by its ID.
  */
-function selectGroupByID(groupID: string) {
+function selectGroupByID(groupID?: string) {
     return (domain: OnyxEntry<Domain>): DomainSecurityGroup | undefined => {
         const key: SecurityGroupKey = `${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`;
         return domain?.[key];
