@@ -1,11 +1,10 @@
-/* cspell:disable */
-import {renderHook} from '@testing-library/react-native';
+import {renderHook, waitFor} from '@testing-library/react-native';
 import Onyx from 'react-native-onyx';
+import useUpcomingTravelReservations from '@pages/home/UpcomingTravelSection/useUpcomingTravelReservations';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report} from '@src/types/onyx';
-import type {Pnr, TripData} from '@src/types/onyx/TripData';
-import useUpcomingTravelReservations from '@pages/home/UpcomingTravelSection/useUpcomingTravelReservations';
+import type {Pnr, PnrData, PnrTraveler} from '@src/types/onyx/TripData';
 import waitForBatchedUpdates from '../../utils/waitForBatchedUpdates';
 
 function daysFromNow(days: number, hours = 12): string {
@@ -15,16 +14,41 @@ function daysFromNow(days: number, hours = 12): string {
     return date.toISOString();
 }
 
-function hoursFromNow(hours: number): string {
-    const date = new Date();
-    date.setHours(date.getHours() + hours);
-    return date.toISOString();
+function makePnrTraveler(userId: string, family1: string, given: string, email: string): PnrTraveler {
+    return {
+        userId: {id: userId},
+        personalInfo: {
+            name: {family1, given, middle: '', family2: '', preferred: ''},
+            email,
+            addresses: [],
+            phoneNumbers: [],
+        },
+        travelerInfo: {},
+        loyalties: [],
+        persona: '',
+        businessInfo: {companySpecifiedAttributes: []},
+        tier: '',
+    };
 }
+
+const basePnrData: Omit<PnrData, 'airPnr' | 'hotelPnr' | 'carPnr' | 'railPnr' | 'limoPnr' | 'miscPnr' | 'pnrTravelers' | 'additionalMetadata'> = {
+    version: 0,
+    travelers: [],
+    transactions: [],
+    customFields: [],
+    tripId: '',
+    suspendReason: '',
+    totalFareAmount: {
+        base: {amount: 0, convertedAmount: 0, convertedCurrency: '', currencyCode: ''},
+        tax: {amount: 0},
+    },
+};
 
 function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, origin = 'ORD', destination = 'SFO'): Pnr {
     return {
         pnrId,
         data: {
+            ...basePnrData,
             airPnr: {
                 legs: [
                     {
@@ -35,14 +59,16 @@ function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, ori
                                 departureDateTime: {iso8601: departureISO},
                                 arrivalDateTime: {iso8601: arrivalISO},
                                 marketing: {airlineCode: 'UA', num: '456'},
+                                operating: {airlineCode: 'UA', num: '456'},
+                                operatingAirlineName: 'United Airlines',
                                 vendorConfirmationNumber: 'CONF123',
                                 cabin: 'Economy',
                                 duration: {iso8601: 'PT3H'},
                                 amenities: [],
-                                arrivalGate: {gate: 'A12', terminal: '1'},
+                                arrivalGate: {gate: '', terminal: ''},
                                 bookingCode: '',
                                 co2EmissionDetail: {averageEmissionValue: 0, emissionValue: 0, flightDistanceKm: 0, isApproximate: false},
-                                departureGate: {gate: 'B5', terminal: '3'},
+                                departureGate: {gate: '', terminal: ''},
                                 distance: {length: 0, unit: ''},
                                 equipment: {code: '', name: '', type: ''},
                                 flightId: '',
@@ -50,8 +76,6 @@ function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, ori
                                 flightStatus: '',
                                 flightWaiverCodes: [],
                                 hiddenStops: [],
-                                operating: {airlineCode: '', num: ''},
-                                operatingAirlineName: '',
                                 otherStatuses: [],
                                 restrictions: [],
                                 sourceStatus: '',
@@ -70,7 +94,6 @@ function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, ori
                         validatingAirlineCode: '',
                     },
                 ],
-                airPnrRemarks: [],
                 travelerInfos: [
                     {
                         tickets: [
@@ -104,8 +127,11 @@ function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, ori
                                 vendorCancellationId: '',
                             },
                         ],
+                        userId: {id: 'user123'},
+                        airVendorCancellationInfo: {airVendorCancellationObjects: []},
+                        appliedCredits: [],
+                        boardingPass: [],
                         booking: {
-                            seats: [{legIdx: 0, flightIdx: 0, amount: 0, number: '14C'}],
                             itinerary: {
                                 fareComponents: [],
                                 flightFareBreakup: [],
@@ -122,16 +148,14 @@ function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, ori
                             luggageDetails: [],
                             otherAncillaries: [],
                             otherCharges: [],
+                            seats: [],
                         },
-                        userId: {id: 'user123'},
-                        airVendorCancellationInfo: {airVendorCancellationObjects: []},
-                        appliedCredits: [],
-                        boardingPass: [],
                         paxType: '',
                         specialServiceRequestInfos: [],
                         travelerIdx: 0,
                     },
                 ],
+                airPnrRemarks: [],
                 automatedCancellationInfo: {supportedCancellations: []},
                 automatedExchangeInfo: {supportedExchanges: []},
                 bookingMetadata: {fareStatistics: {statisticsItems: []}},
@@ -149,17 +173,7 @@ function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, ori
                 },
                 disruptedFlightDetails: [],
             },
-            pnrTravelers: [
-                {
-                    userId: {id: 'user123'},
-                    personalInfo: {name: {family1: 'Doe', given: 'John', middle: '', family2: '', preferred: ''}, email: 'john@example.com', addresses: [], phoneNumbers: []},
-                    travelerInfo: {},
-                    loyalties: [],
-                    persona: '',
-                    businessInfo: {companySpecifiedAttributes: []},
-                    tier: '',
-                },
-            ],
+            pnrTravelers: [makePnrTraveler('user123', 'Doe', 'John', 'john@example.com')],
             additionalMetadata: {
                 airportInfo: [
                     {
@@ -183,13 +197,6 @@ function makeAirPnr(pnrId: string, departureISO: string, arrivalISO: string, ori
                 ],
                 airlineInfo: [{airlineCode: 'UA', airlineName: 'United Airlines'}],
             },
-            version: 0,
-            travelers: [],
-            transactions: [],
-            customFields: [],
-            tripId: '',
-            suspendReason: '',
-            totalFareAmount: {base: {amount: 50, convertedAmount: 0, convertedCurrency: 'USD', currencyCode: 'USD'}, tax: {amount: 5}},
         },
     };
 }
@@ -198,6 +205,7 @@ function makeHotelPnr(pnrId: string, checkInISO: string, checkOutISO: string): P
     return {
         pnrId,
         data: {
+            ...basePnrData,
             hotelPnr: {
                 checkInDateTime: {iso8601: checkInISO},
                 checkOutDateTime: {iso8601: checkOutISO},
@@ -306,70 +314,39 @@ function makeHotelPnr(pnrId: string, checkInISO: string, checkOutISO: string): P
                 vendorCancellationId: '',
                 vendorReferenceId: '',
             },
-            pnrTravelers: [
-                {
-                    personalInfo: {name: {family1: 'Johnson', given: 'Emily', middle: '', family2: '', preferred: ''}, email: 'emily@example.com', addresses: [], phoneNumbers: []},
-                    userId: {id: ''},
-                    travelerInfo: {},
-                    loyalties: [],
-                    persona: '',
-                    businessInfo: {companySpecifiedAttributes: []},
-                    tier: '',
-                },
-            ],
-            version: 0,
-            travelers: [],
-            transactions: [],
+            pnrTravelers: [makePnrTraveler('user200', 'Johnson', 'Emily', 'emily@example.com')],
             additionalMetadata: {airportInfo: [], airlineInfo: []},
-            customFields: [],
-            tripId: '',
-            suspendReason: '',
-            totalFareAmount: {base: {amount: 200, convertedAmount: 0, convertedCurrency: '', currencyCode: 'USD'}, tax: {amount: 20}},
         },
     };
 }
 
 function makeRailPnr(pnrId: string, departISO: string, arriveISO: string): Pnr {
+    const emptyStationInfo = {
+        cityCode: '',
+        continentCode: '',
+        countryCode: '',
+        latLong: {latitude: 0, longitude: 0},
+        localCode: '',
+        sourceRefInfos: [],
+        stateCode: '',
+        stationType: '',
+        timeZone: '',
+    };
     return {
         pnrId,
         data: {
+            ...basePnrData,
             railPnr: {
                 legInfos: [
                     {
-                        originInfo: {
-                            name: 'Station X',
-                            cityName: 'City X',
-                            code: 'STX',
-                            cityCode: '',
-                            continentCode: '',
-                            countryCode: '',
-                            latLong: {latitude: 0, longitude: 0},
-                            localCode: '',
-                            sourceRefInfos: [],
-                            stateCode: '',
-                            stationType: '',
-                            timeZone: '',
-                        },
-                        destinationInfo: {
-                            name: 'Station Y',
-                            cityName: 'City Y',
-                            code: 'STY',
-                            cityCode: '',
-                            continentCode: '',
-                            countryCode: '',
-                            latLong: {latitude: 0, longitude: 0},
-                            localCode: '',
-                            sourceRefInfos: [],
-                            stateCode: '',
-                            stationType: '',
-                            timeZone: '',
-                        },
+                        originInfo: {name: 'Station X', cityName: 'City X', code: 'STX', ...emptyStationInfo},
+                        destinationInfo: {name: 'Station Y', cityName: 'City Y', code: 'STY', ...emptyStationInfo},
                         departAt: {iso8601: departISO},
                         arriveAt: {iso8601: arriveISO},
                         duration: {iso8601: 'PT4H'},
                         allocatedSpaces: [{seatNumber: '12A', coachNumber: 'C1'}],
                         vendorName: 'Amtrak',
-                        vehicle: {carrierName: 'Amtrak', timetableId: '12345', transportName: 'Train 123', type: 'Train'},
+                        vehicle: {carrierName: 'Amtrak', timetableId: '12345', transportName: '', type: ''},
                         ticketNumber: 'RAIL12345',
                         amenities: [],
                         arriveAtLocal: {iso8601: ''},
@@ -401,7 +378,6 @@ function makeRailPnr(pnrId: string, departISO: string, arriveISO: string): Pnr {
                     taxBreakdown: {tax: []},
                     transactionDate: {},
                     refundInfo: {},
-                    paymentMode: '',
                 },
                 rateMetadata: {negotiatedRateType: '', publishedRate: {}, tmcNegotiatedRate: {}, corporateNegotiatedRate: {}},
                 paymentMode: '',
@@ -424,33 +400,9 @@ function makeRailPnr(pnrId: string, departISO: string, arriveISO: string): Pnr {
                     rate: {extras: [], commission: {}, taxBreakdown: {}, refundInfo: {}},
                 },
             },
-            pnrTravelers: [
-                {
-                    userId: {id: 'user456'},
-                    personalInfo: {name: {family1: 'Smith', given: 'Alice', middle: '', family2: '', preferred: ''}, email: 'alice@example.com', addresses: [], phoneNumbers: []},
-                    travelerInfo: {},
-                    loyalties: [],
-                    persona: '',
-                    businessInfo: {companySpecifiedAttributes: []},
-                    tier: '',
-                },
-            ],
-            version: 0,
-            travelers: [],
-            transactions: [],
+            pnrTravelers: [makePnrTraveler('user456', 'Smith', 'Alice', 'alice@example.com')],
             additionalMetadata: {airportInfo: [], airlineInfo: []},
-            customFields: [],
-            tripId: '',
-            suspendReason: '',
-            totalFareAmount: {base: {amount: 100, convertedAmount: 0, convertedCurrency: '', currencyCode: 'USD'}, tax: {amount: 10}},
         },
-    };
-}
-
-function makeTripData(pnrs: Pnr[]): TripData {
-    return {
-        pnrs,
-        tripPaymentInfo: {totalFare: {amount: 1000, currencyCode: 'USD'}},
     };
 }
 
@@ -463,7 +415,7 @@ function makeTripRoomReport(reportID: string, pnrs: Pnr[]): Report {
         policyID: 'policy1',
         tripData: {
             tripID: `trip-${reportID}`,
-            payload: makeTripData(pnrs),
+            payload: {pnrs},
         },
     } as Report;
 }
@@ -482,10 +434,12 @@ describe('useUpcomingTravelReservations', () => {
         await Onyx.clear();
     });
 
-    it('should return empty array when no reports exist', () => {
+    it('should return empty array when no reports exist', async () => {
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toEqual([]);
+        await waitFor(() => {
+            expect(result.current).toEqual([]);
+        });
     });
 
     it('should return empty array when no trip rooms exist', async () => {
@@ -502,7 +456,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toEqual([]);
+        await waitFor(() => {
+            expect(result.current).toEqual([]);
+        });
     });
 
     it('should return empty array when all reservations are in the past', async () => {
@@ -514,7 +470,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toEqual([]);
+        await waitFor(() => {
+            expect(result.current).toEqual([]);
+        });
     });
 
     it('should return empty array when all reservations are more than 7 days away', async () => {
@@ -526,7 +484,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toEqual([]);
+        await waitFor(() => {
+            expect(result.current).toEqual([]);
+        });
     });
 
     it('should return reservation departing within 7 days', async () => {
@@ -538,7 +498,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toHaveLength(1);
+        await waitFor(() => {
+            expect(result.current).toHaveLength(1);
+        });
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_UPCOMING');
         expect(result.current.at(0)?.reservation.type).toBe(CONST.RESERVATION_TYPE.FLIGHT);
         expect(result.current.at(0)?.reportID).toBe('102');
@@ -553,7 +515,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toHaveLength(1);
+        await waitFor(() => {
+            expect(result.current).toHaveLength(1);
+        });
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_7DAYS');
     });
 
@@ -566,7 +530,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toHaveLength(1);
+        await waitFor(() => {
+            expect(result.current).toHaveLength(1);
+        });
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_TODAY');
     });
 
@@ -580,8 +546,10 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
+        await waitFor(() => {
+            expect(result.current).toHaveLength(1);
+        });
         expect(result.current.find((r) => r.reservation.reservationID === 'PNR_JUST_PASSED')).toBeUndefined();
-        expect(result.current).toHaveLength(1);
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_LATER_TODAY');
     });
 
@@ -599,7 +567,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toHaveLength(3);
+        await waitFor(() => {
+            expect(result.current).toHaveLength(3);
+        });
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_DAY1');
         expect(result.current.at(1)?.reservation.reservationID).toBe('PNR_DAY3');
         expect(result.current.at(2)?.reservation.reservationID).toBe('PNR_DAY5');
@@ -617,7 +587,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toHaveLength(1);
+        await waitFor(() => {
+            expect(result.current).toHaveLength(1);
+        });
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_3DAYS_MIX');
     });
 
@@ -633,7 +605,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toHaveLength(3);
+        await waitFor(() => {
+            expect(result.current).toHaveLength(3);
+        });
 
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_RAIL_MIX');
         expect(result.current.at(0)?.reservation.type).toBe(CONST.RESERVATION_TYPE.TRAIN);
@@ -658,7 +632,9 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toHaveLength(2);
+        await waitFor(() => {
+            expect(result.current).toHaveLength(2);
+        });
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_TRIP2');
         expect(result.current.at(0)?.reportID).toBe('501');
         expect(result.current.at(1)?.reservation.reservationID).toBe('PNR_TRIP1');
@@ -679,6 +655,8 @@ describe('useUpcomingTravelReservations', () => {
 
         const {result} = renderHook(() => useUpcomingTravelReservations());
 
-        expect(result.current).toEqual([]);
+        await waitFor(() => {
+            expect(result.current).toEqual([]);
+        });
     });
 });
