@@ -6,7 +6,7 @@ import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavig
 import {isLoggingInAsNewUser as isLoggingInAsNewUserSessionUtils} from '@libs/SessionUtils';
 import Navigation from '@navigation/Navigation';
 import type {AuthScreensParamList} from '@navigation/types';
-import {signInWithShortLivedAuthToken, signInWithSupportAuthToken, signOutAndRedirectToSignIn} from '@userActions/Session';
+import {signInWithShortLivedAuthToken, signInWithSupportAuthToken} from '@userActions/Session';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -32,12 +32,6 @@ function LogOutPreviousUserPage({route}: LogOutPreviousUserPageProps) {
         const transitionURL = CONFIG.IS_HYBRID_APP ? `${CONST.DEEPLINK_BASE_URL}${initialURL ?? ''}` : initialURL;
         const isLoggingInAsNewUser = isLoggingInAsNewUserSessionUtils(transitionURL ?? undefined, sessionEmail);
         const isSupportalLogin = authTokenType === CONST.AUTH_TOKEN_TYPES.SUPPORT;
-
-        if (isLoggingInAsNewUser) {
-            // We don't want to close react-native app in this particular case.
-            signOutAndRedirectToSignIn(false, isSupportalLogin);
-            return;
-        }
 
         if (isSupportalLogin) {
             signInWithSupportAuthToken(shortLivedAuthToken);

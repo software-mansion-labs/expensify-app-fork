@@ -17,7 +17,7 @@ import '@libs/Notification/PushNotification/subscribeToPushNotifications';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import * as SessionUtil from '@src/libs/actions/Session';
-import {KEYS_TO_PRESERVE_SUPPORTAL, signOutAndRedirectToSignIn} from '@src/libs/actions/Session';
+import {KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT, signOutAndRedirectToSignIn} from '@src/libs/actions/Session';
 import * as API from '@src/libs/API';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Credentials, Session} from '@src/types/onyx';
@@ -329,7 +329,7 @@ describe('Session', () => {
 
             expect(SessionUtil.signOut).not.toHaveBeenCalled();
 
-            expect(onyxClearSpy).toHaveBeenCalledWith(KEYS_TO_PRESERVE_SUPPORTAL);
+            expect(onyxClearSpy).toHaveBeenCalledWith(KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT);
 
             expect(onyxMultiSetSpy).toHaveBeenCalledWith({
                 [ONYXKEYS.CREDENTIALS]: testStashedCredentials,

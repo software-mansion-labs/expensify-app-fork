@@ -224,12 +224,30 @@ function getShortLivedLoginParams(isSupportAuthTokenUsed = false, isSAML = false
     return {optimisticData, failureData, finallyData};
 }
 
+// When a support agent signs into a different user's account, we must clear all previous user data from Onyx
+// so that private data from the previous account (e.g. Profile/PersonalDetails) is not shown. Only preserve
+// non-user-specific app settings.
+const KEYS_TO_PRESERVE_SUPPORTAL_LOGIN = [
+    ONYXKEYS.NVP_TRY_FOCUS_MODE,
+    ONYXKEYS.PREFERRED_THEME,
+    ONYXKEYS.NVP_PREFERRED_LOCALE,
+    ONYXKEYS.ARE_TRANSLATIONS_LOADING,
+    ONYXKEYS.ACTIVE_CLIENTS,
+    ONYXKEYS.DEVICE_ID,
+    ONYXKEYS.NETWORK,
+    ONYXKEYS.SHOULD_USE_STAGING_SERVER,
+    ONYXKEYS.IS_DEBUG_MODE_ENABLED,
+    ONYXKEYS.IS_USING_IMPORTED_STATE,
+];
+
 /**
  * This method should be used when we are being redirected from oldDot to NewDot on a supportal request
  */
 function signInWithSupportAuthToken(authToken: string) {
     const {optimisticData, finallyData} = getShortLivedLoginParams(true);
-    API.read(READ_COMMANDS.SIGN_IN_WITH_SUPPORT_AUTH_TOKEN, {authToken}, {optimisticData, finallyData});
+    Onyx.clear(KEYS_TO_PRESERVE_SUPPORTAL_LOGIN).then(() => {
+        API.read(READ_COMMANDS.SIGN_IN_WITH_SUPPORT_AUTH_TOKEN, {authToken}, {optimisticData, finallyData});
+    });
 }
 
 /**
@@ -296,7 +314,7 @@ function isExpiredSession(sessionCreationDate: number): boolean {
     return new Date().getTime() - sessionCreationDate >= CONST.SESSION_EXPIRATION_TIME_MS;
 }
 
-const KEYS_TO_PRESERVE_SUPPORTAL = [
+const KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT = [
     ONYXKEYS.NVP_TRY_FOCUS_MODE,
     ONYXKEYS.PREFERRED_THEME,
     ONYXKEYS.NVP_PREFERRED_LOCALE,
@@ -420,7 +438,7 @@ function signOutAndRedirectToSignIn(shouldResetToHome?: boolean, shouldStashSess
                 // and then redirect to the oldDot supportal page to restore the stashed session
                 // Clear the Onyx DB of stale data that might be present from a previous session
                 // of the customer account
-                Onyx.clear(KEYS_TO_PRESERVE_SUPPORTAL).then(() => {
+                Onyx.clear(KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT).then(() => {
                     Onyx.multiSet(onyxSetParams).then(() => {
                         buildOldDotURL(CONST.OLDDOT_URLS.SUPPORTAL_RESTORE_STASHED_LOGIN).then((oldDotURL) => {
                             // Open the oldDot URL to restore the stashed session and go back to OD supportal page
@@ -1556,7 +1574,7 @@ function resetSMSDeliveryFailureStatus(login: string) {
 }
 
 export {
-    KEYS_TO_PRESERVE_SUPPORTAL,
+    KEYS_TO_PRESERVE_SUPPORTAL_LOGOUT,
     beginSignIn,
     beginAppleSignIn,
     beginGoogleSignIn,
