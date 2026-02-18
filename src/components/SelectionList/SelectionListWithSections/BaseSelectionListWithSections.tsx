@@ -60,7 +60,6 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
     showListEmptyContent = true,
     shouldShowTooltips = true,
     disableKeyboardShortcuts = false,
-    disableMaintainingScrollPosition = false,
     shouldShowTextInput,
     shouldIgnoreFocus = false,
     shouldStopPropagation = false,
@@ -371,7 +370,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
                         ListFooterComponent={listFooterContent}
                         style={style?.listStyle}
                         contentContainerStyle={style?.contentContainerStyle}
-                        maintainVisibleContentPosition={{disabled: disableMaintainingScrollPosition}}
+                        maintainVisibleContentPosition={{disabled: true}}
                     />
                 </>
             )}
