@@ -240,7 +240,7 @@ function MoneyRequestAccountantSelector({onFinish, onAccountantSelected, iouType
         [selectAccountant],
     );
 
-    const showLoadingPlaceholder = useMemo(() => !areOptionsInitialized || !didScreenTransitionEnd, [areOptionsInitialized, didScreenTransitionEnd]);
+    const shouldShowLoadingPlaceholder = useMemo(() => !areOptionsInitialized || !didScreenTransitionEnd, [areOptionsInitialized, didScreenTransitionEnd]);
 
     const optionLength = useMemo(() => {
         if (!areOptionsInitialized) {
@@ -249,7 +249,7 @@ function MoneyRequestAccountantSelector({onFinish, onAccountantSelected, iouType
         return sections.reduce((acc, section) => acc + section.data.length, 0);
     }, [areOptionsInitialized, sections]);
 
-    const shouldShowListEmptyContent = useMemo(() => optionLength === 0 && !showLoadingPlaceholder, [optionLength, showLoadingPlaceholder]);
+    const shouldShowListEmptyContent = useMemo(() => optionLength === 0 && !shouldShowLoadingPlaceholder, [optionLength, shouldShowLoadingPlaceholder]);
 
     const textInputOptions = {
         value: searchTerm,
@@ -272,9 +272,9 @@ function MoneyRequestAccountantSelector({onFinish, onAccountantSelected, iouType
             shouldSingleExecuteRowSelect
             textInputOptions={textInputOptions}
             listEmptyContent={<EmptySelectionListContent contentType={iouType} />}
-            showLoadingPlaceholder={showLoadingPlaceholder}
+            shouldShowLoadingPlaceholder={shouldShowLoadingPlaceholder}
             isLoadingNewOptions={!!isSearchingForReports}
-            showListEmptyContent={shouldShowListEmptyContent}
+            shouldShowListEmptyContent={shouldShowListEmptyContent}
         />
     );
 }

@@ -66,7 +66,7 @@ function ShareTab({ref}: ShareTabProps) {
     const [isSearchingForReports] = useOnyx(ONYXKEYS.IS_SEARCHING_FOR_REPORTS, {initWithStoredValues: false, canBeMissing: true});
 
     const offlineMessage: string = isOffline ? `${translate('common.youAppearToBeOffline')} ${translate('search.resultsAreLimited')}` : '';
-    const showLoadingPlaceholder = useMemo(() => !areOptionsInitialized || !didScreenTransitionEnd, [areOptionsInitialized, didScreenTransitionEnd]);
+    const shouldShowLoadingPlaceholder = useMemo(() => !areOptionsInitialized || !didScreenTransitionEnd, [areOptionsInitialized, didScreenTransitionEnd]);
 
     const searchOptions = useMemo(() => {
         if (!areOptionsInitialized) {
@@ -172,7 +172,7 @@ function ShareTab({ref}: ShareTabProps) {
             textInputOptions={textInputOptions}
             style={{listStyle: [styles.ph2, styles.pb2, styles.overscrollBehaviorContain]}}
             ListItem={InviteMemberListItem}
-            showLoadingPlaceholder={showLoadingPlaceholder}
+            shouldShowLoadingPlaceholder={shouldShowLoadingPlaceholder}
             shouldSingleExecuteRowSelect
             onSelectRow={onSelectRow}
             isLoadingNewOptions={!!isSearchingForReports}

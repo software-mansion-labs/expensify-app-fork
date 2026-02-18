@@ -321,7 +321,7 @@ function EditInviteReceiptPartnerPolicyPage({route}: EditInviteReceiptPartnerPol
                                                 headerMessage: currentHeaderMessage,
                                             }}
                                             listEmptyContent={listEmptyContent}
-                                            showListEmptyContent={shouldShowListEmptyContent}
+                                            shouldShowListEmptyContent={shouldShowListEmptyContent}
                                         />
                                     </TabScreenWithFocusTrapWrapper>
                                 );

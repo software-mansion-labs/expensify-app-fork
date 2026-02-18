@@ -906,7 +906,7 @@ type SelectionListProps<TItem extends ListItem> = Partial<ChildrenProps> & {
     showScrollIndicator?: boolean;
 
     /** Whether to show the loading placeholder */
-    showLoadingPlaceholder?: boolean;
+    shouldShowLoadingPlaceholder?: boolean;
 
     /** The component to show when the list is loading */
     LoadingPlaceholderComponent?: React.ComponentType<LoadingPlaceholderComponentProps>;

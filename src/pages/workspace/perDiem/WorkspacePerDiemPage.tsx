@@ -475,7 +475,7 @@ function WorkspacePerDiemPage({route}: WorkspacePerDiemPageProps) {
                         shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}
                         shouldUseDefaultRightHandSideCheckmark={false}
                         customListHeaderContent={headerContent}
-                        showListEmptyContent={false}
+                        shouldShowListEmptyContent={false}
                         showScrollIndicator={false}
                         turnOnSelectionModeOnLongPress
                         shouldHeaderBeInsideList

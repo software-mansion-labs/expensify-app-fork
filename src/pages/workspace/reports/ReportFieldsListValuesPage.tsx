@@ -401,7 +401,7 @@ function ReportFieldsListValuesPage({
                         customListHeaderContent={headerContent}
                         canSelectMultiple={canSelectMultiple}
                         onCheckboxPress={toggleValue}
-                        showListEmptyContent={false}
+                        shouldShowListEmptyContent={false}
                         showScrollIndicator={false}
                         turnOnSelectionModeOnLongPress
                         shouldHeaderBeInsideList

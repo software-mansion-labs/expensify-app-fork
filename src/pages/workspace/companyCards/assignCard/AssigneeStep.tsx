@@ -241,7 +241,7 @@ function AssigneeStep({route}: AssigneeStepProps) {
                 ListItem={UserListItem}
                 textInputOptions={textInputOptions}
                 initiallyFocusedItemKey={assignCard?.cardToAssign?.email}
-                showLoadingPlaceholder={!areOptionsInitialized}
+                shouldShowLoadingPlaceholder={!areOptionsInitialized}
                 isLoadingNewOptions={!!isSearchingForReports}
                 disableMaintainingScrollPosition
                 shouldUpdateFocusedIndex

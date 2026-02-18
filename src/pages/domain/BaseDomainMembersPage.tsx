@@ -226,7 +226,7 @@ function BaseDomainMembersPage({
                     ListItem={TableListItem}
                     onSelectRow={onSelectRow}
                     onDismissError={onDismissError}
-                    showListEmptyContent={false}
+                    shouldShowListEmptyContent={false}
                     showScrollIndicator={false}
                     shouldHeaderBeInsideList
                     customListHeader={getCustomListHeader()}

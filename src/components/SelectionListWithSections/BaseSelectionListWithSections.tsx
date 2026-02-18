@@ -67,7 +67,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
     footerContentAbovePagination,
     listEmptyContent,
     showScrollIndicator = true,
-    showLoadingPlaceholder = false,
+    shouldShowLoadingPlaceholder = false,
     LoadingPlaceholderComponent = OptionsListSkeletonView,
     showConfirmButton = false,
     isConfirmButtonDisabled = false,
@@ -720,7 +720,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
     };
 
     const renderListEmptyContent = () => {
-        if (showLoadingPlaceholder) {
+        if (shouldShowLoadingPlaceholder) {
             return (
                 <LoadingPlaceholderComponent
                     fixedNumItems={fixedNumItemsForLoader}
@@ -1003,7 +1003,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
     );
 
     const headerMessageContent = () =>
-        (!isLoadingNewOptions || headerMessage !== translate('common.noResultsFound') || (flattenedSections.allOptions.length === 0 && !showLoadingPlaceholder)) &&
+        (!isLoadingNewOptions || headerMessage !== translate('common.noResultsFound') || (flattenedSections.allOptions.length === 0 && !shouldShowLoadingPlaceholder)) &&
         !!headerMessage && (
             <View style={headerMessageStyle ?? [styles.ph5, styles.pb5]}>
                 <Text style={[styles.textLabel, styles.colorMuted, styles.minHeight5]}>{headerMessage}</Text>
@@ -1031,7 +1031,7 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
             {/* This is misleading because we might be in the process of loading fresh options from the server. */}
             {!shouldShowHeaderMessageAfterHeader && headerMessageContent()}
             {!!headerContent && headerContent}
-            {flattenedSections.allOptions.length === 0 && (showLoadingPlaceholder || shouldShowListEmptyContent) ? (
+            {flattenedSections.allOptions.length === 0 && (shouldShowLoadingPlaceholder || shouldShowListEmptyContent) ? (
                 renderListEmptyContent()
             ) : (
                 <>
