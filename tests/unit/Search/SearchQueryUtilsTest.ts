@@ -101,7 +101,7 @@ describe('SearchQueryUtils', () => {
 
             const result = getQueryWithUpdatedValues(userQuery);
 
-            expect(result).toEqual(`${defaultQuery} view:bar groupBy:category from:12345`);
+            expect(result).toEqual('type:expense sortBy:groupCategory sortOrder:asc view:bar groupBy:category from:12345');
         });
 
         test('returns query with view:line', () => {
@@ -109,8 +109,7 @@ describe('SearchQueryUtils', () => {
 
             const result = getQueryWithUpdatedValues(userQuery);
 
-            // LINE view defaults to sortOrder:asc (chronological) and groupBy:month
-            expect(result).toEqual('type:expense sortBy:date sortOrder:asc view:line groupBy:month category:travel');
+            expect(result).toEqual('type:expense sortBy:groupmonth sortOrder:asc view:line groupBy:month category:travel');
         });
 
         test('returns query with view:pie', () => {
@@ -118,7 +117,7 @@ describe('SearchQueryUtils', () => {
 
             const result = getQueryWithUpdatedValues(userQuery);
 
-            expect(result).toEqual(`${defaultQuery} view:pie groupBy:category merchant:Amazon`);
+            expect(result).toEqual('type:expense sortBy:groupCategory sortOrder:asc view:pie groupBy:category merchant:Amazon');
         });
 
         test('deduplicates conflicting type filters keeping the last occurrence', () => {
@@ -314,7 +313,7 @@ describe('SearchQueryUtils', () => {
 
                 const result = buildQueryStringFromFilterFormValues(filterValues, {sortBy: 'amount', sortOrder: 'asc', limit: 25});
 
-                expect(result).toEqual('sortBy:amount sortOrder:asc type:expense merchant:Amazon limit:25');
+                expect(result).toEqual('type:expense sortBy:amount sortOrder:asc merchant:Amazon limit:25');
             });
 
             test('omits limit when not provided', () => {
@@ -1303,12 +1302,12 @@ describe('SearchQueryUtils', () => {
             expect(shouldResetSortOrder('line', 'line', 'month', 'month')).toBe(false);
         });
 
-        test('returns false when groupBy changes in table view', () => {
-            expect(shouldResetSortOrder('table', 'table', 'week', 'month')).toBe(false);
+        test('returns true when groupBy changes in table view', () => {
+            expect(shouldResetSortOrder('table', 'table', 'week', 'month')).toBe(true);
         });
 
-        test('returns false when groupBy changes in bar view', () => {
-            expect(shouldResetSortOrder('bar', 'bar', 'category', 'month')).toBe(false);
+        test('returns true when groupBy changes in bar view', () => {
+            expect(shouldResetSortOrder('bar', 'bar', 'category', 'month')).toBe(true);
         });
 
         // Boundary + groupBy change at the same time (e.g. switching to line with a different groupBy)
@@ -1321,8 +1320,8 @@ describe('SearchQueryUtils', () => {
             expect(shouldResetSortOrder(undefined, undefined, undefined, undefined)).toBe(false);
         });
 
-        test('returns false when both views are undefined and groupBy changes', () => {
-            expect(shouldResetSortOrder(undefined, undefined, 'week', 'month')).toBe(false);
+        test('returns true when both views are undefined and groupBy changes', () => {
+            expect(shouldResetSortOrder(undefined, undefined, 'week', 'month')).toBe(true);
         });
     });
 });

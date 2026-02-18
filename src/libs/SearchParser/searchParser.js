@@ -4551,24 +4551,26 @@ function peg$parse(input, options) {
   }
 
   function applyDefaults(filters) {
-    // Apply chart view defaults (runs after all tokens are parsed, so ordering doesn't matter)
-    if (defaultValues.view && defaultValues.view !== "table") {
-      // Default groupBy when not explicitly set: "month" for line charts, "category" for others
-      if (!defaultValues.groupBy) {
-        defaultValues.groupBy = defaultValues.view === "line" ? "month" : "category";
-      }
-
-      // Default sortOrder to ASC for LINE view with time-based groupBy, only if not explicitly set by the user
-      if (defaultValues.view === "line" && TIME_BASED_GROUP_BY.has(defaultValues.groupBy) && !userProvidedSortOrder) {
-        defaultValues.sortOrder = "asc";
-      }
-    }
-
     return {
       ...defaultValues,
       filters,
       rawFilterList,
     };
+  }
+
+  function deriveGroupByDefaults(groupByValue) {
+    if (!userProvidedSortBy) {
+      const defaultSortBy = getDefaultSortByForGroupBy(groupByValue);
+      if (defaultSortBy && defaultValues.sortBy !== defaultSortBy) {
+        defaultValues.sortBy = defaultSortBy;
+        if (!userProvidedSortOrder) {
+          const defaultSortOrder = getDefaultSortOrderForGroupBy(groupByValue);
+          if (defaultSortOrder) {
+            defaultValues.sortOrder = defaultSortOrder;
+          }
+        }
+      }
+    }
   }
 
   function updateDefaultValues(field, value) {
@@ -4588,19 +4590,24 @@ function peg$parse(input, options) {
     }
 
     // Auto-update sortBy and sortOrder when groupBy changes
-    // Only reset sortOrder if sortBy actually changes (to avoid resetting on every parse)
     if (field === "groupBy" && value) {
-      if (!userProvidedSortBy) {
-        const defaultSortBy = getDefaultSortByForGroupBy(value);
-        // Check if sortBy is actually changing
-        if (defaultSortBy && defaultValues.sortBy !== defaultSortBy) {
-          defaultValues.sortBy = defaultSortBy;
-          // When sortBy changes, reset the sortOrder flag and apply new default
-          const defaultSortOrder = getDefaultSortOrderForGroupBy(value);
-          if (defaultSortOrder) {
-            defaultValues.sortOrder = defaultSortOrder;
-          }
-        }
+      deriveGroupByDefaults(value);
+
+      if (defaultValues.view !== "table" && TIME_BASED_GROUP_BY.has(value) && !userProvidedSortOrder) {
+        defaultValues.sortOrder = "asc";
+      }
+    }
+
+    // Chart view defaults: set default groupBy and sortOrder when view changes to a chart type
+    if (field === "view" && value && value !== "table") {
+      if (!defaultValues.groupBy) {
+        const defaultGroupBy = value === "line" ? "month" : "category";
+        defaultValues.groupBy = defaultGroupBy;
+        deriveGroupByDefaults(defaultGroupBy);
+      }
+
+      if (TIME_BASED_GROUP_BY.has(defaultValues.groupBy) && !userProvidedSortOrder) {
+        defaultValues.sortOrder = "asc";
       }
     }
 
