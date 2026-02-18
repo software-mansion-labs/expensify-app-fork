@@ -2,7 +2,7 @@ import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import reject from 'lodash/reject';
 import type {Ref} from 'react';
 import React, {useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
-import {Keyboard} from 'react-native';
+import {Keyboard, Platform} from 'react-native';
 import Button from '@components/Button';
 import {usePersonalDetails} from '@components/OnyxListItemProvider';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -262,7 +262,7 @@ function NewChatPage({ref}: NewChatPageProps) {
     const isFirstRender = useRef(true);
     useFocusEffect(
         useCallback(() => {
-            if (isFirstRender.current) {
+            if (isFirstRender.current || Platform.OS !== 'web') {
                 isFirstRender.current = false;
                 return;
             }
