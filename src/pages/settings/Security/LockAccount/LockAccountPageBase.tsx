@@ -48,7 +48,6 @@ function LockAccountPageBase({
         const modalResult = await showConfirmModal({
             danger: true,
             title: translate('lockAccountPage.reportSuspiciousActivity'),
-
             prompt: confirmModalPrompt,
             confirmText: translate('lockAccountPage.lockAccount'),
             cancelText: translate('common.cancel'),
