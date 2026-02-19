@@ -1,3 +1,4 @@
+import {differenceInCalendarDays} from 'date-fns';
 import React from 'react';
 import {View} from 'react-native';
 import Icon from '@components/Icon';
@@ -43,16 +44,13 @@ function getTitle(translate: ReturnType<typeof useLocalize>['translate'], reserv
 }
 
 function getRelativeTime(translate: ReturnType<typeof useLocalize>['translate'], startDate: string): string {
-    const now = new Date();
-    const start = new Date(startDate);
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startDayStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-    const diffDays = Math.round((startDayStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = differenceInCalendarDays(new Date(startDate), new Date());
 
+    // Today or in the past (shouldn't happen given the 7-day window filter, but handled for safety)
     if (diffDays <= 0) {
         return translate('homePage.upcomingTravelSection.today');
     }
-    if (diffDays === 7) {
+    if (diffDays === CONST.UPCOMING_TRAVEL_WINDOW_DAYS) {
         return translate('homePage.upcomingTravelSection.inOneWeek');
     }
     return translate('homePage.upcomingTravelSection.inDays', {count: diffDays});

@@ -3,9 +3,8 @@ import useOnyx from '@hooks/useOnyx';
 import {isTripRoom} from '@libs/ReportUtils';
 import type {ReservationData} from '@libs/TripReservationUtils';
 import {getReservationsFromTripReport} from '@libs/TripReservationUtils';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-
-const UPCOMING_WINDOW_DAYS = 7;
 
 type UpcomingReservation = ReservationData & {
     reportID: string;
@@ -17,7 +16,7 @@ function useUpcomingTravelReservations(): UpcomingReservation[] {
     return useMemo(() => {
         const now = new Date();
         const windowEnd = new Date(now);
-        windowEnd.setDate(windowEnd.getDate() + UPCOMING_WINDOW_DAYS);
+        windowEnd.setDate(windowEnd.getDate() + CONST.UPCOMING_TRAVEL_WINDOW_DAYS);
 
         const reports = Object.values(allReports ?? {});
         const upcoming: UpcomingReservation[] = [];
