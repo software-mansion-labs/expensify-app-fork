@@ -1,5 +1,5 @@
 import {selectGroupByID} from '@selectors/Domain';
-import React from 'react';
+import React, {useRef} from 'react';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import type {FormOnyxValues} from '@components/Form/types';
@@ -21,6 +21,7 @@ import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/DomainGroupEditNameForm';
 import type {Errors} from '@src/types/onyx/OnyxCommon';
+import type {AnimatedTextInputRef} from '@components/RNTextInput';
 
 type DomainGroupEditNamePageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.GROUP_EDIT_NAME>;
 
@@ -34,6 +35,8 @@ function DomainGroupEditNamePage({route}: DomainGroupEditNamePageProps) {
         canBeMissing: true,
         selector: selectGroupByID(groupID),
     });
+
+    const inputRef = useRef<AnimatedTextInputRef>(null);
 
     const handleSubmit = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.EDIT_DOMAIN_GROUP_NAME_FORM>) => {
         if (!group?.name) {
@@ -58,6 +61,7 @@ function DomainGroupEditNamePage({route}: DomainGroupEditNamePageProps) {
     return (
         <DomainNotFoundPageWrapper domainAccountID={domainAccountID}>
             <ScreenWrapper
+                onEntryTransitionEnd={() => inputRef.current?.focus()}
                 shouldEnableMaxHeight
                 shouldUseCachedViewportHeight
                 testID="DomainGroupEditNamePage"
@@ -84,7 +88,7 @@ function DomainGroupEditNamePage({route}: DomainGroupEditNamePageProps) {
                         autoCapitalize="none"
                         spellCheck={false}
                         enterKeyHint="done"
-                        autoFocus
+                        ref={inputRef}
                     />
                 </FormProvider>
             </ScreenWrapper>
