@@ -15,7 +15,6 @@ import Text from '@components/Text';
 import useAdvancedSearchFilters from '@hooks/useAdvancedSearchFilters';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import usePrevious from '@hooks/usePrevious';
 import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
@@ -583,18 +582,15 @@ function AdvancedSearchFilters() {
 
     const {currentType, typeFiltersKeys, workspaces} = useAdvancedSearchFilters();
 
-    const prevView = usePrevious(searchAdvancedFilters.view);
-    const prevGroupBy = usePrevious(searchAdvancedFilters.groupBy);
-
     const queryString = useMemo(() => {
         const currentQueryJSON = getCurrentSearchQueryJSON();
-        const resetSort = shouldResetSortOrder(searchAdvancedFilters.view, prevView, searchAdvancedFilters.groupBy, prevGroupBy);
+        const resetSort = shouldResetSortOrder(searchAdvancedFilters.view, currentQueryJSON?.view, searchAdvancedFilters.groupBy, currentQueryJSON?.groupBy);
         return buildQueryStringFromFilterFormValues(searchAdvancedFilters, {
             sortBy: currentQueryJSON?.sortBy,
             sortOrder: resetSort ? undefined : currentQueryJSON?.sortOrder,
             limit: currentQueryJSON?.limit,
         });
-    }, [searchAdvancedFilters, prevView, prevGroupBy]);
+    }, [searchAdvancedFilters]);
     const queryJSON = useMemo(() => buildSearchQueryJSON(queryString || buildCannedSearchQuery()), [queryString]);
 
     const applyFiltersAndNavigate = () => {
