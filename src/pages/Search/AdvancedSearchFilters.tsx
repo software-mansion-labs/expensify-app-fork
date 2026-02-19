@@ -584,7 +584,12 @@ function AdvancedSearchFilters() {
 
     const queryString = useMemo(() => {
         const currentQueryJSON = getCurrentSearchQueryJSON();
-        const resetSort = shouldResetSortOrder(searchAdvancedFilters.view, currentQueryJSON?.view, searchAdvancedFilters.groupBy, currentQueryJSON?.groupBy);
+        const resetSort = shouldResetSortOrder({
+            newView: searchAdvancedFilters.view,
+            oldView: currentQueryJSON?.view,
+            newGroupBy: searchAdvancedFilters.groupBy,
+            oldGroupBy: currentQueryJSON?.groupBy,
+        });
         return buildQueryStringFromFilterFormValues(searchAdvancedFilters, {
             sortBy: currentQueryJSON?.sortBy,
             sortOrder: resetSort ? undefined : currentQueryJSON?.sortOrder,

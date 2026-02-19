@@ -313,7 +313,12 @@ function SearchFiltersBar({
                 updatedFilterFormValues.columns = [];
             }
 
-            const resetSortOrder = shouldResetSortOrder(updatedFilterFormValues.view, searchAdvancedFiltersForm.view, updatedFilterFormValues.groupBy, searchAdvancedFiltersForm.groupBy);
+            const resetSortOrder = shouldResetSortOrder({
+                newView: updatedFilterFormValues.view,
+                oldView: searchAdvancedFiltersForm.view,
+                newGroupBy: updatedFilterFormValues.groupBy,
+                oldGroupBy: searchAdvancedFiltersForm.groupBy,
+            });
 
             let queryString = buildQueryStringFromFilterFormValues(updatedFilterFormValues, {
                 sortBy: queryJSON.sortBy,

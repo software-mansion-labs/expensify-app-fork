@@ -1587,7 +1587,17 @@ function shouldSkipSuggestedSearchNavigation(queryJSON?: SearchQueryJSON) {
  * When crossing the line/non-line boundary or changing groupBy within line view,
  * we reset sortOrder so the parser can determine the correct default.
  */
-function shouldResetSortOrder(newView: string | undefined, oldView: string | undefined, newGroupBy: string | undefined, oldGroupBy: string | undefined): boolean {
+function shouldResetSortOrder({
+    newView,
+    oldView,
+    newGroupBy,
+    oldGroupBy,
+}: {
+    newView: string | undefined;
+    oldView: string | undefined;
+    newGroupBy: string | undefined;
+    oldGroupBy: string | undefined;
+}): boolean {
     return newView !== oldView || newGroupBy !== oldGroupBy;
 }
 
