@@ -25,6 +25,11 @@ type DomainSecurityGroupErrors = {
      * Errors related to the default security group ID setting
      */
     defaultSecurityGroupIDErrors?: OnyxCommon.Errors;
+
+    /**
+     *
+     */
+    enableStrictPolicyRulesErrors?: OnyxCommon.Errors;
 };
 
 /**
@@ -62,4 +67,5 @@ type DomainErrors = {
     setTwoFactorAuthRequiredError?: OnyxCommon.Errors;
 } & PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroupErrors>;
 
+export type {DomainSecurityGroupErrors};
 export default DomainErrors;

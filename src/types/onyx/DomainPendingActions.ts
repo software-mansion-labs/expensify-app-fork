@@ -1,6 +1,6 @@
-import type * as OnyxCommon from './OnyxCommon';
-import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
 import type CONST from '@src/CONST';
+import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
+import type * as OnyxCommon from './OnyxCommon';
 
 /**
  * General pending action structure for domain members
@@ -26,6 +26,11 @@ type DomainSecurityGroupPendingActions = {
      * Pending action for the default security group ID
      */
     defaultSecurityGroupID?: OnyxCommon.PendingAction;
+
+    /**
+     *
+     */
+    enableStrictPolicyRules?: OnyxCommon.PendingAction;
 };
 
 /**
@@ -63,4 +68,5 @@ type DomainPendingAction = {
     pendingAction?: OnyxCommon.PendingAction;
 } & PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroupPendingActions>;
 
+export type {DomainSecurityGroupPendingActions};
 export default DomainPendingAction;
