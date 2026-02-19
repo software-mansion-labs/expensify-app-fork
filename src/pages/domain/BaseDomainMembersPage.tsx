@@ -192,9 +192,14 @@ function BaseDomainMembersPage({
 
     const showSearchBar = data.length > CONST.SEARCH_ITEM_LIMIT;
     const listHeaderContent = (
-        <View style={[styles.mh5, styles.gap4, shouldUseNarrowLayout ? styles.flexColumnReverse : styles.flexRow, showSearchBar ? styles.justifyContentBetween : styles.justifyContentEnd]}>
+        <View style={[styles.mh5, styles.gap3, shouldUseNarrowLayout ? styles.flexColumn : styles.flexRow]}>
+            <View
+                style={[shouldUseNarrowLayout && styles.w100, showSearchBar && !shouldUseNarrowLayout && styles.h13, showSearchBar && !shouldUseNarrowLayout && styles.justifyContentCenter]}
+            >
+                {searchBarAccessory}
+            </View>
             {showSearchBar ? (
-                <View style={styles.flexColumn}>
+                <View style={[shouldUseNarrowLayout && styles.w100]}>
                     <SearchBar
                         inputValue={inputValue}
                         onChangeText={setInputValue}
@@ -204,7 +209,6 @@ function BaseDomainMembersPage({
                     />
                 </View>
             ) : undefined}
-            <View style={showSearchBar ? styles.pt2 : undefined}>{searchBarAccessory}</View>
         </View>
     );
 
@@ -226,7 +230,7 @@ function BaseDomainMembersPage({
                     {!shouldUseNarrowLayout && !!headerContent && <View style={[styles.flexRow, styles.gap2]}>{headerContent}</View>}
                 </HeaderWithBackButton>
 
-                {shouldUseNarrowLayout && !!headerContent && <View style={[styles.pl5, styles.pr5, styles.flexRow, styles.gap2]}>{headerContent}</View>}
+                {shouldUseNarrowLayout && !!headerContent && <View style={[styles.ph5, styles.flexRow, styles.gap2]}>{headerContent}</View>}
 
                 <SelectionListWithModal
                     data={filteredData}

@@ -70,7 +70,6 @@ function DropdownButton({label, value, viewportOffsetTop, PopoverComponent, medi
     const triggerRef = useRef<View | null>(null);
     const anchorRef = useRef<View | null>(null);
     const [isOverlayVisible, setIsOverlayVisible] = useState(false);
-    const [shouldMountPopover, setShouldMountPopover] = useState(false);
     const {calculatePopoverPosition} = usePopoverPosition();
 
     const [popoverTriggerPosition, setPopoverTriggerPosition] = useState({
@@ -99,7 +98,6 @@ function DropdownButton({label, value, viewportOffsetTop, PopoverComponent, medi
     const calculatePopoverPositionAndToggleOverlay = useCallback(() => {
         calculatePopoverPosition(anchorRef, ANCHOR_ORIGIN).then((pos) => {
             setPopoverTriggerPosition({...pos, vertical: pos.vertical + PADDING_MODAL});
-            setShouldMountPopover(true);
             toggleOverlay();
         });
     }, [calculatePopoverPosition, toggleOverlay]);
@@ -156,33 +154,31 @@ function DropdownButton({label, value, viewportOffsetTop, PopoverComponent, medi
                 </CaretWrapper>
             </Button>
 
-            {/* Dropdown overlay - lazily mounted to avoid hidden FlashList interfering with page layout */}
-            {shouldMountPopover && (
-                <PopoverWithMeasuredContent
-                    anchorRef={triggerRef}
-                    avoidKeyboard
-                    isVisible={isOverlayVisible}
-                    onClose={toggleOverlay}
-                    anchorPosition={popoverTriggerPosition}
-                    anchorAlignment={ANCHOR_ORIGIN}
-                    restoreFocusType={CONST.MODAL.RESTORE_FOCUS_TYPE.DELETE}
-                    shouldEnableNewFocusManagement
-                    shouldMeasureAnchorPositionFromTop={false}
-                    outerStyle={{...StyleUtils.getOuterModalStyle(windowHeight, viewportOffsetTop), ...containerStyles}}
-                    // This must be false because we dont want the modal to close if we open the RHP for selections
-                    // such as date years
-                    shouldCloseWhenBrowserNavigationChanged={false}
-                    innerContainerStyle={containerStyles}
-                    popoverDimensions={{
-                        width: CONST.POPOVER_DROPDOWN_WIDTH,
-                        height: CONST.POPOVER_DROPDOWN_MIN_HEIGHT,
-                    }}
-                    shouldSkipRemeasurement
-                    shouldDisplayBelowModals
-                >
-                    {popoverContent}
-                </PopoverWithMeasuredContent>
-            )}
+            {/* Dropdown overlay */}
+            <PopoverWithMeasuredContent
+                anchorRef={triggerRef}
+                avoidKeyboard
+                isVisible={isOverlayVisible}
+                onClose={toggleOverlay}
+                anchorPosition={popoverTriggerPosition}
+                anchorAlignment={ANCHOR_ORIGIN}
+                restoreFocusType={CONST.MODAL.RESTORE_FOCUS_TYPE.DELETE}
+                shouldEnableNewFocusManagement
+                shouldMeasureAnchorPositionFromTop={false}
+                outerStyle={{...StyleUtils.getOuterModalStyle(windowHeight, viewportOffsetTop), ...containerStyles}}
+                // This must be false because we dont want the modal to close if we open the RHP for selections
+                // such as date years
+                shouldCloseWhenBrowserNavigationChanged={false}
+                innerContainerStyle={containerStyles}
+                popoverDimensions={{
+                    width: CONST.POPOVER_DROPDOWN_WIDTH,
+                    height: CONST.POPOVER_DROPDOWN_MIN_HEIGHT,
+                }}
+                shouldSkipRemeasurement
+                shouldDisplayBelowModals
+            >
+                {popoverContent}
+            </PopoverWithMeasuredContent>
         </View>
     );
 }
