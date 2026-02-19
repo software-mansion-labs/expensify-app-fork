@@ -313,7 +313,7 @@ describe('SearchQueryUtils', () => {
 
                 const result = buildQueryStringFromFilterFormValues(filterValues, {sortBy: 'amount', sortOrder: 'asc', limit: 25});
 
-                expect(result).toEqual('type:expense sortBy:amount sortOrder:asc merchant:Amazon limit:25');
+                expect(result).toEqual('sortBy:amount sortOrder:asc type:expense merchant:Amazon limit:25');
             });
 
             test('omits limit when not provided', () => {
@@ -1283,6 +1283,68 @@ describe('SearchQueryUtils', () => {
 
             expect(result).toContain('view:pie');
             expect(result).toContain('merchant:Amazon');
+        });
+    });
+
+    describe('stale sortBy is overridden on groupBy/view transitions', () => {
+        test('switching groupBy from category to week replaces stale sortBy:groupCategory with sortBy:groupweek', () => {
+            const filterValues: Partial<SearchAdvancedFiltersForm> = {
+                type: 'expense',
+                groupBy: CONST.SEARCH.GROUP_BY.WEEK,
+                view: CONST.SEARCH.VIEW.BAR,
+            };
+
+            const queryString = buildQueryStringFromFilterFormValues(filterValues, {
+                sortBy: 'groupCategory',
+            });
+            const queryJSON = buildSearchQueryJSON(queryString);
+
+            expect(queryJSON?.sortBy).toBe(CONST.SEARCH.TABLE_COLUMNS.GROUP_WEEK);
+        });
+
+        test('switching groupBy from month to category replaces stale sortBy:groupmonth with sortBy:groupCategory', () => {
+            const filterValues: Partial<SearchAdvancedFiltersForm> = {
+                type: 'expense',
+                groupBy: CONST.SEARCH.GROUP_BY.CATEGORY,
+                view: CONST.SEARCH.VIEW.BAR,
+            };
+
+            const queryString = buildQueryStringFromFilterFormValues(filterValues, {
+                sortBy: 'groupmonth',
+            });
+            const queryJSON = buildSearchQueryJSON(queryString);
+
+            expect(queryJSON?.sortBy).toBe(CONST.SEARCH.TABLE_COLUMNS.GROUP_CATEGORY);
+        });
+
+        test('switching from table to bar with stale sortBy:date derives correct sortBy from default groupBy', () => {
+            const filterValues: Partial<SearchAdvancedFiltersForm> = {
+                type: 'expense',
+                groupBy: CONST.SEARCH.GROUP_BY.CATEGORY,
+                view: CONST.SEARCH.VIEW.BAR,
+            };
+
+            const queryString = buildQueryStringFromFilterFormValues(filterValues, {
+                sortBy: 'date',
+            });
+            const queryJSON = buildSearchQueryJSON(queryString);
+
+            expect(queryJSON?.sortBy).toBe(CONST.SEARCH.TABLE_COLUMNS.GROUP_CATEGORY);
+        });
+
+        test('explicit non-default sortBy:amount is preserved across groupBy changes', () => {
+            const filterValues: Partial<SearchAdvancedFiltersForm> = {
+                type: 'expense',
+                groupBy: CONST.SEARCH.GROUP_BY.WEEK,
+                view: CONST.SEARCH.VIEW.BAR,
+            };
+
+            const queryString = buildQueryStringFromFilterFormValues(filterValues, {
+                sortBy: 'amount',
+            });
+            const queryJSON = buildSearchQueryJSON(queryString);
+
+            expect(queryJSON?.sortBy).toBe('amount');
         });
     });
 

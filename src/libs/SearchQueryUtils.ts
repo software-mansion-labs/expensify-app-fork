@@ -596,6 +596,13 @@ function buildQueryStringFromFilterFormValues(filterValues: Partial<SearchAdvanc
     const {type, status, groupBy, view, columns, limit, ...otherFilters} = supportedFilterValues;
     const filtersString: string[] = [];
 
+    if (options?.sortBy) {
+        filtersString.push(`${CONST.SEARCH.SYNTAX_ROOT_KEYS.SORT_BY}:${options.sortBy}`);
+    }
+    if (options?.sortOrder) {
+        filtersString.push(`${CONST.SEARCH.SYNTAX_ROOT_KEYS.SORT_ORDER}:${options.sortOrder}`);
+    }
+
     if (type) {
         const sanitizedType = sanitizeSearchValue(type);
         filtersString.push(`${CONST.SEARCH.SYNTAX_ROOT_KEYS.TYPE}:${sanitizedType}`);
@@ -610,13 +617,6 @@ function buildQueryStringFromFilterFormValues(filterValues: Partial<SearchAdvanc
     if (view && groupBy) {
         const sanitizedView = sanitizeSearchValue(view);
         filtersString.push(`${CONST.SEARCH.SYNTAX_ROOT_KEYS.VIEW}:${sanitizedView}`);
-    }
-
-    if (options?.sortBy) {
-        filtersString.push(`${CONST.SEARCH.SYNTAX_ROOT_KEYS.SORT_BY}:${options.sortBy}`);
-    }
-    if (options?.sortOrder) {
-        filtersString.push(`${CONST.SEARCH.SYNTAX_ROOT_KEYS.SORT_ORDER}:${options.sortOrder}`);
     }
 
     if (status && typeof status === 'string') {
