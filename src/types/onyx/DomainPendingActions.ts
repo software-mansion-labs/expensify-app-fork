@@ -1,6 +1,6 @@
-import type * as OnyxCommon from './OnyxCommon';
 import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
 import type CONST from '@src/CONST';
+import type * as OnyxCommon from './OnyxCommon';
 
 /**
  * General pending action structure for domain members

@@ -8645,6 +8645,11 @@ ${amount} para ${merchant} - ${date}`,
                     other: (count: number) => `${count} miembros`,
                 };
             },
+            defaultGroup: 'Grupo predeterminado para nuevos miembros',
+            defaultGroupPrompt: (currentName: string, newName: string) =>
+                `¿Estás seguro de que quieres establecer ${newName} como el grupo predeterminado? Los nuevos miembros serán invitados a este grupo en lugar del grupo predeterminado anterior (${currentName}). `,
+            makeDefault: 'Establecer como predeterminado',
+            nevermind: 'No importa',
         },
     },
     gps: {
