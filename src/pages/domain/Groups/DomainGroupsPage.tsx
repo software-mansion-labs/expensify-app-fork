@@ -1,5 +1,5 @@
 import type {DomainSecurityGroupWithID} from '@selectors/Domain';
-import {groupsSelector} from '@selectors/Domain';
+import {defaultSecurityGroupIDSelector, groupsSelector} from '@selectors/Domain';
 import React from 'react';
 import {View} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -22,6 +22,7 @@ import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 import type {ListItem} from '@components/SelectionList/ListItem/types';
+import Badge from '@components/Badge';
 
 type GroupOption = Omit<ListItem, 'groupID'> & {
     /** Group ID */
@@ -39,20 +40,18 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const [groups = getEmptyArray<DomainSecurityGroupWithID>()] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: false, selector: groupsSelector});
+    const [defaultGroupID] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true, selector: defaultSecurityGroupIDSelector});
 
     const data = groups.map((group) => {
+        const isDefault = group.id === defaultGroupID;
         return {
             keyForList: group.id,
             groupID: group.id,
             text: group.details.name ?? '',
             rightElement: (
-                <View style={styles.flex1}>
-                    <Text
-                        numberOfLines={1}
-                        style={styles.alignSelfStart}
-                    >
-                        {translate('domain.groups.memberCount', {count: Object.keys(group.details.shared).length})}
-                    </Text>
+                <View style={[styles.flex1, styles.flexRow, styles.alignItemsCenter, styles.justifyContentBetween]}>
+                    <Text numberOfLines={1}>{translate('domain.groups.memberCount', {count: Object.keys(group.details.shared).length})}</Text>
+                    {isDefault && <Badge text={translate('common.default')} />}
                 </View>
             ),
         };

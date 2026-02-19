@@ -1,4 +1,4 @@
-import {defaultSecurityGroupIDSelector, domainNameSelector, selectGroupByID} from '@selectors/Domain';
+import {selectGroupByID} from '@selectors/Domain';
 import React from 'react';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScrollView from '@components/ScrollView';
@@ -11,15 +11,13 @@ import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import DomainNotFoundPageWrapper from '@pages/domain/DomainNotFoundPageWrapper';
-import ToggleSettingOptionRow from '@pages/workspace/workflows/ToggleSettingsOptionRow';
-import {closeUpdateDomainSecurityGroupNameError, setDefaultSecurityGroup} from '@userActions/Domain';
+import {closeUpdateDomainSecurityGroupNameError} from '@userActions/Domain';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import CONST from '@src/CONST';
-import useConfirmModal from '@hooks/useConfirmModal';
-import {ModalActions} from '@components/Modal/Global/ModalContext';
+import DefaultGroupToggle from './DefaultGroupToggle';
 
 type DomainGroupDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.GROUP_DETAILS>;
 
@@ -34,45 +32,8 @@ function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
         selector: selectGroupByID(groupID),
     });
 
-    const [defaultSecurityGroupID] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
-        canBeMissing: true,
-        selector: defaultSecurityGroupIDSelector,
-    });
-    const [defaultSecurityGroup] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
-       canBeMissing: true,
-       selector:  selectGroupByID(defaultSecurityGroupID)
-    });
-
-    const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
-        canBeMissing: true,
-        selector: domainNameSelector,
-    });
     const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {canBeMissing: true});
     const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {canBeMissing: true});
-
-    const isDefault = defaultSecurityGroupID === groupID;
-
-    const {showConfirmModal} = useConfirmModal();
-
-    const onDefaultGroupToggle = async () => {
-        if (!domainName || !defaultSecurityGroup?.name || !group?.name) {
-            return;
-        }
-
-        const result = await showConfirmModal({
-            title: translate('domain.groups.defaultGroup'),
-            prompt: translate('domain.groups.defaultGroupPrompt', defaultSecurityGroup.name, group.name),
-            confirmText: translate('domain.groups.makeDefault'),
-            cancelText: translate('domain.groups.nevermind'),
-            shouldShowCancelButton: true,
-        });
-
-        if (result.action !== ModalActions.CONFIRM) {
-            return;
-        }
-
-        setDefaultSecurityGroup(domainAccountID, groupID, domainName, defaultSecurityGroupID);
-    };
 
     return (
         <DomainNotFoundPageWrapper domainAccountID={domainAccountID}>
@@ -99,15 +60,10 @@ function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
                             onPress={() => Navigation.navigate(ROUTES.DOMAIN_GROUP_EDIT_NAME.getRoute(domainAccountID, groupID))}
                         />
                     </OfflineWithFeedback>
-                    <ToggleSettingOptionRow
-                        wrapperStyle={[styles.mv3, styles.ph5]}
-                        switchAccessibilityLabel={translate('domain.groups.defaultGroup')}
-                        isActive={isDefault}
-                        disabled={isDefault}
-                        onToggle={() => {
-                            onDefaultGroupToggle();
-                        }}
-                        title={translate('domain.groups.defaultGroup')}
+                    <DefaultGroupToggle
+                        domainAccountID={domainAccountID}
+                        groupID={groupID}
+                        groupName={group?.name}
                     />
                 </ScrollView>
             </ScreenWrapper>

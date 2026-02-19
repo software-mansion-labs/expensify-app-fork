@@ -1,7 +1,7 @@
 import {Str} from 'expensify-common';
 import type {OnyxEntry} from 'react-native-onyx';
 import CONST from '@src/CONST';
-import type {CardFeeds, Domain, DomainPendingActions, DomainSecurityGroup, DomainSettings, SamlMetadata} from '@src/types/onyx';
+import type {CardFeeds, Domain, DomainErrors, DomainPendingActions, DomainSecurityGroup, DomainSettings, SamlMetadata} from '@src/types/onyx';
 import type {SecurityGroupKey, UserSecurityGroupData} from '@src/types/onyx/Domain';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
@@ -169,6 +169,18 @@ function groupsSelector(domain: OnyxEntry<Domain>): DomainSecurityGroupWithID[] 
     }, []);
 }
 
+function defaultSecurityGroupIDPendingActionSelector(groupID?: string) {
+    return (domainPendingActions: OnyxEntry<DomainPendingActions>) => {
+        return domainPendingActions?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.defaultSecurityGroupID;
+    };
+}
+
+function defaultSecurityGroupIDErrorsSelector(groupID?: string) {
+    return (domainErrors: OnyxEntry<DomainErrors>) => {
+        return domainErrors?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.defaultSecurityGroupIDErrors;
+    };
+}
+
 export {
     domainMemberSettingsSelector,
     domainSettingsPrimaryContactSelector,
@@ -186,6 +198,8 @@ export {
     isSecurityGroupEntry,
     groupsSelector,
     selectGroupByID,
+    defaultSecurityGroupIDPendingActionSelector,
+    defaultSecurityGroupIDErrorsSelector,
 };
 
 export {type DomainSecurityGroupWithID};
