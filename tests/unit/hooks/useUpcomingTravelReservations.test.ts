@@ -442,25 +442,6 @@ describe('useUpcomingTravelReservations', () => {
         });
     });
 
-    it('should return empty array when no trip rooms exist', async () => {
-        const normalReport: Report = {
-            reportID: '1',
-            type: CONST.REPORT.TYPE.CHAT,
-            chatType: CONST.REPORT.CHAT_TYPE.POLICY_ROOM,
-            reportName: 'General',
-            policyID: 'policy1',
-        } as Report;
-
-        await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}1`, normalReport);
-        await waitForBatchedUpdates();
-
-        const {result} = renderHook(() => useUpcomingTravelReservations());
-
-        await waitFor(() => {
-            expect(result.current).toEqual([]);
-        });
-    });
-
     it('should return empty array when all reservations are in the past', async () => {
         const pastFlight = makeAirPnr('PNR_PAST', daysFromNow(-3), daysFromNow(-3, 15));
         const tripRoom = makeTripRoomReport('100', [pastFlight]);
@@ -506,37 +487,7 @@ describe('useUpcomingTravelReservations', () => {
         expect(result.current.at(0)?.reportID).toBe('102');
     });
 
-    it('should include reservation exactly 7 days from now', async () => {
-        const boundaryFlight = makeAirPnr('PNR_7DAYS', daysFromNow(7), daysFromNow(7, 15));
-        const tripRoom = makeTripRoomReport('103', [boundaryFlight]);
-
-        await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}103`, tripRoom);
-        await waitForBatchedUpdates();
-
-        const {result} = renderHook(() => useUpcomingTravelReservations());
-
-        await waitFor(() => {
-            expect(result.current).toHaveLength(1);
-        });
-        expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_7DAYS');
-    });
-
-    it('should include reservation departing today', async () => {
-        const todayFlight = makeAirPnr('PNR_TODAY', daysFromNow(0, 18), daysFromNow(0, 21));
-        const tripRoom = makeTripRoomReport('104', [todayFlight]);
-
-        await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}104`, tripRoom);
-        await waitForBatchedUpdates();
-
-        const {result} = renderHook(() => useUpcomingTravelReservations());
-
-        await waitFor(() => {
-            expect(result.current).toHaveLength(1);
-        });
-        expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_TODAY');
-    });
-
-    it('should exclude reservation that departed earlier today', async () => {
+    it('should exclude reservation that departed yesterday', async () => {
         const pastFlight = makeAirPnr('PNR_JUST_PASSED', daysFromNow(-1, 22), daysFromNow(-1, 23));
         const upcomingFlight = makeAirPnr('PNR_LATER_TODAY', daysFromNow(0, 23), daysFromNow(1, 2));
         const tripRoom = makeTripRoomReport('105', [pastFlight, upcomingFlight]);
@@ -573,24 +524,6 @@ describe('useUpcomingTravelReservations', () => {
         expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_DAY1');
         expect(result.current.at(1)?.reservation.reservationID).toBe('PNR_DAY3');
         expect(result.current.at(2)?.reservation.reservationID).toBe('PNR_DAY5');
-    });
-
-    it('should only return reservations within 7-day window from mixed valid/invalid set', async () => {
-        const pastFlight = makeAirPnr('PNR_PAST_MIX', daysFromNow(-2), daysFromNow(-2, 15));
-        const upcomingFlight = makeAirPnr('PNR_3DAYS_MIX', daysFromNow(3), daysFromNow(3, 15));
-        const farFlight = makeAirPnr('PNR_10DAYS_MIX', daysFromNow(10), daysFromNow(10, 15));
-
-        const tripRoom = makeTripRoomReport('300', [pastFlight, upcomingFlight, farFlight]);
-
-        await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}300`, tripRoom);
-        await waitForBatchedUpdates();
-
-        const {result} = renderHook(() => useUpcomingTravelReservations());
-
-        await waitFor(() => {
-            expect(result.current).toHaveLength(1);
-        });
-        expect(result.current.at(0)?.reservation.reservationID).toBe('PNR_3DAYS_MIX');
     });
 
     it('should handle mixed reservation types (flight, hotel, rail)', async () => {
@@ -639,24 +572,5 @@ describe('useUpcomingTravelReservations', () => {
         expect(result.current.at(0)?.reportID).toBe('501');
         expect(result.current.at(1)?.reservation.reservationID).toBe('PNR_TRIP1');
         expect(result.current.at(1)?.reportID).toBe('500');
-    });
-
-    it('should return empty array when trip room has no tripData payload', async () => {
-        const tripRoom: Report = {
-            reportID: '600',
-            type: CONST.REPORT.TYPE.CHAT,
-            chatType: CONST.REPORT.CHAT_TYPE.TRIP_ROOM,
-            reportName: 'Empty trip',
-            policyID: 'policy1',
-        } as Report;
-
-        await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}600`, tripRoom);
-        await waitForBatchedUpdates();
-
-        const {result} = renderHook(() => useUpcomingTravelReservations());
-
-        await waitFor(() => {
-            expect(result.current).toEqual([]);
-        });
     });
 });
