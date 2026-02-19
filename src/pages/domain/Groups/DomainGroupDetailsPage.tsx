@@ -17,7 +17,9 @@ import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import CONST from '@src/CONST';
+import {View} from 'react-native';
 import DefaultGroupToggle from './DefaultGroupToggle';
+import DomainGroupPermissionsSection from './DomainGroupPermissionsSection';
 
 type DomainGroupDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.GROUP_DETAILS>;
 
@@ -64,6 +66,11 @@ function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
                         domainAccountID={domainAccountID}
                         groupID={groupID}
                         groupName={group?.name}
+                    />
+                    <View style={[styles.sectionDividerLine, styles.mh5, styles.mv6]} />
+                    <DomainGroupPermissionsSection
+                        domainAccountID={domainAccountID}
+                        groupID={groupID}
                     />
                 </ScrollView>
             </ScreenWrapper>

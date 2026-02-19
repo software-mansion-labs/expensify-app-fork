@@ -19,6 +19,8 @@ import {generateAccountID} from '@libs/UserUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Domain, DomainSecurityGroup, UserSecurityGroupData} from '@src/types/onyx';
+import type {DomainSecurityGroupErrors} from '@src/types/onyx/DomainErrors';
+import type {DomainSecurityGroupPendingActions} from '@src/types/onyx/DomainPendingActions';
 import type {PendingAction} from '@src/types/onyx/OnyxCommon';
 import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
 import type {ScimTokenWithState} from './ScimToken/ScimTokenUtils';
@@ -1132,11 +1134,18 @@ function clearToggleTwoFactorAuthRequiredForDomainError(domainAccountID: number)
 }
 
 /**
- * Updates the name of a domain security group
+ * Shared helper for updating a single field on a domain security group via UPDATE_DOMAIN_SECURITY_GROUP.
+ * Both the pending-actions key and the errors key follow the naming of the field being changed.
  */
-function updateDomainSecurityGroupName(domainAccountID: number, groupID: string, newGroupName: string, currentSecurityGroup: DomainSecurityGroup) {
+function updateDomainSecurityGroupField(
+    domainAccountID: number,
+    groupID: string,
+    newSecurityGroup: DomainSecurityGroup,
+    currentSecurityGroup: DomainSecurityGroup,
+    pendingField: keyof DomainSecurityGroupPendingActions,
+    errorField: keyof DomainSecurityGroupErrors,
+) {
     const SECURITY_GROUP_KEY = `${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`;
-    const newSecurityGroup = {...currentSecurityGroup, name: newGroupName};
 
     const optimisticData: Array<
         OnyxUpdate<typeof ONYXKEYS.COLLECTION.DOMAIN> | OnyxUpdate<typeof ONYXKEYS.COLLECTION.DOMAIN_ERRORS> | OnyxUpdate<typeof ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS>
@@ -1144,27 +1153,17 @@ function updateDomainSecurityGroupName(domainAccountID: number, groupID: string,
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: newSecurityGroup,
-            } as PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroup>,
+            value: {[SECURITY_GROUP_KEY]: newSecurityGroup} as PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroup>,
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: {
-                    name: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE,
-                },
-            },
+            value: {[SECURITY_GROUP_KEY]: {[pendingField]: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE}},
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: {
-                    nameErrors: null,
-                },
-            },
+            value: {[SECURITY_GROUP_KEY]: {[errorField]: null}},
         },
     ];
 
@@ -1174,27 +1173,17 @@ function updateDomainSecurityGroupName(domainAccountID: number, groupID: string,
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: currentSecurityGroup,
-            } as PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroup>,
+            value: {[SECURITY_GROUP_KEY]: currentSecurityGroup} as PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroup>,
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: {
-                    name: null,
-                },
-            },
+            value: {[SECURITY_GROUP_KEY]: {[pendingField]: null}},
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: {
-                    nameErrors: getMicroSecondOnyxErrorWithTranslationKey('domain.verifyDomain.codeFetchError'),
-                },
-            },
+            value: {[SECURITY_GROUP_KEY]: {[errorField]: getMicroSecondOnyxErrorWithTranslationKey('domain.verifyDomain.codeFetchError')}},
         },
     ];
 
@@ -1202,20 +1191,12 @@ function updateDomainSecurityGroupName(domainAccountID: number, groupID: string,
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: {
-                    name: null,
-                },
-            },
+            value: {[SECURITY_GROUP_KEY]: {[pendingField]: null}},
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`,
-            value: {
-                [SECURITY_GROUP_KEY]: {
-                    nameErrors: null,
-                },
-            },
+            value: {[SECURITY_GROUP_KEY]: {[errorField]: null}},
         },
     ];
 
@@ -1226,6 +1207,13 @@ function updateDomainSecurityGroupName(domainAccountID: number, groupID: string,
     };
 
     API.write(WRITE_COMMANDS.UPDATE_DOMAIN_SECURITY_GROUP, params, {optimisticData, failureData, successData});
+}
+
+/**
+ * Updates the name of a domain security group
+ */
+function updateDomainSecurityGroupName(domainAccountID: number, groupID: string, newGroupName: string, currentSecurityGroup: DomainSecurityGroup) {
+    updateDomainSecurityGroupField(domainAccountID, groupID, {...currentSecurityGroup, name: newGroupName}, currentSecurityGroup, 'name', 'nameErrors');
 }
 
 function closeUpdateDomainSecurityGroupNameError(domainAccountID: number, groupID: string) {
@@ -1336,6 +1324,26 @@ function closeDefaultSecurityGroupError(domainAccountID: number, groupID: string
     });
 }
 
+function toggleEnableStrictPolicyRules(domainAccountID: number, groupID: string, enabled: boolean, currentSecurityGroup: DomainSecurityGroup) {
+    updateDomainSecurityGroupField(
+        domainAccountID,
+        groupID,
+        {...currentSecurityGroup, enableStrictPolicyRules: enabled},
+        currentSecurityGroup,
+        'enableStrictPolicyRules',
+        'enableStrictPolicyRulesErrors',
+    );
+}
+
+function closeEnableStrictPolicyRulesError(domainAccountID: number, groupID: string) {
+    const SECURITY_GROUP_KEY = `${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`;
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
+        [SECURITY_GROUP_KEY]: {
+            enableStrictPolicyRulesErrors: null,
+        },
+    });
+}
+
 export {
     getDomainValidationCode,
     validateDomain,
@@ -1368,4 +1376,6 @@ export {
     setDefaultSecurityGroup,
     closeUpdateDomainSecurityGroupNameError,
     closeDefaultSecurityGroupError,
+    toggleEnableStrictPolicyRules,
+    closeEnableStrictPolicyRulesError,
 };

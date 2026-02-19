@@ -181,6 +181,18 @@ function defaultSecurityGroupIDErrorsSelector(groupID?: string) {
     };
 }
 
+function enableStrictPolicyRulesPendingActionSelector(groupID?: string) {
+    return (domainPendingActions: OnyxEntry<DomainPendingActions>) => {
+        return domainPendingActions?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.enableStrictPolicyRules;
+    };
+}
+
+function enableStrictPolicyRulesErrorsSelector(groupID?: string) {
+    return (domainErrors: OnyxEntry<DomainErrors>) => {
+        return domainErrors?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.enableStrictPolicyRulesErrors;
+    };
+}
+
 export {
     domainMemberSettingsSelector,
     domainSettingsPrimaryContactSelector,
@@ -200,6 +212,8 @@ export {
     selectGroupByID,
     defaultSecurityGroupIDPendingActionSelector,
     defaultSecurityGroupIDErrorsSelector,
+    enableStrictPolicyRulesPendingActionSelector,
+    enableStrictPolicyRulesErrorsSelector,
 };
 
 export {type DomainSecurityGroupWithID};
