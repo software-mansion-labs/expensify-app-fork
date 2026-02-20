@@ -181,7 +181,16 @@ function BarChartContent({data, title, titleIcon, isLoading, yAxisUnit, yAxisUni
 
     if (isLoading || !font) {
         return (
-            <View style={[styles.barChartContainer, styles.highlightBG, shouldUseNarrowLayout ? styles.p5 : styles.p8, styles.justifyContentCenter, styles.alignItemsCenter]}>
+            <View
+                style={[
+                    styles.barChartContainer,
+                    styles.barChartChartContainer,
+                    styles.highlightBG,
+                    shouldUseNarrowLayout ? styles.p5 : styles.p8,
+                    styles.justifyContentCenter,
+                    styles.alignItemsCenter,
+                ]}
+            >
                 <ActivityIndicator size="large" />
             </View>
         );

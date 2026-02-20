@@ -226,7 +226,16 @@ function LineChartContent({data, title, titleIcon, isLoading, yAxisUnit, yAxisUn
 
     if (isLoading || !font) {
         return (
-            <View style={[styles.lineChartContainer, styles.highlightBG, shouldUseNarrowLayout ? styles.p5 : styles.p8, styles.justifyContentCenter, styles.alignItemsCenter]}>
+            <View
+                style={[
+                    styles.lineChartContainer,
+                    styles.lineChartChartContainer,
+                    styles.highlightBG,
+                    shouldUseNarrowLayout ? styles.p5 : styles.p8,
+                    styles.justifyContentCenter,
+                    styles.alignItemsCenter,
+                ]}
+            >
                 <ActivityIndicator size="large" />
             </View>
         );
