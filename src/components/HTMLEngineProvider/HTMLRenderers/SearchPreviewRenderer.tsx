@@ -56,9 +56,9 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
             searchKey,
             offset: 0,
             isOffline,
-            isLoading: !!searchResults?.isLoading,
+            isLoading: false,
         });
-    }, [queryJSON, isOffline, searchKey, searchResults?.isLoading]);
+    }, [queryJSON, isOffline, searchKey]);
 
     if (!queryJSON || !validGroupBy || !validView) {
         return null;
