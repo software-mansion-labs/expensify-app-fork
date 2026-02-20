@@ -9,7 +9,7 @@ import RootStackRouter from './RootStackRouter';
 import useCustomRootStackNavigatorState from './useCustomRootStackNavigatorState';
 
 
-function transformStateForBottomTab(state: PlatformStackNavigationState<ParamListBase>) {
+function removeDuplicateNavigatorsFromState(state: PlatformStackNavigationState<ParamListBase>) {
     if (!state.routes || state.routes.length <= 1) {
         return state;
     }
@@ -46,7 +46,7 @@ const RootStackNavigatorComponent = createPlatformStackNavigatorComponent('RootS
 
         return {
             ...result,
-            state: transformStateForBottomTab(result),
+            state: removeDuplicateNavigatorsFromState(result),
         };
     },
     ExtraContent: RootNavigatorExtraContent,
