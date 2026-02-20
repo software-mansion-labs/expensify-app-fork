@@ -1,5 +1,6 @@
+import type {ReactNode} from 'react';
 import React from 'react';
-import type {NativeScrollEvent, NativeSyntheticEvent} from 'react-native';
+import type {NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import Animated from 'react-native-reanimated';
 import type {
@@ -130,6 +131,12 @@ type SearchChartViewProps = {
 
     /** Title to be displayed on the chart */
     title: string;
+
+    /** Element to be shown below the chart */
+    footer?: ReactNode;
+
+    /** Additional styles for the view wrapping chart component */
+    containerStyle?: StyleProp<ViewStyle>;
 };
 
 /**
@@ -144,7 +151,7 @@ const CHART_VIEW_TO_COMPONENT: Record<Exclude<ChartView, 'pie'>, typeof SearchBa
  * Layer 3 component - dispatches to the appropriate chart type based on view parameter
  * and handles navigation/drill-down logic
  */
-function SearchChartView({queryJSON, view, groupBy, data, isLoading, onScroll, title}: SearchChartViewProps) {
+function SearchChartView({queryJSON, view, groupBy, data, isLoading, onScroll, title, footer, containerStyle}: SearchChartViewProps) {
     const styles = useThemeStyles();
     const {preferredLocale} = useLocalize();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -185,7 +192,7 @@ function SearchChartView({queryJSON, view, groupBy, data, isLoading, onScroll, t
             onScroll={onScroll}
             scrollEventThrottle={16}
         >
-            <View style={[shouldUseNarrowLayout ? styles.searchListContentContainerStyles : styles.mt3, styles.mh4, styles.mb4, styles.flex1]}>
+            <View style={[shouldUseNarrowLayout ? styles.searchListContentContainerStyles : styles.mt3, styles.mh4, styles.mb4, styles.flex1, containerStyle]}>
                 <ChartComponent
                     data={data}
                     title={title}
@@ -196,6 +203,7 @@ function SearchChartView({queryJSON, view, groupBy, data, isLoading, onScroll, t
                     isLoading={isLoading}
                     yAxisUnit={yAxisUnit}
                     yAxisUnitPosition={yAxisUnitPosition}
+                    footer={footer}
                 />
             </View>
         </Animated.ScrollView>

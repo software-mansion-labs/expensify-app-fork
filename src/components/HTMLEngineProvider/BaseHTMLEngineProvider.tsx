@@ -176,6 +176,10 @@ function BaseHTMLEngineProvider({textSelectable = false, children, enableExperim
                     return isChildOfTaskTitle(tnode as TNode) ? {} : {...styles.blockquote, ...styles.onlyEmojisTextLineHeight};
                 },
             }),
+            'search-preview': HTMLElementModel.fromCustomModel({
+                tagName: 'search-preview',
+                contentModel: HTMLContentModel.block,
+            }),
         }),
         [
             styles.taskTitleMenuItem,

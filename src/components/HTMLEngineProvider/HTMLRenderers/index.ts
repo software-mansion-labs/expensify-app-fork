@@ -18,6 +18,7 @@ import ShortMentionRenderer from './ShortMentionRenderer';
 import TaskTitleRenderer from './TaskTitleRenderer';
 import UserDetailsRenderer from './UserDetailsRenderer';
 import VideoRenderer from './VideoRenderer';
+import SearchPreviewRenderer from './SearchPreviewRenderer';
 
 /**
  * This collection defines our custom renderers. It is a mapping from HTML tag type to the corresponding component.
@@ -46,7 +47,7 @@ const HTMLEngineProviderComponentList: CustomTagRendererRecord = {
     'deleted-action': DeletedActionRenderer,
     'concierge-link': ConciergeLinkRenderer,
     'account-manager-link': AccountManagerLinkRenderer,
-    /* eslint-enable @typescript-eslint/naming-convention */
+    'search-preview': SearchPreviewRenderer,
 };
 
 export default HTMLEngineProviderComponentList;

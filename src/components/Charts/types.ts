@@ -1,4 +1,5 @@
 import type IconAsset from '@src/types/utils/IconAsset';
+import type {ReactNode} from 'react';
 
 type ChartDataPoint = {
     /** Label displayed under the data point (e.g., "Amazon", "Nov 2025") */
@@ -37,6 +38,9 @@ type CartesianChartProps = {
 
     /** Position of the unit symbol relative to the value. Defaults to 'left'. */
     yAxisUnitPosition?: YAxisUnitPosition;
+
+    /** Element to be shown below the chart */
+    footer?: ReactNode;
 };
 
 export type {ChartDataPoint, CartesianChartProps, YAxisUnit, YAxisUnitPosition};

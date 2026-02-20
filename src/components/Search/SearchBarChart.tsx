@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react';
 import React from 'react';
 import {BarChart} from '@components/Charts';
 import type {ChartDataPoint, YAxisUnit, YAxisUnitPosition} from '@components/Charts';
@@ -32,9 +33,12 @@ type SearchBarChartProps = {
 
     /** Position of currency symbol relative to value */
     yAxisUnitPosition?: YAxisUnitPosition;
+
+    /** Element to be shown below the chart */
+    footer?: ReactNode;
 };
 
-function SearchBarChart({data, title, titleIcon, getLabel, getFilterQuery, onItemPress, isLoading, yAxisUnit, yAxisUnitPosition}: SearchBarChartProps) {
+function SearchBarChart({data, title, titleIcon, getLabel, getFilterQuery, onItemPress, isLoading, yAxisUnit, yAxisUnitPosition, footer}: SearchBarChartProps) {
     // Transform grouped transaction data to BarChart format
     const chartData: ChartDataPoint[] = data.map((item) => {
         const currency = item.currency ?? 'USD';
@@ -69,6 +73,7 @@ function SearchBarChart({data, title, titleIcon, getLabel, getFilterQuery, onIte
             onBarPress={handleBarPress}
             yAxisUnit={yAxisUnit}
             yAxisUnitPosition={yAxisUnitPosition}
+            footer={footer}
         />
     );
 }

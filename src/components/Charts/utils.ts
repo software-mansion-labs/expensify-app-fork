@@ -1,4 +1,8 @@
+import type {LocalizedTranslate} from '@components/LocaleContextProvider';
+import type {SearchGroupBy} from '@components/Search/types';
+import type {SearchTypeMenuItem} from '@libs/SearchUIUtils';
 import type {SkFont} from '@shopify/react-native-skia';
+import type {SaveSearchItem} from '@src/types/onyx/SaveSearch';
 import colors from '@styles/theme/colors';
 
 /**
@@ -96,4 +100,15 @@ function calculateMinDomainPadding(chartWidth: number, pointCount: number, inner
     return Math.ceil(chartWidth * minPaddingRatio);
 }
 
-export {getChartColor, DEFAULT_CHART_COLOR, measureTextWidth, rotatedLabelCenterCorrection, rotatedLabelYOffset, calculateMinDomainPadding};
+function getChartTitle(savedSearch: SaveSearchItem | undefined, suggestedSearch: SearchTypeMenuItem | undefined, groupBy: SearchGroupBy, translate: LocalizedTranslate) {
+    if (savedSearch) {
+        if (savedSearch.name !== savedSearch.query) {
+            return savedSearch.name;
+        }
+    } else if (suggestedSearch) {
+        return translate(suggestedSearch.translationPath);
+    }
+    return translate(`search.chartTitles.${groupBy}`);
+}
+
+export {getChartColor, DEFAULT_CHART_COLOR, measureTextWidth, rotatedLabelCenterCorrection, rotatedLabelYOffset, calculateMinDomainPadding, getChartTitle};

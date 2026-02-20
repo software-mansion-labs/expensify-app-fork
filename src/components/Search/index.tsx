@@ -81,6 +81,7 @@ import type {OutstandingReportsByPolicyIDDerivedValue, SaveSearch, Transaction} 
 import type SearchResults from '@src/types/onyx/SearchResults';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import arraysEqual from '@src/utils/arraysEqual';
+import {getChartTitle} from '@components/Charts/utils';
 import SearchChartView from './SearchChartView';
 import {useSearchContext} from './SearchContext';
 import SearchList from './SearchList';
@@ -1249,15 +1250,6 @@ function Search({
     const shouldShowChartView = (view === CONST.SEARCH.VIEW.BAR || view === CONST.SEARCH.VIEW.LINE) && !!validGroupBy;
 
     if (shouldShowChartView && isGroupedItemArray(sortedData)) {
-        let chartTitle = translate(`search.chartTitles.${validGroupBy}`);
-        if (savedSearch) {
-            if (savedSearch.name !== savedSearch.query) {
-                chartTitle = savedSearch.name;
-            }
-        } else if (searchKey && suggestedSearches[searchKey]) {
-            chartTitle = translate(suggestedSearches[searchKey].translationPath);
-        }
-
         return (
             <SearchScopeProvider>
                 <SearchChartView
@@ -1267,7 +1259,7 @@ function Search({
                     data={sortedData}
                     isLoading={shouldShowLoadingState}
                     onScroll={onSearchListScroll}
-                    title={chartTitle}
+                    title={getChartTitle(savedSearch, searchKey ? suggestedSearches[searchKey] : undefined, validGroupBy, translate)}
                 />
             </SearchScopeProvider>
         );
