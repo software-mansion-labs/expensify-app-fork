@@ -29,7 +29,6 @@ import useHandleNativeVideoControls from './useHandleNativeVideoControls';
 import * as VideoUtils from './utils';
 import VideoErrorIndicator from './VideoErrorIndicator';
 import VideoPlayerControls from './VideoPlayerControls';
-import {set} from 'lodash';
 
 function BaseVideoPlayer({
     url,
