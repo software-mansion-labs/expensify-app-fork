@@ -301,7 +301,7 @@ function makeHotelPnr(pnrId: string, checkInISO: string, checkOutISO: string): P
                     },
                     roomInfo: {roomType: '', roomTypeCode: '', typeClassDescription: ''},
                 },
-                vendorConfirmationNumber: 'HOTELCONF123',
+                vendorConfirmationNumber: 'HOTEL123',
                 hotelSpecialRequests: {accessibleFeatures: [], additionalNote: '', flightNumber: '', roomFeatures: [], roomLocations: []},
                 occupancy: [],
                 payment: {description: '', paymentType: ''},
