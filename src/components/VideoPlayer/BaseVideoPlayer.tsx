@@ -29,6 +29,7 @@ import useHandleNativeVideoControls from './useHandleNativeVideoControls';
 import * as VideoUtils from './utils';
 import VideoErrorIndicator from './VideoErrorIndicator';
 import VideoPlayerControls from './VideoPlayerControls';
+import {set} from 'lodash';
 
 function BaseVideoPlayer({
     url,
@@ -56,6 +57,7 @@ function BaseVideoPlayer({
     const {currentlyPlayingURL, sharedElement, originalParent, currentVideoPlayerRef, currentVideoViewRef, mountedVideoPlayersRef, playerStatus} = usePlaybackStateContext();
     const {pauseVideo, playVideo, replayVideo, shareVideoPlayerElements, updateCurrentURLAndReportID, setCurrentlyPlayingURL, updatePlayerStatus} = usePlaybackActionsContext();
     const {isFullScreenRef} = useFullScreenContext();
+    const [pointerEventsDisabled, setPointerEventsDisabled] = useState(true);
 
     const isOffline = useNetwork().isOffline;
     const [duration, setDuration] = useState(videoDuration);
@@ -476,7 +478,7 @@ function BaseVideoPlayer({
                                             }
                                             videoPlayerElementParentRef.current = el;
                                         }}
-                                        pointerEvents="none"
+                                        pointerEvents={pointerEventsDisabled ? 'none' : 'auto'}
                                     >
                                         <VideoView
                                             // has to be switched to fullscreenOptions={{enable: true}} when mobile Safari gets fixed
@@ -497,6 +499,7 @@ function BaseVideoPlayer({
                                                 // When the video is in fullscreen, we don't want the scroll to be captured by the InvertedFlatList of report screen.
                                                 // This will also allow the user to scroll the video playback speed.
                                                 videoPlayerElementParentRef.current.addEventListener('wheel', stopWheelPropagation);
+                                                setPointerEventsDisabled(false);
                                             }}
                                             onFullscreenExit={() => {
                                                 isFullScreenRef.current = false;
@@ -507,6 +510,7 @@ function BaseVideoPlayer({
 
                                                 // Sync volume updates in full screen mode after leaving it
                                                 updateVolume(videoPlayerRef.current.muted ? 0 : videoPlayerRef.current.volume || 1);
+                                                setPointerEventsDisabled(true);
                                             }}
                                         />
                                     </View>
