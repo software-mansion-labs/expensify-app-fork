@@ -5837,8 +5837,8 @@ const staticStyles = (theme: ThemeColors) =>
             width: variables.iconSizeExtraLarge,
             height: variables.iconSizeExtraLarge,
             borderRadius: 8,
-            alignItems: 'center' as const,
-            justifyContent: 'center' as const,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     }) satisfies StaticStyles;
 

@@ -60,12 +60,14 @@ function getTypeIdentifier(reservation: Reservation): string {
     switch (reservation.type) {
         case CONST.RESERVATION_TYPE.FLIGHT:
             return [reservation.company?.shortName, reservation.route?.number].filter(Boolean).join(' ');
+
         case CONST.RESERVATION_TYPE.HOTEL:
             return reservation.start.longName ?? '';
+
         case CONST.RESERVATION_TYPE.CAR:
-            return reservation.vendor ?? '';
         case CONST.RESERVATION_TYPE.TRAIN:
             return reservation.vendor ?? '';
+
         default:
             return '';
     }
@@ -84,7 +86,7 @@ function UpcomingTravelItem({reservation: upcomingReservation}: UpcomingTravelIt
     const title = getTitle(translate, reservation);
     const relativeTime = getRelativeTime(translate, reservation.start.date);
     const typeId = getTypeIdentifier(reservation);
-    const subtitle = typeId ? `${relativeTime} · ${typeId}` : relativeTime;
+    const subtitle = typeId ? `${relativeTime} ${CONST.DOT_SEPARATOR} ${typeId}` : relativeTime;
 
     const handlePress = () => {
         Navigation.navigate(ROUTES.TRAVEL_TRIP_DETAILS.getRoute(reportID, transactionID, reservation.reservationID, sequenceIndex));
