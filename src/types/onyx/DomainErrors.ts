@@ -3,13 +3,23 @@ import type CONST from '@src/CONST';
 import type * as OnyxCommon from './OnyxCommon';
 
 /**
- * Basic errors for domain members
+ * Basic errors for domain members and admins
  */
 type GeneralDomainMemberErrors = {
     /**
      * Base errors
      */
     errors: OnyxCommon.Errors;
+};
+
+/**
+ * Errors for domain members
+ */
+type DomainMemberErrors = GeneralDomainMemberErrors & {
+    /**
+     * Errors related to a specific domain vacation delegate
+     */
+    vacationDelegateErrors?: OnyxCommon.Errors;
 };
 
 /**
@@ -49,7 +59,7 @@ type DomainErrors = {
     /**
      * Errors related to specific domain member, keyed by their accountID. memberErrors are keyed with user email, NOT accountID
      */
-    memberErrors?: Record<string | number, GeneralDomainMemberErrors>;
+    memberErrors?: Record<string | number, DomainMemberErrors>;
 
     /**
      * Errors for the domain itself
@@ -62,4 +72,5 @@ type DomainErrors = {
     setTwoFactorAuthRequiredError?: OnyxCommon.Errors;
 } & PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroupErrors>;
 
+export type {GeneralDomainMemberErrors, DomainMemberErrors};
 export default DomainErrors;
