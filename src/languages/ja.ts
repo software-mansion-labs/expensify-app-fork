@@ -977,6 +977,16 @@ const translations: TranslationDeepObject<typeof en> = {
                 upcomingTodos: '今後のTo-doはここに表示されます。',
             },
         },
+        upcomingTravel: '今後の出張',
+        upcomingTravelSection: {
+            flightTo: ({destination}: {destination: string}) => `${destination} 行きのフライト`,
+            trainTo: ({destination}: {destination: string}) => `${destination} 行きの電車`,
+            hotelIn: ({destination}: {destination: string}) => `${destination}のホテル`,
+            carRentalIn: ({destination}: {destination: string}) => `${destination}でのレンタカー`,
+            inOneWeek: '1週間後',
+            inDays: {one: '1日後', other: (count: number) => `${count}日後`},
+            today: '今日',
+        },
     },
     allSettingsScreen: {
         subscription: 'サブスクリプション',

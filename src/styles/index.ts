@@ -5833,6 +5833,13 @@ const staticStyles = (theme: ThemeColors) =>
             width: variables.iconSizeExtraLarge,
             height: variables.iconSizeExtraLarge,
         },
+        homeWidgetIconContainer: {
+            width: variables.iconSizeExtraLarge,
+            height: variables.iconSizeExtraLarge,
+            borderRadius: 8,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
     }) satisfies StaticStyles;
 
 const dynamicStyles = (theme: ThemeColors) =>
@@ -6376,7 +6383,7 @@ const plainStyles = (theme: ThemeColors) =>
         homePageRightColumn: (shouldUseNarrowLayout: boolean) =>
             shouldUseNarrowLayout
                 ? ({width: '100%', flexDirection: 'column', gap: 20} satisfies ViewStyle)
-                : ({flex: 5, flexBasis: '41.667%', maxWidth: variables.homePageRightColumnMaxWidth, gap: 20} satisfies ViewStyle),
+                : ({flex: 5, flexBasis: '41.667%', maxWidth: variables.homePageRightColumnMaxWidth, flexDirection: 'column', gap: 20} satisfies ViewStyle),
     }) satisfies Styles;
 
 const styles = (theme: ThemeColors) =>

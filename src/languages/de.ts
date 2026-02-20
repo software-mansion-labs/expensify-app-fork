@@ -983,6 +983,16 @@ const translations: TranslationDeepObject<typeof en> = {
                 upcomingTodos: 'Anstehende To-dos werden hier angezeigt.',
             },
         },
+        upcomingTravel: 'Bevorstehende Reisen',
+        upcomingTravelSection: {
+            flightTo: ({destination}: {destination: string}) => `Flug nach ${destination}`,
+            trainTo: ({destination}: {destination: string}) => `Zug nach ${destination}`,
+            hotelIn: ({destination}: {destination: string}) => `Hotel in ${destination}`,
+            carRentalIn: ({destination}: {destination: string}) => `Mietwagen in ${destination}`,
+            inOneWeek: 'In 1 Woche',
+            inDays: {one: 'In 1 Tag', other: (count: number) => `In ${count} Tagen`},
+            today: 'Heute',
+        },
     },
     allSettingsScreen: {
         subscription: 'Abonnement',
