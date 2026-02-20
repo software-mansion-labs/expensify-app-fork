@@ -535,6 +535,7 @@ const translations: TranslationDeepObject<typeof en> = {
         week: 'Semaine',
         year: 'Année',
         quarter: 'Trimestre',
+        vacationDelegate: 'Délégué de vacances',
         expensifyLogo: 'Logo Expensify',
     },
     socials: {
@@ -3079,7 +3080,6 @@ ${
         time: 'Heure',
         clearAfter: 'Effacer après',
         whenClearStatus: 'Quand devons-nous effacer votre statut ?',
-        vacationDelegate: 'Délégué de vacances',
         setVacationDelegate: `Définissez un délégué de vacances pour approuver les notes de frais en votre nom pendant votre absence du bureau.`,
         cannotSetVacationDelegate: `Vous ne pouvez pas définir un délégué de vacances car vous êtes actuellement le délégué des membres suivants :`,
         vacationDelegateError: 'Une erreur s’est produite lors de la mise à jour de votre remplaçant de congés.',
@@ -8493,12 +8493,15 @@ Voici un *reçu test* pour vous montrer comment ça fonctionne :`,
             error: {
                 removeMember: 'Impossible de supprimer cet utilisateur. Veuillez réessayer.',
                 addMember: 'Impossible d’ajouter ce membre. Veuillez réessayer.',
+                vacationDelegate: 'Impossible de définir cet utilisateur comme délégué de vacances. Veuillez réessayer.',
             },
             forceTwoFactorAuth: 'Imposer l’authentification à deux facteurs',
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) =>
                 `<muted-text>Veuillez désactiver <a href="${samlPageUrl}">SAML</a> pour imposer l’authentification à deux facteurs.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Exiger l’authentification à deux facteurs pour tous les membres de ce domaine. Les membres du domaine seront invités à configurer l’authentification à deux facteurs sur leur compte lorsqu’ils se connectent.</muted-text>`,
             forceTwoFactorAuthError: 'L’activation forcée de l’authentification à deux facteurs n’a pas pu être modifiée. Veuillez réessayer plus tard.',
+            cannotSetVacationDelegateForMember: (email: string) =>
+                `Vous ne pouvez pas définir un délégué de vacances pour ${email}, car cette personne est actuellement le délégué des membres suivants :`,
         },
         common: {settings: 'Paramètres'},
         groups: {title: 'Groupes', memberCount: () => ({one: '1 membre', other: (count: number) => `${count} membres`})},

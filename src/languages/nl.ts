@@ -534,6 +534,7 @@ const translations: TranslationDeepObject<typeof en> = {
         week: 'Week',
         year: 'Jaar',
         quarter: 'Kwartaal',
+        vacationDelegate: 'Vertegenwoordiger tijdens vakantie',
         expensifyLogo: 'Expensify-logo',
     },
     socials: {
@@ -3060,7 +3061,6 @@ ${
         time: 'Tijd',
         clearAfter: 'Wissen na',
         whenClearStatus: 'Wanneer moeten we je status wissen?',
-        vacationDelegate: 'Vertegenwoordiger tijdens vakantie',
         setVacationDelegate: `Stel een vervangende fiatteur in om rapporten namens jou goed te keuren terwijl je afwezig bent.`,
         cannotSetVacationDelegate: `Je kunt geen vakantiedelegaat instellen omdat je momenteel de delegaat bent voor de volgende leden:`,
         vacationDelegateError: 'Er is een fout opgetreden bij het bijwerken van je vervanger tijdens vakantie.',
@@ -8435,12 +8435,15 @@ Hier is een *proefbon* om je te laten zien hoe het werkt:`,
             error: {
                 removeMember: 'Kan deze gebruiker niet verwijderen. Probeer het opnieuw.',
                 addMember: 'Kan dit lid niet toevoegen. Probeer het opnieuw.',
+                vacationDelegate: 'Kan deze gebruiker niet als vakantiemandataris instellen. Probeer het opnieuw.',
             },
             forceTwoFactorAuth: 'Tweeledige verificatie afdwingen',
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) =>
                 `<muted-text>Schakel <a href="${samlPageUrl}">SAML</a> uit om het gebruik van twee-factor-authenticatie af te dwingen.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Tweeledige verificatie vereisen voor alle leden van dit domein. Domeinleden worden gevraagd om tweefactorauthenticatie voor hun account in te stellen wanneer ze zich aanmelden.</muted-text>`,
             forceTwoFactorAuthError: 'Verplichte twee-factor-authenticatie kon niet worden gewijzigd. Probeer het later opnieuw.',
+            cannotSetVacationDelegateForMember: (email: string) =>
+                `Je kunt geen vakantiemandataris instellen voor ${email} omdat die persoon momenteel gedelegeerde is voor de volgende leden:`,
         },
         common: {settings: 'Instellingen'},
         groups: {title: 'Groepen', memberCount: () => ({one: '1 lid', other: (count: number) => `${count} leden`})},
