@@ -534,6 +534,7 @@ const translations: TranslationDeepObject<typeof en> = {
         week: 'Tydzień',
         year: 'Rok',
         quarter: 'Kwartał',
+        vacationDelegate: 'Zastępca urlopowy',
         expensifyLogo: 'Logo Expensify',
     },
     socials: {
@@ -3054,7 +3055,6 @@ ${
         time: 'Czas',
         clearAfter: 'Wyczyść po',
         whenClearStatus: 'Kiedy powinniśmy wyczyścić Twój status?',
-        vacationDelegate: 'Zastępca urlopowy',
         setVacationDelegate: `Ustaw zastępcę na czas urlopu, aby zatwierdzał raporty w Twoim imieniu, gdy jesteś poza biurem.`,
         cannotSetVacationDelegate: `Nie możesz ustawić delegata urlopowego, ponieważ obecnie jesteś delegatem dla następujących członków:`,
         vacationDelegateError: 'Wystąpił błąd podczas aktualizowania Twojego zastępcy urlopowego.',
@@ -8422,12 +8422,14 @@ Oto *paragon testowy*, żeby pokazać Ci, jak to działa:`,
             error: {
                 removeMember: 'Nie można usunąć tego użytkownika. Spróbuj ponownie.',
                 addMember: 'Nie można dodać tego członka. Spróbuj ponownie.',
+                vacationDelegate: 'Nie można ustawić tego użytkownika jako zastępującego na czas nieobecności. Spróbuj ponownie.',
             },
             forceTwoFactorAuth: 'Wymuś uwierzytelnianie dwuskładnikowe',
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) =>
                 `<muted-text>Wyłącz proszę <a href="${samlPageUrl}">SAML</a>, aby wymusić uwierzytelnianie dwuskładnikowe.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Wymagaj uwierzytelniania dwuskładnikowego od wszystkich członków tej domeny. Członkowie domeny zostaną poproszeni o skonfigurowanie uwierzytelniania dwuskładnikowego na swoim koncie po zalogowaniu.</muted-text>`,
             forceTwoFactorAuthError: 'Nie udało się zmienić wymuszania uwierzytelniania dwuskładnikowego. Spróbuj ponownie później.',
+            cannotSetVacationDelegateForMember: (email: string) => `Nie możesz ustawić zastępstwa urlopowego dla ${email}, ponieważ jest on/ona obecnie zastępcą dla następujących członków:`,
             reportSuspiciousActivityPrompt: (email: string) =>
                 `Czy na pewno? To zablokuje konto użytkownika <strong>${email}</strong>. <br /><br /> Nasz zespół następnie przejrzy konto i usunie wszelki nieautoryzowany dostęp. Aby odzyskać dostęp, będą musieli współpracować z Concierge.`,
             reportSuspiciousActivityConfirmationPrompt: 'Przejrzymy konto, aby potwierdzić, że bezpiecznie je odblokować, i skontaktujemy się przez Concierge w razie pytań.',

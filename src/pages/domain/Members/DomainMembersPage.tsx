@@ -15,6 +15,7 @@ import useSearchBackPress from '@hooks/useSearchBackPress';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {clearDomainMemberError, closeUserAccount} from '@libs/actions/Domain';
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
+import {hasDomainMemberDetailsErrors} from '@libs/DomainUtils';
 import {getLatestError} from '@libs/ErrorUtils';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
@@ -24,6 +25,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import type {DomainMemberErrors} from '@src/types/onyx/DomainErrors';
 
 type DomainMembersPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.MEMBERS>;
 
@@ -147,15 +149,19 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     };
 
     const getCustomRowProps = (accountID: number, email?: string) => {
-        const emailError = email ? getLatestError(domainErrors?.memberErrors?.[email]?.errors) : undefined;
-        const accountIDError = {
-            ...getLatestError(domainErrors?.memberErrors?.[accountID]?.errors),
-            ...getLatestError(domainErrors?.memberErrors?.[accountID]?.lockAccountErrors),
-        };
         const emailPendingAction = email ? domainPendingActions?.[email]?.pendingAction : undefined;
         const accountIDPendingAction = domainPendingActions?.[accountID]?.pendingAction ?? domainPendingActions?.[accountID]?.lockAccount;
 
-        return {errors: {...emailError, ...accountIDError}, pendingAction: emailPendingAction ?? accountIDPendingAction};
+        const emailError = email ? getLatestError(domainErrors?.memberErrors?.[email]?.errors) : undefined;
+        const vacationDelegatesEmailError = email ? getLatestError(domainErrors?.memberErrors?.[email]?.vacationDelegateErrors) : undefined;
+
+        const mergedErrors: DomainMemberErrors = {
+            errors: {...getLatestError(domainErrors?.memberErrors?.[accountID]?.errors), ...getLatestError(domainErrors?.memberErrors?.[accountID]?.lockAccountErrors), ...emailError},
+            vacationDelegateErrors: {...getLatestError(domainErrors?.memberErrors?.[accountID]?.vacationDelegateErrors), ...vacationDelegatesEmailError},
+        };
+        const brickRoadIndicator = hasDomainMemberDetailsErrors(mergedErrors) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined;
+
+        return {errors: getLatestError(mergedErrors?.errors), pendingAction: emailPendingAction ?? accountIDPendingAction, brickRoadIndicator};
     };
 
     return (

@@ -535,6 +535,7 @@ const translations: TranslationDeepObject<typeof en> = {
         week: 'Settimana',
         year: 'Anno',
         quarter: 'Trimestre',
+        vacationDelegate: 'Delega ferie',
         expensifyLogo: 'Logo Expensify',
     },
     socials: {
@@ -3064,7 +3065,6 @@ ${
         time: 'Ora',
         clearAfter: 'Cancella dopo',
         whenClearStatus: 'Quando dovremmo cancellare il tuo stato?',
-        vacationDelegate: 'Delegato ferie',
         setVacationDelegate: `Imposta un delegato per le ferie per approvare i report per tuo conto mentre sei fuori ufficio.`,
         cannotSetVacationDelegate: `Non puoi impostare un delegato per le ferie perché al momento sei il delegato per i seguenti membri:`,
         vacationDelegateError: 'Si è verificato un errore durante l’aggiornamento del tuo delegato per le ferie.',
@@ -8462,12 +8462,14 @@ Ecco una *ricevuta di prova* per mostrarti come funziona:`,
             error: {
                 removeMember: 'Impossibile rimuovere questo utente. Riprova.',
                 addMember: 'Impossibile aggiungere questo membro. Riprova.',
+                vacationDelegate: 'Impossibile impostare questo utente come delegato per le ferie. Riprova.',
             },
             forceTwoFactorAuth: 'Imponi l’autenticazione a due fattori',
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) =>
                 `<muted-text>Disabilita <a href="${samlPageUrl}">SAML</a> per imporre l’autenticazione a due fattori.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Richiedi l’autenticazione a due fattori per tutti i membri di questo dominio. Ai membri del dominio verrà chiesto di configurare l’autenticazione a due fattori sul proprio account quando effettuano l’accesso.</muted-text>`,
             forceTwoFactorAuthError: 'Impossibile modificare l’impostazione “Forza l’autenticazione a due fattori”. Riprova più tardi.',
+            cannotSetVacationDelegateForMember: (email: string) => `Non puoi impostare un delegato per le vacanze per ${email} perché al momento è il delegato per i seguenti membri:`,
             reportSuspiciousActivityPrompt: (email: string) =>
                 `Sei sicuro? Questo bloccherà l’account di <strong>${email}</strong>. <br /><br /> Il nostro team esaminerà quindi l’account e rimuoverà qualsiasi accesso non autorizzato. Per riottenere l’accesso, dovranno collaborare con Concierge.`,
             reportSuspiciousActivityConfirmationPrompt: 'Esamineremo l’account per verificare che sia sicuro sbloccarlo e ti contatteremo tramite Concierge per qualsiasi domanda.',

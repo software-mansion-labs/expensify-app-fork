@@ -403,6 +403,7 @@ const translations: TranslationDeepObject<typeof en> = {
         week: 'Semana',
         year: 'Año',
         quarter: 'Trimestre',
+        vacationDelegate: 'Delegado de vacaciones',
         expensifyLogo: 'Logo de Expensify',
     },
     socials: {
@@ -2930,7 +2931,6 @@ ${amount} para ${merchant} - ${date}`,
         time: 'Hora',
         clearAfter: 'Borrar después',
         whenClearStatus: '¿Cuándo deberíamos borrar tu estado?',
-        vacationDelegate: 'Delegado de vacaciones',
         setVacationDelegate: 'Configura un delegado de vacaciones para aprobar informes en tu nombre mientras estás fuera de la oficina.',
         cannotSetVacationDelegate: `No puedes establecer un delegado de vacaciones porque actualmente eres el delegado de los siguientes miembros:`,
         vacationDelegateError: 'Hubo un error al actualizar tu delegado de vacaciones.',
@@ -8672,12 +8672,15 @@ ${amount} para ${merchant} - ${date}`,
             error: {
                 removeMember: 'No se pudo eliminar a este usuario. Por favor, inténtalo de nuevo.',
                 addMember: 'No se pudo añadir este miembro. Por favor, inténtalo de nuevo.',
+                vacationDelegate: 'No se pudo establecer a este usuario como delegado de vacaciones. Por favor, inténtalo de nuevo.',
             },
             forceTwoFactorAuth: 'Forzar la autenticación de dos factores',
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) =>
                 `<muted-text>Por favor, deshabilita <a href="${samlPageUrl}">SAML</a> para forzar la autenticación de dos factores.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Requiere la autenticación de dos factores para todos los miembros de este dominio. Se les pedirá a los miembros del dominio que configuren la autenticación de dos factores en su cuenta cuando inicien sesión.</muted-text>`,
             forceTwoFactorAuthError: 'No se pudo cambiar la autenticación de dos factores forzada. Por favor, inténtalo de nuevo más tarde.',
+            cannotSetVacationDelegateForMember: (email: string) =>
+                `No puedes establecer un delegado de vacaciones para ${email} porque actualmente es el delegado de los siguientes miembros:`,
             reportSuspiciousActivityPrompt: (email: string) =>
                 `¿Estás seguro? Esto bloqueará la cuenta de <strong>${email}</strong>. <br /><br /> Nuestro equipo revisará la cuenta y eliminará cualquier acceso no autorizado. Para recuperar el acceso, deberá comunicarse con Concierge.`,
             reportSuspiciousActivityConfirmationPrompt:

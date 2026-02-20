@@ -555,6 +555,7 @@ const translations = {
         week: 'Week',
         year: 'Year',
         quarter: 'Quarter',
+        vacationDelegate: 'Vacation delegate',
         expensifyLogo: 'Expensify logo',
     },
     socials: {
@@ -3101,7 +3102,6 @@ const translations = {
         time: 'Time',
         clearAfter: 'Clear after',
         whenClearStatus: 'When should we clear your status?',
-        vacationDelegate: 'Vacation delegate',
         setVacationDelegate: `Set a vacation delegate to approve reports on your behalf while you're out of office.`,
         cannotSetVacationDelegate: `You can't set a vacation delegate because you're currently the delegate for the following members:`,
         vacationDelegateError: 'There was an error updating your vacation delegate.',
@@ -8419,12 +8419,14 @@ const translations = {
             error: {
                 addMember: 'Unable to add this member. Please try again.',
                 removeMember: 'Unable to remove this user. Please try again.',
+                vacationDelegate: 'Unable to set this user as a vacation delegate. Please try again.',
             },
             forceTwoFactorAuth: 'Force two-factor authentication',
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) =>
                 `<muted-text>Please disable <a href="${samlPageUrl}">SAML</a> to force two-factor authentication.</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>Require two-factor authentication for all members of this domain. Domain members will be prompted to set up two-factor authentication on their account when they sign in.</muted-text>`,
             forceTwoFactorAuthError: "Force two-factor authentication couldn't be changed. Please try again later.",
+            cannotSetVacationDelegateForMember: (email: string) => `You can't set a vacation delegate for ${email} because they're currently the delegate for the following members:`,
             reportSuspiciousActivityPrompt: (email: string) =>
                 `Are you sure? This will lock <strong>${email}'s</strong> account. <br /><br /> Our team will then review the account and remove any unauthorized access. To regain access, they'll need to work with Concierge.`,
             reportSuspiciousActivityConfirmationPrompt: 'We’ll review the account to verify it’s safe to unlock and reach out via Concierge with any questions.',

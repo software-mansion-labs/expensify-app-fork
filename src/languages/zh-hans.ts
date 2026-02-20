@@ -530,6 +530,7 @@ const translations: TranslationDeepObject<typeof en> = {
         week: '周',
         year: '年份',
         quarter: '季度',
+        vacationDelegate: '休假代理',
         expensifyLogo: 'Expensify徽标',
     },
     socials: {
@@ -3004,7 +3005,6 @@ ${
         time: '时间',
         clearAfter: '多久后清除',
         whenClearStatus: '我们应在何时清除你的状态？',
-        vacationDelegate: '休假代理',
         setVacationDelegate: `设置一个休假代理人在你不在办公室时代你审批报销报告。`,
         cannotSetVacationDelegate: `由于你目前是以下成员的代理人，因此无法设置休假代理人：`,
         vacationDelegateError: '更新你的休假代理时出错。',
@@ -8240,14 +8240,12 @@ ${reportName}
                 one: '我们建议安全地关闭该账户，以便在存在以下情况时跳过关闭操作：<ul><li>待处理的审批</li><li>正在进行的报销</li><li>没有其他登录方式</li></ul>否则，您可以忽略上述安全预防措施并强制关闭所选账户。',
                 other: '我们建议安全地关闭该账户，以便在存在以下情况时跳过关闭操作：<ul><li>待处理的审批</li><li>正在进行的报销</li><li>没有其他登录方式</li></ul>否则，您可以忽略上述安全预防措施并强制关闭所选账户。',
             }),
-            error: {
-                removeMember: '无法移除此用户。请重试。',
-                addMember: '无法添加此成员。请重试。',
-            },
+            error: {removeMember: '无法移除此用户。请重试。', addMember: '无法添加此成员。请重试。', vacationDelegate: '无法将此用户设置为休假代理人。请重试。'},
             forceTwoFactorAuth: '强制启用双重身份验证',
             forceTwoFactorAuthSAMLEnabledDescription: (samlPageUrl: string) => `<muted-text>请禁用<a href="${samlPageUrl}">SAML</a>以强制启用双重身份验证。</muted-text>`,
             forceTwoFactorAuthDescription: `<muted-text>要求此域的所有成员使用双重身份验证。域成员在登录时将被提示为其账户设置双重身份验证。</muted-text>`,
             forceTwoFactorAuthError: '无法更改强制启用双重身份验证设置。请稍后再试。',
+            cannotSetVacationDelegateForMember: (email: string) => `您无法为 ${email} 设置休假代理人，因为 TA 当前是以下成员的代理人：`,
             reportSuspiciousActivityPrompt: (email: string) =>
                 `你确定要这样做吗？这将锁定 <strong>${email}</strong> 的账户。<br /><br />我们的团队随后会审核该账户并移除任何未经授权的访问。若要重新获得访问权限，他们需要与 Concierge 配合处理。`,
             reportSuspiciousActivityConfirmationPrompt: '我们会审核账户以确认解锁是否安全，如有任何问题将通过 Concierge 与您联系。',

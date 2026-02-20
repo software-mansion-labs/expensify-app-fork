@@ -1,7 +1,7 @@
 import type * as OnyxCommon from './OnyxCommon';
 
 /**
- * Basic errors for domain members
+ * Basic errors for domain members and admins
  */
 type GeneralDomainMemberErrors = {
     /**
@@ -11,9 +11,14 @@ type GeneralDomainMemberErrors = {
 };
 
 /**
- * Errors for a member.
+ * Errors for domain members
  */
 type DomainMemberErrors = {
+    /**
+     * Errors related to a specific domain vacation delegate
+     */
+    vacationDelegateErrors?: OnyxCommon.Errors;
+
     /**
      * Errors related to specific domain member lock account status.
      */
@@ -55,4 +60,5 @@ type DomainErrors = {
     setTwoFactorAuthRequiredError?: OnyxCommon.Errors;
 };
 
+export type {GeneralDomainMemberErrors, DomainMemberErrors};
 export default DomainErrors;

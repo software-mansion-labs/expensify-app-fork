@@ -1,10 +1,11 @@
-import {accountLockSelector, domainNameSelector, selectSecurityGroupForAccount} from '@selectors/Domain';
+import {accountLockSelector, domainNameSelector, selectSecurityGroupForAccount, vacationDelegateSelector} from '@selectors/Domain';
 import {personalDetailsSelector} from '@selectors/PersonalDetails';
 import React, {useState} from 'react';
 import Button from '@components/Button';
 import DecisionModal from '@components/DecisionModal';
 import MenuItem from '@components/MenuItem';
 import {ModalActions} from '@components/Modal/Global/ModalContext';
+import VacationDelegateMenuItem from '@components/VacationDelegateMenuItem';
 import useConfirmModal from '@hooks/useConfirmModal';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
@@ -18,6 +19,7 @@ import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import BaseDomainMemberDetailsComponent from '@pages/domain/BaseDomainMemberDetailsComponent';
+import {clearVacationDelegateError} from '@userActions/Domain';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -49,7 +51,21 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
 
     const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true, selector: domainNameSelector});
 
+    const [vacationDelegate] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
+        canBeMissing: true,
+        selector: vacationDelegateSelector(accountID),
+    });
+
+    const [domainPendingActions] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_PENDING_ACTIONS}${domainAccountID}`, {
+        canBeMissing: true,
+    });
+    const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {canBeMissing: true});
+
     const memberLogin = personalDetails?.login ?? '';
+
+    const [isAccountLocked] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true, selector: accountLockSelector(accountID)});
+    const lockDomainError = getLatestError(domainErrors?.memberErrors?.[accountID]?.lockAccountErrors);
+    const lockDomainErrorMessage = Object.values(lockDomainError).at(0);
 
     const handleCloseAccount = async () => {
         if (!userSecurityGroup || shouldForceCloseAccount === undefined) {
@@ -93,10 +109,6 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
             style={styles.mb5}
         />
     );
-    const [isAccountLocked] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true, selector: accountLockSelector(accountID)});
-    const [domainErrors] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {canBeMissing: true});
-    const lockDomainError = getLatestError(domainErrors?.memberErrors?.[accountID]?.lockAccountErrors);
-    const lockDomainErrorMessage = Object.values(lockDomainError).at(0);
 
     const showUnlockAccountModal = () => {
         requestUnlockAccount(accountID);
@@ -115,6 +127,14 @@ function DomainMemberDetailsPage({route}: DomainMemberDetailsPageProps) {
                 accountID={accountID}
                 avatarButton={avatarButton}
             >
+                <VacationDelegateMenuItem
+                    vacationDelegate={vacationDelegate}
+                    onPress={() => Navigation.navigate(ROUTES.DOMAIN_VACATION_DELEGATE.getRoute(domainAccountID, accountID))}
+                    pendingAction={domainPendingActions?.member?.[memberLogin]?.vacationDelegate}
+                    errors={getLatestError(domainErrors?.memberErrors?.[memberLogin]?.vacationDelegateErrors)}
+                    onCloseError={() => clearVacationDelegateError(domainAccountID, accountID, memberLogin, vacationDelegate?.previousDelegate)}
+                />
+
                 {isAccountLocked ? (
                     <MenuItem
                         key="UnlockAccount"
