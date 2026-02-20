@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react';
 import React from 'react';
 import {LineChart} from '@components/Charts';
 import type {ChartDataPoint, YAxisUnit, YAxisUnitPosition} from '@components/Charts';
@@ -32,9 +33,12 @@ type SearchLineChartProps = {
 
     /** Position of currency symbol relative to value */
     yAxisUnitPosition?: YAxisUnitPosition;
+
+    /** Element to be shown below the chart */
+    footer?: ReactNode;
 };
 
-function SearchLineChart({data, title, titleIcon, getLabel, getFilterQuery, onItemPress, isLoading, yAxisUnit, yAxisUnitPosition}: SearchLineChartProps) {
+function SearchLineChart({data, title, titleIcon, getLabel, getFilterQuery, onItemPress, isLoading, yAxisUnit, yAxisUnitPosition, footer}: SearchLineChartProps) {
     const chartData: ChartDataPoint[] = data.map((item) => {
         const currency = item.currency ?? 'USD';
         const totalInDisplayUnits = convertToFrontendAmountAsInteger(item.total ?? 0, currency);
@@ -68,6 +72,7 @@ function SearchLineChart({data, title, titleIcon, getLabel, getFilterQuery, onIt
             onPointPress={handlePointPress}
             yAxisUnit={yAxisUnit}
             yAxisUnitPosition={yAxisUnitPosition}
+            footer={footer}
         />
     );
 }
