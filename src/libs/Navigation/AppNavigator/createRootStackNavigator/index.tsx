@@ -1,4 +1,4 @@
-import type {NavigationProp, NavigatorTypeBagBase, ParamListBase, StaticConfig, TypedNavigator} from '@react-navigation/native';
+import type {NavigationProp, NavigatorTypeBagBase, ParamListBase, StackNavigationState, StaticConfig, TypedNavigator} from '@react-navigation/native';
 import {createNavigatorFactory} from '@react-navigation/native';
 import RootNavigatorExtraContent from '@components/Navigation/RootNavigatorExtraContent';
 import useNavigationResetOnLayoutChange from '@libs/Navigation/AppNavigator/useNavigationResetOnLayoutChange';
@@ -8,11 +8,47 @@ import type {PlatformStackNavigationEventMap, PlatformStackNavigationOptions, Pl
 import RootStackRouter from './RootStackRouter';
 import useCustomRootStackNavigatorState from './useCustomRootStackNavigatorState';
 
+
+function transformStateForBottomTab(state: PlatformStackNavigationState<ParamListBase>) {
+    if (!state.routes || state.routes.length <= 1) {
+        return state;
+    }
+
+    const uniqueRoutesMap = new Map();
+    const lastRoute = state.routes[state.routes.length - 1];
+    const secondToLastRoute = state.routes[state.routes.length - 2];
+
+    for (const route of state.routes) {
+        uniqueRoutesMap.set(route.name, route);
+    }
+
+
+    const uniqueRoutes = Array.from(uniqueRoutesMap.values());
+
+
+    const finalRoutes = uniqueRoutes.filter((r) => r.key !== lastRoute.key);
+    finalRoutes.push(lastRoute);
+
+    return {
+        ...state,
+        routes: finalRoutes,
+        index: finalRoutes.length - 1,
+    };
+}
+
+
 const RootStackNavigatorComponent = createPlatformStackNavigatorComponent('RootStackNavigator', {
     createRouter: RootStackRouter,
     defaultScreenOptions: defaultPlatformStackScreenOptions,
     useCustomEffects: useNavigationResetOnLayoutChange,
-    useCustomState: useCustomRootStackNavigatorState,
+    useCustomState: (props) => {
+        const result = useCustomRootStackNavigatorState(props);
+
+        return {
+            ...result,
+            state: transformStateForBottomTab(result),
+        };
+    },
     ExtraContent: RootNavigatorExtraContent,
 });
 
@@ -32,7 +68,6 @@ function createRootStackNavigator<
     },
     const Config extends StaticConfig<TypeBag> = StaticConfig<TypeBag>,
 >(config?: Config): TypedNavigator<TypeBag, Config> {
-    // In React Navigation 7 createNavigatorFactory returns any
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return createNavigatorFactory(RootStackNavigatorComponent)(config);
 }
