@@ -279,10 +279,10 @@ function WorkspaceOverviewPage({policyDraft, policy: policyProp, route}: Workspa
             return;
         }
 
-        leaveWorkspace(policyID);
+        leaveWorkspace(currentUserPersonalDetails.accountID, policyID);
         setIsLeaveModalOpen(false);
         goBackFromInvalidPolicy();
-    }, [policyID]);
+    }, [currentUserPersonalDetails.accountID, policyID]);
 
     const hideDeleteWorkspaceErrorModal = () => {
         setIsDeleteWorkspaceErrorModalOpen(false);
@@ -626,6 +626,7 @@ function WorkspaceOverviewPage({policyDraft, policy: policyProp, route}: Workspa
                                 onPress={onPressName}
                                 shouldBreakWord
                                 numberOfLinesTitle={0}
+                                titleAccessibilityRole={CONST.ROLE.HEADER}
                             />
                         </OfflineWithFeedback>
                         {(!StringUtils.isEmptyString(policy?.description ?? '') || !readOnly || (prevIsPendingDelete && !isPendingDelete)) && (
