@@ -15,6 +15,7 @@ import useSearchBackPress from '@hooks/useSearchBackPress';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {clearDomainMemberError, closeUserAccount, setDomainMembersSelectedForMove} from '@libs/actions/Domain';
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
+import {hasDomainMemberDetailsErrors} from '@libs/DomainUtils';
 import {getLatestError} from '@libs/ErrorUtils';
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
@@ -24,6 +25,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import type {DomainMemberErrors} from '@src/types/onyx/DomainErrors';
 
 type DomainMembersPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamList, typeof SCREENS.DOMAIN.MEMBERS>;
 
@@ -32,7 +34,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const illustrations = useMemoizedLazyIllustrations(['Profile']);
-    const icons = useMemoizedLazyExpensifyIcons(['Plus', 'RemoveMembers', 'Transfer']);
+    const icons = useMemoizedLazyExpensifyIcons(['Plus', 'Gear', 'DotIndicator', 'RemoveMembers', 'Transfer']);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
     const clearSelectedMembers = () => setSelectedMembers([]);
@@ -106,9 +108,12 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
 
         for (const accountIDString of selectedMembers) {
             const accountID = Number(accountIDString);
-            const memberLogin = personalDetails?.[accountID]?.login ?? '';
+            const memberLogin = personalDetails?.[accountID]?.login;
+            if (!memberLogin || !domainName) {
+                continue;
+            }
             const securityGroupData = selectSecurityGroupForAccount(accountID)(domain);
-            closeUserAccount(domainAccountID, domainName ?? '', memberLogin, securityGroupData, shouldForceCloseAccount);
+            closeUserAccount(domainAccountID, domainName, memberLogin, securityGroupData, shouldForceCloseAccount);
         }
 
         setShouldForceCloseAccount(undefined);
@@ -119,7 +124,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
     const getBulkActionsButtonOptions: () => Array<DropdownOption<DomainMemberBulkActionType>> = () => [
         {
             text: translate('domain.members.closeAccount', {count: selectedMembers.length}),
-            value: CONST.DOMAIN.MEMBERS_BULK_ACTION_TYPES.CLOSE_ACCOUNT,
+            value: CONST.DOMAIN.MEMBERS.BULK_ACTION_TYPES.CLOSE_ACCOUNT,
             icon: icons.RemoveMembers,
             onSelected: () => {
                 setIsModalVisible(true);
@@ -145,40 +150,36 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                 onPress={() => null}
                 options={getBulkActionsButtonOptions()}
                 isSplitButton={false}
-                style={[shouldUseNarrowLayout && styles.flexGrow1, shouldUseNarrowLayout && styles.mb3]}
+                style={shouldUseNarrowLayout ? [styles.flexGrow1, styles.mb3] : undefined}
                 isDisabled={!selectedMembers.length}
                 testID="DomainMembersPage-header-dropdown-menu-button"
+                wrapperStyle={shouldUseNarrowLayout && styles.flexGrow1}
             />
         ) : (
-            <>
-                <Button
-                    success
-                    onPress={() => Navigation.navigate(ROUTES.DOMAIN_ADD_MEMBER.getRoute(domainAccountID))}
-                    text={translate('domain.members.addMember')}
-                    icon={icons.Plus}
-                    innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
-                    style={[shouldUseNarrowLayout && styles.flexGrow1, shouldUseNarrowLayout && styles.mb3]}
-                />
-                <ButtonWithDropdownMenu
-                    success={false}
-                    onPress={() => null}
-                    shouldAlwaysShowDropdownMenu
-                    customText={translate('common.more')}
-                    options={[]}
-                    isSplitButton={false}
-                    wrapperStyle={styles.flexGrow0}
-                />
-            </>
+            <Button
+                success
+                onPress={() => Navigation.navigate(ROUTES.DOMAIN_ADD_MEMBER.getRoute(domainAccountID))}
+                text={translate('domain.members.addMember')}
+                icon={icons.Plus}
+                innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
+                style={shouldUseNarrowLayout ? [styles.flexGrow1, styles.mb3] : undefined}
+            />
         );
     };
 
     const getCustomRowProps = (accountID: number, email?: string) => {
-        const emailError = email ? getLatestError(domainErrors?.memberErrors?.[email]?.errors) : undefined;
-        const accountIDError = getLatestError(domainErrors?.memberErrors?.[accountID]?.errors);
         const emailPendingAction = email ? domainPendingActions?.[email]?.pendingAction : undefined;
         const accountIDPendingAction = domainPendingActions?.[accountID]?.pendingAction;
 
-        return {errors: emailError ?? accountIDError, pendingAction: emailPendingAction ?? accountIDPendingAction};
+        const emailErrors = email ? domainErrors?.memberErrors?.[email] : undefined;
+        const accountIDErrors = domainErrors?.memberErrors?.[accountID];
+        const mergedErrors: DomainMemberErrors = {
+            errors: {...accountIDErrors?.errors, ...emailErrors?.errors},
+            vacationDelegateErrors: {...accountIDErrors?.vacationDelegateErrors, ...emailErrors?.vacationDelegateErrors},
+        };
+        const brickRoadIndicator = hasDomainMemberDetailsErrors(mergedErrors) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined;
+
+        return {errors: getLatestError(mergedErrors?.errors), pendingAction: emailPendingAction ?? accountIDPendingAction, brickRoadIndicator};
     };
 
     return (
@@ -196,6 +197,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
                 setSelectedMembers={setSelectedMembers}
                 canSelectMultiple={canSelectMultiple}
                 useSelectionModeHeader={selectionModeHeader}
+                turnOnSelectionModeOnLongPress
                 onBackButtonPress={() => {
                     if (isMobileSelectionModeEnabled) {
                         clearSelectedMembers();

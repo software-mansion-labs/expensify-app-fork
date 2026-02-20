@@ -17,7 +17,7 @@ import {translateLocal} from '@libs/Localize';
 import {appendCountryCode, getPhoneNumberWithoutSpecialChars} from '@libs/LoginUtils';
 import {MaxHeap} from '@libs/MaxHeap';
 import {MinHeap} from '@libs/MinHeap';
-import {getForReportAction} from '@libs/ModifiedExpenseMessage';
+import {getForReportAction, getForReportActionTemp} from '@libs/ModifiedExpenseMessage';
 import Navigation from '@libs/Navigation/Navigation';
 import Parser from '@libs/Parser';
 import Performance from '@libs/Performance';
@@ -117,6 +117,7 @@ import {
     getReportOrDraftReport,
     getReportPreviewMessage,
     getReportSubtitlePrefix,
+    getReportTransactions,
     getUnreportedTransactionMessage,
     hasIOUWaitingOnCurrentUserBankAccount,
     isArchivedNonExpenseReport,
@@ -144,6 +145,7 @@ import {
 } from '@libs/ReportUtils';
 import StringUtils from '@libs/StringUtils';
 import {getTaskCreatedMessage, getTaskReportActionMessage} from '@libs/TaskUtils';
+import {isScanning} from '@libs/TransactionUtils';
 import {generateAccountID} from '@libs/UserUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -211,13 +213,6 @@ Onyx.connect({
 
         policies[key] = policy;
     },
-});
-
-let allPolicies: OnyxCollection<Policy> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.POLICY,
-    waitForCollectionCallback: true,
-    callback: (val) => (allPolicies = val),
 });
 
 let allReports: OnyxCollection<Report>;
@@ -608,6 +603,8 @@ function getLastMessageTextForReport({
     policyForMovingExpensesID,
     reportMetadata,
     reportAttributesDerived,
+    policyTags,
+    currentUserLogin,
 }: {
     translate: LocalizedTranslate;
     report: OnyxEntry<Report>;
@@ -619,6 +616,8 @@ function getLastMessageTextForReport({
     policyForMovingExpensesID?: string;
     reportMetadata?: OnyxEntry<ReportMetadata>;
     reportAttributesDerived?: ReportAttributesDerivedValue['reports'];
+    policyTags?: OnyxEntry<PolicyTagLists>;
+    currentUserLogin?: string;
 }): string {
     const reportID = report?.reportID;
     const lastReportAction = reportID ? lastVisibleReportActions[reportID] : undefined;
@@ -692,13 +691,23 @@ function getLastMessageTextForReport({
     } else if (isReportMessageAttachment({text: report?.lastMessageText ?? '', html: report?.lastMessageHtml, type: ''})) {
         lastMessageTextFromReport = `[${translate('common.attachment')}]`;
     } else if (isModifiedExpenseAction(lastReportAction)) {
-        const properSchemaForModifiedExpenseMessage = getForReportAction({
-            reportAction: lastReportAction,
-            policyID: report?.policyID,
-            movedFromReport,
-            movedToReport,
-            policyForMovingExpensesID,
-        });
+        const properSchemaForModifiedExpenseMessage = policyTags
+            ? getForReportActionTemp({
+                  translate,
+                  reportAction: lastReportAction,
+                  policy,
+                  movedFromReport,
+                  movedToReport,
+                  policyTags,
+                  currentUserLogin: currentUserLogin ?? '',
+              })
+            : getForReportAction({
+                  reportAction: lastReportAction,
+                  policyID: report?.policyID,
+                  movedFromReport,
+                  movedToReport,
+                  policyForMovingExpensesID,
+              });
         lastMessageTextFromReport = formatReportLastMessageText(properSchemaForModifiedExpenseMessage, true);
     } else if (isMovedTransactionAction(lastReportAction)) {
         lastMessageTextFromReport = Parser.htmlToText(getMovedTransactionMessage(translate, lastReportAction));
@@ -720,7 +729,7 @@ function getLastMessageTextForReport({
         } else if (hasPendingDEWSubmit(reportMetadata, isDEWPolicy) && isPendingAdd) {
             lastMessageTextFromReport = translate('iou.queuedToSubmitViaDEW');
         } else {
-            lastMessageTextFromReport = translate('iou.submitted', {memo: getOriginalMessage(lastReportAction)?.message});
+            lastMessageTextFromReport = translate('iou.submitted', getOriginalMessage(lastReportAction)?.message);
         }
     } else if (isActionOfType(lastReportAction, CONST.REPORT.ACTIONS.TYPE.APPROVED)) {
         const {automaticAction} = getOriginalMessage(lastReportAction) ?? {};
@@ -849,6 +858,19 @@ function getLastMessageTextForReport({
     // If the last action is AddComment and no last message text was determined yet, use getLastVisibleMessage to get the preview text
     if (reportID && !lastMessageTextFromReport && isAddCommentAction(lastReportAction)) {
         lastMessageTextFromReport = lastVisibleMessage?.lastMessageText;
+    }
+
+    if (reportID && !lastMessageTextFromReport && reportUtilsIsMoneyRequestReport(report)) {
+        const transactions = getReportTransactions(reportID);
+        const scanningTransactions = transactions.filter((transaction) => isScanning(transaction));
+
+        if (scanningTransactions.length > 0) {
+            lastMessageTextFromReport = translate('iou.receiptScanning', {count: scanningTransactions.length});
+        } else if (report?.transactionCount && report?.transactionCount > 0 && report?.currency) {
+            lastMessageTextFromReport = lastVisibleMessage?.lastMessageText;
+        } else if (report?.transactionCount === 0) {
+            lastMessageTextFromReport = translate('report.noActivityYet');
+        }
     }
 
     // If the last action differs from last original action, it means there's a hidden action (like a whisper), then use getLastVisibleMessage to get the preview text
@@ -1046,7 +1068,7 @@ function getReportOption(
 
             if (subtitle) {
                 // eslint-disable-next-line @typescript-eslint/no-deprecated
-                option.alternateText = translateLocal('iou.submitsTo', {name: subtitle ?? ''});
+                option.alternateText = translateLocal('iou.submitsTo', subtitle ?? '');
             }
         }
     }
@@ -1346,6 +1368,7 @@ function createFilteredOptionList(
     reports: OnyxCollection<Report>,
     currentUserAccountID: number,
     reportAttributesDerived: ReportAttributesDerivedValue['reports'] | undefined,
+    privateIsArchivedMap: PrivateIsArchivedMap,
     options: {
         maxRecentReports?: number;
         includeP2P?: boolean;
@@ -1429,9 +1452,19 @@ function createFilteredOptionList(
         ? Object.values(personalDetails ?? {}).map((personalDetail) => {
               const accountID = personalDetail?.accountID ?? CONST.DEFAULT_NUMBER_ID;
 
+              const report = reportMapForAccountIDs[accountID];
+              const privateIsArchived = privateIsArchivedMap[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${report?.reportID}`];
               return {
                   item: personalDetail,
-                  ...createOption([accountID], personalDetails, reportMapForAccountIDs[accountID], currentUserAccountID, {showPersonalDetails: true}, reportAttributesDerived),
+                  ...createOption(
+                      [accountID],
+                      personalDetails,
+                      reportMapForAccountIDs[accountID],
+                      currentUserAccountID,
+                      {showPersonalDetails: true},
+                      reportAttributesDerived,
+                      privateIsArchived,
+                  ),
               };
           })
         : [];
@@ -1446,6 +1479,7 @@ function createOptionFromReport(
     report: Report,
     personalDetails: OnyxEntry<PersonalDetailsList>,
     currentUserAccountID: number,
+    privateIsArchived: string | undefined,
     reportAttributesDerived?: ReportAttributesDerivedValue['reports'],
     config?: PreviewConfig,
 ) {
@@ -1453,7 +1487,7 @@ function createOptionFromReport(
 
     return {
         item: report,
-        ...createOption(accountIDs, personalDetails, report, currentUserAccountID, config, reportAttributesDerived),
+        ...createOption(accountIDs, personalDetails, report, currentUserAccountID, config, reportAttributesDerived, privateIsArchived),
     };
 }
 
@@ -2140,7 +2174,7 @@ function prepareReportOptionsForDisplay(
 
                 if (subtitle) {
                     // eslint-disable-next-line @typescript-eslint/no-deprecated
-                    newReportOption.alternateText = translateLocal('iou.submitsTo', {name: subtitle ?? ''});
+                    newReportOption.alternateText = translateLocal('iou.submitsTo', subtitle ?? '');
                 }
                 const canSubmitPerDiemExpense = canSubmitPerDiemExpenseFromWorkspace(policy);
                 if (!canSubmitPerDiemExpense && isPerDiemRequest) {
@@ -2477,6 +2511,7 @@ type SearchOptionsConfig = {
     shouldShowGBR?: boolean;
     shouldUnreadBeBold?: boolean;
     loginList: OnyxEntry<Login>;
+    policyCollection: OnyxCollection<Policy>;
     currentUserAccountID: number;
     currentUserEmail: string;
     personalDetails?: OnyxEntry<PersonalDetailsList>;
@@ -2502,6 +2537,7 @@ function getSearchOptions({
     shouldShowGBR = false,
     shouldUnreadBeBold = false,
     loginList,
+    policyCollection,
     currentUserAccountID,
     currentUserEmail,
     reportAttributesDerived,
@@ -2511,7 +2547,7 @@ function getSearchOptions({
 
     const optionList = getValidOptions(
         options,
-        allPolicies,
+        policyCollection,
         draftComments,
         nvpDismissedProductTraining,
         loginList,
@@ -2656,6 +2692,7 @@ function getMemberInviteOptions(
     loginList: OnyxEntry<Login>,
     currentUserAccountID: number,
     currentUserEmail: string,
+    personalDetailsCollection: OnyxEntry<PersonalDetailsList>,
     betas: Beta[] = [],
     excludeLogins: Record<string, boolean> = {},
     includeSelectedOptions = false,
@@ -2677,6 +2714,7 @@ function getMemberInviteOptions(
             includeRecentReports: false,
             searchString: '',
             maxElements: undefined,
+            personalDetails: personalDetailsCollection,
         },
         countryCode,
     );

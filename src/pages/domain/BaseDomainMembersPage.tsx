@@ -17,6 +17,7 @@ import {getLatestError} from '@libs/ErrorUtils';
 import {sortAlphabetically} from '@libs/OptionsListUtils';
 import {getDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 import tokenizedSearch from '@libs/tokenizedSearch';
+import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 import Navigation from '@navigation/Navigation';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -57,7 +58,7 @@ type BaseDomainMembersPageProps = {
     getCustomRightElement?: (accountID: number) => React.ReactNode;
 
     /** Function to return additional row-specific properties like errors or pending actions */
-    getCustomRowProps?: (accountID: number, accountEmail?: string) => {errors?: Errors; pendingAction?: PendingAction};
+    getCustomRowProps?: (accountID: number, accountEmail?: string) => {errors?: Errors; pendingAction?: PendingAction; brickRoadIndicator?: BrickRoad};
 
     /** Callback fired when the user dismisses an error message for a specific row */
     onDismissError?: (item: MemberOption) => void;
@@ -76,6 +77,9 @@ type BaseDomainMembersPageProps = {
 
     /** Custom back button press handler */
     onBackButtonPress?: () => void;
+
+    /** Weather long press should enable selection mode on mobile */
+    turnOnSelectionModeOnLongPress?: boolean;
 };
 
 function BaseDomainMembersPage({
@@ -93,6 +97,7 @@ function BaseDomainMembersPage({
     setSelectedMembers,
     canSelectMultiple = false,
     useSelectionModeHeader,
+    turnOnSelectionModeOnLongPress = false,
     onBackButtonPress,
 }: BaseDomainMembersPageProps) {
     const {formatPhoneNumber, localeCompare, translate} = useLocalize();
@@ -126,6 +131,8 @@ function BaseDomainMembersPage({
             pendingAction: customProps?.pendingAction,
             isInteractive: !isPendingActionDelete && !details?.isOptimisticPersonalDetail,
             isDisabled: isPendingActionDelete,
+            isDisabledCheckbox: isPendingActionDelete || !!details?.isOptimisticPersonalDetail,
+            brickRoadIndicator: customProps?.brickRoadIndicator,
         };
     });
 
@@ -199,7 +206,7 @@ function BaseDomainMembersPage({
             >
                 <HeaderWithBackButton
                     title={useSelectionModeHeader ? translate('common.selectMultiple') : headerTitle}
-                    onBackButtonPress={onBackButtonPress ?? Navigation.popToSidebar}
+                    onBackButtonPress={onBackButtonPress ?? Navigation.goBack}
                     icon={!useSelectionModeHeader ? headerIcon : undefined}
                     shouldShowBackButton={shouldUseNarrowLayout}
                     shouldUseHeadlineHeader={!useSelectionModeHeader}
@@ -214,9 +221,9 @@ function BaseDomainMembersPage({
                     shouldShowRightCaret
                     style={{
                         containerStyle: styles.flex1,
-                        listHeaderWrapperStyle: [styles.ph9, styles.pv3, styles.pb5],
+                        listHeaderWrapperStyle: styles.baseListHeaderWrapperStyle,
                         listItemTitleContainerStyles: shouldUseNarrowLayout ? undefined : styles.pr3,
-                        listItemErrorRowStyles: [styles.ph4, styles.pb4],
+                        listItemErrorRowStyles: [styles.ph4, styles.pb2],
                     }}
                     ListItem={TableListItem}
                     onSelectRow={onSelectRow}
@@ -230,7 +237,7 @@ function BaseDomainMembersPage({
                     onSelectAll={toggleAllUsers}
                     onCheckboxPress={toggleUser}
                     selectedItems={selectedMembers}
-                    turnOnSelectionModeOnLongPress
+                    turnOnSelectionModeOnLongPress={turnOnSelectionModeOnLongPress}
                     onTurnOnSelectionMode={(item) => item && toggleUser?.(item)}
                 />
             </ScreenWrapper>

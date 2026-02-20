@@ -14,7 +14,7 @@ type WorkspaceMemberBulkActionType = DeepValueOf<typeof CONST.POLICY.MEMBERS_BUL
 
 type RoomMemberBulkActionType = DeepValueOf<typeof CONST.REPORT.ROOM_MEMBERS_BULK_ACTION_TYPES>;
 
-type DomainMemberBulkActionType = DeepValueOf<typeof CONST.DOMAIN.MEMBERS_BULK_ACTION_TYPES>;
+type DomainMemberBulkActionType = DeepValueOf<typeof CONST.DOMAIN.MEMBERS.BULK_ACTION_TYPES>;
 
 type WorkspaceDistanceRatesBulkActionType = DeepValueOf<typeof CONST.POLICY.BULK_ACTION_TYPES>;
 
