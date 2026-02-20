@@ -132,7 +132,7 @@ function DomainMembersPage({route}: DomainMembersPageProps) {
         },
         {
             text: translate('domain.members.moveToGroup'),
-            value: CONST.DOMAIN.MEMBERS_BULK_ACTION_TYPES.MOVE_TO_GROUP,
+            value: CONST.DOMAIN.MEMBERS.BULK_ACTION_TYPES.MOVE_TO_GROUP,
             icon: icons.Transfer,
             onSelected: () => {
                 setDomainMembersSelectedForMove(selectedMembers);
