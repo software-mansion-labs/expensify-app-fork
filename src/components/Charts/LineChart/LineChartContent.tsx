@@ -1,9 +1,9 @@
-import {Group, Text as SkiaText, useFont, vec} from '@shopify/react-native-skia';
+import {Circle, Group, Line as SkiaLine, Text as SkiaText, useFont, vec} from '@shopify/react-native-skia';
 import React, {useCallback, useMemo, useState} from 'react';
 import type {LayoutChangeEvent} from 'react-native';
 import {View} from 'react-native';
 import type {CartesianChartRenderArg, ChartBounds} from 'victory-native';
-import {CartesianChart, Line, Scatter} from 'victory-native';
+import {CartesianChart, Line} from 'victory-native';
 import ActivityIndicator from '@components/ActivityIndicator';
 import ChartHeader from '@components/Charts/components/ChartHeader';
 import ChartTooltip from '@components/Charts/components/ChartTooltip';
@@ -44,7 +44,6 @@ function LineChartContent({data, title, titleIcon, isLoading, yAxisUnit, yAxisUn
     const [plotAreaWidth, setPlotAreaWidth] = useState(0);
 
     const yAxisDomain = useDynamicYDomain(data);
-
     const chartData = useMemo(() => {
         return data.map((point, index) => ({
             x: index,
@@ -158,8 +157,40 @@ function LineChartContent({data, title, titleIcon, isLoading, yAxisUnit, yAxisUn
     // - At 45° (rotated): right-align so the last character is under the point
     const renderCustomXLabels = useCallback(
         (args: CartesianChartRenderArg<{x: number; y: number}, 'y'>) => {
+            const scatterPoints = args.points.y.map((pt) =>
+                typeof pt.y === 'number' ? (
+                    <Circle
+                        key={`point-${pt.xValue}-${pt.yValue}`}
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={DOT_RADIUS}
+                        color={DEFAULT_CHART_COLOR}
+                    />
+                ) : null,
+            );
+
+            // Draw the left frame line anchored at the first tick rather than at the domain minimum.
+            // This prevents a visual gap between the frame and the lowest grid line that occurs when
+            // victory-native's nice() and ticks() use different step sizes (nice uses count=10,
+            // ticks uses Y_AXIS_TICK_COUNT=5), causing the domain minimum to land below the first tick.
+            const minTick = args.yTicks.length > 0 ? Math.min(...args.yTicks) : null;
+            const frameBottomY = minTick !== null ? args.yScale(minTick) : args.chartBounds.bottom;
+            const leftFrame = (
+                <SkiaLine
+                    p1={vec(args.chartBounds.left, args.chartBounds.top)}
+                    p2={vec(args.chartBounds.left, frameBottomY)}
+                    color={theme.border}
+                    strokeWidth={1}
+                />
+            );
+
             if (!font) {
-                return null;
+                return (
+                    <>
+                        {leftFrame}
+                        {scatterPoints}
+                    </>
+                );
             }
 
             const fontMetrics = font.getMetrics();
@@ -167,7 +198,7 @@ function LineChartContent({data, title, titleIcon, isLoading, yAxisUnit, yAxisUn
             const descent = Math.abs(fontMetrics.descent);
             const labelY = args.chartBounds.bottom + AXIS_LABEL_GAP + rotatedLabelYOffset(ascent, descent, angleRad);
 
-            return truncatedLabels.map((label, i) => {
+            const xLabels = truncatedLabels.map((label, i) => {
                 if (i % labelSkipInterval !== 0) {
                     return null;
                 }
@@ -213,8 +244,16 @@ function LineChartContent({data, title, titleIcon, isLoading, yAxisUnit, yAxisUn
                     </Group>
                 );
             });
+
+            return (
+                <>
+                    {leftFrame}
+                    {scatterPoints}
+                    {xLabels}
+                </>
+            );
         },
-        [font, truncatedLabels, labelSkipInterval, labelWidths, angleRad, theme.textSupporting],
+        [font, truncatedLabels, labelSkipInterval, labelWidths, angleRad, theme.textSupporting, theme.border],
     );
 
     const dynamicChartStyle = useMemo(
@@ -272,23 +311,16 @@ function LineChartContent({data, title, titleIcon, isLoading, yAxisUnit, yAxisUn
                                 domain: yAxisDomain,
                             },
                         ]}
-                        frame={{lineWidth: {left: 1, bottom: 1, top: 0, right: 0}, lineColor: theme.border}}
+                        frame={{lineWidth: 0}}
                         data={chartData}
                     >
                         {({points}) => (
-                            <>
-                                <Line
-                                    points={points.y}
-                                    color={DEFAULT_CHART_COLOR}
-                                    strokeWidth={2}
-                                    curveType="linear"
-                                />
-                                <Scatter
-                                    points={points.y}
-                                    radius={DOT_RADIUS}
-                                    color={DEFAULT_CHART_COLOR}
-                                />
-                            </>
+                            <Line
+                                points={points.y}
+                                color={DEFAULT_CHART_COLOR}
+                                strokeWidth={2}
+                                curveType="linear"
+                            />
                         )}
                     </CartesianChart>
                 )}
