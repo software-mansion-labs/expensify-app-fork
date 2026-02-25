@@ -26,6 +26,7 @@ import type {GpsPoint} from './index';
 import {
     createDistanceRequest,
     getMoneyRequestParticipantsFromReport,
+    getPolicyTags,
     requestMoney,
     setCustomUnitRateID,
     setMoneyRequestDistance,
@@ -356,6 +357,7 @@ function handleMoneyRequestStepScanParticipants({
                     policyRecentlyUsedCurrencies: policyRecentlyUsedCurrencies ?? [],
                     // No need to update recently used tags because no tags are used when the confirmation step is skipped
                     policyRecentlyUsedTags: undefined,
+                    allPolicyTags: getPolicyTags(),
                 });
                 return;
             }
