@@ -987,6 +987,7 @@ const translations = {
                 cta: 'Review',
             },
         },
+        yourTasks: 'Your tasks',
         assignedCards: 'Assigned cards',
         assignedCardsRemaining: ({amount}: {amount: string}) => `${amount} remaining`,
         announcements: 'Announcements',

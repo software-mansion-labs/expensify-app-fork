@@ -7,16 +7,16 @@ todos:
     status: completed
   - id: implement-hook
     content: Implement useSelfDMTasks hook at src/pages/home/YourTasksSection/hooks/useSelfDMTasks.ts to make the tests pass
-    status: pending
+    status: completed
   - id: implement-task-item
     content: Implement simple TaskItem component (clickable checkbox, title, description) at src/pages/home/YourTasksSection/TaskItem.tsx
-    status: pending
+    status: completed
   - id: implement-section
     content: Implement YourTasksSection component at src/pages/home/YourTasksSection/index.tsx using WidgetContainer and TaskItem
-    status: pending
+    status: completed
   - id: integrate-homepage
     content: Add YourTasksSection to HomePage.tsx right column as first widget, add translation keys
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -818,6 +818,7 @@ const translations: TranslationDeepObject<typeof en> = {
                 cta: 'Revisar',
             },
         },
+        yourTasks: 'Tus tareas',
         assignedCards: 'Tarjetas asignadas',
         assignedCardsRemaining: ({amount}: {amount: string}) => `${amount} restantes`,
         announcements: 'Anuncios',
