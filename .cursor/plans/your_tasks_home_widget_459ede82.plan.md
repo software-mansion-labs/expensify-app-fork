@@ -4,7 +4,7 @@ overview: Add a "Your tasks" widget to the home page right column that shows up 
 todos:
   - id: write-hook-tests
     content: "Write unit tests only (no implementation) for useSelfDMTasks hook at tests/unit/hooks/useSelfDMTasks.test.ts. Tests will import from the hook path but the hook does not exist yet — tests are expected to fail. Covers: empty state, task detection, open+completed tasks, filtering non-task actions, 5-item limit, task data resolution."
-    status: pending
+    status: completed
   - id: implement-hook
     content: Implement useSelfDMTasks hook at src/pages/home/YourTasksSection/hooks/useSelfDMTasks.ts to make the tests pass
     status: pending
