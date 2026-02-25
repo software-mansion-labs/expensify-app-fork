@@ -2,6 +2,7 @@ import {useMemo} from 'react';
 import useOnyx from '@hooks/useOnyx';
 import useSelfDMReport from '@hooks/useSelfDMReport';
 import {getOriginalMessage, isCreatedTaskReportAction} from '@libs/ReportActionsUtils';
+import {isCanceledTaskReport} from '@libs/ReportUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report} from '@src/types/onyx';
 
@@ -27,7 +28,7 @@ function useSelfDMTasks(): {tasks: Report[]; hasAnyTasks: boolean} {
             }
 
             const taskReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${taskReportID}`];
-            if (!taskReport) {
+            if (!taskReport || isCanceledTaskReport(taskReport, action)) {
                 continue;
             }
 
