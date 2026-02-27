@@ -57,9 +57,6 @@ function AuthorizeCardTransactionPreview({transactionID, amount, currency, merch
     const shouldShowCardEnding = !!formattedLastFourPAN;
     const cardEndingText = shouldShowCardEnding ? `${translate('paymentMethodList.accountLastFour')} ${formattedLastFourPAN}` : '';
     const shouldShowMerchantOrDescription = !!merchant;
-    const shouldWrapDisplayAmount = !shouldShowMerchantOrDescription;
-    const shouldShowCategoryOrTag = shouldShowCardEnding;
-    const previewTextViewGap = (shouldShowCategoryOrTag || !shouldWrapDisplayAmount) && styles.gap2;
 
     const colorStyles = StyleUtils.getEReceiptColorStyles(CONST.ERECEIPT_COLORS.GREEN);
     const primaryColor = colorStyles?.backgroundColor;
@@ -89,15 +86,42 @@ function AuthorizeCardTransactionPreview({transactionID, amount, currency, merch
             </View>
             <View style={[styles.expenseAndReportPreviewBoxBody, styles.mtn1]}>
                 <View style={styles.gap3}>
-                    <View style={previewTextViewGap}>
-                        <View style={[styles.flexRow, styles.alignItemsCenter]}>
-                            <Text
-                                style={[styles.textLabelSupporting, styles.flex1, styles.lh16]}
-                                numberOfLines={1}
-                            >
-                                {headerText}
-                            </Text>
-                            {shouldWrapDisplayAmount && !!displayAmount && (
+                    <View style={styles.gap2}>
+                        <Text
+                            style={[styles.textLabelSupporting, styles.lh16]}
+                            numberOfLines={1}
+                        >
+                            {headerText}
+                        </Text>
+                        <View style={[styles.flexRow, styles.gap2]}>
+                            <View style={[styles.flex1, styles.gap2]}>
+                                {shouldShowMerchantOrDescription && (
+                                    <Text
+                                        fontSize={variables.fontSizeNormal}
+                                        style={styles.flexShrink1}
+                                        numberOfLines={1}
+                                    >
+                                        {merchant}
+                                    </Text>
+                                )}
+                                {shouldShowCardEnding && (
+                                    <View style={[styles.flexRow, styles.alignItemsCenter, styles.gap1]}>
+                                        <Icon
+                                            src={icons.CreditCard}
+                                            height={variables.iconSizeExtraSmall}
+                                            width={variables.iconSizeExtraSmall}
+                                            fill={theme.icon}
+                                        />
+                                        <Text
+                                            numberOfLines={1}
+                                            style={[styles.textMicroSupporting, styles.pre, styles.flexShrink1]}
+                                        >
+                                            {cardEndingText}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                            {!!displayAmount && (
                                 <Text
                                     fontSize={variables.fontSizeNormal}
                                     style={styles.flexShrink0}
@@ -107,48 +131,6 @@ function AuthorizeCardTransactionPreview({transactionID, amount, currency, merch
                                 </Text>
                             )}
                         </View>
-                        <View>
-                            <View style={[styles.flexRow]}>
-                                <View style={[styles.flex1, styles.flexRow, styles.alignItemsCenter, styles.justifyContentBetween, styles.gap2]}>
-                                    {shouldShowMerchantOrDescription && (
-                                        <Text
-                                            fontSize={variables.fontSizeNormal}
-                                            style={styles.flexShrink1}
-                                            numberOfLines={1}
-                                        >
-                                            {merchant}
-                                        </Text>
-                                    )}
-                                    {!shouldWrapDisplayAmount && !!displayAmount && (
-                                        <Text
-                                            fontSize={variables.fontSizeNormal}
-                                            style={styles.flexShrink0}
-                                            numberOfLines={1}
-                                        >
-                                            {displayAmount}
-                                        </Text>
-                                    )}
-                                </View>
-                            </View>
-                        </View>
-                        {shouldShowCategoryOrTag && (
-                            <View style={[styles.flexRow, styles.alignItemsCenter]}>
-                                <View style={[styles.flexRow, styles.alignItemsCenter, styles.gap1, styles.flexShrink1]}>
-                                    <Icon
-                                        src={icons.CreditCard}
-                                        height={variables.iconSizeExtraSmall}
-                                        width={variables.iconSizeExtraSmall}
-                                        fill={theme.icon}
-                                    />
-                                    <Text
-                                        numberOfLines={1}
-                                        style={[styles.textMicroSupporting, styles.pre, styles.flexShrink1]}
-                                    >
-                                        {cardEndingText}
-                                    </Text>
-                                </View>
-                            </View>
-                        )}
                     </View>
                 </View>
             </View>
