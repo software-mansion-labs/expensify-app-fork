@@ -16,6 +16,7 @@ import type {
     TransactionYearGroupListItemType,
 } from '@components/SelectionListWithSections/types';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
+import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import DateUtils from '@libs/DateUtils';
@@ -25,10 +26,10 @@ import {formatToParts} from '@libs/NumberFormatUtils';
 import {buildSearchQueryJSON, buildSearchQueryString} from '@libs/SearchQueryUtils';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
-import useLocalize from '@hooks/useLocalize';
 import SearchBarChart from './SearchBarChart';
 import SearchLineChart from './SearchLineChart';
-import type {ChartView, GroupedItem, SearchGroupBy, SearchQueryJSON} from './types';
+import SearchPieChart from './SearchPieChart';
+import type {ChartView, GroupedItem, SearchChartProps, SearchGroupBy, SearchQueryJSON} from './types';
 
 type ChartGroupByConfig = {
     titleIconName: 'Users' | 'CreditCard' | 'Send' | 'Folder' | 'Basket' | 'Tag' | 'Calendar';
@@ -114,8 +115,8 @@ type SearchChartViewProps = {
     /** The current search query JSON */
     queryJSON: SearchQueryJSON;
 
-    /** The view type (bar, line, etc.) */
-    view: Exclude<ChartView, 'pie'>;
+    /** The view type (bar, etc.) */
+    view: ChartView;
 
     /** The groupBy parameter */
     groupBy: SearchGroupBy;
@@ -142,9 +143,10 @@ type SearchChartViewProps = {
 /**
  * Map of chart view types to their corresponding chart components.
  */
-const CHART_VIEW_TO_COMPONENT: Record<Exclude<ChartView, 'pie'>, typeof SearchBarChart | typeof SearchLineChart> = {
+const CHART_VIEW_TO_COMPONENT: Record<ChartView, React.ComponentType<SearchChartProps>> = {
     [CONST.SEARCH.VIEW.BAR]: SearchBarChart,
     [CONST.SEARCH.VIEW.LINE]: SearchLineChart,
+    [CONST.SEARCH.VIEW.PIE]: SearchPieChart,
 };
 
 /**
@@ -168,7 +170,6 @@ function SearchChartView({queryJSON, view, groupBy, data, isLoading, onScroll, t
             Log.alert('[SearchChartView] Failed to build search query JSON from filter query');
             return;
         }
-
         newQueryJSON.groupBy = undefined;
         newQueryJSON.view = CONST.SEARCH.VIEW.TABLE;
 
@@ -182,8 +183,8 @@ function SearchChartView({queryJSON, view, groupBy, data, isLoading, onScroll, t
     const currencyPart = parts.find((p) => p.type === 'currency');
     const currencyIndex = parts.findIndex((p) => p.type === 'currency');
     const integerIndex = parts.findIndex((p) => p.type === 'integer');
-    const yAxisUnit = {value: currencyPart?.value ?? currency, fallback: currency};
-    const yAxisUnitPosition = currencyIndex < integerIndex ? 'left' : 'right';
+    const unit = {value: currencyPart?.value ?? currency, fallback: currency};
+    const unitPosition = currencyIndex < integerIndex ? 'left' : 'right';
 
     return (
         <Animated.ScrollView
@@ -201,8 +202,8 @@ function SearchChartView({queryJSON, view, groupBy, data, isLoading, onScroll, t
                     getFilterQuery={getFilterQuery}
                     onItemPress={handleItemPress}
                     isLoading={isLoading}
-                    yAxisUnit={yAxisUnit}
-                    yAxisUnitPosition={yAxisUnitPosition}
+                    unit={unit}
+                    unitPosition={unitPosition}
                     footer={footer}
                 />
             </View>
