@@ -4,7 +4,7 @@ import type {ChartDataPoint} from '@components/Charts/types';
 import {convertToFrontendAmountAsInteger} from '@libs/CurrencyUtils';
 import type {SearchChartProps} from './types';
 
-function SearchPieChart({data, title, titleIcon, getLabel, getFilterQuery, onItemPress, isLoading, unit, unitPosition}: SearchChartProps) {
+function SearchPieChart({data, title, titleIcon, getLabel, getFilterQuery, onItemPress, isLoading, unit, unitPosition, footer}: SearchChartProps) {
     // Transform grouped transaction data to PieChart format
     const chartData: ChartDataPoint[] = data.map((item) => {
         const currency = item.currency ?? 'USD';
@@ -37,6 +37,7 @@ function SearchPieChart({data, title, titleIcon, getLabel, getFilterQuery, onIte
             onSlicePress={handleSlicePress}
             valueUnit={unit?.value}
             valueUnitPosition={unitPosition}
+            footer={footer}
         />
     );
 }

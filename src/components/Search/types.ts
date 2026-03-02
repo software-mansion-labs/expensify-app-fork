@@ -22,6 +22,7 @@ import type CONST from '@src/CONST';
 import type {Report, ReportAction, SearchResults, Transaction} from '@src/types/onyx';
 import type {SearchDataTypes} from '@src/types/onyx/SearchResults';
 import type IconAsset from '@src/types/utils/IconAsset';
+import type {ReactNode} from 'react';
 
 /** Model of the selected transaction */
 type SelectedTransactionInfo = {
@@ -367,6 +368,9 @@ type SearchChartProps = {
 
     /** Position of currency symbol relative to value */
     unitPosition?: UnitPosition;
+
+    /** Element to be shown below the chart */
+    footer?: ReactNode;
 };
 
 export type {

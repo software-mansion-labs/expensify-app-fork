@@ -1,4 +1,3 @@
-import type {ReactNode} from 'react';
 import React from 'react';
 import {BarChart} from '@components/Charts';
 import type {ChartDataPoint} from '@components/Charts';

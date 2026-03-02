@@ -14,6 +14,7 @@ import type {ChartDataPoint, ChartProps, PieSlice, UnitPosition} from '@componen
 import {findSliceAtPosition, processDataIntoSlices} from '@components/Charts/utils';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 
 type PieChartProps = ChartProps & {
     /** Callback when a slice is pressed */
@@ -26,8 +27,10 @@ type PieChartProps = ChartProps & {
     valueUnitPosition?: UnitPosition;
 };
 
-function PieChartContent({data, title, titleIcon, isLoading, valueUnit, valueUnitPosition, onSlicePress}: PieChartProps) {
+function PieChartContent({data, title, titleIcon, isLoading, valueUnit, valueUnitPosition, onSlicePress, footer}: PieChartProps) {
     const styles = useThemeStyles();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
+
     const [canvasWidth, setCanvasWidth] = useState(0);
     const [canvasHeight, setCanvasHeight] = useState(0);
     const [activeSliceIndex, setActiveSliceIndex] = useState(-1);
@@ -145,7 +148,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, valueUni
     }
 
     return (
-        <View style={[styles.pieChartContainer, styles.highlightBG]}>
+        <View style={[styles.pieChartContainer, styles.highlightBG, shouldUseNarrowLayout && styles.p5]}>
             <ChartHeader
                 title={title}
                 titleIcon={titleIcon}
@@ -180,6 +183,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, valueUni
                 </Animated.View>
             </GestureDetector>
             <View style={styles.pieChartLegendContainer}>{processedSlices.map((slice) => renderLegendItem(slice))}</View>
+            {footer}
         </View>
     );
 }

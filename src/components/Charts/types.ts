@@ -33,6 +33,9 @@ type ChartProps = {
 
     /** Whether data is loading */
     isLoading?: boolean;
+
+    /** Element to be shown below the chart */
+    footer?: ReactNode;
 };
 
 type CartesianChartProps = ChartProps & {
@@ -64,9 +67,6 @@ type PieSlice = {
 
     /** Index in the original unsorted data array, used to map back for tooltips */
     originalIndex: number;
-
-    /** Element to be shown below the chart */
-    footer?: ReactNode;
 };
 
 export type {ChartDataPoint, ChartProps, CartesianChartProps, PieSlice, UnitPosition, UnitWithFallback};

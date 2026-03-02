@@ -32,11 +32,14 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
     const query = tnode.attributes.query;
     const queryJSON = useMemo(() => buildSearchQueryJSON(query), [query]);
     const validGroupBy = queryJSON?.groupBy && Object.values(CONST.SEARCH.GROUP_BY).includes(queryJSON.groupBy) ? queryJSON.groupBy : undefined;
-    const validView = tnode.attributes.view === CONST.SEARCH.VIEW.BAR || tnode.attributes.view === CONST.SEARCH.VIEW.LINE ? tnode.attributes.view : undefined;
+    const validView =
+        tnode.attributes.view === CONST.SEARCH.VIEW.BAR || tnode.attributes.view === CONST.SEARCH.VIEW.LINE || tnode.attributes.view === CONST.SEARCH.VIEW.PIE
+            ? tnode.attributes.view
+            : undefined;
 
-    const [searchResults] = useOnyx(`${ONYXKEYS.COLLECTION.SNAPSHOT}${queryJSON?.hash}`, {canBeMissing: true});
-    const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST, {canBeMissing: true});
-    const [allReportMetadata] = useOnyx(ONYXKEYS.COLLECTION.REPORT_METADATA, {canBeMissing: true});
+    const [searchResults] = useOnyx(`${ONYXKEYS.COLLECTION.SNAPSHOT}${queryJSON?.hash}`);
+    const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST);
+    const [allReportMetadata] = useOnyx(ONYXKEYS.COLLECTION.REPORT_METADATA);
     const {accountID, login} = useCurrentUserPersonalDetails();
     const {isOffline} = useNetwork();
     const {defaultCardFeed} = useCardFeedsForDisplay();
@@ -44,7 +47,7 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
     const searchKey = Object.values(suggestedSearches).find((suggestedSearch) => suggestedSearch.similarSearchHash === queryJSON?.similarSearchHash)?.key;
     const savedSearchSelector = (searches: OnyxEntry<SaveSearch>) => (queryJSON?.hash ? searches?.[queryJSON.hash] : undefined);
     // eslint-disable-next-line rulesdir/no-inline-useOnyx-selector
-    const [savedSearch] = useOnyx(ONYXKEYS.SAVED_SEARCHES, {canBeMissing: true, selector: savedSearchSelector});
+    const [savedSearch] = useOnyx(ONYXKEYS.SAVED_SEARCHES, {selector: savedSearchSelector});
 
     useEffect(() => {
         if (!queryJSON) {
@@ -100,7 +103,7 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
 
     return (
         <SearchScopeProvider>
-            <View style={[styles.w100]}>
+            <View style={styles.w100}>
                 <SearchChartView
                     queryJSON={queryJSON}
                     view={validView}
@@ -110,8 +113,9 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
                     title={chartTitle}
                     footer={
                         <Button
+                            small={!shouldUseNarrowLayout}
                             text={translate('common.view')}
-                            style={!shouldUseNarrowLayout && styles.alignSelfStart}
+                            style={!shouldUseNarrowLayout && [styles.alignSelfStart, styles.mbn4]}
                             onPress={() => Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: `${query} view:${validView}`}))}
                         />
                     }
