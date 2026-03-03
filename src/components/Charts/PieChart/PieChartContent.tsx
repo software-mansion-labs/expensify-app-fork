@@ -148,7 +148,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, valueUni
     }
 
     return (
-        <View style={[styles.pieChartContainer, styles.highlightBG, shouldUseNarrowLayout && styles.p5]}>
+        <View style={[styles.pieChartContainer, styles.highlightBG, shouldUseNarrowLayout && styles.p5, styles.justifyContentEnd]}>
             <ChartHeader
                 title={title}
                 titleIcon={titleIcon}
@@ -182,8 +182,10 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, valueUni
                     )}
                 </Animated.View>
             </GestureDetector>
-            <View style={styles.pieChartLegendContainer}>{processedSlices.map((slice) => renderLegendItem(slice))}</View>
-            {footer}
+            <View style={styles.gap4}>
+                <View style={styles.pieChartLegendContainer}>{processedSlices.map((slice) => renderLegendItem(slice))}</View>
+                {footer}
+            </View>
         </View>
     );
 }
