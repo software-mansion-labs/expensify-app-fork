@@ -429,4 +429,6 @@ export default {
     rightPositionOdometerPhotoInformationContainer: 20,
     bottomPositionOdometerPhotoInformationContainer: 20,
     paddingOdometerPhotoInformationContainer: 13.5,
+
+    searchPreviewOfflineIconSize: 64,
 } as const;

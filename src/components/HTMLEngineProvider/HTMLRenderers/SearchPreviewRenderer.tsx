@@ -1,4 +1,3 @@
-import AttachmentOfflineIndicator from '@components/AttachmentOfflineIndicator';
 import Button from '@components/Button';
 import {getChartTitle} from '@components/Charts/utils';
 import SearchChartView from '@components/Search/SearchChartView';
@@ -23,6 +22,7 @@ import React, {useEffect, useMemo} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {CustomRendererProps, TPhrasing, TText} from 'react-native-render-html';
+import SearchPreviewOfflineIndicator from './SearchPreviewOfflineIndicator';
 
 function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) {
     const styles = useThemeStyles();
@@ -68,11 +68,7 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
     }
 
     if (!searchResults?.data && isOffline) {
-        return (
-            <View style={[styles.barChartContainer, styles.minHeight42, styles.receiptPreviewAspectRatio, styles.overflowHidden]}>
-                <AttachmentOfflineIndicator isPreview />
-            </View>
-        );
+        return <SearchPreviewOfflineIndicator />;
     }
 
     const chartTitle = getChartTitle(savedSearch, searchKey ? suggestedSearches[searchKey] : undefined, validGroupBy, translate);
@@ -103,7 +99,7 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
 
     return (
         <SearchScopeProvider>
-            <View style={styles.w100}>
+            <View style={styles.searchPreviewContainer}>
                 <SearchChartView
                     queryJSON={queryJSON}
                     view={validView}

@@ -7284,6 +7284,7 @@ const translations = {
             selectAllMatchingItems: 'Select all matching items',
             allMatchingItemsSelected: 'All matching items selected',
         },
+        goOnlineToSeePreview: 'Go online to see preview',
     },
     genericErrorPage: {
         title: 'Uh-oh, something went wrong!',

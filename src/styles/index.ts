@@ -5886,6 +5886,27 @@ const staticStyles = (theme: ThemeColors) =>
             width: variables.iconSizeExtraLarge,
             height: variables.iconSizeExtraLarge,
         },
+        searchPreviewContainer: {
+            width: '100%',
+            maxWidth: 640,
+        },
+        searchPreviewOfflineContainer: {
+            backgroundColor: theme.highlightBG,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: variables.componentBorderRadiusLarge,
+            height: 250,
+            paddingBottom: 40,
+            paddingTop: 12,
+            paddingHorizontal: 20,
+        },
+        searchPreviewOfflineDescription: {
+            color: theme.icon,
+            position: 'absolute',
+            bottom: 44,
+            paddingHorizontal: 40,
+            textAlign: 'center',
+        },
     }) satisfies StaticStyles;
 
 const dynamicStyles = (theme: ThemeColors) =>

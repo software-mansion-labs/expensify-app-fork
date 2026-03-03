@@ -137,7 +137,7 @@ function PieChartContent({data, title, titleIcon, isLoading, valueUnit, valueUni
 
     if (isLoading) {
         return (
-            <View style={[styles.pieChartContainer, styles.highlightBG, styles.justifyContentCenter, styles.alignItemsCenter]}>
+            <View style={[styles.pieChartContainer, styles.pieChartChartContainer, styles.highlightBG, styles.justifyContentCenter, styles.alignItemsCenter]}>
                 <ActivityIndicator size="large" />
             </View>
         );
