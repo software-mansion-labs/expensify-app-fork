@@ -105,7 +105,7 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
                     view={validView}
                     groupBy={validGroupBy}
                     data={sortedData}
-                    isLoading={!isSearchDataLoaded(searchResults, queryJSON) || !!searchResults?.search?.isLoading}
+                    isLoading={!isSearchDataLoaded(searchResults, queryJSON)}
                     title={chartTitle}
                     footer={
                         <Button
