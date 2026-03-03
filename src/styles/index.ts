@@ -5846,6 +5846,7 @@ const staticStyles = (theme: ThemeColors) =>
         },
         barChartChartContainer: {
             minHeight: 250,
+            justifyContent: 'flex-end',
         },
         lineChartContainer: {
             borderRadius: variables.componentBorderRadiusLarge,
