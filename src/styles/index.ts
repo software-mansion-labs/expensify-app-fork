@@ -5850,8 +5850,6 @@ const staticStyles = (theme: ThemeColors) =>
         },
         lineChartContainer: {
             borderRadius: variables.componentBorderRadiusLarge,
-            paddingTop: variables.qrShareHorizontalPadding,
-            paddingHorizontal: variables.qrShareHorizontalPadding,
         },
         lineChartChartContainer: {
             minHeight: 250,
