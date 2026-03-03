@@ -5853,6 +5853,7 @@ const staticStyles = (theme: ThemeColors) =>
         },
         lineChartChartContainer: {
             minHeight: 250,
+            justifyContent: 'flex-end',
         },
         pieChartContainer: {
             borderRadius: variables.componentBorderRadiusLarge,
