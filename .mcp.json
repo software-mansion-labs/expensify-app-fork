@@ -3,6 +3,14 @@
         "playwright": {
             "command": "npx",
             "args": ["@playwright/mcp@latest", "--isolated", "--output-dir", ".playwright-output"]
+        },
+        "expensify": {
+            "command": "bun",
+            "args": ["run", "mcp/src/index.ts"],
+            "env": {
+                "EXPENSIFY_AUTH_TOKEN": "<PUT YOUR TOKEN HERE>",
+                "EXPENSIFY_EMAIL": "<PUT YOUR EMAIL HERE>"
+            }
         }
     }
 }
