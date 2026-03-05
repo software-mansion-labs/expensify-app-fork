@@ -2,6 +2,21 @@ import type {ValueOf} from 'type-fest';
 import CONST from '@src/CONST';
 import {cancelSpan, endSpanWithAttributes, getSpan} from './activeSpans';
 
+/**
+ * Submit-to-destination-visible telemetry: measures time from expense submit until the destination screen is visible.
+ *
+ * Flow:
+ * 1. On submit, the action calls setPendingExpenseCreateDestination(type, reportID?) and navigates.
+ * 2. The destination screen mounts; when it becomes "visible" (focus or layout, depending on type), it calls markSubmitToDestinationVisibleEnd.
+ * 3. Only the screen that matches the pending destination type (and reportID if set) ends the span; others no-op.
+ *
+ * Who ends which destination type:
+ * - REPORT_CHAT, RHP_POP -> ReportScreen (useSubmitToDestinationVisible(..., 'focus'))
+ * - MONEY_REQUEST_RHP, RHP_POP -> SearchMoneyRequestReportPage (useSubmitToDestinationVisible(..., 'layout'))
+ * - SEARCH -> Search component (onLayout / useFocusEffect)
+ * - MODAL_DISMISS -> IOU action (synchronously after dismiss)
+ */
+
 type DestinationType = ValueOf<typeof CONST.TELEMETRY.DESTINATION_TYPE>;
 
 type PendingExpenseCreateDestination = {

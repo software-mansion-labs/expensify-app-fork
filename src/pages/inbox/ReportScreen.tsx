@@ -38,6 +38,7 @@ import useReportIsArchived from '@hooks/useReportIsArchived';
 import useReportTransactionsCollection from '@hooks/useReportTransactionsCollection';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSidePanelActions from '@hooks/useSidePanelActions';
+import useSubmitToDestinationVisible from '@hooks/useSubmitToDestinationVisible';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useViewportOffsetTop from '@hooks/useViewportOffsetTop';
 import {hideEmojiPicker} from '@libs/actions/EmojiPickerAction';
@@ -83,7 +84,6 @@ import {
     isValidReportIDFromPath,
 } from '@libs/ReportUtils';
 import {cancelSpan, cancelSpansByPrefix} from '@libs/telemetry/activeSpans';
-import {getPendingExpenseCreateDestination, markSubmitToDestinationVisibleEnd} from '@libs/telemetry/submitToDestinationVisible';
 import {getParentReportActionDeletionStatus} from '@libs/TransactionNavigationUtils';
 import {isNumeric} from '@libs/ValidationUtils';
 import type {ReportsSplitNavigatorParamList, RightModalNavigatorParamList} from '@navigation/types';
@@ -179,7 +179,6 @@ function ReportScreen({route, navigation, isInSidePanel = false}: ReportScreenPr
     const [conciergeReportID] = useOnyx(ONYXKEYS.CONCIERGE_REPORT_ID);
 
     const archivedReportsIdSet = useArchivedReportsIdSet();
-    const hasEndedSubmitToDestinationRef = useRef(false);
 
     const parentReportAction = useParentReportAction(reportOnyx);
 
@@ -973,29 +972,10 @@ function ReportScreen({route, navigation, isInSidePanel = false}: ReportScreenPr
 
     useShowWideRHPVersion(shouldShowWideRHP);
 
-    // End submit-to-destination-visible span when this report screen gains focus (covers REPORT_CHAT and RHP_POP; reset ref on blur for next submit).
-    useFocusEffect(
-        useCallback(() => {
-            const pending = getPendingExpenseCreateDestination();
-            // Already ended this span, or no pending destination, or we're not a report-chat/rhp-pop target.
-            if (
-                hasEndedSubmitToDestinationRef.current ||
-                !pending ||
-                !reportIDFromRoute ||
-                (pending.destinationType !== CONST.TELEMETRY.DESTINATION_TYPE.REPORT_CHAT && pending.destinationType !== CONST.TELEMETRY.DESTINATION_TYPE.RHP_POP)
-            ) {
-                return;
-            }
-            // Pending destination targets a different report.
-            if (pending.reportID && pending.reportID !== reportIDFromRoute) {
-                return;
-            }
-            hasEndedSubmitToDestinationRef.current = true;
-            markSubmitToDestinationVisibleEnd(pending.destinationType, reportIDFromRoute);
-            return () => {
-                hasEndedSubmitToDestinationRef.current = false;
-            };
-        }, [reportIDFromRoute]),
+    useSubmitToDestinationVisible(
+        [CONST.TELEMETRY.DESTINATION_TYPE.REPORT_CHAT, CONST.TELEMETRY.DESTINATION_TYPE.RHP_POP],
+        reportIDFromRoute,
+        CONST.TELEMETRY.SUBMIT_TO_DESTINATION_VISIBLE_TRIGGER.FOCUS,
     );
 
     // Define here because reportActions are recalculated before mount, allowing data to display faster than useEffect can trigger.

@@ -1864,6 +1864,10 @@ const CONST = {
             RHP_POP: 'rhp_pop',
             MODAL_DISMISS: 'modal_dismiss',
         },
+        SUBMIT_TO_DESTINATION_VISIBLE_TRIGGER: {
+            FOCUS: 'focus',
+            LAYOUT: 'layout',
+        },
         SUBMIT_EXPENSE_SCENARIO: {
             REQUEST_MONEY_MANUAL: 'request_money_manual',
             REQUEST_MONEY_SCAN: 'request_money_scan',
