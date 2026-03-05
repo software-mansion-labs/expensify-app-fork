@@ -105,8 +105,10 @@ function NewChatConfirmPage() {
     }, [newGroupDraft, avatarFile, personalData.login, introSelected]);
 
     const stashedLocalAvatarImage = newGroupDraft?.avatarUri;
+    console.log('sergei: NewChatConfirmPage is being re-rendered');
 
     useEffect(() => {
+        console.log('sergei:', 'NewChatConfirmPage', 'useEffect is being run');
         if (!stashedLocalAvatarImage || isLoadingOnyxValue(newGroupDraftMetaData)) {
             return;
         }

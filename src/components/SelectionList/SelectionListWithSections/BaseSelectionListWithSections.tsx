@@ -70,7 +70,8 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
     shouldPreventDefaultFocusOnSelectRow = false,
 }: SelectionListWithSectionsProps<TItem>) {
     const styles = useThemeStyles();
-    const isScreenFocused = useIsFocused();
+    // const isScreenFocused = useIsFocused();
+    const isScreenFocused = true;
     const scrollEnabled = useScrollEnabled();
     const {singleExecution} = useSingleExecution();
     const listRef = useRef<FlashListRef<FlattenedItem<TItem>> | null>(null);
@@ -343,8 +344,11 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
 
     return (
         <View
-            style={[styles.flex1, addBottomSafeAreaPadding && paddingBottomStyle, style?.containerStyle]}
-            onLayout={onLayout}
+            style={[styles.flex1, styles.minHeight4, styles.minWidth18, addBottomSafeAreaPadding && paddingBottomStyle, style?.containerStyle]}
+            onLayout={(e) => {
+                console.log(`sergei: BaseSelectionList PARENT layout w=${e.nativeEvent.layout.width} h=${e.nativeEvent.layout.height}`);
+                onLayout?.(e);
+            }}
         >
             {textInputComponent()}
             {itemsCount === 0 && (showLoadingPlaceholder || showListEmptyContent) ? (
@@ -362,9 +366,17 @@ function BaseSelectionListWithSections<TItem extends ListItem>({
                         keyExtractor={(item) => ('flatListKey' in item ? item.flatListKey : item.keyForList)}
                         onEndReached={onEndReached}
                         onEndReachedThreshold={onEndReachedThreshold}
+                        onLayout={(e) => {
+                            console.log(`sergei: BaseSelectionList layout w=${e.nativeEvent.layout.width} h=${e.nativeEvent.layout.height}`);
+                            onLayout?.(e);
+                        }}
                         onScrollBeginDrag={onScrollBeginDrag}
                         scrollEnabled={scrollEnabled}
                         indicatorStyle="white"
+                        onViewableItemsChanged={({viewableItems, changed}) => {
+                            console.log(`sergei: FlashList viewable=${viewableItems.length} changed=${changed.length}`);
+                        }}
+                        viewabilityConfig={{viewAreaCoveragePercentThreshold: 0, minimumViewTime: 50}}
                         showsVerticalScrollIndicator
                         keyboardShouldPersistTaps="always"
                         ListFooterComponent={listFooterContent}

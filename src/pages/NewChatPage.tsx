@@ -1,9 +1,11 @@
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import reportsSelector from '@selectors/Attributes';
+import {FlashList} from '@shopify/flash-list';
 import reject from 'lodash/reject';
 import type {Ref} from 'react';
-import React, {useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
-import {Keyboard, Platform} from 'react-native';
+import React, {Activity, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
+import {Freeze} from 'react-freeze';
+import {Keyboard, Platform, View} from 'react-native';
 import Button from '@components/Button';
 import {usePersonalDetails} from '@components/OnyxListItemProvider';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -19,6 +21,7 @@ import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails'
 import useDebouncedState from '@hooks/useDebouncedState';
 import useDismissedReferralBanners from '@hooks/useDismissedReferralBanners';
 import useFilteredOptions from '@hooks/useFilteredOptions';
+import useIsFocusedRef from '@hooks/useIsFocusedRef';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
@@ -46,10 +49,22 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {ReportAttributesDerivedValue} from '@src/types/onyx/DerivedValues';
 import type {SelectedParticipant} from '@src/types/onyx/NewGroupChatDraft';
+import type ChildrenProps from '@src/types/utils/ChildrenProps';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 import KeyboardUtils from '@src/utils/keyboard';
+import DummyListItem from './DummyListItem';
 
 const excludedGroupEmails = new Set<string>(CONST.EXPENSIFY_EMAILS.filter((value) => value !== CONST.EMAIL.CONCIERGE));
+
+function FocusActivityGuard({children}: {children: React.ReactNode}) {
+    const isFocused = useIsFocused();
+    return <Activity mode={isFocused ? 'visible' : 'hidden'}>{children}</Activity>;
+}
+
+function FocusFreezeGuard({children}: ChildrenProps) {
+    const isFocused = useIsFocused();
+    return <Freeze freeze={!isFocused}>{children}</Freeze>;
+}
 
 type SelectedOption = ListItem &
     Omit<OptionData, 'reportID'> & {
@@ -71,7 +86,7 @@ function useOptions(reportAttributesDerived: ReportAttributesDerivedValue['repor
     const {contacts} = useContactImport();
     const [draftComments] = useOnyx(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
     const allPersonalDetails = usePersonalDetails();
-    const isScreenFocused = useIsFocused();
+    const isScreenFocused = useIsFocusedRef();
 
     const {
         options: listOptions,
@@ -93,6 +108,8 @@ function useOptions(reportAttributesDerived: ReportAttributesDerivedValue['repor
     const [allPolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
 
     const reports = listOptions?.reports ?? [];
+    console.log('sergei: NewChatPage report len:', reports.length);
+    console.log('sergei: NewChatPage personalDetails len:', listOptions?.personalDetails.length);
     const personalDetails = listOptions?.personalDetails ?? [];
 
     const defaultOptions = getValidOptions(
@@ -179,6 +196,7 @@ function useOptions(reportAttributesDerived: ReportAttributesDerivedValue['repor
             : null;
 
     useEffect(() => {
+        console.log('sergei: NewChatPage useOptions useEffect');
         if (!draftSelectedOptions) {
             return;
         }
@@ -203,9 +221,10 @@ function useOptions(reportAttributesDerived: ReportAttributesDerivedValue['repor
     }, [draftSelectedOptions, setSelectedOptions]);
 
     const handleEndReached = () => {
-        if (!hasMore || isLoadingMore || !areOptionsInitialized || !isScreenFocused) {
+        if (!hasMore || isLoadingMore || !areOptionsInitialized || !isScreenFocused.current) {
             return;
         }
+        console.log('sergei: handleEndReached from NewChatPage is being run');
         loadMore();
     };
 
@@ -232,6 +251,7 @@ type NewChatPageProps = {
     ref?: Ref<NewChatPageRef>;
 };
 function NewChatPage({ref}: NewChatPageProps) {
+    console.log('sergei: NewChatPage is re-rendered');
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
     // We need to use isSmallScreenWidth instead of shouldUseNarrowLayout to show offline indicator on small screen only
@@ -250,27 +270,27 @@ function NewChatPage({ref}: NewChatPageProps) {
     const {singleExecution} = useSingleExecution();
 
     useImperativeHandle(ref, () => ({
-        focus: selectionListRef.current?.focusTextInput,
+        focus: selectionListRef.current?.focusTextInput ? selectionListRef.current?.focusTextInput : () => {},
     }));
 
     // Opacity toggle to fix FlashList layout issue when navigating back.
     // FlashList compacts its layout when the screen is hidden but still mounted.
     // Briefly setting opacity to 0 when the screen regains focus triggers a re-render
     // that forces FlashList to recalculate its layout without a full remount.
-    const [listOpacity, setListOpacity] = useState(1);
-    const isFirstRender = useRef(true);
-    useFocusEffect(
-        useCallback(() => {
-            if (isFirstRender.current || Platform.OS !== 'web') {
-                isFirstRender.current = false;
-                return;
-            }
-            setListOpacity(0);
-            requestAnimationFrame(() => {
-                setListOpacity(1);
-            });
-        }, []),
-    );
+    // const [listOpacity, setListOpacity] = useState(1);
+    // const isFirstRender = useRef(true);
+    // useFocusEffect(
+    //     useCallback(() => {
+    //         if (isFirstRender.current || Platform.OS !== 'web') {
+    //             isFirstRender.current = false;
+    //             return;
+    //         }
+    //         setListOpacity(0);
+    //         requestAnimationFrame(() => {
+    //             setListOpacity(1);
+    //         });
+    //     }, []),
+    // );
 
     const {
         headerMessage,
@@ -486,6 +506,29 @@ function NewChatPage({ref}: NewChatPageProps) {
         shouldInterceptSwipe: true,
     };
 
+    const dummyData = useMemo(
+        () =>
+            Array.from({length: 2000}, (_, i) => ({
+                key: `dummy-${i}`,
+                title: `Dummy User ${i + 1}`,
+                type: 'ROW' as const,
+            })),
+        [],
+    );
+
+    const getItemType = useCallback((item: {type: string}) => item.type, []);
+
+    const renderDummyItem = useCallback(({item, index}: {item: {key: string; title: string; type: string}; index: number}) => {
+        return (
+            <DummyListItem
+                title={item.title}
+                index={index}
+            />
+        );
+    }, []);
+
+    const dummy = true;
+
     return (
         <ScreenWrapper
             enableEdgeToEdgeBottomSafeAreaPadding
@@ -498,28 +541,71 @@ function NewChatPage({ref}: NewChatPageProps) {
             focusTrapSettings={{active: false}}
             testID="NewChatPage"
         >
-            <SelectionListWithSections<OptionWithKey>
-                ref={selectionListRef}
-                ListItem={UserListItem}
-                sections={areOptionsInitialized ? sections : getEmptyArray<Section<OptionWithKey>>()}
-                onSelectRow={selectOption}
-                shouldShowTextInput
-                textInputOptions={textInputOptions}
-                shouldSingleExecuteRowSelect
-                confirmButtonOptions={{
-                    onConfirm: (e, option) => (selectedOptions.length > 0 ? createGroup() : selectOption(option)),
-                }}
-                rightHandSideComponent={itemRightSideComponent}
-                footerContent={footerContent}
-                showLoadingPlaceholder={!areOptionsInitialized}
-                shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}
-                isLoadingNewOptions={!!isSearchingForReports || isLoadingMore}
-                onEndReached={handleEndReached}
-                onEndReachedThreshold={0.75}
-                disableMaintainingScrollPosition
-                addBottomSafeAreaPadding
-                style={{listStyle: {opacity: listOpacity}}}
-            />
+            {/* Dummy FlashList for debugging — mirrors BaseSelectionListWithSections config */}
+            {dummy ? (
+                <FocusActivityGuard>
+                    <View
+                        style={[styles.flex1, styles.maxHeight100Percentage]}
+                        onLayout={(e) => {
+                            console.log(`sergei: FlashList PARENT layout w=${e.nativeEvent.layout.width} h=${e.nativeEvent.layout.height}`);
+                        }}
+                    >
+                        <FlashList
+                            data={dummyData}
+                            renderItem={renderDummyItem}
+                            drawDistance={10}
+                            // extraData={dummyData.length}
+                            // getItemType={getItemType}
+                            keyExtractor={(item) => item.key}
+                            scrollEnabled
+                            indicatorStyle="white"
+                            onViewableItemsChanged={({viewableItems, changed}) => {
+                                console.log(`sergei: DummyFlashList viewable=${viewableItems.length} changed=${changed.length}`);
+                            }}
+                            onLayout={(e) => {
+                                console.log(`sergei: FlashList layout w=${e.nativeEvent.layout.width} h=${e.nativeEvent.layout.height}`);
+                            }}
+                            viewabilityConfig={{viewAreaCoveragePercentThreshold: 0}}
+                            showsVerticalScrollIndicator
+                            keyboardShouldPersistTaps="always"
+                            maintainVisibleContentPosition={{disabled: true}}
+                        />
+                    </View>
+
+                    <Button
+                        success
+                        large
+                        text={translate('common.next')}
+                        onPress={() => (selectedOptions.length > 0 ? createGroup() : selectOption())}
+                        style={{margin: 16}}
+                    />
+                </FocusActivityGuard>
+            ) : (
+                <FocusActivityGuard>
+                    <SelectionListWithSections<OptionWithKey>
+                        ref={selectionListRef}
+                        ListItem={UserListItem}
+                        sections={areOptionsInitialized ? sections : getEmptyArray<Section<OptionWithKey>>()}
+                        onSelectRow={selectOption}
+                        shouldShowTextInput
+                        textInputOptions={textInputOptions}
+                        shouldSingleExecuteRowSelect
+                        confirmButtonOptions={{
+                            onConfirm: (e, option) => (selectedOptions.length > 0 ? createGroup() : selectOption(option)),
+                        }}
+                        rightHandSideComponent={itemRightSideComponent}
+                        footerContent={footerContent}
+                        showLoadingPlaceholder={!areOptionsInitialized}
+                        shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}
+                        isLoadingNewOptions={!!isSearchingForReports || isLoadingMore}
+                        onEndReached={handleEndReached}
+                        onEndReachedThreshold={0.75}
+                        disableMaintainingScrollPosition
+                        addBottomSafeAreaPadding
+                        // style={{listStyle: {opacity: listOpacity}}}
+                    />
+                </FocusActivityGuard>
+            )}
         </ScreenWrapper>
     );
 }

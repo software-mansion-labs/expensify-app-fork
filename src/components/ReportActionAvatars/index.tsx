@@ -108,7 +108,7 @@ function ReportActionAvatars({
     chatReportID,
 }: ReportActionAvatarsProps) {
     const accountIDs = passedAccountIDs.filter((accountID) => accountID !== CONST.DEFAULT_NUMBER_ID);
-
+    console.warn('sergei: ReportActionAvatars is re-rendered');
     const reportID =
         potentialReportID ??
         ([CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW, CONST.REPORT.ACTIONS.TYPE.TRIP_PREVIEW].find((act) => act === action?.actionName) ? action?.childReportID : undefined);

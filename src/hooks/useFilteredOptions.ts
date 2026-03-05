@@ -91,6 +91,9 @@ function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredO
               })
             : null;
 
+    console.log('sergei:', 'useFilteredOptions', 'Options len: ', Object.keys(options?.reports ?? {}).length);
+    console.log('sergei:', 'useFilteredOptions', 'TotalReports len: ', totalReports);
+
     // Reset loading state after options are computed
     useEffect(() => {
         if (!isLoadingMore || !options) {

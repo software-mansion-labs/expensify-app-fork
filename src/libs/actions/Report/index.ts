@@ -400,7 +400,7 @@ function clearGroupChat() {
 }
 
 function startNewChat() {
-    clearGroupChat();
+    // clearGroupChat();
     Navigation.navigate(ROUTES.NEW);
 }
 
