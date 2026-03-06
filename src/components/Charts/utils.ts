@@ -101,7 +101,7 @@ function calculateMinDomainPadding(chartWidth: number, pointCount: number, inner
     return Math.ceil(chartWidth * minPaddingRatio);
 }
 
-function getChartTitle(savedSearch: SaveSearchItem | undefined, suggestedSearch: SearchTypeMenuItem | undefined, groupBy: SearchGroupBy, translate: LocalizedTranslate) {
+function getChartTitle(savedSearch: SaveSearchItem | undefined, suggestedSearch: SearchTypeMenuItem | undefined, groupBy: SearchGroupBy | undefined, translate: LocalizedTranslate) {
     if (savedSearch) {
         if (savedSearch.name !== savedSearch.query) {
             return savedSearch.name;
@@ -109,7 +109,10 @@ function getChartTitle(savedSearch: SaveSearchItem | undefined, suggestedSearch:
     } else if (suggestedSearch) {
         return translate(suggestedSearch.translationPath);
     }
-    return translate(`search.chartTitles.${groupBy}`);
+    if (groupBy) {
+        return translate(`search.chartTitles.${groupBy}`);
+    }
+    return '';
 }
 
 /**

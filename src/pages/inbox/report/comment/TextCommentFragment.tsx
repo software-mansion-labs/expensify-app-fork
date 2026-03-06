@@ -49,7 +49,7 @@ type TextCommentFragmentProps = {
     iouMessage?: string;
 };
 
-function TextCommentFragment({fragment, styleAsDeleted, reportActionID, styleAsMuted = false, source, style, displayAsGroup, iouMessage = ''}: TextCommentFragmentProps) {
+function TextCommentFragment({fragment, styleAsDeleted, reportActionID, reportID, styleAsMuted = false, source, style, displayAsGroup, iouMessage = ''}: TextCommentFragmentProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
     const {html = ''} = fragment ?? {};
@@ -91,6 +91,8 @@ function TextCommentFragment({fragment, styleAsDeleted, reportActionID, styleAsM
             }
             htmlContent = Str.replaceAll(htmlContent, '<emoji>', '<emoji ismedium>');
         }
+
+        htmlContent = Str.replaceAll(htmlContent, '<search-preview ', `<search-preview report-action-id="${reportActionID}" report-id="${reportID}" `);
 
         let htmlWithTag = editedTag ? `${htmlContent}${editedTag}` : htmlContent;
 

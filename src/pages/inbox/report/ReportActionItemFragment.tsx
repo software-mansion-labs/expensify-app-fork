@@ -83,6 +83,7 @@ const MUTED_ACTIONS = [
 
 function ReportActionItemFragment({
     reportActionID,
+    reportID,
     pendingAction,
     actionName,
     fragment,
@@ -136,6 +137,7 @@ function ReportActionItemFragment({
             return (
                 <TextCommentFragment
                     reportActionID={reportActionID}
+                    reportID={reportID}
                     source={source}
                     fragment={fragment}
                     styleAsDeleted={!!(isOffline && isPendingDelete)}

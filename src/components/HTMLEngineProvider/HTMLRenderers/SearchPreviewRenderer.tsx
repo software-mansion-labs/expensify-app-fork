@@ -1,7 +1,6 @@
 import Button from '@components/Button';
 import {getChartTitle} from '@components/Charts/utils';
 import SearchChartView from '@components/Search/SearchChartView';
-import {SearchScopeProvider} from '@components/Search/SearchScopeProvider';
 import type {GroupedItem} from '@components/Search/types';
 import useCardFeedsForDisplay from '@hooks/useCardFeedsForDisplay';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -22,6 +21,7 @@ import React, {useEffect, useMemo} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {CustomRendererProps, TPhrasing, TText} from 'react-native-render-html';
+import SearchTablePreview from '@components/Search/SearchTablePreview';
 import SearchPreviewOfflineIndicator from './SearchPreviewOfflineIndicator';
 
 function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) {
@@ -29,13 +29,9 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
     const {translate, localeCompare, formatPhoneNumber} = useLocalize();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
-    const query = tnode.attributes.query;
+    const {view, query} = tnode.attributes;
     const queryJSON = useMemo(() => buildSearchQueryJSON(query), [query]);
     const validGroupBy = queryJSON?.groupBy && Object.values(CONST.SEARCH.GROUP_BY).includes(queryJSON.groupBy) ? queryJSON.groupBy : undefined;
-    const validView =
-        tnode.attributes.view === CONST.SEARCH.VIEW.BAR || tnode.attributes.view === CONST.SEARCH.VIEW.LINE || tnode.attributes.view === CONST.SEARCH.VIEW.PIE
-            ? tnode.attributes.view
-            : undefined;
 
     const [searchResults] = useOnyx(`${ONYXKEYS.COLLECTION.SNAPSHOT}${queryJSON?.hash}`);
     const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST);
@@ -48,6 +44,11 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
     const savedSearchSelector = (searches: OnyxEntry<SaveSearch>) => (queryJSON?.hash ? searches?.[queryJSON.hash] : undefined);
     // eslint-disable-next-line rulesdir/no-inline-useOnyx-selector
     const [savedSearch] = useOnyx(ONYXKEYS.SAVED_SEARCHES, {selector: savedSearchSelector});
+
+    const reportActionID = tnode.attributes['report-action-id'];
+    const reportID = tnode.attributes['report-id'];
+    const [reportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`);
+    const reportAction = reportActionID ? reportActions?.[reportActionID] : undefined;
 
     useEffect(() => {
         if (!queryJSON) {
@@ -63,7 +64,7 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
         });
     }, [queryJSON, isOffline, searchKey]);
 
-    if (!queryJSON || !validGroupBy || !validView) {
+    if (!queryJSON) {
         return null;
     }
 
@@ -97,12 +98,14 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
           ) as GroupedItem[])
         : [];
 
+    const shouldShowChartView = (view === CONST.SEARCH.VIEW.BAR || view === CONST.SEARCH.VIEW.LINE || view === CONST.SEARCH.VIEW.PIE) && !!validGroupBy;
+
     return (
-        <SearchScopeProvider>
-            <View style={styles.searchPreviewContainer}>
+        <View style={styles.searchPreviewContainer}>
+            {shouldShowChartView ? (
                 <SearchChartView
                     queryJSON={queryJSON}
-                    view={validView}
+                    view={view}
                     groupBy={validGroupBy}
                     data={sortedData}
                     isLoading={!isSearchDataLoaded(searchResults, queryJSON)}
@@ -112,13 +115,23 @@ function SearchPreviewRenderer({tnode}: CustomRendererProps<TText | TPhrasing>) 
                             small={!shouldUseNarrowLayout}
                             text={translate('common.view')}
                             style={!shouldUseNarrowLayout && [styles.alignSelfStart, styles.mbn4]}
-                            onPress={() => Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: `${query} view:${validView}`}))}
+                            onPress={() => Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: `${query} view:${view}`}))}
                         />
                     }
                     containerStyle={[styles.pt1, styles.mh0, styles.mt0]}
                 />
-            </View>
-        </SearchScopeProvider>
+            ) : (
+                <SearchTablePreview
+                    query={query}
+                    queryJSON={queryJSON}
+                    groupBy={validGroupBy}
+                    chartTitle={chartTitle}
+                    data={sortedData}
+                    type={queryJSON.type}
+                    searchResults={searchResults}
+                />
+            )}
+        </View>
     );
 }
 
