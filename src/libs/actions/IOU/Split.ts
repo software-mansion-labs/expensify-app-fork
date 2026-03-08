@@ -363,7 +363,6 @@ function startSplitBill({
     policyRecentlyUsedTags,
     quickAction,
     policyRecentlyUsedCurrencies,
-    participantsPolicyTags,
 }: StartSplitBilActionParams) {
     const currentUserEmailForIOUSplit = addSMSDomainIfPhoneNumber(currentUserLogin);
     const participantAccountIDs = participants.map((participant) => Number(participant.accountID));
@@ -547,7 +546,6 @@ function startSplitBill({
         quickAction,
         policyRecentlyUsedCurrencies,
         policyRecentlyUsedTags,
-        participantsPolicyTags,
     };
 
     if (existingSplitChatReport) {
@@ -641,7 +639,7 @@ function startSplitBill({
         }
         const optimisticPolicyRecentlyUsedCategories = mergePolicyRecentlyUsedCategories(category, policyRecentlyUsedCategories);
         const optimisticPolicyRecentlyUsedTags = buildOptimisticPolicyRecentlyUsedTags({
-            policyTags: participant.policyID ? participantsPolicyTags[participant.policyID] : {},
+            policyTags: getPolicyTagsData(participant.policyID),
             policyRecentlyUsedTags,
             transactionTags: tag,
         });

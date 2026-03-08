@@ -837,7 +837,6 @@ type StartSplitBilActionParams = {
     policyRecentlyUsedTags: OnyxEntry<RecentlyUsedTags>;
     quickAction: OnyxEntry<OnyxTypes.QuickAction>;
     policyRecentlyUsedCurrencies: string[];
-    participantsPolicyTags: Record<string, OnyxTypes.PolicyTagLists>;
 };
 
 type ReplaceReceipt = {
