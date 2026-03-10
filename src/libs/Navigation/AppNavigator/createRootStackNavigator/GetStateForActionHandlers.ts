@@ -2,10 +2,7 @@ import type {CommonActions, RouterConfigOptions, StackActionType, StackNavigatio
 import {StackActions} from '@react-navigation/native';
 import type {ParamListBase, Router} from '@react-navigation/routers';
 import SCREENS_WITH_NAVIGATION_TAB_BAR from '@components/Navigation/TopLevelNavigationTabBar/SCREENS_WITH_NAVIGATION_TAB_BAR';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import Log from '@libs/Log';
-import {isSplitNavigatorName} from '@libs/Navigation/helpers/isNavigatorName';
-import {SPLIT_TO_SIDEBAR} from '@libs/Navigation/linkingConfig/RELATIONS';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
@@ -124,15 +121,15 @@ function handlePushFullscreenAction(
     const targetScreen = action.payload?.params && 'screen' in action.payload.params ? (action.payload?.params?.screen as string) : undefined;
     const navigatorName = action.payload.name;
 
-    // If we navigate to the central screen of the split navigator, we need to filter this navigator from preloadedRoutes to remove a sidebar screen from the state
-    const shouldFilterPreloadedRoutes =
-        getIsNarrowLayout() &&
-        isSplitNavigatorName(navigatorName) &&
-        targetScreen !== SPLIT_TO_SIDEBAR[navigatorName] &&
-        state.preloadedRoutes?.some((preloadedRoute) => preloadedRoute.name === navigatorName);
+    const existingRoute = state.routes.find((route) => route.name === navigatorName);
 
-    const adjustedState = shouldFilterPreloadedRoutes ? {...state, preloadedRoutes: state.preloadedRoutes.filter((preloadedRoute) => preloadedRoute.name !== navigatorName)} : state;
-    const stateWithNavigator = stackRouter.getStateForAction(adjustedState, action, configOptions);
+    if (existingRoute) {
+        return {...state, routes: [...state.routes, existingRoute], index: existingRoute ? state.index + 1 : state.index};
+    }
+
+    // When the navigator exists in preloadedRoutes, we avoid filtering it so the stack router can find and reuse it.
+    // Reusing preserves the route key so React reuses the component instance instead of rendering from scratch.
+    const stateWithNavigator = stackRouter.getStateForAction(state, action, configOptions);
 
     if (!stateWithNavigator) {
         Log.hmmm(`[handlePushAction] ${navigatorName} has not been found in the navigation state.`);
@@ -145,7 +142,6 @@ function handlePushFullscreenAction(
     if (lastFullScreenRoute?.key && targetScreen && !SCREENS_WITH_NAVIGATION_TAB_BAR.includes(targetScreen)) {
         screensWithEnteringAnimation.add(lastFullScreenRoute.key);
     }
-
     return stateWithNavigator;
 }
 
