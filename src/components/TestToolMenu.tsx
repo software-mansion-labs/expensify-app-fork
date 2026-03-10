@@ -6,18 +6,17 @@ import useOnyx from '@hooks/useOnyx';
 import {useSidebarOrderedReportsActions} from '@hooks/useSidebarOrderedReports';
 import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWaitForNavigation from '@hooks/useWaitForNavigation';
 import {revokeMultifactorAuthenticationCredentials} from '@libs/actions/MultifactorAuthentication';
 import {isUsingStagingApi} from '@libs/ApiUtils';
-import Navigation from '@libs/Navigation/Navigation';
 import {setShouldFailAllRequests, setShouldForceOffline, setShouldSimulatePoorConnection} from '@userActions/Network';
 import {expireSessionWithDelay, invalidateAuthToken, invalidateCredentials} from '@userActions/Session';
 import {setIsDebugModeEnabled, setShouldUseStagingServer} from '@userActions/User';
 import CONFIG from '@src/CONFIG';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
 import {hasBiometricsRegisteredSelector, isAccountLoadingSelector} from '@src/selectors/Account';
 import Button from './Button';
+import {useMultifactorAuthentication} from './MultifactorAuthentication/Context';
 import SoftKillTestToolRow from './SoftKillTestToolRow';
 import Switch from './Switch';
 import TestCrash from './TestCrash';
@@ -36,17 +35,11 @@ function TestToolMenu() {
     const [isAccountLoading = false] = useOnyx(ONYXKEYS.ACCOUNT, {selector: isAccountLoadingSelector});
 
     const {singleExecution} = useSingleExecution();
-    const waitForNavigate = useWaitForNavigation();
+    const {executeScenario} = useMultifactorAuthentication();
 
-    /**
-     * The wrapper is needed to prevent rapid double‑taps on native from triggering multiple navigations.
-     * Context: https://github.com/Expensify/App/pull/79475#discussion_r2708230681
-     */
-    const navigateToBiometricsTestPage = singleExecution(
-        waitForNavigate(() => {
-            Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_BIOMETRICS_TEST);
-        }),
-    );
+    const navigateToBiometricsTestPage = singleExecution(() => {
+        executeScenario(CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.BIOMETRICS_TEST);
+    });
 
     // Check if the user is authenticated to show options that require authentication
     const isAuthenticated = useIsAuthenticated();

@@ -313,7 +313,6 @@ const SCREENS = {
         REPORT_CARD_ACTIVATE: 'Report_Card_Activate',
         DOMAIN: 'Domain',
         EXPENSE_REPORT: 'ExpenseReport',
-        MULTIFACTOR_AUTHENTICATION: 'MultifactorAuthentication',
     },
     REPORT_CARD_ACTIVATE: 'Report_Card_Activate_Root',
     SAML_SIGN_IN: 'SAMLSignIn',

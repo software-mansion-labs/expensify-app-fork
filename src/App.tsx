@@ -25,6 +25,8 @@ import KeyboardProvider from './components/KeyboardProvider';
 import KYCWallContextProvider from './components/KYCWall/KYCWallContext';
 import {LocaleContextProvider} from './components/LocaleContextProvider';
 import {ModalProvider} from './components/Modal/Global/ModalContext';
+import {MultifactorAuthenticationContextProvider} from './components/MultifactorAuthentication/Context/Main';
+import MultifactorAuthenticationStateProvider from './components/MultifactorAuthentication/Context/State';
 import NavigationBar from './components/NavigationBar';
 import OnyxListItemProvider from './components/OnyxListItemProvider';
 import PopoverContextProvider from './components/PopoverProvider';
@@ -135,6 +137,8 @@ function App() {
                                         TravelCVVContextProvider,
                                         KYCWallContextProvider,
                                         WideRHPContextProvider,
+                                        MultifactorAuthenticationStateProvider,
+                                        MultifactorAuthenticationContextProvider,
                                     ]}
                                 >
                                     <CustomStatusBarAndBackground />

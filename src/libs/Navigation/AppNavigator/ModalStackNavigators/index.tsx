@@ -16,7 +16,6 @@ import type {
     MergeTransactionNavigatorParamList,
     MissingPersonalDetailsParamList,
     MoneyRequestNavigatorParamList,
-    MultifactorAuthenticationParamList,
     NewChatNavigatorParamList,
     NewReportWorkspaceSelectionNavigatorParamList,
     NewTaskNavigatorParamList,
@@ -92,27 +91,6 @@ const OPTIONS_PER_SCREEN: Partial<Record<Screen, PlatformStackNavigationOptions>
         animationTypeForReplace: 'push',
     },
     [SCREENS.SETTINGS.ADD_BANK_ACCOUNT]: {
-        animationTypeForReplace: 'push',
-    },
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.MAGIC_CODE]: {
-        animationTypeForReplace: 'push',
-    },
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.BIOMETRICS_TEST]: {
-        animationTypeForReplace: 'push',
-    },
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_SUCCESS]: {
-        animationTypeForReplace: 'push',
-    },
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_FAILURE]: {
-        animationTypeForReplace: 'push',
-    },
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT]: {
-        animationTypeForReplace: 'push',
-    },
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.REVOKE]: {
-        animationTypeForReplace: 'push',
-    },
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.NOT_FOUND]: {
         animationTypeForReplace: 'push',
     },
 };
@@ -403,6 +381,7 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
     [SCREENS.SETTINGS.PREFERENCES.THEME]: () => require<ReactComponentModule>('../../../../pages/settings/Preferences/ThemePage').default,
     [SCREENS.SETTINGS.PREFERENCES.PAYMENT_CURRENCY]: () => require<ReactComponentModule>('../../../../pages/settings/Preferences/PaymentCurrencyPage').default,
     [SCREENS.SETTINGS.CLOSE]: () => require<ReactComponentModule>('../../../../pages/settings/Security/CloseAccountPage').default,
+    [SCREENS.MULTIFACTOR_AUTHENTICATION.REVOKE]: () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/RevokePage').default,
     [SCREENS.SETTINGS.APP_DOWNLOAD_LINKS]: () => require<ReactComponentModule>('../../../../pages/settings/AppDownloadLinks').default,
     [SCREENS.SETTINGS.WALLET.CARDS_DIGITAL_DETAILS_UPDATE_ADDRESS]: () => require<ReactComponentModule>('../../../../pages/settings/Profile/PersonalDetails/PersonalAddressPage').default,
     [SCREENS.SETTINGS.WALLET.DOMAIN_CARD]: () => require<ReactComponentModule>('../../../../pages/settings/Wallet/ExpensifyCardPage/index').default,
@@ -1085,17 +1064,6 @@ const WorkspacesDomainModalStackNavigator = createModalStackNavigator<Workspaces
     [SCREENS.WORKSPACES_DOMAIN_ACCESS_RESTRICTED]: () => require<ReactComponentModule>('../../../../pages/domain/DomainAccessRestrictedPage').default,
 });
 
-const MultifactorAuthenticationStackNavigator = createModalStackNavigator<MultifactorAuthenticationParamList>({
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.MAGIC_CODE]: () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/ValidateCodePage').default,
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.BIOMETRICS_TEST]: () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/BiometricsTestPage').default,
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_SUCCESS]: () => require<ReactComponentModule>('@pages/MultifactorAuthentication/OutcomePage').default,
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_FAILURE]: () => require<ReactComponentModule>('@pages/MultifactorAuthentication/OutcomePage').default,
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT]: () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/PromptPage').default,
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.REVOKE]: () => require<ReactComponentModule>('@pages/MultifactorAuthentication/RevokePage').default,
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION]: () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/AuthorizeTransactionPage').default,
-    [SCREENS.MULTIFACTOR_AUTHENTICATION.NOT_FOUND]: () => require<ReactComponentModule>('../../../../pages/ErrorPage/NotFoundPage').default,
-});
-
 export {
     AddPersonalBankAccountModalStackNavigator,
     AddUnreportedExpenseModalStackNavigator,
@@ -1144,6 +1112,5 @@ export {
     WorkspaceConfirmationModalStackNavigator,
     WorkspaceDuplicateModalStackNavigator,
     WorkspacesDomainModalStackNavigator,
-    MultifactorAuthenticationStackNavigator,
     SearchRouterModalStackNavigator,
 };

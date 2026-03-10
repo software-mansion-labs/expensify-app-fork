@@ -76,6 +76,7 @@ import {ShareModalStackNavigator} from './ModalStackNavigators';
 import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
 import FeatureTrainingModalNavigator from './Navigators/FeatureTrainingModalNavigator';
 import MigratedUserWelcomeModalNavigator from './Navigators/MigratedUserWelcomeModalNavigator';
+import MultifactorAuthenticationOverlay from './Navigators/MultifactorAuthenticationOverlay';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
 import TestDriveModalNavigator from './Navigators/TestDriveModalNavigator';
@@ -739,6 +740,7 @@ function AuthScreens() {
             {/* Full-screen 2FA enforcement overlay - blocks all interaction until 2FA is set up */}
             {shouldShowRequire2FAPage && !isIn2FASetupFlow && <RequireTwoFactorAuthenticationPage />}
             <SearchRouterModal />
+            <MultifactorAuthenticationOverlay />
             <GPSTripStateChecker />
             <GPSInProgressModal />
             <OpenAppFailureModal />

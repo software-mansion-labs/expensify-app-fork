@@ -1,16 +1,15 @@
-import {findFocusedRoute} from '@react-navigation/native';
-import {useEffect, useMemo} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
+import {useMultifactorAuthenticationActions, useMultifactorAuthenticationState} from '@components/MultifactorAuthentication/Context/State';
 import useNativeBiometrics from '@components/MultifactorAuthentication/Context/useNativeBiometrics';
 import useOnyx from '@hooks/useOnyx';
-import useRootNavigationState from '@hooks/useRootNavigationState';
 import {isTransactionStillPending3DSReview} from '@libs/actions/MultifactorAuthentication';
 import Log from '@libs/Log';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
+import SCREENS from '@src/SCREENS';
 import type {TransactionPending3DSReview} from '@src/types/onyx';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
-import Navigation, {isMFAFlowScreen} from './Navigation';
+import Navigation from './Navigation';
 
 // We want predictable, stable ordering for transaction challenges to ensure we don't
 // accidentally navigate the user while they're in the middle of acting on a challenge.
@@ -35,25 +34,25 @@ function getFirstSortedTransactionPending3DSReview(transactions: TransactionPend
 }
 
 /** Listens to changes to ONYXKEYS.LOCALLY_PROCESSED_3DS_TRANSACTION_REVIEWS (as well as the currently focused route)
- * and navigates to ROUTES.MULTIFACTOR_AUTHENTICATION_AUTHORIZE_TRANSACTION if necessary */
+ * and shows the MFA overlay with AUTHORIZE_TRANSACTION screen if necessary */
 function useNavigateTo3DSAuthorizationChallenge() {
     const [locallyProcessed3DSTransactionReviews, locallyProcessedReviewsResult] = useOnyx(ONYXKEYS.LOCALLY_PROCESSED_3DS_TRANSACTION_REVIEWS);
     const [transactionsPending3DSReview] = useOnyx(ONYXKEYS.TRANSACTIONS_PENDING_3DS_REVIEW);
 
+    const mfaState = useMultifactorAuthenticationState();
+    const {dispatch: mfaDispatch} = useMultifactorAuthenticationActions();
+
     // It's important not to whisk the user away from a challenge they're still working on. We add the challenge
     // to locallyProcessed3DSTransactionReviews and clear it from the queue as soon as the Authorize call completes,
     // which is also when we navigate to the outcome page. Thus, we need to make sure not to act on the next
-    // queue item until the user has completely exited the flow
-    const isCurrentlyActingOn3DSChallenge = useRootNavigationState((state) => {
-        if (!state) {
-            return false;
-        }
-        const focusedScreen = findFocusedRoute(state)?.name;
-        if (!focusedScreen) {
-            return false;
-        }
-        return isMFAFlowScreen(focusedScreen);
-    });
+    // queue item until the user has completely exited the flow.
+    // We use a ref so the effect reads the latest value as a guard without re-triggering when it changes.
+    // Without this, RESET (which clears activeScreen) would re-fire the effect and immediately
+    // re-dispatch SHOW_SCREEN for the same transaction before Onyx removes it from the pending list.
+    const isCurrentlyActingOn3DSChallengeRef = useRef(mfaState.activeScreen !== undefined);
+    useEffect(() => {
+        isCurrentlyActingOn3DSChallengeRef.current = mfaState.activeScreen !== undefined;
+    }, [mfaState.activeScreen]);
 
     const {doesDeviceSupportBiometrics} = useNativeBiometrics();
 
@@ -94,7 +93,7 @@ function useNavigateTo3DSAuthorizationChallenge() {
 
         Log.info('[useNavigateTo3DSAuthorizationChallenge] Effect triggered for transaction', undefined, {transactionID: transactionPending3DSReview.transactionID});
 
-        if (isCurrentlyActingOn3DSChallenge) {
+        if (isCurrentlyActingOn3DSChallengeRef.current) {
             Log.info('[useNavigateTo3DSAuthorizationChallenge] Ignoring navigation - user is still acting on a challenge');
             return;
         }
@@ -148,8 +147,14 @@ function useNavigateTo3DSAuthorizationChallenge() {
 
             Log.info('[useNavigateTo3DSAuthorizationChallenge] Navigating!', undefined, {transactionID: transactionPending3DSReview.transactionID});
 
-            // If the challenge is still valid, navigate the user to the AuthorizePage
-            Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_AUTHORIZE_TRANSACTION.getRoute(transactionPending3DSReview.transactionID));
+            // If the challenge is still valid, show the MFA overlay with the AuthorizePage
+            mfaDispatch({
+                type: 'SHOW_SCREEN',
+                payload: {
+                    screen: SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION,
+                    params: {transactionID: transactionPending3DSReview.transactionID},
+                },
+            });
         }
 
         Navigation.isNavigationReady().then(() => maybeNavigateTo3DSChallenge());
@@ -157,7 +162,8 @@ function useNavigateTo3DSAuthorizationChallenge() {
         return () => {
             cancel = true;
         };
-    }, [transactionPending3DSReview?.transactionID, doesDeviceSupportBiometrics, isCurrentlyActingOn3DSChallenge]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [transactionPending3DSReview?.transactionID, doesDeviceSupportBiometrics, mfaDispatch]);
 }
 
 export default useNavigateTo3DSAuthorizationChallenge;

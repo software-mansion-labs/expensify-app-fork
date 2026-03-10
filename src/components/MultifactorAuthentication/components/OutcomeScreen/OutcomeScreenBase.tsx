@@ -6,13 +6,13 @@ import Button from '@components/Button';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {loadIllustration} from '@components/Icon/IllustrationLoader';
 import type {IllustrationName} from '@components/Icon/IllustrationLoader';
+import {useMultifactorAuthenticationActions} from '@components/MultifactorAuthentication/Context/State';
 import RenderHTML from '@components/RenderHTML';
 import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import {useMemoizedLazyAsset} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import Navigation from '@libs/Navigation/Navigation';
 import Parser from '@libs/Parser';
 
 type OutcomeScreenBaseProps = {
@@ -48,9 +48,10 @@ function OutcomeScreenBase({headerTitle, illustration, iconWidth, iconHeight, ti
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {asset: icon} = useMemoizedLazyAsset(() => loadIllustration(illustration));
+    const {dispatch} = useMultifactorAuthenticationActions();
 
     const onClose = () => {
-        Navigation.closeRHPFlow();
+        dispatch({type: 'HIDE_OVERLAY'});
     };
 
     const CustomSubtitle = customSubtitle ?? (

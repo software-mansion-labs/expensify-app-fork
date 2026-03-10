@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {View} from 'react-native';
+import {Pressable, View} from 'react-native';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import Button from '@components/Button';
 import FixedFooter from '@components/FixedFooter';
@@ -8,14 +8,15 @@ import LoadingIndicator from '@components/LoadingIndicator';
 import {DefaultCancelConfirmModal} from '@components/MultifactorAuthentication/components/Modals';
 import {useMultifactorAuthentication, useMultifactorAuthenticationActions, useMultifactorAuthenticationState, usePromptContent} from '@components/MultifactorAuthentication/Context';
 import MultifactorAuthenticationPromptContent from '@components/MultifactorAuthentication/PromptContent';
+import {GenericPressable} from '@components/Pressable';
 import ScreenWrapper from '@components/ScreenWrapper';
+import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {markHasAcceptedSoftPrompt} from '@libs/actions/MultifactorAuthentication';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {MultifactorAuthenticationParamList} from '@libs/Navigation/types';
-import Navigation from '@navigation/Navigation';
 import type SCREENS from '@src/SCREENS';
 
 type MultifactorAuthenticationPromptPageProps = PlatformStackScreenProps<MultifactorAuthenticationParamList, typeof SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT>;
@@ -33,13 +34,14 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
     const [isCancelModalVisible, setCancelModalVisibility] = useState(false);
 
     const onConfirm = () => {
+        console.log('MFA onConfirm');
         markHasAcceptedSoftPrompt();
         dispatch({type: 'SET_SOFT_PROMPT_APPROVED', payload: true});
     };
 
     const showCancelModal = () => {
         if (isOffline) {
-            Navigation.closeRHPFlow();
+            dispatch({type: 'HIDE_OVERLAY'});
         } else {
             setCancelModalVisibility(true);
         }
@@ -73,12 +75,16 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
                     escapeDeactivates: focusTrapConfirmModal,
                 },
             }}
+            includePaddingTop={false}
         >
             <HeaderWithBackButton
                 title={translate('multifactorAuthentication.letsVerifyItsYou')}
                 onBackButtonPress={showCancelModal}
                 shouldShowBackButton
             />
+            <GenericPressable onPress={() => console.log('MFA Pressed')}>
+                <Text>test</Text>
+            </GenericPressable>
             <FullPageOfflineBlockingView>
                 <MultifactorAuthenticationPromptContent
                     animation={animation}

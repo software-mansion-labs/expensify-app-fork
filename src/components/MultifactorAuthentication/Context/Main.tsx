@@ -7,12 +7,11 @@ import useNetwork from '@hooks/useNetwork';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import getPlatform from '@libs/getPlatform';
 import type {ChallengeType, MultifactorAuthenticationCallbackInput, MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/Biometrics/types';
-import Navigation from '@navigation/Navigation';
 import {clearLocalMFAPublicKeyList, requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
 import {processRegistration, processScenarioAction} from '@userActions/MultifactorAuthentication/processing';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
+import SCREENS from '@src/SCREENS';
 import type {DeviceBiometrics} from '@src/types/onyx';
 import {useMultifactorAuthenticationActions, useMultifactorAuthenticationState} from './State';
 import useNativeBiometrics from './useNativeBiometrics';
@@ -108,9 +107,9 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             }
 
             if (isSuccessful) {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_OUTCOME_SUCCESS, {forceReplace: true});
+                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_SUCCESS}});
             } else {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_OUTCOME_FAILURE, {forceReplace: true});
+                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_FAILURE}});
             }
 
             dispatch({type: 'SET_FLOW_COMPLETE', payload: true});
@@ -137,6 +136,18 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             isFlowComplete,
         } = state;
 
+        // TODO: remove debug logs
+        console.log('[MFA process] called', {
+            softPromptApproved,
+            isRegistrationComplete,
+            isAuthorizationComplete,
+            isFlowComplete,
+            isOffline,
+            hasScenario: !!scenario,
+            hasError: !!error,
+            activeScreen: state.activeScreen,
+        });
+
         // 0. Check if one of the early exit conditions applies:
         // - Flow is already complete,
         // - User is offline,
@@ -146,6 +157,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         //      Continuable errors (like invalid validate code) are displayed on the current screen
         //      and don't stop the entire flow - the user can retry without restarting
         if (isFlowComplete || !scenario || isOffline || continuableError) {
+            console.log('[MFA process] early exit', {isFlowComplete, hasScenario: !!scenario, isOffline, hasContinuableError: !!continuableError});
             return;
         }
 
@@ -183,13 +195,15 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         }
 
         // 3. Check if registration is required (local credentials not known to server yet)
-        const isRegistrationRequired = !(await biometrics.areLocalCredentialsKnownToServer()) && !isRegistrationComplete;
+        const localCredentialsKnown = await biometrics.areLocalCredentialsKnownToServer();
+        const isRegistrationRequired = !localCredentialsKnown && !isRegistrationComplete;
+        console.log('[MFA process] registration check', {localCredentialsKnown, isRegistrationComplete, isRegistrationRequired});
 
         if (isRegistrationRequired) {
             // Need validate code before registration
             if (!validateCode) {
                 requestValidateCodeAction();
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_MAGIC_CODE, {forceReplace: true});
+                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.MAGIC_CODE}});
                 return;
             }
 
@@ -220,11 +234,14 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             // Check if a soft prompt is needed
             if (!softPromptApproved) {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS), {forceReplace: true});
+                console.log('[MFA process] waiting for soft prompt approval');
+                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, params: {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS}}});
                 return;
             }
 
+            console.log('[MFA process] calling biometrics.register()');
             await biometrics.register(async (result: RegisterResult) => {
+                console.log('[MFA process] register callback', {success: result.success});
                 if (!result.success) {
                     dispatch({
                         type: 'SET_ERROR',
@@ -262,15 +279,18 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         // Registration isn't required, but they have never seen the soft prompt
         // this happens on ios if they delete and reinstall the app. Their keys are preserved in the secure store, but
         // they'll be shown the "do you want to enable FaceID again" system prompt, so we want to show them the soft prompt
+        console.log('[MFA process] post-registration checks', {hasAcceptedSoftPrompt: deviceBiometricsState?.hasAcceptedSoftPrompt});
         if (!deviceBiometricsState?.hasAcceptedSoftPrompt) {
-            Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS), {forceReplace: true});
+            console.log('[MFA process] waiting for deviceBiometricsState.hasAcceptedSoftPrompt');
+            dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, params: {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS}}});
             return;
         }
 
         // 4. Authorize the user if that has not already been done
+        console.log('[MFA process] authorization step', {isAuthorizationComplete, hasAuthChallenge: !!authorizationChallenge});
         if (!isAuthorizationComplete) {
-            if (!Navigation.isActiveRoute(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS))) {
-                Navigation.navigate(ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.getRoute(CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS), {forceReplace: true});
+            if (state.activeScreen !== SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT) {
+                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, params: {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS}}});
             }
 
             // Request authorization challenge if not already fetched
@@ -442,9 +462,9 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
     const cancel = useCallback(async () => {
         // When the app is reopened (e.g. page refresh on web), the MFA context resets to its default state
         // and scenario becomes undefined. Without a scenario, the state machine in process() won't run,
-        // so dispatching SET_ERROR would have no effect. In this case we dismiss the modal directly.
+        // so dispatching SET_ERROR would have no effect. In this case we close the overlay directly.
         if (!state.scenario) {
-            Navigation.dismissModal();
+            dispatch({type: 'RESET'});
             return;
         }
 

@@ -191,6 +191,10 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                             path: ROUTES.SETTINGS_CLOSE,
                             exact: true,
                         },
+                        [SCREENS.MULTIFACTOR_AUTHENTICATION.REVOKE]: {
+                            path: ROUTES.MULTIFACTOR_AUTHENTICATION_REVOKE,
+                            exact: true,
+                        },
                         [SCREENS.SETTINGS.MERGE_ACCOUNTS.ACCOUNT_DETAILS]: {
                             path: ROUTES.SETTINGS_MERGE_ACCOUNTS.route,
                             exact: true,
@@ -2082,18 +2086,6 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                             path: ROUTES.WORKSPACES_DOMAIN_ACCESS_RESTRICTED.route,
                             exact: true,
                         },
-                    },
-                },
-                [SCREENS.RIGHT_MODAL.MULTIFACTOR_AUTHENTICATION]: {
-                    screens: {
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.MAGIC_CODE]: ROUTES.MULTIFACTOR_AUTHENTICATION_MAGIC_CODE,
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.BIOMETRICS_TEST]: ROUTES.MULTIFACTOR_AUTHENTICATION_BIOMETRICS_TEST,
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_SUCCESS]: ROUTES.MULTIFACTOR_AUTHENTICATION_OUTCOME_SUCCESS,
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_FAILURE]: ROUTES.MULTIFACTOR_AUTHENTICATION_OUTCOME_FAILURE,
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT]: ROUTES.MULTIFACTOR_AUTHENTICATION_PROMPT.route,
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.NOT_FOUND]: ROUTES.MULTIFACTOR_AUTHENTICATION_NOT_FOUND,
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.REVOKE]: ROUTES.MULTIFACTOR_AUTHENTICATION_REVOKE,
-                        [SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION]: ROUTES.MULTIFACTOR_AUTHENTICATION_AUTHORIZE_TRANSACTION.route,
                     },
                 },
             },

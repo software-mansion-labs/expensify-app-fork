@@ -9,14 +9,13 @@ import {
     DeniedTransactionServerFailureScreen,
     DeniedTransactionSuccessScreen,
 } from '@components/MultifactorAuthentication/config/scenarios/AuthorizeTransaction';
-import {useMultifactorAuthentication} from '@components/MultifactorAuthentication/Context';
+import {useMultifactorAuthentication, useMultifactorAuthenticationActions} from '@components/MultifactorAuthentication/Context';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useLocalize from '@hooks/useLocalize';
 import useNetworkWithOfflineStatus from '@hooks/useNetworkWithOfflineStatus';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {denyTransaction, fireAndForgetDenyTransaction} from '@libs/actions/MultifactorAuthentication';
-import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {MultifactorAuthenticationParamList} from '@libs/Navigation/types';
 import CONST from '@src/CONST';
@@ -44,6 +43,7 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
     const transaction = transactionQueue?.[transactionID];
 
     const {executeScenario} = useMultifactorAuthentication();
+    const {dispatch: mfaDispatch} = useMultifactorAuthenticationActions();
 
     const [isConfirmModalVisible, setConfirmModalVisibility] = useState(false);
 
@@ -51,7 +51,7 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
         // FullPageOfflineBlockingView doesn't wrap HeaderWithBackButton, so we handle navigation manually when offline.
         // Offline mode isn't supported in MFA; navigate users away immediately without showing the confirmation modal.
         if (isOffline) {
-            Navigation.closeRHPFlow();
+            mfaDispatch({type: 'RESET'});
             return;
         }
         setConfirmModalVisibility(true);
@@ -80,7 +80,7 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
 
     const onSilentlyDenyTransaction = () => {
         fireAndForgetDenyTransaction({transactionID});
-        Navigation.closeRHPFlow();
+        mfaDispatch({type: 'RESET'});
     };
 
     if (denyOutcomeScreen) {
