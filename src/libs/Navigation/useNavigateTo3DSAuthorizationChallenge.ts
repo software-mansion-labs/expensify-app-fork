@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useRef} from 'react';
 import {useMultifactorAuthenticationActions, useMultifactorAuthenticationState} from '@components/MultifactorAuthentication/Context/State';
 import useNativeBiometrics from '@components/MultifactorAuthentication/Context/useNativeBiometrics';
+import {navigate as mfaNavigate} from '@components/MultifactorAuthentication/mfaNavigation';
 import useOnyx from '@hooks/useOnyx';
 import {isTransactionStillPending3DSReview} from '@libs/actions/MultifactorAuthentication';
 import Log from '@libs/Log';
@@ -47,12 +48,12 @@ function useNavigateTo3DSAuthorizationChallenge() {
     // which is also when we navigate to the outcome page. Thus, we need to make sure not to act on the next
     // queue item until the user has completely exited the flow.
     // We use a ref so the effect reads the latest value as a guard without re-triggering when it changes.
-    // Without this, RESET (which clears activeScreen) would re-fire the effect and immediately
-    // re-dispatch SHOW_SCREEN for the same transaction before Onyx removes it from the pending list.
-    const isCurrentlyActingOn3DSChallengeRef = useRef(mfaState.activeScreen !== undefined);
+    // Without this, RESET (which clears isOpen) would re-fire the effect and immediately
+    // re-open the overlay for the same transaction before Onyx removes it from the pending list.
+    const isCurrentlyActingOn3DSChallengeRef = useRef(mfaState.isOpen);
     useEffect(() => {
-        isCurrentlyActingOn3DSChallengeRef.current = mfaState.activeScreen !== undefined;
-    }, [mfaState.activeScreen]);
+        isCurrentlyActingOn3DSChallengeRef.current = mfaState.isOpen;
+    }, [mfaState.isOpen]);
 
     const {doesDeviceSupportBiometrics} = useNativeBiometrics();
 
@@ -148,13 +149,8 @@ function useNavigateTo3DSAuthorizationChallenge() {
             Log.info('[useNavigateTo3DSAuthorizationChallenge] Navigating!', undefined, {transactionID: transactionPending3DSReview.transactionID});
 
             // If the challenge is still valid, show the MFA overlay with the AuthorizePage
-            mfaDispatch({
-                type: 'SHOW_SCREEN',
-                payload: {
-                    screen: SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION,
-                    params: {transactionID: transactionPending3DSReview.transactionID},
-                },
-            });
+            mfaDispatch({type: 'OPEN'});
+            mfaNavigate(SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION, {transactionID: transactionPending3DSReview.transactionID});
         }
 
         Navigation.isNavigationReady().then(() => maybeNavigateTo3DSChallenge());

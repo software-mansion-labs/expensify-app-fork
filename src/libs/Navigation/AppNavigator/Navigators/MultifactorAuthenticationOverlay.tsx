@@ -1,14 +1,11 @@
 import {BaseNavigationContainer, NavigationIndependentTree} from '@react-navigation/core';
 import {DefaultTheme} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
-import React, {useState} from 'react';
-import {View} from 'react-native';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import React from 'react';
 import Modal from '@components/Modal';
 import {useMultifactorAuthenticationActions, useMultifactorAuthenticationState} from '@components/MultifactorAuthentication/Context/State';
-import ScreenWrapperContainer from '@components/ScreenWrapper/ScreenWrapperContainer';
+import {applyPendingNavigation, clearPendingNavigation, getPendingNavigation, mfaNavigationRef} from '@components/MultifactorAuthentication/mfaNavigation';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
-import useThemeStyles from '@hooks/useThemeStyles';
 import type {MultifactorAuthenticationParamList} from '@navigation/types';
 import CONST from '@src/CONST';
 import SCREENS from '@src/SCREENS';
@@ -19,74 +16,46 @@ const Stack = createStackNavigator<MultifactorAuthenticationParamList>();
 const loadValidateCodePage = () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/ValidateCodePage').default;
 const loadOutcomePage = () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/OutcomePage').default;
 const loadPromptPage = () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/PromptPage').default;
-const loadAuthorizeTransactionPage = () => require<ReactComponentModule>('../../../../pages/MultifactorAuthentication/AuthorizeTransactionPage').default;
 const loadErrorPage = () => require<ReactComponentModule>('../../../../pages/ErrorPage/NotFoundPage').default;
 
 function MultifactorAuthenticationOverlay() {
     const state = useMultifactorAuthenticationState();
     const {dispatch} = useMultifactorAuthenticationActions();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
-    const styles = useThemeStyles();
 
-    // Track the screen/params to render. Persists during the Modal close animation
-    // so content stays visible while the panel slides out.
-    // Uses the React-recommended "adjusting state during render" pattern to synchronously
-    // capture new screen values without a render-frame delay.
-    // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
-    const [renderScreen, setRenderScreen] = useState(state.activeScreen);
-    const [renderParams, setRenderParams] = useState(state.activeParams);
-
-    if (state.activeScreen !== undefined && state.activeScreen !== renderScreen) {
-        setRenderScreen(state.activeScreen);
-        setRenderParams(state.activeParams);
-    }
-
-    // Nothing has ever been shown — skip rendering entirely
-    if (renderScreen === undefined) {
+    if (!state.isOpen) {
         return null;
     }
 
-    const isVisible = state.activeScreen !== undefined;
-
-    const onClose = () => {
-        dispatch({type: 'HIDE_OVERLAY'});
-    };
-
-    // Called after the Modal's close animation completes — fully unmount and reset state
-    const onModalHide = () => {
-        setRenderScreen(undefined);
-        setRenderParams(undefined);
-        dispatch({type: 'RESET'});
-    };
+    const pending = getPendingNavigation();
+    const initialState = pending ? {routes: [{name: pending.screen as keyof MultifactorAuthenticationParamList, params: pending.params}]} : undefined;
 
     return (
         <Modal
             type={shouldUseNarrowLayout ? CONST.MODAL.MODAL_TYPE.CENTERED_SWIPEABLE_TO_RIGHT : CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED}
-            isVisible={isVisible}
-            onClose={onClose}
-            onModalHide={onModalHide}
+            isVisible={state.isOpen}
+            onClose={() => dispatch({type: 'HIDE_OVERLAY'})}
+            onModalHide={() => {
+                clearPendingNavigation();
+                dispatch({type: 'RESET'});
+            }}
             fullscreen
             shouldApplySidePanelOffset={!shouldUseNarrowLayout}
             enableEdgeToEdgeBottomSafeAreaPadding
         >
             <NavigationIndependentTree>
                 <BaseNavigationContainer
-                    key={renderScreen}
+                    ref={mfaNavigationRef}
                     theme={DefaultTheme}
+                    onReady={applyPendingNavigation}
+                    initialState={initialState}
                 >
                     <Stack.Navigator
                         screenOptions={{
                             headerShown: false,
-                            animationEnabled: false,
-                            gestureEnabled: false,
+                            animation: 'none',
                         }}
-                        initialRouteName={renderScreen as keyof MultifactorAuthenticationParamList}
                     >
-                        <Stack.Screen
-                            name={SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION}
-                            getComponent={loadAuthorizeTransactionPage}
-                            initialParams={renderParams}
-                        />
                         <Stack.Screen
                             name={SCREENS.MULTIFACTOR_AUTHENTICATION.MAGIC_CODE}
                             getComponent={loadValidateCodePage}
@@ -94,7 +63,6 @@ function MultifactorAuthenticationOverlay() {
                         <Stack.Screen
                             name={SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT}
                             getComponent={loadPromptPage}
-                            initialParams={renderParams}
                         />
                         <Stack.Screen
                             name={SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_SUCCESS}

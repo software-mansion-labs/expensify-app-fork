@@ -54,11 +54,8 @@ type MultifactorAuthenticationState = {
     /** Response from the scenario API call, stored for callback invocation at outcome navigation */
     scenarioResponse: MultifactorAuthenticationScenarioResponse | undefined;
 
-    /** Which MFA screen to show in the overlay (undefined = overlay hidden) */
-    activeScreen: string | undefined;
-
-    /** Params for the active screen */
-    activeParams: Record<string, unknown> | undefined;
+    /** Whether the MFA overlay is open */
+    isOpen: boolean;
 };
 
 type InitPayload = {
@@ -84,8 +81,7 @@ type Action =
     | {type: 'REREGISTER'}
     | {type: 'RESET'}
     | {type: 'HIDE_OVERLAY'}
-    | {type: 'NAVIGATE'; payload: {screen: string; params?: Record<string, unknown>}}
-    | {type: 'SHOW_SCREEN'; payload: {screen: string; params?: Record<string, unknown>}};
+    | {type: 'OPEN'};
 
 /** Context value for state - the current MFA state */
 type MultifactorAuthenticationStateContextType = MultifactorAuthenticationState;

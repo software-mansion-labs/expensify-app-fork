@@ -740,12 +740,13 @@ function AuthScreens() {
             {/* Full-screen 2FA enforcement overlay - blocks all interaction until 2FA is set up */}
             {shouldShowRequire2FAPage && !isIn2FASetupFlow && <RequireTwoFactorAuthenticationPage />}
             <SearchRouterModal />
-            <MultifactorAuthenticationOverlay />
+
             <GPSTripStateChecker />
             <GPSInProgressModal />
             <OpenAppFailureModal />
             <PriorityModeController />
             <OpenConfirmNavigateExpensifyClassicModal />
+            <MultifactorAuthenticationOverlay />
         </ComposeProviders>
     );
 }

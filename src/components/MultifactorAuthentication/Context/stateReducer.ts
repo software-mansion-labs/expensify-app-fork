@@ -17,8 +17,7 @@ const DEFAULT_STATE: MultifactorAuthenticationState = {
     isFlowComplete: false,
     authenticationMethod: undefined,
     scenarioResponse: undefined,
-    activeScreen: undefined,
-    activeParams: undefined,
+    isOpen: false,
 };
 
 /**
@@ -75,8 +74,7 @@ function stateReducer(state: MultifactorAuthenticationState, action: Action): Mu
             const scenario = MULTIFACTOR_AUTHENTICATION_SCENARIO_CONFIG[action.payload.scenario] as MultifactorAuthenticationScenarioConfig;
             return {
                 ...DEFAULT_STATE,
-                activeScreen: state.activeScreen,
-                activeParams: state.activeParams,
+                isOpen: true,
                 scenario,
                 payload: action.payload.payload,
             };
@@ -86,20 +84,12 @@ function stateReducer(state: MultifactorAuthenticationState, action: Action): Mu
         case 'HIDE_OVERLAY':
             return {
                 ...state,
-                activeScreen: undefined,
-                activeParams: undefined,
+                isOpen: false,
             };
-        case 'NAVIGATE':
-            return {
-                ...state,
-                activeScreen: action.payload.screen,
-                activeParams: action.payload.params,
-            };
-        case 'SHOW_SCREEN':
+        case 'OPEN':
             return {
                 ...DEFAULT_STATE,
-                activeScreen: action.payload.screen,
-                activeParams: action.payload.params,
+                isOpen: true,
             };
         case 'REREGISTER':
             return {

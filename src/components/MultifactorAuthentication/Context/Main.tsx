@@ -3,6 +3,7 @@ import type {ReactNode} from 'react';
 import Onyx from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {MultifactorAuthenticationScenario, MultifactorAuthenticationScenarioParams} from '@components/MultifactorAuthentication/config/types';
+import {navigate as mfaNavigate, mfaNavigationRef} from '@components/MultifactorAuthentication/mfaNavigation';
 import useNetwork from '@hooks/useNetwork';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import getPlatform from '@libs/getPlatform';
@@ -107,9 +108,9 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             }
 
             if (isSuccessful) {
-                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_SUCCESS}});
+                mfaNavigate(SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_SUCCESS);
             } else {
-                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_FAILURE}});
+                mfaNavigate(SCREENS.MULTIFACTOR_AUTHENTICATION.OUTCOME_FAILURE);
             }
 
             dispatch({type: 'SET_FLOW_COMPLETE', payload: true});
@@ -145,7 +146,6 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             isOffline,
             hasScenario: !!scenario,
             hasError: !!error,
-            activeScreen: state.activeScreen,
         });
 
         // 0. Check if one of the early exit conditions applies:
@@ -203,7 +203,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             // Need validate code before registration
             if (!validateCode) {
                 requestValidateCodeAction();
-                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.MAGIC_CODE}});
+                mfaNavigate(SCREENS.MULTIFACTOR_AUTHENTICATION.MAGIC_CODE);
                 return;
             }
 
@@ -235,7 +235,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             // Check if a soft prompt is needed
             if (!softPromptApproved) {
                 console.log('[MFA process] waiting for soft prompt approval');
-                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, params: {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS}}});
+                mfaNavigate(SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS});
                 return;
             }
 
@@ -282,15 +282,15 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         console.log('[MFA process] post-registration checks', {hasAcceptedSoftPrompt: deviceBiometricsState?.hasAcceptedSoftPrompt});
         if (!deviceBiometricsState?.hasAcceptedSoftPrompt) {
             console.log('[MFA process] waiting for deviceBiometricsState.hasAcceptedSoftPrompt');
-            dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, params: {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS}}});
+            mfaNavigate(SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS});
             return;
         }
 
         // 4. Authorize the user if that has not already been done
         console.log('[MFA process] authorization step', {isAuthorizationComplete, hasAuthChallenge: !!authorizationChallenge});
         if (!isAuthorizationComplete) {
-            if (state.activeScreen !== SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT) {
-                dispatch({type: 'NAVIGATE', payload: {screen: SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, params: {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS}}});
+            if (mfaNavigationRef.getCurrentRoute()?.name !== SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT) {
+                mfaNavigate(SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT, {promptType: CONST.MULTIFACTOR_AUTHENTICATION.PROMPT.BIOMETRICS});
             }
 
             // Request authorization challenge if not already fetched
