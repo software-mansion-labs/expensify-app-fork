@@ -68,17 +68,29 @@ function HomePage() {
                         addBottomSafeAreaPadding
                     >
                         <View style={styles.homePageMainLayout(shouldUseNarrowLayout)}>
-                            {/* Widgets handle their own visibility and may return null to avoid duplicating visibility logic here */}
-                            <View style={styles.homePageLeftColumn(shouldUseNarrowLayout)}>
-                                <TimeSensitiveSection />
-                                <ForYouSection />
-                                <DiscoverSection />
-                            </View>
-                            <View style={styles.homePageRightColumn(shouldUseNarrowLayout)}>
-                                <UpcomingTravelSection />
-                                <AssignedCardsSection />
-                                <AnnouncementSection />
-                            </View>
+                            {shouldUseNarrowLayout ? (
+                                <>
+                                    <TimeSensitiveSection />
+                                    <ForYouSection />
+                                    <UpcomingTravelSection />
+                                    <AssignedCardsSection />
+                                    <DiscoverSection />
+                                    <AnnouncementSection />
+                                </>
+                            ) : (
+                                <>
+                                    <View style={styles.homePageLeftColumn}>
+                                        <TimeSensitiveSection />
+                                        <ForYouSection />
+                                        <DiscoverSection />
+                                    </View>
+                                    <View style={styles.homePageRightColumn}>
+                                        <UpcomingTravelSection />
+                                        <AssignedCardsSection />
+                                        <AnnouncementSection />
+                                    </View>
+                                </>
+                            )}
                         </View>
                     </ScrollView>
                     {shouldDisplayLHB && <NavigationTabBar selectedTab={NAVIGATION_TABS.HOME} />}
