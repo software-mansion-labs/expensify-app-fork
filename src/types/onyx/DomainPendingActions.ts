@@ -44,11 +44,6 @@ type DomainSecurityGroupPendingActions = {
      * Pending action for the default security group ID
      */
     defaultSecurityGroupID?: OnyxCommon.PendingAction;
-
-    /**
-     * Pending action for the strictly enforce workspace rules setting
-     */
-    enableStrictPolicyRules?: OnyxCommon.PendingAction;
 };
 
 /**

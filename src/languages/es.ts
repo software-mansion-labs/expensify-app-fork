@@ -8905,10 +8905,6 @@ ${amount} para ${merchant} - ${date}`,
             error: {
                 settings: '<rbr>No se pudo guardar este cambio. Inténtalo de nuevo o <concierge-link>contacta con Concierge</concierge-link> para obtener más ayuda.</rbr>',
             },
-            permissions: 'Permisos de grupo',
-            StrictlyEnforceWorkspaceRules: 'Hacer cumplir estrictamente las reglas del espacio de trabajo',
-            StrictlyEnforceWorkspaceRulesDescription: 'Todas las reglas del espacio de trabajo deben cumplirse antes de enviar un informe. No se permiten excepciones manuales.',
-            
         },
     },
     gps: {
