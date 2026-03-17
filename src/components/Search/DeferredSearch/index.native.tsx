@@ -1,5 +1,6 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import SearchRowSkeleton from '@components/Skeletons/SearchRowSkeleton';
+import {isSearchDataLoaded} from '@libs/SearchUIUtils';
 import Search from '..';
 import type {SearchProps} from '..';
 
@@ -8,12 +9,16 @@ import type {SearchProps} from '..';
  * Search is expensive to mount (many hooks, Onyx subscriptions, memos). When key={hash}
  * changes, React remounts it and can show a blank frame. This shows a lightweight
  * skeleton for one frame first so the transition is skeleton -> Search (no blank gap).
+ *
+ * When data is already cached (e.g. returning from submit expense), the skeleton is
+ * skipped entirely so the list paints immediately without a flash.
  */
 function DeferredSearch(props: SearchProps) {
-    const {queryJSON, contentContainerStyle} = props;
+    const {queryJSON, searchResults, contentContainerStyle} = props;
     const queryHash = queryJSON?.hash;
+    const dataAlreadyCached = isSearchDataLoaded(searchResults, queryJSON);
 
-    const [preparedHash, setPreparedHash] = useState<number | undefined>(undefined);
+    const [preparedHash, setPreparedHash] = useState<number | undefined>(() => (dataAlreadyCached ? queryHash : undefined));
 
     useEffect(() => {
         if (queryHash === undefined || preparedHash === queryHash) {
