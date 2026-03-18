@@ -9402,7 +9402,36 @@ function hasReportErrorsOtherThanFailedReceipt(
     transactions: OnyxCollection<Transaction>,
     reportAttributes?: ReportAttributesDerivedValue['reports'],
 ) {
-    const allReportErrors = reportAttributes?.[report?.reportID]?.reportErrors ?? {};
+    if (doesReportHaveViolations) {
+        return true;
+    }
+
+    const allReportErrors = reportAttributes?.[report?.reportID]?.reportErrors;
+    if (allReportErrors) {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        if (Object.values(allReportErrors).some((error) => error?.[0] !== translateLocal('iou.error.genericSmartscanFailureMessage'))) {
+            return true;
+        }
+    }
+
+    let hasTransactionViolations = false;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const _ in transactionViolations) {
+        hasTransactionViolations = true;
+        break;
+    }
+
+    let hasTransactions = false;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const _ in transactions) {
+        hasTransactions = true;
+        break;
+    }
+
+    if (!hasTransactionViolations && !hasTransactions) {
+        return false;
+    }
+
     const transactionReportActions = getAllReportActions(report.reportID);
     const oneTransactionThreadReportID = getOneTransactionThreadReportID(report, chatReport, transactionReportActions, undefined);
     let doesTransactionThreadReportHasViolations = false;
@@ -9410,13 +9439,7 @@ function hasReportErrorsOtherThanFailedReceipt(
         const transactionReport = getReport(oneTransactionThreadReportID, allReports);
         doesTransactionThreadReportHasViolations = !!transactionReport && !!getViolatingReportIDForRBRInLHN(transactionReport, transactionViolations);
     }
-    return (
-        doesTransactionThreadReportHasViolations ||
-        doesReportHaveViolations ||
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        Object.values(allReportErrors).some((error) => error?.[0] !== translateLocal('iou.error.genericSmartscanFailureMessage')) ||
-        !!getReceiptUploadErrorReason(report, chatReport, transactionReportActions, transactions)
-    );
+    return doesTransactionThreadReportHasViolations || !!getReceiptUploadErrorReason(report, chatReport, transactionReportActions, transactions);
 }
 
 type ShouldReportBeInOptionListParams = {
