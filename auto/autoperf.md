@@ -209,4 +209,5 @@ d4e5f6g	utils	0.0	0.0	crash	typed array for report IDs (OOM in test)
 
 ```
 8e65655	utils	190.6	31.0	keep	baseline
+caee33d	utils	173.5	31.0	keep	early return in hasReportErrorsOtherThanFailedReceipt when no txns/violations
 ```

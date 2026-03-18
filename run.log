@@ -1,0 +1,112 @@
+=== Autoperf: track=utils ===
+
+=== TypeCheck (tsgo) ===
+
+> new.expensify@9.3.40-0 typecheck-tsgo
+> tsgo --project tsconfig.tsgo.json
+
+TypeCheck passed.
+
+=== Reassure Performance Benchmark ===
+Test pattern: /OptionsListUtils\.perf-test|/ReportUtils\.perf-test|/PolicyUtils\.perf-test|/SidebarUtils\.perf-test
+
+
+❇️  Running performance tests:
+ - Baseline: autoperf/utils-2026-03-18 (caee33d0a7cf131455647ad0af59da9f83fa30e2) - 2026-03-18 16:39:45Z
+
+watchman warning:  Recrawled this watch 1 time, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/yehor/Desktop/expensify-app-fork' ; watchman watch-project '/Users/yehor/Desktop/expensify-app-fork'`
+
+babel.config.js
+  - api.version: 7.28.3
+  - api.env: test
+  - process.env.NODE_ENV: test
+  - process.env.BABEL_ENV: undefined
+  - running in:  babel-jest
+PASS tests/perf-test/ReportUtils.perf-test.ts (23.211 s)
+PASS tests/perf-test/OptionsListUtils.perf-test.ts (7.105 s)
+PASS tests/perf-test/PolicyUtils.perf-test.ts (6.942 s)
+PASS tests/perf-test/SidebarUtils.perf-test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       31 passed, 31 total
+Snapshots:   0 total
+Time:        42.309 s, estimated 149 s
+Ran all test suites matching /\/OptionsListUtils\.perf-test|\/ReportUtils\.perf-test|\/PolicyUtils\.perf-test|\/SidebarUtils\.perf-test/i.
+
+✅  Written Baseline performance measurements to .reassure/baseline.perf
+🔗 /Users/yehor/Desktop/expensify-app-fork/.reassure/baseline.perf
+
+Hint: You can now run 'reassure' to measure & compare performance against modified code.
+
+
+=== Metrics ===
+METRIC ReportUtils__ReportUtils__findLastAccessedReport_on_2k_reports_and_policies_duration_ms=0.2
+METRIC ReportUtils__ReportUtils__findLastAccessedReport_on_2k_reports_and_policies_count=1.0
+METRIC ReportUtils__ReportUtils__canDeleteReportAction_on_1k_reports_and_policies_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__canDeleteReportAction_on_1k_reports_and_policies_count=1.0
+METRIC ReportUtils__ReportUtils__getReportRecipientAccountID_on_1k_participants_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__getReportRecipientAccountID_on_1k_participants_count=1.0
+METRIC ReportUtils__ReportUtils__getIconsForParticipants_on_1k_participants_duration_ms=0.1
+METRIC ReportUtils__ReportUtils__getIconsForParticipants_on_1k_participants_count=1.0
+METRIC ReportUtils__ReportUtils__getIcons_on_1k_participants_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__getIcons_on_1k_participants_count=1.0
+METRIC ReportUtils__ReportUtils__getDisplayNamesWithTooltips_1k_participants_duration_ms=0.8
+METRIC ReportUtils__ReportUtils__getDisplayNamesWithTooltips_1k_participants_count=1.0
+METRIC ReportUtils__ReportUtils__getReportPreviewMessage_on_1k_policies_duration_ms=0.1
+METRIC ReportUtils__ReportUtils__getReportPreviewMessage_on_1k_policies_count=1.0
+METRIC ReportUtils__ReportUtils__getReportName_on_1k_participants_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__getReportName_on_1k_participants_count=1.0
+METRIC ReportUtils__ReportUtils__canShowReportRecipientLocalTime_on_1k_participants_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__canShowReportRecipientLocalTime_on_1k_participants_count=1.0
+METRIC ReportUtils__ReportUtils__shouldReportBeInOptionList_on_1k_participant_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__shouldReportBeInOptionList_on_1k_participant_count=1.0
+METRIC ReportUtils__ReportUtils__getWorkspaceIcon_on_1k_policies_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__getWorkspaceIcon_on_1k_policies_count=1.0
+METRIC ReportUtils__ReportUtils__getMoneyRequestOptions_on_1k_participants_duration_ms=0.1
+METRIC ReportUtils__ReportUtils__getMoneyRequestOptions_on_1k_participants_count=1.0
+METRIC ReportUtils__ReportUtils__getWorkspaceChat_on_1k_policies_duration_ms=0.1
+METRIC ReportUtils__ReportUtils__getWorkspaceChat_on_1k_policies_count=1.0
+METRIC ReportUtils__ReportUtils__getTransactionDetails_on_1k_reports_duration_ms=0.1
+METRIC ReportUtils__ReportUtils__getTransactionDetails_on_1k_reports_count=1.0
+METRIC ReportUtils__ReportUtils__pushTransactionViolationsOnyxData_on_1k_reports_with_random_expenses_on_each_report_duration_ms=18.0
+METRIC ReportUtils__ReportUtils__pushTransactionViolationsOnyxData_on_1k_reports_with_random_expenses_on_each_report_count=1.0
+METRIC ReportUtils__ReportUtils__getIOUReportActionDisplayMessage_on_1k_policies_duration_ms=0.0
+METRIC ReportUtils__ReportUtils__getIOUReportActionDisplayMessage_on_1k_policies_count=1.0
+METRIC OptionsListUtils__OptionsListUtils__getSearchOptions_duration_ms=5.0
+METRIC OptionsListUtils__OptionsListUtils__getSearchOptions_count=1.0
+METRIC OptionsListUtils__OptionsListUtils__getFilteredOptions_with_search_value_duration_ms=1.9
+METRIC OptionsListUtils__OptionsListUtils__getFilteredOptions_with_search_value_count=1.0
+METRIC OptionsListUtils__OptionsListUtils__getFilteredOptions_with_empty_search_value_duration_ms=0.3
+METRIC OptionsListUtils__OptionsListUtils__getFilteredOptions_with_empty_search_value_count=1.0
+METRIC OptionsListUtils__OptionsListUtils__getShareDestinationOptions_duration_ms=4.9
+METRIC OptionsListUtils__OptionsListUtils__getShareDestinationOptions_count=1.0
+METRIC OptionsListUtils__OptionsListUtils__getMemberInviteOptions_duration_ms=4.9
+METRIC OptionsListUtils__OptionsListUtils__getMemberInviteOptions_count=1.0
+METRIC OptionsListUtils__OptionsListUtils__worst_case_scenario_with_a_search_term_that_matches_a_subset_of_selectedOptions,_filteredRecentReports,_and_filteredPersonalDetails_duration_ms=12.2
+METRIC OptionsListUtils__OptionsListUtils__worst_case_scenario_with_a_search_term_that_matches_a_subset_of_selectedOptions,_filteredRecentReports,_and_filteredPersonalDetails_count=1.0
+METRIC OptionsListUtils__OptionsListUtils__empty_search_term_with_selected_options_and_mocked_personal_details_duration_ms=1.4
+METRIC OptionsListUtils__OptionsListUtils__empty_search_term_with_selected_options_and_mocked_personal_details_count=1.0
+METRIC PolicyUtils_getMemberAccountIDsForWorkspace_500_policy_members_with_personal_details_duration_ms=0.0
+METRIC PolicyUtils_getMemberAccountIDsForWorkspace_500_policy_members_with_personal_details_count=1.0
+METRIC PolicyUtils_getMemberAccountIDsForWorkspace_500_policy_members_with_errors_and_personal_details_duration_ms=0.0
+METRIC PolicyUtils_getMemberAccountIDsForWorkspace_500_policy_members_with_errors_and_personal_details_count=1.0
+METRIC PolicyUtils_getSubmitToAccountID_submit_and_close_policy_duration_ms=0.0
+METRIC PolicyUtils_getSubmitToAccountID_submit_and_close_policy_count=1.0
+METRIC PolicyUtils_getSubmitToAccountID_not_a_submit_and_close_policy_policy_has_category_approval_rules,_but_all_transactions_have_no_category_duration_ms=1.4
+METRIC PolicyUtils_getSubmitToAccountID_not_a_submit_and_close_policy_policy_has_category_approval_rules,_but_all_transactions_have_no_category_count=1.0
+METRIC PolicyUtils_getSubmitToAccountID_not_a_submit_and_close_policy_all_transactions_have_category,_but_no_category_approval_rules_duration_ms=0.0
+METRIC PolicyUtils_getSubmitToAccountID_not_a_submit_and_close_policy_all_transactions_have_category,_but_no_category_approval_rules_count=1.0
+METRIC SidebarUtils__SidebarUtils__getOptionData_duration_ms=0.1
+METRIC SidebarUtils__SidebarUtils__getOptionData_count=1.0
+METRIC SidebarUtils__SidebarUtils__getReportsToDisplayInLHN_on_15k_reports_for_default_priorityMode_duration_ms=70.6
+METRIC SidebarUtils__SidebarUtils__getReportsToDisplayInLHN_on_15k_reports_for_default_priorityMode_count=1.0
+METRIC SidebarUtils__SidebarUtils__getReportsToDisplayInLHN_on_15k_reports_for_GSD_priorityMode_duration_ms=51.3
+METRIC SidebarUtils__SidebarUtils__getReportsToDisplayInLHN_on_15k_reports_for_GSD_priorityMode_count=1.0
+
+METRIC total_duration_ms=173.5
+METRIC total_count=31.0
+METRIC num_tests=31
