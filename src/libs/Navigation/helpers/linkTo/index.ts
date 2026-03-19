@@ -3,6 +3,7 @@ import type {NavigationContainerRef, NavigationState, PartialState} from '@react
 import {findFocusedRoute, StackActions} from '@react-navigation/native';
 import {getMatchingFullScreenRoute, isFullScreenName} from '@libs/Navigation/helpers/getAdaptedStateFromPath';
 import getStateFromPath from '@libs/Navigation/helpers/getStateFromPath';
+import {isSplitNavigatorName} from '@libs/Navigation/helpers/isNavigatorName';
 import normalizePath from '@libs/Navigation/helpers/normalizePath';
 import {linkingConfig} from '@libs/Navigation/linkingConfig';
 import type {PlatformStackNavigationState} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -14,7 +15,7 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import type {Route} from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import getMinimalAction from './getMinimalAction';
-import type {LinkToOptions} from './types';
+import type {ActionPayloadParams, LinkToOptions} from './types';
 
 const defaultLinkToOptions: LinkToOptions = {
     forceReplace: false,
@@ -170,6 +171,27 @@ export default function linkTo(navigation: NavigationContainerRef<RootNavigatorP
     ) {
         // We want to PUSH by default to add entries to the browser history.
         action.type = CONST.NAVIGATION.ACTION_TYPE.PUSH;
+    }
+
+    // When something other than ROOT_TAB_NAVIGATOR is on top of the stack and we're navigating
+    // to a destination inside ROOT_TAB_NAVIGATOR, target the specific split navigator directly.
+    // This avoids duplicating the persistent ROOT_TAB_NAVIGATOR in the stack,
+    // which corrupts the persistent instance's state and breaks back navigation.
+    const currentTopRoute = currentState.routes[currentState.index];
+    const typedPayload = (action as {payload: {name?: string; params?: ActionPayloadParams}}).payload;
+    if (currentTopRoute?.name !== NAVIGATORS.ROOT_TAB_NAVIGATOR && typedPayload.name === NAVIGATORS.ROOT_TAB_NAVIGATOR && typeof typedPayload.params?.screen === 'string') {
+        const innerScreen = typedPayload.params.screen;
+        if (isSplitNavigatorName(innerScreen) || innerScreen === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR) {
+            typedPayload.name = innerScreen;
+            typedPayload.params = typedPayload.params.params as ActionPayloadParams | undefined;
+            // If the current top is the same navigator, NAVIGATE updates it in-place.
+            // Otherwise PUSH adds a new instance above (e.g., workspace above RHP).
+            if (currentTopRoute?.name === innerScreen) {
+                (action as {type: string}).type = CONST.NAVIGATION.ACTION_TYPE.NAVIGATE;
+            } else {
+                (action as {type: string}).type = CONST.NAVIGATION.ACTION_TYPE.PUSH;
+            }
+        }
     }
 
     // If we deep link to a RHP page, we want to make sure we have the correct full screen route under the overlay.

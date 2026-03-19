@@ -66,6 +66,10 @@ const loadSubmitExpensePage = () => require<ReactComponentModule>('../../../page
 const loadWorkspaceJoinUser = () => require<ReactComponentModule>('@pages/workspace/WorkspaceJoinUserPage').default;
 
 const loadDomainSplitNavigator = () => require<ReactComponentModule>('./Navigators/DomainSplitNavigator').default;
+const loadWorkspaceSplitNavigator = () => require<ReactComponentModule>('./Navigators/WorkspaceSplitNavigator').default;
+const loadReportsSplitNavigator = () => require<ReactComponentModule>('./Navigators/ReportsSplitNavigator').default;
+const loadSettingsSplitNavigator = () => require<ReactComponentModule>('./Navigators/SettingsSplitNavigator').default;
+const loadSearchFullscreenNavigator = () => require<ReactComponentModule>('./Navigators/SearchFullscreenNavigator').default;
 
 const RootStack = createRootStackNavigator<AuthScreensParamList>();
 
@@ -192,6 +196,26 @@ function AuthScreens() {
                             name={NAVIGATORS.DOMAIN_SPLIT_NAVIGATOR}
                             options={getWorkspaceOrDomainSplitNavigatorOptions}
                             getComponent={loadDomainSplitNavigator}
+                        />
+                        <RootStack.Screen
+                            name={NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR}
+                            options={getWorkspaceOrDomainSplitNavigatorOptions}
+                            getComponent={loadWorkspaceSplitNavigator}
+                        />
+                        <RootStack.Screen
+                            name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
+                            options={getFullscreenNavigatorOptions}
+                            getComponent={loadReportsSplitNavigator}
+                        />
+                        <RootStack.Screen
+                            name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
+                            options={getFullscreenNavigatorOptions}
+                            getComponent={loadSettingsSplitNavigator}
+                        />
+                        <RootStack.Screen
+                            name={NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR}
+                            options={getFullscreenNavigatorOptions}
+                            getComponent={loadSearchFullscreenNavigator}
                         />
                         <RootStack.Screen
                             name={SCREENS.VALIDATE_LOGIN}
