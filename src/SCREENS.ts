@@ -309,6 +309,7 @@ const SCREENS = {
         DEBUG: 'Debug',
         ADD_UNREPORTED_EXPENSE: 'AddUnreportedExpense',
         SCHEDULE_CALL: 'ScheduleCall',
+        EXPERTISE_NAV: 'ExpertiseNav',
         REPORT_CHANGE_APPROVER: 'Report_Change_Approver',
         REPORT_VERIFY_ACCOUNT: 'Report_Verify_Account',
         MERGE_TRANSACTION: 'MergeTransaction',
@@ -929,6 +930,11 @@ const SCREENS = {
     SCHEDULE_CALL: {
         BOOK: 'ScheduleCall_Book',
         CONFIRMATION: 'ScheduleCall_Confirmation',
+    },
+    EXPERTISE_NAV: {
+        FIRST: 'ExpertiseNav_First',
+        SECOND: 'ExpertiseNav_Second',
+        THIRD: 'ExpertiseNav_Third',
     },
     REPORT_CHANGE_APPROVER: {
         ROOT: 'Report_Change_Approver_Root',

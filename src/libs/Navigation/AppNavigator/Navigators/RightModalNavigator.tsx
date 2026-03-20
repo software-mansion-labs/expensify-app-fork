@@ -389,6 +389,10 @@ function RightModalNavigator({navigation, route}: RightModalNavigatorProps) {
                                 component={ModalStackNavigators.ScheduleCallModalStackNavigator}
                             />
                             <Stack.Screen
+                                name={SCREENS.RIGHT_MODAL.EXPERTISE_NAV}
+                                component={ModalStackNavigators.ExpertiseNavModalStackNavigator}
+                            />
+                            <Stack.Screen
                                 name={SCREENS.RIGHT_MODAL.SEARCH_REPORT}
                                 getComponent={loadRHPReportScreen}
                                 options={(props) => {

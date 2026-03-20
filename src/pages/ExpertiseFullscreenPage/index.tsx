@@ -8,6 +8,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import AddNewScreenSection from './components/AddNewScreenSection';
 import DebuggingNavigationSection from './components/DebuggingNavigationSection';
+import NavigationFunctionsSection from './components/NavigationFunctionsSection';
 import NavigationLibrariesSection from './components/NavigationLibrariesSection';
 import PageRefreshSection from './components/PageRefreshSection';
 import RootStateSection from './components/RootStateSection';
@@ -42,6 +43,7 @@ function ExpertiseFullscreenPage() {
                 <AddNewScreenSection />
                 <PageRefreshSection />
                 <DebuggingNavigationSection />
+                <NavigationFunctionsSection />
                 <RouteMapSection />
             </ScrollView>
             {!shouldUseNarrowLayout && <NavigationTabBar selectedTab={NAVIGATION_TABS.HOME} />}

@@ -12,6 +12,7 @@ import type {
     DebugParamList,
     EditRequestNavigatorParamList,
     EnablePaymentsNavigatorParamList,
+    ExpertiseNavParamList,
     FlagCommentNavigatorParamList,
     MergeTransactionNavigatorParamList,
     MissingPersonalDetailsParamList,
@@ -1083,6 +1084,12 @@ const DebugModalStackNavigator = createModalStackNavigator<DebugParamList>({
     [SCREENS.DEBUG.TRANSACTION_VIOLATION]: () => require<ReactComponentModule>('../../../../pages/Debug/TransactionViolation/DebugTransactionViolationPage').default,
 });
 
+const ExpertiseNavModalStackNavigator = createModalStackNavigator<ExpertiseNavParamList>({
+    [SCREENS.EXPERTISE_NAV.FIRST]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseNavFirstPage').default,
+    [SCREENS.EXPERTISE_NAV.SECOND]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseNavSecondPage').default,
+    [SCREENS.EXPERTISE_NAV.THIRD]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseNavThirdPage').default,
+});
+
 const ScheduleCallModalStackNavigator = createModalStackNavigator<ScheduleCallParamList>({
     [SCREENS.SCHEDULE_CALL.BOOK]: () => require<ReactComponentModule>('../../../../pages/ScheduleCall/ScheduleCallPage').default,
     [SCREENS.SCHEDULE_CALL.CONFIRMATION]: () => require<ReactComponentModule>('../../../../pages/ScheduleCall/ScheduleCallConfirmationPage').default,
@@ -1138,6 +1145,7 @@ export {
     ReportVerifyAccountModalStackNavigator,
     RestrictedActionModalStackNavigator,
     RoomMembersModalStackNavigator,
+    ExpertiseNavModalStackNavigator,
     ScheduleCallModalStackNavigator,
     SearchAdvancedFiltersModalStackNavigator,
     SearchColumnsModalStackNavigator,

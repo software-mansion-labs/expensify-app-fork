@@ -122,6 +122,10 @@ const ROUTES = {
 
     EXPERTISE_FULLSCREEN: 'expertise-fullscreen',
 
+    EXPERTISE_NAV_FIRST: 'expertise-first-page',
+    EXPERTISE_NAV_SECOND: 'expertise-second-page',
+    EXPERTISE_NAV_THIRD: 'expertise-third-page',
+
     // eslint-disable-next-line no-restricted-syntax -- Legacy route generation
     WORKSPACES_LIST: {route: 'workspaces', getRoute: (backTo?: string) => getUrlWithBackToParam('workspaces', backTo)},
     SEARCH_ROUTER: 'search-router',
