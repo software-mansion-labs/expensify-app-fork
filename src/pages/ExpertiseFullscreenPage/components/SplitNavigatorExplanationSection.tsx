@@ -45,6 +45,13 @@ function SplitNavigatorExplanationSection() {
                     {...point}
                 />
             ))}
+            <Text style={[styles.mt4, styles.textSupporting, {fontSize: 16}]}>
+                {'Kluczową częścią SplitRoutera jest funkcja '}
+                <Text style={[styles.textSupporting, {fontSize: 16, fontWeight: 'bold'}]}>adaptStateIfNecessary</Text>
+                {
+                    ' (src/libs/Navigation/AppNavigator/createSplitNavigator/SplitRouter.ts), która upewnia się, że stan nawigatora zawsze zawiera odpowiednie ekrany dla aktualnego układu — np. dodaje sidebar przy otwarciu przez deep link lub uzupełnia ekran centralny na szerokim ekranie.'
+                }
+            </Text>
         </AnimatedSection>
     );
 }

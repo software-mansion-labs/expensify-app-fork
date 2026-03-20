@@ -126,6 +126,12 @@ const ROUTES = {
     EXPERTISE_NAV_SECOND: 'expertise-second-page',
     EXPERTISE_NAV_THIRD: 'expertise-third-page',
 
+    EXPERTISE_PARAM_PAGE: {
+        route: 'expertise-param-page/:numberParam',
+        getRoute: (numberParam: number) => `expertise-param-page/${numberParam}` as const,
+    },
+    EXPERTISE_PARAM_LAST_PAGE: 'expertise-param-last-page',
+
     // eslint-disable-next-line no-restricted-syntax -- Legacy route generation
     WORKSPACES_LIST: {route: 'workspaces', getRoute: (backTo?: string) => getUrlWithBackToParam('workspaces', backTo)},
     SEARCH_ROUTER: 'search-router',

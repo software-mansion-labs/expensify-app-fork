@@ -14,7 +14,6 @@ import PageRefreshSection from './components/PageRefreshSection';
 import RootStateSection from './components/RootStateSection';
 import RouteMapSection from './components/RouteMapSection';
 import SplitNavigatorExplanationSection from './components/SplitNavigatorExplanationSection';
-import StateAdaptationExplanationSection from './components/StateAdaptationExplanationSection';
 
 function ExpertiseFullscreenPage() {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -37,14 +36,13 @@ function ExpertiseFullscreenPage() {
             <TopBar breadcrumbLabel="Centrum ekspertyzy" />
             <ScrollView contentContainerStyle={styles.p5}>
                 <NavigationLibrariesSection />
-                <SplitNavigatorExplanationSection />
-                <StateAdaptationExplanationSection />
                 <RootStateSection />
+                <SplitNavigatorExplanationSection />
+                <RouteMapSection />
+                <DebuggingNavigationSection />
                 <AddNewScreenSection />
                 <PageRefreshSection />
-                <DebuggingNavigationSection />
                 <NavigationFunctionsSection />
-                <RouteMapSection />
             </ScrollView>
             {!shouldUseNarrowLayout && <NavigationTabBar selectedTab={NAVIGATION_TABS.HOME} />}
         </ScreenWrapper>

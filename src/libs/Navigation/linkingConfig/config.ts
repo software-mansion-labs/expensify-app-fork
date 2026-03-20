@@ -2074,6 +2074,12 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         [SCREENS.EXPERTISE_NAV.THIRD]: ROUTES.EXPERTISE_NAV_THIRD,
                     },
                 },
+                [SCREENS.RIGHT_MODAL.EXPERTISE_PARAM_NAV]: {
+                    screens: {
+                        [SCREENS.EXPERTISE_PARAM_NAV.PARAM]: ROUTES.EXPERTISE_PARAM_PAGE.route,
+                        [SCREENS.EXPERTISE_PARAM_NAV.LAST]: ROUTES.EXPERTISE_PARAM_LAST_PAGE,
+                    },
+                },
                 [SCREENS.RIGHT_MODAL.REPORT_CHANGE_APPROVER]: {
                     screens: {
                         [SCREENS.REPORT_CHANGE_APPROVER.ROOT]: ROUTES.REPORT_CHANGE_APPROVER.route,

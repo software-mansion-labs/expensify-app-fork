@@ -2457,6 +2457,7 @@ type RightModalNavigatorParamList = {
     [SCREENS.RIGHT_MODAL.ADD_UNREPORTED_EXPENSE]: NavigatorScreenParams<{reportId: string | undefined}>;
     [SCREENS.RIGHT_MODAL.SCHEDULE_CALL]: NavigatorScreenParams<ScheduleCallParamList>;
     [SCREENS.RIGHT_MODAL.EXPERTISE_NAV]: NavigatorScreenParams<ExpertiseNavParamList>;
+    [SCREENS.RIGHT_MODAL.EXPERTISE_PARAM_NAV]: NavigatorScreenParams<ExpertiseParamNavParamList>;
     [SCREENS.RIGHT_MODAL.REPORT_CHANGE_APPROVER]: NavigatorScreenParams<ReportChangeApproverParamList>;
     [SCREENS.RIGHT_MODAL.MERGE_TRANSACTION]: NavigatorScreenParams<MergeTransactionNavigatorParamList>;
     [SCREENS.RIGHT_MODAL.EXPENSE_REPORT]: {
@@ -3133,6 +3134,13 @@ type ExpertiseNavParamList = {
     [SCREENS.EXPERTISE_NAV.THIRD]: undefined;
 };
 
+type ExpertiseParamNavParamList = {
+    [SCREENS.EXPERTISE_PARAM_NAV.PARAM]: {
+        numberParam: string;
+    };
+    [SCREENS.EXPERTISE_PARAM_NAV.LAST]: undefined;
+};
+
 type ScheduleCallParamList = {
     [SCREENS.SCHEDULE_CALL.BOOK]: {
         reportID: string;
@@ -3277,6 +3285,7 @@ export type {
     TwoFactorAuthNavigatorParamList,
     ScheduleCallParamList,
     ExpertiseNavParamList,
+    ExpertiseParamNavParamList,
     TestDriveModalNavigatorParamList,
     WorkspaceScreenName,
     TestDriveDemoNavigatorParamList,

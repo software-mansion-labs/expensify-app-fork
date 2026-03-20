@@ -13,6 +13,7 @@ import type {
     EditRequestNavigatorParamList,
     EnablePaymentsNavigatorParamList,
     ExpertiseNavParamList,
+    ExpertiseParamNavParamList,
     FlagCommentNavigatorParamList,
     MergeTransactionNavigatorParamList,
     MissingPersonalDetailsParamList,
@@ -1090,6 +1091,11 @@ const ExpertiseNavModalStackNavigator = createModalStackNavigator<ExpertiseNavPa
     [SCREENS.EXPERTISE_NAV.THIRD]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseNavThirdPage').default,
 });
 
+const ExpertiseParamNavModalStackNavigator = createModalStackNavigator<ExpertiseParamNavParamList>({
+    [SCREENS.EXPERTISE_PARAM_NAV.PARAM]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseParamPage').default,
+    [SCREENS.EXPERTISE_PARAM_NAV.LAST]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseParamLastPage').default,
+});
+
 const ScheduleCallModalStackNavigator = createModalStackNavigator<ScheduleCallParamList>({
     [SCREENS.SCHEDULE_CALL.BOOK]: () => require<ReactComponentModule>('../../../../pages/ScheduleCall/ScheduleCallPage').default,
     [SCREENS.SCHEDULE_CALL.CONFIRMATION]: () => require<ReactComponentModule>('../../../../pages/ScheduleCall/ScheduleCallConfirmationPage').default,
@@ -1146,6 +1152,7 @@ export {
     RestrictedActionModalStackNavigator,
     RoomMembersModalStackNavigator,
     ExpertiseNavModalStackNavigator,
+    ExpertiseParamNavModalStackNavigator,
     ScheduleCallModalStackNavigator,
     SearchAdvancedFiltersModalStackNavigator,
     SearchColumnsModalStackNavigator,

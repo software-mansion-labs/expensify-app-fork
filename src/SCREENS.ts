@@ -310,6 +310,7 @@ const SCREENS = {
         ADD_UNREPORTED_EXPENSE: 'AddUnreportedExpense',
         SCHEDULE_CALL: 'ScheduleCall',
         EXPERTISE_NAV: 'ExpertiseNav',
+        EXPERTISE_PARAM_NAV: 'ExpertiseParamNav',
         REPORT_CHANGE_APPROVER: 'Report_Change_Approver',
         REPORT_VERIFY_ACCOUNT: 'Report_Verify_Account',
         MERGE_TRANSACTION: 'MergeTransaction',
@@ -935,6 +936,10 @@ const SCREENS = {
         FIRST: 'ExpertiseNav_First',
         SECOND: 'ExpertiseNav_Second',
         THIRD: 'ExpertiseNav_Third',
+    },
+    EXPERTISE_PARAM_NAV: {
+        PARAM: 'ExpertiseParamNav_Param',
+        LAST: 'ExpertiseParamNav_Last',
     },
     REPORT_CHANGE_APPROVER: {
         ROOT: 'Report_Change_Approver_Root',

@@ -23,6 +23,17 @@ function NavigationFunctionsSection() {
                     onPress={() => Navigation.navigate(ROUTES.EXPERTISE_NAV_FIRST)}
                 />
             </View>
+            <Text style={[styles.mt2, styles.mb2, styles.textSupporting, {fontSize: 18}]}>
+                Demo 2: param-page/1 → param-page/2 → param-page/3 → ostatnia strona. Na ostatniej stronie sprawdź różnicę między goBack z compareParams i bez.
+            </Text>
+            <View style={styles.mb3}>
+                <Button
+                    success
+                    large
+                    text="Otwórz demo parametrów →"
+                    onPress={() => Navigation.navigate(ROUTES.EXPERTISE_PARAM_PAGE.getRoute(1))}
+                />
+            </View>
         </AnimatedSection>
     );
 }
