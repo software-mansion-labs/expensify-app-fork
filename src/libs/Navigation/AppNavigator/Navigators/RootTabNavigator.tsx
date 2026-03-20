@@ -156,15 +156,15 @@ function RootTabNavigator() {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const navigation = useNavigation();
     const parentNavigation = navigation.getParent();
-    const focusedRoute = useNavigationState(findFocusedRoute);
+    const focusedRouteName = useNavigationState((state) => findFocusedRoute(state)?.name);
 
     useEffect(() => {
         if (!shouldUseNarrowLayout || !parentNavigation) {
             return;
         }
-        const isRootScreen = TAB_ROOT_SCREENS_WITHOUT_GESTURE.has(focusedRoute?.name ?? '');
+        const isRootScreen = TAB_ROOT_SCREENS_WITHOUT_GESTURE.has(focusedRouteName ?? '');
         parentNavigation.setOptions({gestureEnabled: !isRootScreen});
-    }, [focusedRoute?.name, shouldUseNarrowLayout, parentNavigation]);
+    }, [focusedRouteName, shouldUseNarrowLayout, parentNavigation]);
 
     return (
         <Tab.Navigator

@@ -10,7 +10,7 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
 import type {OpenDomainSplitActionType, OpenWorkspaceSplitActionType, PushActionType, ReplaceActionType, ToggleSidePanelWithHistoryActionType} from './types';
 
-const SCREENS_WITH_NAVIGATION_TAB_BAR = new Set([...Object.keys(SIDEBAR_TO_SPLIT), NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR, SCREENS.SEARCH.ROOT]);
+const SCREENS_WITH_NAVIGATION_TAB_BAR = new Set([...Object.keys(SIDEBAR_TO_SPLIT), NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR, SCREENS.SEARCH.ROOT, SCREENS.HOME]);
 
 const MODAL_ROUTES_TO_DISMISS = new Set<string>([
     NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR,

@@ -76,29 +76,38 @@ function isSwitchingTabsWithinRootTabNavigator(currentState: NavigationState<Roo
 }
 
 function isRoutePreloaded(currentState: PlatformStackNavigationState<RootNavigatorParamList>, matchingFullScreenRoute: NavigationPartialRoute) {
-    const lastRouteInMatchingFullScreen = matchingFullScreenRoute.state?.routes?.at(-1);
+    const activeScreenInMatching = getActiveScreenInRoute(matchingFullScreenRoute);
 
     const preloadedRoutes = currentState.preloadedRoutes;
 
     return preloadedRoutes.some((preloadedRoute) => {
         const isMatchingFullScreenRoute = preloadedRoute.name === matchingFullScreenRoute.name;
 
-        // If the matching fullscreen route does not have a last route, then we only need to compare the fullscreen route name
-        if (!lastRouteInMatchingFullScreen?.name) {
+        // If the matching fullscreen route does not have an active screen, then we only need to compare the fullscreen route name
+        if (!activeScreenInMatching) {
             return isMatchingFullScreenRoute;
         }
 
-        // Compare the last route of the preloadedRoute and the last route of the matchingFullScreenRoute to ensure the preloaded route is accepted when matching subroutes as well
-        const isMatchingLastRoute = preloadedRoute.params && 'screen' in preloadedRoute.params && preloadedRoute.params.screen === lastRouteInMatchingFullScreen.name;
+        // Compare the active screen of the preloadedRoute and the matchingFullScreenRoute to ensure the preloaded route is accepted when matching subroutes as well
+        const isMatchingLastRoute = preloadedRoute.params && 'screen' in preloadedRoute.params && preloadedRoute.params.screen === activeScreenInMatching;
 
         return isMatchingFullScreenRoute && isMatchingLastRoute;
     });
 }
 
 /**
- * We will check whether we need to navigate with the target route along with the changes of the fullscreen route.
- * When the fullscreen route needs to change, the background of the route will change according to the matchingFullScreenRoute.
+ * For ROOT_TAB_NAVIGATOR routes, returns the focused (active) tab screen name.
+ * For other routes, returns the last nested route name (original behavior).
  */
+function getActiveScreenInRoute(route: NavigationPartialRoute): string | undefined {
+    if (route.name === NAVIGATORS.ROOT_TAB_NAVIGATOR && route.state) {
+        const tabState = route.state as {routes: Array<{name: string}>; index?: number};
+        const index = tabState.index ?? 0;
+        return tabState.routes?.at(index)?.name;
+    }
+    return route.state?.routes?.at(-1)?.name;
+}
+
 function shouldChangeToMatchingFullScreen(
     newFocusedRoute: ReturnType<typeof findFocusedRoute>,
     matchingFullScreenRoute: NavigationPartialRoute,
@@ -108,12 +117,17 @@ function shouldChangeToMatchingFullScreen(
         return true;
     }
 
-    const lastRouteInLastFullScreenRoute = lastFullScreenRoute?.state?.routes.at(-1);
+    // When both are ROOT_TAB_NAVIGATOR, compare the active tab inside rather than the last declared route.
+    const lastActiveScreen = getActiveScreenInRoute(lastFullScreenRoute);
+    const matchingActiveScreen = getActiveScreenInRoute(matchingFullScreenRoute);
+    if (matchingFullScreenRoute.name === NAVIGATORS.ROOT_TAB_NAVIGATOR && lastActiveScreen !== matchingActiveScreen) {
+        return true;
+    }
 
     // We always want the fullscreen route of SCREENS.SETTINGS.SUBSCRIPTION.ADD_PAYMENT_CARD to be the SUBSCRIPTION tab of SCREENS.SETTINGS.
     // The add payment card page can be opened via the Global create button from the create expense flow, so even when we are already on SCREENS.SETTINGS, with any tab currently open,
     // the add payment card page can still be opened. Therefore, checking only the fullscreen name above is not sufficient, and the check below using the last route name is necessary.
-    return newFocusedRoute?.name === SCREENS.SETTINGS.SUBSCRIPTION.ADD_PAYMENT_CARD && lastRouteInLastFullScreenRoute?.name !== SCREENS.SETTINGS.SUBSCRIPTION.ROOT;
+    return newFocusedRoute?.name === SCREENS.SETTINGS.SUBSCRIPTION.ADD_PAYMENT_CARD && lastActiveScreen !== SCREENS.SETTINGS.SUBSCRIPTION.ROOT;
 }
 
 export default function linkTo(navigation: NavigationContainerRef<RootNavigatorParamList> | null, path: Route, options?: LinkToOptions) {

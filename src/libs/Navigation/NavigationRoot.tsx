@@ -47,6 +47,18 @@ type NavigationRootProps = {
 };
 
 /**
+ * If the given route is a ROOT_TAB_NAVIGATOR, returns the name of its currently active tab screen.
+ * Otherwise returns undefined.
+ */
+function getActiveTabName(route: NavigationState['routes'][number] | undefined): string | undefined {
+    if (route?.name !== NAVIGATORS.ROOT_TAB_NAVIGATOR) {
+        return undefined;
+    }
+    const tabState = route.state as {routes: Array<{name: string}>; index: number} | undefined;
+    return tabState?.routes?.[tabState?.index ?? 0]?.name;
+}
+
+/**
  * Intercept navigation state changes and log it
  */
 function parseAndLogRoute(state: NavigationState) {
@@ -73,19 +85,14 @@ function parseAndLogRoute(state: NavigationState) {
     }
 
     Navigation.setIsNavigationReady();
-    if (isWorkspacesTabScreenName(state.routes.at(-1)?.name)) {
+
+    const lastRoute = state.routes.at(-1);
+    const activeTabName = getActiveTabName(lastRoute);
+
+    if (isWorkspacesTabScreenName(lastRoute?.name) || isWorkspacesTabScreenName(activeTabName)) {
         saveWorkspacesTabPathToSessionStorage(currentPath);
-    } else {
-        const lastRoute = state.routes.at(-1);
-        const isSettingsTab =
-            lastRoute?.name === NAVIGATORS.ROOT_TAB_NAVIGATOR &&
-            (() => {
-                const tabState = lastRoute.state as {routes: {name: string}[]; index: number} | undefined;
-                return tabState?.routes?.[tabState?.index ?? 0]?.name === NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR;
-            })();
-        if (isSettingsTab) {
-            saveSettingsTabPathToSessionStorage(currentPath);
-        }
+    } else if (activeTabName === NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR) {
+        saveSettingsTabPathToSessionStorage(currentPath);
     }
 
     // Fullstory Page navigation tracking
@@ -199,7 +206,9 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady}: N
         const lastRoute = navigationRef?.getRootState()?.routes?.at(-1);
 
         // Sidebar is a separate screen only in SplitNavigators, so shouldPopToSidebar should only be set when the last route is a SplitNavigator.
-        if (!isSplitNavigatorName(lastRoute?.name)) {
+        // When the last route is ROOT_TAB_NAVIGATOR, check the active tab inside it.
+        const effectiveName = lastRoute?.name === NAVIGATORS.ROOT_TAB_NAVIGATOR ? getActiveTabName(lastRoute) : lastRoute?.name;
+        if (!isSplitNavigatorName(effectiveName)) {
             return;
         }
 
@@ -220,10 +229,11 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady}: N
             return;
         }
 
-        // REPORTS_SPLIT_NAVIGATOR will persist after user logout, because it is used both for logged-in and logged-out users
-        // That's why for ReportsSplit we need to explicitly clear params when resetting navigation state,
-        // However in case other routes (related to login/logout) appear in nav state, then we want to preserve params for those
-        const isReportSplitNavigatorMounted = lastRoute.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR;
+        // REPORTS_SPLIT_NAVIGATOR will persist after user logout, because it is used both for logged-in and logged-out users.
+        // That's why we need to explicitly clear params when resetting navigation state.
+        // The reports split can be either at root level or nested inside ROOT_TAB_NAVIGATOR.
+        const isReportSplitNavigatorMounted =
+            lastRoute.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR || (lastRoute.name === NAVIGATORS.ROOT_TAB_NAVIGATOR && getActiveTabName(lastRoute) === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR);
         navigationRef.reset({
             ...rootState,
             index: 0,
