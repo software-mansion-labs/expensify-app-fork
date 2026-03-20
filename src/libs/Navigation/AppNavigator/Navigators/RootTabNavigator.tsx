@@ -3,6 +3,7 @@
  */
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {findFocusedRoute, useNavigation, useNavigationState} from '@react-navigation/native';
 import React, {lazy, Suspense, useEffect, useState} from 'react';
 import {View} from 'react-native';
 import type {ValueOf} from 'type-fest';
@@ -128,6 +129,13 @@ const WorkspaceSplitNavigatorScreen = withSuspense(LazyWorkspaceSplitNavigator);
 
 const Tab = createBottomTabNavigator<RootTabNavigatorParamList>();
 
+/**
+ * Root-level tab screens where the swipe-back gesture should be disabled.
+ * Swiping from these screens would pop the entire ROOT_TAB_NAVIGATOR, which feels wrong.
+ * WORKSPACE.INITIAL is intentionally excluded — swiping back from it returns to the workspace list.
+ */
+const TAB_ROOT_SCREENS_WITHOUT_GESTURE = new Set<string>([SCREENS.HOME, SCREENS.INBOX, SCREENS.SEARCH.ROOT, SCREENS.SETTINGS.ROOT, SCREENS.WORKSPACES_LIST]);
+
 const SCENE_STYLE = {flex: 1} as const;
 
 const TAB_SCREEN_OPTIONS_NARROW = {
@@ -146,6 +154,17 @@ const TAB_SCREEN_OPTIONS_WIDE = {
 
 function RootTabNavigator() {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const navigation = useNavigation();
+    const parentNavigation = navigation.getParent();
+    const focusedRoute = useNavigationState(findFocusedRoute);
+
+    useEffect(() => {
+        if (!shouldUseNarrowLayout || !parentNavigation) {
+            return;
+        }
+        const isRootScreen = TAB_ROOT_SCREENS_WITHOUT_GESTURE.has(focusedRoute?.name ?? '');
+        parentNavigation.setOptions({gestureEnabled: !isRootScreen});
+    }, [focusedRoute?.name, shouldUseNarrowLayout, parentNavigation]);
 
     return (
         <Tab.Navigator
