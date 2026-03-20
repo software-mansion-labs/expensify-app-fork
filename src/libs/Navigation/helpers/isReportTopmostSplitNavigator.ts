@@ -15,7 +15,7 @@ const isReportTopmostSplitNavigator = (): boolean => {
         const tabState = topmostFullScreenRoute.state as {routes: {name: keyof RootTabNavigatorParamList}[]; index: number} | undefined;
         return tabState?.routes?.[tabState?.index ?? 0]?.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR;
     }
-    return topmostFullScreenRoute?.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR;
+    return false;
 };
 
 export default isReportTopmostSplitNavigator;

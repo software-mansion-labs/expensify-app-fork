@@ -75,8 +75,17 @@ function parseAndLogRoute(state: NavigationState) {
     Navigation.setIsNavigationReady();
     if (isWorkspacesTabScreenName(state.routes.at(-1)?.name)) {
         saveWorkspacesTabPathToSessionStorage(currentPath);
-    } else if (state.routes.at(-1)?.name === NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR) {
-        saveSettingsTabPathToSessionStorage(currentPath);
+    } else {
+        const lastRoute = state.routes.at(-1);
+        const isSettingsTab =
+            lastRoute?.name === NAVIGATORS.ROOT_TAB_NAVIGATOR &&
+            (() => {
+                const tabState = lastRoute.state as {routes: {name: string}[]; index: number} | undefined;
+                return tabState?.routes?.[tabState?.index ?? 0]?.name === NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR;
+            })();
+        if (isSettingsTab) {
+            saveSettingsTabPathToSessionStorage(currentPath);
+        }
     }
 
     // Fullstory Page navigation tracking

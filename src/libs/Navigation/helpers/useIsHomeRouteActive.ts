@@ -15,7 +15,13 @@ function useIsHomeRouteActive(isNarrowLayout: boolean) {
     }
 
     // On full width screens HOME is always a sidebar to the Reports Screen
-    const isSplit = navigationState?.routes.at(-1)?.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR;
+    const lastRoute = navigationState?.routes.at(-1);
+    const isSplit =
+        lastRoute?.name === NAVIGATORS.ROOT_TAB_NAVIGATOR &&
+        (() => {
+            const tabState = lastRoute.state as {routes: {name: string}[]; index: number} | undefined;
+            return tabState?.routes?.[tabState?.index ?? 0]?.name === NAVIGATORS.REPORTS_SPLIT_NAVIGATOR;
+        })();
     const isReport = focusedRoute?.name === SCREENS.REPORT;
     return isSplit && isReport;
 }

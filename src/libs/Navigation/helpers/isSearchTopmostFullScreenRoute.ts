@@ -15,7 +15,7 @@ const isSearchTopmostFullScreenRoute = (): boolean => {
         const tabState = topmostFullScreenRoute.state as {routes: {name: keyof RootTabNavigatorParamList}[]; index: number} | undefined;
         return tabState?.routes?.[tabState?.index ?? 0]?.name === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR;
     }
-    return topmostFullScreenRoute?.name === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR;
+    return false;
 };
 
 export default isSearchTopmostFullScreenRoute;

@@ -58,12 +58,9 @@ function preloadWorkspacesTab(navigation: PlatformStackNavigationProp<AuthScreen
 
 function preloadReportsTab(navigation: PlatformStackNavigationProp<AuthScreensParamList>) {
     const rootState = navigation.getState();
-    let lastSearchNavigator = rootState.routes.findLast((route) => route.name === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR);
-    if (!lastSearchNavigator) {
-        const rootTabRoute = rootState.routes.findLast((route) => route.name === NAVIGATORS.ROOT_TAB_NAVIGATOR);
-        const tabState = rootTabRoute?.state as {routes: {name: string; key?: string}[]} | undefined;
-        lastSearchNavigator = tabState?.routes?.findLast((route) => route.name === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR);
-    }
+    const rootTabRoute = rootState.routes.findLast((route) => route.name === NAVIGATORS.ROOT_TAB_NAVIGATOR);
+    const tabState = rootTabRoute?.state as {routes: {name: string; key?: string}[]} | undefined;
+    const lastSearchNavigator = tabState?.routes?.findLast((route) => route.name === NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR);
     const lastSearchNavigatorState = lastSearchNavigator?.key ? getPreservedNavigatorState(lastSearchNavigator.key) : undefined;
     const lastSearchRoute = lastSearchNavigatorState?.routes?.findLast((route) => route.name === SCREENS.SEARCH.ROOT);
 

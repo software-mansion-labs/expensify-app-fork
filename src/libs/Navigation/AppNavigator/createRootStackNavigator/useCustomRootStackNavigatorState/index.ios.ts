@@ -35,7 +35,28 @@ function getShouldHidePreloadedRoutes(route?: NavigationRoute) {
 // On native platforms, we store the last two routes to handle swiping back.
 export default function useCustomRootStackNavigatorState({state}: CustomStateHookProps) {
     const lastSplitIndex = state.routes.findLastIndex((route) => isFullScreenName(route.name));
-    const routesToRender = state.routes.slice(Math.max(0, lastSplitIndex - 1), state.routes.length);
+    const indexToSlice = Math.max(0, lastSplitIndex - 1);
+    let routesToRender = state.routes.slice(indexToSlice, state.routes.length);
+
+    // Always include the base ROOT_TAB_NAVIGATOR (first route) in rendered routes.
+    // This ensures dontDetachScreen (from persistentScreens) keeps it mounted,
+    // preserving the bottom tab navigator's internal state (active tab, history)
+    // when another fullscreen route is pushed on top.
+    const firstRoute = state.routes[0];
+    if (firstRoute?.name === NAVIGATORS.ROOT_TAB_NAVIGATOR && indexToSlice > 0) {
+        routesToRender = [firstRoute, ...routesToRender];
+    }
+
+    // When more than 2 ROOT_TAB_NAVIGATORs are rendered, keep only the first
+    // (persistent base, alive via dontDetachScreen) and the last (active).
+    // Filter out intermediate instances to avoid performance overhead.
+    const rootTabCount = routesToRender.filter((route) => route.name === NAVIGATORS.ROOT_TAB_NAVIGATOR).length;
+    if (rootTabCount > 2) {
+        const firstRootTabIdx = routesToRender.findIndex((route) => route.name === NAVIGATORS.ROOT_TAB_NAVIGATOR);
+        const lastRootTabIdx = routesToRender.findLastIndex((route) => route.name === NAVIGATORS.ROOT_TAB_NAVIGATOR);
+        routesToRender = routesToRender.filter((route, i) => route.name !== NAVIGATORS.ROOT_TAB_NAVIGATOR || i === firstRootTabIdx || i === lastRootTabIdx);
+    }
+
     const stateToRender = {...state, routes: routesToRender, index: routesToRender.length - 1};
     if (getShouldHidePreloadedRoutes(stateToRender.routes.at(-1))) {
         return {...stateToRender, preloadedRoutes: []};

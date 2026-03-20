@@ -67,9 +67,6 @@ const loadWorkspaceJoinUser = () => require<ReactComponentModule>('@pages/worksp
 
 const loadDomainSplitNavigator = () => require<ReactComponentModule>('./Navigators/DomainSplitNavigator').default;
 const loadWorkspaceSplitNavigator = () => require<ReactComponentModule>('./Navigators/WorkspaceSplitNavigator').default;
-const loadReportsSplitNavigator = () => require<ReactComponentModule>('./Navigators/ReportsSplitNavigator').default;
-const loadSettingsSplitNavigator = () => require<ReactComponentModule>('./Navigators/SettingsSplitNavigator').default;
-const loadSearchFullscreenNavigator = () => require<ReactComponentModule>('./Navigators/SearchFullscreenNavigator').default;
 
 const RootStack = createRootStackNavigator<AuthScreensParamList>();
 
@@ -148,20 +145,19 @@ function AuthScreens() {
         };
     };
 
-    // Animation is enabled when navigating to any screen different than split sidebar screen
-    const getFullscreenNavigatorOptions = ({route}: {route: RouteProp<AuthScreensParamList>}) => {
-        // We don't need to do anything special for the wide screen.
+    // Dynamic options for ROOT_TAB_NAVIGATOR: supports entering animation for pushed instances
+    const getRootTabNavigatorOptions = ({route}: {route: RouteProp<AuthScreensParamList>}) => {
         if (!shouldUseNarrowLayout) {
-            return rootNavigatorScreenOptions.splitNavigator;
+            return rootNavigatorScreenOptions.fullScreenTabPage;
         }
 
-        // On the narrow screen, we want to animate this navigator if pushed SplitNavigator includes desired screen
         const animationEnabled = screensWithEnteringAnimation.has(route.key);
         return {
-            ...rootNavigatorScreenOptions.splitNavigator,
+            ...rootNavigatorScreenOptions.fullScreenTabPage,
             animation: animationEnabled ? Animations.SLIDE_FROM_RIGHT : Animations.NONE,
+            gestureEnabled: animationEnabled,
             web: {
-                ...rootNavigatorScreenOptions.splitNavigator.web,
+                ...rootNavigatorScreenOptions.fullScreenTabPage.web,
                 cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator({props, isFullScreenModal: true, animationEnabled}),
             },
         };
@@ -189,7 +185,7 @@ function AuthScreens() {
                         {/* ROOT_TAB_NAVIGATOR (containing Home and Workspaces) has to be the first navigator in auth screens. */}
                         <RootStack.Screen
                             name={NAVIGATORS.ROOT_TAB_NAVIGATOR}
-                            options={rootNavigatorScreenOptions.fullScreenTabPage}
+                            options={getRootTabNavigatorOptions}
                             component={RootTabNavigator}
                         />
                         <RootStack.Screen
@@ -201,21 +197,6 @@ function AuthScreens() {
                             name={NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR}
                             options={getWorkspaceOrDomainSplitNavigatorOptions}
                             getComponent={loadWorkspaceSplitNavigator}
-                        />
-                        <RootStack.Screen
-                            name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
-                            options={getFullscreenNavigatorOptions}
-                            getComponent={loadReportsSplitNavigator}
-                        />
-                        <RootStack.Screen
-                            name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
-                            options={getFullscreenNavigatorOptions}
-                            getComponent={loadSettingsSplitNavigator}
-                        />
-                        <RootStack.Screen
-                            name={NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR}
-                            options={getFullscreenNavigatorOptions}
-                            getComponent={loadSearchFullscreenNavigator}
                         />
                         <RootStack.Screen
                             name={SCREENS.VALIDATE_LOGIN}
