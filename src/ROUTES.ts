@@ -120,6 +120,8 @@ const ROUTES = {
     INBOX: 'inbox',
     HOME: 'home',
 
+    EXPERTISE_FULLSCREEN: 'expertise-fullscreen',
+
     // eslint-disable-next-line no-restricted-syntax -- Legacy route generation
     WORKSPACES_LIST: {route: 'workspaces', getRoute: (backTo?: string) => getUrlWithBackToParam('workspaces', backTo)},
     SEARCH_ROUTER: 'search-router',

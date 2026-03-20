@@ -2958,6 +2958,7 @@ type AuthScreensParamList = SharedScreensParamList &
         [SCREENS.TRACK_EXPENSE]: undefined;
         [SCREENS.SUBMIT_EXPENSE]: undefined;
         [SCREENS.HOME]: undefined;
+        [SCREENS.EXPERTISE_FULLSCREEN_PAGE]: undefined;
         [SCREENS.WORKSPACES_LIST]: {
             // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
             backTo?: Routes;
@@ -3171,7 +3172,7 @@ type SplitNavigatorName = keyof SplitNavigatorParamList;
 
 type SearchFullscreenNavigatorName = typeof NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR;
 
-type FullScreenName = SplitNavigatorName | SearchFullscreenNavigatorName | typeof SCREENS.WORKSPACES_LIST | typeof SCREENS.HOME;
+type FullScreenName = SplitNavigatorName | SearchFullscreenNavigatorName | typeof SCREENS.WORKSPACES_LIST | typeof SCREENS.HOME | typeof SCREENS.EXPERTISE_FULLSCREEN_PAGE;
 
 type PublicScreenName =
     | typeof SCREENS.TRANSITION_BETWEEN_APPS

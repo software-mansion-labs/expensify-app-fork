@@ -1746,6 +1746,7 @@ const CONST = {
         TRAVEL: 'travel',
         TEST_DRIVE: 'test-drive',
         NEW_WORKSPACE: 'new-workspace',
+        EXPERTISE: 'expertise',
     },
     TIMING: {
         REPORT_ACTION_ITEM_LAYOUT_DEBOUNCE_TIME: 1500,

@@ -495,6 +495,8 @@ const SCREENS = {
 
     WORKSPACES_LIST: 'Workspaces_List',
 
+    EXPERTISE_FULLSCREEN_PAGE: 'Expertise_Fullscreen_Page',
+
     WORKSPACE: {
         ACCOUNTING: {
             ROOT: 'Policy_Accounting',

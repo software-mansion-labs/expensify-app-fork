@@ -64,6 +64,7 @@ const loadConciergePage = () => require<ReactComponentModule>('../../../pages/Co
 const loadTrackExpensePage = () => require<ReactComponentModule>('../../../pages/TrackExpensePage').default;
 const loadSubmitExpensePage = () => require<ReactComponentModule>('../../../pages/SubmitExpensePage').default;
 const loadHomePage = () => require<ReactComponentModule>('../../../pages/home/HomePage').default;
+const loadExpertiseFullscreenPage = () => require<ReactComponentModule>('../../../pages/ExpertiseFullscreenPage').default;
 const loadWorkspaceJoinUser = () => require<ReactComponentModule>('@pages/workspace/WorkspaceJoinUserPage').default;
 
 const loadReportSplitNavigator = () => require<ReactComponentModule>('./Navigators/ReportsSplitNavigator').default;
@@ -196,6 +197,7 @@ function AuthScreens() {
                             NAVIGATORS.RIGHT_MODAL_NAVIGATOR,
                             SCREENS.WORKSPACES_LIST,
                             SCREENS.HOME,
+                            SCREENS.EXPERTISE_FULLSCREEN_PAGE,
                             SCREENS.SEARCH.ROOT,
                         ]}
                     >
@@ -244,6 +246,11 @@ function AuthScreens() {
                             name={SCREENS.WORKSPACES_LIST}
                             options={rootNavigatorScreenOptions.fullScreenTabPage}
                             component={WorkspacesListPage}
+                        />
+                        <RootStack.Screen
+                            name={SCREENS.EXPERTISE_FULLSCREEN_PAGE}
+                            options={rootNavigatorScreenOptions.fullScreenTabPage}
+                            getComponent={loadExpertiseFullscreenPage}
                         />
                         <RootStack.Screen
                             name={SCREENS.TRANSITION_BETWEEN_APPS}

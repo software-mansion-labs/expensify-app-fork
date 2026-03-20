@@ -10,6 +10,7 @@ import FABButtons from './FABPopoverContent/FABButtons';
 import FABPopoverMenu from './FABPopoverContent/FABPopoverMenu';
 import CreateReportMenuItem from './FABPopoverContent/menuItems/CreateReportMenuItem';
 import ExpenseMenuItem from './FABPopoverContent/menuItems/ExpenseMenuItem';
+import ExpertiseMenuItem from './FABPopoverContent/menuItems/ExpertiseMenuItem';
 import InvoiceMenuItem from './FABPopoverContent/menuItems/InvoiceMenuItem';
 import NewChatMenuItem from './FABPopoverContent/menuItems/NewChatMenuItem';
 import NewWorkspaceMenuItem from './FABPopoverContent/menuItems/NewWorkspaceMenuItem';
@@ -77,6 +78,7 @@ function FloatingActionButtonAndPopover() {
                 <TravelMenuItem />
                 <TestDriveMenuItem />
                 <NewWorkspaceMenuItem />
+                <ExpertiseMenuItem />
                 <QuickActionMenuItem reportID={reportID} />
             </FABPopoverMenu>
             <FABButtons
