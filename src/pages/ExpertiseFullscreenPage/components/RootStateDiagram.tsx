@@ -138,13 +138,13 @@ function RootStateDiagram() {
                     <MiniScreen
                         label="Home"
                         sublabel="sidebar"
-                        color={theme.link}
+                        color="#166534"
                         flex={2}
                     />
                     <MiniScreen
                         label="Report"
                         sublabel="central"
-                        color={theme.success}
+                        color="#16a34a"
                         flex={3}
                     />
                 </View>
@@ -156,7 +156,7 @@ function RootStateDiagram() {
                 index={1}
                 name="Home"
                 kind="screen"
-                tab="Inbox"
+                tab="Home"
             />
 
             <Connector />
@@ -171,19 +171,19 @@ function RootStateDiagram() {
                     <MiniScreen
                         label="Search_Root"
                         sublabel="routes[0]"
-                        color="#0369a1"
+                        color="#166534"
                         faded
                     />
                     <MiniScreen
                         label="Search_Root"
                         sublabel="routes[1]"
-                        color="#0369a1"
+                        color="#166534"
                         faded
                     />
                     <MiniScreen
                         label="Search_Root"
                         sublabel="routes[2]  ← widoczny"
-                        color="#0369a1"
+                        color="#16a34a"
                     />
                 </View>
             </RouteRow>
@@ -209,13 +209,13 @@ function RootStateDiagram() {
                     <MiniScreen
                         label="Workspace Initial"
                         sublabel="sidebar"
-                        color={theme.link}
+                        color="#166534"
                         flex={2}
                     />
                     <MiniScreen
                         label="Workspace Overview"
                         sublabel="central"
-                        color={theme.success}
+                        color="#16a34a"
                         flex={3}
                     />
                 </View>
@@ -233,23 +233,23 @@ function RootStateDiagram() {
                 <View
                     style={{
                         borderWidth: 1,
-                        borderColor: '#7c3aed',
+                        borderColor: '#166534',
                         borderRadius: 8,
                         padding: 8,
                         gap: 6,
                     }}
                 >
-                    <Text style={{color: '#7c3aed', fontSize: 11, fontWeight: '700', marginBottom: 2}}>{'SettingsModalStackNavigator'}</Text>
+                    <Text style={{color: '#166534', fontSize: 11, fontWeight: '700', marginBottom: 2}}>SettingsModalStackNavigator</Text>
                     <MiniScreen
                         label="Settings_Profile"
                         sublabel="routes[0]"
-                        color="#7c3aed"
+                        color="#166534"
                         faded
                     />
                     <MiniScreen
                         label="Settings_Display_Name"
                         sublabel="routes[1]  ← widoczny"
-                        color="#7c3aed"
+                        color="#16a34a"
                     />
                 </View>
             </RouteRow>

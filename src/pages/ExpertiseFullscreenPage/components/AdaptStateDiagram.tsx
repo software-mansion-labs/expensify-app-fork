@@ -5,14 +5,13 @@ import Text from '@components/Text';
 import useTheme from '@hooks/useTheme';
 
 const COLORS = {
-    input: '#1e40af',
-    context: '#1d4ed8',
-    decision: '#b45309',
+    input: '#166534',
+    context: '#166534',
+    decision: '#15803d',
     action: '#166534',
     resultModified: '#166534',
-    resultUnchanged: '#374151',
+    resultUnchanged: '#166534',
     arrow: '#6b7280',
-    branchLabel: '#374151',
 };
 
 function Arrow() {

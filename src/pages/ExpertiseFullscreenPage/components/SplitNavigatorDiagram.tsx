@@ -75,14 +75,14 @@ function SplitNavigatorDiagram() {
                         indexLabel="routes[0]"
                         screenName="SidebarScreen"
                         note="ukryty pod spodem"
-                        color={theme.link}
+                        color="#166534"
                         faded
                     />
                     <ScreenBox
                         indexLabel="routes[1]"
                         screenName="CentralScreen"
                         note="widoczny"
-                        color={theme.success}
+                        color="#16a34a"
                     />
                 </View>
                 <Text style={{color: theme.textSupporting, fontSize: 14, marginTop: 4}}>
@@ -96,13 +96,13 @@ function SplitNavigatorDiagram() {
                     <ScreenBox
                         indexLabel="routes[0]  ← zawsze pierwszy"
                         screenName="SidebarScreen"
-                        color={theme.link}
+                        color="#166534"
                         flex={2}
                     />
                     <ScreenBox
                         indexLabel="routes[1]  ← widoczny"
                         screenName="CentralScreen"
-                        color={theme.success}
+                        color="#16a34a"
                         flex={3}
                     />
                 </View>
@@ -117,14 +117,14 @@ function SplitNavigatorDiagram() {
                     <ScreenBox
                         indexLabel="routes[0]  ← zawsze pierwszy"
                         screenName="SidebarScreen"
-                        color={theme.link}
+                        color="#166534"
                         flex={2}
                     />
                     <ScreenBox
                         indexLabel="routes[1]"
                         screenName="CentralScreen A"
                         note="poprzedni"
-                        color={theme.success}
+                        color="#166534"
                         flex={3}
                         faded
                     />
@@ -132,14 +132,12 @@ function SplitNavigatorDiagram() {
                         indexLabel="routes[2]  ← widoczny"
                         screenName="CentralScreen B"
                         note="aktualny"
-                        color={theme.success}
+                        color="#16a34a"
                         flex={3}
                     />
                 </View>
                 <Text style={{color: theme.textSupporting, fontSize: 14, marginTop: 4}}>
-                    {
-                        'Ekranów centralnych może być wiele — każde wejście w głąb (np. szczegóły → edycja) dokłada kolejny do stosu. Lewa kolumna pozostaje ta sama. Przycisk "wstecz" zdejmuje tylko ekrany centralne, aż do momentu gdy zostanie tylko sidebar — wtedy cofa cały navigator.'
-                    }
+                    Ekranów centralnych może być wiele — każde wejście w głąb (np. szczegóły → edycja) dokłada kolejny do stosu. Lewa kolumna pozostaje ta sama. Przycisk &quot;wstecz&quot; zdejmuje tylko ekrany centralne, aż do momentu gdy zostanie tylko sidebar — wtedy cofa cały navigator.
                 </Text>
             </DiagramPanel>
         </View>

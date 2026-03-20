@@ -1,24 +1,29 @@
 import React from 'react';
-import {View} from 'react-native';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
 import AnimatedSection from './AnimatedSection';
 import SplitNavigatorDiagram from './SplitNavigatorDiagram';
+import Tip from './Tip';
+import type {TipProps} from './Tip';
 
-const SPLIT_NAVIGATOR_POINTS = [
+const SPLIT_NAVIGATOR_POINTS: TipProps[] = [
     {
+        number: 1,
         heading: 'Dwa ekrany jednocześnie',
         body: 'SplitNavigator wyświetla dwie strony obok siebie — na szerokim ekranie (tablet, desktop) lewa kolumna pokazuje listę, a prawa kolumna wyświetla szczegóły wybranego elementu.',
     },
     {
+        number: 2,
         heading: 'Responsywność',
         body: 'Na wąskich ekranach (telefon) SplitNavigator zachowuje się jak zwykły stos — pokazuje tylko jeden ekran na raz, dzięki czemu ten sam kod działa poprawnie na wszystkich urządzeniach.',
     },
     {
+        number: 3,
         heading: 'Lepsza wydajność na szerokich ekranach',
         body: 'Zamiast przeładowywać cały widok przy każdej nawigacji, SplitNavigator utrzymuje lewy panel w pamięci i podmienia tylko prawą stronę, co znacząco przyspiesza interakcję.',
     },
     {
+        number: 4,
         heading: 'Spójne URL-e i deep linking',
         body: 'Każda kombinacja lewy-prawy panel ma swój unikalny adres URL, co umożliwia udostępnianie linków oraz odtworzenie dokładnego stanu aplikacji po odświeżeniu strony.',
     },
@@ -35,16 +40,10 @@ function SplitNavigatorExplanationSection() {
             </Text>
             <SplitNavigatorDiagram />
             {SPLIT_NAVIGATOR_POINTS.map((point) => (
-                <View
-                    key={point.heading}
-                    style={[styles.pv3, styles.flexRow, {gap: 10}]}
-                >
-                    <Text style={[styles.textStrong, {fontSize: 20, lineHeight: 28}]}>{'\u2022'}</Text>
-                    <View style={styles.flex1}>
-                        <Text style={[styles.textStrong, styles.mb1, {fontSize: 20}]}>{point.heading}</Text>
-                        <Text style={[styles.textSupporting, {fontSize: 18}]}>{point.body}</Text>
-                    </View>
-                </View>
+                <Tip
+                    key={point.number}
+                    {...point}
+                />
             ))}
         </AnimatedSection>
     );
