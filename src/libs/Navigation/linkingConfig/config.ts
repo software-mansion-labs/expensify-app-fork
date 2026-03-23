@@ -2080,6 +2080,13 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         [SCREENS.EXPERTISE_PARAM_NAV.LAST]: ROUTES.EXPERTISE_PARAM_LAST_PAGE,
                     },
                 },
+                [SCREENS.RIGHT_MODAL.EXPERTISE_FORCE_REPLACE_NAV]: {
+                    screens: {
+                        [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.FIRST]: ROUTES.EXPERTISE_FORCE_REPLACE_FIRST,
+                        [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.SECOND]: ROUTES.EXPERTISE_FORCE_REPLACE_SECOND,
+                        [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.THIRD]: ROUTES.EXPERTISE_FORCE_REPLACE_THIRD.route,
+                    },
+                },
                 [SCREENS.RIGHT_MODAL.REPORT_CHANGE_APPROVER]: {
                     screens: {
                         [SCREENS.REPORT_CHANGE_APPROVER.ROOT]: ROUTES.REPORT_CHANGE_APPROVER.route,

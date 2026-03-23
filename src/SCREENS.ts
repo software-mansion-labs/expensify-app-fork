@@ -311,6 +311,7 @@ const SCREENS = {
         SCHEDULE_CALL: 'ScheduleCall',
         EXPERTISE_NAV: 'ExpertiseNav',
         EXPERTISE_PARAM_NAV: 'ExpertiseParamNav',
+        EXPERTISE_FORCE_REPLACE_NAV: 'ExpertiseForceReplaceNav',
         REPORT_CHANGE_APPROVER: 'Report_Change_Approver',
         REPORT_VERIFY_ACCOUNT: 'Report_Verify_Account',
         MERGE_TRANSACTION: 'MergeTransaction',
@@ -940,6 +941,11 @@ const SCREENS = {
     EXPERTISE_PARAM_NAV: {
         PARAM: 'ExpertiseParamNav_Param',
         LAST: 'ExpertiseParamNav_Last',
+    },
+    EXPERTISE_FORCE_REPLACE_NAV: {
+        FIRST: 'ExpertiseForceReplaceNav_First',
+        SECOND: 'ExpertiseForceReplaceNav_Second',
+        THIRD: 'ExpertiseForceReplaceNav_Third',
     },
     REPORT_CHANGE_APPROVER: {
         ROOT: 'Report_Change_Approver_Root',

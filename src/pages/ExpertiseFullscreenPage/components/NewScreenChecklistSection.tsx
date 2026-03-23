@@ -2,7 +2,6 @@ import React from 'react';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
 import AnimatedSection from './AnimatedSection';
-import RelationsDiagram from './RelationsDiagram';
 import Tip from './Tip';
 import type {TipProps} from './Tip';
 
@@ -48,10 +47,6 @@ function NewScreenChecklistSection() {
                     {...point}
                 />
             ))}
-            <Text style={[styles.mt4, styles.mb2, styles.textSupporting, {fontSize: 18}]}>
-                {'Schemat RELATIONS — jak aplikacja dobiera ekran pełnoekranowy pod RHP:'}
-            </Text>
-            <RelationsDiagram />
         </AnimatedSection>
     );
 }

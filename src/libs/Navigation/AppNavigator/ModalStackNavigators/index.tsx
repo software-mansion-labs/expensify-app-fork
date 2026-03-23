@@ -12,6 +12,7 @@ import type {
     DebugParamList,
     EditRequestNavigatorParamList,
     EnablePaymentsNavigatorParamList,
+    ExpertiseForceReplaceNavParamList,
     ExpertiseNavParamList,
     ExpertiseParamNavParamList,
     FlagCommentNavigatorParamList,
@@ -1096,6 +1097,12 @@ const ExpertiseParamNavModalStackNavigator = createModalStackNavigator<Expertise
     [SCREENS.EXPERTISE_PARAM_NAV.LAST]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseParamLastPage').default,
 });
 
+const ExpertiseForceReplaceNavModalStackNavigator = createModalStackNavigator<ExpertiseForceReplaceNavParamList>({
+    [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.FIRST]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseForceReplaceFirstPage').default,
+    [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.SECOND]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseForceReplaceSecondPage').default,
+    [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.THIRD]: () => require<ReactComponentModule>('../../../../pages/ExpertiseFullscreenPage/ExpertiseForceReplaceThirdPage').default,
+});
+
 const ScheduleCallModalStackNavigator = createModalStackNavigator<ScheduleCallParamList>({
     [SCREENS.SCHEDULE_CALL.BOOK]: () => require<ReactComponentModule>('../../../../pages/ScheduleCall/ScheduleCallPage').default,
     [SCREENS.SCHEDULE_CALL.CONFIRMATION]: () => require<ReactComponentModule>('../../../../pages/ScheduleCall/ScheduleCallConfirmationPage').default,
@@ -1153,6 +1160,7 @@ export {
     RoomMembersModalStackNavigator,
     ExpertiseNavModalStackNavigator,
     ExpertiseParamNavModalStackNavigator,
+    ExpertiseForceReplaceNavModalStackNavigator,
     ScheduleCallModalStackNavigator,
     SearchAdvancedFiltersModalStackNavigator,
     SearchColumnsModalStackNavigator,

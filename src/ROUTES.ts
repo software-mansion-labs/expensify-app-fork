@@ -132,6 +132,13 @@ const ROUTES = {
     },
     EXPERTISE_PARAM_LAST_PAGE: 'expertise-param-last-page',
 
+    EXPERTISE_FORCE_REPLACE_FIRST: 'expertise-force-replace-a',
+    EXPERTISE_FORCE_REPLACE_SECOND: 'expertise-force-replace-b',
+    EXPERTISE_FORCE_REPLACE_THIRD: {
+        route: 'expertise-force-replace-c/:wasReplaced',
+        getRoute: (wasReplaced: boolean) => `expertise-force-replace-c/${wasReplaced}` as const,
+    },
+
     // eslint-disable-next-line no-restricted-syntax -- Legacy route generation
     WORKSPACES_LIST: {route: 'workspaces', getRoute: (backTo?: string) => getUrlWithBackToParam('workspaces', backTo)},
     SEARCH_ROUTER: 'search-router',

@@ -31,8 +31,8 @@ function navigate(route: Route, type?: string) {
     },
     {
         number: 3,
-        heading: 'React DevTools — zakładka "Components" w przeglądarce',
-        body: 'Zakładka "Components" pojawia się dopiero po zainstalowaniu rozszerzenia React Developer Tools (dostępne dla Chrome i Firefox w ich sklepach z rozszerzeniami). Po instalacji i odświeżeniu strony zakładka jest widoczna obok "Console" i "Network". Tam można wyszukać NavigationContainer i podejrzeć cały props.state — ten sam obiekt, który ląduje w handleStateChange.',
+        heading: 'Sprawdzenie jak akcja obsługiwana jest w routerze',
+        body: 'W RootStackRouter i SplitRouter można ustawić breakpoint w funkcji getStateForAction i sprawdzić jak akcja jest obsługiwana.',
     },
 ];
 

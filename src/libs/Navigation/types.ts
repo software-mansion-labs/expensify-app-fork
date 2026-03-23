@@ -2458,6 +2458,7 @@ type RightModalNavigatorParamList = {
     [SCREENS.RIGHT_MODAL.SCHEDULE_CALL]: NavigatorScreenParams<ScheduleCallParamList>;
     [SCREENS.RIGHT_MODAL.EXPERTISE_NAV]: NavigatorScreenParams<ExpertiseNavParamList>;
     [SCREENS.RIGHT_MODAL.EXPERTISE_PARAM_NAV]: NavigatorScreenParams<ExpertiseParamNavParamList>;
+    [SCREENS.RIGHT_MODAL.EXPERTISE_FORCE_REPLACE_NAV]: NavigatorScreenParams<ExpertiseForceReplaceNavParamList>;
     [SCREENS.RIGHT_MODAL.REPORT_CHANGE_APPROVER]: NavigatorScreenParams<ReportChangeApproverParamList>;
     [SCREENS.RIGHT_MODAL.MERGE_TRANSACTION]: NavigatorScreenParams<MergeTransactionNavigatorParamList>;
     [SCREENS.RIGHT_MODAL.EXPENSE_REPORT]: {
@@ -3141,6 +3142,14 @@ type ExpertiseParamNavParamList = {
     [SCREENS.EXPERTISE_PARAM_NAV.LAST]: undefined;
 };
 
+type ExpertiseForceReplaceNavParamList = {
+    [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.FIRST]: undefined;
+    [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.SECOND]: undefined;
+    [SCREENS.EXPERTISE_FORCE_REPLACE_NAV.THIRD]: {
+        wasReplaced: string;
+    };
+};
+
 type ScheduleCallParamList = {
     [SCREENS.SCHEDULE_CALL.BOOK]: {
         reportID: string;
@@ -3286,6 +3295,7 @@ export type {
     ScheduleCallParamList,
     ExpertiseNavParamList,
     ExpertiseParamNavParamList,
+    ExpertiseForceReplaceNavParamList,
     TestDriveModalNavigatorParamList,
     WorkspaceScreenName,
     TestDriveDemoNavigatorParamList,

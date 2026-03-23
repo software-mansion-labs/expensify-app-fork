@@ -1,5 +1,5 @@
-import React from 'react';
-import {View} from 'react-native';
+import React, {useState} from 'react';
+import {Pressable, View} from 'react-native';
 import Text from '@components/Text';
 import useTheme from '@hooks/useTheme';
 
@@ -58,6 +58,8 @@ type RouteRowProps = {
 
 function RouteRow({index, name, kind, tab, isTop, children}: RouteRowProps) {
     const theme = useTheme();
+    const [expanded, setExpanded] = useState(false);
+    const isCollapsible = !!children;
 
     return (
         <View style={{flexDirection: 'row', alignItems: 'stretch', gap: 10}}>
@@ -88,7 +90,10 @@ function RouteRow({index, name, kind, tab, isTop, children}: RouteRowProps) {
                     marginBottom: 6,
                 }}
             >
-                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4}}>
+                <Pressable
+                    onPress={isCollapsible ? () => setExpanded((prev) => !prev) : undefined}
+                    style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4}}
+                >
                     <Text style={{color: theme.text, fontSize: 14, fontWeight: '700'}}>{name}</Text>
                     <View style={{flexDirection: 'row', gap: 6, alignItems: 'center'}}>
                         <View style={{backgroundColor: KIND_COLOR[kind], borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2}}>
@@ -104,9 +109,14 @@ function RouteRow({index, name, kind, tab, isTop, children}: RouteRowProps) {
                                 <Text style={{color: 'white', fontSize: 11, fontWeight: '700'}}>na wierzchu</Text>
                             </View>
                         )}
+                        {isCollapsible && (
+                            <View style={{backgroundColor: theme.border, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2}}>
+                                <Text style={{color: theme.textSupporting, fontSize: 11}}>{expanded ? '▲' : '▼'}</Text>
+                            </View>
+                        )}
                     </View>
-                </View>
-                {children}
+                </Pressable>
+                {expanded && children}
             </View>
         </View>
     );
@@ -119,6 +129,38 @@ function Connector() {
             <View style={{width: 28, alignItems: 'center'}}>
                 <View style={{width: 2, height: 10, backgroundColor: theme.border}} />
             </View>
+        </View>
+    );
+}
+
+type CollapsibleSectionProps = {
+    label: string;
+    labelColor: string;
+    borderColor: string;
+    children: React.ReactNode;
+};
+
+function CollapsibleSection({label, labelColor, borderColor, children}: CollapsibleSectionProps) {
+    const [expanded, setExpanded] = useState(false);
+
+    return (
+        <View
+            style={{
+                borderWidth: 1,
+                borderColor,
+                borderRadius: 8,
+                padding: 8,
+                gap: 6,
+            }}
+        >
+            <Pressable
+                onPress={() => setExpanded((prev) => !prev)}
+                style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+            >
+                <Text style={{color: labelColor, fontSize: 11, fontWeight: '700'}}>{label}</Text>
+                <Text style={{color: labelColor, fontSize: 11}}>{expanded ? '▲' : '▼'}</Text>
+            </Pressable>
+            {expanded && children}
         </View>
     );
 }
@@ -249,17 +291,11 @@ function RootStateDiagram() {
                 kind="modal"
                 isTop
             >
-                {/* Nested modal stack navigator */}
-                <View
-                    style={{
-                        borderWidth: 1,
-                        borderColor: '#166534',
-                        borderRadius: 8,
-                        padding: 8,
-                        gap: 6,
-                    }}
+                <CollapsibleSection
+                    label="SettingsModalStackNavigator"
+                    labelColor="#166534"
+                    borderColor="#166534"
                 >
-                    <Text style={{color: '#166534', fontSize: 11, fontWeight: '700', marginBottom: 2}}>SettingsModalStackNavigator</Text>
                     <MiniScreen
                         label="Settings_Profile"
                         sublabel="routes[0]"
@@ -271,7 +307,7 @@ function RootStateDiagram() {
                         sublabel="routes[1]  ← widoczny"
                         color="#16a34a"
                     />
-                </View>
+                </CollapsibleSection>
             </RouteRow>
 
             <Text style={{color: theme.textSupporting, fontSize: 13, marginTop: 10, marginLeft: 38}}>
