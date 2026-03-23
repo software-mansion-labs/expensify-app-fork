@@ -100,6 +100,37 @@ function SplitNavigatorDiagram() {
                 </Text>
             </DiagramPanel>
 
+            {/* Wide layout — sidebar active */}
+            <DiagramPanel title="Szeroki ekran — zwykły stos ale pierwszy route (sidebar) jest zawsze renderowany po lewej stronie ekranu">
+                <View style={{gap: 6}}>
+                    <ScreenBox
+                        indexLabel="routes[0]  ← widoczny"
+                        screenName="SidebarScreen"
+                        color="#16a34a"
+                    />
+                    <ScreenBox
+                        indexLabel="routes[1]"
+                        screenName="CentralScreen A"
+                        color="#166534"
+                        faded
+                    />
+                    <ScreenBox
+                        indexLabel="routes[2]"
+                        screenName="CentralScreen B"
+                        color="#166534"
+                        faded
+                    />
+                    <ScreenBox
+                        indexLabel="routes[3]"
+                        screenName="CentralScreen C"
+                        color="#16a34a"
+                    />
+                </View>
+                <Text style={{color: theme.textSupporting, fontSize: 14, marginTop: 4}}>
+                    Gdy aktywny jest routes[0] (SidebarScreen), sidebar jest podświetlony po lewej, a prawy panel pokazuje ostatni ekran centralny ze stosu (lub pusty ekran zastępczy, jeśli żadnego nie ma).
+                </Text>
+            </DiagramPanel>
+
             {/* Wide layout */}
             <DiagramPanel title="Szeroki ekran — zwykły stos ale pierwszy route (sidebar) jest zawsze renderowany po lewej stronie ekranu">
                 <View style={{flexDirection: 'row', gap: 8, alignItems: 'stretch'}}>

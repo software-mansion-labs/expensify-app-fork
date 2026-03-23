@@ -22,7 +22,7 @@ const handleStateChange = (state: NavigationState | undefined) => {
     {
         number: 2,
         heading: 'Breakpoint w funkcjach nawigacji',
-        body: 'Żeby dowiedzieć się, skąd pochodzi konkretna akcja nawigacyjna, warto ustawić breakpoint wewnątrz funkcji navigate, goBack lub linkTo. Debugger pokaże pełny call stack — zobaczysz dokładnie, który komponent lub akcja Onyx wywołała nawigację.',
+        body: 'Żeby dowiedzieć się, skąd pochodzi konkretna akcja nawigacyjna, warto ustawić breakpoint wewnątrz funkcji navigate, goBack lub dismissModal. Debugger pokaże pełny call stack — zobaczysz dokładnie, który komponent lub akcja Onyx wywołała nawigację.',
         code: `// src/libs/Navigation/Navigation.ts
 function navigate(route: Route, type?: string) {
     debugger; // ← wywołaj DevTools i sprawdź call stack
