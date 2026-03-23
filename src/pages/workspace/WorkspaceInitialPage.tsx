@@ -430,7 +430,17 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, route}: Workspac
             >
                 <HeaderWithBackButton
                     title={policyName}
-                    onBackButtonPress={() => Navigation.goBack(route.params?.backTo ?? ROUTES.WORKSPACES_LIST.route)}
+                    onBackButtonPress={() => {
+                        if (route.params?.backTo) {
+                            Navigation.goBack(route.params.backTo);
+                            return;
+                        }
+                        if (shouldUseNarrowLayout) {
+                            Navigation.goBack();
+                            return;
+                        }
+                        Navigation.goBack(ROUTES.WORKSPACES_LIST.route);
+                    }}
                     policyAvatar={policyAvatar}
                     shouldDisplayHelpButton={shouldUseNarrowLayout}
                 />
