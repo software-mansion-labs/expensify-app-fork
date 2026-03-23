@@ -1,9 +1,9 @@
-import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
 import type CONST from '@src/CONST';
+import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
 import type * as OnyxCommon from './OnyxCommon';
 
 /**
- * Basic errors for domain members
+ * Basic errors for domain members and admins
  */
 type GeneralDomainMemberErrors = {
     /**
@@ -13,6 +13,26 @@ type GeneralDomainMemberErrors = {
 };
 
 /**
+ * Errors for domain members
+ */
+type DomainMemberErrors = {
+    /**
+     * Errors related to a specific domain vacation delegate
+     */
+    vacationDelegateErrors?: OnyxCommon.Errors;
+
+    /**
+     * Errors related to the list of emails exempt from the 2FA requirement
+     */
+    twoFactorAuthExemptEmailsError?: OnyxCommon.Errors;
+
+    /**
+     * Errors related to specific domain member lock account status.
+     */
+    lockAccountErrors?: OnyxCommon.Errors;
+} & GeneralDomainMemberErrors;
+
+/**
  * Errors related to a domain security group
  */
 type DomainSecurityGroupErrors = {
@@ -20,11 +40,6 @@ type DomainSecurityGroupErrors = {
      * Errors related to the security group name
      */
     nameErrors?: OnyxCommon.Errors;
-
-    /**
-     * Errors related to the default security group ID setting
-     */
-    defaultSecurityGroupIDErrors?: OnyxCommon.Errors;
 
     /**
      *
@@ -52,9 +67,9 @@ type DomainErrors = {
     useTechnicalContactBillingCardErrors?: OnyxCommon.Errors;
 
     /**
-     * Errors related to specific domain member, keyed by their accountID. memberErrors are keyed with user email, NOT accountID
+     * Errors related to specific domain member, keyed by their user email, (NOT accountID)
      */
-    memberErrors?: Record<string | number, GeneralDomainMemberErrors>;
+    memberErrors?: Record<string | number, DomainMemberErrors>;
 
     /**
      * Errors for the domain itself
@@ -67,5 +82,5 @@ type DomainErrors = {
     setTwoFactorAuthRequiredError?: OnyxCommon.Errors;
 } & PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroupErrors>;
 
-export type {DomainSecurityGroupErrors};
+export type {GeneralDomainMemberErrors, DomainMemberErrors, DomainSecurityGroupErrors};
 export default DomainErrors;

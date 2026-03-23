@@ -1,8 +1,12 @@
 import {Str} from 'expensify-common';
+import isObject from 'lodash/isObject';
 import type {OnyxEntry} from 'react-native-onyx';
 import CONST from '@src/CONST';
 import type {CardFeeds, Domain, DomainErrors, DomainPendingActions, DomainSecurityGroup, DomainSettings, SamlMetadata} from '@src/types/onyx';
 import type {SecurityGroupKey, UserSecurityGroupData} from '@src/types/onyx/Domain';
+import type {DomainSecurityGroupErrors} from '@src/types/onyx/DomainErrors';
+import type {DomainSecurityGroupPendingActions} from '@src/types/onyx/DomainPendingActions';
+import type {BaseVacationDelegate} from '@src/types/onyx/VacationDelegate';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
 
 type DomainSecurityGroupWithID = {
@@ -102,7 +106,7 @@ function memberAccountIDsSelector(domain: OnyxEntry<Domain>): number[] {
  */
 function isSecurityGroupEntry(entry: [string, unknown]): entry is [SecurityGroupKey, DomainSecurityGroup] {
     const [key, value] = entry;
-    return key.startsWith(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX) && typeof value === 'object' && value !== null && 'shared' in value;
+    return key.startsWith(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX) && isObject(value) && 'shared' in value && isObject(value.shared);
 }
 
 /**
@@ -141,6 +145,14 @@ function selectSecurityGroupForAccount(accountID: number) {
 }
 
 const memberPendingActionSelector = (pendingAction: OnyxEntry<DomainPendingActions>) => pendingAction?.member ?? {};
+/**
+ * Get the vacation delegate for a specific member in a domain.
+ *
+ * @param accountID - The account ID of the domain member.
+ */
+function vacationDelegateSelector(accountID: number): (domain: OnyxEntry<Domain>) => BaseVacationDelegate | undefined {
+    return (domain: OnyxEntry<Domain>) => domain?.[`${CONST.DOMAIN.PRIVATE_VACATION_DELEGATE_PREFIX}${accountID}`];
+}
 
 const adminPendingActionSelector = (pendingAction: OnyxEntry<DomainPendingActions>) => pendingAction?.admin ?? {};
 
@@ -150,10 +162,7 @@ const defaultSecurityGroupIDSelector = (domain: OnyxEntry<Domain>) => domain?.do
  * Creates a selector that finds a single security group by its ID.
  */
 function selectGroupByID(groupID?: string) {
-    return (domain: OnyxEntry<Domain>): DomainSecurityGroup | undefined => {
-        const key: SecurityGroupKey = `${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`;
-        return domain?.[key];
-    };
+    return (domain: OnyxEntry<Domain>): DomainSecurityGroup | undefined => domain?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`];
 }
 
 function groupsSelector(domain: OnyxEntry<Domain>): DomainSecurityGroupWithID[] {
@@ -161,23 +170,26 @@ function groupsSelector(domain: OnyxEntry<Domain>): DomainSecurityGroupWithID[] 
         return getEmptyArray<DomainSecurityGroupWithID>();
     }
 
-    return Object.entries(domain).reduce<DomainSecurityGroupWithID[]>((acc, [key, value]) => {
-        if (key.startsWith(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX)) {
-            acc.push({id: key.replace(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, ''), details: value as DomainSecurityGroup});
-        }
-        return acc;
-    }, []);
+    const entries: Array<[string, unknown]> = Object.entries(domain);
+    return entries.filter(isSecurityGroupEntry).map(([key, value]) => ({
+        id: key.replace(CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, ''),
+        details: value,
+    }));
 }
 
-function defaultSecurityGroupIDPendingActionSelector(groupID?: string) {
+const accountLockSelector = (accountID: number) => (domain: OnyxEntry<Domain>) => domain?.[`${CONST.DOMAIN.PRIVATE_LOCKED_ACCOUNT_PREFIX}${accountID}`];
+
+/** Creates a selector that extracts the pending action for a security group's setting */
+function domainSecurityGroupSettingPendingActionSelector(settingName: keyof DomainSecurityGroupPendingActions, groupID?: string) {
     return (domainPendingActions: OnyxEntry<DomainPendingActions>) => {
-        return domainPendingActions?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.defaultSecurityGroupID;
+        return domainPendingActions?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.[settingName];
     };
 }
 
-function defaultSecurityGroupIDErrorsSelector(groupID?: string) {
+/** Creates a selector that extracts the errors for a security group's setting */
+function domainSecurityGroupSettingErrorsSelector(settingName: keyof DomainSecurityGroupErrors, groupID?: string) {
     return (domainErrors: OnyxEntry<DomainErrors>) => {
-        return domainErrors?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.defaultSecurityGroupIDErrors;
+        return domainErrors?.[`${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`]?.[settingName];
     };
 }
 
@@ -209,9 +221,11 @@ export {
     memberPendingActionSelector,
     isSecurityGroupEntry,
     groupsSelector,
+    vacationDelegateSelector,
+    accountLockSelector,
     selectGroupByID,
-    defaultSecurityGroupIDPendingActionSelector,
-    defaultSecurityGroupIDErrorsSelector,
+    domainSecurityGroupSettingPendingActionSelector,
+    domainSecurityGroupSettingErrorsSelector,
     enableStrictPolicyRulesPendingActionSelector,
     enableStrictPolicyRulesErrorsSelector,
 };

@@ -1,13 +1,15 @@
 import type {DomainSecurityGroupWithID} from '@selectors/Domain';
-import {defaultSecurityGroupIDSelector, groupsSelector} from '@selectors/Domain';
+import {domainNameSelector, groupsSelector} from '@selectors/Domain';
 import React from 'react';
 import {View} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import SelectionList from '@components/SelectionList';
 import TableListItem from '@components/SelectionList/ListItem/TableListItem';
+import type {ListItem} from '@components/SelectionList/ListItem/types';
 import CustomListHeader from '@components/SelectionListWithModal/CustomListHeader';
 import Text from '@components/Text';
+import useDomainDocumentTitle from '@hooks/useDomainDocumentTitle';
 import {useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
@@ -21,8 +23,6 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import getEmptyArray from '@src/types/utils/getEmptyArray';
-import type {ListItem} from '@components/SelectionList/ListItem/types';
-import Badge from '@components/Badge';
 
 type GroupOption = Omit<ListItem, 'groupID'> & {
     /** Group ID */
@@ -33,17 +33,17 @@ type DomainGroupsPageProps = PlatformStackScreenProps<DomainSplitNavigatorParamL
 
 function DomainGroupsPage({route}: DomainGroupsPageProps) {
     const {domainAccountID} = route.params;
+    const [domainName] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {selector: domainNameSelector});
+    useDomainDocumentTitle(domainName, 'domain.groups.title');
 
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const illustrations = useMemoizedLazyIllustrations(['Members']);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
-    const [groups = getEmptyArray<DomainSecurityGroupWithID>()] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: false, selector: groupsSelector});
-    const [defaultGroupID] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {canBeMissing: true, selector: defaultSecurityGroupIDSelector});
+    const [groups = getEmptyArray<DomainSecurityGroupWithID>()] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {selector: groupsSelector});
 
     const data = groups.map((group) => {
-        const isDefault = group.id === defaultGroupID;
         return {
             keyForList: group.id,
             groupID: group.id,
@@ -51,7 +51,6 @@ function DomainGroupsPage({route}: DomainGroupsPageProps) {
             rightElement: (
                 <View style={[styles.flex1, styles.flexRow, styles.alignItemsCenter, styles.justifyContentBetween]}>
                     <Text numberOfLines={1}>{translate('domain.groups.memberCount', {count: Object.keys(group.details.shared).length})}</Text>
-                    {isDefault && <Badge text={translate('common.default')} />}
                 </View>
             ),
         };

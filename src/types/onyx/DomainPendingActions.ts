@@ -3,15 +3,33 @@ import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
 import type * as OnyxCommon from './OnyxCommon';
 
 /**
- * General pending action structure for domain members
+ * General pending action structure for domain members and admins
  * Pending actions structure is dictated by how `domain_` updates are handled in the app to prevent them from resetting unintentionally.
  */
 type GeneralDomainMemberPendingAction = {
     /**
      * Base pending actions
      */
-    pendingAction: OnyxCommon.PendingAction;
+    pendingAction?: OnyxCommon.PendingAction;
 };
+
+/**
+ * Pending actions structure for domain members
+ */
+type DomainMemberPendingActions = {
+    /**
+     * Pending action related to a specific domain vacation delegate
+     */
+    vacationDelegate?: OnyxCommon.PendingAction;
+
+    /** Pending action for the list of emails exempt from the 2FA requirement */
+    twoFactorAuthExemptEmails?: OnyxCommon.PendingAction;
+
+    /**
+     * Pending actions for specific domain member lock account action.
+     */
+    lockAccount: OnyxCommon.PendingAction;
+} & GeneralDomainMemberPendingAction;
 
 /**
  * Represents the pending actions related to a domain's security group.
@@ -21,11 +39,6 @@ type DomainSecurityGroupPendingActions = {
      * Pending action for the security group name
      */
     name?: OnyxCommon.PendingAction;
-
-    /**
-     * Pending action for the default security group ID
-     */
-    defaultSecurityGroupID?: OnyxCommon.PendingAction;
 
     /**
      *
@@ -55,7 +68,7 @@ type DomainPendingAction = {
     /**
      * Pending actions for specific domain member, keyed by their email
      */
-    member?: Record<string | number, GeneralDomainMemberPendingAction>;
+    member?: Record<string | number, DomainMemberPendingActions>;
 
     /**
      * Pending action for the 2FA toggle
@@ -68,5 +81,5 @@ type DomainPendingAction = {
     pendingAction?: OnyxCommon.PendingAction;
 } & PrefixedRecord<typeof CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX, DomainSecurityGroupPendingActions>;
 
-export type {DomainSecurityGroupPendingActions};
+export type {GeneralDomainMemberPendingAction, DomainSecurityGroupPendingActions};
 export default DomainPendingAction;
