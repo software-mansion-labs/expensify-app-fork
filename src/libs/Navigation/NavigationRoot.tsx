@@ -25,6 +25,7 @@ import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import AppNavigator from './AppNavigator';
 import {cleanPreservedNavigatorStates} from './AppNavigator/createSplitNavigator/usePreserveNavigatorState';
+import getActiveTabName from './helpers/getActiveTabName';
 import getAdaptedStateFromPath from './helpers/getAdaptedStateFromPath';
 import getPathFromState from './helpers/getPathFromState';
 import {isSplitNavigatorName, isWorkspacesTabScreenName} from './helpers/isNavigatorName';
@@ -45,18 +46,6 @@ type NavigationRootProps = {
     /** Fired when react-navigation is ready */
     onReady: () => void;
 };
-
-/**
- * If the given route is a ROOT_TAB_NAVIGATOR, returns the name of its currently active tab screen.
- * Otherwise returns undefined.
- */
-function getActiveTabName(route: NavigationState['routes'][number] | undefined): string | undefined {
-    if (route?.name !== NAVIGATORS.ROOT_TAB_NAVIGATOR) {
-        return undefined;
-    }
-    const tabState = route.state as {routes: Array<{name: string}>; index: number} | undefined;
-    return tabState?.routes?.[tabState?.index ?? 0]?.name;
-}
 
 /**
  * Intercept navigation state changes and log it
