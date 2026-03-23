@@ -10,7 +10,7 @@ function RootStateSection() {
     return (
         <AnimatedSection title="Jak wygląda stan całej aplikacji?">
             <Text style={[styles.mt3, styles.mb2, styles.textSupporting, {fontSize: 18}]}>
-                Cała nawigacja w aplikacji to jeden wielki stos — RootStackNavigator. W środku znajdują się SplitNavigatory dla każdej zakładki oraz zwykłe ekrany i modale. Poniżej
+                Cała nawigacja w aplikacji to jeden wielki stos — RootStackNavigator. W środku znajdują się SplitNavigatory, FullscreenNavigatory oraz zwykłe ekrany i modale. Poniżej
                 przykładowy stan po przejściu przez kilka zakładek i otwarciu RHP.
             </Text>
             <RootStateDiagram />

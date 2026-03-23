@@ -8,9 +8,10 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import AddNewScreenSection from './components/AddNewScreenSection';
 import DebuggingNavigationSection from './components/DebuggingNavigationSection';
-import NavigationFunctionsSection from './components/NavigationFunctionsSection';
+import GoBackVsDismissModalSection from './components/GoBackVsDismissModalSection';
+import GoBackWithParamsSection from './components/GoBackWithParamsSection';
 import NavigationLibrariesSection from './components/NavigationLibrariesSection';
-import PageRefreshSection from './components/PageRefreshSection';
+import NewScreenChecklistSection from './components/NewScreenChecklistSection';
 import RootStateSection from './components/RootStateSection';
 import RouteMapSection from './components/RouteMapSection';
 import SplitNavigatorExplanationSection from './components/SplitNavigatorExplanationSection';
@@ -39,10 +40,11 @@ function ExpertiseFullscreenPage() {
                 <RootStateSection />
                 <SplitNavigatorExplanationSection />
                 <RouteMapSection />
-                <DebuggingNavigationSection />
                 <AddNewScreenSection />
-                <PageRefreshSection />
-                <NavigationFunctionsSection />
+                <NewScreenChecklistSection />
+                <DebuggingNavigationSection />
+                <GoBackVsDismissModalSection />
+                <GoBackWithParamsSection />
             </ScrollView>
             {!shouldUseNarrowLayout && <NavigationTabBar selectedTab={NAVIGATION_TABS.HOME} />}
         </ScreenWrapper>

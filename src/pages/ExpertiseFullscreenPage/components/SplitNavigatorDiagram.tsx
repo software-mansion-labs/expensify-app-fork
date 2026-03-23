@@ -74,70 +74,65 @@ function SplitNavigatorDiagram() {
                     <ScreenBox
                         indexLabel="routes[0]"
                         screenName="SidebarScreen"
-                        note="ukryty pod spodem"
                         color="#166534"
                         faded
-                    />
-                    <ScreenBox
-                        indexLabel="routes[1]"
-                        screenName="CentralScreen"
-                        note="widoczny"
-                        color="#16a34a"
-                    />
-                </View>
-                <Text style={{color: theme.textSupporting, fontSize: 14, marginTop: 4}}>
-                    Na wąskim ekranie widoczny jest tylko ekran na szczycie stosu. Sidebar leży pod spodem i można do niego wrócić gestem cofnięcia.
-                </Text>
-            </DiagramPanel>
-
-            {/* Wide layout — single central */}
-            <DiagramPanel title="Szeroki ekran — jeden ekran centralny">
-                <View style={{flexDirection: 'row', gap: 8}}>
-                    <ScreenBox
-                        indexLabel="routes[0]  ← zawsze pierwszy"
-                        screenName="SidebarScreen"
-                        color="#166534"
-                        flex={2}
-                    />
-                    <ScreenBox
-                        indexLabel="routes[1]  ← widoczny"
-                        screenName="CentralScreen"
-                        color="#16a34a"
-                        flex={3}
-                    />
-                </View>
-                <Text style={{color: theme.textSupporting, fontSize: 14, marginTop: 4}}>
-                    Na szerokim ekranie SplitNavigator renderuje oba ekrany jednocześnie obok siebie. SidebarScreen musi być zawsze na indeksie 0 — to gwarantuje adaptStateIfNecessary.
-                </Text>
-            </DiagramPanel>
-
-            {/* Wide layout — multiple central screens */}
-            <DiagramPanel title="Szeroki ekran — wiele ekranów centralnych w stosie">
-                <View style={{flexDirection: 'row', gap: 8}}>
-                    <ScreenBox
-                        indexLabel="routes[0]  ← zawsze pierwszy"
-                        screenName="SidebarScreen"
-                        color="#166534"
-                        flex={2}
                     />
                     <ScreenBox
                         indexLabel="routes[1]"
                         screenName="CentralScreen A"
-                        note="poprzedni"
                         color="#166534"
-                        flex={3}
                         faded
                     />
                     <ScreenBox
-                        indexLabel="routes[2]  ← widoczny"
+                        indexLabel="routes[2]"
                         screenName="CentralScreen B"
-                        note="aktualny"
+                        color="#166534"
+                        faded
+                    />
+                    <ScreenBox
+                        indexLabel="routes[3]  ← widoczny"
+                        screenName="CentralScreen C"
                         color="#16a34a"
-                        flex={3}
                     />
                 </View>
                 <Text style={{color: theme.textSupporting, fontSize: 14, marginTop: 4}}>
-                    Ekranów centralnych może być wiele — każde wejście w głąb (np. szczegóły → edycja) dokłada kolejny do stosu. Lewa kolumna pozostaje ta sama. Przycisk &quot;wstecz&quot; zdejmuje tylko ekrany centralne, aż do momentu gdy zostanie tylko sidebar — wtedy cofa cały navigator.
+                    Na wąskim ekranie widoczny jest tylko ekran na szczycie stosu. Sidebar i poprzednie ekrany centralne leżą pod spodem — można do nich wrócić gestem cofnięcia.
+                </Text>
+            </DiagramPanel>
+
+            {/* Wide layout */}
+            <DiagramPanel title="Szeroki ekran — zwykły stos ale pierwszy route (sidebar) jest zawsze renderowany po lewej stronie ekranu">
+                <View style={{flexDirection: 'row', gap: 8, alignItems: 'stretch'}}>
+                    <View style={{flex: 2}}>
+                        <ScreenBox
+                            indexLabel="routes[0]  ← zawsze pierwszy"
+                            screenName="SidebarScreen"
+                            color="#16a34a"
+                        />
+                    </View>
+                    <View style={{flex: 3, gap: 6}}>
+                        <ScreenBox
+                            indexLabel="routes[1]"
+                            screenName="CentralScreen A"
+                            color="#166534"
+                            faded
+                        />
+                        <ScreenBox
+                            indexLabel="routes[2]"
+                            screenName="CentralScreen B"
+                            color="#166534"
+                            faded
+                        />
+                        <ScreenBox
+                            indexLabel="routes[3]  ← widoczny"
+                            screenName="CentralScreen C"
+                            color="#16a34a"
+                        />
+                    </View>
+                </View>
+                <Text style={{color: theme.textSupporting, fontSize: 14, marginTop: 4}}>
+                    Na szerokim ekranie sidebar i aktywny ekran centralny są widoczne jednocześnie. Poprzednie ekrany centralne pozostają w stosie — przycisk &quot;wstecz&quot; zdejmuje je
+                    jeden po drugim.
                 </Text>
             </DiagramPanel>
         </View>

@@ -134,18 +134,28 @@ function RootStateDiagram() {
                 kind="split"
                 tab="Inbox"
             >
-                <View style={{flexDirection: 'row', gap: 6}}>
+                <View style={{gap: 4}}>
                     <MiniScreen
-                        label="Home"
-                        sublabel="sidebar"
-                        color="#166534"
-                        flex={2}
+                        label="Inbox"
+                        sublabel="sidebar  routes[0]"
+                        color="#16a34a"
                     />
                     <MiniScreen
                         label="Report"
-                        sublabel="central"
+                        sublabel="routes[1]"
+                        color="#166534"
+                        faded
+                    />
+                    <MiniScreen
+                        label="Report"
+                        sublabel="routes[2]"
+                        color="#166534"
+                        faded
+                    />
+                    <MiniScreen
+                        label="Report"
+                        sublabel="routes[3]  ← widoczny"
                         color="#16a34a"
-                        flex={3}
                     />
                 </View>
             </RouteRow>
@@ -205,18 +215,28 @@ function RootStateDiagram() {
                 kind="split"
                 tab="Workspaces"
             >
-                <View style={{flexDirection: 'row', gap: 6}}>
+                <View style={{gap: 4}}>
                     <MiniScreen
                         label="Workspace Initial"
-                        sublabel="sidebar"
-                        color="#166534"
-                        flex={2}
+                        sublabel="sidebar  routes[0]"
+                        color="#16a34a"
                     />
                     <MiniScreen
                         label="Workspace Overview"
-                        sublabel="central"
+                        sublabel="routes[1]"
+                        color="#166534"
+                        faded
+                    />
+                    <MiniScreen
+                        label="Workspace Members"
+                        sublabel="routes[2]"
+                        color="#166534"
+                        faded
+                    />
+                    <MiniScreen
+                        label="Workspace Categories"
+                        sublabel="routes[3]  ← widoczny"
                         color="#16a34a"
-                        flex={3}
                     />
                 </View>
             </RouteRow>
