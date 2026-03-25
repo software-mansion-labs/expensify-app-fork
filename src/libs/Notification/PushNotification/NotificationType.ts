@@ -2,9 +2,13 @@ import type {OnyxKey} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import type {AnyOnyxServerUpdate, OnyxServerUpdate} from '@src/types/onyx/OnyxUpdatesFromServer';
 
+// @push-base subtitle:string onyxData:array lastUpdateID:number previousUpdateID:number hasPendingOnyxUpdates:boolean
 const NotificationType = {
+    // @push-payload reportID:number reportActionID:string
     REPORT_ACTION: 'reportAction',
+    // @push-payload reportID:number reportActionID:string
     REPORT_COMMENT: 'reportComment',
+    // @push-payload reportID:number transactionID:number
     TRANSACTION: 'transaction',
 } as const;
 

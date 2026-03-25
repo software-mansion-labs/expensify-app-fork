@@ -2,106 +2,167 @@
 
 TOP="$(realpath "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)/..")"
 readonly TOP
-# Define the directory where .apns files are located
-DIRECTORY="${TOP}/tests/ios-push-notifications"
 
-# Function to extract unique placeholders from a file using grep and cut (compatible with macOS)
-extract_placeholders() {
-    grep -o '<[A-Z_]\+>' "$1" | cut -d'<' -f2 | cut -d'>' -f1 | sort -u
-}
+TYPES_FILE="${TOP}/src/libs/Notification/PushNotification/NotificationType.ts"
+BUNDLE_HYBRID="com.expensify.expensifylite"
+BUNDLE_STANDALONE="com.expensify.chat.dev"
 
-# Parse options
-use_standalone=false
-while getopts ":s" opt; do
-  case $opt in
-    s)
-      use_standalone=true
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      exit 1
-      ;;
-  esac
-done
-shift $((OPTIND-1))
+BOLD='\033[1m'
+DIM='\033[2m'
+CYAN='\033[36m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+RED='\033[31m'
+RESET='\033[0m'
 
-# Check the first argument for 'list' command
-if [ "$1" == "list" ]; then
-    echo "Available push notifications:"
-    for file in "$DIRECTORY"/*.apns; do
-        if [[ "$file" =~ \.standalone\.apns$ ]]; then
-            base_name=$(basename "$file" .standalone.apns)
-            if [[ ! -f "$DIRECTORY/$base_name.apns" ]]; then
-                echo "$base_name (Standalone only)"
-            fi
-        else
-            base_name=$(basename "$file" .apns)
-            if [[ -f "$DIRECTORY/$base_name.standalone.apns" ]]; then
-                echo "$base_name (+ Standalone)"
-            else
-                echo "$base_name"
-            fi
+# Parses @push-payload annotations from NotificationType.ts.
+# Each line pairs with the next line's type value, producing: <typeValue> <field1:type1> <field2:type2> ...
+get_types_with_fields() {
+    grep -A1 '@push-payload' "$TYPES_FILE" | grep -v '^--$' | paste - - | while IFS=$'\t' read -r annotation type_line; do
+        fields=$(echo "$annotation" | sed 's/.*@push-payload //')
+        value=$(echo "$type_line" | grep -o "'[a-zA-Z]*'" | tr -d "'")
+        if [ -n "$value" ]; then
+            echo "$value $fields"
         fi
     done
+}
+
+get_valid_types() {
+    get_types_with_fields | awk '{print $1}'
+}
+
+get_base_fields() {
+    grep '@push-base' "$TYPES_FILE" | sed 's/.*@push-base //' | sed 's/[[:space:]]*$//'
+}
+
+# Converts a raw value string to its JSON representation:
+#   integers -> number, true/false -> boolean, {}/[] -> raw JSON, else -> quoted string
+json_value() {
+    local val="$1"
+    if [[ "$val" =~ ^[0-9]+$ ]]; then
+        printf '%s' "$val"
+    elif [[ "$val" == "true" || "$val" == "false" ]]; then
+        printf '%s' "$val"
+    elif [[ "$val" == \{* || "$val" == \[* ]]; then
+        printf '%s' "$val"
+    else
+        printf '"%s"' "$val"
+    fi
+}
+
+usage() {
+    printf "${BOLD}Usage:${RESET} ios-push-notification ${DIM}[-s] [-f <file>]${RESET} ${CYAN}<type>${RESET} ${GREEN}<title>${RESET} ${DIM}[key=value ...]${RESET}\n"
+    printf "       ios-push-notification ${YELLOW}list${RESET}\n"
     echo ""
+    printf "${BOLD}Options:${RESET}\n"
+    printf "  ${YELLOW}-s${RESET}          Use standalone bundle ID ${DIM}(%s)${RESET}\n" "$BUNDLE_STANDALONE"
+    printf "              Default bundle ID is ${DIM}%s${RESET}\n" "$BUNDLE_HYBRID"
+    printf "  ${YELLOW}-f${RESET} <file>   Read additional payload fields from a JSON file\n"
+    echo ""
+}
+
+bundle_id="$BUNDLE_HYBRID"
+payload_file=""
+while getopts ":sf:" opt; do
+    case $opt in
+        s) bundle_id="$BUNDLE_STANDALONE" ;;
+        f) payload_file="$OPTARG" ;;
+        \?)
+            printf "${RED}Invalid option:${RESET} -%s\n" "$OPTARG" >&2
+            exit 1
+            ;;
+        :)
+            printf "${RED}Option -%s requires an argument${RESET}\n" "$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [ "$1" == "list" ]; then
+    printf "${BOLD}Available notification types${RESET} ${DIM}(from NotificationType.ts)${RESET}\n"
+    echo ""
+    get_types_with_fields | while IFS= read -r line; do
+        type_name=$(echo "$line" | awk '{print $1}')
+        fields=$(echo "$line" | cut -d' ' -f2-)
+        printf "  ${CYAN}${BOLD}%s${RESET}\n" "$type_name"
+        for field in $fields; do
+            name="${field%%:*}"
+            ftype="${field#*:}"
+            printf "    ${GREEN}%s${RESET}${DIM}:%s${RESET}\n" "$name" "$ftype"
+        done
+    done
+    echo ""
+    base_fields=$(get_base_fields)
+    if [ -n "$base_fields" ]; then
+        printf "${BOLD}Common fields${RESET} ${DIM}(can be passed to any type)${RESET}\n"
+        for field in $base_fields; do
+            name="${field%%:*}"
+            ftype="${field#*:}"
+            printf "    ${YELLOW}%s${RESET}${DIM}:%s${RESET}\n" "$name" "$ftype"
+        done
+        echo ""
+    fi
     exit 0
 fi
 
-# Check if the file name without extension is provided
-if [ "$#" -lt 1 ]; then
-    echo "Proper usage: ios-push-notification [-s] <name>"
-    echo "Use 'list' to display available notifications."
-    echo ""
+if [ "$#" -lt 2 ]; then
+    usage
     exit 1
 fi
 
-# Assign the file path by adding .apns or .standalone.apns extension
-if [ "$use_standalone" == true ]; then
-    input_file="${DIRECTORY}/$1.standalone.apns"
-else
-    input_file="${DIRECTORY}/$1.apns"
-fi
+type="$1"
+title="$2"
+shift 2
 
-# Verify that the file exists
-if [ ! -f "$input_file" ]; then
-    echo "$1 does not exist, use 'list' to display available notifications."
-    echo "Proper usage: ios-push-notification [-s] <name>"
+valid_types=$(get_valid_types)
+if ! echo "$valid_types" | grep -qx "$type"; then
+    printf "${RED}Unknown type:${RESET} %s\n" "$type"
+    echo ""
+    printf "${BOLD}Valid types:${RESET}\n"
+    for t in $valid_types; do
+        printf "  ${CYAN}%s${RESET}\n" "$t"
+    done
     echo ""
     exit 2
 fi
 
-# Extract placeholders
-placeholders=$(extract_placeholders "$input_file")
-if [ -z "$placeholders" ]; then
-    cat "$input_file"
-    exit 3
-fi
+payload_fields=""
 
-# Check if correct number of replacements were provided
-if [ $(($# - 1)) -lt "$(echo "$placeholders" | wc -l)" ]; then
-    echo "Insufficient parameters provided."
-    echo "Proper usage: ios-push-notification [-s] $1 $(echo "$placeholders" | sed 's/^/</' | sed 's/$/>/' | tr '\n' ' ')"
-    echo ""
-    exit 4
-fi
-
-# Remove the first argument (file name), leaving only the replacement values
-shift
-
-# Go through the file and replace each placeholder with the successive argument
-sed_script=""
-placeholder_index=1
-for placeholder in $placeholders; do
-    replacement="${!placeholder_index}"
-    # Check if the placeholder is for a string and add quotes if necessary
-    if [[ "$placeholder" == *_STRING ]]; then
-        replacement="\"$replacement\""
+if [ -n "$payload_file" ]; then
+    if [ ! -f "$payload_file" ]; then
+        printf "${RED}Payload file not found:${RESET} %s\n" "$payload_file"
+        exit 3
     fi
-    # Escape special characters for sed
-    replacement_esc="$(printf '%s' "$replacement" | sed 's/[&/\]/\\&/g')"
-    sed_script+="s|<$placeholder>|$replacement_esc|g;"
-    ((placeholder_index++))
+    file_content=$(cat "$payload_file")
+    # Strip the outer braces and leading/trailing whitespace to get inner key-value pairs
+    file_inner=$(echo "$file_content" | sed 's/^[[:space:]]*{//' | sed 's/}[[:space:]]*$//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    if [ -n "$file_inner" ]; then
+        payload_fields+=", $file_inner"
+    fi
+fi
+
+for arg in "$@"; do
+    key="${arg%%=*}"
+    val="${arg#*=}"
+    if [ "$key" = "$arg" ]; then
+        printf "${RED}Invalid argument:${RESET} %s ${DIM}(expected key=value)${RESET}\n" "$arg"
+        exit 3
+    fi
+    payload_fields+=", \"$key\": $(json_value "$val")"
 done
 
-# Execute the sed command and print the result
-sed "$sed_script" "$input_file" | xcrun simctl push booted -
+json=$(cat <<EOF
+{
+  "aps": {
+    "alert": "$title"
+  },
+  "payload": {
+    "type": "$type",
+    "app": "new"$payload_fields
+  }
+}
+EOF
+)
+
+echo "$json" | xcrun simctl push booted "$bundle_id" -
