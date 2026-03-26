@@ -22,7 +22,6 @@ import getOnyxValue from '../../utils/getOnyxValue';
 import type {MockFetch} from '../../utils/TestHelper';
 import {getGlobalFetchMock} from '../../utils/TestHelper';
 import waitForBatchedUpdates from '../../utils/waitForBatchedUpdates';
-import {getPolicyTags} from '@libs/actions/IOU';
 
 const topMostReportID = '23423423';
 jest.mock('@src/libs/Navigation/Navigation', () => ({
@@ -128,9 +127,6 @@ describe('actions/SendInvoice', () => {
         {accountID: 456, isSender: false},
     ];
 
-    const baseSenderPolicyID = baseParticipants.find((p) => p.isSender)?.policyID;
-    const baseParticipantsPolicyTags = getPolicyTags()?.[`${ONYXKEYS.COLLECTION.POLICY_TAGS}${baseSenderPolicyID}`] ?? {};
-
     const baseTransaction = {
         transactionID: 'transaction_base',
         reportID: 'report_base',
@@ -159,7 +155,6 @@ describe('actions/SendInvoice', () => {
                 companyName: undefined,
                 companyWebsite: undefined,
                 policyRecentlyUsedCategories: existingRecentlyUsedCategories,
-                participantsPolicyTags: baseParticipantsPolicyTags,
             });
 
             // Then: Verify optimistic data is generated when policyRecentlyUsedCategories are provided
@@ -184,7 +179,6 @@ describe('actions/SendInvoice', () => {
                 companyName: undefined,
                 companyWebsite: undefined,
                 policyRecentlyUsedCategories: undefined,
-                participantsPolicyTags: baseParticipantsPolicyTags,
             });
 
             expect(result.onyxData.optimisticData).toBeDefined();
@@ -235,7 +229,6 @@ describe('actions/SendInvoice', () => {
                 companyName: 'Test Company Inc.',
                 companyWebsite: 'https://testcompany.com',
                 policyRecentlyUsedCategories: ['Services', 'Consulting'],
-                participantsPolicyTags: mockPolicyTagList as PolicyTagLists,
             });
 
             // Then: Verify the result structure and key values
@@ -312,7 +305,6 @@ describe('actions/SendInvoice', () => {
                 companyName: 'Client Company Ltd.',
                 companyWebsite: 'https://clientcompany.com',
                 policyRecentlyUsedCategories: [],
-                participantsPolicyTags: baseParticipantsPolicyTags,
             });
 
             // Then: Verify the result uses existing chat report
@@ -348,7 +340,6 @@ describe('actions/SendInvoice', () => {
                 companyName: undefined,
                 companyWebsite: undefined,
                 policyRecentlyUsedCategories: [],
-                participantsPolicyTags: baseParticipantsPolicyTags,
             });
 
             // Then: Verify receipt handling
@@ -397,7 +388,6 @@ describe('actions/SendInvoice', () => {
                 companyName: undefined,
                 companyWebsite: undefined,
                 policyRecentlyUsedCategories: [],
-                participantsPolicyTags: baseParticipantsPolicyTags,
             });
 
             // Then: Verify function handles missing data gracefully
@@ -427,7 +417,6 @@ describe('actions/SendInvoice', () => {
                 companyName: undefined,
                 companyWebsite: undefined,
                 policyRecentlyUsedCategories: [],
-                participantsPolicyTags: baseParticipantsPolicyTags,
             });
 
             expect(result.invoiceRoom).toBeDefined();
@@ -479,7 +468,6 @@ describe('actions/SendInvoice', () => {
                 companyName: undefined,
                 companyWebsite: undefined,
                 policyRecentlyUsedCategories: [],
-                participantsPolicyTags: baseParticipantsPolicyTags,
             });
 
             expect(result.invoiceRoom).toBeDefined();
@@ -487,7 +475,7 @@ describe('actions/SendInvoice', () => {
             expect(result.invoiceRoom.reportID).not.toBe(preGeneratedReportID);
         });
 
-        it('should build optimistic recently used tags from participantsPolicyTags', async () => {
+        it('should build optimistic recently used tags from policyTagList', async () => {
             // Given: A transaction with a tag and policy tags seeded in Onyx
             const policyID = 'workspace_tags_test';
             const tagListName = 'Department';
@@ -526,13 +514,13 @@ describe('actions/SendInvoice', () => {
                 ],
             };
 
-            // When: Call getSendInvoiceInformation with participantsPolicyTags read from Onyx
+            // When: Call getSendInvoiceInformation with policyTagList read from Onyx
             const result = getSendInvoiceInformation({
                 transaction: mockTransaction as OnyxEntry<Transaction>,
                 currentUserAccountID: 123,
                 policyRecentlyUsedCurrencies: [],
                 policyRecentlyUsedTags,
-                participantsPolicyTags: participantsPolicyTags ?? {},
+                policyTagList: participantsPolicyTags,
             });
 
             // Then: optimisticData should contain a POLICY_RECENTLY_USED_TAGS update with the transaction tag prepended
@@ -559,8 +547,6 @@ describe('actions/SendInvoice', () => {
             });
             await waitForBatchedUpdates();
 
-            const participantsPolicyTags = await getOnyxValue(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`);
-
             const mockTransaction = {
                 transactionID: 'transaction_no_tags',
                 reportID: 'report_no_tags',
@@ -579,7 +565,6 @@ describe('actions/SendInvoice', () => {
                 transaction: mockTransaction as OnyxEntry<Transaction>,
                 currentUserAccountID: 123,
                 policyRecentlyUsedCurrencies: [],
-                participantsPolicyTags: participantsPolicyTags ?? {},
             });
 
             // Then: No POLICY_RECENTLY_USED_TAGS update should be in optimisticData
@@ -704,32 +689,28 @@ describe('actions/SendInvoice', () => {
             const policyRecentlyUsedTags: OnyxEntry<RecentlyUsedTags> = {
                 [tagName]: ['old tag'],
             };
-            await Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
-                [tagName]: {name: tagName},
-            });
-            await Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_RECENTLY_USED_TAGS}${policyID}`, policyRecentlyUsedTags);
-
+            const policyTagList: PolicyTagLists = {
+                [tagName]: {
+                    name: tagName,
+                    required: false,
+                    tags: {},
+                    orderWeight: 0,
+                },
+            };
             // When sending an invoice
             sendInvoice({
                 currentUserAccountID: 1,
                 transaction,
                 policyRecentlyUsedCurrencies: [],
+                policyTagList,
                 policyRecentlyUsedTags,
             });
-            waitForBatchedUpdates();
+            await waitForBatchedUpdates();
 
             // Then the transaction tag should be added to the recently used tags collection
-            const newPolicyRecentlyUsedTags: RecentlyUsedTags = await new Promise((resolve) => {
-                const connection = Onyx.connectWithoutView({
-                    key: `${ONYXKEYS.COLLECTION.POLICY_RECENTLY_USED_TAGS}${policyID}`,
-                    callback: (recentlyUsedTags) => {
-                        resolve(recentlyUsedTags ?? {});
-                        Onyx.disconnect(connection);
-                    },
-                });
-            });
-            expect(newPolicyRecentlyUsedTags[tagName].length).toBe(2);
-            expect(newPolicyRecentlyUsedTags[tagName].at(0)).toBe(transactionTag);
+            const newPolicyRecentlyUsedTags = await getOnyxValue(`${ONYXKEYS.COLLECTION.POLICY_RECENTLY_USED_TAGS}${policyID}`);
+            expect(newPolicyRecentlyUsedTags?.[tagName]?.length).toBe(2);
+            expect(newPolicyRecentlyUsedTags?.[tagName]?.at(0)).toBe(transactionTag);
         });
 
         it('should use invoiceChatReportID when creating new invoice chat via sendInvoice', () => {
