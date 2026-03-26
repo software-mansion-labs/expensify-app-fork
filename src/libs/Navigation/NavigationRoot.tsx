@@ -205,8 +205,9 @@ function NavigationRoot({authenticated, lastVisitedPath, initialUrl, onReady}: N
     }, [shouldUseNarrowLayout]);
 
     useEffect(() => {
-        // Since the NAVIGATORS.REPORTS_SPLIT_NAVIGATOR url is "/" and it has to be used as an URL for SignInPage,
-        // this navigator should be the only one in the navigation state after logout.
+        // After logout, we reset the navigation state to a single route to prevent stale auth state from leaking.
+        // ROOT_TAB_NAVIGATOR (or REPORTS_SPLIT_NAVIGATOR) persists between auth and public screens,
+        // so we explicitly clear params for these shared navigators.
         const hasUserLoggedOut = !authenticated && !!previousAuthenticated;
         if (!hasUserLoggedOut || !navigationRef.isReady()) {
             return;

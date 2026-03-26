@@ -13,12 +13,11 @@ import NAVIGATION_TABS from '@components/Navigation/NavigationTabBar/NAVIGATION_
 import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaPaddings from '@hooks/useSafeAreaPaddings';
-import useTheme from '@hooks/useTheme';
+import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {RootTabNavigatorParamList} from '@libs/Navigation/types';
 import HomePage from '@pages/home/HomePage';
 import WorkspacesListPage from '@pages/workspace/WorkspacesListPage';
-import variables from '@styles/variables';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
 
@@ -29,6 +28,7 @@ const ROUTE_TO_NAVIGATION_TAB: Record<string, ValueOf<typeof NAVIGATION_TABS>> =
     [NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR]: NAVIGATION_TABS.SETTINGS,
     [SCREENS.WORKSPACES_LIST]: NAVIGATION_TABS.WORKSPACES,
     [NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR]: NAVIGATION_TABS.WORKSPACES,
+    [NAVIGATORS.DOMAIN_SPLIT_NAVIGATOR]: NAVIGATION_TABS.WORKSPACES,
 };
 
 /**
@@ -36,10 +36,11 @@ const ROUTE_TO_NAVIGATION_TAB: Record<string, ValueOf<typeof NAVIGATION_TABS>> =
  * full BottomTabBarProps) to avoid `descriptors` thrashing memoization.
  * Wrapped in overflow:'visible' so floating buttons (FAB, GPS, Camera) aren't clipped.
  */
-function RootTabNavigatorTabBar({tabState}: {tabState: BottomTabBarProps['state']}) {
+function RootTabNavigatorBar({tabState}: {tabState: BottomTabBarProps['state']}) {
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const {paddingBottom: safeAreaPaddingBottom} = useSafeAreaPaddings(true);
-    const theme = useTheme();
+    const styles = useThemeStyles();
+    const StyleUtils = useStyleUtils();
     const selectedRouteName = tabState.routes[tabState.index]?.name;
     const selectedTab = ROUTE_TO_NAVIGATION_TAB[selectedRouteName ?? ''] ?? NAVIGATION_TABS.HOME;
 
@@ -72,13 +73,7 @@ function RootTabNavigatorTabBar({tabState}: {tabState: BottomTabBarProps['state'
         // Negative marginTop overlays the tab bar on content (zero flex space) to prevent layout shifts.
         return (
             <View
-                style={{
-                    overflow: 'visible',
-                    marginTop: -(variables.bottomTabHeight + safeAreaPaddingBottom),
-                    paddingBottom: safeAreaPaddingBottom,
-                    backgroundColor: theme.appBG,
-                    opacity: isHidden ? 0 : 1,
-                }}
+                style={[StyleUtils.getRootTabBarNarrowStyle(safeAreaPaddingBottom), isHidden && styles.opacity0]}
                 pointerEvents={isHidden ? 'none' : 'auto'}
             >
                 <NavigationTabBar
@@ -90,18 +85,19 @@ function RootTabNavigatorTabBar({tabState}: {tabState: BottomTabBarProps['state'
     }
 
     return (
-        <View style={{overflow: 'visible'}}>
+        <View style={styles.overflowHidden}>
             <NavigationTabBar selectedTab={selectedTab} />
         </View>
     );
 }
 
-const renderTabBar = ({state}: BottomTabBarProps) => <RootTabNavigatorTabBar tabState={state} />;
+const renderTabBar = ({state}: BottomTabBarProps) => <RootTabNavigatorBar tabState={state} />;
 
 const LazyReportsSplitNavigator = lazy(() => import('./ReportsSplitNavigator'));
 const LazySearchFullscreenNavigator = lazy(() => import('./SearchFullscreenNavigator'));
 const LazySettingsSplitNavigator = lazy(() => import('./SettingsSplitNavigator'));
 const LazyWorkspaceSplitNavigator = lazy(() => import('./WorkspaceSplitNavigator'));
+const LazyDomainSplitNavigator = lazy(() => import('./DomainSplitNavigator'));
 
 function withSuspense<P extends Record<string, unknown>>(LazyComponent: React.LazyExoticComponent<React.ComponentType<P>>) {
     function SuspenseWrapper(props: P) {
@@ -126,6 +122,7 @@ const ReportsSplitNavigatorScreen = withSuspense(LazyReportsSplitNavigator);
 const SearchFullscreenNavigatorScreen = withSuspense(LazySearchFullscreenNavigator);
 const SettingsSplitNavigatorScreen = withSuspense(LazySettingsSplitNavigator);
 const WorkspaceSplitNavigatorScreen = withSuspense(LazyWorkspaceSplitNavigator);
+const DomainSplitNavigatorScreen = withSuspense(LazyDomainSplitNavigator);
 
 const Tab = createBottomTabNavigator<RootTabNavigatorParamList>();
 
@@ -195,6 +192,10 @@ function RootTabNavigator() {
             <Tab.Screen
                 name={NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR}
                 component={WorkspaceSplitNavigatorScreen}
+            />
+            <Tab.Screen
+                name={NAVIGATORS.DOMAIN_SPLIT_NAVIGATOR}
+                component={DomainSplitNavigatorScreen}
             />
         </Tab.Navigator>
     );

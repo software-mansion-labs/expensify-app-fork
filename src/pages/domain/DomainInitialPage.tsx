@@ -6,6 +6,8 @@ import type {ValueOf} from 'type-fest';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import HighlightableMenuItem from '@components/HighlightableMenuItem';
+import NAVIGATION_TABS from '@components/Navigation/NavigationTabBar/NAVIGATION_TABS';
+import TabBarBottomContent from '@components/Navigation/TabBarBottomContent';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import useConfirmReadyToOpenApp from '@hooks/useConfirmReadyToOpenApp';
@@ -111,6 +113,8 @@ function DomainInitialPage({route}: DomainInitialPageProps) {
         <ScreenWrapper
             testID="DomainInitialPage"
             enableEdgeToEdgeBottomSafeAreaPadding={false}
+            bottomContent={<TabBarBottomContent selectedTab={NAVIGATION_TABS.WORKSPACES} />}
+            bottomContentStyle={styles.overflowVisible}
         >
             <FullPageNotFoundView
                 onBackButtonPress={() => Navigation.dismissModal()}

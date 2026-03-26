@@ -2837,6 +2837,7 @@ type RootTabNavigatorParamList = {
         backTo?: Routes;
     };
     [NAVIGATORS.WORKSPACE_SPLIT_NAVIGATOR]: NavigatorScreenParams<WorkspaceSplitNavigatorParamList>;
+    [NAVIGATORS.DOMAIN_SPLIT_NAVIGATOR]: NavigatorScreenParams<DomainSplitNavigatorParamList>;
 };
 
 type SharedScreensParamList = {
