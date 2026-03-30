@@ -54,8 +54,6 @@ const IGNORED_PROPS = new Set([
     'large',
     'isLoading',
     'isDisabled',
-    // text/icon presence - just whether they're set, not interesting for extras
-    'text',
 ]);
 
 function isTruthyValue(value: string, type: string): boolean {
@@ -66,6 +64,7 @@ function isTruthyValue(value: string, type: string): boolean {
 }
 
 interface ExtraFingerprint {
+    hasText: boolean;
     hasIcon: boolean;
     hasIconRight: boolean;
     hasSecondLineText: boolean;
@@ -79,6 +78,7 @@ interface ExtraFingerprint {
 
 function buildFingerprint(usage: ButtonUsage): ExtraFingerprint {
     const fp: ExtraFingerprint = {
+        hasText: false,
         hasIcon: false,
         hasIconRight: false,
         hasSecondLineText: false,
@@ -129,6 +129,10 @@ function buildFingerprint(usage: ButtonUsage): ExtraFingerprint {
         if (IGNORED_PROPS.has(name)) continue;
         if (name.startsWith('{...')) continue;
 
+        if (name === 'text') {
+            fp.hasText = true;
+            continue;
+        }
         if (name === 'icon') {
             fp.hasIcon = isTruthyValue(value, type);
             continue;
@@ -178,6 +182,7 @@ function buildFingerprint(usage: ButtonUsage): ExtraFingerprint {
 function fingerprintToKey(fp: ExtraFingerprint): string {
     const parts: string[] = [];
 
+    if (fp.hasText) parts.push('text:yes');
     if (fp.hasIcon) parts.push('icon:yes');
     if (fp.hasSecondLineText) parts.push('secondLine:yes');
     if (fp.hasChildren) parts.push('children:yes');

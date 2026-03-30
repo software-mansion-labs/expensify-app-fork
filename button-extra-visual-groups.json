@@ -1,12 +1,13 @@
 {
-  "totalGroups": 66,
+  "totalGroups": 70,
   "totalUsages": 315,
   "groups": [
     {
       "groupId": 1,
-      "count": 193,
-      "visualSignature": "(no extras - plain button)",
+      "count": 192,
+      "visualSignature": "text:yes",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -415,10 +416,6 @@
           "line": 195
         },
         {
-          "file": "src/pages/inbox/report/FloatingMessageCounter.tsx",
-          "line": 66
-        },
-        {
           "file": "src/pages/inbox/report/ListBoundaryLoader.tsx",
           "line": 73
         },
@@ -794,9 +791,10 @@
     },
     {
       "groupId": 2,
-      "count": 22,
-      "visualSignature": "icon:yes",
+      "count": 21,
+      "visualSignature": "text:yes | icon:yes",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -819,10 +817,6 @@
         {
           "file": "src/components/Search/SearchPageHeader/SearchActionsBarCreateButton.tsx",
           "line": 146
-        },
-        {
-          "file": "src/components/Search/SearchPageHeader/SearchActionsBarNarrow.tsx",
-          "line": 55
         },
         {
           "file": "src/components/Search/SearchPageHeader/SearchAdvancedFiltersButton.tsx",
@@ -901,8 +895,9 @@
     {
       "groupId": 3,
       "count": 5,
-      "visualSignature": "icon:yes | style=styles.transactionReceiptButton",
+      "visualSignature": "text:yes | icon:yes | style=styles.transactionReceiptButton",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -941,8 +936,9 @@
     {
       "groupId": 4,
       "count": 4,
-      "visualSignature": "icon:yes | defaultHover:false | textStyles=[[styles.textMicroBold]] | iconFill=theme.link | iconHoverFill=theme.linkHover",
+      "visualSignature": "text:yes | icon:yes | defaultHover:false | textStyles=[[styles.textMicroBold]] | iconFill=theme.link | iconHoverFill=theme.linkHover",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -980,8 +976,9 @@
     {
       "groupId": 5,
       "count": 4,
-      "visualSignature": "icon:yes | style=styles.quickCreationActionsBarButton | textStyles=styles.quickCreationActionsBarButtonText",
+      "visualSignature": "text:yes | icon:yes | style=styles.quickCreationActionsBarButton | textStyles=styles.quickCreationActionsBarButtonText",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1017,8 +1014,9 @@
     {
       "groupId": 6,
       "count": 4,
-      "visualSignature": "icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]]",
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1053,8 +1051,9 @@
     {
       "groupId": 7,
       "count": 4,
-      "visualSignature": "style=[[styles.p9, styles.pt5]]",
+      "visualSignature": "text:yes | style=[[styles.p9, styles.pt5]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1089,40 +1088,9 @@
     {
       "groupId": 8,
       "count": 3,
-      "visualSignature": "style=dynamic (variable: style)",
-      "fingerprint": {
-        "hasIcon": false,
-        "hasIconRight": false,
-        "hasSecondLineText": false,
-        "hasChildren": false,
-        "shouldShowRightIcon": false,
-        "shouldUseDefaultHover": "true",
-        "booleanFlags": {},
-        "styleOverrides": {
-          "style": "dynamic (variable: style)"
-        },
-        "colorOverrides": {}
-      },
-      "files": [
-        {
-          "file": "src/components/Attachments/AttachmentCarousel/CarouselItem.tsx",
-          "line": 45
-        },
-        {
-          "file": "src/pages/settings/Subscription/SubscriptionPlan/SubscriptionPlanCardActionButton.tsx",
-          "line": 104
-        },
-        {
-          "file": "src/pages/settings/Subscription/SubscriptionPlan/SubscriptionPlanCardActionButton.tsx",
-          "line": 119
-        }
-      ]
-    },
-    {
-      "groupId": 9,
-      "count": 3,
       "visualSignature": "icon:yes | iconFill=theme.icon",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1151,42 +1119,11 @@
       ]
     },
     {
-      "groupId": 10,
+      "groupId": 9,
       "count": 3,
-      "visualSignature": "style=[[styles.mt2, styles.alignSelfStart]]",
+      "visualSignature": "text:yes | style=[[styles.w100, styles.mb5, styles.ph5, styles.flexShrink0]]",
       "fingerprint": {
-        "hasIcon": false,
-        "hasIconRight": false,
-        "hasSecondLineText": false,
-        "hasChildren": false,
-        "shouldShowRightIcon": false,
-        "shouldUseDefaultHover": "true",
-        "booleanFlags": {},
-        "styleOverrides": {
-          "style": "[[styles.mt2, styles.alignSelfStart]]"
-        },
-        "colorOverrides": {}
-      },
-      "files": [
-        {
-          "file": "src/pages/inbox/report/PureReportActionItem.tsx",
-          "line": 1808
-        },
-        {
-          "file": "src/pages/inbox/report/ReportActionItemMessage.tsx",
-          "line": 109
-        },
-        {
-          "file": "src/pages/inbox/report/ReportActionItemMessage.tsx",
-          "line": 188
-        }
-      ]
-    },
-    {
-      "groupId": 11,
-      "count": 3,
-      "visualSignature": "style=[[styles.w100, styles.mb5, styles.ph5, styles.flexShrink0]]",
-      "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1215,10 +1152,11 @@
       ]
     },
     {
-      "groupId": 12,
+      "groupId": 10,
       "count": 3,
-      "visualSignature": "icon:yes | secondLine:yes | children:yes | rightIcon:yes | defaultHover:dynamic | isContentCentered:dynamic | isNested:dynamic | primaryTextNumberOfLines:dynamic (from spread of parameter) | shouldBlendOpacity:dynamic | shouldRemoveLeftBorderRadius:dynamic | shouldRemoveRightBorderRadius:dynamic | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (from spread of parameter) | hoverStyles=dynamic (from spread of parameter) | iconRightStyles=dynamic (from spread of parameter) | iconStyles=dynamic (from spread of parameter) | iconWrapperStyles=dynamic (from spread of parameter) | innerStyles=dynamic (from spread of parameter) | style=dynamic (from spread of parameter) | textHoverStyles=dynamic (from spread of parameter) | textStyles=dynamic (from spread of parameter) | iconFill=dynamic (from spread of parameter) | iconHoverFill=dynamic (from spread of parameter) | iconRight=dynamic (from spread of parameter) | iconRightFill=dynamic (from spread of parameter) | iconRightHoverFill=dynamic (from spread of parameter)",
+      "visualSignature": "text:yes | icon:yes | secondLine:yes | children:yes | rightIcon:yes | defaultHover:dynamic | isContentCentered:dynamic | isNested:dynamic | primaryTextNumberOfLines:dynamic (from spread of parameter) | shouldBlendOpacity:dynamic | shouldRemoveLeftBorderRadius:dynamic | shouldRemoveRightBorderRadius:dynamic | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (from spread of parameter) | hoverStyles=dynamic (from spread of parameter) | iconRightStyles=dynamic (from spread of parameter) | iconStyles=dynamic (from spread of parameter) | iconWrapperStyles=dynamic (from spread of parameter) | innerStyles=dynamic (from spread of parameter) | style=dynamic (from spread of parameter) | textHoverStyles=dynamic (from spread of parameter) | textStyles=dynamic (from spread of parameter) | iconFill=dynamic (from spread of parameter) | iconHoverFill=dynamic (from spread of parameter) | iconRight=dynamic (from spread of parameter) | iconRightFill=dynamic (from spread of parameter) | iconRightHoverFill=dynamic (from spread of parameter)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": true,
@@ -1269,10 +1207,11 @@
       ]
     },
     {
-      "groupId": 13,
+      "groupId": 11,
       "count": 3,
-      "visualSignature": "icon:yes | style=dynamic (binary expression)",
+      "visualSignature": "text:yes | icon:yes | style=dynamic (binary expression)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1301,10 +1240,11 @@
       ]
     },
     {
-      "groupId": 14,
+      "groupId": 12,
       "count": 3,
-      "visualSignature": "style=styles.justifyContentCenter",
+      "visualSignature": "text:yes | style=styles.justifyContentCenter",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1333,10 +1273,11 @@
       ]
     },
     {
-      "groupId": 15,
+      "groupId": 13,
       "count": 2,
       "visualSignature": "icon:yes | innerStyles=[[styles.arrowIcon]] | iconFill=theme.text",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1363,10 +1304,11 @@
       ]
     },
     {
-      "groupId": 16,
+      "groupId": 14,
       "count": 2,
-      "visualSignature": "style=[[styles.alignSelfStart, styles.mt3]]",
+      "visualSignature": "text:yes | style=[[styles.alignSelfStart, styles.mt3]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1391,10 +1333,11 @@
       ]
     },
     {
-      "groupId": 17,
+      "groupId": 15,
       "count": 2,
-      "visualSignature": "style=[[styles.w100, styles.p5, styles.mtAuto]]",
+      "visualSignature": "text:yes | style=[[styles.w100, styles.p5, styles.mtAuto]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1419,10 +1362,11 @@
       ]
     },
     {
-      "groupId": 18,
+      "groupId": 16,
       "count": 2,
-      "visualSignature": "icon:yes | iconStyles=dynamic (call: StyleUtils.getTransformScaleStyle)",
+      "visualSignature": "text:yes | icon:yes | iconStyles=dynamic (call: StyleUtils.getTransformScaleStyle)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1447,10 +1391,11 @@
       ]
     },
     {
-      "groupId": 19,
+      "groupId": 17,
       "count": 2,
-      "visualSignature": "style=[[styles.w100, styles.requestPreviewBox]]",
+      "visualSignature": "text:yes | style=[[styles.w100, styles.requestPreviewBox]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1475,10 +1420,69 @@
       ]
     },
     {
+      "groupId": 18,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.mt2, styles.alignSelfStart]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.mt2, styles.alignSelfStart]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/ReportActionItemMessage.tsx",
+          "line": 109
+        },
+        {
+          "file": "src/pages/inbox/report/ReportActionItemMessage.tsx",
+          "line": 188
+        }
+      ]
+    },
+    {
+      "groupId": 19,
+      "count": 2,
+      "visualSignature": "text:yes | style=dynamic (variable: style)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (variable: style)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionPlan/SubscriptionPlanCardActionButton.tsx",
+          "line": 104
+        },
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionPlan/SubscriptionPlanCardActionButton.tsx",
+          "line": 119
+        }
+      ]
+    },
+    {
       "groupId": 20,
       "count": 2,
-      "visualSignature": "style=dynamic (binary expression)",
+      "visualSignature": "text:yes | style=dynamic (binary expression)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1505,8 +1509,9 @@
     {
       "groupId": 21,
       "count": 1,
-      "visualSignature": "icon:yes | shouldStayNormalOnDisable:true",
+      "visualSignature": "text:yes | icon:yes | shouldStayNormalOnDisable:true",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1529,8 +1534,34 @@
     {
       "groupId": 22,
       "count": 1,
-      "visualSignature": "icon:yes | secondLine:yes | rightIcon:yes | shouldRemoveRightBorderRadius:true | shouldStayNormalOnDisable:dynamic | iconRightStyles=dynamic (conditional) | innerStyles=[[innerStyleDropButton, !isSplitButton && styles.dropDownButtonCartIconView, isTe] | style=dynamic (conditional) | textStyles=[[isTextTooLong && shouldUseShortForm ? {...styles.textExtraSmall, ...styles.text] | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional) | iconRight=icons.DownArrow | iconRightFill=dynamic (conditional) | iconRightHoverFill=dynamic (conditional)",
+      "visualSignature": "style=dynamic (variable: style)",
       "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (variable: style)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Attachments/AttachmentCarousel/CarouselItem.tsx",
+          "line": 45
+        }
+      ]
+    },
+    {
+      "groupId": 23,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | secondLine:yes | rightIcon:yes | shouldRemoveRightBorderRadius:true | shouldStayNormalOnDisable:dynamic | iconRightStyles=dynamic (conditional) | innerStyles=[[innerStyleDropButton, !isSplitButton && styles.dropDownButtonCartIconView, isTe] | style=dynamic (conditional) | textStyles=[[isTextTooLong && shouldUseShortForm ? {...styles.textExtraSmall, ...styles.text] | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional) | iconRight=icons.DownArrow | iconRightFill=dynamic (conditional) | iconRightHoverFill=dynamic (conditional)",
+      "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": true,
@@ -1563,10 +1594,11 @@
       ]
     },
     {
-      "groupId": 23,
+      "groupId": 24,
       "count": 1,
       "visualSignature": "shouldRemoveLeftBorderRadius:true | shouldStayNormalOnDisable:dynamic | innerStyles=[[styles.dropDownButtonCartIconContainerPadding, innerStyleDropButton, isButtonSi] | style=[[styles.pl0]]",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1591,10 +1623,11 @@
       ]
     },
     {
-      "groupId": 24,
+      "groupId": 25,
       "count": 1,
-      "visualSignature": "icon:yes | secondLine:yes | rightIcon:yes | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (variable: disabledStyle) | iconRightStyles=dynamic (binary expression) | innerStyles=[[innerStyleDropButton, shouldShowButtonRightIcon && styles.dropDownButtonCartIco] | style=[[styles.w100, style]] | iconRight=dynamic (conditional)",
+      "visualSignature": "text:yes | icon:yes | secondLine:yes | rightIcon:yes | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (variable: disabledStyle) | iconRightStyles=dynamic (binary expression) | innerStyles=[[innerStyleDropButton, shouldShowButtonRightIcon && styles.dropDownButtonCartIco] | style=[[styles.w100, style]] | iconRight=dynamic (conditional)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": true,
@@ -1622,10 +1655,11 @@
       ]
     },
     {
-      "groupId": 25,
+      "groupId": 26,
       "count": 1,
-      "visualSignature": "icon:yes | innerStyles=[[styles.pl10, styles.pr10]]",
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[styles.pl10, styles.pr10]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1646,10 +1680,11 @@
       ]
     },
     {
-      "groupId": 26,
+      "groupId": 27,
       "count": 1,
-      "visualSignature": "rightIcon:yes | iconRight=dynamic (conditional)",
+      "visualSignature": "text:yes | rightIcon:yes | iconRight=dynamic (conditional)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1670,10 +1705,11 @@
       ]
     },
     {
-      "groupId": 27,
+      "groupId": 28,
       "count": 1,
-      "visualSignature": "icon:yes | style=dynamic (variable: style)",
+      "visualSignature": "text:yes | icon:yes | style=dynamic (variable: style)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1694,10 +1730,11 @@
       ]
     },
     {
-      "groupId": 28,
+      "groupId": 29,
       "count": 1,
-      "visualSignature": "icon:yes | style=[[styles.floatingGpsButton]]",
+      "visualSignature": "text:yes | icon:yes | style=[[styles.floatingGpsButton]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1718,10 +1755,11 @@
       ]
     },
     {
-      "groupId": 29,
+      "groupId": 30,
       "count": 1,
-      "visualSignature": "primaryTextNumberOfLines:props.primaryTextNumberOfLines | innerStyles=props.styles?.button | textStyles=props.styles?.text",
+      "visualSignature": "text:yes | primaryTextNumberOfLines:props.primaryTextNumberOfLines | innerStyles=props.styles?.button | textStyles=props.styles?.text",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1745,10 +1783,11 @@
       ]
     },
     {
-      "groupId": 30,
+      "groupId": 31,
       "count": 1,
       "visualSignature": "style=styles.pl2",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1769,10 +1808,11 @@
       ]
     },
     {
-      "groupId": 31,
+      "groupId": 32,
       "count": 1,
-      "visualSignature": "style=[[styles.ph4, styles.pb4]]",
+      "visualSignature": "text:yes | style=[[styles.ph4, styles.pb4]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1793,10 +1833,11 @@
       ]
     },
     {
-      "groupId": 32,
+      "groupId": 33,
       "count": 1,
       "visualSignature": "innerStyles=[[isOverlayVisible && styles.buttonHoveredBG, {maxWidth: 256}, innerStyles]]",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1817,10 +1858,11 @@
       ]
     },
     {
-      "groupId": 33,
+      "groupId": 34,
       "count": 1,
-      "visualSignature": "defaultHover:false | innerStyles=styles.p0",
+      "visualSignature": "text:yes | defaultHover:false | innerStyles=styles.p0",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1841,10 +1883,11 @@
       ]
     },
     {
-      "groupId": 34,
+      "groupId": 35,
       "count": 1,
-      "visualSignature": "defaultHover:dynamic | isNested:true | shouldStayNormalOnDisable:dynamic | innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.w100, shouldDisablePointerEvents && styles.pointerEventsNone]]",
+      "visualSignature": "text:yes | defaultHover:dynamic | isNested:true | shouldStayNormalOnDisable:dynamic | innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.w100, shouldDisablePointerEvents && styles.pointerEventsNone]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1869,10 +1912,11 @@
       ]
     },
     {
-      "groupId": 35,
+      "groupId": 36,
       "count": 1,
-      "visualSignature": "isNested:true | shouldStayNormalOnDisable:dynamic | style=[[styles.w100, shouldDisablePointerEvents && styles.pointerEventsNone]]",
+      "visualSignature": "text:yes | isNested:true | shouldStayNormalOnDisable:dynamic | style=[[styles.w100, shouldDisablePointerEvents && styles.pointerEventsNone]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1896,10 +1940,11 @@
       ]
     },
     {
-      "groupId": 36,
+      "groupId": 37,
       "count": 1,
-      "visualSignature": "defaultHover:false | isNested:true | innerStyles=[[styles.ph3]] | textStyles=[[styles.fontSizeNormal]]",
+      "visualSignature": "text:yes | defaultHover:false | isNested:true | innerStyles=[[styles.ph3]] | textStyles=[[styles.fontSizeNormal]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1923,10 +1968,34 @@
       ]
     },
     {
-      "groupId": 37,
+      "groupId": 38,
       "count": 1,
-      "visualSignature": "style=[[styles.w100, confirmButtonStyle]]",
+      "visualSignature": "icon:yes",
       "fingerprint": {
+        "hasText": false,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchActionsBarNarrow.tsx",
+          "line": 55
+        }
+      ]
+    },
+    {
+      "groupId": 39,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.w100, confirmButtonStyle]]",
+      "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1947,10 +2016,11 @@
       ]
     },
     {
-      "groupId": 38,
+      "groupId": 40,
       "count": 1,
-      "visualSignature": "style=[[styles.w100, styles.mb15]]",
+      "visualSignature": "text:yes | style=[[styles.w100, styles.mb15]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1971,10 +2041,11 @@
       ]
     },
     {
-      "groupId": 39,
+      "groupId": 41,
       "count": 1,
-      "visualSignature": "innerStyles=dynamic (variable: styleForAM)",
+      "visualSignature": "text:yes | innerStyles=dynamic (variable: styleForAM)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -1995,10 +2066,11 @@
       ]
     },
     {
-      "groupId": 40,
+      "groupId": 42,
       "count": 1,
-      "visualSignature": "innerStyles=[[styleForPM, styles.ml1]]",
+      "visualSignature": "text:yes | innerStyles=[[styleForPM, styles.ml1]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2019,10 +2091,11 @@
       ]
     },
     {
-      "groupId": 41,
+      "groupId": 43,
       "count": 1,
-      "visualSignature": "style=[[styles.pb3, styles.ph3]]",
+      "visualSignature": "text:yes | style=[[styles.pb3, styles.ph3]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2043,10 +2116,11 @@
       ]
     },
     {
-      "groupId": 42,
+      "groupId": 44,
       "count": 1,
-      "visualSignature": "style=[[styles.pb5, styles.ph3]]",
+      "visualSignature": "text:yes | style=[[styles.pb5, styles.ph3]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2067,10 +2141,11 @@
       ]
     },
     {
-      "groupId": 43,
+      "groupId": 45,
       "count": 1,
-      "visualSignature": "icon:yes | rightIcon:yes | iconStyles=styles.buttonCTAIcon",
+      "visualSignature": "text:yes | icon:yes | rightIcon:yes | iconStyles=styles.buttonCTAIcon",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2091,10 +2166,11 @@
       ]
     },
     {
-      "groupId": 44,
+      "groupId": 46,
       "count": 1,
-      "visualSignature": "style=styles.updateRequiredViewTextContainer",
+      "visualSignature": "text:yes | style=styles.updateRequiredViewTextContainer",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2115,10 +2191,11 @@
       ]
     },
     {
-      "groupId": 45,
+      "groupId": 47,
       "count": 1,
-      "visualSignature": "innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.pl2]]",
+      "visualSignature": "text:yes | innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.pl2]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2140,10 +2217,11 @@
       ]
     },
     {
-      "groupId": 46,
+      "groupId": 48,
       "count": 1,
-      "visualSignature": "style=styles.twoColumnLayoutCol",
+      "visualSignature": "text:yes | style=styles.twoColumnLayoutCol",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2164,10 +2242,11 @@
       ]
     },
     {
-      "groupId": 47,
+      "groupId": 49,
       "count": 1,
       "visualSignature": "icon:yes | innerStyles=[[styles.arrowIcon]]",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2188,10 +2267,11 @@
       ]
     },
     {
-      "groupId": 48,
+      "groupId": 50,
       "count": 1,
-      "visualSignature": "icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (binary expression)",
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (binary expression)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2213,10 +2293,11 @@
       ]
     },
     {
-      "groupId": 49,
+      "groupId": 51,
       "count": 1,
-      "visualSignature": "icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional) | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional)",
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional) | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2241,10 +2322,11 @@
       ]
     },
     {
-      "groupId": 50,
+      "groupId": 52,
       "count": 1,
-      "visualSignature": "icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional)",
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2266,10 +2348,11 @@
       ]
     },
     {
-      "groupId": 51,
+      "groupId": 53,
       "count": 1,
-      "visualSignature": "style=styles.alignSelfStart",
+      "visualSignature": "text:yes | style=styles.alignSelfStart",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2290,10 +2373,11 @@
       ]
     },
     {
-      "groupId": 52,
+      "groupId": 54,
       "count": 1,
-      "visualSignature": "rightIcon:yes | isContentCentered:true | style=styles.widgetItemButton | textStyles=styles.pb0 | iconRight=icons.Expand",
+      "visualSignature": "text:yes | rightIcon:yes | isContentCentered:true | style=styles.widgetItemButton | textStyles=styles.pb0 | iconRight=icons.Expand",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2319,10 +2403,59 @@
       ]
     },
     {
-      "groupId": 53,
+      "groupId": 55,
       "count": 1,
-      "visualSignature": "rightIcon:yes | iconRight=expensifyIcons.UpArrow",
+      "visualSignature": "(no extras - plain button)",
       "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/FloatingMessageCounter.tsx",
+          "line": 66
+        }
+      ]
+    },
+    {
+      "groupId": 56,
+      "count": 1,
+      "visualSignature": "style=[[styles.mt2, styles.alignSelfStart]]",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.mt2, styles.alignSelfStart]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/PureReportActionItem.tsx",
+          "line": 1808
+        }
+      ]
+    },
+    {
+      "groupId": 57,
+      "count": 1,
+      "visualSignature": "text:yes | rightIcon:yes | iconRight=expensifyIcons.UpArrow",
+      "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2343,10 +2476,11 @@
       ]
     },
     {
-      "groupId": 54,
+      "groupId": 58,
       "count": 1,
-      "visualSignature": "style=[[styles.p5, styles.mt4]]",
+      "visualSignature": "text:yes | style=[[styles.p5, styles.mt4]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2367,10 +2501,11 @@
       ]
     },
     {
-      "groupId": 55,
+      "groupId": 59,
       "count": 1,
       "visualSignature": "rightIcon:yes | innerStyles=styles.bgTransparent | iconRight=expensifyIcons.Trashcan",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2393,10 +2528,11 @@
       ]
     },
     {
-      "groupId": 56,
+      "groupId": 60,
       "count": 1,
-      "visualSignature": "style=[[styles.p5]]",
+      "visualSignature": "text:yes | style=[[styles.p5]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2417,10 +2553,11 @@
       ]
     },
     {
-      "groupId": 57,
+      "groupId": 61,
       "count": 1,
       "visualSignature": "icon:yes | innerStyles=[[styles.singleAvatarMedium, styles.bgGreenSuccess]] | iconFill=theme.white",
       "fingerprint": {
+        "hasText": false,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2443,10 +2580,11 @@
       ]
     },
     {
-      "groupId": 58,
+      "groupId": 62,
       "count": 1,
-      "visualSignature": "style=[[styles.buttonConfirm, shouldUseNarrowLayout ? {} : styles.attachmentButtonBigSc] | textStyles=[[styles.buttonConfirmText]]",
+      "visualSignature": "text:yes | style=[[styles.buttonConfirm, shouldUseNarrowLayout ? {} : styles.attachmentButtonBigSc] | textStyles=[[styles.buttonConfirmText]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2468,10 +2606,11 @@
       ]
     },
     {
-      "groupId": 59,
+      "groupId": 63,
       "count": 1,
-      "visualSignature": "icon:yes | style=[[styles.alignSelfStart, styles.mt6]]",
+      "visualSignature": "text:yes | icon:yes | style=[[styles.alignSelfStart, styles.mt6]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2492,10 +2631,11 @@
       ]
     },
     {
-      "groupId": 60,
+      "groupId": 64,
       "count": 1,
-      "visualSignature": "style=dynamic (conditional)",
+      "visualSignature": "text:yes | style=dynamic (conditional)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2516,10 +2656,11 @@
       ]
     },
     {
-      "groupId": 61,
+      "groupId": 65,
       "count": 1,
-      "visualSignature": "icon:yes | iconWrapperStyles=[[styles.mw100]]",
+      "visualSignature": "text:yes | icon:yes | iconWrapperStyles=[[styles.mw100]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2540,10 +2681,11 @@
       ]
     },
     {
-      "groupId": 62,
+      "groupId": 66,
       "count": 1,
-      "visualSignature": "icon:yes | style=dynamic (conditional)",
+      "visualSignature": "text:yes | icon:yes | style=dynamic (conditional)",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": true,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2564,10 +2706,11 @@
       ]
     },
     {
-      "groupId": 63,
+      "groupId": 67,
       "count": 1,
-      "visualSignature": "style=[[styles.w100, styles.p5]]",
+      "visualSignature": "text:yes | style=[[styles.w100, styles.p5]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2588,10 +2731,11 @@
       ]
     },
     {
-      "groupId": 64,
+      "groupId": 68,
       "count": 1,
-      "visualSignature": "style=themeStyles.justifyContentEnd",
+      "visualSignature": "text:yes | style=themeStyles.justifyContentEnd",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2612,10 +2756,11 @@
       ]
     },
     {
-      "groupId": 65,
+      "groupId": 69,
       "count": 1,
-      "visualSignature": "style=[[styles.mh5, bottomSafeAreaPaddingStyle]]",
+      "visualSignature": "text:yes | style=[[styles.mh5, bottomSafeAreaPaddingStyle]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
@@ -2636,10 +2781,11 @@
       ]
     },
     {
-      "groupId": 66,
+      "groupId": 70,
       "count": 1,
-      "visualSignature": "innerStyles=[[styles.buttonSmall]] | textStyles=[[styles.buttonSmallText]]",
+      "visualSignature": "text:yes | innerStyles=[[styles.buttonSmall]] | textStyles=[[styles.buttonSmallText]]",
       "fingerprint": {
+        "hasText": true,
         "hasIcon": false,
         "hasIconRight": false,
         "hasSecondLineText": false,
