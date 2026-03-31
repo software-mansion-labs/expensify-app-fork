@@ -72,7 +72,7 @@ const BOOLEAN_VISUAL_PROPS = new Set([
 const STYLE_PROPS = new Set(['style', 'innerStyles', 'textStyles', 'textHoverStyles', 'hoverStyles', 'disabledStyle', 'iconStyles', 'iconRightStyles', 'iconWrapperStyles']);
 
 // Color override props
-const COLOR_PROPS = new Set(['iconFill', 'iconHoverFill', 'iconRightFill', 'iconRightHoverFill', 'iconRight']);
+const COLOR_PROPS = new Set(['iconFill', 'iconHoverFill', 'iconRightFill', 'iconRightHoverFill']);
 
 function isTruthyValue(value: string, type: string): boolean {
     if (type === 'boolean-shorthand') return true;
@@ -145,6 +145,10 @@ function buildFingerprint(usage: ButtonUsage): VisualFingerprint {
         }
         if (name === 'secondLineText') {
             fp.hasSecondLineText = isTruthyValue(value, type);
+            continue;
+        }
+        if (name === 'iconRight') {
+            fp.hasIconRight = isTruthyValue(value, type);
             continue;
         }
         if (name === 'children') {

@@ -1,0 +1,4466 @@
+{
+  "totalGroups": 84,
+  "totalEffectiveUsages": 525,
+  "directUsages": 292,
+  "expandedFromWrappers": 233,
+  "groups": [
+    {
+      "groupId": 1,
+      "count": 316,
+      "visualSignature": "text:yes",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/AmountPicker/index.tsx",
+          "line": 43,
+          "source": "via AmountSelectorModal"
+        },
+        {
+          "file": "src/components/AnonymousReportFooter.tsx",
+          "line": 48,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/AvatarCropModal/AvatarCropModal.tsx",
+          "line": 446,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/ColumnsSettingsList.tsx",
+          "line": 295,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/AddPersonalBankAccountPage.tsx",
+          "line": 72,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/EnablePayments/ActivateStep.tsx",
+          "line": 39,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/ReimbursementAccountPage.tsx",
+          "line": 500,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/TransactionDuplicate/Review.tsx",
+          "line": 200,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/domain/BaseDomainVerifiedPage.tsx",
+          "line": 63,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/domain/DomainAddedPage.tsx",
+          "line": 46,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/inbox/report/ReportDetailsExportPage.tsx",
+          "line": 110,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Security/LockAccount/FailedToLockAccountPage.tsx",
+          "line": 27,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Security/LockAccount/UnlockAccountPage.tsx",
+          "line": 28,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Security/MergeAccounts/MergeResultPage.tsx",
+          "line": 230,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Security/TwoFactorAuth/SuccessPage.tsx",
+          "line": 51,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Wallet/InternationalDepositAccount/subPages/Success.tsx",
+          "line": 14,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCards/PersonalCardsErrorConfirmation.tsx",
+          "line": 35,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCards/steps/SuccessStep.tsx",
+          "line": 50,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCards/upgrade/UpgradeConfirmation.tsx",
+          "line": 27,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ShareBankAccount/ShareBankAccount.tsx",
+          "line": 164,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Wallet/SuccessReportCardLost.tsx",
+          "line": 17,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/settings/Wallet/TransferBalancePage.tsx",
+          "line": 122,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardsErrorConfirmation.tsx",
+          "line": 82,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/workspace/downgrade/DowngradeConfirmation.tsx",
+          "line": 34,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/workspace/members/WorkspaceOwnerChangeSuccessPage.tsx",
+          "line": 52,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/workspace/receiptPartners/InviteReceiptPartnerPolicyPage.tsx",
+          "line": 185,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/workspace/upgrade/UpgradeConfirmation.tsx",
+          "line": 66,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/pages/workspace/workflows/WorkspaceWorkflowsPayerSuccessPage.tsx",
+          "line": 35,
+          "source": "via ConfirmationPage"
+        },
+        {
+          "file": "src/components/ImportOnyxState/BaseImportOnyxState.tsx",
+          "line": 50,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 2575,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 2584,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 2632,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/MoneyRequestHeader.tsx",
+          "line": 201,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/MoneyRequestReportView/MoneyRequestReportActionsList.tsx",
+          "line": 911,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/MoneyRequestReportView/MoneyRequestReportActionsList.tsx",
+          "line": 920,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/Search/SearchBulkActionsButton.tsx",
+          "line": 213,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/components/Search/SearchBulkActionsButton.tsx",
+          "line": 222,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/workspace/WorkspaceMembersPage.tsx",
+          "line": 838,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/workspace/categories/WorkspaceCategoriesPage.tsx",
+          "line": 808,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardsPage.tsx",
+          "line": 119,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/workspace/expensifyCard/WorkspaceExpensifyCardDetailsPage.tsx",
+          "line": 328,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/workspace/perDiem/WorkspacePerDiemPage.tsx",
+          "line": 526,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/workspace/tags/ImportTagsOptionsPage.tsx",
+          "line": 289,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/workspace/tags/WorkspaceTagsPage.tsx",
+          "line": 954,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/domain/BaseVerifyDomainPage.tsx",
+          "line": 134,
+          "source": "via FormHelpMessageRowWithRetryButton"
+        },
+        {
+          "file": "src/pages/domain/Saml/SamlConfigurationDetailsSectionContent.tsx",
+          "line": 60,
+          "source": "via FormHelpMessageRowWithRetryButton"
+        },
+        {
+          "file": "src/pages/domain/Saml/ScimTokenContent.tsx",
+          "line": 45,
+          "source": "via FormHelpMessageRowWithRetryButton"
+        },
+        {
+          "file": "src/components/DomainsEmptyStateComponent.tsx",
+          "line": 26,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/domain/DomainSamlPage.tsx",
+          "line": 143,
+          "source": "via FeatureList"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardPageEmptyState.tsx",
+          "line": 112,
+          "source": "via FeatureList"
+        },
+        {
+          "file": "src/pages/workspace/expensifyCard/WorkspaceExpensifyCardPageEmptyState.tsx",
+          "line": 124,
+          "source": "via FeatureList"
+        },
+        {
+          "file": "src/pages/workspace/travel/GetStartedTravel.tsx",
+          "line": 22,
+          "source": "via FeatureList"
+        },
+        {
+          "file": "src/components/MigratedUserWelcomeModal.tsx",
+          "line": 88,
+          "source": "via FeatureTrainingModal"
+        },
+        {
+          "file": "src/components/MigratedUserWelcomeModal.tsx",
+          "line": 109,
+          "source": "via FeatureTrainingModal"
+        },
+        {
+          "file": "src/components/TestDrive/Modal/BaseTestDriveModal.tsx",
+          "line": 55,
+          "source": "via FeatureTrainingModal"
+        },
+        {
+          "file": "src/pages/TrackTrainingPage.tsx",
+          "line": 17,
+          "source": "via FeatureTrainingModal"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+          "line": 243,
+          "source": "via FrozenCardHeader"
+        },
+        {
+          "file": "src/pages/workspace/expensifyCard/WorkspaceExpensifyCardDetailsPage.tsx",
+          "line": 182,
+          "source": "via FrozenCardHeader"
+        },
+        {
+          "file": "src/components/FullscreenLoadingIndicator.tsx",
+          "line": 75,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/TransactionsImportedPage.tsx",
+          "line": 141,
+          "source": "via ImportSpreadsheetColumns"
+        },
+        {
+          "file": "src/pages/workspace/categories/ImportedCategoriesPage.tsx",
+          "line": 149,
+          "source": "via ImportSpreadsheetColumns"
+        },
+        {
+          "file": "src/pages/workspace/members/ImportedMembersPage.tsx",
+          "line": 236,
+          "source": "via ImportSpreadsheetColumns"
+        },
+        {
+          "file": "src/pages/workspace/perDiem/ImportedPerDiemPage.tsx",
+          "line": 163,
+          "source": "via ImportSpreadsheetColumns"
+        },
+        {
+          "file": "src/pages/workspace/tags/ImportedMultiLevelTagsPage.tsx",
+          "line": 61,
+          "source": "via ImportSpreadsheetColumns"
+        },
+        {
+          "file": "src/pages/workspace/tags/ImportedTagsPage.tsx",
+          "line": 145,
+          "source": "via ImportSpreadsheetColumns"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1401,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1431,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1450,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1479,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1486,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1498,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyRequestConfirmationList.tsx",
+          "line": 1248,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyRequestHeaderActions.tsx",
+          "line": 41,
+          "source": "via MoneyRequestHeaderPrimaryAction"
+        },
+        {
+          "file": "src/components/MultifactorAuthentication/components/OutcomeScreen/OutcomeScreenBase.tsx",
+          "line": 84,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Navigation/DebugTabView.tsx",
+          "line": 180,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkEmail/BaseOnboardingWorkEmail.tsx",
+          "line": 164,
+          "source": "via OnboardingMergingAccountBlockedView"
+        },
+        {
+          "file": "src/pages/OnboardingWorkEmailValidation/BaseOnboardingWorkEmailValidation.tsx",
+          "line": 102,
+          "source": "via OnboardingMergingAccountBlockedView"
+        },
+        {
+          "file": "src/components/OpenAppFailureModal/index.native.tsx",
+          "line": 29,
+          "source": "via BaseOpenAppFailureModal"
+        },
+        {
+          "file": "src/components/OpenAppFailureModal/index.tsx",
+          "line": 10,
+          "source": "via BaseOpenAppFailureModal"
+        },
+        {
+          "file": "src/components/PDFView/index.native.tsx",
+          "line": 196,
+          "source": "via PDFPasswordForm"
+        },
+        {
+          "file": "src/components/ProactiveAppReviewModalManager.tsx",
+          "line": 45,
+          "source": "via ProactiveAppReviewModal"
+        },
+        {
+          "file": "src/components/ProductTrainingContext/index.tsx",
+          "line": 310,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/ProductTrainingContext/index.tsx",
+          "line": 316,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/ReportActionItem/MoneyRequestReportPreview/ApproveActionButton.tsx",
+          "line": 69,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/ReportActionItem/MoneyRequestReportPreview/MoneyRequestReportPreviewContent.tsx",
+          "line": 684,
+          "source": "via ReportPreviewActionButton"
+        },
+        {
+          "file": "src/components/ReportActionItem/TripRoomPreview.tsx",
+          "line": 206,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/ConnectToXeroFlow/index.native.tsx",
+          "line": 45,
+          "source": "via RequireTwoFactorAuthenticationModal"
+        },
+        {
+          "file": "src/components/ConnectToXeroFlow/index.tsx",
+          "line": 35,
+          "source": "via RequireTwoFactorAuthenticationModal"
+        },
+        {
+          "file": "src/components/Search/FilterComponents/DateFilterBase.tsx",
+          "line": 179,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/DateSelectPopup.tsx",
+          "line": 98,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/DateSelectPopup.tsx",
+          "line": 105,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/GroupByPopup.tsx",
+          "line": 102,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/GroupByPopup.tsx",
+          "line": 109,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/MultiSelectPopup.tsx",
+          "line": 117,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/MultiSelectPopup.tsx",
+          "line": 124,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/SingleSelectPopup.tsx",
+          "line": 151,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/SingleSelectPopup.tsx",
+          "line": 158,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/TextInputPopup.tsx",
+          "line": 47,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/TextInputPopup.tsx",
+          "line": 54,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/UserSelectPopup.tsx",
+          "line": 186,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/FilterDropdowns/UserSelectPopup.tsx",
+          "line": 193,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchBooleanFilterBasePage.tsx",
+          "line": 91,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/components/Search/SearchFiltersChatsSelector.tsx",
+          "line": 169,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/components/Search/SearchFiltersParticipantsSelector.tsx",
+          "line": 290,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/components/Search/SearchMultipleSelectionPicker.tsx",
+          "line": 106,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/components/Search/SearchSingleSelectionPicker.tsx",
+          "line": 108,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersCardPage.tsx",
+          "line": 151,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersHasPage.tsx",
+          "line": 119,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersIsPage.tsx",
+          "line": 105,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersReportFieldPage/ReportFieldList.tsx",
+          "line": 78,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersStatusPage.tsx",
+          "line": 107,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersTypePage.tsx",
+          "line": 82,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersWorkspacePage.tsx",
+          "line": 127,
+          "source": "via SearchFilterPageFooterButtons"
+        },
+        {
+          "file": "src/components/Search/SearchFiltersAmountBase.tsx",
+          "line": 178,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchList/ListItem/TaskListItemRow.tsx",
+          "line": 104,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/SoftKillTestToolRow/index.native.tsx",
+          "line": 11,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/EnablePayments/PersonalInfo/substeps/ConfirmationStep.tsx",
+          "line": 70,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/MissingPersonalDetails/subPages/Confirmation.tsx",
+          "line": 74,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/EnterSignerInfo/subSteps/Confirmation.tsx",
+          "line": 109,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/BeneficialOwnerInfo/BeneficialOwnerDetailsFormSubSteps/Confirmation.tsx",
+          "line": 159,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/BusinessInfo/subSteps/Confirmation.tsx",
+          "line": 197,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/SignerInfo/subSteps/Confirmation.tsx",
+          "line": 115,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/USD/BeneficialOwnerInfo/subSteps/BeneficialOwnerDetailsFormSubSteps/ConfirmationUBO.tsx",
+          "line": 60,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/USD/Requestor/PersonalInfo/subSteps/Confirmation.tsx",
+          "line": 61,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/settings/Wallet/EnableGlobalReimbursements/BusinessInfo/subSteps/Confirmation.tsx",
+          "line": 87,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/settings/Wallet/InternationalDepositAccount/PersonalInfo/substeps/ConfirmationStep.tsx",
+          "line": 118,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionPlan/SubscriptionPlanDowngradeBlockedPage.tsx",
+          "line": 31,
+          "source": "via SubscriptionPlanDowngradeBlocked"
+        },
+        {
+          "file": "src/pages/inbox/HeaderView.tsx",
+          "line": 387,
+          "source": "via TaskHeaderActionButton"
+        },
+        {
+          "file": "src/pages/inbox/HeaderView.tsx",
+          "line": 429,
+          "source": "via TaskHeaderActionButton"
+        },
+        {
+          "file": "src/components/TestCrash/index.native.tsx",
+          "line": 19,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/TestDrive/TestDriveDemo.tsx",
+          "line": 98,
+          "source": "via TestDriveBanner"
+        },
+        {
+          "file": "src/components/TestToolMenu.tsx",
+          "line": 86,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/TestToolMenu.tsx",
+          "line": 95,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/TestToolMenu.tsx",
+          "line": 104,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/TestToolMenu.tsx",
+          "line": 113,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/TestToolMenu.tsx",
+          "line": 123,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/TestToolMenu.tsx",
+          "line": 129,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/TimePicker/TimePicker.tsx",
+          "line": 884,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/UploadFile.tsx",
+          "line": 114,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/ValidateCodeActionModal/ValidateCodeForm/index.android.tsx",
+          "line": 10,
+          "source": "via BaseValidateCodeForm"
+        },
+        {
+          "file": "src/components/ValidateCodeActionModal/ValidateCodeForm/index.tsx",
+          "line": 8,
+          "source": "via BaseValidateCodeForm"
+        },
+        {
+          "file": "src/pages/signin/ValidateCodeForm/index.android.tsx",
+          "line": 8,
+          "source": "via BaseValidateCodeForm"
+        },
+        {
+          "file": "src/pages/signin/ValidateCodeForm/index.tsx",
+          "line": 8,
+          "source": "via BaseValidateCodeForm"
+        },
+        {
+          "file": "src/pages/Debug/Report/DebugReportPage.tsx",
+          "line": 160,
+          "source": "via DebugDetails"
+        },
+        {
+          "file": "src/pages/Debug/ReportAction/DebugReportActionPage.tsx",
+          "line": 57,
+          "source": "via DebugDetails"
+        },
+        {
+          "file": "src/pages/Debug/Transaction/DebugTransactionPage.tsx",
+          "line": 46,
+          "source": "via DebugDetails"
+        },
+        {
+          "file": "src/pages/Debug/TransactionViolation/DebugTransactionViolationPage.tsx",
+          "line": 60,
+          "source": "via DebugDetails"
+        },
+        {
+          "file": "src/pages/Debug/DebugTagPicker.tsx",
+          "line": 75,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Debug/Report/DebugReportPage.tsx",
+          "line": 183,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Debug/Report/DebugReportPage.tsx",
+          "line": 198,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Debug/ReportAction/DebugReportActionCreatePage.tsx",
+          "line": 137,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Debug/ReportAction/DebugReportActionPage.tsx",
+          "line": 76,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Debug/Transaction/DebugTransactionPage.tsx",
+          "line": 66,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Debug/TransactionViolation/DebugTransactionViolationCreatePage.tsx",
+          "line": 124,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/EnablePayments/PersonalInfo/substeps/ConfirmationStep.tsx",
+          "line": 70,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/MissingPersonalDetails/subPages/Confirmation.tsx",
+          "line": 74,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/EnterSignerInfo/subSteps/Confirmation.tsx",
+          "line": 109,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/BeneficialOwnerInfo/BeneficialOwnerDetailsFormSubSteps/Confirmation.tsx",
+          "line": 159,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/BusinessInfo/subSteps/Confirmation.tsx",
+          "line": 197,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/SignerInfo/subSteps/Confirmation.tsx",
+          "line": 115,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/USD/BeneficialOwnerInfo/subSteps/BeneficialOwnerDetailsFormSubSteps/ConfirmationUBO.tsx",
+          "line": 60,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/USD/Requestor/PersonalInfo/subSteps/Confirmation.tsx",
+          "line": 61,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/settings/Wallet/EnableGlobalReimbursements/BusinessInfo/subSteps/Confirmation.tsx",
+          "line": 87,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/settings/Wallet/InternationalDepositAccount/PersonalInfo/substeps/ConfirmationStep.tsx",
+          "line": 118,
+          "source": "via ConfirmationStep"
+        },
+        {
+          "file": "src/pages/EnablePayments/FeesAndTerms/substeps/FeesStep.tsx",
+          "line": 25,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/ErrorPage/GenericErrorPage.tsx",
+          "line": 62,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/ErrorPage/GenericErrorPage.tsx",
+          "line": 69,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/MultifactorAuthentication/AuthorizeTransactionPage/index.tsx",
+          "line": 147,
+          "source": "via MultifactorAuthenticationAuthorizeTransactionActions"
+        },
+        {
+          "file": "src/pages/MultifactorAuthentication/PromptPage.tsx",
+          "line": 93,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/MultifactorAuthentication/RevokePage.tsx",
+          "line": 191,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/MultifactorAuthentication/RevokePage.tsx",
+          "line": 214,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/MultifactorAuthentication/RevokePage.tsx",
+          "line": 238,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/MultifactorAuthentication/RevokePage.tsx",
+          "line": 247,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/NewChatPage.tsx",
+          "line": 462,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingAccounting/BaseOnboardingAccounting.tsx",
+          "line": 274,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingEmployees/index.native.tsx",
+          "line": 7,
+          "source": "via BaseOnboardingEmployees"
+        },
+        {
+          "file": "src/pages/OnboardingEmployees/index.tsx",
+          "line": 9,
+          "source": "via BaseOnboardingEmployees"
+        },
+        {
+          "file": "src/pages/OnboardingInterestedFeatures/BaseOnboardingInterestedFeatures.tsx",
+          "line": 412,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkEmail/BaseOnboardingWorkEmail.tsx",
+          "line": 189,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkspaceInvite/BaseOnboardingWorkspaceInvite.tsx",
+          "line": 195,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkspaceInvite/BaseOnboardingWorkspaceInvite.tsx",
+          "line": 203,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkspaceOptional/BaseOnboardingWorkspaceOptional.tsx",
+          "line": 256,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkspaceOptional/BaseOnboardingWorkspaceOptional.tsx",
+          "line": 265,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkspaces/BaseOnboardingWorkspaces.tsx",
+          "line": 108,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/OnboardingWorkspaces/BaseOnboardingWorkspaces.tsx",
+          "line": 188,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/EnterSignerInfo/subSteps/UploadDocuments.tsx",
+          "line": 238,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx",
+          "line": 279,
+          "source": "via BeneficialOwnersList"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/SignerInfo/subSteps/UploadDocuments.tsx",
+          "line": 241,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/USD/BeneficialOwnerInfo/BeneficialOwnersStep.tsx",
+          "line": 266,
+          "source": "via CompanyOwnersListUBO"
+        },
+        {
+          "file": "src/pages/RequireTwoFactorAuthenticationOverlay.tsx",
+          "line": 87,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/RestrictedAction/Workspace/WorkspaceAdminRestrictedAction.tsx",
+          "line": 59,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/RestrictedAction/Workspace/WorkspaceOwnerRestrictedAction/index.native.tsx",
+          "line": 55,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/RestrictedAction/Workspace/WorkspaceOwnerRestrictedAction/index.tsx",
+          "line": 54,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/RestrictedAction/Workspace/WorkspaceUserRestrictedAction.tsx",
+          "line": 59,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/ScheduleCall/ScheduleCallConfirmationPage.tsx",
+          "line": 137,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/AdvancedSearchFilters.tsx",
+          "line": 738,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersGroupByPage.tsx",
+          "line": 74,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersGroupByPage.tsx",
+          "line": 80,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersReportFieldPage/index.tsx",
+          "line": 140,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersViewPage.tsx",
+          "line": 72,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersViewPage.tsx",
+          "line": 78,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersWithdrawalTypePage.tsx",
+          "line": 69,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersWithdrawalTypePage.tsx",
+          "line": 75,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Share/ShareDetailsPage.tsx",
+          "line": 265,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/TeachersUnite/ImTeacherUpdateEmailPage.tsx",
+          "line": 44,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/TransactionDuplicate/Confirmation.tsx",
+          "line": 175,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/TransactionDuplicate/Review.tsx",
+          "line": 219,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/TransactionMerge/ConfirmationPage.tsx",
+          "line": 148,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/TransactionMerge/DetailsReviewPage.tsx",
+          "line": 191,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/TransactionMerge/ReceiptReviewPage.tsx",
+          "line": 93,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Travel/DomainPermissionInfoPage.tsx",
+          "line": 36,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Travel/DomainSelectorPage.tsx",
+          "line": 100,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Travel/ManageTrips.tsx",
+          "line": 79,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Travel/PublicDomainErrorPage.tsx",
+          "line": 42,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/domain/Members/DomainRequireTwoFactorAuthPage.tsx",
+          "line": 32,
+          "source": "via BaseDomainRequireTwoFactorAuthPage"
+        },
+        {
+          "file": "src/pages/domain/Members/TwoFactorAuth/DomainMemberForceTwoFactorAuthPage.tsx",
+          "line": 36,
+          "source": "via BaseDomainRequireTwoFactorAuthPage"
+        },
+        {
+          "file": "src/pages/domain/DomainAccessRestrictedPage.tsx",
+          "line": 92,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/inbox/HeaderView.tsx",
+          "line": 195,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/inbox/report/ListBoundaryLoader.tsx",
+          "line": 73,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/inbox/sidebar/SignInButton.tsx",
+          "line": 22,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepAmount.tsx",
+          "line": 461,
+          "source": "via MoneyRequestAmountForm"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepTaxAmountPage.tsx",
+          "line": 162,
+          "source": "via MoneyRequestAmountForm"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepTimeRate.tsx",
+          "line": 82,
+          "source": "via MoneyRequestAmountForm"
+        },
+        {
+          "file": "src/pages/iou/SplitExpenseEditPage.tsx",
+          "line": 352,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/SplitExpenseEditPage.tsx",
+          "line": 366,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/SplitExpensePage.tsx",
+          "line": 435,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/MoneyRequestAttendeeSelector.tsx",
+          "line": 187,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/MoneyRequestParticipantsSelector.tsx",
+          "line": 505,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/MoneyRequestParticipantsSelector.tsx",
+          "line": 516,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepCategory.tsx",
+          "line": 201,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDestination.tsx",
+          "line": 216,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceGPS/GPSButtons/index.tsx",
+          "line": 98,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceGPS/GPSButtons/index.tsx",
+          "line": 107,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceGPS/index.tsx",
+          "line": 35,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceManual.tsx",
+          "line": 361,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceOdometer.tsx",
+          "line": 642,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepHours.tsx",
+          "line": 162,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepTag.tsx",
+          "line": 185,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepWaypoint.tsx",
+          "line": 231,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/ExitSurvey/ExitSurveyConfirmPage.tsx",
+          "line": 92,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Profile/Avatar/AvatarPage.tsx",
+          "line": 298,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Profile/Contacts/ContactMethodsPage.tsx",
+          "line": 95,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Profile/CustomStatus/StatusPage.tsx",
+          "line": 286,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/AddDelegate/ConfirmDelegatePage.tsx",
+          "line": 38,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/AddDelegate/UpdateDelegateRole/ValidateCodeForm/BaseValidateCodeForm.tsx",
+          "line": 185,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/LockAccount/LockAccountPageBase.tsx",
+          "line": 71,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/TwoFactorAuth/TwoFactorAuthPage.tsx",
+          "line": 20,
+          "source": "via CopyCodesPage"
+        },
+        {
+          "file": "src/pages/settings/Security/TwoFactorAuth/DisablePage.tsx",
+          "line": 82,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/TwoFactorAuth/DisabledPage.tsx",
+          "line": 32,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/TwoFactorAuth/ReplaceDeviceVerifyNewPage.tsx",
+          "line": 96,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/TwoFactorAuth/ReplaceDeviceVerifyOldPage.tsx",
+          "line": 74,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Security/TwoFactorAuth/VerifyPage.tsx",
+          "line": 148,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Subscription/CardSection/CardSectionDataEmpty/index.tsx",
+          "line": 26,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Subscription/RequestEarlyCancellationPage/index.tsx",
+          "line": 51,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Subscription/RequestEarlyCancellationPage/index.tsx",
+          "line": 74,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionPlan/SaveWithExpensifyButton/index.tsx",
+          "line": 15,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionPlan/index.tsx",
+          "line": 33,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionSize/subPages/Confirmation.tsx",
+          "line": 41,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/ChangePINPage.tsx",
+          "line": 129,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+          "line": 279,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+          "line": 337,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+          "line": 415,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+          "line": 543,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ImportTransactionsPage.tsx",
+          "line": 95,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCardDetailsPage.tsx",
+          "line": 151,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCardEditTransactionStartDatePage.tsx",
+          "line": 119,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCards/PersonalCardWarning.tsx",
+          "line": 60,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCards/PersonalCardWarning.tsx",
+          "line": 69,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Travel/TravelUpgrade.tsx",
+          "line": 64,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepUpgrade.tsx",
+          "line": 253,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCards/upgrade/PersonalCardUpgradePage.tsx",
+          "line": 91,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/workspace/upgrade/WorkspaceUpgradePage.tsx",
+          "line": 256,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/settings/Wallet/TravelCVVPage/TravelCVVPage.tsx",
+          "line": 95,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/UnshareBankAccount/UnshareBankAccount.tsx",
+          "line": 122,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/signin/SignInPage.tsx",
+          "line": 327,
+          "source": "via ChooseSSOOrMagicCode"
+        },
+        {
+          "file": "src/pages/signin/SMSDeliveryFailurePage.tsx",
+          "line": 69,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/signin/SignUpWelcomeForm.tsx",
+          "line": 28,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/signin/UnlinkLoginForm.tsx",
+          "line": 63,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/signin/ValidateCodeForm/BaseValidateCodeForm.tsx",
+          "line": 409,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/WorkspaceOverviewPlanTypePage.tsx",
+          "line": 151,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/ClaimOfferPage.tsx",
+          "line": 120,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/ClaimOfferPage.tsx",
+          "line": 127,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/intacct/SageIntacctPrerequisitesPage.tsx",
+          "line": 107,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/intacct/import/SageIntacctUserDimensionsPage.tsx",
+          "line": 115,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/netsuite/NetSuiteTokenInput/subPages/NetSuiteTokenSetupContent.tsx",
+          "line": 31,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/netsuite/import/NetSuiteImportCustomFieldNew/subPages/ConfirmCustomListStep.tsx",
+          "line": 55,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/netsuite/import/NetSuiteImportCustomFieldNew/subPages/ConfirmCustomSegmentList.tsx",
+          "line": 50,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/netsuite/import/NetSuiteImportCustomFieldPage.tsx",
+          "line": 143,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/qbd/QuickBooksDesktopSetupPage.tsx",
+          "line": 121,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/qbd/RequireQuickBooksDesktopPage.tsx",
+          "line": 42,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardEditTransactionStartDatePage.tsx",
+          "line": 126,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardsTable/index.tsx",
+          "line": 279,
+          "source": "via WorkspaceCompanyCardTableItem"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardsTable/index.tsx",
+          "line": 407,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/addNew/CardInstructionsStep.tsx",
+          "line": 103,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/assignCard/ConfirmationStep.tsx",
+          "line": 208,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/assignCard/TransactionStartDateStep.tsx",
+          "line": 121,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/downgrade/WorkspaceDowngradePage.tsx",
+          "line": 118,
+          "source": "via DowngradeIntro"
+        },
+        {
+          "file": "src/pages/workspace/downgrade/PayAndDowngradePage.tsx",
+          "line": 114,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/members/ImportedMembersConfirmationPage.tsx",
+          "line": 195,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/members/WorkspaceOwnerChangeCheck.tsx",
+          "line": 77,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/members/WorkspaceOwnerChangeErrorPage.tsx",
+          "line": 75,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/rules/MerchantRules/MerchantRulePageBase.tsx",
+          "line": 439,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/rules/MerchantRules/MerchantRulePageBase.tsx",
+          "line": 447,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/tags/ImportMultiLevelTagsSettingsPage.tsx",
+          "line": 152,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/travel/ReviewingRequest.tsx",
+          "line": 20,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/travel/WorkspaceTravelInvoicingExportPage.tsx",
+          "line": 245,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/travel/WorkspaceTravelInvoicingExportPage.tsx",
+          "line": 252,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/travel/WorkspaceTravelInvoicingSection.tsx",
+          "line": 295,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/upgrade/UpgradeIntro.tsx",
+          "line": 87,
+          "source": "via GenericFeaturesView"
+        },
+        {
+          "file": "src/pages/Travel/TravelUpgrade.tsx",
+          "line": 64,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepUpgrade.tsx",
+          "line": 253,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/settings/Wallet/PersonalCards/upgrade/PersonalCardUpgradePage.tsx",
+          "line": 91,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/workspace/upgrade/WorkspaceUpgradePage.tsx",
+          "line": 256,
+          "source": "via UpgradeIntro"
+        },
+        {
+          "file": "src/pages/workspace/workflows/approvals/WorkspaceWorkflowsApprovalsApprovalLimitPage.tsx",
+          "line": 264,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/workflows/approvals/WorkspaceWorkflowsApprovalsApprovalLimitPage.tsx",
+          "line": 271,
+          "source": "direct"
+        },
+        {
+          "file": "src/stories/NumberWithSymbolForm.stories.tsx",
+          "line": 40,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 2,
+      "count": 38,
+      "visualSignature": "text:yes | shouldBlendOpacity:dynamic | style=dynamic (variable: style)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "shouldBlendOpacity": "dynamic"
+        },
+        "styleOverrides": {
+          "style": "dynamic (variable: style)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/FeatureTrainingModal.tsx",
+          "line": 500,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/components/FeedbackSurvey.tsx",
+          "line": 139,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/components/Form/FormWrapper.tsx",
+          "line": 189,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/components/Search/FilterComponents/DateFilterBase.tsx",
+          "line": 185,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/components/Search/SearchFiltersAmountBase.tsx",
+          "line": 184,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/EnablePayments/FeesAndTerms/substeps/TermsStep.tsx",
+          "line": 86,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/EnablePayments/OnfidoPrivacy.tsx",
+          "line": 66,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/EnablePayments/TermsStep.tsx",
+          "line": 80,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/EnablePayments/VerifyIdentity/VerifyIdentity.tsx",
+          "line": 89,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/InviteReportParticipantsPage.tsx",
+          "line": 163,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/RoomInvitePage.tsx",
+          "line": 277,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/Search/AdvancedSearchFilters.tsx",
+          "line": 746,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/Search/SearchAdvancedFiltersPage/SearchFiltersReportFieldPage/index.tsx",
+          "line": 146,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/Travel/TravelTerms.tsx",
+          "line": 150,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/domain/Admins/DomainAddAdminPage.tsx",
+          "line": 108,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/domain/BaseVerifyDomainPage.tsx",
+          "line": 162,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Rules/RulePageBase.tsx",
+          "line": 274,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Security/MergeAccounts/AccountDetailsPage.tsx",
+          "line": 216,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Wallet/BankAccountPurposePage/substeps/CountrySelection.tsx",
+          "line": 77,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ReportCardLostPage.tsx",
+          "line": 151,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ReportCardLostPage.tsx",
+          "line": 171,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ReportVirtualCardFraudPage.tsx",
+          "line": 65,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ShareBankAccount/ShareBankAccount.tsx",
+          "line": 204,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/settings/Wallet/TransferBalancePage.tsx",
+          "line": 213,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/signin/LoginForm/BaseLoginForm.tsx",
+          "line": 287,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/signin/SMSDeliveryFailurePage.tsx",
+          "line": 98,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/signin/SMSDeliveryFailurePage.tsx",
+          "line": 126,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/tasks/NewTaskPage.tsx",
+          "line": 192,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/WorkspaceInvitePage.tsx",
+          "line": 209,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardStatementCloseDateSelectionList/index.tsx",
+          "line": 177,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/companyCards/assignCard/CardSelectionStep.tsx",
+          "line": 187,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/expensifyCard/issueNew/ConfirmationStep.tsx",
+          "line": 188,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/rules/MerchantRules/MerchantRulePageBase.tsx",
+          "line": 414,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/workflows/WorkspaceWorkflowsPayerPage.tsx",
+          "line": 299,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/workflows/approvals/WorkspaceWorkflowsApprovalsCreatePage.tsx",
+          "line": 85,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/workflows/approvals/WorkspaceWorkflowsApprovalsEditPage.tsx",
+          "line": 175,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/pages/workspace/workflows/approvals/WorkspaceWorkflowsApprovalsExpensesFromPage.tsx",
+          "line": 137,
+          "source": "via FormAlertWithSubmitButton"
+        },
+        {
+          "file": "src/stories/FormAlertWithSubmitButton.stories.tsx",
+          "line": 20,
+          "source": "via FormAlertWithSubmitButton"
+        }
+      ]
+    },
+    {
+      "groupId": 3,
+      "count": 21,
+      "visualSignature": "text:yes | icon:yes",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Attachments/AttachmentView/index.tsx",
+          "line": 294,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchActionsBarCreateButton.tsx",
+          "line": 146,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchAdvancedFiltersButton.tsx",
+          "line": 25,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchSaveButton.tsx",
+          "line": 14,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1409,
+          "source": "via AnimatedSettlementButton"
+        },
+        {
+          "file": "src/components/ReportActionItem/MoneyRequestReportPreview/PayActionButton.tsx",
+          "line": 171,
+          "source": "via AnimatedSettlementButton"
+        },
+        {
+          "file": "src/pages/Debug/DebugJSON.tsx",
+          "line": 32,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/Debug/Report/DebugReportPage.tsx",
+          "line": 190,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/MissingPersonalDetails/subPages/PIN.tsx",
+          "line": 109,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/ReimbursementAccount/NonUSD/SignerInfo/HangTight.tsx",
+          "line": 85,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/domain/Members/DomainMemberDetailsPage.tsx",
+          "line": 113,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Profile/Avatar/AvatarPage.tsx",
+          "line": 242,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Rules/ExpenseRulesPage.tsx",
+          "line": 195,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/ChangePINPage.tsx",
+          "line": 120,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+          "line": 459,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/categories/WorkspaceCategoriesPage.tsx",
+          "line": 613,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/distanceRates/PolicyDistanceRatesPage.tsx",
+          "line": 412,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/members/WorkspaceMemberDetailsPage.tsx",
+          "line": 316,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/reports/ReportFieldsListValuesPage.tsx",
+          "line": 319,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/tags/WorkspaceTagsPage.tsx",
+          "line": 611,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/taxes/WorkspaceTaxesPage.tsx",
+          "line": 330,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 4,
+      "count": 12,
+      "visualSignature": "text:yes | style=styles.widgetItemButton",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.widgetItemButton"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/home/ForYouSection/index.tsx",
+          "line": 112,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/ActivateCard.tsx",
+          "line": 19,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/AddPaymentCard/index.tsx",
+          "line": 14,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/AddShippingAddress.tsx",
+          "line": 19,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/FixAccountingConnection.tsx",
+          "line": 32,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/FixCompanyCardConnection.tsx",
+          "line": 99,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/FixFailedBilling.tsx",
+          "line": 13,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/FixPersonalCardConnection.tsx",
+          "line": 20,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/Offer25off.tsx",
+          "line": 22,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/Offer50off.tsx",
+          "line": 41,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/ReviewCardFraud.tsx",
+          "line": 47,
+          "source": "via BaseWidgetItem"
+        },
+        {
+          "file": "src/pages/home/TimeSensitiveSection/items/ValidateAccount.tsx",
+          "line": 14,
+          "source": "via BaseWidgetItem"
+        }
+      ]
+    },
+    {
+      "groupId": 5,
+      "count": 6,
+      "visualSignature": "text:yes | style=dynamic (conditional)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (conditional)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/Search/EmptySearchView.tsx",
+          "line": 263,
+          "source": "via BookTravelButton"
+        },
+        {
+          "file": "src/pages/Travel/ManageTrips.tsx",
+          "line": 86,
+          "source": "via BookTravelButton"
+        },
+        {
+          "file": "src/pages/workspace/travel/GetStartedTravel.tsx",
+          "line": 33,
+          "source": "via BookTravelButton"
+        },
+        {
+          "file": "src/components/ProcessMoneyReportHoldMenu.tsx",
+          "line": 150,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/inbox/HeaderView.tsx",
+          "line": 436,
+          "source": "via EarlyDiscountBanner"
+        },
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionPlan/SubscriptionPlanCard.tsx",
+          "line": 146,
+          "source": "via SubscriptionPlanCardActionButton"
+        }
+      ]
+    },
+    {
+      "groupId": 6,
+      "count": 5,
+      "visualSignature": "text:yes | defaultHover:dynamic | isNested:true | shouldStayNormalOnDisable:dynamic | innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.w100, shouldDisablePointerEvents && styles.pointerEventsNone]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "dynamic",
+        "booleanFlags": {
+          "shouldStayNormalOnDisable": "dynamic",
+          "isNested": "true"
+        },
+        "styleOverrides": {
+          "style": "[[styles.w100, shouldDisablePointerEvents && styles.pointerEventsNone]]",
+          "innerStyles": "dynamic (variable: buttonInnerStyles)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Search/SearchList/ListItem/ExpenseReportListItemRow.tsx",
+          "line": 203,
+          "source": "via ActionCell"
+        },
+        {
+          "file": "src/components/Search/SearchList/ListItem/ExpenseReportListItemRow.tsx",
+          "line": 308,
+          "source": "via ActionCell"
+        },
+        {
+          "file": "src/components/Search/SearchList/ListItem/ReportListItemHeader.tsx",
+          "line": 182,
+          "source": "via ActionCell"
+        },
+        {
+          "file": "src/components/Search/SearchList/ListItem/UserInfoAndActionButtonRow.tsx",
+          "line": 68,
+          "source": "via ActionCell"
+        },
+        {
+          "file": "src/components/TransactionItemRow/index.tsx",
+          "line": 415,
+          "source": "via ActionCell"
+        }
+      ]
+    },
+    {
+      "groupId": 7,
+      "count": 5,
+      "visualSignature": "text:yes | icon:yes | style=styles.transactionReceiptButton",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.transactionReceiptButton"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx",
+          "line": 506,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx",
+          "line": 512,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx",
+          "line": 532,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx",
+          "line": 542,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx",
+          "line": 550,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 8,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | defaultHover:false | textStyles=[[styles.textMicroBold]] | iconFill=theme.link | iconHoverFill=theme.linkHover",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "false",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "textStyles": "[[styles.textMicroBold]]"
+        },
+        "colorOverrides": {
+          "iconFill": "theme.link",
+          "iconHoverFill": "theme.linkHover"
+        }
+      },
+      "files": [
+        {
+          "file": "src/components/MoneyRequestReportView/MoneyRequestReportTransactionList.tsx",
+          "line": 675,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchFiltersBarNarrow.tsx",
+          "line": 49,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchFiltersBarWide.tsx",
+          "line": 68,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchFiltersBarWide.tsx",
+          "line": 81,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 9,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | style=styles.quickCreationActionsBarButton | textStyles=styles.quickCreationActionsBarButtonText",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.quickCreationActionsBarButton",
+          "textStyles": "styles.quickCreationActionsBarButtonText"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Navigation/QuickCreationActionsBar/index.tsx",
+          "line": 235,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Navigation/QuickCreationActionsBar/index.tsx",
+          "line": 243,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Navigation/QuickCreationActionsBar/index.tsx",
+          "line": 251,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/Navigation/QuickCreationActionsBar/index.tsx",
+          "line": 260,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 10,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | rightIcon:yes | isContentCentered:true",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": true,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "isContentCentered": "true"
+        },
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/AmountForm.tsx",
+          "line": 95,
+          "source": "via NumberWithSymbolForm"
+        },
+        {
+          "file": "src/components/AmountPicker/AmountSelectorModal.tsx",
+          "line": 67,
+          "source": "via NumberWithSymbolForm"
+        },
+        {
+          "file": "src/components/MoneyRequestAmountInput.tsx",
+          "line": 220,
+          "source": "via NumberWithSymbolForm"
+        },
+        {
+          "file": "src/components/MoneyRequestConfirmationListFooter.tsx",
+          "line": 602,
+          "source": "via NumberWithSymbolForm"
+        }
+      ]
+    },
+    {
+      "groupId": 11,
+      "count": 4,
+      "visualSignature": "text:yes | style=[[styles.ph4, styles.pb4]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.ph4, styles.pb4]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ReportActionItem/TransactionPreview/index.tsx",
+          "line": 120,
+          "source": "via TransactionPreviewContent"
+        },
+        {
+          "file": "src/components/ReportActionItem/TransactionPreview/index.tsx",
+          "line": 145,
+          "source": "via TransactionPreviewContent"
+        },
+        {
+          "file": "src/stories/MoneyRequestReportPreview.stories.tsx",
+          "line": 38,
+          "source": "via TransactionPreviewContent"
+        },
+        {
+          "file": "src/stories/TransactionPreviewContent.stories.tsx",
+          "line": 135,
+          "source": "via TransactionPreviewContent"
+        }
+      ]
+    },
+    {
+      "groupId": 12,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[shouldUseNarrowLayout && styles.alignItemsCenter]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/ReportParticipantsPage.tsx",
+          "line": 371,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/RoomMembersPage.tsx",
+          "line": 373,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/WorkspaceMembersPage.tsx",
+          "line": 758,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/WorkspaceOverviewPage.tsx",
+          "line": 481,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 13,
+      "count": 4,
+      "visualSignature": "text:yes | style=[[styles.p9, styles.pt5]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.p9, styles.pt5]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepOdometerImage/index.native.tsx",
+          "line": 303,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepOdometerImage/index.tsx",
+          "line": 312,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepScan/components/MobileWebCameraView.tsx",
+          "line": 395,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepScan/index.native.tsx",
+          "line": 487,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 14,
+      "count": 3,
+      "visualSignature": "icon:yes | iconFill=theme.icon",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {
+          "iconFill": "theme.icon"
+        }
+      },
+      "files": [
+        {
+          "file": "src/components/AvatarCropModal/AvatarCropModal.tsx",
+          "line": 434,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MapView/MapView.tsx",
+          "line": 345,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/MapView/MapViewImpl.website.tsx",
+          "line": 315,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 15,
+      "count": 3,
+      "visualSignature": "text:yes | style=[[styles.w100, styles.mb5, styles.ph5, styles.flexShrink0]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.w100, styles.mb5, styles.ph5, styles.flexShrink0]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistance.tsx",
+          "line": 572,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceGPS/GPSButtons/index.tsx",
+          "line": 119,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceMap.tsx",
+          "line": 561,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 16,
+      "count": 3,
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | secondLine:yes | children:yes | rightIcon:yes | defaultHover:dynamic | isContentCentered:dynamic | isNested:dynamic | primaryTextNumberOfLines:dynamic (from spread of parameter) | shouldBlendOpacity:dynamic | shouldRemoveLeftBorderRadius:dynamic | shouldRemoveRightBorderRadius:dynamic | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (from spread of parameter) | hoverStyles=dynamic (from spread of parameter) | iconRightStyles=dynamic (from spread of parameter) | iconStyles=dynamic (from spread of parameter) | iconWrapperStyles=dynamic (from spread of parameter) | innerStyles=dynamic (from spread of parameter) | style=dynamic (from spread of parameter) | textHoverStyles=dynamic (from spread of parameter) | textStyles=dynamic (from spread of parameter) | iconFill=dynamic (from spread of parameter) | iconHoverFill=dynamic (from spread of parameter) | iconRightFill=dynamic (from spread of parameter) | iconRightHoverFill=dynamic (from spread of parameter)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": true,
+        "hasSecondLineText": true,
+        "hasChildren": true,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "dynamic",
+        "booleanFlags": {
+          "primaryTextNumberOfLines": "dynamic (from spread of parameter)",
+          "shouldRemoveRightBorderRadius": "dynamic",
+          "shouldRemoveLeftBorderRadius": "dynamic",
+          "isContentCentered": "dynamic",
+          "isNested": "dynamic",
+          "shouldBlendOpacity": "dynamic",
+          "shouldStayNormalOnDisable": "dynamic"
+        },
+        "styleOverrides": {
+          "iconStyles": "dynamic (from spread of parameter)",
+          "iconRightStyles": "dynamic (from spread of parameter)",
+          "iconWrapperStyles": "dynamic (from spread of parameter)",
+          "style": "dynamic (from spread of parameter)",
+          "disabledStyle": "dynamic (from spread of parameter)",
+          "innerStyles": "dynamic (from spread of parameter)",
+          "textStyles": "dynamic (from spread of parameter)",
+          "textHoverStyles": "dynamic (from spread of parameter)",
+          "hoverStyles": "dynamic (from spread of parameter)"
+        },
+        "colorOverrides": {
+          "iconRightFill": "dynamic (from spread of parameter)",
+          "iconRightHoverFill": "dynamic (from spread of parameter)",
+          "iconFill": "dynamic (from spread of parameter)",
+          "iconHoverFill": "dynamic (from spread of parameter)"
+        }
+      },
+      "files": [
+        {
+          "file": "src/pages/settings/Subscription/CardSection/CardSectionButton/index.tsx",
+          "line": 7,
+          "source": "direct"
+        },
+        {
+          "file": "src/stories/Button.stories.tsx",
+          "line": 23,
+          "source": "direct"
+        },
+        {
+          "file": "src/stories/Button.stories.tsx",
+          "line": 37,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 17,
+      "count": 3,
+      "visualSignature": "text:yes | icon:yes | style=dynamic (binary expression)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (binary expression)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/workspace/WorkspacesListPageHeaderButton.tsx",
+          "line": 58,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/WorkspacesListPageHeaderButton.tsx",
+          "line": 71,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/expensifyCard/WorkspaceExpensifyCardListPage.tsx",
+          "line": 136,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 18,
+      "count": 3,
+      "visualSignature": "text:yes | style=styles.justifyContentCenter",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.justifyContentCenter"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/workspace/accounting/PolicyAccountingPage.tsx",
+          "line": 340,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/accounting/PolicyAccountingPage.tsx",
+          "line": 535,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/receiptPartners/WorkspaceReceiptPartnersPage.tsx",
+          "line": 222,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 19,
+      "count": 2,
+      "visualSignature": "text:yes | icon:yes | shouldStayNormalOnDisable:true",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "shouldStayNormalOnDisable": "true"
+        },
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 1391,
+          "source": "via AnimatedSubmitButton"
+        },
+        {
+          "file": "src/components/ReportActionItem/MoneyRequestReportPreview/SubmitActionButton.tsx",
+          "line": 65,
+          "source": "via AnimatedSubmitButton"
+        }
+      ]
+    },
+    {
+      "groupId": 20,
+      "count": 2,
+      "visualSignature": "icon:yes | innerStyles=[[styles.arrowIcon]] | iconFill=theme.text",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[styles.arrowIcon]]"
+        },
+        "colorOverrides": {
+          "iconFill": "theme.text"
+        }
+      },
+      "files": [
+        {
+          "file": "src/components/Attachments/AttachmentCarousel/AttachmentCarouselView/index.native.tsx",
+          "line": 90,
+          "source": "via CarouselButtons"
+        },
+        {
+          "file": "src/components/Attachments/AttachmentCarousel/AttachmentCarouselView/index.tsx",
+          "line": 256,
+          "source": "via CarouselButtons"
+        }
+      ]
+    },
+    {
+      "groupId": 21,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.m5, bottomSafeAreaPaddingStyle]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.m5, bottomSafeAreaPaddingStyle]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/workspace/expensifyCard/WorkspaceExpensifyCardBankAccounts.tsx",
+          "line": 152,
+          "source": "via BankAccountVerificationView"
+        },
+        {
+          "file": "src/pages/workspace/travel/WorkspaceTravelInvoicingSettlementAccountPage.tsx",
+          "line": 137,
+          "source": "via BankAccountVerificationView"
+        }
+      ]
+    },
+    {
+      "groupId": 22,
+      "count": 2,
+      "visualSignature": "text:yes | icon:yes | style=[[styles.flex1, marginLeft]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.flex1, marginLeft]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/NumberWithSymbolForm.tsx",
+          "line": 624,
+          "source": "via BigNumberPad"
+        },
+        {
+          "file": "src/components/TimePicker/TimePicker.tsx",
+          "line": 712,
+          "source": "via BigNumberPad"
+        }
+      ]
+    },
+    {
+      "groupId": 23,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.mt4, styles.noSelect]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.mt4, styles.noSelect]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "tests/unit/ConfirmContentTest.tsx",
+          "line": 92,
+          "source": "via ConfirmContent"
+        },
+        {
+          "file": "tests/unit/ConfirmContentTest.tsx",
+          "line": 116,
+          "source": "via ConfirmContent"
+        }
+      ]
+    },
+    {
+      "groupId": 24,
+      "count": 2,
+      "visualSignature": "text:yes | style=dynamic (call: translate)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (call: translate)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/domain/Members/DomainMemberDetailsPage.tsx",
+          "line": 198,
+          "source": "via DecisionModal"
+        },
+        {
+          "file": "src/pages/domain/Members/DomainMembersPage.tsx",
+          "line": 321,
+          "source": "via DecisionModal"
+        }
+      ]
+    },
+    {
+      "groupId": 25,
+      "count": 2,
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[styles.pl10, styles.pr10]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[styles.pl10, styles.pr10]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistance.tsx",
+          "line": 554,
+          "source": "via DistanceRequestFooter"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepDistanceMap.tsx",
+          "line": 543,
+          "source": "via DistanceRequestFooter"
+        }
+      ]
+    },
+    {
+      "groupId": 26,
+      "count": 2,
+      "visualSignature": "text:yes | iconRight:yes | rightIcon:yes",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": true,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Domain/CopyableTextField.tsx",
+          "line": 68,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/inbox/report/ReportActionsList.tsx",
+          "line": 740,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 27,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.alignSelfStart, styles.mt3]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.alignSelfStart, styles.mt3]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ReportActionItem/IssueCardMessage.tsx",
+          "line": 51,
+          "source": "direct"
+        },
+        {
+          "file": "src/components/ReportActionItem/IssueCardMessage.tsx",
+          "line": 61,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 28,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.pb3, styles.ph3]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.pb3, styles.ph3]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/Debug/Report/DebugReportPage.tsx",
+          "line": 237,
+          "source": "via DebugReportActions"
+        },
+        {
+          "file": "tests/ui/DebugReportActionsTest.tsx",
+          "line": 72,
+          "source": "via DebugReportActions"
+        }
+      ]
+    },
+    {
+      "groupId": 29,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.w100, styles.p5, styles.mtAuto]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.w100, styles.p5, styles.mtAuto]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/MultifactorAuthentication/ValidateCodePage.tsx",
+          "line": 249,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/settings/Wallet/ActivatePhysicalCardPageBase.tsx",
+          "line": 124,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 30,
+      "count": 2,
+      "visualSignature": "text:yes | icon:yes | iconStyles=dynamic (call: StyleUtils.getTransformScaleStyle)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "iconStyles": "dynamic (call: StyleUtils.getTransformScaleStyle)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/ReportParticipantDetailsPage.tsx",
+          "line": 99,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/RoomMemberDetailsPage.tsx",
+          "line": 96,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 31,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.w100, styles.requestPreviewBox]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.w100, styles.requestPreviewBox]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/PureReportActionItem.tsx",
+          "line": 1309,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/inbox/report/PureReportActionItem.tsx",
+          "line": 1329,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 32,
+      "count": 2,
+      "visualSignature": "text:yes | style=[[styles.mt2, styles.alignSelfStart]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.mt2, styles.alignSelfStart]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/ReportActionItemMessage.tsx",
+          "line": 109,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/inbox/report/ReportActionItemMessage.tsx",
+          "line": 188,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 33,
+      "count": 2,
+      "visualSignature": "icon:yes | innerStyles=[[styles.singleAvatarMedium, styles.bgGreenSuccess]] | iconFill=theme.white",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[styles.singleAvatarMedium, styles.bgGreenSuccess]]"
+        },
+        "colorOverrides": {
+          "iconFill": "theme.white"
+        }
+      },
+      "files": [
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepScan/components/MobileWebCameraView.tsx",
+          "line": 546,
+          "source": "via ReceiptPreviews"
+        },
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepScan/index.native.tsx",
+          "line": 652,
+          "source": "via ReceiptPreviews"
+        }
+      ]
+    },
+    {
+      "groupId": 34,
+      "count": 2,
+      "visualSignature": "text:yes | icon:yes | iconWrapperStyles=[[styles.mw100]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "iconWrapperStyles": "[[styles.mw100]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/HeaderView.tsx",
+          "line": 382,
+          "source": "via FreeTrial"
+        },
+        {
+          "file": "src/pages/inbox/HeaderView.tsx",
+          "line": 418,
+          "source": "via FreeTrial"
+        }
+      ]
+    },
+    {
+      "groupId": 35,
+      "count": 2,
+      "visualSignature": "text:yes | style=dynamic (binary expression)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (binary expression)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/workspace/companyCards/WorkspaceCompanyCardExpensifyCardPromotionBanner.tsx",
+          "line": 48,
+          "source": "direct"
+        },
+        {
+          "file": "src/pages/workspace/expensifyCard/WorkspaceCardsListLabel.tsx",
+          "line": 171,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 36,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.w100, styles.justifyContentCenter]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.w100, styles.justifyContentCenter]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/AddUnreportedExpenseFooter.tsx",
+          "line": 112,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 37,
+      "count": 1,
+      "visualSignature": "style=dynamic (variable: style)",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (variable: style)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Attachments/AttachmentCarousel/CarouselItem.tsx",
+          "line": 45,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 38,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.ph3]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.ph3]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Banner.tsx",
+          "line": 122,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 39,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | secondLine:yes | rightIcon:yes | shouldRemoveRightBorderRadius:true | shouldStayNormalOnDisable:dynamic | iconRightStyles=dynamic (conditional) | innerStyles=[[innerStyleDropButton, !isSplitButton && styles.dropDownButtonCartIconView, isTe] | style=dynamic (conditional) | textStyles=[[isTextTooLong && shouldUseShortForm ? {...styles.textExtraSmall, ...styles.text] | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional) | iconRightFill=dynamic (conditional) | iconRightHoverFill=dynamic (conditional)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": true,
+        "hasSecondLineText": true,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "shouldStayNormalOnDisable": "dynamic",
+          "shouldRemoveRightBorderRadius": "true"
+        },
+        "styleOverrides": {
+          "style": "dynamic (conditional)",
+          "innerStyles": "[[innerStyleDropButton, !isSplitButton && styles.dropDownButtonCartIconView, isTe]",
+          "iconRightStyles": "dynamic (conditional)",
+          "textStyles": "[[isTextTooLong && shouldUseShortForm ? {...styles.textExtraSmall, ...styles.text]"
+        },
+        "colorOverrides": {
+          "iconFill": "dynamic (conditional)",
+          "iconHoverFill": "dynamic (conditional)",
+          "iconRightFill": "dynamic (conditional)",
+          "iconRightHoverFill": "dynamic (conditional)"
+        }
+      },
+      "files": [
+        {
+          "file": "src/components/ButtonWithDropdownMenu/index.tsx",
+          "line": 169,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 40,
+      "count": 1,
+      "visualSignature": "shouldRemoveLeftBorderRadius:true | shouldStayNormalOnDisable:dynamic | innerStyles=[[styles.dropDownButtonCartIconContainerPadding, innerStyleDropButton, isButtonSi] | style=[[styles.pl0]]",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "shouldStayNormalOnDisable": "dynamic",
+          "shouldRemoveLeftBorderRadius": "true"
+        },
+        "styleOverrides": {
+          "style": "[[styles.pl0]]",
+          "innerStyles": "[[styles.dropDownButtonCartIconContainerPadding, innerStyleDropButton, isButtonSi]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ButtonWithDropdownMenu/index.tsx",
+          "line": 201,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 41,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | secondLine:yes | rightIcon:yes | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (variable: disabledStyle) | iconRightStyles=dynamic (binary expression) | innerStyles=[[innerStyleDropButton, shouldShowButtonRightIcon && styles.dropDownButtonCartIco] | style=[[styles.w100, style]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": true,
+        "hasSecondLineText": true,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "shouldStayNormalOnDisable": "dynamic"
+        },
+        "styleOverrides": {
+          "style": "[[styles.w100, style]]",
+          "disabledStyle": "dynamic (variable: disabledStyle)",
+          "innerStyles": "[[innerStyleDropButton, shouldShowButtonRightIcon && styles.dropDownButtonCartIco]",
+          "iconRightStyles": "dynamic (binary expression)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ButtonWithDropdownMenu/index.tsx",
+          "line": 243,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 42,
+      "count": 1,
+      "visualSignature": "text:yes | style=dynamic (variable: shouldReverseStackedButtons)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (variable: shouldReverseStackedButtons)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ConfirmModal.tsx",
+          "line": 183,
+          "source": "via ConfirmContent"
+        }
+      ]
+    },
+    {
+      "groupId": 43,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | style=dynamic (variable: style)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (variable: style)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/EmptyStateComponent/index.tsx",
+          "line": 78,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 44,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | style=[[styles.floatingGpsButton]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.floatingGpsButton]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/FloatingGPSButton/index.native.tsx",
+          "line": 30,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 45,
+      "count": 1,
+      "visualSignature": "text:yes | shouldBlendOpacity:true | style=dynamic (variable: style)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "shouldBlendOpacity": "true"
+        },
+        "styleOverrides": {
+          "style": "dynamic (variable: style)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/ReportAddApproverPage.tsx",
+          "line": 108,
+          "source": "via FormAlertWithSubmitButton"
+        }
+      ]
+    },
+    {
+      "groupId": 46,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.pt9]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.pt9]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ImportSpreadsheet.tsx",
+          "line": 201,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 47,
+      "count": 1,
+      "visualSignature": "text:yes | shouldRemoveLeftBorderRadius:true | shouldRemoveRightBorderRadius:true | textStyles=[[styles.fontWeightNormal]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "shouldRemoveLeftBorderRadius": "true",
+          "shouldRemoveRightBorderRadius": "true"
+        },
+        "styleOverrides": {
+          "textStyles": "[[styles.fontWeightNormal]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ImportedStateIndicator.tsx",
+          "line": 21,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 48,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.mt3, styles.noSelect]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.mt3, styles.noSelect]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/MoneyReportHeader.tsx",
+          "line": 2670,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 49,
+      "count": 1,
+      "visualSignature": "text:yes | iconRight:yes | rightIcon:yes | innerStyles=[[styles.hoveredComponentBG, styles.ph4, styles.pv2]] | textStyles=styles.buttonSmallText",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": true,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[styles.hoveredComponentBG, styles.ph4, styles.pv2]]",
+          "textStyles": "styles.buttonSmallText"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/MoneyRequestConfirmationListFooter.tsx",
+          "line": 1441,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 50,
+      "count": 1,
+      "visualSignature": "text:yes | defaultHover:false | style=[[styles.pl2]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "false",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.pl2]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/OptionRow.tsx",
+          "line": 303,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 51,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | iconFill=theme.icon",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {
+          "iconFill": "theme.icon"
+        }
+      },
+      "files": [
+        {
+          "file": "src/components/PromotedActionsBar.tsx",
+          "line": 110,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 52,
+      "count": 1,
+      "visualSignature": "text:yes | primaryTextNumberOfLines:props.primaryTextNumberOfLines | innerStyles=props.styles?.button | textStyles=props.styles?.text",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "primaryTextNumberOfLines": "props.primaryTextNumberOfLines"
+        },
+        "styleOverrides": {
+          "innerStyles": "props.styles?.button",
+          "textStyles": "props.styles?.text"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/ReportActionItem/ActionableItemButtons.tsx",
+          "line": 35,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 53,
+      "count": 1,
+      "visualSignature": "style=styles.pl2",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.pl2"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/PureReportActionItem.tsx",
+          "line": 1997,
+          "source": "via ChronosOOOListActions"
+        }
+      ]
+    },
+    {
+      "groupId": 54,
+      "count": 1,
+      "visualSignature": "innerStyles=[[isOverlayVisible && styles.buttonHoveredBG, {maxWidth: 256}, innerStyles]]",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[isOverlayVisible && styles.buttonHoveredBG, {maxWidth: 256}, innerStyles]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Search/FilterDropdowns/DropdownButton.tsx",
+          "line": 134,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 55,
+      "count": 1,
+      "visualSignature": "text:yes | defaultHover:false | innerStyles=styles.p0",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "false",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "styles.p0"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Search/SearchBulkActionsButton.tsx",
+          "line": 199,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 56,
+      "count": 1,
+      "visualSignature": "text:yes | defaultHover:false | isNested:true | innerStyles=[[styles.ph3]] | textStyles=[[styles.fontSizeNormal]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "false",
+        "booleanFlags": {
+          "isNested": "true"
+        },
+        "styleOverrides": {
+          "innerStyles": "[[styles.ph3]]",
+          "textStyles": "[[styles.fontSizeNormal]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Search/SearchList/ListItem/TransactionGroupListExpanded.tsx",
+          "line": 272,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 57,
+      "count": 1,
+      "visualSignature": "icon:yes",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/Search/SearchPageHeader/SearchActionsBarNarrow.tsx",
+          "line": 55,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 58,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.w100, confirmButtonStyle]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.w100, confirmButtonStyle]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/SelectionList/components/Footer.tsx",
+          "line": 33,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 59,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.w100, styles.mb15]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.w100, styles.mb15]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/SubStepForms/DocusignFullStep.tsx",
+          "line": 127,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 60,
+      "count": 1,
+      "visualSignature": "text:yes | innerStyles=dynamic (variable: styleForAM)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "dynamic (variable: styleForAM)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/TimePicker/TimePicker.tsx",
+          "line": 737,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 61,
+      "count": 1,
+      "visualSignature": "text:yes | innerStyles=[[styleForPM, styles.ml1]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[styleForPM, styles.ml1]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/components/TimePicker/TimePicker.tsx",
+          "line": 749,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 62,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.pb5, styles.ph3]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.pb5, styles.ph3]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/Debug/Transaction/DebugTransactionPage.tsx",
+          "line": 80,
+          "source": "via DebugTransactionViolations"
+        }
+      ]
+    },
+    {
+      "groupId": 63,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | rightIcon:yes | iconStyles=styles.buttonCTAIcon",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "iconStyles": "styles.buttonCTAIcon"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/EnablePayments/AddBankAccount/SetupMethod.tsx",
+          "line": 30,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 64,
+      "count": 1,
+      "visualSignature": "text:yes | style=styles.updateRequiredViewTextContainer",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.updateRequiredViewTextContainer"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/ErrorPage/UpdateRequiredView.tsx",
+          "line": 69,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 65,
+      "count": 1,
+      "visualSignature": "text:yes | innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.pl2]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.pl2]]",
+          "innerStyles": "dynamic (variable: buttonInnerStyles)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/NewChatPage.tsx",
+          "line": 428,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 66,
+      "count": 1,
+      "visualSignature": "text:yes | style=styles.twoColumnLayoutCol",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.twoColumnLayoutCol"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/ScheduleCall/ScheduleCallPage.tsx",
+          "line": 223,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 67,
+      "count": 1,
+      "visualSignature": "icon:yes | innerStyles=[[styles.arrowIcon]]",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[styles.arrowIcon]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/TransactionMerge/TransactionMergeReceipts.tsx",
+          "line": 71,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 68,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (binary expression)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[shouldUseNarrowLayout && styles.alignItemsCenter]]",
+          "style": "dynamic (binary expression)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/domain/Admins/DomainAdminsPage.tsx",
+          "line": 81,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 69,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional) | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[shouldUseNarrowLayout && styles.alignItemsCenter]]",
+          "style": "dynamic (conditional)"
+        },
+        "colorOverrides": {
+          "iconFill": "dynamic (conditional)",
+          "iconHoverFill": "dynamic (conditional)"
+        }
+      },
+      "files": [
+        {
+          "file": "src/pages/domain/Admins/DomainAdminsPage.tsx",
+          "line": 89,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 70,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[shouldUseNarrowLayout && styles.alignItemsCenter]]",
+          "style": "dynamic (conditional)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/domain/Members/DomainMembersPage.tsx",
+          "line": 228,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 71,
+      "count": 1,
+      "visualSignature": "text:yes | style=styles.alignSelfStart",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "styles.alignSelfStart"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/domain/Saml/ScimTokenContent.tsx",
+          "line": 32,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 72,
+      "count": 1,
+      "visualSignature": "text:yes | iconRight:yes | rightIcon:yes | isContentCentered:true | style=styles.widgetItemButton | textStyles=styles.pb0",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": true,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {
+          "isContentCentered": "true"
+        },
+        "styleOverrides": {
+          "textStyles": "styles.pb0",
+          "style": "styles.widgetItemButton"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/home/SpendOverTimeSection/SpendOverTimeSectionContent.tsx",
+          "line": 42,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 73,
+      "count": 1,
+      "visualSignature": "(no extras - plain button)",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {},
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/FloatingMessageCounter.tsx",
+          "line": 66,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 74,
+      "count": 1,
+      "visualSignature": "style=[[styles.mt2, styles.alignSelfStart]]",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.mt2, styles.alignSelfStart]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/inbox/report/PureReportActionItem.tsx",
+          "line": 1808,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 75,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.p5, styles.mt4]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.p5, styles.mt4]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepOdometerImage/index.tsx",
+          "line": 477,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 76,
+      "count": 1,
+      "visualSignature": "iconRight:yes | rightIcon:yes | innerStyles=styles.bgTransparent",
+      "fingerprint": {
+        "hasText": false,
+        "hasIcon": false,
+        "hasIconRight": true,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": true,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "styles.bgTransparent"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepScan/ReceiptView/index.tsx",
+          "line": 113,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 77,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.p5]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.p5]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/iou/request/step/IOURequestStepScan/index.tsx",
+          "line": 180,
+          "source": "via DesktopWebUploadView"
+        }
+      ]
+    },
+    {
+      "groupId": 78,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.buttonConfirm, shouldUseNarrowLayout ? {} : styles.attachmentButtonBigSc] | textStyles=[[styles.buttonConfirmText]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.buttonConfirm, shouldUseNarrowLayout ? {} : styles.attachmentButtonBigSc]",
+          "textStyles": "[[styles.buttonConfirmText]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/media/AttachmentModalScreen/AttachmentModalBaseContent/index.tsx",
+          "line": 373,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 79,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | style=[[styles.alignSelfStart, styles.mt6]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.alignSelfStart, styles.mt6]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/settings/Profile/ProfilePage.tsx",
+          "line": 250,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 80,
+      "count": 1,
+      "visualSignature": "text:yes | icon:yes | style=dynamic (conditional)",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": true,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "dynamic (conditional)"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/settings/Subscription/SubscriptionPlan/AddMembersButton/index.tsx",
+          "line": 27,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 81,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.w100, styles.p5]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.w100, styles.p5]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+          "line": 534,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 82,
+      "count": 1,
+      "visualSignature": "text:yes | style=themeStyles.justifyContentEnd",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "themeStyles.justifyContentEnd"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/settings/Wallet/ReportVirtualCardFraudConfirmationPage.tsx",
+          "line": 61,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 83,
+      "count": 1,
+      "visualSignature": "text:yes | style=[[styles.mh5, bottomSafeAreaPaddingStyle]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "style": "[[styles.mh5, bottomSafeAreaPaddingStyle]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/workspace/WorkspaceNewRoomPage.tsx",
+          "line": 51,
+          "source": "direct"
+        }
+      ]
+    },
+    {
+      "groupId": 84,
+      "count": 1,
+      "visualSignature": "text:yes | innerStyles=[[styles.buttonSmall]] | textStyles=[[styles.buttonSmallText]]",
+      "fingerprint": {
+        "hasText": true,
+        "hasIcon": false,
+        "hasIconRight": false,
+        "hasSecondLineText": false,
+        "hasChildren": false,
+        "shouldShowRightIcon": false,
+        "shouldUseDefaultHover": "true",
+        "booleanFlags": {},
+        "styleOverrides": {
+          "innerStyles": "[[styles.buttonSmall]]",
+          "textStyles": "[[styles.buttonSmallText]]"
+        },
+        "colorOverrides": {}
+      },
+      "files": [
+        {
+          "file": "src/pages/workspace/expensifyCard/WorkspaceCardsListLabel.tsx",
+          "line": 141,
+          "source": "direct"
+        }
+      ]
+    }
+  ]
+}

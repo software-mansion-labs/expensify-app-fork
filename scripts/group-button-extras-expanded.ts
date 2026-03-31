@@ -3,7 +3,7 @@ import * as path from 'path';
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const INPUT_PATH = path.join(PROJECT_ROOT, 'button-props-analysis.json');
-const OUTPUT_PATH = path.join(PROJECT_ROOT, 'button-extra-visual-groups.json');
+const OUTPUT_PATH = path.join(PROJECT_ROOT, 'button-extra-visual-groups-expanded.json');
 
 interface PropUsage {
     prop: string;
@@ -17,15 +17,29 @@ interface ButtonUsage {
     props: PropUsage[];
 }
 
-interface AnalysisData {
-    summary: {totalButtonUsages: number; totalFiles: number};
-    propStatistics: unknown[];
-    detailedUsages: ButtonUsage[];
+interface PropMapping {
+    buttonProp: string;
+    wrapperParam: string;
 }
 
-// Props to completely ignore (non-visual + base visual)
+interface WrapperComponent {
+    name: string;
+    file: string;
+    directButtonUsages: number;
+    propForwarding: PropMapping[];
+    wrapperUsageCount: number;
+    wrapperUsages: ButtonUsage[];
+}
+
+interface AnalysisData {
+    summary: {totalButtonUsages: number; totalFiles: number; totalWrapperComponents: number; totalWrapperUsages: number};
+    propStatistics: unknown[];
+    detailedUsages: ButtonUsage[];
+    wrapperComponents: WrapperComponent[];
+}
+
+// Props to completely ignore (non-visual + base visual) — same as group-button-extras.ts
 const IGNORED_PROPS = new Set([
-    // non-visual
     'onPress',
     'onLongPress',
     'onPressIn',
@@ -44,7 +58,6 @@ const IGNORED_PROPS = new Set([
     'isPressOnEnterActive',
     'isLongPressDisabled',
     'shouldEnableHapticFeedback',
-    // base visual - skip these for this grouping
     'success',
     'danger',
     'link',
@@ -76,7 +89,31 @@ interface ExtraFingerprint {
     colorOverrides: Record<string, string>;
 }
 
-function buildFingerprint(usage: ButtonUsage): ExtraFingerprint {
+const BOOLEAN_FLAGS = new Set(['shouldRemoveRightBorderRadius', 'shouldRemoveLeftBorderRadius', 'shouldBlendOpacity', 'shouldStayNormalOnDisable', 'isContentCentered', 'isNested']);
+const STYLE_PROPS = new Set(['style', 'innerStyles', 'textStyles', 'textHoverStyles', 'hoverStyles', 'disabledStyle', 'iconStyles', 'iconRightStyles', 'iconWrapperStyles']);
+const COLOR_PROPS = new Set(['iconFill', 'iconHoverFill', 'iconRightFill', 'iconRightHoverFill']);
+const LAYOUT_ONLY_PATTERN = /^styles\.(m\d|mt\d|mb\d|ml\d|mr\d|mh\d|mv\d|mx\d|my\d|mAuto|mtAuto|mbAuto|mlAuto|mrAuto|w\d+|minWidth\d+|maxWidth\d+|flex1|flexGrow1|flexShrink\d|flexShrink0)$/;
+
+function isLayoutOnlyToken(token: string): boolean {
+    const trimmed = token.trim();
+    if (!trimmed || trimmed === '{}') return true;
+    if (LAYOUT_ONLY_PATTERN.test(trimmed)) return true;
+    if (/&&\s*styles\.(m[tblrhvxy]?\d|flex\w*\d|w\d+|mb\d)$/.test(trimmed)) return true;
+    if (/\?\s*styles\.(m[tblrhvxy]?\d+)\s*:\s*styles\.(m[tblrhvxy]?\d+)$/.test(trimmed)) return true;
+    return false;
+}
+
+function isLayoutOnlyStyle(value: string): boolean {
+    if (LAYOUT_ONLY_PATTERN.test(value)) return true;
+    const arrayMatch = value.match(/^\[\[(.*)\]\]$/);
+    if (arrayMatch) {
+        const tokens = arrayMatch[1].split(',');
+        return tokens.every(isLayoutOnlyToken);
+    }
+    return false;
+}
+
+function buildFingerprint(props: PropUsage[]): ExtraFingerprint {
     const fp: ExtraFingerprint = {
         hasText: false,
         hasIcon: false,
@@ -90,41 +127,7 @@ function buildFingerprint(usage: ButtonUsage): ExtraFingerprint {
         colorOverrides: {},
     };
 
-    const BOOLEAN_FLAGS = new Set(['shouldRemoveRightBorderRadius', 'shouldRemoveLeftBorderRadius', 'shouldBlendOpacity', 'shouldStayNormalOnDisable', 'isContentCentered', 'isNested']);
-
-    const STYLE_PROPS = new Set(['style', 'innerStyles', 'textStyles', 'textHoverStyles', 'hoverStyles', 'disabledStyle', 'iconStyles', 'iconRightStyles', 'iconWrapperStyles']);
-
-    const COLOR_PROPS = new Set(['iconFill', 'iconHoverFill', 'iconRightFill', 'iconRightHoverFill']);
-
-    // Outer margin or width-only style tokens — these don't change button's visual appearance
-    const LAYOUT_ONLY_PATTERN =
-        /^styles\.(m\d|mt\d|mb\d|ml\d|mr\d|mh\d|mv\d|mx\d|my\d|mAuto|mtAuto|mbAuto|mlAuto|mrAuto|w\d+|minWidth\d+|maxWidth\d+|flex1|flexGrow1|flexShrink\d|flexShrink0)$/;
-
-    function isLayoutOnlyToken(token: string): boolean {
-        const trimmed = token.trim();
-        if (!trimmed || trimmed === '{}') return true;
-        // Direct style reference: styles.mt4, styles.w100, styles.flex1
-        if (LAYOUT_ONLY_PATTERN.test(trimmed)) return true;
-        // Conditional that resolves to a layout token or empty: shouldUseNarrowLayout && styles.flex1
-        if (/&&\s*styles\.(m[tblrhvxy]?\d|flex\w*\d|w\d+|mb\d)$/.test(trimmed)) return true;
-        // Conditional with ternary resolving to margin tokens: canUseTouchScreen ? styles.mt5 : styles.mt0
-        if (/\?\s*styles\.(m[tblrhvxy]?\d+)\s*:\s*styles\.(m[tblrhvxy]?\d+)$/.test(trimmed)) return true;
-        return false;
-    }
-
-    function isLayoutOnlyStyle(value: string): boolean {
-        // Direct reference: styles.w100, styles.mt4
-        if (LAYOUT_ONLY_PATTERN.test(value)) return true;
-        // Array syntax: [[styles.w100]], [[styles.mt4, styles.mb3]]
-        const arrayMatch = value.match(/^\[\[(.*)\]\]$/);
-        if (arrayMatch) {
-            const tokens = arrayMatch[1].split(',');
-            return tokens.every(isLayoutOnlyToken);
-        }
-        return false;
-    }
-
-    for (const prop of usage.props) {
+    for (const prop of props) {
         const {prop: name, value, type} = prop;
 
         if (IGNORED_PROPS.has(name)) continue;
@@ -166,7 +169,6 @@ function buildFingerprint(usage: ButtonUsage): ExtraFingerprint {
             continue;
         }
         if (STYLE_PROPS.has(name)) {
-            // Only track style if it's NOT purely layout (outer margin / width)
             if (name === 'style' && isLayoutOnlyStyle(value)) continue;
             fp.styleOverrides[name] = value;
             continue;
@@ -213,26 +215,111 @@ function fingerprintToKey(fp: ExtraFingerprint): string {
     return parts.length === 0 ? '(no extras - plain button)' : parts.join(' | ');
 }
 
+interface EffectiveUsage {
+    file: string;
+    line: number;
+    props: PropUsage[];
+    source: 'direct' | string;
+}
+
+function mergeProps(directProps: PropUsage[], callerProps: PropUsage[]): PropUsage[] {
+    const merged = new Map<string, PropUsage>();
+    for (const p of directProps) {
+        merged.set(p.prop, p);
+    }
+    for (const p of callerProps) {
+        merged.set(p.prop, p);
+    }
+    return [...merged.values()];
+}
+
+function unionProps(allButtonProps: PropUsage[][]): PropUsage[] {
+    const merged = new Map<string, PropUsage>();
+    for (const props of allButtonProps) {
+        for (const p of props) {
+            if (!merged.has(p.prop)) {
+                merged.set(p.prop, p);
+            }
+        }
+    }
+    return [...merged.values()];
+}
+
 function main() {
     const data: AnalysisData = JSON.parse(fs.readFileSync(INPUT_PATH, 'utf8'));
 
-    const groups: Map<string, {fingerprint: ExtraFingerprint; usages: Array<{file: string; line: number}>}> = new Map();
+    const wrappersByFile = new Map<string, WrapperComponent>();
+    for (const wrapper of data.wrapperComponents) {
+        wrappersByFile.set(wrapper.file, wrapper);
+    }
+
+    // Collect all direct Button props per wrapper file (union across all Buttons in wrapper)
+    const wrapperStaticProps = new Map<string, PropUsage[]>();
+    for (const usage of data.detailedUsages) {
+        if (wrappersByFile.has(usage.file)) {
+            const existing = wrapperStaticProps.get(usage.file) ?? [];
+            existing.push(...usage.props);
+            wrapperStaticProps.set(usage.file, existing);
+        }
+    }
+    // Deduplicate: union props across all Buttons, first value wins
+    for (const [file, props] of wrapperStaticProps) {
+        wrapperStaticProps.set(file, unionProps([props]));
+    }
+
+    const effectiveUsages: EffectiveUsage[] = [];
+    let directCount = 0;
+    let expandedCount = 0;
+    const processedWrapperFiles = new Set<string>();
 
     for (const usage of data.detailedUsages) {
-        const fp = buildFingerprint(usage);
+        const wrapper = wrappersByFile.get(usage.file);
+        if (wrapper) {
+            // Process each wrapper only once (not per-Button)
+            if (processedWrapperFiles.has(usage.file)) continue;
+            processedWrapperFiles.add(usage.file);
+
+            const staticProps = wrapperStaticProps.get(usage.file) ?? [];
+            for (const caller of wrapper.wrapperUsages) {
+                const merged = mergeProps(staticProps, caller.props);
+                effectiveUsages.push({
+                    file: caller.file,
+                    line: caller.line,
+                    props: merged,
+                    source: `via ${wrapper.name || path.basename(wrapper.file, '.tsx')}`,
+                });
+                expandedCount++;
+            }
+        } else {
+            effectiveUsages.push({
+                file: usage.file,
+                line: usage.line,
+                props: usage.props,
+                source: 'direct',
+            });
+            directCount++;
+        }
+    }
+
+    const groups = new Map<string, {fingerprint: ExtraFingerprint; usages: Array<{file: string; line: number; source: string}>}>();
+
+    for (const eu of effectiveUsages) {
+        const fp = buildFingerprint(eu.props);
         const key = fingerprintToKey(fp);
 
         if (!groups.has(key)) {
             groups.set(key, {fingerprint: fp, usages: []});
         }
-        groups.get(key)!.usages.push({file: usage.file, line: usage.line});
+        groups.get(key)!.usages.push({file: eu.file, line: eu.line, source: eu.source});
     }
 
     const sorted = [...groups.entries()].sort(([, a], [, b]) => b.usages.length - a.usages.length);
 
     const output = {
         totalGroups: sorted.length,
-        totalUsages: data.detailedUsages.length,
+        totalEffectiveUsages: effectiveUsages.length,
+        directUsages: directCount,
+        expandedFromWrappers: expandedCount,
         groups: sorted.map(([key, group], index) => ({
             groupId: index + 1,
             count: group.usages.length,
@@ -245,19 +332,21 @@ function main() {
     fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2));
     console.error(`Written to ${OUTPUT_PATH}`);
 
-    console.log('=== BUTTON EXTRA-VISUAL GROUPS (ignoring size/variant/isLoading/isDisabled) ===\n');
-    console.log(`Total unique extra-visual configurations: ${sorted.length}`);
-    console.log(`Total Button usages: ${data.detailedUsages.length}\n`);
+    console.log('=== BUTTON EXTRA-VISUAL GROUPS — EXPANDED (wrappers → callers) ===\n');
+    console.log(`Direct Button usages (non-wrapper): ${directCount}`);
+    console.log(`Expanded from wrappers: ${expandedCount}`);
+    console.log(`Total effective usages: ${effectiveUsages.length}`);
+    console.log(`Unique extra-visual configurations: ${sorted.length}\n`);
 
     for (const [key, group] of sorted) {
         console.log(`[${group.usages.length}x] ${key}`);
         for (const u of group.usages) {
-            console.log(`    ${u.file}:${u.line}`);
+            const suffix = u.source !== 'direct' ? `  (${u.source})` : '';
+            console.log(`    ${u.file}:${u.line}${suffix}`);
         }
         console.log();
     }
 
-    // Distribution
     const countBuckets: Record<string, number> = {};
     for (const [, group] of sorted) {
         const bucket = group.usages.length === 1 ? '1 (unique)' : group.usages.length <= 3 ? '2-3' : group.usages.length <= 10 ? '4-10' : '10+';

@@ -1,0 +1,1027 @@
+{
+  "summary": {
+    "totalEffectiveUsages": 525,
+    "directUsages": 292,
+    "expandedFromWrappers": 233,
+    "totalGroups": 84
+  },
+  "distribution": [
+    {
+      "bucket": "10+",
+      "groups": 4,
+      "totalUsages": 387
+    },
+    {
+      "bucket": "1 (unique)",
+      "groups": 49,
+      "totalUsages": 49
+    },
+    {
+      "bucket": "2-3",
+      "groups": 22,
+      "totalUsages": 49
+    },
+    {
+      "bucket": "4-10",
+      "groups": 9,
+      "totalUsages": 40
+    }
+  ],
+  "coverageTop10": {
+    "top10usages": 415,
+    "total": 525,
+    "percentCoveredByTop10": 79
+  },
+  "topGroups": [
+    {
+      "rank": 1,
+      "count": 316,
+      "visualSignature": "text:yes",
+      "directCount": 179,
+      "wrapperCount": 137,
+      "wrapperSources": [
+        {
+          "wrapper": "via ConfirmationPage",
+          "count": 24
+        },
+        {
+          "wrapper": "via ConfirmationStep",
+          "count": 20
+        },
+        {
+          "wrapper": "via DecisionModal",
+          "count": 16
+        },
+        {
+          "wrapper": "via SearchFilterPageFooterButtons",
+          "count": 12
+        },
+        {
+          "wrapper": "via UpgradeIntro",
+          "count": 8
+        },
+        {
+          "wrapper": "via ImportSpreadsheetColumns",
+          "count": 6
+        },
+        {
+          "wrapper": "via BaseValidateCodeForm",
+          "count": 4
+        },
+        {
+          "wrapper": "via DebugDetails",
+          "count": 4
+        },
+        {
+          "wrapper": "via FeatureList",
+          "count": 4
+        },
+        {
+          "wrapper": "via FeatureTrainingModal",
+          "count": 4
+        },
+        {
+          "wrapper": "via FormHelpMessageRowWithRetryButton",
+          "count": 3
+        },
+        {
+          "wrapper": "via MoneyRequestAmountForm",
+          "count": 3
+        },
+        {
+          "wrapper": "via BaseDomainRequireTwoFactorAuthPage",
+          "count": 2
+        },
+        {
+          "wrapper": "via BaseOnboardingEmployees",
+          "count": 2
+        },
+        {
+          "wrapper": "via BaseOpenAppFailureModal",
+          "count": 2
+        },
+        {
+          "wrapper": "via FrozenCardHeader",
+          "count": 2
+        },
+        {
+          "wrapper": "via OnboardingMergingAccountBlockedView",
+          "count": 2
+        },
+        {
+          "wrapper": "via RequireTwoFactorAuthenticationModal",
+          "count": 2
+        },
+        {
+          "wrapper": "via TaskHeaderActionButton",
+          "count": 2
+        },
+        {
+          "wrapper": "via AmountSelectorModal",
+          "count": 1
+        },
+        {
+          "wrapper": "via BeneficialOwnersList",
+          "count": 1
+        },
+        {
+          "wrapper": "via ChooseSSOOrMagicCode",
+          "count": 1
+        },
+        {
+          "wrapper": "via CompanyOwnersListUBO",
+          "count": 1
+        },
+        {
+          "wrapper": "via CopyCodesPage",
+          "count": 1
+        },
+        {
+          "wrapper": "via DowngradeIntro",
+          "count": 1
+        },
+        {
+          "wrapper": "via GenericFeaturesView",
+          "count": 1
+        },
+        {
+          "wrapper": "via MoneyRequestHeaderPrimaryAction",
+          "count": 1
+        },
+        {
+          "wrapper": "via MultifactorAuthenticationAuthorizeTransactionActions",
+          "count": 1
+        },
+        {
+          "wrapper": "via PDFPasswordForm",
+          "count": 1
+        },
+        {
+          "wrapper": "via ProactiveAppReviewModal",
+          "count": 1
+        },
+        {
+          "wrapper": "via ReportPreviewActionButton",
+          "count": 1
+        },
+        {
+          "wrapper": "via SubscriptionPlanDowngradeBlocked",
+          "count": 1
+        },
+        {
+          "wrapper": "via TestDriveBanner",
+          "count": 1
+        },
+        {
+          "wrapper": "via WorkspaceCompanyCardTableItem",
+          "count": 1
+        }
+      ],
+      "sampleFiles": [
+        "src/components/AmountPicker/index.tsx:43  (via AmountSelectorModal)",
+        "src/components/AnonymousReportFooter.tsx:48",
+        "src/components/AvatarCropModal/AvatarCropModal.tsx:446",
+        "src/components/ColumnsSettingsList.tsx:295",
+        "src/pages/AddPersonalBankAccountPage.tsx:72  (via ConfirmationPage)"
+      ]
+    },
+    {
+      "rank": 2,
+      "count": 38,
+      "visualSignature": "text:yes | shouldBlendOpacity:dynamic | style=dynamic (variable: style)",
+      "directCount": 0,
+      "wrapperCount": 38,
+      "wrapperSources": [
+        {
+          "wrapper": "via FormAlertWithSubmitButton",
+          "count": 38
+        }
+      ],
+      "sampleFiles": [
+        "src/components/FeatureTrainingModal.tsx:500  (via FormAlertWithSubmitButton)",
+        "src/components/FeedbackSurvey.tsx:139  (via FormAlertWithSubmitButton)",
+        "src/components/Form/FormWrapper.tsx:189  (via FormAlertWithSubmitButton)",
+        "src/components/Search/FilterComponents/DateFilterBase.tsx:185  (via FormAlertWithSubmitButton)",
+        "src/components/Search/SearchFiltersAmountBase.tsx:184  (via FormAlertWithSubmitButton)"
+      ]
+    },
+    {
+      "rank": 3,
+      "count": 21,
+      "visualSignature": "text:yes | icon:yes",
+      "directCount": 19,
+      "wrapperCount": 2,
+      "wrapperSources": [
+        {
+          "wrapper": "via AnimatedSettlementButton",
+          "count": 2
+        }
+      ],
+      "sampleFiles": [
+        "src/components/Attachments/AttachmentView/index.tsx:294",
+        "src/components/Search/SearchPageHeader/SearchActionsBarCreateButton.tsx:146",
+        "src/components/Search/SearchPageHeader/SearchAdvancedFiltersButton.tsx:25",
+        "src/components/Search/SearchPageHeader/SearchSaveButton.tsx:14",
+        "src/components/MoneyReportHeader.tsx:1409  (via AnimatedSettlementButton)"
+      ]
+    },
+    {
+      "rank": 4,
+      "count": 12,
+      "visualSignature": "text:yes | style=styles.widgetItemButton",
+      "directCount": 0,
+      "wrapperCount": 12,
+      "wrapperSources": [
+        {
+          "wrapper": "via BaseWidgetItem",
+          "count": 12
+        }
+      ],
+      "sampleFiles": [
+        "src/pages/home/ForYouSection/index.tsx:112  (via BaseWidgetItem)",
+        "src/pages/home/TimeSensitiveSection/items/ActivateCard.tsx:19  (via BaseWidgetItem)",
+        "src/pages/home/TimeSensitiveSection/items/AddPaymentCard/index.tsx:14  (via BaseWidgetItem)",
+        "src/pages/home/TimeSensitiveSection/items/AddShippingAddress.tsx:19  (via BaseWidgetItem)",
+        "src/pages/home/TimeSensitiveSection/items/FixAccountingConnection.tsx:32  (via BaseWidgetItem)"
+      ]
+    },
+    {
+      "rank": 5,
+      "count": 6,
+      "visualSignature": "text:yes | style=dynamic (conditional)",
+      "directCount": 0,
+      "wrapperCount": 6,
+      "wrapperSources": [
+        {
+          "wrapper": "via BookTravelButton",
+          "count": 3
+        },
+        {
+          "wrapper": "via DecisionModal",
+          "count": 1
+        },
+        {
+          "wrapper": "via EarlyDiscountBanner",
+          "count": 1
+        },
+        {
+          "wrapper": "via SubscriptionPlanCardActionButton",
+          "count": 1
+        }
+      ],
+      "sampleFiles": [
+        "src/pages/Search/EmptySearchView.tsx:263  (via BookTravelButton)",
+        "src/pages/Travel/ManageTrips.tsx:86  (via BookTravelButton)",
+        "src/pages/workspace/travel/GetStartedTravel.tsx:33  (via BookTravelButton)",
+        "src/components/ProcessMoneyReportHoldMenu.tsx:150  (via DecisionModal)",
+        "src/pages/inbox/HeaderView.tsx:436  (via EarlyDiscountBanner)"
+      ]
+    },
+    {
+      "rank": 6,
+      "count": 5,
+      "visualSignature": "text:yes | defaultHover:dynamic | isNested:true | shouldStayNormalOnDisable:dynamic | innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.w100, shouldDisablePointerEvents && styles.pointerEventsNone]]",
+      "directCount": 0,
+      "wrapperCount": 5,
+      "wrapperSources": [
+        {
+          "wrapper": "via ActionCell",
+          "count": 5
+        }
+      ],
+      "sampleFiles": [
+        "src/components/Search/SearchList/ListItem/ExpenseReportListItemRow.tsx:203  (via ActionCell)",
+        "src/components/Search/SearchList/ListItem/ExpenseReportListItemRow.tsx:308  (via ActionCell)",
+        "src/components/Search/SearchList/ListItem/ReportListItemHeader.tsx:182  (via ActionCell)",
+        "src/components/Search/SearchList/ListItem/UserInfoAndActionButtonRow.tsx:68  (via ActionCell)",
+        "src/components/TransactionItemRow/index.tsx:415  (via ActionCell)"
+      ]
+    },
+    {
+      "rank": 7,
+      "count": 5,
+      "visualSignature": "text:yes | icon:yes | style=styles.transactionReceiptButton",
+      "directCount": 5,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx:506",
+        "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx:512",
+        "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx:532",
+        "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx:542",
+        "src/pages/media/AttachmentModalScreen/routes/TransactionReceiptModalContent.tsx:550"
+      ]
+    },
+    {
+      "rank": 8,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | defaultHover:false | textStyles=[[styles.textMicroBold]] | iconFill=theme.link | iconHoverFill=theme.linkHover",
+      "directCount": 4,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/components/MoneyRequestReportView/MoneyRequestReportTransactionList.tsx:675",
+        "src/components/Search/SearchPageHeader/SearchFiltersBarNarrow.tsx:49",
+        "src/components/Search/SearchPageHeader/SearchFiltersBarWide.tsx:68",
+        "src/components/Search/SearchPageHeader/SearchFiltersBarWide.tsx:81"
+      ]
+    },
+    {
+      "rank": 9,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | style=styles.quickCreationActionsBarButton | textStyles=styles.quickCreationActionsBarButtonText",
+      "directCount": 4,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/components/Navigation/QuickCreationActionsBar/index.tsx:235",
+        "src/components/Navigation/QuickCreationActionsBar/index.tsx:243",
+        "src/components/Navigation/QuickCreationActionsBar/index.tsx:251",
+        "src/components/Navigation/QuickCreationActionsBar/index.tsx:260"
+      ]
+    },
+    {
+      "rank": 10,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | rightIcon:yes | isContentCentered:true",
+      "directCount": 0,
+      "wrapperCount": 4,
+      "wrapperSources": [
+        {
+          "wrapper": "via NumberWithSymbolForm",
+          "count": 4
+        }
+      ],
+      "sampleFiles": [
+        "src/components/AmountForm.tsx:95  (via NumberWithSymbolForm)",
+        "src/components/AmountPicker/AmountSelectorModal.tsx:67  (via NumberWithSymbolForm)",
+        "src/components/MoneyRequestAmountInput.tsx:220  (via NumberWithSymbolForm)",
+        "src/components/MoneyRequestConfirmationListFooter.tsx:602  (via NumberWithSymbolForm)"
+      ]
+    },
+    {
+      "rank": 11,
+      "count": 4,
+      "visualSignature": "text:yes | style=[[styles.ph4, styles.pb4]]",
+      "directCount": 0,
+      "wrapperCount": 4,
+      "wrapperSources": [
+        {
+          "wrapper": "via TransactionPreviewContent",
+          "count": 4
+        }
+      ],
+      "sampleFiles": [
+        "src/components/ReportActionItem/TransactionPreview/index.tsx:120  (via TransactionPreviewContent)",
+        "src/components/ReportActionItem/TransactionPreview/index.tsx:145  (via TransactionPreviewContent)",
+        "src/stories/MoneyRequestReportPreview.stories.tsx:38  (via TransactionPreviewContent)",
+        "src/stories/TransactionPreviewContent.stories.tsx:135  (via TransactionPreviewContent)"
+      ]
+    },
+    {
+      "rank": 12,
+      "count": 4,
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]]",
+      "directCount": 4,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/pages/ReportParticipantsPage.tsx:371",
+        "src/pages/RoomMembersPage.tsx:373",
+        "src/pages/workspace/WorkspaceMembersPage.tsx:758",
+        "src/pages/workspace/WorkspaceOverviewPage.tsx:481"
+      ]
+    },
+    {
+      "rank": 13,
+      "count": 4,
+      "visualSignature": "text:yes | style=[[styles.p9, styles.pt5]]",
+      "directCount": 4,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/pages/iou/request/step/IOURequestStepOdometerImage/index.native.tsx:303",
+        "src/pages/iou/request/step/IOURequestStepOdometerImage/index.tsx:312",
+        "src/pages/iou/request/step/IOURequestStepScan/components/MobileWebCameraView.tsx:395",
+        "src/pages/iou/request/step/IOURequestStepScan/index.native.tsx:487"
+      ]
+    },
+    {
+      "rank": 14,
+      "count": 3,
+      "visualSignature": "icon:yes | iconFill=theme.icon",
+      "directCount": 3,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/components/AvatarCropModal/AvatarCropModal.tsx:434",
+        "src/components/MapView/MapView.tsx:345",
+        "src/components/MapView/MapViewImpl.website.tsx:315"
+      ]
+    },
+    {
+      "rank": 15,
+      "count": 3,
+      "visualSignature": "text:yes | style=[[styles.w100, styles.mb5, styles.ph5, styles.flexShrink0]]",
+      "directCount": 3,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/pages/iou/request/step/IOURequestStepDistance.tsx:572",
+        "src/pages/iou/request/step/IOURequestStepDistanceGPS/GPSButtons/index.tsx:119",
+        "src/pages/iou/request/step/IOURequestStepDistanceMap.tsx:561"
+      ]
+    },
+    {
+      "rank": 16,
+      "count": 3,
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | secondLine:yes | children:yes | rightIcon:yes | defaultHover:dynamic | isContentCentered:dynamic | isNested:dynamic | primaryTextNumberOfLines:dynamic (from spread of parameter) | shouldBlendOpacity:dynamic | shouldRemoveLeftBorderRadius:dynamic | shouldRemoveRightBorderRadius:dynamic | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (from spread of parameter) | hoverStyles=dynamic (from spread of parameter) | iconRightStyles=dynamic (from spread of parameter) | iconStyles=dynamic (from spread of parameter) | iconWrapperStyles=dynamic (from spread of parameter) | innerStyles=dynamic (from spread of parameter) | style=dynamic (from spread of parameter) | textHoverStyles=dynamic (from spread of parameter) | textStyles=dynamic (from spread of parameter) | iconFill=dynamic (from spread of parameter) | iconHoverFill=dynamic (from spread of parameter) | iconRightFill=dynamic (from spread of parameter) | iconRightHoverFill=dynamic (from spread of parameter)",
+      "directCount": 3,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/pages/settings/Subscription/CardSection/CardSectionButton/index.tsx:7",
+        "src/stories/Button.stories.tsx:23",
+        "src/stories/Button.stories.tsx:37"
+      ]
+    },
+    {
+      "rank": 17,
+      "count": 3,
+      "visualSignature": "text:yes | icon:yes | style=dynamic (binary expression)",
+      "directCount": 3,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/pages/workspace/WorkspacesListPageHeaderButton.tsx:58",
+        "src/pages/workspace/WorkspacesListPageHeaderButton.tsx:71",
+        "src/pages/workspace/expensifyCard/WorkspaceExpensifyCardListPage.tsx:136"
+      ]
+    },
+    {
+      "rank": 18,
+      "count": 3,
+      "visualSignature": "text:yes | style=styles.justifyContentCenter",
+      "directCount": 3,
+      "wrapperCount": 0,
+      "wrapperSources": [],
+      "sampleFiles": [
+        "src/pages/workspace/accounting/PolicyAccountingPage.tsx:340",
+        "src/pages/workspace/accounting/PolicyAccountingPage.tsx:535",
+        "src/pages/workspace/receiptPartners/WorkspaceReceiptPartnersPage.tsx:222"
+      ]
+    },
+    {
+      "rank": 19,
+      "count": 2,
+      "visualSignature": "text:yes | icon:yes | shouldStayNormalOnDisable:true",
+      "directCount": 0,
+      "wrapperCount": 2,
+      "wrapperSources": [
+        {
+          "wrapper": "via AnimatedSubmitButton",
+          "count": 2
+        }
+      ],
+      "sampleFiles": [
+        "src/components/MoneyReportHeader.tsx:1391  (via AnimatedSubmitButton)",
+        "src/components/ReportActionItem/MoneyRequestReportPreview/SubmitActionButton.tsx:65  (via AnimatedSubmitButton)"
+      ]
+    },
+    {
+      "rank": 20,
+      "count": 2,
+      "visualSignature": "icon:yes | innerStyles=[[styles.arrowIcon]] | iconFill=theme.text",
+      "directCount": 0,
+      "wrapperCount": 2,
+      "wrapperSources": [
+        {
+          "wrapper": "via CarouselButtons",
+          "count": 2
+        }
+      ],
+      "sampleFiles": [
+        "src/components/Attachments/AttachmentCarousel/AttachmentCarouselView/index.native.tsx:90  (via CarouselButtons)",
+        "src/components/Attachments/AttachmentCarousel/AttachmentCarouselView/index.tsx:256  (via CarouselButtons)"
+      ]
+    }
+  ],
+  "uniqueConfigs": [
+    {
+      "visualSignature": "text:yes | style=[[styles.w100, styles.justifyContentCenter]]",
+      "file": "src/components/AddUnreportedExpenseFooter.tsx",
+      "line": 112,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "style=dynamic (variable: style)",
+      "file": "src/components/Attachments/AttachmentCarousel/CarouselItem.tsx",
+      "line": 45,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.ph3]]",
+      "file": "src/components/Banner.tsx",
+      "line": 122,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | secondLine:yes | rightIcon:yes | shouldRemoveRightBorderRadius:true | shouldStayNormalOnDisable:dynamic | iconRightStyles=dynamic (conditional) | innerStyles=[[innerStyleDropButton, !isSplitButton && styles.dropDownButtonCartIconView, isTe] | style=dynamic (conditional) | textStyles=[[isTextTooLong && shouldUseShortForm ? {...styles.textExtraSmall, ...styles.text] | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional) | iconRightFill=dynamic (conditional) | iconRightHoverFill=dynamic (conditional)",
+      "file": "src/components/ButtonWithDropdownMenu/index.tsx",
+      "line": 169,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "shouldRemoveLeftBorderRadius:true | shouldStayNormalOnDisable:dynamic | innerStyles=[[styles.dropDownButtonCartIconContainerPadding, innerStyleDropButton, isButtonSi] | style=[[styles.pl0]]",
+      "file": "src/components/ButtonWithDropdownMenu/index.tsx",
+      "line": 201,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | iconRight:yes | secondLine:yes | rightIcon:yes | shouldStayNormalOnDisable:dynamic | disabledStyle=dynamic (variable: disabledStyle) | iconRightStyles=dynamic (binary expression) | innerStyles=[[innerStyleDropButton, shouldShowButtonRightIcon && styles.dropDownButtonCartIco] | style=[[styles.w100, style]]",
+      "file": "src/components/ButtonWithDropdownMenu/index.tsx",
+      "line": 243,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=dynamic (variable: shouldReverseStackedButtons)",
+      "file": "src/components/ConfirmModal.tsx",
+      "line": 183,
+      "source": "via ConfirmContent"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | style=dynamic (variable: style)",
+      "file": "src/components/EmptyStateComponent/index.tsx",
+      "line": 78,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | style=[[styles.floatingGpsButton]]",
+      "file": "src/components/FloatingGPSButton/index.native.tsx",
+      "line": 30,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | shouldBlendOpacity:true | style=dynamic (variable: style)",
+      "file": "src/pages/ReportAddApproverPage.tsx",
+      "line": 108,
+      "source": "via FormAlertWithSubmitButton"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.pt9]]",
+      "file": "src/components/ImportSpreadsheet.tsx",
+      "line": 201,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | shouldRemoveLeftBorderRadius:true | shouldRemoveRightBorderRadius:true | textStyles=[[styles.fontWeightNormal]]",
+      "file": "src/components/ImportedStateIndicator.tsx",
+      "line": 21,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.mt3, styles.noSelect]]",
+      "file": "src/components/MoneyReportHeader.tsx",
+      "line": 2670,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | iconRight:yes | rightIcon:yes | innerStyles=[[styles.hoveredComponentBG, styles.ph4, styles.pv2]] | textStyles=styles.buttonSmallText",
+      "file": "src/components/MoneyRequestConfirmationListFooter.tsx",
+      "line": 1441,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | defaultHover:false | style=[[styles.pl2]]",
+      "file": "src/components/OptionRow.tsx",
+      "line": 303,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | iconFill=theme.icon",
+      "file": "src/components/PromotedActionsBar.tsx",
+      "line": 110,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | primaryTextNumberOfLines:props.primaryTextNumberOfLines | innerStyles=props.styles?.button | textStyles=props.styles?.text",
+      "file": "src/components/ReportActionItem/ActionableItemButtons.tsx",
+      "line": 35,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "style=styles.pl2",
+      "file": "src/pages/inbox/report/PureReportActionItem.tsx",
+      "line": 1997,
+      "source": "via ChronosOOOListActions"
+    },
+    {
+      "visualSignature": "innerStyles=[[isOverlayVisible && styles.buttonHoveredBG, {maxWidth: 256}, innerStyles]]",
+      "file": "src/components/Search/FilterDropdowns/DropdownButton.tsx",
+      "line": 134,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | defaultHover:false | innerStyles=styles.p0",
+      "file": "src/components/Search/SearchBulkActionsButton.tsx",
+      "line": 199,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | defaultHover:false | isNested:true | innerStyles=[[styles.ph3]] | textStyles=[[styles.fontSizeNormal]]",
+      "file": "src/components/Search/SearchList/ListItem/TransactionGroupListExpanded.tsx",
+      "line": 272,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "icon:yes",
+      "file": "src/components/Search/SearchPageHeader/SearchActionsBarNarrow.tsx",
+      "line": 55,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.w100, confirmButtonStyle]]",
+      "file": "src/components/SelectionList/components/Footer.tsx",
+      "line": 33,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.w100, styles.mb15]]",
+      "file": "src/components/SubStepForms/DocusignFullStep.tsx",
+      "line": 127,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | innerStyles=dynamic (variable: styleForAM)",
+      "file": "src/components/TimePicker/TimePicker.tsx",
+      "line": 737,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | innerStyles=[[styleForPM, styles.ml1]]",
+      "file": "src/components/TimePicker/TimePicker.tsx",
+      "line": 749,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.pb5, styles.ph3]]",
+      "file": "src/pages/Debug/Transaction/DebugTransactionPage.tsx",
+      "line": 80,
+      "source": "via DebugTransactionViolations"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | rightIcon:yes | iconStyles=styles.buttonCTAIcon",
+      "file": "src/pages/EnablePayments/AddBankAccount/SetupMethod.tsx",
+      "line": 30,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=styles.updateRequiredViewTextContainer",
+      "file": "src/pages/ErrorPage/UpdateRequiredView.tsx",
+      "line": 69,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | innerStyles=dynamic (variable: buttonInnerStyles) | style=[[styles.pl2]]",
+      "file": "src/pages/NewChatPage.tsx",
+      "line": 428,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=styles.twoColumnLayoutCol",
+      "file": "src/pages/ScheduleCall/ScheduleCallPage.tsx",
+      "line": 223,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "icon:yes | innerStyles=[[styles.arrowIcon]]",
+      "file": "src/pages/TransactionMerge/TransactionMergeReceipts.tsx",
+      "line": 71,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (binary expression)",
+      "file": "src/pages/domain/Admins/DomainAdminsPage.tsx",
+      "line": 81,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional) | iconFill=dynamic (conditional) | iconHoverFill=dynamic (conditional)",
+      "file": "src/pages/domain/Admins/DomainAdminsPage.tsx",
+      "line": 89,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | innerStyles=[[shouldUseNarrowLayout && styles.alignItemsCenter]] | style=dynamic (conditional)",
+      "file": "src/pages/domain/Members/DomainMembersPage.tsx",
+      "line": 228,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=styles.alignSelfStart",
+      "file": "src/pages/domain/Saml/ScimTokenContent.tsx",
+      "line": 32,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | iconRight:yes | rightIcon:yes | isContentCentered:true | style=styles.widgetItemButton | textStyles=styles.pb0",
+      "file": "src/pages/home/SpendOverTimeSection/SpendOverTimeSectionContent.tsx",
+      "line": 42,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "(no extras - plain button)",
+      "file": "src/pages/inbox/report/FloatingMessageCounter.tsx",
+      "line": 66,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "style=[[styles.mt2, styles.alignSelfStart]]",
+      "file": "src/pages/inbox/report/PureReportActionItem.tsx",
+      "line": 1808,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.p5, styles.mt4]]",
+      "file": "src/pages/iou/request/step/IOURequestStepOdometerImage/index.tsx",
+      "line": 477,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "iconRight:yes | rightIcon:yes | innerStyles=styles.bgTransparent",
+      "file": "src/pages/iou/request/step/IOURequestStepScan/ReceiptView/index.tsx",
+      "line": 113,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.p5]]",
+      "file": "src/pages/iou/request/step/IOURequestStepScan/index.tsx",
+      "line": 180,
+      "source": "via DesktopWebUploadView"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.buttonConfirm, shouldUseNarrowLayout ? {} : styles.attachmentButtonBigSc] | textStyles=[[styles.buttonConfirmText]]",
+      "file": "src/pages/media/AttachmentModalScreen/AttachmentModalBaseContent/index.tsx",
+      "line": 373,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | style=[[styles.alignSelfStart, styles.mt6]]",
+      "file": "src/pages/settings/Profile/ProfilePage.tsx",
+      "line": 250,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | icon:yes | style=dynamic (conditional)",
+      "file": "src/pages/settings/Subscription/SubscriptionPlan/AddMembersButton/index.tsx",
+      "line": 27,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.w100, styles.p5]]",
+      "file": "src/pages/settings/Wallet/ExpensifyCardPage/index.tsx",
+      "line": 534,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=themeStyles.justifyContentEnd",
+      "file": "src/pages/settings/Wallet/ReportVirtualCardFraudConfirmationPage.tsx",
+      "line": 61,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | style=[[styles.mh5, bottomSafeAreaPaddingStyle]]",
+      "file": "src/pages/workspace/WorkspaceNewRoomPage.tsx",
+      "line": 51,
+      "source": "direct"
+    },
+    {
+      "visualSignature": "text:yes | innerStyles=[[styles.buttonSmall]] | textStyles=[[styles.buttonSmallText]]",
+      "file": "src/pages/workspace/expensifyCard/WorkspaceCardsListLabel.tsx",
+      "line": 141,
+      "source": "direct"
+    }
+  ],
+  "wrapperImpact": [
+    {
+      "wrapper": "via FormAlertWithSubmitButton",
+      "expandedUsages": 39
+    },
+    {
+      "wrapper": "via ConfirmationPage",
+      "expandedUsages": 24
+    },
+    {
+      "wrapper": "via ConfirmationStep",
+      "expandedUsages": 20
+    },
+    {
+      "wrapper": "via DecisionModal",
+      "expandedUsages": 19
+    },
+    {
+      "wrapper": "via BaseWidgetItem",
+      "expandedUsages": 12
+    },
+    {
+      "wrapper": "via SearchFilterPageFooterButtons",
+      "expandedUsages": 12
+    },
+    {
+      "wrapper": "via UpgradeIntro",
+      "expandedUsages": 8
+    },
+    {
+      "wrapper": "via ImportSpreadsheetColumns",
+      "expandedUsages": 6
+    },
+    {
+      "wrapper": "via ActionCell",
+      "expandedUsages": 5
+    },
+    {
+      "wrapper": "via BaseValidateCodeForm",
+      "expandedUsages": 4
+    },
+    {
+      "wrapper": "via DebugDetails",
+      "expandedUsages": 4
+    },
+    {
+      "wrapper": "via FeatureList",
+      "expandedUsages": 4
+    },
+    {
+      "wrapper": "via FeatureTrainingModal",
+      "expandedUsages": 4
+    },
+    {
+      "wrapper": "via NumberWithSymbolForm",
+      "expandedUsages": 4
+    },
+    {
+      "wrapper": "via TransactionPreviewContent",
+      "expandedUsages": 4
+    },
+    {
+      "wrapper": "via BookTravelButton",
+      "expandedUsages": 3
+    },
+    {
+      "wrapper": "via ConfirmContent",
+      "expandedUsages": 3
+    },
+    {
+      "wrapper": "via FormHelpMessageRowWithRetryButton",
+      "expandedUsages": 3
+    },
+    {
+      "wrapper": "via MoneyRequestAmountForm",
+      "expandedUsages": 3
+    },
+    {
+      "wrapper": "via AnimatedSettlementButton",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via AnimatedSubmitButton",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via BankAccountVerificationView",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via BaseDomainRequireTwoFactorAuthPage",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via BaseOnboardingEmployees",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via BaseOpenAppFailureModal",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via BigNumberPad",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via CarouselButtons",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via DebugReportActions",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via DistanceRequestFooter",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via FreeTrial",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via FrozenCardHeader",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via OnboardingMergingAccountBlockedView",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via ReceiptPreviews",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via RequireTwoFactorAuthenticationModal",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via TaskHeaderActionButton",
+      "expandedUsages": 2
+    },
+    {
+      "wrapper": "via AmountSelectorModal",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via BeneficialOwnersList",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via ChooseSSOOrMagicCode",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via ChronosOOOListActions",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via CompanyOwnersListUBO",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via CopyCodesPage",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via DebugTransactionViolations",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via DesktopWebUploadView",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via DowngradeIntro",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via EarlyDiscountBanner",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via GenericFeaturesView",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via MoneyRequestHeaderPrimaryAction",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via MultifactorAuthenticationAuthorizeTransactionActions",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via PDFPasswordForm",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via ProactiveAppReviewModal",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via ReportPreviewActionButton",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via SubscriptionPlanCardActionButton",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via SubscriptionPlanDowngradeBlocked",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via TestDriveBanner",
+      "expandedUsages": 1
+    },
+    {
+      "wrapper": "via WorkspaceCompanyCardTableItem",
+      "expandedUsages": 1
+    }
+  ]
+}
