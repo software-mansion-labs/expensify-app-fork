@@ -2606,6 +2606,7 @@ type SettingsSplitNavigatorParamList = {
     [SCREENS.SETTINGS.ABOUT]: undefined;
     [SCREENS.SETTINGS.HELP]: undefined;
     [SCREENS.SETTINGS.TROUBLESHOOT]: undefined;
+    [SCREENS.SETTINGS.COMPOSABLE_BUTTON]: undefined;
     [SCREENS.SETTINGS.SAVE_THE_WORLD]: undefined;
     [SCREENS.SETTINGS.SUBSCRIPTION.ROOT]?: {
         // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md

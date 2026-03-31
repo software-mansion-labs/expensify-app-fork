@@ -2180,6 +2180,10 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                     path: ROUTES.SETTINGS_TROUBLESHOOT,
                     exact: true,
                 },
+                [SCREENS.SETTINGS.COMPOSABLE_BUTTON]: {
+                    path: ROUTES.SETTINGS_COMPOSABLE_BUTTON,
+                    exact: true,
+                },
                 [SCREENS.SETTINGS.SAVE_THE_WORLD]: ROUTES.SETTINGS_SAVE_THE_WORLD,
                 [SCREENS.SETTINGS.PREFERENCES.ROOT]: {
                     path: ROUTES.SETTINGS_PREFERENCES,

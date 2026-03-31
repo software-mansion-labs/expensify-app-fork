@@ -1,0 +1,36 @@
+import React from 'react';
+import {View} from 'react-native';
+import Icon from '@components/Icon';
+import useTheme from '@hooks/useTheme';
+import useThemeStyles from '@hooks/useThemeStyles';
+import type IconAsset from '@src/types/utils/IconAsset';
+import {useButtonContext} from './ButtonWrapperContext';
+
+type ButtonIconLeftProps = {
+    src: IconAsset;
+};
+
+function ButtonIconLeft({src}: ButtonIconLeftProps) {
+    const {variant, size, isLoading} = useButtonContext();
+    const theme = useTheme();
+    const styles = useThemeStyles();
+
+    const fill = variant === 'success' || variant === 'danger' ? theme.textLight : theme.buttonIcon;
+
+    return (
+        <View style={isLoading ? styles.opacity0 : undefined}>
+            <Icon
+                src={src}
+                fill={fill}
+                extraSmall={size === 'extraSmall'}
+                small={size === 'small'}
+                medium={size === 'medium'}
+                large={size === 'large'}
+                isButtonIcon
+            />
+        </View>
+    );
+}
+
+export default ButtonIconLeft;
+export type {ButtonIconLeftProps};
