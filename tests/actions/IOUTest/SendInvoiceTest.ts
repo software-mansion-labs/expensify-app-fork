@@ -494,7 +494,7 @@ describe('actions/SendInvoice', () => {
             });
             await waitForBatchedUpdates();
 
-            const participantsPolicyTags = await getOnyxValue(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`);
+            const senderPolicyTags = await getOnyxValue(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`);
 
             const policyRecentlyUsedTags: RecentlyUsedTags = {
                 [tagListName]: ['Marketing'],
@@ -520,7 +520,7 @@ describe('actions/SendInvoice', () => {
                 currentUserAccountID: 123,
                 policyRecentlyUsedCurrencies: [],
                 policyRecentlyUsedTags,
-                policyTagList: participantsPolicyTags,
+                policyTagList: senderPolicyTags,
             });
 
             // Then: optimisticData should contain a POLICY_RECENTLY_USED_TAGS update with the transaction tag prepended
@@ -534,7 +534,7 @@ describe('actions/SendInvoice', () => {
 
         it('should not include recently used tags update when transaction has no tag', async () => {
             // Given: A transaction with no tag and policy tags seeded in Onyx
-            const policyID = 'workspace_notags';
+            const policyID = 'workspace_no_tags';
             const tagListName = 'Department';
 
             await Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`, {
