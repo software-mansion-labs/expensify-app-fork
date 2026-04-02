@@ -122,22 +122,22 @@ describe('actions/SendInvoice', () => {
         });
     });
 
-    const baseParticipants = [
-        {accountID: 123, isSender: true, policyID: 'workspace_test'},
-        {accountID: 456, isSender: false},
-    ];
-
-    const baseTransaction = {
-        transactionID: 'transaction_base',
-        reportID: 'report_base',
-        amount: 100,
-        currency: 'USD',
-        created: '2024-02-01',
-        merchant: 'Test Merchant',
-        participants: baseParticipants,
-    };
-
     describe('getSendInvoiceInformation', () => {
+        const baseParticipants = [
+            {accountID: 123, isSender: true, policyID: 'workspace_test'},
+            {accountID: 456, isSender: false},
+        ];
+
+        const baseTransaction = {
+            transactionID: 'transaction_base',
+            reportID: 'report_base',
+            amount: 100,
+            currency: 'USD',
+            created: '2024-02-01',
+            merchant: 'Test Merchant',
+            participants: baseParticipants,
+        };
+
         it('should merge policyRecentlyUsedCategories when provided', () => {
             const currentUserAccountID = 123;
             const existingRecentlyUsedCategories: OnyxEntry<RecentlyUsedCategories> = [];
@@ -475,7 +475,7 @@ describe('actions/SendInvoice', () => {
             expect(result.invoiceRoom.reportID).not.toBe(preGeneratedReportID);
         });
 
-        it('should build optimistic recently used tags from policyTagList', async () => {
+        it('should build optimistic recently used tags from senderPolicyTags', async () => {
             // Given: A transaction with a tag and policy tags seeded in Onyx
             const policyID = 'workspace_tags_test';
             const tagListName = 'Department';
@@ -514,7 +514,7 @@ describe('actions/SendInvoice', () => {
                 ],
             };
 
-            // When: Call getSendInvoiceInformation with policyTagList read from Onyx
+            // When: Call getSendInvoiceInformation with senderPolicyTags read from Onyx
             const result = getSendInvoiceInformation({
                 transaction: mockTransaction as OnyxEntry<Transaction>,
                 currentUserAccountID: 123,
