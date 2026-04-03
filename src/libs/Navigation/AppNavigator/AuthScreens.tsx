@@ -130,7 +130,7 @@ function AuthScreens() {
         return {
             ...rootNavigatorScreenOptions.fullScreenTabPage,
             animation: animationEnabled ? Animations.SLIDE_FROM_RIGHT : Animations.NONE,
-            gestureEnabled: animationEnabled,
+            gestureEnabled: true,
             web: {
                 ...rootNavigatorScreenOptions.fullScreenTabPage.web,
                 cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator({props, isFullScreenModal: true, animationEnabled}),

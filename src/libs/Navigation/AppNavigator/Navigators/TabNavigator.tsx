@@ -1,15 +1,15 @@
 /**
  * Tab Navigator containing Home, Inbox (Reports), Search, Settings, and Workspaces pages.
  */
-import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {findFocusedRoute, useNavigation, useNavigationState} from '@react-navigation/native';
-import React, {lazy, Suspense, useEffect} from 'react';
-import {View} from 'react-native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { findFocusedRoute, useNavigation, useNavigationState } from '@react-navigation/native';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { View } from 'react-native';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type {TabNavigatorParamList} from '@libs/Navigation/types';
+import type { TabNavigatorParamList } from '@libs/Navigation/types';
 import HomePage from '@pages/home/HomePage';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
@@ -66,6 +66,7 @@ const TAB_SCREEN_OPTIONS_BASE = {
 const TAB_SCREEN_OPTIONS_NARROW = {
     ...TAB_SCREEN_OPTIONS_BASE,
     tabBarPosition: 'bottom' as const,
+    gestureEnabled: true,
 } as const;
 
 const TAB_SCREEN_OPTIONS_WIDE = {

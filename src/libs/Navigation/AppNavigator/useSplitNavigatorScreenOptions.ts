@@ -35,6 +35,10 @@ const useSplitNavigatorScreenOptions = () => {
             title: CONFIG.SITE_TITLE,
             headerShown: false,
             animation: shouldUseNarrowLayout && !IS_MOBILE_SAFARI ? Animations.SLIDE_FROM_RIGHT : Animations.NONE,
+            // The sidebar is always at index 0 in the split navigator — there is nothing to
+            // swipe back to inside this navigator.  Disabling the gesture here lets the parent
+            // stack navigator (e.g. WorkspaceNavigator) handle the swipe-back instead.
+            gestureEnabled: false,
             web: {
                 // Note: The card* properties won't be applied on mobile platforms, as they use the native defaults.
                 cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator({props}),
