@@ -6,6 +6,7 @@ import {InteractionManager} from 'react-native';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
 import {isLoggingInAsNewUser} from '@libs/SessionUtils';
+import {startOnboardingFlow} from '@userActions/Welcome/OnboardingFlow';
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -21,6 +22,7 @@ function useOnboardingFlowRouter() {
     const currentUrl = getCurrentUrl();
     const [isLoadingApp = true] = useOnyx(ONYXKEYS.IS_LOADING_APP);
     const [onboardingValues, isOnboardingCompletedMetadata] = useOnyx(ONYXKEYS.NVP_ONBOARDING);
+    const [account] = useOnyx(ONYXKEYS.ACCOUNT);
     const [sessionEmail] = useOnyx(ONYXKEYS.SESSION, {selector: emailSelector});
     const isLoggingInAsNewSessionUser = isLoggingInAsNewUser(currentUrl, sessionEmail);
     const [tryNewDot, tryNewDotMetadata] = useOnyx(ONYXKEYS.NVP_TRY_NEW_DOT, {
@@ -30,6 +32,10 @@ function useOnboardingFlowRouter() {
     const isOnboardingLoading = isLoadingOnyxValue(isOnboardingCompletedMetadata, tryNewDotMetadata);
 
     const [, dismissedProductTrainingMetadata] = useOnyx(ONYXKEYS.NVP_DISMISSED_PRODUCT_TRAINING);
+
+    const [onboardingPurposeSelected] = useOnyx(ONYXKEYS.ONBOARDING_PURPOSE_SELECTED);
+    const [onboardingCompanySize] = useOnyx(ONYXKEYS.ONBOARDING_COMPANY_SIZE);
+    const [onboardingInitialPath] = useOnyx(ONYXKEYS.ONBOARDING_LAST_VISITED_PATH);
 
     const [isSingleNewDotEntry, isSingleNewDotEntryMetadata] = useOnyx(ONYXKEYS.HYBRID_APP, {selector: isSingleNewDotEntrySelector});
 
@@ -70,6 +76,21 @@ function useOnboardingFlowRouter() {
                     Navigation.navigate(ROUTES.EXPLANATION_MODAL_ROOT);
                 }
             }
+
+            // For non-HybridApp (web), explicitly start the onboarding flow when onboarding is not completed.
+            // Previously, the OnboardingGuard would intercept incidental navigation actions (e.g. preload)
+            // to redirect to onboarding, but with the TabNavigator there are no such actions after initial load.
+            if (!CONFIG.IS_HYBRID_APP && hasCompletedGuidedSetupFlowSelector(onboardingValues) === false) {
+                startOnboardingFlow({
+                    onboardingValuesParam: onboardingValues ?? undefined,
+                    isUserFromPublicDomain: !!account?.isFromPublicDomain,
+                    hasAccessiblePolicies: !!account?.hasAccessibleDomainPolicies,
+                    currentOnboardingCompanySize: onboardingCompanySize,
+                    currentOnboardingPurposeSelected: onboardingPurposeSelected,
+                    onboardingInitialPath,
+                    onboardingValues,
+                });
+            }
         });
 
         return () => {
@@ -87,6 +108,11 @@ function useOnboardingFlowRouter() {
         isLoggingInAsNewSessionUser,
         isOnboardingLoading,
         onboardingValues,
+        account?.isFromPublicDomain,
+        account?.hasAccessibleDomainPolicies,
+        onboardingCompanySize,
+        onboardingPurposeSelected,
+        onboardingInitialPath,
     ]);
 
     return {
