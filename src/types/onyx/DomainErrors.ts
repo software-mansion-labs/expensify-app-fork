@@ -40,6 +40,11 @@ type DomainSecurityGroupErrors = {
      * Errors related to the security group name
      */
     nameErrors?: OnyxCommon.Errors;
+
+    /**
+     *
+     */
+    enableStrictPolicyRulesErrors?: OnyxCommon.Errors;
 };
 
 /**

@@ -15,13 +15,16 @@ import {clearDomainSecurityGroupSettingError} from '@userActions/Domain';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import {View} from 'react-native';
 import HTMLMessagesRow from './HTMLMessagesRow';
+import DomainGroupPermissionsSection from './DomainGroupPermissionsSection';
 
 type DomainGroupDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.DOMAIN.GROUP_DETAILS>;
 
 function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
     const {domainAccountID, groupID} = route.params;
 
+    const styles = useThemeStyles();
     const {translate} = useLocalize();
 
     const [group] = useOnyx(`${ONYXKEYS.COLLECTION.DOMAIN}${domainAccountID}`, {
@@ -55,6 +58,11 @@ function DomainGroupDetailsPage({route}: DomainGroupDetailsPageProps) {
                             onDismiss={() => clearDomainSecurityGroupSettingError(domainAccountID, groupID, 'nameErrors')}
                         />
                     </OfflineWithFeedback>
+                    <View style={[styles.sectionDividerLine, styles.mh5, styles.mv6]} />
+                    <DomainGroupPermissionsSection
+                        domainAccountID={domainAccountID}
+                        groupID={groupID}
+                    />
                 </ScrollView>
             </ScreenWrapper>
         </DomainNotFoundPageWrapper>

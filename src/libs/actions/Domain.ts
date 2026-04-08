@@ -26,6 +26,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Domain, DomainSecurityGroup, UserSecurityGroupData} from '@src/types/onyx';
 import type {DomainSecurityGroupErrors} from '@src/types/onyx/DomainErrors';
+import type {DomainSecurityGroupPendingActions} from '@src/types/onyx/DomainPendingActions';
 import type {PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {BaseVacationDelegate} from '@src/types/onyx/VacationDelegate';
 import type PrefixedRecord from '@src/types/utils/PrefixedRecord';
@@ -1811,6 +1812,26 @@ function clearDomainSecurityGroupSettingError(domainAccountID: number, groupID: 
     Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
         [SECURITY_GROUP_KEY]: {
             [settingsName]: null,
+        },
+    });
+}
+
+function toggleEnableStrictPolicyRules(domainAccountID: number, groupID: string, enabled: boolean, currentSecurityGroup: DomainSecurityGroup) {
+    updateDomainSecurityGroupField(
+        domainAccountID,
+        groupID,
+        {...currentSecurityGroup, enableStrictPolicyRules: enabled},
+        currentSecurityGroup,
+        'enableStrictPolicyRules',
+        'enableStrictPolicyRulesErrors',
+    );
+}
+
+function closeEnableStrictPolicyRulesError(domainAccountID: number, groupID: string) {
+    const SECURITY_GROUP_KEY = `${CONST.DOMAIN.DOMAIN_SECURITY_GROUP_PREFIX}${groupID}`;
+    Onyx.merge(`${ONYXKEYS.COLLECTION.DOMAIN_ERRORS}${domainAccountID}`, {
+        [SECURITY_GROUP_KEY]: {
+            enableStrictPolicyRulesErrors: null,
         },
     });
 }

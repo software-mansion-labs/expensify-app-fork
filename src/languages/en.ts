@@ -8868,6 +8868,8 @@ const translations = {
             error: {
                 settings: '<rbr>Couldn’t save this change. Please try again or <concierge-link>contact Concierge</concierge-link> for more support.</rbr>',
             },
+            strictlyEnforceWorkspaceRules: 'Strictly enforce workspace rules',
+            strictlyEnforceWorkspaceRulesDescription: 'All workspace rules must be met before submitting a report. No manual exceptions allowed.',
         },
     },
 };

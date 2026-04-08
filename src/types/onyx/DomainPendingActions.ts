@@ -39,6 +39,11 @@ type DomainSecurityGroupPendingActions = {
      * Pending action for the security group name
      */
     name?: OnyxCommon.PendingAction;
+
+    /**
+     *
+     */
+    enableStrictPolicyRules?: OnyxCommon.PendingAction;
 };
 
 /**
