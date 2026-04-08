@@ -1,4 +1,3 @@
-import {useNavigationState} from '@react-navigation/native';
 import {isUserValidatedSelector} from '@selectors/Account';
 import React, {useCallback} from 'react';
 import {StyleSheet, View} from 'react-native';
@@ -10,9 +9,11 @@ import Text from '@components/Text';
 import {useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useRootNavigationState from '@hooks/useRootNavigationState';
 import useShouldShowRequire2FAPage from '@hooks/useShouldShowRequire2FAPage';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation, {getDeepestFocusedScreen, isTwoFactorSetupScreen} from '@libs/Navigation/Navigation';
+import navigationRef from '@libs/Navigation/navigationRef';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -37,8 +38,9 @@ const is2FARequiredBecauseOfXeroSelector = (email?: string) => {
 
 function RequireTwoFactorAuthenticationOverlay() {
     const shouldShowRequire2FAPage = useShouldShowRequire2FAPage();
-    const isIn2FASetupFlow = useNavigationState((state) => {
-        const focusedScreen = getDeepestFocusedScreen(state);
+    const isIn2FASetupFlow = useRootNavigationState((state) => {
+        // Use navigationRef directly as fallback since this component is rendered outside the navigator tree.
+        const focusedScreen = getDeepestFocusedScreen(state ?? (navigationRef.isReady() ? navigationRef.getRootState() : undefined));
         return isTwoFactorSetupScreen(focusedScreen?.name);
     });
 
@@ -52,10 +54,10 @@ function RequireTwoFactorAuthenticationOverlay() {
 
     const handleOnPress = useCallback(() => {
         if (isUserValidated) {
-            Navigation.navigate(ROUTES.SETTINGS_2FA_ROOT.getRoute());
+            Navigation.navigate(ROUTES.SETTINGS_2FA_ROOT.getRoute(Navigation.getActiveRoute()));
             return;
         }
-        Navigation.navigate(ROUTES.SETTINGS_2FA_VERIFY_ACCOUNT.getRoute({forwardTo: ROUTES.SETTINGS_2FA_ROOT.getRoute()}));
+        Navigation.navigate(ROUTES.SETTINGS_2FA_VERIFY_ACCOUNT.getRoute({forwardTo: ROUTES.SETTINGS_2FA_ROOT.getRoute(), backTo: Navigation.getActiveRoute()}));
     }, [isUserValidated]);
 
     if (!shouldShowRequire2FAPage || isIn2FASetupFlow) {
