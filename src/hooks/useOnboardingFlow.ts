@@ -6,9 +6,10 @@ import {InteractionManager} from 'react-native';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
 import {isLoggingInAsNewUser} from '@libs/SessionUtils';
-import {startOnboardingFlow} from '@userActions/Welcome/OnboardingFlow';
+import {getOnboardingInitialPath} from '@userActions/Welcome/OnboardingFlow';
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 import useOnyx from './useOnyx';
@@ -77,11 +78,12 @@ function useOnboardingFlowRouter() {
                 }
             }
 
-            // For non-HybridApp (web), explicitly start the onboarding flow when onboarding is not completed.
+            // For non-HybridApp (web), explicitly navigate to the onboarding flow when onboarding is not completed.
             // Previously, the OnboardingGuard would intercept incidental navigation actions (e.g. preload)
             // to redirect to onboarding, but with the TabNavigator there are no such actions after initial load.
+            // We use waitForProtectedRoutes to ensure navigation is fully ready (important for fresh login).
             if (!CONFIG.IS_HYBRID_APP && hasCompletedGuidedSetupFlowSelector(onboardingValues) === false) {
-                startOnboardingFlow({
+                const onboardingRoute = getOnboardingInitialPath({
                     onboardingValuesParam: onboardingValues ?? undefined,
                     isUserFromPublicDomain: !!account?.isFromPublicDomain,
                     hasAccessiblePolicies: !!account?.hasAccessibleDomainPolicies,
@@ -89,6 +91,9 @@ function useOnboardingFlowRouter() {
                     currentOnboardingPurposeSelected: onboardingPurposeSelected,
                     onboardingInitialPath,
                     onboardingValues,
+                });
+                Navigation.waitForProtectedRoutes().then(() => {
+                    Navigation.navigate(onboardingRoute as Route);
                 });
             }
         });
