@@ -201,6 +201,9 @@ type CustomBaseTextInputProps = ForwardedFSClassProps &
         /** Component to render on the right hand side of the input - only shown if clear button is not rendered */
         rightHandSideComponent?: React.ReactNode;
 
+        /** Whether to allow focus in landscape mode (skips the Proxy ref wrapper and autoFocus override). Use for inputs that use BigNumberPad instead of the system keyboard. */
+        allowFocusInLandscape?: boolean;
+
         /** Reference to the outer element */
         ref?: ForwardedRef<BaseTextInputRef>;
 

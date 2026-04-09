@@ -546,6 +546,7 @@ function NumberWithSymbolForm({
             onFocus={props.onFocus}
             accessibilityLabel={props.accessibilityLabel}
             keyboardType={props.keyboardType}
+            allowFocusInLandscape={props.allowFocusInLandscape}
         />
     );
 

@@ -305,6 +305,7 @@ function MoneyRequestAmountForm({
                 clearNegative={clearNegative}
                 errorText={formError}
                 footer={footer}
+                allowFocusInLandscape
             />
         </ScrollView>
     );

@@ -132,7 +132,7 @@ type MoneyRequestAmountInputProps = {
 
     /** Determines which keyboard to open */
     keyboardType?: KeyboardTypeOptions;
-} & Pick<TextInputWithSymbolProps, 'autoGrowExtraSpace' | 'submitBehavior' | 'shouldUseDefaultLineHeightForPrefix' | 'onFocus' | 'onBlur'>;
+} & Pick<TextInputWithSymbolProps, 'autoGrowExtraSpace' | 'submitBehavior' | 'shouldUseDefaultLineHeightForPrefix' | 'onFocus' | 'onBlur' | 'allowFocusInLandscape'>;
 
 type Selection = {
     start: number;
@@ -273,6 +273,7 @@ function MoneyRequestAmountInput({
             accessibilityLabel={`${translate('iou.amount')} (${currency})`}
             keyboardType={props.keyboardType}
             shouldUseDynamicFontSize={shouldUseDynamicFontSize}
+            allowFocusInLandscape={props.allowFocusInLandscape}
         />
     );
 }
