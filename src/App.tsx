@@ -5,6 +5,7 @@ import {LogBox, View} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {PickerStateProvider} from 'react-native-picker-select';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {ReferenceTrackerPanel, ReferenceTrackerProvider} from 'react-reference-tracker';
 import '../wdyr';
 import {ActionSheetAwareScrollViewProvider} from './components/ActionSheetAwareScrollView';
 import ActiveElementRoleProvider from './components/ActiveElementRoleProvider';
@@ -135,6 +136,7 @@ function App() {
                                         TravelCVVContextProvider,
                                         KYCWallContextProvider,
                                         WideRHPContextProvider,
+                                        ReferenceTrackerProvider,
                                     ]}
                                 >
                                     <CustomStatusBarAndBackground />
@@ -144,6 +146,7 @@ function App() {
                                         </ColorSchemeWrapper>
                                     </ErrorBoundary>
                                     <NavigationBar />
+                                    <ReferenceTrackerPanel />
                                 </ComposeProviders>
                             </View>
                         </SafeAreaProvider>

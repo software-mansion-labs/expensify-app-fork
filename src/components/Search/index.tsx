@@ -209,6 +209,7 @@ function prepareTransactionsList(
     };
 }
 
+// @track-refs
 function Search({
     queryJSON,
     searchResults,

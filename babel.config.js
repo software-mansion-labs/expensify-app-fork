@@ -29,6 +29,7 @@ function traceTransformer() {
  */
 const defaultPresetsForWebpack = ['@babel/preset-react', ['@babel/preset-env', {targets: {node: 20}}], '@babel/preset-flow', '@babel/preset-typescript'];
 const defaultPluginsForWebpack = [
+    'react-reference-tracker/dist/babel/plugin',
     ['babel-plugin-react-compiler', ReactCompilerConfig], // must run first!
     // Adding the commonjs: true option to react-native-web plugin can cause styling conflicts
     ['react-native-web'],
@@ -65,6 +66,7 @@ const webpack = {
 const metro = {
     presets: [require('@react-native/babel-preset')],
     plugins: [
+        'react-reference-tracker/dist/babel/plugin',
         ['babel-plugin-react-compiler', ReactCompilerConfig], // must run first!
 
         // This is needed due to a react-native bug: https://github.com/facebook/react-native/issues/29084#issuecomment-1030732709

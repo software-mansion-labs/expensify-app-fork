@@ -1,10 +1,10 @@
-import React, {useMemo} from 'react';
-import {View} from 'react-native';
-import type {StyleProp, ViewStyle} from 'react-native';
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Checkbox from '@components/Checkbox';
 import Icon from '@components/Icon';
-import type {TransactionWithOptionalHighlight} from '@components/MoneyRequestReportView/MoneyRequestReportTransactionList';
-import {PressableWithFeedback} from '@components/Pressable';
+import type { TransactionWithOptionalHighlight } from '@components/MoneyRequestReportView/MoneyRequestReportTransactionList';
+import { PressableWithFeedback } from '@components/Pressable';
 import RadioButton from '@components/RadioButton';
 import ActionCell from '@components/Search/SearchList/ListItem/ActionCell';
 import AttendeesCell from '@components/Search/SearchList/ListItem/AttendeesCell';
@@ -15,44 +15,26 @@ import TextCell from '@components/Search/SearchList/ListItem/TextCell';
 import AmountCell from '@components/Search/SearchList/ListItem/TotalCell';
 import UserInfoCell from '@components/Search/SearchList/ListItem/UserInfoCell';
 import WorkspaceCell from '@components/Search/SearchList/ListItem/WorkspaceCell';
-import type {SearchColumnType, TableColumnSize} from '@components/Search/types';
+import type { SearchColumnType, TableColumnSize } from '@components/Search/types';
 import Text from '@components/Text';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
-import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
+import { useMemoizedLazyExpensifyIcons } from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {isCategoryMissing} from '@libs/CategoryUtils';
+import { isCategoryMissing } from '@libs/CategoryUtils';
 import getBase62ReportID from '@libs/getBase62ReportID';
-import {getIOUActionForTransactionID} from '@libs/ReportActionsUtils';
-import {getReportName} from '@libs/ReportNameUtils';
-import {isExpenseReport, isIOUReport, isSettled} from '@libs/ReportUtils';
+import { getIOUActionForTransactionID } from '@libs/ReportActionsUtils';
+import { getReportName } from '@libs/ReportNameUtils';
+import { isExpenseReport, isIOUReport, isSettled } from '@libs/ReportUtils';
 import StringUtils from '@libs/StringUtils';
-import {
-    getAmount,
-    getAttendees,
-    getCurrency,
-    getDescription,
-    getExchangeRate,
-    getMerchant,
-    getOriginalAmountForDisplay,
-    getOriginalCurrencyForDisplay,
-    getReimbursable,
-    getTaxName,
-    getCreated as getTransactionCreated,
-    hasMissingSmartscanFields,
-    isAmountMissing,
-    isMerchantMissing,
-    isScanning,
-    isTimeRequest,
-    shouldShowAttendees as shouldShowAttendeesUtils,
-} from '@libs/TransactionUtils';
+import { getAmount, getAttendees, getCurrency, getDescription, getExchangeRate, getMerchant, getOriginalAmountForDisplay, getOriginalCurrencyForDisplay, getReimbursable, getTaxName, getCreated as getTransactionCreated, hasMissingSmartscanFields, isAmountMissing, isMerchantMissing, isScanning, isTimeRequest, shouldShowAttendees as shouldShowAttendeesUtils } from '@libs/TransactionUtils';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
-import type {PersonalDetails, Policy, Report, ReportAction, TransactionViolation} from '@src/types/onyx';
-import type {SearchTransactionAction} from '@src/types/onyx/SearchResults';
+import type { TranslationPaths } from '@src/languages/types';
+import type { PersonalDetails, Policy, Report, ReportAction, TransactionViolation } from '@src/types/onyx';
+import type { SearchTransactionAction } from '@src/types/onyx/SearchResults';
 import CategoryCell from './DataCells/CategoryCell';
 import ChatBubbleCell from './DataCells/ChatBubbleCell';
 import MerchantOrDescriptionCell from './DataCells/MerchantCell';
@@ -62,6 +44,54 @@ import TaxCell from './DataCells/TaxCell';
 import TotalCell from './DataCells/TotalCell';
 import TypeCell from './DataCells/TypeCell';
 import TransactionItemRowRBR from './TransactionItemRowRBR';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 type TransactionWithOptionalSearchFields = TransactionWithOptionalHighlight & {
     /** The action that can be performed for the transaction */
@@ -163,6 +193,7 @@ function getMerchantName(transactionItem: TransactionWithOptionalSearchFields, t
     return merchantName !== CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT && merchantName !== CONST.TRANSACTION.DEFAULT_MERCHANT ? merchantName : '';
 }
 
+// @track-refs
 function TransactionItemRow({
     transactionItem,
     report,

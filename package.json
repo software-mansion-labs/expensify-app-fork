@@ -79,6 +79,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dotlottie/react-player": "^1.6.3",
     "@expensify/nitro-utils": "file:./modules/ExpensifyNitroUtils",
+    "react-reference-tracker": "file:./repo/react-reference-tracker",
     "@expensify/react-native-background-task": "file:./modules/background-task",
     "@expensify/react-native-hybrid-app": "file:./modules/hybrid-app",
     "@expensify/react-native-live-markdown": "0.1.324",
