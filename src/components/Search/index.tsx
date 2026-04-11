@@ -920,18 +920,14 @@ function Search({
         isRefreshingSelection.current = false;
     }, [selectedTransactions]);
 
-    const updateSelectAllDepsRef = useRef({filteredData, validGroupBy, hasMoreResults: searchResults?.search?.hasMoreResults});
-    updateSelectAllDepsRef.current = {filteredData, validGroupBy, hasMoreResults: searchResults?.search?.hasMoreResults};
-
     const updateSelectAllMatchingItemsState = useCallback(
         (updatedSelectedTransactions: SelectedTransactions) => {
-            const {filteredData: currentFilteredData, validGroupBy: currentValidGroupBy, hasMoreResults} = updateSelectAllDepsRef.current;
-            if (!currentFilteredData.length || isRefreshingSelection.current) {
+            if (!filteredData.length || isRefreshingSelection.current) {
                 return;
             }
-            const areItemsGrouped = !!currentValidGroupBy || type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT;
+            const areItemsGrouped = !!validGroupBy || type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT;
             const totalSelectableItemsCount = areItemsGrouped
-                ? (currentFilteredData as TransactionGroupListItemType[]).reduce((count, item) => {
+                ? (filteredData as TransactionGroupListItemType[]).reduce((count, item) => {
                       // For empty reports, count the report itself as a selectable item
                       if (item.transactions.length === 0 && isTransactionReportGroupListItemType(item)) {
                           if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
@@ -943,17 +939,17 @@ function Search({
                       const selectableTransactions = item.transactions.filter((transaction) => !isTransactionPendingDelete(transaction));
                       return count + selectableTransactions.length;
                   }, 0)
-                : currentFilteredData.length;
+                : filteredData.length;
             const areAllItemsSelected = totalSelectableItemsCount === Object.keys(updatedSelectedTransactions).length;
 
             // If the user has selected all the expenses in their view but there are more expenses matched by the search
             // give them the option to select all matching expenses
-            setShouldShowSelectAllMatchingItems(!!(areAllItemsSelected && hasMoreResults));
+            setShouldShowSelectAllMatchingItems(!!(areAllItemsSelected && searchResults?.search?.hasMoreResults));
             if (!areAllItemsSelected) {
                 selectAllMatchingItems(false);
             }
         },
-        [type, setShouldShowSelectAllMatchingItems, selectAllMatchingItems],
+        [filteredData, validGroupBy, type, searchResults?.search?.hasMoreResults, setShouldShowSelectAllMatchingItems, selectAllMatchingItems],
     );
 
     const toggleTransactionDepsRef = useRef({
