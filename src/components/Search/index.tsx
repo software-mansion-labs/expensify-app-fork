@@ -498,7 +498,7 @@ function Search({
 
     const prevIsSearchResultEmpty = usePrevious(isSearchResultsEmpty);
 
-    const [baseFilteredData, filteredDataLength, allDataLength] = useMemo(() => {
+    const [unstableBaseFilteredData, filteredDataLength, allDataLength] = useMemo(() => {
         if (shouldDeferHeavySearchWork || searchResults === undefined || !isDataLoaded) {
             return [[], 0, 0];
         }
@@ -559,6 +559,8 @@ function Search({
         conciergeReportID,
         onyxPersonalDetailsList,
     ]);
+
+    const baseFilteredData = useStableValue(unstableBaseFilteredData, {key: 'keyForList'});
 
     // For group-by views, each grouped item has a transactionsQueryJSON with a hash pointing to a separate snapshot
     // containing its individual transactions. We collect these hashes and fetch their snapshots to enrich the grouped items.
