@@ -286,6 +286,7 @@ function Search({
     const prevIsOffline = usePrevious(isOffline);
     // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
     const {shouldUseNarrowLayout, isSmallScreenWidth, isLargeScreenWidth} = useResponsiveLayout();
+    const prevIsSmallScreenWidth = usePrevious(isSmallScreenWidth);
     const styles = useThemeStyles();
     const navigation = useNavigation<PlatformStackNavigationProp<SearchFullscreenNavigatorParamList>>();
     const isFocused = useIsFocused();
@@ -380,12 +381,13 @@ function Search({
         if (selectedKeys.length === 0 && isMobileSelectionModeEnabled && shouldTurnOffSelectionMode) {
             turnOffMobileSelectionMode();
         }
-
-        // We don't want to run the effect on isFocused change as we only need it to early return when it is false.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedTransactions, isMobileSelectionModeEnabled, shouldTurnOffSelectionMode]);
+    }, [isFocused, selectedTransactions, isMobileSelectionModeEnabled, shouldTurnOffSelectionMode]);
 
     useEffect(() => {
+        if (prevIsSmallScreenWidth === isSmallScreenWidth) {
+            return;
+        }
+
         if (!isFocused) {
             return;
         }
@@ -400,10 +402,7 @@ function Search({
         if (selectedKeys.length > 0 && !isMobileSelectionModeEnabled && !isSearchResultsEmpty) {
             turnOnMobileSelectionMode();
         }
-
-        // We only want this effect to handle the switching of mobile selection mode state when screen size changes.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isSmallScreenWidth]);
+    }, [isSmallScreenWidth, prevIsSmallScreenWidth, isFocused, selectedTransactions, isMobileSelectionModeEnabled, isSearchResultsEmpty]);
 
     const {newSearchResultKeys, handleSelectionListScroll, newTransactions} = useSearchHighlightAndScroll({
         searchResults,
@@ -457,7 +456,6 @@ function Search({
             return;
         }
         return deferHeavySearchWork();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hash, deferHeavySearchWork, isDataLoaded]);
 
     useFocusEffect(
@@ -663,6 +661,7 @@ function Search({
     }, [lastSearchType, setShouldShowActionsBarLoading, shouldShowLoadingState, type]);
 
     const shouldRetrySearchWithTotalsOrGroupedRef = useRef(false);
+    const lastSearchedTriggerKeyRef = useRef<string | undefined>(undefined);
 
     useEffect(() => {
         const focusedRoute = findFocusedRoute(navigationRef.getRootState());
@@ -680,6 +679,12 @@ function Search({
             return;
         }
 
+        const triggerKey = `${hash}-${offset}-${currentSearchKey}-${shouldCalculateTotals}-${validGroupBy}-${isOffline}`;
+        if (triggerKey === lastSearchedTriggerKeyRef.current && !comingBackOnlineWithNoResults) {
+            return;
+        }
+
+        lastSearchedTriggerKeyRef.current = triggerKey;
         handleSearch({
             queryJSON,
             searchKey: currentSearchKey,
@@ -688,10 +693,22 @@ function Search({
             prevReportsLength: filteredDataLength,
             isLoading: !!searchResults?.search?.isLoading,
         });
-
-        // We don't need to run the effect on change of isFocused.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [handleSearch, isOffline, offset, queryJSON, currentSearchKey, shouldCalculateTotals, validGroupBy]);
+    }, [
+        handleSearch,
+        isOffline,
+        offset,
+        queryJSON,
+        currentSearchKey,
+        shouldCalculateTotals,
+        validGroupBy,
+        isFocused,
+        prevIsOffline,
+        searchResults?.data,
+        searchResults?.search?.count,
+        searchResults?.search?.isLoading,
+        filteredDataLength,
+        hash,
+    ]);
 
     useEffect(() => {
         if (!shouldRetrySearchWithTotalsOrGroupedRef.current || searchResults?.search?.isLoading || (!shouldCalculateTotals && !validGroupBy)) {
@@ -720,6 +737,11 @@ function Search({
     const isRefreshingSelection = useRef(false);
 
     useEffect(() => {
+        if (isRefreshingSelection.current) {
+            isRefreshingSelection.current = false;
+            return;
+        }
+
         if (!isFocused) {
             return;
         }
@@ -877,8 +899,22 @@ function Search({
         setSelectedTransactions(newTransactionList, filteredData);
 
         isRefreshingSelection.current = true;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filteredData, setSelectedTransactions, areAllMatchingItemsSelected, isFocused, outstandingReportsByPolicyID, isExpenseReportType]);
+    }, [
+        filteredData,
+        setSelectedTransactions,
+        areAllMatchingItemsSelected,
+        isFocused,
+        outstandingReportsByPolicyID,
+        isExpenseReportType,
+        accountID,
+        email,
+        login,
+        searchResults?.data,
+        selectedTransactions,
+        transactions,
+        type,
+        validGroupBy,
+    ]);
 
     useEffect(() => {
         if (!isSearchResultsEmpty || prevIsSearchResultEmpty) {
