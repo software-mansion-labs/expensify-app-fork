@@ -1178,12 +1178,13 @@ function Search({
 
     const shouldUseStrictDefaultExpenseColumns = currentSearchKey === CONST.SEARCH.SEARCH_KEYS.EXPENSES && isDefaultExpensesQuery(queryJSON);
 
-    const currentColumns = useMemo(() => {
+    const unstableCurrentColumns = useMemo(() => {
         if (!searchResults?.data) {
             return [];
         }
         return getColumnsToShow({currentAccountID: accountID, data: searchResults?.data, visibleColumns, type: searchDataType, groupBy: validGroupBy, shouldUseStrictDefaultExpenseColumns});
     }, [accountID, searchResults?.data, searchDataType, visibleColumns, validGroupBy, shouldUseStrictDefaultExpenseColumns]);
+    const currentColumns = useStableValue(unstableCurrentColumns);
 
     const opacity = useSharedValue(1);
     const animatedStyle = useAnimatedStyle(() => ({
