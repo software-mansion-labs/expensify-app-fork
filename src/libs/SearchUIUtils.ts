@@ -1765,8 +1765,16 @@ function getTransactionsSections({
     // Get violations - optimize by using a Map for faster lookups
     const allViolations = getViolations(data);
 
-    // Use Map for faster lookups of personal details and reportActions
-    const personalDetailsMap = new Map(Object.entries(data.personalDetailsList ?? {}));
+    // Use Map for faster lookups of personal details and reportActions.
+    // Strip fields unused in search that oscillate between the Search API
+    // (which returns empty defaults like "") and the global Onyx store
+    // (which omits them entirely), causing unnecessary re-renders.
+    const personalDetailsMap = new Map(
+        Object.entries(data.personalDetailsList ?? {}).map(([id, details]) => {
+            const {phoneNumber, pronouns, validated, timezone, ...rest} = details;
+            return [id, rest] as const;
+        }),
+    );
     const {moneyRequestReportActionsByTransactionID, holdReportActionsByTransactionID} = createReportActionsLookupMaps(data);
 
     const transactionsSections: TransactionListItemType[] = [];
@@ -2391,7 +2399,12 @@ function getReportSections({
     );
 
     const orderedKeys: string[] = [...reportKeys, ...transactionKeys];
-    const mergedPersonalDetails = {...(onyxPersonalDetailsList ?? {}), ...(data.personalDetailsList ?? {})};
+    const mergedPersonalDetails = Object.fromEntries(
+        Object.entries({...(onyxPersonalDetailsList ?? {}), ...(data.personalDetailsList ?? {})}).map(([id, details]) => {
+            const {phoneNumber, pronouns, validated, timezone, ...rest} = details ?? {};
+            return [id, rest];
+        }),
+    );
 
     for (const key of orderedKeys) {
         if (isReportEntry(key) && (data[key].type === CONST.REPORT.TYPE.IOU || data[key].type === CONST.REPORT.TYPE.EXPENSE || data[key].type === CONST.REPORT.TYPE.INVOICE)) {
