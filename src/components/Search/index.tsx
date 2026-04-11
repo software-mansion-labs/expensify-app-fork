@@ -357,7 +357,9 @@ function Search({
     const prevValidGroupBy = usePrevious(validGroupBy);
     const isSearchResultsEmpty = !searchResults?.data || isSearchResultsEmptyUtil(searchResults, validGroupBy);
     const isSearchResultsEmptyRef = useRef(isSearchResultsEmpty);
-    isSearchResultsEmptyRef.current = isSearchResultsEmpty;
+    useEffect(() => {
+        isSearchResultsEmptyRef.current = isSearchResultsEmpty;
+    }, [isSearchResultsEmpty]);
 
     // When grouping by card, we need cardFeeds to display feed names
     const isCardFeedsLoading = validGroupBy === CONST.SEARCH.GROUP_BY.CARD && cardFeedsResult?.status === 'loading';
