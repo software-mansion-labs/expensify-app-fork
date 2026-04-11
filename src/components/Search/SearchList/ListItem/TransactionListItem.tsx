@@ -85,7 +85,8 @@ function TransactionListItem<TItem extends ListItem>({
     const unstableSnapshotPolicy = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.POLICY}${transactionItem.policyID}`] ?? {}) as Policy;
     const snapshotPolicy = useStableValue(unstableSnapshotPolicy);
 
-    const actionsData = currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionItem.reportID}`];
+    const unstableActionsData = currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionItem.reportID}`];
+    const actionsData = useStableValue(unstableActionsData);
     const unstableExportedReportActions = actionsData ? Object.values(actionsData) : [];
     const exportedReportActions = useStableValue(unstableExportedReportActions);
 
