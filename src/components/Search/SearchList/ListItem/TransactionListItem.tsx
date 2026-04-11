@@ -66,7 +66,8 @@ function TransactionListItem<TItem extends ListItem>({
 
     const {isLargeScreenWidth, shouldUseNarrowLayout} = useResponsiveLayout();
     const {currentSearchHash, currentSearchKey, currentSearchResults} = useSearchStateContext();
-    const snapshotReport = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionItem.reportID}`] ?? {}) as Report;
+    const unstableSnapshotReport = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionItem.reportID}`] ?? {}) as Report;
+    const snapshotReport = useStableValue(unstableSnapshotReport);
 
     const [unstableUserBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const userBillingGracePeriodEnds = useStableValue(unstableUserBillingGracePeriodEnds);
