@@ -98,12 +98,13 @@ function TransactionListItem<TItem extends ListItem>({
         transactionItem,
     ]);
     const currentUserDetails = useCurrentUserPersonalDetails();
-    const transactionPreviewData: TransactionPreviewData = {
+    const unstableTransactionPreviewData: TransactionPreviewData = {
         hasParentReport: !!parentReport,
         hasTransaction: !!transaction,
         hasParentReportAction: !!parentReportAction,
         hasTransactionThreadReport: !!transactionThreadReport,
     };
+    const transactionPreviewData = useStableValue(unstableTransactionPreviewData);
 
     const unstablePressableStyle = [
         styles.transactionListItemStyle,
