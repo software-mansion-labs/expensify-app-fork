@@ -48,7 +48,7 @@ function TransactionListItem<TItem extends ListItem>({
     canSelectMultiple,
     onSelectRow,
     onCheckboxPress,
-    onFocus,
+    onFocus: unstableOnFocus,
     onLongPressRow,
     shouldSyncFocus,
     columns,
@@ -235,9 +235,9 @@ function TransactionListItem<TItem extends ListItem>({
         });
     }, []);
 
-    const unstableInlineCallbackDepsRef = useRef({onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow});
+    const unstableInlineCallbackDepsRef = useRef({onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus});
     // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
-    unstableInlineCallbackDepsRef.current = {onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow};
+    unstableInlineCallbackDepsRef.current = {onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus};
 
     const stableOnCheckboxPress = useCallback(() => unstableInlineCallbackDepsRef.current.onCheckboxPress?.(unstableInlineCallbackDepsRef.current.item), []);
     const stableOnArrowRightPress = useCallback(() => {
@@ -249,6 +249,7 @@ function TransactionListItem<TItem extends ListItem>({
         deps.onSelectRow(deps.item, deps.transactionPreviewData);
     }, []);
     const stableOnLongPress = useCallback(() => unstableInlineCallbackDepsRef.current.onLongPressRow?.(unstableInlineCallbackDepsRef.current.item), []);
+    const stableOnFocus = useCallback((...args: Parameters<NonNullable<typeof unstableOnFocus>>) => unstableInlineCallbackDepsRef.current.onFocus?.(...args), []);
 
     const pressableRef = useRef<View>(null);
 
@@ -273,7 +274,7 @@ function TransactionListItem<TItem extends ListItem>({
                     pressableStyle,
                     isFocused && StyleUtils.getItemBackgroundColorStyle(!!item.isSelected, !!isFocused, !!item.isDisabled, theme.activeComponentBG, theme.hoverComponentBG),
                 ]}
-                onFocus={onFocus}
+                onFocus={stableOnFocus}
                 wrapperStyle={[
                     !isLargeScreenWidth && styles.mb2,
                     styles.mh5,
