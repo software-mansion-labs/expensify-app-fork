@@ -1491,6 +1491,8 @@ function Search({
     const tableHeaderVisible = canSelectMultiple || (isLargeScreenWidth && !isChat);
     const unstableSearchListContainerStyle = [styles.pv0, !tableHeaderVisible && !isSmallScreenWidth && styles.pt3];
     const searchListContainerStyle = useStableValue(unstableSearchListContainerStyle);
+    const unstableSearchListContentContainerStyle = [styles.pb3, contentContainerStyle];
+    const searchListContentContainerStyle = useStableValue(unstableSearchListContentContainerStyle);
 
     // This is a performance optimization for the submit-expense->search path only.
     // The SearchPage skeleton (useSearchLoadingState) doesn't cover this case because
@@ -1656,7 +1658,7 @@ function Search({
                             </View>
                         )
                     }
-                    contentContainerStyle={[styles.pb3, contentContainerStyle]}
+                    contentContainerStyle={searchListContentContainerStyle}
                     containerStyle={searchListContainerStyle}
                     shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}
                     onScroll={onSearchListScroll}
