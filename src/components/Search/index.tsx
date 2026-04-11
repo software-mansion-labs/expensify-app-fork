@@ -1352,19 +1352,47 @@ function Search({
         setOffset((prev) => prev + CONST.SEARCH.RESULTS_PAGE_SIZE);
     }, [isFocused, searchResults?.search?.hasMoreResults, shouldShowLoadingMoreItems, shouldShowLoadingState, offset, allDataLength]);
 
+    const toggleAllTransactionsDepsRef = useRef({
+        validGroupBy,
+        selectedTransactions,
+        filteredData,
+        updateSelectAllMatchingItemsState,
+        transactions,
+        outstandingReportsByPolicyID,
+        searchResultsData: searchResults?.data,
+    });
+    toggleAllTransactionsDepsRef.current = {
+        validGroupBy,
+        selectedTransactions,
+        filteredData,
+        updateSelectAllMatchingItemsState,
+        transactions,
+        outstandingReportsByPolicyID,
+        searchResultsData: searchResults?.data,
+    };
+
     const toggleAllTransactions = useCallback(() => {
-        const areItemsGrouped = !!validGroupBy || isExpenseReportType;
-        const totalSelected = Object.keys(selectedTransactions).length;
+        const {
+            validGroupBy: currentValidGroupBy,
+            selectedTransactions: currentSelectedTransactions,
+            filteredData: currentFilteredData,
+            updateSelectAllMatchingItemsState: currentUpdateSelectAll,
+            transactions: currentTransactionsData,
+            outstandingReportsByPolicyID: currentOutstandingReports,
+            searchResultsData,
+        } = toggleAllTransactionsDepsRef.current;
+        const areItemsGrouped = !!currentValidGroupBy || isExpenseReportType;
+        const totalSelected = Object.keys(currentSelectedTransactions).length;
 
         if (totalSelected > 0) {
             clearSelectedTransactions();
-            updateSelectAllMatchingItemsState({});
+            currentUpdateSelectAll({});
             return;
         }
 
         let updatedTransactions: SelectedTransactions;
         if (areItemsGrouped) {
-            const allSelections: Array<[string, SelectedTransactionInfo]> = (filteredData as TransactionGroupListItemType[]).flatMap((item) => {
+            const allSelections: Array<[string, SelectedTransactionInfo]> = (currentFilteredData as TransactionGroupListItemType[]).flatMap((item) => {
                 if (item.transactions.length === 0 && isTransactionReportGroupListItemType(item) && item.keyForList) {
                     if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
                         return [];
@@ -1374,40 +1402,27 @@ function Search({
                 return item.transactions
                     .filter((t) => !isTransactionPendingDelete(t))
                     .map((transactionItem) => {
-                        const itemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
-                        const originalItemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
-                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, outstandingReportsByPolicyID);
+                        const itemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
+                        const originalItemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, currentOutstandingReports);
                     });
             });
             updatedTransactions = Object.fromEntries(allSelections);
         } else {
             // When items are not grouped, data is TransactionListItemType[] not TransactionGroupListItemType[]
             updatedTransactions = Object.fromEntries(
-                (filteredData as TransactionListItemType[])
+                (currentFilteredData as TransactionListItemType[])
                     .filter((t) => !isTransactionPendingDelete(t))
                     .map((transactionItem) => {
-                        const itemTransaction = searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
-                        const originalItemTransaction = searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
-                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, outstandingReportsByPolicyID);
+                        const itemTransaction = searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
+                        const originalItemTransaction = searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, currentOutstandingReports);
                     }),
             );
         }
-        setSelectedTransactions(updatedTransactions, filteredData);
-        updateSelectAllMatchingItemsState(updatedTransactions);
-    }, [
-        validGroupBy,
-        isExpenseReportType,
-        selectedTransactions,
-        setSelectedTransactions,
-        filteredData,
-        updateSelectAllMatchingItemsState,
-        clearSelectedTransactions,
-        transactions,
-        email,
-        accountID,
-        outstandingReportsByPolicyID,
-        searchResults?.data,
-    ]);
+        setSelectedTransactions(updatedTransactions, currentFilteredData);
+        currentUpdateSelectAll(updatedTransactions);
+    }, [isExpenseReportType, setSelectedTransactions, clearSelectedTransactions, email, accountID]);
 
     const onLayout = useCallback(() => {
         hasHadFirstLayout.current = true;
