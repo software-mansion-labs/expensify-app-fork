@@ -1456,10 +1456,11 @@ function Search({
         }
     }, [shouldBailToFallbackState]);
 
+    const searchSnapshotData = unstableSearchSnapshotData;
     const unstableYearIndicators = useMemo(
         () =>
-            searchResults?.data
-                ? shouldShowYearUtil(searchResults.data, isExpenseReportType ?? false, undefined, type === CONST.SEARCH.DATA_TYPES.EXPENSE)
+            searchSnapshotData
+                ? shouldShowYearUtil(searchSnapshotData, isExpenseReportType ?? false, undefined, type === CONST.SEARCH.DATA_TYPES.EXPENSE)
                 : {
                       shouldShowYearCreated: false,
                       shouldShowYearSubmitted: false,
@@ -1468,13 +1469,13 @@ function Search({
                       shouldShowYearExported: false,
                       shouldShowYearWithdrawn: false,
                   },
-        [searchResults?.data, isExpenseReportType, type],
+        [searchSnapshotData, isExpenseReportType, type],
     );
     const yearIndicators = useStableValue(unstableYearIndicators);
 
     const unstableAmountIndicators = useMemo(
-        () => (searchResults?.data ? getWideAmountIndicators(searchResults.data) : {shouldShowAmountInWideColumn: false, shouldShowTaxAmountInWideColumn: false}),
-        [searchResults?.data],
+        () => (searchSnapshotData ? getWideAmountIndicators(searchSnapshotData) : {shouldShowAmountInWideColumn: false, shouldShowTaxAmountInWideColumn: false}),
+        [searchSnapshotData],
     );
     const amountIndicators = useStableValue(unstableAmountIndicators);
 
