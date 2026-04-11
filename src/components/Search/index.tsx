@@ -952,8 +952,33 @@ function Search({
         [filteredData, validGroupBy, type, searchResults?.search?.hasMoreResults, setShouldShowSelectAllMatchingItems, selectAllMatchingItems],
     );
 
+    const toggleTransactionDepsRef = useRef({
+        selectedTransactions,
+        filteredData,
+        updateSelectAllMatchingItemsState,
+        transactions,
+        outstandingReportsByPolicyID,
+        searchResultsData: searchResults?.data,
+    });
+    toggleTransactionDepsRef.current = {
+        selectedTransactions,
+        filteredData,
+        updateSelectAllMatchingItemsState,
+        transactions,
+        outstandingReportsByPolicyID,
+        searchResultsData: searchResults?.data,
+    };
+
     const toggleTransaction = useCallback(
         (item: SearchListItem, itemTransactions?: TransactionListItemType[]) => {
+            const {
+                selectedTransactions: currentSelectedTransactions,
+                filteredData: currentFilteredData,
+                updateSelectAllMatchingItemsState: currentUpdateSelectAll,
+                transactions: currentTransactionsData,
+                outstandingReportsByPolicyID: currentOutstandingReports,
+                searchResultsData,
+            } = toggleTransactionDepsRef.current;
             if (isReportActionListItemType(item)) {
                 return;
             }
@@ -967,19 +992,19 @@ function Search({
                 if (isTransactionPendingDelete(item)) {
                     return;
                 }
-                const itemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${item.transactionID}`] as OnyxEntry<Transaction>;
-                const originalItemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+                const itemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${item.transactionID}`] as OnyxEntry<Transaction>;
+                const originalItemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
                 const updatedTransactions = prepareTransactionsList(
                     item,
                     itemTransaction,
                     originalItemTransaction,
-                    selectedTransactions,
+                    currentSelectedTransactions,
                     email ?? '',
                     accountID,
-                    outstandingReportsByPolicyID,
+                    currentOutstandingReports,
                 );
-                setSelectedTransactions(updatedTransactions, filteredData);
-                updateSelectAllMatchingItemsState(updatedTransactions);
+                setSelectedTransactions(updatedTransactions, currentFilteredData);
+                currentUpdateSelectAll(updatedTransactions);
                 return;
             }
 
@@ -996,60 +1021,60 @@ function Search({
                     return;
                 }
 
-                if (selectedTransactions[reportKey]?.isSelected) {
+                if (currentSelectedTransactions[reportKey]?.isSelected) {
                     // Deselect the empty report
                     const reducedSelectedTransactions: SelectedTransactions = {
-                        ...selectedTransactions,
+                        ...currentSelectedTransactions,
                     };
                     delete reducedSelectedTransactions[reportKey];
-                    setSelectedTransactions(reducedSelectedTransactions, filteredData);
-                    updateSelectAllMatchingItemsState(reducedSelectedTransactions);
+                    setSelectedTransactions(reducedSelectedTransactions, currentFilteredData);
+                    currentUpdateSelectAll(reducedSelectedTransactions);
                     return;
                 }
 
                 const [, emptyReportSelection] = mapEmptyReportToSelectedEntry(item);
                 const updatedTransactions = {
-                    ...selectedTransactions,
+                    ...currentSelectedTransactions,
                     [reportKey]: emptyReportSelection,
                 };
-                setSelectedTransactions(updatedTransactions, filteredData);
-                updateSelectAllMatchingItemsState(updatedTransactions);
+                setSelectedTransactions(updatedTransactions, currentFilteredData);
+                currentUpdateSelectAll(updatedTransactions);
                 return;
             }
 
-            if (currentTransactions.some((transaction) => selectedTransactions[transaction.keyForList]?.isSelected)) {
+            if (currentTransactions.some((transaction) => currentSelectedTransactions[transaction.keyForList]?.isSelected)) {
                 const reducedSelectedTransactions: SelectedTransactions = {
-                    ...selectedTransactions,
+                    ...currentSelectedTransactions,
                 };
 
                 for (const transaction of currentTransactions) {
                     delete reducedSelectedTransactions[transaction.keyForList];
                 }
 
-                setSelectedTransactions(reducedSelectedTransactions, filteredData);
-                updateSelectAllMatchingItemsState(reducedSelectedTransactions);
+                setSelectedTransactions(reducedSelectedTransactions, currentFilteredData);
+                currentUpdateSelectAll(reducedSelectedTransactions);
                 return;
             }
 
             const updatedTransactions = {
-                ...selectedTransactions,
+                ...currentSelectedTransactions,
                 ...Object.fromEntries(
                     currentTransactions
                         .filter((t) => !isTransactionPendingDelete(t))
                         .map((transactionItem) => {
-                            const itemTransaction = (searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] ??
-                                transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`]) as OnyxEntry<Transaction>;
+                            const itemTransaction = (searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] ??
+                                currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`]) as OnyxEntry<Transaction>;
                             const originalItemTransaction =
-                                searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`] ??
-                                transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
-                            return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, outstandingReportsByPolicyID);
+                                searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`] ??
+                                currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+                            return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, currentOutstandingReports);
                         }),
                 ),
             };
-            setSelectedTransactions(updatedTransactions, filteredData);
-            updateSelectAllMatchingItemsState(updatedTransactions);
+            setSelectedTransactions(updatedTransactions, currentFilteredData);
+            currentUpdateSelectAll(updatedTransactions);
         },
-        [selectedTransactions, setSelectedTransactions, filteredData, updateSelectAllMatchingItemsState, transactions, email, accountID, outstandingReportsByPolicyID, searchResults?.data],
+        [setSelectedTransactions, email, accountID],
     );
 
     const onSelectRow = useCallback(
