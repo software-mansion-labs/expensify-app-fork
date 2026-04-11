@@ -384,19 +384,15 @@ function SearchList({
      * @param index - the index of the item to scroll to
      * @param animated - whether to animate the scroll
      */
-    const unstableScrollToIndexDepsRef = useRef({data});
-    // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
-    unstableScrollToIndexDepsRef.current = {data};
-
-    const scrollToIndex = useCallback((index: number, animated = true) => {
-        const item = unstableScrollToIndexDepsRef.current.data.at(index);
+    const scrollToIndex = (index: number, animated = true) => {
+        const item = data.at(index);
 
         if (!listRef.current || !item || index === -1) {
             return;
         }
 
         listRef.current.scrollToIndex({index, animated, viewOffset: -variables.contentHeaderHeight});
-    }, []);
+    };
 
     useFocusEffect(
         useCallback(() => {
