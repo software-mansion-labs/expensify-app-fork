@@ -233,12 +233,13 @@ function SearchList({
         }
         return data;
     }, [data, groupBy, type]);
-    const emptyReports = useMemo(() => {
+    const unstableEmptyReports = useMemo(() => {
         if (type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT && isTransactionGroupListItemArray(data)) {
             return data.filter((item) => item.transactions.length === 0);
         }
         return [];
     }, [data, type]);
+    const emptyReports = useStableValue(unstableEmptyReports, {key: 'keyForList'});
 
     const selectedItemsLength = useMemo(() => {
         const selectedTransactionsCount = flattenedItems.reduce((acc, item) => {
