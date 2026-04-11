@@ -1457,7 +1457,7 @@ function Search({
 
     const visibleDataLength = useMemo(() => filteredData.filter((item) => item.pendingAction !== CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE || isOffline).length, [filteredData, isOffline]);
 
-    const yearIndicators = useMemo(
+    const unstableYearIndicators = useMemo(
         () =>
             searchResults?.data
                 ? shouldShowYearUtil(searchResults.data, isExpenseReportType ?? false, undefined, type === CONST.SEARCH.DATA_TYPES.EXPENSE)
@@ -1471,11 +1471,13 @@ function Search({
                   },
         [searchResults?.data, isExpenseReportType, type],
     );
+    const yearIndicators = useStableValue(unstableYearIndicators);
 
-    const amountIndicators = useMemo(
+    const unstableAmountIndicators = useMemo(
         () => (searchResults?.data ? getWideAmountIndicators(searchResults.data) : {shouldShowAmountInWideColumn: false, shouldShowTaxAmountInWideColumn: false}),
         [searchResults?.data],
     );
+    const amountIndicators = useStableValue(unstableAmountIndicators);
 
     const onSortPress = useCallback(
         (column: SearchColumnType, order: SortOrder) => {
