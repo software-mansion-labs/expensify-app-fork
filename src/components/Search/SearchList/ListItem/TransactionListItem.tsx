@@ -182,7 +182,7 @@ function TransactionListItem<TItem extends ListItem>({
     const {isDelegateAccessRestricted} = useDelegateNoAccessState();
     const {showDelegateNoAccessModal} = useDelegateNoAccessActions();
 
-    const handleActionButtonPressDepsRef = useRef({
+    const unstableHandleActionButtonPressDepsRef = useRef({
         currentSearchHash,
         transactionItem,
         onSelectRow,
@@ -199,7 +199,7 @@ function TransactionListItem<TItem extends ListItem>({
         ownerBillingGracePeriodEnd,
     });
     // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
-    handleActionButtonPressDepsRef.current = {
+    unstableHandleActionButtonPressDepsRef.current = {
         currentSearchHash,
         transactionItem,
         onSelectRow,
@@ -217,7 +217,7 @@ function TransactionListItem<TItem extends ListItem>({
     };
 
     const handleActionButtonPress = useCallback(() => {
-        const deps = handleActionButtonPressDepsRef.current;
+        const deps = unstableHandleActionButtonPressDepsRef.current;
         handleActionButtonPressUtil({
             hash: deps.currentSearchHash,
             item: deps.transactionItem,

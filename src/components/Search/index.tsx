@@ -952,7 +952,7 @@ function Search({
         [filteredData, validGroupBy, type, searchResults?.search?.hasMoreResults, setShouldShowSelectAllMatchingItems, selectAllMatchingItems],
     );
 
-    const toggleTransactionDepsRef = useRef({
+    const unstableToggleTransactionDepsRef = useRef({
         selectedTransactions,
         filteredData,
         updateSelectAllMatchingItemsState,
@@ -960,7 +960,7 @@ function Search({
         outstandingReportsByPolicyID,
         searchResultsData: searchResults?.data,
     });
-    toggleTransactionDepsRef.current = {
+    unstableToggleTransactionDepsRef.current = {
         selectedTransactions,
         filteredData,
         updateSelectAllMatchingItemsState,
@@ -978,7 +978,7 @@ function Search({
                 transactions: currentTransactionsData,
                 outstandingReportsByPolicyID: currentOutstandingReports,
                 searchResultsData,
-            } = toggleTransactionDepsRef.current;
+            } = unstableToggleTransactionDepsRef.current;
             if (isReportActionListItemType(item)) {
                 return;
             }
@@ -1343,8 +1343,15 @@ function Search({
         }
     }, [hasErrors, queryJSON, searchResults, shouldResetSearchQuery, setShouldResetSearchQuery]);
 
-    const fetchMoreResultsDepsRef = useRef({isFocused, hasMoreResults: searchResults?.search?.hasMoreResults, shouldShowLoadingState, shouldShowLoadingMoreItems, offset, allDataLength});
-    fetchMoreResultsDepsRef.current = {isFocused, hasMoreResults: searchResults?.search?.hasMoreResults, shouldShowLoadingState, shouldShowLoadingMoreItems, offset, allDataLength};
+    const unstableFetchMoreResultsDepsRef = useRef({
+        isFocused,
+        hasMoreResults: searchResults?.search?.hasMoreResults,
+        shouldShowLoadingState,
+        shouldShowLoadingMoreItems,
+        offset,
+        allDataLength,
+    });
+    unstableFetchMoreResultsDepsRef.current = {isFocused, hasMoreResults: searchResults?.search?.hasMoreResults, shouldShowLoadingState, shouldShowLoadingMoreItems, offset, allDataLength};
 
     const fetchMoreResults = useCallback(() => {
         const {
@@ -1354,7 +1361,7 @@ function Search({
             shouldShowLoadingMoreItems: currentLoadingMore,
             offset: currentOffset,
             allDataLength: currentAllDataLength,
-        } = fetchMoreResultsDepsRef.current;
+        } = unstableFetchMoreResultsDepsRef.current;
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         if (!currentIsFocused || !hasMoreResults || currentLoadingState || currentLoadingMore || currentOffset > currentAllDataLength - CONST.SEARCH.RESULTS_PAGE_SIZE) {
             return;
@@ -1363,7 +1370,7 @@ function Search({
         setOffset((prev) => prev + CONST.SEARCH.RESULTS_PAGE_SIZE);
     }, []);
 
-    const toggleAllTransactionsDepsRef = useRef({
+    const unstableToggleAllTransactionsDepsRef = useRef({
         validGroupBy,
         selectedTransactions,
         filteredData,
@@ -1372,7 +1379,7 @@ function Search({
         outstandingReportsByPolicyID,
         searchResultsData: searchResults?.data,
     });
-    toggleAllTransactionsDepsRef.current = {
+    unstableToggleAllTransactionsDepsRef.current = {
         validGroupBy,
         selectedTransactions,
         filteredData,
@@ -1391,7 +1398,7 @@ function Search({
             transactions: currentTransactionsData,
             outstandingReportsByPolicyID: currentOutstandingReports,
             searchResultsData,
-        } = toggleAllTransactionsDepsRef.current;
+        } = unstableToggleAllTransactionsDepsRef.current;
         const areItemsGrouped = !!currentValidGroupBy || isExpenseReportType;
         const totalSelected = Object.keys(currentSelectedTransactions).length;
 
@@ -1435,8 +1442,8 @@ function Search({
         currentUpdateSelectAll(updatedTransactions);
     }, [isExpenseReportType, setSelectedTransactions, clearSelectedTransactions, email, accountID]);
 
-    const onLayoutDepsRef = useRef({handleSelectionListScroll, stableSortedData, onContentReady});
-    onLayoutDepsRef.current = {handleSelectionListScroll, stableSortedData, onContentReady};
+    const unstableOnLayoutDepsRef = useRef({handleSelectionListScroll, stableSortedData, onContentReady});
+    unstableOnLayoutDepsRef.current = {handleSelectionListScroll, stableSortedData, onContentReady};
 
     const onLayout = useCallback(() => {
         hasHadFirstLayout.current = true;
@@ -1448,7 +1455,7 @@ function Search({
                 [CONST.TELEMETRY.ATTRIBUTE_WAS_LIST_EMPTY]: isSearchResultsEmptyRef.current,
             });
         }
-        const {handleSelectionListScroll: currentHandleScroll, stableSortedData: currentSortedData, onContentReady: currentOnContentReady} = onLayoutDepsRef.current;
+        const {handleSelectionListScroll: currentHandleScroll, stableSortedData: currentSortedData, onContentReady: currentOnContentReady} = unstableOnLayoutDepsRef.current;
         currentHandleScroll(currentSortedData, searchListRef.current);
         flushDeferredWrite(CONST.DEFERRED_LAYOUT_WRITE_KEYS.SEARCH);
         currentOnContentReady?.();
