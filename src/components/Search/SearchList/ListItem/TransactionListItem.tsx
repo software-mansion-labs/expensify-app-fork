@@ -182,22 +182,57 @@ function TransactionListItem<TItem extends ListItem>({
     const {isDelegateAccessRestricted} = useDelegateNoAccessState();
     const {showDelegateNoAccessModal} = useDelegateNoAccessActions();
 
-    const handleActionButtonPress = () => {
-        handleActionButtonPressUtil({
-            hash: currentSearchHash,
-            item: transactionItem,
-            goToItem: () => onSelectRow(item, transactionPreviewData),
-            snapshotReport,
-            snapshotPolicy,
-            lastPaymentMethod,
-            userBillingGracePeriodEnds,
-            currentSearchKey,
-            isDelegateAccessRestricted,
-            onDelegateAccessRestricted: showDelegateNoAccessModal,
-            personalPolicyID,
-            ownerBillingGracePeriodEnd,
-        });
+    const handleActionButtonPressDepsRef = useRef({
+        currentSearchHash,
+        transactionItem,
+        onSelectRow,
+        item,
+        transactionPreviewData,
+        snapshotReport,
+        snapshotPolicy,
+        lastPaymentMethod,
+        userBillingGracePeriodEnds,
+        currentSearchKey,
+        isDelegateAccessRestricted,
+        showDelegateNoAccessModal,
+        personalPolicyID,
+        ownerBillingGracePeriodEnd,
+    });
+    // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
+    handleActionButtonPressDepsRef.current = {
+        currentSearchHash,
+        transactionItem,
+        onSelectRow,
+        item,
+        transactionPreviewData,
+        snapshotReport,
+        snapshotPolicy,
+        lastPaymentMethod,
+        userBillingGracePeriodEnds,
+        currentSearchKey,
+        isDelegateAccessRestricted,
+        showDelegateNoAccessModal,
+        personalPolicyID,
+        ownerBillingGracePeriodEnd,
     };
+
+    const handleActionButtonPress = useCallback(() => {
+        const deps = handleActionButtonPressDepsRef.current;
+        handleActionButtonPressUtil({
+            hash: deps.currentSearchHash,
+            item: deps.transactionItem,
+            goToItem: () => deps.onSelectRow(deps.item, deps.transactionPreviewData),
+            snapshotReport: deps.snapshotReport,
+            snapshotPolicy: deps.snapshotPolicy,
+            lastPaymentMethod: deps.lastPaymentMethod,
+            userBillingGracePeriodEnds: deps.userBillingGracePeriodEnds,
+            currentSearchKey: deps.currentSearchKey,
+            isDelegateAccessRestricted: deps.isDelegateAccessRestricted,
+            onDelegateAccessRestricted: deps.showDelegateNoAccessModal,
+            personalPolicyID: deps.personalPolicyID,
+            ownerBillingGracePeriodEnd: deps.ownerBillingGracePeriodEnd,
+        });
+    }, []);
 
     const pressableRef = useRef<View>(null);
 
