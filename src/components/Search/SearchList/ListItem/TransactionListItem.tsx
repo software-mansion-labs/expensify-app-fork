@@ -2,7 +2,7 @@
 // SearchStaticList (src/components/Search/SearchStaticList.tsx) used for fast
 // perceived performance. If you change the narrow-layout UI here, verify the
 // static version still looks visually identical.
-import React, {useRef} from 'react';
+import React, {useCallback, useRef} from 'react';
 import type {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 // Use the original useOnyx hook to get the real-time data from Onyx and not from the snapshot
@@ -102,7 +102,8 @@ function TransactionListItem<TItem extends ListItem>({
     const transactionThreadReport = useStableValue(unstableTransactionThreadReport);
     const [unstableTransaction] = originalUseOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION}${getNonEmptyStringOnyxID(transactionItem.transactionID)}`);
     const transaction = useStableValue(unstableTransaction);
-    const parentReportActionSelector = (reportActions: OnyxEntry<ReportActions>): OnyxEntry<ReportAction> => reportActions?.[`${transactionItem?.reportAction?.reportActionID}`];
+    const reportActionID = transactionItem?.reportAction?.reportActionID;
+    const parentReportActionSelector = useCallback((reportActions: OnyxEntry<ReportActions>): OnyxEntry<ReportAction> => reportActions?.[`${reportActionID}`], [reportActionID]);
     const [parentReportAction] = originalUseOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${getNonEmptyStringOnyxID(transactionItem.reportID)}`, {selector: parentReportActionSelector}, [
         transactionItem,
     ]);
