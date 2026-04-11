@@ -150,6 +150,7 @@ type TransactionItemRowProps = {
 };
 
 const EMPTY_ACTIVE_STYLE: StyleProp<ViewStyle> = [];
+const NOOP_RADIO_BUTTON_PRESS = () => {};
 
 function getMerchantName(transactionItem: TransactionWithOptionalSearchFields, translate: (key: TranslationPaths) => string) {
     const shouldShowMerchant = transactionItem.shouldShowMerchant ?? true;
@@ -188,7 +189,7 @@ function TransactionItemRow({
     isActionLoading,
     isInSingleTransactionReport = false,
     shouldShowRadioButton = false,
-    onRadioButtonPress = () => {},
+    onRadioButtonPress = NOOP_RADIO_BUTTON_PRESS,
     shouldShowErrors = true,
     shouldHighlightItemWhenSelected = true,
     isDisabled = false,
