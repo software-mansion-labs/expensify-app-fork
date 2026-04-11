@@ -21,6 +21,7 @@ import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchHighlightAndScroll from '@hooks/useSearchHighlightAndScroll';
 import useSearchShouldCalculateTotals from '@hooks/useSearchShouldCalculateTotals';
+import useStableValue from '@hooks/useStableValue';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {turnOffMobileSelectionMode, turnOnMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import type {TransactionPreviewData} from '@libs/actions/Search';
@@ -212,7 +213,7 @@ function prepareTransactionsList(
 // @track-refs
 function Search({
     queryJSON,
-    searchResults,
+    searchResults: unstableSearchResults,
     onSearchListScroll,
     contentContainerStyle,
     handleSearch,
@@ -222,6 +223,7 @@ function Search({
     onContentReady,
     initialContent,
 }: SearchProps) {
+    const searchResults = useStableValue(unstableSearchResults);
     const {type, status, sortBy, sortOrder, hash, similarSearchHash, groupBy, view} = queryJSON;
     // Deferred write: API.write() is postponed so the skeleton renders instantly.
     // Once flushed, we cache the optimistic item from sortedData and re-inject it
