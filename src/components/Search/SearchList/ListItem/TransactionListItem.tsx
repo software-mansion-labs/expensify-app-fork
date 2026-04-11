@@ -189,73 +189,28 @@ function TransactionListItem<TItem extends ListItem>({
     const {isDelegateAccessRestricted} = useDelegateNoAccessState();
     const {showDelegateNoAccessModal} = useDelegateNoAccessActions();
 
-    const unstableHandleActionButtonPressDepsRef = useRef({
-        currentSearchHash,
-        transactionItem,
-        onSelectRow,
-        item: unstableItem,
-        transactionPreviewData,
-        snapshotReport,
-        snapshotPolicy,
-        lastPaymentMethod,
-        userBillingGracePeriodEnds,
-        currentSearchKey,
-        isDelegateAccessRestricted,
-        showDelegateNoAccessModal,
-        personalPolicyID,
-        ownerBillingGracePeriodEnd,
-    });
-    // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
-    unstableHandleActionButtonPressDepsRef.current = {
-        currentSearchHash,
-        transactionItem,
-        onSelectRow,
-        item: unstableItem,
-        transactionPreviewData,
-        snapshotReport,
-        snapshotPolicy,
-        lastPaymentMethod,
-        userBillingGracePeriodEnds,
-        currentSearchKey,
-        isDelegateAccessRestricted,
-        showDelegateNoAccessModal,
-        personalPolicyID,
-        ownerBillingGracePeriodEnd,
+    const handleActionButtonPress = () => {
+        handleActionButtonPressUtil({
+            hash: currentSearchHash,
+            item: transactionItem,
+            goToItem: () => onSelectRow(unstableItem, transactionPreviewData),
+            snapshotReport,
+            snapshotPolicy,
+            lastPaymentMethod,
+            userBillingGracePeriodEnds,
+            currentSearchKey,
+            isDelegateAccessRestricted,
+            onDelegateAccessRestricted: showDelegateNoAccessModal,
+            personalPolicyID,
+            ownerBillingGracePeriodEnd,
+        });
     };
 
-    const handleActionButtonPress = useCallback(() => {
-        const deps = unstableHandleActionButtonPressDepsRef.current;
-        handleActionButtonPressUtil({
-            hash: deps.currentSearchHash,
-            item: deps.transactionItem,
-            goToItem: () => deps.onSelectRow(deps.item, deps.transactionPreviewData),
-            snapshotReport: deps.snapshotReport,
-            snapshotPolicy: deps.snapshotPolicy,
-            lastPaymentMethod: deps.lastPaymentMethod,
-            userBillingGracePeriodEnds: deps.userBillingGracePeriodEnds,
-            currentSearchKey: deps.currentSearchKey,
-            isDelegateAccessRestricted: deps.isDelegateAccessRestricted,
-            onDelegateAccessRestricted: deps.showDelegateNoAccessModal,
-            personalPolicyID: deps.personalPolicyID,
-            ownerBillingGracePeriodEnd: deps.ownerBillingGracePeriodEnd,
-        });
-    }, []);
-
-    const unstableInlineCallbackDepsRef = useRef({onCheckboxPress, onSelectRow, item: unstableItem, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus});
-    // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
-    unstableInlineCallbackDepsRef.current = {onCheckboxPress, onSelectRow, item: unstableItem, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus};
-
-    const stableOnCheckboxPress = useCallback(() => unstableInlineCallbackDepsRef.current.onCheckboxPress?.(unstableInlineCallbackDepsRef.current.item), []);
-    const stableOnArrowRightPress = useCallback(() => {
-        const deps = unstableInlineCallbackDepsRef.current;
-        deps.onSelectRow(deps.item, deps.transactionPreviewData);
-    }, []);
-    const stableOnPress = useCallback(() => {
-        const deps = unstableInlineCallbackDepsRef.current;
-        deps.onSelectRow(deps.item, deps.transactionPreviewData);
-    }, []);
-    const stableOnLongPress = useCallback(() => unstableInlineCallbackDepsRef.current.onLongPressRow?.(unstableInlineCallbackDepsRef.current.item), []);
-    const stableOnFocus = useCallback((...args: Parameters<NonNullable<typeof unstableOnFocus>>) => unstableInlineCallbackDepsRef.current.onFocus?.(...args), []);
+    const stableOnCheckboxPress = () => onCheckboxPress?.(unstableItem);
+    const stableOnArrowRightPress = () => onSelectRow(unstableItem, transactionPreviewData);
+    const stableOnPress = () => onSelectRow(unstableItem, transactionPreviewData);
+    const stableOnLongPress = () => onLongPressRow?.(unstableItem);
+    const stableOnFocus = (...args: Parameters<NonNullable<typeof unstableOnFocus>>) => unstableOnFocus?.(...args);
 
     const pressableRef = useRef<View>(null);
 
