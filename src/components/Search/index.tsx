@@ -312,7 +312,8 @@ function Search({
     const previousTransactions = usePrevious(transactions);
     const [reportActions] = useOnyx(ONYXKEYS.COLLECTION.REPORT_ACTIONS);
     const [outstandingReportsByPolicyID] = useOnyx(ONYXKEYS.DERIVED.OUTSTANDING_REPORTS_BY_POLICY_ID);
-    const [violations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS);
+    const [unstableViolations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS);
+    const violations = useStableValue(unstableViolations);
     const [unstablePolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const policies = useStableValue(unstablePolicies);
     const {accountID, email, login} = useCurrentUserPersonalDetails();
