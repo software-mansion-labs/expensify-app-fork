@@ -16,6 +16,7 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import useNetwork from './useNetwork';
 import useOnyx from './useOnyx';
 import usePrevious from './usePrevious';
+import useStableValue from './useStableValue';
 
 type UseSearchHighlightAndScroll = {
     searchResults: OnyxEntry<SearchResults>;
@@ -65,15 +66,16 @@ function useSearchHighlightAndScroll({
     const searchResultsData = searchResults?.data;
 
     const prevTransactionsIDs = Object.keys(previousTransactions ?? {});
-    const newTransactions: Transaction[] = [];
+    const unstableNewTransactions: Transaction[] = [];
     if (prevTransactionsIDs.length > 0) {
         const previousIDs = new Set(prevTransactionsIDs);
         for (const [id, transaction] of Object.entries(transactions ?? {})) {
             if (!previousIDs.has(id) && transaction) {
-                newTransactions.push(transaction);
+                unstableNewTransactions.push(transaction);
             }
         }
     }
+    const newTransactions = useStableValue(unstableNewTransactions);
 
     // Trigger search when a new report action is added while on chat or when a new transaction is added for the other search types.
     useEffect(() => {
