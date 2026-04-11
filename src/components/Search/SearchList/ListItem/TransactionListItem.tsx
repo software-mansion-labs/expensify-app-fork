@@ -85,7 +85,8 @@ function TransactionListItem<TItem extends ListItem>({
     const snapshotPolicy = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.POLICY}${transactionItem.policyID}`] ?? {}) as Policy;
 
     const actionsData = currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionItem.reportID}`];
-    const exportedReportActions = actionsData ? Object.values(actionsData) : [];
+    const unstableExportedReportActions = actionsData ? Object.values(actionsData) : [];
+    const exportedReportActions = useStableValue(unstableExportedReportActions);
 
     // Fetch policy categories directly from Onyx since they are not included in the search snapshot
     const [policyCategories] = originalUseOnyx(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${getNonEmptyStringOnyxID(policyID)}`);
