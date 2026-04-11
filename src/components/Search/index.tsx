@@ -1525,11 +1525,6 @@ function Search({
         }, [shouldShowLoadingState]),
     );
 
-    // Reset before conditional returns. Only cancelNavigationSpans (error/empty paths)
-    // sets it to true. Must happen during render since it coordinates with the
-    // dep-free useEffect above — see comment on didBailToFallbackState.
-    didBailToFallbackState.current = false;
-
     const isAnyVisibleActionLoading = useMemo(
         () => filteredData.some((item) => 'reportID' in item && item.reportID && isActionLoadingSet.has(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${item.reportID}`)),
         [filteredData, isActionLoadingSet],
