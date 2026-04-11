@@ -506,8 +506,12 @@ function Search({
 
     const prevIsSearchResultEmpty = usePrevious(isSearchResultsEmpty);
 
+    // Extract .data separately so isLoading toggles on searchResults.search don't
+    // trigger the expensive getSections pipeline. replaceEqualDeep (via useStableValue
+    // on searchResults) preserves the .data reference when only .search changes.
+    const unstableSearchSnapshotData = searchResults?.data;
     const [unstableBaseFilteredData, filteredDataLength, allDataLength] = useMemo(() => {
-        if (shouldDeferHeavySearchWork || searchResults === undefined || !isDataLoaded) {
+        if (shouldDeferHeavySearchWork || !unstableSearchSnapshotData || !isDataLoaded) {
             return [[], 0, 0];
         }
 
@@ -520,7 +524,7 @@ function Search({
 
         const [filteredData1, allLength] = getSections({
             type,
-            data: searchResults.data,
+            data: unstableSearchSnapshotData,
             policies,
             currentAccountID: accountID,
             currentUserEmail: email ?? '',
@@ -549,7 +553,7 @@ function Search({
         validGroupBy,
         isDataLoaded,
         shouldDeferHeavySearchWork,
-        searchResults,
+        unstableSearchSnapshotData,
         type,
         archivedReportsIdSet,
         translate,
