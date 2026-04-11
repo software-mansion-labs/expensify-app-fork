@@ -1218,7 +1218,7 @@ function Search({
     const canSelectMultiple = !isChat && !isTask && (!isSmallScreenWidth || isMobileSelectionModeEnabled);
     const ListItem = getListItem(type, status, validGroupBy);
 
-    const sortedData = useMemo(
+    const unstableSortedData = useMemo(
         () =>
             getSortedSections(type, status, filteredData, localeCompare, translate, sortBy, sortOrder, validGroupBy).map((item) => {
                 const baseKey = isChat
@@ -1244,6 +1244,7 @@ function Search({
             }),
         [type, status, filteredData, localeCompare, translate, sortBy, sortOrder, validGroupBy, isChat, newSearchResultKeys, hash],
     );
+    const sortedData = useStableValue(unstableSortedData, {key: 'keyForList'});
 
     // Track the optimistic item through its lifecycle in sortedData.
     // First appearance -> cache it & hide the skeleton.
