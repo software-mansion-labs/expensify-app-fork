@@ -41,7 +41,7 @@ import UserInfoAndActionButtonRow from './UserInfoAndActionButtonRow';
 
 // @track-refs
 function TransactionListItem<TItem extends ListItem>({
-    item,
+    item: unstableItem,
     isFocused,
     showTooltip,
     isDisabled,
@@ -59,7 +59,7 @@ function TransactionListItem<TItem extends ListItem>({
     personalPolicyID,
     isLastItem,
 }: TransactionListItemProps<TItem>) {
-    const transactionItem = item as unknown as TransactionListItemType;
+    const transactionItem = unstableItem as unknown as TransactionListItemType;
     const styles = useThemeStyles();
     const theme = useTheme();
     const StyleUtils = useStyleUtils();
@@ -119,13 +119,13 @@ function TransactionListItem<TItem extends ListItem>({
     const unstablePressableStyle = [
         styles.transactionListItemStyle,
         !isLargeScreenWidth && styles.pt3,
-        item.isSelected && styles.activeComponentBG,
+        unstableItem.isSelected && styles.activeComponentBG,
         isLargeScreenWidth
             ? {
                   ...styles.flexRow,
                   ...styles.justifyContentBetween,
                   ...styles.alignItemsCenter,
-                  ...StyleUtils.getSearchTableRowPressableStyle(!!isLastItem, item.isSelected),
+                  ...StyleUtils.getSearchTableRowPressableStyle(!!isLastItem, unstableItem.isSelected),
               }
             : {...styles.flexColumn, ...styles.alignItemsStretch},
     ];
@@ -135,7 +135,7 @@ function TransactionListItem<TItem extends ListItem>({
 
     const animatedHighlightStyle = useAnimatedHighlightStyle({
         borderRadius: StyleUtils.getSearchTableHighlightBorderRadius(isLargeScreenWidth),
-        shouldHighlight: item?.shouldAnimateInHighlight ?? false,
+        shouldHighlight: unstableItem?.shouldAnimateInHighlight ?? false,
         highlightColor: theme.messageHighlightBG,
         backgroundColor: theme.highlightBG,
         shouldApplyOtherStyles: !isLargeScreenWidth,
@@ -186,7 +186,7 @@ function TransactionListItem<TItem extends ListItem>({
         currentSearchHash,
         transactionItem,
         onSelectRow,
-        item,
+        item: unstableItem,
         transactionPreviewData,
         snapshotReport,
         snapshotPolicy,
@@ -203,7 +203,7 @@ function TransactionListItem<TItem extends ListItem>({
         currentSearchHash,
         transactionItem,
         onSelectRow,
-        item,
+        item: unstableItem,
         transactionPreviewData,
         snapshotReport,
         snapshotPolicy,
@@ -234,9 +234,9 @@ function TransactionListItem<TItem extends ListItem>({
         });
     }, []);
 
-    const unstableInlineCallbackDepsRef = useRef({onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus});
+    const unstableInlineCallbackDepsRef = useRef({onCheckboxPress, onSelectRow, item: unstableItem, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus});
     // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
-    unstableInlineCallbackDepsRef.current = {onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus};
+    unstableInlineCallbackDepsRef.current = {onCheckboxPress, onSelectRow, item: unstableItem, transactionPreviewData, onLongPressRow, onFocus: unstableOnFocus};
 
     const stableOnCheckboxPress = useCallback(() => unstableInlineCallbackDepsRef.current.onCheckboxPress?.(unstableInlineCallbackDepsRef.current.item), []);
     const stableOnArrowRightPress = useCallback(() => {
@@ -255,23 +255,23 @@ function TransactionListItem<TItem extends ListItem>({
     useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
 
     return (
-        <OfflineWithFeedback pendingAction={item.pendingAction}>
+        <OfflineWithFeedback pendingAction={unstableItem.pendingAction}>
             <PressableWithFeedback
                 ref={pressableRef}
                 onLongPress={stableOnLongPress}
                 onPress={stableOnPress}
-                disabled={isDisabled && !item.isSelected}
-                accessibilityLabel={item.text ?? ''}
+                disabled={isDisabled && !unstableItem.isSelected}
+                accessibilityLabel={unstableItem.text ?? ''}
                 role={getButtonRole(true)}
                 isNested
                 onMouseDown={(e) => e.preventDefault()}
-                hoverStyle={[!item.isDisabled && styles.hoveredComponentBG, item.isSelected && styles.activeComponentBG]}
+                hoverStyle={[!unstableItem.isDisabled && styles.hoveredComponentBG, unstableItem.isSelected && styles.activeComponentBG]}
                 dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true, [CONST.INNER_BOX_SHADOW_ELEMENT]: false}}
-                id={item.keyForList ?? ''}
+                id={unstableItem.keyForList ?? ''}
                 sentryLabel={CONST.SENTRY_LABEL.SEARCH.TRANSACTION_LIST_ITEM}
                 style={[
                     pressableStyle,
-                    isFocused && StyleUtils.getItemBackgroundColorStyle(!!item.isSelected, !!isFocused, !!item.isDisabled, theme.activeComponentBG, theme.hoverComponentBG),
+                    isFocused && StyleUtils.getItemBackgroundColorStyle(!!unstableItem.isSelected, !!isFocused, !!unstableItem.isDisabled, theme.activeComponentBG, theme.hoverComponentBG),
                 ]}
                 onFocus={stableOnFocus}
                 wrapperStyle={[
