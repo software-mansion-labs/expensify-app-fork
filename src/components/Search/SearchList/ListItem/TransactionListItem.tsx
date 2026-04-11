@@ -39,6 +39,13 @@ import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
 import type {TransactionListItemProps, TransactionListItemType} from './types';
 import UserInfoAndActionButtonRow from './UserInfoAndActionButtonRow';
 
+function normalizeReportAccountIDs(report: OnyxEntry<Report>): OnyxEntry<Report> {
+    if (!report || typeof report.lastActorAccountID !== 'string') {
+        return report;
+    }
+    return {...report, lastActorAccountID: Number(report.lastActorAccountID)};
+}
+
 // @track-refs
 function TransactionListItem<TItem extends ListItem>({
     item: unstableItem,
@@ -96,7 +103,7 @@ function TransactionListItem<TItem extends ListItem>({
     // Fetch policy categories directly from Onyx since they are not included in the search snapshot
     const [policyCategories] = originalUseOnyx(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${getNonEmptyStringOnyxID(policyID)}`);
 
-    const [unstableParentReport] = originalUseOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(transactionItem.reportID)}`);
+    const [unstableParentReport] = originalUseOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(transactionItem.reportID)}`, {selector: normalizeReportAccountIDs});
     const parentReport = useStableValue(unstableParentReport);
     const [unstableTransactionThreadReport] = originalUseOnyx(`${ONYXKEYS.COLLECTION.REPORT}${transactionItem?.reportAction?.childReportID}`);
     const transactionThreadReport = useStableValue(unstableTransactionThreadReport);

@@ -32,9 +32,10 @@ export default createOnyxDerivedValueConfig({
                     acc[report.policyID] = {};
                 }
 
+                const normalizedReport = typeof report.lastActorAccountID === 'string' ? {...report, lastActorAccountID: Number(report.lastActorAccountID)} : report;
                 acc[report.policyID] = {
                     ...acc[report.policyID],
-                    [reportID]: report,
+                    [reportID]: normalizedReport,
                 };
             }
 
