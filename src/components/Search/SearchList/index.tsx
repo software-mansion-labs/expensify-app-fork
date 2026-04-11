@@ -1,95 +1,61 @@
-import { useFocusEffect, useRoute } from '@react-navigation/native';
-import { isUserValidatedSelector } from '@selectors/Account';
-import { tierNameSelector } from '@selectors/UserWallet';
-import type { FlashListProps, FlashListRef, ViewToken } from '@shopify/flash-list';
-import React, { useCallback, useContext, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { ForwardedRef } from 'react';
-import { View } from 'react-native';
+import {useFocusEffect, useRoute} from '@react-navigation/native';
+import {isUserValidatedSelector} from '@selectors/Account';
+import {tierNameSelector} from '@selectors/UserWallet';
+import type {FlashListProps, FlashListRef, ViewToken} from '@shopify/flash-list';
+import React, {useCallback, useContext, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import type {ForwardedRef} from 'react';
+import {View} from 'react-native';
 // eslint-disable-next-line no-restricted-imports
-import type { NativeScrollEvent, NativeSyntheticEvent, ScrollView as RNScrollView, StyleProp, ViewStyle } from 'react-native';
-import Animated, { Easing, FadeOutUp, LinearTransition } from 'react-native-reanimated';
+import type {NativeScrollEvent, NativeSyntheticEvent, ScrollView as RNScrollView, StyleProp, ViewStyle} from 'react-native';
+import Animated, {Easing, FadeOutUp, LinearTransition} from 'react-native-reanimated';
 import Checkbox from '@components/Checkbox';
 import MenuItem from '@components/MenuItem';
 import Modal from '@components/Modal';
-import { usePersonalDetails } from '@components/OnyxListItemProvider';
-import { PressableWithFeedback } from '@components/Pressable';
-import { ScrollOffsetContext } from '@components/ScrollOffsetContextProvider';
+import {usePersonalDetails} from '@components/OnyxListItemProvider';
+import {PressableWithFeedback} from '@components/Pressable';
+import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
 import ScrollView from '@components/ScrollView';
-import type { SearchColumnType, SearchGroupBy, SearchQueryJSON, SelectedTransactions } from '@components/Search/types';
-import type { ExtendedTargetedEvent } from '@components/SelectionList/ListItem/types';
+import type {SearchColumnType, SearchGroupBy, SearchQueryJSON, SelectedTransactions} from '@components/Search/types';
+import type {ExtendedTargetedEvent} from '@components/SelectionList/ListItem/types';
 import Text from '@components/Text';
 import useKeyboardState from '@hooks/useKeyboardState';
-import { useMemoizedLazyExpensifyIcons } from '@hooks/useLazyAsset';
+import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaPaddings from '@hooks/useSafeAreaPaddings';
+import useStableValue from '@hooks/useStableValue';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
-import { turnOnMobileSelectionMode } from '@libs/actions/MobileSelectionMode';
+import {turnOnMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import DateUtils from '@libs/DateUtils';
 import navigationRef from '@libs/Navigation/navigationRef';
-import { applySelectionToItem, getTableMinWidth } from '@libs/SearchUIUtils';
+import {applySelectionToItem, getTableMinWidth} from '@libs/SearchUIUtils';
 import variables from '@styles/variables';
-import type { TransactionPreviewData } from '@userActions/Search';
+import type {TransactionPreviewData} from '@userActions/Search';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type { Transaction, TransactionViolations } from '@src/types/onyx';
+import type {Transaction, TransactionViolations} from '@src/types/onyx';
 import BaseSearchList from './BaseSearchList';
 import type ChatListItem from './ListItem/ChatListItem';
 import type TaskListItem from './ListItem/TaskListItem';
 import type TransactionGroupListItem from './ListItem/TransactionGroupListItem';
 import type TransactionListItem from './ListItem/TransactionListItem';
-import type { ReportActionListItemType, TaskListItemType, TransactionCardGroupListItemType, TransactionCategoryGroupListItemType, TransactionGroupListItemType, TransactionListItemType, TransactionMerchantGroupListItemType, TransactionMonthGroupListItemType, TransactionQuarterGroupListItemType, TransactionWeekGroupListItemType, TransactionYearGroupListItemType } from './ListItem/types';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import type {
+    ReportActionListItemType,
+    TaskListItemType,
+    TransactionCardGroupListItemType,
+    TransactionCategoryGroupListItemType,
+    TransactionGroupListItemType,
+    TransactionListItemType,
+    TransactionMerchantGroupListItemType,
+    TransactionMonthGroupListItemType,
+    TransactionQuarterGroupListItemType,
+    TransactionWeekGroupListItemType,
+    TransactionYearGroupListItemType,
+} from './ListItem/types';
 
 const easing = Easing.bezier(0.76, 0.0, 0.24, 1.0);
 
@@ -327,7 +293,8 @@ function SearchList({
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [longPressedItem, setLongPressedItem] = useState<SearchListItem>();
 
-    const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const [unstablePolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const policies = useStableValue(unstablePolicies);
 
     const hasItemsBeingRemoved = prevDataLength && prevDataLength > data.length;
     const personalDetails = usePersonalDetails();
