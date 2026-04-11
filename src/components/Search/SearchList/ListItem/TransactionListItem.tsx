@@ -65,7 +65,8 @@ function TransactionListItem<TItem extends ListItem>({
     const StyleUtils = useStyleUtils();
 
     const {isLargeScreenWidth, shouldUseNarrowLayout} = useResponsiveLayout();
-    const {currentSearchHash, currentSearchKey, currentSearchResults} = useSearchStateContext();
+    const {currentSearchHash, currentSearchKey, currentSearchResults: unstableCurrentSearchResults} = useSearchStateContext();
+    const currentSearchResults = useStableValue(unstableCurrentSearchResults);
     const unstableSnapshotReport = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionItem.reportID}`] ?? {}) as Report;
     const snapshotReport = useStableValue(unstableSnapshotReport);
 
