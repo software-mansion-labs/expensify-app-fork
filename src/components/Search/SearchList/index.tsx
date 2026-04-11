@@ -58,6 +58,7 @@ import type {
 } from './ListItem/types';
 
 const easing = Easing.bezier(0.76, 0.0, 0.24, 1.0);
+const SCRAPER_HIDDEN_DATA_SET = {[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true} as const;
 
 // Keep a ref to the horizontal scroll offset so we can restore it if users change the search query
 let savedHorizontalScrollOffset = 0;
@@ -526,7 +527,7 @@ function SearchList({
                             role="button"
                             accessibilityState={{checked: isSelectAllChecked}}
                             sentryLabel={CONST.SENTRY_LABEL.SEARCH.SELECT_ALL_BUTTON}
-                            dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
+                            dataSet={SCRAPER_HIDDEN_DATA_SET}
                         >
                             <Text style={[styles.textMicroSupporting, styles.ph3]}>{translate('workspace.people.selectAll')}</Text>
                         </PressableWithFeedback>
