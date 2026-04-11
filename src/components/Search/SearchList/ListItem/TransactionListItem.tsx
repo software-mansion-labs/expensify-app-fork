@@ -66,8 +66,8 @@ function TransactionListItem<TItem extends ListItem>({
 
     const {isLargeScreenWidth, shouldUseNarrowLayout} = useResponsiveLayout();
     const {currentSearchHash, currentSearchKey, currentSearchResults: unstableCurrentSearchResults} = useSearchStateContext();
-    const currentSearchResults = useStableValue(unstableCurrentSearchResults);
-    const unstableSnapshotReport = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionItem.reportID}`] ?? {}) as Report;
+    const currentSearchResultsData = useStableValue(unstableCurrentSearchResults?.data);
+    const unstableSnapshotReport = (currentSearchResultsData?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionItem.reportID}`] ?? {}) as Report;
     const snapshotReport = useStableValue(unstableSnapshotReport);
 
     const [unstableUserBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
@@ -86,10 +86,10 @@ function TransactionListItem<TItem extends ListItem>({
     const policyID = transactionItem.policyID || snapshotReport?.policyID || activePolicyID;
     const [unstableParentPolicy] = originalUseOnyx(`${ONYXKEYS.COLLECTION.POLICY}${getNonEmptyStringOnyxID(policyID)}`);
     const parentPolicy = useStableValue(unstableParentPolicy);
-    const unstableSnapshotPolicy = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.POLICY}${transactionItem.policyID}`] ?? {}) as Policy;
+    const unstableSnapshotPolicy = (currentSearchResultsData?.[`${ONYXKEYS.COLLECTION.POLICY}${transactionItem.policyID}`] ?? {}) as Policy;
     const snapshotPolicy = useStableValue(unstableSnapshotPolicy);
 
-    const unstableActionsData = currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionItem.reportID}`];
+    const unstableActionsData = currentSearchResultsData?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionItem.reportID}`];
     const actionsData = useStableValue(unstableActionsData);
     const unstableExportedReportActions = actionsData ? Object.values(actionsData) : [];
     const exportedReportActions = useStableValue(unstableExportedReportActions);
