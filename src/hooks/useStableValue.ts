@@ -15,6 +15,8 @@ import replaceEqualDeep from '@src/utils/replaceEqualDeep';
  *               Useful for arrays with stable identity keys like 'keyForList'.
  */
 function useStableValue<T>(value: T, config?: StableArrayConfig): T {
+    'use no memo';
+
     const ref = useRef(value);
     // eslint-disable-next-line react-hooks/refs
     const stable = replaceEqualDeep(ref.current, value, 0, config);
