@@ -224,7 +224,7 @@ function SearchList({
     const expensifyIcons = useMemoizedLazyExpensifyIcons(['CheckSquare']);
 
     const {hash, groupBy, type} = queryJSON;
-    const flattenedItems = useMemo(() => {
+    const unstableFlattenedItems = useMemo(() => {
         if (groupBy || type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT) {
             if (!isTransactionGroupListItemArray(data)) {
                 return data;
@@ -233,6 +233,7 @@ function SearchList({
         }
         return data;
     }, [data, groupBy, type]);
+    const flattenedItems = useStableValue(unstableFlattenedItems, {key: 'keyForList'});
     const unstableEmptyReports = useMemo(() => {
         if (type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT && isTransactionGroupListItemArray(data)) {
             return data.filter((item) => item.transactions.length === 0);
