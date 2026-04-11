@@ -122,6 +122,8 @@ function TransactionListItem<TItem extends ListItem>({
             : {...styles.flexColumn, ...styles.alignItemsStretch},
     ];
     const pressableStyle = useStableValue(unstablePressableStyle);
+    const unstableRowStyle = [styles.p3, styles.pv2, shouldUseNarrowLayout ? styles.pt2 : isLargeScreenWidth && styles.noBorderRadius];
+    const rowStyle = useStableValue(unstableRowStyle);
 
     const animatedHighlightStyle = useAnimatedHighlightStyle({
         borderRadius: StyleUtils.getSearchTableHighlightBorderRadius(isLargeScreenWidth),
@@ -255,7 +257,7 @@ function TransactionListItem<TItem extends ListItem>({
                             taxAmountColumnSize={taxAmountColumnSize}
                             shouldShowCheckbox={!!canSelectMultiple}
                             checkboxSentryLabel={CONST.SENTRY_LABEL.SEARCH.TRANSACTION_LIST_ITEM_CHECKBOX}
-                            style={[styles.p3, styles.pv2, shouldUseNarrowLayout ? styles.pt2 : isLargeScreenWidth && styles.noBorderRadius]}
+                            style={rowStyle}
                             violations={transactionViolations}
                             onArrowRightPress={() => onSelectRow(item, transactionPreviewData)}
                             isHover={hovered}
