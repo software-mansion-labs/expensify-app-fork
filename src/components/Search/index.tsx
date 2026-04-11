@@ -306,7 +306,8 @@ function Search({
         useSearchActionsContext();
     const [offset, setOffset] = useState(0);
 
-    const [transactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION);
+    const [unstableTransactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION);
+    const transactions = useStableValue(unstableTransactions);
     const [introSelected] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED);
     const [betas] = useOnyx(ONYXKEYS.BETAS);
     const previousTransactions = usePrevious(transactions);
