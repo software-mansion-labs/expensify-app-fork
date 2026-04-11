@@ -491,7 +491,7 @@ function Search({
 
     const shouldShowLoadingMoreItems = !shouldShowLoadingState && searchResults?.search?.isLoading && searchResults?.search?.offset > 0;
 
-    const loadMoreSkeletonReasonAttributes = useMemo<SkeletonSpanReasonAttributes>(
+    const unstableLoadMoreSkeletonReasonAttributes = useMemo<SkeletonSpanReasonAttributes>(
         () => ({
             context: 'Search.ListFooter',
             isSearchLoading: !!searchResults?.search?.isLoading,
@@ -499,6 +499,7 @@ function Search({
         }),
         [searchResults?.search?.isLoading, searchResults?.search?.offset],
     );
+    const loadMoreSkeletonReasonAttributes = useStableValue(unstableLoadMoreSkeletonReasonAttributes);
 
     const prevIsSearchResultEmpty = usePrevious(isSearchResultsEmpty);
 
