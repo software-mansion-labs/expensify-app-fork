@@ -234,27 +234,6 @@ function TransactionListItem<TItem extends ListItem>({
         });
     }, []);
 
-    const unstableInlineCallbackDepsRef = useRef({onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow});
-    // eslint-disable-next-line react-hooks/refs -- writing latest values for stable callback pattern
-    unstableInlineCallbackDepsRef.current = {onCheckboxPress, onSelectRow, item, transactionPreviewData, onLongPressRow};
-
-    const stableOnCheckboxPress = useCallback(() => {
-        const deps = unstableInlineCallbackDepsRef.current;
-        deps.onCheckboxPress?.(deps.item);
-    }, []);
-    const stableOnArrowRightPress = useCallback(() => {
-        const deps = unstableInlineCallbackDepsRef.current;
-        deps.onSelectRow(deps.item, deps.transactionPreviewData);
-    }, []);
-    const stableOnPress = useCallback(() => {
-        const deps = unstableInlineCallbackDepsRef.current;
-        deps.onSelectRow(deps.item, deps.transactionPreviewData);
-    }, []);
-    const stableOnLongPress = useCallback(() => {
-        const deps = unstableInlineCallbackDepsRef.current;
-        deps.onLongPressRow?.(deps.item);
-    }, []);
-
     const pressableRef = useRef<View>(null);
 
     useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
@@ -263,8 +242,8 @@ function TransactionListItem<TItem extends ListItem>({
         <OfflineWithFeedback pendingAction={item.pendingAction}>
             <PressableWithFeedback
                 ref={pressableRef}
-                onLongPress={stableOnLongPress}
-                onPress={stableOnPress}
+                onLongPress={() => onLongPressRow?.(item)}
+                onPress={() => onSelectRow(item, transactionPreviewData)}
                 disabled={isDisabled && !item.isSelected}
                 accessibilityLabel={item.text ?? ''}
                 role={getButtonRole(true)}
@@ -305,7 +284,7 @@ function TransactionListItem<TItem extends ListItem>({
                             policy={transactionItem.policy}
                             shouldShowTooltip={showTooltip}
                             onButtonPress={handleActionButtonPress}
-                            onCheckboxPress={stableOnCheckboxPress}
+                            onCheckboxPress={() => onCheckboxPress?.(item)}
                             shouldUseNarrowLayout={!isLargeScreenWidth}
                             isLargeScreenWidth={isLargeScreenWidth}
                             columns={columns}
@@ -323,7 +302,7 @@ function TransactionListItem<TItem extends ListItem>({
                             checkboxSentryLabel={CONST.SENTRY_LABEL.SEARCH.TRANSACTION_LIST_ITEM_CHECKBOX}
                             style={rowStyle}
                             violations={transactionViolations}
-                            onArrowRightPress={stableOnArrowRightPress}
+                            onArrowRightPress={() => onSelectRow(item, transactionPreviewData)}
                             isHover={hovered}
                             customCardNames={customCardNames}
                             reportActions={exportedReportActions}
