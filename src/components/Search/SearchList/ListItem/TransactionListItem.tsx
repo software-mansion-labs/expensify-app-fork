@@ -2,40 +2,41 @@
 // SearchStaticList (src/components/Search/SearchStaticList.tsx) used for fast
 // perceived performance. If you change the narrow-layout UI here, verify the
 // static version still looks visually identical.
-import React, { useRef } from 'react';
-import type { View } from 'react-native';
-import type { OnyxEntry } from 'react-native-onyx';
+import React, {useRef} from 'react';
+import type {View} from 'react-native';
+import type {OnyxEntry} from 'react-native-onyx';
 // Use the original useOnyx hook to get the real-time data from Onyx and not from the snapshot
 // eslint-disable-next-line no-restricted-imports
-import { useOnyx as originalUseOnyx } from 'react-native-onyx';
-import { getButtonRole } from '@components/Button/utils';
-import { useDelegateNoAccessActions, useDelegateNoAccessState } from '@components/DelegateNoAccessModalProvider';
+import {useOnyx as originalUseOnyx} from 'react-native-onyx';
+import {getButtonRole} from '@components/Button/utils';
+import {useDelegateNoAccessActions, useDelegateNoAccessState} from '@components/DelegateNoAccessModalProvider';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
-import { useSearchStateContext } from '@components/Search/SearchContext';
-import type { ListItem } from '@components/SelectionList/types';
+import {useSearchStateContext} from '@components/Search/SearchContext';
+import type {ListItem} from '@components/SelectionList/types';
 import TransactionItemRow from '@components/TransactionItemRow';
 import useAnimatedHighlightStyle from '@hooks/useAnimatedHighlightStyle';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useStableValue from '@hooks/useStableValue';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useSyncFocus from '@hooks/useSyncFocus';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type { TransactionPreviewData } from '@libs/actions/Search';
-import { handleActionButtonPress as handleActionButtonPressUtil } from '@libs/actions/Search';
-import { syncMissingAttendeesViolation } from '@libs/AttendeeUtils';
+import type {TransactionPreviewData} from '@libs/actions/Search';
+import {handleActionButtonPress as handleActionButtonPressUtil} from '@libs/actions/Search';
+import {syncMissingAttendeesViolation} from '@libs/AttendeeUtils';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
-import { isAttendeeTrackingEnabled } from '@libs/PolicyUtils';
-import { isInvoiceReport } from '@libs/ReportUtils';
-import { isViolationDismissed, mergeProhibitedViolations, shouldShowViolation } from '@libs/TransactionUtils';
+import {isAttendeeTrackingEnabled} from '@libs/PolicyUtils';
+import {isInvoiceReport} from '@libs/ReportUtils';
+import {isViolationDismissed, mergeProhibitedViolations, shouldShowViolation} from '@libs/TransactionUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import { isActionLoadingSelector } from '@src/selectors/ReportMetaData';
-import type { Policy, Report, ReportAction, ReportActions } from '@src/types/onyx';
-import type { TransactionViolation } from '@src/types/onyx/TransactionViolation';
-import type { TransactionListItemProps, TransactionListItemType } from './types';
+import {isActionLoadingSelector} from '@src/selectors/ReportMetaData';
+import type {Policy, Report, ReportAction, ReportActions} from '@src/types/onyx';
+import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
+import type {TransactionListItemProps, TransactionListItemType} from './types';
 import UserInfoAndActionButtonRow from './UserInfoAndActionButtonRow';
 
 // @track-refs
@@ -104,7 +105,7 @@ function TransactionListItem<TItem extends ListItem>({
         hasTransactionThreadReport: !!transactionThreadReport,
     };
 
-    const pressableStyle = [
+    const unstablePressableStyle = [
         styles.transactionListItemStyle,
         !isLargeScreenWidth && styles.pt3,
         item.isSelected && styles.activeComponentBG,
@@ -117,6 +118,7 @@ function TransactionListItem<TItem extends ListItem>({
               }
             : {...styles.flexColumn, ...styles.alignItemsStretch},
     ];
+    const pressableStyle = useStableValue(unstablePressableStyle);
 
     const animatedHighlightStyle = useAnimatedHighlightStyle({
         borderRadius: StyleUtils.getSearchTableHighlightBorderRadius(isLargeScreenWidth),
