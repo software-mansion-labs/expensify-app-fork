@@ -566,12 +566,13 @@ function Search({
 
     // For group-by views, each grouped item has a transactionsQueryJSON with a hash pointing to a separate snapshot
     // containing its individual transactions. We collect these hashes and fetch their snapshots to enrich the grouped items.
-    const groupByTransactionHashes = useMemo(() => {
+    const unstableGroupByTransactionHashes = useMemo(() => {
         if (!validGroupBy) {
             return [];
         }
         return (baseFilteredData as TransactionGroupListItemType[]).map((item) => hashToString(item.transactionsQueryJSON?.hash)).filter((hashValue): hashValue is string => !!hashValue);
     }, [validGroupBy, baseFilteredData]);
+    const groupByTransactionHashes = useStableValue(unstableGroupByTransactionHashes);
 
     const groupByTransactionSnapshots = useMultipleSnapshots(groupByTransactionHashes);
 
