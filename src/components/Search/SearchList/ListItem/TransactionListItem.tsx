@@ -39,6 +39,8 @@ import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
 import type {TransactionListItemProps, TransactionListItemType} from './types';
 import UserInfoAndActionButtonRow from './UserInfoAndActionButtonRow';
 
+const TRANSACTION_ITEM_DATA_SET = {[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true, [CONST.INNER_BOX_SHADOW_ELEMENT]: false} as const;
+
 function normalizeReportAccountIDs(report: OnyxEntry<Report>): OnyxEntry<Report> {
     if (!report || typeof report.lastActorAccountID !== 'string') {
         return report;
@@ -228,7 +230,7 @@ function TransactionListItem<TItem extends ListItem>({
                 isNested
                 onMouseDown={(e) => e.preventDefault()}
                 hoverStyle={[!unstableItem.isDisabled && styles.hoveredComponentBG, unstableItem.isSelected && styles.activeComponentBG]}
-                dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true, [CONST.INNER_BOX_SHADOW_ELEMENT]: false}}
+                dataSet={TRANSACTION_ITEM_DATA_SET}
                 id={unstableItem.keyForList ?? ''}
                 sentryLabel={CONST.SENTRY_LABEL.SEARCH.TRANSACTION_LIST_ITEM}
                 style={[
