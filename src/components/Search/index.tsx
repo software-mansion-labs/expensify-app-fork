@@ -1488,6 +1488,10 @@ function Search({
         [clearSelectedTransactions, queryJSON, onSortPressedCallback, navigation],
     );
 
+    const tableHeaderVisible = canSelectMultiple || (isLargeScreenWidth && !isChat);
+    const unstableSearchListContainerStyle = [styles.pv0, !tableHeaderVisible && !isSmallScreenWidth && styles.pt3];
+    const searchListContainerStyle = useStableValue(unstableSearchListContainerStyle);
+
     // This is a performance optimization for the submit-expense->search path only.
     // The SearchPage skeleton (useSearchLoadingState) doesn't cover this case because
     // Search must mount for its onLayout to flush the deferred CreateMoneyRequest API write, which would block the JS thread causing a slowdown on post expense creation navigation
@@ -1566,7 +1570,6 @@ function Search({
     const {shouldShowYearCreated, shouldShowYearSubmitted, shouldShowYearApproved, shouldShowYearPosted, shouldShowYearExported, shouldShowYearWithdrawn} = yearIndicators;
     const {shouldShowAmountInWideColumn, shouldShowTaxAmountInWideColumn} = amountIndicators;
     const shouldShowTableHeader = isLargeScreenWidth && !isChat;
-    const tableHeaderVisible = canSelectMultiple || shouldShowTableHeader;
 
     const shouldShowChartView = (view === CONST.SEARCH.VIEW.BAR || view === CONST.SEARCH.VIEW.LINE || view === CONST.SEARCH.VIEW.PIE) && !!validGroupBy;
 
@@ -1654,7 +1657,7 @@ function Search({
                         )
                     }
                     contentContainerStyle={[styles.pb3, contentContainerStyle]}
-                    containerStyle={[styles.pv0, !tableHeaderVisible && !isSmallScreenWidth && styles.pt3]}
+                    containerStyle={searchListContainerStyle}
                     shouldPreventDefaultFocusOnSelectRow={!canUseTouchScreen()}
                     onScroll={onSearchListScroll}
                     onEndReachedThreshold={0.75}
