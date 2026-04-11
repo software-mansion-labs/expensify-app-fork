@@ -83,7 +83,8 @@ function TransactionListItem<TItem extends ListItem>({
     // NOTE: Using || instead of ?? to treat empty string "" as falsy
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const policyID = transactionItem.policyID || snapshotReport?.policyID || activePolicyID;
-    const [parentPolicy] = originalUseOnyx(`${ONYXKEYS.COLLECTION.POLICY}${getNonEmptyStringOnyxID(policyID)}`);
+    const [unstableParentPolicy] = originalUseOnyx(`${ONYXKEYS.COLLECTION.POLICY}${getNonEmptyStringOnyxID(policyID)}`);
+    const parentPolicy = useStableValue(unstableParentPolicy);
     const unstableSnapshotPolicy = (currentSearchResults?.data?.[`${ONYXKEYS.COLLECTION.POLICY}${transactionItem.policyID}`] ?? {}) as Policy;
     const snapshotPolicy = useStableValue(unstableSnapshotPolicy);
 
