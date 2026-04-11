@@ -2,7 +2,11 @@ import Onyx from 'react-native-onyx';
 import type {CollectionKeyBase} from 'react-native-onyx/dist/types';
 import {isProduction as isProductionLib} from '@libs/Environment/Environment';
 import navigationRef from '@libs/Navigation/navigationRef';
+import {hasReceipt} from '@libs/TransactionUtils';
+import {setMoneyRequestDescription} from '@userActions/IOU';
+import {updateMoneyRequestDescription} from '@userActions/IOU/UpdateMoneyRequest';
 import {setSupportAuthToken} from '@userActions/Session';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 /**
@@ -108,6 +112,49 @@ export default function addUtilsToWindow() {
             }
 
             return undefined;
+        };
+
+        /**
+         * Benchmark helper: edits an expense description using the full production code path.
+         * Called from repo/search-refs/collect.ts via page.evaluate.
+         */
+        // @ts-expect-error -- benchmark utility, not part of the standard Window interface
+        window.__benchmarkEditDescription = async (transactionID: string, comment: string) => {
+            const get = (key: string) => window.Onyx.get(key as CollectionKeyBase);
+
+            const transaction = (await get(`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`)) as {reportID?: string; transactionID?: string} | undefined;
+            if (!transaction?.reportID) {
+                throw new Error(`Transaction ${transactionID} not found or has no reportID`);
+            }
+
+            const report = (await get(`${ONYXKEYS.COLLECTION.REPORT}${transaction.reportID}`)) as {parentReportID?: string; policyID?: string} | undefined;
+            const parentReport = report?.parentReportID ? await get(`${ONYXKEYS.COLLECTION.REPORT}${report.parentReportID}`) : undefined;
+            const policyID = report?.policyID;
+            const policy = policyID ? await get(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`) : undefined;
+            const policyTags = policyID ? await get(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`) : undefined;
+            const policyCategories = policyID ? await get(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`) : undefined;
+            const parentReportNextStep = report?.parentReportID ? await get(`${ONYXKEYS.COLLECTION.NEXT_STEP}${report.parentReportID}`) : undefined;
+
+            const session = (await get(ONYXKEYS.SESSION)) as {accountID?: number; email?: string} | undefined;
+            const betas = ((await get(ONYXKEYS.BETAS)) ?? []) as string[];
+
+            setMoneyRequestDescription(transactionID, comment, false, hasReceipt(transaction as Parameters<typeof hasReceipt>[0]));
+
+            updateMoneyRequestDescription({
+                transactionID,
+                transactionThreadReport: report as Parameters<typeof updateMoneyRequestDescription>[0]['transactionThreadReport'],
+                parentReport: parentReport as Parameters<typeof updateMoneyRequestDescription>[0]['parentReport'],
+                comment,
+                policy: policy as Parameters<typeof updateMoneyRequestDescription>[0]['policy'],
+                policyTagList: policyTags as Parameters<typeof updateMoneyRequestDescription>[0]['policyTagList'],
+                policyCategories: policyCategories as Parameters<typeof updateMoneyRequestDescription>[0]['policyCategories'],
+                currentUserAccountIDParam: session?.accountID ?? 0,
+                currentUserEmailParam: session?.email ?? '',
+                isASAPSubmitBetaEnabled: betas.includes(CONST.BETAS.ASAP_SUBMIT),
+                parentReportNextStep: parentReportNextStep as Parameters<typeof updateMoneyRequestDescription>[0]['parentReportNextStep'],
+            });
+
+            return {transactionID, comment};
         };
 
         // Define lazy getters for debug data
