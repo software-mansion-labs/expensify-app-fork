@@ -335,8 +335,9 @@ function Search({
         selector: selectFilteredReportActions,
     });
 
-    const [unstableCardFeeds, cardFeedsResult] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER);
+    const [unstableCardFeeds, unstableCardFeedsResult] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_DOMAIN_MEMBER);
     const cardFeeds = useStableValue(unstableCardFeeds);
+    const cardFeedsResult = useStableValue(unstableCardFeedsResult);
     const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST);
     const [onyxPersonalDetailsList] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST);
 
