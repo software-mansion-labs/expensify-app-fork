@@ -1435,6 +1435,9 @@ function Search({
         currentUpdateSelectAll(updatedTransactions);
     }, [isExpenseReportType, setSelectedTransactions, clearSelectedTransactions, email, accountID]);
 
+    const onLayoutDepsRef = useRef({handleSelectionListScroll, stableSortedData, onContentReady});
+    onLayoutDepsRef.current = {handleSelectionListScroll, stableSortedData, onContentReady};
+
     const onLayout = useCallback(() => {
         hasHadFirstLayout.current = true;
         endSpanWithAttributes(CONST.TELEMETRY.SPAN_NAVIGATE_TO_REPORTS, {[CONST.TELEMETRY.ATTRIBUTE_IS_WARM]: true});
@@ -1445,10 +1448,11 @@ function Search({
                 [CONST.TELEMETRY.ATTRIBUTE_WAS_LIST_EMPTY]: isSearchResultsEmptyRef.current,
             });
         }
-        handleSelectionListScroll(stableSortedData, searchListRef.current);
+        const {handleSelectionListScroll: currentHandleScroll, stableSortedData: currentSortedData, onContentReady: currentOnContentReady} = onLayoutDepsRef.current;
+        currentHandleScroll(currentSortedData, searchListRef.current);
         flushDeferredWrite(CONST.DEFERRED_LAYOUT_WRITE_KEYS.SEARCH);
-        onContentReady?.();
-    }, [handleSelectionListScroll, stableSortedData, onContentReady]);
+        currentOnContentReady?.();
+    }, []);
 
     // Must be a ref, not state: cancelNavigationSpans is called during render
     // (inside conditional returns), so using setState would trigger infinite re-renders.
