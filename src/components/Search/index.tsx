@@ -1343,14 +1343,25 @@ function Search({
         }
     }, [hasErrors, queryJSON, searchResults, shouldResetSearchQuery, setShouldResetSearchQuery]);
 
+    const fetchMoreResultsDepsRef = useRef({isFocused, hasMoreResults: searchResults?.search?.hasMoreResults, shouldShowLoadingState, shouldShowLoadingMoreItems, offset, allDataLength});
+    fetchMoreResultsDepsRef.current = {isFocused, hasMoreResults: searchResults?.search?.hasMoreResults, shouldShowLoadingState, shouldShowLoadingMoreItems, offset, allDataLength};
+
     const fetchMoreResults = useCallback(() => {
+        const {
+            isFocused: currentIsFocused,
+            hasMoreResults,
+            shouldShowLoadingState: currentLoadingState,
+            shouldShowLoadingMoreItems: currentLoadingMore,
+            offset: currentOffset,
+            allDataLength: currentAllDataLength,
+        } = fetchMoreResultsDepsRef.current;
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        if (!isFocused || !searchResults?.search?.hasMoreResults || shouldShowLoadingState || shouldShowLoadingMoreItems || offset > allDataLength - CONST.SEARCH.RESULTS_PAGE_SIZE) {
+        if (!currentIsFocused || !hasMoreResults || currentLoadingState || currentLoadingMore || currentOffset > currentAllDataLength - CONST.SEARCH.RESULTS_PAGE_SIZE) {
             return;
         }
 
         setOffset((prev) => prev + CONST.SEARCH.RESULTS_PAGE_SIZE);
-    }, [isFocused, searchResults?.search?.hasMoreResults, shouldShowLoadingMoreItems, shouldShowLoadingState, offset, allDataLength]);
+    }, []);
 
     const toggleAllTransactionsDepsRef = useRef({
         validGroupBy,
