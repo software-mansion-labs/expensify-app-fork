@@ -928,295 +928,236 @@ function Search({
         isRefreshingSelection.current = false;
     }, [selectedTransactions]);
 
-    const unstableUpdateSelectAllDepsRef = useRef({filteredData, validGroupBy, searchResultsHasMoreResults: searchResults?.search?.hasMoreResults});
-    unstableUpdateSelectAllDepsRef.current = {filteredData, validGroupBy, searchResultsHasMoreResults: searchResults?.search?.hasMoreResults};
-
-    const updateSelectAllMatchingItemsState = useCallback(
-        (updatedSelectedTransactions: SelectedTransactions) => {
-            const {filteredData: currentFilteredData, validGroupBy: currentValidGroupBy, searchResultsHasMoreResults} = unstableUpdateSelectAllDepsRef.current;
-            if (!currentFilteredData.length || isRefreshingSelection.current) {
-                return;
-            }
-            const areItemsGrouped = !!currentValidGroupBy || type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT;
-            const totalSelectableItemsCount = areItemsGrouped
-                ? (currentFilteredData as TransactionGroupListItemType[]).reduce((count, item) => {
-                      // For empty reports, count the report itself as a selectable item
-                      if (item.transactions.length === 0 && isTransactionReportGroupListItemType(item)) {
-                          if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
-                              return count;
-                          }
-                          return count + 1;
+    const updateSelectAllMatchingItemsState = (updatedSelectedTransactions: SelectedTransactions) => {
+        if (!filteredData.length || isRefreshingSelection.current) {
+            return;
+        }
+        const areItemsGrouped = !!validGroupBy || type === CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT;
+        const totalSelectableItemsCount = areItemsGrouped
+            ? (filteredData as TransactionGroupListItemType[]).reduce((count, item) => {
+                  // For empty reports, count the report itself as a selectable item
+                  if (item.transactions.length === 0 && isTransactionReportGroupListItemType(item)) {
+                      if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
+                          return count;
                       }
-                      // For regular reports, count all transactions except pending delete ones
-                      const selectableTransactions = item.transactions.filter((transaction) => !isTransactionPendingDelete(transaction));
-                      return count + selectableTransactions.length;
-                  }, 0)
-                : currentFilteredData.length;
-            const areAllItemsSelected = totalSelectableItemsCount === Object.keys(updatedSelectedTransactions).length;
+                      return count + 1;
+                  }
+                  // For regular reports, count all transactions except pending delete ones
+                  const selectableTransactions = item.transactions.filter((transaction) => !isTransactionPendingDelete(transaction));
+                  return count + selectableTransactions.length;
+              }, 0)
+            : filteredData.length;
+        const areAllItemsSelected = totalSelectableItemsCount === Object.keys(updatedSelectedTransactions).length;
 
-            // If the user has selected all the expenses in their view but there are more expenses matched by the search
-            // give them the option to select all matching expenses
-            setShouldShowSelectAllMatchingItems(!!(areAllItemsSelected && searchResultsHasMoreResults));
-            if (!areAllItemsSelected) {
-                selectAllMatchingItems(false);
-            }
-        },
-        [type, setShouldShowSelectAllMatchingItems, selectAllMatchingItems],
-    );
-
-    const unstableToggleTransactionDepsRef = useRef({
-        selectedTransactions,
-        filteredData,
-        updateSelectAllMatchingItemsState,
-        transactions,
-        outstandingReportsByPolicyID,
-        searchResultsData: searchResults?.data,
-    });
-    unstableToggleTransactionDepsRef.current = {
-        selectedTransactions,
-        filteredData,
-        updateSelectAllMatchingItemsState,
-        transactions,
-        outstandingReportsByPolicyID,
-        searchResultsData: searchResults?.data,
+        // If the user has selected all the expenses in their view but there are more expenses matched by the search
+        // give them the option to select all matching expenses
+        setShouldShowSelectAllMatchingItems(!!(areAllItemsSelected && searchResults?.search?.hasMoreResults));
+        if (!areAllItemsSelected) {
+            selectAllMatchingItems(false);
+        }
     };
 
-    const toggleTransaction = useCallback(
-        (item: SearchListItem, itemTransactions?: TransactionListItemType[]) => {
-            const {
-                selectedTransactions: currentSelectedTransactions,
-                filteredData: currentFilteredData,
-                updateSelectAllMatchingItemsState: currentUpdateSelectAll,
-                transactions: currentTransactionsData,
-                outstandingReportsByPolicyID: currentOutstandingReports,
-                searchResultsData,
-            } = unstableToggleTransactionDepsRef.current;
-            if (isReportActionListItemType(item)) {
+    const toggleTransaction = (item: SearchListItem, itemTransactions?: TransactionListItemType[]) => {
+        if (isReportActionListItemType(item)) {
+            return;
+        }
+        if (isTaskListItemType(item)) {
+            return;
+        }
+        if (isTransactionListItemType(item)) {
+            if (!item.keyForList) {
                 return;
             }
-            if (isTaskListItemType(item)) {
+            if (isTransactionPendingDelete(item)) {
                 return;
             }
-            if (isTransactionListItemType(item)) {
-                if (!item.keyForList) {
-                    return;
-                }
-                if (isTransactionPendingDelete(item)) {
-                    return;
-                }
-                const itemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${item.transactionID}`] as OnyxEntry<Transaction>;
-                const originalItemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
-                const updatedTransactions = prepareTransactionsList(
-                    item,
-                    itemTransaction,
-                    originalItemTransaction,
-                    currentSelectedTransactions,
-                    email ?? '',
-                    accountID,
-                    currentOutstandingReports,
-                );
-                setSelectedTransactions(updatedTransactions, currentFilteredData);
-                currentUpdateSelectAll(updatedTransactions);
+            const itemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${item.transactionID}`] as OnyxEntry<Transaction>;
+            const originalItemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+            const updatedTransactions = prepareTransactionsList(item, itemTransaction, originalItemTransaction, selectedTransactions, email ?? '', accountID, outstandingReportsByPolicyID);
+            setSelectedTransactions(updatedTransactions, filteredData);
+            updateSelectAllMatchingItemsState(updatedTransactions);
+            return;
+        }
+
+        const currentTransactions = itemTransactions ?? item.transactions;
+
+        // Handle empty reports - treat the report itself as selectable
+        if (currentTransactions.length === 0 && isTransactionReportGroupListItemType(item)) {
+            const reportKey = item.keyForList;
+            if (!reportKey) {
                 return;
             }
 
-            const currentTransactions = itemTransactions ?? item.transactions;
-
-            // Handle empty reports - treat the report itself as selectable
-            if (currentTransactions.length === 0 && isTransactionReportGroupListItemType(item)) {
-                const reportKey = item.keyForList;
-                if (!reportKey) {
-                    return;
-                }
-
-                if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
-                    return;
-                }
-
-                if (currentSelectedTransactions[reportKey]?.isSelected) {
-                    // Deselect the empty report
-                    const reducedSelectedTransactions: SelectedTransactions = {
-                        ...currentSelectedTransactions,
-                    };
-                    delete reducedSelectedTransactions[reportKey];
-                    setSelectedTransactions(reducedSelectedTransactions, currentFilteredData);
-                    currentUpdateSelectAll(reducedSelectedTransactions);
-                    return;
-                }
-
-                const [, emptyReportSelection] = mapEmptyReportToSelectedEntry(item);
-                const updatedTransactions = {
-                    ...currentSelectedTransactions,
-                    [reportKey]: emptyReportSelection,
-                };
-                setSelectedTransactions(updatedTransactions, currentFilteredData);
-                currentUpdateSelectAll(updatedTransactions);
-                return;
-            }
-
-            if (currentTransactions.some((transaction) => currentSelectedTransactions[transaction.keyForList]?.isSelected)) {
-                const reducedSelectedTransactions: SelectedTransactions = {
-                    ...currentSelectedTransactions,
-                };
-
-                for (const transaction of currentTransactions) {
-                    delete reducedSelectedTransactions[transaction.keyForList];
-                }
-
-                setSelectedTransactions(reducedSelectedTransactions, currentFilteredData);
-                currentUpdateSelectAll(reducedSelectedTransactions);
-                return;
-            }
-
-            const updatedTransactions = {
-                ...currentSelectedTransactions,
-                ...Object.fromEntries(
-                    currentTransactions
-                        .filter((t) => !isTransactionPendingDelete(t))
-                        .map((transactionItem) => {
-                            const itemTransaction = (searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] ??
-                                currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`]) as OnyxEntry<Transaction>;
-                            const originalItemTransaction =
-                                searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`] ??
-                                currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
-                            return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, currentOutstandingReports);
-                        }),
-                ),
-            };
-            setSelectedTransactions(updatedTransactions, currentFilteredData);
-            currentUpdateSelectAll(updatedTransactions);
-        },
-        [setSelectedTransactions, email, accountID],
-    );
-
-    const onSelectRow = useCallback(
-        (item: SearchListItem, transactionPreviewData?: TransactionPreviewData) => {
             if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
                 return;
             }
 
-            if (isMobileSelectionModeEnabled) {
-                toggleTransaction(item);
+            if (selectedTransactions[reportKey]?.isSelected) {
+                const reducedSelectedTransactions: SelectedTransactions = {
+                    ...selectedTransactions,
+                };
+                delete reducedSelectedTransactions[reportKey];
+                setSelectedTransactions(reducedSelectedTransactions, filteredData);
+                updateSelectAllMatchingItemsState(reducedSelectedTransactions);
                 return;
             }
 
-            const isTransactionItem = isTransactionListItemType(item);
-            const backTo = Navigation.getActiveRoute();
-            // If we're trying to open a transaction without a transaction thread, let's create the thread and navigate the user
-            if (isTransactionItem && !item?.reportAction?.childReportID) {
-                // If the report is unreported (self DM), we want to open the track expense thread instead of a report with an ID of 0
-                const shouldOpenTransactionThread = !isOneTransactionReport(item.report) || item.reportID === CONST.REPORT.UNREPORTED_REPORT_ID;
-                createAndOpenSearchTransactionThread(item, introSelected, backTo, email ?? '', accountID, betas, item?.reportAction?.childReportID, undefined, shouldOpenTransactionThread);
-                if (shouldOpenTransactionThread) {
-                    return;
-                }
+            const [, emptyReportSelection] = mapEmptyReportToSelectedEntry(item);
+            const updatedTransactions = {
+                ...selectedTransactions,
+                [reportKey]: emptyReportSelection,
+            };
+            setSelectedTransactions(updatedTransactions, filteredData);
+            updateSelectAllMatchingItemsState(updatedTransactions);
+            return;
+        }
+
+        if (currentTransactions.some((transaction) => selectedTransactions[transaction.keyForList]?.isSelected)) {
+            const reducedSelectedTransactions: SelectedTransactions = {
+                ...selectedTransactions,
+            };
+
+            for (const transaction of currentTransactions) {
+                delete reducedSelectedTransactions[transaction.keyForList];
             }
 
-            if (isTransactionGroupListItemType(item) && !isTransactionReportGroupListItemType(item) && item.transactionsQueryJSON) {
-                handleSearch({
-                    queryJSON: item.transactionsQueryJSON,
-                    searchKey: currentSearchKey,
-                    offset: 0,
-                    shouldCalculateTotals: false,
-                    isLoading: false,
-                });
+            setSelectedTransactions(reducedSelectedTransactions, filteredData);
+            updateSelectAllMatchingItemsState(reducedSelectedTransactions);
+            return;
+        }
+
+        const updatedTransactions = {
+            ...selectedTransactions,
+            ...Object.fromEntries(
+                currentTransactions
+                    .filter((t) => !isTransactionPendingDelete(t))
+                    .map((transactionItem) => {
+                        const itemTransaction = (searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] ??
+                            transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`]) as OnyxEntry<Transaction>;
+                        const originalItemTransaction =
+                            searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`] ??
+                            transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, outstandingReportsByPolicyID);
+                    }),
+            ),
+        };
+        setSelectedTransactions(updatedTransactions, filteredData);
+        updateSelectAllMatchingItemsState(updatedTransactions);
+    };
+
+    const onSelectRow = (item: SearchListItem, transactionPreviewData?: TransactionPreviewData) => {
+        if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
+            return;
+        }
+
+        if (isMobileSelectionModeEnabled) {
+            toggleTransaction(item);
+            return;
+        }
+
+        const isTransactionItem = isTransactionListItemType(item);
+        const backTo = Navigation.getActiveRoute();
+        // If we're trying to open a transaction without a transaction thread, let's create the thread and navigate the user
+        if (isTransactionItem && !item?.reportAction?.childReportID) {
+            // If the report is unreported (self DM), we want to open the track expense thread instead of a report with an ID of 0
+            const shouldOpenTransactionThread = !isOneTransactionReport(item.report) || item.reportID === CONST.REPORT.UNREPORTED_REPORT_ID;
+            createAndOpenSearchTransactionThread(item, introSelected, backTo, email ?? '', accountID, betas, item?.reportAction?.childReportID, undefined, shouldOpenTransactionThread);
+            if (shouldOpenTransactionThread) {
                 return;
             }
+        }
 
-            if (!isTransactionItem && !isReportActionListItemType(item) && !isTaskListItemType(item) && !isTransactionGroupListItemType(item)) {
-                return;
-            }
-
-            const transactionItem = item as TransactionListItemType;
-            const reportActionItem = item as ReportActionListItemType;
-
-            let reportID = transactionItem.reportID ?? reportActionItem.reportID;
-            if (isTransactionItem && transactionItem?.reportAction?.childReportID) {
-                const isFromSelfDM = transactionItem.reportID === CONST.REPORT.UNREPORTED_REPORT_ID;
-                const isFromOneTransactionReport = isOneTransactionReport(transactionItem.report);
-
-                if (isFromSelfDM || !isFromOneTransactionReport) {
-                    reportID = transactionItem?.reportAction?.childReportID;
-                }
-            }
-
-            if (!reportID) {
-                return;
-            }
-
-            startSpan(`${CONST.TELEMETRY.SPAN_OPEN_REPORT}_${reportID}`, {
-                name: 'Search',
-                op: CONST.TELEMETRY.SPAN_OPEN_REPORT,
+        if (isTransactionGroupListItemType(item) && !isTransactionReportGroupListItemType(item) && item.transactionsQueryJSON) {
+            handleSearch({
+                queryJSON: item.transactionsQueryJSON,
+                searchKey: currentSearchKey,
+                offset: 0,
+                shouldCalculateTotals: false,
+                isLoading: false,
             });
+            return;
+        }
 
-            if (isTransactionGroupListItemType(item)) {
-                const firstTransaction = item.transactions.at(0);
-                if (item.isOneTransactionReport && firstTransaction && transactionPreviewData) {
-                    if (!firstTransaction?.reportAction?.childReportID) {
-                        createAndOpenSearchTransactionThread(
-                            firstTransaction,
-                            introSelected,
-                            backTo,
-                            email ?? '',
-                            accountID,
-                            betas,
-                            firstTransaction?.reportAction?.childReportID,
-                            transactionPreviewData,
-                            false,
-                        );
-                    } else {
-                        setOptimisticDataForTransactionThreadPreview(firstTransaction, transactionPreviewData, firstTransaction?.reportAction?.childReportID);
-                    }
-                }
+        if (!isTransactionItem && !isReportActionListItemType(item) && !isTaskListItemType(item) && !isTransactionGroupListItemType(item)) {
+            return;
+        }
 
-                if (item.transactions.length > 1) {
-                    markReportIDAsMultiTransactionExpense(reportID);
+        const transactionItem = item as TransactionListItemType;
+        const reportActionItem = item as ReportActionListItemType;
+
+        let reportID = transactionItem.reportID ?? reportActionItem.reportID;
+        if (isTransactionItem && transactionItem?.reportAction?.childReportID) {
+            const isFromSelfDM = transactionItem.reportID === CONST.REPORT.UNREPORTED_REPORT_ID;
+            const isFromOneTransactionReport = isOneTransactionReport(transactionItem.report);
+
+            if (isFromSelfDM || !isFromOneTransactionReport) {
+                reportID = transactionItem?.reportAction?.childReportID;
+            }
+        }
+
+        if (!reportID) {
+            return;
+        }
+
+        startSpan(`${CONST.TELEMETRY.SPAN_OPEN_REPORT}_${reportID}`, {
+            name: 'Search',
+            op: CONST.TELEMETRY.SPAN_OPEN_REPORT,
+        });
+
+        if (isTransactionGroupListItemType(item)) {
+            const firstTransaction = item.transactions.at(0);
+            if (item.isOneTransactionReport && firstTransaction && transactionPreviewData) {
+                if (!firstTransaction?.reportAction?.childReportID) {
+                    createAndOpenSearchTransactionThread(
+                        firstTransaction,
+                        introSelected,
+                        backTo,
+                        email ?? '',
+                        accountID,
+                        betas,
+                        firstTransaction?.reportAction?.childReportID,
+                        transactionPreviewData,
+                        false,
+                    );
                 } else {
-                    unmarkReportIDAsMultiTransactionExpense(reportID);
+                    setOptimisticDataForTransactionThreadPreview(firstTransaction, transactionPreviewData, firstTransaction?.reportAction?.childReportID);
                 }
-
-                requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID, backTo})));
-                return;
             }
 
-            if (isReportActionListItemType(item)) {
-                // Keep deep-linking for persisted actions, but avoid anchoring to optimistic created-task actions that may not be resolvable offline.
-                const isOptimisticCreatedTaskAction = reportActionItem.isOptimisticAction ?? false;
-                const shouldSkipReportActionID =
-                    isCreatedTaskReportAction(reportActionItem) && (isOptimisticCreatedTaskAction || reportActionItem.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD);
-
-                const reportActionID = shouldSkipReportActionID ? undefined : reportActionItem.reportActionID;
-                Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, reportActionID, backTo}));
-                return;
+            if (item.transactions.length > 1) {
+                markReportIDAsMultiTransactionExpense(reportID);
+            } else {
+                unmarkReportIDAsMultiTransactionExpense(reportID);
             }
 
-            if (isTaskListItemType(item)) {
-                requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, backTo})));
-                return;
-            }
+            requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID, backTo})));
+            return;
+        }
 
-            markReportIDAsExpense(reportID);
+        if (isReportActionListItemType(item)) {
+            // Keep deep-linking for persisted actions, but avoid anchoring to optimistic created-task actions that may not be resolvable offline.
+            const isOptimisticCreatedTaskAction = reportActionItem.isOptimisticAction ?? false;
+            const shouldSkipReportActionID =
+                isCreatedTaskReportAction(reportActionItem) && (isOptimisticCreatedTaskAction || reportActionItem.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD);
 
-            if (isTransactionItem && transactionPreviewData) {
-                setOptimisticDataForTransactionThreadPreview(transactionItem, transactionPreviewData, transactionItem?.reportAction?.childReportID);
-            }
+            const reportActionID = shouldSkipReportActionID ? undefined : reportActionItem.reportActionID;
+            Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, reportActionID, backTo}));
+            return;
+        }
 
+        if (isTaskListItemType(item)) {
             requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, backTo})));
-        },
-        [
-            isMobileSelectionModeEnabled,
-            markReportIDAsExpense,
-            toggleTransaction,
-            handleSearch,
-            currentSearchKey,
-            markReportIDAsMultiTransactionExpense,
-            unmarkReportIDAsMultiTransactionExpense,
-            introSelected,
-            betas,
-            email,
-            accountID,
-        ],
-    );
+            return;
+        }
+
+        markReportIDAsExpense(reportID);
+
+        if (isTransactionItem && transactionPreviewData) {
+            setOptimisticDataForTransactionThreadPreview(transactionItem, transactionPreviewData, transactionItem?.reportAction?.childReportID);
+        }
+
+        requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, backTo})));
+    };
 
     const shouldUseStrictDefaultExpenseColumns = currentSearchKey === CONST.SEARCH.SEARCH_KEYS.EXPENSES && isDefaultExpensesQuery(queryJSON);
 
@@ -1355,74 +1296,28 @@ function Search({
         }
     }, [hasErrors, queryJSON, searchResults, shouldResetSearchQuery, setShouldResetSearchQuery]);
 
-    const unstableFetchMoreResultsDepsRef = useRef({
-        isFocused,
-        hasMoreResults: searchResults?.search?.hasMoreResults,
-        shouldShowLoadingState,
-        shouldShowLoadingMoreItems,
-        offset,
-        allDataLength,
-    });
-    unstableFetchMoreResultsDepsRef.current = {isFocused, hasMoreResults: searchResults?.search?.hasMoreResults, shouldShowLoadingState, shouldShowLoadingMoreItems, offset, allDataLength};
-
-    const fetchMoreResults = useCallback(() => {
-        const {
-            isFocused: currentIsFocused,
-            hasMoreResults,
-            shouldShowLoadingState: currentLoadingState,
-            shouldShowLoadingMoreItems: currentLoadingMore,
-            offset: currentOffset,
-            allDataLength: currentAllDataLength,
-        } = unstableFetchMoreResultsDepsRef.current;
+    const fetchMoreResults = () => {
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        if (!currentIsFocused || !hasMoreResults || currentLoadingState || currentLoadingMore || currentOffset > currentAllDataLength - CONST.SEARCH.RESULTS_PAGE_SIZE) {
+        if (!isFocused || !searchResults?.search?.hasMoreResults || shouldShowLoadingState || shouldShowLoadingMoreItems || offset > allDataLength - CONST.SEARCH.RESULTS_PAGE_SIZE) {
             return;
         }
 
         setOffset((prev) => prev + CONST.SEARCH.RESULTS_PAGE_SIZE);
-    }, []);
-
-    const unstableToggleAllTransactionsDepsRef = useRef({
-        validGroupBy,
-        selectedTransactions,
-        filteredData,
-        updateSelectAllMatchingItemsState,
-        transactions,
-        outstandingReportsByPolicyID,
-        searchResultsData: searchResults?.data,
-    });
-    unstableToggleAllTransactionsDepsRef.current = {
-        validGroupBy,
-        selectedTransactions,
-        filteredData,
-        updateSelectAllMatchingItemsState,
-        transactions,
-        outstandingReportsByPolicyID,
-        searchResultsData: searchResults?.data,
     };
 
-    const toggleAllTransactions = useCallback(() => {
-        const {
-            validGroupBy: currentValidGroupBy,
-            selectedTransactions: currentSelectedTransactions,
-            filteredData: currentFilteredData,
-            updateSelectAllMatchingItemsState: currentUpdateSelectAll,
-            transactions: currentTransactionsData,
-            outstandingReportsByPolicyID: currentOutstandingReports,
-            searchResultsData,
-        } = unstableToggleAllTransactionsDepsRef.current;
-        const areItemsGrouped = !!currentValidGroupBy || isExpenseReportType;
-        const totalSelected = Object.keys(currentSelectedTransactions).length;
+    const toggleAllTransactions = () => {
+        const areItemsGrouped = !!validGroupBy || isExpenseReportType;
+        const totalSelected = Object.keys(selectedTransactions).length;
 
         if (totalSelected > 0) {
             clearSelectedTransactions();
-            currentUpdateSelectAll({});
+            updateSelectAllMatchingItemsState({});
             return;
         }
 
         let updatedTransactions: SelectedTransactions;
         if (areItemsGrouped) {
-            const allSelections: Array<[string, SelectedTransactionInfo]> = (currentFilteredData as TransactionGroupListItemType[]).flatMap((item) => {
+            const allSelections: Array<[string, SelectedTransactionInfo]> = (filteredData as TransactionGroupListItemType[]).flatMap((item) => {
                 if (item.transactions.length === 0 && isTransactionReportGroupListItemType(item) && item.keyForList) {
                     if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
                         return [];
@@ -1432,32 +1327,28 @@ function Search({
                 return item.transactions
                     .filter((t) => !isTransactionPendingDelete(t))
                     .map((transactionItem) => {
-                        const itemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
-                        const originalItemTransaction = currentTransactionsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
-                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, currentOutstandingReports);
+                        const itemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
+                        const originalItemTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, outstandingReportsByPolicyID);
                     });
             });
             updatedTransactions = Object.fromEntries(allSelections);
         } else {
-            // When items are not grouped, data is TransactionListItemType[] not TransactionGroupListItemType[]
             updatedTransactions = Object.fromEntries(
-                (currentFilteredData as TransactionListItemType[])
+                (filteredData as TransactionListItemType[])
                     .filter((t) => !isTransactionPendingDelete(t))
                     .map((transactionItem) => {
-                        const itemTransaction = searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
-                        const originalItemTransaction = searchResultsData?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
-                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, currentOutstandingReports);
+                        const itemTransaction = searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`] as OnyxEntry<Transaction>;
+                        const originalItemTransaction = searchResults?.data?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${itemTransaction?.comment?.originalTransactionID}`];
+                        return mapTransactionItemToSelectedEntry(transactionItem, itemTransaction, originalItemTransaction, email ?? '', accountID, outstandingReportsByPolicyID);
                     }),
             );
         }
-        setSelectedTransactions(updatedTransactions, currentFilteredData);
-        currentUpdateSelectAll(updatedTransactions);
-    }, [isExpenseReportType, setSelectedTransactions, clearSelectedTransactions, email, accountID]);
+        setSelectedTransactions(updatedTransactions, filteredData);
+        updateSelectAllMatchingItemsState(updatedTransactions);
+    };
 
-    const unstableOnLayoutDepsRef = useRef({handleSelectionListScroll, stableSortedData, onContentReady});
-    unstableOnLayoutDepsRef.current = {handleSelectionListScroll, stableSortedData, onContentReady};
-
-    const onLayout = useCallback(() => {
+    const onLayout = () => {
         hasHadFirstLayout.current = true;
         endSpanWithAttributes(CONST.TELEMETRY.SPAN_NAVIGATE_TO_REPORTS, {[CONST.TELEMETRY.ATTRIBUTE_IS_WARM]: true});
         const pending = getPendingSubmitFollowUpAction();
@@ -1467,11 +1358,10 @@ function Search({
                 [CONST.TELEMETRY.ATTRIBUTE_WAS_LIST_EMPTY]: isSearchResultsEmptyRef.current,
             });
         }
-        const {handleSelectionListScroll: currentHandleScroll, stableSortedData: currentSortedData, onContentReady: currentOnContentReady} = unstableOnLayoutDepsRef.current;
-        currentHandleScroll(currentSortedData, searchListRef.current);
+        handleSelectionListScroll(stableSortedData, searchListRef.current);
         flushDeferredWrite(CONST.DEFERRED_LAYOUT_WRITE_KEYS.SEARCH);
-        currentOnContentReady?.();
-    }, []);
+        onContentReady?.();
+    };
 
     // Must be a ref, not state: cancelNavigationSpans is called during render
     // (inside conditional returns), so using setState would trigger infinite re-renders.
