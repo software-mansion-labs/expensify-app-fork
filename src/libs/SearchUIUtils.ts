@@ -1833,6 +1833,13 @@ function getTransactionsSections({
             const transactionPendingAction = getTransactionPendingAction(transactionItem);
             const transactionSection: TransactionListItemType = {
                 ...transactionItem,
+                // Stabilize fields that oscillate due to Onyx updateSnapshots copying
+                // stale defaults from the regular transaction collection into the
+                // snapshot. These are not read by rendering components (amounts are
+                // pre-computed into formattedTotal, column visibility uses raw data).
+                originalAmount: undefined,
+                originalCurrency: undefined,
+                taxCode: undefined,
                 ...(transactionPendingAction ? {pendingAction: transactionPendingAction} : {}),
                 keyForList: transactionItem.transactionID,
                 action: getAction(allActions),
