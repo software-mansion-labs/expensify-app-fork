@@ -39,6 +39,8 @@ import type {TransactionViolation} from '@src/types/onyx/TransactionViolation';
 import type {TransactionListItemProps, TransactionListItemType} from './types';
 import UserInfoAndActionButtonRow from './UserInfoAndActionButtonRow';
 
+const PRESSABLE_DATA_SET = {[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true, [CONST.INNER_BOX_SHADOW_ELEMENT]: false} as const;
+
 // @track-refs
 function TransactionListItem<TItem extends ListItem>({
     item,
@@ -214,7 +216,7 @@ function TransactionListItem<TItem extends ListItem>({
                 isNested
                 onMouseDown={(e) => e.preventDefault()}
                 hoverStyle={[!item.isDisabled && styles.hoveredComponentBG, item.isSelected && styles.activeComponentBG]}
-                dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true, [CONST.INNER_BOX_SHADOW_ELEMENT]: false}}
+                dataSet={PRESSABLE_DATA_SET}
                 id={item.keyForList ?? ''}
                 sentryLabel={CONST.SENTRY_LABEL.SEARCH.TRANSACTION_LIST_ITEM}
                 style={[
