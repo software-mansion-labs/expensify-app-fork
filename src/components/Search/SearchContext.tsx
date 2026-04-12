@@ -370,10 +370,17 @@ function SearchContextProvider({children}: SearchContextProps) {
             selectAllMatchingItems,
             setShouldResetSearchQuery,
         }),
-        // setShouldShowActionsBarLoading, setLastSearchType, setShouldShowSelectAllMatchingItems,
-        // and selectAllMatchingItems are stable useState setters — excluded from deps intentionally.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [removeTransaction, setSelectedTransactions, setCurrentSelectedTransactionReportID, clearSelectedTransactions, setShouldResetSearchQuery],
+        [
+            removeTransaction,
+            setSelectedTransactions,
+            setCurrentSelectedTransactionReportID,
+            clearSelectedTransactions,
+            setShouldResetSearchQuery,
+            setShouldShowActionsBarLoading,
+            setLastSearchType,
+            setShouldShowSelectAllMatchingItems,
+            selectAllMatchingItems,
+        ],
     );
 
     return (
