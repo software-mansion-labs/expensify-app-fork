@@ -1,5 +1,5 @@
 import {useRoute} from '@react-navigation/native';
-import React, {useCallback, useContext, useLayoutEffect, useRef} from 'react';
+import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef} from 'react';
 import {View} from 'react-native';
 // eslint-disable-next-line no-restricted-imports
 import type {ScrollView as RNScrollView, ScrollViewProps} from 'react-native';
@@ -88,12 +88,15 @@ function SearchTypeMenuWide({queryJSON}: SearchTypeMenuProps) {
         scrollViewRef.current.scrollTo({y: scrollOffset, animated: false});
     }, [getScrollOffset, route]);
 
-    const sectionStartIndices = [0];
-    for (const section of typeMenuSections) {
-        sectionStartIndices.push((sectionStartIndices.at(-1) ?? 0) + section.menuItems.length);
-    }
-    const exploreSection = typeMenuSections.find((section) => section.translationPath === 'common.explore');
-    const nonExploreSections = typeMenuSections.filter((section) => section.translationPath !== 'common.explore');
+    const sectionStartIndices = useMemo(() => {
+        const indices = [0];
+        for (const section of typeMenuSections) {
+            indices.push((indices.at(-1) ?? 0) + section.menuItems.length);
+        }
+        return indices;
+    }, [typeMenuSections]);
+    const exploreSection = useMemo(() => typeMenuSections.find((section) => section.translationPath === 'common.explore'), [typeMenuSections]);
+    const nonExploreSections = useMemo(() => typeMenuSections.filter((section) => section.translationPath !== 'common.explore'), [typeMenuSections]);
 
     const handleTypeMenuItemPress = singleExecution((searchQuery: string) => {
         clearSelectedTransactions();
