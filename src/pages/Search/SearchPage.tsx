@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import Animated from 'react-native-reanimated';
 import {useSearchActionsContext, useSearchStateContext} from '@components/Search/SearchContext';
 import type {SearchParams} from '@components/Search/types';
@@ -24,7 +24,6 @@ import SearchPageWide from './SearchPageWide';
 
 type SearchPageProps = PlatformStackScreenProps<SearchFullscreenNavigatorParamList, typeof SCREENS.SEARCH.ROOT>;
 
-// @track-refs
 function SearchPage({route}: SearchPageProps) {
     const {translate} = useLocalize();
     useDocumentTitle(translate('common.search'));
@@ -35,7 +34,7 @@ function SearchPage({route}: SearchPageProps) {
 
     const isMobileSelectionModeEnabled = useMobileSelectionMode(clearSelectedTransactions);
 
-    const [lastNonEmptySearchResults, setLastNonEmptySearchResults] = useState<SearchResults | undefined>(undefined);
+    const lastNonEmptySearchResults = useRef<SearchResults | undefined>(undefined);
 
     useConfirmReadyToOpenApp();
     useSearchPageSetup(currentSearchQueryJSON);
@@ -47,7 +46,7 @@ function SearchPage({route}: SearchPageProps) {
 
         setLastSearchType(currentSearchResults.search.type);
         if (currentSearchResults.data) {
-            setLastNonEmptySearchResults(currentSearchResults);
+            lastNonEmptySearchResults.current = currentSearchResults;
         }
     }, [lastSearchType, currentSearchQueryJSON, setLastSearchType, currentSearchResults]);
 
@@ -61,7 +60,7 @@ function SearchPage({route}: SearchPageProps) {
     if (currentSearchResults?.data !== undefined) {
         searchResults = currentSearchResults;
     } else if (isSorting) {
-        searchResults = lastNonEmptySearchResults;
+        searchResults = lastNonEmptySearchResults.current;
     }
 
     const metadata = searchResults?.search;
