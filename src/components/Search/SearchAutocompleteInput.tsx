@@ -16,6 +16,7 @@ import useFocusAfterNav from '@hooks/useFocusAfterNav';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
+import useStableCallback from '@hooks/useStableCallback';
 import useStableValue from '@hooks/useStableValue';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -196,10 +197,10 @@ function SearchAutocompleteInput({
         return parseForLiveMarkdown(input, currentUserDisplayName, substitutionMap, emailListSharedValue, currencySharedValue, categorySharedValue, tagSharedValue, exportedToSharedValue);
     };
 
-    const clearInput = () => {
+    const clearInput = useStableCallback(() => {
         onSearchQueryChange('');
         setSearchContext(false);
-    };
+    });
 
     const inputWidth = isFullWidth ? styles.w100 : {width: variables.popoverWidth};
 
