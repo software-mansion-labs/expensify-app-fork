@@ -114,7 +114,8 @@ function SearchAutocompleteInput({
     const categorySharedValue = useSharedValue(categoryAutocompleteList);
 
     const [allPoliciesTags] = useOnyx(ONYXKEYS.COLLECTION.POLICY_TAGS, {selector: passthroughPolicyTagListSelector});
-    const tagAutocompleteList = getAutocompleteTags(allPoliciesTags);
+    const unstableTagAutocompleteList = getAutocompleteTags(allPoliciesTags);
+    const tagAutocompleteList = useStableValue(unstableTagAutocompleteList);
     const tagSharedValue = useSharedValue(tagAutocompleteList);
 
     const [loginList] = useOnyx(ONYXKEYS.LOGIN_LIST);
