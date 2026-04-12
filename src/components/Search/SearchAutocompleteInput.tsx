@@ -119,7 +119,8 @@ function SearchAutocompleteInput({
     const tagSharedValue = useSharedValue(tagAutocompleteList);
 
     const [loginList] = useOnyx(ONYXKEYS.LOGIN_LIST);
-    const emailList = Object.keys(loginList ?? {});
+    const unstableEmailList = Object.keys(loginList ?? {});
+    const emailList = useStableValue(unstableEmailList);
     const emailListSharedValue = useSharedValue(emailList);
 
     const {exportedToFilterOptions} = useExportedToFilterOptions();
