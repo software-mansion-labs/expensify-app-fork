@@ -25,6 +25,8 @@ import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import type {SearchResults} from '@src/types/onyx';
 
+const handleOnBackButtonPress = () => Navigation.goBack(ROUTES.SEARCH_ROOT.getRoute({query: buildCannedSearchQuery()}));
+
 type SearchPageWideProps = {
     queryJSON?: SearchQueryJSON;
     searchResults: OnyxEntry<SearchResults>;
@@ -41,6 +43,7 @@ type SearchPageWideProps = {
     shouldShowFooter: boolean;
 };
 
+// @track-refs
 function SearchPageWide({
     queryJSON,
     searchResults,
@@ -77,8 +80,6 @@ function SearchPageWide({
 
         return [styles.mtAuto];
     }, [shouldShowFooter, styles]);
-
-    const handleOnBackButtonPress = () => Navigation.goBack(ROUTES.SEARCH_ROOT.getRoute({query: buildCannedSearchQuery()}));
 
     return (
         <View
