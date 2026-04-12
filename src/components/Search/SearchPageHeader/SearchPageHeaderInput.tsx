@@ -25,9 +25,9 @@ import useFeedKeysWithAssignedCards from '@hooks/useFeedKeysWithAssignedCards';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import usePrevious from '@hooks/usePrevious';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useStableCallback from '@hooks/useStableCallback';
 import useStableValue from '@hooks/useStableValue';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -133,21 +133,17 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
         registerSearchPageInput(textInputRef.current);
     }, [isFocused, registerSearchPageInput, displayNarrowHeader]);
 
-    const derivedTextInputValue = shouldShowQuery ? queryText : '';
-    const prevDerivedTextInputValue = usePrevious(derivedTextInputValue);
-    if (derivedTextInputValue !== prevDerivedTextInputValue) {
-        setTextInputValue(derivedTextInputValue);
-        setAutocompleteQueryValue(derivedTextInputValue);
-    }
+    useEffect(() => {
+        const newValue = shouldShowQuery ? queryText : '';
+        setTextInputValue(newValue);
+        setAutocompleteQueryValue(newValue);
+    }, [queryText, shouldShowQuery]);
 
-    const derivedSubstitutionsMap = useMemo(
-        () => buildSubstitutionsMap(originalInputQuery, personalDetails, reports, taxRates, personalAndWorkspaceCards, allFeeds, policies, currentUserAccountID, translate, reportAttributes),
-        [allFeeds, personalAndWorkspaceCards, originalInputQuery, personalDetails, reports, taxRates, policies, currentUserAccountID, translate, reportAttributes],
-    );
-    const prevDerivedSubstitutionsMap = usePrevious(derivedSubstitutionsMap);
-    if (derivedSubstitutionsMap !== prevDerivedSubstitutionsMap) {
-        setAutocompleteSubstitutions(derivedSubstitutionsMap);
-    }
+    useEffect(() => {
+        setAutocompleteSubstitutions(
+            buildSubstitutionsMap(originalInputQuery, personalDetails, reports, taxRates, personalAndWorkspaceCards, allFeeds, policies, currentUserAccountID, translate, reportAttributes),
+        );
+    }, [allFeeds, personalAndWorkspaceCards, originalInputQuery, personalDetails, reports, taxRates, policies, currentUserAccountID, translate, reportAttributes]);
 
     const onFocus = useCallback(() => {
         onSearchRouterFocus?.();
@@ -274,6 +270,9 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
         : [styles.pt4];
     const autocompleteInputStyle = useStableValue(unstableAutocompleteInputStyle);
 
+    const hideAutocompleteList = useStableCallback(() => setIsAutocompleteListVisible(false));
+    const showAutocompleteList = useStableCallback(() => setIsAutocompleteListVisible(true));
+
     if (displayNarrowHeader) {
         return (
             <View
@@ -323,10 +322,6 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
         );
     }
 
-    const hideAutocompleteList = () => setIsAutocompleteListVisible(false);
-    const showAutocompleteList = () => {
-        setIsAutocompleteListVisible(true);
-    };
     const inputWrapperActiveStyle = isAutocompleteListVisible ? styles.ph2 : null;
 
     return (
