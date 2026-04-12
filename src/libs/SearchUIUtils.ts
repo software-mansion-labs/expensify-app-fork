@@ -450,6 +450,19 @@ const emptyPersonalDetails = {
     login: undefined,
 };
 
+/**
+ * Strip personal details fields that oscillate between the Search API snapshot
+ * (which returns empty defaults like "") and the global Onyx store (which omits
+ * them entirely). Only fields verified unused by Search rendering components
+ * (TransactionItemRow, TransactionListItem, UserInfoCell, etc.) are removed.
+ *
+ * Verified consumers only read: accountID, avatar, displayName, login.
+ */
+function stripOscillatingPersonalDetailsFields(details: OnyxTypes.PersonalDetails): OnyxTypes.PersonalDetails {
+    const {phoneNumber, pronouns, validated, timezone, ...rest} = details;
+    return rest;
+}
+
 type ReportKey = `${typeof ONYXKEYS.COLLECTION.REPORT}${string}`;
 
 type TransactionKey = `${typeof ONYXKEYS.COLLECTION.TRANSACTION}${string}`;
@@ -1766,15 +1779,7 @@ function getTransactionsSections({
     const allViolations = getViolations(data);
 
     // Use Map for faster lookups of personal details and reportActions.
-    // Strip fields unused in search that oscillate between the Search API
-    // (which returns empty defaults like "") and the global Onyx store
-    // (which omits them entirely), causing unnecessary re-renders.
-    const personalDetailsMap = new Map(
-        Object.entries(data.personalDetailsList ?? {}).map(([id, details]) => {
-            const {phoneNumber, pronouns, validated, timezone, ...rest} = details;
-            return [id, rest] as const;
-        }),
-    );
+    const personalDetailsMap = new Map(Object.entries(data.personalDetailsList ?? {}).map(([id, details]) => [id, stripOscillatingPersonalDetailsFields(details)] as const));
     const {moneyRequestReportActionsByTransactionID, holdReportActionsByTransactionID} = createReportActionsLookupMaps(data);
 
     const transactionsSections: TransactionListItemType[] = [];
@@ -1833,13 +1838,6 @@ function getTransactionsSections({
             const transactionPendingAction = getTransactionPendingAction(transactionItem);
             const transactionSection: TransactionListItemType = {
                 ...transactionItem,
-                // Stabilize fields that oscillate due to Onyx updateSnapshots copying
-                // stale defaults from the regular transaction collection into the
-                // snapshot. These are not read by rendering components (amounts are
-                // pre-computed into formattedTotal, column visibility uses raw data).
-                originalAmount: undefined,
-                originalCurrency: undefined,
-                taxCode: undefined,
                 ...(transactionPendingAction ? {pendingAction: transactionPendingAction} : {}),
                 keyForList: transactionItem.transactionID,
                 action: getAction(allActions),
@@ -2407,10 +2405,10 @@ function getReportSections({
 
     const orderedKeys: string[] = [...reportKeys, ...transactionKeys];
     const mergedPersonalDetails = Object.fromEntries(
-        Object.entries({...(onyxPersonalDetailsList ?? {}), ...(data.personalDetailsList ?? {})}).map(([id, details]) => {
-            const {phoneNumber, pronouns, validated, timezone, ...rest} = details ?? {};
-            return [id, rest];
-        }),
+        Object.entries({...(onyxPersonalDetailsList ?? {}), ...(data.personalDetailsList ?? {})}).map(([id, details]) => [
+            id,
+            details ? stripOscillatingPersonalDetailsFields(details) : details,
+        ]),
     );
 
     for (const key of orderedKeys) {
