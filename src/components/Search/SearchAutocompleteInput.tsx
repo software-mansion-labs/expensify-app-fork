@@ -109,7 +109,8 @@ function SearchAutocompleteInput({
     const currencySharedValue = useSharedValue(currencyAutocompleteList);
 
     const [allPolicyCategories] = useOnyx(ONYXKEYS.COLLECTION.POLICY_CATEGORIES);
-    const categoryAutocompleteList = getAutocompleteCategories(allPolicyCategories);
+    const unstableCategoryAutocompleteList = getAutocompleteCategories(allPolicyCategories);
+    const categoryAutocompleteList = useStableValue(unstableCategoryAutocompleteList);
     const categorySharedValue = useSharedValue(categoryAutocompleteList);
 
     const [allPoliciesTags] = useOnyx(ONYXKEYS.COLLECTION.POLICY_TAGS, {selector: passthroughPolicyTagListSelector});
