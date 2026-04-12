@@ -16,6 +16,7 @@ import useFocusAfterNav from '@hooks/useFocusAfterNav';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
+import useStableValue from '@hooks/useStableValue';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {setSearchContext} from '@libs/actions/Search';
@@ -73,6 +74,7 @@ type SearchAutocompleteInputProps = {
     ref?: ForwardedRef<BaseTextInputRef>;
 } & Pick<TextInputProps, 'caretHidden' | 'autoFocus' | 'selection' | 'onKeyPress'>;
 
+// @track-refs
 function SearchAutocompleteInput({
     value,
     onSearchQueryChange,
@@ -102,7 +104,8 @@ function SearchAutocompleteInput({
     const inputRef = useRef<AnimatedTextInputRef>(null);
     const autoFocusAfterNav = useFocusAfterNav(inputRef, shouldDelayFocus);
     const {currencyList} = useCurrencyListState();
-    const currencyAutocompleteList = Object.keys(currencyList).filter((currencyCode) => !currencyList[currencyCode]?.retired);
+    const unstableCurrencyAutocompleteList = Object.keys(currencyList).filter((currencyCode) => !currencyList[currencyCode]?.retired);
+    const currencyAutocompleteList = useStableValue(unstableCurrencyAutocompleteList);
     const currencySharedValue = useSharedValue(currencyAutocompleteList);
 
     const [allPolicyCategories] = useOnyx(ONYXKEYS.COLLECTION.POLICY_CATEGORIES);
