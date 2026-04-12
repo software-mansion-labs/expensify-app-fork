@@ -21,6 +21,7 @@ import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchHighlightAndScroll from '@hooks/useSearchHighlightAndScroll';
 import useSearchShouldCalculateTotals from '@hooks/useSearchShouldCalculateTotals';
+import useStableCallback from '@hooks/useStableCallback';
 import useStableValue from '@hooks/useStableValue';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {turnOffMobileSelectionMode, turnOnMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
@@ -965,7 +966,7 @@ function Search({
         isRefreshingSelection.current = false;
     }, [selectedTransactions]);
 
-    const updateSelectAllMatchingItemsState = (updatedSelectedTransactions: SelectedTransactions) => {
+    const updateSelectAllMatchingItemsState = useStableCallback((updatedSelectedTransactions: SelectedTransactions) => {
         if (!filteredData.length || isRefreshingSelection.current) {
             return;
         }
@@ -992,9 +993,9 @@ function Search({
         if (!areAllItemsSelected) {
             selectAllMatchingItems(false);
         }
-    };
+    });
 
-    const toggleTransaction = (item: SearchListItem, itemTransactions?: TransactionListItemType[]) => {
+    const toggleTransaction = useStableCallback((item: SearchListItem, itemTransactions?: TransactionListItemType[]) => {
         if (isReportActionListItemType(item)) {
             return;
         }
@@ -1080,9 +1081,9 @@ function Search({
         };
         setSelectedTransactions(updatedTransactions, filteredData);
         updateSelectAllMatchingItemsState(updatedTransactions);
-    };
+    });
 
-    const onSelectRow = (item: SearchListItem, transactionPreviewData?: TransactionPreviewData) => {
+    const onSelectRow = useStableCallback((item: SearchListItem, transactionPreviewData?: TransactionPreviewData) => {
         if (item.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
             return;
         }
@@ -1194,7 +1195,7 @@ function Search({
         }
 
         requestAnimationFrame(() => Navigation.navigate(ROUTES.SEARCH_REPORT.getRoute({reportID, backTo})));
-    };
+    });
 
     const shouldUseStrictDefaultExpenseColumns = currentSearchKey === CONST.SEARCH.SEARCH_KEYS.EXPENSES && isDefaultExpensesQuery(queryJSON);
 
@@ -1329,16 +1330,16 @@ function Search({
         }
     }, [hasErrors, queryJSON, searchResults, shouldResetSearchQuery, setShouldResetSearchQuery]);
 
-    const fetchMoreResults = () => {
+    const fetchMoreResults = useStableCallback(() => {
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         if (!isFocused || !searchResults?.search?.hasMoreResults || shouldShowLoadingState || shouldShowLoadingMoreItems || offset > allDataLength - CONST.SEARCH.RESULTS_PAGE_SIZE) {
             return;
         }
 
         setOffset((prev) => prev + CONST.SEARCH.RESULTS_PAGE_SIZE);
-    };
+    });
 
-    const toggleAllTransactions = () => {
+    const toggleAllTransactions = useStableCallback(() => {
         const areItemsGrouped = !!validGroupBy || isExpenseReportType;
         const totalSelected = Object.keys(selectedTransactions).length;
 
@@ -1379,9 +1380,9 @@ function Search({
         }
         setSelectedTransactions(updatedTransactions, filteredData);
         updateSelectAllMatchingItemsState(updatedTransactions);
-    };
+    });
 
-    const onLayout = () => {
+    const onLayout = useStableCallback(() => {
         hasHadFirstLayout.current = true;
         endSpanWithAttributes(CONST.TELEMETRY.SPAN_NAVIGATE_TO_REPORTS, {[CONST.TELEMETRY.ATTRIBUTE_IS_WARM]: true});
         const pending = getPendingSubmitFollowUpAction();
@@ -1394,7 +1395,7 @@ function Search({
         handleSelectionListScroll(stableSortedData, searchListRef.current);
         flushDeferredWrite(CONST.DEFERRED_LAYOUT_WRITE_KEYS.SEARCH);
         onContentReady?.();
-    };
+    });
 
     const onLayoutChart = useCallback(() => {
         hasHadFirstLayout.current = true;
