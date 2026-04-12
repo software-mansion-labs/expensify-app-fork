@@ -272,6 +272,13 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
 
     const hideAutocompleteList = useStableCallback(() => setIsAutocompleteListVisible(false));
     const showAutocompleteList = useStableCallback(() => setIsAutocompleteListVisible(true));
+    const handleSubmit = useStableCallback(() => {
+        const focusedOption = listRef.current?.getFocusedOption();
+        if (focusedOption) {
+            return;
+        }
+        submitSearch(textInputValue);
+    });
 
     if (displayNarrowHeader) {
         return (
@@ -336,13 +343,7 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
                             value={textInputValue}
                             onSearchQueryChange={onSearchQueryChange}
                             isFullWidth
-                            onSubmit={() => {
-                                const focusedOption = listRef.current?.getFocusedOption();
-                                if (focusedOption) {
-                                    return;
-                                }
-                                submitSearch(textInputValue);
-                            }}
+                            onSubmit={handleSubmit}
                             autoFocus={false}
                             onFocus={showAutocompleteList}
                             onBlur={hideAutocompleteList}
