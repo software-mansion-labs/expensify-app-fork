@@ -21,6 +21,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
 import type {SearchResultsInfo} from '@src/types/onyx/SearchResults';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import replaceEqualDeep from '@src/utils/replaceEqualDeep';
 import type {SearchActionsContextValue, SearchContextData, SearchStateContextValue, SelectedTransactions} from './types';
 
 type SearchContextProps = {
@@ -229,12 +230,21 @@ function SearchContextProvider({children}: SearchContextProps) {
                 });
         }
 
-        setSearchContextData((prevState) => ({
-            ...prevState,
-            selectedReports: matchingReports,
-            selectedTransactions: transactionIDs,
-            shouldTurnOffSelectionMode: false,
-        }));
+        setSearchContextData((prevState) => {
+            const stableTransactions = replaceEqualDeep(prevState.selectedTransactions, transactionIDs);
+            const stableReports = replaceEqualDeep(prevState.selectedReports, matchingReports);
+
+            if (stableTransactions === prevState.selectedTransactions && stableReports === prevState.selectedReports && !prevState.shouldTurnOffSelectionMode) {
+                return prevState;
+            }
+
+            return {
+                ...prevState,
+                selectedReports: stableReports,
+                selectedTransactions: stableTransactions,
+                shouldTurnOffSelectionMode: false,
+            };
+        });
     }, []);
 
     const currentSearchHashRef = useRef(currentSearchHash);
