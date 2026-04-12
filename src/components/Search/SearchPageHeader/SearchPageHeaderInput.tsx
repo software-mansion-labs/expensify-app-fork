@@ -25,6 +25,7 @@ import useFeedKeysWithAssignedCards from '@hooks/useFeedKeysWithAssignedCards';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import usePrevious from '@hooks/usePrevious';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStableValue from '@hooks/useStableValue';
@@ -122,8 +123,7 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
             return;
         }
         textInputRef.current.blur();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchRouterListVisible]);
+    }, [searchRouterListVisible, displayNarrowHeader]);
 
     useEffect(() => {
         if (displayNarrowHeader || !isFocused || !textInputRef.current) {
@@ -133,33 +133,25 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
         registerSearchPageInput(textInputRef.current);
     }, [isFocused, registerSearchPageInput, displayNarrowHeader]);
 
-    useEffect(() => {
-        const newValue = shouldShowQuery ? queryText : '';
+    const derivedTextInputValue = shouldShowQuery ? queryText : '';
+    const prevDerivedTextInputValue = usePrevious(derivedTextInputValue);
+    if (derivedTextInputValue !== prevDerivedTextInputValue) {
+        setTextInputValue(derivedTextInputValue);
+        setAutocompleteQueryValue(derivedTextInputValue);
+    }
 
-        setTextInputValue(newValue);
-        setAutocompleteQueryValue(newValue);
-    }, [queryText, shouldShowQuery]);
-
-    useEffect(() => {
-        const substitutionsMap = buildSubstitutionsMap(
-            originalInputQuery,
-            personalDetails,
-            reports,
-            taxRates,
-            personalAndWorkspaceCards,
-            allFeeds,
-            policies,
-            currentUserAccountID,
-            translate,
-            reportAttributes,
-        );
-        setAutocompleteSubstitutions(substitutionsMap);
-    }, [allFeeds, personalAndWorkspaceCards, originalInputQuery, personalDetails, reports, taxRates, policies, currentUserAccountID, translate, reportAttributes]);
+    const derivedSubstitutionsMap = useMemo(
+        () => buildSubstitutionsMap(originalInputQuery, personalDetails, reports, taxRates, personalAndWorkspaceCards, allFeeds, policies, currentUserAccountID, translate, reportAttributes),
+        [allFeeds, personalAndWorkspaceCards, originalInputQuery, personalDetails, reports, taxRates, policies, currentUserAccountID, translate, reportAttributes],
+    );
+    const prevDerivedSubstitutionsMap = usePrevious(derivedSubstitutionsMap);
+    if (derivedSubstitutionsMap !== prevDerivedSubstitutionsMap) {
+        setAutocompleteSubstitutions(derivedSubstitutionsMap);
+    }
 
     const onFocus = useCallback(() => {
         onSearchRouterFocus?.();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [onSearchRouterFocus]);
 
     const handleKeyPress = useCallback((e: TextInputKeyPressEvent) => {
         const keyEvent = e as unknown as KeyboardEvent;
