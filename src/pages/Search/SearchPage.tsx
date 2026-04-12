@@ -81,9 +81,13 @@ function SearchPage({route}: SearchPageProps) {
     }, [shouldUseNarrowLayout, resetVideoPlayerData]);
 
     const prevIsLoading = usePrevious(currentSearchResults?.isLoading);
-    if (isSorting && prevIsLoading && !currentSearchResults?.isLoading) {
+    useEffect(() => {
+        if (!isSorting || !prevIsLoading || currentSearchResults?.isLoading) {
+            return;
+        }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsSorting(false);
-    }
+    }, [currentSearchResults?.isLoading, isSorting, prevIsLoading]);
 
     const [searchRequestResponseStatusCode, setSearchRequestResponseStatusCode] = useState<number | null>(null);
 
