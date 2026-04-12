@@ -64,7 +64,8 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
     const {shouldUseNarrowLayout: displayNarrowHeader} = useResponsiveLayout();
     const expensifyIcons = useMemoizedLazyExpensifyIcons(['MagnifyingGlass']);
     const personalDetails = usePersonalDetails();
-    const [reports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
+    const [unstableReports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
+    const reports = useStableValue(unstableReports);
     const [unstablePolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const policies = useStableValue(unstablePolicies);
     const unstableReportAttributes = useReportAttributes();
