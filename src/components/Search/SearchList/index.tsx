@@ -26,6 +26,7 @@ import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaPaddings from '@hooks/useSafeAreaPaddings';
+import useStableCallback from '@hooks/useStableCallback';
 import useStableValue from '@hooks/useStableValue';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -385,7 +386,7 @@ function SearchList({
      * @param index - the index of the item to scroll to
      * @param animated - whether to animate the scroll
      */
-    const scrollToIndex = (index: number, animated = true) => {
+    const scrollToIndex = useStableCallback((index: number, animated = true) => {
         const item = data.at(index);
 
         if (!listRef.current || !item || index === -1) {
@@ -393,7 +394,7 @@ function SearchList({
         }
 
         listRef.current.scrollToIndex({index, animated, viewOffset: -variables.contentHeaderHeight});
-    };
+    });
 
     useFocusEffect(
         useCallback(() => {

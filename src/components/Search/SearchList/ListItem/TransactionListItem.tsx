@@ -19,6 +19,7 @@ import useAnimatedHighlightStyle from '@hooks/useAnimatedHighlightStyle';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useStableCallback from '@hooks/useStableCallback';
 import useStableValue from '@hooks/useStableValue';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useSyncFocus from '@hooks/useSyncFocus';
@@ -191,7 +192,7 @@ function TransactionListItem<TItem extends ListItem>({
     const {isDelegateAccessRestricted} = useDelegateNoAccessState();
     const {showDelegateNoAccessModal} = useDelegateNoAccessActions();
 
-    const handleActionButtonPress = () => {
+    const handleActionButtonPress = useStableCallback(() => {
         handleActionButtonPressUtil({
             hash: currentSearchHash,
             item: transactionItem,
@@ -206,7 +207,7 @@ function TransactionListItem<TItem extends ListItem>({
             personalPolicyID,
             ownerBillingGracePeriodEnd,
         });
-    };
+    });
 
     const pressableRef = useRef<View>(null);
 

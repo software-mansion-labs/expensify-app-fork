@@ -75,8 +75,7 @@ import {useCallback, useLayoutEffect, useRef} from 'react';
  *                 latest version is always invoked at call-time.
  * @returns A function with the same signature as `callback` but a stable identity.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function useStableCallback<T extends (...args: any[]) => any>(callback: T): T {
+function useStableCallback<TArgs extends unknown[], TReturn>(callback: (...args: TArgs) => TReturn): (...args: TArgs) => TReturn {
     'use no memo';
 
     const ref = useRef(callback);
@@ -88,8 +87,8 @@ function useStableCallback<T extends (...args: any[]) => any>(callback: T): T {
     });
 
     // Wrapper created once — delegates to ref.current at invocation time.
-    // eslint-disable-next-line react-hooks/exhaustive-deps, @typescript-eslint/no-unsafe-return
-    return useCallback(((...args: Parameters<T>) => ref.current(...args)) as T, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return useCallback((...args: TArgs) => ref.current(...args), []);
 }
 
 export default useStableCallback;
