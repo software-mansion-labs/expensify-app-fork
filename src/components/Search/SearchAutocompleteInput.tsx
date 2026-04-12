@@ -129,7 +129,8 @@ function SearchAutocompleteInput({
     const offlineMessage: string = isOffline && shouldShowOfflineMessage ? `${translate('common.youAppearToBeOffline')} ${translate('search.resultsAreLimited')}` : '';
 
     const defaultBorderColor = theme.border;
-    const {borderColor: focusedBorderColor = defaultBorderColor, ...restWrapperFocusedStyle} = wrapperFocusedStyle;
+    const {borderColor: focusedBorderColor = defaultBorderColor, ...unstableRestWrapperFocusedStyle} = wrapperFocusedStyle;
+    const restWrapperFocusedStyle = useStableValue(unstableRestWrapperFocusedStyle);
     const {borderColor: wrapperBorderColor = defaultBorderColor, ...restWrapperStyle} = wrapperStyle ?? {};
 
     // we are handling focused/unfocused style using shared value instead of using state to avoid re-rendering. Otherwise layout animation in `Animated.View` will lag.
