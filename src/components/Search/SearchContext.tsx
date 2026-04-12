@@ -242,18 +242,21 @@ function SearchContextProvider({children}: SearchContextProps) {
         currentSearchHashRef.current = currentSearchHash;
     }, [currentSearchHash]);
 
-    const setCurrentSelectedTransactionReportID: SearchActionsContextValue['setCurrentSelectedTransactionReportID'] = (reportID) => {
-        setSearchContextData((prevState) => {
-            if (reportID === prevState.currentSelectedTransactionReportID) {
-                return prevState;
-            }
+    const setCurrentSelectedTransactionReportID: SearchActionsContextValue['setCurrentSelectedTransactionReportID'] = useCallback(
+        (reportID) => {
+            setSearchContextData((prevState) => {
+                if (reportID === prevState.currentSelectedTransactionReportID) {
+                    return prevState;
+                }
 
-            return {
-                ...prevState,
-                currentSelectedTransactionReportID: reportID,
-            };
-        });
-    };
+                return {
+                    ...prevState,
+                    currentSelectedTransactionReportID: reportID,
+                };
+            });
+        },
+        [setSearchContextData],
+    );
 
     const clearSelectedTransactions: SearchActionsContextValue['clearSelectedTransactions'] = useCallback(
         (searchHashOrClearIDsFlag, shouldTurnOffSelectionMode = false) => {
@@ -369,8 +372,8 @@ function SearchContextProvider({children}: SearchContextProps) {
         }),
         // setShouldShowActionsBarLoading, setLastSearchType, setShouldShowSelectAllMatchingItems,
         // and selectAllMatchingItems are stable useState setters — excluded from deps intentionally.
-        // setCurrentSelectedTransactionReportID only uses setSearchContextData (stable setter).
-        [removeTransaction, setSelectedTransactions, clearSelectedTransactions, setShouldResetSearchQuery],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [removeTransaction, setSelectedTransactions, setCurrentSelectedTransactionReportID, clearSelectedTransactions, setShouldResetSearchQuery],
     );
 
     return (
