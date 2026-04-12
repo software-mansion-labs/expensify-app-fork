@@ -100,7 +100,8 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
     const [autocompleteQueryValue, setAutocompleteQueryValue] = useState('');
     const [selection, setSelection] = useState({start: textInputValue.length, end: textInputValue.length});
 
-    const [autocompleteSubstitutions, setAutocompleteSubstitutions] = useState<SubstitutionMap>({});
+    const [unstableAutocompleteSubstitutions, setAutocompleteSubstitutions] = useState<SubstitutionMap>({});
+    const autocompleteSubstitutions = useStableValue(unstableAutocompleteSubstitutions);
     const [isAutocompleteListVisible, setIsAutocompleteListVisible] = useState(false);
     const listRef = useRef<SelectionListWithSectionsHandle>(null);
     const textInputRef = useRef<AnimatedTextInputRef>(null);
