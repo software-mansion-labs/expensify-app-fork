@@ -11,6 +11,7 @@ import withViewportOffsetTop from '@components/withViewportOffsetTop';
 import useOnyx from '@hooks/useOnyx';
 import usePopoverPosition from '@hooks/usePopoverPosition';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useStableValue from '@hooks/useStableValue';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -61,7 +62,20 @@ const ANCHOR_ORIGIN = {
     vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.TOP,
 };
 
-function DropdownButton({label, value, viewportOffsetTop, PopoverComponent, medium = false, labelStyle, innerStyles, caretWrapperStyle, wrapperStyle, sentryLabel}: DropdownButtonProps) {
+// @track-refs
+function DropdownButton({
+    label,
+    value: unstableValue,
+    viewportOffsetTop,
+    PopoverComponent,
+    medium = false,
+    labelStyle,
+    innerStyles,
+    caretWrapperStyle,
+    wrapperStyle,
+    sentryLabel,
+}: DropdownButtonProps) {
+    const value = useStableValue(unstableValue);
     // We need to use isSmallScreenWidth instead of shouldUseNarrowLayout to distinguish RHL and narrow layout
     // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
     const {isSmallScreenWidth} = useResponsiveLayout();
