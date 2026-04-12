@@ -65,7 +65,8 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
     const expensifyIcons = useMemoizedLazyExpensifyIcons(['MagnifyingGlass']);
     const personalDetails = usePersonalDetails();
     const [reports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
-    const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const [unstablePolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const policies = useStableValue(unstablePolicies);
     const unstableReportAttributes = useReportAttributes();
     const reportAttributes = useStableValue(unstableReportAttributes);
     const taxRates = useMemo(() => getAllTaxRates(policies), [policies]);
