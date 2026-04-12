@@ -11,6 +11,7 @@ import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchPageSetup from '@hooks/useSearchPageSetup';
 import useSearchShouldCalculateTotals from '@hooks/useSearchShouldCalculateTotals';
+import useStableValue from '@hooks/useStableValue';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {searchInServer} from '@libs/actions/Report';
 import {search} from '@libs/actions/Search';
@@ -104,7 +105,7 @@ function SearchPage({route}: SearchPageProps) {
         }
     }, []);
 
-    const footerData = useMemo(() => {
+    const unstableFooterData = useMemo(() => {
         if (!shouldAllowFooterTotals && selectedTransactionsKeys.length === 0) {
             return {count: undefined, total: undefined, currency: undefined};
         }
@@ -125,6 +126,7 @@ function SearchPage({route}: SearchPageProps) {
 
         return {count: numberOfExpense, total, currency};
     }, [areAllMatchingItemsSelected, metadata?.count, metadata?.currency, metadata?.total, selectedTransactions, selectedTransactionsKeys, shouldAllowFooterTotals]);
+    const footerData = useStableValue(unstableFooterData);
 
     const onSortPressedCallback = useCallback(() => {
         setIsSorting(true);
