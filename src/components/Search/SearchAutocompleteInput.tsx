@@ -87,15 +87,17 @@ function SearchAutocompleteInput({
     onFocus,
     onBlur,
     caretHidden = false,
-    wrapperStyle,
+    wrapperStyle: unstableWrapperStyle,
     wrapperFocusedStyle = {},
-    outerWrapperStyle,
+    outerWrapperStyle: unstableOuterWrapperStyle,
     isSearchingForReports,
     selection,
     substitutionMap,
     onKeyPress,
     ref,
 }: SearchAutocompleteInputProps) {
+    const wrapperStyle = useStableValue(unstableWrapperStyle);
+    const outerWrapperStyle = useStableValue(unstableOuterWrapperStyle);
     const styles = useThemeStyles();
     const theme = useTheme();
     const {translate} = useLocalize();
