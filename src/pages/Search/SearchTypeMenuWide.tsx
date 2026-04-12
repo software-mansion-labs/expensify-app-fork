@@ -14,6 +14,7 @@ import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useSearchTypeMenuSections from '@hooks/useSearchTypeMenuSections';
 import useSingleExecution from '@hooks/useSingleExecution';
+import useStableValue from '@hooks/useStableValue';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {setSearchContext} from '@libs/actions/Search';
 import Navigation from '@libs/Navigation/Navigation';
@@ -32,6 +33,7 @@ type SearchTypeMenuProps = {
     queryJSON: SearchQueryJSON | undefined;
 };
 
+// @track-refs
 function SearchTypeMenuWide({queryJSON}: SearchTypeMenuProps) {
     const {hash, similarSearchHash, sortBy, sortOrder, type} = queryJSON ?? {};
 
@@ -39,7 +41,8 @@ function SearchTypeMenuWide({queryJSON}: SearchTypeMenuProps) {
     const {isOffline} = useNetwork();
     const {translate} = useLocalize();
     const {singleExecution} = useSingleExecution();
-    const {typeMenuSections, activeItemIndex} = useSearchTypeMenuSections({hash, similarSearchHash, sortBy, sortOrder, type});
+    const {typeMenuSections: unstableTypeMenuSections, activeItemIndex} = useSearchTypeMenuSections({hash, similarSearchHash, sortBy, sortOrder, type});
+    const typeMenuSections = useStableValue(unstableTypeMenuSections);
     const expensifyIcons = useMemoizedLazyExpensifyIcons([
         'Basket',
         'CalendarSolid',
