@@ -50,14 +50,14 @@ function normalizeReportAccountIDs(report: OnyxEntry<Report>): OnyxEntry<Report>
 
 // @track-refs
 function TransactionListItem<TItem extends ListItem>({
-    item: unstableItem,
+    item,
     isFocused,
     showTooltip,
     isDisabled,
     canSelectMultiple,
     onSelectRow,
     onCheckboxPress,
-    onFocus: unstableOnFocus,
+    onFocus,
     onLongPressRow,
     shouldSyncFocus,
     columns,
@@ -68,7 +68,7 @@ function TransactionListItem<TItem extends ListItem>({
     personalPolicyID,
     isLastItem,
 }: TransactionListItemProps<TItem>) {
-    const transactionItem = unstableItem as unknown as TransactionListItemType;
+    const transactionItem = item as unknown as TransactionListItemType;
     const styles = useThemeStyles();
     const theme = useTheme();
     const StyleUtils = useStyleUtils();
@@ -128,13 +128,13 @@ function TransactionListItem<TItem extends ListItem>({
     const unstablePressableStyle = [
         styles.transactionListItemStyle,
         !isLargeScreenWidth && styles.pt3,
-        unstableItem.isSelected && styles.activeComponentBG,
+        item.isSelected && styles.activeComponentBG,
         isLargeScreenWidth
             ? {
                   ...styles.flexRow,
                   ...styles.justifyContentBetween,
                   ...styles.alignItemsCenter,
-                  ...StyleUtils.getSearchTableRowPressableStyle(!!isLastItem, unstableItem.isSelected),
+                  ...StyleUtils.getSearchTableRowPressableStyle(!!isLastItem, item.isSelected),
               }
             : {...styles.flexColumn, ...styles.alignItemsStretch},
     ];
@@ -144,7 +144,7 @@ function TransactionListItem<TItem extends ListItem>({
 
     const animatedHighlightStyle = useAnimatedHighlightStyle({
         borderRadius: StyleUtils.getSearchTableHighlightBorderRadius(isLargeScreenWidth),
-        shouldHighlight: unstableItem?.shouldAnimateInHighlight ?? false,
+        shouldHighlight: item?.shouldAnimateInHighlight ?? false,
         highlightColor: theme.messageHighlightBG,
         backgroundColor: theme.highlightBG,
         shouldApplyOtherStyles: !isLargeScreenWidth,
@@ -195,7 +195,7 @@ function TransactionListItem<TItem extends ListItem>({
         handleActionButtonPressUtil({
             hash: currentSearchHash,
             item: transactionItem,
-            goToItem: () => onSelectRow(unstableItem, transactionPreviewData),
+            goToItem: () => onSelectRow(item, transactionPreviewData),
             snapshotReport,
             snapshotPolicy,
             lastPaymentMethod,
@@ -208,36 +208,30 @@ function TransactionListItem<TItem extends ListItem>({
         });
     };
 
-    const stableOnCheckboxPress = () => onCheckboxPress?.(unstableItem);
-    const stableOnArrowRightPress = () => onSelectRow(unstableItem, transactionPreviewData);
-    const stableOnPress = () => onSelectRow(unstableItem, transactionPreviewData);
-    const stableOnLongPress = () => onLongPressRow?.(unstableItem);
-    const stableOnFocus = (...args: Parameters<NonNullable<typeof unstableOnFocus>>) => unstableOnFocus?.(...args);
-
     const pressableRef = useRef<View>(null);
 
     useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
 
     return (
-        <OfflineWithFeedback pendingAction={unstableItem.pendingAction}>
+        <OfflineWithFeedback pendingAction={item.pendingAction}>
             <PressableWithFeedback
                 ref={pressableRef}
-                onLongPress={stableOnLongPress}
-                onPress={stableOnPress}
-                disabled={isDisabled && !unstableItem.isSelected}
-                accessibilityLabel={unstableItem.text ?? ''}
+                onLongPress={() => onLongPressRow?.(item)}
+                onPress={() => onSelectRow(item, transactionPreviewData)}
+                disabled={isDisabled && !item.isSelected}
+                accessibilityLabel={item.text ?? ''}
                 role={getButtonRole(true)}
                 isNested
                 onMouseDown={(e) => e.preventDefault()}
-                hoverStyle={[!unstableItem.isDisabled && styles.hoveredComponentBG, unstableItem.isSelected && styles.activeComponentBG]}
+                hoverStyle={[!item.isDisabled && styles.hoveredComponentBG, item.isSelected && styles.activeComponentBG]}
                 dataSet={TRANSACTION_ITEM_DATA_SET}
-                id={unstableItem.keyForList ?? ''}
+                id={item.keyForList ?? ''}
                 sentryLabel={CONST.SENTRY_LABEL.SEARCH.TRANSACTION_LIST_ITEM}
                 style={[
                     pressableStyle,
-                    isFocused && StyleUtils.getItemBackgroundColorStyle(!!unstableItem.isSelected, !!isFocused, !!unstableItem.isDisabled, theme.activeComponentBG, theme.hoverComponentBG),
+                    isFocused && StyleUtils.getItemBackgroundColorStyle(!!item.isSelected, !!isFocused, !!item.isDisabled, theme.activeComponentBG, theme.hoverComponentBG),
                 ]}
-                onFocus={stableOnFocus}
+                onFocus={onFocus}
                 wrapperStyle={[
                     !isLargeScreenWidth && styles.mb2,
                     styles.mh5,
@@ -264,7 +258,7 @@ function TransactionListItem<TItem extends ListItem>({
                             policy={transactionItem.policy}
                             shouldShowTooltip={showTooltip}
                             onButtonPress={handleActionButtonPress}
-                            onCheckboxPress={stableOnCheckboxPress}
+                            onCheckboxPress={() => onCheckboxPress?.(item)}
                             shouldUseNarrowLayout={!isLargeScreenWidth}
                             isLargeScreenWidth={isLargeScreenWidth}
                             columns={columns}
@@ -282,7 +276,7 @@ function TransactionListItem<TItem extends ListItem>({
                             checkboxSentryLabel={CONST.SENTRY_LABEL.SEARCH.TRANSACTION_LIST_ITEM_CHECKBOX}
                             style={rowStyle}
                             violations={transactionViolations}
-                            onArrowRightPress={stableOnArrowRightPress}
+                            onArrowRightPress={() => onSelectRow(item, transactionPreviewData)}
                             isHover={hovered}
                             customCardNames={customCardNames}
                             reportActions={exportedReportActions}
