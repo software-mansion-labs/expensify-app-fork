@@ -22,6 +22,7 @@ import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchFilterSync from '@hooks/useSearchFilterSync';
+import useStableValue from '@hooks/useStableValue';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {close} from '@libs/actions/Modal';
@@ -496,7 +497,7 @@ function useSearchFiltersBar(queryJSON: SearchQueryJSON, isMobileSelectionModeEn
     const shouldDisplayWithdrawnFilter =
         !!searchAdvancedFiltersForm.withdrawnOn || !!searchAdvancedFiltersForm.withdrawnAfter || !!searchAdvancedFiltersForm.withdrawnBefore || !!searchAdvancedFiltersForm.withdrawnRange;
 
-    const filters: FilterItem[] = [
+    const unstableFilters: FilterItem[] = [
         {
             label: translate('common.type'),
             PopoverComponent: typeComponent,
@@ -636,6 +637,7 @@ function useSearchFiltersBar(queryJSON: SearchQueryJSON, isMobileSelectionModeEn
               ]
             : []),
     ].filter((filterItem) => isFilterSupported(filterItem.filterKey, type?.value ?? CONST.SEARCH.DATA_TYPES.EXPENSE));
+    const filters = useStableValue(unstableFilters);
 
     const hiddenSelectedFilters = (() => {
         const advancedSearchFiltersKeys = typeFiltersKeys.flat();
