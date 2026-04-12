@@ -126,7 +126,8 @@ function SearchAutocompleteInput({
     const emailList = useStableValue(unstableEmailList);
     const emailListSharedValue = useSharedValue(emailList);
 
-    const {exportedToFilterOptions} = useExportedToFilterOptions();
+    const {exportedToFilterOptions: unstableExportedToFilterOptions} = useExportedToFilterOptions();
+    const exportedToFilterOptions = useStableValue(unstableExportedToFilterOptions);
     const exportedToSharedValue = useSharedValue(exportedToFilterOptions);
 
     const offlineMessage: string = isOffline && shouldShowOfflineMessage ? `${translate('common.youAppearToBeOffline')} ${translate('search.resultsAreLimited')}` : '';
