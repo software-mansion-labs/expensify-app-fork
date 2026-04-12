@@ -263,21 +263,6 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
         [textInputValue, expensifyIcons.MagnifyingGlass, styles.activeComponentBG],
     );
 
-    // we need `- BORDER_WIDTH` to achieve the effect that the input will not "jump"
-    const leftPopoverHorizontalPosition = 12 - BORDER_WIDTH;
-    const rightPopoverHorizontalPosition = 4 - BORDER_WIDTH;
-    const unstableAutocompleteInputStyle = isAutocompleteListVisible
-        ? [
-              styles.border,
-              styles.borderRadiusComponentLarge,
-              styles.pAbsolute,
-              styles.pt2,
-              {top: 8 - BORDER_WIDTH, left: leftPopoverHorizontalPosition, right: rightPopoverHorizontalPosition},
-              {boxShadow: theme.shadow},
-          ]
-        : [styles.pt4];
-    const autocompleteInputStyle = useStableValue(unstableAutocompleteInputStyle);
-
     if (displayNarrowHeader) {
         return (
             <View
@@ -331,6 +316,19 @@ function SearchPageHeaderInput({queryJSON, searchRouterListVisible, hideSearchRo
     const showAutocompleteList = () => {
         setIsAutocompleteListVisible(true);
     };
+    // we need `- BORDER_WIDTH` to achieve the effect that the input will not "jump"
+    const leftPopoverHorizontalPosition = 12 - BORDER_WIDTH;
+    const rightPopoverHorizontalPosition = 4 - BORDER_WIDTH;
+    const autocompleteInputStyle = isAutocompleteListVisible
+        ? [
+              styles.border,
+              styles.borderRadiusComponentLarge,
+              styles.pAbsolute,
+              styles.pt2,
+              {top: 8 - BORDER_WIDTH, left: leftPopoverHorizontalPosition, right: rightPopoverHorizontalPosition},
+              {boxShadow: theme.shadow},
+          ]
+        : [styles.pt4];
     const inputWrapperActiveStyle = isAutocompleteListVisible ? styles.ph2 : null;
 
     return (
