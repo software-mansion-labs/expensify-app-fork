@@ -8,6 +8,7 @@ import useCardFeedsForDisplay from '@hooks/useCardFeedsForDisplay';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import usePreviousDefined from '@hooks/usePreviousDefined';
 import useRootNavigationState from '@hooks/useRootNavigationState';
+import useStableValue from '@hooks/useStableValue';
 import useTodos from '@hooks/useTodos';
 import {getDeepestFocusedScreen} from '@libs/Navigation/Navigation';
 import {isMoneyRequestReport} from '@libs/ReportUtils';
@@ -91,6 +92,7 @@ function selectSearchRawQueryParam(state: NavigationState | undefined) {
     return focused?.name === SCREENS.SEARCH.ROOT ? (focused.params?.rawQuery as string | undefined) : undefined;
 }
 
+// @track-refs
 function SearchContextProvider({children}: SearchContextProps) {
     const navigation = useNavigation();
     // Extract only the primitive values we need from the focused screen to avoid
@@ -111,7 +113,8 @@ function SearchContextProvider({children}: SearchContextProps) {
     const currentRecentSearchHash = currentSearchQueryJSON?.recentSearchHash ?? -1;
     const currentSimilarSearchHash = currentSearchQueryJSON?.similarSearchHash ?? -1;
 
-    const todoSearchResultsData = useTodos();
+    const unstableTodoSearchResultsData = useTodos();
+    const todoSearchResultsData = useStableValue(unstableTodoSearchResultsData);
     const [snapshotSearchResults] = useOnyx(`${ONYXKEYS.COLLECTION.SNAPSHOT}${currentSearchHash}`);
 
     const {defaultCardFeed} = useCardFeedsForDisplay();
