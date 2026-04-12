@@ -17,6 +17,7 @@ import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
 import usePopoverPosition from '@hooks/usePopoverPosition';
+import useStableValue from '@hooks/useStableValue';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {startDistanceRequest, startMoneyRequest} from '@libs/actions/IOU';
 import {openOldDotLink} from '@libs/actions/Link';
@@ -34,6 +35,7 @@ import ROUTES from '@src/ROUTES';
 import {groupPaidPoliciesWithExpenseChatEnabledSelector} from '@src/selectors/Policy';
 import type * as OnyxTypes from '@src/types/onyx';
 
+// @track-refs
 function SearchActionsBarCreateButton() {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
@@ -47,7 +49,8 @@ function SearchActionsBarCreateButton() {
     const [session] = useOnyx(ONYXKEYS.SESSION);
     const [email] = useOnyx(ONYXKEYS.SESSION, {selector: emailSelector});
     const [allBetas] = useOnyx(ONYXKEYS.BETAS);
-    const [allPolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const [unstableAllPolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    const allPolicies = useStableValue(unstableAllPolicies);
     const [transactionViolations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS);
     const [draftTransactionIDs] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_DRAFT, {selector: validTransactionDraftIDsSelector});
     const groupPaidPoliciesWithChatEnabledSelector = useCallback((policies: OnyxCollection<OnyxTypes.Policy>) => groupPaidPoliciesWithExpenseChatEnabledSelector(policies, email), [email]);
