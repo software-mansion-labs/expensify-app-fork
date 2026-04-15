@@ -37,9 +37,12 @@ type ImportSpreadsheetProps = {
 
     /** Whether the spreadsheet is importing multi-level tags */
     isImportingMultiLevelTags?: boolean;
+
+    /** Whether to replace the current route instead of pushing when navigating to goTo */
+    shouldReplaceOnGoTo?: boolean;
 };
 
-function ImportSpreadsheet({backTo, goTo, isImportingMultiLevelTags}: ImportSpreadsheetProps) {
+function ImportSpreadsheet({backTo, goTo, isImportingMultiLevelTags, shouldReplaceOnGoTo}: ImportSpreadsheetProps) {
     const [importedSpreadsheet] = useOnyx(ONYXKEYS.IMPORTED_SPREADSHEET);
     const icons = useMemoizedLazyExpensifyIcons(['SpreadsheetComputer']);
     const styles = useThemeStyles();
@@ -145,7 +148,7 @@ function ImportSpreadsheet({backTo, goTo, isImportingMultiLevelTags}: ImportSpre
                         );
                     })
                     .then(() => {
-                        Navigation.navigate(goTo);
+                        Navigation.navigate(goTo, {forceReplace: !!shouldReplaceOnGoTo});
                     })
                     .catch(() => {
                         showUploadFileError('spreadsheet.importFailedTitle', 'spreadsheet.invalidFileMessage');

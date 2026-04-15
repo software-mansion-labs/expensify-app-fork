@@ -41,6 +41,7 @@ function ImportCategoriesPage({route}: ImportCategoriesPageProps) {
             <ImportSpreadsheet
                 backTo={isQuickSettingsFlow ? backTo : workspaceCategoriesListBackPath}
                 goTo={isQuickSettingsFlow ? ROUTES.SETTINGS_CATEGORIES_IMPORTED.getRoute(policyID, backTo) : workspaceGoToImportedPath}
+                shouldReplaceOnGoTo={!isQuickSettingsFlow}
             />
         </AccessOrNotFoundWrapper>
     );
