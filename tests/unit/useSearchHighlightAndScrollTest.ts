@@ -67,6 +67,8 @@ describe('useSearchHighlightAndScroll', () => {
         searchKey: undefined,
         shouldCalculateTotals: false,
         offset: 0,
+        hasMoreResults: false,
+        onLoadMore: jest.fn(),
     };
 
     it('should not trigger search when collections are empty', () => {

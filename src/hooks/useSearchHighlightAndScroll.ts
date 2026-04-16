@@ -28,6 +28,8 @@ type UseSearchHighlightAndScroll = {
     offset: number;
     shouldCalculateTotals: boolean;
     shouldUseLiveData: boolean;
+    hasMoreResults: boolean;
+    onLoadMore: () => void;
 };
 
 /**
@@ -44,11 +46,15 @@ function useSearchHighlightAndScroll({
     offset,
     shouldCalculateTotals,
     shouldUseLiveData,
+    hasMoreResults,
+    onLoadMore,
 }: UseSearchHighlightAndScroll) {
     const isFocused = useIsFocused();
     const {isOffline} = useNetwork();
     // Ref to track if the search was triggered by this hook
     const triggeredByHookRef = useRef(false);
+    // Ref to track if the highlight was triggered by the manual transactionIDsToHighlight path
+    const manualHighlightTriggeredRef = useRef(false);
     const searchTriggeredRef = useRef(false);
     const hasNewItemsRef = useRef(false);
     const previousSearchResults = usePrevious(searchResults?.data);
@@ -180,10 +186,24 @@ function useSearchHighlightAndScroll({
 
     // Detect new items (transactions or report actions)
     useEffect(() => {
-        if (!previousSearchResults || !searchResults?.data) {
+        if (!searchResults?.data) {
             return;
         }
+
+        // For the manual highlight path (expense/invoice created via global create), we don't need
+        // previousSearchResults — we already know which transaction to highlight via transactionIDsToHighlight.
+        // The previousSearchResults check is only required for the organic detection path to avoid
+        // false positives on initial load.
+        const hasManualHighlights = !isChat && !isEmptyObject(transactionIDsToHighlight);
+
+        if (!previousSearchResults && !hasManualHighlights) {
+            return;
+        }
+
         if (isChat) {
+            if (!previousSearchResults) {
+                return;
+            }
             const previousReportActionIDs = extractReportActionIDsFromSearchResults(previousSearchResults);
             const currentReportActionIDs = extractReportActionIDsFromSearchResults(searchResults.data);
 
@@ -202,13 +222,13 @@ function useSearchHighlightAndScroll({
             }
             setNewSearchResultKeys(newKeys);
         } else {
-            const previousTransactionIDs = extractTransactionIDsFromSearchResults(previousSearchResults);
+            const previousTransactionIDs = previousSearchResults ? extractTransactionIDsFromSearchResults(previousSearchResults) : [];
             const currentTransactionIDs = extractTransactionIDsFromSearchResults(searchResults.data);
             const manualHighlightTransactionIDs = new Set(Object.keys(transactionIDsToHighlight ?? {}).filter((id) => !!transactionIDsToHighlight?.[id]));
 
             // Find new transaction IDs that are not in the previousTransactionIDs and not already highlighted
             const newTransactionIDs = currentTransactionIDs.filter((id) => {
-                if (manualHighlightTransactionIDs.has(id)) {
+                if (manualHighlightTransactionIDs.has(id) && !highlightedIDs.current.has(id)) {
                     return true;
                 }
                 if (!triggeredByHookRef.current || !hasNewItemsRef.current) {
@@ -227,11 +247,19 @@ function useSearchHighlightAndScroll({
                 highlightedIDs.current.add(newTransactionKey);
                 newKeys.add(newTransactionKey);
             }
+            if (newTransactionIDs.some((id) => manualHighlightTransactionIDs.has(id))) {
+                manualHighlightTriggeredRef.current = true;
+            }
             setNewSearchResultKeys(newKeys);
         }
     }, [searchResults?.data, previousSearchResults, isChat, transactionIDsToHighlight]);
 
-    // Reset transactionIDsToHighlight after they have been highlighted
+    // Reset transactionIDsToHighlight immediately after the IDs have been added to newSearchResultKeys.
+    // The highlight animation is driven by newSearchResultKeys (not transactionIDsToHighlight), so resetting
+    // the Onyx flag now does not interrupt the animation. Resetting immediately (no timer) avoids a race
+    // condition where the newSearchResultKeys reset timer (setTimeout 300ms) fires first, causes a re-render,
+    // and the resulting effect cleanup cancels this reset timer before it fires — leaving stale `true` values
+    // that would incorrectly re-highlight the same expense on the next data change.
     useEffect(() => {
         if (isEmptyObject(transactionIDsToHighlight) || newSearchResultKeys === null) {
             return;
@@ -241,20 +269,11 @@ function useSearchHighlightAndScroll({
             (id) => transactionIDsToHighlight[id] && newSearchResultKeys?.has(`${ONYXKEYS.COLLECTION.TRANSACTION}${id}`),
         );
 
-        // We need to use requestAnimationFrame here to ensure that setTimeout actually starts
-        // only after the user has navigated to the "Reports > Expenses" page.
-        // Otherwise, there is still a chance we might miss the timing because setTimeout runs too early,
-        // causing the highlight not to appear.
-        let timer: NodeJS.Timeout;
-        const animation = requestAnimationFrame(() => {
-            timer = setTimeout(() => {
-                mergeTransactionIdsHighlightOnSearchRoute(queryJSON.type, Object.fromEntries(highlightedTransactionIDs.map((id) => [id, false])));
-            }, CONST.ANIMATED_HIGHLIGHT_START_DURATION);
-        });
-        return () => {
-            clearTimeout(timer);
-            cancelAnimationFrame(animation);
-        };
+        if (highlightedTransactionIDs.length === 0) {
+            return;
+        }
+
+        mergeTransactionIdsHighlightOnSearchRoute(queryJSON.type, Object.fromEntries(highlightedTransactionIDs.map((id) => [id, false])));
     }, [transactionIDsToHighlight, queryJSON.type, newSearchResultKeys]);
 
     // Remove transactionIDsToHighlight when the user leaves the current search type
@@ -278,51 +297,82 @@ function useSearchHighlightAndScroll({
         return () => clearTimeout(timer);
     }, [newSearchResultKeys]);
 
+    // When a manual highlight is pending but the transaction is not yet in the loaded search results
+    // (e.g. a backdated expense sitting beyond the first page), keep loading more pages until it appears.
+    useEffect(() => {
+        if (isChat || isEmptyObject(transactionIDsToHighlight) || !hasMoreResults) {
+            return;
+        }
+        if (searchResults?.search?.isLoading) {
+            return;
+        }
+        const currentTransactionIDs = searchResultsData ? extractTransactionIDsFromSearchResults(searchResultsData) : [];
+        // Wait until the initial page has loaded before triggering additional pages.
+        if (currentTransactionIDs.length === 0) {
+            return;
+        }
+        const pendingHighlightIDs = Object.keys(transactionIDsToHighlight ?? {}).filter((id) => !!transactionIDsToHighlight?.[id]);
+        const allFound = pendingHighlightIDs.every((id) => currentTransactionIDs.includes(id));
+        if (!allFound) {
+            onLoadMore();
+        }
+    }, [isChat, transactionIDsToHighlight, hasMoreResults, searchResultsData, searchResults?.search?.isLoading, onLoadMore]);
+
     /**
      * Callback to handle scrolling to the new search result.
+     * Memoized so its reference only changes when newSearchResultKeys or isChat changes,
+     * preventing the useEffect in Search/index.tsx from firing on every render.
      */
-    const handleSelectionListScroll = (data: SearchListItem[], ref: SelectionListHandle<SearchListItem> | null) => {
-        // Early return if there's no ref, new transaction wasn't brought in by this hook
-        // or there's no new search result key
-        const newSearchResultKey = newSearchResultKeys?.values().next().value;
-        if (!ref || !triggeredByHookRef.current || !newSearchResultKey) {
-            return;
-        }
-
-        // Extract the transaction/report action ID from the newSearchResultKey
-        const newID = newSearchResultKey.replace(isChat ? ONYXKEYS.COLLECTION.REPORT_ACTIONS : ONYXKEYS.COLLECTION.TRANSACTION, '');
-
-        // Find the index of the new transaction/report action in the data array
-        const indexOfNewItem = data.findIndex((item) => {
-            if (isChat) {
-                if ('reportActionID' in item && item.reportActionID === newID) {
-                    return true;
-                }
-            } else {
-                // Handle TransactionListItemType
-                if ('transactionID' in item && item.transactionID === newID) {
-                    return true;
-                }
-
-                // Handle TransactionGroupListItemType with transactions array
-                if ('transactions' in item && Array.isArray(item.transactions)) {
-                    return item.transactions.some((transaction) => transaction?.transactionID === newID);
-                }
+    const handleSelectionListScroll = useCallback(
+        (data: SearchListItem[], ref: SelectionListHandle<SearchListItem> | null) => {
+            // Early return if there's no ref, new transaction wasn't brought in by this hook
+            // (either via organic detection or manual highlight path), or there's no new search result key
+            const newSearchResultKey = newSearchResultKeys?.values().next().value;
+            if (!ref || (!triggeredByHookRef.current && !manualHighlightTriggeredRef.current) || !newSearchResultKey) {
+                return;
             }
 
-            return false;
-        });
+            // Extract the transaction/report action ID from the newSearchResultKey
+            const newID = newSearchResultKey.replace(isChat ? ONYXKEYS.COLLECTION.REPORT_ACTIONS : ONYXKEYS.COLLECTION.TRANSACTION, '');
 
-        // Early return if the new item is not found in the data array
-        if (indexOfNewItem <= 0) {
-            return;
-        }
+            // Find the index of the new transaction/report action in the data array
+            const indexOfNewItem = data.findIndex((item) => {
+                if (isChat) {
+                    if ('reportActionID' in item && item.reportActionID === newID) {
+                        return true;
+                    }
+                } else {
+                    // Handle TransactionListItemType
+                    if ('transactionID' in item && item.transactionID === newID) {
+                        return true;
+                    }
 
-        // Perform the scrolling action
-        ref.scrollToIndex(indexOfNewItem);
-        // Reset the trigger flag to prevent unintended future scrolls and highlights
-        triggeredByHookRef.current = false;
-    };
+                    // Handle TransactionGroupListItemType with transactions array
+                    if ('transactions' in item && Array.isArray(item.transactions)) {
+                        return item.transactions.some((transaction) => transaction?.transactionID === newID);
+                    }
+                }
+
+                return false;
+            });
+
+            // Early return if the new item is not found in the data array.
+            // Note: index 0 is valid (item at the top of the list) and must not be skipped.
+            if (indexOfNewItem === -1) {
+                return;
+            }
+
+            // Perform the scrolling action
+            ref.scrollToIndex(indexOfNewItem);
+            // Reset the trigger flags to prevent unintended future scrolls and highlights
+            triggeredByHookRef.current = false;
+            manualHighlightTriggeredRef.current = false;
+        },
+        // Refs (triggeredByHookRef, manualHighlightTriggeredRef) are intentionally omitted —
+        // they are mutable and always hold the current value without needing a re-render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [newSearchResultKeys, isChat],
+    );
 
     return {newSearchResultKeys, handleSelectionListScroll, newTransactions};
 }

@@ -304,6 +304,11 @@ function Search({
         useSearchActionsContext();
     const [offset, setOffset] = useState(0);
 
+    // Stable ref pattern: allows the hook (called before fetchMoreResults is defined) to always
+    // invoke the latest version of fetchMoreResults without causing a temporal dead zone error.
+    const fetchMoreResultsRef = useRef<() => void>(() => {});
+    const stableLoadMore = useCallback(() => fetchMoreResultsRef.current(), []);
+
     const [transactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION);
     const [introSelected] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED);
     const [betas] = useOnyx(ONYXKEYS.BETAS);
@@ -405,6 +410,8 @@ function Search({
         reportActions,
         previousReportActions,
         shouldUseLiveData,
+        hasMoreResults: !!searchResults?.search?.hasMoreResults,
+        onLoadMore: stableLoadMore,
     });
 
     // There's a race condition in Onyx which makes it return data from the previous Search, so in addition to checking that the data is loaded
@@ -1338,6 +1345,9 @@ function Search({
         setOffset((prev) => prev + CONST.SEARCH.RESULTS_PAGE_SIZE);
     }, [isFocused, searchResults?.search?.hasMoreResults, shouldShowLoadingMoreItems, shouldShowLoadingState, offset, allDataLength]);
 
+    // Keep the ref in sync so the hook always calls the latest fetchMoreResults.
+    fetchMoreResultsRef.current = fetchMoreResults;
+
     const toggleAllTransactions = useCallback(() => {
         const areItemsGrouped = !!validGroupBy || isExpenseReportType;
         const totalSelected = Object.keys(selectedTransactions).length;
@@ -1403,6 +1413,20 @@ function Search({
         flushDeferredWrite(CONST.DEFERRED_LAYOUT_WRITE_KEYS.SEARCH);
         onContentReady?.();
     }, [handleSelectionListScroll, stableSortedData, onContentReady, onDestinationVisible]);
+
+    // Retry scroll whenever newSearchResultKeys is set — handles the case where the new expense
+    // arrives in the search API response after onLayout has already fired (the common scenario).
+    // The requestAnimationFrame ensures our scroll runs after SearchList's useFocusEffect rAF
+    // (which restores the previous scroll position), so our scroll wins the race.
+    useEffect(() => {
+        if (!newSearchResultKeys) {
+            return;
+        }
+        const frameID = requestAnimationFrame(() => {
+            handleSelectionListScroll(stableSortedData, searchListRef.current);
+        });
+        return () => cancelAnimationFrame(frameID);
+    }, [newSearchResultKeys, handleSelectionListScroll, stableSortedData]);
 
     // Must be a ref, not state: cancelNavigationSpans is called during render
     // (inside conditional returns), so using setState would trigger infinite re-renders.
