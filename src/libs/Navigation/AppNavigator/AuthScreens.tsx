@@ -60,7 +60,6 @@ import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
 import FeatureTrainingModalNavigator from './Navigators/FeatureTrainingModalNavigator';
 import MigratedUserWelcomeModalNavigator from './Navigators/MigratedUserWelcomeModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
-import TabNavigator from './Navigators/TabNavigator';
 import TestDriveModalNavigator from './Navigators/TestDriveModalNavigator';
 import TestToolsModalNavigator from './Navigators/TestToolsModalNavigator';
 import TestDriveDemoNavigator from './TestDriveDemoNavigator';
@@ -68,6 +67,8 @@ import ThreeDSAuthHandler from './ThreeDSAuthHandler';
 import useModalCardStyleInterpolator from './useModalCardStyleInterpolator';
 import useRootNavigatorScreenOptions from './useRootNavigatorScreenOptions';
 import UserStatusHandler from './UserStatusHandler';
+
+const loadTabNavigator = () => require<ReactComponentModule>('./Navigators/TabNavigator').default;
 
 const loadAttachmentModalScreen = () => require<ReactComponentModule>('../../../pages/media/AttachmentModalScreen').default;
 const loadValidateLoginPage = () => require<ReactComponentModule>('../../../pages/ValidateLoginPage').default;
@@ -186,7 +187,7 @@ function AuthScreens() {
                         <RootStack.Screen
                             name={NAVIGATORS.TAB_NAVIGATOR}
                             options={getTabNavigatorOptions}
-                            component={TabNavigator}
+                            getComponent={loadTabNavigator}
                         />
                         <RootStack.Screen
                             name={SCREENS.VALIDATE_LOGIN}

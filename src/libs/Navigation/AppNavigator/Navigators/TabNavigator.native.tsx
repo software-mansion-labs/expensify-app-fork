@@ -4,50 +4,18 @@
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {findFocusedRoute, useNavigation, useNavigationState} from '@react-navigation/native';
-import React, {lazy, Suspense, useEffect} from 'react';
-import {View} from 'react-native';
-import ActivityIndicator from '@components/ActivityIndicator';
+import React, {useEffect} from 'react';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
-import useThemeStyles from '@hooks/useThemeStyles';
 import type {TabNavigatorParamList} from '@libs/Navigation/types';
+import HomePage from '@pages/home/HomePage';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
+import ReportsSplitNavigator from './ReportsSplitNavigator';
+import SearchFullscreenNavigator from './SearchFullscreenNavigator';
+import SettingsSplitNavigator from './SettingsSplitNavigator';
 import TabNavigatorBar from './TabNavigatorBar';
-
-const LazyHomePage = lazy(() => import('@pages/home/HomePage'));
-const LazyReportsSplitNavigator = lazy(() => import('./ReportsSplitNavigator'));
-const LazySearchFullscreenNavigator = lazy(() => import('./SearchFullscreenNavigator'));
-const LazySettingsSplitNavigator = lazy(() => import('./SettingsSplitNavigator'));
-const LazyWorkspaceNavigator = lazy(() => import('./WorkspaceNavigator'));
-
-function withSuspense<P extends Record<string, unknown>>(LazyComponent: React.LazyExoticComponent<React.ComponentType<P>>) {
-    function SuspenseWrapper(props: P) {
-        const styles = useThemeStyles();
-        return (
-            <Suspense
-                fallback={
-                    <View style={[styles.flex1, styles.justifyContentCenter, styles.alignItemsCenter, styles.appBG]}>
-                        <ActivityIndicator
-                            size="large"
-                            reasonAttributes={{context: 'TabNavigator.LazyTab'}}
-                        />
-                    </View>
-                }
-            >
-                {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-                <LazyComponent {...props} />
-            </Suspense>
-        );
-    }
-    return SuspenseWrapper;
-}
-
-const HomePageScreen = withSuspense(LazyHomePage);
-const ReportsSplitNavigatorScreen = withSuspense(LazyReportsSplitNavigator);
-const SearchFullscreenNavigatorScreen = withSuspense(LazySearchFullscreenNavigator);
-const SettingsSplitNavigatorScreen = withSuspense(LazySettingsSplitNavigator);
-const WorkspaceNavigatorScreen = withSuspense(LazyWorkspaceNavigator);
+import WorkspaceNavigator from './WorkspaceNavigator';
 
 const renderTabBar = ({state}: BottomTabBarProps) => <TabNavigatorBar state={state} />;
 
@@ -65,6 +33,7 @@ const TAB_SCREEN_OPTIONS_BASE = {
     lazy: true,
     animation: 'none' as const,
     freezeOnBlur: true,
+    tabBarPosition: 'left' as const,
 } as const;
 
 function TabNavigator() {
@@ -85,7 +54,6 @@ function TabNavigator() {
     const screenOptions = {
         ...TAB_SCREEN_OPTIONS_BASE,
         sceneStyle: {flex: 1, backgroundColor: theme.appBG},
-        tabBarPosition: shouldUseNarrowLayout ? ('bottom' as const) : ('left' as const),
     };
 
     return (
@@ -96,23 +64,23 @@ function TabNavigator() {
         >
             <Tab.Screen
                 name={SCREENS.HOME}
-                component={HomePageScreen}
+                component={HomePage}
             />
             <Tab.Screen
                 name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
-                component={ReportsSplitNavigatorScreen}
+                component={ReportsSplitNavigator}
             />
             <Tab.Screen
                 name={NAVIGATORS.SEARCH_FULLSCREEN_NAVIGATOR}
-                component={SearchFullscreenNavigatorScreen}
+                component={SearchFullscreenNavigator}
             />
             <Tab.Screen
                 name={NAVIGATORS.SETTINGS_SPLIT_NAVIGATOR}
-                component={SettingsSplitNavigatorScreen}
+                component={SettingsSplitNavigator}
             />
             <Tab.Screen
                 name={NAVIGATORS.WORKSPACE_NAVIGATOR}
-                component={WorkspaceNavigatorScreen}
+                component={WorkspaceNavigator}
             />
         </Tab.Navigator>
     );
