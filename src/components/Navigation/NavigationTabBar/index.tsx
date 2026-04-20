@@ -287,9 +287,9 @@ function NavigationTabBar({selectedTab, isTopLevelBar = false, shouldShowFloatin
             </View>
 
             <FloatingDistanceTestButton
-                        accessibilityLabel="Test distance request"
-                        role={CONST.ROLE.BUTTON}
-                    />
+                accessibilityLabel="Test distance request"
+                role={CONST.ROLE.BUTTON}
+            />
             {shouldShowFloatingButtons && (
                 <>
                     <View style={[styles.navigationTabBarFABItem, styles.ph0, styles.floatingActionButtonPosition]}>
