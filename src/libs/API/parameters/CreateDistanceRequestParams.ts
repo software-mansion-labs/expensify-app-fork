@@ -28,7 +28,6 @@ type CreateDistanceRequestParams = {
     description?: string;
     attendees?: string;
     distance?: number;
-    gpsCoordinates?: string;
     odometerStart?: number;
     odometerEnd?: number;
     gpsCoordinates?: string;

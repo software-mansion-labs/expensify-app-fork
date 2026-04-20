@@ -4,6 +4,7 @@ import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import FloatingCameraButton from '@components/FloatingCameraButton';
+import FloatingDistanceTestButton from '@components/FloatingDistanceTestButton';
 import FloatingGPSButton from '@components/FloatingGPSButton';
 import ImageSVG from '@components/ImageSVG';
 import DebugTabView from '@components/Navigation/DebugTabView';
@@ -217,6 +218,10 @@ function NavigationTabBar({selectedTab, isTopLevelBar = false, shouldShowFloatin
                     </View>
                     <View style={styles.leftNavigationTabBarFAB}>
                         <NavigationTabBarFloatingActionButton />
+                        <FloatingDistanceTestButton
+                            accessibilityLabel="Test distance request"
+                            role={CONST.ROLE.BUTTON}
+                        />
                     </View>
                 </View>
             </>
@@ -281,6 +286,10 @@ function NavigationTabBar({selectedTab, isTopLevelBar = false, shouldShowFloatin
                 />
             </View>
 
+            <FloatingDistanceTestButton
+                        accessibilityLabel="Test distance request"
+                        role={CONST.ROLE.BUTTON}
+                    />
             {shouldShowFloatingButtons && (
                 <>
                     <View style={[styles.navigationTabBarFABItem, styles.ph0, styles.floatingActionButtonPosition]}>
