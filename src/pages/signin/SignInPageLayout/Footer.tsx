@@ -171,7 +171,13 @@ function Footer({navigateFocus}: FooterProps) {
                                 key={column.translationPath}
                                 style={footerColumn}
                             >
-                                <Text style={[styles.textHeadline, styles.footerTitle]}>{translate(column.translationPath)}</Text>
+                                <Text
+                                    style={[styles.textHeadline, styles.footerTitle]}
+                                    accessibilityRole={CONST.ROLE.HEADER}
+                                    aria-level={2}
+                                >
+                                    {translate(column.translationPath)}
+                                </Text>
                                 <View style={[styles.footerRow]}>
                                     {column.rows.map((row) => (
                                         <Hoverable key={row.translationPath}>

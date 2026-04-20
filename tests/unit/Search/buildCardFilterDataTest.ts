@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type {LocaleContextProps} from '@components/LocaleContextProvider';
 import {buildCardFeedsData, buildCardsData} from '@libs/CardFeedUtils';
+import type {DomainFeedData} from '@libs/CardFeedUtils';
 import type IllustrationsType from '@styles/theme/illustrations/types';
 import type {CardList, Policy, WorkspaceCardsList} from '@src/types/onyx';
 
@@ -295,7 +296,7 @@ const cardListClosed = {
 
 const domainFeedDataMock = {
     'mockDomain.com': {domainName: 'mockDomain.com', bank: 'Expensify Card', correspondingCardIDs: ['21589168', '21589182']},
-};
+} as const satisfies Record<string, DomainFeedData>;
 
 const translateMock = jest.fn();
 
@@ -303,6 +304,7 @@ const illustrationsMock = {
     EmptyStateBackgroundImage: jest.fn(),
     ExampleCheckES: jest.fn(),
     ExampleCheckEN: jest.fn(),
+    FileImportTable: jest.fn(),
     WorkspaceProfile: jest.fn(),
     ExpensifyApprovedLogo: jest.fn(),
     GenericCompanyCard: jest.fn(),
@@ -321,6 +323,7 @@ const companyCardIconsMock = {
     BrexCompanyCardDetailLarge: jest.fn(),
     StripeCompanyCardDetailLarge: jest.fn(),
     PlaidCompanyCardDetailLarge: jest.fn(),
+    ExpensifyCardImage: jest.fn(),
 };
 
 describe('buildIndividualCardsData', () => {
@@ -438,6 +441,44 @@ describe('buildCardFeedsData', () => {
         expect(translateMock).toHaveBeenCalledWith('search.filters.card.cardFeedName', {cardFeedBankName: undefined, cardFeedLabel: 'test2'});
         // Check if domain card feed was built properly
         expect(result.unselected.length).toEqual(4);
+    });
+});
+
+describe('buildCardsData isPersonal with customCardNames', () => {
+    it('Uses customCardNames for personal cards when provided', () => {
+        // Card 11111111 has no fundID, so it is treated as personal (isPersonalCard returns true)
+        const customCardNames: Record<string, string> = {
+            '11111111': 'My Custom Card Label',
+        };
+        const result = buildCardsData(
+            workspaceCardFeeds as unknown as Record<string, WorkspaceCardsList | undefined>,
+            cardList as unknown as CardList,
+            {},
+            [],
+            illustrationsMock as IllustrationsType,
+            companyCardIconsMock,
+            false,
+            customCardNames,
+        );
+
+        const personalCard = result.unselected.find((card) => card.keyForList === '11111111') ?? result.selected.find((card) => card.keyForList === '11111111');
+        expect(personalCard).toBeDefined();
+        expect(personalCard?.cardName).toBe('My Custom Card Label');
+    });
+
+    it('Falls back to cardName for personal cards when customCardNames is not provided', () => {
+        const result = buildCardsData(
+            workspaceCardFeeds as unknown as Record<string, WorkspaceCardsList | undefined>,
+            cardList as unknown as CardList,
+            {},
+            [],
+            illustrationsMock as IllustrationsType,
+            companyCardIconsMock,
+        );
+
+        const personalCard = result.unselected.find((card) => card.keyForList === '11111111') ?? result.selected.find((card) => card.keyForList === '11111111');
+        expect(personalCard).toBeDefined();
+        expect(personalCard?.cardName).toBe('455594XXXXXX1138');
     });
 });
 
