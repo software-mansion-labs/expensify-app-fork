@@ -89,6 +89,7 @@ function TabNavigator() {
 
     return (
         <Tab.Navigator
+            initialRouteName={SCREENS.HOME}
             backBehavior="fullHistory"
             tabBar={renderTabBar}
             screenOptions={screenOptions}

@@ -17,7 +17,6 @@ import useDebugShortcut from './hooks/useDebugShortcut';
 import useIsAuthenticated from './hooks/useIsAuthenticated';
 import useLocalize from './hooks/useLocalize';
 import useOnyx from './hooks/useOnyx';
-import {updateLastRoute} from './libs/actions/App';
 import * as ActiveClientManager from './libs/ActiveClientManager';
 import {isSafari} from './libs/Browser';
 import Log from './libs/Log';
@@ -56,7 +55,6 @@ function Expensify() {
     const {setSplashScreenState} = useSplashScreenActions();
     const [hasAttemptedToOpenPublicRoom, setAttemptedToOpenPublicRoom] = useState(false);
     const {preferredLocale} = useLocalize();
-    const [lastRoute] = useOnyx(ONYXKEYS.LAST_ROUTE);
     const [isCheckingPublicRoom = true] = useOnyx(ONYXKEYS.IS_CHECKING_PUBLIC_ROOM, {initWithStoredValues: false});
     const [updateRequired] = useOnyx(ONYXKEYS.RAM_ONLY_UPDATE_REQUIRED);
     const [lastVisitedPath] = useOnyx(ONYXKEYS.LAST_VISITED_PATH);
@@ -250,16 +248,6 @@ function Expensify() {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- we don't want this effect to run again
     }, []);
-
-    useLayoutEffect(() => {
-        if (!isNavigationReady || !lastRoute) {
-            return;
-        }
-        updateLastRoute('');
-        Navigation.navigate(lastRoute as Route);
-        // Disabling this rule because we only want it to run on the first render.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isNavigationReady]);
 
     // Display a blank page until the onyx migration completes
     if (!isOnyxMigrated) {

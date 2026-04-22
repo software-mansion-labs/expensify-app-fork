@@ -56,6 +56,9 @@ export default function () {
             // Ensure the Supportal permission modal doesn't persist across reloads
             [ONYXKEYS.SUPPORTAL_PERMISSION_DENIED]: null,
             [ONYXKEYS.IS_OPEN_APP_FAILURE_MODAL_OPEN]: false,
+            // Start with "no public room check pending" so the splash screen can hide as soon as the navigation becomes ready.
+            // DeepLinkHandler still flips this to true/false while resolving an initial deep link.
+            [ONYXKEYS.IS_CHECKING_PUBLIC_ROOM]: false,
         },
         skippableCollectionMemberIDs: CONST.SKIPPABLE_COLLECTION_MEMBER_IDS,
         snapshotMergeKeys: ['pendingAction', 'pendingFields'],

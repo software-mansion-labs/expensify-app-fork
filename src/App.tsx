@@ -4,7 +4,6 @@ import {maybeCompleteAuthSession} from 'expo-web-browser';
 import React from 'react';
 import {LogBox, View} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {PickerStateProvider} from 'react-native-picker-select';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import '../wdyr';
 import {ActionSheetAwareScrollViewProvider} from './components/ActionSheetAwareScrollView';
@@ -16,22 +15,17 @@ import CustomStatusBarAndBackground from './components/CustomStatusBarAndBackgro
 import CustomStatusBarAndBackgroundContextProvider from './components/CustomStatusBarAndBackground/CustomStatusBarAndBackgroundContextProvider';
 import EnvironmentProvider from './components/EnvironmentContextProvider';
 import ErrorBoundary from './components/ErrorBoundary';
-import FullScreenBlockingViewContextProvider from './components/FullScreenBlockingViewContextProvider';
-import FullScreenLoaderContextProvider from './components/FullScreenLoaderContext';
 import HTMLEngineProvider from './components/HTMLEngineProvider';
 import InitialURLContextProvider from './components/InitialURLContextProvider';
 import {InputBlurContextProvider} from './components/InputBlurContext';
 import KeyboardProvider from './components/KeyboardProvider';
 import {LocaleContextProvider} from './components/LocaleContextProvider';
-import {ModalProvider} from './components/Modal/Global/ModalContext';
 import NavigationBar from './components/NavigationBar';
 import OnyxListItemProvider from './components/OnyxListItemProvider';
-import PopoverContextProvider from './components/PopoverProvider';
+import PostSplashProviders from './components/PostSplashProviders';
 import SafeArea from './components/SafeArea';
 import ScrollOffsetContextProvider from './components/ScrollOffsetContextProvider';
-import SidePanelContextProvider from './components/SidePanel/SidePanelContextProvider';
 import SVGDefinitionsProvider from './components/SVGDefinitionsProvider';
-import {EditingCellProvider} from './components/Table/EditableCell';
 import ThemeIllustrationsProvider from './components/ThemeIllustrationsProvider';
 import ThemeProvider from './components/ThemeProvider';
 import ThemeStylesProvider from './components/ThemeStylesContextProvider';
@@ -46,7 +40,6 @@ import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
 import './libs/HybridApp';
 import './setup/backgroundLocationTrackingTask';
 import './setup/backgroundTask';
-import './setup/fraudProtection';
 import './setup/hybridApp';
 import {SplashScreenStateContextProvider} from './SplashScreenStateContext';
 
@@ -101,10 +94,8 @@ function App() {
                                         HTMLEngineProvider,
                                         PortalProvider,
                                         SafeArea,
-                                        PopoverContextProvider,
                                         CurrentReportIDContextProvider,
                                         ScrollOffsetContextProvider,
-                                        PickerStateProvider,
                                         EnvironmentProvider,
                                         CustomStatusBarAndBackgroundContextProvider,
                                         ActiveElementRoleProvider,
@@ -112,20 +103,17 @@ function App() {
                                         KeyboardProvider,
                                         KeyboardStateProvider,
                                         InputBlurContextProvider,
-                                        FullScreenBlockingViewContextProvider,
-                                        FullScreenLoaderContextProvider,
-                                        ModalProvider,
-                                        SidePanelContextProvider,
-                                        EditingCellProvider,
                                     ]}
                                 >
-                                    <CustomStatusBarAndBackground />
-                                    <ErrorBoundary errorMessage="NewExpensify crash caught by error boundary">
-                                        <ColorSchemeWrapper>
-                                            <Expensify />
-                                        </ColorSchemeWrapper>
-                                    </ErrorBoundary>
-                                    <NavigationBar />
+                                    <PostSplashProviders>
+                                        <CustomStatusBarAndBackground />
+                                        <ErrorBoundary errorMessage="NewExpensify crash caught by error boundary">
+                                            <ColorSchemeWrapper>
+                                                <Expensify />
+                                            </ColorSchemeWrapper>
+                                        </ErrorBoundary>
+                                        <NavigationBar />
+                                    </PostSplashProviders>
                                 </ComposeProviders>
                             </View>
                         </SafeAreaProvider>

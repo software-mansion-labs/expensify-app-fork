@@ -1,6 +1,4 @@
 import React, {useState} from 'react';
-import useArchivedReportsIdSet from '@hooks/useArchivedReportsIdSet';
-import usePermissions from '@hooks/usePermissions';
 import createSplitNavigator from '@libs/Navigation/AppNavigator/createSplitNavigator';
 import FreezeWrapper from '@libs/Navigation/AppNavigator/FreezeWrapper';
 import useSplitNavigatorScreenOptions from '@libs/Navigation/AppNavigator/useSplitNavigatorScreenOptions';
@@ -8,10 +6,8 @@ import getCurrentUrl from '@libs/Navigation/currentUrl';
 import shouldOpenOnAdminRoom from '@libs/Navigation/helpers/shouldOpenOnAdminRoom';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {ReportsSplitNavigatorParamList, TabNavigatorParamList} from '@libs/Navigation/types';
-import * as ReportUtils from '@libs/ReportUtils';
 import CONST from '@src/CONST';
 import type NAVIGATORS from '@src/NAVIGATORS';
-import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
@@ -24,35 +20,26 @@ const Split = createSplitNavigator<ReportsSplitNavigatorParamList>();
  * There can be multiple report screens in the stack with different report IDs.
  */
 function ReportsSplitNavigator({route}: PlatformStackScreenProps<TabNavigatorParamList, typeof NAVIGATORS.REPORTS_SPLIT_NAVIGATOR>) {
-    const {isBetaEnabled} = usePermissions();
     const splitNavigatorScreenOptions = useSplitNavigatorScreenOptions();
-    const archivedReportsIdSet = useArchivedReportsIdSet();
     const isOpenOnAdminRoom = shouldOpenOnAdminRoom();
 
     const [initialReportID] = useState(() => {
-        // Deep links and REPORT_WITH_ID navigation pass the reportID in nested params,
-        // which lets us skip the O(n) findLastAccessedReport scan over all reports.
+        // Deep links and REPORT_WITH_ID navigation pass the reportID in nested params.
         if (route.params?.screen === SCREENS.REPORT && route.params.params?.reportID) {
             return route.params.params.reportID;
         }
 
+        // On web, getCurrentUrl() returns window.location.href and may contain a reportID.
+        // On native, getCurrentUrl() always returns ''.
         const currentURL = getCurrentUrl();
-        const isTransitioning = currentURL.includes(ROUTES.TRANSITION_BETWEEN_APPS);
-
         const reportIdFromPath = currentURL ? new URL(currentURL).pathname.match(CONST.REGEX.REPORT_ID_FROM_PATH)?.at(1) : undefined;
         if (reportIdFromPath) {
             return reportIdFromPath;
         }
 
-        // If we are in a transition, we explicitly do NOT want to load the last accessed report.
-        // Returning an empty string here will cause ReportScreen to skip the `openReport` call initially.
-        if (isTransitioning) {
-            return '';
-        }
-
-        const initialReport = ReportUtils.findLastAccessedReport(!isBetaEnabled(CONST.BETAS.DEFAULT_ROOMS), isOpenOnAdminRoom, undefined, archivedReportsIdSet);
-        // eslint-disable-next-line rulesdir/no-default-id-values
-        return initialReport?.reportID ?? '';
+        // Skip the O(n) findLastAccessedReport scan on cold start so the splash screen can hide faster.
+        // The user can pick a report from the sidebar; deep links are dispatched after the splash hides.
+        return '';
     });
 
     const reportScreenInitialParams = {

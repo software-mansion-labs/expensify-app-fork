@@ -27,6 +27,7 @@ function loadPostSplashScreenModules() {
     import('./libs/actions/replaceOptimisticReportWithActualReport');
     import('./libs/registerPaginationConfig');
     import('./libs/UnreadIndicatorUpdater');
+    import('./setup/fraudProtection');
 }
 
 function SplashScreenStateContextProvider({children}: ChildrenProps) {

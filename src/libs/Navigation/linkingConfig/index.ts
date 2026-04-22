@@ -8,6 +8,10 @@ import prefixes from './prefixes';
 import subscribe from './subscribe';
 
 const linkingConfig: LinkingOptions<RootNavigatorParamList> = {
+    // Always land on the HOME route at cold start. The initial deep link URL is still
+    // captured inside DeepLinkHandler via Linking.getInitialURL() and dispatched through
+    // openReportFromDeepLink after the splash screen hides.
+    getInitialURL: () => Promise.resolve(null),
     getStateFromPath: getAdaptedStateFromPath,
     getPathFromState,
     prefixes,
