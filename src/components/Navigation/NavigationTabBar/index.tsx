@@ -6,6 +6,7 @@ import type {ValueOf} from 'type-fest';
 import FloatingCameraButton from '@components/FloatingCameraButton';
 import FloatingDistanceTestButton from '@components/FloatingDistanceTestButton';
 import FloatingGPSButton from '@components/FloatingGPSButton';
+import FloatingOldDotGPSTestButton from '@components/FloatingOldDotGPSTestButton';
 import ImageSVG from '@components/ImageSVG';
 import DebugTabView from '@components/Navigation/DebugTabView';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -222,6 +223,10 @@ function NavigationTabBar({selectedTab, isTopLevelBar = false, shouldShowFloatin
                             accessibilityLabel="Test distance request"
                             role={CONST.ROLE.BUTTON}
                         />
+                        <FloatingOldDotGPSTestButton
+                            accessibilityLabel="Test OldDot GPS expense"
+                            role={CONST.ROLE.BUTTON}
+                        />
                     </View>
                 </View>
             </>
@@ -288,6 +293,10 @@ function NavigationTabBar({selectedTab, isTopLevelBar = false, shouldShowFloatin
 
             <FloatingDistanceTestButton
                 accessibilityLabel="Test distance request"
+                role={CONST.ROLE.BUTTON}
+            />
+            <FloatingOldDotGPSTestButton
+                accessibilityLabel="Test OldDot GPS expense"
                 role={CONST.ROLE.BUTTON}
             />
             {shouldShowFloatingButtons && (
