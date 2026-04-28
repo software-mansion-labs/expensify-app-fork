@@ -1,4 +1,4 @@
-import type {CommonActions, ParamListBase, PartialState, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
+import type {CommonActions, NavigationState, ParamListBase, PartialState, RouteProp, RouterConfigOptions, StackActionType, StackNavigationState} from '@react-navigation/native';
 import {StackActions, StackRouter} from '@react-navigation/native';
 import pick from 'lodash/pick';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
@@ -19,6 +19,42 @@ type AdaptStateIfNecessaryArgs = {
     state: StackState;
     options: SplitNavigatorRouterOptions;
 };
+
+/**
+ * Walks down the bottom-most descent of the root stack — through nested stacks/tabs — and returns true if
+ * `parentRoute.key` is reached without anything stacked above it. Used to decide whether the sidebar must always be
+ * present in the split's back stack: without it, back navigation from a deep-linked central screen has nowhere to go.
+ *
+ * Descent rules per level:
+ * - TabNavigator: every tab is a sibling "bottom" — check all routes
+ * - other navigators (plain stacks): only `routes[0]` is the bottom — descend into that one
+ */
+function isParentRouteAtBottomOfRootStack(rootState: NavigationState | undefined, parentRoute: RouteProp<ParamListBase>): boolean {
+    if (!rootState || rootState.routes.length === 0) {
+        return true;
+    }
+
+    const matchesBottom = (routes?: NavigationState['routes']): boolean => {
+        if (!routes || routes.length === 0) {
+            return false;
+        }
+        for (const candidate of routes) {
+            if (!candidate) {
+                continue;
+            }
+            if (candidate.key === parentRoute.key) {
+                return true;
+            }
+            const nestedRoutes = (candidate.state as NavigationState | undefined)?.routes;
+            if (matchesBottom(nestedRoutes)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    return matchesBottom(rootState.routes);
+}
 
 /**
  * Adapts the navigation state of a SplitNavigator to ensure proper screen layout and navigation flow.
@@ -45,9 +81,10 @@ function adaptStateIfNecessary({state, options: {sidebarScreen, defaultCentralSc
     const routes = [...state.routes];
     let modified = false;
 
-    // When initializing the app on a small screen with the center screen as the initial screen, the sidebar must also be split to allow users to swipe back.
-    const isInitialRoute = !rootState || rootState.routes.length === 1;
-    const shouldSplitHaveSidebar = isInitialRoute || !isNarrowLayout;
+    // When this split sits at the bottom of the root stack on a small screen, the sidebar must be in the back stack
+    // so the user has somewhere to swipe/pop back to (incl. cold-start deep links that open straight into a modal).
+    const isAtBottomOfRootStack = isParentRouteAtBottomOfRootStack(rootState, parentRoute);
+    const shouldSplitHaveSidebar = isAtBottomOfRootStack || !isNarrowLayout;
 
     // If the screen is wide, there should be at least two screens inside:
     // - sidebarScreen to cover left pane.
