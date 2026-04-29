@@ -2,14 +2,16 @@
  * Tab Navigator containing Home, Inbox (Reports), Search, Settings, and Workspaces pages.
  */
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {findFocusedRoute, useNavigation, useNavigationState} from '@react-navigation/native';
+import type {NavigationState, ParamListBase} from '@react-navigation/native';
+import {findFocusedRoute, useNavigation, useNavigationState, useRoute} from '@react-navigation/native';
 import React, {lazy, Suspense, useEffect} from 'react';
 import {View} from 'react-native';
 import ActivityIndicator from '@components/ActivityIndicator';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import usePreserveNavigatorState from '@libs/Navigation/AppNavigator/createSplitNavigator/usePreserveNavigatorState';
+import createTabNavigator from '@libs/Navigation/AppNavigator/createTabNavigator';
 import type {TabNavigatorParamList} from '@libs/Navigation/types';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
@@ -51,7 +53,7 @@ const WorkspaceNavigatorScreen = withSuspense(LazyWorkspaceNavigator);
 
 const renderTabBar = ({state}: BottomTabBarProps) => <TabNavigatorBar state={state} />;
 
-const Tab = createBottomTabNavigator<TabNavigatorParamList>();
+const Tab = createTabNavigator<TabNavigatorParamList>();
 
 /**
  * Root-level tab screens where the swipe-back gesture should be disabled.
@@ -73,6 +75,17 @@ function TabNavigator() {
     const navigation = useNavigation();
     const parentNavigation = navigation.getParent();
     const focusedRouteName = useNavigationState((state) => findFocusedRoute(state)?.name);
+    const parentRoute = useRoute();
+    const tabState = useNavigationState((parentState) => {
+        const myRoute = parentState.routes.find((r) => r.key === parentRoute.key);
+        const state = myRoute?.state;
+        if (!state || state.stale) {
+            return undefined;
+        }
+        return state as NavigationState<ParamListBase>;
+    });
+
+    usePreserveNavigatorState(tabState, parentRoute);
 
     useEffect(() => {
         if (!shouldUseNarrowLayout || !parentNavigation) {
@@ -93,6 +106,7 @@ function TabNavigator() {
             backBehavior="fullHistory"
             tabBar={renderTabBar}
             screenOptions={screenOptions}
+            parentRoute={parentRoute}
         >
             <Tab.Screen
                 name={SCREENS.HOME}

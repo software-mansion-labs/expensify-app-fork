@@ -1,14 +1,29 @@
-import type {NavigationState, ParamListBase, RouteProp, StackNavigationState} from '@react-navigation/native';
+import type {NavigationState, ParamListBase, PartialState, RouteProp} from '@react-navigation/native';
 import {useEffect} from 'react';
 import NAVIGATORS from '@src/NAVIGATORS';
 
-const preservedNavigatorStates: Record<string, StackNavigationState<ParamListBase>> = {};
+const preservedNavigatorStates: Record<string, NavigationState<ParamListBase>> = {};
+
+const collectAllRouteKeys = (state: NavigationState | PartialState<NavigationState>, keys: Set<string>) => {
+    for (const route of state.routes) {
+        if (route.key) {
+            keys.add(route.key);
+        }
+        // Prefer the live nested state; fall back to the preserved state so that keys for
+        // navigators whose route.state was cleared from the root stack are not lost prematurely.
+        const nestedState = route.state ?? (route.key ? preservedNavigatorStates[route.key] : undefined);
+        if (nestedState) {
+            collectAllRouteKeys(nestedState as NavigationState, keys);
+        }
+    }
+};
 
 const cleanPreservedNavigatorStates = (state: NavigationState) => {
-    const currentSplitNavigatorKeys = new Set(state.routes.map((route) => route.key));
+    const currentNavigatorKeys = new Set<string>();
+    collectAllRouteKeys(state, currentNavigatorKeys);
 
     for (const key of Object.keys(preservedNavigatorStates)) {
-        if (!currentSplitNavigatorKeys.has(key)) {
+        if (!currentNavigatorKeys.has(key)) {
             delete preservedNavigatorStates[key];
         }
     }
@@ -24,9 +39,9 @@ const clearPreservedSearchNavigatorStates = () => {
 
 const getPreservedNavigatorState = (key: string) => preservedNavigatorStates[key];
 
-function usePreserveNavigatorState(state: StackNavigationState<ParamListBase>, route: RouteProp<ParamListBase> | undefined) {
+function usePreserveNavigatorState(state: NavigationState<ParamListBase> | undefined, route: RouteProp<ParamListBase> | undefined) {
     useEffect(() => {
-        if (!route) {
+        if (!route || !state) {
             return;
         }
         preservedNavigatorStates[route.key] = state;
