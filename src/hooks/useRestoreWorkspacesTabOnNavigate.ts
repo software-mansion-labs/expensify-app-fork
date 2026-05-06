@@ -105,9 +105,8 @@ function useRestoreWorkspacesTabOnNavigate() {
             domain: lastViewedDomain,
             lastWorkspacesTabNavigatorRoute,
             topmostFullScreenRoute,
-            workspacesTabState,
         });
-    }, [shouldUseNarrowLayout, currentUserLogin, lastViewedPolicy, lastViewedDomain, lastWorkspacesTabNavigatorRoute, topmostFullScreenRoute, workspacesTabState]);
+    }, [shouldUseNarrowLayout, currentUserLogin, lastViewedPolicy, lastViewedDomain, lastWorkspacesTabNavigatorRoute, topmostFullScreenRoute]);
 }
 
 export default useRestoreWorkspacesTabOnNavigate;
