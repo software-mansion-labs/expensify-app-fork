@@ -1,5 +1,6 @@
 import React, {useRef} from 'react';
 import {View} from 'react-native';
+import Button from '@components/Button';
 import NAVIGATION_TABS from '@components/Navigation/NavigationTabBar/NAVIGATION_TABS';
 import QuickCreationActionsBar from '@components/Navigation/QuickCreationActionsBar';
 import TabBarBottomContent from '@components/Navigation/TabBarBottomContent';
@@ -13,8 +14,10 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
+import Navigation from '@libs/Navigation/Navigation';
 import variables from '@styles/variables';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import AnnouncementSection from './AnnouncementSection';
 import AssignedCardsSection from './AssignedCardsSection';
 import DiscoverSection from './DiscoverSection';
@@ -62,6 +65,14 @@ function HomePage() {
                         contentContainerStyle={styles.homePageContentContainer}
                         addBottomSafeAreaPadding
                     >
+                        <View style={[styles.ph5, styles.pb3]}>
+                            <Button
+                                large
+                                success
+                                text="Open Fix Violations POC"
+                                onPress={() => Navigation.navigate(ROUTES.FIX_EXPENSE_VIOLATIONS_POC.getRoute())}
+                            />
+                        </View>
                         {!shouldUseNarrowLayout && <QuickCreationActionsBar />}
                         <View style={styles.homePageMainLayout(shouldUseNarrowLayout)}>
                             {/* Widgets handle their own visibility and may return null to avoid duplicating visibility logic here */}

@@ -3368,6 +3368,14 @@ const ROUTES = {
         getRoute: (backTo?: string) => getUrlWithBackToParam(`onboarding/workspace-invite`, backTo),
     },
     EXPLANATION_MODAL_ROOT: 'onboarding/explanation',
+    FIX_EXPENSE_VIOLATIONS_POC: {
+        route: 'fix-expense-violations-poc',
+        getRoute: (initialIndex?: number) => (initialIndex ? (`fix-expense-violations-poc?initialIndex=${initialIndex}` as const) : ('fix-expense-violations-poc' as const)),
+    },
+    FIX_EXPENSE_VIOLATIONS_CATEGORY: {
+        route: 'fix-expense-violations-poc/category/:index',
+        getRoute: (index: number) => `fix-expense-violations-poc/category/${index}` as const,
+    },
     TEST_DRIVE_MODAL_ROOT: {
         route: 'onboarding/test-drive',
         getRoute: (bossEmail?: string) => `onboarding/test-drive${bossEmail ? `?bossEmail=${encodeURIComponent(bossEmail)}` : ''}` as const,

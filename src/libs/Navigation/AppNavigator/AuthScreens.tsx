@@ -57,6 +57,7 @@ import KeyboardShortcutsHandler from './KeyboardShortcutsHandler';
 import {ShareModalStackNavigator} from './ModalStackNavigators';
 import ExplanationModalNavigator from './Navigators/ExplanationModalNavigator';
 import FeatureTrainingModalNavigator from './Navigators/FeatureTrainingModalNavigator';
+import FixExpenseViolationsNavigator from './Navigators/FixExpenseViolationsNavigator';
 import MigratedUserWelcomeModalNavigator from './Navigators/MigratedUserWelcomeModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import TestDriveModalNavigator from './Navigators/TestDriveModalNavigator';
@@ -317,6 +318,12 @@ function AuthScreens() {
                             name={NAVIGATORS.FEATURE_TRAINING_MODAL_NAVIGATOR}
                             options={rootNavigatorScreenOptions.basicModalNavigator}
                             component={FeatureTrainingModalNavigator}
+                            listeners={modalScreenListeners}
+                        />
+                        <RootStack.Screen
+                            name={NAVIGATORS.FIX_EXPENSE_VIOLATIONS_NAVIGATOR}
+                            options={rootNavigatorScreenOptions.fixExpenseViolationsModalNavigator}
+                            component={FixExpenseViolationsNavigator}
                             listeners={modalScreenListeners}
                         />
                         {isOnboardingCompleted === false && !Navigation.isValidateLoginFlow() && (

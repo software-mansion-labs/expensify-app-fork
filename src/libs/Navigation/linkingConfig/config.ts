@@ -57,6 +57,18 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
             },
         },
 
+        [NAVIGATORS.FIX_EXPENSE_VIOLATIONS_NAVIGATOR]: {
+            screens: {
+                [SCREENS.FIX_EXPENSE_VIOLATIONS.ROOT]: {
+                    path: ROUTES.FIX_EXPENSE_VIOLATIONS_POC.route,
+                    exact: true,
+                },
+                [SCREENS.FIX_EXPENSE_VIOLATIONS.CATEGORY]: {
+                    path: ROUTES.FIX_EXPENSE_VIOLATIONS_CATEGORY.route,
+                },
+            },
+        },
+
         [NAVIGATORS.MIGRATED_USER_MODAL_NAVIGATOR]: {
             screens: {
                 [SCREENS.MIGRATED_USER_WELCOME_MODAL.ROOT]: {

@@ -919,6 +919,11 @@ const SCREENS = {
         ROOT: 'Explanation_Modal_Root',
     },
 
+    FIX_EXPENSE_VIOLATIONS: {
+        ROOT: 'FixExpenseViolations_Root',
+        CATEGORY: 'FixExpenseViolations_Category',
+    },
+
     MIGRATED_USER_WELCOME_MODAL: {
         ROOT: 'MigratedUserWelcomeModal_Root',
     },

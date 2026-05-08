@@ -19,6 +19,7 @@ import useModalCardStyleInterpolator from './useModalCardStyleInterpolator';
 type RootNavigatorScreenOptions = {
     rightModalNavigator: PlatformStackNavigationOptions;
     basicModalNavigator: PlatformStackNavigationOptions;
+    fixExpenseViolationsModalNavigator: PlatformStackNavigationOptions;
     splitNavigator: PlatformStackNavigationOptions;
     fullScreen: PlatformStackNavigationOptions;
     fullScreenTabPage: PlatformStackNavigationOptions;
@@ -97,6 +98,27 @@ const useRootNavigatorScreenOptions = () => {
                     position: 'fixed',
                 },
                 cardStyleInterpolator: (props: StackCardInterpolationProps) => modalCardStyleInterpolator({props, isOnboardingModal: true}),
+            },
+        },
+        fixExpenseViolationsModalNavigator: {
+            presentation: Presentation.TRANSPARENT_MODAL,
+            // Disable the native screen transition: the navigator drives its own Reanimated
+            // entrance/exit animation, so any native-level slide/fade would stack on top of it
+            // and look broken (e.g. card slides in from the side while the overlay fades separately).
+            animation: Animations.NONE,
+            web: {
+                cardOverlayEnabled: false,
+                cardStyle: {
+                    ...StyleUtils.getNavigationModalCardStyle(),
+                    backgroundColor: 'transparent',
+                    width: '100%',
+                    top: 0,
+                    left: 0,
+                    position: 'fixed',
+                },
+                // Same reason as above on web: keep the card static so the panel and overlay
+                // animations driven inside the navigator are the only ones visible.
+                cardStyleInterpolator: () => ({cardStyle: {}}),
             },
         },
         splitNavigator: {
