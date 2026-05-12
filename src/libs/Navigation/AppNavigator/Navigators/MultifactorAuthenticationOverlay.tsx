@@ -3,18 +3,22 @@ import {DarkTheme, DefaultTheme} from '@react-navigation/native';
 import {CardStyleInterpolators} from '@react-navigation/stack';
 import type {StackCardInterpolationProps} from '@react-navigation/stack';
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import {BackHandler, StyleSheet, View} from 'react-native';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import {useMultifactorAuthentication, useMultifactorAuthenticationActions, useMultifactorAuthenticationState} from '@components/MultifactorAuthentication/Context';
 import type {MfaOverlayInternalParamList} from '@components/MultifactorAuthentication/mfaNavigation';
 import {applyPendingNavigation, clearPendingNavigation, INITIAL_SCREEN, mfaNavigationRef} from '@components/MultifactorAuthentication/mfaNavigation';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import useLocalize from '@hooks/useLocalize';
+import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useRootNavigationState from '@hooks/useRootNavigationState';
 import useTheme from '@hooks/useTheme';
 import useThemePreference from '@hooks/useThemePreference';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {isSafari} from '@libs/Browser';
+import Navigation from '@libs/Navigation/Navigation';
+import navigationRef from '@libs/Navigation/navigationRef';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import Presentation from '@libs/Navigation/PlatformStackNavigation/navigationOptions/presentation';
@@ -58,6 +62,12 @@ function MultifactorAuthenticationOverlay() {
     const [isClosing, setIsClosing] = useState(false);
     const progress = useSharedValue(0);
     const modalCardStyleInterpolator = useModalCardStyleInterpolator();
+    // Subscribe to the root navigator's history so we can detect the MFA marker
+    // being popped (= browser/mWeb back), which is our cue to close the overlay.
+    // useRootNavigationState reads via navigationRef so this works regardless of
+    // where the overlay is mounted in the tree (it sits outside any navigator screen).
+    const lastHistoryEntry = useRootNavigationState((rootState) => rootState?.history?.at(-1));
+    const prevLastHistoryEntry = usePrevious(lastHistoryEntry);
 
     // Mirror isModalOpen transitions during render so the slide-out animation can
     // outlast isModalOpen=false. Cleared by the close-animation completion callback.
@@ -98,6 +108,63 @@ function MultifactorAuthenticationOverlay() {
         }, CONST.ANIMATED_TRANSITION);
         return () => clearTimeout(cleanupTimer);
     }, [isModalOpen, isClosing, progress, dispatch]);
+
+    // The overlay lives in its own independent navigation tree and is excluded from
+    // the linking config, so React Navigation does not bind browser/Android back to
+    // it directly. Instead, we mirror open/close into the root navigator's
+    // state.history via a CUSTOM_HISTORY_ENTRY_MFA_OVERLAY marker — useLinking
+    // pushes/pops a synthetic browser history entry to match, giving us proper
+    // browser/mWeb back integration. BackHandler covers native Android (no browser
+    // history). The history observer effect below maps the marker being popped to
+    // a CLOSE_MODAL dispatch.
+    useEffect(() => {
+        if (!isModalOpen) {
+            return;
+        }
+
+        const backHandlerSub = BackHandler.addEventListener('hardwareBackPress', () => {
+            dispatch({type: 'CLOSE_MODAL'});
+            return true;
+        });
+
+        Navigation.isNavigationReady().then(() => {
+            navigationRef.dispatch({
+                type: CONST.NAVIGATION.ACTION_TYPE.TOGGLE_MFA_OVERLAY_WITH_HISTORY,
+                payload: {isVisible: true},
+            });
+        });
+
+        return () => {
+            backHandlerSub.remove();
+            Navigation.isNavigationReady().then(() => {
+                navigationRef.dispatch({
+                    type: CONST.NAVIGATION.ACTION_TYPE.TOGGLE_MFA_OVERLAY_WITH_HISTORY,
+                    payload: {isVisible: false},
+                });
+            });
+        };
+    }, [isModalOpen, dispatch]);
+
+    // Marker popped while open → user pressed browser/Android back → close. Guarded
+    // by isModalOpen so our own toggle(false) on close doesn't re-trigger CLOSE_MODAL.
+    //
+    // We intentionally do NOT react to the rising edge (marker reappearing via
+    // browser forward into a cancelled overlay): MFA is transactional, so we don't
+    // re-open; and dispatching toggle(false) to strip the marker would make
+    // useLinking history.back() the browser, which re-enables the forward button
+    // and lets the user oscillate forever. Leaving the marker stale means the
+    // forward press is consumed (browser at N+1, no further forward), and the
+    // next executeScenario reuses the marker via the idempotent toggle handler.
+    useEffect(() => {
+        if (!isModalOpen) {
+            return;
+        }
+        const wasMfaMarker = prevLastHistoryEntry === CONST.NAVIGATION.CUSTOM_HISTORY_ENTRY_MFA_OVERLAY;
+        const isMfaMarker = lastHistoryEntry === CONST.NAVIGATION.CUSTOM_HISTORY_ENTRY_MFA_OVERLAY;
+        if (wasMfaMarker && !isMfaMarker) {
+            dispatch({type: 'CLOSE_MODAL'});
+        }
+    }, [isModalOpen, lastHistoryEntry, prevLastHistoryEntry, dispatch]);
 
     const backdropAnimatedStyle = useAnimatedStyle(() => ({
         opacity: progress.get() * variables.overlayOpacity,
