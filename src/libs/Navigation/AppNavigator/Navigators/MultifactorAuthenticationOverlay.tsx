@@ -2,19 +2,24 @@ import {BaseNavigationContainer, NavigationIndependentTree} from '@react-navigat
 import {DarkTheme, DefaultTheme} from '@react-navigation/native';
 import {CardStyleInterpolators} from '@react-navigation/stack';
 import type {StackCardInterpolationProps} from '@react-navigation/stack';
-import React, {useEffect, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {BackHandler, StyleSheet, View} from 'react-native';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
+import type {ExecuteScenarioParams} from '@components/MultifactorAuthentication/Context';
 import {useMultifactorAuthentication, useMultifactorAuthenticationActions, useMultifactorAuthenticationState} from '@components/MultifactorAuthentication/Context';
 import type {MfaOverlayInternalParamList} from '@components/MultifactorAuthentication/mfaNavigation';
 import {applyPendingNavigation, clearPendingNavigation, INITIAL_SCREEN, mfaNavigationRef} from '@components/MultifactorAuthentication/mfaNavigation';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import useLocalize from '@hooks/useLocalize';
+import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useRootNavigationState from '@hooks/useRootNavigationState';
 import useTheme from '@hooks/useTheme';
 import useThemePreference from '@hooks/useThemePreference';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {isSafari} from '@libs/Browser';
+import Navigation from '@libs/Navigation/Navigation';
+import navigationRef from '@libs/Navigation/navigationRef';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import Animations from '@libs/Navigation/PlatformStackNavigation/navigationOptions/animation';
 import Presentation from '@libs/Navigation/PlatformStackNavigation/navigationOptions/presentation';
@@ -45,7 +50,7 @@ TransparentScreen.displayName = 'TransparentScreen';
 
 function MultifactorAuthenticationOverlay() {
     const state = useMultifactorAuthenticationState();
-    const {cancel} = useMultifactorAuthentication();
+    const {cancel, executeScenario} = useMultifactorAuthentication();
     const {dispatch} = useMultifactorAuthenticationActions();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const theme = useTheme();
@@ -58,6 +63,18 @@ function MultifactorAuthenticationOverlay() {
     const [isClosing, setIsClosing] = useState(false);
     const progress = useSharedValue(0);
     const modalCardStyleInterpolator = useModalCardStyleInterpolator();
+    // Subscribe to the root navigator's history so we can detect the MFA marker
+    // being popped (= browser/mWeb back), which is our cue to close the overlay.
+    // useRootNavigationState reads via navigationRef so this works regardless of
+    // where the overlay is mounted in the tree (it sits outside any navigator screen).
+    const lastHistoryEntry = useRootNavigationState((rootState) => rootState?.history?.at(-1));
+    const prevLastHistoryEntry = usePrevious(lastHistoryEntry);
+
+    // Captured-scenario thunk used to re-run the last MFA flow when the user
+    // navigates forward into a previously cancelled overlay. The closure pins the
+    // scenario+payload to the moment of capture so a later forward press can
+    // re-execute without depending on reducer state that gets wiped by RESET.
+    const resumeLastScenarioRef = useRef<(() => void) | undefined>(undefined);
 
     // Mirror isModalOpen transitions during render so the slide-out animation can
     // outlast isModalOpen=false. Cleared by the close-animation completion callback.
@@ -98,6 +115,76 @@ function MultifactorAuthenticationOverlay() {
         }, CONST.ANIMATED_TRANSITION);
         return () => clearTimeout(cleanupTimer);
     }, [isModalOpen, isClosing, progress, dispatch]);
+
+    // The overlay lives in its own independent navigation tree and is excluded from
+    // the linking config, so React Navigation does not bind browser/Android back to
+    // it directly. Instead, we mirror open/close into the root navigator's
+    // state.history via a CUSTOM_HISTORY_ENTRY_MFA_OVERLAY marker — useLinking
+    // pushes/pops a synthetic browser history entry to match, giving us proper
+    // browser/mWeb back integration. BackHandler covers native Android (no browser
+    // history). The history observer effect below maps the marker being popped to
+    // a CLOSE_MODAL dispatch.
+    useEffect(() => {
+        if (!isModalOpen) {
+            return;
+        }
+
+        const backHandlerSub = BackHandler.addEventListener('hardwareBackPress', () => {
+            dispatch({type: 'CLOSE_MODAL'});
+            return true;
+        });
+
+        Navigation.isNavigationReady().then(() => {
+            navigationRef.dispatch({
+                type: CONST.NAVIGATION.ACTION_TYPE.TOGGLE_MFA_OVERLAY_WITH_HISTORY,
+                payload: {isVisible: true},
+            });
+        });
+
+        return () => {
+            backHandlerSub.remove();
+            Navigation.isNavigationReady().then(() => {
+                navigationRef.dispatch({
+                    type: CONST.NAVIGATION.ACTION_TYPE.TOGGLE_MFA_OVERLAY_WITH_HISTORY,
+                    payload: {isVisible: false},
+                });
+            });
+        };
+    }, [isModalOpen, dispatch]);
+
+    // Refresh the resume thunk whenever a scenario is active. RESET wipes the
+    // reducer after the close animation, so without this snapshot we'd lose the
+    // information needed to re-run the flow on browser forward.
+    useEffect(() => {
+        if (!state.scenarioName) {
+            return;
+        }
+        const scenario = state.scenarioName;
+        const payload = state.payload;
+        resumeLastScenarioRef.current = () => {
+            executeScenario(scenario, payload as ExecuteScenarioParams<typeof scenario>);
+        };
+    }, [state.scenarioName, state.payload, executeScenario]);
+
+    // Map root-history transitions onto the MFA reducer:
+    //   marker popped while open  → browser/Android back → close.
+    //   marker restored while closed → browser forward into a previously cancelled
+    //     overlay → re-run the last scenario. The toggle handler is idempotent
+    //     when at(-1)===MFA so the subsequent open dispatch doesn't push a new
+    //     browser entry or oscillate with useLinking.
+    useEffect(() => {
+        const wasMfaMarker = prevLastHistoryEntry === CONST.NAVIGATION.CUSTOM_HISTORY_ENTRY_MFA_OVERLAY;
+        const isMfaMarker = lastHistoryEntry === CONST.NAVIGATION.CUSTOM_HISTORY_ENTRY_MFA_OVERLAY;
+
+        if (wasMfaMarker && !isMfaMarker && isModalOpen) {
+            dispatch({type: 'CLOSE_MODAL'});
+            return;
+        }
+
+        if (!wasMfaMarker && isMfaMarker && !isModalOpen) {
+            resumeLastScenarioRef.current?.();
+        }
+    }, [isModalOpen, lastHistoryEntry, prevLastHistoryEntry, dispatch]);
 
     const backdropAnimatedStyle = useAnimatedStyle(() => ({
         opacity: progress.get() * variables.overlayOpacity,
