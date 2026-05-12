@@ -2,9 +2,10 @@ import {BaseNavigationContainer, NavigationIndependentTree} from '@react-navigat
 import {DarkTheme, DefaultTheme} from '@react-navigation/native';
 import {CardStyleInterpolators} from '@react-navigation/stack';
 import type {StackCardInterpolationProps} from '@react-navigation/stack';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {BackHandler, StyleSheet, View} from 'react-native';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
+import type {ExecuteScenarioParams} from '@components/MultifactorAuthentication/Context';
 import {useMultifactorAuthentication, useMultifactorAuthenticationActions, useMultifactorAuthenticationState} from '@components/MultifactorAuthentication/Context';
 import type {MfaOverlayInternalParamList} from '@components/MultifactorAuthentication/mfaNavigation';
 import {applyPendingNavigation, clearPendingNavigation, INITIAL_SCREEN, mfaNavigationRef} from '@components/MultifactorAuthentication/mfaNavigation';
@@ -49,7 +50,7 @@ TransparentScreen.displayName = 'TransparentScreen';
 
 function MultifactorAuthenticationOverlay() {
     const state = useMultifactorAuthenticationState();
-    const {cancel} = useMultifactorAuthentication();
+    const {cancel, executeScenario} = useMultifactorAuthentication();
     const {dispatch} = useMultifactorAuthenticationActions();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const theme = useTheme();
@@ -68,6 +69,12 @@ function MultifactorAuthenticationOverlay() {
     // where the overlay is mounted in the tree (it sits outside any navigator screen).
     const lastHistoryEntry = useRootNavigationState((rootState) => rootState?.history?.at(-1));
     const prevLastHistoryEntry = usePrevious(lastHistoryEntry);
+
+    // Captured-scenario thunk used to re-run the last MFA flow when the user
+    // navigates forward into a previously cancelled overlay. The closure pins the
+    // scenario+payload to the moment of capture so a later forward press can
+    // re-execute without depending on reducer state that gets wiped by RESET.
+    const resumeLastScenarioRef = useRef<(() => void) | undefined>(undefined);
 
     // Mirror isModalOpen transitions during render so the slide-out animation can
     // outlast isModalOpen=false. Cleared by the close-animation completion callback.
@@ -145,24 +152,37 @@ function MultifactorAuthenticationOverlay() {
         };
     }, [isModalOpen, dispatch]);
 
-    // Marker popped while open → user pressed browser/Android back → close. Guarded
-    // by isModalOpen so our own toggle(false) on close doesn't re-trigger CLOSE_MODAL.
-    //
-    // We intentionally do NOT react to the rising edge (marker reappearing via
-    // browser forward into a cancelled overlay): MFA is transactional, so we don't
-    // re-open; and dispatching toggle(false) to strip the marker would make
-    // useLinking history.back() the browser, which re-enables the forward button
-    // and lets the user oscillate forever. Leaving the marker stale means the
-    // forward press is consumed (browser at N+1, no further forward), and the
-    // next executeScenario reuses the marker via the idempotent toggle handler.
+    // Refresh the resume thunk whenever a scenario is active. RESET wipes the
+    // reducer after the close animation, so without this snapshot we'd lose the
+    // information needed to re-run the flow on browser forward.
     useEffect(() => {
-        if (!isModalOpen) {
+        if (!state.scenarioName) {
             return;
         }
+        const scenario = state.scenarioName;
+        const payload = state.payload;
+        resumeLastScenarioRef.current = () => {
+            executeScenario(scenario, payload as ExecuteScenarioParams<typeof scenario>);
+        };
+    }, [state.scenarioName, state.payload, executeScenario]);
+
+    // Map root-history transitions onto the MFA reducer:
+    //   marker popped while open  → browser/Android back → close.
+    //   marker restored while closed → browser forward into a previously cancelled
+    //     overlay → re-run the last scenario. The toggle handler is idempotent
+    //     when at(-1)===MFA so the subsequent open dispatch doesn't push a new
+    //     browser entry or oscillate with useLinking.
+    useEffect(() => {
         const wasMfaMarker = prevLastHistoryEntry === CONST.NAVIGATION.CUSTOM_HISTORY_ENTRY_MFA_OVERLAY;
         const isMfaMarker = lastHistoryEntry === CONST.NAVIGATION.CUSTOM_HISTORY_ENTRY_MFA_OVERLAY;
-        if (wasMfaMarker && !isMfaMarker) {
+
+        if (wasMfaMarker && !isMfaMarker && isModalOpen) {
             dispatch({type: 'CLOSE_MODAL'});
+            return;
+        }
+
+        if (!wasMfaMarker && isMfaMarker && !isModalOpen) {
+            resumeLastScenarioRef.current?.();
         }
     }, [isModalOpen, lastHistoryEntry, prevLastHistoryEntry, dispatch]);
 
