@@ -1,0 +1,11 @@
+{
+  "name": "agent-optimizer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tooling for validating and evaluating CLAUDE.md",
+  "type": "commonjs",
+  "scripts": {
+    "validate": "node evaluate/validate/run.js",
+    "eval": "node evaluate/validate/run.js --eval"
+  }
+}

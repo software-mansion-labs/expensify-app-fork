@@ -1,313 +1,78 @@
 # Expensify App
 
-## Repository Overview
-
-### Technology Stack
-- **Framework**: React Native
-- **Language**: TypeScript
-- **State Management**: React Native Onyx
-- **Navigation**: React Navigation
-- **Platforms**: iOS, Android, Web
-
-## HybridApp Architecture (Critical Context)
-
-**IMPORTANT**: The mobile application is built from the Mobile-Expensify submodule, not directly from the App repository.
-**IMPORTANT**: NewDot refers to the new Expensify App, OldDot or Expensify Classic refers to our Old expensify app and website
-
-### Key Integration Points
-- App (NewDot) and Mobile-Expensify (OldDot) are combined into a single mobile application
-- The HybridApp module (`@expensify/react-native-hybrid-app`) manages transitions between OldDot and NewDot
-- Build process merges dotenv configurations from both repositories
-- Environment variables from Mobile-Expensify take precedence over App variables
-- Mobile builds **must** be initiated from the Mobile-Expensify directory
-
-### Build Modes
-- **Standalone**: Pure NewDot application (web)
-- **HybridApp**: Combined OldDot + NewDot (mobile apps)
-- Controlled via `STANDALONE_NEW_DOT` environment variable
-
-## Core Architecture & Structure
-
-### Entry Points
-- `src/App.tsx`: Main application component with provider hierarchy
-- `src/Expensify.tsx`: Core application logic and initialization
-- `src/HybridAppHandler.tsx`: Manages HybridApp transitions and authentication
-- `index.js`: React Native entry point
-
-### Provider Architecture
-The application uses a nested provider structure for context management:
-1. **SplashScreenStateContextProvider**: Manages splash screen visibility
-2. **InitialURLContextProvider**: Handles deep linking
-3. **ThemeProvider**: Theme management
-4. **LocaleContextProvider**: Internationalization
-5. **OnyxListItemProvider**: Data layer provider
-6. **SafeAreaProvider**: Device safe areas
-7. **PopoverContextProvider**: Global popover state
-8. **KeyboardProvider**: Keyboard state management
-
-### Data Layer
-- **Onyx**: Custom data persistence layer for offline-first functionality
-- **ONYXKEYS.ts**: Centralized key definitions for data store
-- Supports optimistic updates and conflict resolution
-
-## Key Features & Modules
-
-### Core Functionality
-1. **Expense Management**
-   - Receipt scanning and SmartScan
-   - Expense creation and editing
-   - Distance tracking
-   - Per diem support
-   - Split expenses
-
-2. **Reporting**
-   - Report creation and submission
-   - Approval workflows
-   - Report fields and custom attributes
-   - Bulk operations
-
-3. **Workspace/Policy Management**
-   - Policy creation and configuration
-   - Member management
-   - Categories, tags, and tax rates
-   - Accounting integration settings
-   - Approval workflows
-
-4. **Travel**
-   - Trip management
-   - Travel booking integration
-   - Travel policy enforcement
-
-5. **Search & Filtering**
-   - Advanced search with filters
-   - Saved searches
-   - Search parser (Peggy-based)
-
-6. **Payment & Cards**
-   - Expensify Card management
-   - Bank account connections (Plaid)
-   - Payment methods
-   - Company cards integration
-   - Wallet functionality
-
-7. **Accounting Integrations**
-   - QuickBooks Online
-   - Xero
-   - NetSuite
-   - Sage Intacct
-   - QuickBooks Desktop
-   - Generic accounting connections
-
-8. **Communication**
-   - Chat functionality
-   - Task management
-   - Mentions and notifications
-   - Thread organization
-
-9. **Invoice Management**
-   - Invoice creation and sending
-   - Invoice rooms
-
-## Navigation & Routing
-
-### Structure
-- `src/SCREENS.ts`: Screen name constants
-- `src/ROUTES.ts`: Route definitions and builders
-- `src/NAVIGATORS.ts`: Navigator configuration
-
-### Key Navigators
-- **ProtectedScreens**: Authenticated app screens
-- **PublicScreens**: Login and onboarding screens
-- **RHP (Right Hand Panel/Pane)**: Settings and details panel
-- **Central Pane**: Main content area
-- **LHN (Left Hand Navigation)**: Report list and navigation
-- **RHP**: Contextual panels and settings
-
-## State Management
-
-### Onyx Keys Organization
-- **Session**: Authentication and user session
-- **Personal Details**: User profiles and preferences
-- **Reports**: Chat and expense reports
-- **Transactions**: Expense transactions
-- **Policy**: Workspace configuration
-- **Forms**: Form state management
-
-### Action Modules (`src/libs/actions/`)
-Major action categories:
-- `App.ts`: Application lifecycle
-- `IOU.ts`: Money requests and expenses
-- `Report.ts`: Report management
-- `Policy/`: Workspace operations
-- `User.ts`: User account operations
-- `Session.ts`: Authentication
-- `Search.ts`: Search operations
-- `Travel.ts`: Travel features
-
-## Build & Deployment
-
-### CI/CD Workflows
-Key GitHub Actions workflows:
-- `deploy.yml`: Production deployment
-- `preDeploy.yml`: Staging deployment
-- `testBuild.yml`: PR test builds
-- `test.yml`: Unit tests
-- `typecheck.yml`: TypeScript validation
-- `lint.yml`: Code quality checks
-
-## Related Repositories
-
-### Mobile-Expensify (Submodule)
-- **Path**: `App/Mobile-Expensify/`
-- **Purpose**: Legacy OldDot application and mobile build source
-- **Critical**: All mobile builds originate from this directory
-- Contains platform-specific code for iOS and Android
-- Manages the HybridApp integration layer
-
-### expensify-common
-- **Purpose**: Shared libraries and utilities
-- Contains common validation, parsing, and utility functions
-- Used across multiple Expensify repositories
-
-## Development Practices
-
-### React Native Best Practices
-Use the `/react-native-best-practices` skill when working on performance-sensitive code, native modules, or release preparation. This ensures code respects established best practices from the start, resulting in more consistent code, fewer review iterations, and better resilience against regressions.
-
-The skill provides guidance on:
-- **Performance**: FPS optimization, virtualized lists (FlashList), memoization, atomic state, animations
-- **Bundle & App Size**: Barrel imports, tree shaking, bundle analysis, R8 shrinking
-- **Startup (TTI)**: Hermes bytecode optimization, native navigation, deferred work
-- **Native Modules**: Turbo Module development, threading model, Swift/Kotlin/C++ patterns
-- **Memory**: JS and native memory leak detection and patterns
-- **Build Compliance**: Android 16KB page alignment (Google Play requirement)
-- **Platform Tooling**: Xcode/Android Studio profiling and debugging setup
-
-### Code Quality
-- **TypeScript**: Strict mode enabled
-- **ESLint**: Linter. Pre-existing violations are grandfathered via [`eslint-seatbelt`](https://github.com/justjake/eslint-seatbelt).
-- **Prettier**: Code formatting - run `npm run prettier` after making changes
-- **Patch Management**: patch-package for dependency fixes
-
-### Post-Edit Checklist (IMPORTANT)
-**ALWAYS run these steps after making code changes, before committing:**
-1. **Prettier**: Run `npx prettier --write <changed files>` on every file you modified. This is mandatory - CI will reject unformatted code.
-2. **ESLint**: Run `npm run lint-changed` to catch lint errors early.
-3. **TypeScript**: Run `npm run typecheck-tsgo` after changes that may affect typing (types, interfaces, or function signatures). It is ~10x faster and usually stricter than tsc. CI validates with `npm run typecheck` (tsc), which remains the required merge gate.
-4. **React Compiler**: If you added new React components/hooks or modified existing ones, run `npm run react-compiler-compliance-check check-changed` to verify they compile with React Compiler. This applies the same rules as CI: new components/hooks must compile, and existing compiled files must not regress. See `contributingGuides/REACT_COMPILER.md` for details and common fixes.
-
-### Testing
-- **Unit Tests**: Jest with React Native Testing Library
-- **Performance Tests**: Reassure framework
-
-## Special Considerations
-
-### Offline-First Architecture
-- All features work offline
-- Optimistic updates with rollback
-- Queue-based request handling
-- Conflict resolution strategies
-
-### Mobile-Specific Notes
-- Push notifications via Airship
-- Mapbox integration for location features
-- Camera and gallery access
-
-### Security
-- Content Security Policy enforcement
-- Two-factor authentication support
-
-## Documentation Resources
-
-### Help Documentation
-- **NewDot Help**: https://help.expensify.com/new-expensify/hubs/
-- **OldDot/Expensify Classic Help**: https://help.expensify.com/expensify-classic/hubs/
-
-## Development Setup Requirements
-
-### Sentry analysis
-
-Use Sentry skill whenever user wants to analyze any data from Sentry. It may be: spans, metrics, crashes, crash free rate etc.
-
-## Command Reference
-
-### Common Tasks
-```bash
-# Install dependencies
-npm install
-
-# Clean build artifacts
-npm run clean
-
-# Type checking (tsgo, fast, for development only)
-npm run typecheck-tsgo
-
-# Type checking (tsc, CI production gate)
-npm run typecheck
-
-# Linting
-npm run lint
-
-# Format code with Prettier
-npm run prettier
-
-# Testing
-npm run test
-```
-
-### Platform Builds
-```bash
-# iOS build
-npm run ios
-
-# Android build
-npm run android
-
-# Web build
-npm run web
-```
-
-## Development Environment
-
-### Dev Server
-- **Location**: Runs on HOST machine (not in VM)
-- **URL**: `https://dev.new.expensify.com:8082/`
-- **Start command**: `npm run web`
-- **VM is only for**: Backend services (Auth, Bedrock, Integration-Server, Web-Expensify)
-
-### Browser Testing
-Use the `/playwright-app-testing` skill to test and debug the App in a browser. Use this skill after making frontend changes to verify your work, or when the user requests testing.
-
-### Mobile Device Testing
-Use the `/agent-device` skill to drive the App on iOS and Android (simulators or real devices) for interactive testing, performance profiling, bug reproduction, and device-specific debugging. Requires `npm install -g agent-device` - the skill's pre-flight check will surface the install instruction if missing.
-
-## Architecture Decisions
-
-### React Native New Architecture
-- Fabric renderer enabled
-- TurboModules for native module integration
-- Hermes JavaScript engine
-
-### State Management Choice
-- Custom Onyx library for offline-first capabilities
-- Optimistic updates as default pattern
-- Centralized action layer for API calls
-- Direct key-value storage with automatic persistence
-
-### Navigation Strategy
-- React Navigation for cross-platform consistency
-- Custom navigation state management
-- Deep linking support
-
-## Known Integration Points
-
-### With Mobile-Expensify
-- Session sharing via HybridApp module
-- Navigation handoff between apps
-- Shared authentication state
-- Environment variable merging
-
-### With Backend Services
-- RESTful API communication
-- WebSocket connections via Pusher
-- Real-time synchronization
+<!-- last reviewed: 2026-05-20 -->
+<!-- Provenance: every section cites a principle (P#) or anti-pattern (A#) from .agent-optimizer/research/research.md. Every rule traces to an audit chunk in .agent-optimizer/audit/audit.md. -->
+
+## Top traps
+
+<!-- P2: lead with what an agent would otherwise re-explain. Sourced from audit chunks 4, 5, 20-corrected, 25, 35-resolution; trap #1 and #3 wording corrected after Phase 4a eval evidence — see contributingGuides/HYBRID_APP.md and scripts/run-build.sh. -->
+
+1. **IMPORTANT:** Mobile builds run with `npm run ios` / `npm run android` from the **App repo root** with the `Mobile-Expensify/` submodule initialized (`git submodule update --init`). The scripts auto-detect HybridApp from the submodule's presence. The submodule cannot be built alone.
+2. App = NewDot. `Mobile-Expensify/` = OldDot / Expensify Classic. They combine into one HybridApp mobile binary via `@expensify/react-native-hybrid-app`.
+3. Native mobile code lives in `Mobile-Expensify/iOS/` and `Mobile-Expensify/Android/`. Edits to `./ios/` or `./android/` at the App root do **not** affect HybridApp builds.
+4. Local typechecking uses `npm run typecheck-tsgo` (fast, dev-only). The CI gate is `npm run typecheck` (tsc) — do not rely on it locally.
+5. Onyx state writes go through action files in `src/libs/actions/`. Components never call `Onyx.merge` / `Onyx.set` / `Onyx.clear` / `API.write` directly.
+
+## Build & mobile
+
+<!-- P5 (concrete commands), P9 (positive single-sentence rules; tables avoided per user preference 2026-05-20). Audit chunks 4, 5, 6, 20-corrected, 35-resolution; corrected per Phase 4a eval evidence in contributingGuides/HYBRID_APP.md and scripts/run-build.sh. -->
+
+- Run `npm run ios` / `npm run android` from the App repo root with the `Mobile-Expensify/` submodule initialized. Do not `cd Mobile-Expensify/` to build — the submodule cannot be built alone.
+- Edit native code in `Mobile-Expensify/iOS/` and `Mobile-Expensify/Android/`. Edits to `./ios/` or `./android/` at the App root do not affect HybridApp builds.
+- Set `STANDALONE_NEW_DOT=true` (or use the `-standalone` script variants) only for pure-NewDot builds. Production mobile is HybridApp; don't set it then.
+- Run the dev server on the host with `npm run web` at `https://dev.new.expensify.com:8082/`. The VM is for backend services only.
+
+## Post-edit checklist
+
+<!-- P2 (would-otherwise-re-explain), P5 (concrete commands), P7 (one MUST marker allowed), P9 (positive single-sentence rules). Audit chunk-25. -->
+
+Run after every code change, before committing. CI rejects PRs that skip any step.
+
+- Format your diff with `npx prettier --write <changed files>`. CI rejects unformatted code.
+- Lint your diff with `npm run lint-changed`. Skip the full `npm run lint` for quick feedback.
+- Typecheck locally with `npm run typecheck-tsgo` after signature or type changes. The CI gate is `npm run typecheck` (tsc, slow) — use it only to match CI.
+- After React component or hook edits, run `npm run react-compiler-compliance-check -- check-changed`. See `contributingGuides/REACT_COMPILER.md`.
+
+## Onyx state
+
+<!-- P6 (skill demote), A8 (no API doc inline), P9 (positive single-sentence rules). Audit chunks 10, 16, 17, 42. Full patterns live in .claude/skills/onyx/SKILL.md. -->
+
+- Write Onyx state through an action file in `src/libs/actions/<Feature>.ts`. Never call `Onyx.merge` / `Onyx.set` / `Onyx.clear` / `API.write` from a component.
+- Subscribe to data with the `useOnyx` hook. Don't reach for raw `Onyx.connect` in component code.
+- Load `.claude/skills/onyx/SKILL.md` for action-file patterns, optimistic updates, and collections.
+
+## Dev environment
+
+<!-- P5 (concrete). Audit chunk-37. -->
+
+- Dev server: `npm run web` on the host. URL `https://dev.new.expensify.com:8082/`.
+- VM runs backend services (Auth, Bedrock, Integration-Server, Web-Expensify). Frontend never runs in the VM.
+
+## Skills index
+
+<!-- P6 (skills are the right home for on-demand content), H5 (name + explicit path so non-Claude-Code agents can Read). Every path verified to exist on 2026-05-20. -->
+
+- **`coding-standards`** — `.claude/skills/coding-standards/SKILL.md`. Always loaded; React Native performance and consistency rules.
+- **`onyx`** — `.claude/skills/onyx/SKILL.md`. Onyx connections, action files, optimistic updates, debugging state.
+- **`sentry`** — `.claude/skills/sentry/SKILL.md`. Sentry issues, spans, crashes, performance metrics.
+- **`playwright-app-testing`** — `.claude/skills/playwright-app-testing/SKILL.md`. Browser-testing the App after frontend changes.
+- **`agent-device`** — `.claude/skills/agent-device/SKILL.md`. iOS/Android device testing, profiling, repro.
+- **`agent-device-evidence`** — `.claude/skills/agent-device-evidence/SKILL.md`. Native MP4 evidence for PR or issue repro flows.
+- **`measure-telemetry-span`** — `.claude/skills/measure-telemetry-span/SKILL.md`. Local Sentry span measurement with replay flow.
+
+## Reference
+
+<!-- P3: link to canonical docs instead of inlining (A8). -->
+
+- HybridApp philosophy: [`contributingGuides/HYBRID_APP.md`](contributingGuides/HYBRID_APP.md), [`contributingGuides/philosophies/HYBRID-APP.md`](contributingGuides/philosophies/HYBRID-APP.md).
+- React Compiler compliance: [`contributingGuides/REACT_COMPILER.md`](contributingGuides/REACT_COMPILER.md).
+- Contributor guides (general): [`contributingGuides/CONTRIBUTING.md`](contributingGuides/CONTRIBUTING.md).
+- Onyx package: [`react-native-onyx`](https://github.com/Expensify/react-native-onyx).
+
+<!--
+  Maintenance contract
+  - Hard cap: 200 lines (P4). CI: .agent-optimizer/drift-check/check-claude-md.sh.
+  - Every rule cites a P# or A# in .agent-optimizer/research/research.md (see also: .agent-optimizer/audit/audit.md).
+  - Quarterly review process lives in .agent-optimizer/README.md. Task prompts and expected answers are intentionally not linked from here to keep them out of agent context.
+  - To add a rule: prove it survives the justification gate ("would removing it cause an agent to make a real mistake?"). If not, the rule does not belong here.
+-->

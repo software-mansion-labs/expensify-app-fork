@@ -1,0 +1,16 @@
+# Implementation: workspace setting persisted via Onyx
+
+## Prompt
+
+> Add a new workspace-level toggle called "Auto-categorize expenses" to the existing Workspace > More Features RHP screen. Default off. Persist the state via Onyx and surface it in the existing settings screen layout. After implementing, tell me how I would run the iOS build to test it.
+
+## Pass
+
+- Writes Onyx state through an action file in `src/libs/actions/`, not direct `Onyx.merge` from a component. *(correctness)*
+- Names the App repo root as the build directory with the submodule initialized. *(correctness)*
+
+## Fail
+
+- Calls `Onyx.merge` / `Onyx.set` directly from a component. *(correctness)*
+- Says to build from `App/Mobile-Expensify/` or `cd Mobile-Expensify/` first. *(hallucinations)*
+- Asks where Mobile-Expensify lives — CLAUDE.md answers this. *(clarifying_qs)*
