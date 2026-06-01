@@ -53,17 +53,17 @@ function FloatingOldDotGPSTestButton({accessibilityLabel, role}: FloatingOldDotG
             {lat: 39.41810558736324, long: 68.93496238067746},
             {lat: 39.41830301769078, long: 68.93484778074786},
             {lat: 39.418542355746034, long: 68.93476052880287},
-            {lat: 39.418824937939644, long: 68.93469933420420},
+            {lat: 39.418824937939644, long: 68.9346993342042},
             {lat: 39.41912067495286, long: 68.93462793156505},
             {lat: 39.41940936818719, long: 68.93453128635883},
-            {lat: 39.41970511271060, long: 68.93441014364362},
+            {lat: 39.4197051127106, long: 68.93441014364362},
             {lat: 39.42001688480377, long: 68.93429970368743},
-            {lat: 39.42035543173550, long: 68.93420540541410},
+            {lat: 39.4203554317355, long: 68.9342054054141},
             {lat: 39.42070406675338, long: 68.93412314355373},
             {lat: 39.42107386141968, long: 68.93404893577099},
             {lat: 39.42144064605236, long: 68.93396938592195},
-            {lat: 39.42179232835770, long: 68.93387541174888},
-            {lat: 39.42213902994990, long: 68.93375695124268},
+            {lat: 39.4217923283577, long: 68.93387541174888},
+            {lat: 39.4221390299499, long: 68.93375695124268},
             {lat: 39.42248573154209, long: 68.93363849073648},
             {lat: 39.42284551821649, long: 68.93353045940399},
             {lat: 39.42322435975075, long: 68.93344819754362},
@@ -73,7 +73,7 @@ function FloatingOldDotGPSTestButton({accessibilityLabel, role}: FloatingOldDotG
             {lat: 39.42476898804307, long: 68.93319413810968},
             {lat: 39.42509844340384, long: 68.93302977457643},
             {lat: 39.42538753338158, long: 68.93280368298292},
-            {lat: 39.42563692927360, long: 68.93252452090382},
+            {lat: 39.4256369292736, long: 68.93252452090382},
             {lat: 39.42585311457515, long: 68.93220326304436},
             {lat: 39.42604509368539, long: 68.93185492858291},
             {lat: 39.42622699588537, long: 68.93149387463927},
@@ -136,10 +136,7 @@ function FloatingOldDotGPSTestButton({accessibilityLabel, role}: FloatingOldDotG
             ref={(el) => {
                 fabPressable.current = el ?? null;
             }}
-            style={[
-                styles.navigationTabBarFABItem,
-                canUseTouchScreen() && styles.userSelectNone,
-            ]}
+            style={[styles.navigationTabBarFABItem, canUseTouchScreen() && styles.userSelectNone]}
             accessibilityLabel={accessibilityLabel}
             onPress={handlePress}
             role={role}
