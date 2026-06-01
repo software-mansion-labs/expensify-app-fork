@@ -2,18 +2,23 @@ import type {ReactNode} from 'react';
 import type {WayPoint} from '@components/MapView/MapViewTypes';
 import useMapMarkers from '@hooks/useMapMarkers';
 import type {MapMarkerType} from '@hooks/useMapMarkers/types';
-import useOnyx from '@hooks/useOnyx';
 import {getGPSWaypoints, isTripStopped as isTripStoppedUtil} from '@libs/GPSDraftDetailsUtils';
-import ONYXKEYS from '@src/ONYXKEYS';
+import type {GpsDraftDetails} from '@src/types/onyx';
+import type {TrimmedGPSPoint} from '@src/types/onyx/GpsDraftDetails';
 
-function useGPSWaypointMarkers(): WayPoint[] {
+type UseGPSWaypointMarkersProps = {
+    gpsDraftDetails: GpsDraftDetails | undefined;
+    trimmedEndPoint?: TrimmedGPSPoint;
+};
+
+function useGPSWaypointMarkers({gpsDraftDetails, trimmedEndPoint: trimmedEndPointProp}: UseGPSWaypointMarkersProps) {
     const getMapMarkerIconComponent = useMapMarkers();
 
-    const [gpsDraftDetails] = useOnyx(ONYXKEYS.GPS_DRAFT_DETAILS);
+    const trimmedEndPoint = trimmedEndPointProp ?? gpsDraftDetails?.trimmedEndPoint;
 
     const isTripStopped = isTripStoppedUtil(gpsDraftDetails);
 
-    const gpsWaypoints = getGPSWaypoints(gpsDraftDetails);
+    const gpsWaypoints = getGPSWaypoints(gpsDraftDetails, trimmedEndPoint);
     const waypointEntries = Object.entries(gpsWaypoints);
     const lastIndex = waypointEntries.length - 1;
 
