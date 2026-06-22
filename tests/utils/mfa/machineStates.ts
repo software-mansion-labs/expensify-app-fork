@@ -27,4 +27,5 @@ function getSettleableLeafStates(machine: AnyStateMachine): SettleableLeafState[
 }
 
 export default getSettleableLeafStates;
+export {toStateValue};
 export type {SettleableLeafState};
