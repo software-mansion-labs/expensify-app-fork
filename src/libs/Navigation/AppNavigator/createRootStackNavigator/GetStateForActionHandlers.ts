@@ -214,16 +214,22 @@ function getTargetTabRoute(existingTabRoute: TabRouteForReplacement | undefined,
     const existingFirstRoute = existingNestedRoutes?.at(0);
     const newFirstRoute = newNestedRoutes?.at(0);
     const defaultSidebarRouteName = getSidebarRouteName(existingTabRoute?.name ?? focusedTargetTab.name);
-    const sidebarRoute: NavigationPartialRoute | undefined = existingFirstRoute ?? (defaultSidebarRouteName ? {name: defaultSidebarRouteName} : undefined);
+    let sidebarRoute: NavigationPartialRoute | undefined;
+    if (focusedTargetTab.name === NAVIGATORS.WORKSPACE_NAVIGATOR) {
+        // Always seed a FRESH (keyless) WORKSPACES_LIST sidebar so it mounts born-non-top, even when the
+        // user backed into the list and it is the mounted, visible top. Reusing the existing list's key
+        // makes react-native-screens reorder it top->non-top during the reveal and flash it (#90985). A
+        // keyless route is never the active top, so there is no reorder to flash; it gets a fresh key on
+        // rehydration. The list's params (e.g. backTo) are carried over so the back target survives.
+        // The prepend below is a no-op when the incoming state already starts with WORKSPACES_LIST.
+        const existingListParams = existingFirstRoute?.name === SCREENS.WORKSPACES_LIST ? existingFirstRoute.params : undefined;
+        sidebarRoute = {name: SCREENS.WORKSPACES_LIST, ...(existingListParams ? {params: existingListParams} : {})};
+    } else {
+        sidebarRoute = existingFirstRoute ?? (defaultSidebarRouteName ? {name: defaultSidebarRouteName} : undefined);
+    }
     if (sidebarRoute && newFirstRoute && sidebarRoute.name !== newFirstRoute.name) {
         const prependedRoutes = [sidebarRoute, ...(newNestedRoutes ?? [])];
         mergedNestedState = {...focusedTargetTab.state, routes: prependedRoutes, index: prependedRoutes.length - 1};
-    }
-
-    if (focusedTargetTab.name === NAVIGATORS.WORKSPACE_NAVIGATOR && mergedNestedState?.routes?.length && !mergedNestedState.routes.some((route) => route.name === SCREENS.WORKSPACES_LIST)) {
-        const workspaceRoutes = [{name: SCREENS.WORKSPACES_LIST}, ...mergedNestedState.routes];
-        const focusedIndex = typeof mergedNestedState.index === 'number' ? mergedNestedState.index + 1 : workspaceRoutes.length - 1;
-        mergedNestedState = {...mergedNestedState, routes: workspaceRoutes, index: focusedIndex};
     }
 
     if (!existingTabRoute) {
