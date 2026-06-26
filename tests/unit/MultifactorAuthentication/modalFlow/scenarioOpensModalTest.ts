@@ -1,10 +1,10 @@
 import CONST from '@src/CONST';
-import createMfaTestActor from '../../utils/mfa/createMfaTestActor';
-import createInitEvent, {MFA_TEST_SCENARIO_NAME} from '../../utils/mfa/mfaTestFixtures';
+import createInitEvent, {MFA_TEST_SCENARIO_NAME} from '../../../utils/mfa/flowFixtures';
+import createMfaTestActor from '../../../utils/mfa/machineUnderTest';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 
-describe('mfaMachine', () => {
+describe('the MFA modal opens to its outcome on a scenario', () => {
     it('opens to the success outcome on INIT', () => {
         const {actor, spies} = createMfaTestActor();
 

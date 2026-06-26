@@ -4,8 +4,8 @@ import {useMachine} from '@xstate/react';
 import {getShortestPaths} from 'xstate/graph';
 import {snapshotToState} from '@components/MultifactorAuthentication/machine';
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
-import {buildMfaTestMachine, createMfaActionSpies} from '../../utils/mfa/createMfaTestActor';
-import createInitEvent from '../../utils/mfa/mfaTestFixtures';
+import createInitEvent from '../../../utils/mfa/flowFixtures';
+import {buildMfaTestMachine, createMfaActionSpies} from '../../../utils/mfa/machineUnderTest';
 
 const testMachine = buildMfaTestMachine(createMfaActionSpies());
 
@@ -14,7 +14,7 @@ const drivenEventTypes = new Set<string>(['INIT']);
 
 // createTestModel rejects machines with `after` transitions, so paths come from getShortestPaths and
 // are replayed against the machine running through the @xstate/react adapter the Provider uses.
-describe('mfaMachine view-layer contract', () => {
+describe('the @xstate/react binding reflects the machine', () => {
     const paths = getShortestPaths(mfaMachine, {events: [createInitEvent()]});
 
     it.each(paths.map((path) => [JSON.stringify(path.state.value), path] as const))('view-layer state matches the machine on path -> %s', (_label, path) => {

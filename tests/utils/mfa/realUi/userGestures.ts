@@ -1,9 +1,9 @@
 import {act, fireEvent, screen} from '@testing-library/react-native';
 import type {MfaEvent} from '@components/MultifactorAuthentication/machine/types';
 import {handleInitialScreenLayout} from '@components/MultifactorAuthentication/mfaNavigation';
-import {MFA_TEST_SCENARIO_NAME} from '../mfaTestFixtures';
-import {flushMfaUi, getMfaControls} from './harness';
+import {MFA_TEST_SCENARIO_NAME} from '../flowFixtures';
 import {pendingModalClose} from './mocks';
+import {flushMfaUi, getMfaControls} from './renderModal';
 
 type MfaEventType = MfaEvent['type'];
 type MfaEventExecutor = () => Promise<void>;

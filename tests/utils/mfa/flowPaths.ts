@@ -3,8 +3,8 @@ import type {SnapshotFrom} from 'xstate';
 import {getPathsFromEvents, getSimplePaths} from 'xstate/graph';
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
 import type {MfaEvent} from '@components/MultifactorAuthentication/machine/types';
-import {toStateValue} from './machineStates';
-import createInitEvent from './mfaTestFixtures';
+import createInitEvent from './flowFixtures';
+import {toStateValue} from './reachableStates';
 
 /**
  * A small `createTestModel`-style harness over `xstate/graph`'s plain path generators: each path
