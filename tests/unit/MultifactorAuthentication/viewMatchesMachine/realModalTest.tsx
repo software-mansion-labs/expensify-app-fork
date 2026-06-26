@@ -6,23 +6,23 @@ import {resetMfaUiMocks} from '../../../utils/mfa/realUi/mocks';
 import {flushMfaUi, isModalOverlayMounted, isOutcomeScreenVisible, renderMfaUi} from '../../../utils/mfa/realUi/renderModal';
 import mfaEventExecutors from '../../../utils/mfa/realUi/userGestures';
 
-// Wide layout so the navigator renders the backdrop overlay the assertions use as the mounted marker.
+// Forces a wide layout so the navigator renders the backdrop overlay the assertions use as the mounted marker.
 jest.mock('@hooks/useResponsiveLayout');
-// Dev-only Stately inspector wiring -> the plain @xstate/react adapter the provider needs.
+// Replaces the dev-only Stately inspector wiring with the plain @xstate/react adapter the provider needs.
 jest.mock('@hooks/useInspectedMachine', () => require('../../../utils/mfa/realUi/jestMocks').inspectedMachineMock());
 // Native / WebAuthn biometrics are out of scope for the modal-lifecycle contract.
 jest.mock('@components/MultifactorAuthentication/biometrics/useBiometrics', () => require('../../../utils/mfa/realUi/jestMocks').biometricsHookMock());
 // Browser/Android back-history wiring is a separate concern from the machine <-> UI contract.
 jest.mock('@components/MultifactorAuthentication/useSyncMfaModalNavigatorWithHistory', () => require('../../../utils/mfa/realUi/jestMocks').syncHistoryMock());
-// Navigation automock leaves methods undefined; supply the three the flow needs and no-op the rest.
+// Navigation automock leaves methods undefined, so this supplies the methods the flow needs and no-ops the rest.
 jest.mock('@libs/Navigation/Navigation', () => require('../../../utils/mfa/realUi/jestMocks').navigationMock());
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 
 const testModel = createMfaTestModel();
 
-// The createTestModel-style config: events map -> UI gesture, states map -> per-state assertion.
-// State keys are dot-path values matched with `matchesState`, so they can target any depth - here the
+// The createTestModel-style config maps each event to a UI gesture and each state to a per-state assertion.
+// State keys are dot-path values matched with `matchesState`, so they can target any depth, such as the
 // settled success leaf `open.outcome.success` rather than just the `open` parent.
 const testConfig = {
     events: mfaEventExecutors,
@@ -52,7 +52,7 @@ describe('the real MFA modal follows the machine', () => {
         jest.clearAllMocks();
     });
 
-    // getSimplePaths reaches every state; the lifecycle lap adds the MODAL_CLOSED teardown it skips.
+    // getSimplePaths reaches every state. The lifecycle paths add the MODAL_CLOSED teardown that simple paths skip.
     const paths = [...testModel.getSimplePaths(), ...testModel.getLifecyclePaths()];
 
     for (const path of paths) {

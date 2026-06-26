@@ -13,7 +13,7 @@ function createMfaActionSpies(): MfaActionSpies {
     };
 }
 
-// Stubs only the actions that reach Navigation; context-only actions stay real.
+// Stubs only the actions that reach Navigation. Context-only actions stay real.
 function buildMfaTestMachine(spies: MfaActionSpies) {
     return mfaMachine.provide({
         actions: {

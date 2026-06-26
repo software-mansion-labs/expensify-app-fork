@@ -10,7 +10,7 @@ let pendingCloseCallback: CapturedCallback | undefined;
 
 /**
  * Holds the callback the modal navigator hands to `Navigation.runAfterUpcomingTransition` when it
- * starts closing. The real navigator runs it once the close animation ends; the test captures it and
+ * starts closing. The real navigator runs it once the close animation ends. The test captures it and
  * runs it explicitly so the `closing` state stays observable and `MODAL_CLOSED` stays drivable from
  * the event map instead of resolving on a timer.
  */
@@ -29,9 +29,9 @@ const pendingModalClose = {
 };
 
 /**
- * Stand-in for the native / WebAuthn biometrics hook. The flow only reads these two fields during
- * `INIT` (captureCredentialsState); `authorize` is here for the scenarios that will later sign a
- * challenge through this seam.
+ * Stands in for the native / WebAuthn biometrics hook. The flow only reads the credential fields
+ * during `INIT` (captureCredentialsState). `authorize` is here for the scenarios that will later sign
+ * a challenge through this seam.
  */
 const biometricsMock = {
     serverKnownCredentialIDs: [] as string[],

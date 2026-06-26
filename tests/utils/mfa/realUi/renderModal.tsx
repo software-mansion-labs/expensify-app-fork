@@ -8,8 +8,8 @@ import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import MultifactorAuthenticationModalNavigator from '@navigation/AppNavigator/Navigators/MultifactorAuthenticationModalNavigator';
 import waitForBatchedUpdatesWithAct from '../../waitForBatchedUpdatesWithAct';
 
-/** The two queryable markers the state tests assert against. `OutcomeScreenBase` is the success/failure
- *  screen's testID; the backdrop's `common.close` label only ever renders inside the mounted navigator. */
+/** The queryable markers the state tests assert against. `OutcomeScreenBase` is the success or failure
+ *  screen's testID, and the backdrop's `common.close` label only ever renders inside the mounted navigator. */
 const OUTCOME_SCREEN_TEST_ID = 'OutcomeScreenBase';
 const MODAL_OVERLAY_LABEL = 'Close';
 
@@ -20,7 +20,7 @@ type MfaUiControls = {
 const controlsHolder: {current: MfaUiControls | undefined} = {current: undefined};
 
 /**
- * Renders nothing; it sits inside the providers only to capture the live context API so the event
+ * Renders nothing. It sits inside the providers only to capture the live context API so the event
  * executors can start a flow through the public API.
  */
 function MfaControlsCapture() {

@@ -15,7 +15,7 @@ function collectSettleableLeafStates(node: AnyStateNode): SettleableLeafState[] 
     if (children.length > 0) {
         return children.flatMap(collectSettleableLeafStates);
     }
-    // A leaf with an `always` transition is a transient router - it leaves on entry and never settles.
+    // A leaf with an `always` transition is a transient router that leaves on entry and never settles.
     if ((node.always?.length ?? 0) > 0) {
         return [];
     }

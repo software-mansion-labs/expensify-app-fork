@@ -9,7 +9,7 @@ import {biometricsMock, pendingModalClose} from './mocks';
  * factory, so it returns a ready-to-use mock module (`__esModule` + `default`).
  */
 
-/** Drops the dev-only Stately inspector wiring; the provider just needs the plain @xstate/react adapter. */
+/** Drops the dev-only Stately inspector wiring. The provider just needs the plain @xstate/react adapter. */
 function inspectedMachineMock() {
     // Named `use*` so rules-of-hooks treats it as a custom hook (it calls useMachine).
     const useInspectedMachineMock = (machine: AnyStateMachine) => useMachine(machine);
@@ -19,7 +19,7 @@ function inspectedMachineMock() {
     };
 }
 
-/** Native / WebAuthn biometrics are out of scope for the modal-lifecycle contract; serve the shared seam. */
+/** Native / WebAuthn biometrics are out of scope for the modal-lifecycle contract, so this returns the shared biometrics mock. */
 function biometricsHookMock() {
     return {
         __esModule: true,
@@ -36,15 +36,15 @@ function syncHistoryMock() {
 }
 
 /**
- * Automock leaves the default export's methods undefined, so provide the three the flow needs and
- * resolve any other `Navigation.*` the render path touches to a no-op jest.fn().
+ * Automock leaves the default export's methods undefined, so this provides the methods the flow needs
+ * and resolves any other `Navigation.*` the render path touches to a no-op jest.fn().
  *
  * `runAfterTransition` runs its callback immediately (no active navigation transition in jsdom).
  * `runAfterUpcomingTransition` captures the navigator's teardown callback so MODAL_CLOSED is driven
  * from the event map, not a timer.
  */
 function navigationMock() {
-    const handlers: Record<string, unknown> = {
+    const navigationMethodStubs: Record<string, unknown> = {
         runAfterTransition: (callback: () => void) => {
             callback();
             return {cancel: () => {}};
@@ -57,7 +57,7 @@ function navigationMock() {
     };
     return {
         __esModule: true,
-        default: new Proxy(handlers, {
+        default: new Proxy(navigationMethodStubs, {
             get: (target, property) => {
                 if (typeof property === 'string' && property in target) {
                     return target[property];

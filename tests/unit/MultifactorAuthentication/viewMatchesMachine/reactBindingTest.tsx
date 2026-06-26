@@ -9,7 +9,7 @@ import {buildMfaTestMachine, createMfaActionSpies} from '../../../utils/mfa/mach
 
 const testMachine = buildMfaTestMachine(createMfaActionSpies());
 
-// xstate prepends an internal `xstate.init` step to every path; only events listed here are replayed.
+// xstate prepends an internal `xstate.init` step to every path. Only the events listed here are replayed.
 const drivenEventTypes = new Set<string>(['INIT']);
 
 // createTestModel rejects machines with `after` transitions, so paths come from getShortestPaths and
@@ -22,9 +22,11 @@ describe('the @xstate/react binding reflects the machine', () => {
 
         for (const step of path.steps) {
             if (drivenEventTypes.has(step.event.type)) {
-                act(() => result.current[1](step.event));
+                const [, send] = result.current;
+                act(() => send(step.event));
             }
-            expect(snapshotToState(result.current[0]).modalState).toBe(snapshotToState(step.state).modalState);
+            const [snapshot] = result.current;
+            expect(snapshotToState(snapshot).modalState).toBe(snapshotToState(step.state).modalState);
         }
     });
 });
