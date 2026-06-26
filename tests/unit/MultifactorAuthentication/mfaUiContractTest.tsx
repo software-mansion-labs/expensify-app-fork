@@ -1,4 +1,5 @@
 import {act, renderHook} from '@testing-library/react-native';
+// eslint-disable-next-line no-restricted-imports -- this contract test asserts the machine <-> view mapping through the plain @xstate/react adapter and deliberately skips the inspector wiring useInspectedMachine adds.
 import {useMachine} from '@xstate/react';
 import {getShortestPaths} from 'xstate/graph';
 import {snapshotToState} from '@components/MultifactorAuthentication/machine';

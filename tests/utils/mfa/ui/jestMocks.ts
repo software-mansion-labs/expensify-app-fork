@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- this mock replaces useInspectedMachine with the plain @xstate/react adapter so the modal-lifecycle contract runs without the dev-only inspector wiring.
 import {useMachine} from '@xstate/react';
 import type {AnyStateMachine} from 'xstate';
 import {biometricsMock, pendingModalClose} from './mocks';
