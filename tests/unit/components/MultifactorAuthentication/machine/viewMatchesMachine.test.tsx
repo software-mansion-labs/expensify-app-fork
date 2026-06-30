@@ -1,9 +1,9 @@
 import {act, fireEvent, screen} from '@testing-library/react-native';
 import {MFA_TEST_SCENARIO_NAME} from 'tests/utils/mfa/flowFixtures';
-import getWalkedPaths from 'tests/utils/mfa/flowPaths';
+import getWalkedPaths, {getActorOutcomes, isAutoDrivenEvent} from 'tests/utils/mfa/flowPaths';
 import getSettleableLeafStates from 'tests/utils/mfa/reachableStates';
 import {getMfaControls, renderMfaUi} from 'tests/utils/mfa/realUi/harness';
-import {pendingModalClose, resetMfaUiMocks} from 'tests/utils/mfa/realUi/mocks';
+import {pendingModalClose, resetMfaUiMocks, setActorOutcomes} from 'tests/utils/mfa/realUi/mocks';
 import type * as MfaRealUiMocks from 'tests/utils/mfa/realUi/mocks';
 import waitForBatchedUpdatesWithAct from 'tests/utils/waitForBatchedUpdatesWithAct';
 import {matchesState} from 'xstate';
@@ -16,8 +16,12 @@ import CONST from '@src/CONST';
 jest.mock('@hooks/useResponsiveLayout');
 // This mock disables the dev-only Stately inspector so `useInspectedMachine` falls back to `useMachine`.
 jest.mock('@libs/XStateInspector', () => ({__esModule: true, default: {inspect: undefined}}));
+// The UI walk controls invoked actor outcomes; actor side effects are outside the modal lifecycle contract.
+jest.mock('@components/MultifactorAuthentication/machine/mfaActors', () => jest.requireActual<typeof MfaRealUiMocks>('tests/utils/mfa/realUi/mocks').mfaActorsMock());
 // Native and WebAuthn biometrics are outside the modal lifecycle contract.
 jest.mock('@components/MultifactorAuthentication/biometrics/useBiometrics', () => jest.requireActual<typeof MfaRealUiMocks>('tests/utils/mfa/realUi/mocks').biometricsHookMock());
+// RenderHTML requires an ambient provider that this lifecycle test does not mount.
+jest.mock('@components/RenderHTML', () => jest.requireActual<typeof MfaRealUiMocks>('tests/utils/mfa/realUi/mocks').renderHtmlMock());
 // Browser and Android history synchronization is outside the contract between the machine and UI.
 jest.mock('@components/MultifactorAuthentication/useSyncMfaModalNavigatorWithHistory', () => jest.requireActual<typeof MfaRealUiMocks>('tests/utils/mfa/realUi/mocks').syncHistoryMock());
 // This mock reuses the shared Navigation implementation and overrides the transition methods used by the MFA flow.
@@ -38,7 +42,8 @@ type MfaEventExecutor = () => Promise<void>;
 
 /**
  * `INIT` enters through the public API, while `MODAL_CLOSED` runs the navigator's teardown callback.
- * `satisfies Record<MfaEventType, ...>` requires an explicit executor for every machine event.
+ * `SET_ERROR` is excluded because the UI does not produce it directly; actor failures cover the failure
+ * outcome. The `satisfies` check still requires an executor for every user-driven event.
  */
 /* eslint-disable @typescript-eslint/naming-convention -- keys mirror the machine's event type union. */
 const mfaEventExecutors = {
@@ -60,7 +65,7 @@ const mfaEventExecutors = {
         act(() => pendingModalClose.run());
         await waitForBatchedUpdatesWithAct();
     },
-} satisfies Record<MfaEventType, MfaEventExecutor>;
+} satisfies Record<Exclude<MfaEventType, 'SET_ERROR'>, MfaEventExecutor>;
 /* eslint-enable @typescript-eslint/naming-convention */
 
 // Dot-path state keys let `matchesState` target nested leaves such as `open.outcome.success`.
@@ -75,6 +80,10 @@ const testConfig = {
             expect(screen.queryAllByLabelText(MODAL_OVERLAY_LABEL)).not.toHaveLength(0);
             expect(screen.queryAllByTestId(OUTCOME_SCREEN_TEST_ID)).not.toHaveLength(0);
         },
+        [`${MFA_STATE.OPEN}.${MFA_STATE.OUTCOME}.${MFA_STATE.FAILURE}`]: () => {
+            expect(screen.queryAllByLabelText(MODAL_OVERLAY_LABEL)).not.toHaveLength(0);
+            expect(screen.queryAllByTestId(OUTCOME_SCREEN_TEST_ID)).not.toHaveLength(0);
+        },
         [MFA_STATE.CLOSING]: () => {
             expect(screen.queryAllByLabelText(MODAL_OVERLAY_LABEL)).not.toHaveLength(0);
             expect(screen.queryAllByTestId(OUTCOME_SCREEN_TEST_ID)).toHaveLength(0);
@@ -85,10 +94,9 @@ const testConfig = {
 const walkedPaths = getWalkedPaths();
 
 // `path.description` serializes the complete event payload, so test names use only driven event types.
-// The synthetic `xstate.init` event is excluded because it is not part of `MfaEvent`.
-const INIT_STEP_EVENT_TYPE = 'xstate.init';
+// Framework-generated init and actor-settlement events are excluded because they are not UI gestures.
 function describeDrivenEvents(steps: ReadonlyArray<{event: {type: string}}>): string {
-    const drivenEventTypes = steps.map((step) => step.event.type).filter((type) => type !== INIT_STEP_EVENT_TYPE);
+    const drivenEventTypes = steps.map((step) => step.event.type).filter((type) => !isAutoDrivenEvent(type));
     return drivenEventTypes.length > 0 ? drivenEventTypes.join(' -> ') : '(initial state)';
 }
 
@@ -104,6 +112,9 @@ describe('the real MFA modal follows the machine', () => {
 
     for (const path of walkedPaths) {
         it(`reaches ${JSON.stringify(path.state.value)} via [${describeDrivenEvents(path.steps)}]`, async () => {
+            // Drive each invoked actor to the outcome this path expects (resolve or reject) so the real
+            // machine follows the same branch the graph generated.
+            setActorOutcomes(getActorOutcomes(path.steps));
             renderMfaUi();
             await waitForBatchedUpdatesWithAct();
             await path.test(testConfig);
