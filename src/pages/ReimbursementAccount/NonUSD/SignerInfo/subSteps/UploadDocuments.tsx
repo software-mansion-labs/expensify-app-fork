@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -104,7 +104,7 @@ function UploadDocuments({onNext, isEditing}: UploadDocumentsProps) {
         setErrorFields(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {[inputID]: {onUpload: error}});
     };
 
-    const handleDownload = () => {
+    const downloadPDSAndFSG = () => {
         openExternalLink(`${environmentUrl}/pdfs/PDSAndFSG.pdf`);
         setIsPDSandFSGDownloadedTouched(true);
         setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {[signerInfoKeys.DOWNLOADED_PDS_AND_FSG]: true});
@@ -235,10 +235,9 @@ function UploadDocuments({onNext, isEditing}: UploadDocumentsProps) {
             {isDocumentNeededStatus.isPRDAndFSGNeeded && (
                 <View style={[styles.alignItemsStart]}>
                     <Text style={[styles.mutedTextLabel, styles.mb3]}>{translate('signerInfoStep.PDSandFSG')}</Text>
-                    <Button
-                        onPress={handleDownload}
-                        text={translate('common.download')}
-                    />
+                    <Button onPress={downloadPDSAndFSG}>
+                        <Button.Text>{translate('common.download')}</Button.Text>
+                    </Button>
                     {!isPDSandFSGDownloaded && isPDSandFSGDownloadedTouched && (
                         <DotIndicatorMessage
                             style={[styles.formError, styles.mt3]}

@@ -4,7 +4,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import ActivityIndicator from '@components/ActivityIndicator';
 import BlockingView from '@components/BlockingViews/BlockingView';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import CardFeedIcon from '@components/CardFeedIcon';
 import ScrollView from '@components/ScrollView';
 import Table from '@components/Table';
@@ -428,10 +428,11 @@ function WorkspaceCompanyCardsTable({
                             subtitleStyle={styles.textSupporting}
                         />
                         <Button
-                            text={translate('workspace.companyCards.error.tryAgain')}
                             isDisabled={isOffline}
                             onPress={feedErrorReloadAction}
-                        />
+                        >
+                            <Button.Text>{translate('workspace.companyCards.error.tryAgain')}</Button.Text>
+                        </Button>
                     </View>
                 </ScrollView>
             )}

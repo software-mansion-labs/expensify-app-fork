@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePaginatedReportActions from '@hooks/usePaginatedReportActions';
@@ -27,12 +27,7 @@ function ExportPrimaryAction({reportID, onExportModalOpen}: ExportPrimaryActionP
 
     return (
         <Button
-            success
-            text={translate('workspace.common.exportIntegrationSelected', {
-                // connectedIntegration is guaranteed non-null when EXPORT_TO_ACCOUNTING is the primary action
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                connectionName: connectedIntegration!,
-            })}
+            variant="success"
             onPress={() => {
                 if (!connectedIntegration || !moneyRequestReport) {
                     return;
@@ -43,7 +38,15 @@ function ExportPrimaryAction({reportID, onExportModalOpen}: ExportPrimaryActionP
                 }
                 exportToIntegration(moneyRequestReport.reportID, connectedIntegration);
             }}
-        />
+        >
+            <Button.Text>
+                {translate('workspace.common.exportIntegrationSelected', {
+                    // connectedIntegration is guaranteed non-null when EXPORT_TO_ACCOUNTING is the primary action
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    connectionName: connectedIntegration!,
+                })}
+            </Button.Text>
+        </Button>
     );
 }
 

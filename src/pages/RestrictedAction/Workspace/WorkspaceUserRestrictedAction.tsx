@@ -1,6 +1,6 @@
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ImageSVG from '@components/ImageSVG';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -13,6 +13,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import {findPolicyExpenseChatByPolicyID} from '@libs/ReportUtils';
 import variables from '@styles/variables';
+import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 
 type WorkspaceUserRestrictedActionProps = {
@@ -57,11 +58,12 @@ function WorkspaceUserRestrictedAction({policyID}: WorkspaceUserRestrictedAction
                     </Text>
                 </View>
                 <Button
-                    text={translate('workspace.restrictedAction.chatWithYourAdmin')}
                     onPress={openPolicyExpenseReport}
-                    success
-                    large
-                />
+                    variant="success"
+                    size={CONST.BUTTON_SIZE.LARGE}
+                >
+                    <Button.Text>{translate('workspace.restrictedAction.chatWithYourAdmin')}</Button.Text>
+                </Button>
             </ScrollView>
         </ScreenWrapper>
     );

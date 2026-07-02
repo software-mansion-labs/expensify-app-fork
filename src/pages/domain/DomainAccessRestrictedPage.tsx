@@ -1,6 +1,6 @@
 import React from 'react';
 import {View} from 'react-native';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import FixedFooter from '@components/FixedFooter';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -20,6 +20,7 @@ import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavig
 import type {WorkspacesDomainModalNavigatorParamList} from '@libs/Navigation/types';
 import type {SkeletonSpanReasonAttributes} from '@libs/telemetry/useSkeletonSpan';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
+import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -90,11 +91,12 @@ function DomainAccessRestrictedPage({route}: DomainAccessRestrictedPageProps) {
             </ScrollView>
             <FixedFooter>
                 <Button
-                    large
-                    success
-                    text={translate('common.verify')}
+                    variant="success"
+                    size={CONST.BUTTON_SIZE.LARGE}
                     onPress={() => Navigation.navigate(ROUTES.WORKSPACES_VERIFY_DOMAIN.getRoute(domainAccountID))}
-                />
+                >
+                    <Button.Text>{translate('common.verify')}</Button.Text>
+                </Button>
             </FixedFooter>
         </ScreenWrapper>
     );

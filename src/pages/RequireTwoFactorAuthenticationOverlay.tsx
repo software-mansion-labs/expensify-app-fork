@@ -2,7 +2,7 @@ import {useNavigation} from '@react-navigation/core';
 import React, {useCallback} from 'react';
 import {StyleSheet, View} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import FocusTrapForModal from '@components/FocusTrap/FocusTrapForModal';
 import Icon from '@components/Icon';
 import Text from '@components/Text';
@@ -52,7 +52,7 @@ function RequireTwoFactorAuthenticationOverlay() {
     const requires2FAForXeroSelector = useCallback((workspaces: OnyxCollection<Policy>) => is2FARequiredBecauseOfXeroSelector(email)(workspaces), [email]);
     const [is2FARequiredBecauseOfXero = false] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {selector: requires2FAForXeroSelector});
 
-    const handleOnPress = () => {
+    const navigateToTwoFactorAuth = () => {
         Navigation.navigate(getTwoFactorAuthRoute());
     };
 
@@ -83,12 +83,16 @@ function RequireTwoFactorAuthenticationOverlay() {
                                 </Text>
                             </View>
                             <Button
-                                large
-                                success
-                                pressOnEnter
-                                onPress={handleOnPress}
-                                text={translate('twoFactorAuth.enableTwoFactorAuth')}
-                            />
+                                size={CONST.BUTTON_SIZE.LARGE}
+                                variant="success"
+                                onPress={navigateToTwoFactorAuth}
+                            >
+                                <Button.KeyboardShortcut
+                                    pressOnEnter
+                                    onPress={navigateToTwoFactorAuth}
+                                />
+                                <Button.Text>{translate('twoFactorAuth.enableTwoFactorAuth')}</Button.Text>
+                            </Button>
                         </View>
                     </View>
                 </View>

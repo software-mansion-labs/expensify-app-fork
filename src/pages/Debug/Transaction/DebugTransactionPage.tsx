@@ -1,6 +1,6 @@
 import React, {useCallback, useMemo} from 'react';
 import {View} from 'react-native';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useLocalize from '@hooks/useLocalize';
@@ -64,11 +64,12 @@ function DebugTransactionPage({
             >
                 <View style={[styles.mh5, styles.mb5]}>
                     <Button
-                        text={translate('debug.viewReport')}
                         onPress={() => {
                             Navigation.navigate(ROUTES.DEBUG_REPORT.getRoute(`${transaction?.reportID}`));
                         }}
-                    />
+                    >
+                        <Button.Text>{translate('debug.viewReport')}</Button.Text>
+                    </Button>
                 </View>
             </DebugDetails>
         ),

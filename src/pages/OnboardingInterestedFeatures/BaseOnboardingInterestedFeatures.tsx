@@ -1,7 +1,7 @@
 import {hasSeenTourSelector} from '@selectors/Onboarding';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {View} from 'react-native';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import Checkbox from '@components/Checkbox';
 import FixedFooter from '@components/FixedFooter';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -177,7 +177,7 @@ function BaseOnboardingInterestedFeatures({shouldUseNativeStyles}: BaseOnboardin
         setOnboardingPolicyID(paidGroupPolicy.id);
     }, [paidGroupPolicy, onboardingPolicyID]);
 
-    const handleContinue = useCallback(async () => {
+    const submitInterestedFeatures = useCallback(async () => {
         if (!onboardingPurposeSelected || !onboardingCompanySize) {
             return;
         }
@@ -419,15 +419,21 @@ function BaseOnboardingInterestedFeatures({shouldUseNativeStyles}: BaseOnboardin
 
             <FixedFooter style={[styles.pt3, styles.ph5]}>
                 <Button
-                    success
-                    large
-                    text={translate('common.continue')}
-                    onPress={handleContinue}
+                    variant="success"
+                    size={CONST.BUTTON_SIZE.LARGE}
+                    onPress={submitInterestedFeatures}
                     isDisabled={isOffline}
                     isLoading={isLoading}
-                    pressOnEnter
                     sentryLabel={CONST.SENTRY_LABEL.ONBOARDING.CONTINUE}
-                />
+                >
+                    <Button.KeyboardShortcut
+                        pressOnEnter
+                        onPress={submitInterestedFeatures}
+                        isDisabled={isOffline}
+                        isLoading={isLoading}
+                    />
+                    <Button.Text>{translate('common.continue')}</Button.Text>
+                </Button>
             </FixedFooter>
         </ScreenWrapper>
     );

@@ -5,7 +5,7 @@ import {pendingChatMembersSelector} from '@selectors/ReportMetaData';
 import {isPast} from 'date-fns';
 import React, {useMemo} from 'react';
 import {Keyboard, View} from 'react-native';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import CaretWrapper from '@components/CaretWrapper';
 import ChronosTimerHeaderButton from '@components/ChronosTimerHeaderButton';
 import DisplayNames from '@components/DisplayNames';
@@ -209,10 +209,11 @@ function HeaderView({onNavigationMenuButtonClicked, reportID}: HeaderViewProps) 
 
     const joinButton = (
         <Button
-            success
-            text={translate('common.join')}
+            variant="success"
             onPress={join}
-        />
+        >
+            <Button.Text>{translate('common.join')}</Button.Text>
+        </Button>
     );
 
     const renderAdditionalText = () => {

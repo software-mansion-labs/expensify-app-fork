@@ -1,7 +1,7 @@
 import type {Meta} from '@storybook/react-webpack5';
 import React, {useMemo, useState} from 'react';
 import Badge from '@components/Badge';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import MultiSelectListItem from '@components/SelectionList/ListItem/MultiSelectListItem';
 import SingleSelectListItem from '@components/SelectionList/ListItem/SingleSelectListItem';
 import SelectionList from '@components/SelectionList/SelectionListWithSections';
@@ -338,10 +338,11 @@ function WithConfirmButton(props: SelectionListWithSectionsProps<ListItem>) {
             onSelectRow={onSelectRow}
             footerContent={
                 <Button
-                    success
-                    text="Confirm"
+                    variant="success"
                     onPress={() => {}}
-                />
+                >
+                    <Button.Text>Confirm</Button.Text>
+                </Button>
             }
         />
     );

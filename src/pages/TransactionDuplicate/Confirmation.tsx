@@ -3,7 +3,7 @@ import React, {useCallback, useMemo, useRef} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import FixedFooter from '@components/FixedFooter';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -216,8 +216,7 @@ function Confirmation() {
                     </ScrollView>
                     <FixedFooter style={styles.mtAuto}>
                         <Button
-                            text={translate('common.confirm')}
-                            success
+                            variant="success"
                             onPress={() => {
                                 isDismissingRef.current = true;
                                 if (!isReportOwner) {
@@ -226,8 +225,10 @@ function Confirmation() {
                                 }
                                 handleMergeDuplicates();
                             }}
-                            large
-                        />
+                            size={CONST.BUTTON_SIZE.LARGE}
+                        >
+                            <Button.Text>{translate('common.confirm')}</Button.Text>
+                        </Button>
                     </FixedFooter>
                 </View>
             </FullPageNotFoundView>

@@ -3,7 +3,7 @@ import React, {useMemo} from 'react';
 import type {ListRenderItemInfo, StyleProp, ViewStyle} from 'react-native';
 import {FlatList, View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import {PressableWithoutFeedback} from '@components/Pressable';
@@ -200,10 +200,9 @@ function TripRoomPreview({action, containerStyles, isHovered = false}: TripRoomP
                             <Text style={[styles.headerText, styles.lineHeightXLarge]}>{displayAmount}</Text>
                         </View>
 
-                        <Button
-                            text={translate('common.view')}
-                            onPress={navigateToTrip}
-                        />
+                        <Button onPress={navigateToTrip}>
+                            <Button.Text>{translate('common.view')}</Button.Text>
+                        </Button>
                     </View>
                 </PressableWithoutFeedback>
             </View>

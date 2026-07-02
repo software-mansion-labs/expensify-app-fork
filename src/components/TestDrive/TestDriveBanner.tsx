@@ -1,10 +1,11 @@
 import React from 'react';
 import {View} from 'react-native';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
+import CONST from '@src/CONST';
 
 type TestDriveBannerProps = {
     /** Callback to finish the test drive */
@@ -25,11 +26,12 @@ function TestDriveBanner({onPress}: TestDriveBannerProps) {
                         : `${translate('testDrive.banner.currentlyTestDrivingExpensify')}. ${translate('testDrive.banner.readyForTheRealThing')}`}
                 </Text>
                 <Button
-                    text={translate('testDrive.banner.getStarted')}
-                    small
-                    success
+                    variant="success"
+                    size={CONST.BUTTON_SIZE.SMALL}
                     onPress={onPress}
-                />
+                >
+                    <Button.Text>{translate('testDrive.banner.getStarted')}</Button.Text>
+                </Button>
             </View>
         </View>
     );

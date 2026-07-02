@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
-import Button from '@components/Button';
+import Button from '@components/ButtonComposed';
 import TagPicker from '@components/TagPicker';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
@@ -11,6 +11,7 @@ import {insertTagIntoTransactionTagsString} from '@libs/IOUUtils';
 import {getTagLists} from '@libs/PolicyUtils';
 import type {OptionData} from '@libs/ReportUtils';
 import {getTagArrayFromName} from '@libs/TransactionUtils';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Policy} from '@src/types/onyx';
 
@@ -73,11 +74,12 @@ function DebugTagPicker({policyID, tagName = '', onSubmit}: DebugTagPickerProps)
             {policyTagLists.length > 1 && (
                 <View style={styles.ph5}>
                     <Button
-                        success
-                        large
-                        text={translate('common.save')}
+                        variant="success"
+                        size={CONST.BUTTON_SIZE.LARGE}
                         onPress={submitTag}
-                    />
+                    >
+                        <Button.Text>{translate('common.save')}</Button.Text>
+                    </Button>
                 </View>
             )}
         </View>
