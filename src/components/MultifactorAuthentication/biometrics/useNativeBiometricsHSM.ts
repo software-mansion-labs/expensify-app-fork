@@ -1,4 +1,4 @@
-import {createKeys, deleteKeys, getAllKeys, InputEncoding, isSensorAvailable, signWithOptions} from '@sbaiahmed1/react-native-biometrics';
+import {createKeys, deleteKeys, getAllKeys, InputEncoding, signWithOptions} from '@sbaiahmed1/react-native-biometrics';
 import type {SignatureResult} from '@sbaiahmed1/react-native-biometrics';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -9,6 +9,7 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 import VALUES from '@libs/MultifactorAuthentication/VALUES';
 import CONST from '@src/CONST';
 import Base64URL from '@src/utils/Base64URL';
+import {deviceCheckFailureReason, deviceVerificationType, doesDeviceSupportAuthenticationMethod} from './operations';
 import type {AuthorizeParams, AuthorizeResult, RegisterResult, UseBiometricsReturn} from './shared/types';
 import useServerCredentials from './shared/useServerCredentials';
 
@@ -37,11 +38,6 @@ function useNativeBiometricsHSM(): UseBiometricsReturn {
     const {accountID} = useCurrentUserPersonalDetails();
     const {translate} = useLocalize();
     const {serverKnownCredentialIDs, haveCredentialsEverBeenConfigured} = useServerCredentials();
-
-    const doesDeviceSupportAuthenticationMethod = async () => {
-        const sensorResult = await isSensorAvailable();
-        return sensorResult.isDeviceSecure;
-    };
 
     const getLocalCredentialID = async () => {
         try {
@@ -184,12 +180,12 @@ function useNativeBiometricsHSM(): UseBiometricsReturn {
     const hasLocalCredentials = async () => !!(await getLocalCredentialID());
 
     return {
-        deviceVerificationType: CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS_HSM,
+        deviceVerificationType,
         serverKnownCredentialIDs,
         haveCredentialsEverBeenConfigured,
         getLocalCredentialID,
         doesDeviceSupportAuthenticationMethod,
-        deviceCheckFailureReason: VALUES.REASON.LOCAL_ERRORS.NO_AUTHENTICATION_METHODS_ENROLLED,
+        deviceCheckFailureReason,
         hasLocalCredentials,
         areLocalCredentialsKnownToServer,
         register,

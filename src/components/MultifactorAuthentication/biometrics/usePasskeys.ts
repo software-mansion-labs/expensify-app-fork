@@ -10,7 +10,6 @@ import {
     decodeWebAuthnError,
     extractAAGUID,
     isSupportedTransport,
-    isWebAuthnSupported,
     PASSKEY_AUTH_TYPE,
 } from '@libs/MultifactorAuthentication/Passkeys/WebAuthn';
 import type {RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
@@ -18,6 +17,7 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 import VALUES from '@libs/MultifactorAuthentication/VALUES';
 import {addLocalPasskeyCredential, deleteLocalPasskeyCredentials, getPasskeyOnyxKey, reconcileLocalPasskeysWithBackend} from '@userActions/Passkey';
 import CONST from '@src/CONST';
+import {deviceCheckFailureReason, deviceVerificationType, doesDeviceSupportAuthenticationMethod} from './operations';
 import type {AuthorizeParams, AuthorizeResult, RegisterResult, UseBiometricsReturn} from './shared/types';
 import useServerCredentials from './shared/useServerCredentials';
 
@@ -26,8 +26,6 @@ function usePasskeys(): UseBiometricsReturn {
     const userId = String(accountID);
     const {serverKnownCredentialIDs, haveCredentialsEverBeenConfigured} = useServerCredentials();
     const [localPasskeyCredentials] = useOnyx(getPasskeyOnyxKey(userId));
-
-    const doesDeviceSupportAuthenticationMethod = async () => isWebAuthnSupported();
 
     const getLocalCredentialID = async (): Promise<string | undefined> => {
         return (localPasskeyCredentials ?? []).at(0)?.id;
@@ -176,12 +174,12 @@ function usePasskeys(): UseBiometricsReturn {
     };
 
     return {
-        deviceVerificationType: CONST.MULTIFACTOR_AUTHENTICATION.TYPE.PASSKEYS,
+        deviceVerificationType,
         serverKnownCredentialIDs,
         haveCredentialsEverBeenConfigured,
         getLocalCredentialID,
         doesDeviceSupportAuthenticationMethod,
-        deviceCheckFailureReason: VALUES.REASON.LOCAL_ERRORS.AUTHENTICATION_TYPE_NOT_SUPPORTED,
+        deviceCheckFailureReason,
         hasLocalCredentials,
         areLocalCredentialsKnownToServer,
         register,

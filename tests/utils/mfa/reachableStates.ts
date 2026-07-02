@@ -14,6 +14,10 @@ function getSettleableLeafStates(node: AnyStateNode): SettleableLeafState[] {
     if (autoAdvances) {
         return [];
     }
+    // Invoked actors settle asynchronously and immediately leave through onDone/onError in the test.
+    if ((node.invoke?.length ?? 0) > 0) {
+        return [];
+    }
     // The dot-path description doubles as a state-value key: `matchesState` splits it on `.` before comparing.
     return [{description: node.path.join('.')}];
 }
