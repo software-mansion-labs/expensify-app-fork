@@ -145,7 +145,7 @@ function GrowlNotificationContent({bodyText, type, duration, action, nonce, onDi
                             accessibilityLabel={bodyText}
                             sentryLabel="GrowlNotification-Dismiss"
                             onPress={triggerDismiss}
-                            style={[styles.flex1, styles.flexRow, styles.alignItemsCenter, styles.gap3]}
+                            style={[styles.flex1, styles.flexRow, styles.alignItemsCenter, styles.gap4]}
                         >
                             <Icon
                                 src={types[type].icon}
