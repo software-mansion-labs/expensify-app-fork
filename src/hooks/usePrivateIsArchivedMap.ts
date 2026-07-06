@@ -1,6 +1,8 @@
-import type {OnyxCollection} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {ReportNameValuePairs} from '@src/types/onyx';
+
+import type {OnyxCollection} from 'react-native-onyx';
+
 import useOnyx from './useOnyx';
 
 type PrivateIsArchivedMap = Record<string, boolean>;
