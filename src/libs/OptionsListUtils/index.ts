@@ -169,6 +169,7 @@ import {getDescription, getAmount as getTransactionAmount, getCurrency as getTra
 import {generateAccountID} from '@libs/UserUtils';
 
 import CONST from '@src/CONST';
+import IntlStore from '@src/languages/IntlStore';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {
     Beta,
@@ -1654,6 +1655,8 @@ function createFilteredOptionList(
         policyTags,
         visibleReportActionsData,
         isTrackIntentUser,
+        // Option building translates strings imperatively (translateLocal), so the active locale is part of the output.
+        IntlStore.getCurrentLocale(),
     ];
     if (filteredOptionListCacheValue && filteredOptionListCacheKey?.length === cacheKey.length && cacheKey.every((value, index) => value === filteredOptionListCacheKey?.[index])) {
         return filteredOptionListCacheValue;
