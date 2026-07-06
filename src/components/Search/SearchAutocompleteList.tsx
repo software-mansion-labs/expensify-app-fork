@@ -180,7 +180,12 @@ function SearchAutocompleteList({
     const taxRates = useMemo(() => getAllTaxRates(policies), [policies]);
     const [isTrackIntentUser] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED, {selector: isTrackIntentUserSelector});
 
-    const {options: listOptions, isLoading: isLoadingOptions} = useFilteredOptions({enabled: true, isSearching: !!autocompleteQueryValue.trim(), betas: betas ?? []});
+    const {options: listOptions, isLoading: isLoadingOptions} = useFilteredOptions({
+        enabled: true,
+        isSearching: !!autocompleteQueryValue.trim(),
+        deferContactsUntilSearch: true,
+        betas: betas ?? [],
+    });
 
     const isRecentSearchesDataLoaded = !isLoadingOnyxValue(recentSearchesMetadata);
 

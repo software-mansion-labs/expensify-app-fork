@@ -1661,6 +1661,21 @@ const reportSortComparator = (report: Report, privateIsArchivedMap: PrivateIsArc
  *
  * Use this for screens that need recent reports (NewChatPage, WorkspaceInvitePage, etc.)
  */
+type FilteredOptionListResult = {
+    reports: Array<SearchOption<Report>>;
+    personalDetails: Array<SearchOption<PersonalDetails>>;
+};
+
+// Shared stable default so an omitted `visibleReportActionsData` keeps a constant reference across calls,
+// which the single-entry cache below relies on for hits.
+const EMPTY_VISIBLE_REPORT_ACTIONS: VisibleReportActionsDerivedValue = {};
+
+// Single-entry cache so reopening a selection screen (which remounts and recomputes)
+// reuses the previous result while the underlying Onyx inputs are referentially unchanged.
+// `betas` is intentionally excluded from the key because it does not affect the output here.
+let filteredOptionListCacheKey: unknown[] | null = null;
+let filteredOptionListCacheValue: FilteredOptionListResult | null = null;
+
 function createFilteredOptionList(
     personalDetails: OnyxEntry<PersonalDetailsList>,
     reports: OnyxCollection<Report>,
@@ -1672,12 +1687,43 @@ function createFilteredOptionList(
         includeP2P?: boolean;
         isSearching?: boolean;
         betas?: OnyxEntry<Beta[]>;
+        /**
+         * When true, personal details (contacts) are only built while searching (`isSearching`).
+         * For screens whose idle/empty state shows no standalone contacts (e.g. the SearchRouter),
+         * this skips building an option for every contact on open. Screens that show contacts at
+         * empty state (contact pickers) must leave this false.
+         */
+        deferContactsUntilSearch?: boolean;
     } = {},
     policyTags?: OnyxCollection<PolicyTagLists>,
-    visibleReportActionsData: VisibleReportActionsDerivedValue = {},
+    visibleReportActionsData: VisibleReportActionsDerivedValue = EMPTY_VISIBLE_REPORT_ACTIONS,
     isTrackIntentUser?: boolean,
-) {
-    const {maxRecentReports = 500, includeP2P = true, isSearching = false} = options;
+): FilteredOptionListResult {
+    const {maxRecentReports = 500, includeP2P = true, isSearching = false, deferContactsUntilSearch = false} = options;
+
+    // Contacts are expensive to build on large accounts (one option per personal detail). When a screen
+    // opts into deferral and is not actively searching, skip building them entirely; the empty state
+    // does not display standalone contacts, and typing flips `isSearching` which rebuilds the full set.
+    const shouldBuildContacts = includeP2P && !(deferContactsUntilSearch && !isSearching);
+
+    const cacheKey = [
+        personalDetails,
+        reports,
+        reportAttributesDerived,
+        privateIsArchivedMap,
+        policiesCollection,
+        maxRecentReports,
+        includeP2P,
+        isSearching,
+        deferContactsUntilSearch,
+        policyTags,
+        visibleReportActionsData,
+        isTrackIntentUser,
+    ];
+    if (filteredOptionListCacheValue && filteredOptionListCacheKey?.length === cacheKey.length && cacheKey.every((value, index) => value === filteredOptionListCacheKey?.[index])) {
+        return filteredOptionListCacheValue;
+    }
+
     const reportMapForAccountIDs: Record<number, Report> = {};
 
     // Step 1: Pre-filter reports to avoid processing thousands
@@ -1753,8 +1799,8 @@ function createFilteredOptionList(
         }
     }
 
-    // Step 5: Process personal details (all of them - needed for search functionality)
-    const personalDetailsOptions = includeP2P
+    // Step 5: Process personal details (all of them when built - needed for search functionality)
+    const personalDetailsOptions = shouldBuildContacts
         ? Object.values(personalDetails ?? {}).map((personalDetail) => {
               const accountID = personalDetail?.accountID ?? CONST.DEFAULT_NUMBER_ID;
 
@@ -1779,10 +1825,15 @@ function createFilteredOptionList(
           })
         : [];
 
-    return {
+    const result: FilteredOptionListResult = {
         reports: reportOptions,
         personalDetails: personalDetailsOptions as Array<SearchOption<PersonalDetails>>,
     };
+
+    filteredOptionListCacheKey = cacheKey;
+    filteredOptionListCacheValue = result;
+
+    return result;
 }
 
 function createOptionFromReport(

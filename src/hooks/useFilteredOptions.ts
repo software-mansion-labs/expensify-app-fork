@@ -22,6 +22,12 @@ type UseFilteredOptionsConfig = {
     enablePagination?: boolean;
     /** Whether search mode is active - when true, builds full report map for personal details (default: false) */
     isSearching?: boolean;
+    /**
+     * When true, contacts (personal details) are only built while searching. Use on screens whose
+     * idle/empty state does not show standalone contacts (e.g. the SearchRouter) to avoid building
+     * an option per contact on open. Leave false for contact pickers (default: false).
+     */
+    deferContactsUntilSearch?: boolean;
     /** Beta features the user has access to */
     betas?: OnyxEntry<Beta[]>;
 };
@@ -67,7 +73,7 @@ type UseFilteredOptionsResult = {
  * />
  */
 function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredOptionsResult {
-    const {maxRecentReports = 500, enabled = true, includeP2P = true, batchSize = 100, isSearching = false, betas} = config;
+    const {maxRecentReports = 500, enabled = true, includeP2P = true, batchSize = 100, isSearching = false, deferContactsUntilSearch = false, betas} = config;
 
     const [reportsLimit, setReportsLimit] = useState(maxRecentReports);
 
@@ -95,6 +101,7 @@ function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredO
                           maxRecentReports: reportsLimit,
                           includeP2P,
                           isSearching,
+                          deferContactsUntilSearch,
                           betas,
                       },
                       undefined,
@@ -102,7 +109,20 @@ function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredO
                       isTrackIntentUser,
                   )
                 : null,
-        [enabled, allReports, allPersonalDetails, reportAttributesDerived, privateIsArchivedMap, allPolicies, reportsLimit, includeP2P, isSearching, betas, isTrackIntentUser],
+        [
+            enabled,
+            allReports,
+            allPersonalDetails,
+            reportAttributesDerived,
+            privateIsArchivedMap,
+            allPolicies,
+            reportsLimit,
+            includeP2P,
+            isSearching,
+            deferContactsUntilSearch,
+            betas,
+            isTrackIntentUser,
+        ],
     );
 
     // When isSearching is set to true, the createFilteredOptionList returns all reports
