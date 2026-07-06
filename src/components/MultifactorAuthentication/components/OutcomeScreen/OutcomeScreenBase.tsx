@@ -74,7 +74,7 @@ function OutcomeScreenBase({headerTitle, illustration, iconWidth, iconHeight, ti
     );
 
     return (
-        <ScreenWrapper testID={OutcomeScreenBase.displayName}>
+        <ScreenWrapper testID="MultifactorAuthenticationOutcomeScreen">
             <HeaderWithBackButton
                 title={headerTitle}
                 onBackButtonPress={onClose}
@@ -91,7 +91,7 @@ function OutcomeScreenBase({headerTitle, illustration, iconWidth, iconHeight, ti
                         titleStyles={[styles.mb2, titleStyle]}
                         CustomSubtitle={CustomSubtitle}
                         containerStyle={[styles.ph5, padding]}
-                        testID={OutcomeScreenBase.displayName}
+                        testID="MultifactorAuthenticationOutcomeScreen"
                     />
                 </ScrollView>
                 <View style={[styles.flexRow, styles.m5, styles.mt0]}>
