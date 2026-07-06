@@ -40,6 +40,7 @@ const loadPromptPage = () => require<ReactComponentModule>('../../../../pages/Mu
 function TransparentScreen() {
     return (
         <View
+            testID="MultifactorAuthenticationInitialScreen"
             style={StyleSheet.absoluteFill}
             onLayout={handleInitialScreenLayout}
         />
