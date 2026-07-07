@@ -190,8 +190,9 @@ function SearchAutocompleteList({
     const {options: listOptions, isLoading: isLoadingOptions} = useFilteredOptions({
         enabled: true,
         isSearching: !!autocompleteQueryValue.trim(),
+        // The empty-query state renders only recent searches and recent reports (no standalone contacts),
+        // so contacts can be deferred until the user types a query.
         deferContactsUntilSearch: true,
-        betas: betas ?? [],
     });
 
     const isRecentSearchesDataLoaded = !isLoadingOnyxValue(recentSearchesMetadata);

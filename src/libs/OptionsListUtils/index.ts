@@ -163,6 +163,7 @@ import {
     shouldReportBeInOptionList,
     shouldShowMarkAsDone,
 } from '@libs/ReportUtils';
+import {registerSessionCleanupCallback} from '@libs/SessionCleanup';
 import StringUtils from '@libs/StringUtils';
 import {getTaskCreatedMessage, getTaskReportActionMessage} from '@libs/TaskUtils';
 import {getDescription, getAmount as getTransactionAmount, getCurrency as getTransactionCurrency, isScanning} from '@libs/TransactionUtils';
@@ -173,6 +174,7 @@ import IntlStore from '@src/languages/IntlStore';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {
     Beta,
+    Locale,
     Login,
     OnyxInputOrEntry,
     PersonalDetails,
@@ -1597,20 +1599,21 @@ const reportSortComparator = (report: Report, privateIsArchivedMap: PrivateIsArc
  *
  * Use this for screens that need recent reports (NewChatPage, WorkspaceInvitePage, etc.)
  */
-type FilteredOptionListResult = {
-    reports: Array<SearchOption<Report>>;
-    personalDetails: Array<SearchOption<PersonalDetails>>;
-};
-
 // Shared stable default so an omitted `visibleReportActionsData` keeps a constant reference across calls,
-// which the single-entry cache below relies on for hits.
+// which the cache below relies on for hits.
 const EMPTY_VISIBLE_REPORT_ACTIONS: VisibleReportActionsDerivedValue = {};
 
-// Single-entry cache so reopening a selection screen (which remounts and recomputes)
-// reuses the previous result while the underlying Onyx inputs are referentially unchanged.
-// `betas` is intentionally excluded from the key because it does not affect the output here.
-let filteredOptionListCacheKey: unknown[] | null = null;
-let filteredOptionListCacheValue: FilteredOptionListResult | null = null;
+// Cache keyed by the options signature so each selection screen configuration (SearchRouter, NewChatPage,
+// ShareTab, etc.) keeps its own entry and reopening one screen is not evicted by opening another.
+// An entry is reused only while its Onyx inputs are referentially unchanged.
+const filteredOptionListCache = new Map<string, {inputs: unknown[]; result: OptionList}>();
+
+// Bounds the cache when a paginating screen produces many distinct `maxRecentReports` values.
+const FILTERED_OPTION_LIST_CACHE_MAX_ENTRIES = 8;
+
+// The cached results (and the Onyx collection references in their keys) belong to the signed-in
+// account, so drop them on sign-out instead of holding them until the next call.
+registerSessionCleanupCallback(() => filteredOptionListCache.clear());
 
 function createFilteredOptionList(
     personalDetails: OnyxEntry<PersonalDetailsList>,
@@ -1622,7 +1625,6 @@ function createFilteredOptionList(
         maxRecentReports?: number;
         includeP2P?: boolean;
         isSearching?: boolean;
-        betas?: OnyxEntry<Beta[]>;
         /**
          * When true, personal details (contacts) are only built while searching (`isSearching`).
          * For screens whose idle/empty state shows no standalone contacts (e.g. the SearchRouter),
@@ -1630,36 +1632,36 @@ function createFilteredOptionList(
          * empty state (contact pickers) must leave this false.
          */
         deferContactsUntilSearch?: boolean;
+        /** Active locale; defaults to `IntlStore.getCurrentLocale()`. Pass it from a hook to recompute on language switch. */
+        locale?: Locale;
     } = {},
     policyTags?: OnyxCollection<PolicyTagLists>,
     visibleReportActionsData: VisibleReportActionsDerivedValue = EMPTY_VISIBLE_REPORT_ACTIONS,
     isTrackIntentUser?: boolean,
-): FilteredOptionListResult {
-    const {maxRecentReports = 500, includeP2P = true, isSearching = false, deferContactsUntilSearch = false} = options;
+): OptionList {
+    const {maxRecentReports = 500, includeP2P = true, isSearching = false, deferContactsUntilSearch = false, locale} = options;
 
     // Contacts are expensive to build on large accounts (one option per personal detail). When a screen
     // opts into deferral and is not actively searching, skip building them entirely; the empty state
     // does not display standalone contacts, and typing flips `isSearching` which rebuilds the full set.
     const shouldBuildContacts = includeP2P && !(deferContactsUntilSearch && !isSearching);
 
-    const cacheKey = [
+    const cacheEntryKey = `${maxRecentReports}_${includeP2P}_${isSearching}_${deferContactsUntilSearch}`;
+    const cacheInputs = [
         personalDetails,
         reports,
         reportAttributesDerived,
         privateIsArchivedMap,
         policiesCollection,
-        maxRecentReports,
-        includeP2P,
-        isSearching,
-        deferContactsUntilSearch,
         policyTags,
         visibleReportActionsData,
         isTrackIntentUser,
         // Option building translates strings imperatively (translateLocal), so the active locale is part of the output.
-        IntlStore.getCurrentLocale(),
+        locale ?? IntlStore.getCurrentLocale(),
     ];
-    if (filteredOptionListCacheValue && filteredOptionListCacheKey?.length === cacheKey.length && cacheKey.every((value, index) => value === filteredOptionListCacheKey?.[index])) {
-        return filteredOptionListCacheValue;
+    const cachedEntry = filteredOptionListCache.get(cacheEntryKey);
+    if (cachedEntry && cachedEntry.inputs.length === cacheInputs.length && cacheInputs.every((value, index) => value === cachedEntry.inputs.at(index))) {
+        return cachedEntry.result;
     }
 
     const reportMapForAccountIDs: Record<number, Report> = {};
@@ -1763,13 +1765,20 @@ function createFilteredOptionList(
           })
         : [];
 
-    const result: FilteredOptionListResult = {
+    const result: OptionList = {
         reports: reportOptions,
         personalDetails: personalDetailsOptions as Array<SearchOption<PersonalDetails>>,
     };
 
-    filteredOptionListCacheKey = cacheKey;
-    filteredOptionListCacheValue = result;
+    // Re-inserting moves the entry to the end of the Map, so eviction below drops the least recently written entry.
+    filteredOptionListCache.delete(cacheEntryKey);
+    if (filteredOptionListCache.size >= FILTERED_OPTION_LIST_CACHE_MAX_ENTRIES) {
+        const oldestEntryKey = filteredOptionListCache.keys().next().value;
+        if (oldestEntryKey !== undefined) {
+            filteredOptionListCache.delete(oldestEntryKey);
+        }
+    }
+    filteredOptionListCache.set(cacheEntryKey, {inputs: cacheInputs, result});
 
     return result;
 }

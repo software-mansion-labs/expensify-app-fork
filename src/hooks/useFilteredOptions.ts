@@ -2,13 +2,11 @@ import {createFilteredOptionList} from '@libs/OptionsListUtils';
 import type {OptionList} from '@libs/OptionsListUtils/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type Beta from '@src/types/onyx/Beta';
-
-import type {OnyxEntry} from 'react-native-onyx';
 
 import {isTrackIntentUserSelector} from '@selectors/Onboarding';
 import {useMemo, useState} from 'react';
 
+import useLocalize from './useLocalize';
 import useOnyx from './useOnyx';
 import usePrivateIsArchivedMap from './usePrivateIsArchivedMap';
 import useReportAttributes from './useReportAttributes';
@@ -32,8 +30,6 @@ type UseFilteredOptionsConfig = {
      * an option per contact on open. Leave false for contact pickers (default: false).
      */
     deferContactsUntilSearch?: boolean;
-    /** Beta features the user has access to */
-    betas?: OnyxEntry<Beta[]>;
 };
 
 type UseFilteredOptionsResult = {
@@ -68,7 +64,6 @@ type UseFilteredOptionsResult = {
  * const {options, isLoading} = useFilteredOptions({
  *   maxRecentReports: 500,
  *   enabled: didScreenTransitionEnd,
- *   betas,
  * });
  *
  * <SelectionList
@@ -77,7 +72,7 @@ type UseFilteredOptionsResult = {
  * />
  */
 function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredOptionsResult {
-    const {maxRecentReports = 500, enabled = true, includeP2P = true, batchSize = 100, isSearching = false, deferContactsUntilSearch = false, betas} = config;
+    const {maxRecentReports = 500, enabled = true, includeP2P = true, batchSize = 100, isSearching = false, deferContactsUntilSearch = false} = config;
 
     const [reportsLimit, setReportsLimit] = useState(maxRecentReports);
 
@@ -86,6 +81,8 @@ function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredO
     const [allPolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const reportAttributesDerived = useReportAttributes();
     const [isTrackIntentUser] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED, {selector: isTrackIntentUserSelector});
+    // Option building is locale-dependent, so a consumer that stays mounted through a language switch recomputes.
+    const {preferredLocale} = useLocalize();
 
     const privateIsArchivedMap = usePrivateIsArchivedMap();
 
@@ -106,7 +103,7 @@ function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredO
                           includeP2P,
                           isSearching,
                           deferContactsUntilSearch,
-                          betas,
+                          locale: preferredLocale,
                       },
                       undefined,
                       undefined,
@@ -124,7 +121,7 @@ function useFilteredOptions(config: UseFilteredOptionsConfig = {}): UseFilteredO
             includeP2P,
             isSearching,
             deferContactsUntilSearch,
-            betas,
+            preferredLocale,
             isTrackIntentUser,
         ],
     );

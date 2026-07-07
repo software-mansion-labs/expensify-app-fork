@@ -36,6 +36,7 @@ import * as SequentialQueue from '@libs/Network/SequentialQueue';
 import Pusher from '@libs/Pusher';
 import reauthenticate from '@libs/Reauthentication';
 import {getReportIDFromLink} from '@libs/ReportUtils';
+import {runSessionCleanupCallbacks} from '@libs/SessionCleanup';
 import * as SessionUtils from '@libs/SessionUtils';
 import {checkIfShouldUseNewPartnerName, resetDidUserLogInDuringSession} from '@libs/SessionUtils';
 import {clearSoundAssetsCache} from '@libs/Sound';
@@ -1072,6 +1073,7 @@ function cleanupSession() {
     });
     clearCachedAttachments();
     clearSoundAssetsCache();
+    runSessionCleanupCallbacks();
 }
 
 function clearAccountMessages() {
