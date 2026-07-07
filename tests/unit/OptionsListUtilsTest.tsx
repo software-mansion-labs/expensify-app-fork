@@ -14,6 +14,7 @@ import isSearchTopmostFullScreenRoute from '@libs/Navigation/helpers/isSearchTop
 import type {OptionList, Options, SearchOption, SearchOptionData} from '@libs/OptionsListUtils';
 import {
     canCreateOptimisticPersonalDetailOption,
+    clearFilteredOptionListCache,
     createFilteredOptionList,
     createOption,
     createOptionFromReport,
@@ -856,6 +857,11 @@ describe('OptionsListUtils', () => {
             undefined,
             {isSearching: true},
         );
+    });
+
+    // createFilteredOptionList caches results at module level; clear it so tests stay order-independent.
+    beforeEach(() => {
+        clearFilteredOptionListCache();
     });
 
     describe('getSearchOptions()', () => {

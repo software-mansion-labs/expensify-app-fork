@@ -250,6 +250,11 @@ const deprecatedAllSortedReportActions: Record<string, ReportAction[]> = {};
 const deprecatedCachedOneTransactionThreadReportIDs: Record<string, string | undefined> = {};
 /** @deprecated Use sortedReportActionsData from ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS instead. Will be removed once all flows are migrated. */
 let deprecatedAllReportActions: OnyxCollection<ReportActions>;
+
+// The sorted report-actions objects above are mutated in place (their references never change),
+// so this version number is the only signal that their contents were updated.
+let deprecatedReportActionsVersion = 0;
+
 Onyx.connect({
     key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
     waitForCollectionCallback: true,
@@ -257,6 +262,7 @@ Onyx.connect({
         if (!actions) {
             return;
         }
+        deprecatedReportActionsVersion++;
         deprecatedAllReportActions = actions ?? {};
 
         // Iterate over the report actions to build the sorted report actions objects
@@ -1608,8 +1614,30 @@ const EMPTY_VISIBLE_REPORT_ACTIONS: VisibleReportActionsDerivedValue = {};
 // An entry is reused only while its Onyx inputs are referentially unchanged.
 const filteredOptionListCache = new Map<string, {inputs: unknown[]; result: OptionList}>();
 
-// Bounds the cache when a paginating screen produces many distinct `maxRecentReports` values.
+// One slot per active screen configuration (~7 distinct callers) plus a small buffer.
+// The LRU bound prevents a paginating screen from flooding the cache with one entry
+// per distinct maxRecentReports value and evicting entries for other screens.
 const FILTERED_OPTION_LIST_CACHE_MAX_ENTRIES = 8;
+
+/** Builds the cache key from the option values that define a distinct screen configuration. */
+function buildFilteredOptionListCacheKey(args: Array<string | number | boolean>): string {
+    return args.join('_');
+}
+
+// Consumers (e.g. getValidOptions) mutate option objects in place (isBold/isSelected/brickRoadIndicator),
+// so the cache keeps a pristine copy and every caller receives its own shallow clones, matching the
+// per-call fresh objects they would get without the cache.
+function cloneOptionList(optionList: OptionList): OptionList {
+    return {
+        reports: optionList.reports.map((option) => ({...option})),
+        personalDetails: optionList.personalDetails.map((option) => ({...option})),
+    };
+}
+
+/** Clears the createFilteredOptionList cache. For tests that measure or exercise the build path with unchanged inputs. */
+function clearFilteredOptionListCache() {
+    filteredOptionListCache.clear();
+}
 
 // The cached results (and the Onyx collection references in their keys) belong to the signed-in
 // account, so drop them on sign-out instead of holding them until the next call.
@@ -1646,7 +1674,11 @@ function createFilteredOptionList(
     // does not display standalone contacts, and typing flips `isSearching` which rebuilds the full set.
     const shouldBuildContacts = includeP2P && !(deferContactsUntilSearch && !isSearching);
 
-    const cacheEntryKey = `${maxRecentReports}_${includeP2P}_${isSearching}_${deferContactsUntilSearch}`;
+    // Search-mode results contain an option for every report and contact, so caching them would retain
+    // full-account-sized arrays until sign-out — and any Onyx change invalidates them anyway.
+    const shouldUseCache = !isSearching;
+
+    const cacheEntryKey = buildFilteredOptionListCacheKey([maxRecentReports, includeP2P, isSearching, deferContactsUntilSearch]);
     const cacheInputs = [
         personalDetails,
         reports,
@@ -1658,10 +1690,16 @@ function createFilteredOptionList(
         isTrackIntentUser,
         // Option building translates strings imperatively (translateLocal), so the active locale is part of the output.
         locale ?? IntlStore.getCurrentLocale(),
+        // Option building reads module-level sorted report actions (getLastMessageTextForReport) that are
+        // mutated in place, so their version stands in for the never-changing object reference.
+        deprecatedReportActionsVersion,
     ];
-    const cachedEntry = filteredOptionListCache.get(cacheEntryKey);
-    if (cachedEntry && cachedEntry.inputs.length === cacheInputs.length && cacheInputs.every((value, index) => value === cachedEntry.inputs.at(index))) {
-        return cachedEntry.result;
+    const cachedEntry = shouldUseCache ? filteredOptionListCache.get(cacheEntryKey) : undefined;
+    if (cachedEntry && cacheInputs.every((value, index) => value === cachedEntry.inputs.at(index))) {
+        // Re-inserting refreshes recency so a frequently-hit entry is not evicted by writes to other keys.
+        filteredOptionListCache.delete(cacheEntryKey);
+        filteredOptionListCache.set(cacheEntryKey, cachedEntry);
+        return cloneOptionList(cachedEntry.result);
     }
 
     const reportMapForAccountIDs: Record<number, Report> = {};
@@ -1770,7 +1808,11 @@ function createFilteredOptionList(
         personalDetails: personalDetailsOptions as Array<SearchOption<PersonalDetails>>,
     };
 
-    // Re-inserting moves the entry to the end of the Map, so eviction below drops the least recently written entry.
+    if (!shouldUseCache) {
+        return result;
+    }
+
+    // Re-inserting moves the entry to the end of the Map, so eviction below drops the least recently used entry.
     filteredOptionListCache.delete(cacheEntryKey);
     if (filteredOptionListCache.size >= FILTERED_OPTION_LIST_CACHE_MAX_ENTRIES) {
         const oldestEntryKey = filteredOptionListCache.keys().next().value;
@@ -1780,7 +1822,8 @@ function createFilteredOptionList(
     }
     filteredOptionListCache.set(cacheEntryKey, {inputs: cacheInputs, result});
 
-    return result;
+    // The caller gets clones because the cached entry must stay pristine (see cloneOptionList).
+    return cloneOptionList(result);
 }
 
 function createOptionFromReport(
@@ -3440,6 +3483,7 @@ function processSearchString(searchString: string | undefined): string[] {
 
 export {
     canCreateOptimisticPersonalDetailOption,
+    clearFilteredOptionListCache,
     combineOrderingOfReportsAndPersonalDetails,
     createOptionFromReport,
     createFilteredOptionList,
