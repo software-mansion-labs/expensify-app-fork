@@ -55,6 +55,7 @@ import {buildSearchQueryString, serializeQueryJSONForBackend} from '@libs/Search
 import type {SearchKey} from '@libs/SearchUIUtils';
 import {isTransactionGroupListItemType} from '@libs/SearchUIUtils';
 import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {claimSearchContentLoadSpan, ownsActiveSearchContentLoadSpan, stampSearchContentLoadAttributes} from '@libs/telemetry/searchContentLoadTiming';
 import {hasOnlyPendingCardTransactions} from '@libs/TransactionUtils';
 
 import CONST from '@src/CONST';
@@ -909,6 +910,11 @@ function search({
     }
     inFlightSearchRequests.add(dedupeKey);
 
+    // When this search feeds the Reports tab content load, claim the ContentLoad span so timing and
+    // response-shape attributes can be stamped on it and its duration sliced in Sentry by phase and payload size.
+    claimSearchContentLoadSpan(queryJSON.hash);
+    const searchStartTime = performance.now();
+
     const {optimisticData, finallyData, failureData} = getOnyxLoadingData(queryJSON.hash, queryJSON, offset, isOffline, true, shouldCalculateTotals);
     const {flatFilters, limit, ...queryJSONWithoutFlatFilters} = queryJSON;
     const backendQueryJSON = shouldUseBackendDateSortFallback(queryJSON.sortBy)
@@ -940,11 +946,25 @@ function search({
         });
     }
 
-    const startRequest = () =>
-        makeRequestWithSideEffects(READ_COMMANDS.SEARCH, {hash: queryJSON.hash, jsonQuery}, {optimisticData, finallyData, failureData})
+    const startRequest = () => {
+        const requestStartTime = performance.now();
+        stampSearchContentLoadAttributes(queryJSON.hash, {[CONST.TELEMETRY.ATTRIBUTE_SEARCH_WAIT_FOR_WRITES_MS]: Math.round(requestStartTime - searchStartTime)});
+        return makeRequestWithSideEffects(READ_COMMANDS.SEARCH, {hash: queryJSON.hash, jsonQuery}, {optimisticData, finallyData, failureData})
             .then((result) => {
+                const response = result?.onyxData?.[0]?.value as OnyxSearchResponse;
+                if (ownsActiveSearchContentLoadSpan(queryJSON.hash)) {
+                    const dataKeys = Object.keys(response?.data ?? {});
+                    stampSearchContentLoadAttributes(queryJSON.hash, {
+                        [CONST.TELEMETRY.ATTRIBUTE_SEARCH_REQUEST_MS]: Math.round(performance.now() - requestStartTime),
+                        [CONST.TELEMETRY.ATTRIBUTE_SEARCH_OFFSET]: offset ?? 0,
+                        [CONST.TELEMETRY.ATTRIBUTE_SEARCH_JSON_CODE]: result?.jsonCode,
+                        [CONST.TELEMETRY.ATTRIBUTE_SEARCH_HAS_MORE_RESULTS]: !!response?.search?.hasMoreResults,
+                        [CONST.TELEMETRY.ATTRIBUTE_SEARCH_RESULT_DATA_KEYS]: dataKeys.length,
+                        [CONST.TELEMETRY.ATTRIBUTE_SEARCH_RESULT_REPORTS_COUNT]: dataKeys.filter((key) => key.startsWith(ONYXKEYS.COLLECTION.REPORT)).length,
+                        [CONST.TELEMETRY.ATTRIBUTE_SEARCH_RESULT_TRANSACTIONS_COUNT]: dataKeys.filter((key) => key.startsWith(ONYXKEYS.COLLECTION.TRANSACTION)).length,
+                    });
+                }
                 if (shouldUpdateLastSearchParams) {
-                    const response = result?.onyxData?.[0]?.value as OnyxSearchResponse;
                     const reports = Object.keys(response?.data ?? {})
                         .filter((key) => key.startsWith(ONYXKEYS.COLLECTION.REPORT))
                         .map((key) => key.replace(ONYXKEYS.COLLECTION.REPORT, ''));
@@ -977,6 +997,7 @@ function search({
             .finally(() => {
                 inFlightSearchRequests.delete(dedupeKey);
             });
+    };
 
     if (skipWaitForWrites) {
         return startRequest();

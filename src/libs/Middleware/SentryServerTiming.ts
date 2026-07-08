@@ -1,5 +1,6 @@
-import {WRITE_COMMANDS} from '@libs/API/types';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import {cancelSpan, endSpanWithAttributes, startSpan} from '@libs/telemetry/activeSpans';
+import {stampSearchContentLoadAttributes} from '@libs/telemetry/searchContentLoadTiming';
 
 import CONST from '@src/CONST';
 
@@ -12,12 +13,14 @@ import type Middleware from './types';
  * Maps a set of write commands to a Sentry span operation name.
  */
 type TrackedCommandGroup = {
-    /** Set of write commands that should be instrumented */
+    /** Set of API commands that should be instrumented */
     commands: Set<string>;
     /** Sentry span operation name */
     spanOp: string;
     /** Human-readable span name */
     spanName: string;
+    /** Called with the measured server round-trip duration and the request params when a tracked request resolves */
+    onResponseTime?: (durationMs: number, requestData?: Record<string, unknown>) => void;
 };
 
 /**
@@ -39,6 +42,12 @@ const TRACKED_COMMAND_GROUPS: TrackedCommandGroup[] = [
         spanOp: CONST.TELEMETRY.SPAN_EXPENSE_SERVER_RESPONSE,
         spanName: 'expense-server-response',
     },
+    {
+        commands: new Set<string>([READ_COMMANDS.SEARCH]),
+        spanOp: CONST.TELEMETRY.SPAN_SEARCH_SERVER_RESPONSE,
+        spanName: 'search-server-response',
+        onResponseTime: (durationMs, requestData) => stampSearchContentLoadAttributes(Number(requestData?.hash), {[CONST.TELEMETRY.ATTRIBUTE_SEARCH_SERVER_RESPONSE_MS]: durationMs}),
+    },
 ];
 
 /**
@@ -52,6 +61,9 @@ function findTrackedGroup(command: string): TrackedCommandGroup | undefined {
  * Middleware that tracks server round-trip time for configured command groups via Sentry spans.
  * For non-tracked commands, this is a no-op pass-through.
  *
+ * Since this middleware sits after Reauthentication in the chain, the measured duration includes
+ * the reauth and retry round trips on jsonCode 407 responses.
+ *
  * To add tracking for a new flow, add an entry to TRACKED_COMMAND_GROUPS above.
  */
 const SentryServerTiming: Middleware = (response, request) => {
@@ -61,6 +73,7 @@ const SentryServerTiming: Middleware = (response, request) => {
     }
 
     const spanId = `${group.spanOp}_${request.requestIndex}`;
+    const requestStartTime = performance.now();
     startSpan(spanId, {
         name: group.spanName,
         op: group.spanOp,
@@ -75,6 +88,7 @@ const SentryServerTiming: Middleware = (response, request) => {
                 [CONST.TELEMETRY.ATTRIBUTE_JSON_CODE]: data?.jsonCode,
             };
             endSpanWithAttributes(spanId, attributes);
+            group.onResponseTime?.(Math.round(performance.now() - requestStartTime), request.data);
             return data;
         })
         .catch((error) => {
