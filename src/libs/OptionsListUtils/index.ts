@@ -1660,7 +1660,6 @@ function createFilteredOptionList(
          * empty state (contact pickers) must leave this false.
          */
         deferContactsUntilSearch?: boolean;
-        /** Active locale; defaults to `IntlStore.getCurrentLocale()`. Pass it from a hook to recompute on language switch. */
         locale?: Locale;
     } = {},
     policyTags?: OnyxCollection<PolicyTagLists>,
@@ -1672,7 +1671,8 @@ function createFilteredOptionList(
     // Contacts are expensive to build on large accounts (one option per personal detail). When a screen
     // opts into deferral and is not actively searching, skip building them entirely; the empty state
     // does not display standalone contacts, and typing flips `isSearching` which rebuilds the full set.
-    const shouldBuildContacts = includeP2P && !(deferContactsUntilSearch && !isSearching);
+    const areContactsDeferred = deferContactsUntilSearch && !isSearching;
+    const shouldBuildContacts = includeP2P && !areContactsDeferred;
 
     // Search-mode results contain an option for every report and contact, so caching them would retain
     // full-account-sized arrays until sign-out — and any Onyx change invalidates them anyway.
