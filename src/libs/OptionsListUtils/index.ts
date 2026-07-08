@@ -2799,15 +2799,24 @@ function getValidOptions(
             if (!personalDetail) {
                 continue;
             }
-            if (!!currentUserEmail && personalDetail?.login === currentUserEmail) {
-                currentUserRef.current = personalDetail;
+            // Build a fresh object instead of mutating `personalDetail` in place: it's the same reference held
+            // by `options.personalDetails` (aliased by optionsOrderBy, not cloned), which callers like
+            // getSearchOptions cache by reference. An in-place write here would leak this call's config
+            // (isBold/brickRoadIndicator/isSelected) into another cached call's result.
+            let nextBrickRoadIndicator = personalDetail.brickRoadIndicator;
+            if (nextBrickRoadIndicator === CONST.BRICK_ROAD_INDICATOR_STATUS.INFO) {
+                nextBrickRoadIndicator = shouldShowGBR ? CONST.BRICK_ROAD_INDICATOR_STATUS.INFO : '';
             }
-            personalDetail.isBold = shouldBoldTitleByDefault;
-            if (personalDetail.brickRoadIndicator === CONST.BRICK_ROAD_INDICATOR_STATUS.INFO) {
-                personalDetail.brickRoadIndicator = shouldShowGBR ? CONST.BRICK_ROAD_INDICATOR_STATUS.INFO : '';
+            const nextPersonalDetail: SearchOptionData = {
+                ...personalDetail,
+                isBold: shouldBoldTitleByDefault,
+                brickRoadIndicator: nextBrickRoadIndicator,
+                isSelected: (!!personalDetail.accountID && selectedAccountIDs.has(personalDetail.accountID)) || (!!personalDetail.login && selectedLogins.has(personalDetail.login)),
+            };
+            personalDetailsOptions[i] = nextPersonalDetail;
+            if (!!currentUserEmail && nextPersonalDetail.login === currentUserEmail) {
+                currentUserRef.current = nextPersonalDetail;
             }
-            personalDetail.isSelected =
-                (!!personalDetail.accountID && selectedAccountIDs.has(personalDetail.accountID)) || (!!personalDetail.login && selectedLogins.has(personalDetail.login));
         }
     }
 
@@ -2869,6 +2878,26 @@ type SearchOptionsConfig = {
     isTrackIntentUser?: boolean;
 };
 
+// Cache keyed by the call-site "shape" (SearchRouter's own list vs the FROM/TO/IN autocomplete calls in
+// useAutocompleteSuggestions) so callers with different configs don't evict each other's entries.
+// searchQuery is deliberately NOT part of the key: it changes on every keystroke, and folding it in here
+// would fill the bounded map with one entry per keystroke, evicting the "reopened with empty query" entry
+// this cache exists to protect. It's checked instead as a plain value in `cacheInputs` below.
+// An entry is reused only while its Onyx/derived inputs are referentially unchanged.
+const searchOptionsCache = new Map<string, {inputs: unknown[]; result: OptionsResult}>();
+
+// Bounds the cache to the handful of distinct call-site shapes that exist today (SearchRouter, ChatFinder,
+// the FROM/TO/IN autocomplete calls, etc).
+const SEARCH_OPTIONS_CACHE_MAX_ENTRIES = 8;
+
+// Stable empty reference so an omitted `excludeFromSuggestionsOnly` keeps a constant identity across calls
+// (a `= {}` default parameter would otherwise allocate a new object every call and always miss the cache).
+const EMPTY_EXCLUDE_FROM_SUGGESTIONS_ONLY: Record<string, boolean> = {};
+
+// The cached results (and the Onyx collection references in their keys) belong to the signed-in
+// account, so drop them on sign-out instead of holding them until the next call.
+registerSessionCleanupCallback(() => searchOptionsCache.clear());
+
 /**
  * Build the options for the Search view
  */
@@ -2887,7 +2916,7 @@ function getSearchOptions({
     shouldShowGBR = false,
     shouldUnreadBeBold = false,
     loginList,
-    visibleReportActionsData = {},
+    visibleReportActionsData = EMPTY_VISIBLE_REPORT_ACTIONS,
     policyCollection,
     currentUserAccountID,
     currentUserEmail,
@@ -2896,9 +2925,36 @@ function getSearchOptions({
     allPolicyTags,
     sortedActions,
     conciergeReportID,
-    excludeFromSuggestionsOnly = {},
+    excludeFromSuggestionsOnly = EMPTY_EXCLUDE_FROM_SUGGESTIONS_ONLY,
     isTrackIntentUser,
 }: SearchOptionsConfig): OptionsResult {
+    const shouldUseOpenPathCache = !searchQuery.trim();
+    const cacheEntryKey = `${isUsedInChatFinder}_${includeReadOnly}_${maxResults}_${includeUserToInvite}_${includeRecentReports}_${includeCurrentUser}_${countryCode}_${shouldShowGBR}_${shouldUnreadBeBold}_${isTrackIntentUser}`;
+    const cacheInputs = [
+        options,
+        draftComments,
+        betas,
+        searchQuery,
+        loginList,
+        visibleReportActionsData,
+        policyCollection,
+        currentUserAccountID,
+        currentUserEmail,
+        personalDetails,
+        reportAttributesDerived,
+        allPolicyTags,
+        sortedActions,
+        conciergeReportID,
+        excludeFromSuggestionsOnly,
+    ];
+
+    if (shouldUseOpenPathCache) {
+        const cachedEntry = searchOptionsCache.get(cacheEntryKey);
+        if (cachedEntry && cachedEntry.inputs.length === cacheInputs.length && cacheInputs.every((value, index) => value === cachedEntry.inputs.at(index))) {
+            return cachedEntry.result;
+        }
+    }
+
     const optionList = getValidOptions(options, policyCollection, draftComments, loginList, currentUserAccountID, currentUserEmail, conciergeReportID, {
         betas,
         includeRecentReports,
@@ -2928,6 +2984,18 @@ function getSearchOptions({
         excludeFromSuggestionsOnly,
         isTrackIntentUser,
     });
+
+    if (shouldUseOpenPathCache) {
+        // Re-inserting moves the entry to the end of the Map, so eviction below drops the least recently written entry.
+        searchOptionsCache.delete(cacheEntryKey);
+        if (searchOptionsCache.size >= SEARCH_OPTIONS_CACHE_MAX_ENTRIES) {
+            const oldestEntryKey = searchOptionsCache.keys().next().value;
+            if (oldestEntryKey !== undefined) {
+                searchOptionsCache.delete(oldestEntryKey);
+            }
+        }
+        searchOptionsCache.set(cacheEntryKey, {inputs: cacheInputs, result: optionList});
+    }
 
     return optionList;
 }

@@ -493,7 +493,12 @@ function SearchAutocompleteList({
         }
 
         const nextStyledRecentReports = recentReportsOptions.map((option) => {
-            const report = getReportOrDraftReport(option.reportID, undefined, undefined, undefined, reports?.[`${ONYXKEYS.COLLECTION.REPORT}${option.reportID}`]);
+            // recentReportsOptions mixes report options and personal-detail options (see combineOrderingOfReportsAndPersonalDetails
+            // above), so `.item` is only a Report for the former; a personal-detail option's `.item` is a PersonalDetails object
+            // and must fall back to the live report lookup below.
+            const optionItem = (option as Partial<SearchOption<Report>>).item;
+            const reportItem = optionItem && 'reportID' in optionItem ? optionItem : undefined;
+            const report = reportItem ?? getReportOrDraftReport(option.reportID, undefined, undefined, undefined, reports?.[`${ONYXKEYS.COLLECTION.REPORT}${option.reportID}`]);
             const reportAction = getReportAction(report?.parentReportID, report?.parentReportActionID);
             const shouldParserToHTML = !!reportAction && reportAction.actionName !== CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT;
             const shouldParseAlternateText = report?.lastActionType !== CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT;
@@ -596,13 +601,13 @@ function SearchAutocompleteList({
         getAdditionalSections,
         recentReportsOptions,
         recentSearchesData,
+        reports,
         searchOptions,
         searchQueryItems,
         styles,
         translate,
         isLoadingOptions,
         isRecentSearchesDataLoaded,
-        reports,
     ]);
 
     const trimmedAutocompleteQueryValue = autocompleteQueryValue.trim();
