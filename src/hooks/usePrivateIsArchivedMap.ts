@@ -44,7 +44,8 @@ function buildPrivateIsArchivedMap(allReportNVP: OnyxCollection<ReportNameValueP
 }
 
 /**
- * Hook that returns a map of report IDs to their private_isArchived values
+ * Hook that returns a map of report IDs to their private_isArchived values.
+ * The returned map is a shared cached reference — treat it as read-only; mutating it corrupts the cache.
  */
 function usePrivateIsArchivedMap(): PrivateIsArchivedMap {
     const [allReportNVP] = useOnyx(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS);

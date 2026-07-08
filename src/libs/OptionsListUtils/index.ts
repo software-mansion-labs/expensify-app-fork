@@ -259,10 +259,11 @@ Onyx.connect({
     key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
     waitForCollectionCallback: true,
     callback: (actions) => {
+        // Bump before the empty guard so clearing the collection also invalidates caches keyed on this version.
+        deprecatedReportActionsVersion++;
         if (!actions) {
             return;
         }
-        deprecatedReportActionsVersion++;
         deprecatedAllReportActions = actions ?? {};
 
         // Iterate over the report actions to build the sorted report actions objects
@@ -1627,6 +1628,9 @@ function buildFilteredOptionListCacheKey(args: Array<string | number | boolean>)
 // Consumers (e.g. getValidOptions) mutate option objects in place (isBold/isSelected/brickRoadIndicator),
 // so the cache keeps a pristine copy and every caller receives its own shallow clones, matching the
 // per-call fresh objects they would get without the cache.
+// NOTE: this is a shallow clone — the top-level fields consumers mutate today are all scalars. Nested
+// objects (icons, participantsList, item, allReportErrors) stay shared with the cached entry, so any new
+// consumer that mutates those in place would corrupt the cache and must clone them first.
 function cloneOptionList(optionList: OptionList): OptionList {
     return {
         reports: optionList.reports.map((option) => ({...option})),
