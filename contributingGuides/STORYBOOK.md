@@ -10,7 +10,7 @@ The Storybook docs deploy automatically so there's nothing extra to do here. Sto
 
 To test a local build, we can run
 
-```shell
+```shell xd
 npm run storybook-build
 ```
 
