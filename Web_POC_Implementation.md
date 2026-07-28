@@ -56,7 +56,7 @@ QA_AUTH: {
 ```typescript
 /** OAuth session for the Cloudflare Access-protected QA server (POC — see Web_POC.md) */
 type CloudflareSession = {
-    /** Opaque `oauth:…` bearer token, ~15 min lifetime */
+    /** Opaque `oauth:…` bearer token, ≈15 min lifetime */
     accessToken: string;
 
     /** Rotates on every refresh — must always be persisted atomically together with accessToken */
@@ -71,7 +71,7 @@ export default CloudflareSession;
 
 ### 1.2 `src/types/onyx/index.ts` — modify
 
-Alphabetical insertion in both blocks (pattern: `import type Session from './Session';` at ~line 173 and `Session,` in the export list at ~line 334):
+Alphabetical insertion in both blocks (pattern: `import type Session from './Session';` at ≈line 173 and `Session,` in the export list at ≈line 334):
 
 ```typescript
 import type CloudflareSession from './CloudflareSession';
@@ -80,14 +80,14 @@ import type CloudflareSession from './CloudflareSession';
 
 ### 1.3 `src/ONYXKEYS.ts` — modify (two places)
 
-Key, right after the staging-server key (anchor: `SHOULD_USE_STAGING_SERVER: 'shouldUseStagingServer',` ~line 569):
+Key, right after the staging-server key (anchor: `SHOULD_USE_STAGING_SERVER: 'shouldUseStagingServer',` ≈line 569):
 
 ```typescript
 /** OAuth session for the Cloudflare Access-protected QA server (POC) */
 CF_SESSION: 'cfSession',
 ```
 
-Values-type entry (anchor: `[ONYXKEYS.SHOULD_USE_STAGING_SERVER]: boolean;` ~line 1661):
+Values-type entry (anchor: `[ONYXKEYS.SHOULD_USE_STAGING_SERVER]: boolean;` ≈line 1661):
 
 ```typescript
 [ONYXKEYS.CF_SESSION]: OnyxTypes.CloudflareSession;
@@ -95,24 +95,24 @@ Values-type entry (anchor: `[ONYXKEYS.SHOULD_USE_STAGING_SERVER]: boolean;` ~lin
 
 ### 1.4 `src/libs/ExportOnyxState/common.ts` + its test — modify (both CI-mandatory)
 
-Add to `onyxKeysToRemove` (anchor: the `ONYXKEYS.MAPBOX_ACCESS_TOKEN` entry and its comment, ~line 32):
+Add to `onyxKeysToRemove` (anchor: the `ONYXKEYS.MAPBOX_ACCESS_TOKEN` entry and its comment, ≈line 32):
 
 ```typescript
 // Same story as MAPBOX_ACCESS_TOKEN: the secrets sit in fields maskFragileData doesn't key on
 ONYXKEYS.CF_SESSION,
 ```
 
-The coverage test in `tests/unit/ExportOnyxStateTest.ts` derives its buckets from this file, so the bucket entry alone keeps CI green — but that only proves the key is *categorized*, not that it's categorized *correctly*. Also add `CF_SESSION` to the test's "known-sensitive keys must never be classified as safe" list (~line 342): that assertion is what pins the removal if someone later re-buckets the key. Treat it as part of this step, not optional.
+The coverage test in `tests/unit/ExportOnyxStateTest.ts` derives its buckets from this file, so the bucket entry alone keeps CI green — but that only proves the key is *categorized*, not that it's categorized *correctly*. Also add `CF_SESSION` to the test's "known-sensitive keys must never be classified as safe" list (≈line 342): that assertion is what pins the removal if someone later re-buckets the key. Treat it as part of this step, not optional.
 
 ### 1.5 `src/CONST/index.ts` — modify (two entries)
 
-`HTTP_STATUS` block (~line 2475) has no 401 today — add it:
+`HTTP_STATUS` block (≈line 2475) has no 401 today — add it:
 
 ```typescript
 UNAUTHORIZED: 401,
 ```
 
-New error constant in the `ERROR` block right below (anchor: `FAILED_TO_FETCH: 'Failed to fetch',` ~line 2488):
+New error constant in the `ERROR` block right below (anchor: `FAILED_TO_FETCH: 'Failed to fetch',` ≈line 2488):
 
 ```typescript
 CF_REAUTH_REQUIRED: 'Cloudflare re-authentication required',
@@ -535,7 +535,7 @@ headers: qaAccessToken ? {Authorization: `Bearer ${qaAccessToken}`} : undefined,
 credentials: 'omit', // untouched
 ```
 
-3. Restructure the response handling. First hoist the current parsed-response stage (the third `.then`, ~lines 148–189: `jsonCode` checks, `alert('Too many auth writes', …)`, `alertUser()`) into a module-level `processJSONResponse<TKey>(response: Response<TKey>): Response<TKey>` helper. That stage is **not** pure — it fires `alert()` and the update-required modal — so the retried response must flow through it exactly once, inside the recursive call, never again in the outer chain. *(Corrects the previous revision of this doc, which claimed those checks were pure.)* Then the ok-check `.then` becomes:
+3. Restructure the response handling. First hoist the current parsed-response stage (the third `.then`, ≈lines 148–189: `jsonCode` checks, `alert('Too many auth writes', …)`, `alertUser()`) into a module-level `processJSONResponse<TKey>(response: Response<TKey>): Response<TKey>` helper. That stage is **not** pure — it fires `alert()` and the update-required modal — so the retried response must flow through it exactly once, inside the recursive call, never again in the outer chain. *(Corrects the previous revision of this doc, which claimed those checks were pure.)* Then the ok-check `.then` becomes:
 
 ```typescript
 if (response.status === CONST.HTTP_STATUS.UNAUTHORIZED && qaAccessToken) {
@@ -613,7 +613,7 @@ async function runQAProbe(): Promise<QAProbeResult> {
 
 ### 6.1 `src/components/TestToolMenu.tsx` — modify
 
-Anchor: insert right after the staging-server `TestToolRow` block (`{!CONFIG.IS_USING_LOCAL_WEB && (…useStagingServer…)}`, ~line 121–132). Web gate mirrors the existing branch-name row's `Platform.OS === 'web'` check in the same file.
+Anchor: insert right after the staging-server `TestToolRow` block (`{!CONFIG.IS_USING_LOCAL_WEB && (…useStagingServer…)}`, ≈line 121–132). Web gate mirrors the existing branch-name row's `Platform.OS === 'web'` check in the same file.
 
 Component state + the mount-time pre-warm (this effect is where the Step 3 user-activation story is anchored):
 
@@ -681,7 +681,7 @@ Rows — one shared busy flag serializes Run and Clear (neither starts while the
 
 `QA_PROBE_STATUS_TRANSLATION_KEYS` is a small component-local `const` mapping the four statuses to the translation keys below (statuses are semantic and translated; the raw `detail` diagnostic stays verbatim). Run the React Compiler check afterwards (component changed).
 
-### 6.2 `src/languages/en.ts` — modify (anchor: `useStagingServer: 'Use Staging Server',` ~line 2298)
+### 6.2 `src/languages/en.ts` — modify (anchor: `useStagingServer: 'Use Staging Server',` ≈line 2298)
 
 ```typescript
 qaAuth: 'QA auth (Cloudflare)',
@@ -696,7 +696,7 @@ qaAuthStatusError: 'Probe failed',
 
 ### 6.3 The nine non-English locale files — modify
 
-`de.ts`, `es.ts`, `fr.ts`, `it.ts`, `ja.ts`, `nl.ts`, `pl.ts`, `pt-BR.ts`, `zh-hans.ts` are each typed `TranslationDeepObject<typeof en>` (no partiality), so adding keys to `en.ts` alone fails typecheck across all of them — en+es is not enough. Add the same eight keys at the same anchor in every file (e.g. `useStagingServer: 'Usar servidor "staging"',` ~line 2088 in `es.ts`). Hand-written translations (or English values) are fine for this dev-only tool; the production path — `scripts/generateTranslations.ts`, a bun script that drives ChatGPT — needs API credentials and is overkill for a POC branch.
+`de.ts`, `es.ts`, `fr.ts`, `it.ts`, `ja.ts`, `nl.ts`, `pl.ts`, `pt-BR.ts`, `zh-hans.ts` are each typed `TranslationDeepObject<typeof en>` (no partiality), so adding keys to `en.ts` alone fails typecheck across all of them — en+es is not enough. Add the same eight keys at the same anchor in every file (e.g. `useStagingServer: 'Usar servidor "staging"',` ≈line 2088 in `es.ts`). Hand-written translations (or English values) are fine for this dev-only tool; the production path — `scripts/generateTranslations.ts`, a bun script that drives ChatGPT — needs API credentials and is overkill for a POC branch.
 
 ## Step 7 — Tests
 
@@ -744,7 +744,7 @@ Auth flow (mocked `openAuthSessionAsync`):
 - **Single-flight**: two concurrent `startQAAuthFlow()` → one popup, both settle with the same result.
 - **Persist order**: success resolves only after `Onyx.set` completed with the exchanged session.
 - **Severed-opener recovery**: `openAuthSessionAsync` mocked to never settle (the reproduced hang) → dispatching the breadcrumb `StorageEvent` (`ExpoWebBrowser_OriginUrl_<state>` with the callback URL) completes the flow, exchanges the code, and calls `dismissAuthSession` to clean up the dangling expo session.
-- **Poll fallback**: a breadcrumb seeded in localStorage *before* the flow starts also completes it — the storage event only fires for writes after the listener attached, so the poll is that key's only channel (real timers; costs one ~1 s tick).
+- **Poll fallback**: a breadcrumb seeded in localStorage *before* the flow starts also completes it — the storage event only fires for writes after the listener attached, so the poll is that key's only channel (real timers; costs one ≈1 s tick).
 - **Native import smoke**: importing the session module resolves `getWebCrypto/index.native.ts` under this preset (see above) — assert the import itself doesn't throw. That's the "import-safe on native, throws only when called" claim, tested for free on every run.
 
 ### 7.3 `tests/unit/HttpUtilsTest.ts` — extend (existing `mockFetchResponse` style, plus mock `@libs/actions/CloudflareSession`)
