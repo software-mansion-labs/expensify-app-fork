@@ -106,3 +106,44 @@ jobs:
           scheme: ${{ matrix.scheme }}
           configuration: ${{ matrix.configuration }}
           comment-bot: false
+
+  # TEMPORARY, for this branch only. `seedAdHocCache.yml` cannot be dispatched until it is on the default branch,
+  # so its jobs are borrowed here, where a dispatch can reach them, with the `main`-only guard dropped. Delete this
+  # branch once the dry run in PR_DESCRIPTION.md has been verified.
+  checkIOSCache:
+    name: Check iOS AdHoc cache
+    needs: [prep]
+    uses: ./.github/workflows/checkRockCache.yml
+    with:
+      platform: ios
+      traits: device,AdHoc
+    secrets:
+      OS_BOTIFY_TOKEN: ${{ secrets.OS_BOTIFY_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  seedIOS:
+    name: Seed iOS AdHoc cache
+    needs: [checkIOSCache]
+    if: ${{ needs.checkIOSCache.outputs.NEEDS_BUILD == 'true' }}
+    uses: ./.github/workflows/buildIOS.yml
+    with:
+      ref: ${{ github.sha }}
+      variant: Adhoc
+      seed-cache-only: 'true'
+      artifact-prefix: adhoc-seed-
+      expected-fingerprint: ${{ needs.checkIOSCache.outputs.FINGERPRINT }}
+    secrets: inherit
+
+  verifyIOSSeedLanded:
+    name: Verify iOS AdHoc seed landed
+    needs: [seedIOS]
+    uses: ./.github/workflows/checkRockCache.yml
+    with:
+      platform: ios
+      traits: device,AdHoc
+      expect-cached: 'true'
+    secrets:
+      OS_BOTIFY_TOKEN: ${{ secrets.OS_BOTIFY_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
