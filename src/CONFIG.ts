@@ -43,6 +43,7 @@ const secureNgrokURL = addTrailingForwardSlash(get(Config, 'SECURE_NGROK_URL', '
 const secureExpensifyUrl = addTrailingForwardSlash(get(Config, 'SECURE_EXPENSIFY_URL', 'https://secure.expensify.com/'));
 const useNgrok = get(Config, 'USE_NGROK', 'false') === 'true';
 const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';
+const qaExpensifyURL = get(Config, 'QA_EXPENSIFY_URL', '');
 const expensifyComWithProxy = getPlatform() === 'web' && useWebProxy ? '/' : expensifyURL;
 
 // Throw errors on dev if config variables are not set correctly
@@ -138,5 +139,13 @@ export default {
     SKIP_ONBOARDING: get(Config, 'SKIP_ONBOARDING', 'false') === 'true',
     // eslint-disable-next-line no-restricted-properties
     IS_HYBRID_APP: HybridAppModule.isHybridApp(),
+    // Cloudflare Access-protected QA server POC (see Web_POC.md). Empty values mean "not configured".
+    QA_AUTH: {
+        // '' is the "not configured" sentinel — normalize the slash only on non-empty values,
+        // because addTrailingForwardSlash('') returns '/' and would make a partial config look configured
+        API_ROOT: qaExpensifyURL ? addTrailingForwardSlash(qaExpensifyURL) : '',
+        TEAM_DOMAIN: get(Config, 'QA_CF_TEAM_DOMAIN', ''),
+        CLIENT_ID: get(Config, 'QA_CF_OAUTH_CLIENT_ID', ''),
+    },
     SENTRY_DSN: get(Config, 'SENTRY_DSN', 'https://7b463fb4d4402d342d1166d929a62f4e@o4510228013121536.ingest.us.sentry.io/4510228107427840'),
 } as const;

@@ -45,6 +45,7 @@ import {CurrentReportIDContextProvider} from './hooks/useCurrentReportID';
 import useDefaultDragAndDrop from './hooks/useDefaultDragAndDrop';
 import HybridAppHandler from './HybridAppHandler';
 import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
+import {closeQAAuthPopupIfSeveredOpener} from './libs/CloudflareOAuth/severedOpenerFallback';
 import './libs/HybridApp';
 import {ConciergeSessionProvider} from './pages/inbox/ConciergeSessionContext';
 import './setup/backgroundLocationTrackingTask';
@@ -55,6 +56,9 @@ import {SplashScreenStateContextProvider} from './SplashScreenStateContext';
 
 // This is needed to close pop-up window during logout for users logged in via SSO
 maybeCompleteAuthSession();
+// A QA auth popup whose window.opener was severed can't be closed by its opener — self-close it
+// right after the completion above published the callback URL (no-op everywhere else)
+closeQAAuthPopupIfSeveredOpener();
 
 // On web, dotlottie-web fetches its WASM binary from a third-party CDN (jsdelivr/unpkg) at runtime,
 // which is blocked by our Content Security Policy. Point it at the Expensify CDN proxy instead.

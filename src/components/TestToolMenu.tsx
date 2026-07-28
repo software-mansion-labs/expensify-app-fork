@@ -5,8 +5,12 @@ import {useSidebarOrderedReportsActions} from '@hooks/useSidebarOrderedReports';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {isUsingStagingApi} from '@libs/ApiUtils';
+import {isQAAuthConfigured} from '@libs/CloudflareOAuth/config';
 import {useIsAgentAccount} from '@libs/SessionUtils';
 
+import type {QAProbeResult, QAProbeStatus} from '@userActions/CloudflareProbe';
+import {runQAProbe} from '@userActions/CloudflareProbe';
+import {clearCfSession, prepareQAAuthFlow} from '@userActions/CloudflareSession';
 import {setShouldFailAllRequests, setShouldForceOffline, setShouldSimulatePoorConnection} from '@userActions/Network';
 import {expireSessionWithDelay, invalidateAuthToken, invalidateCredentials} from '@userActions/Session';
 import {setIsDebugModeEnabled, setShouldShowBranchNameInTitle, setShouldUseStagingServer} from '@userActions/User';
@@ -14,7 +18,7 @@ import {setIsDebugModeEnabled, setShouldShowBranchNameInTitle, setShouldUseStagi
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
 
-import React from 'react';
+import {useEffect, useState} from 'react';
 import {Platform} from 'react-native';
 
 import BiometricsTestToolRow from './BiometricsTestToolRow';
@@ -24,6 +28,14 @@ import Switch from './Switch';
 import TestCrash from './TestCrash';
 import TestToolRow from './TestToolRow';
 import Text from './Text';
+
+/** The four semantic probe outcomes are translated; the raw `detail` diagnostic stays verbatim */
+const QA_PROBE_STATUS_TRANSLATION_KEYS = {
+    success: 'qaAuthStatusSuccess',
+    cancelled: 'qaAuthStatusCancelled',
+    reauthRequired: 'qaAuthStatusReauthRequired',
+    error: 'qaAuthStatusError',
+} as const satisfies Record<QAProbeStatus, string>;
 
 function TestToolMenu() {
     const [network] = useOnyx(ONYXKEYS.NETWORK);
@@ -40,6 +52,26 @@ function TestToolMenu() {
 
     // Agent accounts can't have biometric multifactor authentication, so hide the biometrics test row for them.
     const isAgentAccount = useIsAgentAccount();
+
+    // QA auth POC (see Web_POC.md): Run stays disabled until the session cache is hydrated and a PKCE
+    // pair is pre-warmed, so the press path reaches the popup with zero awaits (user activation intact).
+    const [isQAAuthReady, setIsQAAuthReady] = useState(false);
+    const [isQAOperationRunning, setIsQAOperationRunning] = useState(false);
+    const [qaProbeResult, setQAProbeResult] = useState<QAProbeResult | null>(null);
+    // Rendered next to the result: consecutive probes usually produce byte-identical results, and
+    // without a changing element the button reads as dead ("does nothing visual" — live POC feedback)
+    const [qaProbeCompletedAt, setQAProbeCompletedAt] = useState<Date | null>(null);
+
+    useEffect(() => {
+        // The platform gate is load-bearing: on native, prepareQAAuthFlow would hit the throwing crypto stub
+        if (Platform.OS !== 'web' || !isQAAuthConfigured()) {
+            return;
+        }
+        prepareQAAuthFlow()
+            .then(() => setIsQAAuthReady(true))
+            // Surface preparation failures — otherwise Run just sits disabled forever with no explanation
+            .catch((error: unknown) => setQAProbeResult({status: 'error', detail: error instanceof Error ? error.message : undefined}));
+    }, []);
 
     return (
         <>
@@ -129,6 +161,60 @@ function TestToolMenu() {
                         onToggle={() => setShouldUseStagingServer(!shouldUseStagingServer)}
                     />
                 </TestToolRow>
+            )}
+
+            {/* POC: Cloudflare Access OAuth against the QA mock Worker — see Web_POC.md. The shared busy
+            flag serializes Run and Clear; Run additionally waits for pre-warm readiness, while Clear
+            deliberately doesn't — clearing needs neither hydration nor a PKCE pair, and a failed
+            pre-warm must not lock the user out of clearing. */}
+            {Platform.OS === 'web' && isQAAuthConfigured() && (
+                <>
+                    <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuth')}>
+                        <Button
+                            small
+                            text={translate('initialSettingsPage.troubleshoot.qaAuthRunProbe')}
+                            isDisabled={!isQAAuthReady || isQAOperationRunning}
+                            isLoading={isQAOperationRunning}
+                            onPress={() => {
+                                setIsQAOperationRunning(true);
+                                // runQAProbe never rejects — every failure comes back as a semantic result
+                                runQAProbe()
+                                    .then((result) => {
+                                        setQAProbeResult(result);
+                                        setQAProbeCompletedAt(new Date());
+                                    })
+                                    .finally(() => setIsQAOperationRunning(false));
+                            }}
+                        />
+                    </TestToolRow>
+                    <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuthSession')}>
+                        <Button
+                            small
+                            text={translate('initialSettingsPage.troubleshoot.qaAuthClearSession')}
+                            isDisabled={isQAOperationRunning}
+                            onPress={() => {
+                                setIsQAOperationRunning(true);
+                                clearCfSession()
+                                    .then(() => {
+                                        setQAProbeResult(null);
+                                        setQAProbeCompletedAt(null);
+                                    })
+                                    .catch((error: unknown) => {
+                                        setQAProbeResult({status: 'error', detail: error instanceof Error ? error.message : undefined});
+                                        setQAProbeCompletedAt(new Date());
+                                    })
+                                    .finally(() => setIsQAOperationRunning(false));
+                            }}
+                        />
+                    </TestToolRow>
+                    {!!qaProbeResult && (
+                        <Text style={styles.textLabelSupporting}>
+                            {translate(`initialSettingsPage.troubleshoot.${QA_PROBE_STATUS_TRANSLATION_KEYS[qaProbeResult.status]}`)}
+                            {qaProbeResult.detail ? ` (${qaProbeResult.detail})` : ''}
+                            {qaProbeCompletedAt ? ` — ${qaProbeCompletedAt.toLocaleTimeString()}` : ''}
+                        </Text>
+                    )}
+                </>
             )}
 
             {/* When toggled the app will be forced offline. */}
