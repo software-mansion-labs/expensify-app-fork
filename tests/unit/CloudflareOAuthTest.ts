@@ -6,7 +6,7 @@
 import type * as ConfigModule from '@libs/CloudflareOAuth/config';
 import type * as OauthClientModule from '@libs/CloudflareOAuth/oauthClient';
 import type * as PkceModule from '@libs/CloudflareOAuth/pkce';
-import type * as SeveredOpenerFallbackModule from '@libs/CloudflareOAuth/severedOpenerFallback';
+import type * as PopupCompletionRecoveryModule from '@libs/CloudflareOAuth/popupCompletionRecovery';
 
 import Base64URL from '@src/utils/Base64URL';
 
@@ -35,7 +35,7 @@ jest.mock('@libs/CloudflareOAuth/getWebCrypto', () => ({
 // Lazy-require so the @src/CONFIG mock factory sees an initialized mockQAAuth — otherwise the
 // hoisted import order would resolve CONFIG.default while mockQAAuth was still in the TDZ.
 const {getQAResource, isQAAuthConfigured, isQAServerRequest} = require<typeof ConfigModule>('@libs/CloudflareOAuth/config');
-const {closeQAAuthPopupIfSeveredOpener} = require<typeof SeveredOpenerFallbackModule>('@libs/CloudflareOAuth/severedOpenerFallback');
+const {closeQAAuthPopupIfSeveredOpener} = require<typeof PopupCompletionRecoveryModule>('@libs/CloudflareOAuth/popupCompletionRecovery');
 const {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} = require<typeof OauthClientModule>('@libs/CloudflareOAuth/oauthClient');
 const {generatePKCEPair, generateState} = require<typeof PkceModule>('@libs/CloudflareOAuth/pkce');
 const getWebCrypto = require<{default: {getRandomValues: jest.Mock; sha256: jest.Mock}}>('@libs/CloudflareOAuth/getWebCrypto').default;
@@ -295,7 +295,7 @@ describe('oauthClient', () => {
     });
 });
 
-describe('severedOpenerFallback: popup self-close', () => {
+describe('popupCompletionRecovery: popup self-close', () => {
     // expo-web-browser's protocol constants — maybeCompleteAuthSession writes both before posting
     // its completion message, so their presence marks a completed (not in-flight) auth session
     const SESSION_HANDLE_KEY = 'ExpoWebBrowserRedirectHandle';

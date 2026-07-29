@@ -303,7 +303,7 @@ function refreshTokens(refreshToken: string): Promise<CloudflareSession> {
 }
 ```
 
-### 2.5 `severedOpenerFallback.ts` — the recovery channel for openerless popups (added after live testing)
+### 2.5 `popupCompletionRecovery.ts` — the recovery channel for openerless popups (added after live testing)
 
 Found live (Jul 27): the popup's `window.opener` can come back **severed** after the Cloudflare redirect chain. `maybeCompleteAuthSession()` then posts its completion message into the void and `openAuthSessionAsync` hangs forever — the user sees an endless spinner. The recovery rides the lib's own internal handshake: the completion URL is written to localStorage **before** the postMessage (to the key `ExpoWebBrowser_OriginUrl_<handle>`, where the handle is our own OAuth `state`), and localStorage is shared same-origin regardless of opener health. The full walkthrough of that handshake — key names, write ordering, why the lib's built-in fallbacks don't fire on web, what severs openers — plus the version-pinning risk table and upgrade checklist live in `Web_POC_ExpoWebBrowser.md` §3–§5; treat that doc as the reference when touching this file or bumping the package.
 

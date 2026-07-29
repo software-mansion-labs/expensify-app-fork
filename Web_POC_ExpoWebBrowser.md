@@ -36,14 +36,14 @@ The load-bearing accident: the localStorage breadcrumb is written **before** the
 
 **What happened live (Jul 27, right after a fresh login):** the flow hung on an endless spinner. The popup's `window.opener` came back **severed** after the Cloudflare redirect chain, so step 2's postMessage went nowhere — with a severed opener, `window.opener ?? window.parent` of a top-level window is the window *itself*, a message posted to a window with no listener and silently dropped. `openAuthSessionAsync` never settles.
 
-**What severs an opener** (Playwright-reproduced boundary): a renderer-initiated redirect preserves it; a browser-initiated navigation, or a `Cross-Origin-Opener-Policy` header on an intermediate hop, severs it. Whose pages sit in the middle of the redirect chain decides which one you get — Cloudflare Access's pages severed it reliably after a fresh login.
+**What severs an opener:** any hop that disowns the popup does it; the known mechanisms are a browser-initiated navigation and a `Cross-Origin-Opener-Policy` header on an intermediate page. Which one Cloudflare Access used was never pinned down, and the recovery deliberately does not depend on knowing: it keys off the callback URL landing in localStorage, whatever nulled the opener. The live symptom does rule one of them out. COOP puts the popup in a new browsing context group, which is expected to make the opener's own popup handle read as closed, so expo would have resolved `dismiss` within a second rather than hanging. A hang means the popup stayed reachable from the opener while its own `window.opener` was gone.
 
 **Why expo's own two fallbacks don't rescue the severed case on web:**
 
 - Its AppState listener re-reads the `OriginUrl` breadcrumb only on an `active` transition — but web AppState is document-visibility-based, and the opener tab never flips visibility during the popup dance, so it never fires.
 - Its 1 s `popupWindow.closed` poll resolves (as `dismiss`, losing the URL) only once the popup closes — and in the severed case nothing ever closes it, because the closer is the opener-side `dismissPopup()` that only runs on the message that never arrives.
 
-**The recovery (shipped, `src/libs/CloudflareOAuth/severedOpenerFallback.ts`):** two pieces, both riding §3:
+**The recovery (shipped, `src/libs/CloudflareOAuth/popupCompletionRecovery.ts`):** two pieces, both riding §3:
 
 - **Opener side:** `watchForSeveredOpenerCompletion(state)` resolves with the callback URL when `ExpoWebBrowser_OriginUrl_<state>` appears — a `storage` event for writes after attach, plus a 1 s poll for one written before it. `runAuthFlow` races it against `openAuthSessionAsync` and calls `dismissAuthSession()` after a success from either channel.
 - **Popup side:** `closeQAAuthPopupIfSeveredOpener()` (one line in `App.tsx`, right after `maybeCompleteAuthSession()`) — the popup closes *itself*, since its opener no longer can. Every gate must pass: on the callback path, completion breadcrumb published, opener actually gone, QA auth configured (plus a web-storage guard so native is a no-op). "Never close the main window" is the invariant the gates encode.
@@ -68,9 +68,9 @@ Mitigation, not prevention: the unit tests (`Web_POC_Implementation.md` §7.1 se
 **Upgrade checklist for any `expo-web-browser` bump:**
 
 1. Re-read `node_modules/expo-web-browser/build/ExpoWebBrowser.web.js` (it's small) and re-verify every row of the table above.
-2. Run the unit suites covering `severedOpenerFallback` and the `CloudflareSession` severed-recovery/poll cases — they fail on renamed keys or reordered writes.
+2. Run the unit suites covering `popupCompletionRecovery` and the `CloudflareSession` severed-recovery/poll cases — they fail on renamed keys or reordered writes.
 3. One live (or scripted-browser) run of both variants: healthy opener and severed opener.
-4. Update the pinned version here, in the constants comment in `severedOpenerFallback.ts`, and in `Web_POC_Implementation.md` §2.5.
+4. Update the pinned version here, in the constants comment in `popupCompletionRecovery.ts`, and in `Web_POC_Implementation.md` §2.5.
 
 ## 6. Open questions / follow-ups
 

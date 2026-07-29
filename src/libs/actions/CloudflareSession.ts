@@ -8,8 +8,8 @@ import {getOAuthRedirectURI} from '@libs/CloudflareOAuth/config';
 import {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} from '@libs/CloudflareOAuth/oauthClient';
 import type {PKCEPair} from '@libs/CloudflareOAuth/pkce';
 import {generatePKCEPair, generateState} from '@libs/CloudflareOAuth/pkce';
-import type {AuthSessionCompletion} from '@libs/CloudflareOAuth/severedOpenerFallback';
-import {watchForSeveredOpenerCompletion} from '@libs/CloudflareOAuth/severedOpenerFallback';
+import type {AuthSessionCompletion} from '@libs/CloudflareOAuth/popupCompletionRecovery';
+import {watchForSeveredOpenerCompletion} from '@libs/CloudflareOAuth/popupCompletionRecovery';
 import {registerSessionCleanupCallback} from '@libs/SessionCleanup';
 
 import ONYXKEYS from '@src/ONYXKEYS';

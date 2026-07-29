@@ -45,7 +45,7 @@ import {CurrentReportIDContextProvider} from './hooks/useCurrentReportID';
 import useDefaultDragAndDrop from './hooks/useDefaultDragAndDrop';
 import HybridAppHandler from './HybridAppHandler';
 import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
-import {closeQAAuthPopupIfSeveredOpener} from './libs/CloudflareOAuth/severedOpenerFallback';
+import {closeQAAuthPopupIfSeveredOpener} from './libs/CloudflareOAuth/popupCompletionRecovery';
 import './libs/HybridApp';
 import {ConciergeSessionProvider} from './pages/inbox/ConciergeSessionContext';
 import './setup/backgroundLocationTrackingTask';
