@@ -1,16 +1,17 @@
 /**
  * Recovery channel for OAuth popups whose `window.opener` link was severed (POC finding, Jul 27 —
- * see Web_POC.md §5.4). A COOP header on any page in the popup's redirect chain, a browser-initiated
- * navigation, or IdP script disowning the opener all null the popup's `window.opener`. Expo's
- * `maybeCompleteAuthSession` then posts its completion message to `window.opener ?? window.parent`,
- * which for a severed top-level popup is the popup itself — the opener never hears back, its popup
+ * see Web_POC.md §5.4). Something in Cloudflare's redirect chain disowns the popup; which hop and by
+ * which mechanism was never identified, and this recovery deliberately does not depend on knowing.
+ * Expo's `maybeCompleteAuthSession` then posts its completion message to `window.opener ?? window.parent`,
+ * which for a severed top-level popup is the popup itself: the opener never hears back, its popup
  * handle still looks open, and `openAuthSessionAsync` hangs forever with no error anywhere.
  *
- * The recovery relies on two facts (both verified against expo-web-browser's web implementation and
- * reproduced live in a browser):
+ * The recovery relies on two facts:
  *   1. `maybeCompleteAuthSession` writes the callback URL to `localStorage` under
- *      `ExpoWebBrowser_OriginUrl_<state>` BEFORE it attempts the opener postMessage.
- *   2. Same-origin `storage` events still propagate across windows whose opener link is severed.
+ *      `ExpoWebBrowser_OriginUrl_<state>` BEFORE it attempts the opener postMessage (read from
+ *      expo-web-browser's web implementation).
+ *   2. Same-origin `storage` events still propagate across windows whose opener link is severed,
+ *      since localStorage is shared per origin regardless of how the windows relate.
  *
  * Everything here is web-only at runtime and guards on `window`; on native (and in node-env tests)
  * the watcher never settles and the popup helper is a no-op.

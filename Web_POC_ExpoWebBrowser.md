@@ -41,12 +41,17 @@ The load-bearing accident: the localStorage breadcrumb is written **before** the
 **Why expo's own two fallbacks don't rescue the severed case on web:**
 
 - Its AppState listener re-reads the `OriginUrl` breadcrumb only on an `active` transition — but web AppState is document-visibility-based, and the opener tab never flips visibility during the popup dance, so it never fires.
-- Its 1 s `popupWindow.closed` poll resolves (as `dismiss`, losing the URL) only once the popup closes — and in the severed case nothing ever closes it, because the closer is the opener-side `dismissPopup()` that only runs on the message that never arrives.
+- Its 1 s `popupWindow.closed` poll resolves (as `dismiss`, losing the URL) only once the popup closes, and in the pre-fix severed case nothing ever closed it, because the closer is the opener-side `dismissPopup()` that only runs on the message that never arrives. The shipped self-close changes that, which has a consequence of its own: see "what the recovery costs" below.
 
 **The recovery (shipped, `src/libs/CloudflareOAuth/popupCompletionRecovery.ts`):** two pieces, both riding §3:
 
 - **Opener side:** `watchForSeveredOpenerCompletion(state)` resolves with the callback URL when `ExpoWebBrowser_OriginUrl_<state>` appears — a `storage` event for writes after attach, plus a 1 s poll for one written before it. `runAuthFlow` races it against `openAuthSessionAsync` and calls `dismissAuthSession()` after a success from either channel.
 - **Popup side:** `closeQAAuthPopupIfSeveredOpener()` (one line in `App.tsx`, right after `maybeCompleteAuthSession()`) — the popup closes *itself*, since its opener no longer can. Every gate must pass: on the callback path, completion breadcrumb published, opener actually gone, QA auth configured (plus a web-storage guard so native is a no-op). "Never close the main window" is the invariant the gates encode.
+
+**What the recovery costs, and what it cannot cover:**
+
+- **The self-close re-arms expo's `dismiss` poll.** Once our popup closes itself, `popupWindow.closed` flips and the 1 s poll above resolves `{type: 'dismiss'}`, which now races the breadcrumb watcher inside `runAuthFlow`'s `Promise.race`. A `dismiss` is returned as a plain cancel with no second look at localStorage, so the losing shape is a successful login surfacing as "cancelled". The breadcrumb write is queued in the opener before the close, so the watcher wins in practice and this has never been observed, but nothing in the code enforces the ordering. Pressing again recovers.
+- **Nothing helps before the popup reaches our callback URL.** §3 step 2 writes the breadcrumb only after the redirect-URL check passes, so a popup stranded earlier (Cloudflare's "Invalid nonce" page, seen live, or simply an abandoned login) produces neither channel. The flow then waits until the user closes the window, at which point expo's poll settles it as a cancel within a second. This is not fixable app-side: while the popup sits on the provider's origin, none of our code is running inside it. Only the main window's own UI can help, by saying what it is waiting for.
 
 **Why prod never needed this:** the app's only pre-existing web popup (SAML sign-out) routes exclusively through Expensify-controlled pages, which evidently never sever the opener. But `callSAMLSignOut` awaits `openAuthSessionAsync` with no recovery either — it shares the latent hazard; our flow is simply the first to put a third party's pages in the middle of the chain (see §6).
 
@@ -58,9 +63,9 @@ Everything in §3 is private implementation detail of `expo-web-browser@56.0.5`.
 |---|---|---|
 | `window.open` runs synchronously at the top of `openAuthSessionAsync` | The zero-awaits click path / user-activation design | Popups die as `ERR_WEB_BROWSER_BLOCKED` on every press |
 | Session handle = the authorize URL's `state` param (`getStateFromUrlOrGenerateAsync`) | The watcher derives the breadcrumb key from our own `state` | Watcher waits on a key that never appears → the severed case hangs again (healthy case still works) |
-| Key names `ExpoWebBrowserRedirectHandle`, `ExpoWebBrowser_RedirectUrl_<handle>`, `ExpoWebBrowser_OriginUrl_<handle>` | The watcher and the popup self-close gates | Same silent regression to the pre-fix hang |
+| Key names `ExpoWebBrowserRedirectHandle` and `ExpoWebBrowser_OriginUrl_<handle>`. The third key of §3, `ExpoWebBrowser_RedirectUrl_<handle>`, is written and read by the lib alone, so renaming it cannot break us | The watcher and the popup self-close gates | Same silent regression to the pre-fix hang |
 | Breadcrumb written **before** the postMessage | The severed case has a signal at all | The recovery loses its only channel |
-| `dismissAuthSession()` closes via the retained handle and clears the keys | Post-race cleanup | Dangling handles, or a popup left open after the fallback wins |
+| `dismissAuthSession()` closes via the retained handle and clears the keys | Post-race cleanup | Dangling handles, or a popup left open after the recovery wins |
 | Completion message shape `{url, expoSender}` + same-origin check | The healthy (unsevered) channel | Healthy-path completion breaks — caught immediately by any manual run |
 
 Mitigation, not prevention: the unit tests (`Web_POC_Implementation.md` §7.1 self-close gate table, §7.2 severed-opener recovery + poll fallback) hard-code the key names and the ordering, so an expo upgrade that reshapes the handshake **fails the suite loudly instead of hanging a live flow quietly**. Accepted as POC risk.
@@ -69,7 +74,7 @@ Mitigation, not prevention: the unit tests (`Web_POC_Implementation.md` §7.1 se
 
 1. Re-read `node_modules/expo-web-browser/build/ExpoWebBrowser.web.js` (it's small) and re-verify every row of the table above.
 2. Run the unit suites covering `popupCompletionRecovery` and the `CloudflareSession` severed-recovery/poll cases — they fail on renamed keys or reordered writes.
-3. One live (or scripted-browser) run of both variants: healthy opener and severed opener.
+3. One run of both variants: healthy opener, and severed opener (force it by navigating the popup to the callback URL from the browser itself, which drops its `window.opener`).
 4. Update the pinned version here, in the constants comment in `popupCompletionRecovery.ts`, and in `Web_POC_Implementation.md` §2.5.
 
 ## 6. Open questions / follow-ups
