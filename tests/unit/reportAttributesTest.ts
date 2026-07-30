@@ -30,8 +30,8 @@ jest.mock('@libs/ReportUtils', () => ({
     isArchivedReport: jest.fn(() => false),
     isValidReport: jest.fn(() => true),
     parseReportRouteParams: jest.fn(() => ({reportID: ''})),
-    // Only reached once a report has an RBR reason (see the `reportAttributes compute` — error propagation'
-    // describe block); false keeps that report's own brickRoadStatus as ERROR rather than suppressed.
+    // Only reached once a report has an RBR reason (see the 'parent chat error propagation' describe block);
+    // false keeps that report's own brickRoadStatus as ERROR rather than suppressed.
     isPolicyExpenseChat: jest.fn(() => false),
     isPolicyAdmin: jest.fn(() => false),
     isOpenReport: jest.fn(() => false),
@@ -83,6 +83,12 @@ describe('policyRelevantSignature', () => {
         it('ignores Onyx write-bookkeeping keys', () => {
             const withWriteNoise = {...basePolicy, pendingAction: 'update', pendingFields: {name: 'update'}, errors: {a: 'err'}, errorFields: {name: {a: 'err'}}} as unknown as Policy;
             expect(policyRelevantSignature(withWriteNoise)).toBe(policyRelevantSignature(basePolicy));
+        });
+
+        // A persisted policy is read back without its undefined-valued keys, so they must not enter the signature.
+        it('treats an undefined-valued field as absent', () => {
+            const withUndefinedField: Policy = {...basePolicy, avatarURL: undefined};
+            expect(policyRelevantSignature(withUndefinedField)).toBe(policyRelevantSignature(basePolicy));
         });
     });
 

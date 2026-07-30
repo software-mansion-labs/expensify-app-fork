@@ -51,10 +51,8 @@ const prepareReportKeys = (keys: string[]) => {
     ];
 };
 
-// Keys that change without affecting the computed attributes: write-bookkeeping keys and loading flags
-// flip on every optimistic write / API call, and `connections` is large, volatile, and never read here.
-// Excluded at every nesting depth, not just the policy top level — nested bookkeeping (e.g. a member's
-// pendingAction/errors inside employeeList) is just as irrelevant to the attributes as the top-level kind.
+// Keys dropped from a policy signature at every nesting depth: write bookkeeping and loading flags flip on
+// every optimistic write, and `connections` is large, volatile and never read by the attributes.
 const POLICY_SIGNATURE_EXCLUDED_KEYS = new Set([
     'pendingAction',
     'pendingFields',
@@ -69,32 +67,42 @@ const POLICY_SIGNATURE_EXCLUDED_KEYS = new Set([
     'lastModified',
 ]);
 
-// Deterministic stringify: keys are sorted at every level, so equal content yields equal strings regardless of key insertion order.
+// Deterministic stringify: keys are sorted at every level, so equal content yields equal strings regardless
+// of key insertion order. Values that JSON drops or rewrites are encoded the way a JSON round-trip leaves
+// them (undefined-valued keys omitted, undefined array items as null), so a signature taken before a restart
+// matches the one taken from the same content after it was persisted and read back.
 const stableStringify = (value: unknown): string => {
     if (value === null || typeof value !== 'object') {
-        return JSON.stringify(value) ?? 'undefined';
+        return JSON.stringify(value) ?? 'null';
     }
     if (Array.isArray(value)) {
         return `[${value.map(stableStringify).join(',')}]`;
     }
     const entries = Object.entries(value)
-        .filter(([key]) => !POLICY_SIGNATURE_EXCLUDED_KEYS.has(key))
+        .filter(([key, entryValue]) => entryValue !== undefined && !POLICY_SIGNATURE_EXCLUDED_KEYS.has(key))
         .sort(([a], [b]) => (a < b ? -1 : 1));
     return `{${entries.map(([key, entryValue]) => `${JSON.stringify(key)}:${stableStringify(entryValue)}`).join(',')}}`;
 };
 
+// Signatures are keyed by policy object identity: Onyx hands back the same reference when a merge changed
+// nothing, so an unchanged policy is never serialized twice.
+const signatureByPolicy = new WeakMap<Policy, string>();
+
 // Signature of a policy's attribute-relevant content, stored in the derived value (like `locale`) so the
 // change-detection baseline survives app restarts. The serialized length is appended so a 32-bit hash
-// collision alone cannot mask a change. The serialized string encodes its own shape (keys included), so
-// identical signatures imply identical relevant content: any change to the exclusion set, stringify format,
-// or hash function alters signatures of affected policies — the resulting mismatch triggers a one-time
-// scoped recompute that also refreshes the stored baseline.
+// collision alone cannot mask a change.
 const policyRelevantSignature = (policy: Policy | null | undefined): string | null => {
     if (!policy) {
         return null;
     }
+    const cached = signatureByPolicy.get(policy);
+    if (cached !== undefined) {
+        return cached;
+    }
     const serialized = stableStringify(policy);
-    return `${hashCode(serialized)}.${serialized.length}`;
+    const signature = `${hashCode(serialized)}.${serialized.length}`;
+    signatureByPolicy.set(policy, signature);
+    return signature;
 };
 
 const buildPolicySignatures = (policies: OnyxCollection<Policy>): Record<string, string> => {
@@ -131,6 +139,96 @@ const collectReportKeysForPolicies = (reports: OnyxCollection<Report>, changedPo
         }
     }
     return reportKeys;
+};
+
+type PolicySignatureBaseline = {
+    /** Signatures to store with the next derived value. */
+    nextPolicySignatures: Record<string, string> | undefined;
+    /** Reports to recompute because a policy their attributes depend on changed. */
+    policyChangedReportKeys: string[];
+    /** Whether the signatures may be stored on a pass that recomputes no reports. */
+    canPersistWithoutRecompute: boolean;
+};
+
+/**
+ * Decides which reports a policy delivery affects, by diffing the delivered policies against the signatures
+ * stored in the derived value. Because that baseline is persisted, a restart no longer mistakes the policy
+ * update that OpenApp/Reconnect always delivers for "every policy changed".
+ *
+ * Signatures only ever advance together with the recompute they imply — a baseline that moved ahead of the
+ * attributes would absorb the change and leave the affected report names stale.
+ */
+const resolvePolicySignatureBaseline = ({
+    policies,
+    reports,
+    storedPolicySignatures,
+    policyDelta,
+    isPolicyDelivered,
+    hasComputedReports,
+    needsFullRecompute,
+}: {
+    policies: OnyxCollection<Policy>;
+    reports: OnyxCollection<Report>;
+    storedPolicySignatures: Record<string, string> | undefined;
+    policyDelta: Record<string, unknown> | undefined;
+    isPolicyDelivered: boolean;
+    hasComputedReports: boolean;
+    needsFullRecompute: boolean;
+}): PolicySignatureBaseline => {
+    const unchanged: PolicySignatureBaseline = {nextPolicySignatures: storedPolicySignatures, policyChangedReportKeys: [], canPersistWithoutRecompute: false};
+
+    if (!isPolicyDelivered) {
+        // No baseline yet on a pass that did not deliver policies: the attributes and the policies both come
+        // from the same disk-hydrated state, so seeding without a recompute is consistent.
+        if (storedPolicySignatures || !policies || !hasComputedReports) {
+            return unchanged;
+        }
+        return {nextPolicySignatures: buildPolicySignatures(policies), policyChangedReportKeys: [], canPersistWithoutRecompute: true};
+    }
+
+    // Every report recomputes with the current policies anyway, so the full baseline can be snapshotted.
+    if (needsFullRecompute || !hasComputedReports) {
+        return {...unchanged, nextPolicySignatures: buildPolicySignatures(policies)};
+    }
+
+    if (!storedPolicySignatures) {
+        // Attributes exist but carry no baseline (written by an older app version, or computed before policies
+        // loaded), so the delivered policies' reports are recomputed and the full baseline is snapshotted.
+        // A coalesced policy trigger can fire with an empty delta — skip the report walk then.
+        const deliveredPolicyIDs = new Set(Object.keys(policyDelta ?? {}).map((key) => key.replace(ONYXKEYS.COLLECTION.POLICY, '')));
+        const policyChangedReportKeys = deliveredPolicyIDs.size > 0 ? collectReportKeysForPolicies(reports, deliveredPolicyIDs) : [];
+        return {
+            nextPolicySignatures: reports ? buildPolicySignatures(policies) : storedPolicySignatures,
+            policyChangedReportKeys,
+            canPersistWithoutRecompute: !!reports && policyChangedReportKeys.length === 0,
+        };
+    }
+
+    const changedPolicyIDs = new Set<string>();
+    const updatedSignatures = {...storedPolicySignatures};
+    for (const key of Object.keys(policyDelta ?? {})) {
+        const signature = policyRelevantSignature(policies?.[key]);
+        if ((storedPolicySignatures[key] ?? null) === signature) {
+            continue;
+        }
+        changedPolicyIDs.add(key.replace(ONYXKEYS.COLLECTION.POLICY, ''));
+        if (signature === null) {
+            delete updatedSignatures[key];
+        } else {
+            updatedSignatures[key] = signature;
+        }
+    }
+    if (changedPolicyIDs.size === 0) {
+        return unchanged;
+    }
+
+    const policyChangedReportKeys = collectReportKeysForPolicies(reports, changedPolicyIDs);
+    return {
+        nextPolicySignatures: updatedSignatures,
+        policyChangedReportKeys,
+        // With the reports collection missing the recompute is skipped rather than unnecessary, so the baseline must not advance.
+        canPersistWithoutRecompute: !!reports && policyChangedReportKeys.length === 0,
+    };
 };
 
 // A short string built from the fields a report name can come from: displayName and firstName.
@@ -322,13 +420,7 @@ export default createOnyxDerivedValueConfig({
         }
 
         const nextIsTrackIntentUser = isTrackIntentUserSelector(introSelected);
-        // conciergeReportID and introSelected are re-delivered on every OpenApp/reconnect merge, so a full
-        // recompute fires only when the delivered value differs from the stored baseline. A missing baseline
-        // (value written by an older app version) counts as a change on the delivery pass — that pass is the
-        // one chance to reconcile names the persisted value may have been computed with a different value, so
-        // it recomputes rather than being silently absorbed; on non-delivery passes the missing baseline is
-        // seeded instead. '' (not null) marks "no concierge report" — Onyx.set strips nested nulls on persist,
-        // so a null baseline would read back as missing after a restart.
+        // '' marks "no concierge report": the baseline has to survive a restart, and Onyx.set strips nested nulls on persist.
         // eslint-disable-next-line rulesdir/no-default-id-values -- '' is a persistable baseline sentinel, never used as a lookup ID
         const nextConciergeReportID = conciergeReportID ?? '';
         // eslint-disable-next-line rulesdir/no-default-id-values -- same sentinel for values persisted before this field existed
@@ -336,6 +428,9 @@ export default createOnyxDerivedValueConfig({
         const storedIsTrackIntentUser = currentValue && 'isTrackIntentUser' in currentValue ? currentValue.isTrackIntentUser : undefined;
         const conciergeReportIDTriggered = hasKeyTriggeredCompute(ONYXKEYS.CONCIERGE_REPORT_ID, triggeredKeys);
         const introSelectedTriggered = hasKeyTriggeredCompute(ONYXKEYS.NVP_INTRO_SELECTED, triggeredKeys);
+        // Both keys are re-delivered on every OpenApp/reconnect merge, so a recompute needs the delivered value to
+        // differ from the baseline. A missing baseline counts as a change: that delivery is the one chance to
+        // reconcile names the persisted attributes may have been computed with a different value.
         const hasConciergeReportIDChanged = conciergeReportIDTriggered && storedConciergeReportID !== nextConciergeReportID;
         const hasIsTrackIntentUserChanged = introSelectedTriggered && storedIsTrackIntentUser !== nextIsTrackIntentUser;
 
@@ -348,78 +443,29 @@ export default createOnyxDerivedValueConfig({
             hasConciergeReportIDChanged ||
             hasIsTrackIntentUserChanged;
 
-        // Policy changes are detected by diffing against signatures stored in the derived value, so the
-        // baseline survives app restarts. Signatures advance only together with the recompute they imply.
         const storedPolicySignatures = currentValue?.policySignatures;
         const hasComputedReports = !!currentValue?.reports && Object.keys(currentValue.reports).length > 0;
-        let nextPolicySignatures = storedPolicySignatures;
-        // True when signatures may persist through an early return: a pure baseline seed, or changed policies with no reports referencing them.
-        let canPersistSignaturesWithoutRecompute = false;
-        let policyChangedReportKeys: string[] = [];
+        const policyBaseline = resolvePolicySignatureBaseline({
+            policies,
+            reports,
+            storedPolicySignatures,
+            policyDelta: sourceValues?.[ONYXKEYS.COLLECTION.POLICY],
+            isPolicyDelivered: hasKeyTriggeredCompute(ONYXKEYS.COLLECTION.POLICY, triggeredKeys),
+            hasComputedReports,
+            needsFullRecompute,
+        });
+        const {policyChangedReportKeys, canPersistWithoutRecompute} = policyBaseline;
+        let nextPolicySignatures = policyBaseline.nextPolicySignatures;
 
-        // Cached — a single pass can snapshot the full baseline more than once.
-        let allPolicySignaturesCache: Record<string, string> | undefined;
-        const buildAllPolicySignatures = () => {
-            allPolicySignaturesCache ??= buildPolicySignatures(policies);
-            return allPolicySignaturesCache;
-        };
-
-        if (hasKeyTriggeredCompute(ONYXKEYS.COLLECTION.POLICY, triggeredKeys)) {
-            if (needsFullRecompute) {
-                // Every report recomputes with the current policies anyway — snapshot the full baseline.
-                nextPolicySignatures = buildAllPolicySignatures();
-            } else if (storedPolicySignatures) {
-                const changedPolicyIDs = new Set<string>();
-                const updatedSignatures = {...storedPolicySignatures};
-                for (const key of Object.keys(sourceValues?.[ONYXKEYS.COLLECTION.POLICY] ?? {})) {
-                    const signature = policyRelevantSignature(policies?.[key]);
-                    if ((storedPolicySignatures[key] ?? null) === signature) {
-                        continue;
-                    }
-                    changedPolicyIDs.add(key.replace(ONYXKEYS.COLLECTION.POLICY, ''));
-                    if (signature === null) {
-                        delete updatedSignatures[key];
-                    } else {
-                        updatedSignatures[key] = signature;
-                    }
-                }
-                if (changedPolicyIDs.size > 0) {
-                    nextPolicySignatures = updatedSignatures;
-                    policyChangedReportKeys = collectReportKeysForPolicies(reports, changedPolicyIDs);
-                    // With the reports collection missing, the recompute is skipped rather than unnecessary, so the baseline must not advance.
-                    canPersistSignaturesWithoutRecompute = !!reports && policyChangedReportKeys.length === 0;
-                }
-            } else if (hasComputedReports) {
-                // Attributes exist but carry no signature baseline (value written by an older app version, or
-                // computed before policies loaded) — recompute the delivered policies' reports and snapshot the full baseline.
-                const deliveredPolicyIDs = new Set(Object.keys(sourceValues?.[ONYXKEYS.COLLECTION.POLICY] ?? {}).map((key) => key.replace(ONYXKEYS.COLLECTION.POLICY, '')));
-                // A coalesced policy trigger can fire with an empty delta — skip the full report walk then.
-                policyChangedReportKeys = deliveredPolicyIDs.size > 0 ? collectReportKeysForPolicies(reports, deliveredPolicyIDs) : [];
-                canPersistSignaturesWithoutRecompute = !!reports && policyChangedReportKeys.length === 0;
-                if (reports) {
-                    nextPolicySignatures = buildAllPolicySignatures();
-                }
-            } else {
-                // No attributes computed yet — the pass below runs a full scan, so seeding is safe.
-                nextPolicySignatures = buildAllPolicySignatures();
-            }
-        } else if (!storedPolicySignatures && policies && hasComputedReports) {
-            // No baseline yet on a pass that did not deliver policies: the attributes and the policies both
-            // come from the same disk-hydrated state, so seeding without a recompute is consistent.
-            nextPolicySignatures = buildAllPolicySignatures();
-            canPersistSignaturesWithoutRecompute = true;
-        }
-
-        // Baseline writes that ride early returns. An existing conciergeReportID/isTrackIntentUser baseline
-        // advances only in the final return of a full recompute — advancing it here would absorb a change and
-        // suppress the recompute its next delivery should trigger. A missing baseline is seeded only on a pass
-        // that did not deliver the key: the persisted attributes and the delivered value then both come from
-        // the same disk-hydrated state, so the names already reflect it. On the delivery pass a missing
-        // baseline is treated as a change above and recomputed in the final return, not seeded here.
+        // Baseline writes that ride the early returns below, where no report is recomputed.
         const metaPatch: Partial<ReportAttributesDerivedValue> = {};
-        if (canPersistSignaturesWithoutRecompute && nextPolicySignatures !== storedPolicySignatures) {
+        if (canPersistWithoutRecompute && nextPolicySignatures !== storedPolicySignatures) {
             metaPatch.policySignatures = nextPolicySignatures;
         }
+        // An existing baseline advances only in the final return of a full recompute; advancing it here would
+        // absorb the change and suppress the recompute its next delivery should trigger. A missing baseline is
+        // seeded only on a pass that did not deliver the key — the persisted attributes and the delivered value
+        // then come from the same disk-hydrated state, so the names already reflect it.
         if (storedConciergeReportID === undefined && !conciergeReportIDTriggered) {
             metaPatch.conciergeReportID = nextConciergeReportID;
         }
@@ -774,11 +820,11 @@ export default createOnyxDerivedValueConfig({
         // A full scan recomputed every report with the current policies, so the baseline can be snapshotted
         // even when no policy trigger fired this pass.
         if (!useIncrementalUpdates && policies) {
-            nextPolicySignatures = buildAllPolicySignatures();
+            nextPolicySignatures = buildPolicySignatures(policies);
         }
 
-        // The stored conciergeReportID/isTrackIntentUser always reflect the values the full attribute set
-        // was computed with, so they advance only on a full recompute (or the very first write).
+        // The stored conciergeReportID/isTrackIntentUser reflect the values the full attribute set was computed
+        // with, so they advance only on a full recompute (or the very first write).
         return {
             reports: reportAttributes,
             locale: preferredLocale ?? null,
