@@ -102,18 +102,18 @@ async function runAuthFlow(): Promise<boolean> {
     // The popup's completion message only reaches us while its window.opener survives the redirect
     // chain; a severed opener posts it into the void and openAuthSessionAsync hangs forever (verified
     // live — Web_POC.md §5.4). Race it against the localStorage breadcrumb the popup publishes first.
-    const fallback = watchForSeveredOpenerCompletion(state);
+    const recovery = watchForSeveredOpenerCompletion(state);
     let result: WebBrowserAuthSessionResult | AuthSessionCompletion;
     try {
-        result = await Promise.race([openAuthSessionAsync(buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge}), getOAuthRedirectURI()), fallback.completion]);
+        result = await Promise.race([openAuthSessionAsync(buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge}), getOAuthRedirectURI()), recovery.completion]);
     } finally {
-        fallback.stop();
+        recovery.stop();
     }
     if (result.type !== 'success') {
         // Cancelled/dismissed — a semantic outcome, not an exception
         return false;
     }
-    // When the fallback won, expo's session is still dangling: this closes the popup where the handle
+    // When the recovery won, expo's session is still dangling: this closes the popup where the handle
     // still works and clears the localStorage handles either way. No-op after a normal completion.
     dismissAuthSession();
 

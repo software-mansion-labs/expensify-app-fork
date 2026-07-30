@@ -43,7 +43,7 @@ The load-bearing accident: the localStorage breadcrumb is written **before** the
 - Its AppState listener re-reads the `OriginUrl` breadcrumb only on an `active` transition — but web AppState is document-visibility-based, and the opener tab never flips visibility during the popup dance, so it never fires.
 - Its 1 s `popupWindow.closed` poll resolves (as `dismiss`, losing the URL) only once the popup closes, and in the pre-fix severed case nothing ever closed it, because the closer is the opener-side `dismissPopup()` that only runs on the message that never arrives. The shipped self-close changes that, which has a consequence of its own: see "what the recovery costs" below.
 
-**The recovery (shipped, `src/libs/CloudflareOAuth/popupCompletionRecovery.ts`):** two pieces, both riding §3:
+**The recovery (shipped, `src/libs/CloudflareOAuth/popupCompletionRecovery.ts`):** two pieces, both riding §3. §7 maps every added line to its file:
 
 - **Opener side:** `watchForSeveredOpenerCompletion(state)` resolves with the callback URL when `ExpoWebBrowser_OriginUrl_<state>` appears — a `storage` event for writes after attach, plus a 1 s poll for one written before it. `runAuthFlow` races it against `openAuthSessionAsync` and calls `dismissAuthSession()` after a success from either channel.
 - **Popup side:** `closeQAAuthPopupIfSeveredOpener()` (one line in `App.tsx`, right after `maybeCompleteAuthSession()`) — the popup closes *itself*, since its opener no longer can. Every gate must pass: on the callback path, completion breadcrumb published, opener actually gone, QA auth configured (plus a web-storage guard so native is a no-op). "Never close the main window" is the invariant the gates encode.
@@ -83,3 +83,31 @@ Mitigation, not prevention: the unit tests (`Web_POC_Implementation.md` §7.1 se
 - **Full-page-redirect fallback.** The §1 contingency for popup-hostile browsers. Build only if live testing shows popup blockers are a real problem.
 - **Upstreaming.** The clean fix for §5 would be expo exposing the breadcrumb watch as public API — or handling severed openers itself, since it already owns both ends of the handshake. If this flow graduates from POC, an upstream issue/PR would delete our private-API dependency.
 - **SAML sign-out latent hazard.** Same `openAuthSessionAsync`, no recovery; safe only while its redirect chain stays on Expensify-controlled pages (§4). Worth a heads-up to the owners of `callSAMLSignOut` independent of this POC.
+
+## 7. Every change we added, file by file
+
+The map for a reviewer, and for anyone re-deriving §4. Everything below exists to make the lib finish *its own* handshake on web. **`expo-web-browser` itself is untouched:** no fork, no `patches/` entry, no vendored copy, no monkey-patching of its exports. We read two of its localStorage keys and close one window it can no longer reach. Line numbers drift as files move; the symbol names are the durable handle.
+
+**New file: [`src/libs/CloudflareOAuth/popupCompletionRecovery.ts`](src/libs/CloudflareOAuth/popupCompletionRecovery.ts)** — 118 lines, the entirety of the workaround.
+
+- [L1-18](src/libs/CloudflareOAuth/popupCompletionRecovery.ts#L1-L18) — header: the failure mode, and the two §3 facts the recovery rides on.
+- [L21-23](src/libs/CloudflareOAuth/popupCompletionRecovery.ts#L21-L23) — the two pinned key names, `ExpoWebBrowserRedirectHandle` and `ExpoWebBrowser_OriginUrl_`. These are the §5 risk table's third row.
+- [L42-88](src/libs/CloudflareOAuth/popupCompletionRecovery.ts#L42-L88) — `watchForSeveredOpenerCompletion(state)`, the opener side: [storage listener, L71-77](src/libs/CloudflareOAuth/popupCompletionRecovery.ts#L71-L77) and [1 s poll, L78-84](src/libs/CloudflareOAuth/popupCompletionRecovery.ts#L78-L84).
+- [L90-115](src/libs/CloudflareOAuth/popupCompletionRecovery.ts#L90-L115) — `closeQAAuthPopupIfSeveredOpener()`, the popup side; the gates that encode "never close the main window" are [L99-113](src/libs/CloudflareOAuth/popupCompletionRecovery.ts#L99-L113).
+
+**Call site 1: [`src/App.tsx`](src/App.tsx)** — one line at module scope, nothing else in the file.
+
+- [L48](src/App.tsx#L48) — the import.
+- [L57-61](src/App.tsx#L57-L61) — the call, sitting directly under the pre-existing `maybeCompleteAuthSession()` that SAML sign-out already depends on (§1). The precedent and the addition are visible in the same five lines.
+
+**Call site 2: [`src/libs/actions/CloudflareSession.ts`](src/libs/actions/CloudflareSession.ts)** — inside `runAuthFlow`.
+
+- [L11-12](src/libs/actions/CloudflareSession.ts#L11-L12) — the imports.
+- [L102-111](src/libs/actions/CloudflareSession.ts#L102-L111) — start the watcher, race it against `openAuthSessionAsync`, `stop()` it in the `finally` whichever channel won.
+- [L116-118](src/libs/actions/CloudflareSession.ts#L116-L118) — the unconditional `dismissAuthSession()` that cleans up the dangling expo session (§2).
+
+**Tests pinning all of it** — these are what the §5 upgrade checklist step 2 refers to.
+
+- [`tests/unit/CloudflareOAuthTest.ts` L298-359](tests/unit/CloudflareOAuthTest.ts#L298-L359) — the self-close gate table: closes on the severed shape, and refuses on each of a live opener, a non-callback path, a missing breadcrumb, and unconfigured QA auth.
+- [`tests/unit/CloudflareSessionTest.ts` L285-303](tests/unit/CloudflareSessionTest.ts#L285-L303) — the reproduced hang, with `openAuthSessionAsync` mocked to never settle, so the flow can only complete through the breadcrumb. Also asserts the dangling session gets dismissed.
+- [`tests/unit/CloudflareSessionTest.ts` L305-316](tests/unit/CloudflareSessionTest.ts#L305-L316) — same hang, but the breadcrumb lands before the watcher attaches, so the poll is the only channel that can deliver it.

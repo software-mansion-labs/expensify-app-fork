@@ -408,17 +408,17 @@ async function runAuthFlow(): Promise<boolean> {
     const state = generateState(); // synchronous — still zero awaits before the popup
     // A severed opener posts the completion into the void and openAuthSessionAsync hangs forever
     // (verified live — Web_POC.md §5.4). Race it against the popup's localStorage breadcrumb.
-    const fallback = watchForSeveredOpenerCompletion(state);
+    const recovery = watchForSeveredOpenerCompletion(state);
     let result: WebBrowserAuthSessionResult | AuthSessionCompletion;
     try {
-        result = await Promise.race([openAuthSessionAsync(buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge}), getOAuthRedirectURI()), fallback.completion]);
+        result = await Promise.race([openAuthSessionAsync(buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge}), getOAuthRedirectURI()), recovery.completion]);
     } finally {
-        fallback.stop();
+        recovery.stop();
     }
     if (result.type !== 'success') {
         return false; // cancelled/dismissed — semantic result, not an exception
     }
-    // When the fallback won, expo's session is still dangling: dismissAuthSession() closes the popup
+    // When the recovery won, expo's session is still dangling: dismissAuthSession() closes the popup
     // where the handle still works and clears the localStorage handles either way. No-op after a
     // normal completion.
     dismissAuthSession();
@@ -778,7 +778,7 @@ One behavioral case beyond the classification lists: run the export/masking path
 
 After each step: `npm run fmt`, `npm run lint-changed`; after type-bearing steps (1, 2, 3): `npm run typecheck-tsgo` (Step 6 too — the locale files are type-checked against `en`); after Step 6: `npm run react-compiler-compliance-check check-changed`. Tests: `npm run test -- CloudflareOAuth CloudflareSession CloudflareProbe HttpUtils ExportOnyxState`. Before declaring done: one full `npm run typecheck` — tsgo is the fast dev loop, but tsc is what CI gates on (CLAUDE.md), and they occasionally disagree.
 
-Manual stages 2–5 run exactly as written in `Web_POC_Plan.md` §3 (happy path with the pre-warmed popup-from-press, silent refresh, DevTools negative checks, real sign-out). Reminder from §4 there: the dev server must actually be on `:8082`. Since the §2.5 fallback: a popup that comes back openerless (live this hung the probe on an endless spinner) must still complete the probe within about a second and close itself; `gib.js` / push-notification-chunk console errors inside the popup are known cosmetics of the short-lived boot, not failures.
+Manual stages 2–5 run exactly as written in `Web_POC_Plan.md` §3 (happy path with the pre-warmed popup-from-press, silent refresh, DevTools negative checks, real sign-out). Reminder from §4 there: the dev server must actually be on `:8082`. Since the §2.5 recovery: a popup that comes back openerless (live this hung the probe on an endless spinner) must still complete the probe within about a second and close itself; `gib.js` / push-notification-chunk console errors inside the popup are known cosmetics of the short-lived boot, not failures.
 
 ## Explicitly unchanged (so nobody "fixes" these)
 
