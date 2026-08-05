@@ -13,8 +13,7 @@ import SCREENS from '@src/SCREENS';
 import {CONST as COMMON_CONST} from 'expensify-common';
 import {assign, setup} from 'xstate';
 
-import type {MfaMachineEvent} from './machineEvents';
-import type {MfaContext} from './types';
+import type {MfaContext, MfaEvent} from './types';
 
 import createActors from './mfaActors';
 
@@ -58,7 +57,7 @@ const MFAMachine = setup({
     /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
     types: {
         context: {} as MfaContext,
-        events: {} as MfaMachineEvent,
+        events: {} as MfaEvent,
     },
     /* eslint-enable @typescript-eslint/no-unsafe-type-assertion */
     actors: createActors(),
@@ -109,6 +108,7 @@ const MFAMachine = setup({
             }
             return {validateCode: event.validateCode};
         }),
+        clearValidateCode: assign({validateCode: undefined}),
         approveSoftPrompt: assign({softPromptApproved: true}),
         persistSoftPromptAcceptance: ({context}) => {
             if (context.accountID === undefined) {
@@ -237,6 +237,9 @@ const MFAMachine = setup({
                             },
                         },
                         [MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE]: {
+                            // The submitted code is needed only while this actor starts and runs. Clear it on
+                            // every way out so the one-time code cannot outlive the request that consumes it.
+                            exit: 'clearValidateCode',
                             invoke: {
                                 id: 'requestRegistrationChallenge',
                                 src: 'requestRegistrationChallenge',
