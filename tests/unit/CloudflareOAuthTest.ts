@@ -6,7 +6,7 @@
 import type * as ConfigModule from '@libs/CloudflareOAuth/config';
 import type * as OauthClientModule from '@libs/CloudflareOAuth/oauthClient';
 import type * as PkceModule from '@libs/CloudflareOAuth/pkce';
-import type * as PopupCompletionRecoveryModule from '@libs/CloudflareOAuth/popupCompletionRecovery';
+import type * as RedirectFlowStorageModule from '@libs/CloudflareOAuth/redirectFlowStorage';
 
 import Base64URL from '@src/utils/Base64URL';
 
@@ -35,7 +35,7 @@ jest.mock('@libs/CloudflareOAuth/getWebCrypto', () => ({
 // Lazy-require so the @src/CONFIG mock factory sees an initialized mockQAAuth — otherwise the
 // hoisted import order would resolve CONFIG.default while mockQAAuth was still in the TDZ.
 const {getQAResource, isQAAuthConfigured, isQAServerRequest} = require<typeof ConfigModule>('@libs/CloudflareOAuth/config');
-const {closeQAAuthPopupIfSeveredOpener} = require<typeof PopupCompletionRecoveryModule>('@libs/CloudflareOAuth/popupCompletionRecovery');
+const {clearPendingRedirectFlow, consumePendingRedirectFlow, savePendingRedirectFlow} = require<typeof RedirectFlowStorageModule>('@libs/CloudflareOAuth/redirectFlowStorage');
 const {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} = require<typeof OauthClientModule>('@libs/CloudflareOAuth/oauthClient');
 const {generatePKCEPair, generateState} = require<typeof PkceModule>('@libs/CloudflareOAuth/pkce');
 const getWebCrypto = require<{default: {getRandomValues: jest.Mock; sha256: jest.Mock}}>('@libs/CloudflareOAuth/getWebCrypto').default;
@@ -295,65 +295,74 @@ describe('oauthClient', () => {
     });
 });
 
-describe('popupCompletionRecovery: popup self-close', () => {
-    // expo-web-browser's protocol constants — maybeCompleteAuthSession writes both before posting
-    // its completion message, so their presence marks a completed (not in-flight) auth session
-    const SESSION_HANDLE_KEY = 'ExpoWebBrowserRedirectHandle';
-    const BREADCRUMB_KEY = 'ExpoWebBrowser_OriginUrl_handle-1';
+describe('redirectFlowStorage', () => {
+    const STORAGE_KEY = 'QA_AUTH_REDIRECT_FLOW';
+    const FLOW = {state: 'state-1', codeVerifier: 'verifier-1', returnURL: 'http://localhost/settings/troubleshoot', createdAt: 1_700_000_000_000};
 
-    let closeSpy: jest.SpyInstance;
-
-    /** Shapes jsdom into the severed popup: callback path, no opener, completed-session handles */
-    function arrangeSeveredPopup() {
-        window.history.replaceState(null, '', '/oauth/callback');
-        window.localStorage.setItem(SESSION_HANDLE_KEY, 'handle-1');
-        window.localStorage.setItem(BREADCRUMB_KEY, 'http://localhost/oauth/callback?code=c&state=handle-1');
-    }
+    let nowSpy: jest.SpyInstance;
 
     beforeEach(() => {
-        closeSpy = jest.spyOn(window, 'close').mockImplementation(() => {});
-        // jsdom's default opener is already null (the severed shape)
-        Object.defineProperty(window, 'opener', {value: null, writable: true, configurable: true});
+        window.sessionStorage.clear();
+        nowSpy = jest.spyOn(Date, 'now').mockReturnValue(FLOW.createdAt);
     });
 
     afterEach(() => {
-        closeSpy.mockRestore();
-        window.localStorage.clear();
-        window.history.replaceState(null, '', '/');
+        nowSpy.mockRestore();
+        window.sessionStorage.clear();
     });
 
-    it('closes the popup when the opener is severed and the session completed', () => {
-        arrangeSeveredPopup();
-        closeQAAuthPopupIfSeveredOpener();
-        expect(closeSpy).toHaveBeenCalledTimes(1);
+    it('round-trips the flow record', () => {
+        savePendingRedirectFlow(FLOW);
+        expect(consumePendingRedirectFlow()).toEqual(FLOW);
     });
 
-    it('leaves the window alone while the opener is alive — the healthy channel closes it', () => {
-        arrangeSeveredPopup();
-        Object.defineProperty(window, 'opener', {value: {}, writable: true, configurable: true});
-        closeQAAuthPopupIfSeveredOpener();
-        expect(closeSpy).not.toHaveBeenCalled();
+    it('is single-use: the record is removed even before it is validated', () => {
+        savePendingRedirectFlow(FLOW);
+        consumePendingRedirectFlow();
+        expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+        // A replayed callback URL finds nothing — the verifier can never be reused
+        expect(consumePendingRedirectFlow()).toBeNull();
     });
 
-    it('never closes a window off the callback path — the main tab also runs this at boot', () => {
-        // The dangerous shape: a user reloads the main tab mid-flow with stale handles present
-        arrangeSeveredPopup();
-        window.history.replaceState(null, '', '/');
-        closeQAAuthPopupIfSeveredOpener();
-        expect(closeSpy).not.toHaveBeenCalled();
+    it('treats an expired record as absent, so a stale verifier is never exchanged', () => {
+        savePendingRedirectFlow(FLOW);
+        nowSpy.mockReturnValue(FLOW.createdAt + 11 * 60 * 1000);
+        expect(consumePendingRedirectFlow()).toBeNull();
     });
 
-    it('never closes before the completion breadcrumb exists — the flow is still in progress', () => {
-        arrangeSeveredPopup();
-        window.localStorage.removeItem(BREADCRUMB_KEY);
-        closeQAAuthPopupIfSeveredOpener();
-        expect(closeSpy).not.toHaveBeenCalled();
+    it.each([
+        ['unparseable JSON', 'not json'],
+        ['a missing verifier', JSON.stringify({state: 's', returnURL: '/', createdAt: FLOW.createdAt})],
+        ['an empty state', JSON.stringify({...FLOW, state: ''})],
+    ])('returns null for %s, and still clears it', (_label, raw) => {
+        window.sessionStorage.setItem(STORAGE_KEY, raw);
+        expect(consumePendingRedirectFlow()).toBeNull();
+        expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 
-    it('is a no-op when QA auth is not configured', () => {
-        arrangeSeveredPopup();
-        mockQAAuth.CLIENT_ID = '';
-        closeQAAuthPopupIfSeveredOpener();
-        expect(closeSpy).not.toHaveBeenCalled();
+    it('clearPendingRedirectFlow drops a pending record', () => {
+        savePendingRedirectFlow(FLOW);
+        clearPendingRedirectFlow();
+        expect(consumePendingRedirectFlow()).toBeNull();
+    });
+
+    it('throws when the write fails, so the caller refuses to navigate away without a stored verifier', () => {
+        // jsdom's Storage methods are not spy-able, so the whole object is swapped out
+        const realSessionStorage = window.sessionStorage;
+        Object.defineProperty(window, 'sessionStorage', {
+            value: {
+                getItem: () => null,
+                removeItem: () => {},
+                setItem: () => {
+                    throw new Error('QuotaExceededError');
+                },
+            },
+            writable: true,
+            configurable: true,
+        });
+
+        expect(() => savePendingRedirectFlow(FLOW)).toThrow('QuotaExceededError');
+
+        Object.defineProperty(window, 'sessionStorage', {value: realSessionStorage, writable: true, configurable: true});
     });
 });

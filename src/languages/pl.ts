@@ -2203,7 +2203,6 @@ const translations: TranslationDeepObject<typeof en> = {
             qaAuthSession: 'Sesja uwierzytelniania QA',
             qaAuthClearSession: 'Wyczyść sesję',
             qaAuthStatusSuccess: 'Sonda powiodła się',
-            qaAuthStatusCancelled: 'Logowanie anulowane',
             qaAuthStatusReauthRequired: 'Sesja wygasła — uruchom ponownie, aby się zalogować',
             qaAuthStatusError: 'Sonda nie powiodła się',
             forceOffline: 'Wymuś tryb offline',

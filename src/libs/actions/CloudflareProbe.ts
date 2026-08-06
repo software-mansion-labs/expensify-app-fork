@@ -10,9 +10,9 @@ import {isRecord} from '@libs/ObjectUtils';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 
-import {getCfSession, isSessionNearExpiry, refreshCfSession, startQAAuthFlow} from './CloudflareSession';
+import {beginQAAuthRedirect, getCfSession, getPendingQAAuthCompletion, isSessionNearExpiry, refreshCfSession, waitForCfSessionHydration} from './CloudflareSession';
 
-type QAProbeStatus = 'success' | 'cancelled' | 'reauthRequired' | 'error';
+type QAProbeStatus = 'success' | 'reauthRequired' | 'error';
 
 type QAProbeResult = {
     /** Semantic outcome — the UI translates these */
@@ -23,27 +23,32 @@ type QAProbeResult = {
 };
 
 /**
- * Runs the end-to-end probe. Never rejects: popup failures, state mismatches and exchange errors all
- * come back as semantic results, so the UI consumes it with `.then` only.
+ * Runs the end-to-end probe. Never rejects: redirect failures, state mismatches and exchange errors all
+ * come back as semantic results, so the UI consumes it with `.then` only. When there is no session this
+ * navigates the tab away and never settles — the redirect transport needs no user activation, so unlike
+ * the popup transport it is safe to await freely first.
  */
 async function runQAProbe(): Promise<QAProbeResult> {
     try {
-        // No awaits before the popup branch: TestToolMenu keeps the button disabled until
-        // prepareQAAuthFlow() resolved, so the cache is hydrated and PKCE is pre-warmed
+        await waitForCfSessionHydration();
+        // A callback boot may still be exchanging the code — join it rather than reading a still-empty
+        // session and starting a second round trip
+        const pendingCompletion = getPendingQAAuthCompletion();
+        if (pendingCompletion) {
+            await pendingCompletion;
+        }
+
         const session = getCfSession();
         if (!session) {
-            // window.open fires synchronously inside — this must stay within the press's user activation
-            const didAuthenticate = await startQAAuthFlow();
-            if (!didAuthenticate) {
-                return {status: 'cancelled'};
-            }
+            // Navigates this tab to Cloudflare and never settles — nothing below runs
+            await beginQAAuthRedirect();
         } else if (isSessionNearExpiry(session)) {
             // Transient refresh failures throw and land in the catch below as a plain 'error' —
             // the session is kept, so "try again" is honest advice there
             const refreshResult = await refreshCfSession();
             if (refreshResult === 'reauth-required') {
-                // Terminal failure already cleared the session. Deliberately no popup from here — the
-                // failed round trip consumed the user activation; the NEXT press lands in the popup branch
+                // Terminal failure already cleared the session. Deliberately no redirect from here — a
+                // background failure must never navigate the tab away; the NEXT press starts the round trip
                 return {status: 'reauthRequired'};
             }
         }

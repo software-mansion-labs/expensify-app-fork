@@ -2301,7 +2301,6 @@ const translations = {
             qaAuthSession: 'QA auth session',
             qaAuthClearSession: 'Clear session',
             qaAuthStatusSuccess: 'Probe succeeded',
-            qaAuthStatusCancelled: 'Sign-in was cancelled',
             qaAuthStatusReauthRequired: 'Session expired — run again to sign in',
             qaAuthStatusError: 'Probe failed',
             forceOffline: 'Force offline',

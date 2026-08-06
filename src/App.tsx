@@ -45,7 +45,7 @@ import {CurrentReportIDContextProvider} from './hooks/useCurrentReportID';
 import useDefaultDragAndDrop from './hooks/useDefaultDragAndDrop';
 import HybridAppHandler from './HybridAppHandler';
 import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
-import {closeQAAuthPopupIfSeveredOpener} from './libs/CloudflareOAuth/popupCompletionRecovery';
+import {handleQAAuthRedirectCallback} from './libs/CloudflareOAuth/redirectCallback';
 import './libs/HybridApp';
 import {ConciergeSessionProvider} from './pages/inbox/ConciergeSessionContext';
 import './setup/backgroundLocationTrackingTask';
@@ -56,9 +56,9 @@ import {SplashScreenStateContextProvider} from './SplashScreenStateContext';
 
 // This is needed to close pop-up window during logout for users logged in via SSO
 maybeCompleteAuthSession();
-// A QA auth popup whose window.opener was severed can't be closed by its opener — self-close it
-// right after the completion above published the callback URL (no-op everywhere else)
-closeQAAuthPopupIfSeveredOpener();
+// QA auth POC: when this load is the OAuth callback, pick the code up and restore the user's URL before
+// React Navigation reads window.location (no-op on every other load — see Web_POC_ExpoWebBrowser.md)
+handleQAAuthRedirectCallback();
 
 // On web, dotlottie-web fetches its WASM binary from a third-party CDN (jsdelivr/unpkg) at runtime,
 // which is blocked by our Content Security Policy. Point it at the Expensify CDN proxy instead.

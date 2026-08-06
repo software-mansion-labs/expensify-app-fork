@@ -6,11 +6,12 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {isUsingStagingApi} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareOAuth/config';
+import {getQAAuthRedirectOutcome} from '@libs/CloudflareOAuth/redirectCallback';
 import {useIsAgentAccount} from '@libs/SessionUtils';
 
 import type {QAProbeResult, QAProbeStatus} from '@userActions/CloudflareProbe';
 import {runQAProbe} from '@userActions/CloudflareProbe';
-import {clearCfSession, prepareQAAuthFlow} from '@userActions/CloudflareSession';
+import {clearCfSession} from '@userActions/CloudflareSession';
 import {setShouldFailAllRequests, setShouldForceOffline, setShouldSimulatePoorConnection} from '@userActions/Network';
 import {expireSessionWithDelay, invalidateAuthToken, invalidateCredentials} from '@userActions/Session';
 import {setIsDebugModeEnabled, setShouldShowBranchNameInTitle, setShouldUseStagingServer} from '@userActions/User';
@@ -18,7 +19,7 @@ import {setIsDebugModeEnabled, setShouldShowBranchNameInTitle, setShouldUseStagi
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
 
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {Platform} from 'react-native';
 
 import BiometricsTestToolRow from './BiometricsTestToolRow';
@@ -29,13 +30,27 @@ import TestCrash from './TestCrash';
 import TestToolRow from './TestToolRow';
 import Text from './Text';
 
-/** The four semantic probe outcomes are translated; the raw `detail` diagnostic stays verbatim */
+/** The semantic probe outcomes are translated; the raw `detail` diagnostic stays verbatim */
 const QA_PROBE_STATUS_TRANSLATION_KEYS = {
     success: 'qaAuthStatusSuccess',
-    cancelled: 'qaAuthStatusCancelled',
     reauthRequired: 'qaAuthStatusReauthRequired',
     error: 'qaAuthStatusError',
 } as const satisfies Record<QAProbeStatus, string>;
+
+/**
+ * A failed OAuth callback round trip is otherwise invisible: the redirect handler runs at App module
+ * scope, long before this menu mounts, and its only trace is that outcome.
+ */
+function getFailedRedirectResult(): QAProbeResult | null {
+    if (Platform.OS !== 'web' || !isQAAuthConfigured()) {
+        return null;
+    }
+    const {outcome, errorMessage} = getQAAuthRedirectOutcome();
+    if (outcome === 'not-a-callback' || outcome === 'exchanging') {
+        return null;
+    }
+    return {status: 'error', detail: errorMessage};
+}
 
 function TestToolMenu() {
     const [network] = useOnyx(ONYXKEYS.NETWORK);
@@ -53,25 +68,12 @@ function TestToolMenu() {
     // Agent accounts can't have biometric multifactor authentication, so hide the biometrics test row for them.
     const isAgentAccount = useIsAgentAccount();
 
-    // QA auth POC (see Web_POC.md): Run stays disabled until the session cache is hydrated and a PKCE
-    // pair is pre-warmed, so the press path reaches the popup with zero awaits (user activation intact).
-    const [isQAAuthReady, setIsQAAuthReady] = useState(false);
     const [isQAOperationRunning, setIsQAOperationRunning] = useState(false);
-    const [qaProbeResult, setQAProbeResult] = useState<QAProbeResult | null>(null);
+    // Seeded from the boot-time redirect outcome, not an effect: it is fixed for the lifetime of the page
+    const [qaProbeResult, setQAProbeResult] = useState<QAProbeResult | null>(getFailedRedirectResult);
     // Rendered next to the result: consecutive probes usually produce byte-identical results, and
     // without a changing element the button reads as dead ("does nothing visual" — live POC feedback)
     const [qaProbeCompletedAt, setQAProbeCompletedAt] = useState<Date | null>(null);
-
-    useEffect(() => {
-        // The platform gate is load-bearing: on native, prepareQAAuthFlow would hit the throwing crypto stub
-        if (Platform.OS !== 'web' || !isQAAuthConfigured()) {
-            return;
-        }
-        prepareQAAuthFlow()
-            .then(() => setIsQAAuthReady(true))
-            // Surface preparation failures — otherwise Run just sits disabled forever with no explanation
-            .catch((error: unknown) => setQAProbeResult({status: 'error', detail: error instanceof Error ? error.message : undefined}));
-    }, []);
 
     return (
         <>
@@ -164,16 +166,16 @@ function TestToolMenu() {
             )}
 
             {/* POC: Cloudflare Access OAuth against the QA mock Worker — see Web_POC.md. The shared busy
-            flag serializes Run and Clear; Run additionally waits for pre-warm readiness, while Clear
-            deliberately doesn't — clearing needs neither hydration nor a PKCE pair, and a failed
-            pre-warm must not lock the user out of clearing. */}
+            flag serializes Run and Clear. With no session Run navigates the whole tab to Cloudflare, so
+            its spinner stays up until the page unloads; the result of a completed round trip shows on the
+            next press, since the boot after the callback starts this menu with fresh state. */}
             {Platform.OS === 'web' && isQAAuthConfigured() && (
                 <>
                     <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuth')}>
                         <Button
                             small
                             text={translate('initialSettingsPage.troubleshoot.qaAuthRunProbe')}
-                            isDisabled={!isQAAuthReady || isQAOperationRunning}
+                            isDisabled={isQAOperationRunning}
                             isLoading={isQAOperationRunning}
                             onPress={() => {
                                 setIsQAOperationRunning(true);

@@ -2190,7 +2190,6 @@ const translations: TranslationDeepObject<typeof en> = {
             qaAuthSession: 'QA認証セッション',
             qaAuthClearSession: 'セッションをクリア',
             qaAuthStatusSuccess: 'プローブ成功',
-            qaAuthStatusCancelled: 'サインインがキャンセルされました',
             qaAuthStatusReauthRequired: 'セッションの有効期限が切れました。再実行してサインインしてください',
             qaAuthStatusError: 'プローブ失敗',
             forceOffline: '強制的にオフラインにする',

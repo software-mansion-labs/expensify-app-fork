@@ -2207,7 +2207,6 @@ const translations: TranslationDeepObject<typeof en> = {
             qaAuthSession: 'QA-authenticatiesessie',
             qaAuthClearSession: 'Sessie wissen',
             qaAuthStatusSuccess: 'Probe geslaagd',
-            qaAuthStatusCancelled: 'Aanmelden geannuleerd',
             qaAuthStatusReauthRequired: 'Sessie verlopen — voer opnieuw uit om aan te melden',
             qaAuthStatusError: 'Probe mislukt',
             forceOffline: 'Offline forceren',

@@ -2136,7 +2136,6 @@ const translations: TranslationDeepObject<typeof en> = {
             qaAuthSession: 'QA 认证会话',
             qaAuthClearSession: '清除会话',
             qaAuthStatusSuccess: '探测成功',
-            qaAuthStatusCancelled: '登录已取消',
             qaAuthStatusReauthRequired: '会话已过期，请重新运行以登录',
             qaAuthStatusError: '探测失败',
             forceOffline: '强制离线',
