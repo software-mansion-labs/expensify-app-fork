@@ -8,6 +8,9 @@ import type {StyleProp, ViewStyle} from 'react-native';
 import React from 'react';
 
 type ListSelectionButtonProps<TItem extends ListItem> = {
+    /** Checkbox (square, multi-select) or radio (circle, single-select); shape and a11y role derive from this */
+    role: typeof CONST.ROLE.CHECKBOX | typeof CONST.ROLE.RADIO;
+
     /** The item to render the selection button for */
     item: TItem;
 
@@ -32,10 +35,11 @@ type ListSelectionButtonProps<TItem extends ListItem> = {
     /** Test ID */
     testID?: string;
 
-    /** Tab index for the button, pass -1 to remove it from the tab order */
+    /** Tab index for the button; radios default to -1 (out of the tab order) */
     tabIndex?: -1 | 0;
 };
 
+/** The selection indicator for list rows. Checkbox vs radio is a role, not a component — visuals and a11y both derive from it. */
 function ListSelectionButton<TItem extends ListItem>({
     role,
     item,
@@ -47,7 +51,7 @@ function ListSelectionButton<TItem extends ListItem>({
     shouldStopMouseDownPropagation = true,
     testID,
     tabIndex,
-}: ListSelectionButtonProps<TItem> & {role: typeof CONST.ROLE.CHECKBOX | typeof CONST.ROLE.RADIO}) {
+}: ListSelectionButtonProps<TItem>) {
     const label = accessibilityLabel ?? item.text ?? '';
 
     return (
@@ -63,7 +67,7 @@ function ListSelectionButton<TItem extends ListItem>({
             shouldStopMouseDownPropagation={shouldStopMouseDownPropagation}
             sentryLabel={CONST.SENTRY_LABEL.USER_LIST_ITEM.CHECKBOX}
             testID={testID ?? `${CONST.SELECTION_BUTTON_TEST_ID}${label}`}
-            tabIndex={tabIndex}
+            tabIndex={tabIndex ?? (role === CONST.ROLE.RADIO ? -1 : undefined)}
             accessible={false}
         />
     );
