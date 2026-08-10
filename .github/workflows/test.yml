@@ -2,13 +2,25 @@ name: Jest Unit Tests
 
 on:
   workflow_call:
+    inputs:
+      IS_DEPLOY_CANDIDATE:
+        description: |
+          Whether the push to main that triggered this run could result in a staging deploy.
+          Deploy candidates get a per-commit concurrency group so their checks are never cancelled.
+          Every other push to main shares one cancellable group, so a run that a newer merge has
+          already superseded is dropped instead of finishing against a stale tip of main.
+        type: boolean
+        required: false
+        # Defaults to the pre-existing behaviour (per-commit group, never cancelled) so that a caller
+        # which does not set it cannot accidentally opt a deploy into being cancelled.
+        default: true
   pull_request:
     types: [opened, synchronize]
     branches-ignore: [staging, production]
     paths: ['**.js', '**.ts', '**.tsx', 'package.json', 'package-lock.json']
 
 concurrency:
-  group: ${{ github.ref == 'refs/heads/main' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-jest
+  group: ${{ github.ref == 'refs/heads/main' && inputs.IS_DEPLOY_CANDIDATE && format('{0}-{1}', github.ref, github.sha) || github.ref }}-jest
   cancel-in-progress: true
 
 jobs:

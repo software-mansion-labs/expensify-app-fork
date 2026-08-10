@@ -7,19 +7,62 @@ on:
     paths-ignore: [docs/**, help/**, contributingGuides/**, jest/**, tests/**]
 
 jobs:
+  # main takes ~120 merges on a busy weekday and the checks below take ~10 minutes, so roughly two
+  # thirds of these runs are superseded by a newer commit before they finish. A superseded run is safe
+  # to cancel: the run that replaced it covers a superset of the same code. The one thing that is not
+  # safe to cancel is a push that could deploy, because SHOULD_DEPLOY is derived from who pushed --
+  # cancelling a deployer's run would hand off to a successor whose actor is not a deployer, and the
+  # staging deploy would silently never happen.
+  #
+  # So decide "could this push deploy?" up front and let each check pick its concurrency group from
+  # the answer. Only team membership is checked here, because it is stable for the lifetime of the
+  # run. The deploy checklist lock is deliberately left in chooseDeployActions: it can flip while the
+  # checks are running and must be read at the moment the deploy decision is actually made.
+  isDeployCandidate:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    outputs:
+      IS_DEPLOY_CANDIDATE: ${{ steps.isDeployCandidate.outputs.IS_DEPLOY_CANDIDATE }}
+
+    steps:
+      - name: Check whether this push could trigger a deploy
+        id: isDeployCandidate
+        run: |
+          if [[ "$ACTOR" == 'OSBotify' ]]; then
+            echo "IS_DEPLOY_CANDIDATE=false" >> "$GITHUB_OUTPUT"
+          elif gh api "/orgs/Expensify/teams/mobile-deployers/memberships/$ACTOR" --silent; then
+            echo "IS_DEPLOY_CANDIDATE=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "IS_DEPLOY_CANDIDATE=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.OS_BOTIFY_TOKEN }}
+
   typecheck:
+    needs: isDeployCandidate
     uses: ./.github/workflows/typecheck.yml
+    with:
+      IS_DEPLOY_CANDIDATE: ${{ fromJSON(needs.isDeployCandidate.outputs.IS_DEPLOY_CANDIDATE) }}
 
   lint:
+    needs: isDeployCandidate
     uses: ./.github/workflows/lint.yml
     secrets: inherit
+    with:
+      IS_DEPLOY_CANDIDATE: ${{ fromJSON(needs.isDeployCandidate.outputs.IS_DEPLOY_CANDIDATE) }}
 
   oxfmt:
+    needs: isDeployCandidate
     uses: ./.github/workflows/oxfmt.yml
+    with:
+      IS_DEPLOY_CANDIDATE: ${{ fromJSON(needs.isDeployCandidate.outputs.IS_DEPLOY_CANDIDATE) }}
 
   test:
+    needs: isDeployCandidate
     uses: ./.github/workflows/test.yml
     secrets: inherit
+    with:
+      IS_DEPLOY_CANDIDATE: ${{ fromJSON(needs.isDeployCandidate.outputs.IS_DEPLOY_CANDIDATE) }}
 
   confirmPassingBuild:
     runs-on: blacksmith-4vcpu-ubuntu-2404
@@ -29,6 +72,10 @@ jobs:
     steps:
       - uses: useblacksmith/checkout@1c9394c220d293645707b625ba9d79685f093a8f # v1
 
+      # Only a real `failure` fails this workflow. A run cancelled because a newer commit superseded
+      # it must stay quiet, otherwise failureNotifier.yml would open a deploy blocker for every one of
+      # them. `cancelled` and `skipped` therefore reach chooseDeployActions as a pass, which is why
+      # the deploy decision below re-checks the results rather than relying on this job alone.
       - name: Exit failed workflow
         if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
         run: |
@@ -37,7 +84,10 @@ jobs:
 
   chooseDeployActions:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: confirmPassingBuild
+    needs: [typecheck, lint, test, confirmPassingBuild]
+    # Runs even when a check was cancelled, so that skipDeploy still comments on the merged PR. The
+    # deploy itself is gated on CHECKS_PASSED below.
+    if: ${{ always() && needs.confirmPassingBuild.result == 'success' }}
     outputs:
       MERGED_PR: ${{ steps.getMergedPullRequest.outputs.number }}
       SHOULD_DEPLOY: ${{ fromJSON(steps.shouldDeploy.outputs.SHOULD_DEPLOY) }}
@@ -60,12 +110,17 @@ jobs:
       - name: Check if merged pull request should trigger a deploy
         id: shouldDeploy
         run: |
-          if gh api /orgs/Expensify/teams/mobile-deployers/memberships/${{ github.actor }} --silent; then
+          # Never deploy off a run whose checks did not actually pass. A cancelled check means this
+          # commit was superseded, so the run that superseded it is the one that should deploy.
+          if [[ "$CHECKS_PASSED" != 'true' ]]; then
+            echo "SHOULD_DEPLOY=false" >> "$GITHUB_OUTPUT"
+          elif gh api /orgs/Expensify/teams/mobile-deployers/memberships/${{ github.actor }} --silent; then
             echo "SHOULD_DEPLOY=${{ (!fromJSON(steps.isDeployChecklistLocked.outputs.IS_LOCKED) && github.actor != 'OSBotify') }}" >> "$GITHUB_OUTPUT"
           else
             echo "SHOULD_DEPLOY=false" >> "$GITHUB_OUTPUT"
           fi
         env:
+          CHECKS_PASSED: ${{ needs.typecheck.result == 'success' && needs.lint.result == 'success' && needs.test.result == 'success' }}
           GITHUB_TOKEN: ${{ secrets.OS_BOTIFY_TOKEN }}
 
   skipDeploy:
