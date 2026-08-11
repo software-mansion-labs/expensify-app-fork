@@ -1,7 +1,7 @@
 import Avatar from '@components/Avatar';
 import Icon from '@components/Icon';
 import PlaidCardFeedIcon from '@components/PlaidCardFeedIcon';
-import TextWithTooltip from '@components/TextWithTooltip';
+import ListItemComposed from '@components/SelectionList/ListItemComposed';
 import UserDetailsTooltip from '@components/UserDetailsTooltip';
 
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
@@ -146,28 +146,21 @@ function CardListItem<TItem extends ListItem>({
                         )}
                     </View>
                 )}
-                <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch, styles.optionRow]}>
+                <ListItemComposed.TextColumn>
                     <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch]}>
-                        <TextWithTooltip
-                            shouldShowTooltip={showTooltip}
+                        <ListItemComposed.Title
                             text={Str.removeSMSDomain(item.text ?? '')}
-                            style={[
-                                styles.optionDisplayName,
-                                styles.sidebarLinkText,
-                                item.isBold !== false && styles.sidebarLinkTextBold,
-                                styles.pre,
-                                item.alternateText ? styles.mb1 : null,
-                            ]}
+                            showTooltip={showTooltip}
+                            style={[item.isBold === false && [styles.fontWeightNormal, styles.textSupporting], !!item.alternateText && styles.mb1]}
                         />
                         {!!subtitleText && (
-                            <TextWithTooltip
-                                shouldShowTooltip={showTooltip}
+                            <ListItemComposed.Subtitle
                                 text={subtitleText}
-                                style={[styles.textLabelSupporting, styles.lh16, styles.pre]}
+                                showTooltip={showTooltip}
                             />
                         )}
                     </View>
-                </View>
+                </ListItemComposed.TextColumn>
             </>
         </SelectableListItem>
     );

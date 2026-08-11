@@ -30,7 +30,6 @@ import type SingleSelectListItem from './SingleSelectListItem';
 import type SingleSelectWithAvatarListItem from './SingleSelectWithAvatarListItem';
 import type SpendCategorySelectorListItem from './SpendCategorySelectorListItem';
 import type SplitListItem from './SplitListItem';
-import type TableListItem from './TableListItem';
 import type TravelDomainListItem from './TravelDomainListItem';
 import type UserListItem from './UserListItem';
 import type UserSelectionListItem from './UserSelectionListItem';
@@ -324,11 +323,15 @@ type ValidListItem =
     | typeof SingleSelectWithAvatarListItem
     | typeof SpendCategorySelectorListItem
     | typeof SplitListItem
-    | typeof TableListItem
     | typeof TravelDomainListItem
     | typeof BareUserListItem
     | typeof UserListItem
     | typeof UserSelectionListItem;
+
+type ListItemRenderContext = {
+    /** Whether the row is selected (`isSelected ?? item.isSelected`) */
+    isSelected?: boolean;
+};
 
 type BaseListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> &
     ForwardedFSClassProps & {
@@ -343,7 +346,7 @@ type BaseListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> &
         errorRowStyles?: StyleProp<ViewStyle>;
         pendingAction?: PendingAction | null;
         FooterComponent?: ReactElement;
-        children?: ReactElement<ListItemProps<TItem>> | ((hovered: boolean) => ReactElement<ListItemProps<TItem>>);
+        children?: ReactNode | ((hovered: boolean, context?: ListItemRenderContext) => ReactNode);
         shouldSyncFocus?: boolean;
         hoverStyle?: StyleProp<ViewStyle>;
         /** Whether to show RBR */
@@ -388,6 +391,9 @@ type SelectableListItemProps<TItem extends ListItem> = BaseListItemProps<TItem> 
 
     /** Which side of the row to render the selection button on */
     selectionButtonPosition?: ValueOf<typeof CONST.SELECTION_BUTTON_POSITION>;
+
+    /** Whether to render the selection button at all; rows that conditionally hide it can keep this wrapper instead of forking to BaseListItem */
+    showSelectionButton?: boolean;
 };
 
 type SplitListItemType = ListItem &
@@ -441,8 +447,6 @@ type SpendCategorySelectorListItemProps<TItem extends ListItem> = ListItemProps<
 
 type UserListItemProps<TItem extends ListItem> = ListItemProps<TItem> & ForwardedFSClassProps;
 
-type TableListItemProps<TItem extends ListItem> = ListItemProps<TItem>;
-
 type InviteMemberListItemProps<TItem extends ListItem> = UserListItemProps<TItem>;
 
 type WorkspaceListItemType = {
@@ -471,6 +475,7 @@ export type {
     ExtendedTargetedEvent,
     ListItem,
     ListItemProps,
+    ListItemRenderContext,
     ListItemFocusEventHandler,
     BaseSelectListItemProps,
     ValidListItem,
@@ -483,7 +488,6 @@ export type {
     InviteMemberListItemProps,
     SplitListItemType,
     SplitListItemProps,
-    TableListItemProps,
     WorkspaceListItemType,
     UserSelectionListItemProps,
 };

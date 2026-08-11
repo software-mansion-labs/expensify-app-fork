@@ -1,12 +1,11 @@
-import ReportActionAvatars from '@components/ReportActionAvatars';
-import {ListItemFocusContext} from '@components/SelectionList/ListItemFocusContext';
+import ListSelectionButton from '@components/SelectionList/components/ListSelectionButton';
+import ListItemComposed from '@components/SelectionList/ListItemComposed';
 import Text from '@components/Text';
-import TextWithTooltip from '@components/TextWithTooltip';
 
 import useLocalize from '@hooks/useLocalize';
-import useStyleUtils from '@hooks/useStyleUtils';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+
+import CONST from '@src/CONST';
 
 import {Str} from 'expensify-common';
 import React from 'react';
@@ -14,12 +13,12 @@ import {View} from 'react-native';
 
 import type {InviteMemberListItemProps, ListItem} from './types';
 
-import BaseListItem from './BaseListItem';
-import SelectableListItem from './SelectableListItem';
-
 /**
  * A user row with avatar, name, and subtitle used for person selection and invitation. Adds
  * secondary-login footers and product training tooltips on top of the standard user row layout.
+ *
+ * Fully composed row: sits directly on ListItemComposed.Pressable. The selection button, RBR
+ * indicator, and secondary-login footer are plain conditional JSX instead of configured flags.
  */
 function InviteMemberListItem<TItem extends ListItem>({
     item,
@@ -38,91 +37,107 @@ function InviteMemberListItem<TItem extends ListItem>({
     isMultilineSupported,
 }: InviteMemberListItemProps<TItem>) {
     const styles = useThemeStyles();
-    const theme = useTheme();
-    const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
-
-    const focusedBackgroundColor = styles.sidebarLinkActive.backgroundColor;
-    const subscriptAvatarBorderColor = isFocusVisible ? focusedBackgroundColor : theme.sidebar;
-    const hoveredBackgroundColor = !!styles.sidebarLinkHover && 'backgroundColor' in styles.sidebarLinkHover ? styles.sidebarLinkHover.backgroundColor : theme.sidebar;
 
     const firstItemIconID = Number(item?.icons?.at(0)?.id);
 
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const accountID = !item.reportID ? item.accountID || firstItemIconID : undefined;
 
-    const ListItemWrapper = item.isDisabled && !item.isSelected ? BaseListItem : SelectableListItem;
+    const showsSelectionButton = !item.shouldHideSelectionButton && !(item.isDisabled && !item.isSelected);
+    const showsRBR = !canSelectMultiple || !!item.isDisabled;
 
     return (
-        <ListItemWrapper
+        <ListItemComposed.Pressable
             item={item}
-            wrapperStyle={[styles.flex1, styles.justifyContentBetween, styles.sidebarLinkInner, styles.userSelectNone, styles.peopleRow, wrapperStyle]}
             isFocused={isFocused}
             isFocusVisible={isFocusVisible}
             isDisabled={isDisabled}
-            showTooltip={showTooltip}
             canSelectMultiple={canSelectMultiple}
             onSelectRow={onSelectRow}
             onDismissError={onDismissError}
-            rightHandSideComponent={rightHandSideComponent}
             errors={item.errors}
             pendingAction={item.pendingAction}
-            FooterComponent={
-                item.invitedSecondaryLogin ? (
-                    <Text style={[styles.ml9, styles.ph5, styles.pb3, styles.textLabelSupporting]}>{translate('workspace.people.invitedBySecondaryLogin', item.invitedSecondaryLogin)}</Text>
-                ) : undefined
-            }
             keyForList={item.keyForList}
             onFocus={onFocus}
             shouldSyncFocus={shouldSyncFocus}
-            shouldDisplayRBR={!(canSelectMultiple && !item.isDisabled)}
-            onSelectionButtonPress={onSelectionButtonPress}
-            testID={item.text}
         >
-            {(hovered?: boolean) => (
-                <View style={[styles.flexRow, styles.alignItemsCenter, styles.flex1]}>
-                    {(!!item.reportID || !!accountID || !!item.text || !!item.alternateText) && (
-                        <ReportActionAvatars
-                            subscriptAvatarBorderColor={hovered && !isFocusVisible ? hoveredBackgroundColor : subscriptAvatarBorderColor}
-                            shouldShowTooltip={showTooltip}
-                            secondaryAvatarContainerStyle={[
-                                StyleUtils.getBackgroundAndBorderStyle(theme.sidebar),
-                                isFocusVisible ? StyleUtils.getBackgroundAndBorderStyle(focusedBackgroundColor) : undefined,
-                                hovered && !isFocusVisible ? StyleUtils.getBackgroundAndBorderStyle(hoveredBackgroundColor) : undefined,
-                            ]}
-                            fallbackDisplayName={item.text ?? item.alternateText ?? undefined}
-                            singleAvatarContainerStyle={[styles.actionAvatar, styles.mr3]}
-                            reportID={item.reportID}
-                            accountIDs={accountID ? [accountID] : undefined}
-                        />
-                    )}
-                    <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch, styles.optionRow]}>
-                        <View style={[styles.flexRow, styles.alignItemsCenter]}>
-                            <TextWithTooltip
-                                shouldShowTooltip={showTooltip}
-                                text={Str.removeSMSDomain(item.text ?? '')}
-                                numberOfLines={isMultilineSupported ? 2 : 1}
-                                style={[
-                                    styles.optionDisplayName,
-                                    styles.sidebarLinkText,
-                                    item.isBold !== false && styles.sidebarLinkTextBold,
-                                    isMultilineSupported ? styles.preWrap : styles.pre,
-                                    item.alternateText ? styles.mb1 : null,
-                                ]}
-                            />
+            {(hovered, {isSelected}) => (
+                <>
+                    <ListItemComposed.Row
+                        testID={item.text}
+                        style={[styles.flex1, styles.justifyContentBetween, styles.sidebarLinkInner, styles.userSelectNone, styles.peopleRow, wrapperStyle]}
+                    >
+                        <View style={[styles.flexRow, styles.alignItemsCenter, styles.flex1]}>
+                            {!!accountID && (
+                                <ListItemComposed.UserAvatar
+                                    accountID={accountID}
+                                    fallbackDisplayName={item.text ?? item.alternateText ?? undefined}
+                                    showTooltip={showTooltip}
+                                />
+                            )}
+                            {!accountID && !!item.reportID && (
+                                <ListItemComposed.ReportAvatar
+                                    reportID={item.reportID}
+                                    fallbackDisplayName={item.text ?? item.alternateText ?? undefined}
+                                    showTooltip={showTooltip}
+                                />
+                            )}
+                            {!accountID && !item.reportID && (!!item.text || !!item.alternateText) && (
+                                <ListItemComposed.UserAvatar
+                                    accountID={CONST.DEFAULT_NUMBER_ID}
+                                    fallbackDisplayName={item.text ?? item.alternateText ?? undefined}
+                                    showTooltip={showTooltip}
+                                />
+                            )}
+                            <ListItemComposed.TextColumn>
+                                <View style={[styles.flexRow, styles.alignItemsCenter]}>
+                                    <ListItemComposed.Title
+                                        text={Str.removeSMSDomain(item.text ?? '')}
+                                        showTooltip={showTooltip}
+                                        numberOfLines={isMultilineSupported ? 2 : 1}
+                                        style={[
+                                            item.isBold === false && [styles.fontWeightNormal, styles.textSupporting],
+                                            isMultilineSupported && styles.preWrap,
+                                            !!item.alternateText && styles.mb1,
+                                        ]}
+                                    />
+                                </View>
+                                {!!item.alternateText && (
+                                    <ListItemComposed.Subtitle
+                                        text={Str.removeSMSDomain(item.alternateText)}
+                                        showTooltip={showTooltip}
+                                    />
+                                )}
+                            </ListItemComposed.TextColumn>
+                            {item.rightElement}
                         </View>
-                        {!!item.alternateText && (
-                            <TextWithTooltip
-                                shouldShowTooltip={showTooltip}
-                                text={Str.removeSMSDomain(item.alternateText ?? '')}
-                                style={[styles.textLabelSupporting, styles.lh16, styles.pre]}
+                        {showsRBR && (
+                            <ListItemComposed.RBRIndicator
+                                brickRoadIndicator={item.brickRoadIndicator}
+                                isSelected={isSelected}
+                                canShowSeveralIndicators={item.canShowSeveralIndicators}
                             />
                         )}
-                    </View>
-                    {!!item.rightElement && <ListItemFocusContext.Provider value={{isFocused}}>{item.rightElement}</ListItemFocusContext.Provider>}
-                </View>
+                        {showsSelectionButton && (
+                            <ListSelectionButton
+                                role={canSelectMultiple ? CONST.ROLE.CHECKBOX : CONST.ROLE.RADIO}
+                                item={item}
+                                onSelectRow={onSelectionButtonPress ?? onSelectRow}
+                                disabled={!!isDisabled || !!item.isDisabledCheckbox}
+                                style={styles.ml3}
+                            />
+                        )}
+                        {typeof rightHandSideComponent === 'function' ? rightHandSideComponent(item, isFocused) : rightHandSideComponent}
+                    </ListItemComposed.Row>
+                    {!!item.invitedSecondaryLogin && (
+                        <Text style={[styles.ml9, styles.ph5, styles.pb3, styles.textLabelSupporting]}>
+                            {translate('workspace.people.invitedBySecondaryLogin', item.invitedSecondaryLogin)}
+                        </Text>
+                    )}
+                </>
             )}
-        </ListItemWrapper>
+        </ListItemComposed.Pressable>
     );
 }
 

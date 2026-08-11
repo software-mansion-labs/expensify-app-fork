@@ -4,10 +4,10 @@ import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import type {TransactionListItemType} from '@components/Search/SearchList/ListItem/types';
 import UserInfoAndActionButtonRow from '@components/Search/SearchList/ListItem/UserInfoAndActionButtonRow';
 import {useRowSelection} from '@components/Search/SearchSelectionProvider';
+import {useListItemHighlight} from '@components/SelectionList/ListItemComposed';
 import type {ListItem} from '@components/SelectionList/types';
 import TransactionItemRow from '@components/TransactionItemRow';
 
-import useAnimatedHighlightStyle from '@hooks/useAnimatedHighlightStyle';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useSyncFocus from '@hooks/useSyncFocus';
 import useTheme from '@hooks/useTheme';
@@ -70,11 +70,11 @@ function TransactionListItemNarrow<TItem extends ListItem>({
 
     const pressableStyle = [styles.transactionListItemStyle, styles.p4, styles.noBorderRadius, isSelected && styles.activeComponentBG, {...styles.flexColumn, ...styles.alignItemsStretch}];
 
-    const animatedHighlightStyle = useAnimatedHighlightStyle({
+    const {animatedHighlightStyle} = useListItemHighlight({
         borderRadius: 0,
         shouldHighlight: item?.shouldAnimateInHighlight ?? false,
-        highlightColor: theme.messageHighlightBG,
-        backgroundColor: isSelected ? theme.activeComponentBG : theme.highlightBG,
+        isSelected,
+        shouldTrackSelectedBackground: true,
         shouldApplyOtherStyles: true,
     });
 

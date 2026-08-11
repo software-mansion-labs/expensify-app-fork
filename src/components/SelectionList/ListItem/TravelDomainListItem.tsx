@@ -1,5 +1,5 @@
 import Badge from '@components/Badge';
-import TextWithTooltip from '@components/TextWithTooltip';
+import ListItemComposed from '@components/SelectionList/ListItemComposed';
 
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -50,10 +50,10 @@ function TravelDomainListItem<TItem extends ListItem>({
             rightHandSideComponent={showRecommendedTag ? <Badge text={translate('travel.domainSelector.recommended')} /> : undefined}
             selectionButtonPosition={selectionButtonPosition}
         >
-            <TextWithTooltip
-                shouldShowTooltip={showTooltip}
+            <ListItemComposed.Title
                 text={item.text ?? ''}
-                style={[styles.flex1, styles.optionDisplayName, styles.sidebarLinkText, item.isBold !== false && styles.sidebarLinkTextBold, styles.pre]}
+                showTooltip={showTooltip}
+                style={[item.isBold === false && [styles.fontWeightNormal, styles.textSupporting], styles.flex1]}
             />
         </SelectableListItem>
     );

@@ -1,5 +1,4 @@
-import Avatar from '@components/Avatar';
-import TextWithTooltip from '@components/TextWithTooltip';
+import ListItemComposed from '@components/SelectionList/ListItemComposed';
 
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
@@ -62,6 +61,8 @@ function UserSelectionListItem<TItem extends ListItem>({
         });
     }, [formatPhoneNumber, item.accountID, translate]);
 
+    const avatarIcon = item.icons?.at(0);
+
     return (
         <SelectableListItem
             item={item}
@@ -84,30 +85,24 @@ function UserSelectionListItem<TItem extends ListItem>({
             shouldSyncFocus={shouldSyncFocus}
         >
             <View style={[styles.flex1, styles.flexRow, styles.alignItemsCenter, styles.h13, styles.gap3]}>
-                {!!item.icons?.length && (
-                    <View style={styles.mentionSuggestionsAvatarContainer}>
-                        <Avatar
-                            source={item.icons.at(0)?.source}
-                            size={CONST.AVATAR_SIZE.X_SMALL}
-                            name={item.icons.at(0)?.name}
-                            avatarID={item.icons.at(0)?.id}
-                            type={item.icons.at(0)?.type ?? CONST.ICON_TYPE_AVATAR}
-                            fallbackIcon={item.icons.at(0)?.fallbackIcon}
-                        />
-                    </View>
+                {!!avatarIcon && (
+                    <ListItemComposed.CompactAvatar
+                        icon={avatarIcon}
+                        style={styles.mr0}
+                    />
                 )}
 
                 <View style={[styles.flex1, styles.flexRow, styles.gap2, styles.flexShrink1, styles.alignItemsCenter]}>
-                    <TextWithTooltip
-                        shouldShowTooltip={showTooltip}
+                    <ListItemComposed.Title
                         text={userDisplayName}
-                        style={[styles.flexShrink0, styles.optionDisplayName, styles.sidebarLinkText, styles.sidebarLinkTextBold, styles.pre]}
+                        showTooltip={showTooltip}
+                        style={styles.flexShrink0}
                     />
                     {!!userHandle && (
-                        <TextWithTooltip
+                        <ListItemComposed.Subtitle
                             text={`@${userHandle}`}
-                            shouldShowTooltip={showTooltip}
-                            style={[styles.textLabelSupporting, styles.lh16, styles.pre, styles.flexShrink1]}
+                            showTooltip={showTooltip}
+                            style={styles.flexShrink1}
                         />
                     )}
                 </View>

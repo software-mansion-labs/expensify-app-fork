@@ -72,18 +72,13 @@ function UserListItem<TItem extends ListItem>({
             shouldHighlightSelectedItem={shouldHighlightSelectedItem}
             selectionButtonPosition={selectionButtonPosition}
         >
-            {(hovered?: boolean) => (
-                <UserListItemContent
-                    item={item}
-                    isFocused={isFocused}
-                    showTooltip={showTooltip}
-                    isDisabled={isDisabled}
-                    shouldDisableHoverStyle={shouldDisableHoverStyle}
-                    shouldDisableAccessibleGrouping={shouldDisableAccessibleGrouping}
-                    forwardedFSClass={forwardedFSClass}
-                    hovered={!!hovered}
-                />
-            )}
+            <UserListItemContent
+                item={item}
+                showTooltip={showTooltip}
+                isDisabled={isDisabled}
+                shouldDisableAccessibleGrouping={shouldDisableAccessibleGrouping}
+                forwardedFSClass={forwardedFSClass}
+            />
         </SelectableListItem>
     );
 }

@@ -3,11 +3,11 @@ import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import type {TransactionListItemType} from '@components/Search/SearchList/ListItem/types';
 import {useRowSelection} from '@components/Search/SearchSelectionProvider';
+import {useListItemHighlight} from '@components/SelectionList/ListItemComposed';
 import type {ListItem} from '@components/SelectionList/types';
 import TransactionItemRow from '@components/TransactionItemRow';
 import {useEditingCellState} from '@components/TransactionItemRow/EditableCell';
 
-import useAnimatedHighlightStyle from '@hooks/useAnimatedHighlightStyle';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useSyncFocus from '@hooks/useSyncFocus';
 import useTheme from '@hooks/useTheme';
@@ -143,11 +143,11 @@ function TransactionListItemWide<TItem extends ListItem>({
         },
     ];
 
-    const animatedHighlightStyle = useAnimatedHighlightStyle({
+    const {animatedHighlightStyle} = useListItemHighlight({
         borderRadius: 0,
         shouldHighlight: item?.shouldAnimateInHighlight ?? false,
-        highlightColor: theme.messageHighlightBG,
-        backgroundColor: isSelected ? theme.activeComponentBG : theme.highlightBG,
+        isSelected,
+        shouldTrackSelectedBackground: true,
         shouldApplyOtherStyles: false,
     });
 

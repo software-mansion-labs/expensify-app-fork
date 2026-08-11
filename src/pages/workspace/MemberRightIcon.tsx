@@ -20,7 +20,7 @@ type MemberRightIconProps = {
 export default function MemberRightIcon({role, owner, login, badgeStyles}: MemberRightIconProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {isFocused} = useListItemFocus();
+    const {isFocusVisible} = useListItemFocus();
 
     let badgeText = '';
     if (owner && owner === login) {
@@ -40,7 +40,7 @@ export default function MemberRightIcon({role, owner, login, badgeStyles}: Membe
         return (
             <Badge
                 text={badgeText}
-                badgeStyles={[isFocused && styles.badgeDefaultActive, badgeStyles]}
+                badgeStyles={[isFocusVisible && styles.badgeDefaultActive, badgeStyles]}
             />
         );
     }

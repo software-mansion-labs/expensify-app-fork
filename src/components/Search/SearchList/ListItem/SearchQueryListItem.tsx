@@ -1,7 +1,6 @@
 import Icon from '@components/Icon';
-import BaseListItem from '@components/SelectionList/ListItem/BaseListItem';
 import type {ListItem, ListItemFocusEventHandler} from '@components/SelectionList/ListItem/types';
-import TextWithTooltip from '@components/TextWithTooltip';
+import ListItemComposed from '@components/SelectionList/ListItemComposed';
 
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -46,59 +45,59 @@ function isSearchQueryItem(item: OptionData | SearchQueryItem): item is SearchQu
 /**
  * A row with an optional icon, title, and subtitle used in the search router for autocomplete
  * suggestions, saved searches, and recent queries.
+ *
+ * Fully composed row: sits directly on ListItemComposed.Pressable and owns its layout,
+ * without going through BaseListItem's legacy flag surface.
  */
 function SearchQueryListItem({item, isFocused, showTooltip, onSelectRow, onFocus, shouldSyncFocus, shouldDisableHoverStyle}: SearchQueryListItemProps) {
     const styles = useThemeStyles();
     const theme = useTheme();
-
+    const subtitle = item.alternateText;
     return (
-        <BaseListItem
+        <ListItemComposed.Pressable
             item={item}
-            pressableStyle={[[styles.searchQueryListItemStyle, item.isSelected && styles.activeComponentBG, item.cursorStyle]]}
-            wrapperStyle={[styles.flexRow, styles.flex1, styles.justifyContentBetween, styles.userSelectNone, styles.alignItemsCenter]}
+            pressableStyle={[styles.searchQueryListItemStyle, item.isSelected && styles.activeComponentBG, item.cursorStyle]}
             isFocused={isFocused}
             onSelectRow={onSelectRow}
             keyForList={item.keyForList}
             onFocus={onFocus}
             hoverStyle={item.isSelected && styles.activeComponentBG}
             shouldSyncFocus={shouldSyncFocus}
-            showTooltip={showTooltip}
             shouldDisableHoverStyle={shouldDisableHoverStyle}
             shouldHighlightSelectedItem
         >
-            <>
-                {!!item.singleIcon && (
-                    <Icon
-                        src={item.singleIcon}
-                        fill={item.shouldIconApplyFill !== false ? theme.icon : undefined}
-                        additionalStyles={styles.mr3}
-                        size={CONST.ICON_SIZE.MEDIUM}
-                    />
-                )}
-                <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch]}>
-                    <TextWithTooltip
-                        shouldShowTooltip={showTooltip ?? false}
-                        text={item.text ?? ''}
-                        style={[
-                            styles.optionDisplayName,
-                            styles.sidebarLinkText,
-                            styles.sidebarLinkTextBold,
-                            styles.pre,
-                            item.alternateText ? styles.mb1 : null,
-                            styles.justifyContentCenter,
-                        ]}
-                    />
-                    {!!item.alternateText && (
-                        <TextWithTooltip
-                            shouldShowTooltip={showTooltip ?? false}
-                            text={item.alternateText}
-                            style={[styles.textLabelSupporting, styles.lh16, styles.pre]}
+            {(_hovered, {isSelected}) => (
+                <ListItemComposed.Row style={[styles.flexRow, styles.flex1, styles.justifyContentBetween, styles.userSelectNone, styles.alignItemsCenter]}>
+                    {!!item.singleIcon && (
+                        <Icon
+                            src={item.singleIcon}
+                            fill={item.shouldIconApplyFill !== false ? theme.icon : undefined}
+                            additionalStyles={styles.mr3}
+                            size={CONST.ICON_SIZE.MEDIUM}
                         />
                     )}
-                </View>
-                {!!item.rightElement && <View style={[styles.ml2, styles.flexShrink1, styles.mw50]}>{item.rightElement}</View>}
-            </>
-        </BaseListItem>
+                    <View style={[styles.flex1, styles.flexColumn, styles.justifyContentCenter, styles.alignItemsStretch]}>
+                        <ListItemComposed.Title
+                            text={item.text ?? ''}
+                            showTooltip={showTooltip}
+                            style={[styles.justifyContentCenter, !!subtitle && styles.mb1]}
+                        />
+                        {!!subtitle && (
+                            <ListItemComposed.Subtitle
+                                text={subtitle}
+                                showTooltip={showTooltip}
+                            />
+                        )}
+                    </View>
+                    {!!item.rightElement && <View style={[styles.ml2, styles.flexShrink1, styles.mw50]}>{item.rightElement}</View>}
+                    <ListItemComposed.RBRIndicator
+                        brickRoadIndicator={item.brickRoadIndicator}
+                        isSelected={isSelected}
+                        canShowSeveralIndicators={item.canShowSeveralIndicators}
+                    />
+                </ListItemComposed.Row>
+            )}
+        </ListItemComposed.Pressable>
     );
 }
 

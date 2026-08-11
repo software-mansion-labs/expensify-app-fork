@@ -1,4 +1,4 @@
-import TextWithTooltip from '@components/TextWithTooltip';
+import ListItemComposed from '@components/SelectionList/ListItemComposed';
 
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -71,33 +71,19 @@ function BaseSelectListItem<TItem extends ListItem>({
             <>
                 {!!item.leftElement && item.leftElement}
                 <View style={[styles.flex1, styles.alignItemsStart, !!item.rightElement && styles.pr3]}>
-                    <TextWithTooltip
-                        shouldShowTooltip={showTooltip}
+                    <ListItemComposed.Title
                         text={fullTitle ?? ''}
-                        style={[
-                            styles.optionDisplayName,
-                            styles.sidebarLinkText,
-                            styles.sidebarLinkTextBold,
-                            isMultilineSupported ? styles.preWrap : styles.pre,
-                            item.alternateText ? styles.mb1 : null,
-                            isDisabled && styles.colorMuted,
-                            isMultilineSupported ? {paddingLeft} : null,
-                            titleStyles,
-                        ]}
+                        showTooltip={showTooltip}
                         numberOfLines={isMultilineSupported ? titleNumberOfLines : 1}
+                        style={[isMultilineSupported && [styles.preWrap, {paddingLeft}], !!item.alternateText && styles.mb1, !!isDisabled && styles.colorMuted, titleStyles]}
                     />
 
                     {!!item.alternateText && (
-                        <TextWithTooltip
-                            shouldShowTooltip={showTooltip}
+                        <ListItemComposed.Subtitle
                             text={item.alternateText}
-                            style={[
-                                styles.textLabelSupporting,
-                                styles.lh16,
-                                isAlternateTextMultilineSupported ? styles.preWrap : styles.pre,
-                                isAlternateTextMultilineSupported ? {maxWidth: alternateTextMaxWidth} : null,
-                            ]}
+                            showTooltip={showTooltip}
                             numberOfLines={isAlternateTextMultilineSupported ? alternateTextNumberOfLines : 1}
+                            style={isAlternateTextMultilineSupported && [styles.preWrap, {maxWidth: alternateTextMaxWidth}]}
                         />
                     )}
                 </View>

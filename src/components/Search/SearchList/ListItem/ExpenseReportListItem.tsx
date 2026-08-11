@@ -9,10 +9,10 @@ import {
 import {useSearchQueryContext, useSearchResultsContext, useSearchSelectionContext} from '@components/Search/SearchContext';
 import {useRowSelection} from '@components/Search/SearchSelectionProvider';
 import BaseListItem from '@components/SelectionList/ListItem/BaseListItem';
+import {useListItemHighlight} from '@components/SelectionList/ListItemComposed';
 import type {ListItem} from '@components/SelectionList/types';
 import Text from '@components/Text';
 
-import useAnimatedHighlightStyle from '@hooks/useAnimatedHighlightStyle';
 import useConfirmModal from '@hooks/useConfirmModal';
 import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -378,12 +378,13 @@ function ExpenseReportListItemInner<TItem extends ListItem>({
         [styles, isLargeScreenWidth],
     );
 
-    const animatedHighlightStyle = useAnimatedHighlightStyle({
+    const {animatedHighlightStyle} = useListItemHighlight({
         borderRadius: 0,
         shouldHighlight: item?.shouldAnimateInHighlight ?? false,
-        highlightColor: theme.messageHighlightBG,
-        backgroundColor: isSelected ? theme.activeComponentBG : theme.highlightBG,
-        shouldApplyOtherStyles: !isLargeScreenWidth,
+        isSelected,
+        shouldTrackSelectedBackground: true,
+        variant: 'searchTable',
+        isLargeScreenWidth,
     });
 
     const shouldShowViolationDescription = isOpenExpenseReport(reportItem) || isProcessingReport(reportItem);
