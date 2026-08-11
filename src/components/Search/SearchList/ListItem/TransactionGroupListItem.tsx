@@ -5,10 +5,10 @@ import {PressableWithFeedback} from '@components/Pressable';
 import {useSearchResultsContext, useSearchSelectionContext} from '@components/Search/SearchContext';
 import {useRowSelection} from '@components/Search/SearchSelectionProvider';
 import type {SearchGroupBy} from '@components/Search/types';
+import {useListItemHighlight} from '@components/SelectionList/ListItemComposed';
 import type {ListItem} from '@components/SelectionList/types';
 
 import useActionLoadingReportIDs from '@hooks/useActionLoadingReportIDs';
-import useAnimatedHighlightStyle from '@hooks/useAnimatedHighlightStyle';
 import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
@@ -234,10 +234,10 @@ function TransactionGroupListItemImpl({
     const {isSelected: liveRowSelected} = useRowSelection(item?.keyForList);
     const isItemSelected = isSelectAllChecked || liveRowSelected;
 
-    const animatedHighlightStyle = useAnimatedHighlightStyle({
+    const {animatedHighlightStyle} = useListItemHighlight({
         shouldHighlight: item?.shouldAnimateInHighlight ?? false,
-        highlightColor: theme.messageHighlightBG,
-        backgroundColor: isItemSelected ? theme.activeComponentBG : theme.highlightBG,
+        isSelected: isItemSelected,
+        shouldTrackSelectedBackground: true,
         shouldApplyOtherStyles: false,
     });
 

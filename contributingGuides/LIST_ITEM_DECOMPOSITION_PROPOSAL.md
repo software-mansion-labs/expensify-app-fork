@@ -50,12 +50,30 @@ pressableWrapperStyle={pressableWrapperStyle}
 
 Removed imports: `useAnimatedHighlightStyle`, `useStyleUtils`, `useTheme`, `variables`.
 
+## Rows owning their own pressable layout
+
+`TransactionListItemWide`, `TransactionListItemNarrow`, `TransactionGroupListItem` and `ExpenseReportListItem` keep their bespoke pressable styles and take `animatedHighlightStyle` alone. The saving is the config block plus the `useAnimatedHighlightStyle` import, not the style bundle:
+
+```tsx
+const {animatedHighlightStyle} = useListItemHighlight({
+    borderRadius: 0,
+    shouldHighlight: item?.shouldAnimateInHighlight ?? false,
+    isSelected,
+    shouldTrackSelectedBackground: true,
+    shouldApplyOtherStyles: false,
+});
+```
+
+`highlightColor` and the resting-background rule are now centralized, which is the part that makes "every styling fix lands once" true for these rows. `ExpenseReportListItem` needs no `shouldApplyOtherStyles` override at all — `variant: 'searchTable'` already derives `!isLargeScreenWidth`.
+
+All six rows are converted here because the POC lands everything at once. The plan splits them in two: `TaskListItem`/`ChatListItem` in PR 1 (they consume the pressable bundle), and the four Search rows in PR 7, which also adds the three hook params they need. Only `SplitListItem` stays on raw `useAnimatedHighlightStyle` (different trigger and timing params); `GroupHeader` and `GroupChildrenContainer` are not rows and have no pressable. See the implementation plan's disposition table.
+
 ## UserListItemContent: drift fixes
 
 | Drift | Before | After |
 |-------|--------|-------|
 | Avatar border on keyboard focus | `isFocused` (UserListItemContent) vs `isFocusVisible` (InviteMemberListItem, TableListItem) | Unified on `isFocusVisible` via `ListItemAvatar` |
-| Title active text | `isFocused` | `isFocusVisible` via `ListItemTitle` |
+| ~~Title active text~~ | `isFocusVisible ? sidebarLinkActiveText : sidebarLinkText` (BaseSelectListItem) vs `isFocused ? …` (UserListItemContent) | **Resolved by deletion, not unification.** `sidebarLinkActiveText` was byte-identical to `sidebarLinkText`, so the toggle was a no-op. Removed in `d45764d97c9`, already in `main`. `ListItemTitle` applies `sidebarLinkText` + `sidebarLinkTextBold` unconditionally and has no focus branch. |
 | Right caret hover | Opacity dimming (BaseListItem) vs `getButtonState` fill (UserListItemContent) | Unified `getButtonState` fill via `ListItemRightCaret` |
 | Right element focus context | Wrapped in Provider (UserListItemContent) vs raw (TableListItem) | Unified via `ListItemRightElement` |
 
