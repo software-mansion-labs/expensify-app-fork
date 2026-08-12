@@ -5,18 +5,19 @@ import type {
     MultifactorAuthenticationScenario,
     MultifactorAuthenticationScenarioAdditionalParams,
     MultifactorAuthenticationScenarioParams,
+    MultifactorAuthenticationScenarioResponse,
 } from '@components/MultifactorAuthentication/config/types';
 
 import type {RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import type {AuthTypeInfo} from '@libs/MultifactorAuthentication/shared/types';
 
 import type CONST from '@src/CONST';
 
 /**
- * The machine's context: the fields the chart owns and writes. Each lives here, not in
- * `MultifactorAuthenticationState` - migrating a field into the machine means removing it from the
- * reducer shape, so every field has exactly one home and a stale reducer read of a migrated field is
- * a compile error.
+ * The machine's context: every field the flow owns and writes. The legacy reducer that used to hold
+ * the not-yet-migrated fields has been fully retired, so this is now the flow's only state - there is
+ * no second shape a field could still live in.
  */
 type MfaContext = {
     /** Account that owns the active flow and its device-local MFA state */
@@ -45,6 +46,12 @@ type MfaContext = {
 
     /** Whether the cancel-confirmation modal triggered by a back press is currently visible */
     isCancelConfirmVisible: boolean;
+
+    /** Authentication method the authorization actor signed the challenge with */
+    authenticationMethod: AuthTypeInfo | undefined;
+
+    /** Response from the scenario action, carried for the outcome/callback slice that will consume it */
+    scenarioResponse: MultifactorAuthenticationScenarioResponse | undefined;
 };
 
 /** Modal lifecycle state the view layer reads: the machine's three top-level states. */
@@ -99,7 +106,19 @@ type CreateCredentialInput = Omit<CreateCredentialParams, 'signal'>;
 /** The credential-creation actor's result. `keyInfo` never leaves the actor, so a success carries no additional data. */
 type CreateCredentialOutput = MFAResult;
 
+/** Input the machine passes to the authorization actor: the account and scenario needed to challenge, sign, and invoke the scenario's action. */
+type AuthorizeInput = {
+    accountID: number;
+    scenario: MultifactorAuthenticationScenarioConfigFor<MultifactorAuthenticationScenario>;
+    payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined;
+};
+
+/** The authorization actor's result. A success carries the authentication method the ceremony signed with and the scenario action's response. */
+type AuthorizeOutput = MFAResult<{scenarioResponse: MultifactorAuthenticationScenarioResponse; authenticationMethod: AuthTypeInfo}>;
+
 export type {
+    AuthorizeInput,
+    AuthorizeOutput,
     CreateCredentialInput,
     CreateCredentialOutput,
     LoadRegistrationStateInput,

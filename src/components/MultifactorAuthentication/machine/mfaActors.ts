@@ -1,5 +1,5 @@
 import checkDeviceEligibility from '@components/MultifactorAuthentication/biometrics/checkDeviceEligibility';
-import {areLocalCredentialsKnownToServer, createCredential} from '@components/MultifactorAuthentication/biometrics/operations';
+import {areLocalCredentialsKnownToServer, authorize, createCredential, deleteLocalCredentials} from '@components/MultifactorAuthentication/biometrics/operations';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
 import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
@@ -7,14 +7,16 @@ import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
-import {getDeviceBiometricsOnyxKey, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
-import {processRegistration} from '@userActions/MultifactorAuthentication/processing';
+import {getDeviceBiometricsOnyxKey, requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
+import {processRegistration, processScenarioAction} from '@userActions/MultifactorAuthentication/processing';
 
 import CONST from '@src/CONST';
 
 import {fromPromise} from 'xstate';
 
 import type {
+    AuthorizeInput,
+    AuthorizeOutput,
     CreateCredentialInput,
     CreateCredentialOutput,
     LoadRegistrationStateInput,
@@ -82,6 +84,62 @@ const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredenti
 });
 
 /**
+ * Requests the authorization challenge, runs the platform ceremony, then invokes the scenario's
+ * action with the signed challenge. A recoverable credential failure (the key is gone, or the
+ * backend no longer accepts it) clears the local credential before returning — the reason itself is
+ * forwarded unchanged; the recovery slice will retarget that branch to re-registration. No rollback
+ * happens after the scenario action fails, matching `createCredentialActor`'s contract.
+ */
+const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({input, signal}) => {
+    const {httpStatusCode, challenge, reason, message} = await requestAuthorizationChallenge();
+    if (!isHttpSuccess(httpStatusCode) || !challenge) {
+        const challengeError = createMFAErrorFromApiResponse(httpStatusCode, reason, message);
+        addMFABreadcrumb('Authorization challenge failed', challengeError, 'error');
+        return {success: false, error: challengeError};
+    }
+    addMFABreadcrumb('Authorization challenge received');
+
+    // The flow may have been cancelled while the challenge request was in flight. Skip opening the
+    // platform dialog rather than prompting for a ceremony nobody asked for anymore.
+    if (signal.aborted) {
+        return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the authorization ceremony')};
+    }
+
+    const authResult = await authorize({accountID: input.accountID, challenge, signal});
+    addMFABreadcrumb(
+        'Biometric authorization completed',
+        authResult.success ? {success: true, authMethod: authResult.authenticationMethod.code} : authResult.error,
+        authResult.success ? 'info' : 'error',
+    );
+    if (!authResult.success) {
+        if (!signal.aborted && CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES.has(authResult.error.reason)) {
+            addMFABreadcrumb('Authorization key reset', authResult.error, 'warning');
+            await deleteLocalCredentials(input.accountID, signal);
+        }
+        return authResult;
+    }
+
+    // The native ceremony cannot be interrupted mid-flight, so it can still succeed after the flow
+    // was cancelled. Skip the scenario action rather than invoking one nobody asked for anymore.
+    if (signal.aborted) {
+        return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the scenario action')};
+    }
+
+    const scenarioResult = await processScenarioAction(input.scenario.action, {
+        ...input.payload,
+        signedChallenge: authResult.signedChallenge,
+        authenticationMethod: authResult.authenticationMethod.marqetaValue,
+    });
+    addMFABreadcrumb('Scenario action completed', scenarioResult.success ? {success: true} : scenarioResult.error, scenarioResult.success ? 'info' : 'error');
+    if (!scenarioResult.success) {
+        return scenarioResult;
+    }
+
+    const {success, ...scenarioResponse} = scenarioResult;
+    return {success, scenarioResponse, authenticationMethod: authResult.authenticationMethod};
+});
+
+/**
  * Builds the side-effect actors that the machine states invoke. The machine is always created with
  * these working implementations, so no caller needs to provide stubs or overrides.
  */
@@ -91,6 +149,7 @@ function createActors() {
         loadRegistrationState,
         requestRegistrationChallenge: requestRegistrationChallengeActor,
         createCredential: createCredentialActor,
+        authorize: authorizeActor,
     };
 }
 

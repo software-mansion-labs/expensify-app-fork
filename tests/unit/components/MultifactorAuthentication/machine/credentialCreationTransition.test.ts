@@ -16,8 +16,7 @@ const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
 // a wrong target adjusts those expectations and still passes. This suite pins the single entry into
-// credential creation and the actor-outcome routing by hand. `softPromptTransition.test.ts` keeps
-// passing untouched because `createFlowContext` leaves `registrationChallenge` undefined.
+// credential creation and the actor-outcome routing by hand.
 
 describe('MFA credential creation', () => {
     describe('soft-prompt approval', () => {
@@ -35,15 +34,15 @@ describe('MFA credential creation', () => {
             actor.stop();
         });
 
-        it('reaches the success outcome without a pending challenge (returning user)', () => {
+        it('moves to authorizing without a pending challenge (returning user)', () => {
             const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
 
             actor.start();
             actor.send({type: 'SOFT_PROMPT_APPROVED'});
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}})).toBe(true);
-            expect(snapshotToState(result).isProcessingPrompt).toBe(false);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}})).toBe(true);
+            expect(snapshotToState(result).isProcessingPrompt).toBe(true);
 
             actor.stop();
         });
@@ -63,13 +62,13 @@ describe('MFA credential creation', () => {
     });
 
     describe('createCredential actor outcome', () => {
-        it('reaches the success outcome when the actor resolves successfully', () => {
+        it('moves to authorizing when the actor resolves successfully', () => {
             const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
 
             actor.start();
             sendCreateCredentialDone(actor, {success: true});
 
-            expect(actor.getSnapshot().matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}})).toBe(true);
+            expect(actor.getSnapshot().matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}})).toBe(true);
 
             actor.stop();
         });
@@ -110,6 +109,8 @@ describe('MFA credential creation', () => {
                     registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE,
                     softPromptApproved: false,
                     isCancelConfirmVisible: false,
+                    authenticationMethod: undefined,
+                    scenarioResponse: undefined,
                 },
             });
             const actor = createActor(machine, {snapshot});

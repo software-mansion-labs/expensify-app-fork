@@ -2,25 +2,32 @@
 // (operations/index.native.ts), which checks the HSM biometric sensor.
 import {
     areLocalCredentialsKnownToServer,
+    authorize,
     createCredential,
+    deleteLocalCredentials,
     deviceCheckFailureReason,
     deviceVerificationType,
     doesDeviceSupportAuthenticationMethod,
 } from '@components/MultifactorAuthentication/biometrics/operations';
 
-import type {RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
+import {translateLocal} from '@libs/Localize';
+import type {AuthenticationChallenge, RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import VALUES from '@libs/MultifactorAuthentication/VALUES';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Base64URL from '@src/utils/Base64URL';
 
+import {AuthType} from '@sbaiahmed1/react-native-biometrics';
 import Onyx from 'react-native-onyx';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 
 const mockIsSensorAvailable = jest.fn();
 const mockGetAllKeys = jest.fn();
 const mockCreateKeys = jest.fn();
+const mockSignWithOptions = jest.fn();
+const mockDeleteKeys = jest.fn();
+const mockSha256 = jest.fn();
 
 jest.mock('@sbaiahmed1/react-native-biometrics', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -29,6 +36,14 @@ jest.mock('@sbaiahmed1/react-native-biometrics', () => ({
     getAllKeys: (...args: unknown[]) => mockGetAllKeys(...args),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     createKeys: (...args: unknown[]) => mockCreateKeys(...args),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    signWithOptions: (...args: unknown[]) => mockSignWithOptions(...args),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    deleteKeys: (...args: unknown[]) => mockDeleteKeys(...args),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    sha256: (...args: unknown[]) => mockSha256(...args),
+    InputEncoding: {Base64: 'base64'},
+    AuthType: {Unknown: -1, None: 0, DeviceCredentials: 1, Biometrics: 2, FaceID: 3, TouchID: 4, OpticID: 5},
 }));
 
 const ACCOUNT_ID = 12345;
@@ -41,6 +56,13 @@ const REGISTRATION_CHALLENGE: RegistrationChallenge = {
     rp: {id: 'expensify.com'},
     user: {id: 'native-test-user', displayName: 'Native Test User'},
     pubKeyCredParams: [{type: 'public-key', alg: -7}],
+    timeout: 60000,
+};
+const AUTHENTICATION_CHALLENGE: AuthenticationChallenge = {
+    challenge: 'native-authentication-challenge',
+    rpId: 'expensify.com',
+    allowCredentials: [{type: 'public-key', id: LOCAL_CREDENTIAL_ID}],
+    userVerification: 'required',
     timeout: 60000,
 };
 
@@ -151,6 +173,238 @@ describe('biometrics operations (native)', () => {
                 throw new Error('Expected credential creation to fail');
             }
             expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_CREATION_FAILED);
+        });
+    });
+
+    describe('authorize', () => {
+        beforeEach(() => {
+            mockSha256.mockResolvedValue({hash: Buffer.alloc(32).toString('base64')});
+            mockSignWithOptions.mockResolvedValue({success: true, signature: 'dGVzdC1zaWduYXR1cmU=', authType: AuthType.FaceID});
+        });
+
+        it('returns NO_MATCHING_LOCAL_CREDENTIAL and never calls signWithOptions when the local credential is not in allowCredentials', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            const challengeWithDifferentCredential: AuthenticationChallenge = {...AUTHENTICATION_CHALLENGE, allowCredentials: [{type: 'public-key', id: 'different-credential-id'}]};
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: challengeWithDifferentCredential});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL);
+            expect(mockSignWithOptions).not.toHaveBeenCalled();
+        });
+
+        it('builds the signing data from the challenge rpId and challenge string', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+
+            await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(mockSha256).toHaveBeenCalledWith(AUTHENTICATION_CHALLENGE.rpId);
+            expect(mockSha256).toHaveBeenCalledWith(JSON.stringify({challenge: AUTHENTICATION_CHALLENGE.challenge}));
+        });
+
+        it('signs with the account-specific key alias and a localized prompt title', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+
+            await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(mockSignWithOptions).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    keyAlias: '12345_HSM_KEY',
+                    inputEncoding: 'base64',
+                    // eslint-disable-next-line @typescript-eslint/no-deprecated
+                    promptTitle: translateLocal('multifactorAuthentication.letsVerifyItsYou'),
+                    returnAuthType: true,
+                }),
+            );
+        });
+
+        it('maps a sign error code to the corresponding reason when no signature is returned', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            mockSignWithOptions.mockResolvedValue({success: false, errorCode: 'USER_CANCEL'});
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.CANCELED);
+        });
+
+        it('falls back to UNRECOGNIZED when no signature is returned and there is no mappable error code', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            mockSignWithOptions.mockResolvedValue({success: false});
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.UNRECOGNIZED);
+        });
+
+        it('returns UNRECOGNIZED_AUTH_TYPE for an unmappable authType', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            mockSignWithOptions.mockResolvedValue({success: true, signature: 'dGVzdC1zaWduYXR1cmU=', authType: 999});
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.UNRECOGNIZED_AUTH_TYPE);
+        });
+
+        it('decodes a thrown exception into the mapped library error', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            mockSignWithOptions.mockRejectedValue(Object.assign(new Error('User canceled authentication'), {code: 'USER_CANCEL'}));
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.CANCELED);
+        });
+
+        it('returns CANCELED when the flow was cancelled while the ceremony was still running', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            const controller = new AbortController();
+            mockSignWithOptions.mockImplementation(async () => {
+                controller.abort();
+                return {success: true, signature: 'dGVzdC1zaWduYXR1cmU=', authType: AuthType.FaceID};
+            });
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: controller.signal});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED);
+        });
+
+        it('does not open the biometric prompt when the flow was cancelled while looking up the local credential', async () => {
+            // The credential lookup and the signing-data build both run before the prompt opens, so a
+            // cancellation landing in either window must be caught before `signWithOptions` is ever
+            // called — unlike the ceremony itself, this window can still be interrupted.
+            const controller = new AbortController();
+            let resolveGetAllKeys: (result: {keys: Array<{publicKey: string}>}) => void = () => {};
+            mockGetAllKeys.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        resolveGetAllKeys = resolve;
+                    }),
+            );
+
+            const resultPromise = authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: controller.signal});
+            controller.abort();
+            resolveGetAllKeys({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            const result = await resultPromise;
+
+            expect(mockSignWithOptions).not.toHaveBeenCalled();
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED);
+        });
+
+        it.each([
+            {authType: AuthType.FaceID, name: 'Face ID'},
+            {authType: AuthType.TouchID, name: 'Touch ID'},
+            {authType: AuthType.Biometrics, name: 'Biometrics'},
+            {authType: AuthType.DeviceCredentials, name: 'Credentials'},
+        ])('maps authType $authType to "$name" on success', async ({authType, name}) => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            mockSignWithOptions.mockResolvedValue({success: true, signature: 'dGVzdC1zaWduYXR1cmU=', authType});
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(result.success).toBe(true);
+            if (!result.success) {
+                throw new Error('Expected authorization to succeed');
+            }
+            expect(result.authenticationMethod.name).toBe(name);
+        });
+
+        it('returns the exact signed-challenge shape on success', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+
+            expect(result.success).toBe(true);
+            if (!result.success) {
+                throw new Error('Expected authorization to succeed');
+            }
+            expect(result.signedChallenge.rawId).toBe(LOCAL_CREDENTIAL_ID);
+            expect(result.signedChallenge.type).toBe(CONST.MULTIFACTOR_AUTHENTICATION.BIOMETRICS_HSM_TYPE);
+            expect(typeof result.signedChallenge.response.signature).toBe('string');
+        });
+    });
+
+    describe('deleteLocalCredentials', () => {
+        it('deletes the HSM key with the account-specific alias', async () => {
+            await deleteLocalCredentials(ACCOUNT_ID);
+
+            expect(mockDeleteKeys).toHaveBeenCalledWith('12345_HSM_KEY');
+        });
+
+        it('does not throw when the deletion fails', async () => {
+            mockDeleteKeys.mockRejectedValue(new Error('Keystore unavailable'));
+
+            await expect(deleteLocalCredentials(ACCOUNT_ID)).resolves.toBeUndefined();
+        });
+
+        it('does not run a queued deletion after its flow is canceled', async () => {
+            let resolveCreation: (result: {publicKey: string}) => void = () => {};
+            mockCreateKeys.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        resolveCreation = resolve;
+                    }),
+            );
+            const creationPromise = createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            await waitForBatchedUpdates();
+            const controller = new AbortController();
+            const deletionPromise = deleteLocalCredentials(ACCOUNT_ID, controller.signal);
+
+            controller.abort();
+            resolveCreation({publicKey: LOCAL_PUBLIC_KEY_BASE64});
+            await creationPromise;
+            await deletionPromise;
+
+            expect(mockDeleteKeys).not.toHaveBeenCalled();
+        });
+
+        it('finishes an in-flight deletion before creating a replacement key for the same account', async () => {
+            let resolveDeletion = () => {};
+            mockDeleteKeys.mockImplementation(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveDeletion = resolve;
+                    }),
+            );
+            mockCreateKeys.mockResolvedValue({publicKey: LOCAL_PUBLIC_KEY_BASE64});
+
+            const deletionPromise = deleteLocalCredentials(ACCOUNT_ID);
+            const creationPromise = createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            await waitForBatchedUpdates();
+
+            expect(mockDeleteKeys).toHaveBeenCalledTimes(1);
+            expect(mockCreateKeys).not.toHaveBeenCalled();
+
+            resolveDeletion();
+            await deletionPromise;
+            await creationPromise;
+
+            expect(mockCreateKeys).toHaveBeenCalledTimes(1);
         });
     });
 });

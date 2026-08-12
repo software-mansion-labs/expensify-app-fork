@@ -1,20 +1,24 @@
-import type {CreateCredentialParams, CreateCredentialResult} from '@components/MultifactorAuthentication/biometrics/shared/types';
+import type {AuthorizeOperationParams, AuthorizeOperationResult, CreateCredentialParams, CreateCredentialResult} from '@components/MultifactorAuthentication/biometrics/shared/types';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
 import {getErrorMessage} from '@libs/ErrorUtils';
 import {
     arrayBufferToBase64URL,
+    authenticateWithPasskey,
+    buildAllowedCredentialDescriptors,
     buildPublicKeyCredentialCreationOptions,
+    buildPublicKeyCredentialRequestOptions,
     createPasskeyCredential,
     decodeWebAuthnError,
     extractAAGUID,
     isSupportedTransport,
     isWebAuthnSupported,
+    PASSKEY_AUTH_TYPE,
 } from '@libs/MultifactorAuthentication/Passkeys/WebAuthn';
 import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
-import {addLocalPasskeyCredential, getPasskeyOnyxKey, reconcileLocalPasskeysWithBackend} from '@userActions/Passkey';
+import {addLocalPasskeyCredential, deleteLocalPasskeyCredentials, getPasskeyOnyxKey, reconcileLocalPasskeysWithBackend} from '@userActions/Passkey';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -129,4 +133,73 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
     };
 }
 
-export {areLocalCredentialsKnownToServer, createCredential, deviceVerificationType, deviceCheckFailureReason, doesDeviceSupportAuthenticationMethod};
+/**
+ * Runs the platform passkey authorization ceremony. No local-credential clearing happens in here on a
+ * reconciliation miss — that is the authorization actor's decision, not the ceremony's; this only
+ * reports `NO_MATCHING_LOCAL_CREDENTIAL`.
+ */
+async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOperationResult> {
+    const {accountID, challenge, signal} = params;
+    const userId = String(accountID);
+    const localPasskeyCredentials = await readOnyxValueOnce(getPasskeyOnyxKey(userId), signal);
+
+    const backendCredentials = challenge.allowCredentials.map((credential) => ({id: credential.id, type: CONST.PASSKEY_CREDENTIAL_TYPE}));
+    const reconciledExisting = reconcileLocalPasskeysWithBackend({userId, backendCredentials, localCredentials: localPasskeyCredentials ?? null});
+
+    if (reconciledExisting.length === 0) {
+        return {
+            success: false,
+            error: createLocalMFAError(
+                CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.WEBAUTHN.NO_MATCHING_LOCAL_CREDENTIAL,
+                'No local passkey credentials match challenge allowCredentials',
+            ),
+        };
+    }
+
+    const allowCredentials = buildAllowedCredentialDescriptors(reconciledExisting);
+    const publicKeyOptions = buildPublicKeyCredentialRequestOptions(challenge, allowCredentials);
+
+    let assertion: PublicKeyCredential;
+    try {
+        // Cancelling the flow (CLOSE_MODAL) aborts `signal`, which closes the passkey dialog — the
+        // rejection below then gets handled like any other refusal.
+        assertion = await authenticateWithPasskey(publicKeyOptions, signal);
+    } catch (error) {
+        return {success: false, error: decodeWebAuthnError(error)};
+    }
+
+    if (!(assertion.response instanceof AuthenticatorAssertionResponse)) {
+        return {
+            success: false,
+            error: createLocalMFAError(
+                CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.WEBAUTHN.UNEXPECTED_RESPONSE,
+                'Authentication assertion response is not AuthenticatorAssertionResponse',
+            ),
+        };
+    }
+    const assertionResponse = assertion.response;
+
+    return {
+        success: true,
+        signedChallenge: {
+            rawId: arrayBufferToBase64URL(assertion.rawId),
+            type: CONST.PASSKEY_CREDENTIAL_TYPE,
+            response: {
+                authenticatorData: arrayBufferToBase64URL(assertionResponse.authenticatorData),
+                clientDataJSON: arrayBufferToBase64URL(assertionResponse.clientDataJSON),
+                signature: arrayBufferToBase64URL(assertionResponse.signature),
+            },
+        },
+        authenticationMethod: {name: PASSKEY_AUTH_TYPE.NAME, marqetaValue: PASSKEY_AUTH_TYPE.MARQETA_VALUE},
+    };
+}
+
+/** Clears the account's local passkey list. Fire-and-forget, matching the legacy hook's behavior. */
+async function deleteLocalCredentials(accountID: number, signal?: AbortSignal): Promise<void> {
+    if (signal?.aborted) {
+        return;
+    }
+    deleteLocalPasskeyCredentials(String(accountID));
+}
+
+export {areLocalCredentialsKnownToServer, authorize, createCredential, deleteLocalCredentials, deviceVerificationType, deviceCheckFailureReason, doesDeviceSupportAuthenticationMethod};

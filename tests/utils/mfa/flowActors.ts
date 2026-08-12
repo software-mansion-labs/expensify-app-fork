@@ -25,6 +25,8 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         registrationChallenge: undefined,
         softPromptApproved: false,
         isCancelConfirmVisible: false,
+        authenticationMethod: undefined,
+        scenarioResponse: undefined,
         ...overrides,
     };
 }
@@ -59,4 +61,11 @@ function sendCreateCredentialDone(actor: ReturnType<typeof createActorAtState>, 
     actor.send(createActorDoneEvent('createCredential', output));
 }
 
-export {createActorAtState, createFlowContext, sendCreateCredentialDone, sendLoadRegistrationStateDone, sendValidateDeviceDone};
+/**
+ * Completes the invoked authorization actor by sending its done event carrying the given output.
+ */
+function sendAuthorizeDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'authorize'>) {
+    actor.send(createActorDoneEvent('authorize', output));
+}
+
+export {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone, sendValidateDeviceDone};

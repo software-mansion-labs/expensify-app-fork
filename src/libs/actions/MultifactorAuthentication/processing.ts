@@ -1,4 +1,9 @@
-import type {MultifactorAuthenticationScenarioConfig, MultifactorAuthenticationScenarioResponse} from '@components/MultifactorAuthentication/config/types';
+import type {MultifactorAuthenticationScenarioConfigFor} from '@components/MultifactorAuthentication/config';
+import type {
+    MultifactorAuthenticationScenario,
+    MultifactorAuthenticationScenarioParameters,
+    MultifactorAuthenticationScenarioResponse,
+} from '@components/MultifactorAuthentication/config/types';
 
 import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
@@ -30,10 +35,10 @@ async function processRegistration(params: RegistrationParams): Promise<MFAResul
  * @param action - The scenario's action function from the scenario config
  * @param params - Action parameters including signedChallenge and authenticationMethod
  */
-async function processScenarioAction(
-    action: MultifactorAuthenticationScenarioConfig['action'],
-    params: Parameters<MultifactorAuthenticationScenarioConfig['action']>[0],
-): Promise<MFAResult<MultifactorAuthenticationScenarioResponse>> {
+type ScenarioAction = MultifactorAuthenticationScenarioConfigFor<MultifactorAuthenticationScenario>['action'];
+type ScenarioActionParams = MultifactorAuthenticationScenarioParameters[MultifactorAuthenticationScenario];
+
+async function processScenarioAction(action: ScenarioAction, params: ScenarioActionParams): Promise<MFAResult<MultifactorAuthenticationScenarioResponse>> {
     if (!params.signedChallenge) {
         return {
             success: false,
@@ -41,7 +46,10 @@ async function processScenarioAction(
         };
     }
 
-    const {httpStatusCode, reason, message, body} = await action(params);
+    // INIT keeps the action and payload paired; the machine context intentionally erases that generic.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+    const runAction = action as (actionParams: ScenarioActionParams) => Promise<MultifactorAuthenticationScenarioResponse>;
+    const {httpStatusCode, reason, message, body} = await runAction(params);
 
     if (isHttpSuccess(httpStatusCode)) {
         return {

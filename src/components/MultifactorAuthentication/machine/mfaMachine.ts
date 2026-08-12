@@ -24,6 +24,7 @@ const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const OUTCOME_TARGET = `#${MFA_STATE.OUTCOME}` as const;
 const PROMPT_TARGET = `#${MFA_STATE.PROMPT}` as const;
 const VALIDATE_CODE_TARGET = `#${MFA_STATE.VALIDATE_CODE}` as const;
+const AUTHORIZING_TARGET = `#${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}` as const;
 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
 const SOFT_PROMPT_ACCEPTED_ACTIONS = ['approveSoftPrompt', 'persistSoftPromptAcceptance'] as const;
@@ -41,6 +42,8 @@ const DEFAULT_CONTEXT: MfaContext = {
     registrationChallenge: undefined,
     softPromptApproved: false,
     isCancelConfirmVisible: false,
+    authenticationMethod: undefined,
+    scenarioResponse: undefined,
 };
 
 /**
@@ -190,13 +193,10 @@ const MFAMachine = setup({
                                     return {accountID: context.accountID};
                                 },
                                 // A fresh (re-)registration always requires soft-prompt approval. A returning
-                                // user who already accepted it skips straight to the outcome instead of
-                                // re-confirming. Both signals come from the same account-scoped actor read.
-                                //
-                                // Scoped shortcut: production re-authenticates behind a loader before the outcome.
-                                // This slice has no authorization actor yet - revisit this guard once one exists.
+                                // user who already accepted it skips the soft prompt and authorizes directly
+                                // instead of re-confirming. Both signals come from the same account-scoped actor read.
                                 onDone: [
-                                    {guard: ({event}) => event.output.hasLocalCredentials && event.output.hasEverAcceptedSoftPrompt, target: OUTCOME_TARGET},
+                                    {guard: ({event}) => event.output.hasLocalCredentials && event.output.hasEverAcceptedSoftPrompt, target: AUTHORIZING_TARGET},
                                     {guard: ({event}) => event.output.hasLocalCredentials, target: PROMPT_TARGET},
                                     {target: VALIDATE_CODE_TARGET, actions: 'requestValidateCode'},
                                 ],
@@ -280,12 +280,12 @@ const MFAMachine = setup({
                             on: {
                                 SOFT_PROMPT_APPROVED: [
                                     {guard: 'hasRegistrationChallenge', target: MFA_STATE.CREATING_CREDENTIAL, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
-                                    {target: OUTCOME_TARGET, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
+                                    {target: MFA_STATE.AUTHORIZING, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
                                 ],
                             },
                         },
-                        // Registration and, in the next slice, authorization stay under `prompt` so the
-                        // prompt screen and its fingerprint animation remain mounted throughout.
+                        // Registration and authorization stay under `prompt` so the prompt screen and its
+                        // fingerprint animation remain mounted throughout.
                         [MFA_STATE.CREATING_CREDENTIAL]: {
                             invoke: {
                                 id: 'createCredential',
@@ -298,11 +298,48 @@ const MFAMachine = setup({
                                 },
                                 onDone: [
                                     {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
-                                    {target: OUTCOME_TARGET},
+                                    {target: MFA_STATE.AUTHORIZING},
                                 ],
                                 onError: {
                                     target: OUTCOME_TARGET,
                                     actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential registration', event.error)}),
+                                },
+                            },
+                        },
+                        // Reached once local credentials are confirmed (returning user) or freshly created.
+                        // The device-local ceremony, then the scenario's backend action.
+                        [MFA_STATE.AUTHORIZING]: {
+                            invoke: {
+                                id: 'authorize',
+                                src: 'authorize',
+                                input: ({context}) => {
+                                    if (context.accountID === undefined || context.scenario === undefined) {
+                                        throw new Error('MFA account and scenario must be initialized before authorization');
+                                    }
+                                    return {accountID: context.accountID, scenario: context.scenario, payload: context.payload};
+                                },
+                                onDone: [
+                                    // Scoped shortcut: this slice has no recovery actor yet, so a recoverable
+                                    // credential failure still routes to the generic failure outcome. The
+                                    // recovery slice retargets this exact branch to re-registration; the reason
+                                    // is deliberately preserved verbatim so that slice has an exact value to
+                                    // route on.
+                                    {
+                                        guard: ({event}) => !event.output.success && CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES.has(event.output.error.reason),
+                                        target: OUTCOME_TARGET,
+                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
+                                    },
+                                    {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
+                                    {
+                                        target: OUTCOME_TARGET,
+                                        actions: assign(({event}) =>
+                                            event.output.success ? {authenticationMethod: event.output.authenticationMethod, scenarioResponse: event.output.scenarioResponse} : {},
+                                        ),
+                                    },
+                                ],
+                                onError: {
+                                    target: OUTCOME_TARGET,
+                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Authorization', event.error)}),
                                 },
                             },
                         },

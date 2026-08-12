@@ -1,5 +1,5 @@
 import type {AuthenticationChallenge, RegistrationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
-import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {AuthTypeInfo, RegistrationKeyInfo} from '@libs/MultifactorAuthentication/shared/types';
 
 /**
@@ -14,22 +14,18 @@ type CreateCredentialParams = {
 
 type CreateCredentialResult = MFAResult<{keyInfo: RegistrationKeyInfo}>;
 
-type AuthorizeParams = {
+/**
+ * Params for the platform-resolved authorization ceremony. Mirrors `CreateCredentialParams`: a params
+ * object keeps both platform signatures identical while native simply ignores `signal`.
+ */
+type AuthorizeOperationParams = {
+    accountID: number;
     challenge: AuthenticationChallenge;
+    signal?: AbortSignal;
 };
 
-type AuthorizeResultSuccess = {
-    success: true;
-    signedChallenge: SignedChallenge;
-    authenticationMethod: AuthTypeInfo;
-};
-
-type AuthorizeResultFailure = {
-    success: false;
-    error: MFAError;
-};
-
-type AuthorizeResult = AuthorizeResultSuccess | AuthorizeResultFailure;
+/** The platform authorization operation's result. A success carries the signed challenge and the authentication method used. */
+type AuthorizeOperationResult = MFAResult<{signedChallenge: SignedChallenge; authenticationMethod: AuthTypeInfo}>;
 
 type UseBiometricsReturn = {
     /** List of credential IDs known to server (from Onyx) */
@@ -46,12 +42,6 @@ type UseBiometricsReturn = {
 
     /** Check if local credentials are known to server (local credential exists in server's list) */
     areLocalCredentialsKnownToServer: () => Promise<boolean>;
-
-    /** Authorize using chosen authentication method */
-    authorize: (params: AuthorizeParams, onResult: (result: AuthorizeResult) => Promise<void> | void) => Promise<void>;
-
-    /** Delete local keys for account */
-    deleteLocalKeysForAccount: () => Promise<void>;
 };
 
-export type {AuthorizeParams, AuthorizeResult, UseBiometricsReturn, CreateCredentialParams, CreateCredentialResult};
+export type {AuthorizeOperationParams, AuthorizeOperationResult, UseBiometricsReturn, CreateCredentialParams, CreateCredentialResult};

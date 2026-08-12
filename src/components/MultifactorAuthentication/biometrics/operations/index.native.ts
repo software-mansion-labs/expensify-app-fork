@@ -1,15 +1,17 @@
-import type {CreateCredentialParams, CreateCredentialResult} from '@components/MultifactorAuthentication/biometrics/shared/types';
+import type {AuthorizeOperationParams, AuthorizeOperationResult, CreateCredentialParams, CreateCredentialResult} from '@components/MultifactorAuthentication/biometrics/shared/types';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
-import {decodeLibraryError, getKeyAlias} from '@libs/MultifactorAuthentication/NativeBiometricsHSM/helpers';
+import {translateLocal} from '@libs/Localize';
+import {buildSigningData, decodeLibraryError, getKeyAlias, mapAuthTypeNumber, mapSignErrorCodeToReason} from '@libs/MultifactorAuthentication/NativeBiometricsHSM/helpers';
 import type NativeBiometricsHSMKeyInfo from '@libs/MultifactorAuthentication/NativeBiometricsHSM/types';
+import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Base64URL from '@src/utils/Base64URL';
 
-import {createKeys, getAllKeys, isSensorAvailable} from '@sbaiahmed1/react-native-biometrics';
+import {createKeys, deleteKeys, getAllKeys, InputEncoding, isSensorAvailable, signWithOptions} from '@sbaiahmed1/react-native-biometrics';
 import {mfaCredentialIDsSelector} from '@selectors/Account';
 
 /**
@@ -23,6 +25,23 @@ const deviceVerificationType = CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS_
 
 /** The failure reason to report when this platform cannot run the verification method. */
 const deviceCheckFailureReason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_AUTHENTICATION_METHODS_ENROLLED;
+
+const credentialMutationTails = new Map<number, Promise<unknown>>();
+
+/** Serializes same-account HSM writes so an in-flight stale delete cannot remove a replacement key. */
+async function serializeCredentialMutation<T>(accountID: number, mutation: () => Promise<T>): Promise<T> {
+    const previousMutation = credentialMutationTails.get(accountID) ?? Promise.resolve();
+    const currentMutation = previousMutation.catch(() => undefined).then(mutation);
+    credentialMutationTails.set(accountID, currentMutation);
+
+    try {
+        return await currentMutation;
+    } finally {
+        if (credentialMutationTails.get(accountID) === currentMutation) {
+            credentialMutationTails.delete(accountID);
+        }
+    }
+}
 
 /** Resolves to whether this device has an enrolled, secured biometric sensor. */
 async function doesDeviceSupportAuthenticationMethod(): Promise<boolean> {
@@ -63,7 +82,7 @@ async function areLocalCredentialsKnownToServer(accountID: number, signal?: Abor
 
 /** Runs the platform HSM key-creation ceremony. */
 async function createCredential(params: CreateCredentialParams): Promise<CreateCredentialResult> {
-    const {accountID, registrationChallenge} = params;
+    const {accountID, registrationChallenge, signal} = params;
     try {
         const keyAlias = getKeyAlias(accountID);
 
@@ -75,7 +94,16 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
          * allowDeviceCredentials: true - allow device credentials fallback when biometrics are unavailable
          * failIfExists: false - overwrite any existing key for this alias to support re-registration
          */
-        const {publicKey} = await createKeys(keyAlias, 'ec256', undefined, true, false);
+        const keyResult = await serializeCredentialMutation(accountID, async () => {
+            if (signal?.aborted) {
+                return undefined;
+            }
+            return createKeys(keyAlias, 'ec256', undefined, true, false);
+        });
+        if (!keyResult) {
+            return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before HSM key creation')};
+        }
+        const {publicKey} = keyResult;
 
         const credentialID = Base64URL.base64ToBase64url(publicKey);
         const clientDataJSON = JSON.stringify({challenge: registrationChallenge.challenge});
@@ -97,4 +125,98 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
     }
 }
 
-export {areLocalCredentialsKnownToServer, createCredential, deviceVerificationType, deviceCheckFailureReason, doesDeviceSupportAuthenticationMethod};
+/**
+ * Runs the platform HSM authorization ceremony: signs the authentication challenge with the
+ * account's biometric-backed key. `signal` is checked twice: right before `signWithOptions` opens the
+ * prompt (catching a cancellation during the credential lookup or signing-data build above), and once
+ * the ceremony resolves (catching one that lands while the prompt itself is open — the native prompt
+ * cannot be dismissed once started, so that case is only caught after the fact).
+ */
+async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOperationResult> {
+    const {accountID, challenge, signal} = params;
+    const keyAlias = getKeyAlias(accountID);
+    const credentialID = await getLocalCredentialID(accountID);
+    const allowedIDs = challenge.allowCredentials.map((credential) => credential.id);
+
+    if (!credentialID || !allowedIDs.includes(credentialID)) {
+        return {
+            success: false,
+            error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL, 'Local HSM credential not in challenge allowCredentials'),
+        };
+    }
+
+    try {
+        const {authenticatorData, clientDataJSON, dataToSignB64} = await buildSigningData(challenge.rpId, challenge.challenge);
+
+        // The flow may have been cancelled while the credential lookup or signing-data build above
+        // were still in flight. Check right before opening the prompt — once `signWithOptions` is
+        // called there is no way to dismiss it, so this is the last point to skip it.
+        if (signal?.aborted) {
+            return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the biometric prompt could open')};
+        }
+
+        const signResult = await signWithOptions({
+            keyAlias,
+            data: dataToSignB64,
+            inputEncoding: InputEncoding.Base64,
+            // This operation is a plain function invoked from the machine actor, not a component or
+            // hook, so `useLocalize` is not available here.
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
+            promptTitle: translateLocal('multifactorAuthentication.letsVerifyItsYou'),
+            promptSubtitle: '',
+            returnAuthType: true,
+        });
+
+        if (signal?.aborted) {
+            return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled after the biometric ceremony completed')};
+        }
+
+        if (!signResult.success || !signResult.signature) {
+            const failReason = mapSignErrorCodeToReason(signResult.errorCode) ?? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.UNRECOGNIZED;
+            return {success: false, error: createLocalMFAError(failReason, `Error Code: ${signResult.errorCode}`)};
+        }
+
+        const authenticationMethod = mapAuthTypeNumber(signResult.authType);
+        if (!authenticationMethod) {
+            return {
+                success: false,
+                error: createLocalMFAError(
+                    CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.UNRECOGNIZED_AUTH_TYPE,
+                    `Unrecognized auth type from HSM sign result: ${signResult.authType}`,
+                ),
+            };
+        }
+
+        return {
+            success: true,
+            signedChallenge: {
+                rawId: credentialID,
+                type: CONST.MULTIFACTOR_AUTHENTICATION.BIOMETRICS_HSM_TYPE,
+                response: {
+                    authenticatorData: Base64URL.base64ToBase64url(authenticatorData.toString('base64')),
+                    clientDataJSON: Base64URL.encode(clientDataJSON),
+                    signature: Base64URL.base64ToBase64url(signResult.signature),
+                },
+            },
+            authenticationMethod,
+        };
+    } catch (error) {
+        return {success: false, error: decodeLibraryError(error)};
+    }
+}
+
+/** Deletes the account's HSM key unless the flow was canceled before this write starts. */
+async function deleteLocalCredentials(accountID: number, signal?: AbortSignal): Promise<void> {
+    await serializeCredentialMutation(accountID, async () => {
+        if (signal?.aborted) {
+            return;
+        }
+        try {
+            await deleteKeys(getKeyAlias(accountID));
+        } catch (error) {
+            addMFABreadcrumb('Failed to delete local keys', decodeLibraryError(error), 'error');
+        }
+    });
+}
+
+export {areLocalCredentialsKnownToServer, authorize, createCredential, deleteLocalCredentials, deviceVerificationType, deviceCheckFailureReason, doesDeviceSupportAuthenticationMethod};
