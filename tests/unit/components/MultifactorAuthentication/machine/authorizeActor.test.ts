@@ -1,4 +1,5 @@
 import type * as BiometricsOperations from '@components/MultifactorAuthentication/biometrics/operations';
+import {getScenarioConfig} from '@components/MultifactorAuthentication/config';
 import createActors from '@components/MultifactorAuthentication/machine/mfaActors';
 import type {AuthorizeInput} from '@components/MultifactorAuthentication/machine/types';
 import type * as BreadcrumbsModule from '@components/MultifactorAuthentication/observability/breadcrumbs';
@@ -76,9 +77,9 @@ const CHALLENGE_SUCCESS_RESPONSE = {
 const SCENARIO_RESPONSE_SUCCESS = {httpStatusCode: 200, reason: undefined, message: undefined, body: undefined};
 
 /** Runs the machine's real `authorize` actor logic to completion and returns its final snapshot. */
-async function runAuthorizeActor() {
+async function runAuthorizeActor(input: AuthorizeInput = AUTHORIZE_INPUT) {
     const {authorize} = createActors();
-    const actorRef = createActor(authorize, {input: AUTHORIZE_INPUT});
+    const actorRef = createActor(authorize, {input});
     actorRef.start();
     await waitFor(actorRef, (snapshot) => snapshot.status !== 'active');
     return actorRef.getSnapshot();
@@ -227,11 +228,17 @@ describe('authorize actor', () => {
 
     it('forwards the exact signed challenge, marqeta authentication method, and payload to the scenario action', async () => {
         const signedChallenge = {rawId: 'raw-id', type: 'public-key', response: {authenticatorData: 'authenticator-data', clientDataJSON: 'client-data', signature: 'signature'}};
+        const transactionID = 'transaction-123';
+        const scenario = getScenarioConfig(CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION);
         mockAuthorize.mockResolvedValue({success: true, signedChallenge, authenticationMethod: MFA_TEST_AUTH_METHOD});
 
-        await runAuthorizeActor();
+        await runAuthorizeActor({accountID: MFA_TEST_ACCOUNT_ID, scenario, payload: {transactionID}});
 
-        expect(processScenarioActionMock).toHaveBeenCalledWith(SCENARIO.action, {signedChallenge, authenticationMethod: MFA_TEST_AUTH_METHOD.marqetaValue});
+        expect(processScenarioActionMock).toHaveBeenCalledWith(scenario.action, {
+            transactionID,
+            signedChallenge,
+            authenticationMethod: MFA_TEST_AUTH_METHOD.marqetaValue,
+        });
     });
 
     it('does not let a caller-supplied payload overwrite the just-signed challenge or authentication method', async () => {
