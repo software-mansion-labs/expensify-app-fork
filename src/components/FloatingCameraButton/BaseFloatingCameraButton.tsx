@@ -38,6 +38,20 @@ type BaseFloatingCameraButtonProps = {
     icon: IconAsset;
 };
 
+let hasWarmedCreateExpenseScreen = false;
+
+/**
+ * The screen this button navigates to is required lazily, so the first press of a session pays to load its module
+ * inside ManualEntryToScanNavigation. This pulls that load off the press path.
+ */
+function warmCreateExpenseScreen() {
+    if (hasWarmedCreateExpenseScreen) {
+        return;
+    }
+    hasWarmedCreateExpenseScreen = true;
+    import('@pages/iou/request/IOURequestStartPage').catch(() => {});
+}
+
 function BaseFloatingCameraButton({icon}: BaseFloatingCameraButtonProps) {
     const {textLight} = useTheme();
     const styles = useThemeStyles();
@@ -47,6 +61,7 @@ function BaseFloatingCameraButton({icon}: BaseFloatingCameraButtonProps) {
     useEffect(() => {
         loadIllustrationsChunk().catch(() => {});
         loadExpensifyIconsChunk().catch(() => {});
+        warmCreateExpenseScreen();
     }, []);
 
     const [activePolicyID] = useOnyx(ONYXKEYS.NVP_ACTIVE_POLICY_ID);

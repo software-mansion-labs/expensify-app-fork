@@ -20,7 +20,7 @@ import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {shouldShowPerDiemTabOption} from '@libs/IOUUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import OnyxTabNavigator, {TabScreenWithFocusTrapWrapper, TopTab} from '@libs/Navigation/OnyxTabNavigator';
-import {getActivePoliciesWithExpenseChatAndPerDiemEnabled, getActivePoliciesWithExpenseChatAndTimeEnabled, isControlPolicy, isPerDiemEnabled, isTimeTrackingEnabled} from '@libs/PolicyUtils';
+import {getActivePoliciesWithExpenseChat, isControlPolicy, isPerDiemEnabled, isTimeTrackingEnabled} from '@libs/PolicyUtils';
 import {getPayeeName} from '@libs/ReportUtils';
 import {endSpan} from '@libs/telemetry/activeSpans';
 import {cancelTracking} from '@libs/telemetry/submitFollowUpAction';
@@ -29,6 +29,8 @@ import {isPerDiemRequest, isScanRequest} from '@libs/TransactionUtils';
 import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
 
 import CONST from '@src/CONST';
+import type {IOUType} from '@src/CONST';
+import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
 import {iouRequestPolicyCollectionSelector} from '@src/selectors/Policy';
@@ -57,6 +59,16 @@ type IOURequestStartPageProps = WithWritableReportOrNotFoundProps<typeof SCREENS
 // Tab indices for IOURequestStartPage
 const PER_DIEM_TAB_INDEX = 2;
 
+const TAB_TITLE_TRANSLATION_KEYS = {
+    [CONST.IOU.TYPE.REQUEST]: 'iou.createExpense',
+    [CONST.IOU.TYPE.SUBMIT]: 'iou.createExpense',
+    [CONST.IOU.TYPE.SPLIT]: 'iou.splitExpense',
+    [CONST.IOU.TYPE.SPLIT_EXPENSE]: 'iou.splitExpense',
+    [CONST.IOU.TYPE.TRACK]: 'iou.createExpense',
+    [CONST.IOU.TYPE.INVOICE]: 'workspace.invoices.sendInvoice',
+    [CONST.IOU.TYPE.CREATE]: 'iou.createExpense',
+} as const satisfies Record<Exclude<IOUType, typeof CONST.IOU.TYPE.SEND | typeof CONST.IOU.TYPE.PAY>, TranslationPaths>;
+
 function IOURequestStartPage({
     route,
     route: {
@@ -84,17 +96,9 @@ function IOURequestStartPage({
     });
 
     const perDiemInputRef = useRef<AnimatedTextInputRef | null>(null);
-    const tabTitles = {
-        [CONST.IOU.TYPE.REQUEST]: translate('iou.createExpense'),
-        [CONST.IOU.TYPE.SUBMIT]: translate('iou.createExpense'),
-        [CONST.IOU.TYPE.SEND]: translate('iou.paySomeone', getPayeeName(report, translate)),
-        [CONST.IOU.TYPE.PAY]: translate('iou.paySomeone', getPayeeName(report, translate)),
-        [CONST.IOU.TYPE.SPLIT]: translate('iou.splitExpense'),
-        [CONST.IOU.TYPE.SPLIT_EXPENSE]: translate('iou.splitExpense'),
-        [CONST.IOU.TYPE.TRACK]: translate('iou.createExpense'),
-        [CONST.IOU.TYPE.INVOICE]: translate('workspace.invoices.sendInvoice'),
-        [CONST.IOU.TYPE.CREATE]: translate('iou.createExpense'),
-    };
+    // Only the title of the current iouType is translated; paying someone needs the payee name, the rest are static.
+    const tabTitle =
+        iouType === CONST.IOU.TYPE.SEND || iouType === CONST.IOU.TYPE.PAY ? translate('iou.paySomeone', getPayeeName(report, translate)) : translate(TAB_TITLE_TRANSLATION_KEYS[iouType]);
 
     const onTabSelectFocusHandler = ({index}: {index: number}) => {
         if (index !== PER_DIEM_TAB_INDEX) {
@@ -107,14 +111,14 @@ function IOURequestStartPage({
 
     const isFromGlobalCreate = isEmptyObject(report?.reportID);
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
-    const policiesWithPerDiemEnabled = useMemo(
-        () => getActivePoliciesWithExpenseChatAndPerDiemEnabled(allPolicies, currentUserPersonalDetails.login),
-        [allPolicies, currentUserPersonalDetails.login],
-    );
-    const policiesWithTimeEnabled = useMemo(
-        () => getActivePoliciesWithExpenseChatAndTimeEnabled(allPolicies, currentUserPersonalDetails.login),
-        [allPolicies, currentUserPersonalDetails.login],
-    );
+    // Both lists start from the same active-policies-with-expense-chat scan, so they share one pass over the collection.
+    const {policiesWithPerDiemEnabled, policiesWithTimeEnabled} = useMemo(() => {
+        const activePoliciesWithExpenseChat = getActivePoliciesWithExpenseChat(allPolicies, currentUserPersonalDetails.login);
+        return {
+            policiesWithPerDiemEnabled: activePoliciesWithExpenseChat.filter((activePolicy) => isPerDiemEnabled(activePolicy) && isControlPolicy(activePolicy)),
+            policiesWithTimeEnabled: activePoliciesWithExpenseChat.filter(isTimeTrackingEnabled),
+        };
+    }, [allPolicies, currentUserPersonalDetails.login]);
     const doesPerDiemPolicyExist = policiesWithPerDiemEnabled.length > 0;
     const moreThanOnePerDiemExist = policiesWithPerDiemEnabled.length > 1;
     const hasCurrentPolicyPerDiemEnabled = isControlPolicy(policy) && isPerDiemEnabled(policy);
@@ -284,7 +288,7 @@ function IOURequestStartPage({
                             style={[styles.w100]}
                         >
                             <HeaderWithBackButton
-                                title={tabTitles[iouType]}
+                                title={tabTitle}
                                 onBackButtonPress={navigateBack}
                             />
                         </FocusTrapContainerElement>
