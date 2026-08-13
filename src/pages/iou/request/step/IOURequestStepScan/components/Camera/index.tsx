@@ -1,6 +1,8 @@
 import {isMobile} from '@libs/Browser';
 import {cancelSpan, endSpan} from '@libs/telemetry/activeSpans';
 
+import {markReceiptPicked} from '@pages/iou/request/step/IOURequestStepScan/utils/captureToConfirmationSpan';
+
 import CONST from '@src/CONST';
 
 import React, {useEffect} from 'react';
@@ -16,6 +18,12 @@ import FileUpload from './FileUpload';
  * On desktop browsers renders a drag-and-drop / file-picker upload area (FileUpload).
  */
 function Camera(props: CameraProps) {
+    // The upload path has no shutter press, so the picked files are what starts its capture-to-confirmation flow.
+    const onPicked: CameraProps['onPicked'] = (files, items) => {
+        markReceiptPicked();
+        props.onPicked(files, items);
+    };
+
     // End telemetry spans on mount for web (no camera init tracking needed)
     useEffect(() => {
         endSpan(CONST.TELEMETRY.SPAN_OPEN_CREATE_EXPENSE);
@@ -30,18 +38,20 @@ function Camera(props: CameraProps) {
     if (isMobile()) {
         return (
             <CameraCapture
-                // Props are forwarded as-is to the platform-specific Camera variant
+                // Props are forwarded to the platform-specific Camera variant, with onPicked wrapped for telemetry
 
                 {...props}
+                onPicked={onPicked}
             />
         );
     }
 
     return (
         <FileUpload
-            // Props are forwarded as-is to the platform-specific Camera variant
+            // Props are forwarded to the platform-specific Camera variant, with onPicked wrapped for telemetry
 
             {...props}
+            onPicked={onPicked}
         />
     );
 }

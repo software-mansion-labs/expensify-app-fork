@@ -125,7 +125,7 @@ function Camera({onCapture, onPicked, shouldAcceptMultipleFiles = false, onLayou
             startSpan(CONST.TELEMETRY.SPAN_SHUTTER_TO_CONFIRMATION, {
                 name: CONST.TELEMETRY.SPAN_SHUTTER_TO_CONFIRMATION,
                 op: CONST.TELEMETRY.SPAN_SHUTTER_TO_CONFIRMATION,
-                attributes: {[CONST.TELEMETRY.ATTRIBUTE_PLATFORM]: 'native'},
+                attributes: {[CONST.TELEMETRY.ATTRIBUTE_PLATFORM]: 'native', [CONST.TELEMETRY.ATTRIBUTE_SOURCE]: 'camera'},
             });
         }
 

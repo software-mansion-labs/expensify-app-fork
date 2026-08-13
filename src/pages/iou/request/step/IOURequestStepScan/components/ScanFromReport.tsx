@@ -13,6 +13,7 @@ import {getPickerCaptureSource} from '@libs/telemetry/ReceiptObservability';
 
 import type {ReceiptFile} from '@pages/iou/request/step/IOURequestStepScan/types';
 import buildReceiptFiles from '@pages/iou/request/step/IOURequestStepScan/utils/buildReceiptFiles';
+import {startCaptureToConfirmationSpanFromPick} from '@pages/iou/request/step/IOURequestStepScan/utils/captureToConfirmationSpan';
 import getFileSource from '@pages/iou/request/step/IOURequestStepScan/utils/getFileSource';
 import startScanProcessSpan from '@pages/iou/request/step/IOURequestStepScan/utils/startScanProcessSpan';
 import useScanFileReadabilityCheck from '@pages/iou/request/step/IOURequestStepScan/utils/useScanFileReadabilityCheck';
@@ -57,6 +58,7 @@ function ScanFromReport({report, iouType, reportID, transactionID, transaction, 
     useScanFileReadabilityCheck(transactions, draftTransactionIDs ?? [], disableMultiScan);
 
     const navigateFromReport = (fileTransactionIDs: string[]) => {
+        startCaptureToConfirmationSpanFromPick(isMultiScanEnabled);
         startScanProcessSpan(isMultiScanEnabled);
         setMultipleMoneyRequestParticipantsFromReport(fileTransactionIDs, report, currentUserPersonalDetails.accountID).then(() =>
             navigateToConfirmationPage(iouType, transactionID, reportID, backToReport),

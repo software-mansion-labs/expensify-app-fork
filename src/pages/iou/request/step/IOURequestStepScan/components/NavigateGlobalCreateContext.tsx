@@ -9,8 +9,9 @@ import {navigateToConfirmationPage, navigateToParticipantPage} from '@libs/IOUUt
 import Navigation from '@libs/Navigation/Navigation';
 import {getPolicyExpenseChat, isSelfDM} from '@libs/ReportUtils';
 import shouldUseDefaultExpensePolicy from '@libs/shouldUseDefaultExpensePolicy';
-import {endSpan} from '@libs/telemetry/activeSpans';
+import {cancelSpan, endSpan} from '@libs/telemetry/activeSpans';
 
+import {startCaptureToConfirmationSpanFromPick} from '@pages/iou/request/step/IOURequestStepScan/utils/captureToConfirmationSpan';
 import endScanProcessAndStartConfirmationMountSpan from '@pages/iou/request/step/IOURequestStepScan/utils/endScanProcessAndStartConfirmationMountSpan';
 import startScanProcessSpan from '@pages/iou/request/step/IOURequestStepScan/utils/startScanProcessSpan';
 
@@ -94,6 +95,7 @@ function NavigateGlobalCreateSubscriber({fnRef, iouType, reportID, transactionID
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
 
     const navigateGlobalCreate: NavigateGlobalCreateFn = (transactionIDs, isMultiScanEnabled) => {
+        startCaptureToConfirmationSpanFromPick(isMultiScanEnabled);
         startScanProcessSpan(isMultiScanEnabled);
         if (shouldUseDefaultExpensePolicy(iouType, defaultExpensePolicy, amountOwed, userBillingGracePeriodEnds, ownerBillingGracePeriodEnd, currentUserPersonalDetails.accountID)) {
             const shouldAutoReport = !!defaultExpensePolicy?.autoReporting || !!personalPolicy?.autoReporting;
@@ -127,6 +129,9 @@ function NavigateGlobalCreateSubscriber({fnRef, iouType, reportID, transactionID
             });
         } else {
             endSpan(CONST.TELEMETRY.SPAN_SCAN_PROCESS_AND_NAVIGATE);
+            // This route stops at the participant picker, so whatever time passes until a confirmation page mounts
+            // is the user picking participants, not the capture-to-confirmation flow.
+            cancelSpan(CONST.TELEMETRY.SPAN_SHUTTER_TO_CONFIRMATION);
             navigateToParticipantPage(iouType, transactionID, reportID);
         }
     };

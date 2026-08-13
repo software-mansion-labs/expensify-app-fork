@@ -21,6 +21,7 @@ import NavigationAwareCamera from '@pages/iou/request/step/IOURequestStepScan/co
 import ReceiptPreviews from '@pages/iou/request/step/IOURequestStepScan/components/ReceiptPreviews';
 import {cropImageToAspectRatio} from '@pages/iou/request/step/IOURequestStepScan/cropImageToAspectRatio';
 import type {ImageObject} from '@pages/iou/request/step/IOURequestStepScan/cropImageToAspectRatio';
+import {clearReceiptPickMark} from '@pages/iou/request/step/IOURequestStepScan/utils/captureToConfirmationSpan';
 
 import variables from '@styles/variables';
 
@@ -86,11 +87,14 @@ function CameraCapture({onCapture, onPicked, shouldAcceptMultipleFiles = false, 
             return;
         }
 
+        // A pick left over from an upload that never navigated would otherwise backdate this flow to it.
+        clearReceiptPickMark();
+
         if (!isMultiScanEnabled) {
             startSpan(CONST.TELEMETRY.SPAN_SHUTTER_TO_CONFIRMATION, {
                 name: CONST.TELEMETRY.SPAN_SHUTTER_TO_CONFIRMATION,
                 op: CONST.TELEMETRY.SPAN_SHUTTER_TO_CONFIRMATION,
-                attributes: {[CONST.TELEMETRY.ATTRIBUTE_PLATFORM]: 'web'},
+                attributes: {[CONST.TELEMETRY.ATTRIBUTE_PLATFORM]: 'web', [CONST.TELEMETRY.ATTRIBUTE_SOURCE]: 'camera'},
             });
         }
         startSpan(CONST.TELEMETRY.SPAN_RECEIPT_CAPTURE, {
