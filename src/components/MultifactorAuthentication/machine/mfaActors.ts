@@ -85,11 +85,10 @@ const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredenti
 
 /**
  * Requests the authorization challenge, runs the platform ceremony, then invokes the scenario's
- * action with the signed challenge. While the flow is active, a recoverable credential failure (the
- * key is gone, or the backend no longer accepts it) clears the local credential before returning;
- * cancellation skips that cleanup. The reason itself is forwarded unchanged so the recovery slice
- * can retarget that branch to re-registration. No rollback happens after the scenario action fails,
- * matching `createCredentialActor`'s contract.
+ * action with the signed challenge. While the flow is active, a local failure showing that the device
+ * credential is unusable clears it before returning; cancellation skips that cleanup. The reason itself
+ * is forwarded unchanged so the recovery slice can route recoverable failures to re-registration. No
+ * rollback happens after the scenario action fails, matching `createCredentialActor`'s contract.
  */
 const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({input, signal}) => {
     const {httpStatusCode, challenge, reason, message} = await requestAuthorizationChallenge();
@@ -113,7 +112,7 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
         authResult.success ? 'info' : 'error',
     );
     if (!authResult.success) {
-        if (!signal.aborted && CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES.has(authResult.error.reason)) {
+        if (!signal.aborted && CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(authResult.error.reason)) {
             addMFABreadcrumb('Authorization key reset', authResult.error, 'warning');
             await deleteLocalCredentials(input.accountID, signal);
         }

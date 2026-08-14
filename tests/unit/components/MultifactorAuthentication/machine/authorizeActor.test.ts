@@ -147,6 +147,7 @@ describe('authorize actor', () => {
             throw new Error('Expected authorization to fail');
         }
         expect(snapshot.output.error.reason).toBe(REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED);
+        expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
     });
 
     it('surfaces a platform refusal unchanged and never calls the scenario action or clears local credentials', async () => {
@@ -160,8 +161,8 @@ describe('authorize actor', () => {
         expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
     });
 
-    it.each([...CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES])(
-        'clears the local credential and preserves the exact reason for the recoverable failure "%s"',
+    it.each([...CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION])(
+        'clears the local credential and preserves the exact reason for the local credential failure "%s"',
         async (reason) => {
             const recoverableError = createLocalMFAError(reason, 'Recoverable authorization failure');
             mockAuthorize.mockResolvedValue({success: false, error: recoverableError});
