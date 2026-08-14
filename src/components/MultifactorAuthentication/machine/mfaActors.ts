@@ -85,10 +85,11 @@ const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredenti
 
 /**
  * Requests the authorization challenge, runs the platform ceremony, then invokes the scenario's
- * action with the signed challenge. A recoverable credential failure (the key is gone, or the
- * backend no longer accepts it) clears the local credential before returning — the reason itself is
- * forwarded unchanged; the recovery slice will retarget that branch to re-registration. No rollback
- * happens after the scenario action fails, matching `createCredentialActor`'s contract.
+ * action with the signed challenge. While the flow is active, a recoverable credential failure (the
+ * key is gone, or the backend no longer accepts it) clears the local credential before returning;
+ * cancellation skips that cleanup. The reason itself is forwarded unchanged so the recovery slice
+ * can retarget that branch to re-registration. No rollback happens after the scenario action fails,
+ * matching `createCredentialActor`'s contract.
  */
 const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({input, signal}) => {
     const {httpStatusCode, challenge, reason, message} = await requestAuthorizationChallenge();

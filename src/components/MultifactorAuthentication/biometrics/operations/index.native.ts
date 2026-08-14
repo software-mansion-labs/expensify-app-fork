@@ -95,7 +95,7 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
          * failIfExists: false - overwrite any existing key for this alias to support re-registration
          */
         const keyResult = await serializeCredentialMutation(accountID, async () => {
-            if (signal?.aborted) {
+            if (signal.aborted) {
                 return undefined;
             }
             return createKeys(keyAlias, 'ec256', undefined, true, false);
@@ -151,7 +151,7 @@ async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOpe
         // The flow may have been cancelled while the credential lookup or signing-data build above
         // were still in flight. Check right before opening the prompt — once `signWithOptions` is
         // called there is no way to dismiss it, so this is the last point to skip it.
-        if (signal?.aborted) {
+        if (signal.aborted) {
             return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the biometric prompt could open')};
         }
 
@@ -167,7 +167,7 @@ async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOpe
             returnAuthType: true,
         });
 
-        if (signal?.aborted) {
+        if (signal.aborted) {
             return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled after the biometric ceremony completed')};
         }
 

@@ -47,6 +47,7 @@ jest.mock('@sbaiahmed1/react-native-biometrics', () => ({
 }));
 
 const ACCOUNT_ID = 12345;
+const TEST_SIGNAL = new AbortController().signal;
 // The keystore returns the public key as plain base64 while the server stores base64url IDs, so the
 // characters below only match after the module's base64url conversion.
 const LOCAL_PUBLIC_KEY_BASE64 = 'Ab+/cd==';
@@ -139,13 +140,13 @@ describe('biometrics operations (native)', () => {
         });
 
         it('creates the HSM key with the account-specific alias', async () => {
-            await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(mockCreateKeys).toHaveBeenCalledWith('12345_HSM_KEY', 'ec256', undefined, true, false);
         });
 
         it('returns the exact NativeBiometricsHSMKeyInfo shape on success', async () => {
-            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result).toEqual({
                 success: true,
@@ -166,7 +167,7 @@ describe('biometrics operations (native)', () => {
         it('returns a failed result with the mapped reason when the library throws', async () => {
             mockCreateKeys.mockRejectedValue(Object.assign(new Error('Key creation failed'), {code: 'CREATE_KEYS_ERROR'}));
 
-            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -186,7 +187,7 @@ describe('biometrics operations (native)', () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
             const challengeWithDifferentCredential: AuthenticationChallenge = {...AUTHENTICATION_CHALLENGE, allowCredentials: [{type: 'public-key', id: 'different-credential-id'}]};
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: challengeWithDifferentCredential});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: challengeWithDifferentCredential, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -199,7 +200,7 @@ describe('biometrics operations (native)', () => {
         it('builds the signing data from the challenge rpId and challenge string', async () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
 
-            await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(mockSha256).toHaveBeenCalledWith(AUTHENTICATION_CHALLENGE.rpId);
             expect(mockSha256).toHaveBeenCalledWith(JSON.stringify({challenge: AUTHENTICATION_CHALLENGE.challenge}));
@@ -208,7 +209,7 @@ describe('biometrics operations (native)', () => {
         it('signs with the account-specific key alias and a localized prompt title', async () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
 
-            await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(mockSignWithOptions).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -225,7 +226,7 @@ describe('biometrics operations (native)', () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
             mockSignWithOptions.mockResolvedValue({success: false, errorCode: 'USER_CANCEL'});
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -238,7 +239,7 @@ describe('biometrics operations (native)', () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
             mockSignWithOptions.mockResolvedValue({success: false});
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -251,7 +252,7 @@ describe('biometrics operations (native)', () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
             mockSignWithOptions.mockResolvedValue({success: true, signature: 'dGVzdC1zaWduYXR1cmU=', authType: 999});
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -264,7 +265,7 @@ describe('biometrics operations (native)', () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
             mockSignWithOptions.mockRejectedValue(Object.assign(new Error('User canceled authentication'), {code: 'USER_CANCEL'}));
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -325,7 +326,7 @@ describe('biometrics operations (native)', () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
             mockSignWithOptions.mockResolvedValue({success: true, signature: 'dGVzdC1zaWduYXR1cmU=', authType});
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(true);
             if (!result.success) {
@@ -337,7 +338,7 @@ describe('biometrics operations (native)', () => {
         it('returns the exact signed-challenge shape on success', async () => {
             mockGetAllKeys.mockResolvedValue({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(true);
             if (!result.success) {
@@ -370,7 +371,7 @@ describe('biometrics operations (native)', () => {
                         resolveCreation = resolve;
                     }),
             );
-            const creationPromise = createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const creationPromise = createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
             await waitForBatchedUpdates();
             const controller = new AbortController();
             const deletionPromise = deleteLocalCredentials(ACCOUNT_ID, controller.signal);
@@ -394,7 +395,7 @@ describe('biometrics operations (native)', () => {
             mockCreateKeys.mockResolvedValue({publicKey: LOCAL_PUBLIC_KEY_BASE64});
 
             const deletionPromise = deleteLocalCredentials(ACCOUNT_ID);
-            const creationPromise = createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const creationPromise = createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
             await waitForBatchedUpdates();
 
             expect(mockDeleteKeys).toHaveBeenCalledTimes(1);

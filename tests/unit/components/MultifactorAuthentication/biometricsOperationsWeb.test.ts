@@ -47,6 +47,7 @@ const {areLocalCredentialsKnownToServer, authorize, createCredential, deleteLoca
 
 const ACCOUNT_ID = 12345;
 const LOCAL_PASSKEY_ID = 'local-passkey-credential-id';
+const TEST_SIGNAL = new AbortController().signal;
 
 /**
  * jsdom has no `AuthenticatorAttestationResponse` global. `window === globalThis` in jsdom, so
@@ -238,7 +239,7 @@ describe('biometrics operations (web)', () => {
             const expectedCredentialId = arrayBufferToBase64URL(rawId);
             mockCreatePasskeyCredential.mockResolvedValue(buildFakeAttestationCredential(rawId, buildFakeAttestationResponse()));
 
-            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result).toEqual({
                 success: true,
@@ -273,7 +274,7 @@ describe('biometrics operations (web)', () => {
         it('maps a WebAuthn DOMException to the corresponding local error reason', async () => {
             mockCreatePasskeyCredential.mockRejectedValue(new DOMException('The operation was not allowed', 'NotAllowedError'));
 
-            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -286,7 +287,7 @@ describe('biometrics operations (web)', () => {
             const rawId = bytesToArrayBuffer([50, 60, 70]);
             mockCreatePasskeyCredential.mockResolvedValue(buildFakeAttestationCredential(rawId, {}));
 
-            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -308,7 +309,7 @@ describe('biometrics operations (web)', () => {
             await Onyx.set(getPasskeyOnyxKey(String(ACCOUNT_ID)), [{id: duplicateCredentialId, type: CONST.PASSKEY_CREDENTIAL_TYPE}]);
             mockCreatePasskeyCredential.mockResolvedValue(buildFakeAttestationCredential(rawId, buildFakeAttestationResponse()));
 
-            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(true);
 
@@ -323,7 +324,7 @@ describe('biometrics operations (web)', () => {
             });
             mockCreatePasskeyCredential.mockResolvedValue(buildFakeAttestationCredential(bytesToArrayBuffer([11, 22, 33]), buildFakeAttestationResponse()));
 
-            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE});
+            const result = await createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -387,7 +388,7 @@ describe('biometrics operations (web)', () => {
 
         it('reports NO_MATCHING_LOCAL_CREDENTIAL and never calls the ceremony when no local passkey matches the challenge', async () => {
             // No local passkeys stored at all, so reconciliation against the challenge's allowCredentials leaves nothing.
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -400,7 +401,7 @@ describe('biometrics operations (web)', () => {
         it('does not call a bulk credential delete when no local credential matches (reconciliation, not the operation, prunes the stale entry)', async () => {
             await Onyx.set(getPasskeyOnyxKey(String(ACCOUNT_ID)), [{id: 'unrelated-local-id', type: CONST.PASSKEY_CREDENTIAL_TYPE}]);
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             // Reconciliation (shared with `createCredential`) already prunes the non-matching entry as
@@ -430,7 +431,7 @@ describe('biometrics operations (web)', () => {
             await Onyx.set(getPasskeyOnyxKey(String(ACCOUNT_ID)), [{id: LOCAL_PASSKEY_ID, type: CONST.PASSKEY_CREDENTIAL_TYPE}]);
             mockAuthenticateWithPasskey.mockResolvedValue(buildFakeAssertionCredential(bytesToArrayBuffer([1, 2, 3]), {}));
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -443,7 +444,7 @@ describe('biometrics operations (web)', () => {
             await Onyx.set(getPasskeyOnyxKey(String(ACCOUNT_ID)), [{id: LOCAL_PASSKEY_ID, type: CONST.PASSKEY_CREDENTIAL_TYPE}]);
             mockAuthenticateWithPasskey.mockRejectedValue(new DOMException('The operation was not allowed', 'NotAllowedError'));
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
             if (result.success) {
@@ -457,7 +458,7 @@ describe('biometrics operations (web)', () => {
             const rawId = bytesToArrayBuffer([40, 50, 60]);
             mockAuthenticateWithPasskey.mockResolvedValue(buildFakeAssertionCredential(rawId, buildFakeAssertionResponse()));
 
-            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE});
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result).toEqual({
                 success: true,

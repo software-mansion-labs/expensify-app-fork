@@ -97,7 +97,7 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
     // Not every browser honors `signal` on create(), so the ceremony can still succeed after the flow
     // was cancelled. Don't persist or register a credential nobody asked for anymore — the passkey
     // itself is already on the device either way, that part can't be undone.
-    if (signal?.aborted) {
+    if (signal.aborted) {
         return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the credential could be persisted')};
     }
 

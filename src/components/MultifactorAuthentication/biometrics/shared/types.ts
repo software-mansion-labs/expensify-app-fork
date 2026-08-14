@@ -3,25 +3,25 @@ import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {AuthTypeInfo, RegistrationKeyInfo} from '@libs/MultifactorAuthentication/shared/types';
 
 /**
- * Params for the platform-resolved credential-creation ceremony. A params object (not positional
- * args) keeps both platform signatures identical while native simply ignores `signal`.
+ * Params for the platform-resolved credential-creation ceremony. Web forwards the actor signal to
+ * WebAuthn, while native checks it before starting non-cancellable HSM work.
  */
 type CreateCredentialParams = {
     accountID: number;
     registrationChallenge: RegistrationChallenge;
-    signal?: AbortSignal;
+    signal: AbortSignal;
 };
 
 type CreateCredentialResult = MFAResult<{keyInfo: RegistrationKeyInfo}>;
 
 /**
- * Params for the platform-resolved authorization ceremony. Mirrors `CreateCredentialParams`: a params
- * object keeps both platform signatures identical while native simply ignores `signal`.
+ * Params for the platform-resolved authorization ceremony. Web forwards the actor signal to
+ * WebAuthn. Native checks it before and after `signWithOptions()`, which cannot itself be aborted.
  */
 type AuthorizeOperationParams = {
     accountID: number;
     challenge: AuthenticationChallenge;
-    signal?: AbortSignal;
+    signal: AbortSignal;
 };
 
 /** The platform authorization operation's result. A success carries the signed challenge and the authentication method used. */
