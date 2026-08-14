@@ -4,6 +4,7 @@ import createActors from '@components/MultifactorAuthentication/machine/mfaActor
 import type {AuthorizeInput} from '@components/MultifactorAuthentication/machine/types';
 import type * as BreadcrumbsModule from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
+import NATIVE_BIOMETRICS_HSM_VALUES from '@libs/MultifactorAuthentication/NativeBiometricsHSM/VALUES';
 import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import {requestAuthorizationChallenge} from '@userActions/MultifactorAuthentication';
@@ -18,6 +19,12 @@ import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, waitFor} from 'xstate';
 
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
+const EXPECTED_CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION = [
+    REASON.LOCAL_ERRORS.HSM.KEY_ACCESS_FAILED,
+    REASON.LOCAL_ERRORS.HSM.KEY_NOT_FOUND,
+    REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL,
+    REASON.LOCAL_ERRORS.WEBAUTHN.NO_MATCHING_LOCAL_CREDENTIAL,
+] as const;
 
 const mockAuthorize = jest.fn();
 const mockDeleteLocalCredentials = jest.fn();
@@ -150,6 +157,27 @@ describe('authorize actor', () => {
         expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
     });
 
+    it('does not start the authorization ceremony when the flow is cancelled while requesting the challenge', async () => {
+        let resolveChallenge: (response: typeof CHALLENGE_SUCCESS_RESPONSE) => void = () => {};
+        requestAuthorizationChallengeMock.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    resolveChallenge = resolve;
+                }),
+        );
+        const {authorize} = createActors();
+        const actorRef = createActor(authorize, {input: AUTHORIZE_INPUT});
+
+        actorRef.start();
+        await waitForBatchedUpdates();
+        actorRef.stop();
+        resolveChallenge(CHALLENGE_SUCCESS_RESPONSE);
+        await waitForBatchedUpdates();
+
+        expect(mockAuthorize).not.toHaveBeenCalled();
+        expect(processScenarioActionMock).not.toHaveBeenCalled();
+    });
+
     it('surfaces a platform refusal unchanged and never calls the scenario action or clears local credentials', async () => {
         const platformError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.CANCELED, 'User canceled the biometric prompt');
         mockAuthorize.mockResolvedValue({success: false, error: platformError});
@@ -161,19 +189,16 @@ describe('authorize actor', () => {
         expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
     });
 
-    it.each([...CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION])(
-        'clears the local credential and preserves the exact reason for the local credential failure "%s"',
-        async (reason) => {
-            const recoverableError = createLocalMFAError(reason, 'Recoverable authorization failure');
-            mockAuthorize.mockResolvedValue({success: false, error: recoverableError});
+    it.each(EXPECTED_CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION)('clears the local credential and preserves the exact reason for the local credential failure "%s"', async (reason) => {
+        const recoverableError = createLocalMFAError(reason, 'Recoverable authorization failure');
+        mockAuthorize.mockResolvedValue({success: false, error: recoverableError});
 
-            const snapshot = await runAuthorizeActor();
+        const snapshot = await runAuthorizeActor();
 
-            expect(mockDeleteLocalCredentials).toHaveBeenCalledTimes(1);
-            expect(mockDeleteLocalCredentials).toHaveBeenCalledWith(MFA_TEST_ACCOUNT_ID, expect.any(AbortSignal));
-            expect(snapshot.output).toEqual({success: false, error: recoverableError});
-        },
-    );
+        expect(mockDeleteLocalCredentials).toHaveBeenCalledTimes(1);
+        expect(mockDeleteLocalCredentials).toHaveBeenCalledWith(MFA_TEST_ACCOUNT_ID, expect.any(AbortSignal));
+        expect(snapshot.output).toEqual({success: false, error: recoverableError});
+    });
 
     it('does not call the scenario action once the flow was cancelled while the ceremony was still running', async () => {
         // Stopping the actor (what CLOSE_MODAL does) can't interrupt the already-running ceremony
@@ -277,10 +302,21 @@ describe('authorize actor', () => {
     });
 
     it('records a breadcrumb for the challenge request, the ceremony outcome, and the scenario action', async () => {
+        const nativeAuthenticationMethod = NATIVE_BIOMETRICS_HSM_VALUES.AUTH_TYPE.FACE_ID;
+        mockAuthorize.mockResolvedValue({
+            success: true,
+            signedChallenge: {rawId: 'raw-id', type: 'public-key', response: {authenticatorData: 'a', clientDataJSON: 'c', signature: 's'}},
+            authenticationMethod: {
+                code: nativeAuthenticationMethod.CODE,
+                name: nativeAuthenticationMethod.NAME,
+                marqetaValue: nativeAuthenticationMethod.MARQETA_VALUE,
+            },
+        });
+
         await runAuthorizeActor();
 
         expect(mockAddMFABreadcrumb).toHaveBeenCalledWith('Authorization challenge received');
-        expect(mockAddMFABreadcrumb).toHaveBeenCalledWith('Biometric authorization completed', {success: true, authMethod: MFA_TEST_AUTH_METHOD.code}, 'info');
+        expect(mockAddMFABreadcrumb).toHaveBeenCalledWith('Biometric authorization completed', {success: true, authMethod: nativeAuthenticationMethod.CODE}, 'info');
         expect(mockAddMFABreadcrumb).toHaveBeenCalledWith('Scenario action completed', {success: true}, 'info');
     });
 

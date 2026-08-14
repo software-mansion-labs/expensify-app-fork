@@ -6,7 +6,7 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 
 import CONST from '@src/CONST';
 
-import {createActorAtState, sendCreateCredentialDone} from 'tests/utils/mfa/flowActors';
+import {createActorAtState, createFlowContext, sendCreateCredentialDone} from 'tests/utils/mfa/flowActors';
 import createInitEvent, {MFA_TEST_REGISTRATION_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise} from 'xstate';
@@ -62,6 +62,32 @@ describe('MFA credential creation', () => {
     });
 
     describe('createCredential actor outcome', () => {
+        it('invokes createCredential with the account and registration challenge stored in machine context', async () => {
+            const accountID = 67890;
+            let receivedInput: CreateCredentialInput | undefined;
+            const machine = mfaMachine.provide({
+                actors: {
+                    createCredential: fromPromise<CreateCredentialOutput, CreateCredentialInput>(({input}) => {
+                        receivedInput = input;
+                        return new Promise<CreateCredentialOutput>(() => {});
+                    }),
+                },
+            });
+            const snapshot = machine.resolveState({
+                value: {[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
+                context: createFlowContext({accountID, registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE}),
+            });
+            const actor = createActor(machine, {snapshot});
+
+            actor.start();
+            actor.send({type: 'SOFT_PROMPT_APPROVED'});
+            await waitForBatchedUpdates();
+
+            expect(receivedInput).toEqual({accountID, registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
+
+            actor.stop();
+        });
+
         it('moves to authorizing when the actor resolves successfully', () => {
             const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
 

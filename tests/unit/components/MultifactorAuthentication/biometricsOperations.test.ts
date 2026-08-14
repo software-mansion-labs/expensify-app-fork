@@ -175,6 +175,32 @@ describe('biometrics operations (native)', () => {
             }
             expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_CREATION_FAILED);
         });
+
+        it('does not create a queued HSM key after its flow is cancelled', async () => {
+            let resolveDeletion = () => {};
+            mockDeleteKeys.mockImplementationOnce(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveDeletion = resolve;
+                    }),
+            );
+            const deletionPromise = deleteLocalCredentials(ACCOUNT_ID);
+            const controller = new AbortController();
+            const creationPromise = createCredential({accountID: ACCOUNT_ID, registrationChallenge: REGISTRATION_CHALLENGE, signal: controller.signal});
+            await waitForBatchedUpdates();
+
+            controller.abort();
+            resolveDeletion();
+            await deletionPromise;
+            const result = await creationPromise;
+
+            expect(mockCreateKeys).not.toHaveBeenCalled();
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected credential creation to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED);
+        });
     });
 
     describe('authorize', () => {

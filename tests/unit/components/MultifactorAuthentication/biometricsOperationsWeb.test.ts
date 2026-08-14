@@ -491,5 +491,17 @@ describe('biometrics operations (web)', () => {
             const storedCredentials = await getOnyxValue(getPasskeyOnyxKey(String(ACCOUNT_ID)));
             expect(storedCredentials ?? []).toEqual([]);
         });
+
+        it('keeps the local passkey list when the flow was already cancelled', async () => {
+            const credentials = [{id: LOCAL_PASSKEY_ID, type: CONST.PASSKEY_CREDENTIAL_TYPE}];
+            await Onyx.set(getPasskeyOnyxKey(String(ACCOUNT_ID)), credentials);
+            const controller = new AbortController();
+            controller.abort();
+
+            await deleteLocalCredentials(ACCOUNT_ID, controller.signal);
+            await waitForBatchedUpdates();
+
+            expect(await getOnyxValue(getPasskeyOnyxKey(String(ACCOUNT_ID)))).toEqual(credentials);
+        });
     });
 });
