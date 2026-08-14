@@ -1,3 +1,4 @@
+import {getScenarioConfig} from '@components/MultifactorAuthentication/config';
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
 import snapshotToState from '@components/MultifactorAuthentication/machine/snapshotToState';
 import type {AuthorizeInput, AuthorizeOutput} from '@components/MultifactorAuthentication/machine/types';
@@ -6,7 +7,7 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 
 import CONST from '@src/CONST';
 
-import {createActorAtState, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone} from 'tests/utils/mfa/flowActors';
+import {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone} from 'tests/utils/mfa/flowActors';
 import createInitEvent, {MFA_TEST_AUTH_METHOD, MFA_TEST_REGISTRATION_CHALLENGE, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise} from 'xstate';
@@ -84,6 +85,35 @@ describe('MFA authorization', () => {
     });
 
     describe('authorize actor outcome', () => {
+        it('invokes authorize with the account, scenario, and payload stored in machine context', async () => {
+            const accountID = 67890;
+            const transactionID = 'transaction-from-machine-context';
+            const scenarioName = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION;
+            const scenario = getScenarioConfig(scenarioName);
+            let receivedInput: AuthorizeInput | undefined;
+            const machine = mfaMachine.provide({
+                actors: {
+                    authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(({input}) => {
+                        receivedInput = input;
+                        return new Promise<AuthorizeOutput>(() => {});
+                    }),
+                },
+            });
+            const snapshot = machine.resolveState({
+                value: {[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
+                context: createFlowContext({accountID, scenarioName, scenario, payload: {transactionID}}),
+            });
+            const actor = createActor(machine, {snapshot});
+
+            actor.start();
+            actor.send({type: 'SOFT_PROMPT_APPROVED'});
+            await waitForBatchedUpdates();
+
+            expect(receivedInput).toEqual({accountID, scenario, payload: {transactionID}});
+
+            actor.stop();
+        });
+
         it('reaches the success outcome and stores the authentication method and scenario response', () => {
             const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}});
 
