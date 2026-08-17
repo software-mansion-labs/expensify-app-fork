@@ -44,6 +44,8 @@ const DEFAULT_CONTEXT: MfaContext = {
     isCancelConfirmVisible: false,
     authenticationMethod: undefined,
     scenarioResponse: undefined,
+    promptPresentationPhase: undefined,
+    validateCodePresentationPhase: undefined,
 };
 
 /**
@@ -121,6 +123,8 @@ const MFAMachine = setup({
         // Runs on CLOSE_MODAL: drops the cancel-confirmation modal so it cannot linger over the
         // closing navigator (CLOSE_MODAL can fire without the flow completing, e.g. an offline cancel).
         hideCancelConfirmModal: assign({isCancelConfirmVisible: false}),
+        // Runs on CLOSE_MODAL: a cancel shouldn't leave a frozen presentation behind for the next flow.
+        resetPresentationPhases: assign({promptPresentationPhase: undefined, validateCodePresentationPhase: undefined}),
         resetContext: assign(() => ({...DEFAULT_CONTEXT})),
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
@@ -150,7 +154,7 @@ const MFAMachine = setup({
         [MFA_STATE.OPEN]: {
             initial: MFA_STATE.PREPARING,
             on: {
-                CLOSE_MODAL: {target: MFA_STATE.CLOSING, actions: 'hideCancelConfirmModal'},
+                CLOSE_MODAL: {target: MFA_STATE.CLOSING, actions: ['hideCancelConfirmModal', 'resetPresentationPhases']},
             },
             states: {
                 // This is the transparent initial screen, and its child states run the pre-screen
@@ -217,6 +221,7 @@ const MFAMachine = setup({
                         // while the challenge request is in flight is dropped instead of emailing a
                         // code the pending submission ignores.
                         [MFA_STATE.AWAITING_VALIDATE_CODE]: {
+                            entry: assign({validateCodePresentationPhase: MFA_STATE.AWAITING_VALIDATE_CODE}),
                             initial: MFA_STATE.AWAITING_INPUT,
                             on: {
                                 VALIDATE_CODE_ENTERED: {target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
@@ -236,6 +241,7 @@ const MFAMachine = setup({
                             },
                         },
                         [MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE]: {
+                            entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
                             // The submitted code is needed only while this actor starts and runs. Clear it on
                             // every way out so the one-time code cannot outlive the request that consumes it.
                             exit: 'clearValidateCode',
@@ -277,6 +283,8 @@ const MFAMachine = setup({
                     initial: MFA_STATE.AWAITING_SOFT_PROMPT,
                     states: {
                         [MFA_STATE.AWAITING_SOFT_PROMPT]: {
+                            // See `promptPresentationPhase` in types.ts for why this is set on entry.
+                            entry: assign({promptPresentationPhase: MFA_STATE.AWAITING_SOFT_PROMPT}),
                             on: {
                                 SOFT_PROMPT_APPROVED: [
                                     {guard: 'hasRegistrationChallenge', target: MFA_STATE.CREATING_CREDENTIAL, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
@@ -287,6 +295,7 @@ const MFAMachine = setup({
                         // Registration and authorization stay under `prompt` so the prompt screen and its
                         // fingerprint animation remain mounted throughout.
                         [MFA_STATE.CREATING_CREDENTIAL]: {
+                            entry: assign({promptPresentationPhase: MFA_STATE.CREATING_CREDENTIAL}),
                             invoke: {
                                 id: 'createCredential',
                                 src: 'createCredential',
@@ -309,6 +318,7 @@ const MFAMachine = setup({
                         // Reached once local credentials are confirmed (returning user) or freshly created.
                         // The device-local ceremony, then the scenario's backend action.
                         [MFA_STATE.AUTHORIZING]: {
+                            entry: assign({promptPresentationPhase: MFA_STATE.AUTHORIZING}),
                             invoke: {
                                 id: 'authorize',
                                 src: 'authorize',

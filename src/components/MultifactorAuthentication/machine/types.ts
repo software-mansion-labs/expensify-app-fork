@@ -52,7 +52,28 @@ type MfaContext = {
 
     /** Response from the scenario action, carried for the outcome/callback slice that will consume it */
     scenarioResponse: MultifactorAuthenticationScenarioResponse | undefined;
+
+    /**
+     * Last prompt sub-state that had something to show. Kept after the flow moves on to the outcome,
+     * so the prompt screen doesn't snap back to default content while it's still mounted and
+     * animating out. Cleared on `CLOSE_MODAL` and on `closed`.
+     */
+    promptPresentationPhase: PromptPresentationPhase | undefined;
+
+    /** Same idea as `promptPresentationPhase`, for the validate-code screen. */
+    validateCodePresentationPhase: ValidateCodePresentationPhase | undefined;
 };
+
+/** See `MfaContext.promptPresentationPhase`. */
+type PromptPresentationPhase =
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_SOFT_PROMPT
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.CREATING_CREDENTIAL
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AUTHORIZING;
+
+/** See `MfaContext.validateCodePresentationPhase`. */
+type ValidateCodePresentationPhase =
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_VALIDATE_CODE
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE;
 
 /** Modal lifecycle state the view layer reads: the machine's three top-level states. */
 type MfaModalState =

@@ -26,9 +26,9 @@ type MfaState = MfaContext & {
     isProcessingPrompt: boolean;
 
     /**
-     * Whether the flow is running the authorization ceremony. Distinct from `isProcessingPrompt`
-     * (which also covers credential creation) because the prompt screen swaps its copy only for this
-     * sub-state - see `PromptPage`'s title override.
+     * Whether the flow is running (or just ran) the authorization ceremony. Distinct from
+     * `isProcessingPrompt` (which also covers credential creation) because the prompt screen swaps its
+     * copy only for this sub-state - see `PromptPage`'s title override.
      */
     isAuthorizing: boolean;
 };
@@ -54,14 +54,9 @@ function snapshotToState(snapshot: MfaSnapshot): MfaState {
         ...snapshot.context,
         modalState: getModalState(snapshot),
         canResendValidateCode: snapshot.can({type: 'RESEND_VALIDATE_CODE'}),
-        isValidateCodeFormSubmitting: snapshot.matches({
-            [MFA_STATE.OPEN]: {
-                [MFA_STATE.VALIDATE_CODE]: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE,
-            },
-        }),
-        isProcessingPrompt:
-            snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}) || snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}),
-        isAuthorizing: snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}),
+        isValidateCodeFormSubmitting: snapshot.context.validateCodePresentationPhase === MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE,
+        isProcessingPrompt: snapshot.context.promptPresentationPhase === MFA_STATE.CREATING_CREDENTIAL || snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
+        isAuthorizing: snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
         showsInvalidCodeError: snapshot.matches({
             [MFA_STATE.OPEN]: {
                 [MFA_STATE.VALIDATE_CODE]: {

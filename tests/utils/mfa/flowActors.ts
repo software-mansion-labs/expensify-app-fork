@@ -27,6 +27,8 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         isCancelConfirmVisible: false,
         authenticationMethod: undefined,
         scenarioResponse: undefined,
+        promptPresentationPhase: undefined,
+        validateCodePresentationPhase: undefined,
         ...overrides,
     };
 }
@@ -55,6 +57,13 @@ function sendLoadRegistrationStateDone(actor: ReturnType<typeof createActorAtSta
 }
 
 /**
+ * Completes the invoked registration-challenge actor by sending its done event carrying the given output.
+ */
+function sendRequestRegistrationChallengeDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'requestRegistrationChallenge'>) {
+    actor.send(createActorDoneEvent('requestRegistrationChallenge', output));
+}
+
+/**
  * Completes the invoked credential-creation actor by sending its done event carrying the given output.
  */
 function sendCreateCredentialDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'createCredential'>) {
@@ -68,4 +77,4 @@ function sendAuthorizeDone(actor: ReturnType<typeof createActorAtState>, output:
     actor.send(createActorDoneEvent('authorize', output));
 }
 
-export {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone, sendValidateDeviceDone};
+export {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone, sendRequestRegistrationChallengeDone, sendValidateDeviceDone};

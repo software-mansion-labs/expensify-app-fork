@@ -200,6 +200,8 @@ describe('MFA authorization', () => {
                     isCancelConfirmVisible: false,
                     authenticationMethod: undefined,
                     scenarioResponse: undefined,
+                    promptPresentationPhase: undefined,
+                    validateCodePresentationPhase: undefined,
                 },
             });
             const actor = createActor(machine, {snapshot});
@@ -217,7 +219,8 @@ describe('MFA authorization', () => {
         });
 
         it('moves to closing on CLOSE_MODAL and stops the actor without marking the prompt as processing', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}});
+            // The context override stands in for the entry action a live transition would have run.
+            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}, {promptPresentationPhase: MFA_STATE.AUTHORIZING});
 
             actor.start();
             actor.send({type: 'CLOSE_MODAL'});
@@ -230,7 +233,7 @@ describe('MFA authorization', () => {
         });
 
         it('marks the prompt as processing while authorizing', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}});
+            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}, {promptPresentationPhase: MFA_STATE.AUTHORIZING});
 
             actor.start();
 

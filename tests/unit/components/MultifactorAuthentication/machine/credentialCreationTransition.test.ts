@@ -137,6 +137,8 @@ describe('MFA credential creation', () => {
                     isCancelConfirmVisible: false,
                     authenticationMethod: undefined,
                     scenarioResponse: undefined,
+                    promptPresentationPhase: undefined,
+                    validateCodePresentationPhase: undefined,
                 },
             });
             const actor = createActor(machine, {snapshot});
