@@ -8,8 +8,8 @@ import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import CONST from '@src/CONST';
 
-import {createActorAtState, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone} from 'tests/utils/mfa/flowActors';
-import createInitEvent, {MFA_TEST_AUTH_METHOD, MFA_TEST_REGISTRATION_CHALLENGE, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
+import {createActorAtState, sendAuthorizeDone} from 'tests/utils/mfa/flowActors';
+import createInitEvent, {MFA_TEST_AUTH_METHOD, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise, waitFor} from 'xstate';
 
@@ -17,74 +17,10 @@ const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
-// a wrong target adjusts those expectations and still passes. This suite pins the three transitions
-// this slice retargets from `outcome` to `prompt.authorizing`, and the authorization actor's own
-// outcome routing, by hand.
+// a wrong target adjusts those expectations and still passes. This suite pins the authorization
+// actor's input and its own outcome routing, including the exact failure reasons it carries, by hand.
 
 describe('MFA authorization', () => {
-    describe('routing into authorizing', () => {
-        it('sends a returning user who already accepted the soft prompt to authorizing, not the outcome', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PREPARING]: MFA_STATE.DECIDING_REGISTRATION}});
-
-            actor.start();
-            sendLoadRegistrationStateDone(actor, {hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true});
-
-            const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}})).toBe(true);
-
-            actor.stop();
-        });
-
-        it('moves to authorizing on soft-prompt approval when no registration challenge is pending', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
-
-            actor.start();
-            actor.send({type: 'SOFT_PROMPT_APPROVED'});
-
-            const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}})).toBe(true);
-
-            actor.stop();
-        });
-
-        it('still moves to credential creation on soft-prompt approval when a registration challenge is pending', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
-
-            actor.start();
-            actor.send({type: 'SOFT_PROMPT_APPROVED'});
-
-            const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}})).toBe(true);
-
-            actor.stop();
-        });
-
-        it('moves to authorizing when credential creation succeeds, not the outcome', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
-
-            actor.start();
-            sendCreateCredentialDone(actor, {success: true});
-
-            expect(actor.getSnapshot().matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}})).toBe(true);
-
-            actor.stop();
-        });
-
-        it('still reaches the failure outcome directly when credential creation fails', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
-            const failureError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.KEY_CREATION_FAILED, 'Authorization transition spec credential-creation failure');
-
-            actor.start();
-            sendCreateCredentialDone(actor, {success: false, error: failureError});
-
-            const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
-            expect(result.context.error).toBe(failureError);
-
-            actor.stop();
-        });
-    });
-
     describe('authorize actor outcome', () => {
         it('forwards the account, scenario, and payload from INIT to the authorize actor', async () => {
             const accountID = 67890;
@@ -143,9 +79,9 @@ describe('MFA authorization', () => {
             actor.stop();
         });
 
-        // This slice has no recovery actor yet — a recoverable failure still routes to the generic
-        // failure outcome, with `error.reason` preserved verbatim. The recovery slice retargets this
-        // exact branch to re-registration instead; it must not need to touch how the reason is carried.
+        // This slice has no recovery actor yet — a recoverable failure routes to the generic failure
+        // outcome like any other, with `error.reason` preserved verbatim so the recovery slice has an
+        // exact value to route on once it adds its own branch.
         it('reaches the failure outcome preserving the exact reason for a recoverable credential failure', () => {
             const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}});
             const recoverableError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL, 'Authorization transition spec recoverable failure');

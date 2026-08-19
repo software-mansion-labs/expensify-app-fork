@@ -329,16 +329,6 @@ const MFAMachine = setup({
                                     return {accountID: context.accountID, scenario: context.scenario, payload: context.payload};
                                 },
                                 onDone: [
-                                    // Scoped shortcut: this slice has no recovery actor yet, so a recoverable
-                                    // credential failure still routes to the generic failure outcome. The
-                                    // recovery slice retargets this exact branch to re-registration; the reason
-                                    // is deliberately preserved verbatim so that slice has an exact value to
-                                    // route on.
-                                    {
-                                        guard: ({event}) => !event.output.success && CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES.has(event.output.error.reason),
-                                        target: OUTCOME_TARGET,
-                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
-                                    },
                                     {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
                                     {
                                         target: OUTCOME_TARGET,

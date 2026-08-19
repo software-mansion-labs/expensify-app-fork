@@ -37,15 +37,6 @@ const MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR = createMFAErrorFromApiRespons
 // A reason outside the two device-check reasons, so the walk lands on the generic failure copy.
 const MFA_TEST_CREDENTIAL_CREATION_ERROR = createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_CREATION_FAILED, 'Graph-traversal credential creation failure');
 const MFA_TEST_AUTHORIZATION_ORDINARY_ERROR = createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.CANCELED, 'Graph-traversal authorization cancellation');
-const MFA_TEST_AUTHORIZATION_RECOVERABLE_ERROR = createLocalMFAError(
-    CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL,
-    'Graph-traversal authorization recoverable failure',
-);
-const MFA_TEST_REGISTRATION_REQUIRED_ERROR = createMFAErrorFromApiResponse(
-    400,
-    CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED,
-    'Graph-traversal registration required',
-);
 
 /** Builds the INIT event fixture. Device-local registration state is loaded by the machine after initialization. */
 function createInitEvent(): MultifactorAuthenticationInitEvent<typeof MFA_TEST_SCENARIO_NAME> {
@@ -64,12 +55,10 @@ export {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_AUTHENTICATION_CHALLENGE,
     MFA_TEST_AUTHORIZATION_ORDINARY_ERROR,
-    MFA_TEST_AUTHORIZATION_RECOVERABLE_ERROR,
     MFA_TEST_CREDENTIAL_CREATION_ERROR,
     MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR,
     MFA_TEST_INVALID_CODE_ERROR,
     MFA_TEST_REGISTRATION_CHALLENGE,
-    MFA_TEST_REGISTRATION_REQUIRED_ERROR,
     MFA_TEST_SCENARIO_RESPONSE,
     MFA_TEST_VALIDATE_CODE,
 };

@@ -37,9 +37,6 @@ type UseBiometricsReturn = {
     /** Retrieve the credential ID stored locally on this device */
     getLocalCredentialID: () => Promise<string | undefined>;
 
-    /** Check if device has biometric credentials stored locally */
-    hasLocalCredentials: () => Promise<boolean>;
-
     /** Check if local credentials are known to server (local credential exists in server's list) */
     areLocalCredentialsKnownToServer: () => Promise<boolean>;
 };

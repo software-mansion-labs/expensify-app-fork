@@ -46,13 +46,10 @@ function useNativeBiometricsHSM(): UseBiometricsReturn {
         return !!key && serverKnownCredentialIDs.includes(key);
     };
 
-    const hasLocalCredentials = async () => !!(await getLocalCredentialID());
-
     return {
         serverKnownCredentialIDs,
         haveCredentialsEverBeenConfigured,
         getLocalCredentialID,
-        hasLocalCredentials,
         areLocalCredentialsKnownToServer,
     };
 }

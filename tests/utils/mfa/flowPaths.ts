@@ -14,7 +14,6 @@ import {getShortestPaths, TestModel} from 'xstate/graph';
 import createInitEvent, {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_AUTHORIZATION_ORDINARY_ERROR,
-    MFA_TEST_AUTHORIZATION_RECOVERABLE_ERROR,
     MFA_TEST_CREDENTIAL_CREATION_ERROR,
     MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR,
     MFA_TEST_INVALID_CODE_ERROR,
@@ -246,15 +245,13 @@ const MFA_ACTOR_EVENT_FIXTURES = {
         {success: false, error: MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR},
     ),
     createCredential: createActorEvents('createCredential', {success: true}, {success: false, error: MFA_TEST_CREDENTIAL_CREATION_ERROR}),
-    // Deliberately three variants, not four: REGISTRATION_REQUIRED routes through the same branch as
-    // any other ordinary failure and renders the same generic screen, so a fourth fixture would only
-    // multiply walked paths without adding coverage. `authorizationTransition.test.ts` pins that
-    // reason by hand instead.
+    // Deliberately two variants: every authorization failure reason routes through the same branch and
+    // renders the same generic screen, so a third fixture would only multiply walked paths without
+    // adding coverage. `authorizationTransition.test.ts` pins the individual reasons by hand instead.
     authorize: createActorEvents(
         'authorize',
         {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD},
         {success: false, error: MFA_TEST_AUTHORIZATION_ORDINARY_ERROR},
-        {success: false, error: MFA_TEST_AUTHORIZATION_RECOVERABLE_ERROR},
     ),
 } satisfies MfaActorEventFixtures;
 
