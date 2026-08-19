@@ -106,6 +106,8 @@ const includedNodeModulesRegex = new RegExp(`node_modules/(${INCLUDED_NODE_MODUL
 const environmentToLogoSuffixMap: Record<string, string> = {
     production: '-dark',
     staging: '-stg',
+    // QA is staging-class and has no artwork of its own, same call as ExpensifyWordmark's logoComponents.
+    qa: '-stg',
     dev: '-dev',
     adhoc: '-adhoc',
 };
@@ -139,7 +141,7 @@ function getDefineValues(file: string): DefinePluginOptions {
         // React Native JavaScript environment requires the global __DEV__ variable to be accessible.
         // react-native-render-html uses variable to log exclusively during development.
         // See https://reactnative.dev/docs/javascript-environment
-        __DEV__: /staging|prod|adhoc/.test(file) === false,
+        __DEV__: isDevelopmentFile,
         // Expose the current git branch so the debug menu can display it in the browser tab title.
         // Empty string in non-development builds.
         __GIT_BRANCH__: JSON.stringify(isDevelopmentFile ? localBranchName : ''),
@@ -414,7 +416,9 @@ const getCommonConfiguration = async ({file = '.env', platform = 'web', isDevSer
                 splashLogo: fs.readFileSync(path.resolve(dirname, `../../assets/images/new-expensify${mapEnvironmentToLogoSuffix(file)}.svg`), 'utf-8'),
                 isWeb: platform === 'web',
                 isProduction: file === '.env.production',
-                isStaging: file === '.env.staging',
+                // QA is staging-class and gets the same non-production treatment, including the noindex meta tag.
+                isStaging: ['.env.staging', '.env.qa'].includes(file),
+                // QA is deliberately absent here: Ketch consent and GTM are a product decision, not build hygiene.
                 useThirdPartyScripts: process.env.USE_THIRD_PARTY_SCRIPTS === 'true' || (platform === 'web' && ['.env.production', '.env.staging'].includes(file)),
             },
         },
@@ -550,7 +554,8 @@ const getCommonConfiguration = async ({file = '.env', platform = 'web', isDevSer
                         resourceRegExp: /^\.\/locale$/,
                         contextRegExp: /moment$/,
                     }),
-                    ...(file === '.env.production' || file === '.env.staging'
+                    // Deployed builds, QA included, must not ship the why-did-you-render debug package.
+                    ...(['.env.production', '.env.staging', '.env.qa'].includes(file)
                         ? [
                               new rspack.IgnorePlugin({
                                   resourceRegExp: /@welldone-software\/why-did-you-render/,
