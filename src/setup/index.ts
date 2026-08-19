@@ -1,3 +1,4 @@
+import {ensureQAAuthenticated} from '@libs/CloudflareAccess/ensureQAAuthenticated';
 import {handleCloudflareAuthRedirectCallback} from '@libs/CloudflareAccess/handleAuthRedirectCallback';
 import intlPolyfill from '@libs/IntlPolyfill';
 
@@ -94,6 +95,10 @@ export default function () {
     // picked up and the URL restored here, before React Navigation resolves the initial route. After
     // Onyx.init() because a completed exchange persists the session. No-op on every other load.
     handleCloudflareAuthRedirectCallback();
+
+    // Ordering matters: the line above may have started a code exchange, and this joins it rather than
+    // starting a competing round trip. Fire and forget — it resolves without redirecting off a QA build.
+    ensureQAAuthenticated();
 
     initOnyxDerivedValues();
 
