@@ -13,25 +13,38 @@ import getEnvironment from './Environment/getEnvironment';
 
 // To avoid rebuilding native apps, native apps use production config for both staging and prod
 // We use the async environment check because it works on all platforms
-let ENV_NAME: ValueOf<typeof CONST.ENVIRONMENT> = CONST.ENVIRONMENT.PRODUCTION;
-let shouldUseStagingServer = false;
+let activeServer: ValueOf<typeof CONST.SERVER> = CONST.SERVER.PRODUCTION;
+
+/**
+ * `activeServer` above is a placeholder, not an answer: it is only real once getEnvironment() has resolved
+ * AND the first Onyx callback below has run. Render paths re-render when the value arrives, but boot code
+ * that decides something once — the QA gate in particular — must await this or it reads 'production' on
+ * every build, QA included.
+ */
+const {promise: activeServerHydrationPromise, resolve: resolveActiveServerHydration} = Promise.withResolvers<void>();
+
+/**
+ * The whole decision table in one place, taking the environment as a parameter so it can be read without
+ * chasing the async plumbing around it.
+ */
+function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, envName: ValueOf<typeof CONST.ENVIRONMENT>): ValueOf<typeof CONST.SERVER> {
+    // Toggling between APIs is not allowed on production or on an internal dev environment
+    if (envName === CONST.ENVIRONMENT.PRODUCTION || CONFIG.IS_USING_LOCAL_WEB) {
+        return CONST.SERVER.PRODUCTION;
+    }
+
+    const defaultServer = envName === CONST.ENVIRONMENT.STAGING || envName === CONST.ENVIRONMENT.ADHOC ? CONST.SERVER.STAGING : CONST.SERVER.PRODUCTION;
+    return value ?? defaultServer;
+}
+
 getEnvironment().then((envName) => {
-    ENV_NAME = envName;
-
-    // We connect here, so we have the updated ENV_NAME when Onyx callback runs
-    // We only use the value of shouldUseStagingServer to determine which server we should point to.
-    // Since they aren't connected to a UI anywhere, it's OK to use connectWithoutView()
+    // We subscribe inside the .then so `envName` is already resolved whenever the Onyx callback runs.
+    // Since this isn't connected to a UI anywhere, it's OK to use connectWithoutView()
     Onyx.connectWithoutView({
-        key: ONYXKEYS.SHOULD_USE_STAGING_SERVER,
+        key: ONYXKEYS.ACTIVE_SERVER,
         callback: (value) => {
-            // Toggling between APIs is not allowed on production and internal dev environment
-            if (ENV_NAME === CONST.ENVIRONMENT.PRODUCTION || CONFIG.IS_USING_LOCAL_WEB) {
-                shouldUseStagingServer = false;
-                return;
-            }
-
-            const defaultToggleState = ENV_NAME === CONST.ENVIRONMENT.STAGING || ENV_NAME === CONST.ENVIRONMENT.ADHOC;
-            shouldUseStagingServer = value ?? defaultToggleState;
+            activeServer = resolveActiveServer(value, envName);
+            resolveActiveServerHydration();
         },
     });
 });
@@ -43,7 +56,7 @@ getEnvironment().then((envName) => {
 function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request<TKey>, 'shouldUseSecure' | 'shouldSkipWebProxy' | 'command'>>, forceProduction = false): string {
     const shouldUseSecure = request?.shouldUseSecure ?? false;
 
-    if (shouldUseStagingServer && forceProduction !== true) {
+    if (activeServer === CONST.SERVER.STAGING && forceProduction !== true) {
         if (CONFIG.IS_USING_WEB_PROXY && !request?.shouldSkipWebProxy) {
             return shouldUseSecure ? proxyConfig.STAGING_SECURE : proxyConfig.STAGING;
         }
@@ -68,7 +81,16 @@ function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
  * Check if we're currently using the staging API root
  */
 function isUsingStagingApi(): boolean {
-    return shouldUseStagingServer;
+    return activeServer === CONST.SERVER.STAGING;
 }
 
-export {getApiRoot, getCommandURL, isUsingStagingApi};
+function getActiveServer(): ValueOf<typeof CONST.SERVER> {
+    return activeServer;
+}
+
+/** Resolves once `activeServer` reflects the environment and the stored choice. See the comment above it. */
+function waitForActiveServerHydration(): Promise<void> {
+    return activeServerHydrationPromise;
+}
+
+export {getActiveServer, getApiRoot, getCommandURL, isUsingStagingApi, waitForActiveServerHydration};

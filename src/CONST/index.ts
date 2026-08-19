@@ -3748,6 +3748,13 @@ const CONST = {
         ADHOC: 'adhoc',
     },
 
+    /** Which backend the app talks to. Chosen by the build on qa.new.exops.io, by the test-tool switch elsewhere. */
+    SERVER: {
+        PRODUCTION: 'production',
+        STAGING: 'staging',
+        QA: 'qa',
+    },
+
     ENABLE_PAYMENTS: {
         PAGE_NAMES: {
             ADD_BANK_ACCOUNT: 'add-bank-account',

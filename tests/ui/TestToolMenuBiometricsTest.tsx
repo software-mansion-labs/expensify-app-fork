@@ -83,6 +83,7 @@ jest.mock('@libs/actions/MultifactorAuthentication', () => ({
 
 jest.mock('@libs/ApiUtils', () => ({
     isUsingStagingApi: () => false,
+    getActiveServer: () => 'production',
     getCommandURL: () => 'https://test-api.expensify.com/api/Ping?',
 }));
 
@@ -124,7 +125,7 @@ jest.mock('@userActions/Session', () => ({
 
 jest.mock('@userActions/User', () => ({
     setIsDebugModeEnabled: jest.fn(),
-    setShouldUseStagingServer: jest.fn(),
+    setActiveServer: jest.fn(),
 }));
 
 jest.mock('@src/CONFIG', () => ({

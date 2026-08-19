@@ -1,5 +1,6 @@
 import {getCommandURL} from '@libs/ApiUtils';
 
+import CONST from '@src/CONST';
 import {
     getDBTimeWithSkew,
     getIsOffline,
@@ -567,34 +568,34 @@ describe('NetworkState', () => {
             expect(configureMock.mock.calls.at(-1)?.[0].reachabilityUrl).toBe(`${mockPingUrl}accountID=2`);
         });
 
-        test('SHOULD_USE_STAGING_SERVER change triggers a reconfigure when the reachability URL changes', async () => {
+        test('ACTIVE_SERVER change triggers a reconfigure when the reachability URL changes', async () => {
             const callsBefore = configureMock.mock.calls.length;
             jest.mocked(getCommandURL).mockReturnValue(mockStagingPingUrl);
 
-            await Onyx.set(ONYXKEYS.SHOULD_USE_STAGING_SERVER, true);
+            await Onyx.set(ONYXKEYS.ACTIVE_SERVER, CONST.SERVER.STAGING);
             await waitForBatchedUpdates();
 
             expect(configureMock.mock.calls.length).toBeGreaterThan(callsBefore);
             expect(configureMock.mock.calls.at(-1)?.[0].reachabilityUrl).toBe(`${mockStagingPingUrl}accountID=unknown`);
         });
 
-        test('SHOULD_USE_STAGING_SERVER same-value rewrite does NOT reconfigure', async () => {
+        test('ACTIVE_SERVER same-value rewrite does NOT reconfigure', async () => {
             jest.mocked(getCommandURL).mockReturnValue(mockStagingPingUrl);
-            await Onyx.set(ONYXKEYS.SHOULD_USE_STAGING_SERVER, true);
+            await Onyx.set(ONYXKEYS.ACTIVE_SERVER, CONST.SERVER.STAGING);
             await waitForBatchedUpdates();
             const callsAfterFlip = configureMock.mock.calls.length;
 
-            await Onyx.set(ONYXKEYS.SHOULD_USE_STAGING_SERVER, true);
+            await Onyx.set(ONYXKEYS.ACTIVE_SERVER, CONST.SERVER.STAGING);
             await waitForBatchedUpdates();
 
             expect(configureMock.mock.calls.length).toBe(callsAfterFlip);
         });
 
-        test('SHOULD_USE_STAGING_SERVER flip that does not change the reachability URL does NOT reconfigure', async () => {
+        test('ACTIVE_SERVER flip that does not change the reachability URL does NOT reconfigure', async () => {
             // e.g. production, where ApiUtils forces the effective flag off regardless of the toggle
             const callsBefore = configureMock.mock.calls.length;
 
-            await Onyx.set(ONYXKEYS.SHOULD_USE_STAGING_SERVER, true);
+            await Onyx.set(ONYXKEYS.ACTIVE_SERVER, CONST.SERVER.STAGING);
             await waitForBatchedUpdates();
 
             expect(configureMock.mock.calls.length).toBe(callsBefore);
