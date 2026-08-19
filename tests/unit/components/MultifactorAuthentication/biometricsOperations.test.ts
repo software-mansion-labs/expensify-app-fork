@@ -132,6 +132,15 @@ describe('biometrics operations (native)', () => {
 
             await expect(areLocalCredentialsKnownToServer(ACCOUNT_ID)).resolves.toBe(false);
         });
+
+        // The library rejects instead of returning an empty key list when the alias does not exist, so
+        // treating every rejection as a read failure would stop routing a first-time device to registration.
+        it('should return false when the alias rejects with KEY_NOT_FOUND, keeping a first-time device on the registration path', async () => {
+            mockGetAllKeys.mockRejectedValue(Object.assign(new Error('No key for alias'), {code: 'KEY_NOT_FOUND'}));
+            await Onyx.merge(ONYXKEYS.ACCOUNT, {multifactorAuthenticationPublicKeyIDs: [LOCAL_CREDENTIAL_ID]});
+
+            await expect(areLocalCredentialsKnownToServer(ACCOUNT_ID)).resolves.toBe(false);
+        });
     });
 
     describe('createCredential', () => {
@@ -220,6 +229,36 @@ describe('biometrics operations (native)', () => {
                 throw new Error('Expected authorization to fail');
             }
             expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL);
+            expect(mockSignWithOptions).not.toHaveBeenCalled();
+        });
+
+        // An unreadable keystore may recover, so it must not take the same destructive path as a
+        // credential the device confirmed it does not have.
+        it('reports the decoded read error, which is not deletion-worthy, when the keystore cannot be read', async () => {
+            mockGetAllKeys.mockRejectedValue(Object.assign(new Error('Keystore unavailable'), {code: 'KEY_ACCESS_FAILED'}));
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_ACCESS_FAILED);
+            expect(CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(result.error.reason)).toBe(false);
+            expect(mockSignWithOptions).not.toHaveBeenCalled();
+        });
+
+        it('reports KEY_NOT_FOUND, which is deletion-worthy, when the keystore confirms the account has no key', async () => {
+            mockGetAllKeys.mockResolvedValue({keys: []});
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_NOT_FOUND);
+            expect(CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(result.error.reason)).toBe(true);
             expect(mockSignWithOptions).not.toHaveBeenCalled();
         });
 

@@ -38,6 +38,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     scenarioName: undefined,
     scenario: undefined,
     payload: undefined,
+    runScenarioAction: undefined,
     validateCode: undefined,
     registrationChallenge: undefined,
     softPromptApproved: false,
@@ -84,6 +85,7 @@ const MFAMachine = setup({
                 scenarioName: event.scenarioName,
                 scenario: event.scenario,
                 payload: event.payload,
+                runScenarioAction: event.runScenarioAction,
             };
         }),
         // Deferring the outcome push until the modal-open transition settles lets the screen slide in
@@ -123,8 +125,6 @@ const MFAMachine = setup({
         // Runs on CLOSE_MODAL: drops the cancel-confirmation modal so it cannot linger over the
         // closing navigator (CLOSE_MODAL can fire without the flow completing, e.g. an offline cancel).
         hideCancelConfirmModal: assign({isCancelConfirmVisible: false}),
-        // Runs on CLOSE_MODAL: a cancel shouldn't leave a frozen presentation behind for the next flow.
-        resetPresentationPhases: assign({promptPresentationPhase: undefined, validateCodePresentationPhase: undefined}),
         resetContext: assign(() => ({...DEFAULT_CONTEXT})),
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
@@ -154,7 +154,7 @@ const MFAMachine = setup({
         [MFA_STATE.OPEN]: {
             initial: MFA_STATE.PREPARING,
             on: {
-                CLOSE_MODAL: {target: MFA_STATE.CLOSING, actions: ['hideCancelConfirmModal', 'resetPresentationPhases']},
+                CLOSE_MODAL: {target: MFA_STATE.CLOSING, actions: 'hideCancelConfirmModal'},
             },
             states: {
                 // This is the transparent initial screen, and its child states run the pre-screen
@@ -323,10 +323,10 @@ const MFAMachine = setup({
                                 id: 'authorize',
                                 src: 'authorize',
                                 input: ({context}) => {
-                                    if (context.accountID === undefined || context.scenario === undefined) {
-                                        throw new Error('MFA account and scenario must be initialized before authorization');
+                                    if (context.accountID === undefined || context.runScenarioAction === undefined) {
+                                        throw new Error('MFA account and scenario action must be initialized before authorization');
                                     }
-                                    return {accountID: context.accountID, scenario: context.scenario, payload: context.payload};
+                                    return {accountID: context.accountID, runScenarioAction: context.runScenarioAction};
                                 },
                                 onDone: [
                                     {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},

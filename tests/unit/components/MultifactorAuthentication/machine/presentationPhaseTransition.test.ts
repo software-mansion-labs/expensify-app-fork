@@ -15,7 +15,7 @@ const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 // flipping the instant the machine moves on. Cases below drive a live transition into the processing
 // state first (not `createActorAtState` alone), because the freeze is set by that state's entry action.
 
-describe('MFA presentation phase survives the transition to the outcome', () => {
+describe('MFA presentation phase survives outgoing screen transitions', () => {
     it('keeps the prompt marked as authorizing after authorization succeeds', () => {
         const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
 
@@ -65,7 +65,7 @@ describe('MFA presentation phase survives the transition to the outcome', () => 
         actor.stop();
     });
 
-    it('drops the frozen presentation when the modal is cancelled mid-authorization instead of carrying it into the next flow', () => {
+    it('keeps the prompt marked as authorizing while the modal closes', () => {
         const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
 
         actor.start();
@@ -76,8 +76,9 @@ describe('MFA presentation phase survives the transition to the outcome', () => 
 
         const result = actor.getSnapshot();
         expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
-        expect(result.context.promptPresentationPhase).toBeUndefined();
-        expect(snapshotToState(result).isProcessingPrompt).toBe(false);
+        expect(result.context.promptPresentationPhase).toBe(MFA_STATE.AUTHORIZING);
+        expect(snapshotToState(result).isAuthorizing).toBe(true);
+        expect(snapshotToState(result).isProcessingPrompt).toBe(true);
 
         actor.stop();
     });

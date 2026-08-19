@@ -7,6 +7,8 @@ import type {AuthenticationChallenge, RegistrationChallenge} from '@libs/Multifa
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {AuthTypeInfo} from '@libs/MultifactorAuthentication/shared/types';
 
+import {createScenarioActionRunner} from '@userActions/MultifactorAuthentication/processing';
+
 import CONST from '@src/CONST';
 
 const MFA_TEST_SCENARIO_NAME = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.BIOMETRICS_TEST;
@@ -40,12 +42,14 @@ const MFA_TEST_AUTHORIZATION_ORDINARY_ERROR = createLocalMFAError(CONST.MULTIFAC
 
 /** Builds the INIT event fixture. Device-local registration state is loaded by the machine after initialization. */
 function createInitEvent(): MultifactorAuthenticationInitEvent<typeof MFA_TEST_SCENARIO_NAME> {
+    const scenario = getScenarioConfig(MFA_TEST_SCENARIO_NAME);
     return {
         type: 'INIT',
         accountID: MFA_TEST_ACCOUNT_ID,
         scenarioName: MFA_TEST_SCENARIO_NAME,
-        scenario: getScenarioConfig(MFA_TEST_SCENARIO_NAME),
+        scenario,
         payload: undefined,
+        runScenarioAction: createScenarioActionRunner(MFA_TEST_SCENARIO_NAME, scenario.action, undefined),
     };
 }
 

@@ -8,7 +8,7 @@ import {createCanceledMFAResult, createMFAErrorFromApiResponse} from '@libs/Mult
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
 import {getDeviceBiometricsOnyxKey, requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
-import {processRegistration, processScenarioAction} from '@userActions/MultifactorAuthentication/processing';
+import {processRegistration} from '@userActions/MultifactorAuthentication/processing';
 
 import CONST from '@src/CONST';
 
@@ -125,8 +125,7 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
         return createCanceledMFAResult('MFA flow canceled before the scenario action');
     }
 
-    const scenarioResult = await processScenarioAction(input.scenario.action, {
-        ...input.payload,
+    const scenarioResult = await input.runScenarioAction({
         signedChallenge: authResult.signedChallenge,
         authenticationMethod: authResult.authenticationMethod.marqetaValue,
     });

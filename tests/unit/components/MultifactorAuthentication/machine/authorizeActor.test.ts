@@ -1,5 +1,4 @@
 import type * as BiometricsOperations from '@components/MultifactorAuthentication/biometrics/operations';
-import {getScenarioConfig} from '@components/MultifactorAuthentication/config';
 import createActors from '@components/MultifactorAuthentication/machine/mfaActors';
 import type {AuthorizeInput} from '@components/MultifactorAuthentication/machine/types';
 import type * as BreadcrumbsModule from '@components/MultifactorAuthentication/observability/breadcrumbs';
@@ -9,18 +8,17 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 
 import {requestAuthorizationChallenge} from '@userActions/MultifactorAuthentication';
 import type * as MultifactorAuthenticationActions from '@userActions/MultifactorAuthentication';
-import {processScenarioAction} from '@userActions/MultifactorAuthentication/processing';
-import type * as ProcessingActions from '@userActions/MultifactorAuthentication/processing';
 
 import CONST from '@src/CONST';
 
-import createInitEvent, {MFA_TEST_ACCOUNT_ID, MFA_TEST_AUTH_METHOD, MFA_TEST_AUTHENTICATION_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
+import {MFA_TEST_ACCOUNT_ID, MFA_TEST_AUTH_METHOD, MFA_TEST_AUTHENTICATION_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, waitFor} from 'xstate';
 
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
+// Only failures that confirm the credential is unusable belong here. A keystore the device merely
+// failed to read may recover, so it must not reach the deletion path.
 const EXPECTED_CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION = [
-    REASON.LOCAL_ERRORS.HSM.KEY_ACCESS_FAILED,
     REASON.LOCAL_ERRORS.HSM.KEY_NOT_FOUND,
     REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL,
     REASON.LOCAL_ERRORS.WEBAUTHN.NO_MATCHING_LOCAL_CREDENTIAL,
@@ -28,6 +26,7 @@ const EXPECTED_CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION = [
 
 const mockAuthorize = jest.fn();
 const mockDeleteLocalCredentials = jest.fn();
+const mockRunScenarioAction = jest.fn();
 
 // The actor's own decisions (fire the challenge request exactly once, short-circuit on refusal,
 // clear the local credential only on a recoverable failure, forward the signed challenge) are what
@@ -45,11 +44,6 @@ jest.mock('@userActions/MultifactorAuthentication', () => ({
     requestAuthorizationChallenge: jest.fn(),
 }));
 
-jest.mock('@userActions/MultifactorAuthentication/processing', () => ({
-    ...jest.requireActual<typeof ProcessingActions>('@userActions/MultifactorAuthentication/processing'),
-    processScenarioAction: jest.fn(),
-}));
-
 const mockAddMFABreadcrumb = jest.fn();
 
 jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () => {
@@ -63,14 +57,10 @@ jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () 
 });
 
 const requestAuthorizationChallengeMock = jest.mocked(requestAuthorizationChallenge);
-const processScenarioActionMock = jest.mocked(processScenarioAction);
-
-const SCENARIO = createInitEvent().scenario;
 
 const AUTHORIZE_INPUT: AuthorizeInput = {
     accountID: MFA_TEST_ACCOUNT_ID,
-    scenario: SCENARIO,
-    payload: undefined,
+    runScenarioAction: mockRunScenarioAction,
 };
 
 const CHALLENGE_SUCCESS_RESPONSE = {
@@ -101,7 +91,7 @@ describe('authorize actor', () => {
             signedChallenge: {rawId: 'raw-id', type: 'public-key', response: {authenticatorData: 'a', clientDataJSON: 'c', signature: 's'}},
             authenticationMethod: MFA_TEST_AUTH_METHOD,
         });
-        processScenarioActionMock.mockResolvedValue({success: true, ...SCENARIO_RESPONSE_SUCCESS});
+        mockRunScenarioAction.mockResolvedValue({success: true, ...SCENARIO_RESPONSE_SUCCESS});
     });
 
     it('requests the authorization challenge exactly once per run', async () => {
@@ -122,7 +112,7 @@ describe('authorize actor', () => {
         }
         expect(snapshot.output.error.reason).toBe(REASON.CLIENT_ERRORS.UNRECOGNIZED);
         expect(mockAuthorize).not.toHaveBeenCalled();
-        expect(processScenarioActionMock).not.toHaveBeenCalled();
+        expect(mockRunScenarioAction).not.toHaveBeenCalled();
     });
 
     it('returns a failed result when the challenge response is otherwise successful but carries no challenge', async () => {
@@ -175,7 +165,7 @@ describe('authorize actor', () => {
         await waitForBatchedUpdates();
 
         expect(mockAuthorize).not.toHaveBeenCalled();
-        expect(processScenarioActionMock).not.toHaveBeenCalled();
+        expect(mockRunScenarioAction).not.toHaveBeenCalled();
     });
 
     it('surfaces a platform refusal unchanged and never calls the scenario action or clears local credentials', async () => {
@@ -185,7 +175,7 @@ describe('authorize actor', () => {
         const snapshot = await runAuthorizeActor();
 
         expect(snapshot.output).toEqual({success: false, error: platformError});
-        expect(processScenarioActionMock).not.toHaveBeenCalled();
+        expect(mockRunScenarioAction).not.toHaveBeenCalled();
         expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
     });
 
@@ -198,6 +188,43 @@ describe('authorize actor', () => {
         expect(mockDeleteLocalCredentials).toHaveBeenCalledTimes(1);
         expect(mockDeleteLocalCredentials).toHaveBeenCalledWith(MFA_TEST_ACCOUNT_ID, expect.any(AbortSignal));
         expect(snapshot.output).toEqual({success: false, error: recoverableError});
+    });
+
+    it('stays active until the credential cleanup resolves, so the deletion cannot be skipped by its own abort check', async () => {
+        const recoverableError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL, 'No matching local credential');
+        mockAuthorize.mockResolvedValue({success: false, error: recoverableError});
+        let resolveDeletion = () => {};
+        // `mockImplementationOnce`: `clearAllMocks` resets calls but not implementations, so a pending
+        // promise left behind here would hang every later test.
+        mockDeleteLocalCredentials.mockImplementationOnce(
+            () =>
+                new Promise<void>((resolve) => {
+                    resolveDeletion = resolve;
+                }),
+        );
+
+        const {authorize} = createActors();
+        const actorRef = createActor(authorize, {input: AUTHORIZE_INPUT});
+        actorRef.start();
+        await waitForBatchedUpdates();
+
+        expect(mockDeleteLocalCredentials).toHaveBeenCalledTimes(1);
+        expect(actorRef.getSnapshot().status).toBe('active');
+
+        resolveDeletion();
+        await waitFor(actorRef, (snapshot) => snapshot.status !== 'active');
+        expect(actorRef.getSnapshot().output).toEqual({success: false, error: recoverableError});
+    });
+
+    it('keeps the local credential after a keystore read failure, which cannot confirm the credential is unusable', async () => {
+        const readError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.KEY_ACCESS_FAILED, 'Keystore unavailable');
+        mockAuthorize.mockResolvedValue({success: false, error: readError});
+
+        const snapshot = await runAuthorizeActor();
+
+        expect(CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(REASON.LOCAL_ERRORS.HSM.KEY_ACCESS_FAILED)).toBe(false);
+        expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
+        expect(snapshot.output).toEqual({success: false, error: readError});
     });
 
     it('does not call the scenario action once the flow was cancelled while the ceremony was still running', async () => {
@@ -228,7 +255,7 @@ describe('authorize actor', () => {
         });
         await waitForBatchedUpdates();
 
-        expect(processScenarioActionMock).not.toHaveBeenCalled();
+        expect(mockRunScenarioAction).not.toHaveBeenCalled();
     });
 
     it('does not delete credentials when a recoverable failure resolves after the flow was cancelled', async () => {
@@ -252,38 +279,16 @@ describe('authorize actor', () => {
         expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
     });
 
-    it('forwards the exact signed challenge, marqeta authentication method, and payload to the scenario action', async () => {
+    it('forwards the exact signed challenge and marqeta authentication method to the pre-bound scenario runner', async () => {
         const signedChallenge = {rawId: 'raw-id', type: 'public-key', response: {authenticatorData: 'authenticator-data', clientDataJSON: 'client-data', signature: 'signature'}};
-        const transactionID = 'transaction-123';
-        const scenario = getScenarioConfig(CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION);
         mockAuthorize.mockResolvedValue({success: true, signedChallenge, authenticationMethod: MFA_TEST_AUTH_METHOD});
 
-        await runAuthorizeActor({accountID: MFA_TEST_ACCOUNT_ID, scenario, payload: {transactionID}});
+        await runAuthorizeActor();
 
-        expect(processScenarioActionMock).toHaveBeenCalledWith(scenario.action, {
-            transactionID,
+        expect(mockRunScenarioAction).toHaveBeenCalledWith({
             signedChallenge,
             authenticationMethod: MFA_TEST_AUTH_METHOD.marqetaValue,
         });
-    });
-
-    it('does not let a caller-supplied payload overwrite the just-signed challenge or authentication method', async () => {
-        const signedChallenge = {rawId: 'raw-id', type: 'public-key', response: {authenticatorData: 'authenticator-data', clientDataJSON: 'client-data', signature: 'signature'}};
-        mockAuthorize.mockResolvedValue({success: true, signedChallenge, authenticationMethod: MFA_TEST_AUTH_METHOD});
-
-        // Public params may carry optional authentication fields; actor-owned values must win.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-        const maliciousPayload = {
-            signedChallenge: {rawId: 'attacker-supplied', type: 'public-key', response: {authenticatorData: '', clientDataJSON: '', signature: ''}},
-            authenticationMethod: 'OTHER',
-        } as AuthorizeInput['payload'];
-
-        const {authorize} = createActors();
-        const actorRef = createActor(authorize, {input: {...AUTHORIZE_INPUT, payload: maliciousPayload}});
-        actorRef.start();
-        await waitFor(actorRef, (snapshot) => snapshot.status !== 'active');
-
-        expect(processScenarioActionMock).toHaveBeenCalledWith(SCENARIO.action, {signedChallenge, authenticationMethod: MFA_TEST_AUTH_METHOD.marqetaValue});
     });
 
     it('returns the exact scenario response and authentication method on success', async () => {
@@ -294,7 +299,7 @@ describe('authorize actor', () => {
 
     it('surfaces a scenario action failure unchanged', async () => {
         const scenarioError = createLocalMFAError(REASON.CLIENT_ERRORS.UNRECOGNIZED, 'Scenario action rejected');
-        processScenarioActionMock.mockResolvedValue({success: false, error: scenarioError});
+        mockRunScenarioAction.mockResolvedValue({success: false, error: scenarioError});
 
         const snapshot = await runAuthorizeActor();
 

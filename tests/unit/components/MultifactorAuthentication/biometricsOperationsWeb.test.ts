@@ -33,12 +33,17 @@ jest.mock('@libs/MultifactorAuthentication/Passkeys/WebAuthn', () => ({
 }));
 
 const mockAddLocalPasskeyCredential = jest.fn<ReturnType<typeof PasskeyActionsModule.addLocalPasskeyCredential>, Parameters<typeof PasskeyActionsModule.addLocalPasskeyCredential>>();
+const mockDeleteLocalPasskeyCredentials = jest.fn<
+    ReturnType<typeof PasskeyActionsModule.deleteLocalPasskeyCredentials>,
+    Parameters<typeof PasskeyActionsModule.deleteLocalPasskeyCredentials>
+>();
 
 // Only the local credential update is mocked here, and only to simulate its validation throwing —
 // every other test delegates straight through to the real Onyx-backed implementation.
 jest.mock('@userActions/Passkey', () => ({
     ...jest.requireActual<typeof PasskeyActionsModule>('@userActions/Passkey'),
     addLocalPasskeyCredential: (params: Parameters<typeof PasskeyActionsModule.addLocalPasskeyCredential>[0]) => mockAddLocalPasskeyCredential(params),
+    deleteLocalPasskeyCredentials: (userId: Parameters<typeof PasskeyActionsModule.deleteLocalPasskeyCredentials>[0]) => mockDeleteLocalPasskeyCredentials(userId),
 }));
 
 // jest-expo resolves the native variant by default, so load the web entry point explicitly.
@@ -156,6 +161,12 @@ function setWebAuthnSupport(isSupported: boolean) {
 }
 
 describe('biometrics operations (web)', () => {
+    beforeEach(() => {
+        mockDeleteLocalPasskeyCredentials
+            .mockReset()
+            .mockImplementation((userId) => jest.requireActual<typeof PasskeyActionsModule>('@userActions/Passkey').deleteLocalPasskeyCredentials(userId));
+    });
+
     afterEach(() => {
         if (originalPublicKeyCredentialDescriptor) {
             Object.defineProperty(window, 'PublicKeyCredential', originalPublicKeyCredentialDescriptor);
@@ -398,17 +409,29 @@ describe('biometrics operations (web)', () => {
             expect(mockAuthenticateWithPasskey).not.toHaveBeenCalled();
         });
 
-        it('does not call a bulk credential delete when no local credential matches (reconciliation, not the operation, prunes the stale entry)', async () => {
-            await Onyx.set(getPasskeyOnyxKey(String(ACCOUNT_ID)), [{id: 'unrelated-local-id', type: CONST.PASSKEY_CREDENTIAL_TYPE}]);
+        it('returns CANCELED instead of rejecting when the local credential read is aborted', async () => {
+            const controller = new AbortController();
+            controller.abort();
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: controller.signal});
+
+            expect(result.success).toBe(false);
+            if (result.success) {
+                throw new Error('Expected authorization to fail');
+            }
+            expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED);
+            expect(mockAuthenticateWithPasskey).not.toHaveBeenCalled();
+        });
+
+        it('leaves cleanup to the actor when no local credential matches', async () => {
+            const credentials = [{id: 'unrelated-local-id', type: CONST.PASSKEY_CREDENTIAL_TYPE}];
+            await Onyx.set(getPasskeyOnyxKey(String(ACCOUNT_ID)), credentials);
 
             const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
             expect(result.success).toBe(false);
-            // Reconciliation (shared with `createCredential`) already prunes the non-matching entry as
-            // a side effect — the operation itself performs no separate deletion on top of that.
             await waitForBatchedUpdates();
-            const storedCredentials = await getOnyxValue(getPasskeyOnyxKey(String(ACCOUNT_ID)));
-            expect(storedCredentials ?? []).toEqual([]);
+            expect(await getOnyxValue(getPasskeyOnyxKey(String(ACCOUNT_ID)))).toEqual(credentials);
         });
 
         it('builds the request options from the challenge and passes the abort signal through to the ceremony', async () => {
@@ -502,6 +525,29 @@ describe('biometrics operations (web)', () => {
             await waitForBatchedUpdates();
 
             expect(await getOnyxValue(getPasskeyOnyxKey(String(ACCOUNT_ID)))).toEqual(credentials);
+        });
+
+        it('resolves only after the Onyx deletion finishes', async () => {
+            let resolveDeletion = () => {};
+            mockDeleteLocalPasskeyCredentials.mockImplementationOnce(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveDeletion = resolve;
+                    }),
+            );
+            let didResolve = false;
+
+            const deletionPromise = deleteLocalCredentials(ACCOUNT_ID).then(() => {
+                didResolve = true;
+            });
+            await waitForBatchedUpdates();
+
+            expect(didResolve).toBe(false);
+
+            resolveDeletion();
+            await deletionPromise;
+
+            expect(didResolve).toBe(true);
         });
     });
 });

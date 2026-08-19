@@ -6,6 +6,8 @@ import type {AuthorizeInput, AuthorizeOutput, LoadRegistrationStateInput, LoadRe
 import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
+import {createScenarioActionRunner} from '@userActions/MultifactorAuthentication/processing';
+
 import CONST from '@src/CONST';
 
 import {createActorAtState, createFlowContext, sendAuthorizeDone} from 'tests/utils/mfa/flowActors';
@@ -22,11 +24,12 @@ const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
 describe('MFA authorization', () => {
     describe('authorize actor outcome', () => {
-        it('forwards the account, scenario, and payload from INIT to the authorize actor', async () => {
+        it('forwards the account and pre-bound scenario runner from INIT to the authorize actor', async () => {
             const accountID = 67890;
             const transactionID = 'transaction-from-machine-context';
             const scenarioName = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION;
             const scenario = getScenarioConfig(scenarioName);
+            const runScenarioAction = createScenarioActionRunner(scenarioName, scenario.action, {transactionID});
             let receivedInput: AuthorizeInput | undefined;
             const machine = mfaMachine.provide({
                 actors: {
@@ -43,10 +46,10 @@ describe('MFA authorization', () => {
             const actor = createActor(machine);
 
             actor.start();
-            actor.send({type: 'INIT', accountID, scenarioName, scenario, payload: {transactionID}});
+            actor.send({type: 'INIT', accountID, scenarioName, scenario, payload: {transactionID}, runScenarioAction});
             await waitFor(actor, (snapshot) => snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}));
 
-            expect(receivedInput).toEqual({accountID, scenario, payload: {transactionID}});
+            expect(receivedInput).toEqual({accountID, runScenarioAction});
 
             actor.stop();
         });
@@ -140,7 +143,7 @@ describe('MFA authorization', () => {
             actor.stop();
         });
 
-        it('moves to closing on CLOSE_MODAL and stops the actor without marking the prompt as processing', () => {
+        it('moves to closing on CLOSE_MODAL and keeps the authorizing presentation during the close animation', () => {
             // The context override stands in for the entry action a live transition would have run.
             const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}, {promptPresentationPhase: MFA_STATE.AUTHORIZING});
 
@@ -149,7 +152,8 @@ describe('MFA authorization', () => {
 
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
-            expect(snapshotToState(result).isProcessingPrompt).toBe(false);
+            expect(snapshotToState(result).isAuthorizing).toBe(true);
+            expect(snapshotToState(result).isProcessingPrompt).toBe(true);
 
             actor.stop();
         });

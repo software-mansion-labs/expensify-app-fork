@@ -49,6 +49,8 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
             title = 'multifactorAuthentication.letsAuthenticateYou';
             subtitle = undefined;
         } else if (registrationChallenge) {
+            // In the current slice the challenge survives through post-registration authorization.
+            // Recovery must clear it before re-registration, so it is not a durable flow-history flag.
             title = 'multifactorAuthentication.nowLetsAuthenticateYou';
             subtitle = undefined;
         }

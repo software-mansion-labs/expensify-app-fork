@@ -4,6 +4,7 @@ import addMFABreadcrumb from '@components/MultifactorAuthentication/observabilit
 import {translateLocal} from '@libs/Localize';
 import {buildSigningData, decodeLibraryError, getKeyAlias, mapAuthTypeNumber, mapSignErrorCodeToReason} from '@libs/MultifactorAuthentication/NativeBiometricsHSM/helpers';
 import type NativeBiometricsHSMKeyInfo from '@libs/MultifactorAuthentication/NativeBiometricsHSM/types';
+import type {MFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {createCanceledMFAResult, createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
@@ -28,7 +29,11 @@ const deviceCheckFailureReason = CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_E
 
 const credentialMutationTails = new Map<number, Promise<unknown>>();
 
-/** Serializes same-account HSM writes so an in-flight stale delete cannot remove a replacement key. */
+/**
+ * Serializes same-account HSM writes so an in-flight stale delete cannot remove a replacement key.
+ * Only the writes belong here: the authorization ceremony neither creates nor destroys the key, so
+ * queueing it would hold the biometric prompt behind a keystore write without changing its outcome.
+ */
 async function serializeCredentialMutation<T>(accountID: number, mutation: () => Promise<T>): Promise<T> {
     const previousMutation = credentialMutationTails.get(accountID) ?? Promise.resolve();
     const currentMutation = previousMutation.catch(() => undefined).then(mutation);
@@ -49,18 +54,32 @@ async function doesDeviceSupportAuthenticationMethod(): Promise<boolean> {
     return sensorResult.isDeviceSecure;
 }
 
-/** Resolves to the account's HSM-backed credential ID, or undefined when no key exists or the keystore read fails. */
-async function getLocalCredentialID(accountID: number): Promise<string | undefined> {
+/**
+ * Outcome of reading the account's HSM-backed credential. `readFailed` stays distinct from `absent`
+ * because an unreadable keystore may recover on the next attempt, while a confirmed absence cannot:
+ * only the latter means the credential is unusable and may be deleted or re-registered.
+ */
+type LocalCredentialLookup = {status: 'found'; credentialID: string} | {status: 'absent'} | {status: 'readFailed'; error: MFAError};
+
+/** Reads the account's HSM-backed credential, separating a confirmed absence from an unreadable keystore. */
+async function getLocalCredential(accountID: number): Promise<LocalCredentialLookup> {
     try {
         const {keys} = await getAllKeys(getKeyAlias(accountID));
         const entry = keys.at(0);
         if (!entry) {
-            return undefined;
+            return {status: 'absent'};
         }
-        return Base64URL.base64ToBase64url(entry.publicKey);
+        return {status: 'found', credentialID: Base64URL.base64ToBase64url(entry.publicKey)};
     } catch (error) {
-        addMFABreadcrumb('Failed to get local credential ID', decodeLibraryError(error), 'error');
-        return undefined;
+        const readError = decodeLibraryError(error);
+        addMFABreadcrumb('Failed to get local credential ID', readError, 'error');
+        // The library rejects with KEY_NOT_FOUND rather than returning an empty key list when the
+        // alias does not exist. That is a confirmed absence, so it has to keep routing a first-time
+        // device into registration instead of being reported as a read failure.
+        if (readError.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_NOT_FOUND) {
+            return {status: 'absent'};
+        }
+        return {status: 'readFailed', error: readError};
     }
 }
 
@@ -72,12 +91,14 @@ async function getLocalCredentialID(accountID: number): Promise<string | undefin
  * implementations aligned until the hook is removed.
  */
 async function areLocalCredentialsKnownToServer(accountID: number, signal?: AbortSignal): Promise<boolean> {
-    const localCredentialID = await getLocalCredentialID(accountID);
-    if (!localCredentialID) {
+    const localCredential = await getLocalCredential(accountID);
+    // A read failure still answers "no", which sends the flow to registration. This check returns a
+    // plain boolean, so it has no way to fail the flow instead; the recovery slice owns that.
+    if (localCredential.status !== 'found') {
         return false;
     }
     const account = await readOnyxValueOnce(ONYXKEYS.ACCOUNT, signal);
-    return (mfaCredentialIDsSelector(account) ?? []).includes(localCredentialID);
+    return (mfaCredentialIDsSelector(account) ?? []).includes(localCredential.credentialID);
 }
 
 /** Runs the platform HSM key-creation ceremony. */
@@ -135,10 +156,21 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
 async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOperationResult> {
     const {accountID, challenge, signal} = params;
     const keyAlias = getKeyAlias(accountID);
-    const credentialID = await getLocalCredentialID(accountID);
+    const localCredential = await getLocalCredential(accountID);
     const allowedIDs = challenge.allowCredentials.map((credential) => credential.id);
 
-    if (!credentialID || !allowedIDs.includes(credentialID)) {
+    // A keystore the device could not read is reported as-is, so the caller does not delete a key
+    // that may well still be usable. Only a confirmed absence or a mismatch marks it unusable.
+    if (localCredential.status === 'readFailed') {
+        return {success: false, error: localCredential.error};
+    }
+
+    if (localCredential.status === 'absent') {
+        return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_NOT_FOUND, 'No local HSM credential for this account')};
+    }
+
+    const {credentialID} = localCredential;
+    if (!allowedIDs.includes(credentialID)) {
         return {
             success: false,
             error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL, 'Local HSM credential not in challenge allowCredentials'),

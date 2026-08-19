@@ -141,10 +141,20 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
 async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOperationResult> {
     const {accountID, challenge, signal} = params;
     const userId = String(accountID);
-    const localPasskeyCredentials = await readOnyxValueOnce(getPasskeyOnyxKey(userId), signal);
+    let localPasskeyCredentials;
+    try {
+        localPasskeyCredentials = await readOnyxValueOnce(getPasskeyOnyxKey(userId), signal);
+    } catch (error) {
+        if (signal.aborted) {
+            return createCanceledMFAResult('MFA flow canceled while reading local passkey credentials');
+        }
+        throw error;
+    }
 
-    const backendCredentials = challenge.allowCredentials.map((credential) => ({id: credential.id, type: CONST.PASSKEY_CREDENTIAL_TYPE}));
-    const reconciledExisting = reconcileLocalPasskeysWithBackend({userId, backendCredentials, localCredentials: localPasskeyCredentials ?? null});
+    // Keep authorization reconciliation pure. On a full miss the actor owns the cancellation-aware
+    // credential cleanup after this operation reports NO_MATCHING_LOCAL_CREDENTIAL.
+    const allowedCredentialIDs = new Set(challenge.allowCredentials.map((credential) => credential.id));
+    const reconciledExisting = (localPasskeyCredentials ?? []).filter((credential) => allowedCredentialIDs.has(credential.id));
 
     if (reconciledExisting.length === 0) {
         return {
@@ -194,12 +204,12 @@ async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOpe
     };
 }
 
-/** Clears the account's local passkey list. Fire-and-forget, matching the legacy hook's behavior. */
+/** Clears the account's local passkey list and resolves once the Onyx write finishes. */
 async function deleteLocalCredentials(accountID: number, signal?: AbortSignal): Promise<void> {
     if (signal?.aborted) {
         return;
     }
-    deleteLocalPasskeyCredentials(String(accountID));
+    await deleteLocalPasskeyCredentials(String(accountID));
 }
 
 export {areLocalCredentialsKnownToServer, authorize, createCredential, deleteLocalCredentials, deviceVerificationType, deviceCheckFailureReason, doesDeviceSupportAuthenticationMethod};
