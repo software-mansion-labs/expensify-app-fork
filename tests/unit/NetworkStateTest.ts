@@ -1,4 +1,4 @@
-import {getCommandURL} from '@libs/ApiUtils';
+import {getCommandURL, isQAServerActive} from '@libs/ApiUtils';
 
 import CONST from '@src/CONST';
 import {
@@ -45,6 +45,7 @@ jest.mock('@libs/ApiUtils', () => ({
     getApiRoot: jest.fn(() => 'https://test-api.expensify.com/'),
     getCommandURL: jest.fn(() => mockPingUrl),
     isUsingStagingApi: jest.fn(() => false),
+    isQAServerActive: jest.fn(() => false),
 }));
 
 // NetworkState awaits getEnvironment() so configureAndSubscribe runs after ApiUtils settles its
@@ -543,6 +544,7 @@ describe('NetworkState', () => {
 
         beforeEach(async () => {
             jest.mocked(getCommandURL).mockReturnValue(mockPingUrl);
+            jest.mocked(isQAServerActive).mockReturnValue(false);
             configureMock.mockClear();
             await Onyx.clear();
             await waitForBatchedUpdates();
@@ -596,6 +598,17 @@ describe('NetworkState', () => {
             const callsBefore = configureMock.mock.calls.length;
 
             await Onyx.set(ONYXKEYS.ACTIVE_SERVER, CONST.SERVER.STAGING);
+            await waitForBatchedUpdates();
+
+            expect(configureMock.mock.calls.length).toBe(callsBefore);
+        });
+
+        test('QA leaves NetInfo unconfigured — the Ping URL sits behind Cloudflare Access and NetInfo cannot carry the bearer', async () => {
+            jest.mocked(isQAServerActive).mockReturnValue(true);
+            jest.mocked(getCommandURL).mockReturnValue(mockStagingPingUrl);
+            const callsBefore = configureMock.mock.calls.length;
+
+            await Onyx.set(ONYXKEYS.ACTIVE_SERVER, CONST.SERVER.QA);
             await waitForBatchedUpdates();
 
             expect(configureMock.mock.calls.length).toBe(callsBefore);

@@ -6,7 +6,7 @@ import NetInfo from '@react-native-community/netinfo';
 import {toDate} from 'date-fns-tz';
 import Onyx from 'react-native-onyx';
 
-import {getCommandURL} from './ApiUtils';
+import {getCommandURL, isQAServerActive} from './ApiUtils';
 import getEnvironment from './Environment/getEnvironment';
 import {onSuccess as onRequestSuccess, onSustainedFailureChange, reset as resetFailureCounters} from './FailureTracker';
 import Log from './Log';
@@ -340,7 +340,11 @@ function configureAndSubscribe() {
 
     configuredReachabilityUrl = buildReachabilityUrl();
 
-    if (!CONFIG.IS_USING_LOCAL_WEB) {
+    // IS_USING_LOCAL_WEB: there is no reachable Ping on a local dev server.
+    // QA: the Ping URL sits behind Cloudflare Access and NetInfo issues that request itself, so it cannot
+    // carry the bearer and would read as a permanent outage. NetInfo's `reachabilityHeaders` is not a way
+    // out — that config is static and the access token rotates on Cloudflare's schedule.
+    if (!CONFIG.IS_USING_LOCAL_WEB && !isQAServerActive()) {
         NetInfo.configure({
             reachabilityUrl: configuredReachabilityUrl,
             reachabilityMethod: 'GET',

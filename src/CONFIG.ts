@@ -86,6 +86,11 @@ export default {
         DEFAULT_SECURE_API_ROOT: secureURLRoot,
         STAGING_API_ROOT: stagingExpensifyURL,
         STAGING_SECURE_API_ROOT: stagingSecureExpensifyUrl,
+        // Already normalized by normalizeOptionalRoot above; re-applying addTrailingForwardSlash would imply these are raw.
+        // Same two values as QA_AUTH.{API_ROOT,SECURE_API_ROOT} below, and deliberately so: a QA root we route to
+        // that the bearer allowlist does not cover would 401 unrecoverably.
+        QA_API_ROOT: qaExpensifyURL,
+        QA_SECURE_API_ROOT: qaSecureExpensifyURL,
         LEGACY_PARTNER_NAME: get(Config, 'LEGACY_EXPENSIFY_PARTNER_NAME', getDefaultLegacyPartnerConfig().name),
         LEGACY_PARTNER_PASSWORD: get(Config, 'LEGACY_EXPENSIFY_PARTNER_PASSWORD', getDefaultLegacyPartnerConfig().password),
         PARTNER_NAME: get(Config, 'EXPENSIFY_PARTNER_NAME', 'chat-expensify-com'),

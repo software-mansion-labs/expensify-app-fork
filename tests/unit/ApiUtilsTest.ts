@@ -17,6 +17,8 @@ const mockConfig = {
         DEFAULT_SECURE_API_ROOT: 'https://secure.expensify.com/',
         STAGING_API_ROOT: 'https://staging.expensify.com/',
         STAGING_SECURE_API_ROOT: 'https://staging-secure.expensify.com/',
+        QA_API_ROOT: 'https://qa.exops.io/',
+        QA_SECURE_API_ROOT: 'https://qa-secure.exops.io/',
         EXPENSIFY_URL: 'https://www.expensify.com/',
         SECURE_EXPENSIFY_URL: 'https://secure.expensify.com/',
     },
@@ -160,6 +162,45 @@ describe('ApiUtils', () => {
             mockConfig.IS_USING_WEB_PROXY = true;
             await setActiveServer(CONST.SERVER.STAGING);
             expect(ApiUtils.getCommandURL({command: 'Ping'} as CommandRequest)).toBe('/staging/api/Ping?');
+        });
+    });
+
+    describe('QA server routing', () => {
+        it('is inactive by default', async () => {
+            await setActiveServer(null);
+
+            expect(ApiUtils.isQAServerActive()).toBe(false);
+            expect(ApiUtils.getApiRoot()).toBe('https://staging.expensify.com/');
+        });
+
+        it('routes both roots to QA when activeServer is qa', async () => {
+            await setActiveServer(CONST.SERVER.QA);
+
+            expect(ApiUtils.isQAServerActive()).toBe(true);
+            expect(ApiUtils.isUsingStagingApi()).toBe(false);
+            expect(ApiUtils.getApiRoot()).toBe('https://qa.exops.io/');
+            expect(ApiUtils.getApiRoot({shouldUseSecure: true})).toBe('https://qa-secure.exops.io/');
+        });
+
+        it('never routes to QA when forceProduction is set', async () => {
+            await setActiveServer(CONST.SERVER.QA);
+
+            expect(ApiUtils.getApiRoot(undefined, true)).toBe('https://www.expensify.com/');
+        });
+
+        it('bypasses the web proxy for QA \u2014 Cloudflare matches CORS and the bearer against the real origin', async () => {
+            mockConfig.IS_USING_WEB_PROXY = true;
+            await setActiveServer(CONST.SERVER.QA);
+
+            expect(ApiUtils.getApiRoot({shouldSkipWebProxy: false})).toBe('https://qa.exops.io/');
+        });
+
+        it('stays on QA for an internal dev build \u2014 the one case IS_USING_LOCAL_WEB does not win', async () => {
+            mockConfig.IS_USING_LOCAL_WEB = true;
+            await setActiveServer(CONST.SERVER.QA);
+
+            expect(ApiUtils.isQAServerActive()).toBe(true);
+            expect(ApiUtils.getApiRoot()).toBe('https://qa.exops.io/');
         });
     });
 
