@@ -4,6 +4,8 @@ import CONST from '@src/CONST';
 
 import type {StatelyInspectionEvent} from '@statelyai/inspect';
 
+import {isMachineSnapshot} from 'xstate';
+
 const SENSITIVE_VALUE_MASK = '***';
 const CIRCULAR_MARKER = '[Circular]';
 const MAX_DEPTH_MARKER = '[MaxDepth]';
@@ -81,6 +83,9 @@ function serialize(value: unknown, maskSensitiveKeys: boolean): unknown {
  * static state-node names. Masking that path can turn a valid state name into
  * {@link SENSITIVE_VALUE_MASK}, preventing the inspector from resolving the machine snapshot.
  *
+ * That exemption is limited to real machine snapshots, via xstate's own `isMachineSnapshot`. Any other
+ * actor logic is free to keep runtime data under its snapshot's `value`, which must stay masked.
+ *
  * The overloads keep the option's declared type while still accepting the looser raw snapshots that
  * the inspector actually passes in.
  */
@@ -88,7 +93,7 @@ function maskInspectionEvent(event: StatelyInspectionEvent): StatelyInspectionEv
 function maskInspectionEvent(event: unknown): unknown;
 function maskInspectionEvent(event: unknown): unknown {
     const masked = serialize(event, true);
-    if (isRecord(event) && isRecord(masked) && isRecord(event.snapshot) && isRecord(masked.snapshot) && 'value' in event.snapshot) {
+    if (isRecord(event) && isRecord(masked) && isRecord(masked.snapshot) && isMachineSnapshot(event.snapshot)) {
         masked.snapshot.value = serialize(event.snapshot.value, false);
     }
     return masked;
