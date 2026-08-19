@@ -7,7 +7,7 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 import CONST from '@src/CONST';
 
 import {createActorAtState, createFlowContext, sendCreateCredentialDone} from 'tests/utils/mfa/flowActors';
-import createInitEvent, {MFA_TEST_REGISTRATION_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
+import {MFA_TEST_REGISTRATION_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise} from 'xstate';
 
@@ -125,21 +125,7 @@ describe('MFA credential creation', () => {
             });
             const snapshot = machine.resolveState({
                 value: {[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
-                context: {
-                    accountID: 12345,
-                    error: undefined,
-                    scenarioName: createInitEvent().scenarioName,
-                    scenario: createInitEvent().scenario,
-                    payload: undefined,
-                    validateCode: undefined,
-                    registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE,
-                    softPromptApproved: false,
-                    isCancelConfirmVisible: false,
-                    authenticationMethod: undefined,
-                    scenarioResponse: undefined,
-                    promptPresentationPhase: undefined,
-                    validateCodePresentationPhase: undefined,
-                },
+                context: createFlowContext({registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE}),
             });
             const actor = createActor(machine, {snapshot});
 

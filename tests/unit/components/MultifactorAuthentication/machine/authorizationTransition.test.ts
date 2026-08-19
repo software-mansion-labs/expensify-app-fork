@@ -8,8 +8,8 @@ import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import CONST from '@src/CONST';
 
-import {createActorAtState, sendAuthorizeDone} from 'tests/utils/mfa/flowActors';
-import createInitEvent, {MFA_TEST_AUTH_METHOD, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
+import {createActorAtState, createFlowContext, sendAuthorizeDone} from 'tests/utils/mfa/flowActors';
+import {MFA_TEST_AUTH_METHOD, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise, waitFor} from 'xstate';
 
@@ -124,21 +124,7 @@ describe('MFA authorization', () => {
             });
             const snapshot = machine.resolveState({
                 value: {[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
-                context: {
-                    accountID: 12345,
-                    error: undefined,
-                    scenarioName: createInitEvent().scenarioName,
-                    scenario: createInitEvent().scenario,
-                    payload: undefined,
-                    validateCode: undefined,
-                    registrationChallenge: undefined,
-                    softPromptApproved: false,
-                    isCancelConfirmVisible: false,
-                    authenticationMethod: undefined,
-                    scenarioResponse: undefined,
-                    promptPresentationPhase: undefined,
-                    validateCodePresentationPhase: undefined,
-                },
+                context: createFlowContext(),
             });
             const actor = createActor(machine, {snapshot});
 

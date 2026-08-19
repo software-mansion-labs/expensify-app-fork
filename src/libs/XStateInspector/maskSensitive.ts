@@ -1,3 +1,5 @@
+import {isRecord} from '@libs/ObjectUtils';
+
 import CONST from '@src/CONST';
 
 import type {StatelyInspectionEvent} from '@statelyai/inspect';
@@ -18,10 +20,6 @@ const SENSITIVE_KEYS = new Set<string>(CONST.SENSITIVE_AUTH_KEYS);
 
 function hasToJSON(value: unknown): value is {toJSON: () => unknown} {
     return typeof value === 'object' && value !== null && 'toJSON' in value && typeof value.toJSON === 'function';
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
