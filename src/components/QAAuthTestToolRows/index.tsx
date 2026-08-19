@@ -1,10 +1,13 @@
 import Button from '@components/ButtonComposed';
+import Switch from '@components/Switch';
 import TestToolRow from '@components/TestToolRow';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
+import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import {getActiveServer} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import {getCloudflareAuthRedirectOutcome} from '@libs/CloudflareAccess/consumeAuthCallbackURL';
 import DateUtils from '@libs/DateUtils';
@@ -12,8 +15,10 @@ import DateUtils from '@libs/DateUtils';
 import type {CloudflareAuthProbeResult, CloudflareAuthProbeStatus} from '@userActions/CloudflareProbe';
 import {runCloudflareAuthProbe} from '@userActions/CloudflareProbe';
 import {clearCloudflareSession, getCloudflareSession} from '@userActions/CloudflareSession';
+import {setActiveServer} from '@userActions/User';
 
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 
 import {useState} from 'react';
 
@@ -46,6 +51,9 @@ function QAAuthTestToolRows() {
     const styles = useThemeStyles();
     const {translate, datetimeToCalendarTime} = useLocalize();
 
+    const [activeServer = getActiveServer()] = useOnyx(ONYXKEYS.ACTIVE_SERVER);
+    const isUsingQAServer = activeServer === CONST.SERVER.QA;
+
     const [isOperationRunning, setIsOperationRunning] = useState(false);
     // Seeded from the boot-time redirect outcome. An in-flight exchange's failure surfaces when Run joins it
     const [probeResult, setProbeResult] = useState<CloudflareAuthProbeResult | null>(getFailedRedirectResult);
@@ -58,6 +66,20 @@ function QAAuthTestToolRows() {
 
     return (
         <>
+            {/* Point the app at the Cloudflare Access-protected QA server. Toggling either way signs you out:
+                QA is a separate database, so the same email is a different account there.
+                Unlike the staging row in TestToolMenu this is shown to internal devs too — a local .env cannot
+                reach qa.new.exops.io, so this switch is the only way to exercise the flow before it exists. */}
+            <TestToolRow
+                title={translate('initialSettingsPage.troubleshoot.useQAServer')}
+                isTitleAccessible={false}
+            >
+                <Switch
+                    accessibilityLabel={translate('initialSettingsPage.troubleshoot.useQAServer')}
+                    isOn={isUsingQAServer}
+                    onToggle={() => setActiveServer(isUsingQAServer ? CONST.SERVER.PRODUCTION : CONST.SERVER.QA)}
+                />
+            </TestToolRow>
             <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuth')}>
                 <Button
                     size={CONST.BUTTON_SIZE.SMALL}
