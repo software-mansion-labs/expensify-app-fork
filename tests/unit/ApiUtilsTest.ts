@@ -1,6 +1,9 @@
 import type * as ApiUtilsModule from '@libs/ApiUtils';
 
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+
+import type {ValueOf} from 'type-fest';
 
 import Onyx from 'react-native-onyx';
 
@@ -36,13 +39,13 @@ const ApiUtils = require<typeof ApiUtilsModule>('@libs/ApiUtils');
 
 type CommandRequest = Parameters<typeof ApiUtils.getCommandURL>[0];
 
-async function setStagingToggle(value: boolean | null) {
-    await Onyx.set(ONYXKEYS.SHOULD_USE_STAGING_SERVER, value);
+async function setActiveServer(value: ValueOf<typeof CONST.SERVER> | null) {
+    await Onyx.set(ONYXKEYS.ACTIVE_SERVER, value);
     await waitForBatchedUpdates();
 }
 
 beforeAll(async () => {
-    // Drain the initial getEnvironment().then(...) so ApiUtils subscribes to SHOULD_USE_STAGING_SERVER.
+    // Drain the initial getEnvironment().then(...) so ApiUtils subscribes to ACTIVE_SERVER.
     await waitForBatchedUpdates();
 });
 
@@ -59,17 +62,17 @@ describe('ApiUtils', () => {
     describe('getApiRoot — URL resolution (env=ADHOC)', () => {
         describe('staging toggle', () => {
             it('toggle on → STAGING_API_ROOT', async () => {
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot()).toBe('https://staging.expensify.com/');
             });
 
             it('toggle off → DEFAULT_API_ROOT', async () => {
-                await setStagingToggle(false);
+                await setActiveServer(CONST.SERVER.PRODUCTION);
                 expect(ApiUtils.getApiRoot()).toBe('https://www.expensify.com/');
             });
 
             it('toggle cleared → defaults to staging (adhoc default)', async () => {
-                await setStagingToggle(null);
+                await setActiveServer(null);
                 expect(ApiUtils.getApiRoot()).toBe('https://staging.expensify.com/');
             });
         });
@@ -77,53 +80,53 @@ describe('ApiUtils', () => {
         describe('web proxy', () => {
             it('proxy on + toggle on → proxyConfig.STAGING', async () => {
                 mockConfig.IS_USING_WEB_PROXY = true;
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot()).toBe('/staging/');
             });
 
             it('shouldSkipWebProxy + proxy on + toggle on → STAGING_API_ROOT (proxy bypassed)', async () => {
                 mockConfig.IS_USING_WEB_PROXY = true;
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot({shouldSkipWebProxy: true})).toBe('https://staging.expensify.com/');
             });
 
             it('shouldSkipWebProxy on non-staging path → EXPENSIFY_URL', async () => {
-                await setStagingToggle(false);
+                await setActiveServer(CONST.SERVER.PRODUCTION);
                 expect(ApiUtils.getApiRoot({shouldSkipWebProxy: true})).toBe('https://www.expensify.com/');
             });
         });
 
         describe('secure variants', () => {
             it('toggle off + secure → DEFAULT_SECURE_API_ROOT', async () => {
-                await setStagingToggle(false);
+                await setActiveServer(CONST.SERVER.PRODUCTION);
                 expect(ApiUtils.getApiRoot({shouldUseSecure: true})).toBe('https://secure.expensify.com/');
             });
 
             it('toggle on + secure → STAGING_SECURE_API_ROOT', async () => {
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot({shouldUseSecure: true})).toBe('https://staging-secure.expensify.com/');
             });
 
             it('toggle on + secure + proxy → proxyConfig.STAGING_SECURE', async () => {
                 mockConfig.IS_USING_WEB_PROXY = true;
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot({shouldUseSecure: true})).toBe('/staging-secure/');
             });
 
             it('shouldSkipWebProxy + secure (non-staging) → SECURE_EXPENSIFY_URL', async () => {
-                await setStagingToggle(false);
+                await setActiveServer(CONST.SERVER.PRODUCTION);
                 expect(ApiUtils.getApiRoot({shouldUseSecure: true, shouldSkipWebProxy: true})).toBe('https://secure.expensify.com/');
             });
         });
 
         describe('forceProduction', () => {
             it('forceProduction + toggle on → DEFAULT_API_ROOT', async () => {
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot(undefined, true)).toBe('https://www.expensify.com/');
             });
 
             it('forceProduction + toggle on + secure → DEFAULT_SECURE_API_ROOT', async () => {
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot({shouldUseSecure: true}, true)).toBe('https://secure.expensify.com/');
             });
         });
@@ -131,7 +134,7 @@ describe('ApiUtils', () => {
         describe('env clamping (via IS_USING_LOCAL_WEB)', () => {
             it('IS_USING_LOCAL_WEB + toggle on → DEFAULT_API_ROOT (toggle force-disabled on local web)', async () => {
                 mockConfig.IS_USING_LOCAL_WEB = true;
-                await setStagingToggle(true);
+                await setActiveServer(CONST.SERVER.STAGING);
                 expect(ApiUtils.getApiRoot()).toBe('https://www.expensify.com/');
             });
         });
@@ -139,35 +142,35 @@ describe('ApiUtils', () => {
 
     describe('getCommandURL', () => {
         it('staging Ping → {root}api/Ping?', async () => {
-            await setStagingToggle(true);
+            await setActiveServer(CONST.SERVER.STAGING);
             expect(ApiUtils.getCommandURL({command: 'Ping'} as CommandRequest)).toBe('https://staging.expensify.com/api/Ping?');
         });
 
         it('production Ping → {root}api/Ping?', async () => {
-            await setStagingToggle(false);
+            await setActiveServer(CONST.SERVER.PRODUCTION);
             expect(ApiUtils.getCommandURL({command: 'Ping'} as CommandRequest)).toBe('https://www.expensify.com/api/Ping?');
         });
 
         it('omits extra ? when command already contains one', async () => {
-            await setStagingToggle(false);
+            await setActiveServer(CONST.SERVER.PRODUCTION);
             expect(ApiUtils.getCommandURL({command: 'Ping?accountID=42'} as CommandRequest)).toBe('https://www.expensify.com/api/Ping?accountID=42');
         });
 
         it('routes through proxy when IS_USING_WEB_PROXY + toggle on', async () => {
             mockConfig.IS_USING_WEB_PROXY = true;
-            await setStagingToggle(true);
+            await setActiveServer(CONST.SERVER.STAGING);
             expect(ApiUtils.getCommandURL({command: 'Ping'} as CommandRequest)).toBe('/staging/api/Ping?');
         });
     });
 
     describe('isUsingStagingApi', () => {
         it('returns true when toggle is on', async () => {
-            await setStagingToggle(true);
+            await setActiveServer(CONST.SERVER.STAGING);
             expect(ApiUtils.isUsingStagingApi()).toBe(true);
         });
 
         it('returns false when toggle is off', async () => {
-            await setStagingToggle(false);
+            await setActiveServer(CONST.SERVER.PRODUCTION);
             expect(ApiUtils.isUsingStagingApi()).toBe(false);
         });
     });
