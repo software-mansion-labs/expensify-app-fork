@@ -4,7 +4,7 @@ import addMFABreadcrumb from '@components/MultifactorAuthentication/observabilit
 
 import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createCanceledMFAResult, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
 import {getDeviceBiometricsOnyxKey, requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
@@ -76,7 +76,7 @@ const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredenti
     // registering a key nobody asked for — this only catches it before the request starts, there's
     // no way to cancel one already in flight.
     if (signal.aborted) {
-        return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before backend registration')};
+        return createCanceledMFAResult('MFA flow canceled before backend registration');
     }
     const registrationResult = await processRegistration({keyInfo: creationResult.keyInfo});
     addMFABreadcrumb('Backend registration completed', registrationResult.success ? {success: true} : registrationResult.error, registrationResult.success ? 'info' : 'error');
@@ -102,7 +102,7 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
     // The flow may have been cancelled while the challenge request was in flight. Skip opening the
     // platform dialog rather than prompting for a ceremony nobody asked for anymore.
     if (signal.aborted) {
-        return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the authorization ceremony')};
+        return createCanceledMFAResult('MFA flow canceled before the authorization ceremony');
     }
 
     const authResult = await authorize({accountID: input.accountID, challenge, signal});
@@ -122,7 +122,7 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
     // The native ceremony cannot be interrupted mid-flight, so it can still succeed after the flow
     // was cancelled. Skip the scenario action rather than invoking one nobody asked for anymore.
     if (signal.aborted) {
-        return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the scenario action')};
+        return createCanceledMFAResult('MFA flow canceled before the scenario action');
     }
 
     const scenarioResult = await processScenarioAction(input.scenario.action, {

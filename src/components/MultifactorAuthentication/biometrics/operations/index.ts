@@ -15,7 +15,7 @@ import {
     isWebAuthnSupported,
     PASSKEY_AUTH_TYPE,
 } from '@libs/MultifactorAuthentication/Passkeys/WebAuthn';
-import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createCanceledMFAResult, createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
 import {addLocalPasskeyCredential, deleteLocalPasskeyCredentials, getPasskeyOnyxKey, reconcileLocalPasskeysWithBackend} from '@userActions/Passkey';
@@ -98,7 +98,7 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
     // was cancelled. Don't persist or register a credential nobody asked for anymore — the passkey
     // itself is already on the device either way, that part can't be undone.
     if (signal.aborted) {
-        return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the credential could be persisted')};
+        return createCanceledMFAResult('MFA flow canceled before the credential could be persisted');
     }
 
     try {

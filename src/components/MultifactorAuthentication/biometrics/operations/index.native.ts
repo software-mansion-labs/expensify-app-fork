@@ -4,7 +4,7 @@ import addMFABreadcrumb from '@components/MultifactorAuthentication/observabilit
 import {translateLocal} from '@libs/Localize';
 import {buildSigningData, decodeLibraryError, getKeyAlias, mapAuthTypeNumber, mapSignErrorCodeToReason} from '@libs/MultifactorAuthentication/NativeBiometricsHSM/helpers';
 import type NativeBiometricsHSMKeyInfo from '@libs/MultifactorAuthentication/NativeBiometricsHSM/types';
-import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createCanceledMFAResult, createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
 import CONST from '@src/CONST';
@@ -101,7 +101,7 @@ async function createCredential(params: CreateCredentialParams): Promise<CreateC
             return createKeys(keyAlias, 'ec256', undefined, true, false);
         });
         if (!keyResult) {
-            return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before HSM key creation')};
+            return createCanceledMFAResult('MFA flow canceled before HSM key creation');
         }
         const {publicKey} = keyResult;
 
@@ -152,7 +152,7 @@ async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOpe
         // were still in flight. Check right before opening the prompt — once `signWithOptions` is
         // called there is no way to dismiss it, so this is the last point to skip it.
         if (signal.aborted) {
-            return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled before the biometric prompt could open')};
+            return createCanceledMFAResult('MFA flow canceled before the biometric prompt could open');
         }
 
         const signResult = await signWithOptions({
@@ -168,7 +168,7 @@ async function authorize(params: AuthorizeOperationParams): Promise<AuthorizeOpe
         });
 
         if (signal.aborted) {
-            return {success: false, error: createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'MFA flow canceled after the biometric ceremony completed')};
+            return createCanceledMFAResult('MFA flow canceled after the biometric ceremony completed');
         }
 
         if (!signResult.success || !signResult.signature) {
