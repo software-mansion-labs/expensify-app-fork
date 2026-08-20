@@ -1,11 +1,15 @@
+import type * as EnsureQAAuthenticatedModule from '@libs/CloudflareAccess/ensureQAAuthenticated/index.ts';
+
+import type CloudflareSession from '@src/types/onyx/CloudflareSession';
+
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
 
 const mockBeginRedirect = jest.fn(() => new Promise<never>(() => {}));
-const mockGetSession = jest.fn();
-const mockGetPending = jest.fn();
-const mockIsQAServerActive = jest.fn();
+const mockGetSession = jest.fn<CloudflareSession | null | undefined, []>();
+const mockGetPending = jest.fn<Promise<void> | null, []>();
+const mockIsQAServerActive = jest.fn<boolean, []>();
 const mockWaitForActiveServerHydration = jest.fn(() => Promise.resolve());
-const mockIsConfigured = jest.fn();
+const mockIsConfigured = jest.fn<boolean, []>();
 
 jest.mock('@userActions/CloudflareSession', () => ({
     beginCloudflareAuthRedirect: () => mockBeginRedirect(),
@@ -37,15 +41,14 @@ describe('ensureQAAuthenticated', () => {
         mockGetSession.mockReturnValue(null);
         mockGetPending.mockReturnValue(null);
         // Explicit /index.ts: the jest-expo preset resolves the native platform first, and the native variant is a stub
-        ({ensureQAAuthenticated, handleQAReauthRequired} = require<
-            typeof import('@libs/CloudflareAccess/ensureQAAuthenticated/index.ts')
-        >('@libs/CloudflareAccess/ensureQAAuthenticated/index.ts'));
+        ({ensureQAAuthenticated, handleQAReauthRequired} = require<typeof EnsureQAAuthenticatedModule>('@libs/CloudflareAccess/ensureQAAuthenticated/index.ts'));
     });
 
     it('redirects when QA is active and there is no session', async () => {
         // Given a QA build with no stored session — when the gate runs, then it must navigate to Cloudflare,
-        // because on QA even the sign-in POST goes to a Zero Trust origin
-        void ensureQAAuthenticated();
+        // because on QA even the sign-in POST goes to a Zero Trust origin. Not awaited: the gate's promise
+        // never settles once it redirects, so the assertion has to run off the side effect instead
+        ensureQAAuthenticated();
         await waitForBatchedUpdates();
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
     });
@@ -64,7 +67,7 @@ describe('ensureQAAuthenticated', () => {
         mockIsQAServerActive.mockReturnValue(false);
 
         // When the gate runs, then it must not decide off the un-hydrated value
-        void ensureQAAuthenticated();
+        ensureQAAuthenticated();
         await waitForBatchedUpdates();
         expect(mockBeginRedirect).not.toHaveBeenCalled();
 
@@ -119,7 +122,7 @@ describe('ensureQAAuthenticated', () => {
         // fresh code, and module state cannot break a loop made of full page loads
         mockGetPending.mockReturnValue(Promise.reject(new Error('invalid_grant')));
         mockGetSession.mockReturnValue(undefined);
-        void ensureQAAuthenticated();
+        ensureQAAuthenticated();
         await waitForBatchedUpdates();
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
@@ -127,8 +130,8 @@ describe('ensureQAAuthenticated', () => {
     it('redirects at most once even when called concurrently', async () => {
         // Given two callers race — when both run, then the single-flight gate runs the decision chain once,
         // so a second caller cannot reach the redirect while the first is still awaiting hydration
-        void ensureQAAuthenticated();
-        void ensureQAAuthenticated();
+        ensureQAAuthenticated();
+        ensureQAAuthenticated();
         await waitForBatchedUpdates();
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
     });
