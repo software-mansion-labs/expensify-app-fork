@@ -434,22 +434,28 @@ function openApp(shouldKeepPublicRooms = false, allReportsWithDraftComments?: Re
         });
     }
 
-    const params: OpenAppParams = {...getPolicyParamsForOpenOrReconnect(), enablePriorityModeFilter: true};
+    // Lazy Onyx: the policy/report module snapshots feeding getPolicyParamsForOpenOrReconnect and the
+    // preservation successData may not be hydrated yet. An empty policyIDList would make the server
+    // silently return a FULL app payload instead of an incremental one, so hydration must complete
+    // first (it resolves immediately once done — this await is free on every subsequent call).
+    return Promise.all([Onyx.hydrate(ONYXKEYS.COLLECTION.POLICY), Onyx.hydrate(ONYXKEYS.COLLECTION.REPORT)]).then(() => {
+        const params: OpenAppParams = {...getPolicyParamsForOpenOrReconnect(), enablePriorityModeFilter: true};
 
-    // Preservation adds successData an in-flight OpenApp knows nothing about, so this call cannot be dropped.
-    const hasPreservationData = shouldKeepPublicRooms || !!allReportsWithDraftComments;
-    const openAppPromise = API.writeWithNoDuplicatesOpenAppConflictAction(
-        params,
-        getOnyxDataForOpenOrReconnect(true, undefined, shouldKeepPublicRooms, allReportsWithDraftComments),
-        shouldDedupeWithInFlight && !hasPreservationData,
-    ).finally(() => {
-        if (!bootsplashSpan) {
-            return;
-        }
-        endSpan(CONST.TELEMETRY.SPAN_NAVIGATION.APP_OPEN);
+        // Preservation adds successData an in-flight OpenApp knows nothing about, so this call cannot be dropped.
+        const hasPreservationData = shouldKeepPublicRooms || !!allReportsWithDraftComments;
+        const openAppPromise = API.writeWithNoDuplicatesOpenAppConflictAction(
+            params,
+            getOnyxDataForOpenOrReconnect(true, undefined, shouldKeepPublicRooms, allReportsWithDraftComments),
+            shouldDedupeWithInFlight && !hasPreservationData,
+        ).finally(() => {
+            if (!bootsplashSpan) {
+                return;
+            }
+            endSpan(CONST.TELEMETRY.SPAN_NAVIGATION.APP_OPEN);
+        });
+
+        return openAppPromise;
     });
-
-    return openAppPromise;
 }
 
 /**
@@ -483,28 +489,34 @@ function reconnectApp(updateIDFrom: OnyxEntry<number> = 0) {
         }
 
         console.debug(`[OnyxUpdates] App reconnecting with updateIDFrom: ${updateIDFrom}`);
-        const params: ReconnectAppParams = getPolicyParamsForOpenOrReconnect();
-
-        // Include the update IDs when reconnecting so that the server can send incremental updates if they are available.
-        // Otherwise, a full set of app data will be returned.
-        if (updateIDFrom) {
-            params.updateIDFrom = updateIDFrom;
-        }
-
-        const isFullReconnect = !updateIDFrom;
-        const reconnectAppPromise = API.writeWithNoDuplicatesReconnectConflictAction(
-            WRITE_COMMANDS.RECONNECT_APP,
-            params,
-            getOnyxDataForOpenOrReconnect(false, isFullReconnect, isSidebarLoaded, undefined, true),
-        ).finally(() => {
-            if (!bootsplashSpan) {
-                return;
-            }
-            endSpan(CONST.TELEMETRY.SPAN_NAVIGATION.APP_OPEN);
-        });
-
-        return reconnectAppPromise;
+        // Lazy Onyx: same reasoning as in openApp — the params/preservation reads need hydrated
+        // policy/report snapshots (free once hydrated). Fire-and-forget chain mirrors the existing style.
+        return Promise.all([Onyx.hydrate(ONYXKEYS.COLLECTION.POLICY), Onyx.hydrate(ONYXKEYS.COLLECTION.REPORT)]).then(() => reconnectAppAfterHydration(updateIDFrom, bootsplashSpan));
     });
+}
+
+function reconnectAppAfterHydration(updateIDFrom: OnyxEntry<number>, bootsplashSpan: ReturnType<typeof getSpan>) {
+    const params: ReconnectAppParams = getPolicyParamsForOpenOrReconnect();
+
+    // Include the update IDs when reconnecting so that the server can send incremental updates if they are available.
+    // Otherwise, a full set of app data will be returned.
+    if (updateIDFrom) {
+        params.updateIDFrom = updateIDFrom;
+    }
+
+    const isFullReconnect = !updateIDFrom;
+    const reconnectAppPromise = API.writeWithNoDuplicatesReconnectConflictAction(
+        WRITE_COMMANDS.RECONNECT_APP,
+        params,
+        getOnyxDataForOpenOrReconnect(false, isFullReconnect, isSidebarLoaded, undefined, true),
+    ).finally(() => {
+        if (!bootsplashSpan) {
+            return;
+        }
+        endSpan(CONST.TELEMETRY.SPAN_NAVIGATION.APP_OPEN);
+    });
+
+    return reconnectAppPromise;
 }
 
 /**

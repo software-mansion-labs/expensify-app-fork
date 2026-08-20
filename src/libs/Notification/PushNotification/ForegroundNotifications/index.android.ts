@@ -5,7 +5,7 @@ import Airship from '@ua/react-native-airship';
 import type ForegroundNotificationsModule from './types';
 
 function configureForegroundNotifications() {
-    Airship.push.android.setForegroundDisplayPredicate((pushPayload) => Promise.resolve(shouldShowPushNotification(pushPayload)));
+    Airship.push.android.setForegroundDisplayPredicate((pushPayload) => shouldShowPushNotification(pushPayload));
 }
 
 function disableForegroundNotifications() {

@@ -1,3 +1,4 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {getActivePolicies} from '@libs/PolicyUtils';
 
 import CONST from '@src/CONST';
@@ -13,6 +14,7 @@ import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
  */
 import * as Sentry from '@sentry/react-native';
 import Onyx from 'react-native-onyx';
+import OnyxCache from 'react-native-onyx/dist/OnyxCache';
 
 import {cleanupCrashDiagnostics, initializeCrashDiagnostics} from './crashDiagnostics';
 import {cleanupMemoryTracking, initializeMemoryTracking} from './sendMemoryContext';
@@ -58,15 +60,19 @@ Onyx.connectWithoutView({
     },
 });
 
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        if (!value) {
-            return;
+// Lazy-Onyx POC: the reports count is derived from the key INDEX (always complete, no values
+// needed) instead of a whole-collection subscription that would pin every report in RAM just to
+// send an integer to Sentry. Sent once post-ready — good enough for a session-level tag.
+deferUntilAppReady(() => {
+    let reportsCount = 0;
+    for (const key of OnyxCache.getAllKeys()) {
+        // The `report_` prefix (trailing underscore included) cannot match reportActions_/reportDraft_/etc.
+        if (key.startsWith(ONYXKEYS.COLLECTION.REPORT)) {
+            reportsCount++;
         }
-        sendReportsCountTag(Object.keys(value).length);
-    },
-});
+    }
+    sendReportsCountTag(reportsCount);
+}, 'low');
 
 Onyx.connectWithoutView({
     key: ONYXKEYS.PERSONAL_DETAILS_LIST,

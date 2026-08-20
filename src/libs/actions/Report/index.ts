@@ -221,7 +221,6 @@ import type {Route} from '@src/ROUTES';
 import INPUT_IDS from '@src/types/form/NewRoomForm';
 import type {
     AnyRequest,
-    Attachment,
     BankAccountList,
     Beta,
     IntroSelected,
@@ -269,6 +268,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import isEmpty from 'lodash/isEmpty';
 import {DeviceEventEmitter, Linking} from 'react-native';
 import Onyx from 'react-native-onyx';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import deleteReport from './DeleteReport';
 
@@ -569,13 +569,6 @@ Onyx.connect({
         }
         onboarding = val;
     },
-});
-
-// We use connectWithoutView because `allAttachments` doesn't affect the UI rendering, it's only used to retrieve attachment local source when deleting a comment
-let allAttachments: OnyxCollection<Attachment> = {};
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.ATTACHMENT,
-    callback: (value) => (allAttachments = value),
 });
 
 let environment: EnvironmentType;
@@ -3256,21 +3249,19 @@ function deleteReportComment(
 
     const attachmentTags = [...reportCommentText.matchAll(CONST.REGEX.ATTACHMENT.ATTACHMENT)];
 
-    const attachments = attachmentTags.flatMap((htmlTag, index) => {
+    const attachmentIDs = attachmentTags.map((htmlTag, index) => {
         const tag = htmlTag[0];
 
         const dataAttachmentID = tag.match(CONST.REGEX.ATTACHMENT.ATTACHMENT_ID)?.[2]; // [2] means the exact value of the attachment id of the attachment tag
-        const attachmentID = dataAttachmentID ?? `${reportActionID}_${index + 1}`;
-        const attachment = allAttachments?.[`${ONYXKEYS.COLLECTION.ATTACHMENT}${attachmentID}`];
-
-        return {
-            attachmentID,
-            localSource: attachment?.source,
-        };
+        return dataAttachmentID ?? `${reportActionID}_${index + 1}`;
     });
 
-    for (const attachment of attachments) {
-        removeCachedAttachment({attachmentID: attachment.attachmentID, localSource: attachment.localSource});
+    // Lazy Onyx: each attachment is read on demand (fire-and-forget — clearing the local file cache
+    // is a side effect that doesn't have to complete before the optimistic delete below).
+    for (const attachmentID of attachmentIDs) {
+        OnyxUtils.get(`${ONYXKEYS.COLLECTION.ATTACHMENT}${attachmentID}`).then((attachment) => {
+            removeCachedAttachment({attachmentID, localSource: attachment?.source});
+        });
     }
 
     const isDeletedParentAction = ReportActionsUtils.isThreadParentMessage(reportAction, reportID);

@@ -2,6 +2,13 @@ import type {CurrencyListActionsContextType} from '@hooks/useCurrencyList';
 
 import {isCategoryMissing} from '@libs/CategoryUtils';
 import {convertToBackendAmount} from '@libs/CurrencyUtils';
+/**
+ * Actions for inline editing of transactions from the Search results table and the Expense Report page.
+ *
+ * Each function delegates to the corresponding IOU action which owns the canonical Onyx record,
+ * the API write, failure rollback, and snapshot updates (when a hash is provided).
+ */
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {isValidMerchant, isValidMoneyRequestAmount} from '@libs/MoneyRequestUtils';
 import {hasEnabledOptions} from '@libs/OptionsListUtils';
 import Permissions from '@libs/Permissions';
@@ -52,12 +59,6 @@ import type {
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 
-/**
- * Actions for inline editing of transactions from the Search results table and the Expense Report page.
- *
- * Each function delegates to the corresponding IOU action which owns the canonical Onyx record,
- * the API write, failure rollback, and snapshot updates (when a hash is provided).
- */
 import Onyx from 'react-native-onyx';
 
 import {
@@ -80,36 +81,41 @@ type TransactionEditPermissions = {
 };
 
 let allTransactions: NonNullable<OnyxCollection<Transaction>> = {};
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.TRANSACTION,
-    callback: (value) => {
-        allTransactions = value ?? {};
-    },
-});
-
 let allTransactionViolations: NonNullable<OnyxCollection<TransactionViolations>> = {};
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS,
-    callback: (value) => {
-        allTransactionViolations = value ?? {};
-    },
-});
-
 let allReports: NonNullable<OnyxCollection<Report>> = {};
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value ?? {};
-    },
-});
-
 let allReportActions: NonNullable<OnyxCollection<ReportActions>> = {};
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (value) => {
-        allReportActions = value ?? {};
-    },
-});
+
+// Inline editing is interaction-triggered — establishing these whole-collection subscriptions (which
+// under lazy Onyx is what forces the collections to hydrate) is deferred until the app is interactive.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.TRANSACTION,
+        callback: (value) => {
+            allTransactions = value ?? {};
+        },
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS,
+        callback: (value) => {
+            allTransactionViolations = value ?? {};
+        },
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value ?? {};
+        },
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (value) => {
+            allReportActions = value ?? {};
+        },
+    });
+}, 'low');
 
 let currentUserAccountID: number = CONST.DEFAULT_NUMBER_ID;
 let currentUserEmail = '';

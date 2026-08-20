@@ -1,5 +1,6 @@
 import type {CurrencyListActionsContextType} from '@hooks/useCurrencyList';
 
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {calculateAmount} from '@libs/IOUUtils';
 import isSearchTopmostFullScreenRoute from '@libs/Navigation/helpers/isSearchTopmostFullScreenRoute';
 import Navigation from '@libs/Navigation/Navigation';
@@ -28,10 +29,6 @@ import {initDraftSplitExpenseDataForEdit, initSplitExpenseItemData, resolveSplit
 // there so subscriptions stay scoped, the UI updates when the value changes, and they're torn down with
 // the component.
 let allTransactions: OnyxCollection<Transaction>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.TRANSACTION,
-    callback: (value) => (allTransactions = value),
-});
 
 // We read the whole reports collection here only because `initSplitExpense` runs in the action layer
 // (not a component/hook), where `useOnyx` can't be called, and it doesn't affect UI rendering, so
@@ -41,10 +38,20 @@ Onyx.connectWithoutView({
 // there so subscriptions stay scoped, the UI updates when the value changes, and they're torn down with
 // the component.
 let allReports: OnyxCollection<Report>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => (allReports = value),
-});
+
+// Splitting an expense is interaction-triggered — defer the whole-collection subscriptions (which
+// under lazy Onyx force hydration) until the app is interactive.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.TRANSACTION,
+        callback: (value) => (allTransactions = value),
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => (allReports = value),
+    });
+}, 'low');
 
 /**
  * Create a draft transaction to set up split expense details for the split expense flow

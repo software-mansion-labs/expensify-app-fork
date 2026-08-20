@@ -1,3 +1,4 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {getLinkedTransactionID, getReportAction, getReportActionMessage, isCreatedTaskReportAction, isRejectedAction} from '@libs/ReportActionsUtils';
 import {getOriginalReportID} from '@libs/ReportUtils';
 import {buildOptimisticSnapshotData} from '@libs/SearchQueryUtils';
@@ -17,18 +18,23 @@ import deleteReport from './Report/DeleteReport';
 type IgnoreDirection = 'parent' | 'child';
 
 let allReportActions: OnyxCollection<OnyxTypes.ReportActions>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (value) => (allReportActions = value),
-});
-
 let allReports: OnyxCollection<OnyxTypes.Report>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-    },
-});
+
+// Clearing report action errors is interaction-triggered — defer the whole-collection subscriptions
+// (which under lazy Onyx force hydration) until the app is interactive.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (value) => (allReportActions = value),
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value;
+        },
+    });
+}, 'low');
 
 function clearReportActionErrors(reportAction: ReportAction, originalReportID: string | undefined, keys?: string[]) {
     if (!reportAction?.reportActionID) {

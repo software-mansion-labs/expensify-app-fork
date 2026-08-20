@@ -1,3 +1,4 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import Log from '@libs/Log';
 import {getOriginalMessage, isMoneyRequestAction} from '@libs/ReportActionsUtils';
 
@@ -13,16 +14,21 @@ import Onyx from 'react-native-onyx';
 // and this avoids unnecessary re-rendering because we recursively delete the report and its children
 // which requires us to subscribe to the whole report and report actions collection.
 let allReports: OnyxCollection<Report>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => (allReports = value),
-});
-
 let allReportActions: OnyxCollection<ReportActions>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (value) => (allReportActions = value),
-});
+
+// Deleting a report is interaction-triggered — defer the whole-collection subscriptions (which under
+// lazy Onyx force hydration) until the app is interactive.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => (allReports = value),
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (value) => (allReportActions = value),
+    });
+}, 'low');
 
 /** Deletes a report, along with its reportActions, any linked reports, and any linked IOU report. */
 function deleteReport(reportID: string | undefined, shouldDeleteChildReports = false) {

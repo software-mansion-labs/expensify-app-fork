@@ -6,6 +6,8 @@ import type ChildrenProps from './types/utils/ChildrenProps';
 
 import CONFIG from './CONFIG';
 import CONST from './CONST';
+import {markAppReady} from './libs/deferUntilAppReady';
+import Navigation from './libs/Navigation/Navigation';
 import {addBootsplashBreadcrumb} from './libs/telemetry/bootsplashTelemetry';
 import loadUnreadIndicatorUpdater from './libs/UnreadIndicatorUpdater/load';
 
@@ -47,6 +49,10 @@ function SplashScreenStateContextProvider({children}: ChildrenProps) {
             return;
         }
         loadPostSplashScreenModules();
+        // "Interactive" = splash gone AND navigation ready. HIDDEN alone is not enough: the HybridApp
+        // logged-out path sets HIDDEN before navigation mounts. markAppReady is idempotent, so the
+        // StrictMode double-run and the fallback timeout racing this are both safe.
+        Navigation.isNavigationReady().then(() => markAppReady('splash_hidden'));
     }, [splashScreenState]);
 
     // Because of the React Compiler we don't need to memoize these context values manually
