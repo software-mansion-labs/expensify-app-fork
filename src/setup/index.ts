@@ -1,3 +1,4 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import intlPolyfill from '@libs/IntlPolyfill';
 import {endSpan, getSpan, startSpan} from '@libs/telemetry/activeSpans';
 import {installOnyxConnectDemandRecorder} from '@libs/telemetry/onyxBootStats';
@@ -103,9 +104,22 @@ export default function () {
         snapshotMergeKeys: ['pendingAction', 'pendingFields'],
         ramOnlyKeys: RAM_ONLY_KEYS,
         lazyCollections: LAZY_COLLECTIONS,
+        // Partial expression indexes accelerating Onyx.queryCollection over the hot collections.
+        // Declarations are applied by the reconcileIndexes() call below (idle) — which also detects
+        // and drops any Onyx-managed index whose declaration was removed from this list.
+        indexes: {
+            [ONYXKEYS.COLLECTION.REPORT]: ['policyID', 'lastVisibleActionCreated', 'parentReportID'],
+            [ONYXKEYS.COLLECTION.TRANSACTION]: ['reportID'],
+            [ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS]: ['private_isArchived'],
+        },
     });
 
     OnyxUtils.getDeferredInitTask().promise.then(() => endSpan(CONST.TELEMETRY.SPAN_ONYX_INIT));
+
+    // Index builds are O(collection) storage writes — run them from idle, never on the boot path.
+    deferUntilAppReady(() => {
+        Onyx.reconcileIndexes();
+    }, 'low');
 
     // Must run before initOnyxDerivedValues so the derived engine's collection subscriptions are captured.
     installOnyxConnectDemandRecorder();
