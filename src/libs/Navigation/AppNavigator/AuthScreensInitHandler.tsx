@@ -13,6 +13,7 @@ import useReportAttributes from '@hooks/useReportAttributes';
 import useRootNavigationState from '@hooks/useRootNavigationState';
 
 import {init, isClientTheLeader} from '@libs/ActiveClientManager';
+import {isQAServerActive} from '@libs/ApiUtils';
 import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
@@ -47,8 +48,22 @@ function initializePusher(
     getTopmostOneTransactionThreadReportID: () => string | undefined,
     getReportAttributes: () => ReportAttributesDerivedValue['reports'] | undefined,
 ) {
+    // Chosen at runtime, not from .env.qa the way staging picks its key: a dev build can opt into the QA
+    // server through the test tool, and that build loads .env. No fallback either — CONFIG.PUSHER.APP_KEY
+    // defaults to the production key, so falling back would open a QA socket against production Pusher
+    // and every channel auth, signed with QA's secret, would be rejected quietly.
+    const appKey = isQAServerActive() ? CONFIG.PUSHER.QA_APP_KEY : CONFIG.PUSHER.APP_KEY;
+
+    // pusher-js rejects only a null/undefined key, so an empty one builds a socket that never connects while
+    // Pusher.init resolves solely from its 'connected' handler — leaving every subscribe() and the PUSHER_INIT
+    // span pending forever. Bail out instead: no realtime on this build, but nothing hangs behind it.
+    if (!appKey) {
+        Log.alert('[Pusher] Skipping init: no Pusher app key is configured for the active server');
+        return Promise.resolve();
+    }
+
     return Pusher.init({
-        appKey: CONFIG.PUSHER.APP_KEY,
+        appKey,
         cluster: CONFIG.PUSHER.CLUSTER,
         authEndpoint: `${CONFIG.EXPENSIFY.DEFAULT_API_ROOT}api/AuthenticatePusher?`,
     }).then(() => {
