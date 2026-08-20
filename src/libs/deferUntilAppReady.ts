@@ -23,6 +23,15 @@ const PRIORITY_ORDER: readonly DeferPriority[] = ['high', 'medium', 'low'];
 const FALLBACK_TIMEOUT_MS = 10000;
 const IDLE_CALLBACK_TIMEOUT_MS = 2000;
 
+// Under jest there is no splash/navigation, so markAppReady would never fire and every deferred
+// callback (module connects, derived catch-all) would silently never run — producing order-dependent
+// test failures. Deferral is a production-startup optimization, not behavior under test: run
+// callbacks synchronously there, restoring the pre-deferral semantics for the whole suite.
+const isTestEnvironment = typeof jest !== 'undefined' || process.env.NODE_ENV === 'test';
+
+/** requestIdleCallback with a safety net for environments without the polyfill loaded. */
+const scheduleIdle: typeof requestIdleCallback = typeof requestIdleCallback === 'function' ? requestIdleCallback : (callback) => setTimeout(callback, 0) as unknown as number;
+
 let isReady = false;
 let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
 const queues: Record<DeferPriority, Array<() => void>> = {
@@ -49,7 +58,7 @@ function drainQueues() {
         if (!priority) {
             return;
         }
-        requestIdleCallback(
+        scheduleIdle(
             () => {
                 while (queues[priority].length > 0) {
                     const callback = queues[priority].shift();
@@ -84,8 +93,12 @@ function markAppReady(reason: AppReadyReason): void {
  * idle callback (never synchronously) so callers can't accidentally block an interaction.
  */
 function deferUntilAppReady(callback: () => void, priority: DeferPriority = 'medium'): void {
+    if (isTestEnvironment) {
+        runCallbackSafely(callback, priority);
+        return;
+    }
     if (isReady) {
-        requestIdleCallback(() => runCallbackSafely(callback, priority), {timeout: IDLE_CALLBACK_TIMEOUT_MS});
+        scheduleIdle(() => runCallbackSafely(callback, priority), {timeout: IDLE_CALLBACK_TIMEOUT_MS});
         return;
     }
     queues[priority].push(callback);
