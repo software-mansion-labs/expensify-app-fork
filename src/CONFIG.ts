@@ -45,8 +45,11 @@ const useNgrok = get(Config, 'USE_NGROK', 'false') === 'true';
 const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';
 // Only normalize a non-empty value: addTrailingForwardSlash('') returns '/', which would look configured
 const normalizeOptionalRoot = (value: string): string => (value ? addTrailingForwardSlash(value) : '');
-const qaExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_EXPENSIFY_URL', ''));
-const qaSecureExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_SECURE_EXPENSIFY_URL', ''));
+// Defaulted like the staging roots above so .env.qa does not have to restate a host the bundle already knows.
+// The non-secure root comes from CONST because app code outside API routing reads it; no secure host has a
+// constant, so that one is a literal here. An explicitly empty value still reads as unconfigured.
+const qaExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_EXPENSIFY_URL', CONST.QA_EXPENSIFY_URL));
+const qaSecureExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_SECURE_EXPENSIFY_URL', 'https://qa-secure.exops.io/'));
 const expensifyComWithProxy = getPlatform() === 'web' && useWebProxy ? '/' : expensifyURL;
 
 // Throw errors on dev if config variables are not set correctly
