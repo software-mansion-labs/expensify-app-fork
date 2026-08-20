@@ -31,7 +31,7 @@ async function startRedirect(): Promise<void> {
 
 async function runGate(): Promise<void> {
     // Both signals below are Onyx-backed and neither is readable on the boot tick: ACTIVE_SERVER arrives via
-    // ApiUtils (which itself waits on getEnvironment() before subscribing), CF_SESSION via the session cache.
+    // ApiUtils (which itself waits on getEnvironment() before subscribing), CLOUDFLARE_SESSION via the session cache.
     // Deciding before they hydrate reads "production, no session" on every build, QA included.
     await Promise.all([waitForActiveServerHydration(), waitForCloudflareSessionHydration()]);
 
