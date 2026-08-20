@@ -128,7 +128,16 @@ export default function () {
     // handlers are registered before any push arrives, including Android headless/background wake-ups.
     import('@libs/Notification/PushNotification/subscribeToPushNotifications');
 
-    initOnyxDerivedValues();
+    // Lazy-Onyx POC (A2): the derived engine subscribes to ~10 whole collections, which under lazy
+    // Onyx is what forces them all to hydrate — so its START is deferred until the app is
+    // interactive. This is safe because the persisted DERIVED.* outputs are eager singletons: the UI
+    // renders last-session derived values immediately, and the engine's first flush (a full compute)
+    // reconciles them right after the splash hides. Trade-offs accepted for the POC: RAM-only derived
+    // values (sorted report actions) are empty until the post-splash drain, and in a headless wake
+    // the engine only starts via the 10s fallback (the push path fails open on unhydrated reports).
+    deferUntilAppReady(() => {
+        initOnyxDerivedValues();
+    }, 'high');
 
     setDeviceID();
 
