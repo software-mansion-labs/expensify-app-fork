@@ -63,6 +63,10 @@ let realLocation: Location;
 
 beforeEach(() => {
     jest.resetModules();
+    // Nothing here makes an HTTP request, but resetModules gives every test its own copy of the network
+    // queues, and one of those flushes during an await in this suite, reaching jsdom's missing `Request`.
+    // Stubbed so a leaked request from any earlier test cannot fail whichever test happens to be running.
+    global.fetch = jest.fn(() => Promise.reject(new Error('fetch is not available in CloudflareSessionTest')));
     // The redirect flow record lives in jsdom's real sessionStorage. Drop leftovers from earlier tests
     window.sessionStorage.clear();
     // jsdom throws "Not implemented: navigation" on a real location.assign
@@ -103,8 +107,8 @@ describe('refreshCloudflareSession', () => {
         jest.mocked(oAuthClient.refreshTokens).mockReturnValue(refreshDeferred.promise);
 
         // When a second caller asks for a refresh while the first is still in flight
-        const first = SessionActions.refreshCloudflareSession();
-        const second = SessionActions.refreshCloudflareSession();
+        const first = SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
+        const second = SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
         // Then it must join the same promise: refresh tokens are single-use (Cloudflare rotates them),
         // so two parallel refreshes would spend the same token and one of them would be rejected
         expect(second).toBe(first);
@@ -124,7 +128,7 @@ describe('refreshCloudflareSession', () => {
         const persistDeferred = Promise.withResolvers<void>();
         const setSpy = jest.spyOn(Onyx, 'set').mockReturnValue(persistDeferred.promise);
 
-        const inFlight = SessionActions.refreshCloudflareSession();
+        const inFlight = SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
         // The rotation resolved and the cache updated, but Onyx.set is still pending
         await waitForBatchedUpdates();
 
@@ -166,7 +170,7 @@ describe('refreshCloudflareSession', () => {
 
         // When the refresh runs, Then it resolves reauth-required rather than rejecting: only a fresh
         // authorize round trip can recover, so callers must be told to re-auth, not tempted to retry
-        await expect(SessionActions.refreshCloudflareSession()).resolves.toBe('reauth-required');
+        await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('reauth-required');
         // Then the session is deliberately not cleared: the store is shared across tabs and recovery is by
         // replacement. A deletion here could destroy a working rotation another tab persisted moments earlier
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
@@ -180,7 +184,7 @@ describe('refreshCloudflareSession', () => {
 
         // When the refresh runs, Then the error propagates so callers can retry, and the session stays
         // alive: a network blip says nothing about the token, so it must not force a re-auth
-        await expect(SessionActions.refreshCloudflareSession()).rejects.toBe(transientError);
+        await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).rejects.toBe(transientError);
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
     });
 
@@ -189,7 +193,7 @@ describe('refreshCloudflareSession', () => {
         await seedSession(null);
         // When a refresh is requested, Then it resolves reauth-required without touching the network,
         // because the authorize round trip is the only path that can produce a session from nothing
-        await expect(SessionActions.refreshCloudflareSession()).resolves.toBe('reauth-required');
+        await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('reauth-required');
         expect(oAuthClient.refreshTokens).not.toHaveBeenCalled();
     });
 
@@ -199,7 +203,7 @@ describe('refreshCloudflareSession', () => {
         const refreshDeferred = Promise.withResolvers<CloudflareSession>();
         jest.mocked(oAuthClient.refreshTokens).mockReturnValue(refreshDeferred.promise);
 
-        const refresh = SessionActions.refreshCloudflareSession();
+        const refresh = SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
         // When the other tab wins the rotation race (its new pair reaches this tab through Onyx) and the
         // server then rejects the token this tab submitted as already spent
         await seedSession(SESSION_B);
@@ -241,7 +245,7 @@ describe('refreshCloudflareSession', () => {
         jest.mocked(oAuthClient.refreshTokens).mockReturnValue(refreshDeferred.promise);
 
         // When sign-out bumps the session generation before the rotation resolves
-        const refresh = SessionActions.refreshCloudflareSession();
+        const refresh = SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
         sessionCleanup.runSessionCleanupCallbacks();
         refreshDeferred.resolve(SESSION_B);
 
@@ -491,6 +495,30 @@ describe('unconfigured builds', () => {
         // Then hydration still resolves even though no subscription will ever fire, so no caller can hang on it
         await expect(sessionActions.waitForCloudflareSessionHydration()).resolves.toBeUndefined();
         connectSpy.mockRestore();
+    });
+});
+
+describe('markCloudflareSessionRejected', () => {
+    it('clears the session when the rejected token is still the current one', async () => {
+        // Given a stored session whose access token a freshly refreshed request was still rejected with
+        await seedSession(SESSION_A);
+
+        // When the network layer reports that token as rejected
+        await SessionActions.markCloudflareSessionRejected(SESSION_A.accessToken);
+
+        // Then the dead session is gone, because refresh demonstrably cannot recover it
+        expect(SessionActions.getCloudflareSession()).toBeNull();
+    });
+
+    it('is a no-op when a newer token has already replaced the rejected one', async () => {
+        // Given another tab rotated the session after this caller saw its 401
+        await seedSession(SESSION_B);
+
+        // When the caller reports the token it saw, which is now stale news
+        await SessionActions.markCloudflareSessionRejected(SESSION_A.accessToken);
+
+        // Then the working rotation survives. Deleting it would take a live session down with the dead one
+        expect(SessionActions.getCloudflareSession()).toEqual(SESSION_B);
     });
 });
 

@@ -2291,6 +2291,7 @@ const translations = {
             releaseOptions: 'Release options',
             testingPreferences: 'Testing preferences',
             useStagingServer: 'Use Staging Server',
+            useQAServer: 'Use QA Server',
             qaAuth: 'QA auth (Cloudflare)',
             qaAuthRunProbe: 'Run probe',
             qaAuthSession: 'QA auth session',

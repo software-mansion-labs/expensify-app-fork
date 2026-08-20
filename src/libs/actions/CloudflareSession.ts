@@ -144,14 +144,14 @@ function withCrossTabRefreshLock(callback: () => Promise<CloudflareRefreshResult
 }
 
 /** Runs with the cross-tab lock held. The session is re-read here rather than captured by the caller */
-async function performCloudflareRefresh(staleAccessToken: string | undefined): Promise<CloudflareRefreshResult> {
+async function performCloudflareRefresh(staleAccessToken: string): Promise<CloudflareRefreshResult> {
     const generation = sessionGeneration;
     const current = sessionCache;
     if (!current?.refreshToken) {
         return 'reauth-required';
     }
     // Rotation already completed, here or in another tab, while this caller's request was in flight
-    if (staleAccessToken && current.accessToken !== staleAccessToken) {
+    if (current.accessToken !== staleAccessToken) {
         return 'skipped-newer-token';
     }
 
@@ -187,9 +187,10 @@ async function performCloudflareRefresh(staleAccessToken: string | undefined): P
 /**
  * Single-flight refresh, serialized across tabs. The rotated pair is persisted before it resolves. Terminal
  * failures resolve 'reauth-required' (recovery is a fresh authorize round trip), transient ones reject with
- * the session intact. Pass the token a 401 was seen with to get 'skipped-newer-token' after a rotation.
+ * the session intact. `staleAccessToken` is the token the caller decided to refresh from: if it is no longer
+ * the current one, a rotation beat this call and it resolves 'skipped-newer-token' without spending a token.
  */
-function refreshCloudflareSession(staleAccessToken?: string): Promise<CloudflareRefreshResult> {
+function refreshCloudflareSession(staleAccessToken: string): Promise<CloudflareRefreshResult> {
     // Joining guarantees the rotated pair already hit Onyx. Preconditions are re-checked inside the lock
     if (refreshPromise) {
         return refreshPromise;
@@ -201,13 +202,26 @@ function refreshCloudflareSession(staleAccessToken?: string): Promise<Cloudflare
     return refreshPromise;
 }
 
-/** Deletes the session for every tab. Only the test tool's Clear-session button calls this. Failure paths recover by replacement */
+/** Deletes the session for every tab. Two callers: the test tool's Clear-session button, and a 401 that refreshing could not fix */
 function clearCloudflareSession(): Promise<void> {
     // In-flight work must not undo the clear by persisting its late result, exactly like on sign-out
     sessionGeneration++;
     // Synchronous, so a probe pressed right after Clear cannot read the dead session
     sessionCache = null;
     return Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, null);
+}
+
+/**
+ * Drops a session a *freshly refreshed* access token was still rejected with. Token-guarded: another tab may
+ * have rotated since the 401 was seen, and deleting that rotation would take a working session down with the
+ * dead one.
+ */
+function markCloudflareSessionRejected(rejectedAccessToken: string): Promise<void> {
+    if (sessionCache?.accessToken !== rejectedAccessToken) {
+        // A newer session exists, so the caller's 401 is stale news rather than grounds to delete anything
+        return Promise.resolve();
+    }
+    return clearCloudflareSession();
 }
 
 export {
@@ -217,6 +231,7 @@ export {
     getCloudflareSession,
     getPendingCloudflareAuthCompletion,
     isSessionNearExpiry,
+    markCloudflareSessionRejected,
     refreshCloudflareSession,
     waitForCloudflareSessionHydration,
 };
