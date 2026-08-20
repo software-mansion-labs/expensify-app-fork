@@ -2,20 +2,13 @@
  * Test-tool probe: drives the session decision tree and fires one authenticated request at the QA origin.
  * Nothing in the app routes to QA yet, so this is the only way to exercise the whole flow end to end.
  */
-import fetchWithQAAuth, {CF_REAUTH_REQUIRED} from '@libs/CloudflareAccess/fetchWithQAAuth';
+import HttpUtils from '@libs/HttpUtils';
 import {isRecord} from '@libs/ObjectUtils';
 
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 
-import {
-    beginCloudflareAuthRedirect,
-    getCloudflareSession,
-    getPendingCloudflareAuthCompletion,
-    isSessionNearExpiry,
-    refreshCloudflareSession,
-    waitForCloudflareSessionHydration,
-} from './CloudflareSession';
+import {beginCloudflareAuthRedirect, getCloudflareSession, getPendingCloudflareAuthCompletion, waitForCloudflareSessionHydration} from './CloudflareSession';
 
 type CloudflareAuthProbeStatus = 'success' | 'reauthRequired' | 'signInFailed' | 'error';
 
@@ -34,7 +27,9 @@ type CloudflareAuthProbeOptions = {
 
 /**
  * Never rejects. Every failure comes back as a semantic result, so the UI consumes it with `.then` only.
- * With no session (or on a consented re-auth, see the options) it navigates the tab away and never settles.
+ * With no session it navigates the tab away and never settles. A session that `HttpUtils` finds dead
+ * redirects there too, except when QA is not the active server. Nothing downstream may navigate then, so
+ * the consenting second press (see the options) is the only thing that can.
  */
 async function runCloudflareAuthProbe({shouldRedirectOnReauthRequired = false}: CloudflareAuthProbeOptions = {}): Promise<CloudflareAuthProbeResult> {
     try {
@@ -49,30 +44,22 @@ async function runCloudflareAuthProbe({shouldRedirectOnReauthRequired = false}: 
             }
         }
 
-        const session = getCloudflareSession();
-        if (!session) {
+        if (!getCloudflareSession()) {
             // Never settles. Nothing below runs
             await beginCloudflareAuthRedirect();
-        } else if (isSessionNearExpiry(session)) {
-            const refreshResult = await refreshCloudflareSession();
-            if (refreshResult === 'reauth-required') {
-                if (shouldRedirectOnReauthRequired) {
-                    await beginCloudflareAuthRedirect();
-                }
-                return {status: 'reauthRequired'};
-            }
         }
 
-        const response = await fetchWithQAAuth(`${CONFIG.QA_AUTH.API_ROOT}${CONFIG.QA_AUTH.CHECK_PATH}`, {method: CONST.NETWORK.METHOD.POST});
-        if (!response.ok) {
-            return {status: 'error', detail: `HTTP ${response.status}`};
-        }
-        // Diagnostic echo of how the request authenticated. Read loosely
-        const body: unknown = await response.json().catch(() => null);
+        // The real client, so the probe exercises the app's own path. The bearer, the pre-expiry refresh and
+        // the 401 fallback all live in HttpUtils, which is why there is no near-expiry branch of our own here.
+        // Typed as unknown, not as the API Response it is declared to be: the field read below is a QA-only
+        // diagnostic the shared response type knows nothing about
+        const body: unknown = await HttpUtils.processHTTPRequest(`${CONFIG.QA_AUTH.API_ROOT}${CONFIG.QA_AUTH.CHECK_PATH}`, CONST.NETWORK.METHOD.POST);
+        // Cloudflare resolves the token at the edge and injects the user's JWT, so the origin can echo back
+        // how the request authenticated. Read loosely: it is a diagnostic, not a contract.
         const authenticatedVia = isRecord(body) && typeof body.authenticatedVia === 'string' ? body.authenticatedVia : null;
         return {status: 'success', detail: `authenticatedVia: ${authenticatedVia ?? 'null'}`};
     } catch (error) {
-        if (error instanceof Error && error.message === CF_REAUTH_REQUIRED) {
+        if (error instanceof Error && error.message === CONST.ERROR.CF_REAUTH_REQUIRED) {
             if (shouldRedirectOnReauthRequired) {
                 try {
                     await beginCloudflareAuthRedirect();
