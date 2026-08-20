@@ -11,10 +11,17 @@ import type {ValueOf} from 'type-fest';
 
 import Onyx from 'react-native-onyx';
 
+import type {QARequestAuth} from './CloudflareAccess/QARequestAuth/types';
+
 import {setTimeSkew} from './actions/Network';
 import {alertUser} from './actions/UpdateRequired';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
 import {getCommandURL} from './ApiUtils';
+// Both runtime Cloudflare specifiers are extension-less on purpose: that is what resolves to the native
+// stubs, keeping the authorize/PKCE/token chain out of both native bundles even though HttpUtils is shared.
+// The QARequestAuth type import above is erased, so it reaches no module at runtime.
+import {isQAServerRequest} from './CloudflareAccess/Config';
+import {handleQAUnauthorized, prepareQARequestAuth} from './CloudflareAccess/QARequestAuth';
 import HttpsError from './Errors/HttpsError';
 import {setLoadTestParameters} from './Network/LoadTestState';
 import preparePrefetchRequest from './Prefetch/preparePrefetchRequest';
@@ -71,6 +78,54 @@ const ALREADY_CREATED_MESSAGES = new Set<string>([CONST.ERROR_TITLE.ALREADY_CREA
 const APICommandRegex = /\/api\/([^&?]+)\??.*/;
 
 /**
+ * The parsed-response stage. NOT pure: it fires alerts and the update-required modal, so a response must
+ * pass through it exactly once. That is why the QA retry below recurses into attemptRequest(), not into this.
+ */
+function processJSONResponse<TKey extends OnyxKey>(response: Response<TKey>): Response<TKey> {
+    // Some retried requests will result in a "Unique Constraints Violation" error from the server, which just means the record already exists
+    if (response.jsonCode === CONST.JSON_CODE.BAD_REQUEST && response.message === CONST.ERROR_TITLE.DUPLICATE_RECORD) {
+        throw new HttpsError({
+            message: CONST.ERROR.DUPLICATE_RECORD,
+            status: CONST.JSON_CODE.BAD_REQUEST.toString(),
+            title: CONST.ERROR_TITLE.DUPLICATE_RECORD,
+            requestID: response.requestID,
+        });
+    }
+
+    // Per-command messages indicating the resource already exists on the server (e.g. retry after a successful first attempt).
+    if (response.jsonCode === CONST.JSON_CODE.EXP_ERROR && response.message && ALREADY_CREATED_MESSAGES.has(response.message)) {
+        throw new HttpsError({
+            message: CONST.ERROR.ALREADY_CREATED,
+            status: CONST.JSON_CODE.EXP_ERROR.toString(),
+            title: response.message,
+        });
+    }
+
+    // Auth is down or timed out while making a request
+    if (response.jsonCode === CONST.JSON_CODE.EXP_ERROR && response.title === CONST.ERROR_TITLE.SOCKET && response.type === CONST.ERROR_TYPE.SOCKET) {
+        throw new HttpsError({
+            message: CONST.ERROR.EXPENSIFY_SERVICE_INTERRUPTED,
+            status: CONST.JSON_CODE.EXP_ERROR.toString(),
+            title: CONST.ERROR_TITLE.SOCKET,
+            requestID: response.requestID,
+        });
+    }
+
+    if (response.data && (response.data?.authWriteCommands?.length ?? 0)) {
+        const {phpCommandName, authWriteCommands} = response.data;
+        const message = `The API command ${phpCommandName} is doing too many Auth writes. Count ${authWriteCommands.length}, commands: ${authWriteCommands.join(
+            ', ',
+        )}. If you modified this command, you MUST refactor it to remove the extra Auth writes. Otherwise, update the allowed write count in Web-Expensify APIWriteCommands.`;
+        alert('Too many auth writes', message);
+    }
+    if (response.jsonCode === CONST.JSON_CODE.UPDATE_REQUIRED) {
+        // Trigger a modal and disable the app as the user needs to upgrade to the latest minimum version to continue
+        alertUser();
+    }
+    return response;
+}
+
+/**
  * Send an HTTP request, and attempt to resolve the json response.
  * If there is a network error, we'll set the application offline.
  */
@@ -80,9 +135,33 @@ function processHTTPRequest<TKey extends OnyxKey>(
     body: FormData | null = null,
     abortSignal: AbortSignal | undefined = undefined,
 ): Promise<Response<TKey>> {
-    const startTime = new Date().valueOf();
-
     const command = url.match(APICommandRegex)?.[1];
+
+    // Both once-per-request stages live here rather than inside attemptRequest(), which resolves to the raw
+    // parsed body and may call itself once for a QA token refresh. That is what keeps the alerts in
+    // processJSONResponse and the startup-request end from firing twice for a single request.
+    return attemptRequest<TKey>(url, method, body, abortSignal, command)
+        .then(processJSONResponse)
+        .finally(() => markAppStartupNetworkRequestEnd(command));
+}
+
+/** One network attempt: the fetch, its phase spans, the skew bookkeeping, the HTTP-status handling and `response.json()`. */
+async function attemptRequest<TKey extends OnyxKey>(
+    url: string,
+    method: RequestType,
+    body: FormData | null,
+    abortSignal: AbortSignal | undefined,
+    command: string | undefined,
+    qaRetryAuth?: QARequestAuth,
+): Promise<Response<TKey>> {
+    // On the 401 retry the caller hands us the rotated credential; otherwise a QA URL resolves its own,
+    // which awaits the Cloudflare gate and rotates a near-expiry token before anything is sent. Guarded by
+    // the synchronous isQAServerRequest so no other request pays a microtask for it.
+    const qaAuth = qaRetryAuth ?? (isQAServerRequest(url) ? await prepareQARequestAuth() : undefined);
+
+    // Everything below is measured from here, not from the top of the function. A token round trip counted as
+    // request latency would poison setTimeSkew and inflate the wait span.
+    const startTime = new Date().valueOf();
 
     const {prefetchKey, prefetchHeaders} = preparePrefetchRequest(command);
 
@@ -91,7 +170,7 @@ function processHTTPRequest<TKey extends OnyxKey>(
         signal: abortSignal,
         method,
         body,
-        headers: prefetchHeaders,
+        headers: qaAuth ? {...prefetchHeaders, ...qaAuth.headers} : prefetchHeaders,
         // On Web fetch already defaults to 'omit' for credentials, but it seems that this is not the case for the ReactNative implementation
         // so to avoid sending cookies with the request we set it to 'omit' explicitly
         // this avoids us sending specially the expensifyWeb cookie, which makes a CSRF token required
@@ -99,7 +178,11 @@ function processHTTPRequest<TKey extends OnyxKey>(
         credentials: 'omit',
     };
 
-    registerPrefetchOnAppStart({prefetchKey, fetchParams, command, url});
+    // The registered template captures fetchParams, so a request carrying a short-lived bearer must not
+    // become one
+    if (!qaAuth) {
+        registerPrefetchOnAppStart({prefetchKey, fetchParams, command, url});
+    }
 
     // Mirrors the "Waiting" / "Content Download" split Chrome shows for this request.
     const phaseSpanNames = getRequestPhaseSpanNames(command);
@@ -140,6 +223,16 @@ function processHTTPRequest<TKey extends OnyxKey>(
                 throw new HttpsError({
                     message: CONST.ERROR.FAILED_TO_FETCH,
                 });
+            }
+
+            if (response.status === CONST.HTTP_STATUS.UNAUTHORIZED && qaAuth) {
+                // This attempt never reaches a parsed body, so its download span has nothing left to record.
+                // The retry opens its own pair, which is then the only record of the request that landed.
+                cancelSpan(downloadSpanId);
+                // Throws when the session is beyond saving; otherwise resolves the rotated credential to
+                // retry with. Recurses into attemptRequest(), never into processJSONResponse, so the
+                // once-per-request stages in processHTTPRequest still run exactly once.
+                return handleQAUnauthorized(qaAuth, {isRetry: !!qaRetryAuth}).then((rotatedAuth) => attemptRequest<TKey>(url, method, body, abortSignal, command, rotatedAuth));
             }
 
             if (!response.ok) {
@@ -187,56 +280,12 @@ function processHTTPRequest<TKey extends OnyxKey>(
                 },
             );
         })
-        .then((response) => {
-            // Some retried requests will result in a "Unique Constraints Violation" error from the server, which just means the record already exists
-            if (response.jsonCode === CONST.JSON_CODE.BAD_REQUEST && response.message === CONST.ERROR_TITLE.DUPLICATE_RECORD) {
-                throw new HttpsError({
-                    message: CONST.ERROR.DUPLICATE_RECORD,
-                    status: CONST.JSON_CODE.BAD_REQUEST.toString(),
-                    title: CONST.ERROR_TITLE.DUPLICATE_RECORD,
-                    requestID: response.requestID,
-                });
-            }
-
-            // Per-command messages indicating the resource already exists on the server (e.g. retry after a successful first attempt).
-            if (response.jsonCode === CONST.JSON_CODE.EXP_ERROR && response.message && ALREADY_CREATED_MESSAGES.has(response.message)) {
-                throw new HttpsError({
-                    message: CONST.ERROR.ALREADY_CREATED,
-                    status: CONST.JSON_CODE.EXP_ERROR.toString(),
-                    title: response.message,
-                });
-            }
-
-            // Auth is down or timed out while making a request
-            if (response.jsonCode === CONST.JSON_CODE.EXP_ERROR && response.title === CONST.ERROR_TITLE.SOCKET && response.type === CONST.ERROR_TYPE.SOCKET) {
-                throw new HttpsError({
-                    message: CONST.ERROR.EXPENSIFY_SERVICE_INTERRUPTED,
-                    status: CONST.JSON_CODE.EXP_ERROR.toString(),
-                    title: CONST.ERROR_TITLE.SOCKET,
-                    requestID: response.requestID,
-                });
-            }
-
-            if (response.data && (response.data?.authWriteCommands?.length ?? 0)) {
-                const {phpCommandName, authWriteCommands} = response.data;
-                const message = `The API command ${phpCommandName} is doing too many Auth writes. Count ${authWriteCommands.length}, commands: ${authWriteCommands.join(
-                    ', ',
-                )}. If you modified this command, you MUST refactor it to remove the extra Auth writes. Otherwise, update the allowed write count in Web-Expensify APIWriteCommands.`;
-                alert('Too many auth writes', message);
-            }
-            if (response.jsonCode === CONST.JSON_CODE.UPDATE_REQUIRED) {
-                // Trigger a modal and disable the app as the user needs to upgrade to the latest minimum version to continue
-                alertUser();
-            }
-            return response;
-        })
         .catch((error: unknown) => {
             // A rejected fetch skips the success path above, leaving these spans open to record everything until something else tears them down.
             cancelSpan(waitSpanId);
             cancelSpan(downloadSpanId);
             throw error;
-        })
-        .finally(() => markAppStartupNetworkRequestEnd(command));
+        });
 }
 
 /**

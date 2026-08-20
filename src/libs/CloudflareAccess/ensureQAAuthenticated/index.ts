@@ -7,11 +7,10 @@
  * layer alike; that is the whole reason the flow moved off the popup transport.
  */
 import {isQAServerActive, waitForActiveServerHydration} from '@libs/ApiUtils';
+import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import Log from '@libs/Log';
 
 import {beginCloudflareAuthRedirect, getCloudflareSession, getPendingCloudflareAuthCompletion, waitForCloudflareSessionHydration} from '@userActions/CloudflareSession';
-
-import {isQAAuthConfigured} from '../Config';
 
 function shouldAuthenticate(): boolean {
     return isQAAuthConfigured() && isQAServerActive();
@@ -80,9 +79,6 @@ function ensureQAAuthenticated(): Promise<void> {
  * Called when a QA request fails with CF_REAUTH_REQUIRED — the session is dead and refresh cannot save it.
  * On a QA build nothing works without a token, so re-authorizing is the only useful response. No hydration
  * await here, deliberately: a QA request already went out, which means the signal was hydrated to route it.
- *
- * No caller yet: HttpUtils gains one when QA routing lands, in the same way fetchWithQAAuth stays standalone
- * until then.
  */
 function handleQAReauthRequired(): void {
     if (!shouldAuthenticate()) {
