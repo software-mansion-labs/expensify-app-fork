@@ -107,6 +107,8 @@ export default {
     IS_USING_LOCAL_WEB: useNgrok || expensifyURLRoot.includes('dev'),
     PUSHER: {
         APP_KEY: get(Config, 'PUSHER_APP_KEY', '268df511a204fbb60884'),
+        // QA has its own Pusher app so its events never reach a production socket
+        QA_APP_KEY: get(Config, 'PUSHER_QA_APP_KEY', ''),
         SUFFIX: ENVIRONMENT === CONST.ENVIRONMENT.DEV ? get(Config, 'PUSHER_DEV_SUFFIX', '') : '',
         CLUSTER: 'mt1',
     },
