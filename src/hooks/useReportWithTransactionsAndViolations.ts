@@ -1,5 +1,3 @@
-import {useAllReportsTransactionsAndViolations} from '@components/OnyxListItemProvider';
-
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report, Transaction, TransactionViolation} from '@src/types/onyx';
@@ -10,17 +8,16 @@ import {useMemo} from 'react';
 
 import useNetwork from './useNetwork';
 import useOnyx from './useOnyx';
+import useQueriedReportTransactionsAndViolations from './useQueriedReportTransactionsAndViolations';
 
-const DEFAULT_TRANSACTIONS: Record<string, Transaction> = {};
 const DEFAULT_FILTERED_TRANSACTIONS: Transaction[] = [];
-const DEFAULT_VIOLATIONS: Record<string, TransactionViolation[]> = {};
 
 function useReportWithTransactionsAndViolations(reportID?: string): [OnyxEntry<Report>, Transaction[], OnyxCollection<TransactionViolation[]>] {
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`);
 
-    // It connects to single Onyx instance held in OnyxListItemProvider, so it can be safely used in list items without affecting performance.
-    const allReportTransactionsAndViolations = useAllReportsTransactionsAndViolations();
-    const {transactions, violations} = allReportTransactionsAndViolations?.[reportID ?? CONST.DEFAULT_NUMBER_ID] ?? {transactions: DEFAULT_TRANSACTIONS, violations: DEFAULT_VIOLATIONS};
+    // Lazy-Onyx POC: computed on demand (indexed query + targeted member reads) instead of being
+    // sliced out of the whole-app derived value.
+    const {transactions, violations} = useQueriedReportTransactionsAndViolations(reportID);
     const {isOffline} = useNetwork();
     const filteredTransactions = useMemo(
         () => Object.values(transactions).filter((transaction) => isOffline || transaction?.pendingAction !== CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE),

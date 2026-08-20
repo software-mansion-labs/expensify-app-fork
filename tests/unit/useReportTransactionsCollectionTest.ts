@@ -1,23 +1,11 @@
-import {renderHook} from '@testing-library/react-native';
+import {act, renderHook} from '@testing-library/react-native';
 
 import Onyx from 'react-native-onyx';
-
-import type {Transaction} from '../../src/types/onyx';
-import type {ReportTransactionsAndViolationsDerivedValue} from '../../src/types/onyx/DerivedValues';
 
 import useReportTransactionsCollection from '../../src/hooks/useReportTransactionsCollection';
 import ONYXKEYS from '../../src/ONYXKEYS';
 import createRandomTransaction from '../utils/collections/transaction';
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
-
-const getReportTransactionsAndViolations = (reportID: string, transaction: Transaction): ReportTransactionsAndViolationsDerivedValue => ({
-    [reportID]: {
-        transactions: {
-            [transaction.transactionID]: transaction,
-        },
-        violations: {},
-    },
-});
 
 describe('useReportTransactionsCollection', () => {
     beforeAll(() => {
@@ -31,37 +19,34 @@ describe('useReportTransactionsCollection', () => {
     });
 
     it('returns transactions for the requested report ID', async () => {
-        const transaction = createRandomTransaction(1);
         const reportID = '1';
-        const reportTransactionsAndViolations = getReportTransactionsAndViolations(reportID, transaction);
+        const transaction = {...createRandomTransaction(1), reportID};
 
-        await Onyx.merge(ONYXKEYS.DERIVED.REPORT_TRANSACTIONS_AND_VIOLATIONS, reportTransactionsAndViolations);
+        // Lazy-Onyx: the hook queries the transactions collection by reportID instead of reading a derived value.
+        await Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`, transaction);
 
         const {result} = renderHook(() => useReportTransactionsCollection(reportID));
+        await act(async () => waitForBatchedUpdates());
 
-        expect(result.current).toEqual(reportTransactionsAndViolations[reportID].transactions);
+        expect(result.current).toEqual({[`${ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`]: transaction});
     });
 
     it('returns an empty object when reportID is missing', async () => {
-        const transaction = createRandomTransaction(1);
-        const reportID = '1';
-        const reportTransactionsAndViolations = getReportTransactionsAndViolations(reportID, transaction);
-
-        await Onyx.merge(ONYXKEYS.DERIVED.REPORT_TRANSACTIONS_AND_VIOLATIONS, reportTransactionsAndViolations);
+        const transaction = {...createRandomTransaction(1), reportID: '1'};
+        await Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`, transaction);
 
         const {result} = renderHook(() => useReportTransactionsCollection());
+        await act(async () => waitForBatchedUpdates());
 
         expect(result.current).toEqual({});
     });
 
     it('returns an empty object when report does not have transactions', async () => {
-        const transaction = createRandomTransaction(1);
-        const reportID = '1';
-        const reportTransactionsAndViolations = getReportTransactionsAndViolations(reportID, transaction);
-
-        await Onyx.merge(ONYXKEYS.DERIVED.REPORT_TRANSACTIONS_AND_VIOLATIONS, reportTransactionsAndViolations);
+        const transaction = {...createRandomTransaction(1), reportID: '1'};
+        await Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION}${transaction.transactionID}`, transaction);
 
         const {result} = renderHook(() => useReportTransactionsCollection('999'));
+        await act(async () => waitForBatchedUpdates());
 
         expect(result.current).toEqual({});
     });

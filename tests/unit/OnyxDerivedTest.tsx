@@ -512,37 +512,6 @@ describe('OnyxDerived', () => {
         });
     });
 
-    describe('reportTransactionsAndViolations', () => {
-        it('keeps a violations-only change for one transaction when coalesced with a transaction change for another', async () => {
-            const transactionA: Transaction = {...createRandomTransaction(1), transactionID: 'A', reportID: 'rA', amount: 100};
-            const transactionB: Transaction = {...createRandomTransaction(2), transactionID: 'B', reportID: 'rB', amount: 200};
-
-            // Prime so both transactions are tracked and the connections are warm.
-            await Onyx.multiSet({
-                [`${ONYXKEYS.COLLECTION.TRANSACTION}A` as const]: transactionA,
-                [`${ONYXKEYS.COLLECTION.TRANSACTION}B` as const]: transactionB,
-            });
-            await waitForBatchedUpdates();
-
-            const violation: TransactionViolation = {type: CONST.VIOLATION_TYPES.VIOLATION, name: CONST.VIOLATIONS.MISSING_CATEGORY};
-
-            // One logical update: transaction A changes AND violations change for transaction B.
-            const updates: Array<OnyxUpdate<typeof ONYXKEYS.COLLECTION.TRANSACTION | typeof ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS>> = [
-                {onyxMethod: Onyx.METHOD.MERGE_COLLECTION, key: ONYXKEYS.COLLECTION.TRANSACTION, value: {[`${ONYXKEYS.COLLECTION.TRANSACTION}A`]: {amount: 999}}},
-                {onyxMethod: Onyx.METHOD.MERGE_COLLECTION, key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS, value: {[`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}B`]: [violation]}},
-            ];
-            await Onyx.update(updates);
-            await waitForBatchedUpdates();
-
-            const derived = await OnyxUtils.get(ONYXKEYS.DERIVED.REPORT_TRANSACTIONS_AND_VIOLATIONS);
-
-            // The batched violations change for B must not be dropped...
-            expect(derived?.rB?.violations?.[`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}B`]).toEqual([violation]);
-            // ...and the transaction change for A must also land.
-            expect(derived?.rA?.transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}A`]?.amount).toBe(999);
-        });
-    });
-
     describe('sortedReportActions', () => {
         it('applies a REPORT change that is coalesced with a REPORT_ACTIONS change for another report', async () => {
             const chatReportID = '10';

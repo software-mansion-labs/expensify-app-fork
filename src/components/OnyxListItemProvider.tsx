@@ -18,7 +18,6 @@ const [BetaConfigurationProvider, BetaConfigurationContext] = createOnyxContext(
 const [SessionProvider, , useSession] = createOnyxContext(ONYXKEYS.SESSION);
 const [PolicyCategoriesProvider, , usePolicyCategories] = createOnyxContext(ONYXKEYS.COLLECTION.POLICY_CATEGORIES);
 const [PolicyTagsProvider, , usePolicyTags] = createOnyxContext(ONYXKEYS.COLLECTION.POLICY_TAGS);
-const [ReportTransactionsAndViolationsProvider, , useAllReportsTransactionsAndViolations] = createOnyxContext(ONYXKEYS.DERIVED.REPORT_TRANSACTIONS_AND_VIOLATIONS);
 const [CardListProvider, , useCardList] = createOnyxContext(ONYXKEYS.CARD_LIST);
 const [WorkspaceCardListProvider, , useWorkspaceCardList] = createOnyxContext(ONYXKEYS.COLLECTION.WORKSPACE_CARDS_LIST);
 const [OnboardingValuesProvider, ,] = createOnyxContext(ONYXKEYS.NVP_ONBOARDING);
@@ -39,7 +38,6 @@ function OnyxListItemProvider(props: OnyxListItemProviderProps) {
                 SessionProvider,
                 PolicyCategoriesProvider,
                 PolicyTagsProvider,
-                ReportTransactionsAndViolationsProvider,
                 CardListProvider,
                 WorkspaceCardListProvider,
                 OnboardingValuesProvider,
@@ -53,15 +51,4 @@ function OnyxListItemProvider(props: OnyxListItemProviderProps) {
 
 export default OnyxListItemProvider;
 
-export {
-    usePersonalDetails,
-    BetasContext,
-    BetaConfigurationContext,
-    useBlockedFromConcierge,
-    useSession,
-    usePolicyCategories,
-    usePolicyTags,
-    useAllReportsTransactionsAndViolations,
-    useCardList,
-    useWorkspaceCardList,
-};
+export {usePersonalDetails, BetasContext, BetaConfigurationContext, useBlockedFromConcierge, useSession, usePolicyCategories, usePolicyTags, useCardList, useWorkspaceCardList};

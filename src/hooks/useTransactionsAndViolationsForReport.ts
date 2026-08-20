@@ -1,25 +1,21 @@
-import {useAllReportsTransactionsAndViolations} from '@components/OnyxListItemProvider';
-
 import {getTransactionViolations} from '@libs/TransactionUtils';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import {personalDetailsLoginSelector} from '@src/selectors/PersonalDetails';
 import type {TransactionViolations} from '@src/types/onyx';
-import type {ReportTransactionsAndViolations} from '@src/types/onyx/DerivedValues';
 
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useOnyx from './useOnyx';
-
-const DEFAULT_RETURN_VALUE: ReportTransactionsAndViolations = {transactions: {}, violations: {}};
+import useQueriedReportTransactionsAndViolations from './useQueriedReportTransactionsAndViolations';
 
 function useTransactionsAndViolationsForReport(reportID?: string) {
-    const allReportsTransactionsAndViolations = useAllReportsTransactionsAndViolations();
+    // Lazy-Onyx POC: the report's transactions/violations are computed on demand (indexed query +
+    // targeted member reads) instead of being sliced out of the whole-app derived value.
+    const {transactions, violations, isLoaded} = useQueriedReportTransactionsAndViolations(reportID);
     const currentUserDetails = useCurrentUserPersonalDetails();
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`);
     const [reportOwnerLogin] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST, {selector: personalDetailsLoginSelector(report?.ownerAccountID)});
     const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${report?.policyID}`);
-
-    const {transactions, violations} = reportID ? (allReportsTransactionsAndViolations?.[reportID] ?? DEFAULT_RETURN_VALUE) : DEFAULT_RETURN_VALUE;
 
     const filteredViolations: Record<string, TransactionViolations> = {};
     for (const transactionViolationKey of Object.keys(violations)) {
@@ -29,7 +25,7 @@ function useTransactionsAndViolationsForReport(reportID?: string) {
             getTransactionViolations(transaction, violations, currentUserDetails.email ?? '', currentUserDetails.accountID, report, reportOwnerLogin, policy) ?? [];
     }
 
-    return {transactions, violations: filteredViolations, isLoaded: allReportsTransactionsAndViolations !== undefined};
+    return {transactions, violations: filteredViolations, isLoaded};
 }
 
 export default useTransactionsAndViolationsForReport;

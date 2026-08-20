@@ -79,7 +79,6 @@ jest.mock('@components/OnyxListItemProvider', () => ({
     useSession: jest.fn(() => ({})),
     usePolicyCategories: jest.fn(() => ({})),
     usePolicyTags: jest.fn(() => ({})),
-    useAllReportsTransactionsAndViolations: jest.fn(() => ({})),
 }));
 
 jest.mock('@libs/Navigation/Navigation', () => ({

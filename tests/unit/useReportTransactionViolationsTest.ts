@@ -2,8 +2,6 @@ import {renderHook} from '@testing-library/react-native';
 
 import useReportTransactionViolations from '@hooks/useReportTransactionViolations';
 
-import initOnyxDerivedValues from '@userActions/OnyxDerived';
-
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {TransactionViolation} from '@src/types/onyx';
@@ -23,16 +21,9 @@ const inScopeTransaction = {...createRandomTransaction(1), transactionID: IN_SCO
 TestHelper.setupApp();
 
 describe('useReportTransactionViolations', () => {
-    beforeAll(() => {
-        // The hook reads the REPORT_TRANSACTIONS_AND_VIOLATIONS derived value. The app defers the
-        // derived engine behind deferUntilAppReady (which never fires in tests), so start it directly.
-        initOnyxDerivedValues();
-    });
-
     beforeEach(async () => {
         await Onyx.clear();
-        // The derived value groups violations under the transaction's report, so the transaction
-        // itself must exist for its violations to be derivable.
+        // Lazy-Onyx: the hook member-reads exactly the given transactions' violation keys.
         await Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION}${IN_SCOPE_ID}`, inScopeTransaction);
         await Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${IN_SCOPE_ID}`, [violation]);
         await Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${OUT_OF_SCOPE_ID}`, [violation]);
