@@ -65,7 +65,6 @@ function initializePusher(
     return Pusher.init({
         appKey,
         cluster: CONFIG.PUSHER.CLUSTER,
-        authEndpoint: `${CONFIG.EXPENSIFY.DEFAULT_API_ROOT}api/AuthenticatePusher?`,
     }).then(() => {
         User.subscribeToUserEvents(currentUserAccountID ?? CONST.DEFAULT_NUMBER_ID, currentUserEmail ?? '', getTopmostOneTransactionThreadReportID, getReportAttributes);
     });
