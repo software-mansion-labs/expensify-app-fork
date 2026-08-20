@@ -36,6 +36,7 @@ import NavigationRoot from './libs/Navigation/NavigationRoot';
 import PushNotification from './libs/Notification/PushNotification';
 import {endSpan, getSpan, startSpan} from './libs/telemetry/activeSpans';
 import {startBootsplashMonitor} from './libs/telemetry/bootsplashTelemetry';
+import {collectOnyxHydrationStats, sealAndReportOnyxBootDemand} from './libs/telemetry/onyxBootStats';
 import {cleanupTelemetryTrackers, initializeTelemetryTrackers} from './libs/telemetry/TelemetrySynchronizer';
 import Visibility from './libs/Visibility';
 import ONYXKEYS from './ONYXKEYS';
@@ -204,6 +205,13 @@ function Expensify() {
 
     const onSplashHide = useCallback(() => {
         setSplashScreenState(CONST.BOOT_SPLASH_STATE.HIDDEN);
+        // Stamp the startup span with the Onyx hydration census before ending it (lazy-Onyx POC, Phase 0).
+        const hydrationStats = collectOnyxHydrationStats();
+        const startupSpan = getSpan(CONST.TELEMETRY.SPAN_APP_STARTUP);
+        startupSpan?.setAttribute('onyx_total_keys', hydrationStats.totalKeys);
+        startupSpan?.setAttribute('onyx_hydrated_keys', hydrationStats.hydratedKeys);
+        console.debug('[OnyxBootStats] Hydration at splash hide', hydrationStats);
+        sealAndReportOnyxBootDemand();
         endSpan(CONST.TELEMETRY.SPAN_OD_ND_TRANSITION);
         endSpan(CONST.TELEMETRY.SPAN_APP_STARTUP);
         endSpan(CONST.TELEMETRY.SPAN_BOOTSPLASH.ROOT);

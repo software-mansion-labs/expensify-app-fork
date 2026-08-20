@@ -1,4 +1,6 @@
 import intlPolyfill from '@libs/IntlPolyfill';
+import {endSpan, getSpan, startSpan} from '@libs/telemetry/activeSpans';
+import {installOnyxConnectDemandRecorder} from '@libs/telemetry/onyxBootStats';
 
 import {setDeviceID} from '@userActions/Device';
 import initOnyxDerivedValues from '@userActions/OnyxDerived';
@@ -10,6 +12,7 @@ import toSortedPolyfill from 'array.prototype.tosorted';
 import {I18nManager} from 'react-native';
 import Config from 'react-native-config';
 import Onyx from 'react-native-onyx';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import addUtilsToWindow from './addUtilsToWindow';
 import platformSetup from './platformSetup';
@@ -35,6 +38,14 @@ export default function () {
      * However, we still need to use Onyx to update the underlying app data from the headless JS context.
      * Therefore it must be initialized completely outside the React component lifecycle.
      */
+    // Measures the full Onyx boot hydration (storage read + JSON parse + cache populate) — the init
+    // promise resolves only once the store is fully loaded, which also gates every subscription.
+    startSpan(CONST.TELEMETRY.SPAN_ONYX_INIT, {
+        name: CONST.TELEMETRY.SPAN_ONYX_INIT,
+        op: CONST.TELEMETRY.SPAN_ONYX_INIT,
+        parentSpan: getSpan(CONST.TELEMETRY.SPAN_APP_STARTUP),
+    });
+
     Onyx.init({
         keys: ONYXKEYS,
         enableDevTools,
@@ -84,6 +95,11 @@ export default function () {
             ONYXKEYS.RAM_ONLY_HAS_DISMISSED_CONCIERGE_NOTIFICATION_BANNER,
         ],
     });
+
+    OnyxUtils.getDeferredInitTask().promise.then(() => endSpan(CONST.TELEMETRY.SPAN_ONYX_INIT));
+
+    // Must run before initOnyxDerivedValues so the derived engine's collection subscriptions are captured.
+    installOnyxConnectDemandRecorder();
 
     // Must be imported after Onyx.init() and outside the React lifecycle so that push notification
     // handlers are registered before any push arrives, including Android headless/background wake-ups.

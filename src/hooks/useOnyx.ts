@@ -1,13 +1,15 @@
 import {SearchQueryContext, SearchResultsContext} from '@components/Search/SearchContext';
 import {useIsOnSearch} from '@components/Search/SearchScopeProvider';
 
+import {recordOnyxDemand} from '@libs/telemetry/onyxBootStats';
+
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {SearchResults} from '@src/types/onyx';
 
 import type {OnyxCollection, OnyxEntry, OnyxKey, OnyxValue, UseOnyxOptions, UseOnyxResult} from 'react-native-onyx';
 
-import {use} from 'react';
+import {use, useEffect} from 'react';
 // eslint-disable-next-line no-restricted-imports
 import {useOnyx as originalUseOnyx} from 'react-native-onyx';
 
@@ -96,6 +98,11 @@ const useOnyx: OriginalUseOnyx = <TKey extends OnyxKey, TReturnValue = OnyxValue
 
     const onyxOptions: UseOnyxOptions<OnyxKey, OnyxValue<OnyxKey>> = {...optionsWithoutSelector, selector};
     const snapshotKey = shouldUseSnapshot ? (`${ONYXKEYS.COLLECTION.SNAPSHOT}${currentSearchHash}` as OnyxKey) : key;
+
+    // Dev-only boot demand census for the lazy-Onyx POC — records which keys the UI subscribed to before splash hide.
+    useEffect(() => {
+        recordOnyxDemand(snapshotKey);
+    }, [snapshotKey]);
 
     const originalResult = originalUseOnyx(snapshotKey, onyxOptions);
 

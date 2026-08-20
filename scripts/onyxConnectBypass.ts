@@ -22,6 +22,9 @@ const BANNED_RULE_ID = 'rulesdir/no-onyx-connect';
 const GRANDFATHERED_BYPASSES = new Map<string, number>([
     ['src/libs/NextStepUtils.ts', 1],
     ['src/libs/ReportNameUtils.ts', 2],
+    // Lazy-Onyx POC (docs-poc/LAZY_ONYX_IMPLEMENTATION_PLAN.md): dev-only telemetry that wraps
+    // Onyx.connect to record boot-time key demand — instrumentation of the API, not a data read.
+    ['src/libs/telemetry/onyxBootStats.ts', 2],
 ]);
 
 /** A `no-onyx-connect` violation that an inline disable directive silenced. */
