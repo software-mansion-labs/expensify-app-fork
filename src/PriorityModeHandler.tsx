@@ -1,6 +1,7 @@
 import {useEffect} from 'react';
 
 import CONST from './CONST';
+import useAppReadyOnyxCollection from './hooks/useAppReadyOnyxCollection';
 import useOnyx from './hooks/useOnyx';
 import usePrevious from './hooks/usePrevious';
 import {openApp} from './libs/actions/App';
@@ -13,7 +14,10 @@ import ONYXKEYS from './ONYXKEYS';
  */
 function PriorityModeHandler() {
     const [priorityMode] = useOnyx(ONYXKEYS.NVP_PRIORITY_MODE);
-    const [allReportsWithDraftComments] = useOnyx(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
+    // Lazy-Onyx POC: a plain collection-root subscription in this always-mounted handler would
+    // hydrate the collection during boot, but the value is only consumed on a GSD -> DEFAULT switch —
+    // a user action that can't happen before the app is interactive.
+    const [allReportsWithDraftComments] = useAppReadyOnyxCollection(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
     const prevPriorityMode = usePrevious(priorityMode);
 
     useEffect(() => {

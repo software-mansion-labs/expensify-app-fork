@@ -1,5 +1,6 @@
 import {useEffect, useRef} from 'react';
 
+import useAppReadyOnyxCollection from './hooks/useAppReadyOnyxCollection';
 import useOnyx from './hooks/useOnyx';
 import getEnvironment from './libs/Environment/getEnvironment';
 import FS from './libs/Fullstory';
@@ -18,7 +19,9 @@ function FullstoryUserContextHandler() {
     const [onboardingCompanySize] = useOnyx(ONYXKEYS.ONBOARDING_COMPANY_SIZE);
     const [onboardingLastVisitedPath] = useOnyx(ONYXKEYS.ONBOARDING_LAST_VISITED_PATH);
     const [onboardingPurposeSelected] = useOnyx(ONYXKEYS.ONBOARDING_PURPOSE_SELECTED);
-    const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    // Lazy-Onyx POC: this is an always-mounted handler, so a plain collection-root subscription would
+    // hydrate every policy during boot. Analytics identity may settle post-ready.
+    const [policies] = useAppReadyOnyxCollection(ONYXKEYS.COLLECTION.POLICY);
     const [session] = useOnyx(ONYXKEYS.SESSION);
     const [userMetadata] = useOnyx(ONYXKEYS.USER_METADATA);
 

@@ -1,40 +1,21 @@
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report, ReportNameValuePairs} from '@src/types/onyx';
 
-import type {OnyxCollection} from 'react-native-onyx';
+import type {OnyxEntry, OnyxKey} from 'react-native-onyx';
 
-import Onyx from 'react-native-onyx';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import {READ_COMMANDS, WRITE_COMMANDS} from './API/types';
 import {registerPaginationConfig} from './Middleware/Pagination';
 import {getSortedReportActionsForDisplay} from './ReportActionsUtils';
 import {canUserPerformWriteAction as canUserPerformWriteActionReportUtils} from './ReportUtils';
 
-/**
- * This connection is exclusively used within the `registerPaginationConfig` function.
- * Using connectWithoutView() is appropriate here since these values are not directly
- * bound to any UI components.
- */
-let allReports: OnyxCollection<Report>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-    },
-});
-
-let allReportNameValuePairs: OnyxCollection<ReportNameValuePairs>;
-/**
- * This connection is exclusively used within the `registerPaginationConfig` function.
- * Using connectWithoutView() is appropriate here since these values are not directly
- * bound to any UI components.
- */
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
-    callback: (value) => {
-        allReportNameValuePairs = value;
-    },
-});
+// Module-level cast helper: `tryGetCachedValue` returns the untyped OnyxValue union, and a generic
+// assertion at the call site would be repeated per key — narrow the boundary once here.
+function getCachedEntry<TValue>(key: OnyxKey): OnyxEntry<TValue> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the cache delivers this key's value
+    return OnyxUtils.tryGetCachedValue(key) as OnyxEntry<TValue>;
+}
 
 registerPaginationConfig({
     initialCommand: WRITE_COMMANDS.OPEN_REPORT,
@@ -43,8 +24,13 @@ registerPaginationConfig({
     resourceCollectionKey: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
     pageCollectionKey: ONYXKEYS.COLLECTION.REPORT_ACTIONS_PAGES,
     sortItems: (reportActions, reportID) => {
-        const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-        const reportNameValuePairs = allReportNameValuePairs?.[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`];
+        // Lazy-Onyx POC: keyed warm-cache reads instead of two whole-collection subscriptions
+        // (REPORT + REPORT_NAME_VALUE_PAIRS) held open just to look up ONE member each per call.
+        // The report is warm by construction — the paginated response that triggers sortItems has
+        // just written it. The RNVP entry may be cold on the very first call, which matches the old
+        // behavior of the module connect before its first flush (allReportNameValuePairs undefined).
+        const report = getCachedEntry<Report>(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`);
+        const reportNameValuePairs = getCachedEntry<ReportNameValuePairs>(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`);
         const isReportArchived = !!reportNameValuePairs?.private_isArchived;
         const canUserPerformWriteAction = canUserPerformWriteActionReportUtils(report, isReportArchived);
         return getSortedReportActionsForDisplay(reportActions, canUserPerformWriteAction, true, undefined, reportID);

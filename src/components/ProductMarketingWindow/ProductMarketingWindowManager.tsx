@@ -1,3 +1,4 @@
+import useAppReadyOnyxCollection from '@hooks/useAppReadyOnyxCollection';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import {useMemoizedLazyIllustrations} from '@hooks/useLazyAsset';
 import useOnyx from '@hooks/useOnyx';
@@ -15,13 +16,13 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {isActingAsDelegateSelector} from '@src/selectors/Account';
 import {activeAdminPoliciesSelector} from '@src/selectors/Policy';
-import type {Policy, Session} from '@src/types/onyx';
+import type {Session} from '@src/types/onyx';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 
-import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
+import type {OnyxEntry} from 'react-native-onyx';
 
 import {useNavigation} from '@react-navigation/core';
-import React from 'react';
+import React, {useMemo} from 'react';
 
 import ProductMarketingWindow from './ProductMarketingWindow';
 
@@ -52,9 +53,12 @@ type ProductMarketingWindowManagerProps = {
 function ProductMarketingWindowManager({topmostRouteName}: ProductMarketingWindowManagerProps) {
     const {login: currentUserLogin = ''} = useCurrentUserPersonalDetails();
     const {isBetaEnabled} = usePermissions();
-    const [activeAdminPolicies, activeAdminPoliciesMetadata] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {
-        selector: (policies: OnyxCollection<Policy>) => activeAdminPoliciesSelector(policies, currentUserLogin),
-    });
+    // Lazy-Onyx POC: this manager is always mounted, so a plain collection-root subscription (even
+    // with a selector — the subscription is what hydrates) would hydrate every policy during boot.
+    // The promo window doesn't matter pre-ready; the metadata keeps the existing loading gate below
+    // holding the window hidden until the deferred subscription delivers.
+    const [allPolicies, activeAdminPoliciesMetadata] = useAppReadyOnyxCollection(ONYXKEYS.COLLECTION.POLICY);
+    const activeAdminPolicies = useMemo(() => activeAdminPoliciesSelector(allPolicies, currentUserLogin), [allPolicies, currentUserLogin]);
     const [activePolicyID, activePolicyIDMetadata] = useOnyx(ONYXKEYS.NVP_ACTIVE_POLICY_ID);
     // Semantically covering overlays take precedence over the marketing window from pre-show through final hide.
     // Responsive popover sheets and route-backed right-docked navigation remain exempt.

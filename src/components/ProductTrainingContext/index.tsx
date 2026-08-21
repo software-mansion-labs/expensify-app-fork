@@ -2,6 +2,7 @@ import Icon from '@components/Icon';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import RenderHTML from '@components/RenderHTML';
 
+import useAppReadyOnyxCollection from '@hooks/useAppReadyOnyxCollection';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
@@ -57,7 +58,10 @@ function ProductTrainingContextProvider({children}: ChildrenProps) {
         selector: hasCompletedGuidedSetupFlowSelector,
     });
 
-    const [allPolicies, allPoliciesMetadata] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
+    // Lazy-Onyx POC: this provider is always mounted, so a plain collection-root subscription would
+    // hydrate every policy during boot just to compute three booleans. Tooltips don't matter
+    // pre-ready; until the deferred subscription delivers, the booleans below stay false.
+    const [allPolicies, allPoliciesMetadata] = useAppReadyOnyxCollection(ONYXKEYS.COLLECTION.POLICY);
     const [currentUserLogin, currentUserLoginMetadata] = useOnyx(ONYXKEYS.SESSION, {selector: emailSelector});
     const shouldSuppressPromotionalUI = useShouldSuppressPromotionalUI();
 

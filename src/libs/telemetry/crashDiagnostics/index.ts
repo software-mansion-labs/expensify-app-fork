@@ -2,9 +2,6 @@ import Navigation from '@libs/Navigation/Navigation';
 import getMemoryInfo from '@libs/telemetry/getMemoryInfo';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Report} from '@src/types/onyx';
-
-import type {OnyxCollection} from 'react-native-onyx';
 
 /**
  * Browser crash diagnostics (web only).
@@ -20,7 +17,7 @@ import type {OnyxCollection} from 'react-native-onyx';
  */
 import * as Sentry from '@sentry/react-native';
 import {Str} from 'expensify-common';
-import Onyx from 'react-native-onyx';
+import OnyxCache from 'react-native-onyx/dist/OnyxCache';
 
 const STORAGE_KEY_PREFIX = 'crashDiagnostics_session_';
 const SAMPLE_INTERVAL_MS = 15 * 1000;
@@ -73,7 +70,7 @@ type HeapSample = {
     /** Active route (without params) at sample time, to show where the user was. */
     route: string;
 
-    /** Number of reports in Onyx at sample time — a proxy for dataset size. Null before the Onyx connection has delivered a value. */
+    /** Number of report keys in the Onyx key index at sample time — a proxy for dataset size. Null only in records written by older sessions. */
     reportsCount: number | null;
 
     /** Page visibility at sample time; distinguishes foreground activity from background/hidden tabs. */
@@ -120,9 +117,24 @@ type LivenessMessage =
 
 let sessionRecord: SessionRecord | undefined;
 let sampleIntervalID: ReturnType<typeof setInterval> | undefined;
-let reportsCount: number | null = null;
-let reportsConnection: ReturnType<typeof Onyx.connectWithoutView> | undefined;
 let livenessChannel: BroadcastChannel | undefined;
+
+/**
+ * Lazy-Onyx POC: the reports count is derived from the key INDEX (always complete, no values
+ * needed) instead of a whole-collection REPORT subscription, which under lazy Onyx would hydrate
+ * every report into RAM just to count them. Recomputed on each heartbeat, so samples stay as
+ * fresh as the old subscription kept them.
+ */
+function getReportsCountFromKeyIndex(): number {
+    let count = 0;
+    for (const key of OnyxCache.getAllKeys()) {
+        // The `report_` prefix (trailing underscore included) cannot match reportActions_/reportDraft_/etc.
+        if (key.startsWith(ONYXKEYS.COLLECTION.REPORT)) {
+            count++;
+        }
+    }
+    return count;
+}
 
 // Sessions that announced liveness over the channel, keyed by session id -> last-seen epoch ms
 const sessionsLastSeenAlive = new Map<string, number>();
@@ -262,7 +274,7 @@ async function takeSample(): Promise<HeapSample> {
         jsHeapSizeLimitMB: bytesToMB(memoryInfo.maxMemoryBytes),
         domNodes: document.getElementsByTagName('*').length,
         route: getActiveRouteSafe(),
-        reportsCount,
+        reportsCount: getReportsCountFromKeyIndex(),
         visibility: document.visibilityState,
     };
 }
@@ -491,13 +503,6 @@ function initializeCrashDiagnostics() {
         announceLiveness();
     }
 
-    reportsConnection = Onyx.connectWithoutView({
-        key: ONYXKEYS.COLLECTION.REPORT,
-        callback: (value: OnyxCollection<Report>) => {
-            reportsCount = value ? Object.keys(value).length : 0;
-        },
-    });
-
     // pagehide fires on navigation away, refresh, and tab close — all clean exits. It does NOT fire on a
     // renderer crash, which is exactly the signal we rely on. pageshow/resume restore the session after a
     // back/forward-cache restore or freeze. visibilitychange is the broad, cross-browser signal that the tab
@@ -530,10 +535,6 @@ function cleanupCrashDiagnostics() {
         livenessChannel.removeEventListener('message', handleLivenessMessage);
         livenessChannel.close();
         livenessChannel = undefined;
-    }
-    if (reportsConnection) {
-        Onyx.disconnect(reportsConnection);
-        reportsConnection = undefined;
     }
     if (typeof window !== 'undefined') {
         window.removeEventListener('pagehide', markCleanExit);

@@ -49,16 +49,21 @@ Onyx.connectWithoutView({
     },
 });
 
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.POLICY,
-    callback: (value) => {
-        if (!value) {
-            return;
-        }
-        policies = value;
-        sendPoliciesContext();
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection POLICY subscription registered at module load
+// would hydrate every policy during boot just to feed Sentry tags. Deferred until the app is
+// interactive — session-level tags/context settle after the drain, like the reports-count tag below.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.POLICY,
+        callback: (value) => {
+            if (!value) {
+                return;
+            }
+            policies = value;
+            sendPoliciesContext();
+        },
+    });
+}, 'low');
 
 // Lazy-Onyx POC: the reports count is derived from the key INDEX (always complete, no values
 // needed) instead of a whole-collection subscription that would pin every report in RAM just to

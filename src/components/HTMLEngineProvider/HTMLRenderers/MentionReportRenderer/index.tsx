@@ -5,6 +5,7 @@ import useOnyx from '@hooks/useOnyx';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {getReportMentionDetails} from '@libs/MentionUtils';
 import isSearchTopmostFullScreenRoute from '@libs/Navigation/helpers/isSearchTopmostFullScreenRoute';
 
@@ -21,6 +22,7 @@ import type {CustomRendererProps, TPhrasing, TText} from 'react-native-render-ht
 
 import React, {useContext, useMemo} from 'react';
 import {StyleSheet} from 'react-native';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import MentionReportContext from './MentionReportContext';
 
@@ -31,7 +33,16 @@ function MentionReportRenderer({style, tnode, TDefaultRenderer, ...defaultRender
     const StyleUtils = useStyleUtils();
     const htmlAttributeReportID = tnode.attributes.reportid;
     const {currentReportID: currentReportIDContext, exactlyMatch, policyID} = useContext(MentionReportContext);
-    const [reports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
+    // Lazy-Onyx POC: subscribe to the ONE report the mention points at instead of the whole REPORT
+    // collection (which a collection-root subscription would fully hydrate). Mentions carrying a
+    // reportid attribute only ever do a keyed lookup, so a one-entry collection is equivalent.
+    const mentionReportKey = `${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(htmlAttributeReportID)}` as const;
+    const [mentionReport] = useOnyx(mentionReportKey);
+    // Legacy name-only mentions (no reportid attribute) scan the collection for a room name match.
+    // Serve that scan from the warm cache without subscribing: it is best-effort by design, and
+    // post-ready the derived-key catch-all has hydrated REPORT anyway, so the cache is complete
+    // whenever a user can actually see such a mention.
+    const reports = htmlAttributeReportID ? {[mentionReportKey]: mentionReport} : OnyxUtils.getCachedCollection(ONYXKEYS.COLLECTION.REPORT);
 
     const {currentReportID} = useCurrentReportIDState();
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing

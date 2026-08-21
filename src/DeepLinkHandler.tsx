@@ -1,7 +1,8 @@
 import type {NativeEventSubscription} from 'react-native';
 
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Linking} from 'react-native';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import type {Route} from './ROUTES';
 
@@ -11,6 +12,7 @@ import useOnyx from './hooks/useOnyx';
 import {openReportFromDeepLink} from './libs/actions/Link';
 import * as Report from './libs/actions/Report';
 import {hasAuthToken, isAnonymousUser} from './libs/actions/Session';
+import getNonEmptyStringOnyxID from './libs/getNonEmptyStringOnyxID';
 import Log from './libs/Log';
 import {getReportIDFromLink} from './libs/ReportUtils';
 import {endSpan} from './libs/telemetry/activeSpans';
@@ -19,23 +21,42 @@ import ONYXKEYS from './ONYXKEYS';
 import {guidedSetupAndTourStatusSelector} from './selectors/Onboarding';
 import isLoadingOnyxValue from './types/utils/isLoadingOnyxValue';
 
+/**
+ * Lazy-Onyx POC: deep-link resolution only ever does keyed lookups into REPORT (by the reportID in
+ * the URL), so it reads the warm cache at call time instead of holding a collection-root
+ * subscription that would hydrate every report during boot. A miss is safe: for the anonymous
+ * public-room path, openReportFromDeepLink falls back to a member-key connection and waits for the
+ * report to arrive.
+ */
+function getCachedReports() {
+    return OnyxUtils.getCachedCollection(ONYXKEYS.COLLECTION.REPORT);
+}
+
 type DeepLinkHandlerProps = {
     /** Callback to set the initial URL resolved from deep linking */
     onInitialUrl: (url: Route | null) => void;
 };
 
 /**
- * Component that does not render anything but isolates the COLLECTION.REPORT Onyx subscription
+ * Component that does not render anything but isolates deep-link–related Onyx subscriptions
  * from the root Expensify component to prevent cascading re-renders of the
- * entire navigation tree on every report change.
+ * entire navigation tree.
  */
 function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
     const linkingChangeListener = useRef<NativeEventSubscription | null>(null);
     const initialUrlProcessed = useRef(false);
-    const pendingPublicRoomReportID = useRef('');
     const hasRefetchedPublicRoom = useRef(false);
 
-    const [allReports, allReportsMetadata] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
+    // An anonymous deep link into a public room needs to be re-fetched after OpenApp settles (see the
+    // effect below). State (not a ref) so the member-key subscription below re-targets when it changes.
+    const [pendingPublicRoomReportID, setPendingPublicRoomReportID] = useState('');
+    const [pendingPublicRoomReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(pendingPublicRoomReportID)}`);
+
+    // Lazy-Onyx POC: the old COLLECTION.REPORT subscription's metadata doubled as a "storage read
+    // finished" gate before processing the initial URL. HAS_LOADED_APP's metadata flips at the
+    // equivalent moment for a fraction of the cost. Only the metadata is used — gating on the VALUE
+    // would block signed-out users (public rooms, sign-in page), for whom it never flips.
+    const [, hasLoadedAppMetadata] = useOnyx(ONYXKEYS.HAS_LOADED_APP);
     const [isLoadingApp = true] = useOnyx(ONYXKEYS.IS_LOADING_APP);
     const [session, sessionMetadata] = useOnyx(ONYXKEYS.SESSION);
     const [conciergeReportID, conciergeReportIDMetadata] = useOnyx(ONYXKEYS.CONCIERGE_REPORT_ID);
@@ -44,19 +65,18 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
     const [betas, betasMetadata] = useOnyx(ONYXKEYS.BETAS);
     const isAuthenticated = useIsAuthenticated();
 
-    // An anonymous deep link into a public room needs to be re-fetched after OpenApp settles (see the effect
-    // below). Track the pending reportID so both the initial-URL and the url-change paths stay in sync.
+    // Track the pending public-room reportID so both the initial-URL and the url-change paths stay in sync.
     const trackPendingPublicRoomFromDeepLink = useCallback((url: string, isCurrentlyAuthenticated: boolean) => {
         const deepLinkReportID = getReportIDFromLink(url);
         if (!deepLinkReportID || isCurrentlyAuthenticated) {
             return;
         }
-        pendingPublicRoomReportID.current = deepLinkReportID;
+        setPendingPublicRoomReportID(deepLinkReportID);
         hasRefetchedPublicRoom.current = false;
     }, []);
 
     useEffect(() => {
-        if (isLoadingOnyxValue(allReportsMetadata, sessionMetadata, conciergeReportIDMetadata, introSelectedMetadata, guidedSetupAndTourStatusMetadata, betasMetadata)) {
+        if (isLoadingOnyxValue(hasLoadedAppMetadata, sessionMetadata, conciergeReportIDMetadata, introSelectedMetadata, guidedSetupAndTourStatusMetadata, betasMetadata)) {
             return;
         }
 
@@ -106,7 +126,7 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
                     }
                     openReportFromDeepLink(
                         url,
-                        allReports,
+                        getCachedReports(),
                         isCurrentlyAuthenticated,
                         conciergeReportID,
                         introSelected,
@@ -149,7 +169,7 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
             }
             openReportFromDeepLink(
                 state.url,
-                allReports,
+                getCachedReports(),
                 isCurrentlyAuthenticated,
                 conciergeReportID,
                 introSelected,
@@ -165,12 +185,12 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
             clearTimeout(timeoutId);
             linkingChangeListener.current?.remove();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excluding allReports, isAuthenticated, and onInitialUrl to avoid re-triggering deep link handling on every report update
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excluding isAuthenticated and onInitialUrl to avoid re-triggering deep link handling
     }, [
         conciergeReportID,
         introSelected,
         betas,
-        allReportsMetadata.status,
+        hasLoadedAppMetadata.status,
         sessionMetadata.status,
         conciergeReportIDMetadata.status,
         introSelectedMetadata.status,
@@ -195,13 +215,12 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
     // OpenApp that follows anonymous session creation drops it from Onyx, so it never reaches the LHN.
     // Once OpenApp settles, re-fetch the room if it went missing so it shows up in the LHN. See #92672.
     useEffect(() => {
-        const reportID = pendingPublicRoomReportID.current;
-        if (!reportID || isLoadingApp || !isAnonymousUser()) {
+        if (!pendingPublicRoomReportID || isLoadingApp || !isAnonymousUser()) {
             return;
         }
-        // The room made it into Onyx, so the cold-start race is over - stop tracking it.
-        if (allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]?.reportID) {
-            pendingPublicRoomReportID.current = '';
+        // The room made it into Onyx (via the member-key subscription above), so the cold-start race is over - stop tracking it.
+        if (pendingPublicRoomReport?.reportID) {
+            setPendingPublicRoomReportID('');
             hasRefetchedPublicRoom.current = false;
             return;
         }
@@ -210,7 +229,7 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
         }
         hasRefetchedPublicRoom.current = true;
         Report.openReport({
-            reportID,
+            reportID: pendingPublicRoomReportID,
             introSelected,
             betas,
             hasReportActions: false,
@@ -218,7 +237,16 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
             isSelfTourViewed: guidedSetupAndTourStatus?.isSelfTourViewed,
             hasCompletedGuidedSetupFlow: guidedSetupAndTourStatus?.hasCompletedGuidedSetupFlow,
         });
-    }, [isLoadingApp, allReports, introSelected, betas, session?.accountID, guidedSetupAndTourStatus?.isSelfTourViewed, guidedSetupAndTourStatus?.hasCompletedGuidedSetupFlow]);
+    }, [
+        isLoadingApp,
+        pendingPublicRoomReportID,
+        pendingPublicRoomReport?.reportID,
+        introSelected,
+        betas,
+        session?.accountID,
+        guidedSetupAndTourStatus?.isSelfTourViewed,
+        guidedSetupAndTourStatus?.hasCompletedGuidedSetupFlow,
+    ]);
 
     return null;
 }
