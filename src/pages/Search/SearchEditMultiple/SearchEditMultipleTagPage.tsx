@@ -7,6 +7,7 @@ import useOnyx from '@hooks/useOnyx';
 import useSearchBulkEditPolicyID from '@hooks/useSearchBulkEditPolicyID';
 
 import {updateBulkEditDraftTransaction} from '@libs/actions/IOU/BulkEdit';
+import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import Navigation from '@libs/Navigation/Navigation';
 import {getTagList, hasDependentTags as hasDependentTagsPolicyUtils} from '@libs/PolicyUtils';
 import type {OptionData} from '@libs/ReportUtils';
@@ -23,7 +24,6 @@ import {getCommonDependentTag} from './SearchEditMultipleUtils';
 
 function SearchEditMultipleTagPage() {
     const {translate} = useLocalize();
-    const [policies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const [draftTransaction] = useOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_BULK_EDIT_TRANSACTION_ID}`);
     const [allTransactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION);
     const route = useRoute();
@@ -32,7 +32,7 @@ function SearchEditMultipleTagPage() {
 
     const policyID = useSearchBulkEditPolicyID();
 
-    const policy = policyID ? policies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`] : undefined;
+    const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${getNonEmptyStringOnyxID(policyID)}`);
     const [policyTags] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`);
 
     const tagListIndex = Number((route.params as {tagListIndex?: string})?.tagListIndex ?? 0);

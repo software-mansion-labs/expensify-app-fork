@@ -18,6 +18,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {searchUserInServer} from '@libs/actions/Report';
 import {canModifyTask, editTaskAssignee, setAssigneeValue} from '@libs/actions/Task';
 import {READ_COMMANDS} from '@libs/API/types';
+import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import HttpUtils from '@libs/HttpUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackRouteProp} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -49,7 +50,7 @@ function DynamicTaskAssigneeSelectorModal() {
     const isNewTaskFlow = route.name === SCREENS.NEW_TASK.DYNAMIC_TASK_ASSIGNEE;
     const backPath = useDynamicBackPath(isNewTaskFlow ? DYNAMIC_ROUTES.NEW_TASK_ASSIGNEE.path : DYNAMIC_ROUTES.TASK_ASSIGNEE.path);
     const reportID = !isNewTaskFlow && route.params && 'reportID' in route.params ? route.params.reportID : undefined;
-    const [reports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
+    const [reportOnyx] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(reportID)}`);
     const [task] = useOnyx(ONYXKEYS.TASK);
     const [isSearchingForReports] = useOnyx(ONYXKEYS.RAM_ONLY_IS_SEARCHING_FOR_REPORTS);
     const [countryCode = CONST.DEFAULT_COUNTRY_CODE] = useOnyx(ONYXKEYS.COUNTRY_CODE);
@@ -73,16 +74,15 @@ function DynamicTaskAssigneeSelectorModal() {
         if (!reportID) {
             return;
         }
-        const reportOnyx = reports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
         if (reportOnyx && !isTaskReport(reportOnyx)) {
             Navigation.isNavigationReady().then(() => {
                 Navigation.goBack(backPath);
             });
         }
-        return reports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
+        return reportOnyx;
     })();
 
-    const parentReport = reports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.parentReportID}`];
+    const [parentReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(report?.parentReportID)}`);
 
     const hasOutstandingChildTask = useHasOutstandingChildTask(report);
 

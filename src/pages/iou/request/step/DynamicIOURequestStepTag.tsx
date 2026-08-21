@@ -115,19 +115,17 @@ function DynamicIOURequestStepTag({
     // re-select an "orphaned" tag from a deleted source workspace even when the active workspace
     // has no tags configured. Without this the picker would render an empty list with no way to
     // restore the previously selected value.
-    const [allTransactionsForSplitParent] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION);
+    const [splitParentTransaction] = useOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION}${getNonEmptyStringOnyxID(transaction?.comment?.originalTransactionID)}`);
     const [isTrackIntentUser] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED, {selector: isTrackIntentUserSelector});
     const parentTransactionTag = useMemo(() => {
         if (!isEditingSplit) {
             return '';
         }
-        const parentTransactionID = transaction?.comment?.originalTransactionID;
-        if (!parentTransactionID) {
+        if (!transaction?.comment?.originalTransactionID) {
             return '';
         }
-        const parentTransaction = allTransactionsForSplitParent?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${parentTransactionID}`];
-        return parentTransaction?.tag ?? '';
-    }, [isEditingSplit, transaction?.comment?.originalTransactionID, allTransactionsForSplitParent]);
+        return splitParentTransaction?.tag ?? '';
+    }, [isEditingSplit, transaction?.comment?.originalTransactionID, splitParentTransaction]);
 
     const additionalTagsToInclude = useMemo(() => {
         if (!parentTransactionTag) {

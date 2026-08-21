@@ -34,6 +34,7 @@ import {
 import {isMobileSafari} from '@libs/Browser';
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
 import {getEarliestErrorField, getLatestErrorField} from '@libs/ErrorUtils';
+import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import getPathWithoutDynamicSuffix from '@libs/Navigation/helpers/dynamicRoutesUtils/getPathWithoutDynamicSuffix';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -63,7 +64,8 @@ function DynamicContactMethodDetailsPage({route}: DynamicContactMethodDetailsPag
     const [loginList, loginListResult] = useOnyx(ONYXKEYS.LOGINS, {selector: expensifyLoginsSelector});
     const [session, sessionResult] = useOnyx(ONYXKEYS.SESSION);
     const [myDomainSecurityGroups, myDomainSecurityGroupsResult] = useOnyx(ONYXKEYS.MY_DOMAIN_SECURITY_GROUPS);
-    const [securityGroups, securityGroupsResult] = useOnyx(ONYXKEYS.COLLECTION.SECURITY_GROUP);
+    const primaryDomainSecurityGroupID = myDomainSecurityGroups?.[Str.extractEmailDomain(session?.email ?? '')];
+    const [primaryDomainSecurityGroup, securityGroupsResult] = useOnyx(`${ONYXKEYS.COLLECTION.SECURITY_GROUP}${getNonEmptyStringOnyxID(primaryDomainSecurityGroupID)}`);
     const [isLoadingReportData = true, isLoadingReportDataResult] = useOnyx(ONYXKEYS.IS_LOADING_REPORT_DATA);
     const [isValidateCodeFormVisible, setIsValidateCodeFormVisible] = useState(true);
     const {isActingAsDelegate} = useDelegateNoAccessState();
@@ -115,9 +117,6 @@ function DynamicContactMethodDetailsPage({route}: DynamicContactMethodDetailsPag
      * - The security group exists and has `enableRestrictedPrimaryLogin` enabled → restricted.
      */
     const isRestrictedDefaultContactMethodSwitch = useMemo(() => {
-        const domainName = Str.extractEmailDomain(session?.email ?? '');
-        const primaryDomainSecurityGroupID = myDomainSecurityGroups?.[domainName];
-
         // If there's no security group associated with the user for the primary domain,
         // default to NOT restricting the user from switching their default contact method.
         if (!primaryDomainSecurityGroupID) {
@@ -126,8 +125,8 @@ function DynamicContactMethodDetailsPage({route}: DynamicContactMethodDetailsPag
 
         /// Restrict the user from switching their default contact method if their security group
         // restricts primary login switching.
-        return !!securityGroups?.[`${ONYXKEYS.COLLECTION.SECURITY_GROUP}${primaryDomainSecurityGroupID}`]?.enableRestrictedPrimaryLogin;
-    }, [session?.email, myDomainSecurityGroups, securityGroups]);
+        return !!primaryDomainSecurityGroup?.enableRestrictedPrimaryLogin;
+    }, [primaryDomainSecurityGroupID, primaryDomainSecurityGroup]);
 
     /**
      * Checks if the user is allowed to change their default contact method.
