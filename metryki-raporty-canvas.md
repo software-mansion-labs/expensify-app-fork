@@ -24,7 +24,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 314 ms (n 7,090) | 9.4.52-11 · 349 ms (n 4,655) | −10% | mature (18% of volume) → comparable |
 | Android | 9.4.54-4 · 445 ms (n 646) | 9.4.53-10 · 561 ms (n 897) | −21% | rolling out (6% of volume) → no verdict yet |
 
-> web rows moved after the #98051 relabelling; native share dropped 12 pp w/w, so the All row is not comparable to last week
+> **Notes:** web rows moved after the #98051 relabelling; native share dropped 12 pp w/w, so the All row is not comparable to last week
 
 ---
 
@@ -44,6 +44,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 259 ms (n 5,714) | 9.4.52-11 · 256 ms (n 3,682) | +1% | mature (18% of volume) → comparable |
 | Android | 9.4.54-4 · 540 ms (n 582) | 9.4.53-10 · 556 ms (n 747) | −3% | rolling out (6% of volume) → no verdict yet |
 
+> **Notes:** none
+
 ---
 
 ## 🔴 Manual App start up time — target 5000 ms (p95)
@@ -62,7 +64,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.55-4 · 4848 ms (n 568) | 9.4.54-4 · 4520 ms (n 555) | +7% | rolling out (4% of volume) → no verdict yet |
 | Android | 9.4.53-10 · 6311 ms (n 584) | 9.4.52-11 · 10274 ms (n 637) | −39% | rolling out (12% of volume) → no verdict yet |
 
-> 10.8% of spans carry no os.name and are excluded from the platform rows but included in All
+> **Notes:** 10.8% of spans carry no os.name and are excluded from the platform rows but included in All
 
 ---
 
@@ -82,6 +84,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 969 ms (n 48K) | 9.4.52-11 · 1150 ms (n 31K) | −16% | rolling out (15% of volume) → no verdict yet |
 | Android | 9.4.54-4 · 1317 ms (n 5,235) | 9.4.53-10 · 1472 ms (n 6,569) | −10% | rolling out (6% of volume) → no verdict yet |
 
+> **Notes:** none
+
 ---
 
 ## 🔴 Scan Capture to Confirmation Screen — target 400 ms (p95)
@@ -98,7 +102,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 374 ms (n 12K) | 9.4.52-11 · 360 ms (n 9,086) | +4% | rolling out (14% of volume) → no verdict yet |
 | Android | 9.4.54-4 · 574 ms (n 2,411) | 9.4.53-10 · 938 ms (n 2,780) | −39% | rolling out (7% of volume) → no verdict yet |
 
-> native-only path, so All equals the two platform rows; the All move is driven by iOS volume falling 35% w/w
+> **Notes:** native-only path, so All equals the two platform rows; the All move is driven by iOS volume falling 35% w/w
 
 ---
 
@@ -118,7 +122,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 483 ms (n 286) | 9.4.52-11 · 428 ms (n 181) | +13% | mature (16% of volume) → comparable · below 500-sample floor |
 | Android | 9.4.52-11 · 1391 ms (n 301) | 9.4.51-1 · 1078 ms (n 166) | +29% | mature (31% of volume) → comparable · below 500-sample floor |
 
-> smallest sample on the board; release rows fall below the 500-sample floor, so they are indicative only
+> **Notes:** smallest sample on the board; release rows fall below the 500-sample floor, so they are indicative only
 
 ---
 
@@ -138,7 +142,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 637 ms (n 1,244) | 9.4.52-11 · 519 ms (n 610) | +23% | mature (22% of volume) → comparable |
 | Android | 9.4.54-4 · 475 ms (n 142) | 9.4.54-1 · 686 ms (n 124) | −31% | rolling out (7% of volume) → no verdict yet · below 500-sample floor |
 
-> old timer, stops before the message is visible; see the next report for the visible-timer version of the same action
+> **Notes:** old timer, stops before the message is visible; see the next report for the visible-timer version of the same action
 
 ---
 
@@ -158,7 +162,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.54-1 · 413 ms (n 127) | 9.4.53-10 · 830 ms (n 1,244) | −50% | rolling out (8% of volume) → no verdict yet · below 500-sample floor |
 | Android | 9.4.54-4 · 651 ms (n 142) | 9.4.54-1 · 1110 ms (n 124) | −41% | mature (23% of volume) → comparable · below 500-sample floor |
 
-> timer is one week old, so w/w on All compares 14.6K measurements against 154; target 300 ms is inherited from the old timer and not yet agreed for this one
+> **Notes:** timer is one week old, so w/w on All compares 14.6K measurements against 154; target 300 ms is inherited from the old timer and not yet agreed for this one
 
 ---
 
@@ -178,7 +182,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 113 ms (n 12K) | 9.4.52-11 · 113 ms (n 9,084) | flat | rolling out (11% of volume) → no verdict yet |
 | Android | 9.4.53-10 · 144 ms (n 3,069) | 9.4.52-11 · 147 ms (n 15K) | −2% | rolling out (7% of volume) → no verdict yet |
 
-> one span covers four follow-up actions; every platform row is far inside target while the reported sub-metrics are not, which is the scenario-mixing case
+> **Notes:** one span covers four follow-up actions; every platform row is far inside target while the reported sub-metrics are not, which is the scenario-mixing case
 
 ---
 
@@ -198,7 +202,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.53-10 · 342 ms (n 16K) | 9.4.52-11 · 321 ms (n 11K) | +6% | rolling out (13% of volume) → no verdict yet |
 | Android | 9.4.54-4 · 457 ms (n 2,978) | 9.4.53-10 · 484 ms (n 3,347) | −6% | rolling out (7% of volume) → no verdict yet |
 
-> reported as 315 to 280 ms with the weekly release filter; without it the All row is flat at 343 to 341 ms
+> **Notes:** reported as 315 to 280 ms with the weekly release filter; without it the All row is flat at 343 to 341 ms
 
 ---
 
@@ -216,4 +220,4 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.51-1 · 271 ms (n 649) | 9.4.50-3 · 281 ms (n 1,007) | −3% | mature (24% of volume) → comparable |
 | Android | 9.4.52-11 · 469 ms (n 169) | 9.4.51-1 · 591 ms (n 140) | −21% | mature (32% of volume) → comparable · below 500-sample floor |
 
-> no agreed target yet, 300 ms proposed; the span also fires on Android despite the metric name
+> **Notes:** no agreed target yet, 300 ms proposed; the span also fires on Android despite the metric name
