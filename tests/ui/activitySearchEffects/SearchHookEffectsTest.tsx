@@ -205,6 +205,17 @@ describe(`Search hooks under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
             expect(searchCalls()).toBe(0);
         });
 
+        it('keeps the cost of a reveal flat across repeated cycles (audit 2.1 and 2.2)', () => {
+            // Given a mounted Search page setup
+            harness.renderSubject(<SearchPageSetupProbe />);
+
+            // When the user opens and closes something over Search three times, as they do all session long
+            const clearsPerCycle = harness.measureCycles(3, mockClearSelectedTransactions);
+
+            // Then every cycle costs the same, so nothing survives a hide to pile another listener on the next one
+            expect(new Set(clearsPerCycle).size).toBe(1);
+        });
+
         it('reports how many times openSearch runs across a cover cycle (audit 2.3)', () => {
             // Given a mounted Search page setup
             harness.renderSubject(<SearchPageSetupProbe />);
@@ -372,6 +383,29 @@ describe(`Search hooks under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
             harness.uncover();
 
             // Then it is armed again, without leaving a duplicate behind
+            expect(liveSubscriptions).toBe(subscriptionsWhileVisible);
+            addEventListenerSpy.mockRestore();
+        });
+
+        it('does not stack up back button guards across repeated cycles (audit 5.4)', () => {
+            // Given a screen that handles the hardware back button
+            let liveSubscriptions = 0;
+            const addEventListenerSpy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation(() => {
+                liveSubscriptions += 1;
+                return {
+                    remove: () => {
+                        liveSubscriptions -= 1;
+                    },
+                };
+            });
+            harness.renderSubject(<AndroidBackButtonHandlerProbe onBackButtonPress={jest.fn(() => true)} />);
+            const subscriptionsWhileVisible = liveSubscriptions;
+
+            // When the screen is covered and revealed three times
+            harness.measureCycles(3, addEventListenerSpy);
+
+            // Then the count is where it started, so one back press still runs the handler once and not once per
+            // modal the user happened to open earlier
             expect(liveSubscriptions).toBe(subscriptionsWhileVisible);
             addEventListenerSpy.mockRestore();
         });

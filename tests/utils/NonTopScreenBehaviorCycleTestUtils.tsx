@@ -152,7 +152,25 @@ function createCoverCycleHarness() {
         settle();
     }
 
-    return {install, renderSubject, cover, uncover, settle, firePendingCallbacks: transitionTracker.firePendingCallbacks};
+    /**
+     * Runs the whole cover and uncover cycle and reports what a mock recorded during it. Repeating this is how a
+     * test tells a fixed per-reveal cost from one that grows with every cycle, which is the shape a listener or a
+     * handle that outlives the hide leaves behind.
+     */
+    function measureCycles(count: number, mock: {mock: {calls: unknown[]}}) {
+        const callsPerCycle: number[] = [];
+
+        for (let index = 0; index < count; index++) {
+            const callsBefore = mock.mock.calls.length;
+            cover();
+            uncover();
+            callsPerCycle.push(mock.mock.calls.length - callsBefore);
+        }
+
+        return callsPerCycle;
+    }
+
+    return {install, renderSubject, cover, uncover, settle, measureCycles, firePendingCallbacks: transitionTracker.firePendingCallbacks};
 }
 
 export default createCoverCycleHarness;

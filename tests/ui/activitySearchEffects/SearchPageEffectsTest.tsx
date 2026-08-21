@@ -15,6 +15,7 @@ import useSearchShouldCalculateTotals from '@hooks/useSearchShouldCalculateTotal
 
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import {clearFooterConversion, openSearch, search} from '@libs/actions/Search';
+import isSearchTopmostFullScreenRoute from '@libs/Navigation/helpers/isSearchTopmostFullScreenRoute';
 import * as SearchQueryUtils from '@libs/SearchQueryUtils';
 
 import SearchPage from '@pages/Search/SearchPage';
@@ -92,6 +93,11 @@ jest.mock('@libs/actions/MobileSelectionMode', () => ({
     turnOffMobileSelectionMode: jest.fn(),
 }));
 
+// The helper reads the app-wide navigation ref, which the harness stack is not attached to. Driving it explicitly is
+// what tells the two ways of covering Search apart: an RHP leaves Search the topmost fullscreen route, another
+// fullscreen route does not.
+jest.mock('@libs/Navigation/helpers/isSearchTopmostFullScreenRoute', () => ({__esModule: true, default: jest.fn(() => false)}));
+
 jest.mock('@components/VideoPlayerContexts/PlaybackContext', () => {
     const actual = jest.requireActual<Record<string, unknown>>('@components/VideoPlayerContexts/PlaybackContext');
     return {
@@ -108,6 +114,7 @@ const mockedTurnOffMobileSelectionMode = jest.mocked(turnOffMobileSelectionMode)
 const mockedUseNetwork = jest.mocked(useNetwork);
 const mockedUseResponsiveLayout = jest.mocked(useResponsiveLayout);
 const mockedUseSearchShouldCalculateTotals = jest.mocked(useSearchShouldCalculateTotals);
+const mockedIsSearchTopmostFullScreenRoute = jest.mocked(isSearchTopmostFullScreenRoute);
 
 /** Snapshots a mock's call count so an assertion can read the calls the cover and uncover cycle added. */
 function trackCalls(mock: {mock: {calls: unknown[]}}) {
@@ -248,8 +255,9 @@ describe(`SearchPage under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
         expect(searchCalls()).toBe(0);
     });
 
-    it('does not turn the mobile selection mode off on a cover cycle (audit 6.2 and 6.3)', () => {
-        // Given a rendered Search page
+    it('does not turn the mobile selection mode off when another fullscreen route covers Search (audit 6.2 and 6.3)', () => {
+        // Given a rendered Search page that a non-Search fullscreen route is about to cover
+        mockedIsSearchTopmostFullScreenRoute.mockReturnValue(false);
         renderSearchPage();
         const turnOffCalls = trackCalls(mockedTurnOffMobileSelectionMode);
 
@@ -257,8 +265,37 @@ describe(`SearchPage under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
         harness.cover();
         harness.uncover();
 
-        // Then the selection mode is left alone, because the screen stayed the topmost Search route
+        // Then the selection mode is left alone, because the user never left the Search they selected in
         expect(turnOffCalls()).toBe(0);
+    });
+
+    it('does not turn the mobile selection mode off when an RHP covers Search (audit 6.3, the RHP case)', () => {
+        // Given a rendered Search page under an RHP, which leaves Search the topmost fullscreen route
+        mockedIsSearchTopmostFullScreenRoute.mockReturnValue(true);
+        renderSearchPage();
+        const turnOffCalls = trackCalls(mockedTurnOffMobileSelectionMode);
+
+        // When the RHP opens and closes again
+        harness.cover();
+        harness.uncover();
+
+        // Then the guard on the cleanup holds and the selection mode survives, which is the common case: most of
+        // what covers Search is an RHP, not another fullscreen route
+        expect(turnOffCalls()).toBe(0);
+    });
+
+    it('keeps the cost of a reveal flat across repeated cycles (audit 6.1)', () => {
+        // Given a rendered Search page with the heavy Search component mounted
+        const rendered = renderSearchPage();
+        harness.firePendingCallbacks();
+        expect(rendered.UNSAFE_getByType(Search)).toBeTruthy();
+
+        // When the user opens and closes something over Search three times
+        const searchesPerCycle = harness.measureCycles(3, mockedSearch);
+
+        // Then every cycle costs the same: a request per reveal is bad enough, a request count that grows with the
+        // number of reveals would be a leak on top of it
+        expect(new Set(searchesPerCycle).size).toBe(1);
     });
 
     it('does not fall back to the loading skeleton after a reveal (audit 6.4)', () => {

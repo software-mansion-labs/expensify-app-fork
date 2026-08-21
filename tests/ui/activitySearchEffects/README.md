@@ -29,3 +29,11 @@ passes under both documents behavior the migration does not change, which is wor
 findings of the audit turned out to be focus-driven rather than Activity-driven.
 
 The findings each test maps to are numbered after `repo/activity-search-audit/EFFECTS.md`.
+
+Two things the per-finding tests do not say on their own:
+
+- **How Search is covered matters.** An RHP leaves Search the topmost fullscreen route, another fullscreen route does
+  not, and the cleanups in `components/Search` guard on exactly that. Tests that touch those guards drive
+  `isSearchTopmostFullScreenRoute` explicitly instead of inheriting whatever the harness stack happens to report.
+- **One cycle is not enough for leaks.** `measureCycles` runs the cover and uncover cycle repeatedly and hands back
+  the per-cycle count, so a test can tell a fixed per-reveal cost from one that grows with every reveal.
