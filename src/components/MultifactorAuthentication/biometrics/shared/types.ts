@@ -34,7 +34,7 @@ type UseBiometricsReturn = {
     /** Whether biometric credentials have ever been configured for this account */
     haveCredentialsEverBeenConfigured: boolean;
 
-    /** Retrieve the credential ID stored locally on this device */
+    /** Retrieve a credential ID stored locally on this device, preferring one the server still knows when multiple exist */
     getLocalCredentialID: () => Promise<string | undefined>;
 
     /** Check if local credentials are known to server (local credential exists in server's list) */

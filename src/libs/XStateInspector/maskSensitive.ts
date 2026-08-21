@@ -14,11 +14,18 @@ const MAX_DEPTH_MARKER = '[MaxDepth]';
 const MAX_DEPTH = 10;
 
 /**
- * Keys whose entire subtree is masked at any depth. This is the same shared set
- * ({@link CONST.SENSITIVE_AUTH_KEYS}) that the log and parameter-error redactors use, so that secrets
- * are redacted identically wherever data leaves the app.
+ * Keys whose entire subtree is masked at any depth. The shared auth-key set keeps credentials
+ * redacted consistently with logs and parameter errors. `payload` is inspector-only because MFA
+ * scenario payloads can contain arbitrary PII, while globally treating every application payload as
+ * sensitive would hide unrelated diagnostics.
  */
-const SENSITIVE_KEYS = new Set<string>(CONST.SENSITIVE_AUTH_KEYS);
+const SENSITIVE_KEYS = new Set<string>([...CONST.SENSITIVE_AUTH_KEYS, 'payload']);
+
+/**
+ * The inspector can run its serializer repeatedly on the result of an earlier pass. Remembering our
+ * own plain-object outputs makes masking idempotent without putting a marker into postMessage data.
+ */
+const MASKED_INSPECTION_EVENTS = new WeakSet<WeakKey>();
 
 function hasToJSON(value: unknown): value is {toJSON: () => unknown} {
     return typeof value === 'object' && value !== null && 'toJSON' in value && typeof value.toJSON === 'function';
@@ -92,9 +99,16 @@ function serialize(value: unknown, maskSensitiveKeys: boolean): unknown {
 function maskInspectionEvent(event: StatelyInspectionEvent): StatelyInspectionEvent;
 function maskInspectionEvent(event: unknown): unknown;
 function maskInspectionEvent(event: unknown): unknown {
+    if (isRecord(event) && MASKED_INSPECTION_EVENTS.has(event)) {
+        return event;
+    }
+
     const masked = serialize(event, true);
     if (isRecord(event) && isRecord(masked) && isRecord(masked.snapshot) && isMachineSnapshot(event.snapshot)) {
         masked.snapshot.value = serialize(event.snapshot.value, false);
+    }
+    if (isRecord(masked)) {
+        MASKED_INSPECTION_EVENTS.add(masked);
     }
     return masked;
 }

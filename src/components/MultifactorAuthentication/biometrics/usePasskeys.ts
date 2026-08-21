@@ -14,7 +14,8 @@ function usePasskeys(): UseBiometricsReturn {
     const [localPasskeyCredentials] = useOnyx(getPasskeyOnyxKey(userId));
 
     const getLocalCredentialID = async (): Promise<string | undefined> => {
-        return (localPasskeyCredentials ?? []).at(0)?.id;
+        const serverSet = new Set(serverKnownCredentialIDs);
+        return (localPasskeyCredentials ?? []).find((credential) => serverSet.has(credential.id))?.id;
     };
 
     /**

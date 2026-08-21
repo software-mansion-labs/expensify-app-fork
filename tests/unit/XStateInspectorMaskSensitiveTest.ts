@@ -5,12 +5,19 @@ import CONST from '@src/CONST';
 import {createActor, createMachine} from 'xstate';
 
 describe('maskInspectionEvent', () => {
-    it('recurses through plain containers like payload and body, masking only the sensitive leaves while keeping the shape', () => {
+    it('masks every value in a scenario payload because it can contain arbitrary PII', () => {
         const masked = maskInspectionEvent({
             snapshot: {
                 context: {
-                    payload: {pin: '1234', meta: {attempt: 2}},
-                    request: {body: {validateCode: '987654', otp: '111111', attempt: 3}},
+                    payload: {
+                        cardID: 'card-1',
+                        legalFirstName: 'John',
+                        legalLastName: 'Smith',
+                        phoneNumber: '+44123456789',
+                        addressStreet: '10 Downing Street',
+                        dob: '1990-01-01',
+                        isFromMissingDetailsFlow: true,
+                    },
                 },
             },
         });
@@ -18,8 +25,15 @@ describe('maskInspectionEvent', () => {
         expect(masked).toEqual({
             snapshot: {
                 context: {
-                    payload: {pin: SENSITIVE_VALUE_MASK, meta: {attempt: 2}},
-                    request: {body: {validateCode: SENSITIVE_VALUE_MASK, otp: SENSITIVE_VALUE_MASK, attempt: 3}},
+                    payload: {
+                        cardID: SENSITIVE_VALUE_MASK,
+                        legalFirstName: SENSITIVE_VALUE_MASK,
+                        legalLastName: SENSITIVE_VALUE_MASK,
+                        phoneNumber: SENSITIVE_VALUE_MASK,
+                        addressStreet: SENSITIVE_VALUE_MASK,
+                        dob: SENSITIVE_VALUE_MASK,
+                        isFromMissingDetailsFlow: SENSITIVE_VALUE_MASK,
+                    },
                 },
             },
         });
@@ -166,8 +180,12 @@ describe('maskInspectionEvent', () => {
         const actor = createActor(machine).start();
 
         const masked = maskInspectionEvent({snapshot: actor.getSnapshot()});
+        const maskedAgain = maskInspectionEvent(masked);
+        const maskedAfterReconnect = maskInspectionEvent(maskedAgain);
         actor.stop();
 
+        expect(maskedAgain).toBe(masked);
+        expect(maskedAfterReconnect).toBe(masked);
         expect(masked).toEqual(expect.objectContaining({snapshot: expect.objectContaining({value: {validateCode: 'awaitingInput'}})}));
     });
 
