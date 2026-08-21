@@ -1,5 +1,3 @@
-import {isActionable, needsViolationFix, getOldestPreviewActionID} from '@userActions/OnyxDerived/configs/reportAttributes';
-
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Policy, Report, ReportActions, ReportNameValuePairs, Transaction, TransactionViolation} from '@src/types/onyx';
@@ -10,6 +8,7 @@ import {queryCollection} from 'react-native-onyx/dist/OnyxQuery';
 import type {ScopedStore} from './OnDemandOnyxStore';
 import type {OnDemandNameContext} from './OnDemandReportName';
 
+import {getOldestPreviewActionID, isActionable, needsViolationFix} from './actions/OnyxDerived/configs/reportAttributes';
 import Log from './Log';
 import {getIsOffline} from './NetworkState';
 import {createScopedStore, fetchChainTransactions, fetchIntoStore, getStoredReport, makeTrackedCollection, seedReportGraph, watchScopedDependencies} from './OnDemandOnyxStore';

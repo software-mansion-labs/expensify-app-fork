@@ -16,6 +16,7 @@ import useOnyx from './useOnyx';
  */
 function usePolicyOwnerBillingGraceEndPeriod(policy: OnyxInputOrEntry<Policy> | null): [OnyxEntry<BillingGraceEndPeriod>, ResultMetadata] {
     const ownerAccountID = policy?.ownerAccountID;
+    // eslint-disable-next-line rulesdir/no-default-id-values -- DEFAULT_NUMBER_ID is a deliberate match-nothing probe (hooks can't be conditional); the return below hides its value
     const [policyOwnerBillingGraceEndPeriod, metadata] = useOnyx(`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${ownerAccountID ?? CONST.DEFAULT_NUMBER_ID}`);
     return [ownerAccountID ? policyOwnerBillingGraceEndPeriod : undefined, metadata];
 }
