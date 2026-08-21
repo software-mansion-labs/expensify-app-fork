@@ -289,6 +289,26 @@ describe('authorize actor', () => {
         expect(mockAuthorize).toHaveBeenCalledWith({accountID: MFA_TEST_ACCOUNT_ID, challenge: MFA_TEST_AUTHENTICATION_CHALLENGE, signal: ANY_ABORT_SIGNAL});
     });
 
+    it('hands the ceremony the flow-scoped signal, so cancelling the flow reaches it', async () => {
+        let ceremonySignal: AbortSignal | undefined;
+        // Never resolves: the signal has to be the actor's own, so it aborts while the ceremony is still pending.
+        mockAuthorize.mockImplementation((params: {signal: AbortSignal}) => {
+            ceremonySignal = params.signal;
+            return new Promise(() => {});
+        });
+
+        const {authorize} = createActors();
+        const actorRef = createActor(authorize, {input: AUTHORIZE_INPUT});
+        actorRef.start();
+        await waitForBatchedUpdates();
+
+        expect(ceremonySignal?.aborted).toBe(false);
+
+        actorRef.stop();
+
+        expect(ceremonySignal?.aborted).toBe(true);
+    });
+
     it('forwards the exact signed challenge and marqeta authentication method to the pre-bound scenario runner', async () => {
         const signedChallenge = {rawId: 'raw-id', type: 'public-key', response: {authenticatorData: 'authenticator-data', clientDataJSON: 'client-data', signature: 'signature'}};
         mockAuthorize.mockResolvedValue({success: true, signedChallenge, authenticationMethod: MFA_TEST_AUTH_METHOD});
