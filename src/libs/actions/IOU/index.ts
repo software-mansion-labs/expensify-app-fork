@@ -1,3 +1,5 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
+
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxTypes from '@src/types/onyx';
@@ -16,55 +18,61 @@ Onyx.connect({
 });
 
 let allTransactions: NonNullable<OnyxCollection<OnyxTypes.Transaction>> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.TRANSACTION,
-    callback: (value) => {
-        if (!value) {
-            allTransactions = {};
-            return;
-        }
-
-        allTransactions = value;
-    },
-});
-
 let allTransactionDrafts: NonNullable<OnyxCollection<OnyxTypes.Transaction>> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.TRANSACTION_DRAFT,
-    callback: (value) => {
-        allTransactionDrafts = value ?? {};
-    },
-});
-
 // TODO: https://github.com/Expensify/App/issues/66512
 let allTransactionViolations: NonNullable<OnyxCollection<OnyxTypes.TransactionViolations>> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS,
-    callback: (value) => {
-        if (!value) {
-            allTransactionViolations = {};
-            return;
-        }
-
-        allTransactionViolations = value;
-    },
-});
-
 let allReports: OnyxCollection<OnyxTypes.Report>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-    },
-});
-
 let allReportNameValuePairs: OnyxCollection<OnyxTypes.ReportNameValuePairs>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
-    callback: (value) => {
-        allReportNameValuePairs = value;
-    },
-});
+
+// Lazy-Onyx POC (purity lane): whole-collection subscriptions here would hydrate all of these
+// collections at module load — i.e. during boot. Deferred until the app is interactive; the getter/
+// fallback readers see the empty defaults until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.TRANSACTION,
+        callback: (value) => {
+            if (!value) {
+                allTransactions = {};
+                return;
+            }
+
+            allTransactions = value;
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.TRANSACTION_DRAFT,
+        callback: (value) => {
+            allTransactionDrafts = value ?? {};
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS,
+        callback: (value) => {
+            if (!value) {
+                allTransactionViolations = {};
+                return;
+            }
+
+            allTransactionViolations = value;
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value;
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
+        callback: (value) => {
+            allReportNameValuePairs = value;
+        },
+    });
+}, 'low');
 
 let deprecatedUserAccountID = -1;
 Onyx.connect({
@@ -83,15 +91,18 @@ Onyx.connect({
 });
 
 let allReportActions: OnyxCollection<OnyxTypes.ReportActions>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (actions) => {
-        if (!actions) {
-            return;
-        }
-        allReportActions = actions;
-    },
-});
+// Lazy-Onyx POC (purity lane): deferred — see the block above.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (actions) => {
+            if (!actions) {
+                return;
+            }
+            allReportActions = actions;
+        },
+    });
+}, 'low');
 
 // Use connectWithoutView because this is created for non-UI task only
 let recentAttendees: OnyxEntry<Attendee[]>;
@@ -110,28 +121,32 @@ Onyx.connect({
 
 let allSnapshots: OnyxCollection<OnyxTypes.SearchResults> = {};
 let knownSnapshotHashes = new Set<string>();
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.SNAPSHOT,
-    callback: (value) => {
-        allSnapshots = value ?? {};
-        // Keep SEARCH_QUERY_BY_HASH bounded by mirroring the snapshot collection's lifecycle:
-        // when a snapshot disappears, drop its query entry so the map can never outgrow it.
-        const snapshotPrefixLength = ONYXKEYS.COLLECTION.SNAPSHOT.length;
-        const currentHashes = new Set(Object.keys(allSnapshots).map((k) => k.slice(snapshotPrefixLength)));
-        // Reconcile against persisted SEARCH_QUERY_BY_HASH too, so entries whose snapshots were evicted
-        // before this JS session get pruned on first sync (not just hashes seen since startup).
-        const candidates = new Set<string>([...knownSnapshotHashes, ...Object.keys(searchQueryByHash)]);
-        const removed = [...candidates].filter((h) => !currentHashes.has(h));
-        if (removed.length > 0) {
-            const evictions: Record<string, string | null> = {};
-            for (const h of removed) {
-                evictions[h] = null;
+// Lazy-Onyx POC (purity lane): deferred — see the block above. The pruning side effect just runs
+// after the app is interactive instead of during boot.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.SNAPSHOT,
+        callback: (value) => {
+            allSnapshots = value ?? {};
+            // Keep SEARCH_QUERY_BY_HASH bounded by mirroring the snapshot collection's lifecycle:
+            // when a snapshot disappears, drop its query entry so the map can never outgrow it.
+            const snapshotPrefixLength = ONYXKEYS.COLLECTION.SNAPSHOT.length;
+            const currentHashes = new Set(Object.keys(allSnapshots).map((k) => k.slice(snapshotPrefixLength)));
+            // Reconcile against persisted SEARCH_QUERY_BY_HASH too, so entries whose snapshots were evicted
+            // before this JS session get pruned on first sync (not just hashes seen since startup).
+            const candidates = new Set<string>([...knownSnapshotHashes, ...Object.keys(searchQueryByHash)]);
+            const removed = [...candidates].filter((h) => !currentHashes.has(h));
+            if (removed.length > 0) {
+                const evictions: Record<string, string | null> = {};
+                for (const h of removed) {
+                    evictions[h] = null;
+                }
+                Onyx.merge(ONYXKEYS.SEARCH_QUERY_BY_HASH, evictions);
             }
-            Onyx.merge(ONYXKEYS.SEARCH_QUERY_BY_HASH, evictions);
-        }
-        knownSnapshotHashes = currentHashes;
-    },
-});
+            knownSnapshotHashes = currentHashes;
+        },
+    });
+}, 'low');
 
 function getAllPersonalDetails(): OnyxTypes.PersonalDetailsList {
     return allPersonalDetails;

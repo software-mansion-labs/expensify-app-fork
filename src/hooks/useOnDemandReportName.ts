@@ -114,7 +114,6 @@ function useOnDemandReportNames(reportIDs: Array<string | undefined>): OnDemandR
                 unwatch();
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- translate/dateFnsLocale/context are derived from exactly these inputs inside recompute
     }, [signature, personalDetailsList, currentUserAccountID, currentUserLogin, conciergeReportID, isTrackIntentUser, preferredLocale]);
 
     // Never leak a name for an ID no longer requested (e.g. after the signature narrows).

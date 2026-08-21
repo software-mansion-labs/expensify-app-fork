@@ -7,6 +7,7 @@ import useOnDemandReportName from '@hooks/useOnDemandReportName';
 import {translate as translateForLocale} from '@libs/Localize';
 import {computeReportNameOnDemand} from '@libs/OnDemandReportName';
 import type {OnDemandNameContext} from '@libs/OnDemandReportName';
+// eslint-disable-next-line no-restricted-imports -- the test asserts semantic parity of the on-demand path against this exact compute
 import {computeReportName} from '@libs/ReportNameUtils';
 import {buildTransactionsByReportID} from '@libs/TodosUtils';
 

@@ -1089,115 +1089,17 @@ Onyx.connect({
 });
 
 let deprecatedAllReportsDraft: OnyxCollection<Report>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_DRAFT,
-    callback: (value) => (deprecatedAllReportsDraft = value),
-});
-
 let allPolicies: OnyxCollection<Policy>;
 let policiesArray: Policy[] = [];
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.POLICY,
-    callback: (value) => {
-        allPolicies = value;
-        policiesArray = Object.values(value ?? {}).filter((policy): policy is Policy => !!policy);
-    },
-});
-
 let allPolicyDrafts: OnyxCollection<Policy>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.POLICY_DRAFTS,
-    callback: (value) => (allPolicyDrafts = value),
-});
-
 let deprecatedAllReports: OnyxCollection<Report>;
 let deprecatedReportsByPolicyID: ReportByPolicyMap;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        deprecatedAllReports = value;
-
-        if (!value) {
-            return;
-        }
-
-        deprecatedReportsByPolicyID = {};
-        for (const reportID of Object.keys(value)) {
-            const report = value[reportID];
-            if (!report) {
-                continue;
-            }
-
-            // Get all reports, which are the ones that are:
-            // - Owned by the same user
-            // - Are either open or submitted
-            // - Belong to the same workspace
-            if (report.policyID && report.ownerAccountID === deprecatedCurrentUserAccountID && (report.stateNum ?? 0) <= 1) {
-                const reportsForPolicy = deprecatedReportsByPolicyID[report.policyID] ?? {};
-                reportsForPolicy[reportID] = report;
-                deprecatedReportsByPolicyID[report.policyID] = reportsForPolicy;
-            }
-        }
-    },
-});
-
 let deprecatedAllTransactions: OnyxCollection<Transaction> = {};
 let deprecatedReportsTransactions: Record<string, Transaction[]> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.TRANSACTION,
-    callback: (value) => {
-        if (!value) {
-            return;
-        }
-        deprecatedAllTransactions = Object.fromEntries(Object.entries(value).filter(([, transaction]) => transaction));
-
-        deprecatedReportsTransactions = Object.values(value).reduce<Record<string, Transaction[]>>((all, transaction) => {
-            const reportsMap = all;
-            if (!transaction?.reportID) {
-                return reportsMap;
-            }
-
-            if (!reportsMap[transaction.reportID]) {
-                reportsMap[transaction.reportID] = [];
-            }
-            reportsMap[transaction.reportID].push(transaction);
-
-            return all;
-        }, {});
-    },
-});
-
 let allReportActions: OnyxCollection<ReportActions>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (actions) => {
-        if (!actions) {
-            return;
-        }
-        allReportActions = actions;
-    },
-});
-
 let allReportMetadata: OnyxCollection<ReportMetadata>;
 const allReportMetadataKeyValue: Record<string, ReportMetadata> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_METADATA,
-    callback: (value) => {
-        if (!value) {
-            return;
-        }
-        allReportMetadata = value;
-
-        for (const [reportID, reportMetadata] of Object.entries(value)) {
-            if (!reportMetadata) {
-                continue;
-            }
-
-            const [, id] = reportID.split('_');
-            allReportMetadataKeyValue[id] = reportMetadata;
-        }
-    },
-});
+let allReportNameValuePair: OnyxCollection<ReportNameValuePairs>;
 
 // See findLastAccessedReport — non-UI, module-scoped intentionally.
 let allReportLastVisitTimes: Record<string, string> = {};
@@ -1208,16 +1110,122 @@ Onyx.connectWithoutView({
     },
 });
 
-let allReportNameValuePair: OnyxCollection<ReportNameValuePairs>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
-    callback: (value) => {
-        if (!value) {
-            return;
-        }
-        allReportNameValuePair = value;
-    },
-});
+// Lazy-Onyx POC (ReportUtils purity lane): these module caches subscribe to whole COLLECTION roots,
+// which under lazy Onyx forces every one of those collections to hydrate the moment this module loads
+// — i.e. during boot, since ReportUtils is imported by nearly everything. Deferring the subscriptions
+// until the app is interactive keeps the boot path lazy; until the drain, the deprecated fallback
+// readers see `undefined` and degrade the same way they already do before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_DRAFT,
+        callback: (value) => (deprecatedAllReportsDraft = value),
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.POLICY,
+        callback: (value) => {
+            allPolicies = value;
+            policiesArray = Object.values(value ?? {}).filter((policy): policy is Policy => !!policy);
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.POLICY_DRAFTS,
+        callback: (value) => (allPolicyDrafts = value),
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            deprecatedAllReports = value;
+
+            if (!value) {
+                return;
+            }
+
+            deprecatedReportsByPolicyID = {};
+            for (const reportID of Object.keys(value)) {
+                const report = value[reportID];
+                if (!report) {
+                    continue;
+                }
+
+                // Get all reports, which are the ones that are:
+                // - Owned by the same user
+                // - Are either open or submitted
+                // - Belong to the same workspace
+                if (report.policyID && report.ownerAccountID === deprecatedCurrentUserAccountID && (report.stateNum ?? 0) <= 1) {
+                    const reportsForPolicy = deprecatedReportsByPolicyID[report.policyID] ?? {};
+                    reportsForPolicy[reportID] = report;
+                    deprecatedReportsByPolicyID[report.policyID] = reportsForPolicy;
+                }
+            }
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.TRANSACTION,
+        callback: (value) => {
+            if (!value) {
+                return;
+            }
+            deprecatedAllTransactions = Object.fromEntries(Object.entries(value).filter(([, transaction]) => transaction));
+
+            deprecatedReportsTransactions = Object.values(value).reduce<Record<string, Transaction[]>>((all, transaction) => {
+                const reportsMap = all;
+                if (!transaction?.reportID) {
+                    return reportsMap;
+                }
+
+                if (!reportsMap[transaction.reportID]) {
+                    reportsMap[transaction.reportID] = [];
+                }
+                reportsMap[transaction.reportID].push(transaction);
+
+                return all;
+            }, {});
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (actions) => {
+            if (!actions) {
+                return;
+            }
+            allReportActions = actions;
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_METADATA,
+        callback: (value) => {
+            if (!value) {
+                return;
+            }
+            allReportMetadata = value;
+
+            for (const [reportID, reportMetadata] of Object.entries(value)) {
+                if (!reportMetadata) {
+                    continue;
+                }
+
+                const [, id] = reportID.split('_');
+                allReportMetadataKeyValue[id] = reportMetadata;
+            }
+        },
+    });
+
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
+        callback: (value) => {
+            if (!value) {
+                return;
+            }
+            allReportNameValuePair = value;
+        },
+    });
+}, 'low');
 
 let onboarding: OnyxEntry<Onboarding>;
 Onyx.connect({

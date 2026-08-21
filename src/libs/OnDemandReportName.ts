@@ -1,8 +1,5 @@
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import {computeReportName} from '@libs/ReportNameUtils';
-import {getPendingDeleteMemberAccountIDs, isValidReport} from '@libs/ReportUtils';
-
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {PersonalDetailsList, Policy, PolicyTagLists, Report, ReportActions, ReportMetadata, ReportNameValuePairs, Transaction} from '@src/types/onyx';
 
@@ -11,6 +8,10 @@ import type {OnyxCollection, OnyxKey} from 'react-native-onyx';
 
 import {queryCollection, registerQueryWatcher} from 'react-native-onyx/dist/OnyxQuery';
 import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
+
+// eslint-disable-next-line no-restricted-imports -- this module IS the on-demand engine behind the derived report names; it runs the exact compute the derived value uses
+import {computeReportName} from './ReportNameUtils';
+import {getPendingDeleteMemberAccountIDs, isValidReport} from './ReportUtils';
 
 /**
  * Lazy-Onyx POC (derived retirement, per-item reportAttributes): computes ONE report's name from
@@ -99,6 +100,7 @@ function makeTrackedCollection<TValue>(collectionPrefix: string, store: ScopedSt
     return new Proxy(target, {
         get(proxyTarget, property, receiver) {
             if (typeof property !== 'string' || !property.startsWith(collectionPrefix)) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- prototype/symbol passthrough (e.g. hasOwnProperty); never collection data
                 return Reflect.get(proxyTarget, property, receiver);
             }
             store.visited.add(property);

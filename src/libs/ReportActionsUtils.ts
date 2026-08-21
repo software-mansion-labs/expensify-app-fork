@@ -58,6 +58,7 @@ import {getBankName, isCardPendingActivate} from './CardUtils';
 import {getDecodedCategoryName} from './CategoryUtils';
 import {convertAmountToDisplayString, convertToBackendAmount, convertToDisplayStringWithExplicitCurrency, convertToShortDisplayString} from './CurrencyUtils';
 import DateUtils from './DateUtils';
+import {deferUntilAppReady} from './deferUntilAppReady';
 import {getFormattedDistanceInUnits} from './DistanceDisplayUtils';
 import {getEnvironmentURL, getOldDotEnvironmentURL} from './Environment/Environment';
 import getBase62ReportID from './getBase62ReportID';
@@ -103,15 +104,20 @@ function isHarvestCreatedExpenseReport(origin?: string, originalID?: string): bo
 }
 
 let allReportActions: OnyxCollection<ReportActions>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (actions) => {
-        if (!actions) {
-            return;
-        }
-        allReportActions = actions;
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate every report's
+// actions at module load — i.e. during boot. Deferred until the app is interactive; keyed fallback
+// readers see `undefined` until then, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (actions) => {
+            if (!actions) {
+                return;
+            }
+            allReportActions = actions;
+        },
+    });
+}, 'low');
 
 let deprecatedIsNetworkOffline = getIsOffline();
 subscribeNetworkState(() => {
@@ -132,15 +138,18 @@ Onyx.connect({
 });
 
 let allReportNameValuePair: OnyxCollection<ReportNameValuePairs>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
-    callback: (value) => {
-        if (!value) {
-            return;
-        }
-        allReportNameValuePair = value;
-    },
-});
+// Lazy-Onyx POC (purity lane): deferred — see the REPORT_ACTIONS connect above.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
+        callback: (value) => {
+            if (!value) {
+                return;
+            }
+            allReportNameValuePair = value;
+        },
+    });
+}, 'low');
 
 let environmentURL: string;
 getEnvironmentURL().then((url: string) => (environmentURL = url));
