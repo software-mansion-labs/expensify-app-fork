@@ -748,4 +748,6 @@ export default createOnyxDerivedValueConfig({
     },
 });
 
-export {hasPolicyRelevantFieldChanged, getOldestPreviewActionID};
+// isActionable/needsViolationFix are exported for the per-item on-demand path (OnDemandReportAttributes)
+// so both compute the exact same parent-chat error-propagation semantics without drift.
+export {hasPolicyRelevantFieldChanged, getOldestPreviewActionID, isActionable, needsViolationFix};

@@ -439,3 +439,22 @@ click-time-key callbacks need imperative `OnyxUtils.get` reads, not subscription
 
 **PDL split re-scoped**: 186 useOnyx sites / 197 files — recommend measuring first (eager singleton
 either way, so it doesn't block lazy boot); decide post-measurement together with the LHN sort call.
+
+**Purity lane step 1**: all 17 whole-collection module connects in ReportUtils / ReportActionsUtils /
+actions-IOU now register from `deferUntilAppReady('low')` — the boot path no longer hydrates REPORT,
+TRANSACTION, POLICY, REPORT_ACTIONS, RNVP, REPORT_METADATA, TRANSACTION_VIOLATIONS or SNAPSHOT;
+caches fill right after interactive (step 2 = retiring the caches outright). Pre-drain, deprecated
+fallback readers see undefined — the same window that exists today between module load and Onyx's
+first flush. jest-sync keeps the whole suite's behavior identical.
+
+**Per-item FULL attributes (chat-landing lane)**: shared scoped-store machinery extracted to
+libs/OnDemandOnyxStore; libs/OnDemandReportAttributes runs the derived config's per-report body
+(generateReportAttributes → field violations → SidebarUtils RBR → badge rules) against tracked
+proxies, plus the parent-chat error propagation scoped to the target: children come from a
+`reports where chatReportID = X` indexed query (index added to setup declarations), each child runs
+the same error check (cap 100, logged), and the Fix-badge target reuses the config's own
+getOldestPreviewActionID/needsViolationFix (now exported). `useOnDemandReportAttributes(reportID)`
+(deepEqual-stable) replaces ReportActionsList's derived-value selector — the last PRE-ready derived
+subscription on the chat-landing path. Propagation fidelity note: a child with no (or a deleted)
+parent action is skipped exactly like in the config (isDeletedAction(undefined) === true — verified).
+Tests: OnDemandReportAttributesTest (6: clean/missing/self-error/propagation/live-update/undefined).

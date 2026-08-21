@@ -108,7 +108,7 @@ export default function () {
         // Declarations are applied by the reconcileIndexes() call below (idle) — which also detects
         // and drops any Onyx-managed index whose declaration was removed from this list.
         indexes: {
-            [ONYXKEYS.COLLECTION.REPORT]: ['policyID', 'lastVisibleActionCreated', 'parentReportID', 'type'],
+            [ONYXKEYS.COLLECTION.REPORT]: ['policyID', 'lastVisibleActionCreated', 'parentReportID', 'type', 'chatReportID'],
             [ONYXKEYS.COLLECTION.TRANSACTION]: ['reportID'],
             [ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS]: ['private_isArchived'],
         },

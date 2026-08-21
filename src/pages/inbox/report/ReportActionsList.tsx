@@ -7,6 +7,7 @@ import useLinkedMessageOfflineLoading from '@hooks/useLinkedMessageOfflineLoadin
 import useLocalize from '@hooks/useLocalize';
 import useMarkAsRead from '@hooks/useMarkAsRead';
 import useNetwork from '@hooks/useNetwork';
+import useOnDemandReportAttributes from '@hooks/useOnDemandReportAttributes';
 import useOnyx from '@hooks/useOnyx';
 import useReportActionsScroll from '@hooks/useReportActionsScroll';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -149,20 +150,10 @@ function ReportActionsListContent({reportID, onLayout}: ReportActionsListContent
     const [isTrackIntentUser] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED, {selector: isTrackIntentUserSelector});
     const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${getNonEmptyStringOnyxID(report?.policyID)}`);
 
-    const reportAttributesSelector = (value: OnyxEntry<OnyxTypes.ReportAttributesDerivedValue>) => {
-        const attrs = value?.reports?.[reportID];
-        if (!attrs) {
-            return undefined;
-        }
-        return {
-            actionBadge: attrs.actionBadge,
-            actionTargetReportActionID: attrs.actionTargetReportActionID,
-            brickRoadStatus: attrs.brickRoadStatus,
-        };
-    };
-    const [reportAttributes] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {
-        selector: reportAttributesSelector,
-    });
+    // Lazy-Onyx POC: this report's attributes computed ON DEMAND instead of a derived-value
+    // subscription — the chat screen mounts on chat-landing boots, and subscribing here would start
+    // the reportAttributes engine (hydrating all of its dependency collections) before first paint.
+    const reportAttributes = useOnDemandReportAttributes(reportID);
     const isHarvestCreatedExpenseReportAction = isHarvestCreatedExpenseReport(reportNameValuePairs?.origin, reportNameValuePairs?.originalID);
 
     const [reportStable] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`, {selector: getStableReportSelector});
