@@ -362,3 +362,30 @@ Options: (a) POC entirely on branch/fork, upstream after results; (b) upstream P
 chunked read) to Expensify/react-native-onyx immediately in parallel.
 **Rec: (b)** — Phase 1 is semantics-preserving, benefits everyone regardless of POC outcome, and
 shrinks our fork's diff.
+
+---
+
+# Execution log (2026-08-20)
+
+Onyx fork (`lazy-onyx`): lazy hydration + invariants/tests → query API (where DSL, keyset cursor,
+patch-then-reconcile) → index API (`indexes` init option + `reconcileIndexes` create/drop-undeclared,
+composite fields, record_key auto-appended, partial-index literals) → `onFirstSubscription` →
+post-clear rehydration of subscribed lazy collections.
+
+App (`lazy-onyx-poc`): Phase 0 instrumentation → Phase 3 all-lazy wiring + critical fixes →
+A1 index declarations → A2b demand-driven derived engine → A3 incremental outstanding config →
+A4-T1 consumer tranche → deferUntilAppReady sync-under-jest → **retired REPORT_TRANSACTIONS_AND_VIOLATIONS**
+(on-demand queries; useQueriedReportTransactionsAndViolations / useViolationsForTransactionIDs /
+useDrainedOnyxQuery; usePolicyData on two queries) → per-report visible-actions hook
+(useVisibleActionsEntryForReport) replacing whole-map reads in 4 consumers (Search-side whole-map
+consumers stay on the demand-driven config) → bare-collection-subscription ratchet
+(`scripts/checkBareCollectionSubscriptions.ts`, baseline committed).
+
+Full app suite vs fork: only pre-existing environment failures (DateUtils/SubscriptionUtils/
+UnreadIndicators — identical on the untouched baseline checkout); PaginationTest regression was found
+and fixed at the library level (post-clear rehydration).
+
+Open before Phase 4 (measurements): OUTSTANDING_REPORTS_BY_POLICY_ID retirement (in flight),
+reportAttributes per-item hook + the LHN default-mode sort decision (user call: materialized sort
+key vs server ordering vs focus-only), PERSONAL_DETAILS_LIST split (protocol-level), consumer
+tranches T2+ (~470 sites), ReportUtils purity migration, navigation-guard hydration gating.

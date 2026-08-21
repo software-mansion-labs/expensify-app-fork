@@ -40,6 +40,10 @@ function computeReportVisibility(reportActions: ReportActions, currentUserAccoun
     return reportVisibility;
 }
 
+// Exported for the per-report on-demand path (useVisibleActionsEntryForReport) so both compute the
+// exact same visibility semantics without drift.
+export {computeReportVisibility};
+
 export default createOnyxDerivedValueConfig({
     key: ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS,
     // Note: REPORT dependency is needed both to trigger recompute when reports change

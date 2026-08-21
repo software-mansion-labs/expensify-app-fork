@@ -8,6 +8,7 @@ import useGetExpensifyCardFromReportAction from '@hooks/useGetExpensifyCardFromR
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useVisibleActionsEntryForReport from '@hooks/useVisibleActionsEntryForReport';
 
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {getLastVisibleActionIncludingTransactionThread, getOriginalMessage, isActionableTrackExpense, isInviteOrRemovedAction} from '@libs/ReportActionsUtils';
@@ -64,28 +65,19 @@ function OptionRowLHNData({
     const [parentReportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${getNonEmptyStringOnyxID(fullReport?.parentReportID)}`);
     const [transactionThreadReportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${getNonEmptyStringOnyxID(oneTransactionThreadReportID)}`);
 
-    // Scoped VISIBLE_REPORT_ACTIONS selector
-    const visibleActionsSelector = useCallback(
-        (data: VisibleReportActionsDerivedValue | undefined) => {
-            if (!data) {
-                return undefined;
-            }
-            const result: VisibleReportActionsDerivedValue = {};
-            const reportEntry = data[reportID];
-            if (reportEntry) {
-                result[reportID] = reportEntry;
-            }
-            if (oneTransactionThreadReportID) {
-                const txThreadEntry = data[oneTransactionThreadReportID];
-                if (txThreadEntry) {
-                    result[oneTransactionThreadReportID] = txThreadEntry;
-                }
-            }
-            return result;
-        },
-        [reportID, oneTransactionThreadReportID],
-    );
-    const [visibleReportActionsData] = useOnyx(ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS, {selector: visibleActionsSelector});
+    // Lazy-Onyx: per-report on-demand visibility (member reads) instead of the whole-app derived value.
+    const reportVisibleEntry = useVisibleActionsEntryForReport(reportID);
+    const threadVisibleEntry = useVisibleActionsEntryForReport(oneTransactionThreadReportID);
+    const visibleReportActionsData = useMemo(() => {
+        const result: VisibleReportActionsDerivedValue = {};
+        if (reportVisibleEntry) {
+            result[reportID] = reportVisibleEntry;
+        }
+        if (oneTransactionThreadReportID && threadVisibleEntry) {
+            result[oneTransactionThreadReportID] = threadVisibleEntry;
+        }
+        return result;
+    }, [reportID, reportVisibleEntry, oneTransactionThreadReportID, threadVisibleEntry]);
 
     // Per-item NVP subscription instead of collection-level subscription in parent
     const [reportNameValuePairs] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`);

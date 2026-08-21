@@ -7,6 +7,7 @@ import useRootNavigationState from '@hooks/useRootNavigationState';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useVisibleActionsEntryForReport from '@hooks/useVisibleActionsEntryForReport';
 
 import {isFullScreenName} from '@libs/Navigation/helpers/isNavigatorName';
 import Navigation from '@libs/Navigation/Navigation';
@@ -24,7 +25,7 @@ import SCREENS from '@src/SCREENS';
 import type {ColorValue, StyleProp, TextStyle, ViewStyle} from 'react-native';
 
 import {useRoute} from '@react-navigation/native';
-import React from 'react';
+import React, {useMemo} from 'react';
 import {View} from 'react-native';
 
 import StatusBadge from './StatusBadge';
@@ -115,7 +116,12 @@ function ParentNavigationSubtitle({
     const {translate} = useLocalize();
     const [currentReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`);
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${parentReportID}`);
-    const [visibleReportActionsData] = useOnyx(ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS);
+    // Lazy-Onyx: per-report on-demand visibility (member read) instead of the whole-app derived value.
+    const parentVisibleActionsEntry = useVisibleActionsEntryForReport(parentReportID);
+    const visibleReportActionsData = useMemo(
+        () => (parentReportID && parentVisibleActionsEntry ? {[parentReportID]: parentVisibleActionsEntry} : undefined),
+        [parentReportID, parentVisibleActionsEntry],
+    );
     const isReportArchived = useReportIsArchived(report?.reportID);
     const canUserPerformWriteAction = canUserPerformWriteActionReportUtils(report, isReportArchived);
     const hasAccessToParentReport = currentReport?.hasParentAccess !== false;

@@ -18,6 +18,7 @@ import useReportTransactionsCollection from '@hooks/useReportTransactionsCollect
 import useResponsiveLayoutOnWideRHP from '@hooks/useResponsiveLayoutOnWideRHP';
 import useScrollToEndOnNewMessageReceived from '@hooks/useScrollToEndOnNewMessageReceived';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useVisibleActionsEntryForReport from '@hooks/useVisibleActionsEntryForReport';
 
 import {isConsecutiveChronosAutomaticTimerAction} from '@libs/ChronosUtils';
 import DateUtils from '@libs/DateUtils';
@@ -176,7 +177,9 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
 
     const isReportArchived = useReportIsArchived(reportID);
     const canPerformWriteAction = canUserPerformWriteAction(report, isReportArchived);
-    const [visibleReportActionsData] = useOnyx(ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS);
+    // Lazy-Onyx: per-report on-demand visibility (member read) instead of the whole-app derived value.
+    const visibleActionsEntry = useVisibleActionsEntryForReport(reportID);
+    const visibleReportActionsData = useMemo(() => (reportID && visibleActionsEntry ? {[reportID]: visibleActionsEntry} : undefined), [reportID, visibleActionsEntry]);
 
     const [reportNameValuePairs] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${getNonEmptyStringOnyxID(reportID)}`);
     const shouldShowHarvestCreatedAction = isHarvestCreatedExpenseReport(reportNameValuePairs?.origin, reportNameValuePairs?.originalID);

@@ -6,7 +6,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {ReportAction} from '@src/types/onyx';
 
-import {reportVisibleActionsSelector} from '@selectors/ReportAction';
+import {useMemo} from 'react';
 
 import useConciergeSidePanelReportActions from './useConciergeSidePanelReportActions';
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
@@ -16,6 +16,7 @@ import useNetwork from './useNetwork';
 import useOnyx from './useOnyx';
 import useSidePanelState from './useSidePanelState';
 import useTransactionsAndViolationsForReport from './useTransactionsAndViolationsForReport';
+import useVisibleActionsEntryForReport from './useVisibleActionsEntryForReport';
 
 type UseReportActionsVisibilityParams = {
     reportID: string | undefined;
@@ -62,9 +63,9 @@ function useReportActionsVisibility({
 
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`);
     const [conciergeReportID] = useOnyx(ONYXKEYS.CONCIERGE_REPORT_ID);
-    const [visibleReportActionsData] = useOnyx(ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS, {
-        selector: reportVisibleActionsSelector(reportID),
-    });
+    // Lazy-Onyx: per-report on-demand visibility (member read) instead of the whole-app derived value.
+    const visibleActionsEntry = useVisibleActionsEntryForReport(reportID);
+    const visibleReportActionsData = useMemo(() => (reportID && visibleActionsEntry ? {[reportID]: visibleActionsEntry} : undefined), [reportID, visibleActionsEntry]);
 
     const isInSidePanel = useIsInSidePanel();
     const isConciergeSidePanel = isInSidePanel && isConciergeChatReport(report, conciergeReportID);
