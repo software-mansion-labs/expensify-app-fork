@@ -3,7 +3,7 @@ import BaseListItem from '@components/SelectionList/ListItem/BaseListItem';
 import type {ListItem} from '@components/SelectionList/types';
 
 import useAnimatedHighlightStyle from '@hooks/useAnimatedHighlightStyle';
-import useOnyx from '@hooks/useOnyx';
+import useOnDemandReportName from '@hooks/useOnDemandReportName';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
@@ -14,9 +14,6 @@ import FS from '@libs/Fullstory';
 import variables from '@styles/variables';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {ReportAttributesDerivedValue} from '@src/types/onyx';
-
-import type {OnyxEntry} from 'react-native-onyx';
 
 import React from 'react';
 
@@ -44,9 +41,10 @@ function TaskListItem<TItem extends ListItem>({
     const taskItem = item as unknown as TaskListItemType;
     const parentReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${taskItem?.parentReportID}`];
     const parentReportID = taskItem?.parentReportID;
-    const [liveParentReportAttributeName] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {
-        selector: (value: OnyxEntry<ReportAttributesDerivedValue>) => (parentReportID ? value?.reports?.[parentReportID]?.reportName : undefined),
-    });
+    // Lazy-Onyx POC: on-demand per-report name instead of a derived-value subscription (which would
+    // start the reportAttributes engine); until the first compute resolves, the snapshot's
+    // parentReportName below stands in.
+    const liveParentReportAttributeName = useOnDemandReportName(parentReportID);
     const liveTaskItem: TaskListItemType =
         liveParentReportAttributeName && liveParentReportAttributeName !== taskItem.parentReportName ? {...taskItem, parentReportName: liveParentReportAttributeName} : taskItem;
     const styles = useThemeStyles();

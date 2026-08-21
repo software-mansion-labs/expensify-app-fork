@@ -9,7 +9,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOneTransactionThreadReportID from '@hooks/useOneTransactionThreadReportID';
 import useOnyx from '@hooks/useOnyx';
 import useReconcileHighContrastIntent from '@hooks/useReconcileHighContrastIntent';
-import useReportAttributes from '@hooks/useReportAttributes';
 import useRootNavigationState from '@hooks/useRootNavigationState';
 
 import {init, isClientTheLeader} from '@libs/ActiveClientManager';
@@ -40,6 +39,17 @@ import type {ReportAttributesDerivedValue} from '@src/types/onyx';
 
 import {guidedSetupAndTourStatusSelector} from '@selectors/Onboarding';
 import {useEffect, useRef} from 'react';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
+
+// Passive cache read instead of a subscription: this component mounts during boot, and subscribing to
+// the derived key here would count as its first subscription and start the reportAttributes engine
+// (hydrating all of its dependency collections) before the app is interactive. The Pusher callback only
+// samples the value at event time, and the persisted last-session attributes cover the brief window
+// before the engine's post-ready start.
+function getReportAttributesFromCache(): ReportAttributesDerivedValue['reports'] | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- tryGetCachedValue is untyped per-key; this key always holds a ReportAttributesDerivedValue
+    return (OnyxUtils.tryGetCachedValue(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES) as ReportAttributesDerivedValue | undefined)?.reports;
+}
 
 function initializePusher(
     currentUserAccountID: number | undefined,
@@ -85,11 +95,6 @@ function AuthScreensInitHandler() {
     const activePolicy = useActivePolicy();
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
 
-    const reportAttributes = useReportAttributes();
-    // We use a ref so the Pusher callback (registered once on mount) always reads the latest value without re-subscribing.
-    const reportAttributesRef = useRef(reportAttributes);
-    reportAttributesRef.current = reportAttributes;
-
     useReconcileHighContrastIntent();
     useAIFeaturesPromoModal(session);
 
@@ -111,12 +116,7 @@ function AuthScreensInitHandler() {
                 return Promise.resolve();
             }
 
-            return initializePusher(
-                currentAccountID,
-                currentEmail,
-                () => topmostOneTransactionThreadReportIDRef.current,
-                () => reportAttributesRef.current,
-            );
+            return initializePusher(currentAccountID, currentEmail, () => topmostOneTransactionThreadReportIDRef.current, getReportAttributesFromCache);
         });
 
         return () => {
@@ -129,7 +129,7 @@ function AuthScreensInitHandler() {
             return;
         }
         // This means sign in in RHP was successful, so we can subscribe to user events
-        initializePusher(session?.accountID, session?.email, () => topmostOneTransactionThreadReportIDRef.current, () => reportAttributesRef.current);
+        initializePusher(session?.accountID, session?.email, () => topmostOneTransactionThreadReportIDRef.current, getReportAttributesFromCache);
     }, [session?.accountID, session?.email]);
 
     useEffect(() => {
@@ -152,7 +152,7 @@ function AuthScreensInitHandler() {
         });
         PusherConnectionManager.init();
 
-        initializePusher(session?.accountID, session?.email, () => topmostOneTransactionThreadReportIDRef.current, () => reportAttributesRef.current).finally(() => {
+        initializePusher(session?.accountID, session?.email, () => topmostOneTransactionThreadReportIDRef.current, getReportAttributesFromCache).finally(() => {
             endSpan(CONST.TELEMETRY.SPAN_NAVIGATION.PUSHER_INIT);
         });
 

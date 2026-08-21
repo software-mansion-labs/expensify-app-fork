@@ -124,6 +124,7 @@ import {convertAttendeesToArray} from './AttendeeUtils';
 import {getCategoryGLCode} from './CategoryUtils';
 import {convertToDisplayStringEnLocale} from './CurrencyUtils';
 import DateUtils from './DateUtils';
+import {deferUntilAppReady} from './deferUntilAppReady';
 import {getEnvironmentURL} from './Environment/Environment';
 import getEnvironment from './Environment/getEnvironment';
 import {getMicroSecondOnyxErrorWithTranslationKey, isReceiptError} from './ErrorUtils';
@@ -1233,12 +1234,18 @@ Onyx.connect({
 });
 
 let reportAttributesDerivedValue: ReportAttributesDerivedValue['reports'];
-Onyx.connect({
-    key: ONYXKEYS.DERIVED.REPORT_ATTRIBUTES,
-    callback: (value) => {
-        reportAttributesDerivedValue = value?.reports ?? {};
-    },
-});
+// Deferred: ReportUtils is imported by nearly every module, so subscribing here at load time would
+// count as the derived key's first subscription and start the reportAttributes engine (hydrating all
+// of its dependency collections) during boot. Every reader already tolerates the pre-callback
+// `undefined`, and the derived engine's post-ready catch-all starts in the same window anyway.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.DERIVED.REPORT_ATTRIBUTES,
+        callback: (value) => {
+            reportAttributesDerivedValue = value?.reports ?? {};
+        },
+    });
+}, 'low');
 
 let cachedSelfDMReportID: OnyxEntry<string>;
 Onyx.connect({
@@ -2530,8 +2537,11 @@ function hasExpenses(reportID?: string, transactions?: OnyxCollection<Transactio
 
 /**
  * Whether the provided report is a closed expense report with no expenses
+ *
+ * Prefer passing `reportTransactionsList` (the report's own prebuilt transaction array): the
+ * `transactions` fallback scans the entire collection, which a scoped per-report data set can't serve.
  */
-function isClosedExpenseReportWithNoExpenses(report: OnyxEntry<Report>, transactions?: OnyxCollection<Transaction>): boolean {
+function isClosedExpenseReportWithNoExpenses(report: OnyxEntry<Report>, transactions?: OnyxCollection<Transaction>, reportTransactionsList?: Transaction[]): boolean {
     if (!report?.statusNum || report.statusNum !== CONST.REPORT.STATUS_NUM.CLOSED || !isExpenseReport(report)) {
         return false;
     }
@@ -2551,6 +2561,9 @@ function isClosedExpenseReportWithNoExpenses(report: OnyxEntry<Report>, transact
         return false;
     }
 
+    if (reportTransactionsList) {
+        return reportTransactionsList.length === 0;
+    }
     return !hasExpenses(report.reportID, transactions);
 }
 

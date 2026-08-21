@@ -3,8 +3,7 @@ import type {ReportAttributesDerivedValue} from '@src/types/onyx';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-import {reportNameSelector} from '@selectors/ReportAttributes';
-
+import useOnDemandReportName, {useOnDemandReportNames} from './useOnDemandReportName';
 import useOnyx from './useOnyx';
 
 /**
@@ -39,12 +38,15 @@ function useReportAttributesByID(reportID: string | undefined) {
  * Use this when a component only needs one report's name: the selector output is a primitive string, so its
  * comparison is trivial and the component re-renders only when that specific report's name changes — not on
  * every global report attribute change.
+ *
+ * Lazy-Onyx POC (reportAttributes retirement): the name is computed ON DEMAND from targeted member
+ * reads (`useOnDemandReportName`) instead of the REPORT_ATTRIBUTES derived value — a subscription to
+ * that key would start its engine and hydrate every dependency collection to serve one name. The API
+ * is unchanged for consumers; the value is briefly `undefined` while the first compute resolves
+ * (consumers already fall back through `getReportName(report, derivedReportName)`).
  */
 function useDerivedReportNameByReportID(reportID: string | undefined) {
-    const [reportName] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {
-        selector: (value: OnyxEntry<ReportAttributesDerivedValue>) => reportNameSelector(value, reportID),
-    });
-    return reportName;
+    return useOnDemandReportName(reportID);
 }
 
 /**
@@ -56,16 +58,9 @@ function useDerivedReportNameByReportID(reportID: string | undefined) {
  * tiny (one name per requested ID), so its `deepEqual` is cheap.
  */
 function useDerivedReportNamesByReportIDs(reportIDs: Array<string | undefined>) {
-    const [reportNames] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {
-        selector: (value: OnyxEntry<ReportAttributesDerivedValue>) =>
-            reportIDs.reduce<Record<string, string | undefined>>((acc, reportID) => {
-                if (reportID) {
-                    acc[reportID] = reportNameSelector(value, reportID);
-                }
-                return acc;
-            }, {}),
-    });
-    return reportNames;
+    // Lazy-Onyx POC: on-demand per-report computes instead of a derived-value subscription — see
+    // useDerivedReportNameByReportID above. Same `{reportID: name}` shape as before.
+    return useOnDemandReportNames(reportIDs);
 }
 
 export default useReportAttributes;

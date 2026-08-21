@@ -6,7 +6,7 @@ import Text from '@components/Text';
 
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
+import useOnDemandReportName from '@hooks/useOnDemandReportName';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -17,13 +17,8 @@ import {getReportStatusColorStyle, getReportStatusTooltipTranslation, getReportS
 import variables from '@styles/variables';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
-import type {ReportAttributesDerivedValue} from '@src/types/onyx';
 
-import type {OnyxEntry} from 'react-native-onyx';
-
-import {reportNameSelector} from '@selectors/ReportAttributes';
-import React, {useCallback, useMemo} from 'react';
+import React, {useMemo} from 'react';
 import {View} from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -45,8 +40,9 @@ function ReportPreviewHeader() {
     const {goToPrevious, goToNext} = useReportPreviewActions();
     const numberOfRequests = transactions.length;
 
-    const selectReportName = useCallback((attributes: OnyxEntry<ReportAttributesDerivedValue>) => reportNameSelector(attributes, iouReportID), [iouReportID]);
-    const [derivedReportName] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES, {selector: selectReportName});
+    // Lazy-Onyx POC: on-demand per-report name instead of a derived-value subscription (which would
+    // start the reportAttributes engine); the fallback chain below covers the first-compute frame.
+    const derivedReportName = useOnDemandReportName(iouReportID);
     const reportName = derivedReportName ?? iouReport?.reportName ?? '';
     const formattedReportName = useMemo(() => Parser.htmlToText(reportName || (action.childReportName ?? '')), [reportName, action.childReportName]);
 

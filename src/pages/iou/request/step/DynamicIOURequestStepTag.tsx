@@ -125,7 +125,7 @@ function DynamicIOURequestStepTag({
             return '';
         }
         return splitParentTransaction?.tag ?? '';
-    }, [isEditingSplit, transaction?.comment?.originalTransactionID, splitParentTransaction]);
+    }, [isEditingSplit, transaction?.comment?.originalTransactionID, splitParentTransaction?.tag]);
 
     const additionalTagsToInclude = useMemo(() => {
         if (!parentTransactionTag) {

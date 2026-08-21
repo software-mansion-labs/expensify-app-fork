@@ -126,7 +126,7 @@ function DynamicContactMethodDetailsPage({route}: DynamicContactMethodDetailsPag
         /// Restrict the user from switching their default contact method if their security group
         // restricts primary login switching.
         return !!primaryDomainSecurityGroup?.enableRestrictedPrimaryLogin;
-    }, [primaryDomainSecurityGroupID, primaryDomainSecurityGroup]);
+    }, [primaryDomainSecurityGroupID, primaryDomainSecurityGroup?.enableRestrictedPrimaryLogin]);
 
     /**
      * Checks if the user is allowed to change their default contact method.

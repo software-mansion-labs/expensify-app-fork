@@ -389,3 +389,53 @@ Open before Phase 4 (measurements): OUTSTANDING_REPORTS_BY_POLICY_ID retirement 
 reportAttributes per-item hook + the LHN default-mode sort decision (user call: materialized sort
 key vs server ordering vs focus-only), PERSONAL_DETAILS_LIST split (protocol-level), consumer
 tranches T2+ (~470 sites), ReportUtils purity migration, navigation-guard hydration gating.
+
+# Execution log (2026-08-21)
+
+**Retired OUTSTANDING_REPORTS_BY_POLICY_ID** (agent): whole-map consumers →
+`useAllOutstandingReportsByPolicyID` (drained live query, identical shape), ReportField →
+`useOutstandingReportsForPolicy(policyID)`; shared `isOutstandingReport()` predicate (stateNum-null
+and nested `pendingFields.preview` are JS-filtered on top of the indexed query); self-heal test
+ported to visibleReportActions; LazyGroupSelectionTest fixed (was passing only because the derived
+engine never started).
+
+**Boot-demand sweep around REPORT_ATTRIBUTES**: the module-level
+`Onyx.connect(DERIVED.REPORT_ATTRIBUTES)` in ReportUtils (imported by ~everything → counted as the
+key's first subscription → started the whole engine during boot) is now registered from
+`deferUntilAppReady('low')`; the always-mounted AuthScreensInitHandler dropped its
+`useReportAttributes()` subscription for a passive `tryGetCachedValue` getter feeding Pusher.
+
+**reportAttributes per-item lane — reachability audit result** (agent, call-graph over
+computeReportName / generateReportAttributes / getReasonAndReportActionThatHasRedBrickRoad):
+all three are lookup-only over the PASSED collections after point fixes — the only true
+enumerations were `hasExpenses` (fixed: `isClosedExpenseReportWithNoExpenses` now takes the
+report's prebuilt transaction array), `findSelfDMReportID` (already shielded by SELF_DM_REPORT_ID),
+and `getViolatingReportIDForRBRInLHN` (needs a `reports where policyID=X AND owner=me AND
+stateNum<=1` indexed query — pending, full-attributes lane). Module-level caches
+(deprecatedAllReports & co., fed by whole-collection connects in ReportUtils + IOU/index.ts) are the
+dominant remaining boot cost → ReportUtils purity lane.
+
+**On-demand report names shipped**: `computeReportNameOnDemand` (libs/OnDemandReportName.ts) — seeds
+a scoped store by graph walk (parent chain, chat report, actions/policies/RNVPs, per-report
+transactions via indexed query), then runs the derived config's own `computeReportName` against
+tracked Proxies to a miss-fetch fixpoint; the recorded key set drives write-watcher invalidation
+(`watchOnDemandReportName`). Missing/invalid report → name `undefined` (mirrors the derived value's
+deleted-entry semantics; caught by MoneyRequestReportPreview test). Hook
+`useOnDemandReportName(s)`; `useDerivedReportNameByReportID` / `useDerivedReportNamesByReportIDs`
+now DELEGATE to it — all ~25 single-name call sites migrated with zero consumer edits; direct
+name-selector consumers (ReportPreviewHeader, TaskListItem) rewired. Parity test:
+tests/unit/OnDemandReportNameTest.ts asserts on-demand === derived compute on identical data.
+Still on the derived value: whole-map consumers (LHN sort, Search/options, IOU flows),
+ReportActionsList (reads brickRoadStatus — needs the full-attributes per-item lane), DebugReportPage
+(intentionally shows the derived value).
+
+**Consumer tranche T2** (agent): 6 bare→member migrations (DynamicTaskAssigneeSelectorModal,
+SearchEditMultipleTagPage, SplitExpenseCreateDateRagePage, DynamicIOURequestStepTag,
+DynamicContactMethodDetailsPage, MoneyRequestReceiptView); ratchet 667→661 across 349→345 files.
+T3 levers, by payoff: (1) `shouldRestrictUserBillableActions` redesign clears ~20
+SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END sites in one PR (key by policy.ownerAccountID);
+(2) variable-cardinality selection flows need per-item child components or the query API; (3)
+click-time-key callbacks need imperative `OnyxUtils.get` reads, not subscriptions.
+
+**PDL split re-scoped**: 186 useOnyx sites / 197 files — recommend measuring first (eager singleton
+either way, so it doesn't block lazy boot); decide post-measurement together with the LHN sort call.
