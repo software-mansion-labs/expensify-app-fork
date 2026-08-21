@@ -1,28 +1,37 @@
 # Weekly performance reports — 13–20 Aug 2026
 
-One format for every metric on the scoreboard, read on the whole population: no release filter on the headline number, release comparisons underneath and always inside a single platform slice.
+One format for every metric on the scoreboard, read on the whole population: no release filter on the headline number, version comparisons underneath and always inside a single platform slice. Read from Sentry (`spans`, `environment:production`) on 21 Aug; the week-over-week column compares against 6–13 Aug.
 
-**How to read it.** The headline carries the target. The platform table says which platform the headline is actually about. The release table answers whether a version changed anything, and its verdict says whether that version is rolled out far enough to be worth calling. `native share` plus the mix flag say whether this week may be compared with the previous one at all.
+**How to read it.** The headline carries the target. The platform table says which platform the headline is actually about. The version table lists what each release measures in that platform slice, with its sample count and its share of the platform's traffic, so you can see how much of the population a version already represents. `native share` plus the mix note say whether the headline may be compared with the previous week at all.
 
-**Fixed rules.** p95 everywhere, `n` always shown, release rows are the two newest releases with at least 500 measurements on that platform, a release is mature at 15% of that platform's volume in the window, and a week is flagged as not comparable when the native share moves by more than 5 points.
+**Fixed rules.** p95 everywhere, `n` always shown, platform rows for iOS / Android / Windows / macOS, version rows for every release with at least 500 measurements and at least 2% of that platform's traffic in the window, newest first. A week is flagged when the native share moves by more than 5 points. No verdict is attached to a version: the numbers and the sample count are the output.
 
 ---
 
 ## 🔴 Bottom tab switch to Inbox — target 400 ms (p95)
 
-`ManualNavigateToInboxTab` · **All p95 628 ms** (n 124K) · native share 40% · 🔴 mix shifted −12 pp, week not comparable
+`ManualNavigateToInboxTab` · **All p95 626 ms** (n 126K) · native share 41% · 🔴 mix shifted −11 pp — read the platform rows, not the headline
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 303 ms | 40K | −2% | ✅ |
-| Android | 542 ms | 10K | +13% | 🔴 |
+| iOS | 301 ms | 42K | −3% | ✅ |
+| Android | 541 ms | 10K | +13% | 🔴 |
 | Windows | 769 ms | 47K | flat | 🔴 |
 | macOS | 555 ms | 26K | +2% | 🔴 |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 314 ms (n 7,090) | 9.4.52-11 · 349 ms (n 4,655) | −10% | mature (18% of volume) → comparable |
-| Android | 9.4.54-4 · 445 ms (n 646) | 9.4.53-10 · 561 ms (n 897) | −21% | rolling out (6% of volume) → no verdict yet |
+| iOS | 9.4.53-10 | 303 ms | 8,302 | 20% |
+| iOS | 9.4.52-11 | 349 ms | 4,656 | 11% |
+| iOS | 9.4.51-1 | 285 ms | 9,156 | 22% |
+| iOS | 9.4.50-3 | 289 ms | 12K | 29% |
+| iOS | 9.4.49-3 | 282 ms | 2,179 | 5% |
+| iOS | 9.4.47-7 | 302 ms | 1,116 | 3% |
+| Android | 9.4.54-4 | 445 ms | 646 | 6% |
+| Android | 9.4.53-10 | 561 ms | 897 | 9% |
+| Android | 9.4.52-11 | 537 ms | 3,571 | 35% |
+| Android | 9.4.51-1 | 495 ms | 2,275 | 22% |
+| Android | 9.4.50-3 | 429 ms | 929 | 9% |
 
 > **Notes:** web rows moved after the #98051 relabelling; native share dropped 12 pp w/w, so the All row is not comparable to last week
 
@@ -30,19 +39,29 @@ One format for every metric on the scoreboard, read on the whole population: no 
 
 ## 🟢 Bottom tab switch to Reports — target 400 ms (p95)
 
-`ManualNavigateToReports` · **All p95 327 ms** (n 130K) · native share 32% · mix within 5 pp of last week
+`ManualNavigateToReports` · **All p95 326 ms** (n 131K) · native share 32% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 274 ms | 32K | −4% | ✅ |
+| iOS | 274 ms | 33K | −4% | ✅ |
 | Android | 594 ms | 9,134 | +6% | 🔴 |
 | Windows | 350 ms | 60K | flat | ✅ |
 | macOS | 193 ms | 28K | −1% | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 259 ms (n 5,714) | 9.4.52-11 · 256 ms (n 3,682) | +1% | mature (18% of volume) → comparable |
-| Android | 9.4.54-4 · 540 ms (n 582) | 9.4.53-10 · 556 ms (n 747) | −3% | rolling out (6% of volume) → no verdict yet |
+| iOS | 9.4.53-10 | 260 ms | 6,616 | 20% |
+| iOS | 9.4.52-11 | 256 ms | 3,682 | 11% |
+| iOS | 9.4.51-1 | 274 ms | 7,478 | 22% |
+| iOS | 9.4.50-3 | 285 ms | 9,956 | 30% |
+| iOS | 9.4.49-3 | 281 ms | 1,830 | 5% |
+| iOS | 9.4.47-7 | 285 ms | 889 | 3% |
+| Android | 9.4.54-4 | 540 ms | 582 | 6% |
+| Android | 9.4.53-10 | 556 ms | 747 | 8% |
+| Android | 9.4.52-11 | 613 ms | 3,298 | 36% |
+| Android | 9.4.51-1 | 543 ms | 2,136 | 23% |
+| Android | 9.4.50-3 | 527 ms | 1,026 | 11% |
+| Android | 9.4.49-3 | 598 ms | 526 | 6% |
 
 > **Notes:** none
 
@@ -50,19 +69,27 @@ One format for every metric on the scoreboard, read on the whole population: no 
 
 ## 🔴 Manual App start up time — target 5000 ms (p95)
 
-`ManualAppStartup` · **All p95 5162 ms** (n 173K) · native share 11% · mix within 5 pp of last week
+`ManualAppStartup` · **All p95 5160 ms** (n 173K) · native share 11% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 5968 ms | 14K | −3% | 🔴 |
-| Android | 6191 ms | 4,747 | +11% | 🔴 |
+| iOS | 5969 ms | 14K | −3% | 🔴 |
+| Android | 6191 ms | 4,750 | +11% | 🔴 |
 | Windows | 5614 ms | 83K | +4% | 🔴 |
-| macOS | 2710 ms | 51K | +2% | ✅ |
+| macOS | 2711 ms | 51K | +2% | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.55-4 · 4848 ms (n 568) | 9.4.54-4 · 4520 ms (n 555) | +7% | rolling out (4% of volume) → no verdict yet |
-| Android | 9.4.53-10 · 6311 ms (n 584) | 9.4.52-11 · 10274 ms (n 637) | −39% | rolling out (12% of volume) → no verdict yet |
+| iOS | 9.4.55-4 | 4847 ms | 570 | 4% |
+| iOS | 9.4.54-4 | 4520 ms | 555 | 4% |
+| iOS | 9.4.53-10 | 4886 ms | 1,760 | 13% |
+| iOS | 9.4.52-11 | 5236 ms | 1,892 | 14% |
+| iOS | 9.4.51-1 | 6672 ms | 1,498 | 11% |
+| iOS | 9.4.50-3 | 5735 ms | 2,016 | 15% |
+| iOS | 9.4.43-1 | 6132 ms | 909 | 7% |
+| iOS | 9.4.35-6 | 5813 ms | 1,323 | 10% |
+| Android | 9.4.53-10 | 6311 ms | 584 | 12% |
+| Android | 9.4.52-11 | 10274 ms | 637 | 13% |
 
 > **Notes:** 10.8% of spans carry no os.name and are excluded from the platform rows but included in All
 
@@ -70,19 +97,30 @@ One format for every metric on the scoreboard, read on the whole population: no 
 
 ## 🔴 Opening Report — target 1000 ms (p95)
 
-`ManualOpenReport` · **All p95 1158 ms** (n 1.05M) · native share 39% · mix within 5 pp of last week
+`ManualOpenReport` · **All p95 1155 ms** (n 1.07M) · native share 40% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 1166 ms | 320K | −5% | 🔴 |
-| Android | 1595 ms | 88K | −1% | 🔴 |
+| iOS | 1156 ms | 334K | −6% | 🔴 |
+| Android | 1596 ms | 88K | −1% | 🔴 |
 | Windows | 1195 ms | 418K | flat | 🔴 |
 | macOS | 742 ms | 223K | flat | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 969 ms (n 48K) | 9.4.52-11 · 1150 ms (n 31K) | −16% | rolling out (15% of volume) → no verdict yet |
-| Android | 9.4.54-4 · 1317 ms (n 5,235) | 9.4.53-10 · 1472 ms (n 6,569) | −10% | rolling out (6% of volume) → no verdict yet |
+| iOS | 9.4.53-10 | 973 ms | 58K | 17% |
+| iOS | 9.4.52-11 | 1151 ms | 31K | 9% |
+| iOS | 9.4.51-1 | 1167 ms | 79K | 24% |
+| iOS | 9.4.50-3 | 1235 ms | 106K | 32% |
+| iOS | 9.4.49-3 | 1242 ms | 20K | 6% |
+| iOS | 9.4.47-7 | 1232 ms | 10K | 3% |
+| iOS | 9.4.35-6 | 1268 ms | 6,920 | 2% |
+| Android | 9.4.54-4 | 1318 ms | 5,240 | 6% |
+| Android | 9.4.53-10 | 1472 ms | 6,571 | 7% |
+| Android | 9.4.52-11 | 1568 ms | 32K | 37% |
+| Android | 9.4.51-1 | 1533 ms | 20K | 23% |
+| Android | 9.4.50-3 | 1720 ms | 9,356 | 11% |
+| Android | 9.4.49-3 | 1749 ms | 4,944 | 6% |
 
 > **Notes:** none
 
@@ -90,57 +128,70 @@ One format for every metric on the scoreboard, read on the whole population: no 
 
 ## 🔴 Scan Capture to Confirmation Screen — target 400 ms (p95)
 
-`ManualShutterToConfirmation` · **All p95 463 ms** (n 122K) · native share 100% · mix within 5 pp of last week
+`ManualShutterToConfirmation` · **All p95 460 ms** (n 125K) · native share 100% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 376 ms | 86K | −2% | ✅ |
-| Android | 705 ms | 36K | −10% | 🔴 |
+| iOS | 376 ms | 89K | −2% | ✅ |
+| Android | 706 ms | 36K | −10% | 🔴 |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 374 ms (n 12K) | 9.4.52-11 · 360 ms (n 9,086) | +4% | rolling out (14% of volume) → no verdict yet |
-| Android | 9.4.54-4 · 574 ms (n 2,411) | 9.4.53-10 · 938 ms (n 2,780) | −39% | rolling out (7% of volume) → no verdict yet |
+| iOS | 9.4.53-10 | 375 ms | 14K | 16% |
+| iOS | 9.4.52-11 | 360 ms | 9,086 | 10% |
+| iOS | 9.4.51-1 | 378 ms | 21K | 23% |
+| iOS | 9.4.50-3 | 384 ms | 29K | 32% |
+| iOS | 9.4.49-3 | 352 ms | 6,164 | 7% |
+| iOS | 9.4.47-7 | 367 ms | 2,728 | 3% |
+| iOS | 9.4.35-6 | 317 ms | 2,061 | 2% |
+| Android | 9.4.54-4 | 574 ms | 2,413 | 7% |
+| Android | 9.4.53-10 | 931 ms | 2,784 | 8% |
+| Android | 9.4.52-11 | 707 ms | 14K | 38% |
+| Android | 9.4.51-1 | 713 ms | 8,564 | 24% |
+| Android | 9.4.50-3 | 715 ms | 3,643 | 10% |
+| Android | 9.4.49-3 | 662 ms | 2,131 | 6% |
 
-> **Notes:** native-only path, so All equals the two platform rows; the All move is driven by iOS volume falling 35% w/w
+> **Notes:** native-only path, so All equals the two platform rows; the All move is driven by iOS volume falling 32% w/w
 
 ---
 
 ## 🔴 Opening Search bar — target 400 ms (p95)
 
-`ManualOpenSearchRouter` · **All p95 575 ms** (n 5,642) · native share 48% · mix within 5 pp of last week
+`ManualOpenSearchRouter` · **All p95 571 ms** (n 5,725) · native share 49% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 476 ms | 1,766 | −3% | 🔴 |
+| iOS | 472 ms | 1,848 | −3% | 🔴 |
 | Android | 1218 ms | 956 | +21% | 🔴 |
 | Windows | 378 ms | 1,886 | +2% | ✅ |
-| macOS | 244 ms | 1,019 | +22% | ✅ |
+| macOS | 244 ms | 1,020 | +22% | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 483 ms (n 286) | 9.4.52-11 · 428 ms (n 181) | +13% | mature (16% of volume) → comparable · below 500-sample floor |
-| Android | 9.4.52-11 · 1391 ms (n 301) | 9.4.51-1 · 1078 ms (n 166) | +29% | mature (31% of volume) → comparable · below 500-sample floor |
+| iOS | 9.4.50-3 | 476 ms | 548 | 30% |
 
-> **Notes:** smallest sample on the board; release rows fall below the 500-sample floor, so they are indicative only
+> **Notes:** smallest sample on the board; only one version clears the 500-measurement floor, Android clears none
 
 ---
 
 ## 🔴 Sending message — target 300 ms (p95)
 
-`ManualSendMessage` · **All p95 371 ms** (n 27K) · native share 28% · mix within 5 pp of last week
+`ManualSendMessage` · **All p95 373 ms** (n 28K) · native share 29% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 629 ms | 5,754 | +10% | 🔴 |
+| iOS | 616 ms | 6,099 | +8% | 🔴 |
 | Android | 1188 ms | 1,945 | +79% | 🔴 |
 | Windows | 274 ms | 12K | −8% | ✅ |
-| macOS | 176 ms | 7,591 | −1% | ✅ |
+| macOS | 176 ms | 7,591 | −2% | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 637 ms (n 1,244) | 9.4.52-11 · 519 ms (n 610) | +23% | mature (22% of volume) → comparable |
-| Android | 9.4.54-4 · 475 ms (n 142) | 9.4.54-1 · 686 ms (n 124) | −31% | rolling out (7% of volume) → no verdict yet · below 500-sample floor |
+| iOS | 9.4.53-10 | 625 ms | 1,428 | 23% |
+| iOS | 9.4.52-11 | 519 ms | 610 | 10% |
+| iOS | 9.4.51-1 | 603 ms | 1,148 | 19% |
+| iOS | 9.4.50-3 | 705 ms | 1,601 | 26% |
+| Android | 9.4.52-11 | 1952 ms | 668 | 34% |
 
 > **Notes:** old timer, stops before the message is visible; see the next report for the visible-timer version of the same action
 
@@ -148,39 +199,49 @@ One format for every metric on the scoreboard, read on the whole population: no 
 
 ## 🔴 Sending message (visible timer) — target 300 ms (p95)
 
-`ManualSendMessageVisible` · **All p95 477 ms** (n 15K) · native share 16% · 🔴 mix shifted −84 pp, week not comparable
+`ManualSendMessageVisible` · **All p95 483 ms** (n 15K) · native share 18% · 🔴 mix shifted −82 pp — read the platform rows, not the headline
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 760 ms | 1,690 | +102% | 🔴 |
+| iOS | 753 ms | 2,036 | +100% | 🔴 |
 | Android | 1199 ms | 605 | flat | 🔴 |
 | Windows | 445 ms | 7,491 | — | 🔴 |
 | macOS | 289 ms | 4,740 | — | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.54-1 · 413 ms (n 127) | 9.4.53-10 · 830 ms (n 1,244) | −50% | rolling out (8% of volume) → no verdict yet · below 500-sample floor |
-| Android | 9.4.54-4 · 651 ms (n 142) | 9.4.54-1 · 1110 ms (n 124) | −41% | mature (23% of volume) → comparable · below 500-sample floor |
+| iOS | 9.4.53-10 | 822 ms | 1,428 | 70% |
 
-> **Notes:** timer is one week old, so w/w on All compares 14.6K measurements against 154; target 300 ms is inherited from the old timer and not yet agreed for this one
+> **Notes:** timer is one week old, so w/w on All compares 14.9K measurements against 154; target 300 ms is inherited from the old timer and not yet agreed for this one
 
 ---
 
 ## 🟢 Time from submitting an expense to landing on the next screen — target 400 ms (p95)
 
-`ManualSubmitToDestinationVisible` · **All p95 170 ms** (n 243K) · native share 60% · 🔴 mix shifted −5 pp, week not comparable
+`ManualSubmitToDestinationVisible` · **All p95 169 ms** (n 246K) · native share 60% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 116 ms | 104K | flat | ✅ |
+| iOS | 116 ms | 107K | flat | ✅ |
 | Android | 153 ms | 42K | flat | ✅ |
-| Windows | 285 ms | 57K | +6% | ✅ |
+| Windows | 286 ms | 57K | +6% | ✅ |
 | macOS | 207 ms | 40K | +18% | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 113 ms (n 12K) | 9.4.52-11 · 113 ms (n 9,084) | flat | rolling out (11% of volume) → no verdict yet |
-| Android | 9.4.53-10 · 144 ms (n 3,069) | 9.4.52-11 · 147 ms (n 15K) | −2% | rolling out (7% of volume) → no verdict yet |
+| iOS | 9.4.53-10 | 113 ms | 14K | 13% |
+| iOS | 9.4.52-11 | 113 ms | 9,085 | 8% |
+| iOS | 9.4.51-1 | 115 ms | 26K | 25% |
+| iOS | 9.4.50-3 | 117 ms | 37K | 35% |
+| iOS | 9.4.49-3 | 119 ms | 7,867 | 7% |
+| iOS | 9.4.47-7 | 124 ms | 3,505 | 3% |
+| iOS | 9.4.35-6 | 110 ms | 2,711 | 3% |
+| Android | 9.4.54-4 | 149 ms | 2,634 | 6% |
+| Android | 9.4.53-10 | 144 ms | 3,071 | 7% |
+| Android | 9.4.52-11 | 147 ms | 15K | 37% |
+| Android | 9.4.51-1 | 159 ms | 10K | 24% |
+| Android | 9.4.50-3 | 159 ms | 4,166 | 10% |
+| Android | 9.4.49-3 | 138 ms | 2,738 | 7% |
 
 > **Notes:** one span covers four follow-up actions; every platform row is far inside target while the reported sub-metrics are not, which is the scenario-mixing case
 
@@ -188,19 +249,30 @@ One format for every metric on the scoreboard, read on the whole population: no 
 
 ## 🟡 Starting Create expense flow — target 400 ms (p95)
 
-`ManualOpenCreateExpense` · **All p95 341 ms** (n 262K) · native share 63% · 🔴 mix shifted −5 pp, week not comparable
+`ManualOpenCreateExpense` · **All p95 341 ms** (n 266K) · native share 64% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 358 ms | 121K | −2% | ✅ |
+| iOS | 358 ms | 125K | −2% | ✅ |
 | Android | 514 ms | 45K | +3% | 🔴 |
 | Windows | 107 ms | 58K | flat | ✅ |
 | macOS | 80 ms | 38K | −1% | ✅ |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.53-10 · 342 ms (n 16K) | 9.4.52-11 · 321 ms (n 11K) | +6% | rolling out (13% of volume) → no verdict yet |
-| Android | 9.4.54-4 · 457 ms (n 2,978) | 9.4.53-10 · 484 ms (n 3,347) | −6% | rolling out (7% of volume) → no verdict yet |
+| iOS | 9.4.53-10 | 344 ms | 19K | 16% |
+| iOS | 9.4.52-11 | 322 ms | 11K | 9% |
+| iOS | 9.4.51-1 | 354 ms | 30K | 24% |
+| iOS | 9.4.50-3 | 377 ms | 42K | 33% |
+| iOS | 9.4.49-3 | 365 ms | 8,696 | 7% |
+| iOS | 9.4.47-7 | 360 ms | 3,906 | 3% |
+| iOS | 9.4.35-6 | 344 ms | 2,892 | 2% |
+| Android | 9.4.54-4 | 456 ms | 2,981 | 7% |
+| Android | 9.4.53-10 | 484 ms | 3,349 | 7% |
+| Android | 9.4.52-11 | 503 ms | 17K | 37% |
+| Android | 9.4.51-1 | 527 ms | 11K | 24% |
+| Android | 9.4.50-3 | 542 ms | 4,438 | 10% |
+| Android | 9.4.49-3 | 520 ms | 2,985 | 7% |
 
 > **Notes:** reported as 315 to 280 ms with the weekly release filter; without it the All row is flat at 343 to 341 ms
 
@@ -208,16 +280,37 @@ One format for every metric on the scoreboard, read on the whole population: no 
 
 ## ⚪ iOS Native Share Extension performance — target none set (p95)
 
-`ShareExtensionOpenSubmitFlow` · **All p95 334 ms** (n 3,273) · native share 100% · mix within 5 pp of last week
+`ShareExtensionOpenSubmitFlow` · **All p95 330 ms** (n 3,443) · native share 100% · mix within 5 pp of last week
 
 | Platform | p95 | n | w/w | vs target |
 |---|---|---|---|---|
-| iOS | 290 ms | 2,742 | −18% | — |
+| iOS | 287 ms | 2,912 | −19% | — |
 | Android | 468 ms | 531 | −40% | — |
 
-| Slice | Newer release | Older release | Δ | Verdict |
+| Slice | Release | p95 | n | share of slice |
 |---|---|---|---|---|
-| iOS | 9.4.51-1 · 271 ms (n 649) | 9.4.50-3 · 281 ms (n 1,007) | −3% | mature (24% of volume) → comparable |
-| Android | 9.4.52-11 · 469 ms (n 169) | 9.4.51-1 · 591 ms (n 140) | −21% | mature (32% of volume) → comparable · below 500-sample floor |
+| iOS | 9.4.53-10 | 271 ms | 551 | 19% |
+| iOS | 9.4.51-1 | 271 ms | 649 | 22% |
+| iOS | 9.4.50-3 | 281 ms | 1,007 | 35% |
 
-> **Notes:** no agreed target yet, 300 ms proposed; the span also fires on Android despite the metric name
+> **Notes:** no agreed target yet, 300 ms proposed; the span also fires on Android despite the metric name, and Android clears no version floor
+
+---
+
+## How this format evolved
+
+The first version of this report kept the weekly release filter and published one blended number per metric. Three rounds of feedback changed it into what is above.
+
+**The release filter left the headline.** Rotating it onto the versions shipped in a given week does not select a version of the code, it selects a phase of the rollout, and with it the ratio of native to web traffic. The same build 9.4.50-3 read in two consecutive weeks moved from 16% to 78% native share and from 105 to 279 ms of blended p90 with no commit behind it. The headline is now read over the whole population in a fixed 7-day window.
+
+**Platform rows were added.** The blended p95 already measured mostly native traffic, because web practically never reaches the tail — on create expense the share of opens above 400 ms is 0.16% on Windows and 0.08% on macOS. The rows make that explicit, and they immediately surfaced things the blend hid: the worst row on the Inbox tab is Windows at 769 ms, not mobile.
+
+**The maturity verdict was removed.** The first version marked a release as mature at 15% of its platform's volume and printed `no verdict this week` below that line. On Opening Report that rule discarded a version with 57,928 measurements on iOS. A threshold picked to describe representativeness was being used to decide whether a number may be read at all, which is the wrong job for it. The report now prints the numbers, the sample count and the share, and leaves the conclusion to the reader.
+
+**The two-newest-versions pair was replaced by a list.** Taking the two newest releases above a floor dropped versions: in this window Opening Report on iOS has nine releases above the floor, and the pair skipped the largest one, 9.4.50-3 with 105,855 measurements. Every release with at least 500 measurements and at least 2% of the slice is now listed, newest first, which also makes a trend across versions visible — on create expense iOS it reads 377 → 354 → 344 ms from 9.4.50-3 to 9.4.53-10.
+
+**The query limit was raised.** The first run grouped by release and platform with a limit of 12 rows, which silently truncated the tail of older versions. The lists above come from limits of 20 to 40 rows per metric.
+
+**Wording changed to say what to do.** `not comparable` became a note pointing at the platform rows, because the data is not useless when the mix moves — only the blended comparison is. The notes block is now present in every report and reads `none` when there is nothing to flag.
+
+**Still open.** Comparing releases in two groups, newer against older, with a calendar boundary fixed in advance rather than chosen after seeing the result; filtering out spans marked as production that come only from our own QA; excluding releases that have been in production for less than a week; and one global platform tag, because mobile web currently lands in the iOS bucket and the native share that the mix note stands on is computed from that same sample.
