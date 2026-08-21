@@ -30,7 +30,12 @@ const IDLE_CALLBACK_TIMEOUT_MS = 2000;
 const isTestEnvironment = typeof jest !== 'undefined' || process.env.NODE_ENV === 'test';
 
 /** requestIdleCallback with a safety net for environments without the polyfill loaded. */
-const scheduleIdle: typeof requestIdleCallback = typeof requestIdleCallback === 'function' ? requestIdleCallback : (callback) => setTimeout(callback, 0) as unknown as number;
+const scheduleIdle: (callback: () => void, options?: {timeout: number}) => void =
+    typeof requestIdleCallback === 'function'
+        ? requestIdleCallback
+        : (callback) => {
+              setTimeout(callback, 0);
+          };
 
 let isReady = false;
 let fallbackTimer: ReturnType<typeof setTimeout> | undefined;

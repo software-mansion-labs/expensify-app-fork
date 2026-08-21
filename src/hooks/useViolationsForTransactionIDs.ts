@@ -29,22 +29,19 @@ function useViolationsForTransactionIDs(transactionIDs: Array<string | undefined
         [transactionIDs],
     );
 
-    const [violations, setViolations] = useState<Record<string, TransactionViolation[]>>(EMPTY_VIOLATIONS);
-    const [isLoaded, setIsLoaded] = useState(false);
+    // Loading is modeled as "the loaded signature matches the requested one" instead of a separate
+    // boolean, so a signature change flips isLoaded without any synchronous setState in the effect.
+    // The initial state's '' signature makes the empty-ID case loaded immediately, effect-free.
+    const [loaded, setLoaded] = useState<{signature: string; violations: Record<string, TransactionViolation[]>}>({signature: '', violations: EMPTY_VIOLATIONS});
 
     useEffect(() => {
-        const ids = transactionIDsSignature ? transactionIDsSignature.split(',') : [];
-        const violationKeyList = ids.map((transactionID) => `${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transactionID}` as const);
-        const violationKeys = new Set<string>(violationKeyList);
-
-        if (violationKeys.size === 0) {
-            setViolations(EMPTY_VIOLATIONS);
-            setIsLoaded(true);
+        if (!transactionIDsSignature) {
             return;
         }
+        const violationKeyList = transactionIDsSignature.split(',').map((transactionID) => `${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transactionID}` as const);
+        const violationKeys = new Set<string>(violationKeyList);
 
         let isCancelled = false;
-        setIsLoaded(false);
         Promise.all(violationKeyList.map((violationKey) => OnyxUtils.get(violationKey).then((value) => [violationKey, value] as const))).then((entries) => {
             if (isCancelled) {
                 return;
@@ -55,22 +52,22 @@ function useViolationsForTransactionIDs(transactionIDs: Array<string | undefined
                     loadedViolations[key] = value as TransactionViolation[];
                 }
             }
-            setViolations(loadedViolations);
-            setIsLoaded(true);
+            setLoaded({signature: transactionIDsSignature, violations: loadedViolations});
         });
 
         const unregisterWatcher = registerQueryWatcher(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS, (key, value) => {
             if (!violationKeys.has(key)) {
                 return;
             }
-            setViolations((previousViolations) => {
-                const nextViolations = {...previousViolations};
+            setLoaded((previous) => {
+                const nextViolations = {...previous.violations};
                 if (Array.isArray(value) && value.length > 0) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the watcher delivers untyped written values; every transactionViolations_ member is a TransactionViolation[]
                     nextViolations[key] = value as TransactionViolation[];
                 } else {
                     delete nextViolations[key];
                 }
-                return nextViolations;
+                return {signature: previous.signature, violations: nextViolations};
             });
         });
 
@@ -80,7 +77,8 @@ function useViolationsForTransactionIDs(transactionIDs: Array<string | undefined
         };
     }, [transactionIDsSignature]);
 
-    return useMemo(() => ({violations, isLoaded}), [violations, isLoaded]);
+    const isLoaded = loaded.signature === transactionIDsSignature;
+    return useMemo(() => ({violations: isLoaded ? loaded.violations : EMPTY_VIOLATIONS, isLoaded}), [loaded.violations, isLoaded]);
 }
 
 export default useViolationsForTransactionIDs;

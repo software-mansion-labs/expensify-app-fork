@@ -33,7 +33,10 @@ function usePolicyData(policyID?: string): PolicyData {
     const [categories] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`);
 
     const {items: reportItems} = useDrainedOnyxQuery(ONYXKEYS.COLLECTION.REPORT, {
-        where: [{field: 'policyID', operator: 'eq', value: policyID ?? ''}],
+        where: [
+            // eslint-disable-next-line rulesdir/no-default-id-values -- '' matches no report by design (hooks can't be conditional)
+            {field: 'policyID', operator: 'eq', value: policyID ?? ''},
+        ],
         orderBy: {field: 'reportID', direction: 'asc'},
         batchSize: QUERY_BATCH_SIZE,
         maxWindowSize: QUERY_MAX_WINDOW,
@@ -57,6 +60,7 @@ function usePolicyData(policyID?: string): PolicyData {
     const transactionsAndViolations = useMemo(() => {
         const grouped: ReportTransactionsAndViolationsDerivedValue = {};
         for (const item of transactionItems) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the query DSL returns untyped rows; every transactions_ collection value is a Transaction
             const transaction = item.value as Transaction;
             const reportID = transaction?.reportID;
             if (!reportID) {
@@ -78,6 +82,7 @@ function usePolicyData(policyID?: string): PolicyData {
     const reports = useMemo(
         () =>
             reportItems
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the query DSL returns untyped rows; every report_ collection value is a Report
                 .map((item) => item.value as Report)
                 .filter((report) => {
                     const reportID = report?.reportID;

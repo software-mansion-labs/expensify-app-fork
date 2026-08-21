@@ -26,7 +26,7 @@ import type {ViewStyle} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
 
 import {isTrackIntentUserSelector} from '@selectors/Onboarding';
-import React, {useCallback, useMemo} from 'react';
+import React, {useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 
 import OptionRowLHN from './OptionRowLHN';

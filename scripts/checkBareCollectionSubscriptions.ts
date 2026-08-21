@@ -34,9 +34,8 @@ function collectCounts(): Counts {
             output = execSync(`git grep -c -E "${pattern}" -- 'src/**/*.ts' 'src/**/*.tsx'`, {cwd: ROOT, encoding: 'utf8'});
         } catch (error) {
             // git grep exits 1 when nothing matches — that's a valid zero-count result.
-            const execError = error as {status?: number; stdout?: string};
-            if (execError.status === 1) {
-                output = execError.stdout ?? '';
+            if (error && typeof error === 'object' && 'status' in error && error.status === 1) {
+                output = 'stdout' in error && typeof error.stdout === 'string' ? error.stdout : '';
             } else {
                 throw error;
             }
@@ -69,6 +68,7 @@ if (!fs.existsSync(BASELINE_PATH)) {
     process.exit(1);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the baseline file is written exclusively by this script's --update path
 const baseline: Counts = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8')) as Counts;
 
 const regressions: string[] = [];

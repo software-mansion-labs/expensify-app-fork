@@ -30,7 +30,10 @@ function useQueriedReportTransactionsAndViolations(reportID?: string): QueriedRe
     // Hooks can't be conditional — an undefined reportID queries for a value no transaction has.
     // Consumers expect the COMPLETE set (the derived value had no windowing), hence the drained query.
     const {items, isComplete} = useDrainedOnyxQuery(ONYXKEYS.COLLECTION.TRANSACTION, {
-        where: [{field: 'reportID', operator: 'eq', value: reportID ?? ''}],
+        where: [
+            // eslint-disable-next-line rulesdir/no-default-id-values -- '' matches no transaction by design (see comment above)
+            {field: 'reportID', operator: 'eq', value: reportID ?? ''},
+        ],
         orderBy: {field: 'created', direction: 'asc'},
         batchSize: TRANSACTIONS_BATCH_SIZE,
         maxWindowSize: TRANSACTIONS_MAX_WINDOW,
@@ -39,6 +42,7 @@ function useQueriedReportTransactionsAndViolations(reportID?: string): QueriedRe
     const transactions = useMemo(() => {
         const result: Record<string, Transaction> = {};
         for (const item of items) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the query DSL returns untyped rows; every transactions_ collection value is a Transaction
             result[item.key] = item.value as Transaction;
         }
         return result;
