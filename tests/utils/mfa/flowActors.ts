@@ -44,13 +44,6 @@ function createActorAtState(value: StateValue, contextOverrides?: Partial<MfaCon
 }
 
 /**
- * Completes the invoked device-check actor by sending its done event carrying the given output.
- */
-function sendValidateDeviceDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'validateDevice'>) {
-    actor.send(createActorDoneEvent('validateDevice', output));
-}
-
-/**
  * Completes the invoked credentials-check actor by sending its done event carrying the given output.
  */
 function sendLoadRegistrationStateDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'loadRegistrationState'>) {
@@ -78,4 +71,4 @@ function sendAuthorizeDone(actor: ReturnType<typeof createActorAtState>, output:
     actor.send(createActorDoneEvent('authorize', output));
 }
 
-export {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone, sendRequestRegistrationChallengeDone, sendValidateDeviceDone};
+export {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendLoadRegistrationStateDone, sendRequestRegistrationChallengeDone};

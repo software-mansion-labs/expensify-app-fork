@@ -58,6 +58,9 @@ jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () 
 
 const requestAuthorizationChallengeMock = jest.mocked(requestAuthorizationChallenge);
 
+// `expect.any` is typed as `any`, which cannot be assigned inside a matcher object literal.
+const ANY_ABORT_SIGNAL: unknown = expect.any(AbortSignal);
+
 const AUTHORIZE_INPUT: AuthorizeInput = {
     accountID: MFA_TEST_ACCOUNT_ID,
     runScenarioAction: mockRunScenarioAction,
@@ -277,6 +280,13 @@ describe('authorize actor', () => {
         await waitForBatchedUpdates();
 
         expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
+    });
+
+    it('passes the account, the requested challenge and the cancellation signal into the platform ceremony', async () => {
+        await runAuthorizeActor();
+
+        expect(mockAuthorize).toHaveBeenCalledTimes(1);
+        expect(mockAuthorize).toHaveBeenCalledWith({accountID: MFA_TEST_ACCOUNT_ID, challenge: MFA_TEST_AUTHENTICATION_CHALLENGE, signal: ANY_ABORT_SIGNAL});
     });
 
     it('forwards the exact signed challenge and marqeta authentication method to the pre-bound scenario runner', async () => {

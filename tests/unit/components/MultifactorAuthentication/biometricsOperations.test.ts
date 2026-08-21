@@ -230,6 +230,8 @@ describe('biometrics operations (native)', () => {
             }
             expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL);
             expect(mockSignWithOptions).not.toHaveBeenCalled();
+            // Deletion is the actor's decision, taken from this reason, so the ceremony must leave the keystore alone.
+            expect(mockDeleteKeys).not.toHaveBeenCalled();
         });
 
         // An unreadable keystore may recover, so it must not take the same destructive path as a

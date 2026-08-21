@@ -172,10 +172,8 @@ const MFAMachine = setup({
                                     }
                                     return {allowedAuthenticationMethods: context.scenario.allowedAuthenticationMethods};
                                 },
-                                // An error stored earlier in the flow wins even over a successful device check.
                                 onDone: [
                                     {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
-                                    {guard: ({context}) => context.error !== undefined, target: OUTCOME_TARGET},
                                     {target: MFA_STATE.DECIDING_REGISTRATION},
                                 ],
                                 // Expected refusals travel as failed results through onDone, so a

@@ -79,4 +79,4 @@ function createScenarioActionRunner<T extends MultifactorAuthenticationScenario>
 }
 
 export {createScenarioActionRunner, processRegistration, processScenarioAction};
-export type {RunScenarioAction, ScenarioActionAuthenticationParams};
+export type {RunScenarioAction};
