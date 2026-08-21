@@ -136,4 +136,22 @@ describe('useReportActionsNewActionLiveTail across a cover/reveal cycle', () => 
         expect(pruneReportActionPagesToNewestWindow).toHaveBeenCalledTimes(1);
         expect(setTreatAsNoPaginationAnchor).toHaveBeenCalledWith(false);
     });
+
+    // The subscription made at mount must be the one still standing after the cycle, never torn down and rebuilt,
+    // because any teardown window drops the new-action events Pusher delivers while the chat is covered.
+    it('stays subscribed to the new-action channel after the chat is covered and revealed', async () => {
+        const unsubscribe = jest.fn();
+        subscribeToNewActionEvent.mockReturnValue(unsubscribe);
+
+        const screen = renderLiveTail();
+        await waitForBatchedUpdatesWithAct();
+        expect(subscribeToNewActionEvent).toHaveBeenCalledTimes(1);
+
+        await screen.hide();
+        await screen.reveal();
+        await waitForBatchedUpdatesWithAct();
+
+        expect(unsubscribe).not.toHaveBeenCalled();
+        expect(subscribeToNewActionEvent).toHaveBeenCalledTimes(1);
+    });
 });

@@ -50,13 +50,16 @@ jest.mock('@userActions/Report', () => ({
     updateLoadingInitialReportAction: jest.fn(),
 }));
 
+// Undefined drives the legacy path; CONST.FAKE_REPORT_ID drives the fake-ID path of the second describe.
+let mockOneTransactionThreadReportID: string | undefined;
+
 // A legacy single-transaction expense report: one transaction, no IOU action for it, and no transaction thread yet.
 // The utils are stubbed to that shape so the test drives the handler's own guard, not their derivation logic.
 jest.mock('@libs/ReportActionsUtils', () => ({
     ...jest.requireActual<typeof ReportActionsUtils>('@libs/ReportActionsUtils'),
     getFilteredReportActionsForReportView: (reportActions: unknown) => reportActions,
     getIOUActionForReportID: () => undefined,
-    getOneTransactionThreadReportID: () => undefined,
+    getOneTransactionThreadReportID: () => mockOneTransactionThreadReportID,
 }));
 
 jest.mock('@libs/MoneyRequestReportUtils', () => ({
@@ -77,25 +80,53 @@ const {createTransactionThreadReport} = jest.requireMock<{createTransactionThrea
 
 const transitionTracker = createTransitionTrackerHarness();
 
+beforeAll(() => {
+    Onyx.init({keys: ONYXKEYS});
+});
+
+beforeEach(async () => {
+    jest.clearAllMocks();
+    transitionTracker.install();
+    mockOneTransactionThreadReportID = undefined;
+    await Onyx.clear();
+    await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${REPORT_ID}`, {reportID: REPORT_ID, type: CONST.REPORT.TYPE.EXPENSE});
+    await Onyx.merge(`${ONYXKEYS.COLLECTION.RAM_ONLY_REPORT_LOADING_STATE}${REPORT_ID}`, {hasOnceLoadedReportActions: true, isLoadingInitialReportActions: false});
+});
+
 /**
  * Opening a legacy single-transaction expense report creates its missing transaction thread once, guarded by a ref
  * whose comment says it is set before the call "to prevent race conditions". A ref survives a cover, so a reveal must
  * not re-arm it. The assertion describes behavior that ships today.
  */
 describe('ReportFetchHandler legacy transaction thread across a cover/reveal cycle', () => {
-    beforeAll(() => {
-        Onyx.init({keys: ONYXKEYS});
-    });
-
-    beforeEach(async () => {
-        jest.clearAllMocks();
-        transitionTracker.install();
-        await Onyx.clear();
-        await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${REPORT_ID}`, {reportID: REPORT_ID, type: CONST.REPORT.TYPE.EXPENSE});
-        await Onyx.merge(`${ONYXKEYS.COLLECTION.RAM_ONLY_REPORT_LOADING_STATE}${REPORT_ID}`, {hasOnceLoadedReportActions: true, isLoadingInitialReportActions: false});
-    });
-
     it('creates the missing transaction thread once, not again after a reveal', async () => {
+        const screen = renderCoverableScreen(<ReportFetchHandler />);
+        await waitForBatchedUpdatesWithAct();
+        transitionTracker.firePendingCallbacks();
+        await waitForBatchedUpdatesWithAct();
+
+        expect(createTransactionThreadReport).toHaveBeenCalledTimes(1);
+
+        await screen.hide();
+        await screen.reveal();
+        transitionTracker.firePendingCallbacks();
+        await waitForBatchedUpdatesWithAct();
+
+        expect(createTransactionThreadReport).toHaveBeenCalledTimes(1);
+    });
+});
+
+/**
+ * While the one-transaction thread is still the fake placeholder (create in flight, offline, or failed), a second path
+ * calls `createTransactionThreadReport` guarded only by those data conditions, with no surviving ref. The conditions
+ * are evaluated once per effect run, so as long as effects run once per mount a cover/reveal cannot re-enter the path
+ * and create a duplicate optimistic thread. The assertion describes behavior that ships today.
+ */
+describe('ReportFetchHandler fake-ID transaction thread across a cover/reveal cycle', () => {
+    it('creates the fake-ID transaction thread once, not again after a reveal', async () => {
+        // The mocked createTransactionThreadReport never resolves, so the fake-ID conditions persist across the cycle.
+        mockOneTransactionThreadReportID = CONST.FAKE_REPORT_ID;
+
         const screen = renderCoverableScreen(<ReportFetchHandler />);
         await waitForBatchedUpdatesWithAct();
         transitionTracker.firePendingCallbacks();
