@@ -1,3 +1,4 @@
+import useAllOutstandingReportsByPolicyID from '@hooks/useAllOutstandingReportsByPolicyID';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useEnvironment from '@hooks/useEnvironment';
 import useNetwork from '@hooks/useNetwork';
@@ -401,7 +402,7 @@ function SearchWriteActionsProvider({
     const {accountID, email, login} = useCurrentUserPersonalDetails();
     const selfDMReport = useSelfDMReport();
     const [reportNameValuePairs] = useOnyx(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS);
-    const [outstandingReportsByPolicyID] = useOnyx(ONYXKEYS.DERIVED.OUTSTANDING_REPORTS_BY_POLICY_ID);
+    const outstandingReportsByPolicyID = useAllOutstandingReportsByPolicyID();
     const {applySelection} = useSearchSelectionActions();
 
     const searchResultsData = searchResults?.data;

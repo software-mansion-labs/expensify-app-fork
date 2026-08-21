@@ -3,6 +3,7 @@ import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useOutstandingReports from '@hooks/useOutstandingReports';
+import useOutstandingReportsForPolicy from '@hooks/useOutstandingReportsForPolicy';
 import {useDerivedReportNameByReportID} from '@hooks/useReportAttributes';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -22,7 +23,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 
 import React from 'react';
 
-import {createOutstandingReportsForPolicySelector, reportFieldTransactionStateSelector} from './selectors';
+import {reportFieldTransactionStateSelector} from './selectors';
 import useTransactionSelector from './useTransactionSelector';
 
 type ReportFieldProps = {
@@ -56,7 +57,7 @@ function ReportField({selectedParticipants, iouType, reportID, reportActionID, a
     const {translate, localeCompare} = useLocalize();
 
     const policyID = selectedParticipants?.at(0)?.policyID;
-    const [outstandingReportsForPolicy] = useOnyx(ONYXKEYS.DERIVED.OUTSTANDING_REPORTS_BY_POLICY_ID, {selector: createOutstandingReportsForPolicySelector(policyID)});
+    const outstandingReportsForPolicy = useOutstandingReportsForPolicy(policyID);
     const [reportNameValuePairs] = useOnyx(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS);
 
     // Self-resolved narrow slice of the transaction; replaces the previously prop-drilled `transaction` object.

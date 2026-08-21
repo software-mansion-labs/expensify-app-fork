@@ -7,7 +7,6 @@ import type {OnyxDerivedValueConfig} from './types';
 import cardFeedErrorsConfig from './configs/cardFeedErrors';
 import loginToAccountIDMapConfig from './configs/loginToAccountIDMap';
 import nonPersonalAndWorkspaceCardListConfig from './configs/nonPersonalAndWorkspaceCardList';
-import outstandingReportsByPolicyIDConfig from './configs/outstandingReportsByPolicyID';
 import personalAndWorkspaceCardListConfig from './configs/personalAndWorkspaceCardList';
 import reportAttributesConfig from './configs/reportAttributes';
 import sortedReportActionsConfig from './configs/sortedReportActions';
@@ -19,7 +18,6 @@ import visibleReportActionsConfig from './configs/visibleReportActions';
  */
 const ONYX_DERIVED_VALUES = {
     [ONYXKEYS.DERIVED.REPORT_ATTRIBUTES]: reportAttributesConfig,
-    [ONYXKEYS.DERIVED.OUTSTANDING_REPORTS_BY_POLICY_ID]: outstandingReportsByPolicyIDConfig,
     [ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS]: visibleReportActionsConfig,
     [ONYXKEYS.DERIVED.NON_PERSONAL_AND_WORKSPACE_CARD_LIST]: nonPersonalAndWorkspaceCardListConfig,
     [ONYXKEYS.DERIVED.PERSONAL_AND_WORKSPACE_CARD_LIST]: personalAndWorkspaceCardListConfig,

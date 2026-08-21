@@ -216,6 +216,14 @@ describe('Lazily loaded group selection', () => {
     it('selects every child of a group that was not already selected once its children loaded', async () => {
         const {result} = renderSelection();
 
+        // Given the provider's on-demand outstanding-reports query has settled (as it has by the time a
+        // user can interact in the app). Toggling before it settles would race the reconcile effect its
+        // resolution triggers, which drops selections for items absent from filteredData — and lazy group
+        // children never appear there.
+        await act(async () => {
+            await waitForBatchedUpdatesWithAct();
+        });
+
         // When the checkbox is pressed on an expanded, unselected group whose children have loaded
         await act(async () => {
             result.current.toggle(categoryGroup, loadedChildren);
