@@ -4,6 +4,7 @@ import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails'
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import usePreferredPolicy from '@hooks/usePreferredPolicy';
 import {useDerivedReportNamesByReportIDs} from '@hooks/useReportAttributes';
 import useReportIsArchived from '@hooks/useReportIsArchived';
@@ -66,7 +67,6 @@ function QuickActionMenuItem({reportID}: QuickActionMenuItemProps) {
     const {isRestrictedToPreferredPolicy} = usePreferredPolicy();
     const quickActionPolicyID = quickAction?.action === CONST.QUICK_ACTIONS.TRACK_PER_DIEM && quickAction?.perDiemPolicyID ? quickAction?.perDiemPolicyID : quickActionReport?.policyID;
     const [quickActionPolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${quickActionPolicyID}`);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
 
@@ -83,7 +83,9 @@ function QuickActionMenuItem({reportID}: QuickActionMenuItemProps) {
     const policyChatForActivePolicyPolicyID = getNonEmptyStringOnyxID(policyChatForActivePolicy?.policyID);
 
     const [quickActionReportPolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${quickActionReportPolicyID ?? CONST.POLICY.ID_FAKE}`);
+    const [quickActionReportPolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(quickActionReportPolicy);
     const [policyChatForActivePolicyPolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyChatForActivePolicyPolicyID ?? CONST.POLICY.ID_FAKE}`);
+    const [policyChatForActivePolicyPolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(policyChatForActivePolicyPolicy);
 
     const [quickActionReportPendingDeleteMemberAccountIDs] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${getNonEmptyStringOnyxID(quickActionReport?.reportID)}`, {
         selector: pendingDeleteMemberAccountIDsSelector,
@@ -144,7 +146,13 @@ function QuickActionMenuItem({reportID}: QuickActionMenuItemProps) {
             shouldRestrictAction &&
             quickActionReportPolicyID &&
             quickActionReportPolicy &&
-            shouldRestrictUserBillableActions(quickActionReportPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserPersonalDetails.accountID)
+            shouldRestrictUserBillableActions(
+                quickActionReportPolicy,
+                ownerBillingGracePeriodEnd,
+                quickActionReportPolicyOwnerBillingGraceEndPeriod,
+                amountOwed,
+                currentUserPersonalDetails.accountID,
+            )
         ) {
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(quickActionReportPolicyID));
             return;
@@ -226,7 +234,7 @@ function QuickActionMenuItem({reportID}: QuickActionMenuItemProps) {
                         shouldRestrictUserBillableActions(
                             policyChatForActivePolicyPolicy,
                             ownerBillingGracePeriodEnd,
-                            userBillingGracePeriodEnds,
+                            policyChatForActivePolicyPolicyOwnerBillingGraceEndPeriod,
                             amountOwed,
                             currentUserPersonalDetails.accountID,
                         )

@@ -96,19 +96,7 @@ describe('shouldUseDefaultExpensePolicy', () => {
 
         const policy = makePaidGroupPolicy({ownerAccountID: workspaceOwnerAccountID});
         const pastDueGracePeriodEnd = getUnixTime(subDays(new Date(), 3));
-        const gracePeriodKey = `${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${workspaceOwnerAccountID}` as const;
 
-        expect(
-            shouldUseDefaultExpensePolicy(
-                CONST.IOU.TYPE.CREATE,
-                policy,
-                undefined,
-                {
-                    [gracePeriodKey]: {...billingGraceEndPeriod, value: pastDueGracePeriodEnd},
-                },
-                undefined,
-                memberAccountID,
-            ),
-        ).toBeFalsy();
+        expect(shouldUseDefaultExpensePolicy(CONST.IOU.TYPE.CREATE, policy, undefined, {...billingGraceEndPeriod, value: pastDueGracePeriodEnd}, undefined, memberAccountID)).toBeFalsy();
     });
 });

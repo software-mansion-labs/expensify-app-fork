@@ -29,7 +29,7 @@ import {approveMoneyRequest} from './actions/IOU/ReportWorkflow';
 import {isBankAccountPartiallySetup} from './BankAccountUtils';
 import BankAccountModel from './models/BankAccount';
 import Navigation from './Navigation/Navigation';
-import {shouldRestrictUserBillableActions} from './SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from './SubscriptionUtils';
 
 type KYCFlowEvent = GestureResponderEvent | KeyboardEvent | undefined;
 type TriggerKYCFlow = (params: ContinueActionParams) => void;
@@ -235,7 +235,10 @@ const selectPaymentType = (params: SelectPaymentTypeParams) => {
         ownerLogin,
         getCurrencyDecimals,
     } = params;
-    if (policy && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentAccountID)) {
+    if (
+        policy &&
+        shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policy), amountOwed, currentAccountID)
+    ) {
         Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(policy.id));
         return;
     }

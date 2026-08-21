@@ -505,12 +505,29 @@ function canCancelSubscription(
 }
 
 /**
+ * Picks the given policy owner's entry out of the whole SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END collection.
+ * Only for callers that legitimately hold the whole collection because they check many policies (e.g. bulk Search
+ * flows) — single-policy callers should subscribe to the member key directly
+ * (`SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END` + `policy.ownerAccountID`) instead of hydrating the collection.
+ */
+function getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds: OnyxCollection<BillingGraceEndPeriod>, policy: OnyxEntry<Policy>): OnyxEntry<BillingGraceEndPeriod> {
+    if (!policy?.ownerAccountID) {
+        return undefined;
+    }
+    return userBillingGracePeriodEnds?.[`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${policy.ownerAccountID}`];
+}
+
+/**
  * Whether the user's billable actions should be restricted.
+ *
+ * @param policyOwnerBillingGraceEndPeriod the policy owner's SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END entry —
+ * the collection member keyed by `policy.ownerAccountID` (see `getPolicyOwnerBillingGraceEndPeriod`). Pass `undefined`
+ * when the policy has no owner account ID.
  */
 function shouldRestrictUserBillableActions(
     policy: OnyxEntry<Policy>,
     ownerBillingGracePeriodEnd: OnyxEntry<number>,
-    userBillingGracePeriodEnds: OnyxCollection<BillingGraceEndPeriod>,
+    policyOwnerBillingGraceEndPeriod: OnyxEntry<BillingGraceEndPeriod>,
     amountOwed: OnyxEntry<number>,
     currentUserAccountID: number,
 ): boolean {
@@ -518,18 +535,11 @@ function shouldRestrictUserBillableActions(
 
     // This logic will be executed if the user is a workspace's non-owner (normal user or admin).
     // We should restrict the workspace's non-owner actions if it's member of a workspace where the owner is
-    // past due and is past its grace period end.
-    for (const userBillingGraceEndPeriodEntry of Object.entries(userBillingGracePeriodEnds ?? {})) {
-        const [entryKey, userBillingGracePeriodEnd] = userBillingGraceEndPeriodEntry;
-
-        if (userBillingGracePeriodEnd && isAfter(currentDate, fromUnixTime(userBillingGracePeriodEnd.value))) {
-            // Extracts the owner account ID from the collection member key.
-            const ownerAccountID = Number(entryKey.slice(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END.length));
-
-            if (isPolicyOwner(policy, ownerAccountID)) {
-                return true;
-            }
-        }
+    // past due and is past its grace period end. The entry is keyed by the policy owner's account ID, so a
+    // present entry already satisfies the `isPolicyOwner` check the collection loop used to perform — we only
+    // guard that the policy actually has an owner set, consistent with `isPolicyOwner` semantics.
+    if (!!policy?.ownerAccountID && policyOwnerBillingGraceEndPeriod && isAfter(currentDate, fromUnixTime(policyOwnerBillingGraceEndPeriod.value))) {
+        return true;
     }
 
     // If it reached here it means that the user is actually the workspace's owner.
@@ -710,6 +720,7 @@ export {
     hasUserFreeTrialEnded,
     isUserOnFreeTrial,
     PAYMENT_STATUS,
+    getPolicyOwnerBillingGraceEndPeriod,
     shouldRestrictUserBillableActions,
     shouldShowPreTrialBillingBanner,
     shouldShowDiscountBanner,

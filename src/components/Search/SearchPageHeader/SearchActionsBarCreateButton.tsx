@@ -10,6 +10,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import usePopoverPosition from '@hooks/usePopoverPosition';
 import useShouldShowEmptyReportConfirmation from '@hooks/useShouldShowEmptyReportConfirmation';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -64,7 +65,6 @@ function SearchActionsBarCreateButton() {
     const [activePolicyID] = useOnyx(ONYXKEYS.NVP_ACTIVE_POLICY_ID);
     const [activePolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${activePolicyID}`);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const {shouldNavigateToUpgradePath} = usePolicyForMovingExpenses();
     const defaultChatEnabledPolicy = useMemo(
@@ -72,6 +72,7 @@ function SearchActionsBarCreateButton() {
         [activePolicy, groupPoliciesWithChatEnabled],
     );
     const defaultChatEnabledPolicyID = defaultChatEnabledPolicy?.id;
+    const [defaultChatEnabledPolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(defaultChatEnabledPolicy);
     const [isTrackIntentUser] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED, {selector: isTrackIntentUserSelector});
 
     const shouldShowEmptyReportConfirmationForDefaultChatEnabledPolicy = useShouldShowEmptyReportConfirmation(defaultChatEnabledPolicyID);
@@ -173,7 +174,7 @@ function SearchActionsBarCreateButton() {
                             (shouldRestrictUserBillableActions(
                                 defaultChatEnabledPolicy,
                                 ownerBillingGracePeriodEnd,
-                                userBillingGracePeriodEnds,
+                                defaultChatEnabledPolicyOwnerBillingGraceEndPeriod,
                                 amountOwed,
                                 currentUserPersonalDetails.accountID,
                             ) &&
@@ -188,7 +189,7 @@ function SearchActionsBarCreateButton() {
                             !shouldRestrictUserBillableActions(
                                 defaultChatEnabledPolicy,
                                 ownerBillingGracePeriodEnd,
-                                userBillingGracePeriodEnds,
+                                defaultChatEnabledPolicyOwnerBillingGraceEndPeriod,
                                 amountOwed,
                                 currentUserPersonalDetails.accountID,
                             )
@@ -215,7 +216,7 @@ function SearchActionsBarCreateButton() {
             defaultChatEnabledPolicyID,
             shouldShowEmptyReportConfirmationForDefaultChatEnabledPolicy,
             ownerBillingGracePeriodEnd,
-            userBillingGracePeriodEnds,
+            defaultChatEnabledPolicyOwnerBillingGraceEndPeriod,
             openCreateReportConfirmation,
             handleCreateWorkspaceReport,
             amountOwed,

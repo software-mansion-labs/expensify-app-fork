@@ -479,7 +479,7 @@ describe('handleBulkPayItemSelected', () => {
         isDelegateAccessRestricted: false,
         showDelegateNoAccessModal: jest.fn(),
         confirmPayment: jest.fn(),
-        userBillingGracePeriodEnds: undefined,
+        policyOwnerBillingGraceEndPeriod: undefined,
         businessBankAccountOptions: undefined,
         bankAccountList: undefined,
         ownerBillingGracePeriodEnd: undefined,

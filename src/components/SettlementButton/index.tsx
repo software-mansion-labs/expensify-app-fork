@@ -43,7 +43,7 @@ import {
 } from '@libs/ReportUtils';
 import useSettlementButtonPaymentMethods from '@libs/SettlementButtonUtils';
 import shouldPopoverUseScrollView from '@libs/shouldPopoverUseScrollView';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 
 import {clearPersonalBankAccount, pressLockedBankAccount} from '@userActions/BankAccounts';
 import {approveMoneyRequest} from '@userActions/IOU/ReportWorkflow';
@@ -227,7 +227,10 @@ function SettlementButton({
             return true;
         }
 
-        if (policy && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)) {
+        if (
+            policy &&
+            shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policy), amountOwed, currentUserAccountID)
+        ) {
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(policy.id));
             return true;
         }

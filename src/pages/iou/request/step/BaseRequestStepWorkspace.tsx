@@ -14,7 +14,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import {getPolicyByCustomUnitID, sortWorkspacesBySelected} from '@libs/PolicyUtils';
 import {getDefaultWorkspaceAvatar} from '@libs/ReportUtils';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 import tokenizedSearch from '@libs/tokenizedSearch';
 
 import CONST from '@src/CONST';
@@ -89,7 +89,9 @@ function BaseRequestStepWorkspace({transaction, getPolicies, onSelectWorkspace}:
     const selectWorkspace = (item: WorkspaceListItem) => {
         const policyID = item.policyID;
         const policy = allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`];
-        if (shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)) {
+        if (
+            shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policy), amountOwed, currentUserAccountID)
+        ) {
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(policyID));
             return;
         }

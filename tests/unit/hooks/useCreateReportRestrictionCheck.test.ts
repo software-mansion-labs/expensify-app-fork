@@ -15,8 +15,8 @@ jest.mock('@libs/SubscriptionUtils', () => ({
 jest.mock('@hooks/useOnyx', () => ({
     __esModule: true,
     default: (key: string) => {
-        if (key === 'sharedNVP_private_billingGracePeriodEnd_') {
-            return [{end: 123}];
+        if (key === 'sharedNVP_private_billingGracePeriodEnd_7') {
+            return [{value: 123}];
         }
         if (key === 'nvp_private_billingGracePeriodEnd') {
             return [456];
@@ -29,7 +29,7 @@ jest.mock('@hooks/useOnyx', () => ({
 }));
 
 const session = createMock<OnyxTypes.Session>({accountID: 42});
-const restrictedPolicy = createMock<OnyxTypes.Policy>({id: 'p1'});
+const restrictedPolicy = createMock<OnyxTypes.Policy>({id: 'p1', ownerAccountID: 7});
 
 describe('useCreateReportRestrictionCheck', () => {
     beforeEach(() => {
@@ -37,25 +37,37 @@ describe('useCreateReportRestrictionCheck', () => {
     });
 
     it('returns false when no restriction policy is supplied (skip the subscription check)', () => {
+        // Given the underlying restriction util would restrict
         mockShouldRestrict.mockReturnValue(true);
-        const {result} = renderHook(() => useCreateReportRestrictionCheck(session));
 
-        expect(result.current(undefined)).toBe(false);
+        // When the hook is rendered without a restriction policy
+        const {result} = renderHook(() => useCreateReportRestrictionCheck(session, undefined));
+
+        // Then the check short-circuits to false without consulting the util
+        expect(result.current()).toBe(false);
         expect(mockShouldRestrict).not.toHaveBeenCalled();
     });
 
-    it('forwards billing/grace-period state and accountID to shouldRestrictUserBillableActions', () => {
+    it("forwards billing/grace-period state, the policy owner's entry, and accountID to shouldRestrictUserBillableActions", () => {
+        // Given the underlying restriction util restricts
         mockShouldRestrict.mockReturnValue(true);
-        const {result} = renderHook(() => useCreateReportRestrictionCheck(session));
 
-        expect(result.current(restrictedPolicy)).toBe(true);
-        expect(mockShouldRestrict).toHaveBeenCalledWith(restrictedPolicy, expect.anything(), expect.anything(), expect.anything(), 42);
+        // When the hook is rendered with a restriction policy whose owner has a billing grace period entry
+        const {result} = renderHook(() => useCreateReportRestrictionCheck(session, restrictedPolicy));
+
+        // Then the util receives the policy, the owner's member entry (not the whole collection), and the accountID
+        expect(result.current()).toBe(true);
+        expect(mockShouldRestrict).toHaveBeenCalledWith(restrictedPolicy, 456, {value: 123}, 789, 42);
     });
 
     it('returns whatever shouldRestrictUserBillableActions returns', () => {
+        // Given the underlying restriction util does not restrict
         mockShouldRestrict.mockReturnValue(false);
-        const {result} = renderHook(() => useCreateReportRestrictionCheck(session));
 
-        expect(result.current(restrictedPolicy)).toBe(false);
+        // When the hook is rendered with a restriction policy
+        const {result} = renderHook(() => useCreateReportRestrictionCheck(session, restrictedPolicy));
+
+        // Then the check returns the util's result
+        expect(result.current()).toBe(false);
     });
 });

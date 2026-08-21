@@ -21,6 +21,7 @@ import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import usePolicy from '@hooks/usePolicy';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {fetchUnreportedExpenses} from '@libs/actions/UnreportedExpenses';
@@ -81,7 +82,7 @@ function AddExistingExpense({route}: AddExistingExpensePageType) {
     const [cardList] = useOnyx(ONYXKEYS.CARD_LIST);
     const {accountID: currentUserAccountID} = useCurrentUserPersonalDetails();
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
+    const [policyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(policy);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const shouldShowUnreportedTransactionsSkeletons = isLoadingUnreportedTransactions && hasMoreUnreportedTransactionsResults && !isOffline;
     const [draftTransactionIDs] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_DRAFT, {selector: validTransactionDraftIDsSelector});
@@ -420,7 +421,7 @@ function AddExistingExpense({route}: AddExistingExpensePageType) {
                                 buttonAction: () => {
                                     if (
                                         report?.policyID &&
-                                        shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)
+                                        shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, policyOwnerBillingGraceEndPeriod, amountOwed, currentUserAccountID)
                                     ) {
                                         Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(report.policyID));
                                         return;

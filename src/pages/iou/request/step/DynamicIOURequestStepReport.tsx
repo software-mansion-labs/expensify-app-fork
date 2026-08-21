@@ -115,7 +115,8 @@ function DynamicIOURequestStepReport({route, transaction}: DynamicIOURequestStep
     const [betas] = useOnyx(ONYXKEYS.BETAS);
     const [isTrackIntentUser] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED, {selector: isTrackIntentUserSelector});
     const {getCurrencyDecimals} = useCurrencyListActions();
-    const isCreateReportRestricted = useCreateReportRestrictionCheck(session);
+    const restrictionPolicy = isPerDiemTransaction ? perDiemOriginalPolicy : policyForMovingExpenses;
+    const isCreateReportRestricted = useCreateReportRestrictionCheck(session, restrictionPolicy);
     const handleGoBack = () => {
         if (isEditing) {
             Navigation.dismissToSuperWideRHP();
@@ -196,8 +197,7 @@ function DynamicIOURequestStepReport({route, transaction}: DynamicIOURequestStep
     });
 
     const createReport = () => {
-        const restrictionPolicy = isPerDiemTransaction ? perDiemOriginalPolicy : policyForMovingExpenses;
-        if (restrictionPolicy && isCreateReportRestricted(restrictionPolicy)) {
+        if (restrictionPolicy && isCreateReportRestricted()) {
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(restrictionPolicy.id));
             return;
         }

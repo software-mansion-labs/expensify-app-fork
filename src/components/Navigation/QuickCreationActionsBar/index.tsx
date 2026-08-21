@@ -9,6 +9,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import useShouldShowEmptyReportConfirmation from '@hooks/useShouldShowEmptyReportConfirmation';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -53,7 +54,6 @@ function QuickCreationActionsBar() {
     const [lastDistanceExpenseType] = useOnyx(ONYXKEYS.NVP_LAST_DISTANCE_EXPENSE_TYPE);
     const [activePolicyID] = useOnyx(ONYXKEYS.NVP_ACTIVE_POLICY_ID);
     const [activePolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${activePolicyID}`);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const [primaryLogin] = useOnyx(ONYXKEYS.ACCOUNT, {selector: primaryLoginSelector});
@@ -76,6 +76,7 @@ function QuickCreationActionsBar() {
         [activePolicy, groupPoliciesWithChatEnabled],
     );
     const defaultChatEnabledPolicyID = defaultChatEnabledPolicy?.id;
+    const [defaultChatEnabledPolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(defaultChatEnabledPolicy);
 
     const shouldShowEmptyReportConfirmationForDefaultChatEnabledPolicy = useShouldShowEmptyReportConfirmation(defaultChatEnabledPolicyID);
 
@@ -159,14 +160,28 @@ function QuickCreationActionsBar() {
 
                 if (
                     !workspaceIDForReportCreation ||
-                    (shouldRestrictUserBillableActions(defaultChatEnabledPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserPersonalDetails.accountID) &&
+                    (shouldRestrictUserBillableActions(
+                        defaultChatEnabledPolicy,
+                        ownerBillingGracePeriodEnd,
+                        defaultChatEnabledPolicyOwnerBillingGraceEndPeriod,
+                        amountOwed,
+                        currentUserPersonalDetails.accountID,
+                    ) &&
                         groupPoliciesWithChatEnabled.length > 1)
                 ) {
                     navigateToCreateReportWorkspaceSelection();
                     return;
                 }
 
-                if (!shouldRestrictUserBillableActions(defaultChatEnabledPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserPersonalDetails.accountID)) {
+                if (
+                    !shouldRestrictUserBillableActions(
+                        defaultChatEnabledPolicy,
+                        ownerBillingGracePeriodEnd,
+                        defaultChatEnabledPolicyOwnerBillingGraceEndPeriod,
+                        amountOwed,
+                        currentUserPersonalDetails.accountID,
+                    )
+                ) {
                     if (shouldShowEmptyReportConfirmationForDefaultChatEnabledPolicy) {
                         openCreateReportConfirmation();
                     } else {
@@ -180,7 +195,7 @@ function QuickCreationActionsBar() {
         [
             shouldNavigateToUpgradePath,
             defaultChatEnabledPolicyID,
-            userBillingGracePeriodEnds,
+            defaultChatEnabledPolicyOwnerBillingGraceEndPeriod,
             ownerBillingGracePeriodEnd,
             amountOwed,
             defaultChatEnabledPolicy,

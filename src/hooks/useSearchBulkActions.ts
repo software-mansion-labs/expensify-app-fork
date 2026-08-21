@@ -72,7 +72,7 @@ import refreshSearchAfterReportAction from '@libs/SearchRefreshUtils';
 import {getColumnsToShow, getSearchColumnTranslationKey, getSelectedGroupFilterEntry, getValidGroupBy, isGroupEntry, navigateToSearchRHP, shouldShowDeleteOption} from '@libs/SearchUIUtils';
 import showConfirmModalAfterMoreMenuDismiss from '@libs/showConfirmModalAfterMoreMenuDismiss';
 import playSound, {SOUNDS} from '@libs/Sound';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 import {
     getDeleteConfirmationPrompt,
     getDeleteExpenseTitle,
@@ -173,7 +173,7 @@ function getRestrictedPolicyID(
                 shouldRestrictUserBillableActions(
                     allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`],
                     ownerBillingGracePeriodEnd,
-                    billingGracePeriods,
+                    getPolicyOwnerBillingGraceEndPeriod(billingGracePeriods, allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyID}`]),
                     amountOwed,
                     currentUserAccountID,
                 ),
@@ -1056,7 +1056,14 @@ function useSearchBulkActions({queryJSON}: UseSearchBulkActionsParams) {
             const policyToUpgrade = reportPolicy;
             const wouldNavigateToUpgrade = isSubmitPolicy(policyToUpgrade) && !!policyToUpgrade?.id;
             const wouldNavigateToRestricted =
-                !!expenseReport.policyID && shouldRestrictUserBillableActions(reportPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, accountID);
+                !!expenseReport.policyID &&
+                shouldRestrictUserBillableActions(
+                    reportPolicy,
+                    ownerBillingGracePeriodEnd,
+                    getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, reportPolicy),
+                    amountOwed,
+                    accountID,
+                );
 
             approveMoneyRequest({
                 getCurrencyDecimals,
@@ -2101,7 +2108,16 @@ function useSearchBulkActions({queryJSON}: UseSearchBulkActionsParams) {
                     value: CONST.SEARCH.BULK_ACTION_TYPES.DUPLICATE,
                     shouldCloseModalOnSelect: true,
                     onSelected: () => {
-                        if (defaultExpensePolicy && shouldRestrictUserBillableActions(defaultExpensePolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, accountID)) {
+                        if (
+                            defaultExpensePolicy &&
+                            shouldRestrictUserBillableActions(
+                                defaultExpensePolicy,
+                                ownerBillingGracePeriodEnd,
+                                getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, defaultExpensePolicy),
+                                amountOwed,
+                                accountID,
+                            )
+                        ) {
                             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(defaultExpensePolicy.id));
                             return;
                         }
@@ -2619,7 +2635,16 @@ function useSearchBulkActions({queryJSON}: UseSearchBulkActionsParams) {
                 value: CONST.SEARCH.BULK_ACTION_TYPES.DUPLICATE,
                 shouldCloseModalOnSelect: true,
                 onSelected: () => {
-                    if (defaultExpensePolicy && shouldRestrictUserBillableActions(defaultExpensePolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, accountID)) {
+                    if (
+                        defaultExpensePolicy &&
+                        shouldRestrictUserBillableActions(
+                            defaultExpensePolicy,
+                            ownerBillingGracePeriodEnd,
+                            getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, defaultExpensePolicy),
+                            amountOwed,
+                            accountID,
+                        )
+                    ) {
                         Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(defaultExpensePolicy.id));
                         return;
                     }

@@ -11,7 +11,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {RestrictedActionParamList} from '@libs/Navigation/types';
 import {isPolicyAdmin, isPolicyAuditor, isPolicyOwner, isPolicyUser} from '@libs/PolicyUtils';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 
@@ -70,7 +70,7 @@ function WorkspaceRestrictedActionPage({
         if (isLoadingSubscriptionData !== false) {
             return;
         }
-        if (!shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriods, amountOwed, accountID)) {
+        if (!shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriods, policy), amountOwed, accountID)) {
             Navigation.goBack();
         }
     }, [policy, isLoadingSubscriptionData, userBillingGracePeriods, ownerBillingGracePeriodEnd, amountOwed, accountID]);

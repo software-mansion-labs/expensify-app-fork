@@ -35,6 +35,7 @@ import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import usePaginatedReportActions from '@hooks/usePaginatedReportActions';
 import useParentReportAction from '@hooks/useParentReportAction';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import usePreferredPolicy from '@hooks/usePreferredPolicy';
 import {useDerivedReportNamesByReportIDs} from '@hooks/useReportAttributes';
 import useReportIsArchived from '@hooks/useReportIsArchived';
@@ -183,6 +184,7 @@ function DynamicReportDetailsPage({policy, report, route, reportMetadata, report
     const {isOffline} = useNetwork();
     const {isRestrictedToPreferredPolicy, preferredPolicyID} = usePreferredPolicy();
     const activePolicy = useActivePolicy();
+    const [activePolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(activePolicy);
     const lastWorkspaceNumber = useLastWorkspaceNumber();
     const styles = useThemeStyles();
     const expensifyIcons = useMemoizedLazyExpensifyIcons([
@@ -204,7 +206,6 @@ function DynamicReportDetailsPage({policy, report, route, reportMetadata, report
     const navigateBackFromReportDetailsPath = useDynamicBackPath(DYNAMIC_ROUTES.REPORT_DETAILS.path);
     const taskDeleteBackTo = Navigation.getTopmostSearchReportRouteParams()?.backTo;
 
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [parentReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${report.parentReportID}`);
@@ -558,7 +559,7 @@ function DynamicReportDetailsPage({policy, report, route, reportMetadata, report
                     introSelected,
                     draftTransactionIDs,
                     activePolicy,
-                    userBillingGracePeriodEnds,
+                    activePolicyOwnerBillingGraceEndPeriod,
                     amountOwed,
                     ownerBillingGracePeriodEnd,
                     isRestrictedToPreferredPolicy,
@@ -625,7 +626,7 @@ function DynamicReportDetailsPage({policy, report, route, reportMetadata, report
                             introSelected,
                             draftTransactionIDs,
                             activePolicy,
-                            userBillingGracePeriodEnds,
+                            activePolicyOwnerBillingGraceEndPeriod,
                             amountOwed,
                             ownerBillingGracePeriodEnd,
                             transaction: iouTransaction,
@@ -652,7 +653,7 @@ function DynamicReportDetailsPage({policy, report, route, reportMetadata, report
                             introSelected,
                             draftTransactionIDs,
                             activePolicy,
-                            userBillingGracePeriodEnds,
+                            activePolicyOwnerBillingGraceEndPeriod,
                             amountOwed,
                             ownerBillingGracePeriodEnd,
                             transaction: iouTransaction,
@@ -801,7 +802,7 @@ function DynamicReportDetailsPage({policy, report, route, reportMetadata, report
         introSelected,
         draftTransactionIDs,
         activePolicy,
-        userBillingGracePeriodEnds,
+        activePolicyOwnerBillingGraceEndPeriod,
         amountOwed,
         ownerBillingGracePeriodEnd,
         iouTransaction,

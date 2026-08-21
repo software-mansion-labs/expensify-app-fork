@@ -14,6 +14,7 @@ import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicy from '@hooks/usePolicy';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useReportIsArchived from '@hooks/useReportIsArchived';
 import useSelfDMReport from '@hooks/useSelfDMReport';
@@ -90,8 +91,8 @@ function IOURequestStepDistanceGPS({
 
     const shouldShowNotFoundPage = useShowNotFoundPageInIOUStep(action, iouType, reportActionID, report, transaction);
     const defaultExpensePolicy = useDefaultExpensePolicy();
+    const [defaultExpensePolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(defaultExpensePolicy);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const personalPolicy = usePersonalPolicy();
     const policy = usePolicy(report?.policyID);
@@ -106,7 +107,7 @@ function IOURequestStepDistanceGPS({
         iouType,
         defaultExpensePolicy,
         amountOwed,
-        userBillingGracePeriodEnds,
+        defaultExpensePolicyOwnerBillingGraceEndPeriod,
         ownerBillingGracePeriodEnd,
         currentUserAccountIDParam,
     );
@@ -186,7 +187,7 @@ function IOURequestStepDistanceGPS({
             draftTransactionIDs,
             isSelfTourViewed: !!isSelfTourViewed,
             amountOwed,
-            userBillingGracePeriodEnds,
+            defaultExpensePolicyOwnerBillingGraceEndPeriod,
             ownerBillingGracePeriodEnd,
             conciergeChat,
             optimisticTransactionID,

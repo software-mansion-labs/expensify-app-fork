@@ -8,6 +8,7 @@ import useDelegateAccountID from '@hooks/useDelegateAccountID';
 import useLastWorkspaceNumber from '@hooks/useLastWorkspaceNumber';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import usePreferredPolicy from '@hooks/usePreferredPolicy';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -191,13 +192,13 @@ function TrackExpenseButtons({action, actionOwnerReportID}: TrackExpenseButtonsP
     const lastWorkspaceNumber = useLastWorkspaceNumber();
     const personalDetail = useCurrentUserPersonalDetails();
     const activePolicy = useActivePolicy();
+    const [activePolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(activePolicy);
     const {isRestrictedToPreferredPolicy, preferredPolicyID} = usePreferredPolicy();
 
     const [draftTransactionIDs] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_DRAFT, {
         selector: validTransactionDraftIDsSelector,
     });
     const [introSelected] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [filteredPoliciesInfo] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {selector: createFilteredPoliciesInfoSelector(personalDetail.email)});
@@ -212,7 +213,7 @@ function TrackExpenseButtons({action, actionOwnerReportID}: TrackExpenseButtonsP
         introSelected,
         draftTransactionIDs,
         activePolicy,
-        userBillingGracePeriodEnds,
+        activePolicyOwnerBillingGraceEndPeriod,
         amountOwed,
         ownerBillingGracePeriodEnd,
         transaction: trackExpenseTransaction,

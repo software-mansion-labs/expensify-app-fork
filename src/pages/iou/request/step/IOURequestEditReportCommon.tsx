@@ -22,7 +22,7 @@ import useReportTransactions from '@hooks/useReportTransactions';
 import Navigation from '@libs/Navigation/Navigation';
 import {canSubmitPerDiemExpenseFromWorkspace, isPerDiemEnabled, isPolicyAdmin, isTimeTrackingEnabled} from '@libs/PolicyUtils';
 import {canAddTransaction, getIconsForExpenseReport, isIOUReport, isOpenReport, isReportOwner, isSelfDM, sortOutstandingReportsBySelected} from '@libs/ReportUtils';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 import {isPerDiemRequest as isPerDiemRequestUtil} from '@libs/TransactionUtils';
 
 import CONST from '@src/CONST';
@@ -265,7 +265,13 @@ function IOURequestEditReportCommon({
         if (
             item?.policyID &&
             itemPolicy &&
-            shouldRestrictUserBillableActions(itemPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserPersonalDetails.accountID)
+            shouldRestrictUserBillableActions(
+                itemPolicy,
+                ownerBillingGracePeriodEnd,
+                getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, itemPolicy),
+                amountOwed,
+                currentUserPersonalDetails.accountID,
+            )
         ) {
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(item.policyID));
             return;

@@ -788,7 +788,7 @@ describe('MoneyRequest', () => {
             isSelfTourViewed: false,
             amountOwed: 0,
             draftTransactionIDs: undefined,
-            userBillingGracePeriodEnds: undefined,
+            defaultExpensePolicyOwnerBillingGraceEndPeriod: undefined,
             conciergeChat: undefined,
             action: CONST.IOU.ACTION.CREATE,
             currentUserLocalCurrency: undefined,

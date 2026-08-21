@@ -28,7 +28,7 @@ import {
     updateReportPreview,
 } from '@libs/ReportUtils';
 import playSound, {SOUNDS} from '@libs/Sound';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 
 import {buildPolicyData, generatePolicyID} from '@userActions/Policy/Policy';
 import type {BuildPolicyDataKeys} from '@userActions/Policy/Policy';
@@ -893,7 +893,13 @@ function payMoneyRequest(params: PayMoneyRequestFunctionParams) {
     if (
         chatReport.policyID &&
         policyForBillingRestriction &&
-        shouldRestrictUserBillableActions(policyForBillingRestriction, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)
+        shouldRestrictUserBillableActions(
+            policyForBillingRestriction,
+            ownerBillingGracePeriodEnd,
+            getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policyForBillingRestriction),
+            amountOwed,
+            currentUserAccountID,
+        )
     ) {
         Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(chatReport.policyID));
         return;

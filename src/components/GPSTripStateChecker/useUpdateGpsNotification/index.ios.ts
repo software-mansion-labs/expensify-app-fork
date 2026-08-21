@@ -3,6 +3,7 @@ import useDefaultExpensePolicy from '@hooks/useDefaultExpensePolicy';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 
 import DistanceRequestUtils from '@libs/DistanceRequestUtils';
 import shouldUseDefaultExpensePolicyUtil from '@libs/shouldUseDefaultExpensePolicy';
@@ -43,17 +44,17 @@ function useUpdateGpsNotificationOnUnitChange() {
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
 
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [transaction] = useOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_TRANSACTION_ID}`);
 
     const defaultExpensePolicy = useDefaultExpensePolicy();
+    const [defaultExpensePolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(defaultExpensePolicy);
     const personalPolicy = usePersonalPolicy();
     const shouldUseDefaultExpensePolicy = shouldUseDefaultExpensePolicyUtil(
         CONST.IOU.TYPE.CREATE,
         defaultExpensePolicy,
         amountOwed,
-        userBillingGracePeriodEnds,
+        defaultExpensePolicyOwnerBillingGraceEndPeriod,
         ownerBillingGracePeriodEnd,
         currentUserPersonalDetails.accountID,
     );

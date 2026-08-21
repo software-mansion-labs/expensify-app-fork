@@ -24,6 +24,7 @@ jest.mock('@libs/Navigation/Navigation', () => ({
 }));
 
 jest.mock('@libs/SubscriptionUtils', () => ({
+    ...jest.requireActual<typeof import('@libs/SubscriptionUtils')>('@libs/SubscriptionUtils'),
     shouldRestrictUserBillableActions: jest.fn(),
 }));
 
@@ -201,7 +202,8 @@ describe('PaymentUtils', () => {
 
             selectPaymentType(params);
 
-            expect(mockShouldRestrict).toHaveBeenCalledWith(testPolicy, 999, params.userBillingGracePeriodEnds, 42, params.currentAccountID);
+            // The third argument is the policy owner's billing grace period entry picked from the (undefined) collection.
+            expect(mockShouldRestrict).toHaveBeenCalledWith(testPolicy, 999, undefined, 42, params.currentAccountID);
         });
 
         it('should trigger KYC flow for EXPENSIFY payment type when user is validated', () => {

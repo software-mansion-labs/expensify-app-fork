@@ -43,6 +43,7 @@ import useOnyx from './useOnyx';
 import useOptimisticDraftTransactions from './useOptimisticDraftTransactions';
 import usePersonalPolicy from './usePersonalPolicy';
 import usePolicyForMovingExpenses from './usePolicyForMovingExpenses';
+import usePolicyOwnerBillingGraceEndPeriod from './usePolicyOwnerBillingGraceEndPeriod';
 import useTransactionsByID from './useTransactionsByID';
 
 const policyMapper = (policy: OnyxEntry<Policy>): OnyxEntry<Policy> =>
@@ -92,8 +93,8 @@ function useParticipantSubmission({
     const [selfDMReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${selfDMReportID}`);
     const [activePolicyID] = useOnyx(ONYXKEYS.NVP_ACTIVE_POLICY_ID);
     const [activePolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${activePolicyID}`);
+    const [activePolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(activePolicy);
     const [introSelected] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
@@ -113,7 +114,7 @@ function useParticipantSubmission({
     const isActivePolicyRequest =
         iouType === CONST.IOU.TYPE.CREATE &&
         isGroupPolicy(activePolicy) &&
-        !shouldRestrictUserBillableActions(activePolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserPersonalDetails.accountID);
+        !shouldRestrictUserBillableActions(activePolicy, ownerBillingGracePeriodEnd, activePolicyOwnerBillingGraceEndPeriod, amountOwed, currentUserPersonalDetails.accountID);
 
     const dataRef = useRef({
         allPolicies,

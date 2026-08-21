@@ -207,7 +207,7 @@ describe('AmountSubmission', () => {
                 transactionViolations: {},
                 storedTransaction: undefined,
                 policyCategories: undefined,
-                userBillingGracePeriodEnds: {},
+                defaultExpensePolicyOwnerBillingGraceEndPeriod: undefined,
                 duplicateTransactions: {},
                 duplicateTransactionViolations: {},
                 reportAttributesDerivedValue: undefined,

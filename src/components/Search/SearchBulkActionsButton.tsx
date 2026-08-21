@@ -16,6 +16,7 @@ import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import usePolicy from '@hooks/usePolicy';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchBulkActions from '@hooks/useSearchBulkActions';
 import useSortedActiveAdminPolicies from '@hooks/useSortedActiveAdminPolicies';
@@ -59,7 +60,6 @@ function SearchBulkActionsButton({queryJSON}: SearchBulkActionsButtonProps) {
     const {showLockedAccountModal} = useLockedAccountActions();
     const {isDelegateAccessRestricted} = useDelegateNoAccessState();
     const {showDelegateNoAccessModal} = useDelegateNoAccessActions();
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [bankAccountList] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST);
     // Sends an unvalidated user to the verify-account (security code) screen and resumes the stored bulk pay once they validate.
     const {isUserValidated, verifyAccountAndResume} = useVerifyAccountAndResume((retry) => retry?.());
@@ -107,6 +107,7 @@ function SearchBulkActionsButton({queryJSON}: SearchBulkActionsButtonProps) {
     const currentSelectedPolicyID = selectedPolicyIDs?.at(0);
     const currentSelectedReportID = selectedTransactionReportIDs?.at(0) ?? selectedReportIDs?.at(0);
     const currentPolicy = usePolicy(currentSelectedPolicyID);
+    const [currentPolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(currentPolicy);
     const [selectedIOUReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${currentSelectedReportID}`);
     const isCurrentSelectedExpenseReport = isExpenseReport(currentSelectedReportID);
     const pendingPaymentAdditionalDataRef = useRef<BulkPaySelectionData | undefined>(undefined);
@@ -156,7 +157,7 @@ function SearchBulkActionsButton({queryJSON}: SearchBulkActionsButtonProps) {
             isDelegateAccessRestricted,
             showDelegateNoAccessModal,
             confirmPayment,
-            userBillingGracePeriodEnds,
+            policyOwnerBillingGraceEndPeriod: currentPolicyOwnerBillingGraceEndPeriod,
             amountOwed,
             ownerBillingGracePeriodEnd,
             setPendingPaymentAdditionalData: (data) => {

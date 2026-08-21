@@ -13,6 +13,7 @@ import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import useTransactionsByID from '@hooks/useTransactionsByID';
 
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
@@ -64,7 +65,6 @@ function DynamicIOURequestEditReport({route}: DynamicIOURequestEditReportProps) 
     const delegateAccountID = useDelegateAccountID();
     const personalPolicy = usePersonalPolicy();
     const [personalPolicyID] = useOnyx(ONYXKEYS.PERSONAL_POLICY_ID);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const [allPolicies] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
@@ -91,6 +91,7 @@ function DynamicIOURequestEditReport({route}: DynamicIOURequestEditReportProps) 
     const [transactionViolations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS);
     const hasViolations = hasViolationsReportUtils(undefined, transactionViolations, currentUserPersonalDetails.accountID ?? CONST.DEFAULT_NUMBER_ID, currentUserPersonalDetails.email ?? '');
     const policyForMovingExpenses = policyForMovingExpensesID ? allPolicies?.[`${ONYXKEYS.COLLECTION.POLICY}${policyForMovingExpensesID}`] : undefined;
+    const [policyForMovingExpensesOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(policyForMovingExpenses);
     const [betas] = useOnyx(ONYXKEYS.BETAS);
     const reports = useChangeTransactionsReportReports(transactions, selectedReport?.reportID);
     const [selfDMReportID] = useOnyx(ONYXKEYS.SELF_DM_REPORT_ID);
@@ -199,7 +200,13 @@ function DynamicIOURequestEditReport({route}: DynamicIOURequestEditReportProps) 
         const restrictionPolicy = policyForMovingExpenses;
         if (
             restrictionPolicy &&
-            shouldRestrictUserBillableActions(restrictionPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserPersonalDetails.accountID)
+            shouldRestrictUserBillableActions(
+                restrictionPolicy,
+                ownerBillingGracePeriodEnd,
+                policyForMovingExpensesOwnerBillingGraceEndPeriod,
+                amountOwed,
+                currentUserPersonalDetails.accountID,
+            )
         ) {
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(restrictionPolicy.id));
             return;

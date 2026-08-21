@@ -33,7 +33,7 @@ import type {OptionWithKey} from '@libs/OptionsListUtils/types';
 import {getActiveAdminWorkspaces, isGroupPolicy as isGroupPolicyUtil} from '@libs/PolicyUtils';
 import type {OptionData} from '@libs/ReportUtils';
 import {getReportOrDraftReport, isInvoiceRoom} from '@libs/ReportUtils';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 import {expensifyLoginsSelector} from '@libs/UserUtils';
 
 import {getInvoicePrimaryWorkspace} from '@userActions/Policy/Policy';
@@ -490,7 +490,13 @@ function ParticipantSearchResults({
             option.isPolicyExpenseChat &&
             optionPolicyID &&
             optionPolicy &&
-            shouldRestrictUserBillableActions(optionPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)
+            shouldRestrictUserBillableActions(
+                optionPolicy,
+                ownerBillingGracePeriodEnd,
+                getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, optionPolicy),
+                amountOwed,
+                currentUserAccountID,
+            )
         ) {
             onRestrictedParticipantSelected?.();
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(optionPolicyID));

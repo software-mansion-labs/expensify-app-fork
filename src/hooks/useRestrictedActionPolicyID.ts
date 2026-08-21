@@ -7,6 +7,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useOnyx from './useOnyx';
+import usePolicyOwnerBillingGraceEndPeriod from './usePolicyOwnerBillingGraceEndPeriod';
 
 /**
  * Resolves the policy ID to redirect to `RESTRICTED_ACTION` when the given policy's billable actions
@@ -18,10 +19,10 @@ import useOnyx from './useOnyx';
 function useRestrictedActionPolicyID(policy: OnyxEntry<Policy>): string | undefined {
     const {accountID} = useCurrentUserPersonalDetails();
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
+    const [policyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(policy);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
 
-    if (!policy || !shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, accountID)) {
+    if (!policy || !shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, policyOwnerBillingGraceEndPeriod, amountOwed, accountID)) {
         return undefined;
     }
     return policy.id;

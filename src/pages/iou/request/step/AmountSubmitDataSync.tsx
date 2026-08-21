@@ -3,6 +3,7 @@ import useDelegateAccountID from '@hooks/useDelegateAccountID';
 import useDuplicateTransactionsAndViolations from '@hooks/useDuplicateTransactionsAndViolations';
 import useOnyx from '@hooks/useOnyx';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import useSelfDMReport from '@hooks/useSelfDMReport';
 
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
@@ -35,7 +36,7 @@ type AmountSubmitData = Pick<
     | 'transactionViolations'
     | 'storedTransaction'
     | 'policyCategories'
-    | 'userBillingGracePeriodEnds'
+    | 'defaultExpensePolicyOwnerBillingGraceEndPeriod'
     | 'duplicateTransactions'
     | 'duplicateTransactionViolations'
     | 'reportAttributesDerivedValue'
@@ -77,6 +78,7 @@ function AmountSubmitDataSync({report, transaction, transactionID, policyID, isE
     const delegateAccountID = useDelegateAccountID();
     const selfDMReport = useSelfDMReport();
     const defaultExpensePolicy = useDefaultExpensePolicy();
+    const [defaultExpensePolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(defaultExpensePolicy);
     const personalPolicy = usePersonalPolicy();
     const [allPersonalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST);
     const [allReports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
@@ -84,7 +86,6 @@ function AmountSubmitDataSync({report, transaction, transactionID, policyID, isE
     const [allReportNVPs] = useOnyx(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS);
     const [transactionDrafts] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_DRAFT, {selector: validTransactionDraftsSelector});
     const [transactionViolations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [policyCategories] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`);
     const existingTransactionID = getExistingTransactionID(transaction?.linkedTrackedExpenseReportAction);
     const [storedTransaction] = useOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION}${getNonEmptyStringOnyxID(existingTransactionID)}`);
@@ -124,7 +125,7 @@ function AmountSubmitDataSync({report, transaction, transactionID, policyID, isE
             transactionViolations,
             storedTransaction,
             policyCategories,
-            userBillingGracePeriodEnds,
+            defaultExpensePolicyOwnerBillingGraceEndPeriod,
             duplicateTransactions,
             duplicateTransactionViolations,
             reportAttributesDerivedValue,
@@ -155,7 +156,7 @@ function AmountSubmitDataSync({report, transaction, transactionID, policyID, isE
         transactionViolations,
         storedTransaction,
         policyCategories,
-        userBillingGracePeriodEnds,
+        defaultExpensePolicyOwnerBillingGraceEndPeriod,
         duplicateTransactions,
         duplicateTransactionViolations,
         reportAttributesDerivedValue,

@@ -18,6 +18,7 @@ import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useDefaultExpensePolicy from './useDefaultExpensePolicy';
 import useOnyx from './useOnyx';
 import usePersonalPolicy from './usePersonalPolicy';
+import usePolicyOwnerBillingGraceEndPeriod from './usePolicyOwnerBillingGraceEndPeriod';
 import {useResolvedSelfDMReport} from './useSelfDMReport';
 
 type UseDefaultParticipantsParams = {
@@ -55,10 +56,10 @@ type UseDefaultParticipantsResult = {
 function useDefaultParticipants({sourceReport, transaction, iouType, isNewManualExpenseFlowEnabled = true}: UseDefaultParticipantsParams): UseDefaultParticipantsResult {
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
     const defaultExpensePolicy = useDefaultExpensePolicy();
+    const [defaultExpensePolicyOwnerBillingGraceEndPeriod, defaultExpensePolicyOwnerBillingGraceEndPeriodResult] = usePolicyOwnerBillingGraceEndPeriod(defaultExpensePolicy);
     const personalPolicy = usePersonalPolicy();
     const {selfDMReport, isLoading: isLoadingSelfDMReport} = useResolvedSelfDMReport();
     const [amountOwed, amountOwedResult] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
-    const [userBillingGracePeriodEnds, userBillingGracePeriodEndsResult] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd, ownerBillingGracePeriodEndResult] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [, policyCollectionResult] = useOnyx(ONYXKEYS.COLLECTION.POLICY, {selector: () => null});
 
@@ -66,7 +67,9 @@ function useDefaultParticipants({sourceReport, transaction, iouType, isNewManual
 
     const isLoading =
         isNewManualExpenseFlowEnabled &&
-        (!accountID || isLoadingSelfDMReport || isLoadingOnyxValue(policyCollectionResult, amountOwedResult, userBillingGracePeriodEndsResult, ownerBillingGracePeriodEndResult));
+        (!accountID ||
+            isLoadingSelfDMReport ||
+            isLoadingOnyxValue(policyCollectionResult, amountOwedResult, defaultExpensePolicyOwnerBillingGraceEndPeriodResult, ownerBillingGracePeriodEndResult));
 
     const participants = useMemo(() => {
         if (!isNewManualExpenseFlowEnabled) {
@@ -87,7 +90,14 @@ function useDefaultParticipants({sourceReport, transaction, iouType, isNewManual
             return getMoneyRequestParticipantsFromReport(selfDMReport, accountID).filter((participant) => participant.selected);
         }
 
-        const canUseDefaultPolicy = shouldUseDefaultExpensePolicy(iouType, defaultExpensePolicy, amountOwed, userBillingGracePeriodEnds, ownerBillingGracePeriodEnd, accountID);
+        const canUseDefaultPolicy = shouldUseDefaultExpensePolicy(
+            iouType,
+            defaultExpensePolicy,
+            amountOwed,
+            defaultExpensePolicyOwnerBillingGraceEndPeriod,
+            ownerBillingGracePeriodEnd,
+            accountID,
+        );
         if (!canUseDefaultPolicy) {
             return [];
         }
@@ -104,7 +114,7 @@ function useDefaultParticipants({sourceReport, transaction, iouType, isNewManual
         iouType,
         defaultExpensePolicy,
         amountOwed,
-        userBillingGracePeriodEnds,
+        defaultExpensePolicyOwnerBillingGraceEndPeriod,
         ownerBillingGracePeriodEnd,
         personalPolicy?.autoReporting,
         selfDMReport,

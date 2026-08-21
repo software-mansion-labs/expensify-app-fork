@@ -67,7 +67,7 @@ import {
     isSettled,
 } from '@libs/ReportUtils';
 import playSound, {SOUNDS} from '@libs/Sound';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 import {
     allHavePendingRTERViolation,
     hasAnyTransactionWithoutRTERViolation,
@@ -488,7 +488,16 @@ function approveMoneyRequest(params: ApproveMoneyRequestFunctionParams) {
         return;
     }
 
-    if (expenseReport.policyID && shouldRestrictUserBillableActions(expenseReportPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountIDParam)) {
+    if (
+        expenseReport.policyID &&
+        shouldRestrictUserBillableActions(
+            expenseReportPolicy,
+            ownerBillingGracePeriodEnd,
+            getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, expenseReportPolicy),
+            amountOwed,
+            currentUserAccountIDParam,
+        )
+    ) {
         Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(expenseReport.policyID));
         return;
     }
@@ -1325,7 +1334,10 @@ function submitReport({
     if (!expenseReport) {
         return;
     }
-    if (expenseReport.policyID && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountIDParam)) {
+    if (
+        expenseReport.policyID &&
+        shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policy), amountOwed, currentUserAccountIDParam)
+    ) {
         Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(expenseReport.policyID));
         return;
     }

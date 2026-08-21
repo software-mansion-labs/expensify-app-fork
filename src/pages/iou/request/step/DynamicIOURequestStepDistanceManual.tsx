@@ -20,6 +20,7 @@ import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
 import usePolicyForTransaction from '@hooks/usePolicyForTransaction';
+import usePolicyOwnerBillingGraceEndPeriod from '@hooks/usePolicyOwnerBillingGraceEndPeriod';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useReportIsArchived from '@hooks/useReportIsArchived';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -98,6 +99,7 @@ function DynamicIOURequestStepDistanceManual({
     });
     const personalPolicy = usePersonalPolicy();
     const defaultExpensePolicy = useDefaultExpensePolicy();
+    const [defaultExpensePolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(defaultExpensePolicy);
     const {policyForMovingExpenses} = usePolicyForMovingExpenses();
     const reportAttributesDerived = useReportAttributes();
 
@@ -107,7 +109,6 @@ function DynamicIOURequestStepDistanceManual({
     const [policyTags] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policy?.id}`);
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
     const [skipConfirmation] = useOnyx(`${ONYXKEYS.COLLECTION.SKIP_CONFIRMATION}${transactionID}`);
     const [lastSelectedDistanceRates] = useOnyx(ONYXKEYS.NVP_LAST_SELECTED_DISTANCE_RATES);
@@ -150,7 +151,7 @@ function DynamicIOURequestStepDistanceManual({
         iouType,
         defaultExpensePolicy,
         amountOwed,
-        userBillingGracePeriodEnds,
+        defaultExpensePolicyOwnerBillingGraceEndPeriod,
         ownerBillingGracePeriodEnd,
         currentUserAccountIDParam,
     );
@@ -334,7 +335,7 @@ function DynamicIOURequestStepDistanceManual({
             personalOutputCurrency: personalPolicy?.outputCurrency,
             isSelfTourViewed: !!isSelfTourViewed,
             amountOwed,
-            userBillingGracePeriodEnds,
+            defaultExpensePolicyOwnerBillingGraceEndPeriod,
             ownerBillingGracePeriodEnd,
             conciergeChat,
             draftTransactionIDs,

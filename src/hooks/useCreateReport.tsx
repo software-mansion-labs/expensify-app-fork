@@ -18,6 +18,7 @@ import {useCallback} from 'react';
 import useCreateEmptyReportConfirmation from './useCreateEmptyReportConfirmation';
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useOnyx from './useOnyx';
+import usePolicyOwnerBillingGraceEndPeriod from './usePolicyOwnerBillingGraceEndPeriod';
 import useShouldShowEmptyReportConfirmation from './useShouldShowEmptyReportConfirmation';
 
 type UseCreateReportParams = {
@@ -61,7 +62,6 @@ export default function useCreateReport({
     const [activePolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${activePolicyID}`);
     const [, policiesLoadStatus] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const [ownerBillingGracePeriodEnd] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
-    const [userBillingGracePeriodEnds] = useOnyx(ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END);
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const {accountID} = useCurrentUserPersonalDetails();
 
@@ -74,6 +74,7 @@ export default function useCreateReport({
 
     const defaultChatEnabledPolicy = getDefaultChatEnabledPolicy(groupPoliciesWithChatEnabled as Array<OnyxEntry<OnyxTypes.Policy>>, activePolicy);
     const defaultChatEnabledPolicyID = defaultChatEnabledPolicy?.id;
+    const [defaultChatEnabledPolicyOwnerBillingGraceEndPeriod] = usePolicyOwnerBillingGraceEndPeriod(defaultChatEnabledPolicy);
 
     const shouldShowEmptyReportConfirmation = useShouldShowEmptyReportConfirmation(defaultChatEnabledPolicyID, shouldSkipEmptyReportConfirmation);
 
@@ -117,7 +118,8 @@ export default function useCreateReport({
             const isDefaultPersonal = !activePolicy || activePolicy.type === CONST.POLICY.TYPE.PERSONAL || !isGroupPolicy(activePolicy);
             const hasMultipleNonPersonalWorkspaces = groupPoliciesWithChatEnabled.length > 1;
             const isDefaultBillingRestricted =
-                !!workspaceIDForReportCreation && shouldRestrictUserBillableActions(defaultChatEnabledPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, accountID);
+                !!workspaceIDForReportCreation &&
+                shouldRestrictUserBillableActions(defaultChatEnabledPolicy, ownerBillingGracePeriodEnd, defaultChatEnabledPolicyOwnerBillingGraceEndPeriod, amountOwed, accountID);
 
             if (!workspaceIDForReportCreation || (isDefaultPersonal && hasMultipleNonPersonalWorkspaces) || (isDefaultBillingRestricted && hasMultipleNonPersonalWorkspaces)) {
                 if (onNavigateToWorkspaceSelection) {
@@ -129,7 +131,7 @@ export default function useCreateReport({
             }
 
             // Default workspace is not restricted → create report directly (or show empty-report confirmation)
-            if (!shouldRestrictUserBillableActions(defaultChatEnabledPolicy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, accountID)) {
+            if (!shouldRestrictUserBillableActions(defaultChatEnabledPolicy, ownerBillingGracePeriodEnd, defaultChatEnabledPolicyOwnerBillingGraceEndPeriod, amountOwed, accountID)) {
                 if (shouldShowEmptyReportConfirmation) {
                     openCreateReportConfirmation();
                 } else {
@@ -147,7 +149,7 @@ export default function useCreateReport({
         defaultChatEnabledPolicy,
         defaultChatEnabledPolicyID,
         ownerBillingGracePeriodEnd,
-        userBillingGracePeriodEnds,
+        defaultChatEnabledPolicyOwnerBillingGraceEndPeriod,
         amountOwed,
         accountID,
         groupPoliciesWithChatEnabled.length,

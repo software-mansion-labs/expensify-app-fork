@@ -41,7 +41,7 @@ import {
     isWorkspaceEligibleForReportChange,
 } from '@libs/ReportUtils';
 import refreshSearchAfterReportAction from '@libs/SearchRefreshUtils';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 import {hasAppliedCommuterExclusion, isManualDistanceRequest, isOdometerDistanceRequest} from '@libs/TransactionUtils';
 
 import CONST from '@src/CONST';
@@ -136,7 +136,15 @@ function DynamicReportChangeWorkspacePage({report}: DynamicReportChangeWorkspace
         if (blockManualOrOdometerDistanceRequestIfNeeded(policyID)) {
             return;
         }
-        if (shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriods, amountOwed, currentUserPersonalDetails.accountID)) {
+        if (
+            shouldRestrictUserBillableActions(
+                policy,
+                ownerBillingGracePeriodEnd,
+                getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriods, policy),
+                amountOwed,
+                currentUserPersonalDetails.accountID,
+            )
+        ) {
             Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(policy.id));
             return;
         }

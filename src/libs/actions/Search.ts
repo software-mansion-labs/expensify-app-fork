@@ -65,7 +65,7 @@ import {
 import {buildSearchQueryJSON, buildSearchQueryString, serializeQueryJSONForBackend} from '@libs/SearchQueryUtils';
 import type {SearchKey} from '@libs/SearchUIUtils';
 import {isTransactionGroupListItemType} from '@libs/SearchUIUtils';
-import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import {getPolicyOwnerBillingGraceEndPeriod, shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
 import {cancelSpan, endSpan, startSpan} from '@libs/telemetry/activeSpans';
 import {hasOnlyPendingCardTransactions} from '@libs/TransactionUtils';
 
@@ -325,7 +325,16 @@ function handleActionButtonPress({
                 onDelegateAccessRestricted?.();
                 return;
             }
-            if (snapshotReport.policyID && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)) {
+            if (
+                snapshotReport.policyID &&
+                shouldRestrictUserBillableActions(
+                    policy,
+                    ownerBillingGracePeriodEnd,
+                    getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policy),
+                    amountOwed,
+                    currentUserAccountID,
+                )
+            ) {
                 Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(snapshotReport.policyID));
                 return;
             }
@@ -363,7 +372,16 @@ function handleActionButtonPress({
                 onDelegateAccessRestricted?.();
                 return;
             }
-            if (snapshotReport.policyID && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)) {
+            if (
+                snapshotReport.policyID &&
+                shouldRestrictUserBillableActions(
+                    policy,
+                    ownerBillingGracePeriodEnd,
+                    getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policy),
+                    amountOwed,
+                    currentUserAccountID,
+                )
+            ) {
                 Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(snapshotReport.policyID));
                 return;
             }
@@ -396,7 +414,16 @@ function handleActionButtonPress({
             if (shouldDisableSearchSubmitPress || consumeIgnoreNextSearchSubmitPress?.()) {
                 return;
             }
-            if (snapshotReport.policyID && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)) {
+            if (
+                snapshotReport.policyID &&
+                shouldRestrictUserBillableActions(
+                    policy,
+                    ownerBillingGracePeriodEnd,
+                    getPolicyOwnerBillingGraceEndPeriod(userBillingGracePeriodEnds, policy),
+                    amountOwed,
+                    currentUserAccountID,
+                )
+            ) {
                 Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(snapshotReport.policyID));
                 return;
             }
@@ -2109,7 +2136,8 @@ function handleBulkPayItemSelected(params: {
     activeAdminPolicies: Policy[];
     isUserValidated: boolean | undefined;
     isDelegateAccessRestricted: boolean;
-    userBillingGracePeriodEnds: OnyxCollection<BillingGraceEndPeriod>;
+    /** The SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END entry of `policy`'s owner (member keyed by `policy.ownerAccountID`) */
+    policyOwnerBillingGraceEndPeriod: OnyxEntry<BillingGraceEndPeriod>;
     showDelegateNoAccessModal: () => void;
     amountOwed: OnyxEntry<number>;
     ownerBillingGracePeriodEnd: OnyxEntry<number>;
@@ -2130,7 +2158,7 @@ function handleBulkPayItemSelected(params: {
         activeAdminPolicies,
         isUserValidated,
         isDelegateAccessRestricted,
-        userBillingGracePeriodEnds,
+        policyOwnerBillingGraceEndPeriod,
         showDelegateNoAccessModal,
         confirmPayment,
         amountOwed,
@@ -2167,7 +2195,7 @@ function handleBulkPayItemSelected(params: {
         return;
     }
 
-    if (policy && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, userBillingGracePeriodEnds, amountOwed, currentUserAccountID)) {
+    if (policy && shouldRestrictUserBillableActions(policy, ownerBillingGracePeriodEnd, policyOwnerBillingGraceEndPeriod, amountOwed, currentUserAccountID)) {
         Log.info('[BulkPay] Blocking bulk pay: billable actions are restricted', false, {policyID: policy.id});
         Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(policy?.id));
         return;

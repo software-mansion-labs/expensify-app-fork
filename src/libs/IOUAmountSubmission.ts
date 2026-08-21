@@ -93,7 +93,8 @@ type SubmitAmountArgs = {
     transactionViolations: OnyxCollection<OnyxTypes.TransactionViolations>;
     storedTransaction: OnyxEntry<OnyxTypes.Transaction>;
     policyCategories: OnyxEntry<OnyxTypes.PolicyCategories>;
-    userBillingGracePeriodEnds: OnyxCollection<OnyxTypes.BillingGraceEndPeriod>;
+    /** The SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END entry of `defaultExpensePolicy`'s owner (member keyed by `defaultExpensePolicy.ownerAccountID`) */
+    defaultExpensePolicyOwnerBillingGraceEndPeriod: OnyxEntry<OnyxTypes.BillingGraceEndPeriod>;
     duplicateTransactions: OnyxCollection<OnyxTypes.Transaction>;
     duplicateTransactionViolations: OnyxCollection<OnyxTypes.TransactionViolations>;
     isTrackIntentUser: boolean | undefined;
@@ -479,7 +480,7 @@ function submitGlobalCreate(args: SubmitAmountArgs, ctx: SubmitAmountContext): v
         personalPolicy,
         selfDMReport,
         amountOwed,
-        userBillingGracePeriodEnds,
+        defaultExpensePolicyOwnerBillingGraceEndPeriod,
         ownerBillingGracePeriodEnd,
         allReports,
         allReportDrafts,
@@ -488,7 +489,7 @@ function submitGlobalCreate(args: SubmitAmountArgs, ctx: SubmitAmountContext): v
 
     // Starting from global + menu means no participant context exists yet,
     // so we need to handle participant selection based on available workspace settings
-    if (!shouldUseDefaultExpensePolicy(iouType, defaultExpensePolicy, amountOwed, userBillingGracePeriodEnds, ownerBillingGracePeriodEnd, currentUserAccountID)) {
+    if (!shouldUseDefaultExpensePolicy(iouType, defaultExpensePolicy, amountOwed, defaultExpensePolicyOwnerBillingGraceEndPeriod, ownerBillingGracePeriodEnd, currentUserAccountID)) {
         navigateToParticipantPageDeferred(iouType, transactionID, reportID);
         return;
     }

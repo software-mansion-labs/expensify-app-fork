@@ -341,20 +341,25 @@ describe('SubscriptionUtils', () => {
             expect(shouldRestrictUserBillableActions(undefined, undefined, undefined, undefined, CONST.DEFAULT_NUMBER_ID)).toBeFalsy();
         });
 
-        it('should return false if the user is a non-owner of a workspace that is not in the shared NVP collection', () => {
+        it('should return false if the user is a non-owner of a workspace whose owner has no billing grace period entry', () => {
             const policyID = '1001';
-            const ownerAccountID = 2001;
-            const policy = {...createRandomPolicy(Number(policyID)), ownerAccountID: 2002}; // owner not in the shared NVP collection
+            const policy = {...createRandomPolicy(Number(policyID)), ownerAccountID: 2002}; // owner has no shared NVP entry
+
+            // The third argument is the entry keyed by the policy owner's account ID — undefined when the owner has none.
+            expect(shouldRestrictUserBillableActions(policy, undefined, undefined, undefined, CONST.DEFAULT_NUMBER_ID)).toBeFalsy();
+        });
+
+        it("should return false if the policy owner's entry is past due but the policy has no owner account ID set", () => {
+            const policyID = '1001';
+            const policy = {...createRandomPolicy(Number(policyID)), ownerAccountID: undefined};
 
             expect(
                 shouldRestrictUserBillableActions(
                     policy,
                     undefined,
                     {
-                        [`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${ownerAccountID}`]: {
-                            ...billingGraceEndPeriod,
-                            value: getUnixTime(subDays(new Date(), 3)), // past due
-                        },
+                        ...billingGraceEndPeriod,
+                        value: getUnixTime(subDays(new Date(), 3)), // past due
                     },
                     undefined,
                     CONST.DEFAULT_NUMBER_ID,
@@ -372,10 +377,8 @@ describe('SubscriptionUtils', () => {
                     policy,
                     undefined,
                     {
-                        [`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${ownerAccountID}` as const]: {
-                            ...billingGraceEndPeriod,
-                            value: getUnixTime(addDays(new Date(), 3)), // not past due
-                        },
+                        ...billingGraceEndPeriod,
+                        value: getUnixTime(addDays(new Date(), 3)), // not past due
                     },
                     undefined,
                     CONST.DEFAULT_NUMBER_ID,
@@ -393,10 +396,8 @@ describe('SubscriptionUtils', () => {
                     policy,
                     undefined,
                     {
-                        [`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${ownerAccountID}` as const]: {
-                            ...billingGraceEndPeriod,
-                            value: getUnixTime(subDays(new Date(), 3)), // past due
-                        },
+                        ...billingGraceEndPeriod,
+                        value: getUnixTime(subDays(new Date(), 3)), // past due
                     },
                     undefined,
                     CONST.DEFAULT_NUMBER_ID,
@@ -617,10 +618,8 @@ describe('SubscriptionUtils', () => {
                     policy,
                     undefined,
                     {
-                        [`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${ownerAccountID}` as const]: {
-                            ...billingGraceEndPeriod,
-                            value: getUnixTime(subDays(new Date(), 3)),
-                        },
+                        ...billingGraceEndPeriod,
+                        value: getUnixTime(subDays(new Date(), 3)),
                     },
                     undefined,
                     CONST.DEFAULT_NUMBER_ID,
@@ -641,10 +640,8 @@ describe('SubscriptionUtils', () => {
                     policy,
                     undefined,
                     {
-                        [`${ONYXKEYS.COLLECTION.SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END}${ownerAccountID}` as const]: {
-                            ...billingGraceEndPeriod,
-                            value: getUnixTime(addDays(new Date(), 3)),
-                        },
+                        ...billingGraceEndPeriod,
+                        value: getUnixTime(addDays(new Date(), 3)),
                     },
                     undefined,
                     CONST.DEFAULT_NUMBER_ID,
