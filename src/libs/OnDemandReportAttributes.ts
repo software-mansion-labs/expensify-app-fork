@@ -1,7 +1,9 @@
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Policy, Report, ReportActions, ReportNameValuePairs, Transaction, TransactionViolation} from '@src/types/onyx';
-import type {ReportAttributes} from '@src/types/onyx/DerivedValues';
+import type {LHNReportAttributes, ReportAttributes} from '@src/types/onyx/DerivedValues';
+
+import type {OnyxCollection} from 'react-native-onyx';
 
 import {queryCollection} from 'react-native-onyx/dist/OnyxQuery';
 
@@ -37,9 +39,21 @@ import SidebarUtils from './SidebarUtils';
 const MAX_FIXPOINT_PASSES = 6;
 const CHILD_REPORTS_CAP = 100;
 
+/** Builds one LHN projection member from the scoped store's tracked collections — see the scoped materializer. */
+type OnDemandProjectionBuilder = (params: {
+    reportID: string;
+    attributes: ReportAttributes;
+    reports: OnyxCollection<Report>;
+    transactionViolations: OnyxCollection<TransactionViolation[]>;
+    transactions: OnyxCollection<Transaction>;
+    reportNameValuePairs: OnyxCollection<ReportNameValuePairs>;
+}) => LHNReportAttributes | null;
+
 type OnDemandAttributesResult = {
     /** `undefined` when the report is missing or invalid — mirroring the derived value, which holds no entry for such reports. */
     attributes: ReportAttributes | undefined;
+    /** The LHN projection member, when a builder was passed (null = delete; undefined = not requested/no attributes). */
+    projection?: LHNReportAttributes | null;
     /** Full Onyx keys the compute depends on — a write to any of them invalidates the attributes. */
     visitedKeys: Set<string>;
     /** The target + ancestors + chat + child report IDs — a NEW transaction landing on any of them invalidates too. */
@@ -176,7 +190,7 @@ function computeAttributesCore(reportID: string, store: ScopedStore, currentUser
     };
 }
 
-async function computeReportAttributesOnDemand(reportID: string, context: OnDemandNameContext): Promise<OnDemandAttributesResult> {
+async function computeReportAttributesOnDemand(reportID: string, context: OnDemandNameContext, buildProjection?: OnDemandProjectionBuilder): Promise<OnDemandAttributesResult> {
     const store = createScopedStore();
     const chainReportIDs = await seedReportGraph(reportID, store);
     const reportTransactions = await fetchChainTransactions(chainReportIDs, store);
@@ -288,7 +302,30 @@ async function computeReportAttributesOnDemand(reportID: string, context: OnDema
         attributes.reportName = await computeNameFromStore(reportID, store, reportTransactions, context);
     }
 
-    return {attributes, visitedKeys: store.visited, chainReportIDs};
+    // Scoped write-time materializer support: build the LHN projection member inside the SAME store,
+    // with its own small miss-fetch fixpoint (eligibility reads mostly seeded keys, but e.g. the
+    // parent chain of an unseeded shape can miss).
+    let projection: LHNReportAttributes | null | undefined;
+    if (attributes && buildProjection) {
+        for (let pass = 0; pass < MAX_FIXPOINT_PASSES; pass++) {
+            store.misses.clear();
+            projection = buildProjection({
+                reportID,
+                attributes,
+                reports: makeTrackedCollection<Report>(ONYXKEYS.COLLECTION.REPORT, store),
+                transactionViolations: makeTrackedCollection<TransactionViolation[]>(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS, store),
+                transactions: makeTrackedCollection<Transaction>(ONYXKEYS.COLLECTION.TRANSACTION, store),
+                reportNameValuePairs: makeTrackedCollection<ReportNameValuePairs>(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS, store),
+            });
+            if (store.misses.size === 0) {
+                break;
+            }
+            // eslint-disable-next-line no-await-in-loop -- fixpoint: this pass's misses decide the next pass's fetches
+            await fetchIntoStore(store, [...store.misses]);
+        }
+    }
+
+    return {attributes, projection, visitedKeys: store.visited, chainReportIDs};
 }
 
 /** Watches the result's dependency keys (same collection set as the name path, plus violations). */
@@ -297,4 +334,4 @@ function watchOnDemandReportAttributes(result: OnDemandAttributesResult, onInval
 }
 
 export {computeReportAttributesOnDemand, watchOnDemandReportAttributes};
-export type {OnDemandAttributesResult};
+export type {OnDemandAttributesResult, OnDemandProjectionBuilder};

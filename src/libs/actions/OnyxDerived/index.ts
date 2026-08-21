@@ -27,10 +27,22 @@ import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 import type {DerivedValueContext} from './types';
 
 import ONYX_DERIVED_VALUES from './ONYX_DERIVED_VALUES';
+import startReportAttributesScopedMaterializer from './scopedConfigs/reportAttributesScoped';
 import {setDerivedValue} from './utils';
 
 /** Derived keys whose engine has already started, so a demand trigger and the catch-all can't double-start one. */
 const startedDerivedKeys = new Set<OnyxKey>();
+
+/**
+ * Lazy-Onyx POC, scoped-store derived (SOTA step 3): keys listed here run as WRITE-TIME scoped
+ * materializers (write streams + targeted per-entry recomputes) instead of the classic engine below,
+ * which subscribes to — and therefore hydrates and pins in RAM — every whole dependency collection.
+ * Small-input configs (card lists, login map) intentionally stay classic: their dependencies are
+ * cheap singletons/small collections, so scoping them buys nothing.
+ */
+const SCOPED_MATERIALIZER_STARTERS: Partial<Record<OnyxKey, () => void>> = {
+    [ONYXKEYS.DERIVED.REPORT_ATTRIBUTES]: startReportAttributesScopedMaterializer,
+};
 
 /**
  * Registers every Onyx derived value for DEMAND-DRIVEN start (lazy-Onyx POC): a config's engine —
@@ -44,6 +56,21 @@ function init() {
     const starters: Array<() => void> = [];
 
     for (const [key, {compute, dependencies, onReset, projection}] of ObjectUtils.typedEntries(ONYX_DERIVED_VALUES)) {
+        const scopedStarter = SCOPED_MATERIALIZER_STARTERS[key];
+        if (scopedStarter) {
+            const startScoped = () => {
+                if (startedDerivedKeys.has(key)) {
+                    return;
+                }
+                startedDerivedKeys.add(key);
+                Log.info(`[OnyxDerived] starting SCOPED materializer for ${key}`);
+                scopedStarter();
+            };
+            starters.push(startScoped);
+            OnyxUtils.onFirstSubscription(key, startScoped);
+            continue;
+        }
+
         // Starts this derived value's engine: restores the persisted output, connects the
         // dependencies, and recomputes on their changes. Idempotent — the demand trigger and the
         // catch-all below can both fire it.

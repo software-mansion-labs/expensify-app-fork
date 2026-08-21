@@ -256,36 +256,36 @@ describe('OnyxDerived', () => {
         });
 
         it('should recompute reportAttributes when personalDetailsList displayName changes', async () => {
-            // Set up initial state with report and personalDetailsList
-            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${mockReport.reportID}`, mockReport);
+            // Given a 1:1 chat whose name derives from the other participant's display name, and a
+            // session identifying the current user (so the name excludes them).
+            await Onyx.set(ONYXKEYS.SESSION, {accountID: 1, email: 'john.doe@example.com'});
+            const dmReport: Report = {
+                reportID: 'dm_1',
+                type: CONST.REPORT.TYPE.CHAT,
+                participants: {'1': {notificationPreference: 'always'}, '2': {notificationPreference: 'always'}},
+                lastMessageText: 'hello',
+            };
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${dmReport.reportID}`, dmReport);
             await Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, {
-                '1': {
-                    accountID: 1,
-                    displayName: 'John Doe',
-                    login: 'john.doe@example.com',
-                    firstName: 'John',
-                    lastName: 'Doe',
-                },
+                '1': {accountID: 1, displayName: 'John Doe', login: 'john.doe@example.com', firstName: 'John', lastName: 'Doe'},
+                '2': {accountID: 2, displayName: 'Bob Builder', login: 'bob@example.com', firstName: 'Bob', lastName: 'Builder'},
             });
             await waitForBatchedUpdates();
 
-            // Get initial computed value reference
-            const initialDerivedReportAttributes = await OnyxUtils.get(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
+            let derivedReportAttributes = await OnyxUtils.get(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
+            expect(derivedReportAttributes?.reports[dmReport.reportID]?.reportName).toContain('Bob');
 
-            // Change the displayName - this should trigger full recomputation
+            // When the other participant's display name changes.
             await Onyx.merge(ONYXKEYS.PERSONAL_DETAILS_LIST, {
-                '1': {
-                    displayName: 'Jane Doe',
-                    firstName: 'Jane',
-                },
+                '2': {displayName: 'Robert Builder', firstName: 'Robert'},
             });
             await waitForBatchedUpdates();
 
-            // Get the computed value after displayName change
-            const derivedReportAttributesAfterDisplayNameChange = await OnyxUtils.get(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
-
-            // The computed value should not be the same object (new computation happened)
-            expect(derivedReportAttributesAfterDisplayNameChange).not.toBe(initialDerivedReportAttributes);
+            // Then the report's computed name follows the rename — the recompute actually happened.
+            // (The old assertion compared blob object references, which a value-deduplicating store
+            // legitimately keeps stable when nothing changed.)
+            derivedReportAttributes = await OnyxUtils.get(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
+            expect(derivedReportAttributes?.reports[dmReport.reportID]?.reportName).toContain('Robert');
         });
 
         it('should only recompute reports that reference the changed accountID when a display name changes', () => {

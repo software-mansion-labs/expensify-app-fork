@@ -30,6 +30,7 @@ import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {
+    Beta,
     LHNReportAttributes,
     PersonalDetails,
     PersonalDetailsList,
@@ -37,6 +38,8 @@ import type {
     Report,
     ReportActions,
     ReportAttributesDerivedValue,
+    ReportNameValuePairs,
+    Session,
     Transaction,
     TransactionViolation,
 } from '@src/types/onyx';
@@ -779,46 +782,22 @@ export default createOnyxDerivedValueConfig({
                 }
             }
 
-            const isOffline = getIsOffline();
-            const currentUserLogin = session?.email ?? '';
-            const currentUserAccountID = session?.accountID ?? CONST.DEFAULT_NUMBER_ID;
             for (const [reportID, attributes] of Object.entries(newReports)) {
                 if (previousReports?.[reportID] === attributes) {
                     continue;
                 }
-                const memberKey = `${ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES}${reportID}`;
-                const report = reports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-                if (!report) {
-                    members[memberKey] = null;
-                    continue;
-                }
-                const isReportArchived = isArchivedReport(reportNameValuePairs?.[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`]);
-                const eligibilityParams = {
-                    report,
+                members[`${ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES}${reportID}`] = buildLHNProjectionEntry({
+                    reportID,
+                    attributes,
+                    reportAttributesMap: newReports,
                     reports,
-                    currentReportId: undefined,
-                    betas,
                     transactionViolations,
-                    draftComment: undefined,
                     transactions,
-                    isOffline,
-                    isReportArchived,
-                    reportAttributes: newReports,
-                    currentUserLogin,
-                    currentUserAccountID,
-                    conciergeReportID: conciergeReportID ?? undefined,
-                };
-                members[memberKey] = {
-                    reportName: attributes.reportName,
-                    sortName: attributes.reportName.toLowerCase(),
-                    lhnEligibleDefault: SidebarUtils.shouldDisplayReportInLHN({...eligibilityParams, isInFocusMode: false}).shouldDisplay ? 1 : 0,
-                    lhnEligibleFocus: SidebarUtils.shouldDisplayReportInLHN({...eligibilityParams, isInFocusMode: true}).shouldDisplay ? 1 : 0,
-                    isPinned: report.isPinned ? 1 : 0,
-                    isArchived: isReportArchived ? 1 : 0,
-                    lastVisibleActionCreated: report.lastVisibleActionCreated ?? '',
-                    brickRoadStatus: attributes.brickRoadStatus,
-                    requiresAttention: attributes.requiresAttention ? 1 : 0,
-                };
+                    reportNameValuePairs,
+                    betas,
+                    session,
+                    conciergeReportID,
+                });
             }
 
             return members;
@@ -826,6 +805,72 @@ export default createOnyxDerivedValueConfig({
     },
 });
 
+type BuildLHNProjectionEntryParams = {
+    reportID: string;
+    attributes: ReportAttributesDerivedValue['reports'][string];
+    /** The full (or scoped) attributes map — eligibility reads other entries' requiresAttention. */
+    reportAttributesMap: ReportAttributesDerivedValue['reports'];
+    reports: OnyxCollection<Report>;
+    transactionViolations: OnyxCollection<TransactionViolation[]>;
+    transactions: OnyxCollection<Transaction>;
+    reportNameValuePairs: OnyxCollection<ReportNameValuePairs>;
+    betas: OnyxEntry<Beta[]>;
+    session: OnyxEntry<Session>;
+    conciergeReportID: string | undefined;
+};
+
+/**
+ * Builds ONE report's LHN projection member (lazy-Onyx POC, SOTA LHN). Shared by the classic
+ * engine's projection pass and the scoped write-time materializer so both produce identical members.
+ * Returns null when the report is gone (the member should be deleted).
+ */
+function buildLHNProjectionEntry({
+    reportID,
+    attributes,
+    reportAttributesMap,
+    reports,
+    transactionViolations,
+    transactions,
+    reportNameValuePairs,
+    betas,
+    session,
+    conciergeReportID,
+}: BuildLHNProjectionEntryParams): LHNReportAttributes | null {
+    const report = reports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
+    if (!report) {
+        return null;
+    }
+    const isReportArchived = isArchivedReport(reportNameValuePairs?.[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`]);
+    const eligibilityParams = {
+        report,
+        reports,
+        currentReportId: undefined,
+        betas,
+        transactionViolations,
+        draftComment: undefined,
+        transactions,
+        isOffline: getIsOffline(),
+        isReportArchived,
+        reportAttributes: reportAttributesMap,
+        currentUserLogin: session?.email ?? '',
+        currentUserAccountID: session?.accountID ?? CONST.DEFAULT_NUMBER_ID,
+        conciergeReportID: conciergeReportID ?? undefined,
+    };
+    return {
+        reportName: attributes.reportName,
+        sortName: attributes.reportName.toLowerCase(),
+        lhnEligibleDefault: SidebarUtils.shouldDisplayReportInLHN({...eligibilityParams, isInFocusMode: false}).shouldDisplay ? 1 : 0,
+        lhnEligibleFocus: SidebarUtils.shouldDisplayReportInLHN({...eligibilityParams, isInFocusMode: true}).shouldDisplay ? 1 : 0,
+        isPinned: report.isPinned ? 1 : 0,
+        isArchived: isReportArchived ? 1 : 0,
+        lastVisibleActionCreated: report.lastVisibleActionCreated ?? '',
+        brickRoadStatus: attributes.brickRoadStatus,
+        requiresAttention: attributes.requiresAttention ? 1 : 0,
+    };
+}
+
 // isActionable/needsViolationFix are exported for the per-item on-demand path (OnDemandReportAttributes)
 // so both compute the exact same parent-chat error-propagation semantics without drift.
-export {hasPolicyRelevantFieldChanged, getOldestPreviewActionID, isActionable, needsViolationFix};
+// buildLHNProjectionEntry and getDisplayNameChanges are exported for the scoped write-time
+// materializer (scopedConfigs/reportAttributesScoped) — same reasoning.
+export {hasPolicyRelevantFieldChanged, getOldestPreviewActionID, isActionable, needsViolationFix, buildLHNProjectionEntry, getDisplayNameChanges};

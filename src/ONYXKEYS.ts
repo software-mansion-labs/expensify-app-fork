@@ -533,6 +533,13 @@ const ONYXKEYS = {
     // The last update ID that was applied to the client
     ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT: 'OnyxUpdatesLastUpdateIDAppliedToClient',
 
+    /**
+     * Lazy-Onyx POC (scoped-store derived): per-materializer metadata — the compute-schema version
+     * each scoped materializer last backfilled with, keyed by its output key. A version mismatch (or
+     * absence, e.g. after Onyx.clear) triggers a chunked background backfill.
+     */
+    DERIVED_SCOPED_META: 'derivedScopedMeta',
+
     // The access token to be used with the Mapbox library
     MAPBOX_ACCESS_TOKEN: 'mapboxAccessToken',
 
@@ -1709,6 +1716,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.MAPBOX_ACCESS_TOKEN]: OnyxTypes.MapboxAccessToken;
     [ONYXKEYS.ONYX_UPDATES_FROM_SERVER]: OnyxTypes.AnyOnyxUpdatesFromServer;
     [ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT]: number;
+    [ONYXKEYS.DERIVED_SCOPED_META]: Record<string, {version: number}>;
     [ONYXKEYS.MAX_CANVAS_AREA]: number;
     [ONYXKEYS.MAX_CANVAS_HEIGHT]: number;
     [ONYXKEYS.MAX_CANVAS_WIDTH]: number;

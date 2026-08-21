@@ -131,8 +131,12 @@ function LHNOptionsList({
     );
 
     const extraData = useMemo(
-        () => [reports, reportAttributes, policy, personalDetails, data.length, optionMode, isOffline],
-        [reports, reportAttributes, policy, personalDetails, data.length, optionMode, isOffline],
+        // `data` (not just its length): a pure REORDER changes each row's index (testIDs, focus
+        // targets) without changing any item's identity, so the list must re-render its cells. The
+        // classic derived engine masked this by pushing a fresh reportAttributes reference on every
+        // flush; the scoped materializer only updates what changed.
+        () => [reports, reportAttributes, policy, personalDetails, data, optionMode, isOffline],
+        [reports, reportAttributes, policy, personalDetails, data, optionMode, isOffline],
     );
 
     const previousOptionMode = usePrevious(optionMode);

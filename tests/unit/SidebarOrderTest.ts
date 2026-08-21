@@ -357,6 +357,10 @@ describe('Sidebar', () => {
                             lastVisibleActionCreated: DateUtils.getDBTime(),
                         }),
                     )
+                    // The scoped reportAttributes materializer updates the blob asynchronously after the
+                    // write — let those updates land before querying the tree, or the list is caught
+                    // mid-reorder (duplicate row testIDs).
+                    .then(waitForBatchedUpdates)
 
                     // Then the order of the reports should be 1 > 3 > 2
                     //                                         ^--- (1 goes to the front and pushes other two down)
