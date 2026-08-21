@@ -15,12 +15,10 @@ import createTransitionTrackerHarness from './TransitionTrackerTestUtils';
  * real platform stack navigator, so the subject sees the same focus transitions and the same wrapper the
  * `nonTopScreenBehavior` option picks in production.
  *
- * The behavior under test comes from the `NON_TOP_SCREEN_BEHAVIOR` environment variable and defaults to `freeze`,
- * which is what covered screens of a split navigator do today. Running the same suite with
- * `NON_TOP_SCREEN_BEHAVIOR=activity` is the "turn Activity on" step: every effect that cannot survive a hide and
- * reveal cycle starts failing. `NON_TOP_SCREEN_BEHAVIOR=none` runs the third baseline, which is what a screen whose
- * navigator sets no behavior does, so a suite for such a screen can state its invariants against the behavior the
- * screen actually ships with.
+ * The behavior under test comes from the `NON_TOP_SCREEN_BEHAVIOR` environment variable and defaults to `none`,
+ * which is what the Search navigator sets today. Running the same suite with `NON_TOP_SCREEN_BEHAVIOR=activity` is
+ * the "turn Activity on" step, and the question every test answers is the migration question: does the screen behave
+ * the same as it does today?
  *
  * Jest hoists mock factories per file, so a test file using this harness has to mock
  * `@libs/Navigation/TransitionTracker` with a `runAfterTransitions: jest.fn()` itself and call `install()` from its
@@ -35,17 +33,7 @@ type CoverCycleParamList = {
 // Long enough to cover the wrapper's first-render fallback timeout and the freeze wrapper's deferred frame.
 const SETTLE_DURATION_MS = 250;
 
-function readBehaviorFromEnvironment(): NonTopScreenBehavior {
-    if (process.env.NON_TOP_SCREEN_BEHAVIOR === 'activity') {
-        return 'activity';
-    }
-    if (process.env.NON_TOP_SCREEN_BEHAVIOR === 'none') {
-        return 'none';
-    }
-    return 'freeze';
-}
-
-const NON_TOP_SCREEN_BEHAVIOR: NonTopScreenBehavior = readBehaviorFromEnvironment();
+const NON_TOP_SCREEN_BEHAVIOR: NonTopScreenBehavior = process.env.NON_TOP_SCREEN_BEHAVIOR === 'activity' ? 'activity' : 'none';
 
 const Stack = createPlatformStackNavigator<CoverCycleParamList>();
 

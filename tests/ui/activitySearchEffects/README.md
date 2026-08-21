@@ -4,18 +4,14 @@ These tests exist to check the Search screen against the lifecycle described in
 [ACTIVITY_SCREENS.md](../../../contributingGuides/ACTIVITY_SCREENS.md) before Search opts into
 `nonTopScreenBehavior: 'activity'`. They are scaffolding for that decision, not a suite meant to stay in the repo.
 
-Every test states an invariant that holds today, with covered screens frozen, and asserts the delta over one cover and
-uncover cycle rather than an absolute call count, so the dev-only StrictMode double mount an Activity screen runs under
-never enters the numbers.
+Every test states an invariant that holds today and asserts the delta over one cover and uncover cycle rather than an
+absolute call count, so the dev-only StrictMode double mount an Activity screen runs under never enters the numbers.
 
 ## Running
 
 ```bash
-# What a covered screen of a split navigator does today
+# What Search does today: its navigator sets no behavior at all
 npx jest tests/ui/activitySearchEffects
-
-# What Search itself does today: its navigator sets no behavior at all
-NON_TOP_SCREEN_BEHAVIOR=none npx jest tests/ui/activitySearchEffects
 
 # The same suite with Activity turned on for the covered screen
 NON_TOP_SCREEN_BEHAVIOR=activity npx jest tests/ui/activitySearchEffects
@@ -25,19 +21,21 @@ The switch reaches the real `nonTopScreenBehavior` option of the screen, so the 
 navigator picks in production. The harness lives in
 [`tests/utils/NonTopScreenBehaviorCycleTestUtils.tsx`](../../utils/NonTopScreenBehaviorCycleTestUtils.tsx).
 
-`none` is the baseline that matters for the decision, because `SearchFullscreenNavigator` sets no behavior and only
-the whole navigator is frozen, when the user switches tabs. `freeze` is kept because it says whether a finding also
-applies to the screens of a split navigator. Both produce the same set of green tests today.
+The baseline is `none`, because `SearchFullscreenNavigator` sets no behavior and only the whole navigator is frozen,
+when the user switches tabs. The question every test answers is therefore the migration question: with Activity on,
+does the screen still behave the way it does today? `freeze` is deliberately out of the comparison. Search never runs
+it, and measuring it here would also need work: the global setup replaces `react-freeze` with a pass-through and the
+native wrapper only freezes after a 500 ms delay.
 
 ## Reading the result
 
-A test that passes under `freeze` and fails under `activity` is a regression the migration would ship. A test that
+A test that passes under `none` and fails under `activity` is a regression the migration would ship. A test that
 passes under both documents behavior the migration does not change, which is worth keeping visible because several
 findings of the audit turned out to be focus-driven rather than Activity-driven.
 
 The findings each test maps to are numbered after `repo/activity-search-audit/EFFECTS.md`.
 
-Two things the per-finding tests do not say on their own:
+Three things the per-finding tests do not say on their own:
 
 - **How Search is covered matters.** An RHP leaves Search the topmost fullscreen route, another fullscreen route does
   not, and the cleanups in `components/Search` guard on exactly that. Tests that touch those guards drive

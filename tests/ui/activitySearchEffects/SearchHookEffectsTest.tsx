@@ -4,6 +4,7 @@ import type {SearchQueryJSON} from '@components/Search/types';
 
 // The web entry point of the hook is an empty function, so the audit point is only observable on the Android one.
 import useAndroidBackButtonHandler from '@hooks/useAndroidBackButtonHandler/index.android';
+import useDocumentTitle from '@hooks/useDocumentTitle';
 import useEndSubmitNavigationSpans from '@hooks/useEndSubmitNavigationSpans';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useMobileSelectionMode from '@hooks/useMobileSelectionMode';
@@ -18,6 +19,7 @@ import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import {openSearch, search, seedMyExpensesSearch, updateAdvancedFilters} from '@libs/actions/Search';
 import {buildSearchQueryJSON} from '@libs/SearchQueryUtils';
 import {endSubmitFollowUpActionSpan, getPendingSubmitFollowUpAction} from '@libs/telemetry/submitFollowUpAction';
+import {setPageTitle} from '@libs/UnreadIndicatorUpdater/updateUnread';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -96,6 +98,14 @@ jest.mock('@libs/telemetry/submitFollowUpAction', () => ({
     endSubmitFollowUpActionSpan: jest.fn(),
 }));
 
+// The global setup mocks the hook away, because the web implementation of setPageTitle churns fake timers.
+// This suite measures the hook itself, so it takes the real one back and stubs the module it writes through.
+jest.unmock('@src/hooks/useDocumentTitle');
+
+jest.mock('@libs/UnreadIndicatorUpdater/updateUnread', () => ({
+    setPageTitle: jest.fn(),
+}));
+
 jest.mock('@libs/KeyboardShortcut', () => ({
     __esModule: true,
     // Called through a wrapper, because the mock factory runs before the spy above is initialized.
@@ -162,6 +172,11 @@ function SaveSortedReportIDsProbe() {
 }
 
 const FILTER_FORM_VALUES = {type: CONST.SEARCH.DATA_TYPES.EXPENSE};
+
+function DocumentTitleProbe() {
+    useDocumentTitle('Spend');
+    return <View testID="probe" />;
+}
 
 function SearchFilterSyncProbe() {
     useSearchFilterSync(QUERY_JSON, FILTER_FORM_VALUES);
@@ -448,6 +463,22 @@ describe(`Search hooks under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
             // Then the form is left alone, because the guard that skips an unchanged query lives outside the
             // component and survives the cover. This is the pattern the sites in audit 10 and 11 are missing
             expect(updateCalls()).toBe(0);
+        });
+    });
+
+    describe('useDocumentTitle', () => {
+        it('sets the page title once per reveal, as it already does today (audit 8.4)', () => {
+            // Given a screen that owns the document title
+            harness.renderSubject(<DocumentTitleProbe />);
+            expect(jest.mocked(setPageTitle)).toHaveBeenCalledTimes(1);
+            const setPageTitleCalls = trackCalls(jest.mocked(setPageTitle));
+
+            // When the screen gets covered and revealed again
+            harness.cover();
+            harness.uncover();
+
+            // Then the title is written once for the regained focus, which is focus-driven and idempotent
+            expect(setPageTitleCalls()).toBe(1);
         });
     });
 
