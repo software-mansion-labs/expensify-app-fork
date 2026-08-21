@@ -458,3 +458,20 @@ getOldestPreviewActionID/needsViolationFix (now exported). `useOnDemandReportAtt
 subscription on the chat-landing path. Propagation fidelity note: a child with no (or a deleted)
 parent action is skipped exactly like in the config (isDeletedAction(undefined) === true — verified).
 Tests: OnDemandReportAttributesTest (6: clean/missing/self-error/propagation/live-update/undefined).
+
+**Consumer tranche T3, lever 1** (agent): `shouldRestrictUserBillableActions` now takes the policy
+owner's single BillingGraceEndPeriod entry instead of the whole
+SHARED_NVP_PRIVATE_USER_BILLING_GRACE_PERIOD_END collection — the old loop existed only to find that
+one member. New `usePolicyOwnerBillingGraceEndPeriod(policy)` member-subscription hook (+
+`getPolicyOwnerBillingGraceEndPeriod` for callers that legitimately hold the collection); 34 bare
+subscriptions removed across ~40 call sites; ratchet **661 → 627**. Kept on the collection (reasons
+documented in the tranche report): payment/submit/approve chains that resolve the restriction policy
+at call time, dynamic per-item workspace pickers, and two dual-use/unrelated readers
+(WorkspaceRestrictedActionPage rollback, actions/Subscription clearing loop). SubscriptionUtilsTest
+pre-existing timezone failures identical before/after (4).
+
+**Pre-measurement code work COMPLETE at this point.** Remaining before Phase 4 are the two user
+decisions (LHN default-mode sort; PDL split timing) — see the decision-stop summary in the session.
+Deferred to post-POC by design: purity-lane step 2 (retiring the module caches outright), consumer
+tranches T4+ (~627 sites by pattern), navigation-guard hydration gating (edge 5.11), loading≠empty
+audit, per-item lanes for the remaining Search-side whole-map consumers.
