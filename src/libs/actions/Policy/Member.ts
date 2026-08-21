@@ -13,6 +13,7 @@ import type {
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import * as ApiUtils from '@libs/ApiUtils';
 import DateUtils from '@libs/DateUtils';
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import fileDownload from '@libs/fileDownload';
 import Log from '@libs/Log';
@@ -62,10 +63,15 @@ function hasPolicyAdminsRoomsAccess(role: string | undefined): boolean {
 }
 
 let allReportActions: OnyxCollection<ReportActions>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (actions) => (allReportActions = actions),
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate REPORT_ACTIONS at
+// module load — i.e. during boot. Deferred until the app is interactive; keyed fallback readers see
+// undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (actions) => (allReportActions = actions),
+    });
+}, 'low');
 
 let policyOwnershipChecks: Record<string, PolicyOwnershipChangeChecks>;
 /** We use `connectWithoutView` here since this connection only stores non-reactive data that is needed across different pages */

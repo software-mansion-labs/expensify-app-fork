@@ -9,6 +9,7 @@ import type {OnyxUpdate} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
+import {deferUntilAppReady} from './deferUntilAppReady';
 import {getTitleReportField} from './ReportUtils';
 
 let allReportNameValuePairs: Record<string, ReportNameValuePairs> = {};
@@ -18,12 +19,17 @@ let allReportNameValuePairs: Record<string, ReportNameValuePairs> = {};
  * We need up to date report name value pairs of reports to correctly determine if further updates to report's titles should be made.
  * It wouldn't be possible without connection directly to Onyx.
  */
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
-    callback: (val) => {
-        allReportNameValuePairs = (val as Record<string, ReportNameValuePairs>) ?? {};
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate
+// REPORT_NAME_VALUE_PAIRS at module load — i.e. during boot. Deferred until the app is interactive;
+// keyed fallback readers see undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
+        callback: (val) => {
+            allReportNameValuePairs = (val as Record<string, ReportNameValuePairs>) ?? {};
+        },
+    });
+}, 'low');
 
 /**
  * Get the title field from report name value pairs

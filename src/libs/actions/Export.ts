@@ -1,5 +1,6 @@
 import {write} from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {rand64} from '@libs/NumberUtils';
 
 import CONST from '@src/CONST';
@@ -58,23 +59,28 @@ function clearExportDownload(exportID: string, exportDownload: OnyxEntry<ExportD
 function clearStaleExportDownloads() {
     // Uses connectWithoutView instead of useOnyx to avoid subscribing the caller component
     // to the entire collection, which would cause unnecessary re-renders on every change.
-    const connectionID = Onyx.connectWithoutView({
-        key: ONYXKEYS.COLLECTION.EXPORT_DOWNLOAD,
-        callback: (exportDownloads) => {
-            Onyx.disconnect(connectionID);
-            if (!exportDownloads) {
-                return;
-            }
-            for (const key of Object.keys(exportDownloads)) {
-                const exportDownload = exportDownloads[key];
-                if (!exportDownload || exportDownload.state === CONST.EXPORT_DOWNLOAD.STATE.PREPARING) {
-                    continue;
+    // Lazy-Onyx POC (purity lane): this is called at AuthScreens mount, so the whole-collection
+    // subscription would hydrate EXPORT_DOWNLOAD during boot. Deferred until the app is interactive;
+    // stale downloads are still cleared once the queue drains.
+    deferUntilAppReady(() => {
+        const connectionID = Onyx.connectWithoutView({
+            key: ONYXKEYS.COLLECTION.EXPORT_DOWNLOAD,
+            callback: (exportDownloads) => {
+                Onyx.disconnect(connectionID);
+                if (!exportDownloads) {
+                    return;
                 }
-                const exportID = key.replace(ONYXKEYS.COLLECTION.EXPORT_DOWNLOAD, '');
-                clearExportDownload(exportID, exportDownload);
-            }
-        },
-    });
+                for (const key of Object.keys(exportDownloads)) {
+                    const exportDownload = exportDownloads[key];
+                    if (!exportDownload || exportDownload.state === CONST.EXPORT_DOWNLOAD.STATE.PREPARING) {
+                        continue;
+                    }
+                    const exportID = key.replace(ONYXKEYS.COLLECTION.EXPORT_DOWNLOAD, '');
+                    clearExportDownload(exportID, exportDownload);
+                }
+            },
+        });
+    }, 'low');
 }
 
 function exportReportsToPDF(reportIDs: string[]): string {

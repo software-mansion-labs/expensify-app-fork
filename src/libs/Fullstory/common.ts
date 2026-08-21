@@ -1,3 +1,4 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {chatIncludesConcierge} from '@libs/ReportUtils';
 
 import CONST from '@src/CONST';
@@ -16,12 +17,17 @@ import type {GetChatFSClass, ShouldInitialize} from './types';
 // masked or not, so it's acceptable to use `Onyx.connectWithoutView` and avoid many UI elements
 // having to subscribe to this whole collection.
 let allReports: OnyxCollection<Report>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate REPORT at module
+// load — i.e. during boot. Deferred until the app is interactive; keyed fallback readers see
+// undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value;
+        },
+    });
+}, 'low');
 
 const allowedReportChatTypes = new Set<ValueOf<typeof CONST.REPORT.CHAT_TYPE>>([
     CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT,

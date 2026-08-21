@@ -8,6 +8,7 @@ import type {PrivateIsArchivedMap} from '@hooks/usePrivateIsArchivedMap';
 import {getAddAgentRuleMessage, getDeleteAgentRuleMessage, getUpdateAgentRuleMessage} from '@libs/AgentRuleChangeLogUtils';
 import {getEnabledCategoriesCount} from '@libs/CategoryUtils';
 import {convertToDisplayString as convertToDisplayStringUtil} from '@libs/CurrencyUtils';
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import filterArrayByMatch from '@libs/filterArrayByMatch';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {isReportMessageAttachment} from '@libs/isReportMessageAttachment';
@@ -244,12 +245,6 @@ import {doesPersonalDetailMatchSearchTerm, getCurrentUserSearchTerms, getPersona
  */
 
 let allReports: OnyxCollection<Report>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-    },
-});
 
 /** @deprecated Use sortedReportActionsData from ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS instead. Will be removed once all flows are migrated. */
 const deprecatedLastReportActions: ReportActions = {};
@@ -260,48 +255,64 @@ const deprecatedCachedOneTransactionThreadReportIDs: Record<string, string | und
 /** @deprecated Use sortedReportActionsData from ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS instead. Will be removed once all flows are migrated. */
 let deprecatedAllReportActions: OnyxCollection<ReportActions>;
 
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (actions) => {
-        if (!actions) {
-            return;
-        }
-        deprecatedAllReportActions = actions ?? {};
+// Lazy-Onyx POC (purity lane): whole-collection subscriptions here would hydrate REPORT and
+// REPORT_ACTIONS at module load — i.e. during boot. Deferred until the app is interactive; keyed
+// fallback readers see undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value;
+        },
+    });
 
-        // Iterate over the report actions to build the sorted report actions objects
-        for (const reportActions of Object.entries(deprecatedAllReportActions)) {
-            const reportID = reportActions[0].split('_').at(1);
-            if (!reportID) {
-                continue;
+    connectToReportActions();
+}, 'low');
+
+function connectToReportActions() {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (actions) => {
+            if (!actions) {
+                return;
             }
+            deprecatedAllReportActions = actions ?? {};
 
-            const reportActionsArray = Object.values(reportActions[1] ?? {});
-            let sortedReportActions = getSortedReportActions(withDEWRoutedActionsArray(reportActionsArray), true);
-            deprecatedAllSortedReportActions[reportID] = sortedReportActions;
-            const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-            const chatReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`];
+            // Iterate over the report actions to build the sorted report actions objects
+            for (const reportActions of Object.entries(deprecatedAllReportActions)) {
+                const reportID = reportActions[0].split('_').at(1);
+                if (!reportID) {
+                    continue;
+                }
 
-            // If the report is a one-transaction report, we need to return the combined reportActions so that the LHN can display modifications
-            // to the transaction thread or the report itself.
-            // Cache the result for O(1) lookup in renderItem.
-            const transactionThreadReportID = getOneTransactionThreadReportID(report, chatReport, actions[reportActions[0]], getIsOffline());
-            deprecatedCachedOneTransactionThreadReportIDs[reportID] = transactionThreadReportID;
+                const reportActionsArray = Object.values(reportActions[1] ?? {});
+                let sortedReportActions = getSortedReportActions(withDEWRoutedActionsArray(reportActionsArray), true);
+                deprecatedAllSortedReportActions[reportID] = sortedReportActions;
+                const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
+                const chatReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`];
 
-            if (transactionThreadReportID) {
-                const transactionThreadReportActionsArray = Object.values(actions[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}`] ?? {});
-                const isSelfDM = report?.chatType === CONST.REPORT.CHAT_TYPE.SELF_DM;
-                sortedReportActions = getCombinedReportActions(sortedReportActions, transactionThreadReportID, transactionThreadReportActionsArray, isSelfDM);
+                // If the report is a one-transaction report, we need to return the combined reportActions so that the LHN can display modifications
+                // to the transaction thread or the report itself.
+                // Cache the result for O(1) lookup in renderItem.
+                const transactionThreadReportID = getOneTransactionThreadReportID(report, chatReport, actions[reportActions[0]], getIsOffline());
+                deprecatedCachedOneTransactionThreadReportIDs[reportID] = transactionThreadReportID;
+
+                if (transactionThreadReportID) {
+                    const transactionThreadReportActionsArray = Object.values(actions[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}`] ?? {});
+                    const isSelfDM = report?.chatType === CONST.REPORT.CHAT_TYPE.SELF_DM;
+                    sortedReportActions = getCombinedReportActions(sortedReportActions, transactionThreadReportID, transactionThreadReportActionsArray, isSelfDM);
+                }
+
+                const firstReportAction = sortedReportActions.at(0);
+                if (!firstReportAction) {
+                    delete deprecatedLastReportActions[reportID];
+                } else {
+                    deprecatedLastReportActions[reportID] = firstReportAction;
+                }
             }
-
-            const firstReportAction = sortedReportActions.at(0);
-            if (!firstReportAction) {
-                delete deprecatedLastReportActions[reportID];
-            } else {
-                deprecatedLastReportActions[reportID] = firstReportAction;
-            }
-        }
-    },
-});
+        },
+    });
+}
 
 let activePolicyID: OnyxEntry<string>;
 Onyx.connect({

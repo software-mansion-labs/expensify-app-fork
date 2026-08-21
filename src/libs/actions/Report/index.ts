@@ -59,6 +59,7 @@ import * as Browser from '@libs/Browser';
 import type {CustomRNImageManipulatorResult} from '@libs/cropOrRotateImage/types';
 import {getCurrencyDecimals as getCurrencyDecimalsUtil} from '@libs/CurrencyUtils';
 import DateUtils from '@libs/DateUtils';
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import * as Environment from '@libs/Environment/Environment';
 import {getOldDotURLFromEnvironment} from '@libs/Environment/Environment';
 import getEnvironment from '@libs/Environment/getEnvironment';
@@ -520,12 +521,17 @@ function clearStaleDMRecoveryTargetByTargetReportID(targetReportID: string) {
 }
 
 let allReports: OnyxCollection<Report>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate REPORT at module
+// load — i.e. during boot. Deferred until the app is interactive; keyed fallback readers see
+// undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value;
+        },
+    });
+}, 'low');
 
 let allPersonalDetails: OnyxEntry<PersonalDetailsList> = {};
 Onyx.connect({

@@ -1,4 +1,5 @@
 import AppStateMonitor from '@libs/AppStateMonitor';
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import memoize from '@libs/memoize';
 import {getIsOffline} from '@libs/NetworkState';
 import {getOneTransactionThreadReportID} from '@libs/ReportActionsUtils';
@@ -40,30 +41,35 @@ Onyx.connectWithoutView({
 });
 
 let allReportNameValuePairs: OnyxCollection<ReportNameValuePairs> = {};
-// This subscription is used to update the unread indicators count which is not linked to UI and it does not update any UI state.
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
-    callback: (value) => {
-        allReportNameValuePairs = value;
-    },
-});
-
 let allReportActions: OnyxCollection<ReportActions> = {};
-// This subscription is used to update the unread indicators count which is not linked to UI and it does not update any UI state.
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (value) => {
-        allReportActions = value;
-    },
-});
-
 let allDraftComments: OnyxCollection<string> = {};
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT,
-    callback: (value) => {
-        allDraftComments = value;
-    },
-});
+
+// These subscriptions are used to update the unread indicators count which is not linked to UI and does not update any UI state.
+// Lazy-Onyx POC (purity lane): whole-collection subscriptions here would hydrate REPORT_NAME_VALUE_PAIRS,
+// REPORT_ACTIONS and REPORT_DRAFT_COMMENT at module load — i.e. during boot. Deferred until the app is
+// interactive; keyed fallback readers see undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS,
+        callback: (value) => {
+            allReportNameValuePairs = value;
+        },
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (value) => {
+            allReportActions = value;
+        },
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT,
+        callback: (value) => {
+            allDraftComments = value;
+        },
+    });
+}, 'low');
 
 function getUnreadReportsForUnreadIndicator(reports: OnyxCollection<Report>, currentReportID: string | undefined, draftComment: string | undefined) {
     // Read the in-memory offline state directly since this is an imperative one-shot computation (reactivity is not needed here).
@@ -130,13 +136,18 @@ const triggerUnreadUpdate = debounce(() => {
 }, CONST.TIMING.UNREAD_UPDATE_DEBOUNCE_TIME);
 
 // This subscription is used to update the unread indicators count which is not linked to UI and it does not update any UI state.
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-        triggerUnreadUpdate();
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate REPORT at module
+// load — i.e. during boot. Deferred until the app is interactive; the unread indicator first
+// updates on the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value;
+            triggerUnreadUpdate();
+        },
+    });
+}, 'low');
 
 navigationRef?.addListener?.('state', () => {
     triggerUnreadUpdate();

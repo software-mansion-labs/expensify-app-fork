@@ -1,3 +1,4 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import TransitionTracker from '@libs/Navigation/TransitionTracker';
 import {isMoneyRequest, isMoneyRequestReport, isOneTransactionReport} from '@libs/ReportUtils';
@@ -39,11 +40,6 @@ import {openReport, saveReportDraftComment} from './Report';
  */
 
 let allReportDraftComments: Record<string, string | undefined> = {};
-// Draft comments are cached only for transferring to the preexisting report; no UI subscribes, so connectWithoutView() is used.
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT,
-    callback: (value) => (allReportDraftComments = value ?? {}),
-});
 
 let allReports: OnyxCollection<Report>;
 
@@ -58,13 +54,25 @@ Onyx.connectWithoutView({
 });
 
 let allReportActions: OnyxCollection<ReportActions> = {};
-// Report actions are cached only to resolve parent actions for IOU cleanup; no UI subscribes, so connectWithoutView() is used.
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (value) => {
-        allReportActions = value ?? {};
-    },
-});
+
+// Draft comments are cached only for transferring to the preexisting report, and report actions only
+// to resolve parent actions for IOU cleanup; no UI subscribes, so connectWithoutView() is used.
+// Lazy-Onyx POC (purity lane): whole-collection subscriptions here would hydrate REPORT_DRAFT_COMMENT
+// and REPORT_ACTIONS at module load — i.e. during boot. Deferred until the app is interactive; keyed
+// fallback readers see undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT,
+        callback: (value) => (allReportDraftComments = value ?? {}),
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (value) => {
+            allReportActions = value ?? {};
+        },
+    });
+}, 'low');
 
 function replaceOptimisticReportWithActualReport(report: Report, draftReportComment: string | undefined, currentUserAccountID: number) {
     const {reportID, preexistingReportID, parentReportID, parentReportActionID} = report;
@@ -248,28 +256,33 @@ function replaceOptimisticReportWithActualReport(report: Report, draftReportComm
 }
 
 // Reports are observed only to detect preexistingReportID and run replacement; no UI subscribes, so connectWithoutView() is used.
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value: OnyxCollection<Report>) => {
-        allReports = value;
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate REPORT at module
+// load — i.e. during boot. Deferred until the app is interactive; optimistic-report replacement first
+// runs on the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value: OnyxCollection<Report>) => {
+            allReports = value;
 
-        if (!value) {
-            return;
-        }
-
-        for (const report of Object.values(value)) {
-            if (!report) {
-                continue;
+            if (!value) {
+                return;
             }
 
-            replaceOptimisticReportWithActualReport(
-                report,
-                allReportDraftComments?.[`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report.reportID}`],
-                sessionAccountID ?? CONST.DEFAULT_NUMBER_ID,
-            );
-        }
-    },
-});
+            for (const report of Object.values(value)) {
+                if (!report) {
+                    continue;
+                }
+
+                replaceOptimisticReportWithActualReport(
+                    report,
+                    allReportDraftComments?.[`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report.reportID}`],
+                    sessionAccountID ?? CONST.DEFAULT_NUMBER_ID,
+                );
+            }
+        },
+    });
+}, 'low');
 
 export {replaceOptimisticReportWithActualReport};
 

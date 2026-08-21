@@ -2,6 +2,7 @@ import {isAnonymousUser} from '@libs/actions/Session';
 import * as API from '@libs/API';
 import type {MarkAllMessagesAsReadParams} from '@libs/API/parameters';
 import {WRITE_COMMANDS} from '@libs/API/types';
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {getDBTimeWithSkew, getIsOffline} from '@libs/NetworkState';
 import {getOneTransactionThreadReportID} from '@libs/ReportActionsUtils';
 import {isArchivedReport, isUnread} from '@libs/ReportUtils';
@@ -16,16 +17,22 @@ import Onyx from 'react-native-onyx';
 // We use connectWithoutView because markAllMessagesAsRead doesn't affect the UI rendering
 // and this avoids unnecessary re-rendering in AuthScreen whenever any report or report action is updated
 let allReportActions: OnyxCollection<ReportActions>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
-    callback: (value) => (allReportActions = value),
-});
-
 let allReports: OnyxCollection<Report>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => (allReports = value),
-});
+
+// Lazy-Onyx POC (purity lane): whole-collection subscriptions here would hydrate REPORT_ACTIONS and
+// REPORT at module load — i.e. during boot. Deferred until the app is interactive; keyed fallback
+// readers see undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
+        callback: (value) => (allReportActions = value),
+    });
+
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => (allReports = value),
+    });
+}, 'low');
 
 function markAllMessagesAsRead(reportNameValuePairs: OnyxCollection<ReportNameValuePairs>) {
     if (isAnonymousUser()) {

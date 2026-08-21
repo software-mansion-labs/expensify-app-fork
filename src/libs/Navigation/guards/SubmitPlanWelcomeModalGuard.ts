@@ -1,3 +1,4 @@
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import Log from '@libs/Log';
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 import findFocusedRouteWithOnyxTabGuard from '@libs/Navigation/helpers/findFocusedRouteWithOnyxTabGuard';
@@ -185,12 +186,17 @@ Onyx.connectWithoutView({
     },
 });
 
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.POLICY,
-    callback: (value) => {
-        policies = value;
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate POLICY at module
+// load — i.e. during boot. Deferred until the app is interactive; the guard's synchronous reads see
+// undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.POLICY,
+        callback: (value) => {
+            policies = value;
+        },
+    });
+}, 'low');
 
 Onyx.connectWithoutView({
     key: ONYXKEYS.NVP_SUBMIT_MIGRATION_MODAL_SHOWN,
@@ -224,12 +230,17 @@ Onyx.connectWithoutView({
     },
 });
 
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.SECURITY_GROUP,
-    callback: (value) => {
-        securityGroups = value;
-    },
-});
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate SECURITY_GROUP at
+// module load — i.e. during boot. Deferred until the app is interactive; the guard's synchronous
+// reads see undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.SECURITY_GROUP,
+        callback: (value) => {
+            securityGroups = value;
+        },
+    });
+}, 'low');
 
 /**
  * Block navigation while the submit plan modal is active (on top of the stack).

@@ -4,27 +4,33 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import {ExpensiMark} from 'expensify-common';
 import Onyx from 'react-native-onyx';
 
+import {deferUntilAppReady} from './deferUntilAppReady';
 import Log from './Log';
 
 let reportIDToNameMap: Record<string, string> = {};
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        // Clear the map so removed reports don’t linger
-        reportIDToNameMap = {};
+// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate REPORT at module
+// load — i.e. during boot. Deferred until the app is interactive; keyed fallback readers see
+// undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connect({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            // Clear the map so removed reports don’t linger
+            reportIDToNameMap = {};
 
-        if (!value) {
-            return;
-        }
-
-        for (const report of Object.values(value)) {
-            if (!report) {
-                continue;
+            if (!value) {
+                return;
             }
-            reportIDToNameMap[report.reportID] = report.reportName ?? report.reportID;
-        }
-    },
-});
+
+            for (const report of Object.values(value)) {
+                if (!report) {
+                    continue;
+                }
+                reportIDToNameMap[report.reportID] = report.reportName ?? report.reportID;
+            }
+        },
+    });
+}, 'low');
 
 let accountIDToNameMap: Record<string, string> = {};
 Onyx.connect({

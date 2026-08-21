@@ -4,6 +4,7 @@ import * as API from '@libs/API';
 import type {GetMissingOnyxMessagesParams, HandleRestrictedEventParams, OpenAppParams, ReconnectAppParams, UpdatePreferredLocaleParams} from '@libs/API/parameters';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import clearWorkboxRecoveryCaches from '@libs/clearWorkboxRecoveryCaches';
+import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {getLastFullReconnectTimeToRecord} from '@libs/FullReconnectUtils';
 import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
@@ -104,18 +105,23 @@ Onyx.connectWithoutView({
 // so retrieving them using Onyx.connectWithoutView is correct.
 let allReports: OnyxCollection<OnyxTypes.Report>;
 let allPolicies: OnyxCollection<OnyxTypes.Policy>;
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    callback: (value) => {
-        allReports = value;
-    },
-});
-Onyx.connectWithoutView({
-    key: ONYXKEYS.COLLECTION.POLICY,
-    callback: (value) => {
-        allPolicies = value;
-    },
-});
+// Lazy-Onyx POC (purity lane): whole-collection subscriptions here would hydrate REPORT and POLICY
+// at module load — i.e. during boot. Deferred until the app is interactive; keyed fallback readers
+// see undefined until the drain, same as before Onyx's first flush.
+deferUntilAppReady(() => {
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.REPORT,
+        callback: (value) => {
+            allReports = value;
+        },
+    });
+    Onyx.connectWithoutView({
+        key: ONYXKEYS.COLLECTION.POLICY,
+        callback: (value) => {
+            allPolicies = value;
+        },
+    });
+}, 'low');
 
 let preservedUserSession: OnyxTypes.Session | undefined;
 
