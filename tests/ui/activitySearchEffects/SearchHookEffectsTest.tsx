@@ -5,15 +5,17 @@ import type {SearchQueryJSON} from '@components/Search/types';
 // The web entry point of the hook is an empty function, so the audit point is only observable on the Android one.
 import useAndroidBackButtonHandler from '@hooks/useAndroidBackButtonHandler/index.android';
 import useEndSubmitNavigationSpans from '@hooks/useEndSubmitNavigationSpans';
+import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useMobileSelectionMode from '@hooks/useMobileSelectionMode';
 import usePrevious from '@hooks/usePrevious';
 import useSaveSortedReportIDs from '@hooks/useSaveSortedReportIDs';
 import useScrollEventEmitter from '@hooks/useScrollEventEmitter';
+import useSearchFilterSync from '@hooks/useSearchFilterSync';
 import useSearchPageSetup from '@hooks/useSearchPageSetup';
 import useSeedMyExpensesSearch from '@hooks/useSeedMyExpensesSearch';
 
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
-import {openSearch, search, seedMyExpensesSearch} from '@libs/actions/Search';
+import {openSearch, search, seedMyExpensesSearch, updateAdvancedFilters} from '@libs/actions/Search';
 import {buildSearchQueryJSON} from '@libs/SearchQueryUtils';
 import {endSubmitFollowUpActionSpan, getPendingSubmitFollowUpAction} from '@libs/telemetry/submitFollowUpAction';
 
@@ -37,6 +39,8 @@ import createCoverCycleHarness, {NON_TOP_SCREEN_BEHAVIOR, createSubjectStore} fr
 const mockOnyxValues = new Map<string, unknown>();
 const mockClearSelectedTransactions = jest.fn();
 const mockSetSortedReportIDs = jest.fn();
+const mockUnsubscribeKeyboardShortcut = jest.fn();
+const mockSubscribeKeyboardShortcut = jest.fn(() => mockUnsubscribeKeyboardShortcut);
 let mockIsOfflineValue = false;
 
 function mockIsOffline() {
@@ -76,6 +80,7 @@ jest.mock('@libs/actions/Search', () => ({
     search: jest.fn(() => Promise.resolve(200)),
     openSearch: jest.fn(),
     seedMyExpensesSearch: jest.fn(),
+    updateAdvancedFilters: jest.fn(),
 }));
 
 jest.mock('@libs/actions/ReportNavigation', () => ({
@@ -89,6 +94,12 @@ jest.mock('@libs/actions/MobileSelectionMode', () => ({
 jest.mock('@libs/telemetry/submitFollowUpAction', () => ({
     getPendingSubmitFollowUpAction: jest.fn(),
     endSubmitFollowUpActionSpan: jest.fn(),
+}));
+
+jest.mock('@libs/KeyboardShortcut', () => ({
+    __esModule: true,
+    // Called through a wrapper, because the mock factory runs before the spy above is initialized.
+    default: {subscribe: () => mockSubscribeKeyboardShortcut()},
 }));
 
 const harness = createCoverCycleHarness();
@@ -147,6 +158,18 @@ const sortedItemsStore = createSubjectStore<Array<{reportID?: string}>>([{report
 
 function SaveSortedReportIDsProbe() {
     useSaveSortedReportIDs(CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT, sortedItemsStore.useValue());
+    return <View testID="probe" />;
+}
+
+const FILTER_FORM_VALUES = {type: CONST.SEARCH.DATA_TYPES.EXPENSE};
+
+function SearchFilterSyncProbe() {
+    useSearchFilterSync(QUERY_JSON, FILTER_FORM_VALUES);
+    return <View testID="probe" />;
+}
+
+function KeyboardShortcutProbe({onShortcut}: {onShortcut: () => void}) {
+    useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ESCAPE, onShortcut);
     return <View testID="probe" />;
 }
 
@@ -408,6 +431,49 @@ describe(`Search hooks under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
             // modal the user happened to open earlier
             expect(liveSubscriptions).toBe(subscriptionsWhileVisible);
             addEventListenerSpy.mockRestore();
+        });
+    });
+
+    describe('useSearchFilterSync', () => {
+        it('does not rewrite the advanced filters form on a reveal (audit 12.3, positive control)', () => {
+            // Given a header whose filter pills already match the query, which the module-level signature records
+            mockOnyxValues.set(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, {type: CONST.SEARCH.DATA_TYPES.EXPENSE});
+            harness.renderSubject(<SearchFilterSyncProbe />);
+            const updateCalls = trackCalls(jest.mocked(updateAdvancedFilters));
+
+            // When the screen gets covered and revealed again
+            harness.cover();
+            harness.uncover();
+
+            // Then the form is left alone, because the guard that skips an unchanged query lives outside the
+            // component and survives the cover. This is the pattern the sites in audit 10 and 11 are missing
+            expect(updateCalls()).toBe(0);
+        });
+    });
+
+    describe('useKeyboardShortcut', () => {
+        it('does not re-register the keyboard shortcut on a reveal (audit 12.1)', () => {
+            // Given a screen holding a keyboard shortcut, the way the Search footer, router and list do
+            harness.renderSubject(<KeyboardShortcutProbe onShortcut={jest.fn()} />);
+
+            // When the screen is covered and revealed three times
+            const registrationsPerCycle = harness.measureCycles(3, mockSubscribeKeyboardShortcut);
+
+            // Then the registration is left alone: re-registering moves the handler to the top of the shortcut
+            // stack, so a screen the user only covered would start winning over the one that covered it
+            expect(registrationsPerCycle).toEqual([0, 0, 0]);
+        });
+
+        it('keeps exactly one keyboard shortcut registered across repeated cycles (audit 12.2)', () => {
+            // Given a screen holding a keyboard shortcut
+            harness.renderSubject(<KeyboardShortcutProbe onShortcut={jest.fn()} />);
+            const registrationsWhileVisible = mockSubscribeKeyboardShortcut.mock.calls.length - mockUnsubscribeKeyboardShortcut.mock.calls.length;
+
+            // When the screen is covered and revealed three times
+            harness.measureCycles(3, mockSubscribeKeyboardShortcut);
+
+            // Then one key press still runs the handler once, and not once per screen the user opened over Search
+            expect(mockSubscribeKeyboardShortcut.mock.calls.length - mockUnsubscribeKeyboardShortcut.mock.calls.length).toBe(registrationsWhileVisible);
         });
     });
 

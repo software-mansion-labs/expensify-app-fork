@@ -17,6 +17,7 @@ import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import {clearFooterConversion, openSearch, search} from '@libs/actions/Search';
 import isSearchTopmostFullScreenRoute from '@libs/Navigation/helpers/isSearchTopmostFullScreenRoute';
 import * as SearchQueryUtils from '@libs/SearchQueryUtils';
+import {cancelNavigateToReportsSpansIfSame} from '@libs/telemetry/navigateToReportsSpans';
 
 import SearchPage from '@pages/Search/SearchPage';
 
@@ -93,6 +94,16 @@ jest.mock('@libs/actions/MobileSelectionMode', () => ({
     turnOffMobileSelectionMode: jest.fn(),
 }));
 
+jest.mock('@libs/telemetry/navigateToReportsSpans', () => {
+    const actual = jest.requireActual<Record<string, unknown>>('@libs/telemetry/navigateToReportsSpans');
+    return {
+        ...actual,
+        // The only call site of this one is the mount cleanup under test, unlike the other cancel helpers, which the
+        // empty-state bail-out path also calls during render.
+        cancelNavigateToReportsSpansIfSame: jest.fn(),
+    };
+});
+
 // The helper reads the app-wide navigation ref, which the harness stack is not attached to. Driving it explicitly is
 // what tells the two ways of covering Search apart: an RHP leaves Search the topmost fullscreen route, another
 // fullscreen route does not.
@@ -115,6 +126,7 @@ const mockedUseNetwork = jest.mocked(useNetwork);
 const mockedUseResponsiveLayout = jest.mocked(useResponsiveLayout);
 const mockedUseSearchShouldCalculateTotals = jest.mocked(useSearchShouldCalculateTotals);
 const mockedIsSearchTopmostFullScreenRoute = jest.mocked(isSearchTopmostFullScreenRoute);
+const mockedCancelNavigateToReportsSpansIfSame = jest.mocked(cancelNavigateToReportsSpansIfSame);
 
 /** Snapshots a mock's call count so an assertion can read the calls the cover and uncover cycle added. */
 function trackCalls(mock: {mock: {calls: unknown[]}}) {
@@ -382,6 +394,20 @@ describe(`SearchPage under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
 
         // Then the reveal fetches the totals once, not once per effect that survived the cover
         expect(searchCalls()).toBe(1);
+    });
+
+    it('keeps the navigate-to-reports spans of a screen covered before its first layout (audit 6.2, the telemetry branch)', () => {
+        // Given a mounted Search component whose list has not reported a layout yet, so the spans are still open
+        const rendered = renderSearchPage();
+        harness.firePendingCallbacks();
+        expect(rendered.UNSAFE_getByType(Search)).toBeTruthy();
+        const cancelIfSameCalls = trackCalls(mockedCancelNavigateToReportsSpansIfSame);
+
+        // When the screen gets covered
+        harness.cover();
+
+        // Then the spans stay open, because the cleanup that cancels them belongs to leaving Search
+        expect(cancelIfSameCalls()).toBe(0);
     });
 
     it('reports how often the page-level setup calls openSearch (audit 2.3)', () => {
