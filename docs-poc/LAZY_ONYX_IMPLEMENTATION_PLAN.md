@@ -509,3 +509,38 @@ materialized derived data + indexes (the Signal/WhatsApp conversations-table pat
 - **Step 3 (post-measurement)**: turn the engine into a write-time-scoped materializer (scoped-store
   reads instead of whole-map subscriptions) and retire the whole-map blob for remaining consumers;
   optionally replace `sortName` with proper collation keys.
+
+# Scoped-store derived — SHIPPED (user directive 2026-08-21: complete the POC incl. step 3 first,
+# measurements last)
+
+Step 3 is no longer post-measurement — it is implemented (commits b13006b923f, d4f1516c354):
+
+- **Runtime** (`OnyxDerived/scopedMaterializer.ts`): write streams (registerQueryWatcher) feed a
+  serialized pump → write batches map to affected entry IDs → per-entry recomputes from targeted
+  reads with bounded concurrency → ordered applies. Whole-view triggers rebuild via chunked
+  background sweeps. Version stamp in the new DERIVED_SCOPED_META key drives backfills; the runtime
+  subscribes to its own OUTPUT key so a post-clear nullish value re-seeds the shell and rebuilds once
+  the clear task settles. `isOutputPersisted: false` (RAM_ONLY outputs) skips the stamp and sweeps on
+  every start — the classic engine's full first compute, without pinning inputs in RAM afterwards.
+- **reportAttributes** scoped (P2): computeEntry = computeReportAttributesOnDemand, which also
+  builds the LHN projection member in the same store pass (shared buildLHNProjectionEntry). Fan-out:
+  member writes map directly; merge DELTAS resolve missing fields against the merged value; policy/
+  policyTags fan out via the indexed policyID query; session/locale/betas/intro/display-name-renames
+  sweep (PDL narrowed by signatures; the first-baseline 'all' also sweeps — once per session, the
+  classic engine's startup-recompute cost). Blob kept for whole-map consumers via read-modify-SET
+  (merge would keep fields that went back to undefined; Onyx.set dedupes identical values).
+- **visibleReportActions + sortedReportActions** scoped (P3): per-entry computes from targeted
+  reads; sorted's chat fan-out via `reports where chatReportID = X`; offline flips sweep sorted.
+- **Kept classic on purpose (P4)**: card lists, cardFeedErrors, loginToAccountIDMap — their
+  dependencies are singletons/small collections; scoping buys nothing. The classic engine remains for
+  them (and its delta-retention self-heal is still covered by tests, retargeted to loginToAccountIDMap).
+- **End state**: NO whole-collection subscription remains anywhere in the derived layer for REPORT,
+  REPORT_ACTIONS, TRANSACTION, TRANSACTION_VIOLATIONS, POLICY, POLICY_TAGS, RNVP or REPORT_METADATA.
+  The remaining post-ready whole-collection hydrations in the app are the DEFERRED module caches in
+  ReportUtils/ReportActionsUtils/actions-IOU (purity step 2 = retiring them outright) and per-screen
+  bare subscriptions from the ratchet (~626, tranches T4+).
+- Known deltas (documented in the configs): transaction deletions without an accompanying report/
+  actions write can't be fan-out-mapped (in practice deletions rewrite report totals/actions);
+  thread-action writes don't refresh the parent's combined sorted view (classic had the same
+  staleness); NETWORK flips don't recompute reportAttributes (classic's incremental path skipped
+  them too).
