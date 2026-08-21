@@ -11,6 +11,7 @@ import {PlaybackContextProvider} from '@components/VideoPlayerContexts/PlaybackC
 
 import useNetwork from '@hooks/useNetwork';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useSearchShouldCalculateTotals from '@hooks/useSearchShouldCalculateTotals';
 
 import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import {clearFooterConversion, openSearch, search} from '@libs/actions/Search';
@@ -21,6 +22,7 @@ import SearchPage from '@pages/Search/SearchPage';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
+import type {SearchResults} from '@src/types/onyx';
 
 import type {ComponentProps} from 'react';
 
@@ -57,6 +59,7 @@ jest.mock('@react-navigation/native', () => {
 
 jest.mock('@hooks/useResponsiveLayout', () => jest.fn());
 jest.mock('@hooks/useNetwork', () => jest.fn());
+jest.mock('@hooks/useSearchShouldCalculateTotals', () => ({__esModule: true, default: jest.fn(() => false)}));
 
 jest.mock('@hooks/useRootNavigationState', () => ({
     __esModule: true,
@@ -104,6 +107,7 @@ const mockedClearFooterConversion = jest.mocked(clearFooterConversion);
 const mockedTurnOffMobileSelectionMode = jest.mocked(turnOffMobileSelectionMode);
 const mockedUseNetwork = jest.mocked(useNetwork);
 const mockedUseResponsiveLayout = jest.mocked(useResponsiveLayout);
+const mockedUseSearchShouldCalculateTotals = jest.mocked(useSearchShouldCalculateTotals);
 
 /** Snapshots a mock's call count so an assertion can read the calls the cover and uncover cycle added. */
 function trackCalls(mock: {mock: {calls: unknown[]}}) {
@@ -131,6 +135,39 @@ const searchPageProps = {
 
 function renderSearchPage() {
     return harness.renderSubject(<SearchPage {...searchPageProps} />, withProviders);
+}
+
+/**
+ * One expense entry, which is what `isSearchResultsEmpty` counts. The list itself still renders its empty state
+ * here: building a snapshot the section builder accepts needs the whole report, policy and personal details graph,
+ * and none of the assertions below read the rows.
+ */
+function buildSnapshotDataWithOneExpense(): SearchResults['data'] {
+    const transactionKey: `${typeof ONYXKEYS.COLLECTION.TRANSACTION}1` = `${ONYXKEYS.COLLECTION.TRANSACTION}1`;
+
+    return {
+        [transactionKey]: {
+            transactionID: '1',
+            reportID: '1',
+            amount: -5000,
+            currency: 'USD',
+            created: '2024-12-21',
+            merchant: 'Expense',
+            category: '',
+            tag: '',
+            comment: {comment: ''},
+        },
+    };
+}
+
+/** Seeds a result set with one entry, so a later reveal can see the results turn empty. */
+async function seedNonEmptySnapshot() {
+    await act(async () => {
+        await Onyx.merge(`${ONYXKEYS.COLLECTION.SNAPSHOT}${queryJSON?.hash}`, {
+            search: {hasResults: true},
+            data: buildSnapshotDataWithOneExpense(),
+        });
+    });
 }
 
 beforeAll(() => {
@@ -237,6 +274,77 @@ describe(`SearchPage under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
 
         // Then the list stays on screen instead of being replaced by the skeleton of a restarted defer cycle
         expect(rendered.UNSAFE_queryByType(SearchLoadingSkeleton)).toBeNull();
+    });
+
+    it('keeps the interactive Search component mounted across a cover cycle (audit 5.2)', () => {
+        // Given a page that already transitioned from its static phase to the interactive Search component
+        const rendered = renderSearchPage();
+        harness.firePendingCallbacks();
+        expect(rendered.UNSAFE_getByType(Search)).toBeTruthy();
+
+        // When the screen gets covered and revealed again
+        harness.cover();
+        harness.uncover();
+        harness.firePendingCallbacks();
+
+        // Then it stays interactive instead of falling back to the lightweight static list
+        expect(rendered.UNSAFE_queryByType(Search)).toBeTruthy();
+    });
+
+    it('reports what an empty result set delivered while covered does on a reveal (audit 6.11)', async () => {
+        // Given a page whose result set is not empty
+        await seedNonEmptySnapshot();
+        const rendered = renderSearchPage();
+        harness.firePendingCallbacks();
+        expect(rendered.UNSAFE_getByType(Search)).toBeTruthy();
+
+        // When the result set empties out while the screen is covered
+        harness.cover();
+        const turnOffCalls = trackCalls(mockedTurnOffMobileSelectionMode);
+        await act(async () => {
+            await Onyx.set(`${ONYXKEYS.COLLECTION.SNAPSHOT}${queryJSON?.hash}`, {
+                search: {
+                    type: CONST.SEARCH.DATA_TYPES.EXPENSE,
+                    offset: 0,
+                    hash: queryJSON?.hash,
+                    isLoading: false,
+                    hasMoreResults: false,
+                    hasResults: false,
+                    state: CONST.SEARCH.SNAPSHOT_STATE.LOADED,
+                },
+                data: {},
+            });
+        });
+        harness.settle();
+        harness.uncover();
+        harness.firePendingCallbacks();
+
+        // Then the reveal drops the selection once, for a change the user never saw happen
+        expect(turnOffCalls()).toBe(1);
+    });
+
+    it('reports what the totals retry does when the search finishes while covered (audit 6.12)', async () => {
+        // Given a page whose in-flight search armed the retry that fetches the totals
+        mockedUseSearchShouldCalculateTotals.mockReturnValue(true);
+        await act(async () => {
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.SNAPSHOT}${queryJSON?.hash}`, {search: {isLoading: true}});
+        });
+        const rendered = renderSearchPage();
+        harness.firePendingCallbacks();
+        expect(rendered.UNSAFE_getByType(Search)).toBeTruthy();
+
+        // When the search finishes while the screen is covered
+        harness.cover();
+        const searchCalls = trackCalls(mockedSearch);
+        await act(async () => {
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.SNAPSHOT}${queryJSON?.hash}`, {search: {isLoading: false}});
+        });
+        harness.settle();
+        harness.uncover();
+        harness.firePendingCallbacks();
+
+        // Then the reveal fetches the totals once, not once per effect that survived the cover
+        expect(searchCalls()).toBe(1);
     });
 
     it('reports how often the page-level setup calls openSearch (audit 2.3)', () => {

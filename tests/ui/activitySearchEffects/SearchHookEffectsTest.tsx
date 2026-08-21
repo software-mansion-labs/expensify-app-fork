@@ -2,6 +2,8 @@ import {act} from '@testing-library/react-native';
 
 import type {SearchQueryJSON} from '@components/Search/types';
 
+// The web entry point of the hook is an empty function, so the audit point is only observable on the Android one.
+import useAndroidBackButtonHandler from '@hooks/useAndroidBackButtonHandler/index.android';
 import useEndSubmitNavigationSpans from '@hooks/useEndSubmitNavigationSpans';
 import useMobileSelectionMode from '@hooks/useMobileSelectionMode';
 import usePrevious from '@hooks/usePrevious';
@@ -19,7 +21,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
-import {DeviceEventEmitter, View} from 'react-native';
+import {BackHandler, DeviceEventEmitter, View} from 'react-native';
 
 import createCoverCycleHarness, {NON_TOP_SCREEN_BEHAVIOR, createSubjectStore} from '../../utils/NonTopScreenBehaviorCycleTestUtils';
 
@@ -145,6 +147,11 @@ const sortedItemsStore = createSubjectStore<Array<{reportID?: string}>>([{report
 
 function SaveSortedReportIDsProbe() {
     useSaveSortedReportIDs(CONST.SEARCH.DATA_TYPES.EXPENSE_REPORT, sortedItemsStore.useValue());
+    return <View testID="probe" />;
+}
+
+function AndroidBackButtonHandlerProbe({onBackButtonPress}: {onBackButtonPress: () => boolean}) {
+    useAndroidBackButtonHandler(onBackButtonPress);
     return <View testID="probe" />;
 }
 
@@ -337,6 +344,36 @@ describe(`Search hooks under the ${NON_TOP_SCREEN_BEHAVIOR} behavior`, () => {
             // When the covering screen reads the IDs while it is on top
             // Then the context already carries the new ones, which is what the report screen's navigation arrows need
             expect(mockSetSortedReportIDs).toHaveBeenCalledWith(['2']);
+        });
+    });
+
+    describe('useAndroidBackButtonHandler', () => {
+        it('re-arms the back button guard it detaches while covered (audit 5.4)', () => {
+            // Given a screen that handles the hardware back button
+            let liveSubscriptions = 0;
+            const addEventListenerSpy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation(() => {
+                liveSubscriptions += 1;
+                return {
+                    remove: () => {
+                        liveSubscriptions -= 1;
+                    },
+                };
+            });
+            harness.renderSubject(<AndroidBackButtonHandlerProbe onBackButtonPress={jest.fn(() => true)} />);
+            const subscriptionsWhileVisible = liveSubscriptions;
+
+            // When the screen gets covered
+            harness.cover();
+
+            // Then the guard steps aside for the screen on top
+            expect(liveSubscriptions).toBeLessThan(subscriptionsWhileVisible);
+
+            // And when the screen is revealed again
+            harness.uncover();
+
+            // Then it is armed again, without leaving a duplicate behind
+            expect(liveSubscriptions).toBe(subscriptionsWhileVisible);
+            addEventListenerSpy.mockRestore();
         });
     });
 
