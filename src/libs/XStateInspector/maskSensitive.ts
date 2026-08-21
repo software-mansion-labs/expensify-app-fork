@@ -1,6 +1,10 @@
+import {isRecord} from '@libs/ObjectUtils';
+
 import CONST from '@src/CONST';
 
 import type {StatelyInspectionEvent} from '@statelyai/inspect';
+
+import {isMachineSnapshot} from 'xstate';
 
 const SENSITIVE_VALUE_MASK = '***';
 const CIRCULAR_MARKER = '[Circular]';
@@ -21,19 +25,12 @@ function hasToJSON(value: unknown): value is {toJSON: () => unknown} {
 }
 
 /**
- * The inspector's `serialize` option, which masks the whole event before it reaches the stately.ai
- * window. It serializes the event into postMessage-safe data, much like the inspector's default
- * serializer: it honors `toJSON`, drops functions and symbols, collapses cycles, and caps the depth.
- * Every primitive under a {@link SENSITIVE_KEYS} key becomes {@link SENSITIVE_VALUE_MASK}, while the
- * surrounding shape is preserved, so the inspector still shows which fields exist without revealing
- * their values.
- *
- * The overloads keep the option's declared type while still accepting the looser raw snapshots that
- * the inspector actually passes in.
+ * Serializes a value into postMessage-safe data, much like the inspector's default serializer. It
+ * honors `toJSON`, drops functions and symbols, collapses cycles, and caps the depth. When
+ * `maskSensitiveKeys` is set, every primitive under a {@link SENSITIVE_KEYS} key becomes
+ * {@link SENSITIVE_VALUE_MASK}.
  */
-function maskInspectionEvent(event: StatelyInspectionEvent): StatelyInspectionEvent;
-function maskInspectionEvent(event: unknown): unknown;
-function maskInspectionEvent(event: unknown): unknown {
+function serialize(value: unknown, maskSensitiveKeys: boolean): unknown {
     // `visited` holds only the nodes on the current path, because each one is removed again as the
     // walk returns. A value that is shared but not circular therefore still renders in full, and only
     // a true cycle collapses to the marker.
@@ -65,7 +62,7 @@ function maskInspectionEvent(event: unknown): unknown {
         } else {
             const masked: Record<string, unknown> = {};
             for (const [key, nested] of Object.entries(node)) {
-                const maskedValue = walk(nested, depth + 1, isSensitive || SENSITIVE_KEYS.has(key));
+                const maskedValue = walk(nested, depth + 1, isSensitive || (maskSensitiveKeys && SENSITIVE_KEYS.has(key)));
                 if (maskedValue !== undefined) {
                     masked[key] = maskedValue;
                 }
@@ -77,7 +74,29 @@ function maskInspectionEvent(event: unknown): unknown {
         return result;
     }
 
-    return walk(event, 0, false);
+    return walk(value, 0, false);
+}
+
+/**
+ * The inspector's `serialize` option. Sensitive runtime values are masked before they reach the
+ * stately.ai window, while `snapshot.value` is serialized without masking because it contains only
+ * static state-node names. Masking that path can turn a valid state name into
+ * {@link SENSITIVE_VALUE_MASK}, preventing the inspector from resolving the machine snapshot.
+ *
+ * That exemption is limited to real machine snapshots, via xstate's own `isMachineSnapshot`. Any other
+ * actor logic is free to keep runtime data under its snapshot's `value`, which must stay masked.
+ *
+ * The overloads keep the option's declared type while still accepting the looser raw snapshots that
+ * the inspector actually passes in.
+ */
+function maskInspectionEvent(event: StatelyInspectionEvent): StatelyInspectionEvent;
+function maskInspectionEvent(event: unknown): unknown;
+function maskInspectionEvent(event: unknown): unknown {
+    const masked = serialize(event, true);
+    if (isRecord(event) && isRecord(masked) && isRecord(masked.snapshot) && isMachineSnapshot(event.snapshot)) {
+        masked.snapshot.value = serialize(event.snapshot.value, false);
+    }
+    return masked;
 }
 
 export {maskInspectionEvent, CIRCULAR_MARKER, MAX_DEPTH_MARKER, SENSITIVE_VALUE_MASK};
