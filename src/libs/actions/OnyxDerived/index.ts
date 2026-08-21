@@ -153,8 +153,8 @@ function init() {
                             if (memberEntries.length > 0) {
                                 Log.info(`[OnyxDerived] projecting ${memberEntries.length} member(s) of ${key} into ${projection.collectionKey}`);
                                 const PROJECTION_WRITE_CHUNK_SIZE = 500;
-                                for (let start = 0; start < memberEntries.length; start += PROJECTION_WRITE_CHUNK_SIZE) {
-                                    const chunk = Object.fromEntries(memberEntries.slice(start, start + PROJECTION_WRITE_CHUNK_SIZE));
+                                for (let chunkStart = 0; chunkStart < memberEntries.length; chunkStart += PROJECTION_WRITE_CHUNK_SIZE) {
+                                    const chunk = Object.fromEntries(memberEntries.slice(chunkStart, chunkStart + PROJECTION_WRITE_CHUNK_SIZE));
                                     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- computeMembers returns this collection's member shapes by contract
                                     Onyx.mergeCollection(projection.collectionKey, chunk as Parameters<typeof Onyx.mergeCollection>[1]);
                                 }

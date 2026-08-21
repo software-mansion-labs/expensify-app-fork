@@ -657,10 +657,8 @@ function SidebarOrderedReportsLazyContextProvider({children, currentReportIDForT
 // renders — the branch below never changes within a session.
 function SidebarOrderedReportsContextProvider(props: SidebarOrderedReportsContextProviderProps) {
     if (CONFIG.LAZY_LHN) {
-        // eslint-disable-next-line react/jsx-props-no-spreading
         return <SidebarOrderedReportsLazyContextProvider {...props} />;
     }
-    // eslint-disable-next-line react/jsx-props-no-spreading
     return <SidebarOrderedReportsClassicContextProvider {...props} />;
 }
 

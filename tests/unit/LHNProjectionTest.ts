@@ -24,9 +24,7 @@ const mockReport: Report = {
     policyID: 'policy1',
 };
 
-const getProjectionMember = (reportID: string) =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- derivedReportAttributes_ members always hold LHNReportAttributes
-    OnyxUtils.get(`${ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES}${reportID}`) as Promise<LHNReportAttributes | undefined>;
+const getProjectionMember = (reportID: string): Promise<LHNReportAttributes | undefined> => OnyxUtils.get(`${ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES}${reportID}`);
 
 describe('LHN attributes projection (SOTA LHN, lazy-Onyx POC)', () => {
     beforeAll(async () => {
