@@ -5,6 +5,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import {getActivePaymentType, getBusinessBankAccountOptions, selectPaymentType} from '@libs/PaymentUtils';
 import type {SelectPaymentTypeParams} from '@libs/PaymentUtils';
 import {shouldRestrictUserBillableActions} from '@libs/SubscriptionUtils';
+import type * as SubscriptionUtilsModule from '@libs/SubscriptionUtils';
 
 import CONST from '@src/CONST';
 import {calculateWalletTransferBalanceFee} from '@src/libs/PaymentUtils';
@@ -24,7 +25,7 @@ jest.mock('@libs/Navigation/Navigation', () => ({
 }));
 
 jest.mock('@libs/SubscriptionUtils', () => ({
-    ...jest.requireActual<typeof import('@libs/SubscriptionUtils')>('@libs/SubscriptionUtils'),
+    ...jest.requireActual<typeof SubscriptionUtilsModule>('@libs/SubscriptionUtils'),
     shouldRestrictUserBillableActions: jest.fn(),
 }));
 
