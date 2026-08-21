@@ -28,6 +28,8 @@ import type {DerivedValueContext} from './types';
 
 import ONYX_DERIVED_VALUES from './ONYX_DERIVED_VALUES';
 import startReportAttributesScopedMaterializer from './scopedConfigs/reportAttributesScoped';
+import startSortedReportActionsScopedMaterializer from './scopedConfigs/sortedReportActionsScoped';
+import startVisibleReportActionsScopedMaterializer from './scopedConfigs/visibleReportActionsScoped';
 import {setDerivedValue} from './utils';
 
 /** Derived keys whose engine has already started, so a demand trigger and the catch-all can't double-start one. */
@@ -42,6 +44,8 @@ const startedDerivedKeys = new Set<OnyxKey>();
  */
 const SCOPED_MATERIALIZER_STARTERS: Partial<Record<OnyxKey, () => void>> = {
     [ONYXKEYS.DERIVED.REPORT_ATTRIBUTES]: startReportAttributesScopedMaterializer,
+    [ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS]: startVisibleReportActionsScopedMaterializer,
+    [ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS]: startSortedReportActionsScopedMaterializer,
 };
 
 /**

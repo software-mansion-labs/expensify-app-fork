@@ -19,7 +19,6 @@ import type {OnyxEntry} from 'react-native-onyx';
 
 import {isTrackIntentUserSelector} from '@selectors/Onboarding';
 import Onyx from 'react-native-onyx';
-import OnyxCache, {TASK} from 'react-native-onyx/dist/OnyxCache';
 import {queryCollection} from 'react-native-onyx/dist/OnyxQuery';
 import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
@@ -282,28 +281,6 @@ function startReportAttributesScopedMaterializer(): void {
         computeEntry,
         applyEntries,
         connectTriggers: ({requestSweep, requestEntries}) => {
-            // Post-clear repair: Onyx.clear wipes the blob (and the version stamp) and, when no
-            // writes flow during the clear, the pump never observes it. The blob's own subscription
-            // does: on a nullish blob, re-seed the shell and rebuild once the clear task finishes.
-            Onyx.connectWithoutView({
-                key: ONYXKEYS.DERIVED.REPORT_ATTRIBUTES,
-                callback: (blob) => {
-                    if (blob) {
-                        return;
-                    }
-                    const clearTask = OnyxCache.getTaskPromise(TASK.CLEAR);
-                    const reseed = () => {
-                        ensureOutputs();
-                        requestSweep('post-clear rebuild');
-                    };
-                    if (clearTask) {
-                        clearTask.finally(reseed);
-                    } else {
-                        reseed();
-                    }
-                },
-            });
-
             let isSessionInitialized = false;
             Onyx.connectWithoutView({
                 key: ONYXKEYS.SESSION,

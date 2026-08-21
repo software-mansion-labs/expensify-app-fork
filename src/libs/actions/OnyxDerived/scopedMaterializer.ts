@@ -58,6 +58,12 @@ type ScopedMaterializerSpec<TEntry> = {
     connectTriggers?: (controls: ScopedMaterializerControls) => void;
     /** Seeds/repairs the persisted outputs' shells (e.g. an empty blob) — called at start and again after Onyx.clear. */
     ensureOutputs?: () => void;
+    /**
+     * False for RAM_ONLY outputs: there is nothing persisted to restore or version-stamp, so every
+     * engine start rebuilds via a sweep (the classic engine's full first compute, without pinning
+     * the inputs in RAM afterwards). Defaults to true.
+     */
+    isOutputPersisted?: boolean;
 };
 
 const COMPUTE_CONCURRENCY = 4;
@@ -112,7 +118,9 @@ function startScopedMaterializer<TEntry>(spec: ScopedMaterializerSpec<TEntry>): 
                 setTimeout(resolve, 0);
             });
         }
-        Onyx.merge(ONYXKEYS.DERIVED_SCOPED_META, {[spec.outputKey]: {version: spec.version}});
+        if (spec.isOutputPersisted !== false) {
+            Onyx.merge(ONYXKEYS.DERIVED_SCOPED_META, {[spec.outputKey]: {version: spec.version}});
+        }
     }
 
     const schedulePump = () => {
@@ -216,6 +224,38 @@ function startScopedMaterializer<TEntry>(spec: ScopedMaterializerSpec<TEntry>): 
             schedulePump();
         },
     });
+
+    // Post-clear repair, generalized: Onyx.clear wipes the output, and when no writes flow during
+    // the clear the pump never observes it. The output key's own subscription does: on a nullish
+    // output, re-seed the shell and rebuild once the clear task finishes. (The subscription can't
+    // recursively start this materializer — the engine registry's started-guard holds.)
+    Onyx.connectWithoutView({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- outputKey is a derived Onyx key by contract
+        key: spec.outputKey as Parameters<typeof Onyx.connectWithoutView>[0]['key'],
+        callback: (outputValue) => {
+            if (outputValue) {
+                return;
+            }
+            const clearTask = OnyxCache.getTaskPromise(TASK.CLEAR);
+            const reseed = () => {
+                spec.ensureOutputs?.();
+                isSweepRequested = true;
+                schedulePump();
+            };
+            if (clearTask) {
+                clearTask.finally(reseed);
+            } else {
+                reseed();
+            }
+        },
+    });
+
+    if (spec.isOutputPersisted === false) {
+        // RAM_ONLY output: nothing persisted survives a restart — every engine start rebuilds.
+        isSweepRequested = true;
+        schedulePump();
+        return;
+    }
 
     // Version check: absent (fresh install, post-clear) or outdated (compute schema changed) stamp
     // means the persisted outputs can't be trusted — rebuild them in the background.
