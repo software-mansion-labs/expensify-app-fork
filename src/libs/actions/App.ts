@@ -4,7 +4,6 @@ import * as API from '@libs/API';
 import type {GetMissingOnyxMessagesParams, HandleRestrictedEventParams, OpenAppParams, ReconnectAppParams, UpdatePreferredLocaleParams} from '@libs/API/parameters';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import clearWorkboxRecoveryCaches from '@libs/clearWorkboxRecoveryCaches';
-import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import {getLastFullReconnectTimeToRecord} from '@libs/FullReconnectUtils';
 import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
@@ -37,6 +36,7 @@ import {findFocusedRoute} from '@react-navigation/native';
 import {Str} from 'expensify-common';
 import {AppState} from 'react-native';
 import Onyx from 'react-native-onyx';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import clearOnyxAndSeedFullReconnect from './clearOnyxAndSeedFullReconnect';
 import {setShouldForceOffline} from './Network';
@@ -101,27 +101,13 @@ Onyx.connectWithoutView({
     },
 });
 
-// allReports and allPolicies are used in the "ForOpenOrReconnect" functions and are not directly associated with the View,
-// so retrieving them using Onyx.connectWithoutView is correct.
-let allReports: OnyxCollection<OnyxTypes.Report>;
-let allPolicies: OnyxCollection<OnyxTypes.Policy>;
-// Lazy-Onyx POC (purity lane): whole-collection subscriptions here would hydrate REPORT and POLICY
-// at module load — i.e. during boot. Deferred until the app is interactive; keyed fallback readers
-// see undefined until the drain, same as before Onyx's first flush.
-deferUntilAppReady(() => {
-    Onyx.connectWithoutView({
-        key: ONYXKEYS.COLLECTION.REPORT,
-        callback: (value) => {
-            allReports = value;
-        },
-    });
-    Onyx.connectWithoutView({
-        key: ONYXKEYS.COLLECTION.POLICY,
-        callback: (value) => {
-            allPolicies = value;
-        },
-    });
-}, 'low');
+// Lazy-Onyx POC (purity lane): the OpenApp/ReconnectApp param builders read POLICY and REPORT
+// straight from the cache instead of module snapshots. The callers hydrate both collections right
+// before building params (see openApp/reconnectApp), so the cache is authoritative at read time —
+// a module connect would either hydrate everything at module load (during boot) or, deferred, hold
+// an EMPTY snapshot exactly on the boot-time OpenApp call that matters most.
+const getCachedReports = (): OnyxCollection<OnyxTypes.Report> => OnyxUtils.getCachedCollection(ONYXKEYS.COLLECTION.REPORT);
+const getCachedPolicies = (): OnyxCollection<OnyxTypes.Policy> => OnyxUtils.getCachedCollection(ONYXKEYS.COLLECTION.POLICY);
 
 let preservedUserSession: OnyxTypes.Session | undefined;
 
@@ -302,7 +288,7 @@ AppState.addEventListener('change', (nextAppState) => {
  * Gets the policy params that are passed to the server in the OpenApp and ReconnectApp API commands. This includes a full list of policy IDs the client knows about as well as when they were last modified.
  */
 function getPolicyParamsForOpenOrReconnect(): PolicyParamsForOpenOrReconnect {
-    return {policyIDList: getNonOptimisticPolicyIDs(allPolicies)};
+    return {policyIDList: getNonOptimisticPolicyIDs(getCachedPolicies())};
 }
 
 type OnyxDataForOpenOrReconnectKeys = typeof ONYXKEYS.COLLECTION.REPORT | typeof ONYXKEYS.IS_LOADING_REPORT_DATA | typeof ONYXKEYS.HAS_LOADED_APP | typeof ONYXKEYS.IS_LOADING_APP;
@@ -376,7 +362,7 @@ function getOnyxDataForOpenOrReconnect(
     }
 
     if (shouldKeepPublicRooms) {
-        const publicReports = Object.values(allReports ?? {}).filter((report) => isPublicRoom(report) && isValidReport(report));
+        const publicReports = Object.values(getCachedReports() ?? {}).filter((report) => isPublicRoom(report) && isValidReport(report));
         if (publicReports) {
             for (const report of publicReports) {
                 result.successData?.push({
@@ -395,7 +381,7 @@ function getOnyxDataForOpenOrReconnect(
     const reportsWithDraftComments = Object.entries(allReportsWithDraftComments ?? {})
         .filter(([, value]) => value !== null)
         .map(([key]) => key.replace(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT, ''))
-        .map((reportID) => allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]);
+        .map((reportID) => getCachedReports()?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]);
 
     if (reportsWithDraftComments) {
         for (const report of reportsWithDraftComments) {
@@ -692,7 +678,7 @@ function createWorkspaceWithPolicyDraftAndNavigateToIt(params: CreateWorkspaceWi
             conciergeChat,
             currentUserAccountIDParam,
             currentUserEmailParam,
-            allReportsParam: allReports,
+            allReportsParam: getCachedReports(),
             shouldCreateControlPolicy,
             type,
             isSelfTourViewed,
@@ -764,7 +750,7 @@ function createWorkspaceWithPolicyDraft(params: CreateWorkspaceWithPolicyDraftPa
         conciergeChat,
         currentUserAccountIDParam,
         currentUserEmailParam,
-        allReportsParam: allReports,
+        allReportsParam: getCachedReports(),
         shouldCreateControlPolicy,
         isSelfTourViewed,
         betas,

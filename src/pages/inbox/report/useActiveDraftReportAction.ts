@@ -1,4 +1,5 @@
 import useAncestors from '@hooks/useAncestors';
+import useMemberMap from '@hooks/useMemberMap';
 import useOnyx from '@hooks/useOnyx';
 
 import {getOriginalReportID, shouldExcludeAncestorReportAction} from '@libs/ReportUtils';
@@ -9,6 +10,8 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxTypes from '@src/types/onyx';
 
 import type {OnyxCollection} from 'react-native-onyx';
+
+import {useMemo} from 'react';
 
 /**
  * Canonical active edit derived from drafts on an ancestor-original report, the visible report, or a linked transaction thread.
@@ -143,64 +146,25 @@ function useActiveDraftReportAction({reportID, effectiveTransactionThreadReportI
             ? undefined
             : effectiveTransactionThreadReportID;
 
-    const [reportActions] = useOnyx(ONYXKEYS.COLLECTION.REPORT_ACTIONS, {
-        selector: (allReportActions: OnyxCollection<OnyxTypes.ReportActions>) => {
-            if (!allReportActions) {
-                return {};
-            }
+    // Lazy-Onyx POC: the old whole-collection subscriptions (with slicing selectors) hydrated ALL
+    // report actions and drafts to serve a bounded, known ID set — the visible report, the
+    // transaction thread, and the ancestors. Member maps subscribe to exactly those keys.
+    const actionsReportIDs = useMemo(() => [reportID, transactionThreadReportID, ...ancestors.map((ancestor) => ancestor.report.reportID)], [reportID, transactionThreadReportID, ancestors]);
+    const reportActions = useMemberMap<OnyxTypes.ReportActions>(ONYXKEYS.COLLECTION.REPORT_ACTIONS, actionsReportIDs);
 
-            const scopedReportActionsSlice: OnyxCollection<OnyxTypes.ReportActions> = {};
-
-            if (reportID) {
-                const visibleReportActionsKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`;
-                scopedReportActionsSlice[visibleReportActionsKey] = allReportActions[visibleReportActionsKey];
-            }
-
-            if (transactionThreadReportID != null) {
-                const transactionThreadActionsKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}`;
-                scopedReportActionsSlice[transactionThreadActionsKey] = allReportActions[transactionThreadActionsKey];
-            }
-
-            for (const ancestor of ancestors) {
-                const ancestorReportActionsKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${ancestor.report.reportID}`;
-                scopedReportActionsSlice[ancestorReportActionsKey] = allReportActions[ancestorReportActionsKey];
-            }
-
-            return scopedReportActionsSlice;
-        },
-    });
-
-    const [reportActionsDrafts] = useOnyx(ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS, {
-        selector: (allDrafts: OnyxCollection<OnyxTypes.ReportActionsDrafts>) => {
-            if (!allDrafts) {
-                return {};
-            }
-
-            const scopedDraftsSlice: OnyxCollection<OnyxTypes.ReportActionsDrafts> = {};
-
-            if (reportID) {
-                const currentDraftKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${reportID}`;
-                scopedDraftsSlice[currentDraftKey] = allDrafts[currentDraftKey];
-            }
-
-            if (transactionThreadReportID != null) {
-                const transactionThreadDraftKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${transactionThreadReportID}`;
-                scopedDraftsSlice[transactionThreadDraftKey] = allDrafts[transactionThreadDraftKey];
-            }
-
-            for (const ancestor of ancestors) {
-                const actionsForAncestorRow = reportActions?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${ancestor.report.reportID}`];
-                const draftOwningReportID = getOriginalReportID(ancestor.report.reportID, ancestor.reportAction, actionsForAncestorRow);
-                if (!draftOwningReportID) {
-                    continue;
-                }
-                const ancestorDraftBucketKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${draftOwningReportID}`;
-                scopedDraftsSlice[ancestorDraftBucketKey] = allDrafts[ancestorDraftBucketKey];
-            }
-
-            return scopedDraftsSlice;
-        },
-    });
+    const draftsReportIDs = useMemo(
+        () => [
+            reportID,
+            transactionThreadReportID,
+            // A draft can live on the report that OWNS the ancestor action (getOriginalReportID), not
+            // necessarily the ancestor itself — mirror the old selector's bucket resolution.
+            ...ancestors.map((ancestor) =>
+                getOriginalReportID(ancestor.report.reportID, ancestor.reportAction, reportActions?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${ancestor.report.reportID}`]),
+            ),
+        ],
+        [reportID, transactionThreadReportID, ancestors, reportActions],
+    );
+    const reportActionsDrafts = useMemberMap<OnyxTypes.ReportActionsDrafts>(ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS, draftsReportIDs);
 
     return computeResolvedActiveDraftEdit({ancestors, reportActions, reportActionsDrafts, reportID, transactionThreadReportID});
 }

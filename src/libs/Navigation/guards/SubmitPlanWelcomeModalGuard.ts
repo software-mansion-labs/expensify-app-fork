@@ -1,4 +1,3 @@
-import {deferUntilAppReady} from '@libs/deferUntilAppReady';
 import Log from '@libs/Log';
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 import findFocusedRouteWithOnyxTabGuard from '@libs/Navigation/helpers/findFocusedRouteWithOnyxTabGuard';
@@ -12,27 +11,26 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES, {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-import type {IntroSelected, Policy, SecurityGroup, Session} from '@src/types/onyx';
+import type {IntroSelected, SecurityGroup, Session} from '@src/types/onyx';
 
 import type {NavigationAction, NavigationState} from '@react-navigation/native';
-import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
+import type {OnyxEntry} from 'react-native-onyx';
 
 import {findFocusedRoute} from '@react-navigation/native';
 import {hasCompletedGuidedSetupFlowSelector} from '@selectors/Onboarding';
 import {isSupportalSessionSelector} from '@selectors/Session';
 import {Str} from 'expensify-common';
 import Onyx from 'react-native-onyx';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import type {GuardContext, GuardResult, NavigationGuard} from './types';
 
 let session: OnyxEntry<Session>;
 let isLoadingApp = true;
 let introSelected: OnyxEntry<IntroSelected>;
-let policies: OnyxCollection<Policy>;
 let hasCompletedGuidedSetupFlow: boolean | undefined;
 let hasShownSubmitMigrationModal: OnyxEntry<boolean>;
 let myDomainSecurityGroups: OnyxEntry<Record<string, string>>;
-let securityGroups: OnyxCollection<SecurityGroup>;
 let isSubmitMigrationModalShownLoaded = false;
 let hasLoadedApp = false;
 
@@ -88,9 +86,18 @@ function resetSessionFlag() {
  */
 function shouldShowSubmitPlanWelcomeModal(): boolean {
     const hasEmployerIntent = introSelected?.choice === CONST.ONBOARDING_CHOICES.EMPLOYER;
-    const groupPolicies = getGroupPoliciesWhereReportCanBeCreated(policies, session?.email);
-
-    return hasEmployerIntent && !!hasCompletedGuidedSetupFlow && groupPolicies.length === 0 && !isPolicyCreationRestricted() && !hasShownSubmitMigrationModal;
+    if (!hasEmployerIntent || !hasCompletedGuidedSetupFlow || hasShownSubmitMigrationModal || isPolicyCreationRestricted()) {
+        return false;
+    }
+    // Lazy-Onyx POC: no whole-POLICY subscription — read the warm cache. The synchronous guard path
+    // may only decide when the collection is FULLY hydrated (post-OpenApp writes make it so);
+    // otherwise it must not claim "no group policies" from a partial view — the async proactive
+    // path (which hydrates on demand) owns the decision then.
+    if (Onyx.getHydrationStatus(ONYXKEYS.COLLECTION.POLICY) !== 'hydrated') {
+        return false;
+    }
+    const groupPolicies = getGroupPoliciesWhereReportCanBeCreated(OnyxUtils.getCachedCollection(ONYXKEYS.COLLECTION.POLICY), session?.email);
+    return groupPolicies.length === 0;
 }
 
 /**
@@ -104,7 +111,11 @@ function isPolicyCreationRestricted(): boolean {
     if (!securityGroupID) {
         return false;
     }
-    return securityGroups?.[`${ONYXKEYS.COLLECTION.SECURITY_GROUP}${securityGroupID}`]?.enableRestrictedPolicyCreation === true;
+    // Lazy-Onyx POC: keyed cache read instead of a whole-SECURITY_GROUP subscription — the ID is
+    // known, and the member is written by OpenApp so it's warm whenever this decision can matter.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- securityGroup_ members always hold SecurityGroups
+    const securityGroup = OnyxUtils.tryGetCachedValue(`${ONYXKEYS.COLLECTION.SECURITY_GROUP}${securityGroupID}`) as SecurityGroup | undefined;
+    return securityGroup?.enableRestrictedPolicyCreation === true;
 }
 
 /**
@@ -113,16 +124,30 @@ function isPolicyCreationRestricted(): boolean {
  * Waits for NVP_SUBMIT_MIGRATION_MODAL_SHOWN to load before evaluating, preventing the
  * race condition where the modal would re-appear on app restart.
  */
-function navigateToSubmitPlanWelcomeModalIfReady() {
-    if (
-        isSupportalSessionSelector(session) ||
-        !session?.authToken ||
-        isLoadingApp ||
-        !hasLoadedApp ||
-        hasRedirectedToSubmitPlanModal ||
-        !isSubmitMigrationModalShownLoaded ||
-        !shouldShowSubmitPlanWelcomeModal()
-    ) {
+async function navigateToSubmitPlanWelcomeModalIfReady() {
+    if (isSupportalSessionSelector(session) || !session?.authToken || isLoadingApp || !hasLoadedApp || hasRedirectedToSubmitPlanModal || !isSubmitMigrationModalShownLoaded) {
+        return;
+    }
+
+    // Cheap singleton gates first, so the POLICY hydration below only ever runs for the rare
+    // eligible cohort (employer intent, onboarding done, modal not shown yet) — once per session.
+    const hasEmployerIntent = introSelected?.choice === CONST.ONBOARDING_CHOICES.EMPLOYER;
+    if (!hasEmployerIntent || !hasCompletedGuidedSetupFlow || hasShownSubmitMigrationModal) {
+        return;
+    }
+
+    // Lazy-Onyx POC: targeted reads replace the old whole-collection connect caches. The decision is
+    // boot-time, so the data must be fetched on demand: the (single) security-group member, then the
+    // policy collection this one check genuinely needs in full.
+    const userDomain = session?.email ? Str.extractEmailDomain(session.email) : undefined;
+    const securityGroupID = userDomain ? myDomainSecurityGroups?.[userDomain] : undefined;
+    if (securityGroupID) {
+        await OnyxUtils.get(`${ONYXKEYS.COLLECTION.SECURITY_GROUP}${securityGroupID}`);
+    }
+    await Onyx.hydrate(ONYXKEYS.COLLECTION.POLICY);
+
+    // Re-check the one-shot flag — the guard's synchronous path may have redirected during the awaits.
+    if (hasRedirectedToSubmitPlanModal || !shouldShowSubmitPlanWelcomeModal()) {
         return;
     }
 
@@ -186,18 +211,6 @@ Onyx.connectWithoutView({
     },
 });
 
-// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate POLICY at module
-// load — i.e. during boot. Deferred until the app is interactive; the guard's synchronous reads see
-// undefined until the drain, same as before Onyx's first flush.
-deferUntilAppReady(() => {
-    Onyx.connectWithoutView({
-        key: ONYXKEYS.COLLECTION.POLICY,
-        callback: (value) => {
-            policies = value;
-        },
-    });
-}, 'low');
-
 Onyx.connectWithoutView({
     key: ONYXKEYS.NVP_SUBMIT_MIGRATION_MODAL_SHOWN,
     callback: (value) => {
@@ -229,18 +242,6 @@ Onyx.connectWithoutView({
         myDomainSecurityGroups = value;
     },
 });
-
-// Lazy-Onyx POC (purity lane): a whole-collection subscription here would hydrate SECURITY_GROUP at
-// module load — i.e. during boot. Deferred until the app is interactive; the guard's synchronous
-// reads see undefined until the drain, same as before Onyx's first flush.
-deferUntilAppReady(() => {
-    Onyx.connectWithoutView({
-        key: ONYXKEYS.COLLECTION.SECURITY_GROUP,
-        callback: (value) => {
-            securityGroups = value;
-        },
-    });
-}, 'low');
 
 /**
  * Block navigation while the submit plan modal is active (on top of the stack).

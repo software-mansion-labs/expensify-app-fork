@@ -1,4 +1,3 @@
-import useOnyx from '@hooks/useOnyx';
 import useRootNavigationState from '@hooks/useRootNavigationState';
 
 import calculateReceiptPaneRHPWidth from '@libs/Navigation/helpers/calculateReceiptPaneRHPWidth';
@@ -12,14 +11,13 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report} from '@src/types/onyx';
 
-import type {OnyxCollection} from 'react-native-onyx';
-
 import {findFocusedRoute} from '@react-navigation/native';
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState} from 'react';
 // We use Animated for all functionality related to wide RHP to make it easier
 // to interact with react-navigation components (e.g., CardContainer, interpolator), which also use Animated.
 // eslint-disable-next-line no-restricted-imports
 import {Animated, Dimensions} from 'react-native';
+import OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
 
 import type {RHPWidth, RHPWidthHint, WideRHPActionsContextType, WideRHPStateContextType} from './types';
 
@@ -55,17 +53,14 @@ const modalStackOverlaySuperWideRHPPositionLeft = new Animated.Value(superWideRH
 const WideRHPStateContext = createContext<WideRHPStateContextType>(defaultWideRHPStateContextValue);
 const WideRHPActionsContext = createContext<WideRHPActionsContextType>(defaultWideRHPActionsContextValue);
 
-const expenseReportSelector = (reports: OnyxCollection<Report>) => {
-    return Object.fromEntries(
-        Object.entries(reports ?? {}).map(([key, report]) => [
-            key,
-            {
-                reportID: report?.reportID,
-                type: report?.type,
-            },
-        ]),
-    );
-};
+// Lazy-Onyx POC: targeted cache read instead of a whole-REPORT subscription — this provider is
+// always mounted, and the subscription hydrated the entire collection at boot only to look up one
+// report's `type` at RHP-open time (when that member is warm anyway; a cold miss just skips the
+// invoice/task exclusion, which the rendered screen corrects).
+function getCachedReportType(reportID: string): string | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- report_ members always hold Reports
+    return (OnyxUtils.tryGetCachedValue(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`) as Report | undefined)?.type;
+}
 
 // Function to add a Wide/Super Wide RHP route key to the array including wide/super wide RHP route keys
 function showWideRHPRoute(route: NavigationRoute, setAllRHPRouteKeys: React.Dispatch<React.SetStateAction<string[]>>) {
@@ -115,10 +110,6 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
 
     // A reportID maps to at most one hint, making "wide vs super-wide" structurally mutually exclusive.
     const [reportRHPWidthHints, setReportRHPWidthHints] = useState<Map<string, RHPWidthHint>>(() => new Map());
-
-    const [allReports] = useOnyx(ONYXKEYS.COLLECTION.REPORT, {
-        selector: expenseReportSelector,
-    });
 
     const isWideRHPClosingRef = useRef(false);
     const isSuperWideRHPClosingRef = useRef(false);
@@ -229,8 +220,8 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
             return;
         }
         if (width === 'wide') {
-            const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-            if (report?.type === CONST.REPORT.TYPE.INVOICE || report?.type === CONST.REPORT.TYPE.TASK) {
+            const reportType = getCachedReportType(reportID);
+            if (reportType === CONST.REPORT.TYPE.INVOICE || reportType === CONST.REPORT.TYPE.TASK) {
                 return;
             }
         }

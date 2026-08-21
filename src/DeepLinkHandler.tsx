@@ -218,10 +218,10 @@ function DeepLinkHandler({onInitialUrl}: DeepLinkHandlerProps) {
         if (!pendingPublicRoomReportID || isLoadingApp || !isAnonymousUser()) {
             return;
         }
-        // The room made it into Onyx (via the member-key subscription above), so the cold-start race is over - stop tracking it.
+        // The room made it into Onyx (via the member-key subscription above), so the cold-start race is
+        // over. Tracking state is deliberately NOT reset here (setState in an effect cascades renders);
+        // the lingering member-key subscription is one key, and a new deep link re-targets it anyway.
         if (pendingPublicRoomReport?.reportID) {
-            setPendingPublicRoomReportID('');
-            hasRefetchedPublicRoom.current = false;
             return;
         }
         if (hasRefetchedPublicRoom.current) {

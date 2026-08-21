@@ -73,13 +73,16 @@ describe('useAncestors', () => {
         jest.clearAllMocks();
     });
 
-    test('returns correct ancestor reports and actions', () => {
+    test('returns correct ancestor reports and actions', async () => {
         let reportNum = 8;
 
         const mockReport = mockReports[`${ONYXKEYS.COLLECTION.REPORT}${reportNum}`];
-        const {
-            result: {current: ancestors},
-        } = renderHook(() => useAncestors(mockReport));
+        // The lazy hook fetches the chain asynchronously from targeted member reads.
+        const {result} = renderHook(() => useAncestors(mockReport));
+        await act(async () => {
+            await waitForBatchedUpdates();
+        });
+        const ancestors = result.current;
 
         // Check the oldest ancestor (should be reportID 1)
         const {report: oldestAncestorReport, reportAction: oldestAncestorReportAction} = ancestors.at(0) ?? {};
