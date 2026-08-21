@@ -4,7 +4,7 @@ import useReportActionsNewActionLiveTail from '@pages/inbox/report/useReportActi
 
 import type * as OnyxTypes from '@src/types/onyx';
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {getFakeReportAction} from '../utils/ReportTestUtils';
 import renderCoverableScreen from '../utils/ScreenCoverHarness';
@@ -43,6 +43,45 @@ const {openReport, pruneReportActionPagesToNewestWindow, subscribeToNewActionEve
 
 const transitionTracker = createTransitionTrackerHarness();
 
+type LiveTail = ReturnType<typeof useReportActionsNewActionLiveTail>;
+
+const publishedLiveTail: {current: LiveTail | undefined} = {current: undefined};
+const publishedFinishInitialLoad: {current: (() => void) | undefined} = {current: undefined};
+const setTreatAsNoPaginationAnchor = jest.fn();
+
+function LiveTailProbe() {
+    // The initial report actions load is in flight until the openReport triggered by the jump resolves.
+    const [isLoadingInitialReportActions, setIsLoadingInitialReportActions] = useState(true);
+
+    const liveTail = useReportActionsNewActionLiveTail({
+        reportID: REPORT_ID,
+        introSelected: undefined,
+        betas: undefined,
+        isOffline: false,
+        reportScrollManager: {scrollToIndex: jest.fn(), scrollToBottom: jest.fn(), scrollToEnd: jest.fn(), scrollToOffset: jest.fn()},
+        setIsFloatingMessageCounterVisible: jest.fn(),
+        setActionIdToHighlight: jest.fn(),
+        unreadMarkerReportActionID: '200',
+        hasNewerActions: true,
+        linkedReportActionID: undefined,
+        hasNewestReportAction: true,
+        sortedVisibleReportActions: [],
+        sortedAllReportActionsForPagination: [],
+        reportActionPages: undefined,
+        setTreatAsNoPaginationAnchor,
+        treatAsNoPaginationAnchor: false,
+        prevIsLoadingInitialReportActions: true,
+        reportLoadingState: {isLoadingInitialReportActions},
+    });
+
+    useEffect(() => {
+        publishedLiveTail.current = liveTail;
+        publishedFinishInitialLoad.current = () => setIsLoadingInitialReportActions(false);
+    });
+
+    return null;
+}
+
 /**
  * The live-tail jump is a four-stage machine (idle -> open_report -> await_scroll -> await_prune) that spans several
  * renders and an `openReport` round trip. Covering the chat with a thread mid-jump must not rewind it, or the list is
@@ -52,51 +91,19 @@ describe('useReportActionsNewActionLiveTail across a cover/reveal cycle', () => 
     beforeEach(() => {
         jest.clearAllMocks();
         transitionTracker.install();
+        publishedLiveTail.current = undefined;
+        publishedFinishInitialLoad.current = undefined;
     });
 
     function renderLiveTail() {
-        const liveTailRef: {current: ReturnType<typeof useReportActionsNewActionLiveTail> | undefined} = {current: undefined};
-        const setTreatAsNoPaginationAnchor = jest.fn();
-        let finishInitialLoad: (() => void) | undefined;
-
-        function Probe() {
-            // The initial report actions load is in flight until the openReport triggered by the jump resolves.
-            const [isLoadingInitialReportActions, setIsLoadingInitialReportActions] = useState(true);
-            finishInitialLoad = () => setIsLoadingInitialReportActions(false);
-
-            liveTailRef.current = useReportActionsNewActionLiveTail({
-                reportID: REPORT_ID,
-                introSelected: undefined,
-                betas: undefined,
-                isOffline: false,
-                reportScrollManager: {scrollToIndex: jest.fn(), scrollToBottom: jest.fn(), scrollToEnd: jest.fn(), scrollToOffset: jest.fn()},
-                setIsFloatingMessageCounterVisible: jest.fn(),
-                setActionIdToHighlight: jest.fn(),
-                unreadMarkerReportActionID: '200',
-                hasNewerActions: true,
-                linkedReportActionID: undefined,
-                hasNewestReportAction: true,
-                sortedVisibleReportActions: [],
-                sortedAllReportActionsForPagination: [],
-                reportActionPages: undefined,
-                setTreatAsNoPaginationAnchor,
-                treatAsNoPaginationAnchor: false,
-                prevIsLoadingInitialReportActions: true,
-                reportLoadingState: {isLoadingInitialReportActions},
-            });
-
-            return null;
-        }
-
-        const screen = renderCoverableScreen(<Probe />);
+        const screen = renderCoverableScreen(<LiveTailProbe />);
 
         return {
             ...screen,
-            getLiveTail: () => liveTailRef.current,
-            setTreatAsNoPaginationAnchor,
+            getLiveTail: () => publishedLiveTail.current,
             finishInitialLoad: () =>
                 act(async () => {
-                    finishInitialLoad?.();
+                    publishedFinishInitialLoad.current?.();
                     // The hook defers its scroll flag to a microtask, which has to settle inside the same act block.
                     await Promise.resolve();
                 }),
@@ -127,6 +134,6 @@ describe('useReportActionsNewActionLiveTail across a cover/reveal cycle', () => 
         act(() => screen.getLiveTail()?.completeLiveTailPruneAfterScrollToBottom());
 
         expect(pruneReportActionPagesToNewestWindow).toHaveBeenCalledTimes(1);
-        expect(screen.setTreatAsNoPaginationAnchor).toHaveBeenCalledWith(false);
+        expect(setTreatAsNoPaginationAnchor).toHaveBeenCalledWith(false);
     });
 });

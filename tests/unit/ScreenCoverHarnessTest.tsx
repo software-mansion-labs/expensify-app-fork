@@ -2,80 +2,81 @@ import React, {useEffect, useRef, useState} from 'react';
 
 import renderCoverableScreen, {getCoverMode} from '../utils/ScreenCoverHarness';
 
+let effectLog: string[] = [];
+let survivals: Array<{stateIdentity: Record<string, unknown>; refValue: string}> = [];
+
+/** Records what the effect lifecycle did, which is the only difference between the two behaviors. */
+function EffectLogProbe() {
+    useEffect(() => {
+        effectLog.push('effect');
+        return () => {
+            effectLog.push('cleanup');
+        };
+    }, []);
+
+    return null;
+}
+
+/**
+ * Records the identity of a lazily initialized state value and a ref set at mount. The initializer runs once per
+ * state creation, so an unchanged identity is proof the state was carried over rather than started again.
+ */
+function SurvivalProbe() {
+    const [stateIdentity] = useState<Record<string, unknown>>(() => ({}));
+    const survivingRef = useRef('set-at-mount');
+
+    useEffect(() => {
+        survivals.push({stateIdentity, refValue: survivingRef.current});
+    });
+
+    return null;
+}
+
 /**
  * Guards the harness the chat-window lifecycle suite is built on: covering a screen must leave state and refs alone
  * while doing to the effects exactly what the configured mode promises.
  */
 describe('ScreenCoverHarness', () => {
-    it('runs the mount effect exactly once before any cover happens', async () => {
-        const calls: string[] = [];
+    beforeEach(() => {
+        effectLog = [];
+        survivals = [];
+    });
 
-        function Probe() {
-            useEffect(() => {
-                calls.push('effect');
-                return () => {
-                    calls.push('cleanup');
-                };
-            }, []);
-            return null;
-        }
+    it('runs the mount effect exactly once before any cover happens', () => {
+        renderCoverableScreen(<EffectLogProbe />);
 
-        renderCoverableScreen(<Probe />);
-
-        expect(calls).toEqual(['effect']);
+        expect(effectLog).toEqual(['effect']);
     });
 
     it('cleans up and re-runs effects on a hide/reveal cycle only under activity', async () => {
-        const calls: string[] = [];
-
-        function Probe() {
-            useEffect(() => {
-                calls.push('effect');
-                return () => {
-                    calls.push('cleanup');
-                };
-            }, []);
-            return null;
-        }
-
-        const screen = renderCoverableScreen(<Probe />);
-        calls.length = 0;
+        const screen = renderCoverableScreen(<EffectLogProbe />);
+        effectLog = [];
 
         await screen.hide();
         await screen.reveal();
 
         if (getCoverMode() === 'activity') {
-            expect(calls).toEqual(['cleanup', 'effect']);
+            expect(effectLog).toEqual(['cleanup', 'effect']);
         } else {
-            expect(calls).toEqual([]);
+            expect(effectLog).toEqual([]);
         }
     });
 
+    it('runs the mount effect of a screen that mounts already covered, in both modes', () => {
+        renderCoverableScreen(<EffectLogProbe />, {startCovered: true});
+
+        // Neither behavior may skip the mount work of a screen that mounts underneath another one, or a deep-linked
+        // screen would fetch nothing and the reveal would show a loading state.
+        expect(effectLog).toContain('effect');
+    });
+
     it('keeps state and refs across a hide/reveal cycle in both modes', async () => {
-        const seen: Array<{count: number; refValue: string | undefined}> = [];
-
-        function Probe() {
-            const [count, setCount] = useState(0);
-            const ref = useRef<string | undefined>(undefined);
-            ref.current ??= 'set-at-mount';
-            seen.push({count, refValue: ref.current});
-
-            useEffect(() => {
-                setCount((value) => value + 1);
-            }, []);
-
-            return null;
-        }
-
-        const screen = renderCoverableScreen(<Probe />);
-        const countBeforeHide = seen.at(-1)?.count;
+        const screen = renderCoverableScreen(<SurvivalProbe />);
 
         await screen.hide();
         await screen.reveal();
 
-        // The mount effect bumps the counter once per effect mount, so activity adds one; neither mode may reset it.
-        const expectedCount = getCoverMode() === 'activity' ? (countBeforeHide ?? 0) + 1 : countBeforeHide;
-        expect(seen.at(-1)?.count).toBe(expectedCount);
-        expect(seen.at(-1)?.refValue).toBe('set-at-mount');
+        expect(survivals.at(-1)?.stateIdentity).toBe(survivals.at(0)?.stateIdentity);
+        expect(survivals.at(-1)?.refValue).toBe('set-at-mount');
     });
 });

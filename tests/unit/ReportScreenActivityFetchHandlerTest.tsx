@@ -78,8 +78,8 @@ describe('ReportFetchHandler across a cover/reveal cycle', () => {
         await Onyx.merge(`${ONYXKEYS.COLLECTION.RAM_ONLY_REPORT_LOADING_STATE}${REPORT_ID}`, {hasOnceLoadedReportActions: true, isLoadingInitialReportActions: false});
     });
 
-    async function renderFetchHandler() {
-        const screen = renderCoverableScreen(<ReportFetchHandler />);
+    async function renderFetchHandler(options?: {startCovered: boolean}) {
+        const screen = renderCoverableScreen(<ReportFetchHandler />, options);
         await waitForBatchedUpdatesWithAct();
         // The leaving-events subscription is scheduled behind the navigation transition.
         transitionTracker.firePendingCallbacks();
@@ -111,6 +111,21 @@ describe('ReportFetchHandler across a cover/reveal cycle', () => {
         await waitForBatchedUpdatesWithAct();
 
         expect(openReport).not.toHaveBeenCalled();
+    });
+
+    it('fetches and subscribes exactly once for a report that mounts already covered', async () => {
+        // A thread opened from a deep link mounts its parent chat underneath it, and that chat is the one the user
+        // lands on after a back press, so it has to be fetched and subscribed at mount and not again on the reveal.
+        const screen = await renderFetchHandler({startCovered: true});
+        expect(openReport).toHaveBeenCalledTimes(1);
+        expect(subscribeToReportLeavingEvents).toHaveBeenCalledTimes(1);
+
+        await screen.reveal();
+        transitionTracker.firePendingCallbacks();
+        await waitForBatchedUpdatesWithAct();
+
+        expect(openReport).toHaveBeenCalledTimes(1);
+        expect(subscribeToReportLeavingEvents).toHaveBeenCalledTimes(1);
     });
 
     it('does not push the report back into its initial loading state on reveal', async () => {
