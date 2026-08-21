@@ -144,13 +144,20 @@ function init() {
 
                         // Per-member projection (lazy-Onyx POC): persist only the members computeMembers
                         // reports as changed, so indexed queries over the projection collection stay fresh.
+                        // The write is chunked: the first-ever compute (or a full recompute) projects EVERY
+                        // member, and one giant mergeCollection would block the storage layer.
                         if (projection) {
                             // @ts-expect-error TypeScript can't confirm the shape of dependencyValues matches computeMembers' parameters
                             const changedMembers = projection.computeMembers(dependencyValues, newDerivedValue, previousDerivedValue);
-                            if (Object.keys(changedMembers).length > 0) {
-                                Log.info(`[OnyxDerived] projecting ${Object.keys(changedMembers).length} member(s) of ${key} into ${projection.collectionKey}`);
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- computeMembers returns this collection's member shapes by contract
-                                Onyx.mergeCollection(projection.collectionKey, changedMembers as Parameters<typeof Onyx.mergeCollection>[1]);
+                            const memberEntries = Object.entries(changedMembers);
+                            if (memberEntries.length > 0) {
+                                Log.info(`[OnyxDerived] projecting ${memberEntries.length} member(s) of ${key} into ${projection.collectionKey}`);
+                                const PROJECTION_WRITE_CHUNK_SIZE = 500;
+                                for (let start = 0; start < memberEntries.length; start += PROJECTION_WRITE_CHUNK_SIZE) {
+                                    const chunk = Object.fromEntries(memberEntries.slice(start, start + PROJECTION_WRITE_CHUNK_SIZE));
+                                    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- computeMembers returns this collection's member shapes by contract
+                                    Onyx.mergeCollection(projection.collectionKey, chunk as Parameters<typeof Onyx.mergeCollection>[1]);
+                                }
                             }
                         }
                     } finally {

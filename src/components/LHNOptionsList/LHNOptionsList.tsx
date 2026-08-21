@@ -1,5 +1,6 @@
 import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
 
+import useMemberMap from '@hooks/useMemberMap';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
@@ -13,7 +14,7 @@ import variables from '@styles/variables';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {Report} from '@src/types/onyx';
+import type {Policy, Report} from '@src/types/onyx';
 
 import type {FlashListProps, FlashListRef} from '@shopify/flash-list';
 import type {ReactElement} from 'react';
@@ -33,15 +34,39 @@ const keyExtractor = (item: Report) => `report_${item.reportID}`;
 const platform = getPlatform();
 const isWeb = platform === CONST.PLATFORM.WEB;
 
-function LHNOptionsList({style, contentContainerStyles, data, onSelectRow, optionMode, shouldDisableFocusOptions = false, onFirstItemRendered = () => {}}: LHNOptionsListProps) {
+function LHNOptionsList({
+    style,
+    contentContainerStyles,
+    data,
+    onSelectRow,
+    optionMode,
+    shouldDisableFocusOptions = false,
+    onFirstItemRendered = () => {},
+    onEndReached,
+}: LHNOptionsListProps) {
     const {saveScrollOffset, getScrollOffset, saveScrollIndex, getScrollIndex} = useContext(ScrollOffsetContext);
     const {isOffline} = useNetwork();
     const flashListRef = useRef<FlashListRef<Report>>(null);
     const route = useRoute();
-    const [reports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
     const reportAttributes = useReportAttributes();
-    const [policy] = useOnyx(ONYXKEYS.COLLECTION.POLICY);
     const [personalDetails] = useOnyx(ONYXKEYS.PERSONAL_DETAILS_LIST);
+
+    // Lazy-Onyx POC: the rows only ever LOOK UP a handful of members (each row's parent report,
+    // one-transaction thread, and policies), so subscribe to exactly those instead of the whole
+    // REPORT and POLICY collections — a whole-collection subscription here would hydrate everything
+    // the moment the LHN mounts and undo the windowed provider entirely.
+    const relatedReportIDs = useMemo(() => data.flatMap((item) => [item.parentReportID, reportAttributes?.[item.reportID]?.oneTransactionThreadReportID]), [data, reportAttributes]);
+    const reports = useMemberMap<Report>(ONYXKEYS.COLLECTION.REPORT, relatedReportIDs);
+    const relatedPolicyIDs = useMemo(
+        () =>
+            data.flatMap((item) => {
+                const itemParentReport = reports[`${ONYXKEYS.COLLECTION.REPORT}${item.parentReportID}`];
+                const receiverPolicyIDs = [item.invoiceReceiver, itemParentReport?.invoiceReceiver].map((receiver) => (receiver && 'policyID' in receiver ? receiver.policyID : undefined));
+                return [item.policyID, ...receiverPolicyIDs];
+            }),
+        [data, reports],
+    );
+    const policy = useMemberMap<Policy>(ONYXKEYS.COLLECTION.POLICY, relatedPolicyIDs);
 
     const styles = useThemeStyles();
     const estimatedItemSize = optionMode === CONST.OPTION_MODE.COMPACT ? variables.optionRowHeightCompact : variables.optionRowHeight;
@@ -173,6 +198,8 @@ function LHNOptionsList({style, contentContainerStyles, data, onSelectRow, optio
                     showsVerticalScrollIndicator={false}
                     onLayout={onLayout}
                     onScroll={onScroll}
+                    onEndReached={onEndReached}
+                    onEndReachedThreshold={2}
                     initialScrollIndex={initialScrollIndex}
                     maintainVisibleContentPosition={{disabled: true}}
                     drawDistance={250}

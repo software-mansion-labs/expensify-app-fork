@@ -48,7 +48,7 @@ function SidebarLinks({insets, optionListItems, hasReportData, priorityMode = CO
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {shouldUseNarrowLayout, isInLandscapeMode} = useResponsiveLayout();
-    const {setStickyReportID} = useSidebarOrderedReportsActions();
+    const {setStickyReportID, loadMoreReports} = useSidebarOrderedReportsActions();
     const [isLoadingReportData = true] = useOnyx(ONYXKEYS.IS_LOADING_REPORT_DATA);
 
     useEffect(() => {
@@ -115,6 +115,7 @@ function SidebarLinks({insets, optionListItems, hasReportData, priorityMode = CO
                         shouldDisableFocusOptions={shouldUseNarrowLayout}
                         optionMode={viewMode}
                         onFirstItemRendered={setSidebarLoaded}
+                        onEndReached={loadMoreReports}
                     />
                 )}
                 {shouldShowLoadingSkeleton && (

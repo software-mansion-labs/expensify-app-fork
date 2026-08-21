@@ -48,6 +48,8 @@ type SidebarOrderedReportsActionsContextValue = {
     clearLHNCache: () => void;
     setActiveTab: (tab: ValueOf<typeof CONST.INBOX_TAB>) => void;
     setStickyReportID: (reportID: string) => void;
+    /** Pages the lazy LHN window in when the list scrolls near its end (no-op on the classic provider). */
+    loadMoreReports: () => void;
 };
 
 type ReportsToDisplayInLHN = Record<string, OnyxTypes.Report & {hasErrorsOtherThanFailedReceipt?: boolean; requiresAttention?: boolean; isUnreadReport?: boolean}>;
@@ -68,6 +70,7 @@ const SidebarOrderedReportsActionsContext = createContext<SidebarOrderedReportsA
     clearLHNCache: () => {},
     setActiveTab: () => {},
     setStickyReportID: () => {},
+    loadMoreReports: () => {},
 });
 
 // This file does not compile with React Compiler (render-time ref cache below keeps referential
@@ -421,7 +424,10 @@ function SidebarOrderedReportsClassicContextProvider({
         reportsToDisplayInLHN,
     ]);
 
-    const actionsValue: SidebarOrderedReportsActionsContextValue = useMemo(() => ({clearLHNCache, setActiveTab, setStickyReportID}), [clearLHNCache, setActiveTab, setStickyReportID]);
+    const actionsValue: SidebarOrderedReportsActionsContextValue = useMemo(
+        () => ({clearLHNCache, setActiveTab, setStickyReportID, loadMoreReports: () => {}}),
+        [clearLHNCache, setActiveTab, setStickyReportID],
+    );
 
     return (
         <SidebarOrderedReportsStateContext.Provider value={stateValue}>
@@ -487,7 +493,7 @@ function SidebarOrderedReportsLazyContextProvider({children, currentReportIDForT
                   },
         [isInFocusMode],
     );
-    const {items: windowItems} = useOnyxQuery(ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES, windowQuery);
+    const {items: windowItems, loadMore: loadMoreWindow, hasMore: windowHasMore} = useOnyxQuery(ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES, windowQuery);
     // Pinned reports sort into the top group regardless of recency, so they're read separately (small).
     const {items: pinnedItems} = useDrainedOnyxQuery(ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES, {
         where: [{field: 'isPinned', operator: 'eq', value: 1}],
@@ -627,8 +633,18 @@ function SidebarOrderedReportsLazyContextProvider({children, currentReportIDForT
         [filteredReports, orderedReportIDs, derivedCurrentReportID, attributesForSort, activeTab, inboxTabCounts],
     );
 
+    const loadMoreReports = useCallback(() => {
+        if (!windowHasMore) {
+            return;
+        }
+        loadMoreWindow();
+    }, [windowHasMore, loadMoreWindow]);
+
     // The lazy source has no LHN cache to clear — the queries are the source of truth.
-    const actionsValue: SidebarOrderedReportsActionsContextValue = useMemo(() => ({clearLHNCache: () => {}, setActiveTab, setStickyReportID}), [setActiveTab, setStickyReportID]);
+    const actionsValue: SidebarOrderedReportsActionsContextValue = useMemo(
+        () => ({clearLHNCache: () => {}, setActiveTab, setStickyReportID, loadMoreReports}),
+        [setActiveTab, setStickyReportID, loadMoreReports],
+    );
 
     return (
         <SidebarOrderedReportsStateContext.Provider value={stateValue}>

@@ -31,6 +31,9 @@ type CustomLHNOptionsListProps = {
 
     /** Callback to fire when the list is laid out */
     onFirstItemRendered: () => void;
+
+    /** Callback to fire when the list scrolls near its end — pages the lazy LHN window in (lazy-Onyx POC) */
+    onEndReached?: () => void;
 };
 
 type LHNOptionsListProps = CustomLHNOptionsListProps;
