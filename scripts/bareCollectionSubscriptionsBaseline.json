@@ -134,7 +134,7 @@
     "src/hooks/useSelectionModeReportActions.ts": 3,
     "src/hooks/useSelfDMReport.ts": 1,
     "src/hooks/useShouldShowEmptyReportConfirmation.ts": 2,
-    "src/hooks/useSidebarOrderedReports.tsx": 6,
+    "src/hooks/useSidebarOrderedReports.tsx": 7,
     "src/hooks/useSplitEffectivePolicy.ts": 1,
     "src/hooks/useStrictPolicyRules.ts": 1,
     "src/hooks/useSubscriptionPlan.ts": 1,

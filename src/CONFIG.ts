@@ -108,6 +108,9 @@ export default {
     },
     CAPTURE_METRICS: get(Config, 'CAPTURE_METRICS', 'false') === 'true',
     ONYX_METRICS: get(Config, 'ONYX_METRICS', 'false') === 'true',
+    // Lazy-Onyx POC (SOTA LHN): sources the LHN from indexed queries over the derivedReportAttributes_
+    // projection instead of whole-collection subscriptions. Set LAZY_LHN=true in .env for measurement builds.
+    LAZY_LHN: get(Config, 'LAZY_LHN', 'false') === 'true',
     DEV_PORT: process.env.PORT ?? 8082,
     SEND_CRASH_REPORTS: get(Config, 'SEND_CRASH_REPORTS', 'false') === 'true',
     IS_USING_WEB_PROXY: getPlatform() === 'web' && useWebProxy,

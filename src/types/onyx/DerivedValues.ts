@@ -58,6 +58,34 @@ type ReportAttributes = {
 };
 
 /**
+ * One report's LHN-relevant attribute PROJECTION (lazy-Onyx POC, SOTA LHN): a persisted, indexable
+ * member of the `derivedReportAttributes_` collection maintained by the reportAttributes engine.
+ * Carries exactly what the LHN needs to filter and sort without hydrating any whole collection.
+ * Boolean-ish flags are stored as 0/1 numbers so the SQL (json_extract) and JS query engines
+ * compare them identically.
+ */
+type LHNReportAttributes = {
+    /** The computed report name (same value as the derived blob's entry). */
+    reportName: string;
+    /** Lowercased report name — the focus-mode/alphabetical sort key (byte-order approximation of localeCompare). */
+    sortName: string;
+    /** Materialized static LHN eligibility in default mode (runtime factors — focused report, drafts — are added client-side). */
+    lhnEligibleDefault: 0 | 1;
+    /** Materialized static LHN eligibility in focus (#gsd) mode. */
+    lhnEligibleFocus: 0 | 1;
+    /** Whether the report is pinned (copied from the report for indexed grouping). */
+    isPinned: 0 | 1;
+    /** Whether the report is archived (from its RNVP, for the archived-last grouping). */
+    isArchived: 0 | 1;
+    /** Copy of the report's lastVisibleActionCreated — the default-mode (most recent) sort key. */
+    lastVisibleActionCreated: string;
+    /** The status of the brick road (display only). */
+    brickRoadStatus: ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | undefined;
+    /** Whether the report requires attention (GBR grouping). */
+    requiresAttention: 0 | 1;
+};
+
+/**
  * The derived value for report attributes.
  */
 type ReportAttributesDerivedValue = {
@@ -266,6 +294,7 @@ type LoginToAccountIDMapDerivedValue = Record<string, number>;
 
 export type {
     ReportAttributes,
+    LHNReportAttributes,
     ReportAttributesDerivedValue,
     ReportTransactionsAndViolationsDerivedValue,
     ReportTransactionsAndViolations,

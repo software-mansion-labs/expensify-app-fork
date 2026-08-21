@@ -3,6 +3,7 @@ import type {ReportAttributesDerivedValue} from '@src/types/onyx';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
+import useAppReadyOnyxValue from './useAppReadyOnyxValue';
 import useOnDemandReportName, {useOnDemandReportNames} from './useOnDemandReportName';
 import useOnyx from './useOnyx';
 
@@ -13,9 +14,15 @@ import useOnyx from './useOnyx';
  * `useOnyx`, it forces a `deepEqual` comparison on every Onyx update cycle. Because
  * `reports` is a large `Record<string, ReportAttributes>`, that deep comparison is
  * O(n) and expensive.
+ *
+ * Lazy-Onyx POC: the subscription is deferred until the app is interactive
+ * (useAppReadyOnyxValue) — always-mounted whole-map consumers (LHN, tooltips, Search shells) must
+ * not start the derived engine during boot. Until the deferred subscription attaches, the persisted
+ * last-session map from cache is served — the same values today's UI shows before the engine's
+ * first flush.
  */
 function useReportAttributes() {
-    const [reportAttributes] = useOnyx(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
+    const reportAttributes = useAppReadyOnyxValue(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
     return reportAttributes?.reports;
 }
 

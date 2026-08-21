@@ -46,6 +46,25 @@ type OnyxDerivedValueConfig<Key extends ValueOf<typeof ONYXKEYS.DERIVED>, Deps e
      * compute starts from scratch instead of diffing rehydrated data against pre-clear state.
      */
     onReset?: () => void;
+
+    /**
+     * Optional per-member PROJECTION of the derived value into a persisted, indexable Onyx collection
+     * (lazy-Onyx POC, SOTA LHN): after each successful compute the engine writes the returned members
+     * via Onyx.mergeCollection (a `null` member deletes). computeMembers should diff `newValue`
+     * against `previousValue` and return ONLY the changed members (keyed by FULL member key), so a
+     * consumer can read the minimum it displays through an indexed query instead of subscribing to
+     * the whole derived blob.
+     */
+    projection?: {
+        collectionKey: OnyxCollectionKey;
+        computeMembers: (
+            args: {
+                [Index in keyof Deps]: OnyxValue<Deps[Index]>;
+            },
+            newValue: OnyxValue<Key>,
+            previousValue: OnyxValue<Key> | undefined,
+        ) => Record<string, unknown>;
+    };
 };
 
 export type {OnyxDerivedValueConfig, DerivedValueContext};

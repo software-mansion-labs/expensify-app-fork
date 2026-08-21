@@ -1,21 +1,27 @@
 import {setInboxTab} from '@libs/actions/User';
 import Log from '@libs/Log';
+import {isArchivedReport} from '@libs/ReportUtils';
 import SidebarUtils from '@libs/SidebarUtils';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 import {getChatTabBrickRoad} from '@libs/WorkspacesSettingsUtils';
 
+import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxTypes from '@src/types/onyx';
+import type {LHNReportAttributes, ReportAttributes} from '@src/types/onyx/DerivedValues';
 
 import type {ValueOf} from 'type-fest';
 
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import {useOnyxQuery} from 'react-native-onyx';
 
 import useCollectionDelta from './useCollectionDelta';
 import {useCurrentReportIDState} from './useCurrentReportID';
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
+import useDrainedOnyxQuery from './useDrainedOnyxQuery';
 import useLocalize from './useLocalize';
+import useMemberMap from './useMemberMap';
 import useNetwork from './useNetwork';
 import useOnyx from './useOnyx';
 import usePrevious from './usePrevious';
@@ -66,7 +72,7 @@ const SidebarOrderedReportsActionsContext = createContext<SidebarOrderedReportsA
 
 // This file does not compile with React Compiler (render-time ref cache below keeps referential
 // stability), so the manual useMemo/useCallback in this provider are load-bearing and must stay.
-function SidebarOrderedReportsContextProvider({
+function SidebarOrderedReportsClassicContextProvider({
     children,
     /**
      * Only required to make unit tests work, since we
@@ -440,5 +446,207 @@ function useSidebarOrderedReports() {
     return useMemo(() => ({...state, ...actions}), [state, actions]);
 }
 
-export {SidebarOrderedReportsContextProvider, useSidebarOrderedReports, useSidebarOrderedReportsState, useSidebarOrderedReportsActions};
+/** How many LHN rows the lazy window reads per batch and at most keeps live. */
+const LHN_WINDOW_BATCH_SIZE = 50;
+const LHN_WINDOW_MAX_SIZE = 200;
+const LHN_PINNED_BATCH_SIZE = 100;
+const LHN_PINNED_MAX_SIZE = 500;
+
+/**
+ * Lazy-Onyx POC (SOTA LHN): sources the LHN from indexed, windowed queries over the
+ * `derivedReportAttributes_` projection instead of whole-collection subscriptions — only the
+ * displayed slice is ever read. Runtime factors the projection deliberately doesn't materialize
+ * (the focused report, drafted reports) are added client-side from member reads. Known POC
+ * deltas vs the classic provider: tab counts and the errors/GBR groups only cover the loaded
+ * window (+pinned), and rows beyond LHN_WINDOW_MAX_SIZE aren't paged in yet.
+ */
+function SidebarOrderedReportsLazyContextProvider({children, currentReportIDForTests}: SidebarOrderedReportsContextProviderProps) {
+    const {localeCompare} = useLocalize();
+    const [priorityMode = CONST.PRIORITY_MODE.DEFAULT] = useOnyx(ONYXKEYS.NVP_PRIORITY_MODE);
+    const [inboxTab = CONST.INBOX_TAB.ALL] = useOnyx(ONYXKEYS.NVP_INBOX_TAB);
+    const activeTab = inboxTab ?? CONST.INBOX_TAB.ALL;
+    const isInFocusMode = priorityMode === CONST.PRIORITY_MODE.GSD;
+    const {currentReportID: currentReportIDValue} = useCurrentReportIDState();
+    const derivedCurrentReportID = currentReportIDForTests ?? currentReportIDValue;
+
+    // The eligible window in the active mode's order — the core "load only what's displayed" read.
+    const windowQuery = useMemo(
+        () =>
+            isInFocusMode
+                ? {
+                      where: [{field: 'lhnEligibleFocus', operator: 'eq' as const, value: 1}],
+                      orderBy: {field: 'sortName', direction: 'asc' as const},
+                      batchSize: LHN_WINDOW_BATCH_SIZE,
+                      maxWindowSize: LHN_WINDOW_MAX_SIZE,
+                  }
+                : {
+                      where: [{field: 'lhnEligibleDefault', operator: 'eq' as const, value: 1}],
+                      orderBy: {field: 'lastVisibleActionCreated', direction: 'desc' as const},
+                      batchSize: LHN_WINDOW_BATCH_SIZE,
+                      maxWindowSize: LHN_WINDOW_MAX_SIZE,
+                  },
+        [isInFocusMode],
+    );
+    const {items: windowItems} = useOnyxQuery(ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES, windowQuery);
+    // Pinned reports sort into the top group regardless of recency, so they're read separately (small).
+    const {items: pinnedItems} = useDrainedOnyxQuery(ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES, {
+        where: [{field: 'isPinned', operator: 'eq', value: 1}],
+        orderBy: {field: 'sortName', direction: 'asc'},
+        batchSize: LHN_PINNED_BATCH_SIZE,
+        maxWindowSize: LHN_PINNED_MAX_SIZE,
+    });
+    // Drafted reports must show even when otherwise ineligible; the drafts collection is tiny.
+    const [reportsDrafts] = useOnyx(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
+
+    const projections = useMemo(() => {
+        const result: Record<string, LHNReportAttributes> = {};
+        for (const item of [...windowItems, ...pinnedItems]) {
+            if (!item.value) {
+                continue;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the query DSL returns untyped rows; every derivedReportAttributes_ value is an LHNReportAttributes
+            result[item.key.slice(ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES.length)] = item.value as LHNReportAttributes;
+        }
+        return result;
+    }, [windowItems, pinnedItems]);
+
+    const draftedReportIDs = useMemo(
+        () =>
+            Object.entries(reportsDrafts ?? {})
+                .filter(([, value]) => !!value)
+                .map(([key]) => key.replace(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT, '')),
+        [reportsDrafts],
+    );
+
+    const memberIDs = useMemo(() => [...Object.keys(projections), ...draftedReportIDs, derivedCurrentReportID], [projections, draftedReportIDs, derivedCurrentReportID]);
+    const reportsMap = useMemberMap<OnyxTypes.Report>(ONYXKEYS.COLLECTION.REPORT, memberIDs);
+    const reportNameValuePairsMap = useMemberMap<OnyxTypes.ReportNameValuePairs>(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS, memberIDs);
+
+    const reportsToDisplay: ReportsToDisplayInLHN = useMemo(() => {
+        const result: ReportsToDisplayInLHN = {};
+        const addReport = (reportID: string, projection: LHNReportAttributes | undefined) => {
+            const reportKey = `${ONYXKEYS.COLLECTION.REPORT}${reportID}`;
+            const report = reportsMap[reportKey];
+            if (!report || reportKey in result) {
+                return;
+            }
+            const isReportArchived = isArchivedReport(reportNameValuePairsMap[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`]);
+            result[reportKey] = {
+                ...report,
+                requiresAttention: projection?.requiresAttention === 1,
+                hasErrorsOtherThanFailedReceipt: projection?.brickRoadStatus === CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR,
+                isUnreadReport: SidebarUtils.getIsUnreadReportForInboxTab(report, isReportArchived),
+            };
+        };
+        for (const [reportID, projection] of Object.entries(projections)) {
+            addReport(reportID, projection);
+        }
+        for (const draftedReportID of draftedReportIDs) {
+            addReport(draftedReportID, projections[draftedReportID]);
+        }
+        if (derivedCurrentReportID) {
+            addReport(derivedCurrentReportID, projections[derivedCurrentReportID]);
+        }
+        return result;
+    }, [projections, draftedReportIDs, derivedCurrentReportID, reportsMap, reportNameValuePairsMap]);
+
+    // The name/attention map the sorter reads — minimal ReportAttributes entries built from the projection.
+    const attributesForSort = useMemo(() => {
+        const result: Record<string, ReportAttributes> = {};
+        for (const [reportID, projection] of Object.entries(projections)) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the sorter/brick-road readers only touch these fields
+            result[reportID] = {
+                reportName: projection.reportName,
+                requiresAttention: projection.requiresAttention === 1,
+                brickRoadStatus: projection.brickRoadStatus,
+            } as ReportAttributes;
+        }
+        return result;
+    }, [projections]);
+
+    const hasDraftByReportID = useMemo(() => {
+        const result: Record<string, boolean> = {};
+        for (const draftedReportID of draftedReportIDs) {
+            result[draftedReportID] = true;
+        }
+        return result;
+    }, [draftedReportIDs]);
+
+    const orderedReportIDs = useMemo(
+        () => SidebarUtils.sortReportsToDisplayInLHN(reportsToDisplay, priorityMode, localeCompare, hasDraftByReportID, reportNameValuePairsMap, attributesForSort),
+        [reportsToDisplay, priorityMode, localeCompare, hasDraftByReportID, reportNameValuePairsMap, attributesForSort],
+    );
+
+    // Sticky report handling — identical to the classic provider (provider-local UI state).
+    const [stickyReport, setStickyReport] = useState<{reportID: string; tab: ValueOf<typeof CONST.INBOX_TAB>} | undefined>(undefined);
+    const stickyReportID = stickyReport?.reportID;
+    const stickyReportTab = stickyReport?.tab;
+    const filteredReportIDs = useMemo(() => {
+        const baseFilteredReportIDs = SidebarUtils.filterReportsForInboxTab(orderedReportIDs, reportsToDisplay, activeTab);
+        if (activeTab === CONST.INBOX_TAB.ALL || !stickyReportID || stickyReportTab !== activeTab || baseFilteredReportIDs.includes(stickyReportID)) {
+            return baseFilteredReportIDs;
+        }
+        if (!orderedReportIDs.includes(stickyReportID)) {
+            return [stickyReportID, ...baseFilteredReportIDs];
+        }
+        const baseSet = new Set(baseFilteredReportIDs);
+        return orderedReportIDs.filter((reportID) => baseSet.has(reportID) || reportID === stickyReportID);
+    }, [orderedReportIDs, reportsToDisplay, activeTab, stickyReportTab, stickyReportID]);
+
+    const inboxTabCounts = useMemo(() => SidebarUtils.getInboxTabCounts(orderedReportIDs, reportsToDisplay), [orderedReportIDs, reportsToDisplay]);
+
+    const filteredReports = useMemo(
+        () => filteredReportIDs.map((reportID) => reportsMap[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]).filter((report): report is OnyxTypes.Report => !!report),
+        [filteredReportIDs, reportsMap],
+    );
+
+    const setActiveTab = useCallback((tab: ValueOf<typeof CONST.INBOX_TAB>) => {
+        setInboxTab(tab);
+        setStickyReport(undefined);
+    }, []);
+
+    const setStickyReportID = useCallback(
+        (reportID: string) => {
+            if (activeTab === CONST.INBOX_TAB.ALL) {
+                return;
+            }
+            setStickyReport({reportID, tab: activeTab});
+        },
+        [activeTab],
+    );
+
+    const stateValue: SidebarOrderedReportsStateContextValue = useMemo(
+        () => ({
+            filteredReports,
+            orderedReportIDs,
+            currentReportID: derivedCurrentReportID,
+            chatTabBrickRoad: getChatTabBrickRoad(orderedReportIDs, attributesForSort),
+            activeTab,
+            inboxTabCounts,
+        }),
+        [filteredReports, orderedReportIDs, derivedCurrentReportID, attributesForSort, activeTab, inboxTabCounts],
+    );
+
+    // The lazy source has no LHN cache to clear — the queries are the source of truth.
+    const actionsValue: SidebarOrderedReportsActionsContextValue = useMemo(() => ({clearLHNCache: () => {}, setActiveTab, setStickyReportID}), [setActiveTab, setStickyReportID]);
+
+    return (
+        <SidebarOrderedReportsStateContext.Provider value={stateValue}>
+            <SidebarOrderedReportsActionsContext.Provider value={actionsValue}>{children}</SidebarOrderedReportsActionsContext.Provider>
+        </SidebarOrderedReportsStateContext.Provider>
+    );
+}
+
+// The flag is a build-time constant, so exactly one provider implementation (and its hook set) ever
+// renders — the branch below never changes within a session.
+function SidebarOrderedReportsContextProvider(props: SidebarOrderedReportsContextProviderProps) {
+    if (CONFIG.LAZY_LHN) {
+        // eslint-disable-next-line react/jsx-props-no-spreading
+        return <SidebarOrderedReportsLazyContextProvider {...props} />;
+    }
+    // eslint-disable-next-line react/jsx-props-no-spreading
+    return <SidebarOrderedReportsClassicContextProvider {...props} />;
+}
+
+export {SidebarOrderedReportsContextProvider, SidebarOrderedReportsLazyContextProvider, useSidebarOrderedReports, useSidebarOrderedReportsState, useSidebarOrderedReportsActions};
 export type {ReportsToDisplayInLHN};

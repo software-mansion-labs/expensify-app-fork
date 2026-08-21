@@ -111,6 +111,10 @@ export default function () {
             [ONYXKEYS.COLLECTION.REPORT]: ['policyID', 'lastVisibleActionCreated', 'parentReportID', 'type', 'chatReportID'],
             [ONYXKEYS.COLLECTION.TRANSACTION]: ['reportID'],
             [ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS]: ['private_isArchived'],
+            // SOTA LHN: the per-report attributes projection sorts/filters entirely in SQLite —
+            // default mode by recency among eligible members, focus mode alphabetically, plus the
+            // pinned group. See OnyxDerivedValueConfig.projection in configs/reportAttributes.
+            [ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES]: [['lhnEligibleDefault', 'lastVisibleActionCreated'], ['lhnEligibleFocus', 'sortName'], 'isPinned'],
         },
     });
 

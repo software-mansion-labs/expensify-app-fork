@@ -1691,4 +1691,5 @@ export default {
     shouldDisplayReportInLHN,
     filterReportsForInboxTab,
     getInboxTabCounts,
+    getIsUnreadReportForInboxTab,
 };

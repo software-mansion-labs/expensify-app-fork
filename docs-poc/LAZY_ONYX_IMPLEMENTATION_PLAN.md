@@ -475,3 +475,37 @@ decisions (LHN default-mode sort; PDL split timing) — see the decision-stop su
 Deferred to post-POC by design: purity-lane step 2 (retiring the module caches outright), consumer
 tranches T4+ (~627 sites by pattern), navigation-guard hydration gating (edge 5.11), loading≠empty
 audit, per-item lanes for the remaining Search-side whole-map consumers.
+
+# SOTA LHN (user decision 2026-08-21: "żeby nie robić pełnej hydracji")
+
+The user picked the state-of-the-art mechanism: the LHN loads ONLY what it displays, driven by
+materialized derived data + indexes (the Signal/WhatsApp conversations-table pattern):
+
+- **S1 — per-member projection.** `OnyxDerivedValueConfig.projection` (engine writes the changed
+  members via mergeCollection after each successful compute; null deletes). The reportAttributes
+  config projects each report into the persisted `derivedReportAttributes_<reportID>` collection:
+  `{reportName, sortName (lowercased), lhnEligibleDefault/Focus (materialized
+  shouldDisplayReportInLHN sans runtime factors; 0/1 numbers so SQL json_extract and the JS query
+  engine compare identically), isPinned, isArchived, lastVisibleActionCreated, brickRoadStatus,
+  requiresAttention}`. Identity diffing is exact because the compute rewrites touched entries.
+  BETAS added as a config dependency (feeds eligibility; triggers a full recompute — rare).
+  Composite indexes declared: (lhnEligibleDefault, lastVisibleActionCreated),
+  (lhnEligibleFocus, sortName), isPinned. Tests: LHNProjectionTest.
+- **S2 — lazy provider.** `SidebarOrderedReportsLazyContextProvider` (flag `CONFIG.LAZY_LHN`, env
+  LAZY_LHN=true for measurement builds): a windowed indexed query over the projection (default mode
+  by recency, focus mode by sortName; window 50/200) + a small pinned query + the tiny drafts
+  collection + the focused report; `useMemberMap` (new: targeted member reads + scoped write
+  watcher, stale-while-revalidate) supplies the report/RNVP members for exactly those rows; sorting/
+  tabs/brick-road reuse SidebarUtils over the bounded set. Runtime factors the projection skips
+  (focused report, drafts) are added client-side. Known POC deltas: tab counts and error/GBR groups
+  cover the loaded window(+pinned) only; no paging past 200 yet. Tests:
+  LazySidebarOrderedReportsTest.
+- **Supporting**: `useAppReadyOnyxValue` (passive cached read + subscription deferred to app-ready)
+  now backs `useReportAttributes()`, so whole-map consumers (LHN rows, tooltips, Search shells)
+  can't start the derived engine pre-ready; they serve the persisted last-session map until the
+  post-ready catch-all refreshes it — the same values today's UI shows before the engine's first
+  flush. Gotcha for posterity: a generic `as T` assertion inside a hook body makes the OXC React
+  Compiler silently skip the file (babel/oxc divergence) — keep such casts in module-level helpers.
+- **Step 3 (post-measurement)**: turn the engine into a write-time-scoped materializer (scoped-store
+  reads instead of whole-map subscriptions) and retire the whole-map blob for remaining consumers;
+  optionally replace `sortName` with proper collation keys.

@@ -29,7 +29,17 @@ import {hasKeyTriggeredCompute} from '@userActions/OnyxDerived/utils';
 import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {PersonalDetails, PersonalDetailsList, Policy, Report, ReportActions, ReportAttributesDerivedValue, Transaction, TransactionViolation} from '@src/types/onyx';
+import type {
+    LHNReportAttributes,
+    PersonalDetails,
+    PersonalDetailsList,
+    Policy,
+    Report,
+    ReportActions,
+    ReportAttributesDerivedValue,
+    Transaction,
+    TransactionViolation,
+} from '@src/types/onyx';
 
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 
@@ -227,6 +237,8 @@ export default createOnyxDerivedValueConfig({
         ONYXKEYS.NVP_INTRO_SELECTED,
         ONYXKEYS.COLLECTION.REPORT_METADATA,
         ONYXKEYS.NETWORK,
+        // Feeds only the LHN projection's eligibility flags (shouldDisplayReportInLHN reads betas).
+        ONYXKEYS.BETAS,
     ],
     compute: (
         [
@@ -282,7 +294,10 @@ export default createOnyxDerivedValueConfig({
             (hasKeyTriggeredCompute(ONYXKEYS.NVP_PREFERRED_LOCALE, triggeredKeys) && preferredLocale !== currentValue?.locale) ||
             displayNameChanges === RECOMPUTE_ALL ||
             hasKeyTriggeredCompute(ONYXKEYS.CONCIERGE_REPORT_ID, triggeredKeys) ||
-            hasKeyTriggeredCompute(ONYXKEYS.NVP_INTRO_SELECTED, triggeredKeys);
+            hasKeyTriggeredCompute(ONYXKEYS.NVP_INTRO_SELECTED, triggeredKeys) ||
+            // Betas feed the LHN projection's eligibility flags; changes are rare (sign-in, rollouts),
+            // so a full recompute (which re-projects every member) is the simple correct answer.
+            hasKeyTriggeredCompute(ONYXKEYS.BETAS, triggeredKeys);
 
         const policyChangedReportKeys: string[] = [];
         // Reports whose policy change touched only fields that don't feed the report name (type, approvalMode,
@@ -745,6 +760,69 @@ export default createOnyxDerivedValueConfig({
         previousDisplayNames = {};
         previousPersonalDetails = undefined;
         previousPolicies = undefined;
+    },
+    // Lazy-Onyx POC (SOTA LHN): project each report's LHN-relevant attributes into the persisted,
+    // indexed `derivedReportAttributes_` collection. Only identity-changed entries re-project (every
+    // touched report gets a fresh object in the compute above, so identity diffing is exact).
+    // Runtime-dependent eligibility factors (the focused report, drafts) are deliberately NOT
+    // materialized — the LHN adds them client-side from cheap member reads.
+    projection: {
+        collectionKey: ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES,
+        computeMembers: ([reports, , transactionViolations, , reportNameValuePairs, transactions, , session, , , conciergeReportID, , , , betas], newValue, previousValue) => {
+            const members: Record<string, LHNReportAttributes | null> = {};
+            const previousReports = previousValue?.reports;
+            const newReports = newValue?.reports ?? {};
+
+            for (const reportID of Object.keys(previousReports ?? {})) {
+                if (!newReports[reportID]) {
+                    members[`${ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES}${reportID}`] = null;
+                }
+            }
+
+            const isOffline = getIsOffline();
+            const currentUserLogin = session?.email ?? '';
+            const currentUserAccountID = session?.accountID ?? CONST.DEFAULT_NUMBER_ID;
+            for (const [reportID, attributes] of Object.entries(newReports)) {
+                if (previousReports?.[reportID] === attributes) {
+                    continue;
+                }
+                const memberKey = `${ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES}${reportID}`;
+                const report = reports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
+                if (!report) {
+                    members[memberKey] = null;
+                    continue;
+                }
+                const isReportArchived = isArchivedReport(reportNameValuePairs?.[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`]);
+                const eligibilityParams = {
+                    report,
+                    reports,
+                    currentReportId: undefined,
+                    betas,
+                    transactionViolations,
+                    draftComment: undefined,
+                    transactions,
+                    isOffline,
+                    isReportArchived,
+                    reportAttributes: newReports,
+                    currentUserLogin,
+                    currentUserAccountID,
+                    conciergeReportID: conciergeReportID ?? undefined,
+                };
+                members[memberKey] = {
+                    reportName: attributes.reportName,
+                    sortName: attributes.reportName.toLowerCase(),
+                    lhnEligibleDefault: SidebarUtils.shouldDisplayReportInLHN({...eligibilityParams, isInFocusMode: false}).shouldDisplay ? 1 : 0,
+                    lhnEligibleFocus: SidebarUtils.shouldDisplayReportInLHN({...eligibilityParams, isInFocusMode: true}).shouldDisplay ? 1 : 0,
+                    isPinned: report.isPinned ? 1 : 0,
+                    isArchived: isReportArchived ? 1 : 0,
+                    lastVisibleActionCreated: report.lastVisibleActionCreated ?? '',
+                    brickRoadStatus: attributes.brickRoadStatus,
+                    requiresAttention: attributes.requiresAttention ? 1 : 0,
+                };
+            }
+
+            return members;
+        },
     },
 });
 

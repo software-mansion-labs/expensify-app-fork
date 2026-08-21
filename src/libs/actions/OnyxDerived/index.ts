@@ -43,7 +43,7 @@ const startedDerivedKeys = new Set<OnyxKey>();
 function init() {
     const starters: Array<() => void> = [];
 
-    for (const [key, {compute, dependencies, onReset}] of ObjectUtils.typedEntries(ONYX_DERIVED_VALUES)) {
+    for (const [key, {compute, dependencies, onReset, projection}] of ObjectUtils.typedEntries(ONYX_DERIVED_VALUES)) {
         // Starts this derived value's engine: restores the persisted output, connects the
         // dependencies, and recomputes on their changes. Idempotent — the demand trigger and the
         // catch-all below can both fire it.
@@ -135,11 +135,24 @@ function init() {
                     });
 
                     try {
+                        const previousDerivedValue = derivedValue;
                         // @ts-expect-error TypeScript can't confirm the shape of dependencyValues matches the compute function's parameters
                         const newDerivedValue = compute(dependencyValues, context);
                         Log.info(`[OnyxDerived] updating value for ${key} in Onyx`);
                         derivedValue = newDerivedValue;
                         setDerivedValue(key, derivedValue);
+
+                        // Per-member projection (lazy-Onyx POC): persist only the members computeMembers
+                        // reports as changed, so indexed queries over the projection collection stay fresh.
+                        if (projection) {
+                            // @ts-expect-error TypeScript can't confirm the shape of dependencyValues matches computeMembers' parameters
+                            const changedMembers = projection.computeMembers(dependencyValues, newDerivedValue, previousDerivedValue);
+                            if (Object.keys(changedMembers).length > 0) {
+                                Log.info(`[OnyxDerived] projecting ${Object.keys(changedMembers).length} member(s) of ${key} into ${projection.collectionKey}`);
+                                // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- computeMembers returns this collection's member shapes by contract
+                                Onyx.mergeCollection(projection.collectionKey, changedMembers as Parameters<typeof Onyx.mergeCollection>[1]);
+                            }
+                        }
                     } finally {
                         endSpan(spanId);
                     }

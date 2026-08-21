@@ -892,6 +892,13 @@ const ONYXKEYS = {
         // keys below (REPORT_LOADING_STATE, REPORT_PAGINATION_STATE, REPORT_LAST_VISIT_TIMES)
         // so they don't ripple to every subscriber of the report's business state.
         REPORT_METADATA: 'reportMetadata_',
+
+        /**
+         * Lazy-Onyx POC (SOTA LHN): per-report projection of the reportAttributes derived value,
+         * maintained incrementally by its engine (see OnyxDerivedValueConfig.projection). Indexed so
+         * the LHN reads only the members it displays — never a whole collection.
+         */
+        DERIVED_REPORT_ATTRIBUTES: 'derivedReportAttributes_',
         /** Session-scoped loading/error flags for a report's action list.
          *  Registered as RAM-only in `setup/index.ts`. */
         RAM_ONLY_REPORT_LOADING_STATE: 'reportLoadingState_',
@@ -1472,6 +1479,7 @@ type OnyxCollectionValuesMapping = {
     [ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS]: OnyxTypes.ReportNameValuePairs;
     [ONYXKEYS.COLLECTION.REPORT_DRAFT]: OnyxTypes.Report;
     [ONYXKEYS.COLLECTION.REPORT_METADATA]: OnyxTypes.ReportMetadata;
+    [ONYXKEYS.COLLECTION.DERIVED_REPORT_ATTRIBUTES]: OnyxTypes.LHNReportAttributes;
     [ONYXKEYS.COLLECTION.RAM_ONLY_REPORT_LOADING_STATE]: OnyxTypes.ReportLoadingState;
     [ONYXKEYS.COLLECTION.RAM_ONLY_COMPANY_CARDS_LOADING_STATE]: OnyxTypes.CompanyCardsLoadingState;
     [ONYXKEYS.COLLECTION.REPORT_PAGINATION_STATE]: OnyxTypes.ReportPaginationState;
