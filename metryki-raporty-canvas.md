@@ -19,7 +19,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 769 ms | 47K | flat | 🔴 |
 | macOS | 555 ms | 26K | +2% | 🔴 |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 303 ms | 8,302 | 20% |
 | iOS | 9.4.52-11 | 349 ms | 4,656 | 11% |
@@ -33,7 +33,9 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Android | 9.4.51-1 | 495 ms | 2,275 | 22% |
 | Android | 9.4.50-3 | 429 ms | 929 | 9% |
 
-> **Notes:** web rows moved after the #98051 relabelling; native share dropped 12 pp w/w, so the All row is not comparable to last week
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (42K measurements) and the Android rows against Android traffic (10K). Each slice adds up to at most 100%; the rest is versions below the floor.
+
+> **Notes:** web rows moved after the #98051 relabelling; the native share dropped 11 pp w/w, so the All row is not comparable to last week
 
 ---
 
@@ -48,7 +50,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 350 ms | 60K | flat | ✅ |
 | macOS | 193 ms | 28K | −1% | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 260 ms | 6,616 | 20% |
 | iOS | 9.4.52-11 | 256 ms | 3,682 | 11% |
@@ -62,6 +64,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Android | 9.4.51-1 | 543 ms | 2,136 | 23% |
 | Android | 9.4.50-3 | 527 ms | 1,026 | 11% |
 | Android | 9.4.49-3 | 598 ms | 526 | 6% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (33K measurements) and the Android rows against Android traffic (9,134). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** none
 
@@ -78,7 +82,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 5614 ms | 83K | +4% | 🔴 |
 | macOS | 2711 ms | 51K | +2% | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.55-4 | 4847 ms | 570 | 4% |
 | iOS | 9.4.54-4 | 4520 ms | 555 | 4% |
@@ -90,6 +94,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 9.4.35-6 | 5813 ms | 1,323 | 10% |
 | Android | 9.4.53-10 | 6311 ms | 584 | 12% |
 | Android | 9.4.52-11 | 10274 ms | 637 | 13% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (14K measurements) and the Android rows against Android traffic (4,750). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** 10.8% of spans carry no os.name and are excluded from the platform rows but included in All
 
@@ -106,7 +112,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 1195 ms | 418K | flat | 🔴 |
 | macOS | 742 ms | 223K | flat | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 973 ms | 58K | 17% |
 | iOS | 9.4.52-11 | 1151 ms | 31K | 9% |
@@ -122,6 +128,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Android | 9.4.50-3 | 1720 ms | 9,356 | 11% |
 | Android | 9.4.49-3 | 1749 ms | 4,944 | 6% |
 
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (334K measurements) and the Android rows against Android traffic (88K). Each slice adds up to at most 100%; the rest is versions below the floor.
+
 > **Notes:** none
 
 ---
@@ -135,7 +143,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 376 ms | 89K | −2% | ✅ |
 | Android | 706 ms | 36K | −10% | 🔴 |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 375 ms | 14K | 16% |
 | iOS | 9.4.52-11 | 360 ms | 9,086 | 10% |
@@ -150,6 +158,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Android | 9.4.51-1 | 713 ms | 8,564 | 24% |
 | Android | 9.4.50-3 | 715 ms | 3,643 | 10% |
 | Android | 9.4.49-3 | 662 ms | 2,131 | 6% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (89K measurements) and the Android rows against Android traffic (36K). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** native-only path, so All equals the two platform rows; the All move is driven by iOS volume falling 32% w/w
 
@@ -166,9 +176,11 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 378 ms | 1,886 | +2% | ✅ |
 | macOS | 244 ms | 1,020 | +22% | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.50-3 | 476 ms | 548 | 30% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (1,848 measurements) and the Android rows against Android traffic (956). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** smallest sample on the board; only one version clears the 500-measurement floor, Android clears none
 
@@ -185,13 +197,15 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 274 ms | 12K | −8% | ✅ |
 | macOS | 176 ms | 7,591 | −2% | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 625 ms | 1,428 | 23% |
 | iOS | 9.4.52-11 | 519 ms | 610 | 10% |
 | iOS | 9.4.51-1 | 603 ms | 1,148 | 19% |
 | iOS | 9.4.50-3 | 705 ms | 1,601 | 26% |
 | Android | 9.4.52-11 | 1952 ms | 668 | 34% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (6,099 measurements) and the Android rows against Android traffic (1,945). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** old timer, stops before the message is visible; see the next report for the visible-timer version of the same action
 
@@ -208,9 +222,11 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 445 ms | 7,491 | — | 🔴 |
 | macOS | 289 ms | 4,740 | — | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 822 ms | 1,428 | 70% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (2,036 measurements) and the Android rows against Android traffic (605). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** timer is one week old, so w/w on All compares 14.9K measurements against 154; target 300 ms is inherited from the old timer and not yet agreed for this one
 
@@ -227,7 +243,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 286 ms | 57K | +6% | ✅ |
 | macOS | 207 ms | 40K | +18% | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 113 ms | 14K | 13% |
 | iOS | 9.4.52-11 | 113 ms | 9,085 | 8% |
@@ -242,6 +258,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Android | 9.4.51-1 | 159 ms | 10K | 24% |
 | Android | 9.4.50-3 | 159 ms | 4,166 | 10% |
 | Android | 9.4.49-3 | 138 ms | 2,738 | 7% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (107K measurements) and the Android rows against Android traffic (42K). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** one span covers four follow-up actions; every platform row is far inside target while the reported sub-metrics are not, which is the scenario-mixing case
 
@@ -258,7 +276,7 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Windows | 107 ms | 58K | flat | ✅ |
 | macOS | 80 ms | 38K | −1% | ✅ |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 344 ms | 19K | 16% |
 | iOS | 9.4.52-11 | 322 ms | 11K | 9% |
@@ -274,6 +292,8 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | Android | 9.4.50-3 | 542 ms | 4,438 | 10% |
 | Android | 9.4.49-3 | 520 ms | 2,985 | 7% |
 
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (125K measurements) and the Android rows against Android traffic (45K). Each slice adds up to at most 100%; the rest is versions below the floor.
+
 > **Notes:** reported as 315 to 280 ms with the weekly release filter; without it the All row is flat at 343 to 341 ms
 
 ---
@@ -287,11 +307,13 @@ One format for every metric on the scoreboard, read on the whole population: no 
 | iOS | 287 ms | 2,912 | −19% | — |
 | Android | 468 ms | 531 | −40% | — |
 
-| Slice | Release | p95 | n | share of slice |
+| Slice | Release | p95 | n | share of that platform |
 |---|---|---|---|---|
 | iOS | 9.4.53-10 | 271 ms | 551 | 19% |
 | iOS | 9.4.51-1 | 271 ms | 649 | 22% |
 | iOS | 9.4.50-3 | 281 ms | 1,007 | 35% |
+
+Shares are taken inside one platform slice, so the iOS rows add up against iOS traffic (2,912 measurements) and the Android rows against Android traffic (531). Each slice adds up to at most 100%; the rest is versions below the floor.
 
 > **Notes:** no agreed target yet, 300 ms proposed; the span also fires on Android despite the metric name, and Android clears no version floor
 
