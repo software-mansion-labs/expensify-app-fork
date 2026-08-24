@@ -9,7 +9,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getActiveServer} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
-import {getCloudflareAuthRedirectOutcome} from '@libs/CloudflareAccess/consumeAuthCallbackURL';
+import {getCloudflareSignInOutcome} from '@libs/CloudflareAccess/finishSignInFromURL';
 import DateUtils from '@libs/DateUtils';
 
 import type {CloudflareAuthProbeResult, CloudflareAuthProbeStatus} from '@userActions/CloudflareProbe';
@@ -36,7 +36,7 @@ function getFailedRedirectResult(): CloudflareAuthProbeResult | null {
     if (getCloudflareSession()) {
         return null;
     }
-    const {outcome, errorMessage} = getCloudflareAuthRedirectOutcome();
+    const {outcome, errorMessage} = getCloudflareSignInOutcome();
     if (outcome === 'not-a-callback' || outcome === 'exchanging') {
         return null;
     }

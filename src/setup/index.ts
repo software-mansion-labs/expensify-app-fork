@@ -1,4 +1,4 @@
-import {consumeCloudflareAuthCallbackURL} from '@libs/CloudflareAccess/consumeAuthCallbackURL';
+import {finishCloudflareSignInFromURL} from '@libs/CloudflareAccess/finishSignInFromURL';
 import intlPolyfill from '@libs/IntlPolyfill';
 
 import {setDeviceID} from '@userActions/Device';
@@ -93,7 +93,7 @@ export default function () {
     // Spends the authorization code the capture phase read off this document's location before the app was
     // imported. Here rather than there because a completed exchange persists the session, which needs
     // Onyx.init() to have run. No-op on every load that was not the callback.
-    consumeCloudflareAuthCallbackURL();
+    finishCloudflareSignInFromURL();
 
     initOnyxDerivedValues();
 

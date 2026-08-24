@@ -18,9 +18,9 @@ const mockWaitForActiveServerHydration = jest.fn(() => Promise.resolve());
 const mockIsConfigured = jest.fn<boolean, []>();
 
 jest.mock('@userActions/CloudflareSession', () => ({
-    beginCloudflareAuthRedirect: () => mockBeginRedirect(),
+    redirectToCloudflareSignIn: () => mockBeginRedirect(),
     getCloudflareSession: () => mockGetSession(),
-    getPendingCloudflareAuthCompletion: () => mockGetPending(),
+    getPendingCloudflareCodeExchange: () => mockGetPending(),
     waitForCloudflareSessionHydration: () => Promise.resolve(),
 }));
 jest.mock('@libs/ApiUtils', () => ({

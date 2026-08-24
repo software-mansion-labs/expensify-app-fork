@@ -6,16 +6,14 @@
  */
 import {getCapturedCloudflareAuthCallback} from '@libs/CloudflareAccess/captureAuthCallbackURL';
 
-import {completeCloudflareAuthRedirect} from '@userActions/CloudflareSession';
+import {exchangeCodeForCloudflareSession} from '@userActions/CloudflareSession';
 
-import CONFIG from '@src/CONFIG';
+import type {CloudflareSignInOutcome, FinishCloudflareSignInFromURL, GetCloudflareSignInOutcome} from './types';
 
-import type {CloudflareAuthRedirectOutcome, ConsumeCloudflareAuthCallbackURL, GetCloudflareAuthRedirectOutcome} from './types';
-
-let lastOutcome: CloudflareAuthRedirectOutcome = 'not-a-callback';
+let lastOutcome: CloudflareSignInOutcome = 'not-a-callback';
 let lastErrorMessage: string | undefined;
 
-const consumeCloudflareAuthCallbackURL: ConsumeCloudflareAuthCallbackURL = () => {
+const finishCloudflareSignInFromURL: FinishCloudflareSignInFromURL = () => {
     const captured = getCapturedCloudflareAuthCallback();
     lastOutcome = captured.outcome;
     lastErrorMessage = captured.errorMessage;
@@ -26,7 +24,7 @@ const consumeCloudflareAuthCallbackURL: ConsumeCloudflareAuthCallbackURL = () =>
         // 'exchanging'. Both handlers attach to the same promise rather than chaining .then().catch(): a
         // chain would push the rejection one extra microtask out, and the outcome is read by callers that
         // only wait one.
-        completeCloudflareAuthRedirect(captured.exchange).catch((error: unknown) => {
+        exchangeCodeForCloudflareSession(captured.exchange).catch((error: unknown) => {
             lastOutcome = 'exchange-failed';
             lastErrorMessage = error instanceof Error ? error.message : String(error);
         });
@@ -35,6 +33,6 @@ const consumeCloudflareAuthCallbackURL: ConsumeCloudflareAuthCallbackURL = () =>
     return lastOutcome;
 };
 
-const getCloudflareAuthRedirectOutcome: GetCloudflareAuthRedirectOutcome = () => ({outcome: lastOutcome, errorMessage: lastErrorMessage});
+const getCloudflareSignInOutcome: GetCloudflareSignInOutcome = () => ({outcome: lastOutcome, errorMessage: lastErrorMessage});
 
-export {consumeCloudflareAuthCallbackURL, getCloudflareAuthRedirectOutcome};
+export {finishCloudflareSignInFromURL, getCloudflareSignInOutcome};

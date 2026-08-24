@@ -13,11 +13,11 @@
  * away for reasons the person watching cannot connect to anything they did.
  */
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-import {getActiveServer, isQAServerActive, waitForActiveServerHydration} from '@libs/ApiUtils';
+import {isQAServerActive, waitForActiveServerHydration} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import Log from '@libs/Log';
 
-import {beginCloudflareAuthRedirect, getCloudflareSession, getPendingCloudflareAuthCompletion, waitForCloudflareSessionHydration} from '@userActions/CloudflareSession';
+import {redirectToCloudflareSignIn, getCloudflareSession, getPendingCloudflareCodeExchange, waitForCloudflareSessionHydration} from '@userActions/CloudflareSession';
 
 import type {EnsureQAAuthenticated, HandleQAReauthRequired} from './types';
 
@@ -61,13 +61,13 @@ function shouldAuthenticate(): boolean {
 }
 
 /**
- * "At most one navigation" is `beginCloudflareAuthRedirect`'s own invariant — a second caller gets a
+ * "At most one navigation" is `redirectToCloudflareSignIn`'s own invariant — a second caller gets a
  * never-settling promise rather than a competing flow. All this adds is the logging: both callers sit on the
  * request path, with nobody to return an error to.
  */
 async function startRedirect(): Promise<void> {
     try {
-        await beginCloudflareAuthRedirect();
+        await redirectToCloudflareSignIn();
     } catch (error) {
         Log.warn('[CloudflareAccess] Failed to start the QA auth redirect', {error});
     }
@@ -86,7 +86,7 @@ async function awaitGateSignals(): Promise<'may-redirect' | 'must-not-redirect'>
     await Promise.all([waitForActiveServerHydration(), waitForCloudflareSessionHydration()]);
 
     // This page load may BE the callback: a code is already being exchanged, and redirecting would burn it.
-    const pendingCompletion = getPendingCloudflareAuthCompletion();
+    const pendingCompletion = getPendingCloudflareCodeExchange();
 
     if (!pendingCompletion) {
         return 'may-redirect';

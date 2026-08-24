@@ -3,7 +3,7 @@
  * as a semantic result rather than a rejection. Its dependencies are mocked, since they have their own suites.
  */
 import {runCloudflareAuthProbe} from '@userActions/CloudflareProbe';
-import {beginCloudflareAuthRedirect, getCloudflareSession, getPendingCloudflareAuthCompletion} from '@userActions/CloudflareSession';
+import {redirectToCloudflareSignIn, getCloudflareSession, getPendingCloudflareCodeExchange} from '@userActions/CloudflareSession';
 
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
@@ -17,9 +17,9 @@ const mockProcessHTTPRequest = jest.fn<Promise<Record<string, unknown>>, [string
 jest.mock('@userActions/CloudflareSession', () => ({
     __esModule: true,
     getCloudflareSession: jest.fn(),
-    getPendingCloudflareAuthCompletion: jest.fn(() => null),
+    getPendingCloudflareCodeExchange: jest.fn(() => null),
     waitForCloudflareSessionHydration: jest.fn(() => Promise.resolve()),
-    beginCloudflareAuthRedirect: jest.fn(),
+    redirectToCloudflareSignIn: jest.fn(),
 }));
 
 jest.mock('@libs/HttpUtils', () => ({
@@ -35,8 +35,8 @@ beforeEach(() => {
     jest.clearAllMocks();
     // clearAllMocks keeps implementations, and the redirect stub is deliberately never-settling in one
     // case. Leaking that into the next test would hang it
-    jest.mocked(beginCloudflareAuthRedirect).mockReset();
-    jest.mocked(getPendingCloudflareAuthCompletion).mockReturnValue(null);
+    jest.mocked(redirectToCloudflareSignIn).mockReset();
+    jest.mocked(getPendingCloudflareCodeExchange).mockReturnValue(null);
     mockProcessHTTPRequest.mockResolvedValue({jsonCode: 200, authenticatedVia: 'oauth-bearer'});
 });
 
@@ -45,7 +45,7 @@ describe('runCloudflareAuthProbe', () => {
         // Given no stored session, so the only path to working auth is a fresh authorize round trip
         jest.mocked(getCloudflareSession).mockReturnValue(null);
         // Given a redirect stub that, like the real one, navigates the tab away and never settles
-        jest.mocked(beginCloudflareAuthRedirect).mockReturnValue(new Promise<never>(() => {}));
+        jest.mocked(redirectToCloudflareSignIn).mockReturnValue(new Promise<never>(() => {}));
 
         // When the probe runs
         let isSettled = false;
@@ -57,7 +57,7 @@ describe('runCloudflareAuthProbe', () => {
 
         // Then it should start the redirect and do nothing else: the page is leaving, so firing the request
         // or settling the promise would only report into a tab that is about to be gone
-        expect(beginCloudflareAuthRedirect).toHaveBeenCalledTimes(1);
+        expect(redirectToCloudflareSignIn).toHaveBeenCalledTimes(1);
         expect(mockProcessHTTPRequest).not.toHaveBeenCalled();
         expect(isSettled).toBe(false);
     });
@@ -66,7 +66,7 @@ describe('runCloudflareAuthProbe', () => {
         // Given the boot after the callback: the exchange is in flight, and populates the cache before the
         // probe reads it, so no second round trip is needed
         jest.mocked(getCloudflareSession).mockReturnValue(SESSION);
-        jest.mocked(getPendingCloudflareAuthCompletion).mockReturnValue(Promise.resolve());
+        jest.mocked(getPendingCloudflareCodeExchange).mockReturnValue(Promise.resolve());
 
         // When the probe runs
         // Then it should join the in-flight exchange and succeed off the session that exchange produced
@@ -74,13 +74,13 @@ describe('runCloudflareAuthProbe', () => {
 
         // Then no second redirect should start: the authorization code is single-use, so another round trip
         // could only invalidate the exchange already under way
-        expect(beginCloudflareAuthRedirect).not.toHaveBeenCalled();
+        expect(redirectToCloudflareSignIn).not.toHaveBeenCalled();
     });
 
     it('surfaces a failed callback-boot exchange as signInFailed, with no redirect', async () => {
         // Given a callback boot whose in-flight exchange rejects. The sign-in itself failed
         jest.mocked(getCloudflareSession).mockReturnValue(null);
-        jest.mocked(getPendingCloudflareAuthCompletion).mockReturnValue(Promise.reject(new Error('invalid_grant')));
+        jest.mocked(getPendingCloudflareCodeExchange).mockReturnValue(Promise.reject(new Error('invalid_grant')));
 
         // When the probe joins that exchange
         // Then it should report signInFailed rather than a generic error: the sign-in failed, not the probe,
@@ -89,7 +89,7 @@ describe('runCloudflareAuthProbe', () => {
 
         // Then no redirect and no request: the retry must be the user's informed rerun, not something the
         // probe launches behind their back
-        expect(beginCloudflareAuthRedirect).not.toHaveBeenCalled();
+        expect(redirectToCloudflareSignIn).not.toHaveBeenCalled();
         expect(mockProcessHTTPRequest).not.toHaveBeenCalled();
     });
 
@@ -111,7 +111,7 @@ describe('runCloudflareAuthProbe', () => {
         expect(mockProcessHTTPRequest).toHaveBeenCalledWith(`${CONFIG.QA_AUTH.API_ROOT}${CONFIG.QA_AUTH.CHECK_PATH}`, CONST.NETWORK.METHOD.POST);
 
         // Then no redirect: a session the client accepts needs no auth flow
-        expect(beginCloudflareAuthRedirect).not.toHaveBeenCalled();
+        expect(redirectToCloudflareSignIn).not.toHaveBeenCalled();
     });
 
     it('with a dead session: reports reauthRequired and leaves the redirect to the client that found it dead', async () => {
@@ -128,14 +128,14 @@ describe('runCloudflareAuthProbe', () => {
         // Then the probe should not redirect on its own. HttpUtils already called handleQAReauthRequired for
         // this rejection (asserted in HttpUtilsTest), so on a QA build the tab is already navigating; a second
         // call here would add nothing, and duplicating that decision is what Task 7 removed
-        expect(beginCloudflareAuthRedirect).not.toHaveBeenCalled();
+        expect(redirectToCloudflareSignIn).not.toHaveBeenCalled();
     });
 
     it('redirects on a dead session when the press consented, since the client may not have', async () => {
         // Given the same unrecoverable rejection
         jest.mocked(getCloudflareSession).mockReturnValue(SESSION);
         mockProcessHTTPRequest.mockRejectedValue(new Error(CONST.ERROR.CF_REAUTH_REQUIRED));
-        jest.mocked(beginCloudflareAuthRedirect).mockReturnValue(new Promise<never>(() => {}));
+        jest.mocked(redirectToCloudflareSignIn).mockReturnValue(new Promise<never>(() => {}));
 
         // When the probe runs with shouldRedirectOnReauthRequired. The user already saw reauthRequired and
         // pressed Run again, and that informed second press is the consent
@@ -149,7 +149,7 @@ describe('runCloudflareAuthProbe', () => {
         // Then the redirect should start and the probe never settle. This is not redundant with HttpUtils:
         // handleQAReauthRequired only redirects while QA is the active server, and the test tool can probe the
         // QA origin from a staging or production session, where the consenting press is the only thing that can
-        expect(beginCloudflareAuthRedirect).toHaveBeenCalledTimes(1);
+        expect(redirectToCloudflareSignIn).toHaveBeenCalledTimes(1);
         expect(isSettled).toBe(false);
     });
 
@@ -164,13 +164,13 @@ describe('runCloudflareAuthProbe', () => {
         await expect(runCloudflareAuthProbe()).resolves.toEqual({status: 'error', detail: 'Failed to fetch'});
 
         // Then no redirect: a transient failure must never navigate the tab away
-        expect(beginCloudflareAuthRedirect).not.toHaveBeenCalled();
+        expect(redirectToCloudflareSignIn).not.toHaveBeenCalled();
     });
 
     it('maps a redirect that could not start to a semantic error result', async () => {
         // Given no session and a redirect that cannot even begin
         jest.mocked(getCloudflareSession).mockReturnValue(null);
-        jest.mocked(beginCloudflareAuthRedirect).mockRejectedValue(new Error('Session storage is unavailable'));
+        jest.mocked(redirectToCloudflareSignIn).mockRejectedValue(new Error('Session storage is unavailable'));
 
         // When the probe runs
         // Then even this failure should resolve as a semantic error result: the probe must never reject,

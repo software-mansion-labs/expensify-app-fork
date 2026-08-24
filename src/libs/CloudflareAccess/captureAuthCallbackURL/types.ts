@@ -1,4 +1,4 @@
-import type {CloudflareAuthRedirectOutcome} from '@libs/CloudflareAccess/consumeAuthCallbackURL/types';
+import type {CloudflareSignInOutcome} from '@libs/CloudflareAccess/finishSignInFromURL/types';
 
 /** The authorization the capture phase hands to the exchange phase. Both halves are secrets */
 type AuthorizedCodeExchange = {
@@ -14,7 +14,7 @@ type AuthorizedCodeExchange = {
  * except when an exchange is owed, which only the exchange phase can conclude.
  */
 type CapturedAuthCallback = {
-    outcome: CloudflareAuthRedirectOutcome;
+    outcome: CloudflareSignInOutcome;
     errorMessage?: string;
 
     /** Set only when the callback passed every check and the exchange has been authorized but not run */

@@ -8,7 +8,7 @@ import {isRecord} from '@libs/ObjectUtils';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 
-import {beginCloudflareAuthRedirect, getCloudflareSession, getPendingCloudflareAuthCompletion, waitForCloudflareSessionHydration} from './CloudflareSession';
+import {redirectToCloudflareSignIn, getCloudflareSession, getPendingCloudflareCodeExchange, waitForCloudflareSessionHydration} from './CloudflareSession';
 
 type CloudflareAuthProbeStatus = 'success' | 'reauthRequired' | 'signInFailed' | 'error';
 
@@ -35,7 +35,7 @@ async function runCloudflareAuthProbe({shouldRedirectOnReauthRequired = false}: 
     try {
         await waitForCloudflareSessionHydration();
         // A callback boot may still be exchanging the code. Join it instead of starting a second round trip
-        const pendingCompletion = getPendingCloudflareAuthCompletion();
+        const pendingCompletion = getPendingCloudflareCodeExchange();
         if (pendingCompletion) {
             try {
                 await pendingCompletion;
@@ -46,7 +46,7 @@ async function runCloudflareAuthProbe({shouldRedirectOnReauthRequired = false}: 
 
         if (!getCloudflareSession()) {
             // Never settles. Nothing below runs
-            await beginCloudflareAuthRedirect();
+            await redirectToCloudflareSignIn();
         }
 
         // The real client, so the probe exercises the app's own path. The bearer, the pre-expiry refresh and
@@ -62,7 +62,7 @@ async function runCloudflareAuthProbe({shouldRedirectOnReauthRequired = false}: 
         if (error instanceof Error && error.message === CONST.ERROR.CF_REAUTH_REQUIRED) {
             if (shouldRedirectOnReauthRequired) {
                 try {
-                    await beginCloudflareAuthRedirect();
+                    await redirectToCloudflareSignIn();
                 } catch (redirectError) {
                     return {status: 'error', detail: redirectError instanceof Error ? redirectError.message : undefined};
                 }
