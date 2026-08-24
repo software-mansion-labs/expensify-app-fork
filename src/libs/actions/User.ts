@@ -1028,7 +1028,11 @@ function setActiveServer(server: ValueOf<typeof CONST.SERVER>) {
     }
 
     if (previousServer !== server && (previousServer === CONST.SERVER.QA || server === CONST.SERVER.QA)) {
-        signOutAndRedirectToSignIn();
+        // The LogOut is pinned to the server being left. Without that it routes by whichever server is active
+        // when it is actually sent, and the Onyx.set below wins that race every time — so the request would
+        // reach the server being entered, carrying a token that means nothing there, and the session on the
+        // one being left would stay valid.
+        signOutAndRedirectToSignIn(undefined, undefined, undefined, undefined, previousServer);
     }
 
     // Kept after the sign-out: that path clears Onyx asynchronously, and while ACTIVE_SERVER is in every

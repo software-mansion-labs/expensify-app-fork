@@ -1,13 +1,17 @@
 /**
  * Owns the Cloudflare Access OAuth session for the QA server: Onyx-backed cache, the same-tab redirect
  * flow, and the single-flight refresh. Web-only until native claims Universal/App Links.
+ *
+ * The session outlives an Expensify sign-out on purpose. It authenticates the developer at this machine to
+ * the QA environment, which is a different question from which Expensify account is signed in, and the two
+ * identities are deliberately not bound. Dropping it on sign-out would bounce the user from the sign-in
+ * screen back through Cloudflare before they could type an address.
  */
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import {generatePKCEPair, generateState} from '@libs/CloudflareAccess/generatePKCE';
 import {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} from '@libs/CloudflareAccess/OAuthClient';
-import {clearPendingAuthFlow, savePendingAuthFlow} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
+import {savePendingAuthFlow} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
 import Log from '@libs/Log';
-import {registerSessionCleanupCallback} from '@libs/SessionCleanup';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type CloudflareSession from '@src/types/onyx/CloudflareSession';
@@ -21,9 +25,10 @@ const ACCESS_TOKEN_EXPIRY_BUFFER_MS = 60_000;
 let sessionCache: CloudflareSession | null | undefined;
 
 /**
- * Bumped by sign-out. The async flows below cannot be cancelled, so each captures this at the start and
- * re-checks it after awaits. A mismatch makes the late result inert. Every new `await` added to this
- * module must re-check the captured generation afterwards.
+ * Bumped whenever the session is deliberately dropped (Clear-session, or a 401 refresh could not fix).
+ * Notably not by sign-out, which leaves this session alone. The async flows below cannot be cancelled, so
+ * each captures this at the start and re-checks it after awaits. A mismatch makes the late result inert.
+ * Every new `await` added to this module must re-check the captured generation afterwards.
  */
 let sessionGeneration = 0;
 
@@ -41,13 +46,6 @@ if (isQAAuthConfigured()) {
             sessionCache = value ?? null;
             resolveHydration();
         },
-    });
-
-    // Onyx.clear wipes the key but its callback is async, so drop the cache synchronously
-    registerSessionCleanupCallback(() => {
-        sessionGeneration++;
-        sessionCache = null;
-        clearPendingAuthFlow();
     });
 } else {
     // Nothing will ever hydrate the cache, so a waiter must not block forever
@@ -86,8 +84,8 @@ async function beginCloudflareAuthRedirect(returnURL: string = window.location.h
         // Resolved before the flow record is stored, so a failed discovery leaves nothing behind
         const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
         if (generation !== sessionGeneration) {
-            // Signed out while this flow was being prepared. Do not navigate a signed-out tab
-            throw new Error('Cloudflare auth flow was cancelled by sign-out');
+            // The session was dropped while this flow was being prepared, so the flow it belonged to is gone
+            throw new Error('Cloudflare auth flow was cancelled');
         }
         // Must be stored before the navigation. Module memory does not survive the unload
         savePendingAuthFlow({state, codeVerifier: pkce.codeVerifier, returnURL, createdAt: Date.now()});

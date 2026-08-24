@@ -4,10 +4,10 @@
  * `isQAAuthConfigured()` short-circuit at runtime — keeps the whole authorize/PKCE/token chain out of the
  * native bundle, matching the `Config` and `consumeAuthCallbackURL` variants next door.
  */
-function ensureQAAuthenticated(): Promise<void> {
-    return Promise.resolve();
-}
+import type {EnsureQAAuthenticated, HandleQAReauthRequired} from './types';
 
-function handleQAReauthRequired(): void {}
+const ensureQAAuthenticated: EnsureQAAuthenticated = () => Promise.resolve();
+
+const handleQAReauthRequired: HandleQAReauthRequired = () => {};
 
 export {ensureQAAuthenticated, handleQAReauthRequired};

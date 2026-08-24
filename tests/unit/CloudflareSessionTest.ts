@@ -237,22 +237,40 @@ describe('refreshCloudflareSession', () => {
         expect(oAuthClient.refreshTokens).not.toHaveBeenCalled();
     });
 
-    it('does not persist a rotation that resolves after sign-out', async () => {
-        // Given a stored session and a refresh that will still be in flight when sign-out runs. In-flight
-        // async work cannot be cancelled, only have its result discarded
+    it('does not persist a rotation that resolves after the session was dropped', async () => {
+        // Given a stored session and a refresh that will still be in flight when the session is dropped.
+        // In-flight async work cannot be cancelled, only have its result discarded
         await seedSession(SESSION_A);
         const refreshDeferred = Promise.withResolvers<CloudflareSession>();
         jest.mocked(oAuthClient.refreshTokens).mockReturnValue(refreshDeferred.promise);
 
-        // When sign-out bumps the session generation before the rotation resolves
+        // When the session is dropped, bumping the generation, before the rotation resolves
         const refresh = SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
-        sessionCleanup.runSessionCleanupCallbacks();
+        await SessionActions.clearCloudflareSession();
         refreshDeferred.resolve(SESSION_B);
 
-        // Then the late result must be dropped so the signed-out account's session is never resurrected
+        // Then the late result must be dropped, so a session deliberately thrown away is never resurrected
         await expect(refresh).resolves.toBe('reauth-required');
         // Then the cache is written before Onyx, so a null cache is proof the rotated pair never reached the store
         expect(SessionActions.getCloudflareSession()).toBeNull();
+    });
+
+    it('keeps a rotation that resolves after an Expensify sign-out', async () => {
+        // Given a stored session and a refresh still in flight when the user signs out of Expensify
+        await seedSession(SESSION_A);
+        const refreshDeferred = Promise.withResolvers<CloudflareSession>();
+        jest.mocked(oAuthClient.refreshTokens).mockReturnValue(refreshDeferred.promise);
+
+        // When sign-out runs its cleanup before the rotation resolves
+        const refresh = SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
+        sessionCleanup.runSessionCleanupCallbacks();
+        refreshDeferred.resolve(SESSION_B);
+        await refresh;
+
+        // Then the rotation stands: the Cloudflare identity is the developer's, not the signed-in account's,
+        // so signing out of Expensify is not grounds to discard a Cloudflare session or the work rotating it.
+        // Dropping it here is what sent the user from the sign-in screen straight back through Cloudflare
+        expect(SessionActions.getCloudflareSession()).toEqual(SESSION_B);
     });
 });
 
@@ -329,18 +347,18 @@ describe('beginCloudflareAuthRedirect', () => {
         Object.defineProperty(window, 'sessionStorage', {value: realSessionStorage, writable: true, configurable: true});
     });
 
-    it('refuses to navigate when sign-out invalidated the flow while the key material was generated', async () => {
+    it('refuses to navigate when the session was dropped while the key material was generated', async () => {
         // Given key-material generation still pending when the redirect starts
         const pkceDeferred = Promise.withResolvers<PKCEPair>();
         jest.mocked(pkce.generatePKCEPair).mockReturnValue(pkceDeferred.promise);
 
-        // When sign-out invalidates the flow before the key material arrives
+        // When the session is dropped, invalidating the flow, before the key material arrives
         const redirect = SessionActions.beginCloudflareAuthRedirect('http://localhost/settings/troubleshoot');
-        sessionCleanup.runSessionCleanupCallbacks();
+        await SessionActions.clearCloudflareSession();
         pkceDeferred.resolve(PAIR_1);
 
-        // Then it must reject without navigating or storing anything: sign-out cannot cancel the in-flight
-        // work, so its late result is discarded rather than sending a signed-out tab into the authorize flow
+        // Then it must reject without navigating or storing anything: dropping the session cannot cancel the
+        // in-flight work, so its late result is discarded rather than sending the tab into a stale authorize
         await expect(redirect).rejects.toThrow();
         expect(assignSpy).not.toHaveBeenCalled();
         expect(window.sessionStorage.getItem('QA_AUTH_REDIRECT_FLOW')).toBeNull();
@@ -409,22 +427,6 @@ describe('completeCloudflareAuthRedirect', () => {
         exchangeDeferred.resolve(SESSION_A);
         await first;
         expect(SessionActions.getPendingCloudflareAuthCompletion()).toBeNull();
-    });
-
-    it('discards an exchange that resolves after sign-out, so the signed-out account is not resurrected', async () => {
-        // Given an exchange that will still be in flight when sign-out runs
-        const exchangeDeferred = Promise.withResolvers<CloudflareSession>();
-        jest.mocked(oAuthClient.exchangeCode).mockReturnValue(exchangeDeferred.promise);
-
-        // When sign-out bumps the session generation before the exchange resolves
-        const completion = SessionActions.completeCloudflareAuthRedirect({code: 'auth-code-1', codeVerifier: PAIR_1.codeVerifier});
-        sessionCleanup.runSessionCleanupCallbacks();
-        exchangeDeferred.resolve(SESSION_A);
-
-        await completion;
-        // Then the late result is dropped, since in-flight work cannot be cancelled, only discarded. Because
-        // the cache is written before Onyx, a null cache is proof the exchanged pair never reached the store
-        expect(SessionActions.getCloudflareSession()).toBeNull();
     });
 
     it('resolves and keeps the usable session in cache when the exchange succeeded but Onyx.set rejected', async () => {

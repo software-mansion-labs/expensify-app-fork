@@ -19,19 +19,23 @@ function buildQARequestAuth(accessToken: string): QARequestAuth {
     return {accessToken, headers: {Authorization: `Bearer ${accessToken}`}};
 }
 
-/** The session is gone and only a fresh authorize round trip can recover it, so fail this request and start one */
-function throwQAReauthRequired(): never {
-    handleQAReauthRequired();
+/**
+ * The session is gone and only a fresh authorize round trip can recover it, so fail this request and ask for
+ * one. Whether the round trip actually starts is `handleQAReauthRequired`'s call: only a command the app
+ * cannot proceed without may navigate the tab. The request fails either way — there is no credential for it.
+ */
+function throwQAReauthRequired(command: string | undefined): never {
+    handleQAReauthRequired(command);
     throw new HttpsError({message: CONST.ERROR.CF_REAUTH_REQUIRED, status: CONST.HTTP_STATUS.UNAUTHORIZED.toString()});
 }
 
-const prepareQARequestAuth: PrepareQARequestAuth = async () => {
+const prepareQARequestAuth: PrepareQARequestAuth = async (command) => {
     // Awaited, not started alongside: a QA request cannot succeed before the handshake has, a bearer-less one
     // can only 401, and the 401 handler cannot rescue it either because it keys off a token that does not
     // exist yet. Such a request would fall through to ordinary failure handling and could flash the offline
     // indicator before the tab leaves. Cheap on every later call, though not free — the gate runs again and
     // finds the session, paying only for hydration awaits that have already settled.
-    await ensureQAAuthenticated();
+    await ensureQAAuthenticated(command);
 
     // The design doc's primary refresh path: a token inside the expiry buffer is rotated BEFORE the request,
     // so the common case costs no wasted round trip. `handleQAUnauthorized` stays as the fallback, for a
@@ -40,7 +44,7 @@ const prepareQARequestAuth: PrepareQARequestAuth = async () => {
     if (session && isSessionNearExpiry(session) && (await refreshCloudflareSession(session.accessToken)) === 'reauth-required') {
         // Terminal, and nothing has been sent yet. Same dead-session behaviour as the 401 path, deliberately:
         // one answer to "the session is gone", not two.
-        throwQAReauthRequired();
+        throwQAReauthRequired(command);
     }
 
     // Read after the refresh above, so this is the rotated token and not the one that was about to expire
@@ -48,7 +52,7 @@ const prepareQARequestAuth: PrepareQARequestAuth = async () => {
     return accessToken ? buildQARequestAuth(accessToken) : undefined;
 };
 
-const handleQAUnauthorized: HandleQAUnauthorized = async ({accessToken}, {isRetry}) => {
+const handleQAUnauthorized: HandleQAUnauthorized = async ({accessToken}, {isRetry, command}) => {
     if (isRetry) {
         // A freshly refreshed token still got 401 — refresh demonstrably cannot fix this session. Drop it
         // (token-guarded, so a concurrently established session is not collateral damage) and re-authorize,
@@ -56,12 +60,12 @@ const handleQAUnauthorized: HandleQAUnauthorized = async ({accessToken}, {isRetr
         // in-memory cache — is dropped synchronously inside, and only the persistence write is async, with
         // nothing this layer could do about a failed one.
         markCloudflareSessionRejected(accessToken);
-        throwQAReauthRequired();
+        throwQAReauthRequired(command);
     }
 
     if ((await refreshCloudflareSession(accessToken)) === 'reauth-required') {
         // Terminal; refreshCloudflareSession already cleared the dead session
-        throwQAReauthRequired();
+        throwQAReauthRequired(command);
     }
 
     // 'refreshed' / 'skipped-newer-token': retry with the rotated token. A transient refresh failure never
@@ -69,8 +73,8 @@ const handleQAUnauthorized: HandleQAUnauthorized = async ({accessToken}, {isRetr
     // the session stays alive.
     const rotatedAccessToken = getCloudflareSession()?.accessToken;
     if (!rotatedAccessToken) {
-        // Signed out, or the session was cleared, while the refresh was in flight: no credential to retry with
-        throwQAReauthRequired();
+        // The session was cleared while the refresh was in flight: no credential to retry with
+        throwQAReauthRequired(command);
     }
     return buildQARequestAuth(rotatedAccessToken);
 };

@@ -1,100 +1,37 @@
 /**
- * Callback-boot half of the same-tab OAuth redirect: Cloudflare delivers the authorization code as this
- * document's own location, so it is picked up during boot, before any render, and the URL is rewritten
- * back to where the user came from (no app route lives at the redirect path).
+ * Exchange half of the same-tab OAuth redirect. The callback URL was already read and rewritten by the
+ * capture phase, which runs earlier in boot; all that is left is to spend the authorization code it
+ * approved. Kept separate because this half needs an initialised Onyx to persist the session it produces,
+ * and so cannot run as early as the URL rewrite has to.
  */
-import {getOAuthRedirectURI, isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
-import {OAuthError} from '@libs/CloudflareAccess/OAuthClient';
-import {consumePendingAuthFlow} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
+import {getCapturedCloudflareAuthCallback} from '@libs/CloudflareAccess/captureAuthCallbackURL';
 
 import {completeCloudflareAuthRedirect} from '@userActions/CloudflareSession';
+
+import CONFIG from '@src/CONFIG';
 
 import type {CloudflareAuthRedirectOutcome, ConsumeCloudflareAuthCallbackURL, GetCloudflareAuthRedirectOutcome} from './types';
 
 let lastOutcome: CloudflareAuthRedirectOutcome = 'not-a-callback';
 let lastErrorMessage: string | undefined;
 
-/** Same-origin only: this is the one stored field fed back into navigation, so it is treated as tainted */
-function toSafeReturnPath(returnURL: string | undefined): string {
-    if (!returnURL) {
-        return '/';
-    }
-    try {
-        const parsed = new URL(returnURL, window.location.origin);
-        if (parsed.origin !== window.location.origin) {
-            return '/';
-        }
-        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-    } catch {
-        return '/';
-    }
-}
-
 const consumeCloudflareAuthCallbackURL: ConsumeCloudflareAuthCallbackURL = () => {
-    lastErrorMessage = undefined;
+    const captured = getCapturedCloudflareAuthCallback();
+    lastOutcome = captured.outcome;
+    lastErrorMessage = captured.errorMessage;
 
-    if (!isQAAuthConfigured()) {
-        lastOutcome = 'not-a-callback';
-        return lastOutcome;
+    if (captured.exchange) {
+        // Fire and forget. The catch records the failure as the observable outcome, since the completion
+        // promise clears as it settles. It runs a microtask later, so it always lands after the synchronous
+        // 'exchanging'. Both handlers attach to the same promise rather than chaining .then().catch(): a
+        // chain would push the rejection one extra microtask out, and the outcome is read by callers that
+        // only wait one.
+        completeCloudflareAuthRedirect(captured.exchange).catch((error: unknown) => {
+            lastOutcome = 'exchange-failed';
+            lastErrorMessage = error instanceof Error ? error.message : String(error);
+        });
     }
 
-    let callbackPath: string;
-    try {
-        callbackPath = new URL(getOAuthRedirectURI()).pathname;
-    } catch {
-        lastOutcome = 'not-a-callback';
-        return lastOutcome;
-    }
-
-    if (window.location.pathname !== callbackPath) {
-        lastOutcome = 'not-a-callback';
-        return lastOutcome;
-    }
-
-    // Params read before the rewrite, flow consumed before any validation: the record is single-use, so a
-    // replayed callback finds nothing however this call ends.
-    const params = new URL(window.location.href).searchParams;
-    const flow = consumePendingAuthFlow();
-
-    // Unconditional: even an invalid callback must leave the user on a real route
-    window.history.replaceState(null, '', toSafeReturnPath(flow?.returnURL));
-
-    if (!flow) {
-        lastOutcome = 'no-pending-flow';
-        lastErrorMessage = 'No pending QA auth flow in this tab — start the sign-in again';
-        return lastOutcome;
-    }
-
-    // State first: a callback that fails provenance is discarded wholesale, its other params untrusted
-    if (params.get('state') !== flow.state) {
-        lastOutcome = 'invalid-callback';
-        lastErrorMessage = 'OAuth callback state mismatch';
-        return lastOutcome;
-    }
-
-    const oauthError = params.get('error');
-    if (oauthError) {
-        // e.g. access_denied, never attempt the exchange
-        lastOutcome = 'provider-error';
-        lastErrorMessage = new OAuthError(oauthError, params.get('error_description') ?? undefined).message;
-        return lastOutcome;
-    }
-
-    const code = params.get('code');
-    if (!code) {
-        lastOutcome = 'invalid-callback';
-        lastErrorMessage = 'OAuth callback is missing the authorization code';
-        return lastOutcome;
-    }
-
-    // Fire and forget. The catch records the failure as the observable outcome, since the completion promise
-    // clears as it settles. It runs a microtask later, so it always lands after the synchronous 'exchanging'.
-    completeCloudflareAuthRedirect({code, codeVerifier: flow.codeVerifier}).catch((error: unknown) => {
-        lastOutcome = 'exchange-failed';
-        lastErrorMessage = error instanceof Error ? error.message : String(error);
-    });
-
-    lastOutcome = 'exchanging';
     return lastOutcome;
 };
 

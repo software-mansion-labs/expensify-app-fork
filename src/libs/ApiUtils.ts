@@ -9,6 +9,7 @@ import type {ValueOf} from 'type-fest';
 import Onyx from 'react-native-onyx';
 
 import proxyConfig from '../../config/proxyConfig';
+import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
 import getEnvironment from './Environment/getEnvironment';
 
 // To avoid rebuilding native apps, native apps use production config for both staging and prod
@@ -71,11 +72,13 @@ getEnvironment().then((envName) => {
  * Get the currently used API endpoint, unless forceProduction is set to true
  * (Non-production environments allow for dynamically switching the API)
  */
-function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request<TKey>, 'shouldUseSecure' | 'shouldSkipWebProxy' | 'command'>>, forceProduction = false): string {
+function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request<TKey>, 'shouldUseSecure' | 'shouldSkipWebProxy' | 'command' | 'server'>>, forceProduction = false): string {
     const shouldUseSecure = request?.shouldUseSecure ?? false;
     // `forceProduction` means "route as if nothing is toggled on", so apply it once rather than repeating it
-    // as a guard on every non-production branch below
-    const server = forceProduction ? CONST.SERVER.PRODUCTION : activeServer;
+    // as a guard on every non-production branch below. `request.server` outranks the active server for the
+    // rare request that must reach a specific one: the active server can change between building a request
+    // and sending it, and a sign-out issued while switching servers has to reach the one being left.
+    const server = forceProduction ? CONST.SERVER.PRODUCTION : (request?.server ?? activeServer);
 
     if (server === CONST.SERVER.QA) {
         // Deliberately no web-proxy branch: Cloudflare Access answers the preflight and matches the bearer
@@ -113,7 +116,9 @@ function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request
  */
 function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
     // If request.command already contains ? then we don't need to append it
-    return `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
+    const url = `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
+
+    return url;
 }
 
 /**

@@ -157,7 +157,7 @@ async function attemptRequest<TKey extends OnyxKey>(
     // On the 401 retry the caller hands us the rotated credential; otherwise a QA URL resolves its own,
     // which awaits the Cloudflare gate and rotates a near-expiry token before anything is sent. Guarded by
     // the synchronous isQAServerRequest so no other request pays a microtask for it.
-    const qaAuth = qaRetryAuth ?? (isQAServerRequest(url) ? await prepareQARequestAuth() : undefined);
+    const qaAuth = qaRetryAuth ?? (isQAServerRequest(url) ? await prepareQARequestAuth(command) : undefined);
 
     // Everything below is measured from here, not from the top of the function. A token round trip counted as
     // request latency would poison setTimeSkew and inflate the wait span.
@@ -232,7 +232,7 @@ async function attemptRequest<TKey extends OnyxKey>(
                 // Throws when the session is beyond saving; otherwise resolves the rotated credential to
                 // retry with. Recurses into attemptRequest(), never into processJSONResponse, so the
                 // once-per-request stages in processHTTPRequest still run exactly once.
-                return handleQAUnauthorized(qaAuth, {isRetry: !!qaRetryAuth}).then((rotatedAuth) => attemptRequest<TKey>(url, method, body, abortSignal, command, rotatedAuth));
+                return handleQAUnauthorized(qaAuth, {isRetry: !!qaRetryAuth, command}).then((rotatedAuth) => attemptRequest<TKey>(url, method, body, abortSignal, command, rotatedAuth));
             }
 
             if (!response.ok) {

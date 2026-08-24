@@ -28,7 +28,7 @@ import type {OnyxData, RequestConflictResolver} from '@src/types/onyx/Request';
 import type Response from '@src/types/onyx/Response';
 
 import type {OnyxKey} from 'react-native-onyx';
-import type {SetRequired} from 'type-fest';
+import type {SetRequired, ValueOf} from 'type-fest';
 
 import Onyx from 'react-native-onyx';
 
@@ -96,6 +96,7 @@ function prepareRequest<TCommand extends ApiCommand, TKey extends OnyxKey>(
     params: ApiRequestCommandParameters[TCommand],
     onyxData: OnyxData<TKey> = {},
     conflictResolver: RequestConflictResolver<TKey> = {},
+    server?: ValueOf<typeof CONST.SERVER>,
 ): OnyxRequest<TKey> {
     Log.info('[API] Preparing request', false, {command, type});
 
@@ -140,6 +141,9 @@ function prepareRequest<TCommand extends ApiCommand, TKey extends OnyxKey>(
         successData,
         failureData,
         ...conflictResolver,
+        // Omitted rather than set to undefined so a persisted request keeps the shape it had before this
+        // existed: almost every request routes to whichever server is active when it is sent.
+        ...(server ? {server} : {}),
     };
 
     if (isWriteRequest) {

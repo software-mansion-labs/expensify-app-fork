@@ -6,6 +6,9 @@ import './src/polyfills/NitroFetch';
 import './src/polyfills/PromiseWithResolvers';
 import './src/polyfills/requestIdleCallback';
 import {AppRegistry} from 'react-native';
+// Must precede the app import: it rewrites the QA auth callback URL, and the app's modules are evaluated
+// before any statement in this file runs
+import './src/setup/captureQAAuthCallbackURL';
 import App from './src/App';
 import Config from './src/CONFIG';
 import additionalAppSetup from './src/setup';

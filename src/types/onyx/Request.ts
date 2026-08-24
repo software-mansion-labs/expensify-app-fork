@@ -1,7 +1,9 @@
+import type CONST from '@src/CONST';
 import type {OnyxCollectionKey} from '@src/ONYXKEYS';
 
 import type {OnyxKey, OnyxUpdate} from 'react-native-onyx';
 import type OnyxUtils from 'react-native-onyx/dist/OnyxUtils';
+import type {ValueOf} from 'type-fest';
 
 import type Response from './Response';
 
@@ -88,6 +90,13 @@ type RequestDataBase<TKey extends OnyxKey> = {
 
     /** Whether the app should skip the web proxy to connect to API endpoints */
     shouldSkipWebProxy?: boolean;
+
+    /**
+     * The server this request must reach, whatever is active by the time it is sent. Routing otherwise reads
+     * the active server at send time, which is wrong for a request whose whole purpose is to act on the
+     * server being left — signing out while switching servers is the case that needs this.
+     */
+    server?: ValueOf<typeof CONST.SERVER>;
 
     /**
      * Whether the request is initiated offline.

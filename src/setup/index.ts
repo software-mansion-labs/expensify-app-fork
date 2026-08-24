@@ -90,9 +90,9 @@ export default function () {
     // handlers are registered before any push arrives, including Android headless/background wake-ups.
     import('@libs/Notification/PushNotification/subscribeToPushNotifications');
 
-    // The QA auth callback arrives as a full page load, so no component is around to receive it: the code is
-    // picked up and the URL restored here, before React Navigation resolves the initial route. After
-    // Onyx.init() because a completed exchange persists the session. No-op on every other load.
+    // Spends the authorization code the capture phase read off this document's location before the app was
+    // imported. Here rather than there because a completed exchange persists the session, which needs
+    // Onyx.init() to have run. No-op on every load that was not the callback.
     consumeCloudflareAuthCallbackURL();
 
     initOnyxDerivedValues();
