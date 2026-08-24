@@ -88,9 +88,9 @@ async function runGate(): Promise<void> {
 let gatePromise: Promise<void> | null = null;
 
 /**
- * Call once during boot, after consumeCloudflareAuthCallbackURL(). Resolves immediately on a build with
- * no Cloudflare credentials, and without redirecting on any non-QA build. When it does redirect, the returned
- * promise never settles — the page is leaving.
+ * Called during boot, after consumeCloudflareAuthCallbackURL(), and again before every QA request. Resolves
+ * immediately on a build with no Cloudflare credentials, and without redirecting on any non-QA build. When it
+ * does redirect, the returned promise never settles — the page is leaving.
  */
 function ensureQAAuthenticated(): Promise<void> {
     // The only check that is honest synchronously: CONFIG is baked into the bundle. A build with no
@@ -102,7 +102,14 @@ function ensureQAAuthenticated(): Promise<void> {
     }
     // TEMPORARY debug instrumentation: shows whether this call started the gate or joined a running one
     traceQAAuth('gate.enter', {alreadyRunning: !!gatePromise});
-    gatePromise ??= runGate();
+    // Cleared once the run settles, so the single-flight covers concurrent callers without memoising the
+    // answer. The gate reads `activeServer`, which the test-tool switch changes mid-session: flipping it to QA
+    // signs the user out client-side without reloading, so a cached "nothing to do" from boot would be the
+    // last word for the rest of the page and every QA request would go out with no bearer. A run that does
+    // redirect never settles, so this cannot fire mid-navigation and admit a competing flow.
+    gatePromise ??= runGate().finally(() => {
+        gatePromise = null;
+    });
     return gatePromise;
 }
 

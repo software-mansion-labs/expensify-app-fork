@@ -11,7 +11,6 @@ import Onyx from 'react-native-onyx';
 import proxyConfig from '../../config/proxyConfig';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
 // TEMPORARY debug instrumentation for the QA Cloudflare flow. Remove with the QAAuthTrace directory.
-import {isQAAuthConfigured} from './CloudflareAccess/Config';
 import {traceQAAuth} from './CloudflareAccess/QAAuthTrace';
 import getEnvironment from './Environment/getEnvironment';
 
@@ -26,12 +25,6 @@ let activeServer: ValueOf<typeof CONST.SERVER> = CONST.SERVER.PRODUCTION;
  * every build, QA included.
  */
 const {promise: activeServerHydrationPromise, resolve: resolveActiveServerHydration} = Promise.withResolvers<void>();
-
-/**
- * TEMPORARY debug instrumentation: resolved once, because a build without QA credentials can never enter the
- * traced flow and should not pay for the trace. Remove with the QAAuthTrace directory.
- */
-const shouldTraceQAAuth = isQAAuthConfigured();
 
 /**
  * The whole decision table in one place, taking the environment as a parameter so it can be read without
@@ -74,9 +67,7 @@ getEnvironment().then((envName) => {
             activeServer = resolveActiveServer(value, envName);
             // TEMPORARY debug instrumentation: this is the value that decides whether sign-in POSTs to the QA
             // origin or to production, and it is the one thing no static reading of the repo can tell us.
-            if (shouldTraceQAAuth) {
-                traceQAAuth('activeServer.resolved', {stored: value ?? null, environment: envName, resolved: activeServer});
-            }
+            traceQAAuth('activeServer.resolved', {stored: value ?? null, environment: envName, resolved: activeServer});
             resolveActiveServerHydration();
         },
     });
@@ -144,7 +135,7 @@ function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
     // TEMPORARY debug instrumentation: only the commands that decide a sign-in, so ordinary traffic cannot
     // evict the boot and callback records this exists to capture. `getApiRoot` derives the URL from
     // `activeServer`, so tracing every QA request would add volume without adding an independent fact.
-    if (shouldTraceQAAuth && TRACED_COMMANDS.has(request.command)) {
+    if (TRACED_COMMANDS.has(request.command)) {
         traceQAAuth('api.commandURL', {command: request.command, activeServer, url});
     }
 

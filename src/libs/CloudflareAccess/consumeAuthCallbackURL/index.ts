@@ -56,7 +56,6 @@ function runCallback(): CloudflareAuthRedirectOutcome {
             qaClientID: fingerprint(CONFIG.QA_AUTH.CLIENT_ID),
             qaCheckPath: CONFIG.QA_AUTH.CHECK_PATH,
             redirectURI: getOAuthRedirectURI(),
-            defaultApiRoot: CONFIG.EXPENSIFY.DEFAULT_API_ROOT,
             isUsingLocalWeb: CONFIG.IS_USING_LOCAL_WEB,
         });
     }
@@ -132,17 +131,20 @@ function runCallback(): CloudflareAuthRedirectOutcome {
 
     // Fire and forget. The catch records the failure as the observable outcome, since the completion promise
     // clears as it settles. It runs a microtask later, so it always lands after the synchronous 'exchanging'.
-    completeCloudflareAuthRedirect({code, codeVerifier: flow.codeVerifier})
-        .then(() => {
+    // Both handlers attach to the same promise rather than chaining .then().catch(): a chain would push the
+    // rejection one extra microtask out, and the outcome is read by callers that only wait one.
+    completeCloudflareAuthRedirect({code, codeVerifier: flow.codeVerifier}).then(
+        () => {
             // TEMPORARY debug instrumentation: the success half, so a silent exchange is distinguishable from none
             traceQAAuth('callback.exchangeSucceeded');
-        })
-        .catch((error: unknown) => {
+        },
+        (error: unknown) => {
             lastOutcome = 'exchange-failed';
             lastErrorMessage = error instanceof Error ? error.message : String(error);
             // TEMPORARY debug instrumentation: this failure is otherwise swallowed by the gate's boot-loop guard
             traceQAAuth('callback.exchangeFailed', {error: lastErrorMessage});
-        });
+        },
+    );
 
     lastOutcome = 'exchanging';
     return lastOutcome;
