@@ -9,6 +9,10 @@ import type {ValueOf} from 'type-fest';
 import Onyx from 'react-native-onyx';
 
 import proxyConfig from '../../config/proxyConfig';
+import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
+// TEMPORARY debug instrumentation for the QA Cloudflare flow. Remove with the QAAuthTrace directory.
+import {isQAAuthConfigured} from './CloudflareAccess/Config';
+import {traceQAAuth} from './CloudflareAccess/QAAuthTrace';
 import getEnvironment from './Environment/getEnvironment';
 
 // To avoid rebuilding native apps, native apps use production config for both staging and prod
@@ -22,6 +26,12 @@ let activeServer: ValueOf<typeof CONST.SERVER> = CONST.SERVER.PRODUCTION;
  * every build, QA included.
  */
 const {promise: activeServerHydrationPromise, resolve: resolveActiveServerHydration} = Promise.withResolvers<void>();
+
+/**
+ * TEMPORARY debug instrumentation: resolved once, because a build without QA credentials can never enter the
+ * traced flow and should not pay for the trace. Remove with the QAAuthTrace directory.
+ */
+const shouldTraceQAAuth = isQAAuthConfigured();
 
 /**
  * The whole decision table in one place, taking the environment as a parameter so it can be read without
@@ -39,15 +49,20 @@ function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, en
         return CONST.SERVER.PRODUCTION;
     }
 
+    // A stored 'qa' outlives the config that produced it: clearing QA_EXPENSIFY_URL hides the switch and
+    // turns the boot gate off, but leaves the old Onyx value behind. Ignore it rather than resolve to a
+    // server this build has no address for.
+    const storedServer = value === CONST.SERVER.QA && !CONFIG.EXPENSIFY.QA_API_ROOT ? undefined : value;
+
     // Toggling between APIs is not allowed on an internal dev environment, with QA as the one exception:
     // internal devs are exactly who needs to reach QA from a local build, and it is opt-in so it can never
     // become a default
-    if (CONFIG.IS_USING_LOCAL_WEB && value !== CONST.SERVER.QA) {
+    if (CONFIG.IS_USING_LOCAL_WEB && storedServer !== CONST.SERVER.QA) {
         return CONST.SERVER.PRODUCTION;
     }
 
     const defaultServer = envName === CONST.ENVIRONMENT.STAGING || envName === CONST.ENVIRONMENT.ADHOC ? CONST.SERVER.STAGING : CONST.SERVER.PRODUCTION;
-    return value ?? defaultServer;
+    return storedServer ?? defaultServer;
 }
 
 getEnvironment().then((envName) => {
@@ -57,6 +72,11 @@ getEnvironment().then((envName) => {
         key: ONYXKEYS.ACTIVE_SERVER,
         callback: (value) => {
             activeServer = resolveActiveServer(value, envName);
+            // TEMPORARY debug instrumentation: this is the value that decides whether sign-in POSTs to the QA
+            // origin or to production, and it is the one thing no static reading of the repo can tell us.
+            if (shouldTraceQAAuth) {
+                traceQAAuth('activeServer.resolved', {stored: value ?? null, environment: envName, resolved: activeServer});
+            }
             resolveActiveServerHydration();
         },
     });
@@ -75,7 +95,20 @@ function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request
     if (server === CONST.SERVER.QA) {
         // Deliberately no web-proxy branch: Cloudflare Access answers the preflight and matches the bearer
         // against the real origin, so routing QA through a same-origin proxy path would defeat both
-        return shouldUseSecure ? CONFIG.EXPENSIFY.QA_SECURE_API_ROOT : CONFIG.EXPENSIFY.QA_API_ROOT;
+        if (!shouldUseSecure) {
+            return CONFIG.EXPENSIFY.QA_API_ROOT;
+        }
+
+        // A QA deployment with one host is a supported shape — isQAAuthConfigured() accepts it and the bearer
+        // allowlist carries a single entry — so this is an unavailable host, not bad config. Returning the
+        // empty root would be far worse than failing: getCommandURL would build a relative `api/Command?`,
+        // which the browser resolves against the app's own origin, quietly sending the request to the dev
+        // server with no bearer on it.
+        if (!CONFIG.EXPENSIFY.QA_SECURE_API_ROOT) {
+            throw new Error(`The QA server has no secure host, so it cannot serve ${request?.command ?? 'a secure command'}. Set QA_SECURE_EXPENSIFY_URL to reach one.`);
+        }
+
+        return CONFIG.EXPENSIFY.QA_SECURE_API_ROOT;
     }
     if (server === CONST.SERVER.STAGING) {
         if (CONFIG.IS_USING_WEB_PROXY && !request?.shouldSkipWebProxy) {
@@ -89,13 +122,33 @@ function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request
     return shouldUseSecure ? CONFIG.EXPENSIFY.DEFAULT_SECURE_API_ROOT : CONFIG.EXPENSIFY.DEFAULT_API_ROOT;
 }
 
+/** TEMPORARY debug instrumentation: the commands whose destination decides whether a magic code is ever sent */
+const TRACED_COMMANDS = new Set<string>([
+    READ_COMMANDS.BEGIN_SIGNIN,
+    WRITE_COMMANDS.SIGN_IN_USER,
+    READ_COMMANDS.SIGN_IN_WITH_SHORT_LIVED_AUTH_TOKEN,
+    WRITE_COMMANDS.OPEN_APP,
+    WRITE_COMMANDS.RECONNECT_APP,
+    SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP,
+    SIDE_EFFECT_REQUEST_COMMANDS.AUTHENTICATE_PUSHER,
+]);
+
 /**
  * Get the command url for the given request
  * @param - the name of the API command
  */
 function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
     // If request.command already contains ? then we don't need to append it
-    return `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
+    const url = `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
+
+    // TEMPORARY debug instrumentation: only the commands that decide a sign-in, so ordinary traffic cannot
+    // evict the boot and callback records this exists to capture. `getApiRoot` derives the URL from
+    // `activeServer`, so tracing every QA request would add volume without adding an independent fact.
+    if (shouldTraceQAAuth && TRACED_COMMANDS.has(request.command)) {
+        traceQAAuth('api.commandURL', {command: request.command, activeServer, url});
+    }
+
+    return url;
 }
 
 /**
