@@ -26,13 +26,11 @@ function throwQAReauthRequired(): never {
 }
 
 const prepareQARequestAuth: PrepareQARequestAuth = async () => {
-    // A QA request cannot succeed before the Cloudflare handshake has, so wait for the gate rather than
-    // sending a bearer-less request that can only 401. Boot fires OpenApp/ReconnectApp without awaiting the
-    // gate (setup/index.ts calls it fire-and-forget, deliberately — boot must not block on a network round
-    // trip), so without this those requests race the redirect: they reach the QA origin with no Authorization
-    // header, and the 401 handler cannot help them because it keys off a token that does not exist yet. They
-    // fall through to ordinary failure handling and can flash the offline indicator before the tab leaves.
-    // Cheap on every other path: the gate returns a resolved single-flight promise once a session exists.
+    // Awaited, not started alongside: a QA request cannot succeed before the handshake has, a bearer-less one
+    // can only 401, and the 401 handler cannot rescue it either because it keys off a token that does not
+    // exist yet. Such a request would fall through to ordinary failure handling and could flash the offline
+    // indicator before the tab leaves. Cheap on every later call, though not free — the gate runs again and
+    // finds the session, paying only for hydration awaits that have already settled.
     await ensureQAAuthenticated();
 
     // The design doc's primary refresh path: a token inside the expiry buffer is rotated BEFORE the request,

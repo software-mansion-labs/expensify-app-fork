@@ -17,9 +17,9 @@ let activeServer: ValueOf<typeof CONST.SERVER> = CONST.SERVER.PRODUCTION;
 
 /**
  * `activeServer` above is a placeholder, not an answer: it is only real once getEnvironment() has resolved
- * AND the first Onyx callback below has run. Render paths re-render when the value arrives, but boot code
- * that decides something once — the QA gate in particular — must await this or it reads 'production' on
- * every build, QA included.
+ * AND the first Onyx callback below has run. Render paths re-render when the value arrives, but a one-shot
+ * decision — the QA gate in particular, which the first request of a page load can reach before either
+ * signal has landed — must await this or it reads 'production' on every build, QA included.
  */
 const {promise: activeServerHydrationPromise, resolve: resolveActiveServerHydration} = Promise.withResolvers<void>();
 
@@ -40,7 +40,7 @@ function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, en
     }
 
     // A stored 'qa' outlives the config that produced it: clearing QA_EXPENSIFY_URL hides the switch and
-    // turns the boot gate off, but leaves the old Onyx value behind. Ignore it rather than resolve to a
+    // turns the QA gate off, but leaves the old Onyx value behind. Ignore it rather than resolve to a
     // server this build has no address for.
     const storedServer = value === CONST.SERVER.QA && !CONFIG.EXPENSIFY.QA_API_ROOT ? undefined : value;
 

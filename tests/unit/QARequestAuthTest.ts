@@ -40,7 +40,7 @@ beforeEach(() => {
 });
 
 describe('prepareQARequestAuth', () => {
-    it('waits for the boot gate, then returns the bearer for the cached token', async () => {
+    it('waits for the gate, then returns the bearer for the cached token', async () => {
         // Given a gate that has not resolved yet
         let releaseGate!: () => void;
         mockEnsureQAAuthenticated.mockReturnValue(

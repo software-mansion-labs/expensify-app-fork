@@ -1,5 +1,4 @@
 import {consumeCloudflareAuthCallbackURL} from '@libs/CloudflareAccess/consumeAuthCallbackURL';
-import {ensureQAAuthenticated} from '@libs/CloudflareAccess/ensureQAAuthenticated';
 import intlPolyfill from '@libs/IntlPolyfill';
 
 import {setDeviceID} from '@userActions/Device';
@@ -95,10 +94,6 @@ export default function () {
     // picked up and the URL restored here, before React Navigation resolves the initial route. After
     // Onyx.init() because a completed exchange persists the session. No-op on every other load.
     consumeCloudflareAuthCallbackURL();
-
-    // Ordering matters: the line above may have started a code exchange, and this joins it rather than
-    // starting a competing round trip. Fire and forget — it resolves without redirecting off a QA build.
-    ensureQAAuthenticated();
 
     initOnyxDerivedValues();
 

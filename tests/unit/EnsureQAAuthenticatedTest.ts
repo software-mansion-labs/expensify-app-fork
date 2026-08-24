@@ -85,7 +85,7 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
 
-    it('does nothing when QA auth is not configured — a build without credentials must still boot', async () => {
+    it('does nothing when QA auth is not configured — a build without credentials must not pay for hydration', async () => {
         // Given a build with no Cloudflare credentials — when the gate runs, then it returns without even
         // awaiting hydration, because CONFIG is synchronously honest and the awaits would buy nothing
         mockIsConfigured.mockReturnValue(false);
@@ -102,7 +102,7 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('joins an in-flight callback exchange instead of starting a second round trip', async () => {
-        // Given this boot IS the callback: an exchange is in flight and stores the session when it settles.
+        // Given this page load IS the callback: an exchange is in flight and stores the session when it settles.
         // A gate that read the session without awaiting would see null here and burn the code it just got.
         mockGetPending.mockReturnValue(
             Promise.resolve().then(() => {
@@ -115,8 +115,8 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
 
-    // Regression: the previous revision asserted the opposite ("still redirects"), which specified a boot loop
-    it('does NOT redirect when the in-flight exchange rejects, so a failed callback cannot loop the boot', async () => {
+    // Regression: the previous revision asserted the opposite ("still redirects"), which specified a redirect loop
+    it('does NOT redirect when the in-flight exchange rejects, so a failed callback cannot start a redirect loop', async () => {
         // Given the callback exchange failed — when the gate runs, then it must stop rather than redirect,
         // because Cloudflare still holds a valid Zero Trust session and would bounce straight back with a
         // fresh code, and module state cannot break a loop made of full page loads
@@ -136,11 +136,11 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
     });
 
-    // Regression: the single-flight promise used to survive its own run, which turned one boot-time decision
+    // Regression: the single-flight promise used to survive its own run, which turned one early decision
     // into the answer for the whole page. The QA switch changes the active server mid-session and signs the
     // user out client-side without reloading, so the gate has to be able to decide again.
     it('decides again after the active server changes, because flipping the switch does not reload the page', async () => {
-        // Given a non-QA boot that correctly did nothing
+        // Given a non-QA first run that correctly did nothing
         mockIsQAServerActive.mockReturnValue(false);
         await ensureQAAuthenticated();
         expect(mockBeginRedirect).not.toHaveBeenCalled();
