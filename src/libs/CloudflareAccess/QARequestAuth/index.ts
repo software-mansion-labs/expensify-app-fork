@@ -7,8 +7,6 @@
  * every request in the app goes through.
  */
 import {ensureQAAuthenticated, handleQAReauthRequired} from '@libs/CloudflareAccess/ensureQAAuthenticated';
-// TEMPORARY debug instrumentation for the QA Cloudflare flow. Remove with the QAAuthTrace directory.
-import {fingerprint, traceQAAuth} from '@libs/CloudflareAccess/QAAuthTrace';
 import HttpsError from '@libs/Errors/HttpsError';
 
 import {getCloudflareSession, isSessionNearExpiry, markCloudflareSessionRejected, refreshCloudflareSession} from '@userActions/CloudflareSession';
@@ -49,15 +47,10 @@ const prepareQARequestAuth: PrepareQARequestAuth = async () => {
 
     // Read after the refresh above, so this is the rotated token and not the one that was about to expire
     const accessToken = getCloudflareSession()?.accessToken;
-    // TEMPORARY debug instrumentation: whether this QA request actually carries a bearer. A request leaving here
-    // with no token can only 401, and that is invisible from the outside.
-    traceQAAuth('request.prepareAuth', {accessToken: fingerprint(accessToken)});
     return accessToken ? buildQARequestAuth(accessToken) : undefined;
 };
 
 const handleQAUnauthorized: HandleQAUnauthorized = async ({accessToken}, {isRetry}) => {
-    // TEMPORARY debug instrumentation: a 401 from the QA origin, and whether this is the second one
-    traceQAAuth('request.unauthorized', {isRetry, accessToken: fingerprint(accessToken)});
     if (isRetry) {
         // A freshly refreshed token still got 401 — refresh demonstrably cannot fix this session. Drop it
         // (token-guarded, so a concurrently established session is not collateral damage) and re-authorize,

@@ -9,9 +9,6 @@ import type {ValueOf} from 'type-fest';
 import Onyx from 'react-native-onyx';
 
 import proxyConfig from '../../config/proxyConfig';
-import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
-// TEMPORARY debug instrumentation for the QA Cloudflare flow. Remove with the QAAuthTrace directory.
-import {traceQAAuth} from './CloudflareAccess/QAAuthTrace';
 import getEnvironment from './Environment/getEnvironment';
 
 // To avoid rebuilding native apps, native apps use production config for both staging and prod
@@ -65,9 +62,6 @@ getEnvironment().then((envName) => {
         key: ONYXKEYS.ACTIVE_SERVER,
         callback: (value) => {
             activeServer = resolveActiveServer(value, envName);
-            // TEMPORARY debug instrumentation: this is the value that decides whether sign-in POSTs to the QA
-            // origin or to production, and it is the one thing no static reading of the repo can tell us.
-            traceQAAuth('activeServer.resolved', {stored: value ?? null, environment: envName, resolved: activeServer});
             resolveActiveServerHydration();
         },
     });
@@ -113,33 +107,13 @@ function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request
     return shouldUseSecure ? CONFIG.EXPENSIFY.DEFAULT_SECURE_API_ROOT : CONFIG.EXPENSIFY.DEFAULT_API_ROOT;
 }
 
-/** TEMPORARY debug instrumentation: the commands whose destination decides whether a magic code is ever sent */
-const TRACED_COMMANDS = new Set<string>([
-    READ_COMMANDS.BEGIN_SIGNIN,
-    WRITE_COMMANDS.SIGN_IN_USER,
-    READ_COMMANDS.SIGN_IN_WITH_SHORT_LIVED_AUTH_TOKEN,
-    WRITE_COMMANDS.OPEN_APP,
-    WRITE_COMMANDS.RECONNECT_APP,
-    SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP,
-    SIDE_EFFECT_REQUEST_COMMANDS.AUTHENTICATE_PUSHER,
-]);
-
 /**
  * Get the command url for the given request
  * @param - the name of the API command
  */
 function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
     // If request.command already contains ? then we don't need to append it
-    const url = `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
-
-    // TEMPORARY debug instrumentation: only the commands that decide a sign-in, so ordinary traffic cannot
-    // evict the boot and callback records this exists to capture. `getApiRoot` derives the URL from
-    // `activeServer`, so tracing every QA request would add volume without adding an independent fact.
-    if (TRACED_COMMANDS.has(request.command)) {
-        traceQAAuth('api.commandURL', {command: request.command, activeServer, url});
-    }
-
-    return url;
+    return `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
 }
 
 /**

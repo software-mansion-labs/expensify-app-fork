@@ -1,9 +1,6 @@
 import type * as EnsureQAAuthenticatedModule from '@libs/CloudflareAccess/ensureQAAuthenticated/index.ts';
 
-import CONST from '@src/CONST';
 import type CloudflareSession from '@src/types/onyx/CloudflareSession';
-
-import type {ValueOf} from 'type-fest';
 
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
 
@@ -11,7 +8,6 @@ const mockBeginRedirect = jest.fn(() => new Promise<never>(() => {}));
 const mockGetSession = jest.fn<CloudflareSession | null | undefined, []>();
 const mockGetPending = jest.fn<Promise<void> | null, []>();
 const mockIsQAServerActive = jest.fn<boolean, []>();
-const mockGetActiveServer = jest.fn<ValueOf<typeof CONST.SERVER>, []>();
 const mockWaitForActiveServerHydration = jest.fn(() => Promise.resolve());
 const mockIsConfigured = jest.fn<boolean, []>();
 
@@ -22,7 +18,6 @@ jest.mock('@userActions/CloudflareSession', () => ({
     waitForCloudflareSessionHydration: () => Promise.resolve(),
 }));
 jest.mock('@libs/ApiUtils', () => ({
-    getActiveServer: () => mockGetActiveServer(),
     isQAServerActive: () => mockIsQAServerActive(),
     waitForActiveServerHydration: () => mockWaitForActiveServerHydration(),
 }));
@@ -41,7 +36,6 @@ describe('ensureQAAuthenticated', () => {
         jest.resetModules();
         jest.clearAllMocks();
         mockIsQAServerActive.mockReturnValue(true);
-        mockGetActiveServer.mockReturnValue(CONST.SERVER.QA);
         mockWaitForActiveServerHydration.mockReturnValue(Promise.resolve());
         mockIsConfigured.mockReturnValue(true);
         mockGetSession.mockReturnValue(null);
@@ -79,7 +73,6 @@ describe('ensureQAAuthenticated', () => {
 
         // When the signal hydrates to QA, then the gate redirects
         mockIsQAServerActive.mockReturnValue(true);
-        mockGetActiveServer.mockReturnValue(CONST.SERVER.QA);
         releaseHydration();
         await waitForBatchedUpdates();
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
@@ -155,7 +148,6 @@ describe('ensureQAAuthenticated', () => {
         // When the switch flips to QA and the next QA request runs the gate, then it must redirect. A cached
         // "nothing to do" would leave the tab with no Cloudflare session and every QA request bearer-less
         mockIsQAServerActive.mockReturnValue(true);
-        mockGetActiveServer.mockReturnValue(CONST.SERVER.QA);
         ensureQAAuthenticated();
         await waitForBatchedUpdates();
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);

@@ -6,8 +6,6 @@ import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import {generatePKCEPair, generateState} from '@libs/CloudflareAccess/generatePKCE';
 import {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} from '@libs/CloudflareAccess/OAuthClient';
 import {clearPendingAuthFlow, savePendingAuthFlow} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
-// TEMPORARY debug instrumentation for the QA Cloudflare flow. Remove with the QAAuthTrace directory.
-import {describeError, fingerprint, traceQAAuth} from '@libs/CloudflareAccess/QAAuthTrace';
 import Log from '@libs/Log';
 import {registerSessionCleanupCallback} from '@libs/SessionCleanup';
 
@@ -41,13 +39,6 @@ if (isQAAuthConfigured()) {
         key: ONYXKEYS.CLOUDFLARE_SESSION,
         callback: (value) => {
             sessionCache = value ?? null;
-            // TEMPORARY debug instrumentation: whether a session survived the round trip, and how long it has left
-            traceQAAuth('session.hydrated', {
-                hasSession: !!value,
-                expiresInMs: value ? value.expiresAt - Date.now() : null,
-                hasRefreshToken: !!value?.refreshToken,
-                accessToken: fingerprint(value?.accessToken),
-            });
             resolveHydration();
         },
     });
@@ -83,8 +74,6 @@ let isRedirectInFlight = false;
  * requested. The page is leaving. Rejects only if the flow record couldn't be stored.
  */
 async function beginCloudflareAuthRedirect(returnURL: string = window.location.href): Promise<never> {
-    // TEMPORARY debug instrumentation: a redirect suppressed as a duplicate looks identical to one that never started
-    traceQAAuth('redirect.begin', {isRedirectInFlight, returnURL});
     if (isRedirectInFlight) {
         // A second press while the first navigation is settling must not overwrite the stored flow
         return new Promise<never>(() => {});
@@ -96,32 +85,15 @@ async function beginCloudflareAuthRedirect(returnURL: string = window.location.h
         const state = generateState();
         // Resolved before the flow record is stored, so a failed discovery leaves nothing behind
         const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
-        // TEMPORARY debug instrumentation: proves discovery resolved, and records what is being asked for.
-        // The whole URL is decomposed rather than logged, so state and code_challenge stay fingerprinted.
-        const parsedAuthorizeURL = new URL(authorizeURL);
-        const authorizeParams = parsedAuthorizeURL.searchParams;
-        traceQAAuth('redirect.authorizeURL', {
-            authorizeEndpoint: `${parsedAuthorizeURL.origin}${parsedAuthorizeURL.pathname}`,
-            clientID: fingerprint(authorizeParams.get('client_id')),
-            redirectURI: authorizeParams.get('redirect_uri'),
-            scope: authorizeParams.get('scope'),
-            codeChallengeMethod: authorizeParams.get('code_challenge_method'),
-            state: fingerprint(state),
-        });
         if (generation !== sessionGeneration) {
             // Signed out while this flow was being prepared. Do not navigate a signed-out tab
             throw new Error('Cloudflare auth flow was cancelled by sign-out');
         }
         // Must be stored before the navigation. Module memory does not survive the unload
         savePendingAuthFlow({state, codeVerifier: pkce.codeVerifier, returnURL, createdAt: Date.now()});
-        // TEMPORARY debug instrumentation: the flow record is stored and the tab is about to leave. If the next
-        // record after this one is not a callback record, the return trip is where the flow broke.
-        traceQAAuth('redirect.navigating');
         window.location.assign(authorizeURL);
     } catch (error) {
         isRedirectInFlight = false;
-        // TEMPORARY debug instrumentation: a discovery or storage failure before the tab ever left
-        traceQAAuth('redirect.failed', {error: describeError(error)});
         throw error;
     }
     return new Promise<never>(() => {});
@@ -131,13 +103,9 @@ let redirectCompletionPromise: Promise<void> | null = null;
 
 function completeCloudflareAuthRedirect({code, codeVerifier}: {code: string; codeVerifier: string}): Promise<void> {
     const generation = sessionGeneration;
-    // TEMPORARY debug instrumentation: joining an in-flight exchange versus starting one
-    traceQAAuth('exchange.start', {alreadyInFlight: !!redirectCompletionPromise, code: fingerprint(code)});
     // Single-flight: a caller joining mid-exchange must not burn the single-use authorization code twice
     redirectCompletionPromise ??= exchangeCode({code, codeVerifier})
         .then((session) => {
-            // TEMPORARY debug instrumentation: the token endpoint answered
-            traceQAAuth('exchange.tokenReceived', {expiresInMs: session.expiresAt - Date.now(), hasRefreshToken: !!session.refreshToken, staleGeneration: generation !== sessionGeneration});
             if (generation !== sessionGeneration) {
                 // Signed out mid-exchange
                 return;
@@ -189,8 +157,6 @@ async function performCloudflareRefresh(staleAccessToken: string): Promise<Cloud
 
     const submittedRefreshToken = current.refreshToken;
     try {
-        // TEMPORARY debug instrumentation: a refresh round trip is starting
-        traceQAAuth('refresh.start');
         const session = await refreshTokens(submittedRefreshToken);
         if (generation !== sessionGeneration) {
             // Signed out mid-refresh. Persisting the rotated pair would resurrect the dead session
@@ -200,8 +166,6 @@ async function performCloudflareRefresh(staleAccessToken: string): Promise<Cloud
         await Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session);
         return 'refreshed';
     } catch (error) {
-        // TEMPORARY debug instrumentation: distinguishes a spent refresh token from a transient network failure
-        traceQAAuth('refresh.failed', {error: describeError(error), code: error instanceof OAuthError ? error.code : null});
         // A failed persist is not a spent token, so it falls through here and rethrows
         if (!(error instanceof OAuthError) || (error.code !== 'invalid_grant' && error.code !== 'invalid_response')) {
             throw error;
