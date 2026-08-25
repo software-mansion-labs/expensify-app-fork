@@ -1,4 +1,4 @@
-import {finishCloudflareSignInFromURL} from '@libs/CloudflareAccess/finishSignInFromURL';
+import finishCloudflareSignInFromURL from '@libs/CloudflareAccess/finishSignInFromURL';
 import intlPolyfill from '@libs/IntlPolyfill';
 
 import {setDeviceID} from '@userActions/Device';

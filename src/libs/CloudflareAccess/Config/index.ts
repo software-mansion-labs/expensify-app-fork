@@ -4,7 +4,7 @@
  */
 import CONFIG from '@src/CONFIG';
 
-import type {GetCloudflareLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
+import type {GetCloudflareTeamLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
 
 /** A bare hostname: no scheme, no slash, no port. Loose about labels (custom Access domains exist). */
 const TEAM_DOMAIN_SHAPE = /^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
@@ -21,9 +21,9 @@ function parseHTTPSOrigin(value: string): string | null {
 
 /** Anything short of a complete, well-formed config and every consumer behaves as if the feature is absent */
 const isQAAuthConfigured: IsQAAuthConfigured = () => {
-    const {API_ROOT, SECURE_API_ROOT, TEAM_DOMAIN, CLIENT_ID, CHECK_PATH} = CONFIG.QA_AUTH;
+    const {API_ROOT, SECURE_API_ROOT, TEAM_DOMAIN, CLIENT_ID} = CONFIG.QA_AUTH;
 
-    if (!API_ROOT || !TEAM_DOMAIN || !CLIENT_ID || !CHECK_PATH) {
+    if (!API_ROOT || !TEAM_DOMAIN || !CLIENT_ID) {
         return false;
     }
 
@@ -77,11 +77,11 @@ const getOAuthRedirectURI: GetOAuthRedirectURI = () => {
 };
 
 /**
- * The team domain is the identity provider for the whole Access account, so this ends the browser's session
- * with every application on it, not only the QA server.
+ * Logging out on the application's own domain leaves Access in a state where the next authorize
+ * request bounces to the application root rather than prompting, so the handshake never reaches a callback.
  */
-const getCloudflareLogoutURL: GetCloudflareLogoutURL = () => {
+const getCloudflareTeamLogoutURL: GetCloudflareTeamLogoutURL = () => {
     return `https://${CONFIG.QA_AUTH.TEAM_DOMAIN}/cdn-cgi/access/logout`;
 };
 
-export {getCloudflareLogoutURL, getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};
+export {getCloudflareTeamLogoutURL, getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};

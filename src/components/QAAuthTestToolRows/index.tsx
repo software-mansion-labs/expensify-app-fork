@@ -1,21 +1,17 @@
 import Button from '@components/ButtonComposed';
 import Switch from '@components/Switch';
 import TestToolRow from '@components/TestToolRow';
-import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getActiveServer} from '@libs/ApiUtils';
-import {getCloudflareLogoutURL, isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
-import {getCloudflareSignInOutcome} from '@libs/CloudflareAccess/finishSignInFromURL';
-import DateUtils from '@libs/DateUtils';
+import {getCloudflareTeamLogoutURL, isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
+import Log from '@libs/Log';
 
-import type {CloudflareAuthProbeResult, CloudflareAuthProbeStatus} from '@userActions/CloudflareProbe';
-import {runCloudflareAuthProbe} from '@userActions/CloudflareProbe';
-import {clearCloudflareSession, getCloudflareSession} from '@userActions/CloudflareSession';
+import {clearCloudflareSession} from '@userActions/CloudflareSession';
 import {openExternalLink} from '@userActions/Link';
+import {signOutAndRedirectToSignIn} from '@userActions/Session';
 import {setActiveServer} from '@userActions/User';
 
 import CONST from '@src/CONST';
@@ -23,43 +19,13 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import {useState} from 'react';
 
-/** The semantic probe outcomes are translated. The raw `detail` diagnostic stays verbatim */
-const PROBE_STATUS_TRANSLATION_KEYS = {
-    success: 'qaAuthStatusSuccess',
-    reauthRequired: 'qaAuthStatusReauthRequired',
-    signInFailed: 'qaAuthStatusSignInFailed',
-    error: 'qaAuthStatusError',
-} as const satisfies Record<CloudflareAuthProbeStatus, string>;
-
-/** A failed round trip is otherwise invisible: the handler ran during boot, long before this mounts */
-function getFailedRedirectResult(): CloudflareAuthProbeResult | null {
-    // A live session (this boot's or another tab's) outranks a recorded failure. It is history at that point
-    if (getCloudflareSession()) {
-        return null;
-    }
-    const {outcome, errorMessage} = getCloudflareSignInOutcome();
-    if (outcome === 'not-a-callback' || outcome === 'exchanging') {
-        return null;
-    }
-    return {status: 'signInFailed', detail: errorMessage};
-}
-
-/**
- * Test-tool rows for the QA server auth flow, rendered only when the QA credentials are configured. With no
- * session, Run navigates the whole tab to Cloudflare, so a round trip's result only shows on the next press.
- */
 function QAAuthTestToolRows() {
-    const styles = useThemeStyles();
-    const {translate, datetimeToCalendarTime} = useLocalize();
+    const {translate} = useLocalize();
 
     const [activeServer = getActiveServer()] = useOnyx(ONYXKEYS.ACTIVE_SERVER);
     const isUsingQAServer = activeServer === CONST.SERVER.QA;
 
-    const [isOperationRunning, setIsOperationRunning] = useState(false);
-    // Seeded from the boot-time redirect outcome. An in-flight exchange's failure surfaces when Run joins it
-    const [probeResult, setProbeResult] = useState<CloudflareAuthProbeResult | null>(getFailedRedirectResult);
-    // Consecutive probes produce identical results, so without a changing element the button reads as dead
-    const [probeCompletedAt, setProbeCompletedAt] = useState<string | null>(null);
+    const [isSigningOut, setIsSigningOut] = useState(false);
 
     if (!isQAAuthConfigured()) {
         return null;
@@ -81,53 +47,27 @@ function QAAuthTestToolRows() {
                     onToggle={() => setActiveServer(isUsingQAServer ? CONST.SERVER.PRODUCTION : CONST.SERVER.QA)}
                 />
             </TestToolRow>
-            <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuth')}>
-                <Button
-                    size={CONST.BUTTON_SIZE.SMALL}
-                    isDisabled={isOperationRunning}
-                    isLoading={isOperationRunning}
-                    onPress={() => {
-                        setIsOperationRunning(true);
-                        // Never rejects. Failures come back as semantic results
-                        runCloudflareAuthProbe({shouldRedirectOnReauthRequired: probeResult?.status === 'reauthRequired'})
-                            .then((result) => {
-                                setProbeResult(result);
-                                setProbeCompletedAt(DateUtils.getDBTime());
-                            })
-                            .finally(() => setIsOperationRunning(false));
-                    }}
-                >
-                    <Button.Text>{translate('initialSettingsPage.troubleshoot.qaAuthRunProbe')}</Button.Text>
-                </Button>
-            </TestToolRow>
-            {/* Signing out of Cloudflare is what makes the next QA request show a real consent screen. Our own
-                tokens have to go first: an unexpired one lets the gate skip the handshake entirely. Same tab,
-                because a new one would leave this instance running against a server that rejects every request. */}
+            {/* Cloudflare's identity is a cookie on its own domain, so only a navigation there can drop it, and
+                that page is a dead end — hence a new tab, leaving this one to land on the sign-in screen. Our
+                own tokens have to go too, or an unexpired one lets the next handshake be skipped entirely. */}
             <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuthCloudflareIdentity')}>
                 <Button
                     size={CONST.BUTTON_SIZE.SMALL}
-                    isDisabled={isOperationRunning}
+                    isDisabled={isSigningOut}
                     onPress={() => {
-                        setIsOperationRunning(true);
-                        clearCloudflareSession()
-                            .then(() => openExternalLink(getCloudflareLogoutURL(), false, true))
-                            .catch((error: unknown) => {
-                                setProbeResult({status: 'error', detail: error instanceof Error ? error.message : undefined});
-                                setProbeCompletedAt(DateUtils.getDBTime());
-                            })
-                            .finally(() => setIsOperationRunning(false));
+                        setIsSigningOut(true);
+                        // Opened first: window.open outside the click's own task is blocked as a popup
+                        openExternalLink(getCloudflareTeamLogoutURL());
+                        // The LogOut has to finish before the tokens go: sent without one it 401s where nothing reports it
+                        Promise.resolve(signOutAndRedirectToSignIn())
+                            .then(() => clearCloudflareSession())
+                            .catch((error: unknown) => Log.warn('QA Cloudflare sign-out did not complete', {error}))
+                            .finally(() => setIsSigningOut(false));
                     }}
                 >
                     <Button.Text>{translate('initialSettingsPage.troubleshoot.qaAuthCloudflareSignOut')}</Button.Text>
                 </Button>
             </TestToolRow>
-            {!!probeResult && (
-                <Text style={styles.textLabelSupporting}>
-                    {translate(`initialSettingsPage.troubleshoot.${PROBE_STATUS_TRANSLATION_KEYS[probeResult.status]}`)}
-                    {probeResult.detail ? ` (${probeResult.detail})` : ''}
-                    {probeCompletedAt ? ` — ${datetimeToCalendarTime(probeCompletedAt, false)}` : ''}
-                </Text>
-            )}
         </>
     );
 }

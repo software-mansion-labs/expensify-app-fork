@@ -5,34 +5,27 @@
  * and so cannot run as early as the URL rewrite has to.
  */
 import {getCapturedCloudflareAuthCallback} from '@libs/CloudflareAccess/captureAuthCallbackURL';
+import Log from '@libs/Log';
 
 import {exchangeCodeForCloudflareSession} from '@userActions/CloudflareSession';
 
-import type {CloudflareSignInOutcome, FinishCloudflareSignInFromURL, GetCloudflareSignInOutcome} from './types';
-
-let lastOutcome: CloudflareSignInOutcome = 'not-a-callback';
-let lastErrorMessage: string | undefined;
+import type {FinishCloudflareSignInFromURL} from './types';
 
 const finishCloudflareSignInFromURL: FinishCloudflareSignInFromURL = () => {
     const captured = getCapturedCloudflareAuthCallback();
-    lastOutcome = captured.outcome;
-    lastErrorMessage = captured.errorMessage;
+    if (captured.errorMessage) {
+        Log.warn('Cloudflare sign-in callback did not complete', {outcome: captured.outcome, errorMessage: captured.errorMessage});
+    }
 
     if (captured.exchange) {
-        // Fire and forget. The catch records the failure as the observable outcome, since the completion
-        // promise clears as it settles. It runs a microtask later, so it always lands after the synchronous
-        // 'exchanging'. Both handlers attach to the same promise rather than chaining .then().catch(): a
-        // chain would push the rejection one extra microtask out, and the outcome is read by callers that
-        // only wait one.
+        // Fire and forget: boot cannot wait on the round trip. The catch is not optional — an unhandled
+        // rejection is reported as a crash
         exchangeCodeForCloudflareSession(captured.exchange).catch((error: unknown) => {
-            lastOutcome = 'exchange-failed';
-            lastErrorMessage = error instanceof Error ? error.message : String(error);
+            Log.warn('Cloudflare code exchange failed', {errorMessage: error instanceof Error ? error.message : String(error)});
         });
     }
 
-    return lastOutcome;
+    return captured.outcome;
 };
 
-const getCloudflareSignInOutcome: GetCloudflareSignInOutcome = () => ({outcome: lastOutcome, errorMessage: lastErrorMessage});
-
-export {finishCloudflareSignInFromURL, getCloudflareSignInOutcome};
+export default finishCloudflareSignInFromURL;

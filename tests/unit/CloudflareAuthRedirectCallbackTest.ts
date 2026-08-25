@@ -18,7 +18,6 @@ const mockQAAuth = {
     API_ROOT: 'https://qa.example.com/',
     TEAM_DOMAIN: 'team.cloudflareaccess.com',
     CLIENT_ID: 'client-123',
-    CHECK_PATH: 'api/CloudflareAuthProbe',
 };
 
 jest.mock('@src/CONFIG', () => ({__esModule: true, default: {QA_AUTH: mockQAAuth}}));
@@ -29,6 +28,11 @@ jest.mock('@libs/CloudflareAccess/Config', () => jest.requireActual<typeof Confi
 
 // Same reason, and it must be this single instance: the exchange phase reads what the capture phase stored
 jest.mock('@libs/CloudflareAccess/captureAuthCallbackURL', () => jest.requireActual<typeof CaptureAuthCallbackModule>('@libs/CloudflareAccess/captureAuthCallbackURL/index.ts'));
+
+// Declared outside the factory: beforeEach resets the module registry, which would otherwise hand the module
+// under test a fresh spy on every test while the assertions kept reading the first one
+const mockLogWarn = jest.fn();
+jest.mock('@libs/Log', () => ({__esModule: true, default: {warn: mockLogWarn}}));
 
 jest.mock('@userActions/CloudflareSession', () => ({
     __esModule: true,
@@ -58,6 +62,7 @@ let realLocation: Location;
 
 beforeEach(() => {
     jest.resetModules();
+    mockLogWarn.mockClear();
     window.sessionStorage.clear();
     realLocation = window.location;
     mockQAAuth.CLIENT_ID = 'client-123';
@@ -78,7 +83,7 @@ afterEach(() => {
 /** Both halves of boot, in order. Splitting them is an ordering constraint, never a behavioural one */
 function runBoot() {
     captureAuthCallback.captureCloudflareAuthCallbackURL();
-    return authRedirectCallback.finishCloudflareSignInFromURL();
+    return authRedirectCallback.default();
 }
 
 describe('the boot-time QA auth callback handling', () => {
@@ -125,7 +130,7 @@ describe('the boot-time QA auth callback handling', () => {
         expect(sessionActions.exchangeCodeForCloudflareSession).toHaveBeenCalledWith({code: 'auth-code-1', codeVerifier: FLOW.codeVerifier});
     });
 
-    it('records a rejected exchange as the observable exchange-failed outcome', async () => {
+    it('reports a rejected exchange to the log', async () => {
         // Given a genuine callback whose token exchange the server will reject
         arrangeCallbackURL('?code=auth-code-1&state=state-1');
         pendingAuthFlowStorage.savePendingAuthFlow(FLOW);
@@ -136,8 +141,8 @@ describe('the boot-time QA auth callback handling', () => {
         // When the rejection lands. Its handler runs on a later microtask, so asserting synchronously would still read 'exchanging'
         await Promise.resolve();
 
-        // Then the failure must become the observable outcome, message included: the completion promise clears as it settles, so a caller arriving later could never see the rejection itself
-        expect(authRedirectCallback.getCloudflareSignInOutcome()).toEqual({outcome: 'exchange-failed', errorMessage: 'invalid_grant'});
+        // Then the reason must reach the log: nothing else can ever observe the rejection
+        expect(mockLogWarn).toHaveBeenCalledWith('Cloudflare code exchange failed', {errorMessage: 'invalid_grant'});
     });
 
     it('validates state first: a foreign callback is discarded wholesale, even with error and code present', () => {
@@ -149,7 +154,7 @@ describe('the boot-time QA auth callback handling', () => {
         // Then state must be validated before anything else: a callback failing provenance is discarded wholesale with its other params untrusted, so the planted code never reaches the exchange and the reported error is our mismatch, not the attacker's (CSRF/injection protection)
         expect(runBoot()).toBe('invalid-callback');
         expect(sessionActions.exchangeCodeForCloudflareSession).not.toHaveBeenCalled();
-        expect(authRedirectCallback.getCloudflareSignInOutcome().errorMessage).toBe('OAuth callback state mismatch');
+        expect(mockLogWarn).toHaveBeenCalledWith('Cloudflare sign-in callback did not complete', {outcome: 'invalid-callback', errorMessage: 'OAuth callback state mismatch'});
         // Then the boot is still rescued off the redirect path, which has no app route
         expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/settings/troubleshoot');
     });
@@ -163,7 +168,7 @@ describe('the boot-time QA auth callback handling', () => {
         // Then the refusal is surfaced with the provider's own description and no exchange is ever attempted. The user said no, so there is nothing legitimate to redeem
         expect(runBoot()).toBe('provider-error');
         expect(sessionActions.exchangeCodeForCloudflareSession).not.toHaveBeenCalled();
-        expect(authRedirectCallback.getCloudflareSignInOutcome().errorMessage).toBe('User refused');
+        expect(mockLogWarn).toHaveBeenCalledWith('Cloudflare sign-in callback did not complete', {outcome: 'provider-error', errorMessage: 'User refused'});
     });
 
     it('rejects a callback with no authorization code', () => {

@@ -28,7 +28,6 @@ const mockDefaultQAAuth = {
     SECURE_API_ROOT: 'https://qa-secure.example.com/',
     TEAM_DOMAIN: 'team.cloudflareaccess.com',
     CLIENT_ID: 'client-123',
-    CHECK_PATH: 'api/CloudflareAuthProbe',
 };
 // Mutable QA config the '@src/CONFIG' mock closes over. Tests tweak fields per case.
 // The `mock` prefix is what lets the hoisted jest.mock factory reference it.
@@ -153,7 +152,6 @@ describe('config', () => {
         mockQAAuth.API_ROOT = '';
         mockQAAuth.TEAM_DOMAIN = '';
         mockQAAuth.CLIENT_ID = '';
-        mockQAAuth.CHECK_PATH = '';
         // When configuration is checked, then both the feature flag and the request gate must read off, so no code path can attach a token
         expect(isQAAuthConfigured()).toBe(false);
         expect(isQAServerRequest('https://qa.example.com/api/OpenApp')).toBe(false);
@@ -169,13 +167,6 @@ describe('config', () => {
     it('treats a partial config as not configured — missing client ID', () => {
         // Given a config missing only the client ID. When checked, then the entire feature must disable, because a flow with no client identity can never be authorized
         mockQAAuth.CLIENT_ID = '';
-        expect(isQAAuthConfigured()).toBe(false);
-        expect(isQAServerRequest('https://qa.example.com/api/OpenApp')).toBe(false);
-    });
-
-    it('treats a partial config as not configured — missing auth check path', () => {
-        // Given a config missing only the auth check path. When checked, then the entire feature must disable, because without a probe there is no way to verify access
-        mockQAAuth.CHECK_PATH = '';
         expect(isQAAuthConfigured()).toBe(false);
         expect(isQAServerRequest('https://qa.example.com/api/OpenApp')).toBe(false);
     });
