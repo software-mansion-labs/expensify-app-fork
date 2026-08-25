@@ -71,13 +71,11 @@ type SettlementButtonProps = WithSentryLabel & {
     /** Total money amount in form <currency><amount> */
     formattedAmount?: string;
 
-    /** The size of the button */
     size?: ValueOf<typeof CONST.BUTTON_SIZE>;
 
     /** Route for the Add Debit Card screen for a given navigation stack */
     addDebitCardRoute?: Route;
 
-    /** Whether the button should be disabled */
     isDisabled?: boolean;
 
     /** Whether the button should stay visually normal even when disabled. */
@@ -104,10 +102,8 @@ type SettlementButtonProps = WithSentryLabel & {
     /** Whether to use keyboard shortcuts for confirmation or not */
     useKeyboardShortcuts?: boolean;
 
-    /** Whether we only show pay elsewhere button */
     onlyShowPayElsewhere?: boolean;
 
-    /** Whether to use short form for the button */
     shouldUseShortForm?: boolean;
 
     /** Whether we the report has only held expenses */

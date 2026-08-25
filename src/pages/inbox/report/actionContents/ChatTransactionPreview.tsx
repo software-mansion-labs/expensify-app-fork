@@ -39,7 +39,6 @@ type ChatTransactionPreviewProps = {
     /** Whether the preview should navigate to the split bill details screen on press */
     shouldShowSplitPreview: boolean;
 
-    /** The ID of the transaction to preview */
     transactionID: string | undefined;
 };
 

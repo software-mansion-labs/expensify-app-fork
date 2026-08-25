@@ -22,10 +22,8 @@ import React, {useCallback} from 'react';
 import {Keyboard} from 'react-native';
 
 type CategoryFormProps = {
-    /** All policy categories */
     policyCategories: OnyxEntry<PolicyCategories>;
 
-    /** The name of the category */
     categoryName?: string;
 
     /** Function to call when the form is submitted */

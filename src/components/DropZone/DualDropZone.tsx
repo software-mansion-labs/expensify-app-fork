@@ -28,7 +28,6 @@ type DropZoneProps = {
     /** Callback to execute when a file is dropped */
     onReceiptDrop: (event: DragEvent) => void;
 
-    /** Whether the drop zone should accept a single receipt */
     shouldAcceptSingleReceipt?: boolean;
 };
 

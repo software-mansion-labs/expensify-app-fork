@@ -17,7 +17,6 @@ type AvatarIconProps = AvatarPrimitivesCommonProps & {
     /** Icon asset to render as the avatar. */
     avatarSource: IconAsset;
 
-    /** Test ID used for the fallback avatar. */
     fallbackAvatarTestID: string;
 
     /** Styles for View wrapping Icon / Image. */
@@ -29,7 +28,6 @@ type AvatarIconProps = AvatarPrimitivesCommonProps & {
     /** The fill color for the icon */
     fill?: string;
 
-    /** Additional styles for Icon */
     iconAdditionalStyles?: StyleProp<ViewStyle>;
 };
 

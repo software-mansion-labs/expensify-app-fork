@@ -36,34 +36,27 @@ type MoneyRequestAmountInputProps = {
     /** Function to call when the amount changes */
     onAmountChange?: (amount: string) => void;
 
-    /** Style for the input */
     inputStyle?: StyleProp<TextStyle>;
 
-    /** Style for the container */
     containerStyle?: StyleProp<ViewStyle>;
 
     /** Character to be shown before the amount */
     prefixCharacter?: string;
 
-    /** Whether to hide the currency symbol */
     hideCurrencySymbol?: boolean;
 
     /** Whether to disable native keyboard on mobile */
     disableKeyboard?: boolean;
 
-    /** Style for the prefix */
     prefixStyle?: StyleProp<TextStyle>;
 
-    /** Style for the prefix container */
     prefixContainerStyle?: StyleProp<ViewStyle>;
 
-    /** Style for the touchable input wrapper */
     touchableInputWrapperStyle?: StyleProp<ViewStyle>;
 
     /** Whether we want to format the display amount on blur */
     formatAmountOnBlur?: boolean;
 
-    /** Max length for the amount input */
     maxLength?: number;
 
     /** Hide the focus styles on TextInput */
@@ -83,13 +76,10 @@ type MoneyRequestAmountInputProps = {
     /** Whether to apply padding to the input, some inputs doesn't require any padding, e.g. Amount input in money request flow */
     shouldApplyPaddingToContainer?: boolean;
 
-    /** Whether the amount is negative */
     isNegative?: boolean;
 
-    /** Function to toggle the amount to negative */
     toggleNegative?: () => void;
 
-    /** Function to clear the negative amount */
     clearNegative?: () => void;
 
     /** Whether to allow flipping amount (shows flip button and enables toggle mechanism) */
@@ -98,16 +88,13 @@ type MoneyRequestAmountInputProps = {
     /** Whether to allow direct negative input (for split amounts where value is already negative) */
     allowNegativeInput?: boolean;
 
-    /** Style for the negative symbol */
     negativeSymbolStyle?: StyleProp<TextStyle>;
 
     /** The testID of the input. Used to locate this view in end-to-end tests. */
     testID?: string;
 
-    /** Whether to show the big number pad */
     shouldShowBigNumberPad?: boolean;
 
-    /** Whether to use dynamic font size for the amount input */
     shouldUseDynamicFontSize?: boolean;
 
     /** Error to display at the bottom of the form */
@@ -135,7 +122,6 @@ type MoneyRequestAmountInputProps = {
      */
     shouldRefocusOnScrollViewClick?: boolean;
 
-    /** Whether the input is disabled or not */
     disabled?: boolean;
 
     /** Reference to the outer element */

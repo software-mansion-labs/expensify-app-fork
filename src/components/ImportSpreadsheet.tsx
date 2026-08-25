@@ -43,7 +43,6 @@ type ImportSpreadsheetProps = {
     // If true, replace the current route after import instead of pushing on top.
     shouldForceReplaceNavigation?: boolean;
 
-    /** Whether the spreadsheet is importing multi-level tags */
     isImportingMultiLevelTags?: boolean;
 };
 

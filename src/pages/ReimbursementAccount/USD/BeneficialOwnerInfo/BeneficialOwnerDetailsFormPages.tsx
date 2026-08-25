@@ -40,7 +40,6 @@ type BeneficialOwnerDetailsFormPagesProps = {
     /** ID of current policy */
     policyID?: string;
 
-    /** ID of the beneficial owner being modified */
     beneficialOwnerBeingModifiedID: string;
 
     /** Setter for the beneficial owner being modified */

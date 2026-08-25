@@ -12,7 +12,6 @@ type CurrencySelectionListProps = Partial<SelectionListWithSectionsProps<Currenc
     /** Currency item to be selected initially */
     initiallySelectedCurrencyCode?: string;
 
-    /** List of recently used currencies */
     recentlyUsedCurrencies?: string[];
 
     /** Callback to fire when a currency is selected */

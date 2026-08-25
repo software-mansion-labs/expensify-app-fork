@@ -29,9 +29,6 @@ type QRCodeProps = {
      */
     svgLogo?: React.FC<SvgProps>;
 
-    /**
-     * Background color to be used for logo.
-     */
     logoBackgroundColor?: string;
 
     /**
@@ -45,13 +42,10 @@ type QRCodeProps = {
     /** The size ratio of margin around logo to QR code */
     logoMarginRatio?: QRCodeLogoMarginRatio;
 
-    /** The QRCode size */
     size?: number;
 
-    /** The QRCode color */
     color?: string;
 
-    /** The QRCode background color */
     backgroundColor?: string;
 
     /**

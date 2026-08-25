@@ -20,10 +20,8 @@ import DiagonalAvatarsFrame from './DiagonalAvatarsFrame';
 import getDiagonalAvatarSizing from './getDiagonalAvatarSizing';
 
 type DiagonalAvatarsProps = MultipleAvatarsProps & {
-    /** Style for the secondary avatar container */
     secondaryAvatarContainerStyle?: StyleProp<ViewStyle>;
 
-    /** Whether the avatars are hovered */
     isHovered?: boolean;
 };
 

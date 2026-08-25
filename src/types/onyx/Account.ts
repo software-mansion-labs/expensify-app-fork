@@ -100,31 +100,23 @@ type Account = {
     /** Whether the account 2FA setup is in progress, driven by the frontend */
     twoFactorAuthSetupInProgress?: boolean;
 
-    /** Whether the account is validated */
     validated?: boolean;
 
     /** The primaryLogin associated with the account */
     primaryLogin?: string;
 
-    /** The Report ID of the admins room */
     adminsRoomReportID?: string;
 
-    /** The Account ID of the account manager */
     accountManagerAccountID?: number;
 
-    /** The Report ID of the account manager */
     accountManagerReportID?: string;
 
-    /** The calendar link of the account manager */
     accountManagerCalendarLink?: string;
 
-    /** The account ID of the partner manager */
     partnerManagerAccountID?: number;
 
-    /** The email of the partner manager */
     partnerManagerEmail?: string;
 
-    /** The calendar link of the partner manager */
     partnerManagerCalendarLink?: string;
 
     /** The message to be displayed when code requested */
@@ -136,7 +128,6 @@ type Account = {
     /** Whether the user forgot their password */
     forgotPassword?: boolean;
 
-    /** Whether the account exists */
     accountExists?: boolean;
 
     /** Is the account / domain under domain control? */
@@ -184,7 +175,6 @@ type Account = {
     /** Indicates SMS delivery failure status and associated information */
     smsDeliveryFailureStatus?: SMSDeliveryFailureStatus;
 
-    /** The guide details of the account */
     guideDetails?: {
         /** The email of the guide details */
         email: string;

@@ -82,7 +82,6 @@ type MoneyRequestReportPreviewContentProps = MoneyRequestReportPreviewContentOny
         /** Extra styles passed used by MoneyRequestReportPreviewContent */
         reportPreviewStyles: MoneyRequestReportPreviewStyleType;
 
-        /** MoneyRequestReportPreview's current width */
         currentWidth: number;
 
         /** Extra styles to pass to View wrapper */
@@ -94,7 +93,6 @@ type MoneyRequestReportPreviewContentProps = MoneyRequestReportPreviewContentOny
         /** Callback passed to Component wrapper view's onLayout */
         onWrapperLayout: (e: LayoutChangeEvent) => void;
 
-        /** Callback to render a transaction preview item */
         renderTransactionItem: ListRenderItem<Transaction>;
 
         /** Callback called when the whole preview is pressed */

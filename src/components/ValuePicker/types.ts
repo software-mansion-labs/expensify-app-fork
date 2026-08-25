@@ -35,7 +35,6 @@ type ValueSelectorModalProps = {
     /** Items to pick from */
     items?: ValuePickerItem[];
 
-    /** The selected item */
     selectedItem?: ValuePickerItem;
 
     /** Label for values */
@@ -56,10 +55,8 @@ type ValueSelectorModalProps = {
     /** Flag to indicate if the keyboard avoiding view should be enabled */
     shouldEnableKeyboardAvoidingView?: boolean;
 
-    /** Whether to add bottom safe area padding */
     addBottomSafeAreaPadding?: boolean;
 
-    /** Whether to disable keyboard shortcuts */
     disableKeyboardShortcuts?: boolean;
 
     /** Number of lines to show for alternate text */
@@ -78,7 +75,6 @@ type ValuePickerProps = ForwardedFSClassProps & {
     /** Item to display */
     value?: string;
 
-    /** Label of picker */
     label?: string;
 
     /** Items to pick from */
@@ -108,10 +104,8 @@ type ValuePickerProps = ForwardedFSClassProps & {
     /** Reference to the outer element */
     ref: ForwardedRef<View>;
 
-    /** Whether to add bottom safe area padding */
     addBottomSafeAreaPadding?: boolean;
 
-    /** Whether to disable keyboard shortcuts */
     disableKeyboardShortcuts?: boolean;
 
     /** Number of lines to show for alternate text */

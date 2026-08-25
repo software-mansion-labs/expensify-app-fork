@@ -14,7 +14,6 @@ type CreateDomainForm = Form<
         [INPUT_IDS.DOMAIN_NAME]: string;
     }
 > & {
-    /** Whether domain creation has succeeded */
     hasCreationSucceeded?: boolean;
 };
 

@@ -30,7 +30,6 @@ type BaseVacationDelegateSelectionComponentProps = {
     /** Callback when a row is selected */
     onSelectRow: (option: Participant) => void;
 
-    /** Title for the header */
     headerTitle: string;
 
     /** Function to call when the back button is pressed */

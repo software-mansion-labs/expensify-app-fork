@@ -31,13 +31,11 @@ type StepScreenWrapperProps = {
     /** Whether or not to display not found page */
     shouldShowNotFoundPage?: boolean;
 
-    /** Whether to show offline indicator */
     shouldShowOfflineIndicator?: boolean;
 
     /** An ID used for unit testing */
     testID: string;
 
-    /** Whether or not to include safe area padding */
     includeSafeAreaPaddingBottom?: boolean;
 
     /** Returns a function as a child to pass insets to or a node to render without insets */

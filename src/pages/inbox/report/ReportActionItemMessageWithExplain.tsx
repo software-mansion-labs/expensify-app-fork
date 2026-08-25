@@ -33,7 +33,6 @@ type ReportActionItemMessageWithExplainProps = {
     /** All the data of the action item */
     action: OnyxEntry<ReportAction>;
 
-    /** The child report of the action item */
     childReport: OnyxEntry<Report>;
 
     /** Original report from which the given reportAction is first created */

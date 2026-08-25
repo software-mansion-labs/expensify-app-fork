@@ -256,7 +256,6 @@ type TransactionReportGroupListItemType = TransactionGroupListItemType & {groupe
         /** The date of the report's first approval (created date of the earliest APPROVED/FORWARDED report action) */
         firstApproved?: string;
 
-        /** The avatar of the first approver */
         firstApproverAvatar?: AvatarSource;
 
         /** Account ID of the first approver (actor on the earliest APPROVED/FORWARDED report action) */
@@ -393,7 +392,6 @@ type ReportActionListItemType = ListItem &
         /** Key used internally by React */
         keyForList: string;
 
-        /** The name of the report */
         reportName: string;
     };
 

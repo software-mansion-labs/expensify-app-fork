@@ -65,7 +65,6 @@ type FormProviderProps<TFormID extends OnyxFormKey = OnyxFormKey> = FormProps<TF
     /** Children to render. */
     children: ((props: {inputValues: FormOnyxValues<TFormID>}) => ReactNode) | ReactNode;
 
-    /** Callback to validate the form */
     validate?: (values: FormOnyxValues<TFormID>, translate: LocalizedTranslate) => FormInputErrors<TFormID>;
 
     /** Should validate function be called when input loose focus */
@@ -99,7 +98,6 @@ type FormProviderProps<TFormID extends OnyxFormKey = OnyxFormKey> = FormProps<TF
     /** Whether to render the submit button above the footer. */
     shouldRenderFooterAboveSubmit?: boolean;
 
-    /** Whether the form is loading */
     isLoading?: boolean;
 
     /** Whether to add bottom safe area padding to the content. */

@@ -41,7 +41,6 @@ type Mention = {
 };
 
 type MentionSuggestionsProps = {
-    /** The index of the highlighted mention */
     highlightedMentionIndex?: number;
 
     /** Array of suggested mentions */

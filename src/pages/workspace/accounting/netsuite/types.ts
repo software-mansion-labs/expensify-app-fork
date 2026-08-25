@@ -97,7 +97,6 @@ type CustomFieldSubPageWithPolicy = SubPageProps & {
     /** Callback to update the current segment type of the record  */
     setCustomSegmentType?: (segmentType: ValueOf<typeof CONST.NETSUITE_CUSTOM_RECORD_TYPES>) => void;
 
-    /** NetSuiteCustomFieldForm values */
     netSuiteCustomFieldFormValues: NetSuiteCustomFieldForm;
 
     customSegments?: NetSuiteCustomSegment[];

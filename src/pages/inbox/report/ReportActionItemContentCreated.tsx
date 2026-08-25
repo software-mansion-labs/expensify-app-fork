@@ -34,10 +34,8 @@ type ReportActionItemContentCreatedProps = {
     /** Report action belonging to the report's parent */
     parentReportAction: OnyxEntry<OnyxTypes.ReportAction>;
 
-    /** The transaction ID */
     transactionID: string | undefined;
 
-    /** The draft message */
     draftMessage: string | undefined;
 
     /** Flag to show, hide the thread divider line */

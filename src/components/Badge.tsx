@@ -37,10 +37,8 @@ type BadgeProps = {
     /** Text to display in the Badge */
     environment?: string;
 
-    /** Styles for Badge */
     badgeStyles?: StyleProp<ViewStyle>;
 
-    /** Styles for Badge Text */
     textStyles?: StyleProp<TextStyle>;
 
     /** Callback to be called on onPress */

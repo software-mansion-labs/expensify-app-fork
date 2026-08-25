@@ -17,13 +17,10 @@ type AddNewPersonalCardFeedData = {
     /** Name of the card */
     cardTitle: string;
 
-    /** Selected bank */
     selectedBank: ValueOf<typeof CONST.PERSONAL_CARDS.BANKS> | null;
 
-    /** Name of the bank */
     bankName?: string;
 
-    /** Selected country */
     selectedCountry?: string;
 
     /** Public token from Plaid connection */
@@ -35,7 +32,6 @@ type AddNewPersonalCardFeedData = {
     /** Feed name from Plaid connection */
     plaidConnectedFeedName?: string;
 
-    /** Plaid accounts */
     plaidAccounts?: LinkAccount[] | PlaidAccount[];
 };
 

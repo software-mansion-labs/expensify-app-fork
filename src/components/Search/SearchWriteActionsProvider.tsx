@@ -41,7 +41,6 @@ type SearchWriteActionsProviderProps = {
     /** The live TRANSACTION collection, subscribed by `<Search>` and passed down. */
     transactions: OnyxCollection<Transaction>;
 
-    /** Whether mobile selection mode is on. */
     isMobileSelectionModeEnabled: boolean;
 
     /** The search data type. */
@@ -85,7 +84,6 @@ type ReconcileSelectionParams = {
     /** Login (email or phone) of the current user */
     currentUserLogin: string;
 
-    /** Account ID of the current user */
     currentUserAccountID: number;
 
     /** The current user's self-DM report, used as the parent for unreported (track) expenses */

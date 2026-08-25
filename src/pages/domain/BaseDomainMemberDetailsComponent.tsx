@@ -31,7 +31,6 @@ import {View} from 'react-native';
 import DomainNotFoundPageWrapper from './DomainNotFoundPageWrapper';
 
 type BaseDomainMemberDetailsComponentProps = {
-    /** Domain ID */
     domainAccountID: number;
 
     /** User account ID */

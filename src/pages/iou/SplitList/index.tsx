@@ -17,7 +17,6 @@ type SplitListProps = {
     /** The split expense sections data. */
     data: SplitListItemType[];
 
-    /** The initially focused option key. */
     initiallyFocusedOptionKey: string | undefined;
 
     /** Callback when a row is selected. */

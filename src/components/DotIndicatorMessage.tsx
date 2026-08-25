@@ -44,7 +44,6 @@ type DotIndicatorMessageProps = {
     /** Additional styles to apply to the text */
     textStyles?: StyleProp<TextStyle>;
 
-    /** A function to dismiss error */
     dismissError?: () => void;
 };
 

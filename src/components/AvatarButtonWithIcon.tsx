@@ -32,7 +32,6 @@ type AvatarButtonWithIconProps = WithSentryLabel & {
     /** Executed on click */
     onPress: () => void;
 
-    /** Ref of the anchor */
     anchorRef?: RefObject<View | HTMLDivElement | null>;
 
     /** The avatar to display. */

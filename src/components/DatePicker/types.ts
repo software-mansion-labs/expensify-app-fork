@@ -111,7 +111,6 @@ type DatePickerProps = {
     /** Callback to close the modal */
     onClose: () => void;
 
-    /** Callback when date is selected */
     onSelected?: (value: string) => void;
 
     /** Whether to close the modal when browser navigation changes */

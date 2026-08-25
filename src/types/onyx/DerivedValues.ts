@@ -15,17 +15,11 @@ import type TransactionViolations from './TransactionViolation';
  * The attributes of a report.
  */
 type ReportAttributes = {
-    /**
-     * The name of the report.
-     */
     reportName: string;
     /**
      * Whether the report is empty (has no visible messages).
      */
     isEmpty: boolean;
-    /**
-     * The status of the brick road.
-     */
     brickRoadStatus: ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | undefined;
     /**
      * Whether the report requires attention from current user.
@@ -39,9 +33,6 @@ type ReportAttributes = {
      * The reportActionID that the action badge refers to, used for deep linking when the LHN row is pressed.
      */
     actionTargetReportActionID?: string;
-    /**
-     * The errors of the report.
-     */
     reportErrors: Errors;
     /**
      * The reportID of the one-transaction thread report, if applicable.
@@ -160,9 +151,6 @@ type CardFeedErrorState = {
  * The errors of a card feed.
  */
 type FeedErrors = CardFeedErrorState & {
-    /**
-     * The errors of the feed.
-     */
     feedErrors?: Errors;
     /**
      * The errors of all cards for a specific feed within a workspace/domain.
@@ -188,14 +176,8 @@ type CardFeedErrors = {
      */
     cardFeedErrors: CardFeedErrorsObject;
 
-    /**
-     * The cards with a broken feed connection.
-     */
     cardsWithBrokenFeedConnection: Record<string, Card>;
 
-    /**
-     * The personal cards with a broken connection.
-     */
     personalCardsWithBrokenConnection: Record<string, Card>;
 
     /**

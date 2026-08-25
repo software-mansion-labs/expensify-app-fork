@@ -11,13 +11,10 @@ type AccountData = {
     /** Additional account data */
     additionalData?: BankAccountAdditionalData;
 
-    /** Address name */
     addressName?: string;
 
-    /** Address state */
     addressState?: string;
 
-    /** Address street */
     addressStreet?: string;
 
     /** Address zip code */

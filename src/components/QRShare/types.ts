@@ -35,9 +35,6 @@ type QRShareProps = {
      */
     logo?: ImageSourcePropType;
 
-    /**
-     * Background color to be used for logo.
-     */
     logoBackgroundColor?: string;
 
     /**

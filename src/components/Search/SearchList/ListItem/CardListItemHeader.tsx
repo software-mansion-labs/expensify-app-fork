@@ -35,7 +35,6 @@ type CardListItemHeaderProps<TItem extends ListItem> = {
     /** Whether this section items disabled for selection */
     isDisabled?: boolean | null;
 
-    /** Whether the item is focused */
     isFocused?: boolean;
 
     /** Whether selecting multiple transactions at once is allowed */

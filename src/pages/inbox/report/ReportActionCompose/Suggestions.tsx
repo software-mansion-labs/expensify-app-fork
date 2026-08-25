@@ -34,13 +34,10 @@ type SuggestionProps = {
     /** Report composer focus state */
     isComposerFocused?: boolean;
 
-    /** Callback to reset the keyboard input */
     resetKeyboardInput?: () => void;
 
-    /** Whether the auto suggestion picker is large */
     isAutoSuggestionPickerLarge?: boolean;
 
-    /** The height of the composer */
     composerHeight?: number;
 
     /** If current composer is connected with report from group policy */

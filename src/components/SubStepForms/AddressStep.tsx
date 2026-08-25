@@ -49,10 +49,8 @@ function getStringFormValue<TFormID extends keyof OnyxFormValuesMapping>(values:
 
 type AddressStepProps<TFormID extends keyof OnyxFormValuesMapping> = SubPageProps &
     ForwardedFSClassProps & {
-        /** The ID of the form */
         formID: TFormID;
 
-        /** The title of the form */
         formTitle: string;
 
         /** The disclaimer informing that PO box is not allowed */
@@ -67,13 +65,10 @@ type AddressStepProps<TFormID extends keyof OnyxFormValuesMapping> = SubPageProp
         /** Fields list of the form */
         stepFields: Array<FormOnyxKeys<TFormID>>;
 
-        /** The IDs of the input fields */
         inputFieldsIDs: AddressInputIDs;
 
-        /** The default values for the form */
         defaultValues: AddressValues;
 
-        /** Should show help links */
         shouldShowHelpLinks?: boolean;
 
         /** Indicates if country selector should be displayed */
@@ -82,13 +77,10 @@ type AddressStepProps<TFormID extends keyof OnyxFormValuesMapping> = SubPageProp
         /** Indicates if state selector should be displayed */
         shouldDisplayStateSelector?: boolean;
 
-        /** Label for the state selector */
         stateSelectorLabel?: string;
 
-        /** The title of the state selector modal */
         stateSelectorModalHeaderTitle?: string;
 
-        /** The title of the state selector search input */
         stateSelectorSearchInputTitle?: string;
 
         /** Callback to be called when the country is changed */

@@ -16,7 +16,6 @@ import ConfirmContent from './ConfirmContent';
 import Modal from './Modal';
 
 type ConfirmModalProps = {
-    /** Title of the modal */
     title?: string;
 
     /** A callback to call when the form has been submitted */
@@ -49,10 +48,8 @@ type ConfirmModalProps = {
     /** Is the action destructive */
     danger?: boolean;
 
-    /** Whether we should disable the confirm button when offline */
     shouldDisableConfirmButtonWhenOffline?: boolean;
 
-    /** Whether we should show the cancel button */
     shouldShowCancelButton?: boolean;
 
     /** Callback method fired when the modal is hidden */
@@ -67,37 +64,28 @@ type ConfirmModalProps = {
     /** Fill color for the Icon */
     iconFill?: string | false;
 
-    /** Icon width */
     iconWidth?: number;
 
-    /** Icon height */
     iconHeight?: number;
 
     /** Should the icon be centered */
     shouldCenterIcon?: boolean;
 
-    /** Whether to show the dismiss icon */
     shouldShowDismissIcon?: boolean;
 
-    /** Styles for title container */
     titleContainerStyles?: StyleProp<ViewStyle>;
 
-    /** Styles for title */
     titleStyles?: StyleProp<TextStyle>;
 
-    /** Styles for prompt */
     promptStyles?: StyleProp<TextStyle>;
 
-    /** Styles for subtitle */
     subtitleStyles?: StyleProp<TextStyle>;
 
-    /** Styles for icon */
     iconAdditionalStyles?: StyleProp<ViewStyle>;
 
     /** Whether to center the icon / text content */
     shouldCenterContent?: boolean;
 
-    /** Whether to stack the buttons */
     shouldStackButtons?: boolean;
 
     /** Whether to reverse the order of the stacked buttons */
@@ -106,10 +94,8 @@ type ConfirmModalProps = {
     /** Image to display with content */
     image?: IconAsset;
 
-    /** Styles for the image */
     imageStyles?: StyleProp<ViewStyle>;
 
-    /** Whether to fit the image to the container */
     shouldFitImageToContainer?: boolean;
 
     /**
@@ -130,7 +116,6 @@ type ConfirmModalProps = {
     /** Whether to handle navigation back when modal show. */
     shouldHandleNavigationBack?: boolean;
 
-    /** Whether to ignore the back handler during transition */
     shouldIgnoreBackHandlerDuringTransition?: boolean;
 
     /** Merged into the modal container after default confirm styles (e.g. `width` overrides `variables.sideBarWidth` on wide screens). */

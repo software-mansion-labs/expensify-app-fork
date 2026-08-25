@@ -17,7 +17,6 @@ type ListSelectionButtonProps<TItem extends ListItem> = {
     /** Custom accessibility label */
     accessibilityLabel?: string;
 
-    /** Whether the button is disabled */
     disabled?: boolean;
 
     /** Additional styles */
@@ -32,7 +31,6 @@ type ListSelectionButtonProps<TItem extends ListItem> = {
     /** Paint the checkmark on press before the parent's selection update lands. Opt-in for pages that defer that update. */
     shouldUseOptimisticSelection?: boolean;
 
-    /** Test ID */
     testID?: string;
 
     /** Tab index for the button, pass -1 to remove it from the tab order */

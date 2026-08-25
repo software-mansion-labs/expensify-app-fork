@@ -243,7 +243,6 @@ type ColumnRole = {
     /** Used for any additional text - e.g. if the field is required */
     description?: string;
 
-    /** Whether the column is required for import */
     isRequired?: boolean;
 };
 
@@ -260,7 +259,6 @@ type ImportColumnProps = {
     /** Index of the column in the spreadsheet */
     columnIndex: number;
 
-    /** Whether to show the dropdown menu */
     shouldShowDropdownMenu?: boolean;
 };
 

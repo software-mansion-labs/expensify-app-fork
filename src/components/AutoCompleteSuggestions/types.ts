@@ -24,7 +24,6 @@ type AutoCompleteSuggestionsProps<TSuggestion> = {
     /** Create unique keys for each suggestion item */
     keyExtractor: (item: TSuggestion, index: number) => string;
 
-    /** The index of the highlighted suggestion */
     highlightedSuggestionIndex: number;
 
     /** Fired when the user selects a suggestion */

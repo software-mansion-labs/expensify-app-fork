@@ -43,7 +43,6 @@ type SetSpendRulesStepProps = {
     /* The policy that the card will be issued under */
     policyID: string;
 
-    /** Start from step index */
     startStepIndex: number;
 
     /** Array of step names */

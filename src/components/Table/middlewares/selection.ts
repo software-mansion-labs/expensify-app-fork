@@ -16,7 +16,6 @@ import {useCallback, useEffect, useState} from 'react';
 import type {MiddlewareHookResult} from './types';
 
 type UseSelectionProps<DataType extends TableData> = {
-    /** The data being used in the table */
     data: DataType[];
 
     /** The number of non-disabled items in the original (pre-search/filter) data */

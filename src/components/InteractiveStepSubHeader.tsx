@@ -16,7 +16,6 @@ type InteractiveStepSubHeaderProps = {
     /** Function to call when a step is selected */
     onStepSelected?: (stepName: string) => void;
 
-    /** The index of the step to start with */
     startStepIndex?: number;
 
     /** Description of the current step, appended to its accessibility label */
@@ -27,10 +26,8 @@ type InteractiveStepSubHeaderProps = {
 };
 
 type InteractiveStepSubHeaderHandle = {
-    /** Move to the next step */
     moveNext: () => void;
 
-    /** Move to the previous step */
     movePrevious: () => void;
 
     /** Move to a specific step */

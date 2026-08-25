@@ -11,7 +11,6 @@ type InitiatingBankAccountUnlock = {
     /** Is request being processed */
     isLoading: boolean;
 
-    /** Errors */
     errors: Errors;
 
     /** ID of the optimistic Concierge report action to clean up after API success */

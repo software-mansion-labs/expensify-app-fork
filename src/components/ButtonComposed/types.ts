@@ -41,7 +41,6 @@ type ButtonBehaviorProps = {
     /** Indicates whether the button should be disabled */
     isDisabled?: boolean;
 
-    /** Should enable the haptic feedback? */
     enableHapticFeedback?: boolean;
 
     /** Should disable the long press? */
@@ -93,7 +92,6 @@ type ButtonStyleProps = {
     /** Should we remove the border radius on a specific side? */
     removeBorderRadius?: ValueOf<typeof CONST.BUTTON_REMOVE_BORDER_RADIUS>;
 
-    /** The size of the button */
     size?: ValueOf<typeof CONST.BUTTON_SIZE>;
 
     /** The visual variant of the button, which controls its color scheme */
@@ -110,7 +108,6 @@ type BaseButtonProps = WithSentryLabel &
         /** The testID of the button. Used to locate this view in end-to-end tests. */
         testID?: string;
 
-        /** Accessibility label for the component */
         accessibilityLabel?: string;
 
         /** Accessibility state to pass to the pressable */

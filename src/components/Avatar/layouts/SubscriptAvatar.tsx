@@ -24,10 +24,8 @@ type SubscriptAvatarProps = BaseAvatarProps & {
     /** The secondary (subscript) avatar icon */
     secondaryAvatar?: IconType;
 
-    /** Border color for the subscript avatar */
     subscriptAvatarBorderColor?: ColorValue;
 
-    /** Style for  avatar container */
     containerStyle?: StyleProp<ViewStyle>;
 };
 

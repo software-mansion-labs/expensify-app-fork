@@ -35,7 +35,6 @@ type CommonSearchViewProps = {
     /** Whether the action column uses its wider variant. */
     isActionColumnWide: boolean;
 
-    /** Whether mobile selection mode is on. */
     isMobileSelectionModeEnabled: boolean;
 
     /** The column header element (undefined on narrow layouts). */

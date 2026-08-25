@@ -51,13 +51,10 @@ type ReportActionItemSingleProps = Partial<ChildrenProps> & {
     /** IOU Report for this action, if any */
     iouReport?: OnyxEntry<Report>;
 
-    /** Show header for action */
     showHeader?: boolean;
 
-    /** If the action is being hovered */
     isHovered?: boolean;
 
-    /** If the action is active */
     isActive?: boolean;
 };
 

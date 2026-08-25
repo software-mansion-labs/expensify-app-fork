@@ -137,16 +137,13 @@ type CustomUnit = OnyxCommon.OnyxValueWithOfflineFeedback<
 
 /** Policy company address data */
 type CompanyAddress = {
-    /** Street address */
     addressStreet: string;
 
     /** Street address line 2 */
     addressStreet2?: string;
 
-    /** City */
     city: string;
 
-    /** State */
     state: string;
 
     /** Zip post code */
@@ -338,10 +335,8 @@ type ConnectionLastSync = {
 
 /** Last sync state specific to Merge HR connections */
 type MergeHRConnectionLastSync = ConnectionLastSync & {
-    /** Type of the sync */
     syncType?: ValueOf<typeof CONST.MERGE_HR.SYNC_TYPE>;
 
-    /** Status of the sync */
     syncStatus?: ValueOf<typeof CONST.MERGE_HR.SYNC_STATUS>;
 
     /** Timestamps of the last few manual ("Sync now") syncs, used for blocking manual syncs client-side once the daily limit is reached */
@@ -570,7 +565,6 @@ type QBOConnectionConfig = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** Defines how non reimbursable expenses are exported */
     nonReimbursableExpensesExportDestination: QBONonReimbursableExportAccountType;
 
-    /** Default vendor of non reimbursable bill */
     nonReimbursableBillDefaultVendor: string;
 
     /** Default vendor used as a fallback when a non-reimbursable Credit/Debit card expense has no vendor set on the expense itself. */
@@ -1133,7 +1127,6 @@ type NetSuiteSyncOptions = {
 /** User configuration for the NetSuite accounting integration. */
 type NetSuiteConnectionConfig = OnyxCommon.OnyxValueWithOfflineFeedback<
     {
-        /** Invoice Item Preference */
         invoiceItemPreference?: NetSuiteInvoiceItemPreferenceValues;
 
         /** ID of the bank account for NetSuite invoice collections */
@@ -1993,7 +1986,6 @@ type DualEntryAccount = {
     /** Name of the account. */
     name: string;
 
-    /** Type of the account. */
     accountType: string;
 
     /** Currency associated with the account. */
@@ -2293,7 +2285,6 @@ type HRConnectionConfigBase = OnyxCommon.OnyxValueWithOfflineFeedback<
 
 /** Gusto connection config */
 type GustoConnectionConfig = HRConnectionConfigBase & {
-    /** Approval mode */
     approvalMode: ValueOf<typeof CONST.GUSTO.APPROVAL_MODE> | null;
 };
 
@@ -2389,7 +2380,6 @@ type QBDExportConfig = {
     /** Account that receives the non reimbursable expenses */
     nonReimbursableAccount: string;
 
-    /** Default vendor of non reimbursable bill */
     nonReimbursableBillDefaultVendor: string;
 
     /** Account ID that receives the exported travel payable */
@@ -2404,7 +2394,6 @@ type QBDExportConfig = {
  */
 type QBDConnectionConfig = OnyxCommon.OnyxValueWithOfflineFeedback<
     {
-        /** API provider */
         apiProvider: string;
 
         /** Configuration of automatic synchronization from QuickBooks Desktop to the app */
@@ -2416,7 +2405,6 @@ type QBDConnectionConfig = OnyxCommon.OnyxValueWithOfflineFeedback<
             enabled: boolean;
         };
 
-        /** Whether a check to be printed */
         markChecksToBePrinted: boolean;
 
         /** Determines if a vendor should be automatically created */
@@ -2521,7 +2509,6 @@ type MccGroup = {
 
 /** Model of verified reimbursement bank account linked to policy */
 type ACHAccount = {
-    /** ID of the bank account */
     bankAccountID: number;
 
     /** Bank account number */
@@ -2533,7 +2520,6 @@ type ACHAccount = {
     /** Address name of the bank account */
     addressName: string;
 
-    /** Name of the bank */
     bankName: string;
 
     /** E-mail of the reimburser */
@@ -2611,7 +2597,6 @@ type PolicyReportField = {
     /** Value of the field */
     value?: string | null;
 
-    /** Value of the target */
     target?: 'expense' | 'invoice' | 'paycheck';
 
     /** Options to select from if field is of type dropdown */
@@ -2647,19 +2632,15 @@ type PolicyInvoicingDetails = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** Stripe Connect company website */
     companyWebsite?: string;
 
-    /** Bank account */
     bankAccount?: {
-        /** Account balance */
         stripeConnectAccountBalance?: number;
 
-        /** AccountID */
         stripeConnectAccountID?: string;
 
         /** bankAccountID of selected BBA for payouts */
         transferBankAccountID?: number;
     };
 
-    /** The markUp */
     markUp?: number;
 }>;
 
@@ -2677,19 +2658,15 @@ type PendingJoinRequestPolicy = {
 
 /** Details of public policy */
 type PolicyDetailsForNonMembers = {
-    /** Name of the policy */
     name: string;
 
-    /** Policy owner account ID */
     ownerAccountID: number;
 
     /** Policy owner e-mail */
     ownerEmail: string;
 
-    /** Policy type */
     type: ValueOf<typeof CONST.POLICY.TYPE>;
 
-    /** Policy avatar */
     avatar?: string;
 };
 
@@ -2829,31 +2806,25 @@ type AgentRule = {
 /** Model of policy data */
 type Policy = OnyxCommon.OnyxValueWithOfflineFeedback<
     {
-        /** The ID of the policy */
         id: string;
 
-        /** The name of the policy */
         name: string;
 
         /** The current user's role in the policy */
         role: ValueOf<typeof CONST.POLICY.ROLE>;
 
-        /** The policy type */
         type: ValueOf<typeof CONST.POLICY.TYPE>;
 
         /** The email of the policy owner */
         owner: string;
 
-        /** The accountID of the policy owner */
         ownerAccountID?: number;
 
-        /** The output currency for the policy */
         outputCurrency: string;
 
         /** The address of the company */
         address?: CompanyAddress;
 
-        /** The URL for the policy avatar */
         avatarURL?: string;
 
         /** The client ID set by an Approved! Accountant for tracking purposes */
@@ -2911,10 +2882,8 @@ type Policy = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** When the monthly scheduled submit should happen */
         autoReportingOffset?: AutoReportingOffset;
 
-        /** The employee list of the policy */
         employeeList?: OnyxTypes.PolicyEmployeeList;
 
-        /** The reimbursement choice for policy */
         reimbursementChoice?: ValueOf<typeof CONST.POLICY.REIMBURSEMENT_CHOICES>;
 
         /** The set reimburser for the policy */
@@ -2966,10 +2935,8 @@ type Policy = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** Informative messages about which policy members were added with primary logins when invited with their secondary login */
         primaryLoginsInvited?: Record<string, string>;
 
-        /** Whether policy is updating */
         isPolicyUpdating?: boolean;
 
-        /** The approver of the policy */
         approver?: string;
 
         /** The approval mode set up on this policy */
@@ -3002,9 +2969,6 @@ type Policy = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** Whether to show category GL codes when selecting a category */
         showCategoryGLCodes?: boolean;
 
-        /**
-         * Policy Receipt Partners
-         */
         receiptPartners?: ReceiptPartners;
 
         /** Whether the workspace has multiple levels of tags enabled */
@@ -3194,7 +3158,6 @@ type Policy = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** Policy level user created in-app export templates */
         exportLayouts?: Record<string, OnyxTypes.ExportTemplate>;
 
-        /** Whether Attendee Tracking is enabled */
         isAttendeeTrackingEnabled?: boolean;
 
         /** Whether receipts are publicly viewable via URL without report access */

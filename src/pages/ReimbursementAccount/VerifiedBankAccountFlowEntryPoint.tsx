@@ -68,7 +68,6 @@ type VerifiedBankAccountFlowEntryPointProps = {
     /** Back to url passed from page */
     backTo?: Route;
 
-    /** Should show the continue setup button */
     shouldShowContinueSetupButton: boolean | null;
 
     /** Whether the workspace currency is set to non USD currency */

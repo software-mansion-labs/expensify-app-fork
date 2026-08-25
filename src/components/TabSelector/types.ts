@@ -19,7 +19,6 @@ type TabSelectorProps = MaterialTopTabBarProps & {
     /** Callback to register focus trap container element */
     onFocusTrapContainerElementChanged?: (element: HTMLElement | null) => void;
 
-    /** Whether to show the label when the tab is inactive */
     shouldShowLabelWhenInactive?: boolean;
 
     /** Whether tabs should have equal width */
@@ -54,7 +53,6 @@ type TabSelectorBaseItem<K extends string = string> = WithSentryLabel & {
     /** Called instead of selecting the tab when it is disabled. Keeps the tab pressable so it can explain why it is locked. */
     disabledAction?: () => void | Promise<void>;
 
-    /** Pending action for the tab. */
     pendingAction?: PendingAction;
 
     /** Optional ref forwarded to this tab's pressable element, e.g. to anchor a popover to this specific tab. */
@@ -72,7 +70,6 @@ type TabSelectorBaseProps<K extends string = string> = {
     /** Tabs to render. */
     tabs: Array<TabSelectorBaseItem<K>>;
 
-    /** Key of the currently active tab. */
     activeTabKey: K | undefined;
 
     /** Called when a tab is pressed with its key. */
@@ -87,7 +84,6 @@ type TabSelectorBaseProps<K extends string = string> = {
     /** Animated position from a navigator (optional). */
     position?: Animated.AnimatedInterpolation<number>;
 
-    /** Whether to show the label when the tab is inactive. */
     shouldShowLabelWhenInactive?: boolean;
 
     /** Whether tabs should have equal width. */
@@ -98,7 +94,6 @@ type TabSelectorBaseProps<K extends string = string> = {
 };
 
 type TabSelectorItemProps = WithSentryLabel & {
-    /** Key of the tab */
     tabKey: string;
 
     /** Function to call when onPress */
@@ -110,7 +105,6 @@ type TabSelectorItemProps = WithSentryLabel & {
     /** Icon to display on tab */
     icon?: IconAsset;
 
-    /** Title of the tab */
     title?: string;
 
     /** Animated background color value for the tab button */
@@ -125,7 +119,6 @@ type TabSelectorItemProps = WithSentryLabel & {
     /** Whether this tab is active */
     isActive?: boolean;
 
-    /** Whether to show the label when the tab is inactive */
     shouldShowLabelWhenInactive?: boolean;
 
     /** Test identifier used to find elements in tests */
@@ -149,7 +142,6 @@ type TabSelectorItemProps = WithSentryLabel & {
     /** Called instead of selecting the tab when it is disabled. Keeps the tab pressable so it can explain why it is locked. */
     disabledAction?: () => void | Promise<void>;
 
-    /** Pending action for the tab. */
     pendingAction?: PendingAction;
 
     /** Optional ref forwarded to the tab's pressable element. */
@@ -177,9 +169,6 @@ type AnimationConfigBase = {
      */
     position: Animated.AnimatedInterpolation<number> | undefined;
 
-    /**
-     * Whether the tab is active.
-     */
     isActive: boolean;
 };
 

@@ -27,16 +27,12 @@ type MenuItemWithLink = MenuItemProps & {
     /** A unique key for the menu item */
     key?: string;
 
-    /** The pending action for the menu item */
     pendingAction?: OnyxCommon.PendingAction | null;
 
-    /** A function to dismiss the pending action */
     onPendingActionDismiss?: () => void;
 
-    /** The error for the menu item */
     error?: OnyxCommon.Errors | null;
 
-    /** Whether we should force opacity */
     shouldForceOpacity?: boolean;
 };
 
@@ -53,10 +49,8 @@ type MenuItemListProps = {
     /** Icon to display on the left side of each item */
     icon?: IconAsset;
 
-    /** Icon Width */
     iconWidth?: number;
 
-    /** Icon Height */
     iconHeight?: number;
 };
 

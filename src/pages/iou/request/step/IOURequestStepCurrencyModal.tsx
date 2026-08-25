@@ -16,13 +16,10 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React from 'react';
 
 type CurrencyPickerProps = {
-    /** Whether the picker modal is visible */
     isPickerVisible: boolean;
 
-    /** Function to hide the picker modal */
     hidePickerModal: () => void;
 
-    /** Header text for the modal */
     headerText: string;
 
     /** Current value of the selected item */

@@ -33,9 +33,6 @@ type Errors = Record<string, string | null>;
  * Error object for a translation key
  */
 type TranslationKeyError = {
-    /**
-     * The translation key
-     */
     translationKey: TranslationPaths;
 };
 

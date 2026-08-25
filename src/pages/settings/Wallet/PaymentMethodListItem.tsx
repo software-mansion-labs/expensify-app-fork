@@ -96,7 +96,6 @@ type PaymentMethodListItemProps = {
     /** Callback for when the three dots menu is pressed */
     onThreeDotsMenuPress?: (e: GestureResponderEvent | KeyboardEvent | undefined) => void;
 
-    /** List item style */
     listItemStyle?: StyleProp<ViewStyle>;
 };
 

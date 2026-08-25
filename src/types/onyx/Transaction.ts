@@ -68,7 +68,6 @@ type Comment = {
     /** Content of the transaction comment */
     comment?: string;
 
-    /** Whether the transaction is on hold */
     hold?: string;
 
     /** Collection of waypoints associated with the transaction */
@@ -80,7 +79,6 @@ type Comment = {
     /** Whether the transaction comment is a demo transaction */
     isDemoTransaction?: boolean;
 
-    /** Type of the transaction */
     type?: ValueOf<typeof CONST.TRANSACTION.TYPE>;
 
     /** Contains information pertaining to time tracking */
@@ -101,7 +99,6 @@ type Comment = {
     /** Source of the transaction which when specified matches `split` */
     source?: string;
 
-    /** ID of the original transaction */
     originalTransactionID?: string;
 
     /** In split transactions this is a collection of participant split data */
@@ -113,13 +110,10 @@ type Comment = {
     /** Total that the user currently owes for splitExpenses */
     splitExpensesTotal?: number;
 
-    /** Start date for splits */
     splitsStartDate?: string;
 
-    /** End date for splits */
     splitsEndDate?: string;
 
-    /** Violations that were dismissed */
     dismissedViolations?: Partial<Record<ViolationName, Record<string, string | number>>>;
 
     /** Defines the type of liability for the transaction */
@@ -171,10 +165,8 @@ type TransactionCustomUnit = {
         };
     };
 
-    /** ID of the custom unit */
     customUnitID?: string;
 
-    /** ID of the custom unit rate */
     customUnitRateID?: string;
 
     /** Custom unit amount */
@@ -330,7 +322,6 @@ type TravelerPersonalDetails = {
 
 /** Model of reservation */
 type Reservation = {
-    /** ID of the reservation */
     reservationID?: string;
 
     /** Details about the start of the reservation */
@@ -408,7 +399,6 @@ type Reservation = {
     /** Type or category of purchased fare */
     fareType?: string;
 
-    /** leg id */
     legId?: number;
 };
 
@@ -438,10 +428,8 @@ type ReservationTimeDetails = {
     /** In flight reservations, this is the short name of the airport */
     shortName?: string;
 
-    /** Timezone offset */
     timezoneOffset?: string;
 
-    /** City name */
     cityName?: string;
 };
 
@@ -517,19 +505,15 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** The currency conversion rate from the transaction currency to the report currency */
         currencyConversionRate?: string;
 
-        /** The transaction tax amount */
         taxAmount?: number;
 
         /** The transaction converted tax amount in report's currency */
         convertedTaxAmount?: number;
 
-        /** The transaction tax code */
         taxCode?: string;
 
-        /** The transaction tax value */
         taxValue?: string | undefined;
 
-        /** The transaction tax name */
         taxName?: string;
 
         /** Whether the expense is billable */
@@ -621,13 +605,11 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** Existing routes */
         routes?: Routes;
 
-        /** The transaction id */
         transactionID: string;
 
         /** Selected transaction IDs for bulk edit operations (only used in draft transactions) */
         selectedTransactionIDs?: string[];
 
-        /** The transaction tag */
         tag?: string;
 
         /** Whether the transaction was created globally */
@@ -636,12 +618,10 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** Whether the transaction was created from the FAB, including Global create button, FloatingCameraButton, QuickAction,... */
         isFromFloatingActionButton?: boolean;
 
-        /** The transaction tax rate */
         taxRate?: string | undefined;
 
         /** Card Transactions */
 
-        /** The parent transaction id */
         parentTransactionID?: string;
 
         /** Whether the expense is reimbursable or not */
@@ -668,7 +648,6 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** If the transaction was made in a foreign currency, we send the original amount and currency */
         originalAmount?: number;
 
-        /** The original currency of the transaction */
         originalCurrency?: string;
 
         /** Indicates transaction loading */
@@ -686,7 +665,6 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** The linked reportAction id for the tracked expense */
         linkedTrackedExpenseReportAction?: ReportAction;
 
-        /** The linked report id for the tracked expense */
         linkedTrackedExpenseReportID?: string;
 
         /** The bank of the purchaser card, if any */
@@ -713,7 +691,6 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** The inserted time of the transaction */
         inserted?: string;
 
-        /** Transaction type */
         transactionType?: string;
     },
     keyof Comment | keyof TransactionCustomUnit | 'attendees'

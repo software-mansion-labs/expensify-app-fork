@@ -35,7 +35,6 @@ type SubscriptionPlanCardActionButtonProps = {
     /** Whether the plan card was rendered inside the comparison modal */
     isFromComparisonModal: boolean;
 
-    /** Whether the plan is currently used */
     isSelected: boolean;
 
     /** Closes comparison modal */

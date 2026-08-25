@@ -70,10 +70,8 @@ type ValidateCodeInputProps = {
     /** Name attribute for the input */
     name?: string;
 
-    /** Input value */
     value?: string;
 
-    /** Should the input auto focus */
     autoFocus?: boolean;
 
     /** Error text to display */
@@ -106,10 +104,8 @@ type ValidateCodeInputProps = {
     /** Last pressed digit on BigDigitPad */
     lastPressedDigit?: string;
 
-    /** TestID for test */
     testID?: string;
 
-    /** Accessibility label for the input */
     accessibilityLabel?: string;
 
     /** Reference to the outer element */

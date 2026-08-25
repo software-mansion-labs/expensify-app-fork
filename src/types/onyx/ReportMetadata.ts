@@ -23,7 +23,6 @@ type ReportMetadata = {
     /** Whether the current report is optimistic */
     isOptimisticReport?: boolean;
 
-    /** Pending members of the report */
     pendingChatMembers?: PendingChatMember[];
 
     /** Whether the report has violations or errors */

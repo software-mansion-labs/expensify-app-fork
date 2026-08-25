@@ -76,7 +76,6 @@ type ParticipantSearchResultsProps = {
     /** Selected participants */
     participants: Participant[] | typeof CONST.EMPTY_ARRAY;
 
-    /** Whether the IOU is workspaces only */
     isWorkspacesOnly: boolean;
 
     /** Whether this is a per diem expense request */
@@ -97,7 +96,6 @@ type ParticipantSearchResultsProps = {
     /** Forwarded ref for the SelectionList — used by the parent's useImperativeHandle */
     selectionListRef: Ref<SelectionListWithSectionsHandle | null>;
 
-    /** Whether the text input should auto-focus */
     textInputAutoFocus: boolean;
 
     /** Setter to toggle textInputAutoFocus from the contact permission flow */

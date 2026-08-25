@@ -20,7 +20,6 @@ import {emailSelector} from '@selectors/Session';
 import React from 'react';
 
 type InvoiceSenderFieldProps = {
-    /** The selected participants */
     selectedParticipants: Participant[];
 
     /** Flag indicating if it is read-only */

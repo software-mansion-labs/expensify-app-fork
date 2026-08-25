@@ -23,7 +23,6 @@ type BaseDomainMembersPageProps = {
     /** The list of members to display in the table */
     members: DomainMemberRowData[];
 
-    /** The title of the header */
     headerTitle: string;
 
     /** Content to display in the header (e.g., Add/Settings buttons) */

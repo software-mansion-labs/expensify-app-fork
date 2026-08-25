@@ -21,7 +21,6 @@ type RadioButtonsProps = ForwardedFSClassProps & {
     /** List of choices to display via radio buttons */
     items: Choice[];
 
-    /** Default checked value */
     defaultCheckedValue?: string;
 
     /** Callback to fire when selecting a radio button */

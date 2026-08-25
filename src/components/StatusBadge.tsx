@@ -14,10 +14,8 @@ type StatusBadgeProps = {
     /** Status text to display */
     text: string;
 
-    /** Background color for the status badge */
     backgroundColor?: ColorValue;
 
-    /** Text color for the status badge */
     textColor?: ColorValue;
 
     /** Additional badge styles */

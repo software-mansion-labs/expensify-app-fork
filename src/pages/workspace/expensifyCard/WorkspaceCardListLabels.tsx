@@ -17,7 +17,6 @@ type WorkspaceCardListLabelsProps = {
     /** ID of the current policy */
     policyID: string;
 
-    /** Card settings */
     cardSettings: ExpensifyCardSettingsBase | undefined;
 };
 

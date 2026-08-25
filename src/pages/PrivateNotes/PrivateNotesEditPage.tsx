@@ -51,7 +51,6 @@ type PrivateNotesEditPageProps = WithReportAndPrivateNotesOrNotFoundProps &
     };
 
 type PrivateNotesEditPageInternalProps = PrivateNotesEditPageProps & {
-    /** Draft private note */
     privateNoteDraft: string;
 };
 

@@ -115,7 +115,6 @@ type ReportActionItemProps = {
     /** Report action belonging to the report's parent */
     parentReportAction: OnyxEntry<OnyxTypes.ReportAction>;
 
-    /** The transaction thread report's parentReportAction */
     parentReportActionForTransactionThread?: OnyxEntry<OnyxTypes.ReportAction>;
 
     /** All the data of the action item */
@@ -145,13 +144,11 @@ type ReportActionItemProps = {
      */
     isThreadReportParentAction?: boolean;
 
-    /** IF the thread divider line will be used */
     shouldUseThreadDividerLine?: boolean;
 
     /** Whether context menu should be displayed */
     shouldDisplayContextMenu?: boolean;
 
-    /** Linked transaction route error */
     linkedTransactionRouteError?: Errors;
 
     /** Whether to show border for MoneyRequestReportPreviewContent */
@@ -160,7 +157,6 @@ type ReportActionItemProps = {
     /** Whether to highlight the action for a few seconds */
     shouldHighlight?: boolean;
 
-    /** Whether the action is the "Created" action of a harvest-created expense report */
     isHarvestCreatedExpenseReport?: boolean;
 };
 

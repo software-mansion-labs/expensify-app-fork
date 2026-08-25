@@ -79,7 +79,6 @@ type PnrTraveler = {
 
     /** Business information of the traveler. */
     businessInfo: {
-        /** Attributes specified by the company. */
         companySpecifiedAttributes: unknown[];
     };
 
@@ -123,7 +122,6 @@ type PnrData = {
             /** Information about designated approvers. */
             designatedApproverInfos: unknown[];
 
-            /** User IDs of designated approvers. */
             designatedApproverUserIds: unknown[];
         };
 
@@ -189,26 +187,17 @@ type PnrData = {
     additionalMetadata: {
         /** Information about airports. */
         airportInfo: Array<{
-            /** Airport code. */
             airportCode: string;
-            /** Airport name. */
             airportName: string;
-            /** City name. */
             cityName: string;
-            /** Country code. */
             countryCode: string;
-            /** Country name. */
             countryName: string;
-            /** State code. */
             stateCode: string;
-            /** Zone name. */
             zoneName: string;
         }>;
         /** Information about airlines. */
         airlineInfo: Array<{
-            /** Airline code. */
             airlineCode: string;
-            /** Airline name. */
             airlineName: string;
         }>;
     };
@@ -330,9 +319,7 @@ type AirPnr = {
             cabin: string;
             /** CO2 emission details for the flight. */
             co2EmissionDetail: {
-                /** Average emission value. */
                 averageEmissionValue: number;
-                /** Emission value. */
                 emissionValue: number;
                 /** Flight distance in kilometers. */
                 flightDistanceKm: number;
@@ -374,13 +361,9 @@ type AirPnr = {
                 /** Equipment type. */
                 type: string;
             };
-            /** Flight ID. */
             flightId: string;
-            /** Index of the flight. */
             flightIndex: number;
-            /** Status of the flight. */
             flightStatus: string;
-            /** Waiver codes for the flight. */
             flightWaiverCodes: unknown[];
             /** Hidden stops for the flight. */
             hiddenStops: unknown[];
@@ -398,7 +381,6 @@ type AirPnr = {
                 /** Flight number for operating. */
                 num: string;
             };
-            /** Operating airline name. */
             operatingAirlineName: string;
             /** Origin of the flight. */
             origin: string;
@@ -411,11 +393,8 @@ type AirPnr = {
             /** Vendor confirmation number for the flight. */
             vendorConfirmationNumber: string;
         }>;
-        /** Leg ID. */
         legId: string;
-        /** Index of the leg. */
         legIndex: number;
-        /** Status of the leg. */
         legStatus: string;
         /** Preferences for the leg. */
         preferences: unknown[];
@@ -438,7 +417,6 @@ type AirPnr = {
     travelerInfos: Array<{
         /** Air vendor cancellation information. */
         airVendorCancellationInfo: {
-            /** Air vendor cancellation objects. */
             airVendorCancellationObjects: unknown[];
         };
         /** Applied credits for the traveler. */
@@ -464,7 +442,6 @@ type AirPnr = {
                         /** Other coinage details for the base fare. */
                         otherCoinage: unknown[];
                     };
-                    /** Fare basis code for the component. */
                     fareBasisCode: string;
                     /** Flight IDs associated with the component. */
                     flightIds: Array<{
@@ -473,9 +450,7 @@ type AirPnr = {
                         /** Index of the leg. */
                         legIdx: number;
                     }>;
-                    /** Ticket designator for the component. */
                     ticketDesignator: string;
-                    /** Tour code for the component. */
                     tourCode: string;
                 }>;
                 /** Flight fare breakup details. */
@@ -646,7 +621,6 @@ type AirPnr = {
                 /** Percentage of the commission. */
                 percent: number;
             };
-            /** Conjunction ticket suffix for the ticket. */
             conjunctionTicketSuffix: unknown[];
             /** Exchange policy for the ticket. */
             exchangePolicy: {
@@ -723,13 +697,10 @@ type AirPnr = {
                 fop: {
                     /** Access type details for the payment. */
                     accessType: {
-                        /** Type of access. */
                         accessType: string;
                         /** Entities associated with the access. */
                         entities: Array<{
-                            /** Central card access level. */
                             centralCardAccessLevel: string;
-                            /** Entity ID. */
                             entityId: string;
                         }>;
                         /** Entity IDs associated with the access. */
@@ -741,13 +712,9 @@ type AirPnr = {
                     card: {
                         /** Address details for the card. */
                         address: {
-                            /** Address lines. */
                             addressLines: string[];
-                            /** Administrative area. */
                             administrativeArea: string;
-                            /** Administrative area name. */
                             administrativeAreaName: string;
-                            /** Continent code. */
                             continentCode: string;
                             /** Description of the address. */
                             description: string;
@@ -801,7 +768,6 @@ type AirPnr = {
                         /** Type of the card. */
                         type: string;
                     };
-                    /** Payment method for the payment. */
                     paymentMethod: string;
                     /** Type of the payment. */
                     type: string;
@@ -870,17 +836,13 @@ type AirPnr = {
                         /** Other coinage details for the tax. */
                         otherCoinage: unknown[];
                     };
-                    /** Tax code for the tax. */
                     taxCode: string;
                 }>;
             };
-            /** Ticket incomplete reasons for the ticket. */
             ticketIncompleteReasons: unknown[];
-            /** Ticket number for the ticket. */
             ticketNumber: string;
             /** Ticket settlement details for the ticket. */
             ticketSettlement: string;
-            /** Ticket type for the ticket. */
             ticketType: string;
             /** Validating airline code for the ticket. */
             validatingAirlineCode: string;
@@ -1002,13 +964,9 @@ type HotelPnr = {
         additionalAmenities: unknown[];
         /** Address details of the hotel. */
         address: {
-            /** Address lines. */
             addressLines: string[];
-            /** Administrative area. */
             administrativeArea: string;
-            /** Administrative area name. */
             administrativeAreaName: string;
-            /** Continent code. */
             continentCode: string;
             /** Description of the address. */
             description: string;
@@ -1069,7 +1027,6 @@ type HotelPnr = {
         fax: Array<{
             /** Country code for the fax number. */
             countryCode: number;
-            /** Source of the country code. */
             countryCodeSource: string;
             /** Extension of the fax number. */
             extension: string;
@@ -1088,7 +1045,6 @@ type HotelPnr = {
             /** Type of the fax number. */
             type: string;
         }>;
-        /** Hotel ID. */
         hotelId: string;
         /** Image sets for the hotel. */
         imageSets: Array<{
@@ -1122,7 +1078,6 @@ type HotelPnr = {
         phone: {
             /** Country code for the phone number. */
             countryCode: number;
-            /** Source of the country code. */
             countryCodeSource: string;
             /** Extension of the phone number. */
             extension: string;
@@ -1143,11 +1098,8 @@ type HotelPnr = {
         };
         /** Star rating of the hotel. */
         starRating: number;
-        /** Third-party hotel codes. */
         thirdPartyHotelCodes: Array<{
-            /** Hotel code. */
             hotelCode: string;
-            /** Type of the hotel code. */
             hotelCodeType: string;
         }>;
     };
@@ -1181,7 +1133,6 @@ type HotelPnr = {
     payment: {
         /** Description of the payment. */
         description: string;
-        /** Type of payment. */
         paymentType: string;
     };
     /** Status of the hotel PNR. */
@@ -1203,7 +1154,6 @@ type HotelPnr = {
         additionalAmenities: unknown[];
         /** Additional details for the room. */
         additionalDetails: Array<{
-            /** Type of the additional detail. */
             additionalDetailType: string;
             /** Text of the additional detail. */
             text: string;
@@ -1439,14 +1389,11 @@ type HotelPnr = {
         };
         /** Room information details. */
         roomInfo: {
-            /** Type of the room. */
             roomType: string;
-            /** Room type code. */
             roomTypeCode: string;
             /** Type class description for the room. */
             typeClassDescription: string;
         };
-        /** Name of the room. */
         roomName: string;
     };
     /** Sorting priority for the booking. */
@@ -1720,7 +1667,6 @@ type CarPnr = {
         /** List of cancelled PNR IDs for re-booking. */
         cancelledPnrIds: Array<Record<string, unknown>>;
 
-        /** Rebooked PNR ID. */
         rebookedPnrId: string;
     };
 
@@ -1755,9 +1701,7 @@ type RailPnr = {
     legInfos: Array<{
         /** Allocated spaces for the leg. */
         allocatedSpaces: Array<{
-            /** Seat */
             seatNumber: string;
-            /** Coach */
             coachNumber: string;
         }>;
         /** Amenities available for the leg. */
@@ -1772,9 +1716,7 @@ type RailPnr = {
             /** ISO 8601 format. */
             iso8601: string;
         };
-        /** Carrier confirmation number. */
         carrierConfirmationNumber: string;
-        /** CO2 emission in grams per passenger. */
         co2EmissionGramsPerPassenger: number;
         /** Departure time in ISO 8601 format. */
         departAt: {
@@ -1813,9 +1755,7 @@ type RailPnr = {
             name: string;
             /** Source reference information for the destination. */
             sourceRefInfos: Array<{
-                /** Name of the inventory. */
                 inventoryName: string;
-                /** Station reference ID. */
                 stationReferenceId: string;
             }>;
             /** State code of the destination. */
@@ -1868,9 +1808,7 @@ type RailPnr = {
             name: string;
             /** Source reference information for the origin. */
             sourceRefInfos: Array<{
-                /** Name of the inventory. */
                 inventoryName: string;
-                /** Station reference ID. */
                 stationReferenceId: string;
             }>;
             /** State code of the origin. */
@@ -1896,9 +1834,7 @@ type RailPnr = {
         };
         /** Seat preference selection details. */
         seatPreferenceSelection: {
-            /** Type of carriage. */
             carriageType: string;
-            /** Type of deck. */
             deckType: string;
             /** Direction of the seat. */
             direction: string;
@@ -1906,9 +1842,7 @@ type RailPnr = {
             facilities: unknown[];
             /** Position type of the seat. */
             positionType: string;
-            /** Location type of the seat. */
             seatLocationType: string;
-            /** Type of the seat. */
             seatType: string;
         };
         /** Ticket number for the leg. */
@@ -1919,16 +1853,13 @@ type RailPnr = {
         travelerRailInfo: unknown[];
         /** Vehicle details for the leg. */
         vehicle: {
-            /** Name of the carrier. */
             carrierName: string;
             /** Timetable ID for the vehicle. */
             timetableId: string;
-            /** Name of the transport. */
             transportName: string;
             /** Type of the vehicle. */
             type: string;
         };
-        /** Name of the vendor. */
         vendorName: string;
     }>;
 

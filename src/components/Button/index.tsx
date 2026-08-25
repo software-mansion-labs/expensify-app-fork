@@ -148,7 +148,6 @@ type ButtonProps = Partial<ChildrenProps> &
         /** Should we remove the left border radius top + bottom? */
         shouldRemoveLeftBorderRadius?: boolean;
 
-        /** Should enable the haptic feedback? */
         shouldEnableHapticFeedback?: boolean;
 
         /** Should disable the long press? */
@@ -157,7 +156,6 @@ type ButtonProps = Partial<ChildrenProps> &
         /** Id to use for this button */
         id?: string;
 
-        /** Accessibility label for the component */
         accessibilityLabel?: string;
 
         /** Accessibility state to pass to the pressable */

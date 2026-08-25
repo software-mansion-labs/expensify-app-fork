@@ -29,7 +29,6 @@ import FormContext from './FormContext';
 
 type FormWrapperProps = ChildrenProps &
     FormProps & {
-        /** Submit button styles */
         submitButtonStyles?: StyleProp<ViewStyle>;
 
         /** Whether to apply flex to the submit button */
@@ -44,13 +43,11 @@ type FormWrapperProps = ChildrenProps &
         /** Whether the submit button is disabled */
         isSubmitDisabled?: boolean;
 
-        /** Callback to submit the form */
         onSubmit: () => void;
 
         /** should render the extra button above submit button */
         shouldRenderFooterAboveSubmit?: boolean;
 
-        /** Whether the form is loading */
         isLoading?: boolean;
 
         /** Whether the fix errors alert should be visible */

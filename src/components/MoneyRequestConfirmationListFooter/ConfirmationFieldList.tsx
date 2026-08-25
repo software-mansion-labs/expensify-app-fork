@@ -46,16 +46,13 @@ type ConfirmationFieldListProps = {
     /** Pre-formatted amount values */
     amountDisplay: AmountDisplay;
 
-    /** Per-field "required" flags */
     requiredFlags: RequiredFlags;
 
     /** Caller-supplied visibility decisions */
     visibilityFlags: VisibilityFlags;
 
-    /** Error state */
     errorState: ErrorState;
 
-    /** Toggle handlers */
     toggleHandlers: ToggleHandlers;
 
     /** Compact-mode bookkeeping */

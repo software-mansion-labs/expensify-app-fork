@@ -14,19 +14,16 @@ import type {MaskedTextInputOwnProps} from 'react-native-advanced-input-mask/lib
 type InputType = 'markdown' | 'mask' | 'default';
 type CustomBaseTextInputProps = ForwardedFSClassProps &
     WithSentryLabel & {
-        /** Input label */
         label?: string;
 
         /** Name attribute for the input */
         name?: string;
 
-        /** Input value */
         value?: string;
 
         /** Default value - used for non controlled inputs */
         defaultValue?: string;
 
-        /** Input value placeholder */
         placeholder?: string;
 
         /** Error text to display */
@@ -53,13 +50,11 @@ type CustomBaseTextInputProps = ForwardedFSClassProps &
         /** Customize the main container */
         containerStyles?: StyleProp<ViewStyle>;
 
-        /** input style */
         inputStyle?: StyleProp<TextStyle>;
 
         /** If present, this prop forces the label to remain in a position where it will not collide with input text */
         forceActiveLabel?: boolean;
 
-        /** Should the input auto focus? */
         autoFocus?: boolean;
 
         /** Disable the virtual keyboard  */
@@ -98,10 +93,8 @@ type CustomBaseTextInputProps = ForwardedFSClassProps &
         /** Whether the hint should be rendered as HTML */
         shouldRenderHintAsHTML?: boolean;
 
-        /** Prefix character */
         prefixCharacter?: string;
 
-        /** Suffix character */
         suffixCharacter?: string;
 
         /** Whether autoCorrect functionality should enable  */
@@ -156,28 +149,20 @@ type CustomBaseTextInputProps = ForwardedFSClassProps &
         /** Whether to apply styles when input is disabled */
         shouldUseDisabledStyles?: boolean;
 
-        /** Style for the prefix */
         prefixStyle?: StyleProp<TextStyle>;
 
-        /** Style for the prefix container */
         prefixContainerStyle?: StyleProp<ViewStyle>;
 
-        /** Style for the suffix */
         suffixStyle?: StyleProp<TextStyle>;
 
-        /** Style for the suffix container */
         suffixContainerStyle?: StyleProp<ViewStyle>;
 
-        /** Style for the loading spinner */
         loadingSpinnerStyle?: StyleProp<ViewStyle>;
 
-        /** Style for the icon container */
         iconContainerStyle?: StyleProp<ViewStyle>;
 
-        /** Style for the clear button */
         clearButtonStyle?: StyleProp<ViewStyle>;
 
-        /** The clear button icon size */
         clearButtonIconSize?: number;
 
         /** The width of inner content */

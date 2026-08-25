@@ -19,7 +19,6 @@ type TextSelectorModalProps = {
     /** Function to call when the user closes the modal */
     onClose: () => void;
 
-    /** Whether to show the tooltip text */
     shouldShowTooltips?: boolean;
 
     /** Whether to clear the input value when the modal closes */
@@ -67,7 +66,6 @@ type TextPickerProps = {
     /** Text to display under the main menu item */
     furtherDetails?: string;
 
-    /** Whether to show the tooltip text */
     shouldShowTooltips?: boolean;
 
     /** The ID used to uniquely identify the input in a Form */

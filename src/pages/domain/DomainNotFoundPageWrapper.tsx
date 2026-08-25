@@ -16,7 +16,6 @@ import {adminAccountIDsSelector} from '@selectors/Domain';
 import React, {useEffect} from 'react';
 
 type DomainNotFoundPageWrapperProps = {
-    /** AccountID of the domain */
     domainAccountID: number;
 
     /** The children to render */

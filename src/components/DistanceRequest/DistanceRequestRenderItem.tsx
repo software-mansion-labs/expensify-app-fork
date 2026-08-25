@@ -23,16 +23,13 @@ type DistanceRequestProps = WithSentryLabel & {
     /** Function to call when the secondary interaction is triggered */
     onSecondaryInteraction?: () => void;
 
-    /** Function to get the index of the item */
     getIndex?: () => number | undefined;
 
-    /** Whether the item is active */
     isActive?: boolean;
 
     /** Function to call when the user clicks the item */
     onPress?: (index: number) => void;
 
-    /** Whether the item is disabled */
     disabled?: boolean;
 };
 

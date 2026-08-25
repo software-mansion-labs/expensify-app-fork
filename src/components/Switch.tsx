@@ -18,10 +18,8 @@ type SwitchProps = {
     /** Callback to fire when the switch is toggled */
     onToggle: (isOn: boolean) => void;
 
-    /** Accessibility label for the switch */
     accessibilityLabel: string;
 
-    /** Whether the switch is disabled */
     disabled?: boolean;
 
     /** Whether to show the lock icon even if the switch is enabled */

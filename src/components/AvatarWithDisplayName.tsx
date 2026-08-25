@@ -65,13 +65,11 @@ type AvatarWithDisplayNameProps = {
     /** The report currently being looked at */
     report: OnyxEntry<Report>;
 
-    /** The size of the avatar */
     size?: ValueOf<typeof CONST.AVATAR_SIZE>;
 
     /** Whether if it's an unauthenticated user */
     isAnonymous?: boolean;
 
-    /** Whether we should enable detail page navigation */
     shouldEnableDetailPageNavigation?: boolean;
 
     /** Whether the avatar is pressable to open the actor details */

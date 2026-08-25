@@ -36,7 +36,6 @@ type TextLinkProps = (LinkProps | PressProps) &
         /** Callback that is called when mousedown is triggered */
         onMouseDown?: MouseEventHandler;
 
-        /** Whether to suppress the default link style */
         suppressDefaultStyle?: boolean;
     };
 

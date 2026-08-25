@@ -30,7 +30,6 @@ type CardTypeStepProps = {
     /** Array of step names */
     stepNames: readonly string[];
 
-    /** Start from step index */
     startStepIndex: number;
 };
 

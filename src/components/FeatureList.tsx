@@ -61,13 +61,11 @@ type FeatureListProps = {
     /** The style used for the title */
     titleStyles?: StyleProp<TextStyle>;
 
-    /** Padding for content on large screens */
     contentPaddingOnLargeScreens?: {padding: number};
 
     /** Custom content to display in the footer */
     footer?: ReactNode;
 
-    /** Whether the button should be disabled */
     isButtonDisabled?: boolean;
 
     /** Additional styles to apply to the CTA button inner container */

@@ -3,7 +3,6 @@ type ChronosTimeTracking = {
     /** Timer start time in DB format; empty string when no timer is running */
     startTime?: string;
 
-    /** Whether the timer was tracked manually */
     timerWasTrackedManually?: string;
 
     /** Last time the timer was stopped */

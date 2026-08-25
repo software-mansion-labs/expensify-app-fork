@@ -46,7 +46,6 @@ type OriginalMessageIOU = {
      */
     IOUReportID?: string;
 
-    /** ID of the expense report */
     expenseReportID?: string;
 
     /** Was the action created automatically, not by a human */
@@ -79,7 +78,6 @@ type OriginalMessageIOU = {
     /** Where the invoice is paid with business account or not */
     payAsBusiness?: boolean;
 
-    /** The bank account id */
     bankAccountID?: number;
 
     /** Masked number (e.g., 'XXXXXX1234') of the bank account used to fund the payment */
@@ -129,7 +127,6 @@ type Decision = {
 
 /** Model of `smart scan failed` report action */
 type OriginalMessageSmartScanFailed = {
-    /** Fields that are missing */
     missingFields: string[];
 
     /** LLM-friendly explanation of the scan failure that activates the Explain button */
@@ -147,7 +144,6 @@ type OriginalMessageAddComment = {
     /** When was the comment last modified */
     lastModified?: string;
 
-    /** ID of the task report */
     taskReportID?: string;
 
     /** Collection of accountIDs of users mentioned in message */
@@ -188,10 +184,8 @@ type OriginalMessageActionableMentionWhisper = {
 
 /** Model of `actionable card fraud alert` report action */
 type OriginalMessageCardFraudAlert = {
-    /** Card ID */
     cardID: number;
 
-    /** Masked card number */
     maskedCardNumber: string;
 
     /** Transaction amount in cents */
@@ -264,7 +258,6 @@ type OriginalMessageSubmitted = {
     /** Currency of the approved expense amount */
     currency: string;
 
-    /** Report ID of the expense */
     expenseReportID?: string;
 
     /** Was the report submitted via harvesting (delayed submit) */
@@ -300,13 +293,11 @@ type OriginalMessageCreatedReportForUnapprovedTransactions = {
 
 /** Model of `closed` report action */
 type OriginalMessageClosed = {
-    /** Name of the policy */
     policyName: string;
 
     /** What was the reason to close the report */
     reason: ValueOf<typeof CONST.REPORT.ARCHIVE_REASON>;
 
-    /** When was the message last modified */
     lastModified?: string;
 
     /** If the report was closed because accounts got merged, then this is the new account ID */
@@ -396,7 +387,6 @@ type PolicyBudgetFrequency = {
     /** Individual value of the entity budget */
     individual?: number;
 
-    /** Notification threshold */
     notificationThreshold: number;
 };
 
@@ -411,7 +401,6 @@ type OriginalMessageChangeLog = {
     /** Description of the chat room */
     description?: string;
 
-    /** ID of the report */
     reportID?: number;
 
     /** Old name of the workspace */
@@ -426,7 +415,6 @@ type OriginalMessageChangeLog = {
     /** Role of user */
     role?: string;
 
-    /** When was it last modified */
     lastModified?: string;
 
     /** New role of user or new value of the category/tag field
@@ -441,7 +429,6 @@ type OriginalMessageChangeLog = {
      */
     oldValue?: boolean | string;
 
-    /** Name of connection */
     connectionName?: AllConnectionName;
 
     /** Name of the added category */
@@ -462,7 +449,6 @@ type OriginalMessagePolicyChangeLog = {
     /** Description of the chat room */
     description?: string;
 
-    /** ID of the report */
     reportID?: number;
 
     /** Old name of the workspace/tag */
@@ -477,7 +463,6 @@ type OriginalMessagePolicyChangeLog = {
     /** Role of user */
     role?: string;
 
-    /** When was it last modified */
     lastModified?: string;
 
     /** Old currency of the workspace */
@@ -492,7 +477,6 @@ type OriginalMessagePolicyChangeLog = {
     /** New frequency of the workspace */
     newFrequency?: ValueOf<typeof CONST.POLICY.AUTO_REPORTING_FREQUENCIES>;
 
-    /** Name of connection */
     connectionName?: AllConnectionName;
 
     /** Name of the added category */
@@ -504,16 +488,12 @@ type OriginalMessagePolicyChangeLog = {
     /** Name of the updated field */
     updatedField?: string;
 
-    /** Old value for max expense amount with no receipt */
     oldMaxExpenseAmountNoReceipt?: number;
 
-    /** New value for max expense amount with no receipt */
     newMaxExpenseAmountNoReceipt?: number;
 
-    /** Old value for max expense amount with no itemized receipt */
     oldMaxExpenseAmountNoItemizedReceipt?: number;
 
-    /** New value for max expense amount with no itemized receipt */
     newMaxExpenseAmountNoItemizedReceipt?: number;
 
     /** Currency of the policy */
@@ -531,16 +511,12 @@ type OriginalMessagePolicyChangeLog = {
     /** New value for max expense age (days) */
     newMaxExpenseAge?: number;
 
-    /** Old default billable value */
     oldDefaultBillable?: string;
 
-    /** New default billable value */
     newDefaultBillable?: string;
 
-    /** Old default reimbursable value */
     oldDefaultReimbursable?: string;
 
-    /** New default reimbursable value */
     newDefaultReimbursable?: string;
 
     /** MCC group name whose default spend category changed (e.g. "Airlines") */
@@ -561,10 +537,8 @@ type OriginalMessagePolicyChangeLog = {
     /** value -- returned when updating "Auto-approve compliant reports" */
     value?: boolean;
 
-    /** New description */
     newDescription?: string;
 
-    /** Old description */
     oldDescription?: string;
 
     /** Report field type */
@@ -586,16 +560,12 @@ type OriginalMessagePolicyChangeLog = {
     /** Report field name */
     fieldName?: string;
 
-    /** Custom unit name */
     customUnitName?: string;
 
-    /** Rate name of the custom unit */
     customUnitRateName?: string;
 
-    /** Name of the custom unit sub rate */
     customUnitSubRateName?: string;
 
-    /** Name of the removed sub rate */
     removedSubRateName?: string;
 
     /** Custom unit name */
@@ -694,25 +664,18 @@ type OriginalMessagePolicyChangeLog = {
     /** Name for the field of which approver has been updated */
     name?: string;
 
-    /** Account ID of the approver */
     approverAccountID?: string;
 
-    /** Email of the new approver */
     newApproverEmail?: string;
 
-    /** Name of the new approver */
     newApproverName?: string;
 
-    /** Email of the old approver */
     oldApproverEmail?: string;
 
-    /** Name of the old approver */
     oldApproverName?: string;
 
-    /** Email of the approver */
     approverEmail?: string;
 
-    /** Name of the approver */
     approverName?: string;
 
     /** Option name of a list report field */
@@ -730,7 +693,6 @@ type OriginalMessagePolicyChangeLog = {
     /** The amount of the transaction */
     amount?: number;
 
-    /** The ID of the transaction thread report */
     transactionThreadReportID?: string;
 
     /** Old rate of the time enabled */
@@ -739,10 +701,8 @@ type OriginalMessagePolicyChangeLog = {
     /** New rate of the time enabled */
     newRate?: number;
 
-    /** Old prohibited expenses */
     oldProhibitedExpenses?: Record<ValueOf<typeof CONST.POLICY.PROHIBITED_EXPENSES>, boolean>;
 
-    /** New prohibited expenses */
     newProhibitedExpenses?: Record<ValueOf<typeof CONST.POLICY.PROHIBITED_EXPENSES>, boolean>;
 
     /** Old reimbursement choice */
@@ -751,46 +711,32 @@ type OriginalMessagePolicyChangeLog = {
     /** New reimbursement choice */
     newChoice?: ValueOf<typeof CONST.POLICY.REIMBURSEMENT_CHOICES>;
 
-    /** Old owner email */
     oldOwnerEmail?: string;
 
-    /** Old owner name */
     oldOwnerName?: string;
 
-    /** Budget amount */
     budgetAmount?: string;
 
-    /** Budget frequency */
     budgetFrequency?: string;
 
-    /** Budget name */
     budgetName?: string;
 
-    /** Budget type for notification message */
     budgetTypeForNotificationMessage?: string;
 
-    /** Is new DOT */
     isNewDot?: boolean;
 
-    /** Summary link message */
     summaryLinkMessage?: string;
 
-    /** Threshold percentage */
     thresholdPercentage?: number;
 
-    /** Total spend */
     totalSpend?: number;
 
-    /** Unsubmitted spend */
     unsubmittedSpend?: number;
 
-    /** User email */
     userEmail?: string;
 
-    /** Approved reimbursed closed spend */
     approvedReimbursedClosedSpend?: number;
 
-    /** Awaiting approval spend */
     awaitingApprovalSpend?: number;
     /** The name of the enabled/disabled feature */
     featureName?: string;
@@ -1007,7 +953,6 @@ type OriginalMessageModifiedExpense = {
     /** Edited billable */
     billable?: string;
 
-    /** Old billable */
     oldBillable?: string;
 
     /** Old expense tag amount */
@@ -1037,7 +982,6 @@ type OriginalMessageModifiedExpense = {
     /** Collection of accountIDs of users mentioned in expense report */
     whisperedTo?: number[];
 
-    /** The ID of moved report */
     movedToReportID?: string;
 
     /** The ID of the report the expense moved from */
@@ -1058,10 +1002,8 @@ type OriginalMessageModifiedExpense = {
     /** The policy ID that the expense was modified in */
     policyID?: string;
 
-    /** The fields that were modified by policy rules */
     policyRulesModifiedFields?: PolicyRulesModifiedFields;
 
-    /** The fields that were modified by personal rules */
     personalRulesModifiedFields?: PersonalRulesModifiedFields;
 
     /** The Concierge reasoning for the action */
@@ -1207,7 +1149,6 @@ type OriginalMessageReimbursementQueued = {
 
 /** Model of `actionable tracked expense whisper` report action */
 type OriginalMessageActionableTrackedExpenseWhisper = {
-    /** ID of the transaction */
     transactionID: string;
 
     /** When was the tracked expense whisper last modified */
@@ -1222,7 +1163,6 @@ type OriginalMessageReimbursementDequeued = {
     /** Why the reimbursement was cancelled */
     cancellationReason: ValueOf<typeof CONST.REPORT.CANCEL_PAYMENT_REASONS>;
 
-    /** ID of the `expense` report */
     expenseReportID?: string;
 
     /** Amount that wasn't reimbursed */
@@ -1253,7 +1193,6 @@ type OriginalMessageUnreportedTransaction = {
 type OriginalMessageMovedTransaction = {
     /** @Deprecated ID of the new report for backwards compatibility */
     toReportID?: string;
-    /** ID of the original report */
     fromReportID: string;
     /** Reasoning for the automated move, used by Concierge Explain feature */
     reasoning?: string;
@@ -1267,10 +1206,8 @@ type OriginalMessageMoved = {
     /** ID of the new policy */
     toPolicyID: string;
 
-    /** ID of the new parent report */
     newParentReportID: string;
 
-    /** ID of the moved report */
     movedReportID: string;
 };
 
@@ -1279,7 +1216,6 @@ type OriginalMessageDismissedViolation = {
     /** Why the violation was dismissed */
     reason: string;
 
-    /** Name of the violation */
     violationName: string;
 };
 
@@ -1333,7 +1269,6 @@ type OriginalMessageReimbursed = {
     /** Whether this is an invoice or bill payment */
     isInvoiceOrBill?: boolean;
 
-    /** Whether the submitter is adding a bank account */
     isSubmitterAddingBankAccount?: boolean;
 
     /** For StripeConnect payments, indicates payment type ('card' or 'bank account') */
@@ -1369,7 +1304,6 @@ type OriginalMessageApproved = {
     /** Currency of the approved expense amount */
     currency: string;
 
-    /** Report ID of the expense */
     expenseReportID: string;
 
     /** The login of approver who is on vacation */
@@ -1390,7 +1324,6 @@ type OriginalMessageForwarded = {
     /** Currency of the forwarded expense amount */
     currency: string;
 
-    /** Report ID of the expense */
     expenseReportID: string;
 
     /** The login the approver who is acting on behalf of the vacationer */
@@ -1462,7 +1395,6 @@ type OriginalMessageUnapproved = {
     /** Currency of the unapproved expense amount */
     currency: string;
 
-    /** Report ID of the expense */
     expenseReportID: string;
 };
 
@@ -1477,7 +1409,6 @@ type OriginalMessageRemovedFromApprovalChain = {
 
 /** Model of `Demoted From Workspace` report action */
 type OriginalMessageDemotedFromWorkspace = {
-    /** The policy name */
     policyName: string;
 
     /** The old role of the employee that is being demoted */
@@ -1554,7 +1485,6 @@ type OriginalMessageDEWFailed = {
     /** The error message */
     message: string;
 
-    /** Whether the action was automatic */
     automaticAction?: boolean;
 
     /** Was the report submitted via harvesting (delayed submit) */
@@ -1568,7 +1498,6 @@ type OriginalMessageCard = {
     /** The id of the user the card was assigned to */
     assigneeAccountID: number;
 
-    /** The id of the card */
     cardID: number;
 
     /** Whether the card was issued without a shipping address */
@@ -1610,10 +1539,8 @@ type OriginalPersonalCard = {
     /** The id of the user the card was assigned to */
     assigneeAccountID: number;
 
-    /** The id of the card */
     cardID: number;
 
-    /** The name of the card */
     cardName?: string;
 };
 
@@ -1703,10 +1630,8 @@ type OriginalMessageReimbursementDirectorInformationRequired = {
     /** Currency of policy */
     currency: string;
 
-    /** ID of policy */
     policyID: string;
 
-    /** ID of bank account */
     bankAccountID: string;
 
     /** Whether user added signer information */

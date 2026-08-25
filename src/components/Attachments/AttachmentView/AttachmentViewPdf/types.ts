@@ -16,7 +16,6 @@ type AttachmentViewPdfProps = Pick<AttachmentViewProps, 'file' | 'onPress' | 'is
     /** Triggered when the PDF fails to load */
     onLoadError?: () => void;
 
-    /** Whether the PDF is used as a chat attachment */
     isUsedAsChatAttachment?: boolean;
 
     /** Controlled rotation angle for the PDF */

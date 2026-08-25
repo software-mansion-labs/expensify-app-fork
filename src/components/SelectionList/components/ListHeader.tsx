@@ -33,7 +33,6 @@ type ListHeaderProps<TItem extends ListItem> = {
     /** Function called when the select all button is pressed */
     onSelectAll: () => void;
 
-    /** Whether to show 'Select all' button */
     shouldShowSelectAllButton: boolean;
 
     /** Whether to prevent default focus when selecting rows */

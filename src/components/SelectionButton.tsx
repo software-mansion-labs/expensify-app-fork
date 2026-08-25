@@ -49,10 +49,8 @@ type BaseSelectionButtonProps = Partial<ChildrenProps> &
         /** The size of the caret (checkmark) */
         caretSize?: number;
 
-        /** An accessibility label */
         accessibilityLabel: string;
 
-        /** An accessibility hint */
         accessibilityHint?: string;
 
         /** stop propagation of the mouse down event */
@@ -70,7 +68,6 @@ type BaseSelectionButtonProps = Partial<ChildrenProps> &
         /** Reference to the outer element */
         ref?: ForwardedRef<View>;
 
-        /** Tab index */
         tabIndex?: 0 | -1;
 
         /** Whether the button is accessible to screen readers */

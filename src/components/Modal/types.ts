@@ -63,7 +63,6 @@ type BaseModalProps = Partial<ReanimatedModalProps> &
         /** Whether the modal should go under the system navigation bar */
         navigationBarTranslucent?: boolean;
 
-        /** Whether the modal should avoid the keyboard */
         avoidKeyboard?: boolean;
 
         /** Modal container styles  */
@@ -93,7 +92,6 @@ type BaseModalProps = Partial<ReanimatedModalProps> &
         /** After swipe more than threshold modal will close */
         swipeThreshold?: number;
 
-        /** In which direction modal will swipe */
         swipeDirection?: SwipeDirection;
 
         /** Used to set the element that should receive the initial focus */

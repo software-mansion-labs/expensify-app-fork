@@ -31,7 +31,6 @@ type ReceiptImageProps = (
           /** Transaction ID of the transaction the receipt belongs to */
           transactionID: string;
 
-          /** Whether it is EReceipt */
           isEReceipt: boolean;
 
           /** Whether it is receipt preview thumbnail we are displaying */
@@ -81,7 +80,6 @@ type ReceiptImageProps = (
     /** Whether the receipt image requires an authToken */
     isAuthTokenRequired?: boolean;
 
-    /** The file extension of the receipt file */
     fileExtension?: string;
 
     /** number of images displayed in the same parent container */
@@ -99,10 +97,8 @@ type ReceiptImageProps = (
     /** If the image fails to load – show the provided fallback icon */
     fallbackIcon?: IconAsset;
 
-    /** The size of the fallback icon */
     fallbackIconSize?: number;
 
-    /** The color of the fallback icon */
     fallbackIconColor?: string;
 
     /** The background color of fallback icon */
@@ -113,7 +109,6 @@ type ReceiptImageProps = (
     /** Callback to be called on pressing the image */
     onPress?: () => void;
 
-    /** Whether the receipt is a per diem request */
     isPerDiemRequest?: boolean;
 
     /** The transaction data in search */
@@ -128,7 +123,6 @@ type ReceiptImageProps = (
     /** Callback to be called when the image fails to load */
     onLoadFailure?: () => void;
 
-    /** The resize mode of the image */
     resizeMode?: ImageResizeMode;
 
     /** Any additional styles to apply */

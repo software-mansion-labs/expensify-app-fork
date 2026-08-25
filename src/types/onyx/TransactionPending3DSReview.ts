@@ -6,7 +6,6 @@ type TransactionPending3DSReview = {
     /** Transaction amount in cents */
     amount?: number;
 
-    /** Transaction currency */
     currency?: string;
 
     /** Merchant name */

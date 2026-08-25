@@ -32,7 +32,6 @@ type SummaryItem = {
 
 type ConfirmationStepProps = SubPageProps &
     ForwardedFSClassProps & {
-        /** The title of the step */
         pageTitle: string;
 
         /** The summary items to display */
@@ -50,7 +49,6 @@ type ConfirmationStepProps = SubPageProps &
         /** The error message to display */
         error?: string;
 
-        /** Whether to apply safe area padding bottom */
         shouldApplySafeAreaPaddingBottom?: boolean;
     };
 

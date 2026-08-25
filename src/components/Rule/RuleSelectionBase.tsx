@@ -43,7 +43,6 @@ type RuleSelectionBaseProps = {
 };
 
 type RuleSelectionPickerProps = {
-    /** The currently selected item */
     selectedItem?: SelectionItem;
 
     /** The list of items to display */

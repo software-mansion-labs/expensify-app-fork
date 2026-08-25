@@ -25,10 +25,8 @@ import {View} from 'react-native';
 
 type SingleFieldStepProps<TFormID extends keyof OnyxFormValuesMapping> = SubPageProps &
     ForwardedFSClassProps & {
-        /** The ID of the form */
         formID: TFormID;
 
-        /** The title of the form */
         formTitle: string;
 
         /** The disclaimer to show below the form title */
@@ -40,22 +38,17 @@ type SingleFieldStepProps<TFormID extends keyof OnyxFormValuesMapping> = SubPage
         /** A function to call when the form is submitted */
         onSubmit: (values: FormOnyxValues<TFormID>) => void;
 
-        /** The ID of the form input */
         inputId: string;
 
-        /** The label of the input */
         inputLabel: string;
 
-        /** The mode of the input */
         inputMode?: InputModeOptions;
 
         /** The default values for the form */
         defaultValue: string;
 
-        /** Whether to show help links */
         shouldShowHelpLinks?: boolean;
 
-        /** Max length of the field */
         maxLength?: number;
 
         /** Should the submit button be enabled when offline */

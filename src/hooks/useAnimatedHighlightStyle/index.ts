@@ -17,7 +17,6 @@ type Props = {
     /** Delay before the highlighted item enters */
     itemEnterDelay?: number;
 
-    /** Duration in which the item enters */
     itemEnterDuration?: number;
 
     /** Delay before the item starts to get highlighted */

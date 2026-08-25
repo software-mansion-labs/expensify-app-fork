@@ -29,10 +29,8 @@ import ImageWithSizeCalculation from './ImageWithSizeCalculation';
 const thumbnailDimensionsCache = new Map<string, {width: number; height: number}>();
 
 type ThumbnailImageProps = {
-    /** Source URL for the preview image */
     previewSourceURL: string | ImageSourcePropType;
 
-    /** alt text for the image */
     altText?: string;
 
     /** Any additional styles to apply */
@@ -41,10 +39,8 @@ type ThumbnailImageProps = {
     /** Whether the image requires an authToken */
     isAuthTokenRequired: boolean;
 
-    /** Width of the thumbnail image */
     imageWidth?: number;
 
-    /** Height of the thumbnail image */
     imageHeight?: number;
 
     /** The size of the loading indicator */
@@ -56,10 +52,8 @@ type ThumbnailImageProps = {
     /** If the image fails to load – show the provided fallback icon */
     fallbackIcon?: IconAsset;
 
-    /** The size of the fallback icon */
     fallbackIconSize?: number;
 
-    /** The color of the fallback icon */
     fallbackIconColor?: string;
 
     /** The background color of fallback icon */
@@ -68,10 +62,8 @@ type ThumbnailImageProps = {
     /** Should the image be resized on load or just fit container */
     shouldDynamicallyResize?: boolean;
 
-    /** The object position of image */
     objectPosition?: ImageObjectPosition;
 
-    /** Whether the image is deleted */
     isDeleted?: boolean;
 
     /** Callback fired when the image fails to load */
@@ -83,7 +75,6 @@ type ThumbnailImageProps = {
     /** Callback to be called when the image loads */
     onLoad?: (event: {nativeEvent: {width: number; height: number}}) => void;
 
-    /** The resize mode of the image */
     resizeMode?: ImageResizeMode;
 
     /** Low-resolution URI shown as a placeholder while the full image loads */

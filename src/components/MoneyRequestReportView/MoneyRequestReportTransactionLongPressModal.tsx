@@ -18,7 +18,6 @@ type MoneyRequestReportTransactionLongPressModalHandle = {
 };
 
 type MoneyRequestReportTransactionLongPressModalProps = {
-    /** Whether the mobile selection mode is currently enabled */
     isMobileSelectionModeEnabled: boolean;
 
     /** Callback to toggle the selection state of a transaction */

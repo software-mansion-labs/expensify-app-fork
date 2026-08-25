@@ -33,7 +33,6 @@ type MoneyRequestParticipantsSelectorProps = {
     /** The action of the IOU, i.e. create, split, move */
     action: IOUAction;
 
-    /** Whether the IOU is workspaces only */
     isWorkspacesOnly?: boolean;
 
     /** Whether this is a per diem expense request */

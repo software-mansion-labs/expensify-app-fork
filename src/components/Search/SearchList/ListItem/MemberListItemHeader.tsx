@@ -50,7 +50,6 @@ type MemberListItemHeaderProps<TItem extends ListItem> = {
     /** The visible columns for the header */
     columns?: SearchColumnType[];
 
-    /** Whether the screen is large */
     isLargeScreenWidth?: boolean;
 };
 

@@ -17,10 +17,8 @@ import CONST from '@src/CONST';
 import React, {useMemo} from 'react';
 
 type PushRowModalProps = {
-    /** Whether the modal is visible */
     isVisible: boolean;
 
-    /** The currently selected option */
     selectedOption: string;
 
     /** Function to call when the user selects an option */
@@ -32,10 +30,8 @@ type PushRowModalProps = {
     /** The list of items to render */
     optionsList: Record<string, string>;
 
-    /** The title of the modal */
     headerTitle: string;
 
-    /** The title of the search input */
     searchInputTitle?: string;
 };
 

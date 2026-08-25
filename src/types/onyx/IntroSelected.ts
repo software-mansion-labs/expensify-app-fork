@@ -10,10 +10,8 @@ type IntroSelected = {
     /** The choice that the user selected in the engagement modal */
     choice?: OnboardingPurpose;
 
-    /** The invite type */
     inviteType?: OnboardingInvite;
 
-    /** Whether the onboarding is complete */
     isInviteOnboardingComplete?: boolean;
 
     /** Task reportID for 'viewTour' type */

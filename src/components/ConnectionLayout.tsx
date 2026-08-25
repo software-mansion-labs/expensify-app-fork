@@ -53,10 +53,8 @@ type ConnectionLayoutProps = {
     /** Style of the title text */
     titleStyle?: StyleProp<TextStyle> | undefined;
 
-    /** Whether to include safe area padding bottom or not */
     shouldIncludeSafeAreaPaddingBottom?: boolean;
 
-    /** Whether to use ScrollView or not */
     shouldUseScrollView?: boolean;
 
     /** Used for dynamic header title translation with parameters */

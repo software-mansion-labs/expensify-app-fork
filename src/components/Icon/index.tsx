@@ -30,10 +30,8 @@ type IconProps = {
     /** Preset icon size. */
     size?: IconSize;
 
-    /** Whether the icon is hovered. */
     hovered?: boolean;
 
-    /** Whether the icon is pressed. */
     pressed?: boolean;
 
     /** Additional styles for the icon wrapper. */

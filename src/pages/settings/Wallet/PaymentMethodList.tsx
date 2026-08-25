@@ -96,7 +96,6 @@ type PaymentMethodListProps = {
     /** List container style */
     style?: StyleProp<ViewStyle>;
 
-    /** List item style */
     listItemStyle?: StyleProp<ViewStyle>;
 
     /** Whether the add bank account button should be shown on the list */
@@ -135,7 +134,6 @@ type PaymentMethodListProps = {
     /** The icon to be displayed in the right side of the payment method item */
     itemIconRight?: IconAsset;
 
-    /** Type of payment method to filter by */
     filterType?: ValueOf<typeof CONST.BANK_ACCOUNT.TYPE>;
 
     /* Currency of payment method to filter by */

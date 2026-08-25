@@ -22,13 +22,11 @@ type ScreenWrapperOfflineIndicatorsProps = {
     /** Whether to show offline indicator on small screens */
     shouldShowOfflineIndicator?: boolean;
 
-    /** Whether to show offline indicator on wide screens */
     shouldShowOfflineIndicatorInWideScreen?: boolean;
 
     /** Whether to use a sticky small screen offline indicator. */
     shouldMobileOfflineIndicatorStickToBottom?: boolean;
 
-    /** Whether the offline indicator should be translucent. */
     isOfflineIndicatorTranslucent?: boolean;
 
     /** The extra content to display. */

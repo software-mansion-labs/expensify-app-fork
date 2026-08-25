@@ -86,7 +86,6 @@ type SectionProps = Partial<ChildrenProps> & {
     /** Styles to apply to illustration component */
     illustrationStyle?: StyleProp<ViewStyle>;
 
-    /** Padding for content on large screens */
     contentPaddingOnLargeScreens?: {padding: number};
 
     /** Overlay content to display on top of animation */
@@ -98,10 +97,8 @@ type SectionProps = Partial<ChildrenProps> & {
     /** The component to display custom title */
     renderTitle?: () => ReactNode;
 
-    /** The width of the icon. */
     iconWidth?: number;
 
-    /** The height of the icon. */
     iconHeight?: number;
 
     /** Banner to display at the top of the section */

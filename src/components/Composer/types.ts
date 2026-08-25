@@ -62,7 +62,6 @@ type ComposerProps = Omit<TextInputProps, 'onClear'> &
         /** Selection Object */
         selection?: TextSelection;
 
-        /** Should we calculate the caret position */
         shouldCalculateCaretPosition?: boolean;
 
         /** Function to check whether composer is covered up or not */

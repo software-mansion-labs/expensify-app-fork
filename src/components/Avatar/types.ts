@@ -28,12 +28,10 @@ type AvatarCommonProps = {
      */
     fill?: string;
 
-    /** Test ID for the Avatar component */
     testID?: string;
 };
 
 type AvatarPrimitivesCommonProps = {
-    /** Size of Avatar */
     size: AvatarSizeName;
 
     /** Denotes whether it is an avatar or a workspace avatar */

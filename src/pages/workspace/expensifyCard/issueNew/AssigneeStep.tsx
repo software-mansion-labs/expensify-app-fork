@@ -43,7 +43,6 @@ type AssigneeStepProps = {
     /** Array of step names */
     stepNames: readonly string[];
 
-    /** Start from step index */
     startStepIndex: number;
 
     /** Route params */

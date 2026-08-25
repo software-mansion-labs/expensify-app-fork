@@ -27,7 +27,6 @@ type ImageWithSizeCalculationProps = {
     /** Url for image to display */
     url: string | ImageSourcePropType;
 
-    /** alt text for the image */
     altText?: string;
 
     /** Any additional styles to apply */
@@ -41,7 +40,6 @@ type ImageWithSizeCalculationProps = {
     /** Whether the image requires an authToken */
     isAuthTokenRequired: boolean;
 
-    /** The object position of image */
     objectPosition?: ImageObjectPosition;
 
     /** The size of the loading indicator */
@@ -53,7 +51,6 @@ type ImageWithSizeCalculationProps = {
     /** Callback to be called when the image loads */
     onLoad?: (event: {nativeEvent: {width: number; height: number}}) => void;
 
-    /** The resize mode of the image */
     resizeMode?: ImageResizeMode;
 
     /** Low-resolution URI shown as a placeholder while the full image loads */

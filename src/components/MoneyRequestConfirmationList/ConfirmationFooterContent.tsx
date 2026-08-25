@@ -69,7 +69,6 @@ type ConfirmationFooterContentProps = {
     /** Whether the product-training tooltip should anchor to the button */
     shouldShowProductTrainingTooltip: boolean;
 
-    /** Renders the product-training tooltip content */
     renderProductTrainingTooltip: () => React.ReactElement;
 };
 

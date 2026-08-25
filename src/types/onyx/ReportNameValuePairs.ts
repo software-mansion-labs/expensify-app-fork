@@ -30,9 +30,6 @@ type CalendlyCall = {
  * Guide call schedule
  */
 type GuideCalendlySchedule = {
-    /**
-     * Guide Email
-     */
     guideEmail: string;
     /**
      * Available slots for the guide
@@ -81,7 +78,6 @@ type ReportNameValuePairs = OnyxCommon.OnyxValueWithOfflineFeedback<{
         errors?: OnyxCommon.Errors;
     };
 
-    /** The time the report export failed */
     exportFailedTime?: string;
 
     /**
@@ -93,7 +89,6 @@ type ReportNameValuePairs = OnyxCommon.OnyxValueWithOfflineFeedback<{
      */
     agentZeroProcessingRequestIndicator?: Record<string, string | null> | string;
 
-    /** Parent report ID */
     parentReportID?: string;
 
     /** Title field configuration copied from policy - presence indicates auto-generated names are allowed */
@@ -120,7 +115,6 @@ type ReportNameValuePairs = OnyxCommon.OnyxValueWithOfflineFeedback<{
         /** Value of the field */
         value?: string | null;
 
-        /** Value of the target */
         target?: 'expense' | 'invoice' | 'paycheck';
 
         /** Options to select from if field is of type dropdown */

@@ -13,7 +13,6 @@ type ReportActionItemMessageHeaderSenderProps = {
     /** The accountID of the copilot who took this action on behalf of the user */
     delegateAccountID?: number;
 
-    /** Actor icon */
     actorIcon?: OnyxCommon.Icon;
 
     /** Whether the fragment should show a tooltip */

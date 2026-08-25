@@ -15,10 +15,8 @@ type ReportActionsListItemRendererProps = {
     /** All the data of the action item */
     reportAction: ReportAction;
 
-    /** The report's parentReportAction */
     parentReportAction: OnyxEntry<ReportAction>;
 
-    /** The transaction thread report's parentReportAction */
     parentReportActionForTransactionThread: OnyxEntry<ReportAction>;
 
     /** Report for this action */
@@ -42,19 +40,16 @@ type ReportActionsListItemRendererProps = {
     /** Report action ID that was referenced in the deeplink to report  */
     linkedReportActionID?: string;
 
-    /** Whether we should display "Replies" divider */
     shouldDisplayReplyDivider: boolean;
 
     /** If this is the first visible report action */
     isFirstVisibleReportAction: boolean;
 
-    /** If the thread divider line will be used */
     shouldUseThreadDividerLine?: boolean;
 
     /** Animate highlight action in few seconds */
     shouldHighlight?: boolean;
 
-    /** Whether the action is the "Created" action of a harvest-created expense report */
     isHarvestCreatedExpenseReport?: boolean;
 
     /** Whether context menu should be disabled for the active Concierge draft */

@@ -72,7 +72,6 @@ type NumberWithSymbolFormProps = {
     /** Custom label for the TextInput */
     label?: string;
 
-    /** Whether to wrap the input in a container */
     shouldWrapInputInContainer?: boolean;
 
     /** Style applied to the outer ScrollView */
@@ -96,7 +95,6 @@ type NumberWithSymbolFormProps = {
     /** Whether to allow direct negative input (for split amounts where value is already negative) */
     allowNegativeInput?: boolean;
 
-    /** Style for the negative symbol */
     negativeSymbolStyle?: StyleProp<TextStyle>;
 
     /** Whether to use dynamic font size for the amount input */
@@ -114,7 +112,6 @@ type NumberWithSymbolFormProps = {
     /** Determines which keyboard to open */
     keyboardType?: KeyboardTypeOptions;
 
-    /** Whether to show the flip (+/-) button */
     shouldShowFlipButton?: boolean;
 
     /** Whether to show the currency selection button */

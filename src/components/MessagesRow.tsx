@@ -36,7 +36,6 @@ type MessagesRowProps = {
     /** Additional style object for the error text */
     errorTextStyles?: StyleProp<TextStyle>;
 
-    /** A function to dismiss error */
     dismissError?: () => void;
 };
 

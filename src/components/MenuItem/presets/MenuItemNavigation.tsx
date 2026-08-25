@@ -25,7 +25,6 @@ type MenuItemNavigationProps = WithSentryLabel & {
     /** Function to fire when the row is pressed */
     onPress: (event: GestureResponderEvent | KeyboardEvent) => void | Promise<void>;
 
-    /** Whether the menu item is disabled */
     isDisabled?: boolean;
 };
 

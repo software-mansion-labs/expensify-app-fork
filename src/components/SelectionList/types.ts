@@ -34,7 +34,6 @@ type BaseSelectionListProps<TItem extends ListItem> = {
     /** Custom content to display in the footer of list component */
     listFooterContent?: React.JSX.Element | null | undefined;
 
-    /** Whether to show the loading placeholder */
     shouldShowLoadingPlaceholder?: boolean;
 
     /** Component to display on the right side of each item */
@@ -52,7 +51,6 @@ type BaseSelectionListProps<TItem extends ListItem> = {
     /** Callback to fire when an error is dismissed */
     onDismissError?: (item: TItem) => void;
 
-    /** Whether to prevent default focus on row selection */
     shouldPreventDefaultFocusOnSelectRow?: boolean;
 
     /** Whether to single execution onRowSelect to avoid double clicks on mobile app */
@@ -64,19 +62,15 @@ type BaseSelectionListProps<TItem extends ListItem> = {
     /** Search value used for focus synchronization. Defaults to textInputOptions.value */
     searchValueForFocusSync?: string;
 
-    /** Whether to show the text input */
     shouldShowTextInput?: boolean;
 
-    /** Whether new options are loading */
     isLoadingNewOptions?: boolean;
 
     /** Custom content to display when the list is empty */
     listEmptyContent?: React.JSX.Element | null | undefined;
 
-    /** Whether to show the empty list content */
     shouldShowListEmptyContent?: boolean;
 
-    /** Whether to add bottom safe area padding */
     addBottomSafeAreaPadding?: boolean;
 
     /** Styles for the list */
@@ -127,13 +121,11 @@ type BaseSelectionListProps<TItem extends ListItem> = {
     /** Whether hover style should be disabled */
     shouldDisableHoverStyle?: boolean;
 
-    /** Whether to set the hover style */
     setShouldDisableHoverStyle?: React.Dispatch<React.SetStateAction<boolean>>;
 
     /** Which side of the row to render the selection button on */
     selectionButtonPosition?: ValueOf<typeof CONST.SELECTION_BUTTON_POSITION>;
 
-    /** Whether to highlight the selected item */
     shouldHighlightSelectedItem?: boolean;
 };
 
@@ -183,7 +175,6 @@ type SelectionListProps<TItem extends ListItem> = Partial<ChildrenProps> &
         /** Whether to show the vertical scroll indicator */
         showScrollIndicator?: boolean;
 
-        /** Whether to use the user skeleton view */
         shouldUseUserSkeletonView?: boolean;
 
         /** Whether to show the right caret icon */
@@ -209,7 +200,6 @@ type SelectionListStyle = {
     /** Styles for the list container */
     containerStyle?: StyleProp<ViewStyle>;
 
-    /** Styles for the title of the list item */
     listItemTitleStyles?: StyleProp<TextStyle>;
 
     /** Styles for the list item wrapper */
@@ -221,10 +211,8 @@ type SelectionListStyle = {
     /** Styles for the default "Select all" label in the list header (merged after textStrong) */
     listHeaderSelectAllTextStyle?: StyleProp<TextStyle>;
 
-    /** Styles for the title container of the list item */
     listItemTitleContainerStyles?: StyleProp<ViewStyle>;
 
-    /** Styles for the error row of the list item */
     listItemErrorRowStyles?: StyleProp<ViewStyle>;
 
     /** Styles for the section titles */
@@ -235,7 +223,6 @@ type TextInputOptions = {
     /** Called when the text input value changes */
     onChangeText?: (text: string) => void;
 
-    /** Label */
     label?: string;
 
     /** Current value */

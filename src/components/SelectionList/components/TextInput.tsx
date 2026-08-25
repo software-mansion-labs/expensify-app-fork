@@ -31,7 +31,6 @@ type TextInputProps = {
     /**  */
     accessibilityLabel?: string;
 
-    /** Whether the text input is loading */
     isLoading?: boolean;
 
     /** The number of items in the data array, used to determine submit behavior */
@@ -46,16 +45,13 @@ type TextInputProps = {
     /** Function called when the text input focus changes */
     onFocusChange: (focused: boolean) => void;
 
-    /** Whether to show the text input */
     shouldShowTextInput?: boolean;
 
-    /** Whether to show the loading placeholder */
     shouldShowLoadingPlaceholder?: boolean;
 
     /** Whether to show the loading indicator for new options */
     isLoadingNewOptions?: boolean;
 
-    /** Function to focus text input component */
     focusTextInput: () => void;
 };
 

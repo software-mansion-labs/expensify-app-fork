@@ -71,19 +71,15 @@ type ScreenWrapperContainerProps = ForwardedFSClassProps &
         /** Whether to use the minHeight. Use true for screens where the window height are changing because of Virtual Keyboard */
         shouldEnableMinHeight?: boolean;
 
-        /** Whether to avoid scroll on virtual viewport */
         shouldAvoidScrollOnVirtualViewport?: boolean;
 
         /** Whether to use cached virtual viewport height  */
         shouldUseCachedViewportHeight?: boolean;
 
-        /** Whether to include padding bottom */
         includeSafeAreaPaddingBottom?: boolean;
 
-        /** Whether to include padding top */
         includePaddingTop?: boolean;
 
-        /** Whether to enable edge to edge bottom safe area padding */
         enableEdgeToEdgeBottomSafeAreaPadding?: boolean;
 
         /**

@@ -20,10 +20,8 @@ import {CustomStylesForChildrenContext} from './CustomStylesForChildrenProvider'
 
 type TextProps = RNTextProps &
     ChildrenProps & {
-        /** The color of the text */
         color?: string;
 
-        /** The size of the text */
         fontSize?: number;
 
         /** The alignment of the text */

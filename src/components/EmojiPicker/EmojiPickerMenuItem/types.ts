@@ -20,7 +20,6 @@ type EmojiPickerMenuItemProps = {
     /** Whether this menu item is currently focused or not */
     isFocused?: boolean;
 
-    /** Whether the menu item should be highlighted or not */
     isHighlighted?: boolean;
 
     /** Whether the emoji is highlighted by the keyboard/mouse */
