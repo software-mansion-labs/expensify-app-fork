@@ -4,7 +4,7 @@
  */
 import CONFIG from '@src/CONFIG';
 
-import type {GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
+import type {GetCloudflareLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
 
 /** A bare hostname: no scheme, no slash, no port. Loose about labels (custom Access domains exist). */
 const TEAM_DOMAIN_SHAPE = /^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
@@ -76,4 +76,12 @@ const getOAuthRedirectURI: GetOAuthRedirectURI = () => {
     return `${window.location.origin}/oauth/callback`;
 };
 
-export {getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};
+/**
+ * The team domain is the identity provider for the whole Access account, so this ends the browser's session
+ * with every application on it, not only the QA server.
+ */
+const getCloudflareLogoutURL: GetCloudflareLogoutURL = () => {
+    return `https://${CONFIG.QA_AUTH.TEAM_DOMAIN}/cdn-cgi/access/logout`;
+};
+
+export {getCloudflareLogoutURL, getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};

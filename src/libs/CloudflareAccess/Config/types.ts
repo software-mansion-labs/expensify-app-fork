@@ -13,4 +13,7 @@ type GetQAResource = () => string;
 /** The OAuth redirect URI this client sends and handles */
 type GetOAuthRedirectURI = () => string;
 
-export type {GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest};
+/** The Cloudflare Access sign-out endpoint for the team domain */
+type GetCloudflareLogoutURL = () => string;
+
+export type {GetCloudflareLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest};

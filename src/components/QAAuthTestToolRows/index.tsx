@@ -8,13 +8,14 @@ import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getActiveServer} from '@libs/ApiUtils';
-import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
+import {getCloudflareLogoutURL, isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import {getCloudflareSignInOutcome} from '@libs/CloudflareAccess/finishSignInFromURL';
 import DateUtils from '@libs/DateUtils';
 
 import type {CloudflareAuthProbeResult, CloudflareAuthProbeStatus} from '@userActions/CloudflareProbe';
 import {runCloudflareAuthProbe} from '@userActions/CloudflareProbe';
 import {clearCloudflareSession, getCloudflareSession} from '@userActions/CloudflareSession';
+import {openExternalLink} from '@userActions/Link';
 import {setActiveServer} from '@userActions/User';
 
 import CONST from '@src/CONST';
@@ -99,17 +100,17 @@ function QAAuthTestToolRows() {
                     <Button.Text>{translate('initialSettingsPage.troubleshoot.qaAuthRunProbe')}</Button.Text>
                 </Button>
             </TestToolRow>
-            <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuthSession')}>
+            {/* Signing out of Cloudflare is what makes the next QA request show a real consent screen. Our own
+                tokens have to go first: an unexpired one lets the gate skip the handshake entirely. Same tab,
+                because a new one would leave this instance running against a server that rejects every request. */}
+            <TestToolRow title={translate('initialSettingsPage.troubleshoot.qaAuthCloudflareIdentity')}>
                 <Button
                     size={CONST.BUTTON_SIZE.SMALL}
                     isDisabled={isOperationRunning}
                     onPress={() => {
                         setIsOperationRunning(true);
                         clearCloudflareSession()
-                            .then(() => {
-                                setProbeResult(null);
-                                setProbeCompletedAt(null);
-                            })
+                            .then(() => openExternalLink(getCloudflareLogoutURL(), false, true))
                             .catch((error: unknown) => {
                                 setProbeResult({status: 'error', detail: error instanceof Error ? error.message : undefined});
                                 setProbeCompletedAt(DateUtils.getDBTime());
@@ -117,7 +118,7 @@ function QAAuthTestToolRows() {
                             .finally(() => setIsOperationRunning(false));
                     }}
                 >
-                    <Button.Text>{translate('initialSettingsPage.troubleshoot.qaAuthClearSession')}</Button.Text>
+                    <Button.Text>{translate('initialSettingsPage.troubleshoot.qaAuthCloudflareSignOut')}</Button.Text>
                 </Button>
             </TestToolRow>
             {!!probeResult && (
