@@ -61,9 +61,6 @@ type DomainSecurityGroupPendingActions = {
      */
     enableStrictPolicyRules?: OnyxCommon.PendingAction;
 
-    /**
-     * Pending action for the default security group ID
-     */
     defaultSecurityGroupID?: OnyxCommon.PendingAction;
 
     /**
@@ -101,9 +98,6 @@ type DomainPendingAction = {
      */
     admin?: Record<number, GeneralDomainMemberPendingAction>;
 
-    /**
-     * Pending action for the technical contact email
-     */
     technicalContactEmail?: OnyxCommon.PendingAction;
 
     /**

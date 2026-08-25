@@ -17,7 +17,6 @@ import React from 'react';
 import {View} from 'react-native';
 
 type ChronosOOOListActionsProps = {
-    /** The ID of the report */
     reportID: string | undefined;
 
     /** All the data of the action */

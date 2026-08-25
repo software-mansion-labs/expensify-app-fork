@@ -15,7 +15,6 @@ import React from 'react';
 import {View} from 'react-native';
 
 type ThreadDividerProps = {
-    /** Whether the thread divider should display a new marker */
     shouldDisplayNewMarker: boolean;
     /** Callback to be called on press */
     onPress?: () => void;

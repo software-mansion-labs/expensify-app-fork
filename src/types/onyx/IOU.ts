@@ -98,37 +98,28 @@ type Split = {
     /** IOU split participant account ID */
     accountID?: number;
 
-    /** Chat report ID */
     chatReportID?: string;
 
-    /** IOU report ID */
     iouReportID?: string;
 
-    /** Report Action ID */
     reportActionID?: string;
 
-    /** Transaction ID */
     transactionID?: string;
 
-    /** Policy ID */
     policyID?: string;
 
-    /** Created chat report action ID */
     createdChatReportActionID?: string;
 
     /** Created IOU report action ID */
     createdIOUReportActionID?: string;
 
-    /** Report preview report action ID */
     reportPreviewReportActionID?: string;
 
-    /** Transaction thread report ID */
     transactionThreadReportID?: string;
 
     /** Created report action ID for thread */
     createdReportActionIDForThread?: string;
 
-    /** IOU tax amount */
     taxAmount?: number;
 };
 
@@ -208,7 +199,6 @@ type Attendee = {
 
 /** Model of IOU accountant */
 type Accountant = {
-    /** Account ID */
     accountID?: number;
 
     /** Account login */

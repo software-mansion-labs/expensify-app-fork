@@ -2782,10 +2782,8 @@ type CreateAndOpenSearchTransactionThreadParams = {
     /** The route to go back to after navigation */
     backTo: string;
 
-    /** The current user's login */
     currentUserLogin: string;
 
-    /** The current user's account ID */
     currentUserAccountID: number;
 
     /** Beta features list */

@@ -29,7 +29,6 @@ type ConfirmedRouteProps = {
     /** Whether the size of the route pending icon is smaller. */
     isSmallerIcon?: boolean;
 
-    /** Whether it should have border radius */
     shouldHaveBorderRadius?: boolean;
 
     /** Whether it should display the Mapbox map only when the route/coordinates exist otherwise

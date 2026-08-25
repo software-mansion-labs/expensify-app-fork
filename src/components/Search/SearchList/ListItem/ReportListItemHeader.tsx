@@ -67,7 +67,6 @@ type ReportListItemHeaderProps<TItem extends ListItem> = SearchListActionProps &
     /** Whether this section items disabled for selection */
     isDisabled?: boolean | null;
 
-    /** Whether the item is focused */
     isFocused?: boolean;
 
     /** Whether selecting multiple transactions at once is allowed */
@@ -85,7 +84,6 @@ type ReportListItemHeaderProps<TItem extends ListItem> = SearchListActionProps &
     /** Whether the down arrow is expanded */
     isExpanded?: boolean;
 
-    /** Whether the item is hovered */
     isHovered?: boolean;
 };
 

@@ -36,7 +36,6 @@ type SelectionScreenProps<T = string> = {
     /** Used to set the testID for tests */
     displayName: string;
 
-    /** Title of the selection component */
     title?: TranslationPaths;
 
     /** Custom content to display in the header */
@@ -102,7 +101,6 @@ type SelectionScreenProps<T = string> = {
     /** Whether to update the focused index on a row select */
     shouldUpdateFocusedIndex?: boolean;
 
-    /** Whether to show the text input */
     shouldShowTextInput?: boolean;
 
     /** Whether to allow each row's title to wrap onto multiple lines instead of truncating */

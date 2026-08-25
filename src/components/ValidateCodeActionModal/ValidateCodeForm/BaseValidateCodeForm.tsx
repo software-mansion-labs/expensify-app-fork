@@ -75,10 +75,8 @@ type ValidateCodeFormProps = {
     /** Function is called when submitting form  */
     handleSubmitForm: (validateCode: string) => void;
 
-    /** Styles for the button */
     buttonStyles?: StyleProp<ViewStyle>;
 
-    /** Function to clear error of the form */
     clearError: () => void;
 
     /** Whether to show the verify button  */
@@ -90,10 +88,8 @@ type ValidateCodeFormProps = {
     /** Function is called when validate code modal is mounted and on validateCode resend */
     sendValidateCode: () => void;
 
-    /** Whether the form is loading or not */
     isLoading?: boolean;
 
-    /** Whether to show skip button */
     shouldShowSkipButton?: boolean;
 
     /** Function to call when skip button is pressed */

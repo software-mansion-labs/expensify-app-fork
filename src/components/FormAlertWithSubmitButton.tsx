@@ -19,7 +19,6 @@ type FormAlertWithSubmitButtonProps = WithSentryLabel & {
     /** Error message to display above button */
     message?: string;
 
-    /** Whether the button is disabled */
     isDisabled?: boolean;
 
     /** Whether message is in html format */
@@ -42,22 +41,17 @@ type FormAlertWithSubmitButtonProps = WithSentryLabel & {
     /** Callback fired when the "fix the errors" link is pressed */
     onFixTheErrorsLinkPressed?: () => void;
 
-    /** Submit function */
     onSubmit: () => void;
 
-    /** Should the button be enabled when offline */
     enabledWhenOffline?: boolean;
 
-    /** Disable press on enter for submit button */
     disablePressOnEnter?: boolean;
 
-    /** Whether the form submit action is dangerous */
     isSubmitActionDangerous?: boolean;
 
     /** Custom content to display in the footer after submit button */
     footerContent?: React.ReactNode;
 
-    /** Styles for the button */
     buttonStyles?: StyleProp<ViewStyle>;
 
     /** Whether to show the alert text */
@@ -66,13 +60,10 @@ type FormAlertWithSubmitButtonProps = WithSentryLabel & {
     /** React ref being forwarded to the submit button */
     buttonRef?: Ref<View>;
 
-    /** Text for the button */
     buttonText: string;
 
-    /** Whether to use a smaller submit button size */
     useSmallerSubmitButtonSize?: boolean;
 
-    /** Style for the error message for submit button */
     errorMessageStyle?: StyleProp<ViewStyle>;
 
     /** The priority to assign the enter key event listener to buttons. 0 is the highest priority. */
@@ -87,7 +78,6 @@ type FormAlertWithSubmitButtonProps = WithSentryLabel & {
      */
     shouldBlendOpacity?: boolean;
 
-    /** Whether to add a bottom padding to the button */
     addButtonBottomPadding?: boolean;
 
     /** Prevents the button from triggering blur on mouse down. */

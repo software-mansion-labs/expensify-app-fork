@@ -69,7 +69,6 @@ type WorkspacePageWithSectionsProps = WithPolicyAndFullscreenLoadingProps &
         /** Policy feature permission needed to show this page */
         policyFeature?: PolicyFeature;
 
-        /** Whether to show the not found page */
         shouldShowNotFoundPage?: boolean;
 
         /** Makes firstRender ref display loading page before isLoading is change to true */
@@ -88,13 +87,11 @@ type WorkspacePageWithSectionsProps = WithPolicyAndFullscreenLoadingProps &
         /** Content to be added to the header */
         headerContent?: ReactNode;
 
-        /** TestID of the component */
         testID?: string;
 
         /** Whether the page is loading, example any other API call in progress */
         isLoading?: boolean;
 
-        /** Whether to use the headline header */
         shouldUseHeadlineHeader?: boolean;
 
         /**

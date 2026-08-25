@@ -59,7 +59,6 @@ type AvatarWithImagePickerProps = Omit<AvatarButtonWithIconProps, 'text' | 'onPr
     /** Execute when the user taps "remove" */
     onImageRemoved?: () => void;
 
-    /** Whether we are using the default avatar */
     isUsingDefaultAvatar?: boolean;
 
     /** Image crop vector mask */

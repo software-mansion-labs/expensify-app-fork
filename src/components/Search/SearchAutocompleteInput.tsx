@@ -43,10 +43,8 @@ type SearchAutocompleteInputProps = {
     /** Callback invoked when the user submits the input */
     onSubmit?: () => void;
 
-    /** Whether the input is full width */
     isFullWidth: boolean;
 
-    /** Whether the input is disabled */
     disabled?: boolean;
 
     /** Whether the offline message should be shown */

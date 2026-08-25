@@ -52,7 +52,6 @@ type AttachmentCarouselPagerProps = {
     /** The reportID related to the attachment */
     reportID?: string;
 
-    /** Callback for attachment errors */
     onAttachmentError?: (source: AttachmentSource) => void;
 
     /** Reference to the outer element */

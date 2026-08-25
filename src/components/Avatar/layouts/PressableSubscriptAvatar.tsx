@@ -25,7 +25,6 @@ type PressableSubscriptAvatarProps = {
     /** The primary (main) avatar */
     primaryAvatar: IconType;
 
-    /** The secondary (subscript) avatar */
     secondaryAvatar: IconType;
 
     /** Called with the pressed avatar */
@@ -34,7 +33,6 @@ type PressableSubscriptAvatarProps = {
     /** Sentry label applied to both pressables */
     sentryLabel: string;
 
-    /** Style for the avatar container */
     containerStyle?: StyleProp<ViewStyle>;
 };
 

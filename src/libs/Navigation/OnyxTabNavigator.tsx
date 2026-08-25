@@ -60,7 +60,6 @@ type OnyxTabNavigatorProps<TTabName extends string = SelectedTabRequest> = Child
      */
     onTabBarFocusTrapContainerElementChanged?: (containerElement: HTMLElement | null) => void;
 
-    /** Whether to show the label when the tab is inactive */
     shouldShowLabelWhenInactive?: boolean;
 
     /** Whether to lazy load the tab screens */

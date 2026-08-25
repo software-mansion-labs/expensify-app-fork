@@ -31,10 +31,8 @@ type LabelHitGeometry = {
     /** rightUpperCorner.y = labelY + cornerAnchorDY */
     cornerAnchorDY: number;
 
-    /** yMin90 = labelY + yMin90Offset */
     yMin90Offset: number;
 
-    /** Per-label: yMax90 = labelY + yMax90Offsets[i] */
     yMax90Offsets: number[];
 };
 

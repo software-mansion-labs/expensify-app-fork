@@ -26,7 +26,6 @@ type CorpayBeneficialOwner = {
     /** Residential address of the owner */
     residentialAddress?: string;
 
-    /** Ownership percentage */
     ownershipPercentage?: string;
 
     /** Nationality of the owner */
@@ -168,7 +167,6 @@ type ACHData = Partial<BeneficialOwnersStepProps & CompanyStepProps & RequestorS
     /** Bank account number */
     accountNumber?: string;
 
-    /** Bank account name */
     bankName?: BankName;
 
     /** Policy ID of the workspace the bank account is being set up on */

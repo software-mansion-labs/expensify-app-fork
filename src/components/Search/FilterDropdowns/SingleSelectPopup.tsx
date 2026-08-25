@@ -12,7 +12,6 @@ import React, {useCallback, useState} from 'react';
 import BasePopup from './BasePopup';
 
 type SingleSelectPopupProps<T> = {
-    /** Whether to show the label in the popup or not */
     showLabel?: boolean;
 
     /** The label to show when in an overlay on mobile */

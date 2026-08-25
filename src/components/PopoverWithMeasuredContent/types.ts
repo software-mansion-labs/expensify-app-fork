@@ -6,7 +6,6 @@ type PopoverWithMeasuredContentProps = Omit<PopoverProps, 'anchorPosition'> & {
     /** The horizontal and vertical anchors points for the popover */
     anchorPosition: AnchorPosition;
 
-    /** The dimension of anchor component */
     anchorDimensions?: AnchorDimensions;
 
     /** Whether we should change the vertical position if the popover's position is overflow */

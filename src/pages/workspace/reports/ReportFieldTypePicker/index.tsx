@@ -17,10 +17,8 @@ type ReportFieldItemType = {
     /** The display text */
     text: string;
 
-    /** The key for list */
     keyForList: string;
 
-    /** Whether the value is selected */
     isSelected: boolean;
 };
 

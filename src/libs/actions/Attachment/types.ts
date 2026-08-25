@@ -20,7 +20,6 @@ type GetCachedAttachmentProps = {
     /** Attachment data from Onyx */
     attachment: OnyxEntry<Attachment>;
 
-    /** Current source of the attachment */
     currentSource: string;
 };
 

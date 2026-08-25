@@ -52,7 +52,6 @@ type MapViewProps = {
     /** Callback to call when the map is idle / ready. */
     onMapReady?: () => void;
 
-    /** Whether the map is interactive or not */
     interactive?: boolean;
 
     /** Distance displayed on the map in meters. */
@@ -72,7 +71,6 @@ type MapViewProps = {
 };
 
 type CompassProps = {
-    /** Whether the map is interactive or not */
     interactive: boolean;
 
     /** Whether the compass should be displayed or not */

@@ -51,7 +51,6 @@ type MoneyRequestReportGroupHeaderProps = {
     /** Pending action for offline feedback styling (Pattern B - Optimistic WITH Feedback) */
     pendingAction?: PendingAction;
 
-    /** Whether to use narrow layout */
     shouldUseNarrowLayout?: boolean;
 };
 

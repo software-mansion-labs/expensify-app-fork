@@ -64,19 +64,16 @@ type UseConfirmationValidationParams = {
     /** Policy the IOU belongs to */
     policy: OnyxEntry<OnyxTypes.Policy>;
 
-    /** Policy tag lists, used for tag validation */
     policyTags: OnyxEntry<OnyxTypes.PolicyTagLists>;
 
     /** Pre-resolved tag lists for the policy (output of getTagLists) */
     policyTagLists: ReturnType<typeof getTagListsFn>;
 
-    /** Policy categories, used for category validation */
     policyCategories: OnyxEntry<OnyxTypes.PolicyCategories>;
 
     /** Participants selected for this IOU */
     selectedParticipants: Participant[];
 
-    /** Personal details of the current user */
     currentUserPersonalDetails: CurrentUserPersonalDetails;
 
     /** Whether we are editing an existing split bill */
@@ -115,7 +112,6 @@ type UseConfirmationValidationParams = {
     /** Truthy when the route to the confirmation page has a known error */
     routeError: string | null | undefined;
 
-    /** Whether the new manual expense flow is enabled */
     isNewManualExpenseFlowEnabled: boolean;
 
     /** Whether the confirmation fields are read-only (date is not inline-editable) */

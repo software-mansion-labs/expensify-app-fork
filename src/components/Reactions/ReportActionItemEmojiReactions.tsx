@@ -29,7 +29,6 @@ import AddReactionBubble from './AddReactionBubble';
 import ReportActionReactionBubble from './ReportActionReactionBubble';
 
 type ReportActionItemEmojiReactionsProps = {
-    /** The report action that these reactions are for */
     reportAction: ReportAction;
 
     /** The ID of the chat report this action belongs to */
@@ -49,7 +48,6 @@ type FormattedReaction = {
     /** The emoji codes to display in the bubble */
     emojiCodes: string[];
 
-    /** IDs of users used the reaction */
     userAccountIDs: number[];
 
     /** Total reaction count */
@@ -64,7 +62,6 @@ type FormattedReaction = {
     /** Callback to fire on press */
     onPress: () => void;
 
-    /** The name of the emoji */
     reactionEmojiName: string;
 
     /** The type of action that's pending */

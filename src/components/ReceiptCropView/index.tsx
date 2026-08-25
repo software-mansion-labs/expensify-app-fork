@@ -28,7 +28,6 @@ type CropRect = {
 };
 
 type ReceiptCropViewProps = {
-    /** URI of the image to crop */
     imageUri: string;
 
     /** Callback when crop rectangle changes */

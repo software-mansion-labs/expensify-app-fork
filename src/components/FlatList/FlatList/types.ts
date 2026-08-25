@@ -2,14 +2,8 @@ import type {ForwardedRef} from 'react';
 import type {CellRendererProps, FlatList, FlatListProps} from 'react-native';
 
 type CustomFlatListProps<T> = Omit<FlatListProps<T>, 'CellRendererComponent'> & {
-    /**
-     * Ref to the FlatList component
-     */
     ref?: ForwardedRef<FlatList>;
 
-    /**
-     * Whether to disable the visible content position
-     */
     shouldDisableVisibleContentPosition?: boolean;
 
     /**

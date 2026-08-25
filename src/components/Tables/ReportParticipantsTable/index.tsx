@@ -18,7 +18,6 @@ import ReportParticipantsTableRow from './ReportParticipantsTableRow';
 type ReportParticipantsTableColumnKey = 'member' | 'role' | 'actions';
 
 type ReportParticipantRowData = TableData & {
-    /** The accountID of the participant */
     accountID: number;
 
     /** The participant's login (email/phone) */

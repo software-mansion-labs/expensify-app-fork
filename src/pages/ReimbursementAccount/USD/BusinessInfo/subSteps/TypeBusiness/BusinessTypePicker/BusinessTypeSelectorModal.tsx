@@ -16,7 +16,6 @@ import React, {useMemo} from 'react';
 import type {BusinessTypeItemType, IncorporationType} from './types';
 
 type BusinessTypeSelectorModalProps = {
-    /** Whether the modal is visible */
     isVisible: boolean;
 
     /** Business type value selected  */

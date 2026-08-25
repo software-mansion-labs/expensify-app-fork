@@ -53,13 +53,11 @@ import {Animated, ScrollView, View} from 'react-native';
 import MoneyRequestReportActionsList from './MoneyRequestReportActionsList';
 
 type MoneyRequestReportViewProps = {
-    /** The report */
     report: OnyxEntry<OnyxTypes.Report>;
 
     /** Report ID from the route, known before the report itself loads */
     reportIDFromRoute: string | undefined;
 
-    /** Loading state for report */
     reportLoadingState: OnyxEntry<OnyxTypes.ReportLoadingState>;
 
     /** Whether Report footer (that includes Composer) should be displayed */

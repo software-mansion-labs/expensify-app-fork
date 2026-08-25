@@ -14,7 +14,6 @@ import RadioButton from './RadioButton';
 import Text from './Text';
 
 type RadioButtonWithLabelProps = ForwardedFSClassProps & {
-    /** Whether the radioButton is checked */
     isChecked: boolean;
 
     /** Called when the radioButton or label is pressed */

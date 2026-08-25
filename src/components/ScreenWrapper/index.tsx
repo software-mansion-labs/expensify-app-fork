@@ -85,7 +85,6 @@ type ScreenWrapperProps = Omit<ScreenWrapperContainerProps, 'children'> &
         /** Whether to disable the safe area padding for (nested) offline indicators */
         disableOfflineIndicatorSafeAreaPadding?: boolean;
 
-        /** Settings for the focus trap */
         focusTrapSettings?: FocusTrapForScreenProps['focusTrapSettings'];
 
         /** Called when navigated Screen's transition is finished. It does not fire when user exit the page. */

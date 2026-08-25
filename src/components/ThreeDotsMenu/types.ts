@@ -42,22 +42,18 @@ type ThreeDotsMenuProps = WithSentryLabel & {
     /** menuItems that'll show up on toggle of the popup menu */
     menuItems: PopoverMenuItem[];
 
-    /** The anchor alignment of the menu */
     anchorAlignment?: AnchorAlignment;
 
     /** Whether the popover menu should overlay the current view */
     shouldOverlay?: boolean;
 
-    /** Whether the menu is disabled */
     disabled?: boolean;
 
     /** Should we announce the Modal visibility changes? */
     shouldSetModalVisibility?: boolean;
 
-    /** Function to hide the product training tooltip */
     hideProductTrainingTooltip?: () => void;
 
-    /** Tooltip content to render */
     renderProductTrainingTooltipContent?: () => React.JSX.Element;
 
     /** Should we render the tooltip */
@@ -66,16 +62,13 @@ type ThreeDotsMenuProps = WithSentryLabel & {
     /** Is the menu nested? This prop is used to omit html warning when we are nesting a button inside another button */
     isNested?: boolean;
 
-    /** Ref to the menu */
     threeDotsMenuRef?: React.RefObject<{hidePopoverMenu: () => void; isPopupMenuVisible: boolean} | null>;
 
-    /** Whether the menu is focused */
     isContainerFocused?: boolean;
 };
 
 type ThreeDotsMenuWithOptionalAnchorProps =
     | (ThreeDotsMenuProps & {
-          /** The anchor position of the menu */
           anchorPosition: AnchorPosition;
 
           /** A callback to get the anchor position dynamically */
@@ -85,7 +78,6 @@ type ThreeDotsMenuWithOptionalAnchorProps =
           shouldSelfPosition?: false;
       })
     | (ThreeDotsMenuProps & {
-          /** The anchor position of the menu */
           anchorPosition?: never;
 
           /** A callback to get the anchor position dynamically */
@@ -95,7 +87,6 @@ type ThreeDotsMenuWithOptionalAnchorProps =
           shouldSelfPosition?: false;
       })
     | (ThreeDotsMenuProps & {
-          /** The anchor position of the menu */
           anchorPosition?: never;
 
           /** A callback to get the anchor position dynamically */

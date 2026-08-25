@@ -26,7 +26,6 @@ type AttachmentCarouselProps = {
     /** Function to change the download button Visibility */
     setDownloadButtonVisibility?: (isButtonVisible: boolean) => void;
 
-    /** The type of the attachment */
     type?: ValueOf<typeof CONST.ATTACHMENT_TYPE>;
 
     /** If the attachment originates from a note, the accountID will represent the author of that note. */
@@ -37,7 +36,6 @@ type AttachmentCarouselProps = {
 
     attachmentLink?: string;
 
-    /** Callback for attachment errors */
     onAttachmentError?: (source: AttachmentSource, state?: boolean) => void;
 };
 

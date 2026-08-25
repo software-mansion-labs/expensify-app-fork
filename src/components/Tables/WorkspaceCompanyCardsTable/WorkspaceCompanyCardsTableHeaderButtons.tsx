@@ -48,7 +48,6 @@ type WorkspaceCompanyCardsTableHeaderButtonsProps = {
     /** Whether the current member can edit company cards */
     canWriteCompanyCards: boolean;
 
-    /** Card feed icon */
     CardFeedIcon: React.ReactNode;
 };
 

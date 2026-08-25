@@ -3,13 +3,10 @@ import type {PopoverMenuItem} from '@components/PopoverMenu';
 import type {Errors, PendingAction} from '@src/types/onyx/OnyxCommon';
 
 type ValidateCodeActionContentProps = {
-    /** Title of the modal */
     title: string;
 
-    /** Primary description of the modal */
     descriptionPrimary: string;
 
-    /** Secondary description of the modal */
     descriptionSecondary?: string | null;
 
     /** Function to call when the user closes the modal */

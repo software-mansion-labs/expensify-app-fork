@@ -34,11 +34,8 @@ type AddExistingExpenseFooterProps = {
     selectedIds: Set<string>;
     /** The report to add expenses to */
     report: OnyxEntry<Report>;
-    /** The report to confirm */
     reportToConfirm: OnyxEntry<Report>;
-    /** The policy */
     policy: OnyxEntry<Policy>;
-    /** The policy categories */
     policyCategories: OnyxEntry<PolicyCategories>;
     /** Error message displayed in this component */
     errorMessage: string;

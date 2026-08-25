@@ -21,7 +21,6 @@ import {useRoute} from '@react-navigation/native';
 import React, {useMemo} from 'react';
 
 type TwoFactorAuthWrapperProps = ChildrenProps & {
-    /** Name of the step */
     stepName: ValueOf<typeof CONST.TWO_FACTOR_AUTH_STEPS>;
 
     /** Title of the Header */

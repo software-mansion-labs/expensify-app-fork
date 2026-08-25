@@ -39,10 +39,8 @@ type BaseFeatureTrainingContentProps = {
     /** Link to navigate to when user wants to learn more */
     onHelp?: () => void;
 
-    /** Styles for the content container */
     contentInnerContainerStyles?: StyleProp<ViewStyle>;
 
-    /** Styles for the content outer container */
     contentOuterContainerStyles?: StyleProp<ViewStyle>;
 
     /** Styles for the modal inner container */
@@ -103,7 +101,6 @@ type FeatureTrainingContentIllustrationVideoProps = {
     /** Additional styles for the animation */
     animationStyle?: StyleProp<ViewStyle>;
 
-    /** URL for the video */
     videoURL?: string;
 };
 
@@ -114,10 +111,8 @@ type FeatureTrainingContentIllustrationSVGProps = {
     /** Determines how the image should be resized to fit its container */
     contentFitImage?: ImageContentFit;
 
-    /** The width of the image */
     imageWidth?: ImageSVGProps['width'];
 
-    /** The height of the image */
     imageHeight?: ImageSVGProps['height'];
 };
 

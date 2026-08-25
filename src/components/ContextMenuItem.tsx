@@ -18,7 +18,6 @@ import FocusableMenuItem from './FocusableMenuItem';
 import Icon from './Icon';
 
 type ContextMenuItemProps = WithSentryLabel & {
-    /** Icon Component */
     icon: IconAsset;
 
     /** Text to display */
@@ -42,7 +41,6 @@ type ContextMenuItemProps = WithSentryLabel & {
     /** The action accept for anonymous user or not */
     isAnonymousAction?: boolean;
 
-    /** Whether the menu item is focused or not */
     isFocused?: boolean;
 
     /** Whether the width should be limited */
@@ -62,10 +60,8 @@ type ContextMenuItemProps = WithSentryLabel & {
     /** Handles what to do when the item loose focus */
     onBlur?: () => void;
 
-    /** Whether the menu item is disabled or not */
     disabled?: boolean;
 
-    /** Whether the menu item should show loading icon */
     shouldShowLoadingSpinnerIcon?: boolean;
 };
 

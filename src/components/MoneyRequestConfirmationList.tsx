@@ -84,7 +84,6 @@ type MoneyRequestConfirmationListProps = {
     /** Callback to parent modal to pay someone */
     onSendMoney?: (paymentMethod: PaymentMethodType | undefined) => void;
 
-    /** IOU type */
     iouType?: Exclude<IOUType, typeof CONST.IOU.TYPE.REQUEST | typeof CONST.IOU.TYPE.SEND>;
 
     /** Callback to toggle the billable state */
@@ -102,10 +101,8 @@ type MoneyRequestConfirmationListProps = {
     /** Number of expenses to be created */
     expensesNumber?: number;
 
-    /** The policyID of the request */
     policyID?: string;
 
-    /** The reportID of the request */
     reportID?: string;
 
     /** File path of the receipt */
@@ -144,10 +141,8 @@ type MoneyRequestConfirmationListProps = {
     /** A flag for verifying that the current report is a sub-report of a expense chat */
     isPolicyExpenseChat?: boolean;
 
-    /** Whether smart scan failed */
     hasSmartScanFailed?: boolean;
 
-    /** The ID of the report action */
     reportActionID?: string;
 
     /** The action to take */
@@ -168,10 +163,8 @@ type MoneyRequestConfirmationListProps = {
     /** The PDF password callback */
     onPDFPassword?: () => void;
 
-    /** Function to toggle reimbursable */
     onToggleReimbursable?: (isOn: boolean) => void;
 
-    /** Show remove expense confirmation modal */
     showRemoveExpenseConfirmModal?: () => void;
 
     /** When true, hide the "To:" section (e.g. when adding an expense directly to the current report) */

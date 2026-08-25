@@ -17,13 +17,10 @@ import {View} from 'react-native';
 import Collapsible from './Collapsible';
 
 type CollapsibleSectionProps = ChildrenProps & {
-    /** Title of the Collapsible section */
     title: string;
 
-    /** Style of title of the collapsible section */
     titleStyle?: StyleProp<TextStyle>;
 
-    /** Style for the text */
     textStyle?: StyleProp<TextStyle>;
 
     /** Style for the wrapper view */

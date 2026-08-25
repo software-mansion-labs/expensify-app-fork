@@ -38,10 +38,8 @@ type OfflineWithFeedbackProps = Partial<ChildrenProps> & {
     /** The errors to display  */
     errors?: OnyxCommon.Errors | OnyxCommon.TranslationKeyErrors | ReceiptErrors | null;
 
-    /** Whether we should show the error messages */
     shouldShowErrorMessages?: boolean;
 
-    /** Whether we should disable opacity */
     shouldDisableOpacity?: boolean;
 
     /** A function to run when the X button next to the error is clicked */
@@ -68,10 +66,8 @@ type OfflineWithFeedbackProps = Partial<ChildrenProps> & {
     /** Whether we should render the error message above the children */
     shouldDisplayErrorAbove?: boolean;
 
-    /** Whether we should force opacity */
     shouldForceOpacity?: boolean;
 
-    /** A function to dismiss error */
     dismissError?: () => void;
 };
 

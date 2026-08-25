@@ -17,7 +17,6 @@ import {View} from 'react-native';
 import type {RoomMemberRowData} from '.';
 
 type RoomMembersTableRowProps = {
-    /** The room member item for the row */
     item: RoomMemberRowData;
 
     /** The index of the row relative to all other rows */

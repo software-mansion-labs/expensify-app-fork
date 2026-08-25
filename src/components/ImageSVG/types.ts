@@ -7,19 +7,15 @@ type ImageSVGProps = {
     /** The asset to render. */
     src: IconAsset | undefined;
 
-    /** The width of the image. */
     width?: number | `${number}%` | 'auto';
 
-    /** The height of the image. */
     height?: number | `${number}%` | 'auto';
 
     /** The fill color for the image. Can be hex, rgb, rgba, or valid react-native named color such as 'red' or 'blue'. */
     fill?: string;
 
-    /** Is image hovered */
     hovered?: boolean;
 
-    /** Is image pressed */
     pressed?: boolean;
 
     /** Additional styles to add to the component */
@@ -38,7 +34,6 @@ type ImageSVGProps = {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'aria-hidden'?: boolean;
 
-    /** TestID for test */
     testID?: string;
 
     //* Called when the image load either succeeds or fails. */

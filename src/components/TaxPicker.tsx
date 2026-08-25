@@ -25,10 +25,8 @@ type TaxPickerProps = {
     /** The selected tax rate of an expense */
     selectedTaxRate?: string;
 
-    /** ID of the policy */
     policyID?: string;
 
-    /** ID of the transaction */
     transactionID?: string;
 
     /** Callback to fire when a tax is pressed */
@@ -37,7 +35,6 @@ type TaxPickerProps = {
     /** The action to take */
     action?: IOUAction;
 
-    /** The type of IOU */
     iouType?: ValueOf<typeof CONST.IOU.TYPE>;
 
     onDismiss: () => void;

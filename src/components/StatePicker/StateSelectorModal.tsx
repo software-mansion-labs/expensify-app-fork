@@ -22,7 +22,6 @@ import React, {useMemo} from 'react';
 type State = keyof typeof COMMON_CONST.STATES;
 
 type StateSelectorModalProps = {
-    /** Whether the modal is visible */
     isVisible: boolean;
 
     /** Function to call when the user closes the business type selector modal */

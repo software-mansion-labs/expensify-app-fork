@@ -10,10 +10,8 @@ type Address = {
     /** Street line 2 */
     street2?: string;
 
-    /** City */
     city?: string;
 
-    /** State */
     state?: string;
 
     /** Zip post code */
@@ -22,7 +20,6 @@ type Address = {
     /** Country code */
     country?: Country | '';
 
-    /** Zip post code */
     zipPostCode?: string;
 
     /** Street line 1 */

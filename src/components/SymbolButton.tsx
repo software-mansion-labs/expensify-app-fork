@@ -22,10 +22,8 @@ type SymbolButtonProps = {
     /** Function to call when symbol button is pressed */
     onSymbolButtonPress: () => void;
 
-    /** Whether the symbol button is pressable or not */
     isSymbolPressable?: boolean;
 
-    /** Style for the symbol button */
     textStyle?: StyleProp<TextStyle>;
 };
 

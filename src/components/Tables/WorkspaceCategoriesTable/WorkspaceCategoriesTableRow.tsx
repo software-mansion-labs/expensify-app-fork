@@ -26,7 +26,6 @@ type WorkspaceCategoriesTableRowProps = {
     /** The index of the row relative to all other rows */
     rowIndex: number;
 
-    /** Whether to use narrow table row layout */
     shouldUseNarrowTableLayout: boolean;
 
     /** Whether the GL Code column is visible on web screens or not */

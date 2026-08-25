@@ -57,7 +57,6 @@ type BaseBlockingViewProps = {
     /** Function to call when pressing the CTA button. The button only renders when this and `buttonTranslationKey` are both provided */
     onButtonPress?: () => void;
 
-    /** Whether we should embed the link with subtitle */
     shouldEmbedLinkWithSubtitle?: boolean;
 
     /** Render custom subtitle */
@@ -69,10 +68,8 @@ type BaseBlockingViewProps = {
     /** Additional styles to apply to the container */
     containerStyle?: StyleProp<ViewStyle>;
 
-    /** Whether to add bottom safe area padding to the view. */
     addBottomSafeAreaPadding?: boolean;
 
-    /** Accessibility label for the view */
     accessibilityLabel?: string;
 
     /** Whether to add bottom safe area padding to the content. */
@@ -103,7 +100,6 @@ type BlockingViewAnimationProps = {
     /** Style for the animation */
     animationStyles?: StyleProp<ViewStyle>;
 
-    /** Style for the animation on web */
     animationWebStyle?: WebStyle;
 };
 

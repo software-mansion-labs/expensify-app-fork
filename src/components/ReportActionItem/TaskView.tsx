@@ -51,10 +51,8 @@ type TaskViewProps = {
     /** The report currently being looked at */
     report: OnyxEntry<Report>;
 
-    /** The parent report */
     parentReport: OnyxEntry<Report>;
 
-    /** The task report action */
     action: OnyxEntry<ReportAction>;
 };
 

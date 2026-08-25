@@ -19,10 +19,8 @@ import React, {useMemo} from 'react';
 import {View} from 'react-native';
 
 type BillingBannerProps = {
-    /** The title of the banner. */
     title: string | React.ReactNode;
 
-    /** The subtitle of the banner. */
     subtitle: string | React.ReactNode;
 
     /** The icon to display in the banner. */
@@ -46,7 +44,6 @@ type BillingBannerProps = {
     /** Callback to be called when the right icon is pressed. */
     onRightIconPress?: () => void;
 
-    /** Accessibility label for the right icon. */
     rightIconAccessibilityLabel?: string;
 
     /** Sentry label for the right icon button. Defaults to `CONST.SENTRY_LABEL.BILLING_BANNER.RIGHT_ICON`. */

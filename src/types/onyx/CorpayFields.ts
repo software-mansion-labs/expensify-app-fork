@@ -55,9 +55,7 @@ type CorpayFormField = {
 
 /** CorpayFields */
 type CorpayFields = {
-    /** Country of the bank */
     bankCountry: string;
-    /** Currency of the bank */
     bankCurrency: string;
     /** Classification of the bank */
     classification: string;
@@ -67,7 +65,6 @@ type CorpayFields = {
     paymentMethods: string[];
     /** Preferred method for the bank */
     preferredMethod: string;
-    /** Form fields for the Corpay form */
     formFields: CorpayFormField[];
     /** Indicates if the fields are loading */
     isLoading: boolean;

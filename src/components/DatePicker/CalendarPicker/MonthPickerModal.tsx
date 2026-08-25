@@ -15,7 +15,6 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {Keyboard} from 'react-native';
 
 type MonthPickerModalProps = {
-    /** Whether the modal is visible */
     isVisible: boolean;
 
     /** Currently selected month (0-indexed) */

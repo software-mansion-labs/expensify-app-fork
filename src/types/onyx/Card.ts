@@ -66,7 +66,6 @@ type Card = OnyxValueWithOfflineFeedback<{
     /** Total spend on the card (comes as a negative number) */
     totalSpend?: number;
 
-    /** Domain name */
     domainName: string;
 
     /** Transaction start date */
@@ -81,19 +80,15 @@ type Card = OnyxValueWithOfflineFeedback<{
     /** Last four Primary Account Number digits */
     lastFourPAN?: string;
 
-    /** Pin of the card */
     pin?: string;
 
-    /** Card number */
     cardNumber?: string;
 
-    /** Encrypted card number */
     encryptedCardNumber?: string;
 
     /** Current fraud state of the card */
     fraud: ValueOf<typeof CONST.EXPENSIFY_CARD.FRAUD_TYPES>;
 
-    /** Card name */
     cardName?: string;
 
     /** Related policy account id */
@@ -111,7 +106,6 @@ type Card = OnyxValueWithOfflineFeedback<{
     /** Last update result */
     lastScrapeResult?: number;
 
-    /** Last import attempt */
     lastImportAttempt?: string;
 
     /** Card related error messages */
@@ -164,19 +158,14 @@ type Card = OnyxValueWithOfflineFeedback<{
         /** Program currency of the card (USD, GBP, or EUR) */
         currency?: string;
 
-        /** Is a virtual card */
         isVirtual?: boolean;
 
-        /** Is a travel card */
         isTravelCard?: boolean;
 
-        /** Previous card state */
         previousState?: number;
 
-        /** Card expiration date */
         expirationDate?: string;
 
-        /** Card status changes */
         statusChanges?: CardStatusChanges[];
 
         /** Card terminated reason */
@@ -225,7 +214,6 @@ type ProvisioningCardData = {
     /** Card identifier */
     cardToken: string;
 
-    /** Card display name */
     displayName: string;
 
     /** Last 4 digits of the card */
@@ -322,10 +310,8 @@ type IssueNewCardData = {
     /** The email address of the inviting member */
     invitingMemberEmail: string;
 
-    /** The accountID of the inviting member */
     invitingMemberAccountID: number;
 
-    /** Card type */
     cardType: ValueOf<typeof CONST.EXPENSIFY_CARD.CARD_TYPE>;
 
     /** Card spending limit type */
@@ -337,7 +323,6 @@ type IssueNewCardData = {
     /** Name of the card */
     cardTitle: string;
 
-    /** Currency of the card */
     currency: string;
 
     /** Optional start date for card validity (YYYY-MM-DD) */
@@ -429,7 +414,6 @@ type CardAssignmentData = {
     /** Cardholder personal details */
     cardholder?: PersonalDetails | null;
 
-    /** Errors */
     errors?: Errors;
 
     /**
@@ -437,7 +421,6 @@ type CardAssignmentData = {
      */
     errorFields?: ErrorFields;
 
-    /** Pending action */
     pendingAction?: PendingAction;
 };
 

@@ -62,19 +62,14 @@ type MoneyRequestReportTransactionItemProps = {
     /** Callback function triggered upon long pressing a transaction. */
     handleLongPress: (transactionID: string) => void;
 
-    /** Whether the transaction is selected */
     isSelected: boolean;
 
-    /** The size of the date column */
     dateColumnSize: TableColumnSize;
 
-    /** The size of the posted column */
     postedColumnSize: TableColumnSize;
 
-    /** The size of the amount column */
     amountColumnSize: TableColumnSize;
 
-    /** The size of the tax amount column */
     taxAmountColumnSize: TableColumnSize;
 
     /** Columns to show */

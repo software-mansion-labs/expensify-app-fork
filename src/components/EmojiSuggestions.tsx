@@ -17,7 +17,6 @@ import AutoCompleteSuggestions from './AutoCompleteSuggestions';
 import Text from './Text';
 
 type EmojiSuggestionsProps = {
-    /** The index of the highlighted emoji */
     highlightedEmojiIndex?: number;
 
     /** Array of suggested emoji */
@@ -41,7 +40,6 @@ type EmojiSuggestionsProps = {
     /** Measures the parent container's position and dimensions. Also add cursor coordinates */
     measureParentContainerAndReportCursor: (callback: MeasureParentContainerAndCursorCallback) => void;
 
-    /** Reset the emoji suggestions */
     resetSuggestions: () => void;
 };
 

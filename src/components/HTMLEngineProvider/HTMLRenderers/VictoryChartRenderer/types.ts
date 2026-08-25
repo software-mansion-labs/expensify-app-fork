@@ -117,7 +117,6 @@ type LabelItem = {
     /** Font style (per line) */
     fontStyle?: Record<number, string>;
 
-    /** Line height (per line) */
     lineHeight?: Record<number, number>;
 
     /** Text horizontal anchor  */
@@ -134,22 +133,16 @@ type LegendItemEntry = {
     /** The color of the text */
     color?: Color;
 
-    /** Font size */
     fontSize?: number;
 
-    /** Font weight */
     fontWeight?: 'normal' | 'bold';
 
-    /** Font family */
     fontFamily?: string;
 
-    /** Font style */
     fontStyle?: string;
 
-    /** The color of the symbol */
     symbolColor?: Color;
 
-    /** Symbol size */
     symbolSize?: number;
 };
 

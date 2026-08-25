@@ -36,7 +36,6 @@ type TextCommentFragmentProps = {
     /** The reportAction's source */
     source: OriginalMessageSource;
 
-    /** The report action's id */
     reportActionID?: string;
 
     /** The message fragment needing to be displayed */

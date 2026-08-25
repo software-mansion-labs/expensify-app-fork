@@ -9,13 +9,11 @@ type ValidateCodeActionFormProps = {
     /** Primary description of the modal */
     descriptionPrimary: ReactNode;
 
-    /** Primary description styles */
     descriptionPrimaryStyles?: TextStyle;
 
     /** Secondary description of the modal */
     descriptionSecondary?: ReactNode;
 
-    /** Secondary description styles */
     descriptionSecondaryStyles?: TextStyle;
 
     /** The pending action for submitting form */
@@ -27,7 +25,6 @@ type ValidateCodeActionFormProps = {
     /** Function is called when submitting form  */
     handleSubmitForm: (validateCode: string) => void;
 
-    /** Function to clear error of the form */
     clearError: () => void;
 
     /** Function is called when validate code modal is mounted and on validateCode resend */
@@ -36,22 +33,18 @@ type ValidateCodeActionFormProps = {
     /** If the validateCode has been resent previously */
     hasValidateCodeBeenSent?: boolean;
 
-    /** Whether the form is loading or not */
     isLoading?: boolean;
 
-    /** Whether to show the skip button */
     shouldShowSkipButton?: boolean;
 
     /** Function to call when the skip button is pressed */
     handleSkipButtonPress?: () => void;
 
-    /** Text for submit button */
     submitButtonText?: string;
 
     /** Skip the call to sendValidateCode fn on initial render */
     shouldSkipInitialValidation?: boolean;
 
-    /** Ref for validate code form */
     ref?: ForwardedRef<ValidateCodeFormHandle>;
 };
 

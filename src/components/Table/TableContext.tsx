@@ -49,7 +49,6 @@ type TableContextValue<DataType extends TableData, ColumnKey extends string = st
     /** FlashList props passed through from the Table component. */
     listProps: SharedListProps<DataType>;
 
-    /** Whether or not selection is enabled for the table */
     selectionEnabled?: boolean;
 
     /** Whether the selection UX should key off the real screen size instead of shouldUseNarrowLayout (for tables inside a narrow pane modal / RHP) */
@@ -85,7 +84,6 @@ type TableContextValue<DataType extends TableData, ColumnKey extends string = st
     /** The column sorting is locked to on narrow layouts, where user sorting is ignored. */
     narrowLayoutSortColumn: ColumnKey | undefined;
 
-    /** Currently active search string. */
     activeSearchString: string;
 
     /** Methods exposed by the Table component for programmatic control. */
@@ -103,7 +101,6 @@ type TableContextValue<DataType extends TableData, ColumnKey extends string = st
     /** Whether the table has an empty result caused by search or filters. */
     isEmptyResult: boolean;
 
-    /** Whether or not table selection is enabled on mobile */
     isMobileSelectionEnabled: boolean;
 
     /** Whether to use a narrow layout (e.g. on mobile screens). */

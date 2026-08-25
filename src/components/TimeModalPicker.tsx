@@ -25,7 +25,6 @@ type TimeModalPickerProps = {
     /** Form Error description */
     errorText?: string;
 
-    /** Label for the picker */
     label: string;
 
     /** Reference to the outer element */

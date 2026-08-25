@@ -51,10 +51,8 @@ type OptionRowLHNDataProps = {
     /** The policy which the user has access to and which the report could be tied to */
     policy?: OnyxEntry<Policy>;
 
-    /** Invoice receiver policy */
     invoiceReceiverPolicy?: OnyxEntry<Policy>;
 
-    /** The reportID of the report */
     reportID: string;
 
     /** Toggle between compact and default view */
@@ -66,10 +64,8 @@ type OptionRowLHNDataProps = {
     /** Callback to execute when the OptionList lays out */
     onLayout?: (event: LayoutChangeEvent) => void;
 
-    /** The report attributes for the report */
     reportAttributes: OnyxEntry<ReportAttributes>;
 
-    /** The derived report attributes for all reports */
     reportAttributesDerived?: ReportAttributesDerivedValue['reports'];
 
     /** TestID of the row, indicating order */

@@ -25,10 +25,8 @@ type PushRowWithModalProps = {
     /** The description for the picker */
     description: string;
 
-    /** The title of the modal */
     modalHeaderTitle: string;
 
-    /** The title of the search input */
     searchInputTitle: string;
 
     /** Whether the selected option is editable */

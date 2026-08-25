@@ -46,13 +46,11 @@ type ReportActionItemParentActionProps = {
     /** Report actions belonging to the report's parent */
     parentReportAction: OnyxEntry<ReportAction>;
 
-    /** Whether we should display "Replies" divider */
     shouldDisplayReplyDivider: boolean;
 
     /** If this is the first visible report action */
     isFirstVisibleReportAction: boolean;
 
-    /** If the thread divider line will be used */
     shouldUseThreadDividerLine?: boolean;
 };
 

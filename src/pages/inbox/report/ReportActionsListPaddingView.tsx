@@ -15,7 +15,6 @@ import useShouldShowComposerForActiveEditDraft from './useShouldShowComposerForA
 type ReportActionsListPaddingViewProps = ChildrenProps & {
     /** The report currently being looked at */
     report: OnyxTypes.Report;
-    /** Whether the report is archived */
     isReportArchived: boolean;
 };
 

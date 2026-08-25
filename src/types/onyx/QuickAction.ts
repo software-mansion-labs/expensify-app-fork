@@ -10,7 +10,6 @@ type QuickAction = {
     /** The action to take */
     action?: QuickActionName;
 
-    /** ID of the report */
     chatReportID?: string;
 
     /** ID of the target account for task actions */

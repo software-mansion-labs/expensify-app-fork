@@ -32,7 +32,6 @@ type WorkspaceExpensifyCardsTableRowProps = {
     /** The index of the row relative to all other rows */
     rowIndex: number;
 
-    /** Whether to use narrow table row layout */
     shouldUseNarrowTableLayout: boolean;
 };
 

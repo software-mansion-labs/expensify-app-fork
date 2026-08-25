@@ -3,7 +3,6 @@ import type PlaidBankAccount from './PlaidBankAccount';
 
 /** Model of plaid data */
 type PlaidData = {
-    /** Name of the bank */
     bankName?: string;
 
     /**

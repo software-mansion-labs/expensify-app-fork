@@ -32,13 +32,10 @@ type DropdownButtonProps = WithSentryLabel &
         /** Whether to use medium size button instead of small */
         medium?: boolean;
 
-        /** Button inner styles */
         innerStyles?: StyleProp<ViewStyle>;
 
-        /** Button label style */
         labelStyle?: StyleProp<TextStyle>;
 
-        /** Caret wrapper style */
         caretWrapperStyle?: StyleProp<ViewStyle>;
         onClosePress?: () => void;
     };

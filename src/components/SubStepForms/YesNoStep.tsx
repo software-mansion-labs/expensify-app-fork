@@ -22,7 +22,6 @@ type YesNoStepProps = {
     /** The default value of the radio button */
     defaultValue: boolean;
 
-    /** Callback when the value is selected */
     onSelectedValue: (value: boolean) => void;
 
     /** The style of the submit button */

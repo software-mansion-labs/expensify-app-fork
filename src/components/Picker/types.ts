@@ -84,7 +84,6 @@ type BasePickerProps<TPickerValue> = {
     /** A callback method that is called when the value changes and it receives the selected value as an argument */
     onInputChange?: (value: TPickerValue, index?: number) => void;
 
-    /** Size of a picker component */
     size?: PickerSize;
 
     /** An icon to display with the picker */

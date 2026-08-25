@@ -31,7 +31,6 @@ type ProcessMoneyReportHoldMenuProps = {
     /** Callback for closing modal */
     onClose: () => void;
 
-    /** Type of payment */
     paymentType?: PaymentMethodType;
 
     /** Selected VBBA ID for payment */
@@ -46,7 +45,6 @@ type ProcessMoneyReportHoldMenuProps = {
     /** Callback invoked after the user confirms pay/approve, receives whether the full amount was chosen */
     onConfirm?: (full: boolean) => void;
 
-    /** Whether the report has non held expenses */
     hasNonHeldExpenses?: boolean;
 };
 

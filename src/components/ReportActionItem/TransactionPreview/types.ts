@@ -67,7 +67,6 @@ type TransactionPreviewContentProps = {
     /** Navigates the user to a separate view or component for reviewing or editing transaction fields. */
     navigateToReviewFields: () => void;
 
-    /** Whether the transaction is whisper. */
     isWhisper?: boolean;
 
     /** Determines if the element is currently hovered over. */
@@ -113,7 +112,6 @@ type TransactionPreviewContentProps = {
     /** Indicates whether the transaction consists of duplicates */
     areThereDuplicates: boolean;
 
-    /** Session account ID */
     sessionAccountID?: number;
 
     /** Name of the route where the transaction preview is being displayed */

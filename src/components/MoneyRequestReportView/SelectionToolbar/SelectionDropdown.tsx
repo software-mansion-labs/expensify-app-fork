@@ -26,10 +26,8 @@ type SelectionDropdownProps = {
     selectedTransactionsOptions: Array<DropdownOption<string>>;
     selectedTransactionIDs: string[];
 
-    /** Whether the selection mode is pay-in */
     hasPayInSelectionMode: boolean;
 
-    /** Callback to select the payment */
     onSelectionModePaymentSelect: (event: KYCFlowEvent, iouPaymentType: PaymentMethodType, triggerKYCFlow: TriggerKYCFlow) => void;
 
     /** Callback for the end of the onContinue trigger on option selection */

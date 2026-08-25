@@ -15,7 +15,6 @@ type LoadingIndicatorProps = {
     /** Styles of the outer view */
     style?: StyleProp<ViewStyle>;
 
-    /** Size of the icon */
     iconSize?: LoadingIndicatorIconSize;
 };
 

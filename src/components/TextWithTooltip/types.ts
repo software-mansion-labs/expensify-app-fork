@@ -6,7 +6,6 @@ type TextWithTooltipProps = ForwardedFSClassProps & {
     /** The text to display */
     text: string;
 
-    /** Whether to show the tooltip text */
     shouldShowTooltip?: boolean;
 
     /** Additional styles */
@@ -15,7 +14,6 @@ type TextWithTooltipProps = ForwardedFSClassProps & {
     /** Custom number of lines for text wrapping */
     numberOfLines?: number;
 
-    /** TestID of the Text component */
     testID?: string;
 };
 

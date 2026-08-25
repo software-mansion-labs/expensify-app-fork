@@ -47,7 +47,6 @@ type MultiSelectProps<T> = SearchFilterCommonProps<Array<MultiSelectItem<T>>> & 
     /** Whether the data for the popover is loading */
     loading?: boolean;
 
-    /** Whether to show the loading placeholder */
     shouldShowLoadingPlaceholder?: boolean;
 };
 

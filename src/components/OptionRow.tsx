@@ -49,7 +49,6 @@ type OptionRowProps = {
     /** Display the text of the option in bold font style */
     boldStyle?: boolean;
 
-    /** Whether to show the title tooltip */
     showTitleTooltip?: boolean;
 
     /** Whether this option should be disabled */

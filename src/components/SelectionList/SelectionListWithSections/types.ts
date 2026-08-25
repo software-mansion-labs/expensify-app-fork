@@ -7,7 +7,6 @@ import type {ReactElement, ReactNode} from 'react';
 import type {LayoutChangeEvent} from 'react-native';
 
 type Section<TItem extends ListItem> = {
-    /** Title of the section */
     title?: string;
 
     /** Custom header to display */

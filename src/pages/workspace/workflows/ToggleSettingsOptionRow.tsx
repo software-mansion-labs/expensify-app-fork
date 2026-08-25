@@ -32,16 +32,12 @@ type ToggleSettingOptionRowProps = {
     /** Icon to be shown for the option row */
     rowIcon?: IconAsset;
 
-    /** Title of the option */
     title?: string;
 
-    /** Custom title for the option */
     customTitle?: React.ReactNode;
 
-    /** Subtitle of the option */
     subtitle?: string | ReactNode;
 
-    /** Accessibility label for the switch */
     switchAccessibilityLabel: string;
 
     /** subtitle should show below switch and title */
@@ -95,7 +91,6 @@ type ToggleSettingOptionRowProps = {
     /** Callback to close the error messages */
     onCloseError?: () => void;
 
-    /** Whether the toggle should be disabled */
     disabled?: boolean;
 
     /** Whether to show the lock icon even if the switch is enabled */

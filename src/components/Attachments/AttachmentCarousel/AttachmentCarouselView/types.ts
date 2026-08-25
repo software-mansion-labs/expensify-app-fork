@@ -7,7 +7,6 @@ type AttachmentCarouselViewProps = {
     shouldShowArrows: boolean;
     /** The current page index */
     page: number;
-    /** The attachments from the carousel */
     attachments: Attachment[];
     /** The id of the current active attachment */
     attachmentID?: string;
@@ -25,7 +24,6 @@ type AttachmentCarouselViewProps = {
     setPage: (page: number) => void;
     /** The report currently being looked at */
     report?: Report;
-    /** Callback for attachment errors */
     onAttachmentError?: (source: AttachmentSource, state?: boolean) => void;
     /** Callback to update the parent modal's state with a source and name from the attachments array */
     onNavigate?: (attachment: Attachment) => void;

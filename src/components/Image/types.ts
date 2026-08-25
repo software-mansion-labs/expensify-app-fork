@@ -30,7 +30,6 @@ type BaseImageProps = {
     /** Styles for the Image */
     style?: StyleProp<ImageStyle>;
 
-    /** The image cache policy */
     cachePolicy?: ImagePrefetchOptions['cachePolicy'];
 
     /** Priorities for completing loads. If more than one load is queued at a time,
@@ -67,7 +66,6 @@ type ImageOwnProps = BaseImageProps & {
     /** Progress events while the image is downloading */
     onProgress?: () => void;
 
-    /** The object position of image */
     objectPosition?: ImageObjectPosition;
 
     /**

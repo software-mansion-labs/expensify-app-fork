@@ -94,7 +94,6 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** Function to fire when component is pressed */
         onPress?: (event: GestureResponderEvent | KeyboardEvent) => void | Promise<void>;
 
-        /** Whether the menu item should be interactive at all */
         interactive?: boolean;
 
         /** Text to be shown as badge near the right end. */
@@ -160,10 +159,8 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** Whether the secondary icon should have hover style */
         isSecondaryIconHoverable?: boolean;
 
-        /** Icon Width */
         iconWidth?: number;
 
-        /** Icon Height */
         iconHeight?: number;
 
         /** Any additional styles to pass to the icon container. */
@@ -252,7 +249,6 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** Text to display for the item */
         title?: string;
 
-        /** Accessibility label for the menu item */
         accessibilityLabel?: string;
 
         /** Optional accessibility role for the title. Only set when the title is a section heading (e.g. CONST.ROLE.HEADER); omit for regular menu items. */
@@ -273,7 +269,6 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** Should the title show with normal font weight (not bold) */
         shouldShowBasicTitle?: boolean;
 
-        /** Should we truncate the title */
         shouldTruncateTitle?: boolean;
 
         /** Whether this item is selected */
@@ -303,7 +298,6 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** Whether or not the text should be escaped */
         shouldEscapeText?: boolean;
 
-        /** Should we grey out the menu item when it is disabled? */
         shouldGreyOutWhenDisabled?: boolean;
 
         /** Should we remove the background color of the menu item */
@@ -394,7 +388,6 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** Whether the tooltip content should be visible. When omitted, matches shouldRenderTooltip. */
         shouldDisplayEducationalTooltip?: boolean;
 
-        /** Anchor alignment of the tooltip */
         tooltipAnchorAlignment?: TooltipAnchorAlignment;
 
         /** Additional styles for tooltip wrapper */
@@ -429,7 +422,6 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** Pressable component Test ID. Used to locate the component in tests. */
         pressableTestID?: string;
 
-        /** Whether to teleport the portal to the modal layer */
         shouldTeleportPortalToModalLayer?: boolean;
 
         /** The value to copy in copy to clipboard action. Must be used in conjunction with `copyable=true`. Default value is `title` prop. */
@@ -459,13 +451,11 @@ type MenuItemBaseProps = ForwardedFSClassProps &
         /** The accessibility role to use for this menu item */
         role?: Role;
 
-        /** Whether to show the badge in a separate row */
         shouldShowBadgeInSeparateRow?: boolean;
 
         /** Whether to show the badge below the title */
         shouldShowBadgeBelow?: boolean;
 
-        /** Whether item should be accessible */
         shouldBeAccessible?: boolean;
 
         /** Whether item should be focusable with keyboard */

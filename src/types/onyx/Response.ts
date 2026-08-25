@@ -85,7 +85,6 @@ type Response<TKey extends OnyxKey> = {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     shared_secret?: string;
 
-    /** Setup Url */
     setupUrl?: string;
 
     /** The accountID of the user */

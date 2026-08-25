@@ -100,10 +100,8 @@ type MoneyRequestConfirmationListFooterProps = {
     /** Caller-supplied visibility decisions */
     visibilityFlags: VisibilityFlags;
 
-    /** Error state */
     errorState: ErrorState;
 
-    /** Toggle handlers */
     toggleHandlers?: ToggleHandlers;
 
     /** Receipt-related options */

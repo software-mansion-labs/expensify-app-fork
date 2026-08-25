@@ -28,21 +28,16 @@ import {View} from 'react-native';
 
 type WorkspaceCompanyCardTableRowData = TableData &
     CardAssignmentData & {
-        /** Whether the card is deleted */
         isCardDeleted: boolean;
 
-        /** Whether the card is assigned */
         isAssigned: boolean;
 
-        /** Assigned card */
         assignedCard?: Card;
 
-        /** On dismiss error callback */
         onDismissError?: () => void;
     };
 
 type WorkspaceCompanyCardTableRowProps = {
-    /** The workspace company card table item */
     item: WorkspaceCompanyCardTableRowData;
 
     /** Selected card feed */
@@ -57,10 +52,8 @@ type WorkspaceCompanyCardTableRowProps = {
     /** Whether the current member can edit company cards */
     canWriteCompanyCards: boolean;
 
-    /** Whether to use narrow table row layout */
     shouldUseNarrowTableLayout: boolean;
 
-    /** The index of the row */
     rowIndex: number;
 
     /**

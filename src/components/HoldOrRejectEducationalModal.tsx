@@ -20,7 +20,6 @@ type SectionMenuItem = {
     /** The icon supplied with the section */
     icon: IconAsset;
 
-    /** Translation key for the title */
     titleTranslationKey: TranslationPaths;
 };
 

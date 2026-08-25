@@ -107,10 +107,8 @@ type ActionContentRouterProps = {
     /** Should the comment have the appearance of being grouped with the previous comment? */
     displayAsGroup: boolean;
 
-    /** ReportAction draft message */
     draftMessage: string | undefined;
 
-    /** Whether the report action is a whisper */
     isWhisper: boolean;
 
     /** Whether the report action is hovered (or context menu / emoji picker active) */
@@ -125,7 +123,6 @@ type ActionContentRouterProps = {
     /** Whether the provided report is a closed expense report with no expenses */
     isClosedExpenseReportWithNoExpenses?: boolean;
 
-    /** Whether the report action is the "Created" action of a harvest-created expense report */
     isHarvestCreatedExpenseReport: boolean;
 
     /** Whether to show border for MoneyRequestReportPreviewContent */
@@ -137,7 +134,6 @@ type ActionContentRouterProps = {
     /** Toggle whether the payment method popover is active */
     setIsPaymentMethodPopoverActive: (value: boolean) => void;
 
-    /** Whether the user is a track intent user */
     isTrackIntentUser?: boolean;
 };
 

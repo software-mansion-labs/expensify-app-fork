@@ -92,7 +92,6 @@ type MoneyRequestReportUnifiedListProps = {
     /** Ref to the underlying list, shared via the ActionList context. */
     listRef: FlatListRefType;
 
-    /** Accessibility label for the list. */
     accessibilityLabel: string;
 
     /** Called when the list lays out. */

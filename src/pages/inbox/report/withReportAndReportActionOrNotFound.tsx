@@ -38,7 +38,6 @@ type WithReportAndReportActionOrNotFoundProps = PlatformStackScreenProps<
     /** The parent report if the current report is a thread and it has a parent */
     parentReport: OnyxEntry<OnyxTypes.Report>;
 
-    /** The report's parentReportAction */
     parentReportAction: NonNullable<OnyxEntry<OnyxTypes.ReportAction>> | null;
 };
 

@@ -59,7 +59,6 @@ type ListItem<K extends string | number = string> = {
     /** Whether the option can show both selected and error indicators */
     canShowSeveralIndicators?: boolean;
 
-    /** Whether the checkbox should be disabled */
     isDisabledCheckbox?: boolean;
 
     /** Whether this option is disabled for selection */
@@ -103,16 +102,12 @@ type ListItem<K extends string | number = string> = {
     /** Represents the index of the option within the section it came from */
     index?: number;
 
-    /** ID of the report */
     reportID?: string;
 
-    /** ID of the policy */
     policyID?: string;
 
-    /** ID of the group */
     groupID?: string;
 
-    /** ID of the category */
     categoryID?: string;
 
     /** Whether this option should show subscript */
@@ -124,7 +119,6 @@ type ListItem<K extends string | number = string> = {
     /** Whether to wrap the alternate text up to 2 lines */
     isAlternateTextMultilineSupported?: boolean;
 
-    /** The search value from the selection list */
     searchText?: string | null;
 
     /** What text to show inside the badge (if none present the badge will be omitted) */
@@ -265,7 +259,6 @@ type ListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> & {
     /** Additional styles to apply to text */
     style?: StyleProp<TextStyle>;
 
-    /** Is item hovered */
     isHovered?: boolean;
 
     /** Prevent the submission of the list item when enter key is pressed */
@@ -292,10 +285,8 @@ type ListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> & {
     /** Styles applied for the title container of the list item */
     titleContainerStyles?: StyleProp<ViewStyle>;
 
-    /** Whether to highlight the selected item */
     shouldHighlightSelectedItem?: boolean;
 
-    /** Index of the item in the list */
     index?: number;
 
     /** Callback when the input inside the item is focused (if input exists) */
@@ -307,7 +298,6 @@ type ListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> & {
     /** Callback when the hold menu should be opened */
     onHoldMenuOpen?: HoldMenuCallback;
 
-    /** Whether to disable the hover style of the item */
     shouldDisableHoverStyle?: boolean;
 
     /** Whether the network is offline */
@@ -356,10 +346,8 @@ type BaseListItemProps<TItem extends ListItem> = CommonListItemProps<TItem> &
         testID?: string;
         /** Whether to show the right caret icon */
         shouldShowRightCaret?: boolean;
-        /** Whether to highlight the selected item */
         shouldHighlightSelectedItem?: boolean;
 
-        /** Whether to disable the hover style of the item */
         shouldDisableHoverStyle?: boolean;
 
         /**
@@ -396,7 +384,6 @@ type SelectableListItemProps<TItem extends ListItem> = BaseListItemProps<TItem> 
 
 type SplitListItemType = ListItem &
     SplitExpense & {
-        /** Item header text */
         headerText: string;
 
         /** Merchant or vendor name */
@@ -408,7 +395,6 @@ type SplitListItemType = ListItem &
         /** ID of split expense */
         transactionID: string;
 
-        /** Currency symbol */
         currencySymbol: string;
 
         /** Original amount before split */

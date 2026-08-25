@@ -43,10 +43,8 @@ type OnyxUpdatesFromServerBase<TKey extends OnyxKey, TRequest> = {
     /** Delivery method of onyx updates */
     type: 'https' | 'pusher' | 'airship';
 
-    /** Last update ID from server */
     lastUpdateID: number | string;
 
-    /** Previous update ID from server */
     previousUpdateID?: number | string;
 
     /** Whether the client should fetch pending updates from the server */

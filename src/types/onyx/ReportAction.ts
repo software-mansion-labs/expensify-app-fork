@@ -30,10 +30,8 @@ type Message = {
      */
     style?: string;
 
-    /** ID of a report */
     reportID?: string;
 
-    /** ID of a policy */
     policyID?: string;
 
     /** The target of a link fragment e.g. '_blank' */
@@ -63,13 +61,11 @@ type Message = {
     /** Key to translate the message */
     translationKey?: string;
 
-    /** ID of a task report */
     taskReportID?: string;
 
     /** Reason of payment cancellation */
     cancellationReason?: string;
 
-    /** ID of an expense report */
     expenseReportID?: string;
 
     /** Amount of an expense */
@@ -178,13 +174,10 @@ type ReportActionBase = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** TODO: Not enough context */
     shouldShow?: boolean;
 
-    /** The ID of childReport */
     childReportID?: string;
 
-    /** Name of child report */
     childReportName?: string;
 
-    /** Type of child report  */
     childType?: string;
 
     /** The user's ID */
@@ -208,10 +201,8 @@ type ReportActionBase = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** In task reports this is account ID of the user assigned to the task */
     childManagerAccountID?: number;
 
-    /** The owner account ID of the child report action */
     childOwnerAccountID?: number;
 
-    /** The status of the child report */
     childStatusNum?: ValueOf<typeof CONST.REPORT.STATUS_NUM>;
 
     /** Report action child status name */
@@ -220,7 +211,6 @@ type ReportActionBase = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** Content of the last money request comment, used in report preview */
     childLastMoneyRequestComment?: string;
 
-    /** Account ID of the last actor */
     childLastActorAccountID?: number;
 
     /** Amount of money requests */
@@ -229,10 +219,8 @@ type ReportActionBase = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** Whether the report action is the first one */
     isFirstItem?: boolean;
 
-    /** Whether the report action is only an attachment */
     isAttachmentOnly?: boolean;
 
-    /** Whether the report action is an attachment with text */
     isAttachmentWithText?: boolean;
 
     /** Receipt tied to report action */
@@ -253,10 +241,8 @@ type ReportActionBase = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** Recent receipt transaction IDs keyed by reportID */
     childRecentReceiptTransactionIDs?: Record<string, string>;
 
-    /** ReportID of the report action */
     reportID?: string;
 
-    /** Metadata of the link */
     linkMetadata?: LinkMetadata[];
 
     /** The current user's notification preference for this report's child */
@@ -271,7 +257,6 @@ type ReportActionBase = OnyxCommon.OnyxValueWithOfflineFeedback<{
     /** Whether the original report related to this action was deleted */
     isOriginalReportDeleted?: boolean;
 
-    /** The admins's ID */
     adminAccountID?: number;
 
     /** These are the account IDs to whom a message was whispered. It is used to check if a specific user should be displayed a whisper message or not. */
@@ -304,10 +289,8 @@ type ReportAction<T extends ReportActionName = ReportActionName> = ReportActionB
     /** @deprecated Used in old report actions before migration. Replaced by using getOriginalMessage function. */
     originalMessage?: OriginalMessage<T>;
 
-    /** report action message */
     message?: (OriginalMessage<T> & Message) | Array<Message | undefined>;
 
-    /** report action message */
     previousMessage?: (OriginalMessage<T> & Message) | Array<Message | undefined>;
 };
 

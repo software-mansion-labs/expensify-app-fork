@@ -34,7 +34,6 @@ type RequiredLabelProps =
       };
 
 type CheckboxWithLabelProps = RequiredLabelProps & {
-    /** Whether the checkbox is checked */
     isChecked?: boolean;
 
     /** Called when the checkbox or label is pressed */
@@ -49,7 +48,6 @@ type CheckboxWithLabelProps = RequiredLabelProps & {
     /** Value for checkbox. This prop is intended to be set by FormProvider only */
     value?: boolean;
 
-    /** The default value for the checkbox */
     defaultValue?: boolean;
 
     /** The ID used to uniquely identify the input in a Form */
@@ -60,7 +58,6 @@ type CheckboxWithLabelProps = RequiredLabelProps & {
     // eslint-disable-next-line react/no-unused-prop-types
     shouldSaveDraft?: boolean;
 
-    /** An accessibility label for the checkbox */
     accessibilityLabel?: string;
 
     /** Reference to the outer element */

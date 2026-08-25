@@ -22,7 +22,6 @@ type ErrorMessageRowProps = {
     /** If passed, an X button next to the error will be shown and which triggers this callback */
     onDismiss?: () => void;
 
-    /** A function to dismiss error */
     dismissError?: () => void;
 };
 

@@ -65,16 +65,13 @@ type AssignCardData = {
     /** Access token for Plaid bank */
     plaidAccessToken?: string;
 
-    /** Plaid feed name */
     plaidConnectedFeedName?: string;
 
-    /** Plaid accounts */
     plaidAccounts?: LinkAccount[] | PlaidAccount[];
 
     /** The email address of the inviting member */
     invitingMemberEmail: string;
 
-    /** The accountID of the inviting member */
     invitingMemberAccountID: number;
 };
 
@@ -92,7 +89,6 @@ type AssignCard = {
     /** Whether the assignment flow has finished */
     isAssignmentFinished?: boolean;
 
-    /** Whether the card is assigning */
     isAssigning?: boolean;
 
     /** Whether the feed connection is currently being refreshed */

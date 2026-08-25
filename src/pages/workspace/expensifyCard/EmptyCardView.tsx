@@ -15,7 +15,6 @@ import React from 'react';
 import {View} from 'react-native';
 
 type EmptyCardViewProps = {
-    /** Whether the bank account is verified */
     isBankAccountVerified: boolean;
     /** ID of the current policy */
     policyID?: string;

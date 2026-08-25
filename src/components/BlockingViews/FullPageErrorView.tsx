@@ -14,7 +14,6 @@ import BlockingView from './BlockingView';
 import ForceFullScreenView from './ForceFullScreenView';
 
 type FullPageErrorViewProps = {
-    /** TestID for test */
     testID?: string;
 
     /** Child elements */
@@ -29,7 +28,6 @@ type FullPageErrorViewProps = {
     /** The subtitle text to be displayed */
     subtitle?: string;
 
-    /** Whether we should force the full page view */
     shouldForceFullScreen?: boolean;
 
     /** The style of the subtitle message */

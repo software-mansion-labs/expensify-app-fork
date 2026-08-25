@@ -33,7 +33,6 @@ type PDFDownloadModalProps = {
     /** Whether the download button uses the success (green) style once the PDF is ready */
     shouldUseSuccessButton?: boolean;
 
-    /** Whether the modal is visible */
     isVisible: boolean;
 
     /** Whether this modal should count as covering the product marketing window */

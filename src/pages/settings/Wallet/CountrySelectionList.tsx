@@ -20,7 +20,6 @@ import React from 'react';
 import {View} from 'react-native';
 
 type CountrySelectionListProps = {
-    /** The currently selected country */
     selectedCountry: string;
 
     /** List of available countries in country code format */

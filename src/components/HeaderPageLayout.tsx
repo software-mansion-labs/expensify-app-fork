@@ -48,7 +48,6 @@ type HeaderPageLayoutProps = ChildrenProps &
         /** Style to apply to the whole section container */
         style?: StyleProp<ViewStyle>;
 
-        /** Whether or not to show the offline indicator */
         shouldShowOfflineIndicatorInWideScreen?: boolean;
 
         keyboardShouldPersistTaps?: ScrollViewProps['keyboardShouldPersistTaps'];

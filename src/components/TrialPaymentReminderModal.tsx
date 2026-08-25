@@ -15,7 +15,6 @@ import Modal from './Modal';
 import Text from './Text';
 
 type TrialPaymentReminderModalProps = {
-    /** Whether the modal is visible */
     isVisible: boolean;
 
     /** The variant of the modal to display */

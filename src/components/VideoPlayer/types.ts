@@ -41,9 +41,6 @@ type VideoPlayerProps = {
      */
     videoDuration?: number;
 
-    /**
-     * Whether the VideoPlayer should use a shared video element.
-     */
     shouldUseSharedVideoElement?: boolean;
 
     /**
@@ -51,9 +48,6 @@ type VideoPlayerProps = {
      */
     shouldUseSmallVideoControls?: boolean;
 
-    /**
-     * Whether the VideoPlayer is currently hovered.
-     */
     isVideoHovered?: boolean;
 
     /**

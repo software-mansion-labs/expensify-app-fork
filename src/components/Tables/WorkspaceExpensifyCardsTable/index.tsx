@@ -51,7 +51,6 @@ type WorkspaceExpensifyCardTableRowData = TableData & {
 };
 
 type WorkspaceExpensifyCardsTableProps = {
-    /** Policy ID */
     policyID: string;
 
     /** Optional page-level content rendered above the card labels that scrolls with the rows */

@@ -21,7 +21,6 @@ type FullScreenLoadingIndicatorProps = {
     /** Styles of the outer view */
     style?: StyleProp<ViewStyle>;
 
-    /** Size of the icon */
     iconSize?: FullScreenLoadingIndicatorIconSize;
 
     /** Whether the "Go Back" button appears after a timeout. */

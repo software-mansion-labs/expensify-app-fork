@@ -69,7 +69,6 @@ type PopoverMenuItem = MenuItemProps & {
      */
     shouldCallAfterModalHide?: boolean;
 
-    /** Whether to close all modals */
     shouldCloseAllModals?: boolean;
 
     pendingAction?: PendingAction;
@@ -90,7 +89,6 @@ type PopoverMenuItem = MenuItemProps & {
     /** Whether to show a loading spinner icon for the menu item */
     shouldShowLoadingSpinnerIcon?: boolean;
 
-    /** Whether to close the modal on select */
     shouldCloseModalOnSelect?: boolean;
 
     /** Whether selecting this item should avoid restoring focus to the popover before a follow-up modal opens on iOS */
@@ -130,13 +128,11 @@ type PopoverMenuProps = Partial<ModalAnimationProps> & {
     /** Optional non-interactive text to display as a header for any create menu */
     headerText?: string;
 
-    /** Whether disable the animations */
     disableAnimation?: boolean;
 
     /** The horizontal and vertical anchors points for the popover */
     anchorPosition: AnchorPosition;
 
-    /** Ref of the anchor */
     anchorRef: RefObject<View | HTMLDivElement | null>;
 
     /** Where the popover should be positioned relative to the anchor points. */

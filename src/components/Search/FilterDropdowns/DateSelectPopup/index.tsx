@@ -31,7 +31,6 @@ type DateSelectPopupProps = {
     /** The current date values */
     value: SearchDateValues;
 
-    /** The date presets */
     presets?: SearchDatePreset[];
 
     /** Additional style props */

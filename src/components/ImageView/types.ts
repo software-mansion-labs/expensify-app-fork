@@ -10,7 +10,6 @@ type ImageViewProps = Pick<Attachment, 'attachmentID'> & {
     /** URL to full-sized image */
     url: string;
 
-    /** image file name */
     fileName: string;
 
     /** Handles errors while displaying the image */

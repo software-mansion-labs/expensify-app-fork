@@ -18,7 +18,6 @@ import {View} from 'react-native';
 import type {ReportFieldListValueRowData} from '.';
 
 type WorkspaceReportFieldListValuesTableRowProps = {
-    /** The list value item for the row */
     item: ReportFieldListValueRowData;
 
     /** The index of the row relative to all other rows */

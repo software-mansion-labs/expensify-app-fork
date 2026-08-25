@@ -48,7 +48,6 @@ type ExpensifyCardSettingsBase = {
     /** Policy IDs linked to this Expensify Card feed (when present, drives feed grouping in the admin selector) */
     linkedPolicyIDs?: string[];
 
-    /** The Marqeta business token */
     marqetaBusinessToken?: number;
 
     /** Name of the domain card was issued for */

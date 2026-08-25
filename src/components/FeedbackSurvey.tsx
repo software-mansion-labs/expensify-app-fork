@@ -28,10 +28,8 @@ type FeedbackSurveyProps = {
     /** A unique Onyx key identifying the form */
     formID: typeof ONYXKEYS.FORMS.DISABLE_AUTO_RENEW_SURVEY_FORM | typeof ONYXKEYS.FORMS.CANCEL_SUBSCRIPTION_FORM;
 
-    /** Title of the survey */
     title: string;
 
-    /** Description of the survey */
     description: string;
 
     /** Callback to be called when the survey is submitted */

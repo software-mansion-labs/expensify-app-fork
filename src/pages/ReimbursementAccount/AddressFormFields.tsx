@@ -43,10 +43,8 @@ type AddressFormProps = ForwardedFSClassProps & {
     /** Translate key for Street name */
     streetTranslationKey: TranslationPaths;
 
-    /** Default values */
     defaultValues?: Address;
 
-    /** Form values */
     values?: Address;
 
     /** Any errors that can arise from form validation */
@@ -67,13 +65,10 @@ type AddressFormProps = ForwardedFSClassProps & {
     /** Indicates if state selector should be displayed */
     shouldDisplayStateSelector?: boolean;
 
-    /** Label for the state selector */
     stateSelectorLabel?: string;
 
-    /** The title of the state selector modal */
     stateSelectorModalHeaderTitle?: string;
 
-    /** The title of the state selector search input */
     stateSelectorSearchInputTitle?: string;
 
     /** Callback to be called when the country is changed */

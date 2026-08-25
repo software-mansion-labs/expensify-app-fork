@@ -15,7 +15,6 @@ type SingleAvatarProps = BaseAvatarProps & {
     /** The resolved avatar icon to render */
     avatar: AvatarIcon;
 
-    /** Container styles for the avatar */
     containerStyles: StyleProp<ViewStyle>;
 };
 

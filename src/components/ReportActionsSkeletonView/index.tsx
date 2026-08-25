@@ -8,7 +8,6 @@ import {Dimensions, View} from 'react-native';
 import SkeletonViewLines from './SkeletonViewLines';
 
 type ReportActionsSkeletonViewProps = {
-    /** Whether to animate the skeleton view */
     shouldAnimate?: boolean;
 
     /** Number of possible visible content items */

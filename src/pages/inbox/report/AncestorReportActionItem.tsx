@@ -35,19 +35,16 @@ type AncestorReportActionItemProps = {
     /** Should we display the new marker on top of the comment? */
     shouldDisplayNewMarker: boolean;
 
-    /** Report name value pairs for the ancestor reports */
     reportNameValuePairs: OnyxCollection<ReportNameValuePairs>;
 
     /** Beta features list */
     allBetas: OnyxEntry<Beta[]>;
 
-    /** Concierge personal details */
     conciergePersonalDetail: OnyxEntry<PersonalDetails>;
 
     /** The user's Concierge reportID */
     conciergeReportID: string | undefined;
 
-    /** Account ID of the current user */
     currentUserAccountID: number;
 
     /** Model of onboarding */
@@ -62,13 +59,11 @@ type AncestorReportActionItemProps = {
     /** Whether the user has viewed the self-guided tour */
     isSelfTourViewed: boolean | undefined;
 
-    /** Linked transaction route error */
     linkedTransactionRouteError: Errors | undefined;
 
     /** Report action belonging to the report's parent */
     parentReportAction: OnyxEntry<ReportAction>;
 
-    /** If the thread divider line will be used */
     shouldUseThreadDividerLine: boolean;
 
     /** The transaction thread report associated with the current report, if any */

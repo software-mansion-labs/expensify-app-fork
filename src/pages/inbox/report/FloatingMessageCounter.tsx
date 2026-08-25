@@ -74,7 +74,6 @@ type FloatingMessageCounterProps = {
     /** Whether the New Messages indicator is active */
     isActive?: boolean;
 
-    /** Whether there are new messages */
     hasNewMessages: boolean;
 
     /** Callback to be called when user clicks the New Messages indicator */

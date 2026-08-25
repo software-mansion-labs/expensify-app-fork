@@ -39,7 +39,6 @@ type LimitTypeStepProps = {
     // The policy that the card will be issued under
     policy: OnyxEntry<OnyxTypes.Policy>;
 
-    /** Start from step index */
     startStepIndex: number;
 
     /** Array of step names */

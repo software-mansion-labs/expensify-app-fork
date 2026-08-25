@@ -93,7 +93,6 @@ type ButtonWithDropdownMenuProps<TValueType> = WithSentryLabel & {
     /** Whether we should show a loading state for the main button */
     isLoading?: boolean;
 
-    /** The size of the button */
     size?: ValueOf<typeof CONST.BUTTON_SIZE>;
 
     /** Should the confirmation button be disabled? */
@@ -166,7 +165,6 @@ type ButtonWithDropdownMenuProps<TValueType> = WithSentryLabel & {
     /** Whether to use modal padding style for the popover menu */
     shouldUseModalPaddingStyle?: boolean;
 
-    /** Whether to use short form for the button */
     shouldUseShortForm?: boolean;
 
     /** Whether to display the option icon when only one option is available */

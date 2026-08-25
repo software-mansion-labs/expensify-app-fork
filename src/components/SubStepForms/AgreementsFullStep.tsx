@@ -47,7 +47,6 @@ type AgreementsFullStepProps<TFormID extends keyof OnyxFormValuesMapping> = {
     /** Default values for inputs */
     defaultValues: Partial<Record<FormOnyxKeys<TFormID>, boolean>>;
 
-    /** The ID of the form */
     formID: TFormID;
 
     /** Input IDs for field in the form */

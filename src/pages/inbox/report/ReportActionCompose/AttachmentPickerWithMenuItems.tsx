@@ -63,28 +63,21 @@ type AttachmentPickerWithMenuItemsProps = {
     /** The report currently being looked at */
     report: OnyxEntry<OnyxTypes.Report>;
 
-    /** The personal details of the current user */
     currentUserPersonalDetails: OnyxTypes.PersonalDetails;
 
-    /** Callback when the attachment is picked */
     onAttachmentPicked: (url: FileObject | FileObject[]) => void;
 
     /** Whether or not the full size composer is available */
     isFullComposerAvailable: boolean;
 
-    /** Whether or not the composer is full size */
     isComposerFullSize: boolean;
 
-    /** Whether or not the attachment picker is disabled */
     disabled?: boolean;
 
-    /** Sets the menu visibility */
     setMenuVisibility: (isVisible: boolean) => void;
 
-    /** Whether or not the menu is visible */
     isMenuVisible: boolean;
 
-    /** Report ID */
     reportID: string;
 
     /** Called when opening the attachment picker */
