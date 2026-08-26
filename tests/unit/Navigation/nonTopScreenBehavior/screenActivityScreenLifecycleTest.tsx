@@ -50,7 +50,9 @@ let stateIdentities: Array<Record<string, unknown>> = [];
 function ChatScreen() {
     const [stateIdentity] = useState<Record<string, unknown>>(() => ({}));
     const survivingRef = useRef<string | undefined>(undefined);
-    survivingRef.current ??= 'set-at-mount';
+    if (survivingRef.current === undefined) {
+        survivingRef.current = 'set-at-mount';
+    }
     stateIdentities.push(stateIdentity);
 
     useEffect(() => {
