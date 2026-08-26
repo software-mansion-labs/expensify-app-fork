@@ -154,9 +154,6 @@ const KEYS_TO_PRESERVE: OnyxKey[] = [
     ONYXKEYS.PRESERVED_ACCOUNT,
     ONYXKEYS.HYBRID_APP,
     ONYXKEYS.ACTIVE_SERVER,
-    // The Cloudflare Access identity is deliberately not bound to the Expensify account, so dropping it here
-    // would force a full authorize round trip on the sign-in screen the moment the first QA request goes out.
-    ONYXKEYS.CLOUDFLARE_SESSION,
     ONYXKEYS.IS_DEBUG_MODE_ENABLED,
     ONYXKEYS.COLLECTION.PASSKEY_CREDENTIALS,
     ONYXKEYS.COLLECTION.DEVICE_BIOMETRICS,

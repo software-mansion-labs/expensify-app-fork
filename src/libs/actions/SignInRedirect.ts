@@ -59,9 +59,6 @@ function clearStorageAndRedirect(errorMessage?: string, isSAMLReauthentication?:
     keysToPreserve.push(ONYXKEYS.ACTIVE_CLIENTS);
     keysToPreserve.push(ONYXKEYS.DEVICE_ID);
     keysToPreserve.push(ONYXKEYS.ACTIVE_SERVER);
-    // The Cloudflare Access identity is not bound to the Expensify account, so dropping this key sends the
-    // first QA request out unauthenticated and bounces the user from the sign-in screen to Cloudflare.
-    keysToPreserve.push(ONYXKEYS.CLOUDFLARE_SESSION);
     keysToPreserve.push(ONYXKEYS.IS_DEBUG_MODE_ENABLED);
     keysToPreserve.push(ONYXKEYS.COLLECTION.PASSKEY_CREDENTIALS);
     keysToPreserve.push(ONYXKEYS.COLLECTION.DEVICE_BIOMETRICS);

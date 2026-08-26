@@ -508,7 +508,7 @@ describe('Session', () => {
     });
 
     describe('redirectToSignIn', () => {
-        test('carries the QA server pointer and its Cloudflare credential through the sign-out clear together', async () => {
+        test('carries the QA server pointer through the sign-out clear but drops its Cloudflare credential', async () => {
             // Given a build pointed at the QA server with a live Cloudflare Access session
             await Onyx.multiSet({
                 [ONYXKEYS.ACTIVE_SERVER]: CONST.SERVER.QA,
@@ -519,13 +519,9 @@ describe('Session', () => {
             await SignInRedirect.default();
             await waitForBatchedUpdates();
 
-            // Then both must survive, and specifically as a pair
+            // Then the server pointer survives, while the Cloudflare identity is dropped so the next QA request re-authorizes
             await expect(getOnyxValue(ONYXKEYS.ACTIVE_SERVER)).resolves.toBe(CONST.SERVER.QA);
-            await expect(getOnyxValue(ONYXKEYS.CLOUDFLARE_SESSION)).resolves.toEqual({
-                accessToken: 'oauth:token',
-                refreshToken: 'oauth:refresh',
-                expiresAt: 1_700_000_000_000,
-            });
+            await expect(getOnyxValue(ONYXKEYS.CLOUDFLARE_SESSION)).resolves.toBeUndefined();
         });
     });
 
