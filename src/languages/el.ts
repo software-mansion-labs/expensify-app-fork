@@ -2257,7 +2257,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: 'Παραγωγή', description: 'Το ζωντανό περιβάλλον που βλέπουν οι πραγματικοί χρήστες'},
                 staging: {label: 'Staging', description: 'Αντίγραφο της παραγωγής. Χρησιμοποιείται για τον τελικό έλεγχο'},
-                qa: {label: 'QA'},
+                qa: {label: 'QA', description: 'Ξεχωριστή βάση δεδομένων. Η σύνδεση εδώ δημιουργεί διαφορετικό λογαριασμό'},
             },
             forceOffline: 'Εξαναγκασμός εκτός σύνδεσης',
             simulatePoorConnection: 'Προσομοίωση κακής σύνδεσης στο διαδίκτυο',
@@ -2286,7 +2286,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryDebugDescription: 'Καταγραφή αιτημάτων Sentry στην κονσόλα',
             sentryHighlightedSpanOps: 'Επισημασμένα ονόματα span',
             sentryHighlightedSpanOpsPlaceholder: 'κλικ αλληλεπίδρασης διεπαφής, πλοήγηση, φόρτωση διεπαφής',
-            useQAServer: 'Χρήση διακομιστή QA',
+            confirmServerChangeDescription: 'Η εναλλαγή προς ή από το QA σας αποσυνδέει, επειδή το QA είναι ξεχωριστή βάση δεδομένων.',
         },
         security: 'Ασφάλεια',
         signOut: 'Αποσύνδεση',

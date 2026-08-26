@@ -1,10 +1,12 @@
 import {act, fireEvent, render, screen} from '@testing-library/react-native';
 
+import {ModalActions} from '@components/Modal/Global/ModalContext';
 import SelectionList from '@components/SelectionList';
 import TestToolMenu from '@components/TestToolMenu';
 
+import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import Navigation from '@libs/Navigation/Navigation';
-import navigationRef from '@libs/Navigation/navigationRef';
+import type navigationRef from '@libs/Navigation/navigationRef';
 
 import ServerSelector from '@pages/settings/Troubleshoot/ServerSelector';
 
@@ -33,9 +35,20 @@ jest.mock('@hooks/useOnyx', () => ({
     default: (key: string) => [key === mockActiveServerKey ? mockActiveServer : undefined, {status: 'loaded'}],
 }));
 
+let mockIsAuthenticated = false;
+
 jest.mock('@hooks/useIsAuthenticated', () => ({
     __esModule: true,
-    default: () => false,
+    default: () => mockIsAuthenticated,
+}));
+
+jest.mock('@libs/CloudflareAccess/Config', () => ({isQAAuthConfigured: jest.fn(() => false)}));
+
+const mockShowConfirmModal = jest.fn();
+
+jest.mock('@hooks/useConfirmModal', () => ({
+    __esModule: true,
+    default: () => ({showConfirmModal: mockShowConfirmModal}),
 }));
 
 jest.mock('@hooks/useLocalize', () => ({
@@ -45,7 +58,7 @@ jest.mock('@hooks/useLocalize', () => ({
 
 jest.mock('@src/CONFIG', () => ({
     __esModule: true,
-    default: {...jest.requireActual<{default: object}>('@src/CONFIG').default, IS_USING_LOCAL_WEB: false},
+    default: {...jest.requireActual<{default: Record<string, unknown>}>('@src/CONFIG').default, IS_USING_LOCAL_WEB: false},
 }));
 
 jest.mock('@components/SelectionList', () => jest.fn(() => null));
@@ -54,9 +67,15 @@ jest.mock('@libs/Navigation/Navigation', () => ({
     __esModule: true,
     default: {navigate: jest.fn(), goBack: jest.fn(), getActiveRoute: jest.fn(() => '/test-tools')},
 }));
+
+type RootState = ReturnType<NonNullable<typeof navigationRef.current>['getRootState']>;
+
+const mockGetRootState = jest.fn<RootState | undefined, []>();
+
 jest.mock('@libs/Navigation/navigationRef', () => ({
     __esModule: true,
-    default: {current: {getRootState: jest.fn()}},
+    // The factory is hoisted above mockGetRootState's initialisation, so it has to be read at call time
+    default: {current: {getRootState: () => mockGetRootState()}},
 }));
 jest.mock('@userActions/User', () => ({
     setActiveServer: jest.fn(),
@@ -88,10 +107,8 @@ const pressSave = () => {
     onConfirm();
 };
 
-type RootState = ReturnType<NonNullable<typeof navigationRef.current>['getRootState']>;
-
 const mockTestToolsModalState = (backTo?: string) => {
-    jest.mocked(navigationRef.current?.getRootState)?.mockReturnValue(
+    mockGetRootState.mockReturnValue(
         createMock<RootState>({
             routes: [
                 {
@@ -106,7 +123,10 @@ const mockTestToolsModalState = (backTo?: string) => {
 describe('Server selection', () => {
     beforeEach(() => {
         mockActiveServer = CONST.SERVER.PRODUCTION;
+        mockIsAuthenticated = false;
         jest.clearAllMocks();
+        jest.mocked(isQAAuthConfigured).mockReturnValue(false);
+        mockShowConfirmModal.mockResolvedValue({action: ModalActions.CONFIRM});
     });
 
     describe('the server row in the test tools', () => {
@@ -152,6 +172,71 @@ describe('Server selection', () => {
             act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.STAGING}));
             pressSave();
 
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.STAGING);
+        });
+
+        it('offers QA as a third option once its auth is configured', () => {
+            jest.mocked(isQAAuthConfigured).mockReturnValue(true);
+            render(<ServerSelector />);
+
+            expect(getSelectionListProps().data.map((item) => item.keyForList)).toEqual([CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING, CONST.SERVER.QA]);
+        });
+    });
+
+    describe('crossing the QA boundary', () => {
+        beforeEach(() => {
+            jest.mocked(isQAAuthConfigured).mockReturnValue(true);
+            mockIsAuthenticated = true;
+        });
+
+        it('asks before signing the user out, and leaves the server alone when they cancel', async () => {
+            mockShowConfirmModal.mockResolvedValue({action: ModalActions.CLOSE});
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.QA}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).toHaveBeenCalled();
+            expect(setActiveServer).not.toHaveBeenCalled();
+        });
+
+        it('switches on confirmation', async () => {
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.QA}));
+
+            await act(async () => pressSave());
+
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.QA);
+        });
+
+        it('asks on the way out of QA too', async () => {
+            mockActiveServer = CONST.SERVER.QA;
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.PRODUCTION}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).toHaveBeenCalled();
+        });
+
+        it('does not ask on the sign-in screen, where there is no session to lose', async () => {
+            mockIsAuthenticated = false;
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.QA}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).not.toHaveBeenCalled();
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.QA);
+        });
+
+        it('does not ask when the switch stays clear of QA', async () => {
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.STAGING}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).not.toHaveBeenCalled();
             expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.STAGING);
         });
     });

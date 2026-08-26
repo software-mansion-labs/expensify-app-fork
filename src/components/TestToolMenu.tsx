@@ -28,7 +28,6 @@ import BiometricsTestToolRow from './BiometricsTestToolRow';
 import Button from './ButtonComposed';
 import Icon from './Icon';
 import PressableWithoutFeedback from './Pressable/PressableWithoutFeedback';
-import QAAuthTestToolRows from './QAAuthTestToolRows';
 import SoftKillTestToolRow from './SoftKillTestToolRow';
 import Switch from './Switch';
 import TestCrash from './TestCrash';
@@ -162,8 +161,6 @@ function TestToolMenu({serverPageRoute}: TestToolMenuProps) {
                     </TestToolRow>
                 </PressableWithoutFeedback>
             )}
-
-            <QAAuthTestToolRows />
 
             {/* When toggled the app will be forced offline. */}
             <TestToolRow

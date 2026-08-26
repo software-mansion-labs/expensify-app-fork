@@ -2198,7 +2198,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: 'Produzione', description: "L'ambiente live che vedono gli utenti reali"},
                 staging: {label: 'Staging', description: 'Copia della produzione. Usata per la validazione finale'},
-                qa: {label: 'QA'},
+                qa: {label: 'QA', description: 'Database separato. Accedere qui crea un account diverso'},
             },
             forceOffline: 'Forza offline',
             simulatePoorConnection: 'Simula una connessione Internet scadente',
@@ -2227,7 +2227,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOps: 'Nomi degli intervalli evidenziati',
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click, navigazione, ui.load',
             showBranchNameInTitle: 'Mostra nome del ramo nel titolo del browser',
-            useQAServer: 'Usa il server QA',
+            confirmServerChangeDescription: 'Passare a QA o uscirne effettua la disconnessione, perché QA è un database separato.',
         },
         security: 'Sicurezza',
         signOut: 'Esci',

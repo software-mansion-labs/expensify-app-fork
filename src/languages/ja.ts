@@ -2177,7 +2177,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: '本番', description: '実際のユーザーが利用している環境'},
                 staging: {label: 'ステージング', description: '本番のミラー。最終確認に使用します'},
-                qa: {label: 'QA'},
+                qa: {label: 'QA', description: '独立したデータベース。ここでサインインすると別のアカウントになります'},
             },
             forceOffline: '強制的にオフラインにする',
             simulatePoorConnection: '不安定なインターネット接続をシミュレート',
@@ -2206,7 +2206,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOps: '強調表示されたスパン名',
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click、ナビゲーション、ui.load',
             showBranchNameInTitle: 'ブラウザのタイトルにブランチ名を表示',
-            useQAServer: 'QA サーバーを使用',
+            confirmServerChangeDescription: 'QA は独立したデータベースのため、QA への切り替えと QA からの切り替えではサインアウトされます。',
         },
         security: 'セキュリティ',
         signOut: 'サインアウト',

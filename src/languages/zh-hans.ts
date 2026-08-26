@@ -2120,7 +2120,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: '生产', description: '真实用户所使用的线上环境'},
                 staging: {label: '预备', description: '生产环境的镜像，用于最终验证'},
-                qa: {label: 'QA'},
+                qa: {label: 'QA', description: '独立的数据库。在此登录会创建不同的账户'},
             },
             forceOffline: '强制离线',
             simulatePoorConnection: '模拟较差的互联网连接',
@@ -2149,7 +2149,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOps: '高亮的跨度名称',
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click，navigation，ui.load',
             showBranchNameInTitle: '在浏览器标题中显示分支名称',
-            useQAServer: '使用 QA 服务器',
+            confirmServerChangeDescription: '切换到 QA 或从 QA 切换出去都会将你退出登录，因为 QA 是独立的数据库。',
         },
         security: '安全',
         signOut: '退出登录',
