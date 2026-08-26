@@ -1,18 +1,14 @@
 import type {CloudflareSignInOutcome} from '@libs/CloudflareAccess/finishSignInFromURL/types';
 
-/** The authorization the capture phase hands to the exchange phase. Both halves are secrets */
 type AuthorizedCodeExchange = {
-    /** Cloudflare's single-use authorization code, read off this document's own location */
+    /** Cloudflare's single-use authorization code */
     code: string;
 
-    /** The PKCE secret the authorize request committed to, recovered from the parked flow */
+    /** The PKCE secret the authorize request committed to */
     codeVerifier: string;
 };
 
-/**
- * What the callback URL turned out to be, decided synchronously at capture. Every field is already final
- * except when an exchange is owed, which only the exchange phase can conclude.
- */
+/** What the callback URL turned out to be, decided synchronously at capture */
 type CapturedAuthCallback = {
     outcome: CloudflareSignInOutcome;
     errorMessage?: string;
@@ -21,13 +17,10 @@ type CapturedAuthCallback = {
     exchange?: AuthorizedCodeExchange;
 };
 
-/**
- * Call once, before the app's module graph is evaluated. Rewrites the URL off the redirect path and returns
- * what it found. A no-op on every load that is not the callback.
- */
+/** Call once, before the app's module graph is evaluated */
 type CaptureCloudflareAuthCallbackURL = () => CapturedAuthCallback;
 
-/** The result of the single capture this load performed, for the exchange phase that runs later */
+/** The result of the single capture this load performed */
 type GetCapturedCloudflareAuthCallback = () => CapturedAuthCallback;
 
 export type {AuthorizedCodeExchange, CapturedAuthCallback, CaptureCloudflareAuthCallbackURL, GetCapturedCloudflareAuthCallback};

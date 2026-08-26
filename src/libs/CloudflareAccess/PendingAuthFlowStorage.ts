@@ -7,7 +7,7 @@ import {isRecord} from '@libs/ObjectUtils';
 
 import CONST from '@src/CONST';
 
-/** Cloudflare's authorization codes are short-lived anyway. An older record is treated as absent */
+/** Cloudflare's authorization codes are short-lived anyway */
 const PENDING_AUTH_FLOW_TTL_MS = 10 * 60 * 1000;
 
 type PendingAuthFlow = {
@@ -37,8 +37,8 @@ function getSessionStorage(): Storage | null {
 }
 
 /**
- * Throws when web storage is unavailable. The caller must refuse to redirect in that case rather than
- * navigate away and lose the verifier with no way to finish the exchange.
+ * Throws rather than reporting failure: a caller that navigated away without saving the verifier could never
+ * finish the exchange.
  */
 function savePendingAuthFlow(flow: PendingAuthFlow): void {
     const storage = getSessionStorage();
@@ -48,10 +48,7 @@ function savePendingAuthFlow(flow: PendingAuthFlow): void {
     storage.setItem(CONST.SESSION_STORAGE_KEYS.QA_AUTH_REDIRECT_FLOW, JSON.stringify(flow));
 }
 
-/**
- * Single-use: removes the record before returning it, so a replayed callback URL finds nothing.
- * Returns null when absent, unreadable, malformed or expired.
- */
+/** Single-use: removes the record before returning it, so a replayed callback URL finds nothing */
 function consumePendingAuthFlow(): PendingAuthFlow | null {
     const storage = getSessionStorage();
     if (!storage) {
@@ -59,7 +56,7 @@ function consumePendingAuthFlow(): PendingAuthFlow | null {
     }
 
     // A hardened configuration can hand back a Storage whose methods throw SecurityError, and this runs
-    // during boot. A record that could not be removed is reported absent too, keeping it single-use.
+    // during boot
     let raw: string | null;
     try {
         raw = storage.getItem(CONST.SESSION_STORAGE_KEYS.QA_AUTH_REDIRECT_FLOW);

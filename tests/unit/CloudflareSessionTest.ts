@@ -1,7 +1,5 @@
 /**
- * Single-flight refresh with rotated-token persistence, the terminal/transient failure split, and both
- * halves of the redirect flow. Modules are re-required per test because the module-level caches are
- * exactly what's under test.
+ * Modules are re-required per test because the module-level caches are exactly what's under test.
  */
 import type * as ConfigModule from '@libs/CloudflareAccess/Config';
 import type * as PKCEModule from '@libs/CloudflareAccess/generatePKCE';
@@ -268,8 +266,7 @@ describe('refreshCloudflareSession', () => {
         await refresh;
 
         // Then the rotation stands: the Cloudflare identity is the developer's, not the signed-in account's,
-        // so signing out of Expensify is not grounds to discard a Cloudflare session or the work rotating it.
-        // Dropping it here is what sent the user from the sign-in screen straight back through Cloudflare
+        // so signing out of Expensify is not grounds to discard a Cloudflare session or the work rotating it
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_B);
     });
 });
@@ -399,9 +396,7 @@ describe('exchangeCodeForCloudflareSession', () => {
         // Then the session is cached before the disk write settles. Requests fired during this boot need the
         // token before disk I/O finishes. While the promise still waits for the write to actually complete
         expect(oAuthClient.exchangeCode).toHaveBeenCalledWith({code: 'auth-code-1', codeVerifier: PAIR_1.codeVerifier});
-        // Cache first, because requests during this boot must see the token right away
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
-        // But the completion waits for the disk write
         expect(isSettled).toBe(false);
 
         persistDeferred.resolve();
@@ -488,9 +483,8 @@ describe('builds without QA auth configured', () => {
         // When the actions module is imported
         const sessionActions = require<typeof SessionActionsModule>('@userActions/CloudflareSession');
 
-        // Then nothing subscribed to the QA session key, so apps without QA auth configured pay no cost for the feature and
-        // importing the module pulls in unrelated modules that legitimately subscribe to their own keys,
-        // so the claim is specifically that nothing connected to the QA session key
+        // Then nothing subscribed to the QA session key, so apps without QA auth configured pay no cost for
+        // the feature. Importing the module pulls in unrelated modules that legitimately subscribe to their own keys
         const connectedKeys = connectSpy.mock.calls.map(([connection]) => connection.key);
         expect(connectedKeys).not.toContain(ONYXKEYS.CLOUDFLARE_SESSION);
         expect(sessionActions.getCloudflareSession()).toBeNull();

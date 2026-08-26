@@ -17,9 +17,6 @@ import {setTimeSkew} from './actions/Network';
 import {alertUser} from './actions/UpdateRequired';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
 import {getCommandURL} from './ApiUtils';
-// Both runtime Cloudflare specifiers are extension-less on purpose: that is what resolves to the native
-// stubs, keeping the authorize/PKCE/token chain out of both native bundles even though HttpUtils is shared.
-// The QARequestAuth type import above is erased, so it reaches no module at runtime.
 import {isQAServerRequest} from './CloudflareAccess/Config';
 import {handleQAUnauthorized, prepareQARequestAuth} from './CloudflareAccess/QARequestAuth';
 import HttpsError from './Errors/HttpsError';
@@ -77,10 +74,6 @@ const ALREADY_CREATED_MESSAGES = new Set<string>([CONST.ERROR_TITLE.ALREADY_CREA
  */
 const APICommandRegex = /\/api\/([^&?]+)\??.*/;
 
-/**
- * The parsed-response stage. NOT pure: it fires alerts and the update-required modal, so a response must
- * pass through it exactly once. That is why the QA retry below recurses into attemptRequest(), not into this.
- */
 function processJSONResponse<TKey extends OnyxKey>(response: Response<TKey>): Response<TKey> {
     // Some retried requests will result in a "Unique Constraints Violation" error from the server, which just means the record already exists
     if (response.jsonCode === CONST.JSON_CODE.BAD_REQUEST && response.message === CONST.ERROR_TITLE.DUPLICATE_RECORD) {
@@ -137,15 +130,12 @@ function processHTTPRequest<TKey extends OnyxKey>(
 ): Promise<Response<TKey>> {
     const command = url.match(APICommandRegex)?.[1];
 
-    // Both once-per-request stages live here rather than inside attemptRequest(), which resolves to the raw
-    // parsed body and may call itself once for a QA token refresh. That is what keeps the alerts in
-    // processJSONResponse and the startup-request end from firing twice for a single request.
+    // Both stages run once per request, and attemptRequest may call itself once for a QA token refresh.
     return attemptRequest<TKey>(url, method, body, abortSignal, command)
         .then(processJSONResponse)
         .finally(() => markAppStartupNetworkRequestEnd(command));
 }
 
-/** One network attempt: the fetch, its phase spans, the skew bookkeeping, the HTTP-status handling and `response.json()`. */
 async function attemptRequest<TKey extends OnyxKey>(
     url: string,
     method: RequestType,
@@ -154,13 +144,9 @@ async function attemptRequest<TKey extends OnyxKey>(
     command: string | undefined,
     qaRetryAuth?: QARequestAuth,
 ): Promise<Response<TKey>> {
-    // On the 401 retry the caller hands us the rotated credential; otherwise a QA URL resolves its own,
-    // which awaits the Cloudflare gate and rotates a near-expiry token before anything is sent. Guarded by
-    // the synchronous isQAServerRequest so no other request pays a microtask for it.
     const qaAuth = qaRetryAuth ?? (isQAServerRequest(url) ? await prepareQARequestAuth(command) : undefined);
 
-    // Everything below is measured from here, not from the top of the function. A token round trip counted as
-    // request latency would poison setTimeSkew and inflate the wait span.
+    // A token round trip counted as request latency would poison setTimeSkew and inflate the wait span.
     const startTime = new Date().valueOf();
 
     const {prefetchKey, prefetchHeaders} = preparePrefetchRequest(command);
@@ -178,8 +164,7 @@ async function attemptRequest<TKey extends OnyxKey>(
         credentials: 'omit',
     };
 
-    // The registered template captures fetchParams, so a request carrying a short-lived bearer must not
-    // become one
+    // The registered template captures fetchParams, so a request carrying a short-lived bearer must not become one
     if (!qaAuth) {
         registerPrefetchOnAppStart({prefetchKey, fetchParams, command, url});
     }
@@ -226,12 +211,7 @@ async function attemptRequest<TKey extends OnyxKey>(
             }
 
             if (response.status === CONST.HTTP_STATUS.UNAUTHORIZED && qaAuth) {
-                // This attempt never reaches a parsed body, so its download span has nothing left to record.
-                // The retry opens its own pair, which is then the only record of the request that landed.
                 cancelSpan(downloadSpanId);
-                // Throws when the session is beyond saving; otherwise resolves the rotated credential to
-                // retry with. Recurses into attemptRequest(), never into processJSONResponse, so the
-                // once-per-request stages in processHTTPRequest still run exactly once.
                 return handleQAUnauthorized(qaAuth, {isRetry: !!qaRetryAuth, command}).then((rotatedAuth) => attemptRequest<TKey>(url, method, body, abortSignal, command, rotatedAuth));
             }
 

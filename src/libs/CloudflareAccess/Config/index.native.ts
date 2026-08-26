@@ -2,8 +2,8 @@ import type {GetCloudflareTeamLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQ
 
 /**
  * QA auth is web-only: receiving the OAuth callback needs claimed Universal/App Links, so the feature is
- * structurally off on native regardless of build configuration. Everything downstream gates on
- * isQAAuthConfigured(), which makes the remaining exports unreachable. They only satisfy the module shape.
+ * structurally off on native regardless of build configuration. The other exports only satisfy the module
+ * shape.
  */
 const isQAAuthConfigured: IsQAAuthConfigured = () => false;
 

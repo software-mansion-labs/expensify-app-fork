@@ -248,13 +248,11 @@ describe('actions/App', () => {
                 [ONYXKEYS.CLOUDFLARE_SESSION]: {accessToken: 'oauth:token', refreshToken: 'oauth:refresh', expiresAt: 1_700_000_000_000},
             });
 
-            // When the user signs out, which clears Onyx down to the preserved keys
+            // When the user signs out
             await Onyx.clear(App.KEYS_TO_PRESERVE);
             await waitForBatchedUpdates();
 
-            // Then both must survive, and specifically as a pair: keeping the pointer while dropping the
-            // credential sends the first QA request out unauthenticated, and the gate answers that by
-            // navigating to Cloudflare from the sign-in screen the user was just returned to
+            // Then both must survive, and specifically as a pair
             await expect(getOnyxValue(ONYXKEYS.ACTIVE_SERVER)).resolves.toBe(CONST.SERVER.QA);
             await expect(getOnyxValue(ONYXKEYS.CLOUDFLARE_SESSION)).resolves.toEqual({
                 accessToken: 'oauth:token',

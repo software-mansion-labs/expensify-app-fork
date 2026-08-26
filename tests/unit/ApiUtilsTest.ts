@@ -204,8 +204,7 @@ describe('ApiUtils', () => {
         });
     });
 
-    // Switching servers signs the user out, and that LogOut has to reach the server being left. Both
-    // directions are covered because either one can be the server being left.
+    // Switching servers signs the user out, and that LogOut has to reach the server being left.
     describe('a request pinned to one server', () => {
         it('routes to the pinned server rather than the active one', async () => {
             await setActiveServer(CONST.SERVER.QA);

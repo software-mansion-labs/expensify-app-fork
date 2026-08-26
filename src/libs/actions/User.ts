@@ -1015,28 +1015,21 @@ function updateChatPriorityMode(mode: ValueOf<typeof CONST.PRIORITY_MODE>, autom
 
 /**
  * QA and the other environments hold entirely separate databases — the same email is a different account on
- * each — so any move into or out of QA has to sign the user out. Staging↔production keeps today's behaviour
- * of staying signed in.
+ * each — so any move into or out of QA has to sign the user out.
  */
 function setActiveServer(server: ValueOf<typeof CONST.SERVER>) {
     const previousServer = getActiveServer();
 
     if (CONFIG.IS_HYBRID_APP) {
-        // OldDot still owns a boolean staging flag, so the bridge keeps taking one. Dropping this call
-        // would silently stop the HybridApp staging toggle from reaching OldDot.
         HybridAppModule.shouldUseStaging(server === CONST.SERVER.STAGING);
     }
 
     if (previousServer !== server && (previousServer === CONST.SERVER.QA || server === CONST.SERVER.QA)) {
-        // The LogOut is pinned to the server being left. Without that it routes by whichever server is active
-        // when it is actually sent, and the Onyx.set below wins that race every time — so the request would
-        // reach the server being entered, carrying a token that means nothing there, and the session on the
-        // one being left would stay valid.
+        // Pinned to the server being left: routing resolves the server when the request is sent, by which
+        // time the Onyx.set below has made it the new one.
         signOutAndRedirectToSignIn(undefined, undefined, undefined, undefined, previousServer);
     }
 
-    // Kept after the sign-out: that path clears Onyx asynchronously, and while ACTIVE_SERVER is in every
-    // KEYS_TO_PRESERVE list, writing the new value first makes the outcome independent of that.
     Onyx.set(ONYXKEYS.ACTIVE_SERVER, server);
 }
 

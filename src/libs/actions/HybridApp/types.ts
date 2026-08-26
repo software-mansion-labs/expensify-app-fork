@@ -5,10 +5,7 @@ import type HybridApp from '@src/types/onyx/HybridApp';
 type HybridAppSettings = {
     [ONYXKEYS.HYBRID_APP]: HybridApp;
     [ONYXKEYS.NVP_TRY_NEW_DOT]?: TryNewDot;
-    /**
-     * OldDot sends its own boolean staging flag on handoff; it knows nothing about ACTIVE_SERVER. NewDot's
-     * migration is what turns a stored boolean into the tri-state, so this stays a boolean on purpose.
-     */
+    /** OldDot sends its own boolean staging flag on handoff; it knows nothing about ACTIVE_SERVER */
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- OldDot's handoff payload is a boolean; see above
     [ONYXKEYS.SHOULD_USE_STAGING_SERVER]?: boolean;
 };

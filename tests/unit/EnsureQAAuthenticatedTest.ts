@@ -67,9 +67,9 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
     });
 
-    // THE regression test: this is what a synchronous read of isQAServerActive() gets wrong. ApiUtils reports
-    // 'production' until getEnvironment() and its first Onyx callback have both run, so a gate that decides
-    // before waitForActiveServerHydration() resolves never fires — on a QA build included.
+    // A synchronous read of isQAServerActive() gets this wrong: ApiUtils reports 'production' until
+    // getEnvironment() and its first Onyx callback have both run, so a gate that decides before
+    // waitForActiveServerHydration() resolves never fires — on a QA build included.
     it('waits for the active-server signal before deciding', async () => {
         // Given the active-server signal has not hydrated yet and reads as non-QA
         let releaseHydration = () => {};
@@ -130,7 +130,6 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
 
-    // Regression: the previous revision asserted the opposite ("still redirects"), which specified a redirect loop
     it('does NOT redirect when the in-flight exchange rejects, so a failed callback cannot start a redirect loop', async () => {
         // Given the callback exchange failed — when the gate runs, then it must stop rather than redirect,
         // because Cloudflare still holds a valid Zero Trust session and would bounce straight back with a
@@ -151,9 +150,8 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
     });
 
-    // Regression: the single-flight promise used to survive its own run, which turned one early decision
-    // into the answer for the whole page. The QA switch changes the active server mid-session and signs the
-    // user out client-side without reloading, so the gate has to be able to decide again.
+    // The QA switch changes the active server mid-session and signs the user out client-side without
+    // reloading, so a single-flight promise that survived its own run would answer for the whole page.
     it('decides again after the active server changes, because flipping the switch does not reload the page', async () => {
         // Given a non-QA first run that correctly did nothing
         mockIsQAServerActive.mockReturnValue(false);
@@ -169,9 +167,8 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
     });
 
-    // THE regression test for the allowlist: any QA request could previously navigate the tab, so background
-    // traffic could too. Switching the test tool to QA while typing an address was enough — a log flush landed
-    // a few seconds later and took the page to Cloudflare, with nothing the person did to connect it to
+    // Without the allowlist any QA request navigates the tab, so a log flush landing seconds after the
+    // switch takes the page to Cloudflare with nothing the person did to connect it to
     it('does not redirect for a command the user is not waiting on', async () => {
         // Given a QA build with no session, and background traffic rather than a sign-in
         await ensureQAAuthenticated(BACKGROUND_COMMAND);
@@ -191,8 +188,8 @@ describe('ensureQAAuthenticated', () => {
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
 
-    // Regression: sharing one single-flight promise across both kinds of caller let whichever arrived first
-    // decide for the other — a background flush could swallow the sign-in's redirect
+    // One single-flight promise shared across both kinds of caller lets whichever arrives first decide for
+    // the other, so a background flush swallows the sign-in's redirect
     it('a background caller does not consume the redirect an allowlisted caller is entitled to', async () => {
         // Given background traffic reaches the gate first
         ensureQAAuthenticated(BACKGROUND_COMMAND);

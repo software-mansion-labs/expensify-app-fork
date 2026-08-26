@@ -141,8 +141,6 @@ function prepareRequest<TCommand extends ApiCommand, TKey extends OnyxKey>(
         successData,
         failureData,
         ...conflictResolver,
-        // Omitted rather than set to undefined so a persisted request keeps the shape it had before this
-        // existed: almost every request routes to whichever server is active when it is sent.
         ...(server ? {server} : {}),
     };
 

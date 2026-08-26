@@ -419,7 +419,6 @@ Onyx.connectWithoutView({
     },
 });
 
-// Re-target the reachability ping when the server switch flips at runtime.
 // queueMicrotask waits for ApiUtils' callback on the same key, which owns the value behind
 // getApiRoot(). Skip the rebuild when the URL is unchanged: rebuilding tears down NetInfo
 // state and fires extra Pings, and the switch can flip without changing the URL.

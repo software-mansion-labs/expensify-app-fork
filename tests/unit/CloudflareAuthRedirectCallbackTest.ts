@@ -4,8 +4,6 @@
  *
  * Boot runs this in two phases — capture (before the app is imported) and exchange (after Onyx.init) — so
  * the tests drive both, which is the only combination that ever happens in the app.
- *
- * Requires the web implementations explicitly. Jest resolves platform-split modules to their native variant.
  */
 import type * as CaptureAuthCallbackModule from '@libs/CloudflareAccess/captureAuthCallbackURL/index.ts';
 import type * as ConfigModule from '@libs/CloudflareAccess/Config/index.ts';
@@ -80,7 +78,6 @@ afterEach(() => {
     Object.defineProperty(window, 'location', {value: realLocation, writable: true, configurable: true});
 });
 
-/** Both halves of boot, in order. Splitting them is an ordering constraint, never a behavioural one */
 function runBoot() {
     captureAuthCallback.captureCloudflareAuthCallbackURL();
     return authRedirectCallback.default();

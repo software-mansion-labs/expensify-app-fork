@@ -91,11 +91,7 @@ type RequestDataBase<TKey extends OnyxKey> = {
     /** Whether the app should skip the web proxy to connect to API endpoints */
     shouldSkipWebProxy?: boolean;
 
-    /**
-     * The server this request must reach, whatever is active by the time it is sent. Routing otherwise reads
-     * the active server at send time, which is wrong for a request whose whole purpose is to act on the
-     * server being left — signing out while switching servers is the case that needs this.
-     */
+    /** The server this request must reach, whatever is active by the time it is sent */
     server?: ValueOf<typeof CONST.SERVER>;
 
     /**

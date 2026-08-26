@@ -1,7 +1,3 @@
-/**
- * PKCE encoding pinned to the RFC 7636 Appendix B vector, the config security boundary
- * (isQAServerRequest), and the OAuth client's request/response contract.
- */
 import type * as AuthServerMetadataModule from '@libs/CloudflareAccess/AuthServerMetadata';
 import type * as ConfigModule from '@libs/CloudflareAccess/Config/index.ts';
 import type * as PKCEModule from '@libs/CloudflareAccess/generatePKCE';
@@ -22,15 +18,13 @@ jest.mock('@libs/CloudflareAccess/AuthServerMetadata', () => ({
     getAuthServerEndpoints: jest.fn(),
 }));
 
-// The baseline resetQAAuthConfig() restores between cases. One source, so a new field is added once.
 const mockDefaultQAAuth = {
     API_ROOT: 'https://qa.example.com/',
     SECURE_API_ROOT: 'https://qa-secure.example.com/',
     TEAM_DOMAIN: 'team.cloudflareaccess.com',
     CLIENT_ID: 'client-123',
 };
-// Mutable QA config the '@src/CONFIG' mock closes over. Tests tweak fields per case.
-// The `mock` prefix is what lets the hoisted jest.mock factory reference it.
+// The `mock` prefix is what lets the hoisted jest.mock factory reference it
 const mockQAAuth = {...mockDefaultQAAuth};
 
 jest.mock('@src/CONFIG', () => ({__esModule: true, default: {QA_AUTH: mockQAAuth}}));
@@ -47,7 +41,6 @@ jest.mock('@libs/CloudflareAccess/getWebCrypto', () => ({
 
 // Lazy-require so the @src/CONFIG mock factory sees an initialized mockQAAuth. Otherwise the
 // hoisted import order would resolve CONFIG.default while mockQAAuth was still in the TDZ.
-// The web implementation explicitly. Jest resolves platform-split modules to their native variant
 const {getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest} = require<typeof ConfigModule>('@libs/CloudflareAccess/Config/index.ts');
 const {clearPendingAuthFlow, consumePendingAuthFlow, savePendingAuthFlow} = require<typeof PendingAuthFlowStorageModule>('@libs/CloudflareAccess/PendingAuthFlowStorage');
 const {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} = require<typeof OAuthClientModule>('@libs/CloudflareAccess/OAuthClient');
@@ -365,8 +358,7 @@ describe('oAuthClient', () => {
 });
 
 describe('authServerMetadata', () => {
-    // The real Cloudflare response shape, captured from a live team. Built from entries because the
-    // protocol uses snake_case keys, which the naming-convention lint rule forbids as literal properties.
+    // The real Cloudflare response shape, captured from a live team
     const VALID_METADATA_ENTRIES: Array<[string, unknown]> = [
         ['issuer', 'https://team.cloudflareaccess.com'],
         ['authorization_endpoint', 'https://team.cloudflareaccess.com/cdn-cgi/access/oauth/authorization'],

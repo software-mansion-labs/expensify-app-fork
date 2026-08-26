@@ -519,9 +519,7 @@ describe('Session', () => {
             await SignInRedirect.default();
             await waitForBatchedUpdates();
 
-            // Then both must survive, and specifically as a pair: keeping the pointer while dropping the
-            // credential sends the first QA request out unauthenticated, and the gate answers that by
-            // navigating to Cloudflare from the sign-in screen the user was just returned to
+            // Then both must survive, and specifically as a pair
             await expect(getOnyxValue(ONYXKEYS.ACTIVE_SERVER)).resolves.toBe(CONST.SERVER.QA);
             await expect(getOnyxValue(ONYXKEYS.CLOUDFLARE_SESSION)).resolves.toEqual({
                 accessToken: 'oauth:token',

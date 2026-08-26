@@ -28,8 +28,7 @@ const ENVIRONMENT_SHORT_FORM = {
 
 /**
  * Which environment the badge is *about*. That is the server the app sends requests to, not the environment
- * baked into the bundle: the server switches in the test tool change the former without touching the latter,
- * so a dev build with the QA switch on talks only to QA while still reporting itself as a dev build.
+ * baked into the bundle: the server switches in the test tool change the former without touching the latter.
  */
 function getBadgeEnvironment(activeServer: ValueOf<typeof CONST.SERVER>, environment: EnvironmentValue): EnvironmentValue {
     if (activeServer === CONST.SERVER.QA) {
@@ -40,8 +39,7 @@ function getBadgeEnvironment(activeServer: ValueOf<typeof CONST.SERVER>, environ
         return CONST.ENVIRONMENT.STAGING;
     }
 
-    // Requests go to production. Only the bundled environment distinguishes a dev build from an ad-hoc one,
-    // so it answers here — except on a staging build, which is talking to production despite its name.
+    // Requests go to production, so a staging build reaching here is talking to production despite its name
     return environment === CONST.ENVIRONMENT.STAGING ? CONST.ENVIRONMENT.PRODUCTION : environment;
 }
 
@@ -50,8 +48,7 @@ function EnvironmentBadge() {
     const StyleUtils = useStyleUtils();
     const {environment, isProduction} = useEnvironment();
     // Subscribed only to re-render when the switch flips; the value read is ApiUtils' own resolved answer
-    // rather than the raw stored one, so the badge cannot claim a server the router is not using. A stored
-    // 'qa' left over from a dev session does not make a production build talk to QA.
+    // rather than the raw stored one, so the badge cannot claim a server the router is not using.
     useOnyx(ONYXKEYS.ACTIVE_SERVER);
 
     const badgeEnvironment = getBadgeEnvironment(getActiveServer(), environment);
@@ -62,8 +59,7 @@ function EnvironmentBadge() {
 
     const badgeEnvironmentStyle = StyleUtils.getEnvironmentBadgeStyle(success, error, adhoc);
 
-    // If we are on production, don't show any badge. A production build cannot switch servers, so this reads
-    // the bundled environment: it is the one thing the switches can never change.
+    // A production build cannot switch servers, so this reads the bundled environment
     if (isProduction) {
         return null;
     }

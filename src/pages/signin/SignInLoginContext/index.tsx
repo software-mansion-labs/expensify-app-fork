@@ -27,11 +27,7 @@ const LoginActionsContext = React.createContext<LoginActionsContextType>({
     setLogin: () => {},
 });
 
-/**
- * Long enough to cover the Cloudflare Access round trip, including signing in to Access and granting consent.
- * Deliberately its own bound rather than the pending-flow TTL it happens to match: this one decides how long a
- * typed address may linger in the tab, which is a different question from how long an authorization code is good for.
- */
+/** Long enough to cover the Cloudflare Access round trip, including signing in to Access and granting consent. */
 const LOGIN_DRAFT_TTL_MS = 10 * 60 * 1000;
 
 /** Storage access itself throws in hardened browser configurations, not just the write */
@@ -47,13 +43,10 @@ function getSessionStorage(): Storage | null {
 }
 
 /**
- * The typed login lives in React state, which a full-page navigation destroys. `credentials.login` is not a
- * substitute: it is written only once the server answers, and setting it early would hide the login form
- * (see `shouldShowLoginForm`) and advance the screen before the account is known to exist. So the draft is
- * parked here instead. sessionStorage because it is synchronous and scoped to the tab that typed it.
- *
- * Today the only thing that navigates away mid-form is the QA Cloudflare Access handshake, which the first
- * QA request awaits — pressing Continue leaves the page before `BeginSignIn` can answer.
+ * A full-page navigation destroys the React state holding the typed login: on QA, pressing Continue leaves
+ * the page while the first request awaits the Cloudflare Access handshake, before `BeginSignIn` can answer.
+ * `credentials.login` is not a substitute — it is written only once the server answers, and setting it early
+ * hides the login form (see `shouldShowLoginForm`) and advances the screen before the account is known to exist.
  */
 function saveLoginDraft(login: string): void {
     const storage = getSessionStorage();
@@ -67,11 +60,7 @@ function saveLoginDraft(login: string): void {
     storage.setItem(CONST.SESSION_STORAGE_KEYS.SIGN_IN_LOGIN_DRAFT, JSON.stringify({login, createdAt: Date.now()}));
 }
 
-/**
- * Read without consuming: the provider can mount more than once per load, and each mount needs the draft.
- * Anything older than the round trip could plausibly take is treated as absent, so signing out later in the
- * same tab still starts from an empty field rather than the previous person's address.
- */
+/** Read without consuming: the provider can mount more than once per load, and each mount needs the draft. */
 function readLoginDraft(): string {
     const stored = getSessionStorage()?.getItem(CONST.SESSION_STORAGE_KEYS.SIGN_IN_LOGIN_DRAFT);
     if (!stored) {
@@ -90,8 +79,6 @@ function readLoginDraft(): string {
 
 function LoginProvider({children}: ChildrenProps) {
     const [credentials] = useOnyx(ONYXKEYS.CREDENTIALS);
-    // The stored login wins where it exists, leaving the pre-existing seed untouched; the draft only fills in
-    // the case that used to start empty.
     const [login, setLoginState] = useState(() => Str.removeSMSDomain(credentials?.login ?? '') || readLoginDraft());
 
     const setLogin = (newLogin: string) => {

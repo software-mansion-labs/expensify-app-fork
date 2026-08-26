@@ -1,6 +1,6 @@
 /**
- * Strictly-validating client for Cloudflare Access's Managed OAuth endpoints. Protocol failures surface as
- * OAuthError, so callers can tell terminal outcomes from transient transport errors.
+ * Protocol failures surface as OAuthError, so callers can tell terminal outcomes from transient transport
+ * errors.
  */
 import {isRecord} from '@libs/ObjectUtils';
 
@@ -23,7 +23,6 @@ class OAuthError extends Error {
     }
 }
 
-/** POSTs form-encoded params to the token endpoint and validates the response into a CloudflareSession */
 async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSession> {
     const {tokenEndpoint} = await getAuthServerEndpoints();
     const response = await fetch(tokenEndpoint, {
@@ -59,7 +58,7 @@ async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSessi
         json.token_type.toLowerCase() !== 'bearer'
     ) {
         // Terminal: retrying won't fix a protocol mismatch. token_type is checked because callers hardcode
-        // the Bearer scheme. Another type must never be persisted as if it were one.
+        // the Bearer scheme
         throw new OAuthError('invalid_response', 'Token endpoint returned an unexpected response shape');
     }
 
@@ -70,7 +69,6 @@ async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSessi
     };
 }
 
-/** Builds the authorization URL the browser navigates to */
 async function buildAuthorizeURL({state, codeChallenge}: {state: string; codeChallenge: string}): Promise<string> {
     const {authorizationEndpoint} = await getAuthServerEndpoints();
     const url = new URL(authorizationEndpoint);
@@ -80,12 +78,11 @@ async function buildAuthorizeURL({state, codeChallenge}: {state: string; codeCha
     url.searchParams.set('state', state);
     url.searchParams.set('code_challenge', codeChallenge);
     url.searchParams.set('code_challenge_method', 'S256');
-    // RFC 8707. Cloudflare binds the issued token to this resource, and omitting it breaks the exchange
+    // RFC 8707. Omitting the resource breaks the exchange
     url.searchParams.set('resource', getQAResource());
     return url.toString();
 }
 
-/** Exchanges an authorization code (plus the PKCE verifier) for a session */
 function exchangeCode({code, codeVerifier}: {code: string; codeVerifier: string}): Promise<CloudflareSession> {
     const body = new URLSearchParams();
     body.set('grant_type', 'authorization_code');

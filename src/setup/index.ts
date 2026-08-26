@@ -90,9 +90,7 @@ export default function () {
     // handlers are registered before any push arrives, including Android headless/background wake-ups.
     import('@libs/Notification/PushNotification/subscribeToPushNotifications');
 
-    // Spends the authorization code the capture phase read off this document's location before the app was
-    // imported. Here rather than there because a completed exchange persists the session, which needs
-    // Onyx.init() to have run. No-op on every load that was not the callback.
+    // Must run after Onyx.init(): a completed exchange persists the session
     finishCloudflareSignInFromURL();
 
     initOnyxDerivedValues();

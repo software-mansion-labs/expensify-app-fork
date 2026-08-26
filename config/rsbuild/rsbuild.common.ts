@@ -106,7 +106,6 @@ const includedNodeModulesRegex = new RegExp(`node_modules/(${INCLUDED_NODE_MODUL
 const environmentToLogoSuffixMap: Record<string, string> = {
     production: '-dark',
     staging: '-stg',
-    // QA is staging-class and has no artwork of its own, same call as ExpensifyWordmark's logoComponents.
     qa: '-stg',
     dev: '-dev',
     adhoc: '-adhoc',
@@ -416,9 +415,7 @@ const getCommonConfiguration = async ({file = '.env', platform = 'web', isDevSer
                 splashLogo: fs.readFileSync(path.resolve(dirname, `../../assets/images/new-expensify${mapEnvironmentToLogoSuffix(file)}.svg`), 'utf-8'),
                 isWeb: platform === 'web',
                 isProduction: file === '.env.production',
-                // QA is staging-class and gets the same non-production treatment, including the noindex meta tag.
                 isStaging: ['.env.staging', '.env.qa'].includes(file),
-                // QA is deliberately absent here: Ketch consent and GTM are a product decision, not build hygiene.
                 useThirdPartyScripts: process.env.USE_THIRD_PARTY_SCRIPTS === 'true' || (platform === 'web' && ['.env.production', '.env.staging'].includes(file)),
             },
         },
@@ -554,7 +551,6 @@ const getCommonConfiguration = async ({file = '.env', platform = 'web', isDevSer
                         resourceRegExp: /^\.\/locale$/,
                         contextRegExp: /moment$/,
                     }),
-                    // Deployed builds, QA included, must not ship the why-did-you-render debug package.
                     ...(['.env.production', '.env.staging', '.env.qa'].includes(file)
                         ? [
                               new rspack.IgnorePlugin({

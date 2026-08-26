@@ -154,10 +154,8 @@ const KEYS_TO_PRESERVE: OnyxKey[] = [
     ONYXKEYS.PRESERVED_ACCOUNT,
     ONYXKEYS.HYBRID_APP,
     ONYXKEYS.ACTIVE_SERVER,
-    // Preserved alongside ACTIVE_SERVER, and for the same reason: together they say which backend this build
-    // talks to and how, which is a property of the machine rather than of whoever is signed in. The Cloudflare
-    // Access identity is deliberately not bound to the Expensify account, so dropping it here would force a
-    // full authorize round trip on the sign-in screen the moment the first QA request goes out.
+    // The Cloudflare Access identity is deliberately not bound to the Expensify account, so dropping it here
+    // would force a full authorize round trip on the sign-in screen the moment the first QA request goes out.
     ONYXKEYS.CLOUDFLARE_SESSION,
     ONYXKEYS.IS_DEBUG_MODE_ENABLED,
     ONYXKEYS.COLLECTION.PASSKEY_CREDENTIALS,

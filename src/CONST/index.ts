@@ -3752,7 +3752,7 @@ const CONST = {
         ADHOC: 'adhoc',
     },
 
-    /** Which backend the app talks to. Chosen by the build on qa.new.exops.io, by the test-tool switch elsewhere. */
+    /** Which backend the app talks to. */
     SERVER: {
         PRODUCTION: 'production',
         STAGING: 'staging',

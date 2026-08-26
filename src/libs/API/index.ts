@@ -132,7 +132,6 @@ function makeRequestWithSideEffects<TCommand extends SideEffectRequestCommand, T
     command: TCommand,
     apiCommandParameters: ApiRequestCommandParameters[TCommand],
     onyxData: OnyxData<TKey> = {},
-    /** Pins this request to one server instead of whichever is active when it is sent. See `Request.server`. */
     server?: ValueOf<typeof CONST.SERVER>,
 ): Promise<void | Response<TKey>> {
     Log.info('[API] Called API makeRequestWithSideEffects', false, buildLogParams(command, apiCommandParameters ?? {}));

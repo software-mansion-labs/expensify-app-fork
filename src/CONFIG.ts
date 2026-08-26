@@ -45,9 +45,6 @@ const useNgrok = get(Config, 'USE_NGROK', 'false') === 'true';
 const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';
 // Only normalize a non-empty value: addTrailingForwardSlash('') returns '/', which would look configured
 const normalizeOptionalRoot = (value: string): string => (value ? addTrailingForwardSlash(value) : '');
-// Defaulted like the staging roots above so .env.qa does not have to restate a host the bundle already knows.
-// The non-secure root comes from CONST because app code outside API routing reads it; no secure host has a
-// constant, so that one is a literal here. An explicitly empty value still reads as unconfigured.
 const qaExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_EXPENSIFY_URL', CONST.QA_EXPENSIFY_URL));
 const qaSecureExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_SECURE_EXPENSIFY_URL', 'https://qa-secure.exops.io/'));
 const expensifyComWithProxy = getPlatform() === 'web' && useWebProxy ? '/' : expensifyURL;
@@ -89,9 +86,6 @@ export default {
         DEFAULT_SECURE_API_ROOT: secureURLRoot,
         STAGING_API_ROOT: stagingExpensifyURL,
         STAGING_SECURE_API_ROOT: stagingSecureExpensifyUrl,
-        // Already normalized by normalizeOptionalRoot above; re-applying addTrailingForwardSlash would imply these are raw.
-        // Same two values as QA_AUTH.{API_ROOT,SECURE_API_ROOT} below, and deliberately so: a QA root we route to
-        // that the bearer allowlist does not cover would 401 unrecoverably.
         QA_API_ROOT: qaExpensifyURL,
         QA_SECURE_API_ROOT: qaSecureExpensifyURL,
         LEGACY_PARTNER_NAME: get(Config, 'LEGACY_EXPENSIFY_PARTNER_NAME', getDefaultLegacyPartnerConfig().name),
@@ -110,7 +104,6 @@ export default {
     IS_USING_LOCAL_WEB: useNgrok || expensifyURLRoot.includes('dev'),
     PUSHER: {
         APP_KEY: get(Config, 'PUSHER_APP_KEY', '268df511a204fbb60884'),
-        // QA has its own Pusher app so its events never reach a production socket
         QA_APP_KEY: get(Config, 'PUSHER_QA_APP_KEY', ''),
         SUFFIX: ENVIRONMENT === CONST.ENVIRONMENT.DEV ? get(Config, 'PUSHER_DEV_SUFFIX', '') : '',
         CLUSTER: 'mt1',
@@ -152,10 +145,9 @@ export default {
     SKIP_ONBOARDING: get(Config, 'SKIP_ONBOARDING', 'false') === 'true',
     // eslint-disable-next-line no-restricted-properties
     IS_HYBRID_APP: HybridAppModule.isHybridApp(),
-    // Auth for the Cloudflare Access-protected QA server. Empty values disable the feature entirely
+    // Auth for the Cloudflare Access-protected QA server
     QA_AUTH: {
         API_ROOT: qaExpensifyURL,
-        // Second Cloudflare-protected host, for the `shouldUseSecure` commands. Empty = a one-entry allowlist.
         SECURE_API_ROOT: qaSecureExpensifyURL,
         TEAM_DOMAIN: get(Config, 'QA_CF_TEAM_DOMAIN', ''),
         CLIENT_ID: get(Config, 'QA_CF_OAUTH_CLIENT_ID', ''),

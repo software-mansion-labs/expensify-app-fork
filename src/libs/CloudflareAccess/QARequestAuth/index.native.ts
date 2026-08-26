@@ -1,7 +1,7 @@
 /**
- * QA auth is web-only (see the `Config` variant next door, which reports nothing as a QA request on native),
- * so neither of these can run. They exist to keep `HttpUtils` — which every platform imports — from reaching
- * the session module and dragging the authorize/PKCE/token chain into the native bundles.
+ * QA auth is web-only, so neither of these can run. They exist to keep `HttpUtils` — which every platform
+ * imports — from reaching the session module and dragging the authorize/PKCE/token chain into the native
+ * bundles.
  */
 import type {HandleQAUnauthorized, PrepareQARequestAuth} from './types';
 

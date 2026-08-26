@@ -606,10 +606,10 @@ const ONYXKEYS = {
     /** Indicates whether we should mask fragile user data while exporting onyx state or not */
     SHOULD_MASK_ONYX_STATE: 'shouldMaskOnyxState',
 
-    /** @deprecated Read only by ReplaceShouldUseStagingServerWithActiveServer. Use ACTIVE_SERVER. */
+    /** @deprecated Use ACTIVE_SERVER. */
     SHOULD_USE_STAGING_SERVER: 'shouldUseStagingServer',
 
-    /** Which server environment the app talks to: production, staging or the Cloudflare-protected QA server */
+    /** Which server environment the app talks to */
     ACTIVE_SERVER: 'activeServer',
 
     /** OAuth session used to reach the Cloudflare Access-protected QA server */
@@ -1731,7 +1731,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.PLAID_CURRENT_EVENT]: string;
     [ONYXKEYS.NVP_PRIVATE_TAX_EXEMPT]: boolean;
     [ONYXKEYS.SHOULD_MASK_ONYX_STATE]: boolean;
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the key stays typed so the migration can read it
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the key stays typed while it is still read
     [ONYXKEYS.SHOULD_USE_STAGING_SERVER]: boolean;
     [ONYXKEYS.ACTIVE_SERVER]: ValueOf<typeof CONST.SERVER>;
     [ONYXKEYS.CLOUDFLARE_SESSION]: OnyxTypes.CloudflareSession;

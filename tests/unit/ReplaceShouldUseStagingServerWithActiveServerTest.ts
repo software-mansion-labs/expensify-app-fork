@@ -25,8 +25,6 @@ describe('ReplaceShouldUseStagingServerWithActiveServer', () => {
         expect(await getOnyxValue(ONYXKEYS.SHOULD_USE_STAGING_SERVER)).toBeUndefined();
     });
 
-    // Not what the spec's decision table says ("false or missing -> production"); see the migration's
-    // doc comment. Writing 'production' here would override the env default for staging and adhoc builds.
     it('writes nothing when the legacy key is absent, so the env default still applies', async () => {
         await ReplaceShouldUseStagingServerWithActiveServer();
         await waitForBatchedUpdates();

@@ -33,10 +33,7 @@ function QAAuthTestToolRows() {
 
     return (
         <>
-            {/* Point the app at the Cloudflare Access-protected QA server. Toggling either way signs you out:
-                QA is a separate database, so the same email is a different account there.
-                Unlike the staging row in TestToolMenu this is shown to internal devs too — a local .env cannot
-                reach qa.new.exops.io, so this switch is the only way to exercise the flow before it exists. */}
+            {/* Toggling either way signs you out: QA is a separate database, so the same email is a different account there. */}
             <TestToolRow
                 title={translate('initialSettingsPage.troubleshoot.useQAServer')}
                 isTitleAccessible={false}
