@@ -2295,8 +2295,6 @@ const translations = {
             testingPreferences: 'Testing preferences',
             useStagingServer: 'Use Staging Server',
             useQAServer: 'Use QA Server',
-            qaAuthCloudflareIdentity: 'Cloudflare identity',
-            qaAuthCloudflareSignOut: 'Sign out',
             forceOffline: 'Force offline',
             simulatePoorConnection: 'Simulate poor internet connection',
             simulateFailingNetworkRequests: 'Simulate failing network requests',

@@ -2202,8 +2202,6 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click、ナビゲーション、ui.load',
             showBranchNameInTitle: 'ブラウザのタイトルにブランチ名を表示',
             useQAServer: 'QA サーバーを使用',
-            qaAuthCloudflareIdentity: 'Cloudflare ID',
-            qaAuthCloudflareSignOut: 'ログアウト',
         },
         security: 'セキュリティ',
         signOut: 'サインアウト',

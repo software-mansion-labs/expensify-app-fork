@@ -1,4 +1,4 @@
-import type {GetCloudflareTeamLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
+import type {GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
 
 /**
  * QA auth is web-only: receiving the OAuth callback needs claimed Universal/App Links, so the feature is
@@ -15,6 +15,4 @@ const getQAResource: GetQAResource = () => '';
 
 const getOAuthRedirectURI: GetOAuthRedirectURI = () => '';
 
-const getCloudflareTeamLogoutURL: GetCloudflareTeamLogoutURL = () => '';
-
-export {getCloudflareTeamLogoutURL, getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};
+export {getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};

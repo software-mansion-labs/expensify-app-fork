@@ -2214,8 +2214,6 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'kliknięcie interfejsu, nawigacja, ładowanie interfejsu',
             showBranchNameInTitle: 'Pokaż nazwę gałęzi w tytule przeglądarki',
             useQAServer: 'Użyj serwera QA',
-            qaAuthCloudflareIdentity: 'Tożsamość Cloudflare',
-            qaAuthCloudflareSignOut: 'Wyloguj się',
         },
         security: 'Bezpieczeństwo',
         signOut: 'Wyloguj się',

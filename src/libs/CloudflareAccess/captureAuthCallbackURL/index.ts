@@ -7,8 +7,6 @@ import {getOAuthRedirectURI, isQAAuthConfigured} from '@libs/CloudflareAccess/Co
 import {OAuthError} from '@libs/CloudflareAccess/OAuthClient';
 import {consumePendingAuthFlow} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
 
-import CONFIG from '@src/CONFIG';
-
 import type {CapturedAuthCallback, CaptureCloudflareAuthCallbackURL, GetCapturedCloudflareAuthCallback} from './types';
 
 let captured: CapturedAuthCallback = {outcome: 'not-a-callback'};

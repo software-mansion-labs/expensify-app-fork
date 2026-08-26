@@ -14,6 +14,5 @@ type GetQAResource = () => string;
 type GetOAuthRedirectURI = () => string;
 
 /** Where to send the browser to end its Cloudflare Access session */
-type GetCloudflareTeamLogoutURL = () => string;
 
-export type {GetCloudflareTeamLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest};
+export type {GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest};

@@ -2223,8 +2223,6 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click, navigazione, ui.load',
             showBranchNameInTitle: 'Mostra nome del ramo nel titolo del browser',
             useQAServer: 'Usa il server QA',
-            qaAuthCloudflareIdentity: 'Identità Cloudflare',
-            qaAuthCloudflareSignOut: 'Esci',
         },
         security: 'Sicurezza',
         signOut: 'Esci',

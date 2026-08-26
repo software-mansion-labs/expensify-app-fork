@@ -1,7 +1,7 @@
 /** Config and request classification for the Cloudflare Access-protected QA server */
 import CONFIG from '@src/CONFIG';
 
-import type {GetCloudflareTeamLogoutURL, GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
+import type {GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
 
 /** A bare hostname: no scheme, no slash, no port. Loose about labels (custom Access domains exist). */
 const TEAM_DOMAIN_SHAPE = /^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
@@ -68,12 +68,4 @@ const getOAuthRedirectURI: GetOAuthRedirectURI = () => {
     return `${window.location.origin}/oauth/callback`;
 };
 
-/**
- * Logging out on the application's own domain leaves Access in a state where the next authorize
- * request bounces to the application root rather than prompting, so the handshake never reaches a callback.
- */
-const getCloudflareTeamLogoutURL: GetCloudflareTeamLogoutURL = () => {
-    return `https://${CONFIG.QA_AUTH.TEAM_DOMAIN}/cdn-cgi/access/logout`;
-};
-
-export {getCloudflareTeamLogoutURL, getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};
+export {getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};

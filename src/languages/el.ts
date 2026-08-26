@@ -2282,8 +2282,6 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOps: 'Επισημασμένα ονόματα span',
             sentryHighlightedSpanOpsPlaceholder: 'κλικ αλληλεπίδρασης διεπαφής, πλοήγηση, φόρτωση διεπαφής',
             useQAServer: 'Χρήση διακομιστή QA',
-            qaAuthCloudflareIdentity: 'Ταυτότητα Cloudflare',
-            qaAuthCloudflareSignOut: 'Αποσύνδεση',
         },
         security: 'Ασφάλεια',
         signOut: 'Αποσύνδεση',

@@ -2226,8 +2226,6 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaktion.klick, navigation, ui.laden',
             showBranchNameInTitle: 'Branch-Namen im Browser-Titel anzeigen',
             useQAServer: 'QA-Server verwenden',
-            qaAuthCloudflareIdentity: 'Cloudflare-Identität',
-            qaAuthCloudflareSignOut: 'Abmelden',
         },
         security: 'Sicherheit',
         signOut: 'Abmelden',

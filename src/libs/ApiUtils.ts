@@ -9,7 +9,6 @@ import type {ValueOf} from 'type-fest';
 import Onyx from 'react-native-onyx';
 
 import proxyConfig from '../../config/proxyConfig';
-import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
 import getEnvironment from './Environment/getEnvironment';
 
 // To avoid rebuilding native apps, native apps use production config for both staging and prod

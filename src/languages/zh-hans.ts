@@ -2145,8 +2145,6 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click，navigation，ui.load',
             showBranchNameInTitle: '在浏览器标题中显示分支名称',
             useQAServer: '使用 QA 服务器',
-            qaAuthCloudflareIdentity: 'Cloudflare 身份',
-            qaAuthCloudflareSignOut: '退出登录',
         },
         security: '安全',
         signOut: '退出登录',

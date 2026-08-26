@@ -2146,8 +2146,6 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click, navigation, ui.load',
             showBranchNameInTitle: 'Mostrar nombre de rama en el título del navegador',
             useQAServer: 'Usar servidor QA',
-            qaAuthCloudflareIdentity: 'Identidad de Cloudflare',
-            qaAuthCloudflareSignOut: 'Cerrar sesión',
         },
         security: 'Seguridad',
         restoreStashed: 'Restablecer login guardado',
