@@ -15,10 +15,12 @@ import TextInputClearButton from '@components/TextInput/TextInputClearButton';
 import TextInputLabel from '@components/TextInput/TextInputLabel';
 import TextInputMeasurement from '@components/TextInput/TextInputMeasurement';
 
+import {useClaimOnce} from '@hooks/useActivityIdentityGuard';
 import useHtmlPaste from '@hooks/useHtmlPaste';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useMarkdownStyle from '@hooks/useMarkdownStyle';
+import useRouteKey from '@hooks/useRouteKey';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -133,10 +135,18 @@ function BaseTextInput({
 
     useHtmlPaste(input as RefObject<TextInput | null>, undefined, isMarkdownEnabled, maxLength);
 
+    const routeKey = useRouteKey();
+    const claimAutoFocus = useClaimOnce();
+
     // AutoFocus which only works on mount:
     useEffect(() => {
         // We are manually managing focus to prevent this issue: https://github.com/Expensify/App/issues/4514
         if (!inputProps.autoFocus || !input.current) {
+            return;
+        }
+
+        // The claim is keyed on the route so a revealed screen does not autofocus again and steal the caret.
+        if (!claimAutoFocus(routeKey ?? '')) {
             return;
         }
 

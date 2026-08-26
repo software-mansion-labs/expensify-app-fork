@@ -1,6 +1,7 @@
 import FlashList from '@components/FlashList';
 import type FlatListRefType from '@components/FlashList/types';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 
 import type {SkeletonSpanReasonAttributes} from '@libs/telemetry/useSkeletonSpan';
@@ -211,9 +212,13 @@ function MoneyRequestReportUnifiedList({
 
     // Reset the offset to the top whenever the report changes. A report view opens at the top, but the store only
     // updates from onScroll — so without this a stale offset
+    const hasScrollOffsetReportIDChanged = useLastApplied();
     useEffect(() => {
+        if (!hasScrollOffsetReportIDChanged(report.reportID)) {
+            return;
+        }
         scrollOffsetStore.setOffset(0);
-    }, [report.reportID, scrollOffsetStore]);
+    }, [report.reportID, scrollOffsetStore, hasScrollOffsetReportIDChanged]);
 
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         // Always feed the offset store (emitter, not state: the nested FlashList updates its own render stack without
@@ -267,9 +272,13 @@ function MoneyRequestReportUnifiedList({
     // undefined and the list never anchors on the linked message. Re-anchor imperatively once the linked action is
     // present. Guarded so it fires exactly once per linked target and never yanks the user after they've scrolled.
     const hasAnchoredLinkedActionRef = useRef(false);
+    const hasLinkedReportActionIDChanged = useLastApplied();
     useEffect(() => {
+        if (!hasLinkedReportActionIDChanged(linkedReportActionID ?? '')) {
+            return;
+        }
         hasAnchoredLinkedActionRef.current = false;
-    }, [linkedReportActionID]);
+    }, [linkedReportActionID, hasLinkedReportActionIDChanged]);
 
     useEffect(() => {
         if (!linkedReportActionID || initialScrollIndex === undefined || hasAnchoredLinkedActionRef.current) {

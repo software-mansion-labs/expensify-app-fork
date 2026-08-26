@@ -1,6 +1,7 @@
 import ColorSchemeWrapper from '@components/ColorSchemeWrapper';
 import {usePopoverActions} from '@components/PopoverProvider';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -52,23 +53,32 @@ function PopoverWithoutOverlay({
             enableEdgeToEdgeBottomSafeAreaPadding,
         });
 
-    useEffect(() => {
-        let removeOnClose: () => void;
-        if (isVisible) {
-            onModalShow();
+    const hasVisibilityChanged = useLastApplied();
 
-            onOpen?.({
-                ref: withoutOverlayRef,
-                close: onClose ?? NOOP,
-                anchorRef,
-            });
+    useEffect(() => {
+        const isVisibilityTransition = hasVisibilityChanged(String(isVisible));
+
+        let removeOnClose: (() => void) | undefined;
+        if (isVisible) {
+            if (isVisibilityTransition) {
+                onModalShow();
+
+                onOpen?.({
+                    ref: withoutOverlayRef,
+                    close: onClose ?? NOOP,
+                    anchorRef,
+                });
+            }
+            // The cleanup below runs on an Activity hide while the popover is still open, so the close handler is registered again on every run.
             removeOnClose = setCloseModal(onClose ?? NOOP);
-        } else {
+        } else if (isVisibilityTransition) {
             onModalHide();
             close(anchorRef);
             onModalDidClose();
         }
-        willAlertModalBecomeVisible(isVisible, true);
+        if (isVisibilityTransition) {
+            willAlertModalBecomeVisible(isVisible, true);
+        }
 
         return () => {
             if (!removeOnClose) {

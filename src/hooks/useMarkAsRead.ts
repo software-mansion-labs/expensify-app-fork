@@ -16,7 +16,7 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 
 import {useIsFocused, useRoute} from '@react-navigation/native';
-import {useCallback, useEffect, useEffectEvent, useRef, useState} from 'react';
+import {useCallback, useEffect, useEffectEvent, useRef, useState, useSyncExternalStore} from 'react';
 import {DeviceEventEmitter} from 'react-native';
 
 import {useLastApplied} from './useActivityIdentityGuard';
@@ -55,15 +55,9 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
     const isReportArchived = useReportIsArchived(reportID);
     const isReportActionsLoaded = useIsReportActionsLoaded(reportID);
 
-    const [isVisible, setIsVisible] = useState(Visibility.isVisible);
-    useEffect(() => {
-        // Visibility changes are lost while the screen is hidden, so re-subscribing has to resynchronize the state as well.
-        setIsVisible(Visibility.isVisible());
-        const unsubscribe = Visibility.onVisibilityChange(() => {
-            setIsVisible(Visibility.isVisible());
-        });
-        return unsubscribe;
-    }, []);
+    // Visibility changes are lost while the screen is hidden, and useSyncExternalStore re-reads the snapshot when it
+    // re-subscribes on a reveal, so the state cannot stay stale.
+    const isVisible = useSyncExternalStore(Visibility.onVisibilityChange, Visibility.isVisible);
 
     // A visible browser window can regain OS focus without any visibility change, and nothing else re-runs the
     // read catch-up in that case, so bump a counter on app focus to re-run it.

@@ -81,6 +81,8 @@ function useUnreadMarker({
             return;
         }
 
+        // The marker has to be reconciled with the persisted read time before listening again, because the events of the covered window are gone.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         reseedUnreadMarkerTime();
 
         const unreadActionSubscription = DeviceEventEmitter.addListener(`unreadAction_${reportID}`, (newLastReadTime: string) => {

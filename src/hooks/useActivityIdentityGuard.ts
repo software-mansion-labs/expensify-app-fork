@@ -17,12 +17,15 @@ function useClaimOnce(): (key: string) => boolean {
     }, []);
 }
 
+// A sentinel is needed because undefined is a value a caller can legitimately apply.
+const BEFORE_FIRST_APPLY = Symbol('beforeFirstApply');
+
 /** Returns a stable hasChanged that is true when the value differs from the last recorded one, and records it. */
-function useLastApplied(): (value: string) => boolean {
-    const lastAppliedValue = useRef<string | undefined>(undefined);
+function useLastApplied(): (value: string | undefined) => boolean {
+    const lastAppliedValue = useRef<string | undefined | typeof BEFORE_FIRST_APPLY>(BEFORE_FIRST_APPLY);
 
     // The identity has to stay stable because callers list the returned callback in effect dependencies.
-    return useCallback((value: string) => {
+    return useCallback((value: string | undefined) => {
         if (lastAppliedValue.current === value) {
             return false;
         }

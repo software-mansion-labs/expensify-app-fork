@@ -6,6 +6,7 @@ import {MFA_OVERLAY_SCREENS} from '@components/MultifactorAuthentication/mfaNavi
 import withNavigationFallback from '@components/withNavigationFallback';
 
 import useAccessibilityFocus from '@hooks/useAccessibilityFocus';
+import {useClaimOnce} from '@hooks/useActivityIdentityGuard';
 import useEnvironment from '@hooks/useEnvironment';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
@@ -223,12 +224,21 @@ function ScreenWrapper({
 
     useAccessibilityFocus({didScreenTransitionEnd, isFocused, ref: screenWrapperRef, shouldMoveAccessibilityFocus});
 
+    const claimEntryTransitionEnd = useClaimOnce();
+    const routeKey = route?.key ?? '';
+
     useEffect(() => {
-        // On iOS, the transitionEnd event doesn't trigger some times. As such, we need to set a timeout
-        const timeout = setTimeout(() => {
+        // The claim is taken where the transition actually ends, so a cover that cancelled the pending timeout still lets the reveal announce it once.
+        const announceEntryTransitionEnd = () => {
+            if (!claimEntryTransitionEnd(routeKey)) {
+                return;
+            }
             setDidScreenTransitionEnd(true);
             onEntryTransitionEnd?.();
-        }, CONST.SCREEN_TRANSITION_END_TIMEOUT);
+        };
+
+        // On iOS, the transitionEnd event doesn't trigger some times. As such, we need to set a timeout
+        const timeout = setTimeout(announceEntryTransitionEnd, CONST.SCREEN_TRANSITION_END_TIMEOUT);
 
         const unsubscribeTransitionEnd = navigation.addListener?.('transitionEnd', (event) => {
             // Prevent firing the prop callback when user is exiting the page.
@@ -236,8 +246,7 @@ function ScreenWrapper({
                 return;
             }
             clearTimeout(timeout);
-            setDidScreenTransitionEnd(true);
-            onEntryTransitionEnd?.();
+            announceEntryTransitionEnd();
         });
 
         // We need to have this prop to remove keyboard before going away from the screen, to avoid previous screen look weird for a brief moment,

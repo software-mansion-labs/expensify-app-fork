@@ -411,7 +411,7 @@ function ReportFetchHandler() {
             return;
         }
         fetchReport();
-    }, [route, isLinkedMessagePageReady, reportActionIDFromRoute, shouldDeferGuidedSetupOpenReport, onboardingSignal, reportIDFromRoute, secureKeyFromRoute, hasFetchIdentityChanged]);
+    }, [route.key, isLinkedMessagePageReady, reportActionIDFromRoute, shouldDeferGuidedSetupOpenReport, onboardingSignal, reportIDFromRoute, secureKeyFromRoute, hasFetchIdentityChanged]);
 
     useEffect(() => {
         // This function is only triggered when a user is invited to a room after opening the link.

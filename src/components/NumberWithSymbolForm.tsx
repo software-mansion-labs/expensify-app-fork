@@ -1,3 +1,4 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useIsInLandscapeMode from '@hooks/useIsInLandscapeMode';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
@@ -225,15 +226,20 @@ function NumberWithSymbolForm({
         end: currentNumber.length,
     });
 
+    const hasNumberChanged = useLastApplied();
+
     // When the prop resets to empty, mirror that in internal state so the field doesn't stay stuck at "0.00".
     useEffect(() => {
+        if (!hasNumberChanged(number ?? '')) {
+            return;
+        }
         if (number !== '') {
             return;
         }
         // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing internal state to an externally-driven prop reset (Onyx); mirrors the existing pattern in this file
         setCurrentNumber('');
         setSelection({start: 0, end: 0});
-    }, [number]);
+    }, [number, hasNumberChanged]);
 
     const forwardDeletePressedRef = useRef(false);
     // The ref is used to ignore any onSelectionChange event that happens while we are updating the selection manually in setNewNumber

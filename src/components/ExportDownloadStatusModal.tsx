@@ -1,3 +1,4 @@
+import {useClaimOnce} from '@hooks/useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useEnvironment from '@hooks/useEnvironment';
 import useLocalize from '@hooks/useLocalize';
@@ -51,6 +52,7 @@ function ExportDownloadStatusModal({exportID, isVisible, onClose, failedBody}: E
     const {environment} = useEnvironment();
 
     const [encryptedAuthToken] = useOnyx(ONYXKEYS.SESSION, {selector: (session) => session?.encryptedAuthToken});
+    const claimAutoDownload = useClaimOnce();
 
     const [exportDownload] = useOnyx(`${ONYXKEYS.COLLECTION.EXPORT_DOWNLOAD}${exportID}`);
     const displayedExport = usePreviousDefined(exportDownload);
@@ -87,9 +89,13 @@ function ExportDownloadStatusModal({exportID, isVisible, onClose, failedBody}: E
         if (!isReady || !fileName || shouldSendFromConcierge || isEmptyReceipts) {
             return;
         }
+        // The claim is keyed on the export so a re-entry of this effect cannot download the same file a second time.
+        if (!claimAutoDownload(`${exportID}|${fileName}`)) {
+            return;
+        }
         downloadFile();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isReady, fileName, shouldSendFromConcierge, isEmptyReceipts]);
+    }, [isReady, fileName, shouldSendFromConcierge, isEmptyReceipts, claimAutoDownload]);
 
     const handleSendFromConcierge = () => {
         sendExportFileFromConcierge(exportID, displayedExport ?? undefined);

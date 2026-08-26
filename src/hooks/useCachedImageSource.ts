@@ -1,3 +1,5 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
+
 import Log from '@libs/Log';
 
 import CONST from '@src/CONST';
@@ -23,10 +25,14 @@ function useCachedImageSource(source: ImageSource | undefined): ImageSource | nu
     const hasHeaders = typeof source === 'object' && !!source.headers;
     const [cachedUri, setCachedUri] = useState<string | null>(null);
     const [hasError, setHasError] = useState(false);
+    const hasSourceChanged = useLastApplied();
 
     useEffect(() => {
-        setCachedUri(null);
-        setHasError(false);
+        // A re-run for the same source keeps the resolved URI, because clearing it would blank an image that is already painted.
+        if (hasSourceChanged(`${uri ?? ''}|${String(hasHeaders)}`)) {
+            setCachedUri(null);
+            setHasError(false);
+        }
 
         if (!hasHeaders || !uri) {
             return;
@@ -86,7 +92,7 @@ function useCachedImageSource(source: ImageSource | undefined): ImageSource | nu
                 URL.revokeObjectURL(objectURL);
             }
         };
-    }, [uri, hasHeaders, source?.headers]);
+    }, [uri, hasHeaders, source?.headers, hasSourceChanged]);
 
     // Images without headers are cached natively by the browser,
     // so pass them through as-is — no Cache API needed

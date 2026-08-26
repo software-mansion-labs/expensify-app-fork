@@ -10,7 +10,7 @@ function useClearReportActionDraftsOnReportChange(reportID: string | undefined) 
     const hasReportChanged = useLastApplied();
 
     useEffect(() => {
-        if (!hasReportChanged(reportID ?? '')) {
+        if (!hasReportChanged(reportID)) {
             return;
         }
 

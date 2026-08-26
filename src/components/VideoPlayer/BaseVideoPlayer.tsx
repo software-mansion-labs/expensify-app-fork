@@ -9,6 +9,7 @@ import {usePlaybackActionsContext, usePlaybackStateContext} from '@components/Vi
 import {useVolumeActions, useVolumeState} from '@components/VideoPlayerContexts/VolumeContext';
 import VideoPopoverMenu from '@components/VideoPopoverMenu';
 
+import {useClaimOnce, useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useNetwork from '@hooks/useNetwork';
 import useReportOrReportDraft from '@hooks/useReportOrReportDraft';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -125,15 +126,25 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
         },
     });
 
+    const offlineSinceRef = useRef<number | null>(null);
+
     useEffect(() => {
         if (!isOffline) {
+            offlineSinceRef.current = null;
             setIsVideoOffline(false);
             return;
         }
 
-        const timer = setTimeout(() => {
-            setIsVideoOffline(true);
-        }, CONST.VIDEO_PLAYER.OFFLINE_THRESHOLD);
+        // The threshold is measured from the moment the app went offline, so a re-run continues the countdown instead of restarting it.
+        const offlineSince = offlineSinceRef.current ?? Date.now();
+        offlineSinceRef.current = offlineSince;
+
+        const timer = setTimeout(
+            () => {
+                setIsVideoOffline(true);
+            },
+            Math.max(0, CONST.VIDEO_PLAYER.OFFLINE_THRESHOLD - (Date.now() - offlineSince)),
+        );
 
         return () => clearTimeout(timer);
     }, [isOffline]);
@@ -157,6 +168,9 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
     // eslint-disable-next-line react-hooks/refs
     shouldUseSharedVideoElementRef.current = shouldUseSharedVideoElement;
     const canUseTouchScreen = canUseTouchScreenLib();
+    const hasTouchScreenSupportChanged = useLastApplied();
+    const claimUploadingPlayer = useClaimOnce();
+    const loadedVideoElementRef = useRef<HTMLVideoElement | null>(null);
     const isCurrentlyURLSet = currentlyPlayingURL === url;
     const isUploading = CONST.ATTACHMENT_LOCAL_URL_PREFIX.some((prefix) => url.startsWith(prefix));
     const shouldShowErrorIndicator = useMemo(() => {
@@ -233,13 +247,16 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
     const debouncedHideControl = useMemo(() => debounce(hideControl, 1500), [hideControl]);
 
     useEffect(() => {
+        if (!hasTouchScreenSupportChanged(String(canUseTouchScreen))) {
+            return;
+        }
         if (canUseTouchScreen) {
             return;
         }
         // If the device cannot use touch screen, always set the control status as 'show'.
         // Then if user hover over the video, controls is shown.
         setControlStatusState(CONST.VIDEO_PLAYER.CONTROLS_STATUS.SHOW);
-    }, [canUseTouchScreen]);
+    }, [canUseTouchScreen, hasTouchScreenSupportChanged]);
 
     useEffect(() => {
         // We only auto hide the control if the device can use touch screen.
@@ -413,6 +430,9 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
         if (!isUploading || !videoPlayerRef.current) {
             return;
         }
+        if (!claimUploadingPlayer(url)) {
+            return;
+        }
 
         // If we are uploading a new video, we want to pause previous playing video and immediately set the video player ref.
         if (currentVideoPlayerRef.current) {
@@ -421,7 +441,7 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
 
         currentVideoPlayerRef.current = videoPlayerRef.current;
         currentVideoViewRef.current = videoViewRef.current;
-    }, [url, currentVideoPlayerRef, isUploading, pauseVideo, currentVideoViewRef]);
+    }, [url, currentVideoPlayerRef, isUploading, pauseVideo, currentVideoViewRef, claimUploadingPlayer]);
 
     const isCurrentlyURLSetRef = useRef<boolean | undefined>(undefined);
     isCurrentlyURLSetRef.current = isCurrentlyURLSet;
@@ -551,6 +571,11 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
         if (!videoElement || hasError || !isSafari() || sharedElement) {
             return;
         }
+        // The element survives a re-run of this effect, and loading it again would rewind the video the user is watching.
+        if (loadedVideoElementRef.current === videoElement) {
+            return;
+        }
+        loadedVideoElementRef.current = videoElement;
         videoElement.load();
     }, [hasError, sharedElement]);
 

@@ -2,6 +2,7 @@ import {renderScrollComponent as renderActionSheetAwareScrollView} from '@compon
 import InvertedFlashList from '@components/FlashList/InvertedFlashList';
 import ReportActionsSkeletonView from '@components/ReportActionsSkeletonView';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useEnvironment from '@hooks/useEnvironment';
 import useLinkedMessageOfflineLoading from '@hooks/useLinkedMessageOfflineLoading';
 import useLocalize from '@hooks/useLocalize';
@@ -134,10 +135,14 @@ function ReportActionsListContent({reportID, onLayout}: ReportActionsListContent
     const {sessionStartTime} = useConciergeSessionState();
 
     const didLayout = useRef(false);
+    const hasLayoutReportIDChanged = useLastApplied();
 
     useEffect(() => {
+        if (!hasLayoutReportIDChanged(reportID)) {
+            return;
+        }
         didLayout.current = false;
-    }, [reportID]);
+    }, [reportID, hasLayoutReportIDChanged]);
 
     useLinkedMessageOfflineLoading({reportID: report?.reportID ?? reportID, reportActionIDFromRoute});
 

@@ -60,7 +60,7 @@ function MoneyReportHeaderActions({reportID, primaryAction, isReportInSearch, ba
     const hasTransactionThreadReportIDChanged = useLastApplied();
 
     useEffect(() => {
-        if (!hasTransactionThreadReportIDChanged(transactionThreadReportID ?? '')) {
+        if (!hasTransactionThreadReportIDChanged(transactionThreadReportID)) {
             return;
         }
         if (!transactionThreadReportID) {

@@ -5,6 +5,7 @@ import ImageSVG from '@components/ImageSVG';
 import {PressableWithoutFeedback} from '@components/Pressable';
 import Text from '@components/Text';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
@@ -80,6 +81,7 @@ function MapViewImpl({
     const [shouldResetBoundaries, setShouldResetBoundaries] = useState<boolean>(false);
     const setRef = useCallback((newRef: MapRef | null) => setMapRef(newRef), []);
     const shouldInitializeCurrentPosition = useRef(true);
+    const hasContainerSizeChanged = useLastApplied();
 
     // Determines if map can be panned to user's detected
     // location without bothering the user. It will return
@@ -186,7 +188,12 @@ function MapViewImpl({
             return;
         }
 
-        const resizeObserver = new ResizeObserver(() => {
+        const resizeObserver = new ResizeObserver((entries) => {
+            const observedSize = entries.at(0)?.contentRect;
+            // Observing again replays the current size, so the map is only resized when the container really changed.
+            if (observedSize && !hasContainerSizeChanged(`${observedSize.width}x${observedSize.height}`)) {
+                return;
+            }
             mapRef.resize();
             setShouldResetBoundaries(true);
         });
@@ -195,7 +202,7 @@ function MapViewImpl({
         return () => {
             resizeObserver?.disconnect();
         };
-    }, [mapRef]);
+    }, [mapRef, hasContainerSizeChanged]);
 
     useImperativeHandle(
         ref,

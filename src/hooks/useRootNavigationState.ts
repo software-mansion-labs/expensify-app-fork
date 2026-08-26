@@ -33,6 +33,12 @@ function useRootNavigationState<T>(selector: Selector<T>): T {
     });
 
     useEffect(() => {
+        // The listener only reports future changes, so we resync from the current state first in case any change was missed while this subtree had no listener attached.
+        if (navigationRef.isReady()) {
+            const currentResult = selectorRef.current(navigationRef.getRootState());
+            setResult((prev) => (Object.is(prev, currentResult) ? prev : currentResult));
+        }
+
         const unsubscribe = navigationRef.addListener('state', () => {
             // State from the event data may be incomplete. (defined params but no nested state for the route)
             const newResult = selectorRef.current(navigationRef.getRootState());

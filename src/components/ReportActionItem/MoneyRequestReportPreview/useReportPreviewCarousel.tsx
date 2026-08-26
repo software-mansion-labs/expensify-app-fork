@@ -1,5 +1,6 @@
 import Text from '@components/Text';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useIsFocusedRef from '@hooks/useIsFocusedRef';
 import useLocalize from '@hooks/useLocalize';
@@ -158,7 +159,14 @@ function useReportPreviewCarousel({
         carouselTransactionsRef.current = carouselTransactions;
     }, [carouselTransactions]);
 
+    const newTransactionIDsKey = [...(newTransactionIDs ?? [])].sort().join('|');
+    const hasNewTransactionIDsChanged = useLastApplied();
+
     useEffect(() => {
+        if (!hasNewTransactionIDsChanged(newTransactionIDsKey)) {
+            return;
+        }
+
         const index = carouselTransactions.findIndex((transaction) => newTransactionIDs?.has(transaction.transactionID));
 
         if (index < 0) {

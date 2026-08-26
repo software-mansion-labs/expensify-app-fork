@@ -119,9 +119,6 @@ function ReanimatedModal({
                 TransitionTracker.endTransition(transitionHandleRef.current);
                 transitionHandleRef.current = null;
             }
-
-            setIsVisibleState(false);
-            setIsContainerOpen(false);
         },
 
         [],

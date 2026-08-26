@@ -7,6 +7,7 @@ import EmojiPickerButton from '@components/EmojiPicker/EmojiPickerButton';
 import ExceededCommentLength from '@components/ExceededCommentLength';
 import {useBlockedFromConcierge} from '@components/OnyxListItemProvider';
 
+import {useClaimOnce, useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useIsScrollLikelyLayoutTriggered from '@hooks/useIsScrollLikelyLayoutTriggered';
 import useKeyboardState from '@hooks/useKeyboardState';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
@@ -152,6 +153,12 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
     const composerRef = useRef<ComposerRef | null>(null);
     const draftRef = useRef(draft);
     const emojiPickerSelectionRef = useRef<Selection | undefined>(undefined);
+    const hasTakenFocusPriorityRef = useRef(false);
+    const claimInitialComposerFocus = useClaimOnce();
+    const claimDeletedActionDraftClear = useClaimOnce();
+    const hasComposerFocusKeepInputChanged = useLastApplied();
+    const hasDraftConversionInputChanged = useLastApplied();
+    const composerFocusKeepInputKey = [String(isFocused), String(modal.willAlertModalBecomeVisible), String(modal.isVisible), String(onyxInputFocused)].join('|');
 
     // Save the draft of the comment. This debounced so that we're not ceaselessly saving your edit. Saving the draft
     // allows one to navigate somewhere else and come back to the comment and still have it in edit mode.
@@ -166,7 +173,11 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
     });
 
     useEffect(() => {
+        if (!claimInitialComposerFocus(action.reportActionID)) {
+            return;
+        }
         focusComposerWithDelay(composerRef.current)(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the initial focus belongs to the edit session and is claimed once for it
     }, []);
 
     // If the underlying action becomes deleted while the user has it open in
@@ -175,28 +186,18 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
         if (!isDeletedAction(action)) {
             return;
         }
+        if (!claimDeletedActionDraftClear(action.reportActionID)) {
+            return;
+        }
         clearAllReportActionDrafts();
-    }, [action, reportID]);
+    }, [action, reportID, claimDeletedActionDraftClear]);
 
     useEffect(() => {
+        if (!hasComposerFocusKeepInputChanged(composerFocusKeepInputKey)) {
+            return;
+        }
         composerFocusKeepFocusOn(composerRef.current as HTMLElement, isFocused, modal, onyxInputFocused);
-    }, [isFocused, modal, onyxInputFocused]);
-
-    useEffect(
-        // Remove focus callback on unmount to avoid stale callbacks
-        () => {
-            if (composerRef.current) {
-                ReportActionComposeFocusManager.editComposerRef.current = composerRef.current;
-            }
-            return () => {
-                if (ReportActionComposeFocusManager.editComposerRef.current !== composerRef.current) {
-                    return;
-                }
-                ReportActionComposeFocusManager.clear(true);
-            };
-        },
-        [],
-    );
+    }, [composerFocusKeepInputKey, hasComposerFocusKeepInputChanged, isFocused, modal, onyxInputFocused]);
 
     /**
      * Focus the composer text input
@@ -208,11 +209,32 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
 
     // Take over focus priority
     const setUpComposeFocusManager = useCallback(() => {
+        hasTakenFocusPriorityRef.current = true;
         ReportActionComposeFocusManager.onComposerFocus(() => {
             focus(true, emojiPickerSelectionRef.current ? {...emojiPickerSelectionRef.current} : undefined);
             emojiPickerSelectionRef.current = undefined;
         }, true);
     }, [focus]);
+
+    useEffect(
+        // Remove focus callback on unmount to avoid stale callbacks
+        () => {
+            if (composerRef.current) {
+                ReportActionComposeFocusManager.editComposerRef.current = composerRef.current;
+            }
+            // The teardown below also runs when this screen is only covered, so a priority callback this composer owned has to be re-armed here.
+            if (hasTakenFocusPriorityRef.current) {
+                setUpComposeFocusManager();
+            }
+            return () => {
+                if (ReportActionComposeFocusManager.editComposerRef.current !== composerRef.current) {
+                    return;
+                }
+                ReportActionComposeFocusManager.clear(true);
+            };
+        },
+        [setUpComposeFocusManager],
+    );
 
     /**
      * Update the value of the draft in Onyx
@@ -252,6 +274,9 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
     );
 
     useEffect(() => {
+        if (!hasDraftConversionInputChanged(`${action.reportActionID}|${preferredLocale}`)) {
+            return;
+        }
         updateDraft(draft);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- run this only when language is changed
     }, [action.reportActionID, preferredLocale]);

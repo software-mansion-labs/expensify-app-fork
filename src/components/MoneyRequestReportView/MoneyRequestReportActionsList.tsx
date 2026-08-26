@@ -1,5 +1,6 @@
 import ScrollView from '@components/ScrollView';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useAppFocusEvent from '@hooks/useAppFocusEvent';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import {useIsReportLoadPending} from '@hooks/useInFlightRequests';
@@ -72,7 +73,7 @@ import type {LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent} from 'r
 /* eslint-disable rulesdir/prefer-early-return */
 import {useIsFocused, useRoute} from '@react-navigation/native';
 import isEmpty from 'lodash/isEmpty';
-import React, {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {DeviceEventEmitter, View} from 'react-native';
 
 import MoneyRequestReportTransactionList from './MoneyRequestReportTransactionList';
@@ -308,11 +309,27 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
             return;
         }
 
+        const wasBackfilling = isBackfillingRef.current;
+        const consumedCursor = prevBackfillCursorRef.current;
         isBackfillingRef.current = true;
         prevBackfillCursorRef.current = cursor;
-        const handle = TransitionTracker.runAfterTransitions({callback: () => getOlderActions(reportID, cursor)});
+        let hasFetchRun = false;
+        const handle = TransitionTracker.runAfterTransitions({
+            callback: () => {
+                hasFetchRun = true;
+                getOlderActions(reportID, cursor);
+            },
+        });
 
-        return () => handle.cancel();
+        return () => {
+            handle.cancel();
+            if (hasFetchRun) {
+                return;
+            }
+            // The cursor was never actually fetched, so give it back or the next run declines to retry it.
+            isBackfillingRef.current = wasBackfilling;
+            prevBackfillCursorRef.current = consumedCursor;
+        };
     }, [
         hasFinishedInitialLoad,
         isOffline,
@@ -360,13 +377,18 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
      * - reads a new message as it is received
      */
     const [unreadMarkerTime, setUnreadMarkerTime] = useState(reportLastReadTime);
+    const hasUnreadMarkerReportIDChanged = useLastApplied();
     useEffect(() => {
+        if (!hasUnreadMarkerReportIDChanged(report?.reportID ?? '')) {
+            return;
+        }
         setUnreadMarkerTime(reportLastReadTime);
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [report?.reportID]);
+    }, [report?.reportID, hasUnreadMarkerReportIDChanged]);
 
     useEffect(() => {
+        setIsVisible(Visibility.isVisible());
         const unsubscribe = Visibility.onVisibilityChange(() => {
             setIsVisible(Visibility.isVisible());
         });
@@ -379,7 +401,21 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
     const [appFocusCount, setAppFocusCount] = useState(0);
     useAppFocusEvent(useCallback(() => setAppFocusCount((count) => count + 1), []));
 
+    // One key for the whole trigger set, so a reveal that presents the same data does not repeat the read catch-up.
+    const readCatchUpKey = [
+        report?.reportID ?? '',
+        report?.lastVisibleActionCreated ?? '',
+        transactionThreadReport?.lastVisibleActionCreated ?? '',
+        String(isVisible),
+        String(isReportActionsLoaded),
+    ].join('|');
+    const hasReadCatchUpKeyChanged = useLastApplied();
+
     useEffect(() => {
+        if (!hasReadCatchUpKeyChanged(readCatchUpKey)) {
+            return;
+        }
+
         if (!isFocused) {
             return;
         }
@@ -403,7 +439,7 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
         }
         // This effect should only run when the newest visible action changes, otherwise every action/report object update can prematurely consume unread state.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [report?.lastVisibleActionCreated, transactionThreadReport?.lastVisibleActionCreated, report?.reportID, isVisible, isReportActionsLoaded]);
+    }, [report?.lastVisibleActionCreated, transactionThreadReport?.lastVisibleActionCreated, report?.reportID, isVisible, isReportActionsLoaded, readCatchUpKey, hasReadCatchUpKeyChanged]);
 
     useEffect(() => {
         if (!isVisible || !Visibility.hasFocus() || !isFocused) {
@@ -530,22 +566,45 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
 
         // Wait for the footer to lay out, otherwise the content hasn't grown yet and there is
         // nothing to scroll to.
+        let hasScrollRun = false;
         const timeoutID = setTimeout(() => {
+            hasScrollRun = true;
             reportScrollManager.scrollToEnd();
         }, DELAY_FOR_SCROLLING_TO_END);
 
-        return () => clearTimeout(timeoutID);
+        return () => {
+            clearTimeout(timeoutID);
+            if (hasScrollRun) {
+                return;
+            }
+            // The scroll never happened, so the latch has to be released or nothing retries it.
+            hasScrolledForThinkingIndicatorRef.current = false;
+        };
     }, [isThinkingIndicatorVisible, reportScrollManager]);
+
+    const recordLastReadTime = useLastApplied();
+
+    // Both events below carry the report's new lastReadTime, so a subscription that missed them can catch up from the report itself.
+    const reseedUnreadMarkerTime = useEffectEvent(() => {
+        if (!recordLastReadTime(reportLastReadTime)) {
+            return;
+        }
+        setUnreadMarkerTime(reportLastReadTime);
+    });
 
     /**
      * Subscribe to read/unread events and update our unreadMarkerTime
      */
     useEffect(() => {
+        reseedUnreadMarkerTime();
+
         const unreadActionSubscription = DeviceEventEmitter.addListener(`unreadAction_${report?.reportID}`, (newLastReadTime: string) => {
+            recordLastReadTime(newLastReadTime);
             setUnreadMarkerTime(newLastReadTime);
             userActiveSince.current = DateUtils.getDBTime();
         });
         const readNewestActionSubscription = DeviceEventEmitter.addListener(`readNewestAction_${report?.reportID}`, (newLastReadTime: string) => {
+            recordLastReadTime(newLastReadTime);
             setUnreadMarkerTime(newLastReadTime);
         });
 
@@ -553,7 +612,7 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
             unreadActionSubscription.remove();
             readNewestActionSubscription.remove();
         };
-    }, [report?.reportID]);
+    }, [report?.reportID, recordLastReadTime]);
 
     /**
      * When the user reads a new message as it is received, we'll push the unreadMarkerTime down to the timestamp of
@@ -708,6 +767,9 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
                 return;
             }
             clearTimeout(stickToBottomTimeoutRef.current);
+            stickToBottomTimeoutRef.current = null;
+            // Nothing is left to unpin the list once the timeout is gone, so unpin it here.
+            stickToBottomRef.current = false;
         };
     }, []);
 
