@@ -42,7 +42,7 @@ jest.mock('@hooks/useIsAuthenticated', () => ({
     default: () => mockIsAuthenticated,
 }));
 
-jest.mock('@libs/CloudflareAccess/Config', () => ({isQAAuthConfigured: jest.fn(() => false)}));
+jest.mock('@libs/CloudflareAccess/Config', () => ({isQAAuthConfigured: jest.fn()}));
 
 const mockShowConfirmModal = jest.fn();
 
@@ -198,6 +198,7 @@ describe('Server selection', () => {
 
             expect(mockShowConfirmModal).toHaveBeenCalled();
             expect(setActiveServer).not.toHaveBeenCalled();
+            expect(getSelectionListProps().data.find((item) => item.isSelected)?.keyForList).toBe(CONST.SERVER.PRODUCTION);
         });
 
         it('switches on confirmation', async () => {

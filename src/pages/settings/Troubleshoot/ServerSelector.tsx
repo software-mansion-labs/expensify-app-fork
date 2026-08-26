@@ -15,6 +15,7 @@ import useOnyx from '@hooks/useOnyx';
 
 import {getActiveServer} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
+import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 
 import {setActiveServer} from '@userActions/User';
@@ -31,6 +32,8 @@ type Server = ValueOf<typeof CONST.SERVER>;
 /** Narrows keyForList so onSelectRow hands back a server rather than a bare string */
 type ServerListItem = ListItem & {keyForList: Server};
 
+const ALWAYS_SELECTABLE_SERVERS = [CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING] as const;
+
 type ServerSelectorProps = {
     /** Pads for the device safe area. The test tools modal floats, so it must not. */
     shouldAddBottomSafeAreaPadding?: boolean;
@@ -44,7 +47,7 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
 
     const [selectedServer, setSelectedServer] = useState<Server>(activeServer);
 
-    const selectableServers = isQAAuthConfigured() ? [CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING, CONST.SERVER.QA] : [CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING];
+    const selectableServers = [...ALWAYS_SELECTABLE_SERVERS, ...(isQAAuthConfigured() ? [CONST.SERVER.QA] : [])];
 
     const servers: ServerListItem[] = selectableServers.map((server) => ({
         text: translate(`initialSettingsPage.troubleshoot.servers.${server}.label`),
@@ -53,11 +56,11 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
         isSelected: selectedServer === server,
     }));
 
-    // QA is a separate database, so the same email is a different account there and setActiveServer ends the
-    // session on either crossing. There is no session to lose on the sign-in screen.
-    const shouldConfirmSignOut = isAuthenticated && selectedServer !== activeServer && (selectedServer === CONST.SERVER.QA || activeServer === CONST.SERVER.QA);
+    const confirmAndApplyServerChange = async () => {
+        // QA is a separate database, so the same email is a different account there and setActiveServer ends the
+        // session on either crossing. There is no session to lose on the sign-in screen.
+        const shouldConfirmSignOut = isAuthenticated && selectedServer !== activeServer && (selectedServer === CONST.SERVER.QA || activeServer === CONST.SERVER.QA);
 
-    const applyServerChange = async () => {
         if (shouldConfirmSignOut) {
             const result = await showConfirmModal({
                 title: translate('common.areYouSure'),
@@ -67,6 +70,8 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
                 shouldShowCancelButton: true,
             });
             if (result.action !== ModalActions.CONFIRM) {
+                // Drop the pick as well, so the radio keeps reporting the server that is actually active
+                setSelectedServer(activeServer);
                 return;
             }
         }
@@ -77,7 +82,9 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
         showButton: true,
         text: translate('common.save'),
         onConfirm: () => {
-            applyServerChange();
+            confirmAndApplyServerChange().catch((error: unknown) => {
+                Log.warn('Failed to change the active server', {error});
+            });
         },
         isDisabled: selectedServer === activeServer,
     };
