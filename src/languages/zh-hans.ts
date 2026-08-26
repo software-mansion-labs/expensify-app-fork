@@ -2116,7 +2116,12 @@ const translations: TranslationDeepObject<typeof en> = {
             results: '结果',
             releaseOptions: '发布选项',
             testingPreferences: '测试偏好',
-            useStagingServer: '使用预备服务器',
+            server: '服务器',
+            servers: {
+                production: {label: '生产', description: '真实用户所使用的线上环境'},
+                staging: {label: '预备', description: '生产环境的镜像，用于最终验证'},
+                qa: {label: 'QA'},
+            },
             forceOffline: '强制离线',
             simulatePoorConnection: '模拟较差的互联网连接',
             simulateFailingNetworkRequests: '模拟失败的网络请求',

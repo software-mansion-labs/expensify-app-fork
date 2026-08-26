@@ -2253,7 +2253,12 @@ const translations: TranslationDeepObject<typeof en> = {
             results: 'Αποτελέσματα',
             releaseOptions: 'Επιλογές έκδοσης',
             testingPreferences: 'Προτιμήσεις δοκιμών',
-            useStagingServer: 'Χρήση διακομιστή staging',
+            server: 'Διακομιστής',
+            servers: {
+                production: {label: 'Παραγωγή', description: 'Το ζωντανό περιβάλλον που βλέπουν οι πραγματικοί χρήστες'},
+                staging: {label: 'Staging', description: 'Αντίγραφο της παραγωγής. Χρησιμοποιείται για τον τελικό έλεγχο'},
+                qa: {label: 'QA'},
+            },
             forceOffline: 'Εξαναγκασμός εκτός σύνδεσης',
             simulatePoorConnection: 'Προσομοίωση κακής σύνδεσης στο διαδίκτυο',
             simulateFailingNetworkRequests: 'Προσομοίωση αποτυχημένων αιτημάτων δικτύου',

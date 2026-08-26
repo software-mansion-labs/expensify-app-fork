@@ -2293,7 +2293,12 @@ const translations = {
             results: 'Results',
             releaseOptions: 'Release options',
             testingPreferences: 'Testing preferences',
-            useStagingServer: 'Use Staging Server',
+            server: 'Server',
+            servers: {
+                production: {label: 'Production', description: 'The live environment real users see'},
+                staging: {label: 'Staging', description: 'Mirror of production. Used for final validation'},
+                qa: {label: 'QA'},
+            },
             useQAServer: 'Use QA Server',
             forceOffline: 'Force offline',
             simulatePoorConnection: 'Simulate poor internet connection',

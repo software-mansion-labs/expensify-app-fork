@@ -2185,7 +2185,12 @@ const translations: TranslationDeepObject<typeof en> = {
             results: 'Wyniki',
             releaseOptions: 'Opcje wydania',
             testingPreferences: 'Preferencje testowe',
-            useStagingServer: 'Użyj serwera testowego',
+            server: 'Serwer',
+            servers: {
+                production: {label: 'Produkcja', description: 'Środowisko produkcyjne, które widzą prawdziwi użytkownicy'},
+                staging: {label: 'Staging', description: 'Kopia produkcji. Używana do ostatecznej weryfikacji'},
+                qa: {label: 'QA'},
+            },
             forceOffline: 'Wymuś tryb offline',
             simulatePoorConnection: 'Symuluj słabe połączenie internetowe',
             simulateFailingNetworkRequests: 'Symuluj nieudane żądania sieciowe',
