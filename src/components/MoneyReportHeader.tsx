@@ -8,7 +8,7 @@ import useResponsiveLayoutOnWideRHP from '@hooks/useResponsiveLayoutOnWideRHP';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useTransactionsAndViolationsForReport from '@hooks/useTransactionsAndViolationsForReport';
 
-import {turnOffMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
+import {turnOffMobileSelectionMode, turnOnMobileSelectionMode} from '@libs/actions/MobileSelectionMode';
 import type {PlatformStackRouteProp} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {ReportsSplitNavigatorParamList, RightModalNavigatorParamList} from '@libs/Navigation/types';
 
@@ -18,7 +18,7 @@ import type {Route} from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 
 import {useRoute} from '@react-navigation/native';
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {View} from 'react-native';
 
 import HeaderLoadingBar from './HeaderLoadingBar';
@@ -95,9 +95,21 @@ function MoneyReportHeaderContent({reportID: reportIDProp, shouldDisplayBackButt
     const shouldShowBackButton = shouldDisplayBackButton || shouldUseNarrowLayout;
 
     const isMobileSelectionModeEnabled = useMobileSelectionMode();
+    const isMobileSelectionModeEnabledRef = useRef(isMobileSelectionModeEnabled);
+    const wasMobileSelectionModeOnAtCleanupRef = useRef(false);
 
     useEffect(() => {
+        isMobileSelectionModeEnabledRef.current = isMobileSelectionModeEnabled;
+    }, [isMobileSelectionModeEnabled]);
+
+    useEffect(() => {
+        // A reveal puts back the global flag the matching teardown turned off, because covering the report is not leaving it.
+        if (wasMobileSelectionModeOnAtCleanupRef.current) {
+            wasMobileSelectionModeOnAtCleanupRef.current = false;
+            turnOnMobileSelectionMode();
+        }
         return () => {
+            wasMobileSelectionModeOnAtCleanupRef.current = isMobileSelectionModeEnabledRef.current;
             turnOffMobileSelectionMode();
         };
     }, []);

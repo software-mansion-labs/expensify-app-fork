@@ -6,9 +6,10 @@ import {getUnreadMarkerReportAction} from '@pages/inbox/report/shouldDisplayNewM
 import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxTypes from '@src/types/onyx';
 
-import {useEffect, useState} from 'react';
+import {useEffect, useEffectEvent, useState} from 'react';
 import {DeviceEventEmitter} from 'react-native';
 
+import {useLastApplied} from './useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useIsAnonymousUser from './useIsAnonymousUser';
 import useLocalize from './useLocalize';
@@ -65,16 +66,29 @@ function useUnreadMarker({
     const reportLastReadTime = reportLastReadTimeValue ?? '';
 
     const [unreadMarkerTime, setUnreadMarkerTime] = useState(reportLastReadTime);
+    const recordLastReadTime = useLastApplied();
+
+    // Both events below carry the report's new lastReadTime, so a subscription that missed them can catch up from the report itself.
+    const reseedUnreadMarkerTime = useEffectEvent(() => {
+        if (!recordLastReadTime(reportLastReadTime)) {
+            return;
+        }
+        setUnreadMarkerTime(reportLastReadTime);
+    });
 
     useEffect(() => {
         if (isAnonymousUser) {
             return;
         }
 
+        reseedUnreadMarkerTime();
+
         const unreadActionSubscription = DeviceEventEmitter.addListener(`unreadAction_${reportID}`, (newLastReadTime: string) => {
+            recordLastReadTime(newLastReadTime);
             setUnreadMarkerTime(newLastReadTime);
         });
         const readNewestActionSubscription = DeviceEventEmitter.addListener(`readNewestAction_${reportID}`, (newLastReadTime: string) => {
+            recordLastReadTime(newLastReadTime);
             setUnreadMarkerTime(newLastReadTime);
         });
 
@@ -82,7 +96,7 @@ function useUnreadMarker({
             unreadActionSubscription.remove();
             readNewestActionSubscription.remove();
         };
-    }, [reportID, isAnonymousUser]);
+    }, [reportID, isAnonymousUser, recordLastReadTime]);
 
     const sortedVisibleReportActionsObjects: OnyxTypes.ReportActions = sortedVisibleReportActions.reduce<OnyxTypes.ReportActions>((actions, action) => {
         // eslint-disable-next-line no-param-reassign

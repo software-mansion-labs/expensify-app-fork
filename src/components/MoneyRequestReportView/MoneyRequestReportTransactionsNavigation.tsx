@@ -5,7 +5,7 @@ import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails'
 import useOnyx from '@hooks/useOnyx';
 
 import {createTransactionThreadReport, setOptimisticTransactionThread} from '@libs/actions/Report';
-import {clearActiveTransactionIDs} from '@libs/actions/TransactionThreadNavigation';
+import {clearActiveTransactionIDs, getActiveTransactionIDs, setActiveTransactionIDs} from '@libs/actions/TransactionThreadNavigation';
 import type {RightModalNavigatorParamList} from '@libs/Navigation/types';
 import {getOriginalMessage, isMoneyRequestAction} from '@libs/ReportActionsUtils';
 import {getReportIDToOpenForExpense} from '@libs/TransactionThreadNavigationUtils';
@@ -22,7 +22,7 @@ import type {GestureResponderEvent} from 'react-native';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 
 import {findFocusedRoute} from '@react-navigation/native';
-import React, {startTransition, useCallback, useEffect, useMemo} from 'react';
+import React, {startTransition, useCallback, useEffect, useMemo, useRef} from 'react';
 
 type MoneyRequestReportRHPNavigationButtonsProps = {
     currentTransactionID: string;
@@ -106,16 +106,25 @@ function MoneyRequestReportTransactionsNavigation({currentTransactionID, isFromR
     const [prevThreadReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${prevParentReportAction?.childReportID}`);
     const [nextThreadReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${nextParentReportAction?.childReportID}`);
 
+    const clearedSiblingsRef = useRef<ReturnType<typeof getActiveTransactionIDs> | undefined>(undefined);
+
     /**
      * We clear the sibling transactionThreadIDs when unmounting this component
      * only when the mount actually goes to a different SCREEN (and not a different version of the same SCREEN)
      */
     useEffect(() => {
+        const clearedSiblings = clearedSiblingsRef.current;
+        clearedSiblingsRef.current = undefined;
+        // A reveal puts back the siblings the matching teardown cleared, unless another screen has seeded its own since.
+        if (clearedSiblings?.ids && !getActiveTransactionIDs().ids) {
+            setActiveTransactionIDs(clearedSiblings.ids, clearedSiblings.descriptors ?? undefined);
+        }
         return () => {
             const focusedRoute = findFocusedRoute(navigationRef.getRootState());
             if (focusedRoute?.name === SCREENS.RIGHT_MODAL.SEARCH_REPORT || focusedRoute?.name === SCREENS.TRANSACTION_DUPLICATE.DYNAMIC_REVIEW) {
                 return;
             }
+            clearedSiblingsRef.current = getActiveTransactionIDs();
             clearActiveTransactionIDs();
         };
     }, []);

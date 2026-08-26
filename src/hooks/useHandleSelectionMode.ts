@@ -16,8 +16,11 @@ function useHandleSelectionMode<TItem extends ListItem>(selectedItems: readonly 
     const isMobileSelectionModeEnabled = useMobileSelectionMode();
     // Check if selection should be on when the modal is opened
     const wasSelectionOnRef = useRef(false);
+    const isMobileSelectionModeEnabledRef = useRef(isMobileSelectionModeEnabled);
+    const wasMobileSelectionModeOnAtCleanupRef = useRef(false);
 
     useEffect(() => {
+        isMobileSelectionModeEnabledRef.current = isMobileSelectionModeEnabled;
         if (!isSmallScreenWidth) {
             if (selectedItems.length === 0 && isMobileSelectionModeEnabled) {
                 turnOffMobileSelectionMode();
@@ -37,7 +40,17 @@ function useHandleSelectionMode<TItem extends ListItem>(selectedItems: readonly 
         }
     }, [isMobileSelectionModeEnabled, isSmallScreenWidth, isFocused, selectedItems.length]);
 
-    useEffect(() => () => turnOffMobileSelectionMode(), []);
+    useEffect(() => {
+        // A reveal puts back the global flag the matching teardown turned off, because covering the screen is not leaving it.
+        if (wasMobileSelectionModeOnAtCleanupRef.current) {
+            wasMobileSelectionModeOnAtCleanupRef.current = false;
+            turnOnMobileSelectionMode();
+        }
+        return () => {
+            wasMobileSelectionModeOnAtCleanupRef.current = isMobileSelectionModeEnabledRef.current;
+            turnOffMobileSelectionMode();
+        };
+    }, []);
 }
 
 export default useHandleSelectionMode;

@@ -1,3 +1,4 @@
+import {useClaimOnce} from '@hooks/useActivityIdentityGuard';
 import useOnyx from '@hooks/useOnyx';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -19,7 +20,12 @@ import type SilentCommentUpdaterProps from './types';
 function SilentCommentUpdater({updateComment, reportID}: SilentCommentUpdaterProps) {
     const [comment = ''] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`);
 
+    const claimInitialCommentSync = useClaimOnce();
+
     useEffect(() => {
+        if (!claimInitialCommentSync(reportID)) {
+            return;
+        }
         updateComment(comment);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- We need to run this on mount
     }, []);

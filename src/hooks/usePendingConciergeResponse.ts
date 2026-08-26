@@ -47,6 +47,9 @@ function usePendingConciergeResponse(reportID: string | undefined) {
 
     const tokens = tokenizeForReveal(fullHtml);
     const accelerateRef = useRef<((nowMs: number) => void) | null>(null);
+    // The stream identity belongs to the reply, so an effect re-entry for the same reportActionID continues the
+    // stream the draft reducer already knows instead of opening a new one at sequence 0.
+    const trickleSessionRef = useRef<{reportActionID: string; streamSessionID: string; sequence: number} | null>(null);
 
     // Captured into a ref so the trickle effect can re-run only on the IDs that
     // identify a distinct Concierge reply. Composer typing, unrelated Onyx emits,
@@ -153,8 +156,8 @@ function usePendingConciergeResponse(reportID: string | undefined) {
             return () => clearTimeout(timer);
         }
 
-        const session = rand64();
-        let sequence = 0;
+        const trickleSession = trickleSessionRef.current?.reportActionID === reportActionID ? trickleSessionRef.current : {reportActionID, streamSessionID: rand64(), sequence: 0};
+        trickleSessionRef.current = trickleSession;
         let intervalID: ReturnType<typeof setInterval> | null = null;
         let trickleStart = 0;
         let effectiveDuration = DEFAULT_STREAM_DURATION_MS;
@@ -169,14 +172,14 @@ function usePendingConciergeResponse(reportID: string | undefined) {
             if (cancelled) {
                 return;
             }
-            sequence += 1;
+            trickleSession.sequence += 1;
             // Read dispatch fn from the ref so a context-provider refresh doesn't pin
             // the trickle to a stale handler. The ref always points at the latest.
             trickleInputsRef.current.dispatchLocalDraftEvent({
                 reportID,
                 reportActionID,
-                streamSessionID: session,
-                sequence,
+                streamSessionID: trickleSession.streamSessionID,
+                sequence: trickleSession.sequence,
                 status,
                 created: reportAction.created,
                 finalRenderedHTML,
@@ -217,7 +220,7 @@ function usePendingConciergeResponse(reportID: string | undefined) {
             }
         };
 
-        accelerateRef.current = (nowMs: number) => {
+        const accelerate = (nowMs: number) => {
             if (!intervalID || trickleStart === 0) {
                 return;
             }
@@ -228,6 +231,7 @@ function usePendingConciergeResponse(reportID: string | undefined) {
             arrival = {progress: easeOut(elapsed / effectiveDuration), elapsedMs: elapsed};
             effectiveDuration = elapsed + ACCELERATED_REMAINING_MS;
         };
+        accelerateRef.current = accelerate;
 
         const startTrickle = () => {
             if (cancelled) {
@@ -269,6 +273,10 @@ function usePendingConciergeResponse(reportID: string | undefined) {
                     completeAndApply();
                 }
             }, TICK_INTERVAL_MS);
+            // A canonical reply that landed before this loop armed its accelerator still has to compress the reveal.
+            if (trickleInputsRef.current.persistedAction) {
+                accelerate(Date.now());
+            }
         };
 
         const startTimer = setTimeout(startTrickle, Math.max(0, remainingDelay));

@@ -25,8 +25,9 @@ import type {NativeScrollEvent, NativeSyntheticEvent, ViewToken} from 'react-nat
 import type {OnyxEntry} from 'react-native-onyx';
 
 import {useRoute} from '@react-navigation/native';
-import {useEffect, useEffectEvent, useState} from 'react';
+import {useEffect, useEffectEvent, useRef, useState} from 'react';
 
+import {useClaimOnce} from './useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useNetworkWithOfflineStatus from './useNetworkWithOfflineStatus';
 import useOnyx from './useOnyx';
@@ -270,6 +271,8 @@ function useReportActionsScroll({
         });
     }, [draftAutoScrollKey, hasNewestReportAction, previousDraftAutoScrollKey, reportScrollManager, scrollOffsetRef, setIsFloatingMessageCounterVisible]);
 
+    const claimInitialScrollToBottom = useClaimOnce();
+
     const scheduleInitialScrollToBottom = useEffectEvent(() => {
         if (initialScrollKey) {
             return undefined;
@@ -277,7 +280,8 @@ function useReportActionsScroll({
 
         return TransitionTracker.runAfterTransitions({
             callback: () => {
-                if (shouldFocusToTopOnMount) {
+                // The claim is taken when the scroll actually runs, so a schedule cancelled before the transition ended is still owed.
+                if (shouldFocusToTopOnMount || !claimInitialScrollToBottom(reportID)) {
                     return;
                 }
                 setIsFloatingMessageCounterVisible(false);
@@ -287,11 +291,13 @@ function useReportActionsScroll({
         });
     });
 
-    // The initial scroll-to-bottom must be scheduled exactly once, on mount; re-running it as deps change would yank the user back down while they read history.
+    // The initial scroll-to-bottom must happen exactly once per report; running it again would yank the user back down while they read history.
     useEffect(() => {
         const handle = scheduleInitialScrollToBottom();
         return () => handle?.cancel();
     }, []);
+
+    const owedWhisperScrollActionIDRef = useRef<string | undefined>(undefined);
 
     // Fixes Safari-specific issue where the whisper option is not highlighted correctly on hover after adding new transaction.
     // https://github.com/Expensify/App/issues/54520
@@ -299,27 +305,40 @@ function useReportActionsScroll({
         if (!isSafari()) {
             return;
         }
-        const prevSorted = lastAction?.reportActionID ? prevSortedVisibleReportActionsObjects[lastAction?.reportActionID] : null;
-        if (lastAction?.actionName !== CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_TRACK_EXPENSE_WHISPER || prevSorted) {
+        const lastActionID = lastAction?.reportActionID;
+        const prevSorted = lastActionID ? prevSortedVisibleReportActionsObjects[lastActionID] : null;
+        const isNewWhisper = lastAction?.actionName === CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_TRACK_EXPENSE_WHISPER && !prevSorted;
+        // A scroll that was scheduled but cancelled before the transitions ended is still owed, so it is rescheduled here.
+        const isOwedWhisperScroll = !!lastActionID && owedWhisperScrollActionIDRef.current === lastActionID;
+        if (!isNewWhisper && !isOwedWhisperScroll) {
             return;
         }
+        owedWhisperScrollActionIDRef.current = lastActionID;
         const handle = TransitionTracker.runAfterTransitions({
             callback: () => {
+                owedWhisperScrollActionIDRef.current = undefined;
                 reportScrollManager.scrollToBottom();
             },
         });
         return () => handle.cancel();
     }, [lastAction?.reportActionID, lastAction?.actionName, prevSortedVisibleReportActionsObjects, reportScrollManager]);
 
+    const highlightStartRef = useRef<{actionID: string; startedAt: number} | undefined>(undefined);
+
     // Clear the highlighted report action after scrolling and highlighting
     useEffect(() => {
         if (actionIdToHighlight === '') {
+            highlightStartRef.current = undefined;
             return;
         }
+        // The highlight is anchored on the timestamp it started at, so a re-run continues the original duration instead of restarting it.
+        const startedAt = highlightStartRef.current?.actionID === actionIdToHighlight ? highlightStartRef.current.startedAt : Date.now();
+        highlightStartRef.current = {actionID: actionIdToHighlight, startedAt};
         // Time highlight is the same as SearchPage
+        const remainingDuration = Math.max(0, durationHighlightItem - (Date.now() - startedAt));
         const timer = setTimeout(() => {
             setActionIdToHighlight('');
-        }, durationHighlightItem);
+        }, remainingDuration);
         return () => clearTimeout(timer);
     }, [actionIdToHighlight]);
 
@@ -329,11 +348,22 @@ function useReportActionsScroll({
     // Scroll to the bottom when a new errored action appears, so the user sees the failed money request. Re-checked
     // only when a new action arrives (keyed on lastAction), so loading older history never yanks a user who has
     // scrolled up. The !lastIOUActionWithError guard keeps a cleared error (retry succeeded / dismissed) from scrolling.
+    const owedErrorScrollActionIDRef = useRef<string | undefined>(undefined);
     const scheduleScrollToNewError = useEffectEvent(() => {
-        if (!lastIOUActionWithError || lastIOUActionWithError.reportActionID === prevLastIOUActionWithError?.reportActionID) {
+        const errorActionID = lastIOUActionWithError?.reportActionID;
+        const isNewError = !!errorActionID && errorActionID !== prevLastIOUActionWithError?.reportActionID;
+        // A scroll that was scheduled but cancelled before the transitions ended is still owed, so it is rescheduled here.
+        const isOwedErrorScroll = !!errorActionID && owedErrorScrollActionIDRef.current === errorActionID;
+        if (!isNewError && !isOwedErrorScroll) {
             return undefined;
         }
-        return TransitionTracker.runAfterTransitions({callback: () => reportScrollManager.scrollToBottom()});
+        owedErrorScrollActionIDRef.current = errorActionID;
+        return TransitionTracker.runAfterTransitions({
+            callback: () => {
+                owedErrorScrollActionIDRef.current = undefined;
+                reportScrollManager.scrollToBottom();
+            },
+        });
     });
     useEffect(() => {
         const handle = scheduleScrollToNewError();

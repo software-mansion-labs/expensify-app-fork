@@ -3,6 +3,7 @@ import MoneyReportHeaderPrimaryAction from '@components/MoneyReportHeaderPrimary
 import {useMoneyReportTransactionThread} from '@components/MoneyReportTransactionThreadContext';
 import {useSearchSelectionActions, useSearchSelectionContext} from '@components/Search/SearchContext';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useExportAgainModal from '@hooks/useExportAgainModal';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -56,13 +57,18 @@ function MoneyReportHeaderActions({reportID, primaryAction, isReportInSearch, ba
     const hasSelectedTransactions = !!selectedTransactionIDs.length;
     const isTransactionThread = !!transactionThreadReportID;
 
+    const hasTransactionThreadReportIDChanged = useLastApplied();
+
     useEffect(() => {
+        if (!hasTransactionThreadReportIDChanged(transactionThreadReportID ?? '')) {
+            return;
+        }
         if (!transactionThreadReportID) {
             return;
         }
 
         clearSelectedTransactions(true);
-    }, [transactionThreadReportID]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [transactionThreadReportID, hasTransactionThreadReportIDChanged]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const narrowedPrimaryAction = narrowPrimaryAction(primaryAction);
 

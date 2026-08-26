@@ -1,3 +1,4 @@
+import {useClaimOnce} from '@hooks/useActivityIdentityGuard';
 import useOnyx from '@hooks/useOnyx';
 
 import TransitionTracker from '@libs/Navigation/TransitionTracker';
@@ -18,23 +19,38 @@ import {useEffect} from 'react';
 function DeleteTransactionNavigateBackHandler() {
     const isFocused = useIsFocused();
     const [deleteTransactionNavigateBackUrl] = useOnyx(ONYXKEYS.NVP_DELETE_TRANSACTION_NAVIGATE_BACK_URL);
+    const claimClearForUrl = useClaimOnce();
 
     useEffect(() => {
-        if (isFocused || !deleteTransactionNavigateBackUrl) {
+        if (!deleteTransactionNavigateBackUrl || doesDeleteNavigateBackUrlIncludeDuplicatesReview(deleteTransactionNavigateBackUrl)) {
             return;
         }
-        if (doesDeleteNavigateBackUrlIncludeDuplicatesReview(deleteTransactionNavigateBackUrl)) {
-            return;
+
+        // The claim keeps the blur branch and the teardown branch from both scheduling a clear for the same URL.
+        const scheduleClear = () => {
+            if (!claimClearForUrl(deleteTransactionNavigateBackUrl)) {
+                return null;
+            }
+            // Clear the URL only after we navigate away to avoid a brief Not Found flash.
+            return TransitionTracker.runAfterTransitions({
+                callback: () => {
+                    requestAnimationFrame(clearDeleteTransactionNavigateBackUrl);
+                },
+                waitForUpcomingTransition: true,
+            });
+        };
+
+        if (!isFocused) {
+            const handle = scheduleClear();
+            return () => handle?.cancel();
         }
-        // Clear the URL only after we navigate away to avoid a brief Not Found flash.
-        const handle = TransitionTracker.runAfterTransitions({
-            callback: () => {
-                requestAnimationFrame(clearDeleteTransactionNavigateBackUrl);
-            },
-            waitForUpcomingTransition: true,
-        });
-        return () => handle.cancel();
-    }, [isFocused, deleteTransactionNavigateBackUrl]);
+
+        // Losing focus is what the clear waits for, and it is also the commit in which a covered screen tears
+        // this effect down, so the teardown is the one place both behaviors reach.
+        return () => {
+            scheduleClear();
+        };
+    }, [isFocused, deleteTransactionNavigateBackUrl, claimClearForUrl]);
 
     return null;
 }

@@ -831,8 +831,118 @@ function handlePusherDraftEvents(runtime: PusherDraftPacingRuntime, eventData: C
     }
 }
 
+type ActivePusherDraftChannel = {
+    reportID: string;
+    runtime: PusherDraftPacingRuntime;
+    unsubscribe: () => void;
+};
+
+// The draft stream is one-shot, so the channel bindings are keyed on the report and on the hook instance that owns
+// them, instead of on the mount count of an effect that an Activity hide tears down while the screen stays alive.
+let activePusherDraftChannel: ActivePusherDraftChannel | null = null;
+
+function releaseActivePusherDraftChannel() {
+    if (!activePusherDraftChannel) {
+        return;
+    }
+
+    const {runtime, unsubscribe} = activePusherDraftChannel;
+    activePusherDraftChannel = null;
+    unsubscribe();
+    stopPusherDraftPace(runtime);
+    stopFinalRenderedHTMLReveal(runtime);
+}
+
+function subscribeToPusherDraftChannel(runtime: PusherDraftPacingRuntime) {
+    const currentChannel = activePusherDraftChannel;
+    // Ref identity tells a re-run of the same hook instance apart from a fresh one, because refs are created per instance.
+    if (currentChannel?.reportID === runtime.reportID && currentChannel.runtime.currentDraftRef === runtime.currentDraftRef) {
+        currentChannel.runtime = runtime;
+        return;
+    }
+
+    releaseActivePusherDraftChannel();
+
+    const {reportID} = runtime;
+    const channelName = getReportChannelName(reportID);
+    const channel: ActivePusherDraftChannel = {reportID, runtime, unsubscribe: () => {}};
+    const handleResubscribe = () => {
+        clearCachedPusherDraft(channel.runtime);
+    };
+
+    const draftEventSubscriptions = [
+        {
+            eventType: Pusher.TYPE.CONCIERGE_DRAFT_EVENTS,
+            listener: Pusher.subscribe(
+                channelName,
+                Pusher.TYPE.CONCIERGE_DRAFT_EVENTS,
+                (eventData: ConciergeDraftEventsEvent) => {
+                    handlePusherDraftEvents(channel.runtime, eventData);
+                },
+                handleResubscribe,
+            ),
+        },
+        ...PUSHER_DRAFT_EVENT_TYPES.map((eventType) => ({
+            eventType,
+            listener: Pusher.subscribe(
+                channelName,
+                eventType,
+                (eventData: ConciergeDraftEvent) => {
+                    handlePusherDraftEvent(channel.runtime, eventData);
+                },
+                handleResubscribe,
+            ),
+        })),
+    ];
+
+    for (const {eventType, listener} of draftEventSubscriptions) {
+        listener.catch((error: unknown) => {
+            Log.hmmm('Failed to subscribe to Pusher concierge draft events', {eventType, reportID, error});
+        });
+    }
+
+    const unsubscribeVisibility = Visibility.onVisibilityChange(() => {
+        if (!Visibility.isVisible()) {
+            return;
+        }
+
+        const currentRuntime = channel.runtime;
+        if (currentRuntime.completedPusherDraftEventRef.current) {
+            // Completion may arrive while the tab is hidden. Reveal the full target on visibility return
+            // so final HTML is not delayed by throttled timers.
+            revealFullPusherDraftTarget(currentRuntime);
+            return;
+        }
+
+        if (currentRuntime.finalRenderedHTMLRevealIntervalRef.current) {
+            tickFinalRenderedHTMLReveal(currentRuntime);
+            return;
+        }
+
+        if (!currentRuntime.pusherPaceIntervalRef.current) {
+            return;
+        }
+
+        tickPacing(currentRuntime);
+    });
+
+    channel.unsubscribe = () => {
+        unsubscribeVisibility();
+        for (const {listener} of draftEventSubscriptions) {
+            listener.unsubscribe();
+        }
+    };
+    activePusherDraftChannel = channel;
+}
+
 function resumeCachedPusherDraftPace(runtime: PusherDraftPacingRuntime) {
-    const {completedPusherDraftEventRef, latestPusherDraftEventRef, queuedPusherDraftEventsRef, visibleSourceOffsetRef} = runtime;
+    const {completedPusherDraftEventRef, finalRenderedHTMLRevealIntervalRef, latestPusherDraftEventRef, pusherPaceIntervalRef, queuedPusherDraftEventsRef, visibleSourceOffsetRef} = runtime;
+
+    if (pusherPaceIntervalRef.current || finalRenderedHTMLRevealIntervalRef.current) {
+        // The reveal is still animating from an earlier effect run, so restarting it here would replay text the user already saw.
+        return;
+    }
+
     const latestEvent = latestPusherDraftEventRef.current;
     if (!latestEvent?.bodyMarkdown) {
         if (latestEvent?.finalRenderedHTML) {
@@ -997,77 +1107,9 @@ function usePusherDraftPacing(reportID: string, isGroupPolicyReport: boolean) {
             visibleSourceOffsetRef,
             visibleSequenceRef,
         };
-        const channelName = getReportChannelName(reportID);
-        const handleResubscribe = () => {
-            clearCachedPusherDraft(runtime);
-        };
 
-        const draftEventSubscriptions = [
-            {
-                eventType: Pusher.TYPE.CONCIERGE_DRAFT_EVENTS,
-                listener: Pusher.subscribe(
-                    channelName,
-                    Pusher.TYPE.CONCIERGE_DRAFT_EVENTS,
-                    (eventData: ConciergeDraftEventsEvent) => {
-                        handlePusherDraftEvents(runtime, eventData);
-                    },
-                    handleResubscribe,
-                ),
-            },
-            ...PUSHER_DRAFT_EVENT_TYPES.map((eventType) => ({
-                eventType,
-                listener: Pusher.subscribe(
-                    channelName,
-                    eventType,
-                    (eventData: ConciergeDraftEvent) => {
-                        handlePusherDraftEvent(runtime, eventData);
-                    },
-                    handleResubscribe,
-                ),
-            })),
-        ];
-
-        const subscriptions = draftEventSubscriptions.map(({eventType, listener}) => {
-            listener.catch((error: unknown) => {
-                Log.hmmm('Failed to subscribe to Pusher concierge draft events', {eventType, reportID, error});
-            });
-
-            return listener;
-        });
-
+        subscribeToPusherDraftChannel(runtime);
         resumeCachedPusherDraftPace(runtime);
-        const unsubscribeVisibility = Visibility.onVisibilityChange(() => {
-            if (!Visibility.isVisible()) {
-                return;
-            }
-
-            if (completedPusherDraftEventRef.current) {
-                // Completion may arrive while the tab is hidden. Reveal the full target on visibility return
-                // so final HTML is not delayed by throttled timers.
-                revealFullPusherDraftTarget(runtime);
-                return;
-            }
-
-            if (finalRenderedHTMLRevealIntervalRef.current) {
-                tickFinalRenderedHTMLReveal(runtime);
-                return;
-            }
-
-            if (!pusherPaceIntervalRef.current) {
-                return;
-            }
-
-            tickPacing(runtime);
-        });
-
-        return () => {
-            unsubscribeVisibility();
-            stopPusherDraftPace(runtime);
-            stopFinalRenderedHTMLReveal(runtime);
-            for (const subscription of subscriptions) {
-                subscription.unsubscribe();
-            }
-        };
     }, [reportID, isGroupPolicyReport]);
 
     return {clearDraft, dispatchLocalDraftEvent, draft, revealDraftFromReportAction};

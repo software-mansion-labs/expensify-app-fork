@@ -95,7 +95,13 @@ function ReportNavigateAwayHandler() {
     // so we must persist the value in a ref updated synchronously during render. See issue #84248.
     const isCurrentRouteOwnWorkspaceChatRef = useIsOwnWorkspaceChatRef(report, reportIDFromRoute);
 
-    const firstRender = useRef(true);
+    const isBaselineRun = useRef(true);
+
+    // A covered screen drops its Onyx subscriptions and picks the data up again when it is revealed, so the first
+    // removal check after every mount records the baseline instead of reading a removal into it.
+    useEffect(() => {
+        isBaselineRun.current = true;
+    }, []);
 
     // Navigation action that reads non-reactive context (concierge params, modal state, etc.)
     const navigateAwayFromReport = useEffectEvent((prevOnyxReportID: string | undefined, prevParentReportID: string | undefined) => {
@@ -149,8 +155,8 @@ function ReportNavigateAwayHandler() {
     // Navigate on removal
     useEffect(() => {
         // We don't want this effect to run on the first render.
-        if (firstRender.current) {
-            firstRender.current = false;
+        if (isBaselineRun.current) {
+            isBaselineRun.current = false;
             return;
         }
 

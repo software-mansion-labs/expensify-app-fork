@@ -1,3 +1,4 @@
+import {useClaimOnce, useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useIsAnonymousUser from '@hooks/useIsAnonymousUser';
 import useIsInSidePanel from '@hooks/useIsInSidePanel';
@@ -98,9 +99,13 @@ function ReportFetchHandler() {
     const {accountID: currentUserAccountID, email: currentUserEmail} = useCurrentUserPersonalDetails();
     const isAnonymousUser = useIsAnonymousUser();
     const prevIsAnonymousUser = useRef(false);
-    const hasCreatedLegacyThreadRef = useRef(false);
     const didSubscribeToReportLeavingEvents = useRef(false);
     const joinedSecureLinkReportIDRef = useRef<string | undefined>(undefined);
+
+    const claimOneTransactionThreadCreation = useClaimOnce();
+    const claimLegacyThreadCreation = useClaimOnce();
+    const hasFetchIdentityChanged = useLastApplied();
+    const hasInitialLoadingIdentityChanged = useLastApplied();
 
     const [reportOnyx] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportIDFromRoute}`);
     const [hasReportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportIDFromRoute}`, {selector: Boolean});
@@ -215,13 +220,6 @@ function ReportFetchHandler() {
         });
     });
 
-    const onUnmount = useEffectEvent(() => {
-        if (!didSubscribeToReportLeavingEvents.current) {
-            return;
-        }
-        unsubscribeFromLeavingRoomReportChannel(reportID);
-    });
-
     // If a user has chosen to leave a thread, and then returns to it (e.g. with the back button), we need to call `openReport` again in order to allow the user to rejoin and to receive real-time updates
     const rejoinThread = useEffectEvent(() => {
         if (!shouldUseNarrowLayout || !isChatThread(report) || !isHiddenForCurrentUser(report) || isTransactionThreadView) {
@@ -303,8 +301,21 @@ function ReportFetchHandler() {
             return;
         }
 
+        // The claim is keyed on the report so the optimistic thread is created once for it, not once per effect run.
+        if (!reportID || !claimOneTransactionThreadCreation(reportID)) {
+            return;
+        }
+
         createOneTransactionThread();
-    }, [reportLoadingState.hasOnceLoadedReportActions, reportMetadata?.isOptimisticReport, transactionThreadReport?.reportID, transactionThreadReportID, isOffline]);
+    }, [
+        reportLoadingState.hasOnceLoadedReportActions,
+        reportMetadata?.isOptimisticReport,
+        transactionThreadReport?.reportID,
+        transactionThreadReportID,
+        isOffline,
+        reportID,
+        claimOneTransactionThreadCreation,
+    ]);
 
     useEffect(() => {
         if (isLoadingReportData || !prevIsLoadingReportData || !prevIsAnonymousUser.current || isAnonymousUser) {
@@ -347,22 +358,21 @@ function ReportFetchHandler() {
         setViewingPublicRoomReportID(isThread(report) ? report.parentReportID : reportID);
     }, [reportID, report, isAnonymousUser, isFocused]);
 
-    useEffect(() => {
-        return () => {
-            onUnmount();
-        };
-    }, []);
-
     // `isLoadingInitialReportActions` is memory-only and is not reset between navigations. A prior failed
     // fetch leaves a stale `false` that can make ReportNotFoundGuard show "not here" before the fetch below
     // re-runs. When opening a report whose actions were never successfully loaded, mark it as loading again so
     // the guard waits for the real fetch result instead of trusting the leaked flag. See issue #92920.
     useEffect(() => {
+        // The write is keyed on the report and its loaded state, so it fires once per report and again only when a
+        // later fetch really loses that state, instead of once per effect run.
+        if (!hasInitialLoadingIdentityChanged(`${reportIDFromRoute}:${reportLoadingState.hasOnceLoadedReportActions}`)) {
+            return;
+        }
         if (reportLoadingState.hasOnceLoadedReportActions) {
             return;
         }
         updateLoadingInitialReportAction(reportIDFromRoute, true);
-    }, [reportIDFromRoute, reportLoadingState.hasOnceLoadedReportActions]);
+    }, [reportIDFromRoute, reportLoadingState.hasOnceLoadedReportActions, hasInitialLoadingIdentityChanged]);
 
     useEffect(() => {
         // Both `Navigation.setParams` and `forceReplace` below act on the currently focused route, but this effect
@@ -386,8 +396,22 @@ function ReportFetchHandler() {
         // For each link click, we retrieve the report data again, even though it may already be cached.
         // Usually this triggers one openReport execution per page start or navigation. If guided setup is deferred while app data loads,
         // rerun once the defer signal clears so openReport includes the loaded onboarding data.
+        // The fetch is keyed on the route and link state it reads, so it follows every navigation but a re-run with an
+        // unchanged identity issues no second request.
+        const fetchIdentity = [
+            route.key,
+            reportIDFromRoute,
+            reportActionIDFromRoute ?? '',
+            secureKeyFromRoute ?? '',
+            isLinkedMessagePageReady,
+            shouldDeferGuidedSetupOpenReport,
+            onboardingSignal,
+        ].join('|');
+        if (!hasFetchIdentityChanged(fetchIdentity)) {
+            return;
+        }
         fetchReport();
-    }, [route, isLinkedMessagePageReady, reportActionIDFromRoute, shouldDeferGuidedSetupOpenReport, onboardingSignal]);
+    }, [route, isLinkedMessagePageReady, reportActionIDFromRoute, shouldDeferGuidedSetupOpenReport, onboardingSignal, reportIDFromRoute, secureKeyFromRoute, hasFetchIdentityChanged]);
 
     useEffect(() => {
         // This function is only triggered when a user is invited to a room after opening the link.
@@ -431,10 +455,13 @@ function ReportFetchHandler() {
             });
         }
         return () => {
-            if (!interactionTask) {
+            interactionTask?.cancel();
+            // The teardown has to be symmetric, because a cover runs it while the screen is still alive and the body above resubscribes on reveal.
+            if (!didSubscribeToReportLeavingEvents.current) {
                 return;
             }
-            interactionTask.cancel();
+            unsubscribeFromLeavingRoomReportChannel(reportIDFromRoute);
+            didSubscribeToReportLeavingEvents.current = false;
         };
     }, [report?.reportID, didSubscribeToReportLeavingEvents, reportIDFromRoute, report?.pendingFields, currentUserAccountID]);
 
@@ -446,16 +473,11 @@ function ReportFetchHandler() {
         readNewestAction(report?.reportID, isReportActionsLoaded);
     }, [report, isReportActionsLoaded]);
 
-    useEffect(() => {
-        hasCreatedLegacyThreadRef.current = false;
-    }, [reportID]);
-
     // When opening IOU report for single transaction, we will create IOU action and transaction thread
     // for legacy transaction that doesn't have IOU action
     useEffect(() => {
-        // Skip if already created, coming from Search page, or thread already exists
+        // Skip if coming from Search page, or thread already exists
         if (
-            hasCreatedLegacyThreadRef.current ||
             route.name === SCREENS.RIGHT_MODAL.SEARCH_REPORT ||
             transactionThreadReport ||
             (transactionThreadReportID && transactionThreadReportID !== '0') ||
@@ -479,8 +501,10 @@ function ReportFetchHandler() {
             return;
         }
 
-        // Mark as created BEFORE calling to prevent race conditions
-        hasCreatedLegacyThreadRef.current = true;
+        // The claim is keyed on the report and taken BEFORE the call, so neither a race nor a reveal creates a second thread.
+        if (!claimLegacyThreadCreation(reportID)) {
+            return;
+        }
 
         // For legacy transactions, pass undefined as IOU action and the transaction object
         // It will be created optimistically and in the backend when call openReport
@@ -505,6 +529,7 @@ function ReportFetchHandler() {
         route.name,
         reportLoadingState?.hasOnceLoadedReportActions,
         reportActions.length,
+        claimLegacyThreadCreation,
     ]);
 
     return null;

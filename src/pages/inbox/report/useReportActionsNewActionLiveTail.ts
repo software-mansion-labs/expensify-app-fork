@@ -1,3 +1,4 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import type useReportScrollManager from '@hooks/useReportScrollManager';
 
@@ -78,6 +79,7 @@ function useReportActionsNewActionLiveTail({
 }: UseReportActionsNewActionLiveTailParams) {
     const {accountID: currentUserAccountID} = useCurrentUserPersonalDetails();
     const liveTailJumpRef = useRef<{stage: LiveTailJumpStage}>({stage: 'idle'});
+    const hasReportChanged = useLastApplied();
     const [isScrollToBottomEnabled, setIsScrollToBottomEnabled] = useState(false);
 
     const scrollToBottomForCurrentUserAction = useEffectEvent((isFromCurrentUser: boolean, action?: OnyxTypes.ReportAction) => {
@@ -147,9 +149,13 @@ function useReportActionsNewActionLiveTail({
         liveTailJumpRef.current = {stage: 'idle'};
     }, [reportID, sortedAllReportActionsForPagination, reportActionPages, setTreatAsNoPaginationAnchor]);
 
+    // The jump spans several renders, so it may only be rewound when the screen really switches report.
     useEffect(() => {
+        if (!hasReportChanged(reportID)) {
+            return;
+        }
         liveTailJumpRef.current = {stage: 'idle'};
-    }, [reportID]);
+    }, [hasReportChanged, reportID]);
 
     useEffect(() => {
         if (liveTailJumpRef.current.stage !== 'open_report') {

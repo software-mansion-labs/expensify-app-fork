@@ -3,6 +3,7 @@ import {useSession} from '@components/OnyxListItemProvider';
 import type {AnimatedMarkdownTextInputRef} from '@components/RNMarkdownTextInput';
 import RNMarkdownTextInput from '@components/RNMarkdownTextInput';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useHtmlPaste from '@hooks/useHtmlPaste';
 import useIsScrollBarVisible from '@hooks/useIsScrollBarVisible';
 import useMarkdownStyle from '@hooks/useMarkdownStyle';
@@ -89,13 +90,18 @@ function Composer({
     const [prevHeight, setPrevHeight] = useState<number | undefined>();
     const isReportFlatListScrolling = useRef(false);
 
+    const hasSelectionPropChanged = useLastApplied();
     useEffect(() => {
+        // Comparing against the last applied prop keeps a re-run with an unchanged prop from discarding a caret the user has moved since.
+        if (!hasSelectionPropChanged(`${selectionProp.start}-${selectionProp.end}`)) {
+            return;
+        }
         if (!!selection && selectionProp.start === selection.start && selectionProp.end === selection.end) {
             return;
         }
         setSelection(selectionProp);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectionProp]);
+    }, [selectionProp, hasSelectionPropChanged]);
 
     /**
      *  Adds the cursor position to the selection change event.
@@ -244,7 +250,11 @@ function Composer({
             isReportFlatListScrolling.current = scrolling;
         });
 
-        return () => scrollingListener.remove();
+        return () => {
+            scrollingListener.remove();
+            // The ref outlives the subscription, so a stale true would keep swallowing wheel events with no listener left to reset it.
+            isReportFlatListScrolling.current = false;
+        };
     }, []);
 
     useEffect(() => {
@@ -270,13 +280,18 @@ function Composer({
         };
     }, []);
 
+    const hasComposerFullSizeChanged = useLastApplied();
     useEffect(() => {
+        // Only an actual full size transition should move the scroll offset, never a bare re-run with stale prevScroll and prevHeight.
+        if (!hasComposerFullSizeChanged(String(isComposerFullSize))) {
+            return;
+        }
         if (!textInputRef.current || prevScroll === undefined || prevHeight === undefined) {
             return;
         }
         textInputRef.current.scrollTop = prevScroll + prevHeight - textInputRef.current.clientHeight;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isComposerFullSize]);
+    }, [isComposerFullSize, hasComposerFullSizeChanged]);
 
     const isActive = useIsFocused();
     useHtmlPaste(textInputRef, handlePaste, isActive);

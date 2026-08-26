@@ -1,3 +1,5 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
+
 import CONST from '@src/CONST';
 
 import type {RefObject} from 'react';
@@ -68,12 +70,19 @@ export default function useReportUnreadMessageScrollTracking({
         onUnreadActionVisible,
         actionBadgeTargetIndex,
     });
+    const hasReportChanged = useLastApplied();
+    const hasUnreadMarkerIndexChanged = useLastApplied();
+    const hasActionBadgeTargetIndexChanged = useLastApplied();
+
     // We want to save the updated value on ref to use it in onViewableItemsChanged
     // because FlatList requires the callback to be stable and we cannot add a dependency on the useCallback.
     useEffect(() => {
         ref.current.reportID = reportID;
+        if (!hasReportChanged(reportID)) {
+            return;
+        }
         ref.current.previousViewableItems = [];
-    }, [reportID]);
+    }, [hasReportChanged, reportID]);
 
     useEffect(() => {
         ref.current.isFocused = isFocused;
@@ -180,16 +189,25 @@ export default function useReportUnreadMessageScrollTracking({
     useEffect(() => {
         ref.current.unreadMarkerReportActionIndex = unreadMarkerReportActionIndex;
 
+        if (!hasUnreadMarkerIndexChanged(String(unreadMarkerReportActionIndex))) {
+            return;
+        }
+
         if (ref.current.previousViewableItems.length) {
             onViewableItemsChanged({viewableItems: ref.current.previousViewableItems, changed: []});
         }
-    }, [onViewableItemsChanged, unreadMarkerReportActionIndex]);
+    }, [hasUnreadMarkerIndexChanged, onViewableItemsChanged, unreadMarkerReportActionIndex]);
 
     // When actionBadgeTargetIndex changes, recalculate visibility
     useEffect(() => {
         ref.current.actionBadgeTargetIndex = actionBadgeTargetIndex;
+
+        if (!hasActionBadgeTargetIndexChanged(String(actionBadgeTargetIndex))) {
+            return;
+        }
+
         onViewableItemsChanged({viewableItems: ref.current.previousViewableItems, changed: []});
-    }, [onViewableItemsChanged, actionBadgeTargetIndex]);
+    }, [hasActionBadgeTargetIndexChanged, onViewableItemsChanged, actionBadgeTargetIndex]);
 
     return {
         isFloatingMessageCounterVisible,

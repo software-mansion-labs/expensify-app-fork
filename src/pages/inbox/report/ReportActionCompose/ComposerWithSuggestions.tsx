@@ -5,6 +5,7 @@ import Composer from '@components/Composer';
 import type {ComposerRef, CustomSelectionChangeEvent, TextSelection} from '@components/Composer/types';
 import {useWideRHPState} from '@components/WideRHPContextProvider';
 
+import {useClaimOnce} from '@hooks/useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useIsInSidePanel from '@hooks/useIsInSidePanel';
 import useKeyboardState from '@hooks/useKeyboardState';
@@ -286,7 +287,8 @@ function ComposerWithSuggestions({
     });
 
     // Save the draft of the report action. This debounced so that we're not ceaselessly saving your edit.
-    const {saveDraft: debouncedSaveReportActionDraft, isSavePending: isDraftSavePending} = useDebouncedSaveDraft(saveReportActionDraft);
+    // The pending save is flushed rather than cancelled when the composer goes away, so the last keystroke is never dropped.
+    const {saveDraft: debouncedSaveReportActionDraft, isSavePending: isDraftSavePending} = useDebouncedSaveDraft(saveReportActionDraft, undefined, true);
 
     // Save the draft of the report comment. This debounced so that we're not ceaselessly saving your edit. Saving the draft
     // allows one to navigate somewhere else and come back to the comment and still have it in edit mode.
@@ -349,7 +351,14 @@ function ComposerWithSuggestions({
         }
     }, [focus, onFocus, editingState]);
 
-    useEffect(() => () => clearTimeout(ignoreEditSelectionResetTimeoutRef.current), []);
+    useEffect(
+        () => () => {
+            clearTimeout(ignoreEditSelectionResetTimeoutRef.current);
+            // The flag outlives this effect, so cancelling its only reset timer would leave it stuck on forever.
+            shouldIgnoreEditSelectionResetRef.current = false;
+        },
+        [],
+    );
 
     const handleEditValueChange = useCallback(
         (nextValue: string) => {
@@ -783,10 +792,21 @@ function ComposerWithSuggestions({
         }
         delayedAutoFocusRouteKeyRef.current = route.key;
 
-        const handle = TransitionTracker.runAfterTransitions({callback: () => focus(true)});
+        let hasFocusRun = false;
+        const handle = TransitionTracker.runAfterTransitions({
+            callback: () => {
+                hasFocusRun = true;
+                focus(true);
+            },
+        });
 
         return () => {
             handle.cancel();
+            if (hasFocusRun) {
+                return;
+            }
+            // The scheduled focus never landed, so the route key has to be released for a later attempt to re-arm it.
+            delayedAutoFocusRouteKeyRef.current = null;
         };
     }, [focus, route.key, shouldAutoFocus, shouldDelayAutoFocus]);
 
@@ -885,8 +905,7 @@ function ComposerWithSuggestions({
         setUpComposeFocusManager();
 
         return () => {
-            ReportActionComposeFocusManager.clear();
-
+            // The focus manager holds a single process-wide callback that the last composer to register owns, so clearing it here would drop someone else's registration.
             removeKeyDownPressListener(focusComposerOnKeyPress);
             unsubscribeNavigationBlur();
             unsubscribeNavigationFocus();
@@ -933,7 +952,11 @@ function ComposerWithSuggestions({
         focus(true);
     }, [focus, prevIsFocused, editFocused, prevIsModalVisible, isFocused, modal?.isVisible, isNextModalWillOpenRef, shouldAutoFocus, isSidePanelHiddenOrLargeScreen, isInSidePanel]);
 
+    const claimInitialRangeSetup = useClaimOnce();
     useEffect(() => {
+        if (!claimInitialRangeSetup(reportID)) {
+            return;
+        }
         // Scrolls the composer to the bottom and sets the selection to the end, so that longer drafts are easier to edit
         updateMultilineInputRange(composerRef.current, !!shouldAutoFocus);
         // eslint-disable-next-line react-hooks/exhaustive-deps

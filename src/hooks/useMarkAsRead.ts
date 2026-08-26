@@ -19,6 +19,7 @@ import {useIsFocused, useRoute} from '@react-navigation/native';
 import {useCallback, useEffect, useEffectEvent, useRef, useState} from 'react';
 import {DeviceEventEmitter} from 'react-native';
 
+import {useLastApplied} from './useActivityIdentityGuard';
 import useAppFocusEvent from './useAppFocusEvent';
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useIsAnonymousUser from './useIsAnonymousUser';
@@ -56,6 +57,8 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
 
     const [isVisible, setIsVisible] = useState(Visibility.isVisible);
     useEffect(() => {
+        // Visibility changes are lost while the screen is hidden, so re-subscribing has to resynchronize the state as well.
+        setIsVisible(Visibility.isVisible());
         const unsubscribe = Visibility.onVisibilityChange(() => {
             setIsVisible(Visibility.isVisible());
         });
@@ -75,11 +78,16 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
     const lastAction = sortedVisibleReportActions.at(0);
     const isReportUnreadValue = isUnread(report, transactionThreadReport, isReportArchived) || (!!lastAction && isCurrentActionUnread(report, lastAction));
 
+    const hasReportChanged = useLastApplied();
     useEffect(() => {
+        // Re-arming these guards is only correct for a report the user actually switched to, not for a re-run over the same report.
+        if (!hasReportChanged(reportID)) {
+            return;
+        }
         userActiveSince.current = DateUtils.getDBTime();
         didMarkReportAsReadInitially.current = false;
         prevReportID = reportID;
-    }, [reportID]);
+    }, [reportID, hasReportChanged]);
 
     useEffect(() => {
         if (isAnonymousUser) {
@@ -129,10 +137,17 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
         readActionSkippedRef.current = true;
     });
 
+    const reportChangeKey = [report?.lastVisibleActionCreated, transactionThreadReport?.lastVisibleActionCreated, reportID, isVisible, isReportActionsLoaded].join('|');
+    const hasReportChangeKeyChanged = useLastApplied();
+
     // Only re-run on newest-action changes; otherwise any report update can prematurely consume unread state.
     useEffect(() => {
+        // A re-run over unchanged values may not consume unread state, so the handler is keyed on the values themselves.
+        if (!hasReportChangeKeyChanged(reportChangeKey)) {
+            return;
+        }
         handleReportChangeMarkAsRead();
-    }, [report?.lastVisibleActionCreated, transactionThreadReport?.lastVisibleActionCreated, reportID, isVisible, isReportActionsLoaded]);
+    }, [reportChangeKey, hasReportChangeKeyChanged]);
 
     // isFocused is passed as an arg because the Effect Event closure can be stale (stuck true) on frozen screens,
     // re-marking a just-unread report as read on report switch

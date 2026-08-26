@@ -23,37 +23,40 @@ type ReportLifecycleHandlerProps = {
  * Component that does not render anything. Handles screen lifecycle side effects:
  * - Hide emoji picker when screen loses focus
  * - Clear notifications when report is opened/re-focused
- * - Telemetry span cancellation on unmount
+ * - Telemetry span cancellation on report change
  * - Bank account unlock effect
  */
 function ReportLifecycleHandler({reportID}: ReportLifecycleHandlerProps) {
     const onyxReportID = getNonEmptyStringOnyxID(reportID);
     const isFocused = useIsFocused();
-    const prevIsFocused = usePrevious(isFocused);
+    const prevOnyxReportID = usePrevious(onyxReportID);
     const {currentReportID: currentReportIDValue} = useCurrentReportIDState();
     const isTopMostReportId = currentReportIDValue === reportID;
 
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${onyxReportID}`);
     useBankAccountUnlockEffect(report);
 
-    // Hide emoji picker when screen loses focus
+    // Hide emoji picker when screen loses focus. The teardown of the focused run is the only moment both a plain
+    // blur and a covered screen reach.
     useEffect(() => {
-        if (!prevIsFocused || isFocused) {
+        if (!isFocused) {
             return;
         }
-        hideEmojiPicker(true);
-    }, [prevIsFocused, isFocused]);
+        return () => hideEmojiPicker(true);
+    }, [isFocused]);
 
-    // Telemetry cleanup
+    // Telemetry cleanup on report change. A covered screen keeps its spans because it is still loading that report.
     useEffect(() => {
-        return () => {
-            // Cancel telemetry span when user leaves the screen before full report data is loaded
-            cancelSpan(`${CONST.TELEMETRY.SPAN_OPEN_REPORT}_${onyxReportID}`);
+        if (prevOnyxReportID === onyxReportID) {
+            return;
+        }
 
-            // Cancel any pending send-message spans to prevent orphaned spans when navigating away
-            cancelSpansByPrefix(CONST.TELEMETRY.SPAN_SEND_MESSAGE);
-        };
-    }, [onyxReportID]);
+        // Cancel telemetry span when the user moves to another report before full report data is loaded
+        cancelSpan(`${CONST.TELEMETRY.SPAN_OPEN_REPORT}_${prevOnyxReportID}`);
+
+        // Cancel any pending send-message spans to prevent orphaned spans when navigating away
+        cancelSpansByPrefix(CONST.TELEMETRY.SPAN_SEND_MESSAGE);
+    }, [onyxReportID, prevOnyxReportID]);
 
     // Clear notifications for the current report when it's opened and re-focused
     const clearNotifications = () => {

@@ -14,6 +14,7 @@ import {getNewestReportActionSelector} from '@selectors/ReportAction';
 import {getAgentZeroProcessingLabel} from '@selectors/ReportNameValuePairs';
 import {useCallback, useEffect, useRef, useState, useSyncExternalStore} from 'react';
 
+import {useClaimOnce} from './useActivityIdentityGuard';
 import useLocalize from './useLocalize';
 import useNetwork from './useNetwork';
 import useOnyx from './useOnyx';
@@ -85,6 +86,8 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
     const getOptimisticSnapshot = () => AgentZeroOptimisticStore.getEntry(reportID, agentAccountID);
     const optimisticEntry = useSyncExternalStore(subscribeToOptimisticStore, getOptimisticSnapshot, getOptimisticSnapshot);
     const pendingOptimisticRequests = optimisticEntry?.count ?? 0;
+    const optimisticStartedAt = optimisticEntry?.startedAt;
+    const prevOptimisticStartedAtRef = useRef<number | undefined>(optimisticStartedAt);
     // Debounced label shown to the user — smooths rapid server label changes.
     // displayedLabelRef mirrors state so the label-sync effect can read the current value
     // without including displayedLabel in its dependency array (avoids extra effect cycles).
@@ -95,6 +98,9 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
     const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
     const lastUpdateTimeRef = useRef<number>(0);
     const safetyTimerRef = useRef<NodeJS.Timeout | null>(null);
+    // Absolute expiry of the running safety window. It is what survives a teardown of the timeout itself, so an
+    // Activity hide and reveal resumes the same cap instead of restarting it from zero.
+    const safetyDeadlineRef = useRef<number | null>(null);
     const isOfflineRef = useRef<boolean>(false);
     // Newest reportActionID at the moment the indicator became active (raw state, ignoring
     // offline). Lets us distinguish "a pre-existing Concierge action was already the newest"
@@ -113,8 +119,9 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
     const wasIndicatorActiveRef = useRef<boolean>(!!initialRestoredEntry);
 
     /**
-     * Clear the safety timer. Called when the indicator clears normally, when a new
-     * processing cycle starts (renewing the cap), or when the component unmounts.
+     * Clear the pending safety timeout without ending the window it belongs to. Used by the
+     * teardown effect, which also runs when an Activity hide cleans the subtree up while the
+     * indicator is still on screen.
      *
      * Kept in useCallback because it's referenced in several useEffect dep arrays below. The
      * react-compiler-compat ESLint processor (which would otherwise suppress the exhaustive-deps
@@ -128,6 +135,12 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
         safetyTimerRef.current = null;
     }, []);
 
+    /** End the safety window for good, so nothing resumes it afterwards. Called when this processing cycle is over. */
+    const endSafetyWindow = useCallback(() => {
+        safetyDeadlineRef.current = null;
+        clearSafetyTimer();
+    }, [clearSafetyTimer]);
+
     /**
      * Hard-clear the indicator by resetting local state and clearing the Onyx NVP.
      * Called as a safety net after MAX_INDICATOR_DURATION_MS if no response has arrived.
@@ -137,31 +150,30 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
         if (isOfflineRef.current) {
             return;
         }
-        clearSafetyTimer();
+        endSafetyWindow();
         AgentZeroOptimisticStore.clear(reportID, agentAccountID);
         displayedLabelRef.current = '';
         setDisplayedLabel('');
         clearAgentZeroProcessingIndicator(reportID, agentAccountID);
         getNewerActions(reportID, newestReportActionRef.current?.reportActionID);
-    }, [clearSafetyTimer, reportID, agentAccountID]);
+    }, [endSafetyWindow, reportID, agentAccountID]);
 
     /**
-     * (Re)arm the safety timer. Called when processing becomes active or the server label
-     * changes (renewing the cap). The timer fires `hardClearIndicator` after
-     * `safetyDurationMs` if nothing has cleared the indicator by then.
+     * Arm a timeout for the given part of the safety window. The timer fires `hardClearIndicator`
+     * once it elapses, if nothing has cleared the indicator by then.
      *
      * Recovery itself is delegated upstream: Pusher's own reconnect-and-replay buffer
      * delivers missed events on most drops, and `useNetwork().onReconnect` fires a
      * one-shot `getNewerActions` on HTTP reconnect. The safety timer is the backstop
      * for the long tail.
      */
-    const startSafetyTimer = useCallback(
-        (safetyDurationMs: number = MAX_INDICATOR_DURATION_MS) => {
+    const armSafetyTimer = useCallback(
+        (safetyDurationMs: number) => {
             clearSafetyTimer();
 
             if (safetyDurationMs <= 0) {
-                // Entry is already past the safety window (e.g. remount after >2 min) —
-                // hard-clear immediately rather than rearming a timer that would fire at zero.
+                // The window is already spent (a remount or a cover longer than the cap) —
+                // hard-clear immediately rather than arming a timer that would fire at zero.
                 hardClearIndicator();
                 return;
             }
@@ -172,6 +184,31 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
         },
         [clearSafetyTimer, hardClearIndicator],
     );
+
+    /** Open a fresh safety window. Called when processing becomes active or the server renews the lease with a new label. */
+    const startSafetyTimer = useCallback(
+        (safetyDurationMs: number = MAX_INDICATOR_DURATION_MS) => {
+            safetyDeadlineRef.current = Date.now() + safetyDurationMs;
+            armSafetyTimer(safetyDurationMs);
+        },
+        [armSafetyTimer],
+    );
+
+    /**
+     * Put a timeout back on the window that is already running, or open one when none is. A teardown drops the
+     * timeout while the deadline survives, so this is what an Activity reveal needs instead of a fresh window.
+     */
+    const resumeSafetyTimer = useCallback(() => {
+        const deadline = safetyDeadlineRef.current;
+        if (deadline === null) {
+            startSafetyTimer();
+            return;
+        }
+        if (safetyTimerRef.current) {
+            return;
+        }
+        armSafetyTimer(deadline - Date.now());
+    }, [armSafetyTimer, startSafetyTimer]);
 
     // On reconnect, defensively clear any stale NVP, refetch missed actions, and rearm the
     // safety timer so the cap measures from reconnect rather than the original kickoff.
@@ -233,12 +270,22 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
         // → no indicator." The optimistic entry is cleared by authoritative signals only: the
         // reply-detection effect (new agent action newer than baseline), the 120s safety
         // timeout, or the onReconnect handler.
+        //
+        // Only a new label or a new kickoff renews the lease: this effect also re-runs after an Activity hide with
+        // every dependency unchanged, and renewing there would restart the cap from zero on every reveal.
+        const hasNewServerLabel = hasServerLabel && serverLabel !== prevServerLabelRef.current;
+        const hasNewOptimisticKickoff = optimisticStartedAt !== undefined && optimisticStartedAt !== prevOptimisticStartedAtRef.current;
+        prevOptimisticStartedAtRef.current = optimisticStartedAt;
         if (hasServerLabel || pendingOptimisticRequests > 0) {
-            startSafetyTimer();
+            if (hasNewServerLabel || hasNewOptimisticKickoff) {
+                startSafetyTimer();
+            } else {
+                resumeSafetyTimer();
+            }
         }
         // Clear the safety timer when processing ends
         else {
-            clearSafetyTimer();
+            endSafetyWindow();
             if (hadServerLabel && reasoningHistory.length > 0) {
                 AgentZeroReasoningStore.clearReasoning(reportID, agentAccountID);
             }
@@ -282,15 +329,16 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
                 return;
             }
             clearTimeout(updateTimerRef.current);
+            updateTimerRef.current = null;
         };
-    }, [serverLabel, reasoningHistory.length, reportID, agentAccountID, pendingOptimisticRequests, translate, startSafetyTimer, clearSafetyTimer]);
+    }, [serverLabel, reasoningHistory.length, reportID, agentAccountID, pendingOptimisticRequests, optimisticStartedAt, translate, startSafetyTimer, resumeSafetyTimer, endSafetyWindow]);
 
     useEffect(() => {
         isOfflineRef.current = isOffline;
     }, [isOffline]);
 
-    // Clean up safety timer on unmount (and if clearSafetyTimer identity changes — no-op
-    // when no timer).
+    // Drop the pending safety timeout on teardown. The deadline it was arming against is kept, so a reveal
+    // resumes the same window instead of losing the cap.
     useEffect(
         () => () => {
             clearSafetyTimer();
@@ -299,22 +347,23 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
     );
 
     // If we restored optimistic state from a previous mount (e.g. user switched chats and
-    // came back mid-thinking), rearm the safety timer with whatever time remains on the
+    // came back mid-thinking), arm the safety timer with whatever time remains on the
     // window. If a server label is also present on mount, the label-sync effect runs in
-    // the same commit and rearms with a fresh window — `startSafetyTimer` clears any
-    // prior timer, so that restart wins naturally.
+    // the same commit and opens a fresh window — this effect runs after it, so the shorter
+    // restored window wins.
     //
-    // `startSafetyTimer` is stable for the lifetime of the mount (no reportID dep), so
-    // this effect runs once per mount and doesn't re-fire on unrelated renders.
+    // The claim is keyed on the restored entry rather than on the mount, because an Activity reveal re-runs the
+    // effect against the very same snapshot, whose remaining window has shrunk in the meantime.
+    const claimRestoredSafetyWindow = useClaimOnce();
     useEffect(() => {
         const restored = restoredOptimisticOnMountRef.current;
-        if (!restored) {
+        if (!restored || !claimRestoredSafetyWindow(`${reportID}:${agentAccountID}:${restored.startedAt}`)) {
             return;
         }
         const elapsed = Date.now() - restored.startedAt;
         const remaining = MAX_INDICATOR_DURATION_MS - elapsed;
         startSafetyTimer(remaining);
-    }, [startSafetyTimer]);
+    }, [startSafetyTimer, claimRestoredSafetyWindow, reportID, agentAccountID]);
 
     // Capture the newest reportActionID as a baseline whenever the indicator transitions
     // from inactive to active (serverLabel or optimistic). The baseline survives offline
@@ -323,12 +372,15 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
     const isIndicatorActive = !!serverLabel || pendingOptimisticRequests > 0;
     useEffect(() => {
         if (isIndicatorActive && !wasIndicatorActiveRef.current) {
-            indicatorBaselineActionIDRef.current = newestReportActionRef.current?.reportActionID ?? null;
+            // The store's own baseline is preferred because it was recorded at the kickoff, while the newest action
+            // seen here is only the one that happens to be current when this effect gets to run.
+            const kickoffBaselineActionID = AgentZeroOptimisticStore.getEntry(reportID, agentAccountID)?.baselineActionID;
+            indicatorBaselineActionIDRef.current = kickoffBaselineActionID ?? newestReportActionRef.current?.reportActionID ?? null;
         } else if (!isIndicatorActive) {
             indicatorBaselineActionIDRef.current = null;
         }
         wasIndicatorActiveRef.current = isIndicatorActive;
-    }, [isIndicatorActive]);
+    }, [isIndicatorActive, reportID, agentAccountID]);
 
     // Clear the indicator when this agent has *actually completed* processing. A newer
     // action from the agent alone isn't enough: during processing, the agent can post
@@ -356,9 +408,9 @@ function useAgentZeroStatusIndicator(reportID: string, agentAccountID: number = 
             return;
         }
         clearAgentZeroProcessingIndicator(reportID, agentAccountID);
-        clearSafetyTimer();
+        endSafetyWindow();
         AgentZeroOptimisticStore.clear(reportID, agentAccountID);
-    }, [newestActorAccountID, newestActionID, serverLabel, pendingOptimisticRequests, reportID, clearSafetyTimer, agentAccountID]);
+    }, [newestActorAccountID, newestActionID, serverLabel, pendingOptimisticRequests, reportID, endSafetyWindow, agentAccountID]);
 
     const isProcessing = !isOffline && isIndicatorActive;
 

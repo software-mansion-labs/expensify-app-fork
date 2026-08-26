@@ -11,6 +11,7 @@ import SingleSelectListItem from '@components/SelectionList/ListItem/SingleSelec
 import SearchRowSkeleton from '@components/Skeletons/SearchRowSkeleton';
 import Text from '@components/Text';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useCopySelectionHelper from '@hooks/useCopySelectionHelper';
 import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -430,11 +431,16 @@ function MoneyRequestReportTransactionList({
         }, [showPendingExpensePlaceholder, reportID, transactions.length, hasOptimisticNewTransaction]),
     );
 
+    const hasReportIDChanged = useLastApplied();
+
     useEffect(() => {
+        if (!hasReportIDChanged(reportID)) {
+            return;
+        }
         clearSelectedTransactions(true);
         // We don't want to run the effect on change of clearSelectedTransactions since it can cause an infinite loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reportID]);
+    }, [reportID, hasReportIDChanged]);
 
     const [sortConfig, setSortConfig] = useState<SortedTransactions>({
         sortBy: CONST.SEARCH.TABLE_COLUMNS.DATE,
@@ -581,9 +587,14 @@ function MoneyRequestReportTransactionList({
     // the effect only re-fires when the actual content changes.
     const visualOrderTransactionIDsKey = useMemo(() => visualOrderTransactionIDs.join(','), [visualOrderTransactionIDs]);
 
+    const hasSeededActiveTransactionIDsRef = useRef(false);
+
     useEffect(() => {
         const focusedRoute = findFocusedRoute(navigationRef.getRootState());
-        if (focusedRoute?.name !== SCREENS.RIGHT_MODAL.SEARCH_REPORT) {
+        // A reveal re-seeds the carousel the matching teardown cleared, unless another screen has seeded its own since.
+        const shouldRestoreClearedSeed = hasSeededActiveTransactionIDsRef.current && !getActiveTransactionIDs().ids;
+        if (focusedRoute?.name !== SCREENS.RIGHT_MODAL.SEARCH_REPORT && !shouldRestoreClearedSeed) {
+            hasSeededActiveTransactionIDsRef.current = false;
             return;
         }
         // Don't take over a snapshot-backed carousel (identified by its sibling descriptors, e.g. the Home
@@ -591,9 +602,11 @@ function MoneyRequestReportTransactionList({
         // Overwriting and then clearing it would drop that carousel when the user navigates back. Row presses
         // still seed the correct siblings lazily via useNavigateToTransactionThread.
         if (getActiveTransactionIDs().descriptors) {
+            hasSeededActiveTransactionIDsRef.current = false;
             return;
         }
         setActiveTransactionIDs(visualOrderTransactionIDs);
+        hasSeededActiveTransactionIDsRef.current = true;
         return () => {
             clearActiveTransactionIDs();
         };
