@@ -2297,7 +2297,7 @@ const translations = {
             servers: {
                 production: {label: 'Production', description: 'The live environment real users see'},
                 staging: {label: 'Staging', description: 'Mirror of production. Used for final validation'},
-                qa: {label: 'QA', description: 'Separate database. Signing in here creates a different account'},
+                qa: {label: 'QA', description: 'Experimental environment used for testing'},
             },
             confirmServerChangeDescription: 'Switching to or from QA signs you out, because QA is a separate database.',
             forceOffline: 'Force offline',

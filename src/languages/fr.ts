@@ -2207,7 +2207,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: 'Production', description: "L'environnement en direct que voient les vrais utilisateurs"},
                 staging: {label: 'Préproduction', description: 'Copie de la production. Utilisée pour la validation finale'},
-                qa: {label: 'QA', description: 'Base de données distincte. Se connecter ici crée un compte différent'},
+                qa: {label: 'QA', description: 'Environnement expérimental utilisé pour les tests'},
             },
             forceOffline: 'Forcer le mode hors ligne',
             simulatePoorConnection: 'Simuler une mauvaise connexion Internet',

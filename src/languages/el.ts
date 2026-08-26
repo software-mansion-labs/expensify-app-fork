@@ -2257,7 +2257,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: 'Παραγωγή', description: 'Το ζωντανό περιβάλλον που βλέπουν οι πραγματικοί χρήστες'},
                 staging: {label: 'Staging', description: 'Αντίγραφο της παραγωγής. Χρησιμοποιείται για τον τελικό έλεγχο'},
-                qa: {label: 'QA', description: 'Ξεχωριστή βάση δεδομένων. Η σύνδεση εδώ δημιουργεί διαφορετικό λογαριασμό'},
+                qa: {label: 'QA', description: 'Πειραματικό περιβάλλον που χρησιμοποιείται για δοκιμές'},
             },
             forceOffline: 'Εξαναγκασμός εκτός σύνδεσης',
             simulatePoorConnection: 'Προσομοίωση κακής σύνδεσης στο διαδίκτυο',

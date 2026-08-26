@@ -112,10 +112,6 @@ function isUsingStagingApi(): boolean {
     return activeServer === CONST.SERVER.STAGING;
 }
 
-/**
- * Not the routing question: `getApiRoot` resolves the effective server for one request, which
- * `forceProduction` can differ from.
- */
 function isQAServerActive(): boolean {
     return activeServer === CONST.SERVER.QA;
 }

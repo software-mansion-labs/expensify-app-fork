@@ -2201,7 +2201,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: 'Produktion', description: 'Die Live-Umgebung, die echte Nutzer sehen'},
                 staging: {label: 'Staging', description: 'Spiegel der Produktion. Wird für die endgültige Validierung verwendet'},
-                qa: {label: 'QA', description: 'Eigene Datenbank. Eine Anmeldung hier erstellt ein anderes Konto'},
+                qa: {label: 'QA', description: 'Experimentelle Umgebung für Tests'},
             },
             forceOffline: 'Offline erzwingen',
             simulatePoorConnection: 'Schlechte Internetverbindung simulieren',

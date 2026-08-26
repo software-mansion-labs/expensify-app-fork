@@ -2120,7 +2120,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: '生产', description: '真实用户所使用的线上环境'},
                 staging: {label: '预备', description: '生产环境的镜像，用于最终验证'},
-                qa: {label: 'QA', description: '独立的数据库。在此登录会创建不同的账户'},
+                qa: {label: 'QA', description: '用于测试的实验环境'},
             },
             forceOffline: '强制离线',
             simulatePoorConnection: '模拟较差的互联网连接',

@@ -2177,7 +2177,7 @@ const translations: TranslationDeepObject<typeof en> = {
             servers: {
                 production: {label: '本番', description: '実際のユーザーが利用している環境'},
                 staging: {label: 'ステージング', description: '本番のミラー。最終確認に使用します'},
-                qa: {label: 'QA', description: '独立したデータベース。ここでサインインすると別のアカウントになります'},
+                qa: {label: 'QA', description: 'テストに使用する実験的な環境'},
             },
             forceOffline: '強制的にオフラインにする',
             simulatePoorConnection: '不安定なインターネット接続をシミュレート',
