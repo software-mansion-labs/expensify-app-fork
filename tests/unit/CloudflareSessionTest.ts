@@ -38,6 +38,12 @@ jest.mock('@libs/CloudflareAccess/OAuthClient', () => ({
     refreshTokens: jest.fn(),
 }));
 
+// Log ships its lines to the server, so a real warn enqueues an API request that flushes into a later test
+jest.mock('@libs/Log', () => ({
+    __esModule: true,
+    default: {alert: jest.fn(), warn: jest.fn(), info: jest.fn(), hmmm: jest.fn()},
+}));
+
 jest.mock('@libs/CloudflareAccess/generatePKCE', () => ({
     __esModule: true,
     generatePKCEPair: jest.fn(),
@@ -184,6 +190,20 @@ describe('refreshCloudflareSession', () => {
         // alive: a network blip says nothing about the token, so it must not force a re-auth
         await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).rejects.toBe(transientError);
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
+    });
+
+    it('reports the rotation as refreshed when it succeeded but Onyx.set rejected', async () => {
+        // Given a rotation that succeeds while the persist rejects
+        await seedSession(SESSION_A);
+        jest.mocked(oAuthClient.refreshTokens).mockResolvedValue(SESSION_B);
+        const setSpy = jest.spyOn(Onyx, 'set').mockRejectedValue(new Error('Storage is full'));
+
+        // When the refresh runs, Then it still reports success: the old token is already spent, so the
+        // rotated pair in the cache is the only usable credential
+        await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('refreshed');
+        expect(SessionActions.getCloudflareSession()).toEqual(SESSION_B);
+
+        setSpy.mockRestore();
     });
 
     it('resolves reauth-required without a network call when there is no session', async () => {

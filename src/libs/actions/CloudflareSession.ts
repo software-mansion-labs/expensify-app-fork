@@ -142,10 +142,13 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
             return 'reauth-required';
         }
         sessionCache = session;
-        await Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session);
+        // A failed persist is only logged: the rotation already spent the old token, so the cache
+        // holds the only usable pair
+        await Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session).catch((error: unknown) => {
+            Log.warn('[CloudflareSession] Failed to persist the rotated session', {error});
+        });
         return 'refreshed';
     } catch (error) {
-        // A failed persist is not a spent token, so it falls through here and rethrows
         if (!(error instanceof OAuthError) || (error.code !== 'invalid_grant' && error.code !== 'invalid_response')) {
             throw error;
         }
@@ -163,10 +166,10 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
 }
 
 /**
- * The rotated pair is persisted before this resolves. Terminal failures resolve 'reauth-required' (recovery
- * is a fresh authorize round trip), transient ones reject with the session intact. `staleAccessToken` is the
- * token the caller decided to refresh from: if it is no longer the current one, a rotation beat this call and
- * it resolves 'skipped-newer-token' without spending a token.
+ * Resolves only after the rotated pair is cached and its persist has settled. Terminal failures resolve
+ * 'reauth-required' (recovery is a fresh authorize round trip), transient ones reject with the session
+ * intact. `staleAccessToken` is the token the caller decided to refresh from: if it is no longer the current
+ * one, a rotation beat this call and it resolves 'skipped-newer-token' without spending a token.
  */
 function refreshCloudflareSession(staleAccessToken: string): Promise<CloudflareRefreshResult> {
     // Preconditions are re-checked inside the lock
