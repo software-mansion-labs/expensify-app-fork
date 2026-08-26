@@ -6,20 +6,32 @@ import {AppState} from 'react-native';
 import type AppStateType from './types';
 import type {UseAppStateProps} from './types';
 
+function getAppState(status: AppStateStatus): AppStateType {
+    return {
+        isForeground: status === 'active',
+        isInactive: status === 'inactive',
+        isBackground: status === 'background',
+    };
+}
+
+function isSameAppState(a: AppStateType, b: AppStateType): boolean {
+    return a.isForeground === b.isForeground && a.isInactive === b.isInactive && a.isBackground === b.isBackground;
+}
+
 function useAppState({onAppStateChange}: UseAppStateProps = {}) {
-    const [appState, setAppState] = React.useState<AppStateType>({
-        isForeground: AppState.currentState === 'active',
-        isInactive: AppState.currentState === 'inactive',
-        isBackground: AppState.currentState === 'background',
-    });
+    const [appState, setAppState] = React.useState<AppStateType>(() => getAppState(AppState.currentState));
 
     React.useEffect(() => {
+        function applyStatus(nextAppState: AppStateStatus) {
+            const nextState = getAppState(nextAppState);
+            setAppState((previousState) => (isSameAppState(previousState, nextState) ? previousState : nextState));
+        }
+
+        // The listener misses every change made while it was detached, so the current status is read back before listening again.
+        applyStatus(AppState.currentState);
+
         function handleAppStateChange(nextAppState: AppStateStatus) {
-            setAppState({
-                isForeground: nextAppState === 'active',
-                isInactive: nextAppState === 'inactive',
-                isBackground: nextAppState === 'background',
-            });
+            applyStatus(nextAppState);
 
             onAppStateChange?.(nextAppState);
         }

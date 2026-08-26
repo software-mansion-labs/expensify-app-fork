@@ -15,7 +15,6 @@ import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import usePopoverPosition from '@hooks/usePopoverPosition';
 import usePreferredPolicy from '@hooks/usePreferredPolicy';
-import usePrevious from '@hooks/usePrevious';
 import useReportIsArchived from '@hooks/useReportIsArchived';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useShouldShowEmptyReportConfirmation from '@hooks/useShouldShowEmptyReportConfirmation';
@@ -364,23 +363,14 @@ function AttachmentPickerWithMenuItems({
         onMenuClosed?.();
     };
 
-    const prevIsFocused = usePrevious(isFocused);
-
-    /**
-     * Check if current screen is inactive and previous screen is active.
-     * Used to close already opened popover menu when any other page is opened over current page.
-     *
-     * @return {Boolean}
-     */
-    const didScreenBecomeInactive = useCallback(() => !isFocused && prevIsFocused, [isFocused, prevIsFocused]);
-
-    // When the navigation is focused, we want to close the popover menu.
+    // The popover menu has to close when another page opens over this one, and the teardown of the focused run is the one commit that every way of leaving the screen reaches.
     useEffect(() => {
-        if (!didScreenBecomeInactive() || !isMenuVisible) {
+        if (!isFocused) {
             return;
         }
-        setMenuVisibility(false);
-    }, [didScreenBecomeInactive, isMenuVisible, setMenuVisibility]);
+
+        return () => setMenuVisibility(false);
+    }, [isFocused, setMenuVisibility]);
 
     // Calculate anchor position when menu becomes visible
     useEffect(() => {

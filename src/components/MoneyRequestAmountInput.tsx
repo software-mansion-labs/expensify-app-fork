@@ -1,3 +1,4 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useLocalize from '@hooks/useLocalize';
 
@@ -192,7 +193,12 @@ function MoneyRequestAmountInput({
     const numberFormRef = useRef<NumberWithSymbolFormRef | null>(null);
     const decimals = getCurrencyDecimals(currency);
 
+    const hasAmountChanged = useLastApplied();
+
     useEffect(() => {
+        if (!hasAmountChanged(`${amount}|${shouldKeepUserInput}`)) {
+            return;
+        }
         if ((!currency || typeof amount !== 'number' || (formatAmountOnBlur && isTextInputFocused(textInput))) ?? shouldKeepUserInput) {
             return;
         }
@@ -205,7 +211,7 @@ function MoneyRequestAmountInput({
 
         // we want to re-initialize the state only when the amount changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [amount, shouldKeepUserInput]);
+    }, [amount, shouldKeepUserInput, hasAmountChanged]);
 
     const formatAmount = useCallback(() => {
         if (!formatAmountOnBlur) {

@@ -1,3 +1,4 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useLocalize from '@hooks/useLocalize';
 
 import {getInvoicePayerName} from '@libs/ReportNameUtils';
@@ -103,6 +104,7 @@ function usePreviewMessageAnimation({
     const {translate, formatPhoneNumber} = useLocalize();
 
     const previewMessageOpacity = useSharedValue(1);
+    const hasPreviewMessageChanged = useLastApplied();
     const previewMessageStyle = useAnimatedStyle(() => ({
         opacity: previewMessageOpacity.get(),
     }));
@@ -171,6 +173,11 @@ function usePreviewMessageAnimation({
     ]);
 
     useEffect(() => {
+        // A re-run with an unchanged previewMessage would flash the opacity of text the user is already reading.
+        if (!hasPreviewMessageChanged(previewMessage)) {
+            return;
+        }
+
         if (!isPaidAnimationRunning || isApprovedAnimationRunning || isSubmittingAnimationRunning) {
             return;
         }
@@ -182,7 +189,7 @@ function usePreviewMessageAnimation({
         );
         // We only want to animate the text when the text changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [previewMessage, previewMessageOpacity]);
+    }, [previewMessage, previewMessageOpacity, hasPreviewMessageChanged]);
 
     return {previewMessageStyle};
 }

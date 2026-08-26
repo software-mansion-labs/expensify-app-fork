@@ -23,7 +23,8 @@ function useDebouncedState<T>(initialValue: T, delay: number = CONST.TIMING.USE_
     const [debouncedValue, setDebouncedValue] = useState(initialValue);
     const debouncedSetDebouncedValue = useRef(debounce(setDebouncedValue, delay)).current;
 
-    useEffect(() => () => debouncedSetDebouncedValue.cancel(), [debouncedSetDebouncedValue]);
+    // The pending update is flushed rather than cancelled, because dropping it would leave the debounced value permanently behind the committed one.
+    useEffect(() => () => debouncedSetDebouncedValue.flush(), [debouncedSetDebouncedValue]);
 
     const handleSetValue = useCallback(
         (newValue: T) => {

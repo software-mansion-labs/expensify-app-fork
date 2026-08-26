@@ -75,6 +75,8 @@ function AnimatedSubmitButton({
     const [minWidth, setMinWidth] = useState<number>(0);
     const [isShowingLoading, setIsShowingLoading] = useState(false);
     const viewRef = useRef<HTMLElement | null>(null);
+    const loadingPhaseDeadlineRef = useRef<number | undefined>(undefined);
+    const submittedPhaseDeadlineRef = useRef<number | undefined>(undefined);
     const [pendingExpenseAction] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`, {selector: pendingExpenseActionSelector});
     const isDEWSubmissionComplete = isDEWSubmission && isSubmittingAnimationRunning && !pendingExpenseAction;
 
@@ -119,6 +121,8 @@ function AnimatedSubmitButton({
             setIsShowingLoading(false);
             height.set(variables.componentSizeNormal);
             buttonMarginTop.set(0);
+            loadingPhaseDeadlineRef.current = undefined;
+            submittedPhaseDeadlineRef.current = undefined;
             return;
         }
 
@@ -127,12 +131,20 @@ function AnimatedSubmitButton({
             return;
         }
 
-        setMinWidth(viewRef.current?.getBoundingClientRect?.().width ?? 0);
-        setIsShowingLoading(true);
+        // The deadline is kept per animation, so a re-run resumes the loading phase instead of replaying it.
+        const loadingPhaseDeadline = loadingPhaseDeadlineRef.current ?? Date.now() + CONST.ANIMATION_SUBMIT_LOADING_STATE_DURATION;
+        if (loadingPhaseDeadlineRef.current === undefined) {
+            loadingPhaseDeadlineRef.current = loadingPhaseDeadline;
+            setMinWidth(viewRef.current?.getBoundingClientRect?.().width ?? 0);
+            setIsShowingLoading(true);
+        }
 
-        const timer = setTimeout(() => {
-            setIsShowingLoading(false);
-        }, CONST.ANIMATION_SUBMIT_LOADING_STATE_DURATION);
+        const timer = setTimeout(
+            () => {
+                setIsShowingLoading(false);
+            },
+            Math.max(0, loadingPhaseDeadline - Date.now()),
+        );
 
         return () => clearTimeout(timer);
     }, [buttonMarginTop, gap, height, isAnimationRunning, isDEWSubmission]);
@@ -142,7 +154,10 @@ function AnimatedSubmitButton({
             return;
         }
 
-        const timer = setTimeout(() => setCanShow(false), CONST.ANIMATION_SUBMIT_SUBMITTED_STATE_VISIBLE_DURATION);
+        const submittedPhaseDeadline = submittedPhaseDeadlineRef.current ?? Date.now() + CONST.ANIMATION_SUBMIT_SUBMITTED_STATE_VISIBLE_DURATION;
+        submittedPhaseDeadlineRef.current = submittedPhaseDeadline;
+
+        const timer = setTimeout(() => setCanShow(false), Math.max(0, submittedPhaseDeadline - Date.now()));
 
         return () => clearTimeout(timer);
     }, [isAnimationRunning, isShowingLoading, isDEWSubmissionComplete, isDEWSubmission]);

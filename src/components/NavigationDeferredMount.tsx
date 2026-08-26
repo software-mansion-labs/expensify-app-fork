@@ -37,13 +37,29 @@ function NavigationDeferredMount({placeholder = null, children, waitForUpcomingT
     const [isReady, setIsReady] = useState(false);
     // One-shot mount-time config — flipping the prop after mount shouldn't retrigger the wait.
     const waitForUpcomingTransitionRef = useRef(waitForUpcomingTransition);
+    // Survives a re-run of the effect below, which an <Activity> hide triggers by running the cleanup on a still mounted tree.
+    const hydrateStatusRef = useRef<'pending' | 'cancelled' | 'done'>('pending');
 
     useEffect(() => {
+        if (hydrateStatusRef.current === 'done') {
+            return;
+        }
+        // A hydrate that was cancelled is already owed, so it must not wait for yet another transition to start.
+        const shouldWaitForUpcomingTransition = hydrateStatusRef.current === 'cancelled' ? false : waitForUpcomingTransitionRef.current;
         const handle = TransitionTracker.runAfterTransitions({
-            waitForUpcomingTransition: waitForUpcomingTransitionRef.current,
-            callback: () => startTransition(() => setIsReady(true)),
+            waitForUpcomingTransition: shouldWaitForUpcomingTransition,
+            callback: () => {
+                hydrateStatusRef.current = 'done';
+                startTransition(() => setIsReady(true));
+            },
         });
-        return () => handle.cancel();
+        return () => {
+            handle.cancel();
+            if (hydrateStatusRef.current === 'done') {
+                return;
+            }
+            hydrateStatusRef.current = 'cancelled';
+        };
     }, []);
 
     return isReady ? children : placeholder;

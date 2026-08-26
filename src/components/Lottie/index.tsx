@@ -71,6 +71,7 @@ function Lottie({ref, source, webStyle, shouldLoadAfterInteractions, ...props}: 
         }
         // The focus event can fire while this subtree is hidden, so the effect reconciles with the current focus state instead of waiting for the next event.
         if (navigator.isFocused()) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHasNavigatedAway(false);
         }
         const unsubscribeNavigationFocus = navigator.addListener('focus', () => {

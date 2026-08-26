@@ -1,5 +1,6 @@
 import type {AttachmentSource} from '@components/Attachments/types';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useCachedImageSource from '@hooks/useCachedImageSource';
 
 import getImageRecyclingKey from '@libs/getImageRecyclingKey';
@@ -27,13 +28,16 @@ function BaseImage({onLoad, onLoadStart, source, style, ...props}: BaseImageProp
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const hasSourceChanged = useLastApplied();
     useEffect(() => {
-        if (!source) {
+        // The guard runs before the empty check so a source that clears and comes back is still recorded as a change.
+        const isNewSource = hasSourceChanged(getImageRecyclingKey(source));
+        if (!source || !isNewSource) {
             return;
         }
         // expo-image doesn't support onLoadStart on web, so we call it manually when the source changes, matching react-native-web's Image behavior
         onLoadStart?.();
-    }, [source, onLoadStart]);
+    }, [source, onLoadStart, hasSourceChanged]);
 
     const imageLoadedSuccessfully = useCallback(
         (event: ImageLoadEventData) => {

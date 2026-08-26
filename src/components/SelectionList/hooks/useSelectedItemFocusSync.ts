@@ -1,5 +1,7 @@
 import type {ListItem} from '@components/SelectionList/ListItem/types';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
+
 import {useEffect, useMemo} from 'react';
 
 type UseSelectedItemFocusSyncParams<TItem extends ListItem, TData = TItem> = {
@@ -35,8 +37,12 @@ function useSelectedItemFocusSync<TItem extends ListItem, TData = TItem>({
     setFocusedIndex,
 }: UseSelectedItemFocusSyncParams<TItem, TData>) {
     const selectedItemIndex = useMemo(() => (initiallyFocusedItemKey ? data.findIndex(isItemSelected) : -1), [data, initiallyFocusedItemKey, isItemSelected]);
+    const hasSelectedItemIndexChanged = useLastApplied();
 
     useEffect(() => {
+        if (!hasSelectedItemIndexChanged(String(selectedItemIndex))) {
+            return;
+        }
         if (selectedItemIndex === -1 || selectedItemIndex === focusedIndex || searchValue) {
             return;
         }
@@ -44,7 +50,7 @@ function useSelectedItemFocusSync<TItem extends ListItem, TData = TItem>({
 
         // Only sync focus when selectedItemIndex changes, not when other dependencies update
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedItemIndex]);
+    }, [selectedItemIndex, hasSelectedItemIndexChanged]);
 
     return selectedItemIndex;
 }

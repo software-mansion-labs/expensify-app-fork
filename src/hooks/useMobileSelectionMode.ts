@@ -17,6 +17,8 @@ export default function useMobileSelectionMode(onTurnOffSelectionMode = () => {}
         if (!initialSelectionModeValueRef.current) {
             return;
         }
+        // The latch is consumed here so a later run of this effect cannot turn off a selection mode the user has since started.
+        initialSelectionModeValueRef.current = false;
         turnOffMobileSelectionMode();
     }, []);
 

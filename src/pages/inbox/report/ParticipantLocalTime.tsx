@@ -37,6 +37,8 @@ function ParticipantLocalTime({participant}: ParticipantLocalTimeProps) {
 
     const [localTime, setLocalTime] = useState(() => getParticipantLocalTime(participant, getLocalDateFromDatetime));
     useEffect(() => {
+        // The interval is the only thing that refreshes the clock, so re-entering the effect has to repaint the current time first.
+        setLocalTime(getParticipantLocalTime(participant, getLocalDateFromDatetime));
         const timer = Timers.register(
             setInterval(() => {
                 setLocalTime(getParticipantLocalTime(participant, getLocalDateFromDatetime));

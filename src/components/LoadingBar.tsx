@@ -1,3 +1,4 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
@@ -15,8 +16,14 @@ function LoadingBar({shouldShow}: LoadingBarProps) {
     const width = useSharedValue(0);
     const opacity = useSharedValue(0);
     const styles = useThemeStyles();
+    const hasShouldShowChanged = useLastApplied();
 
     useEffect(() => {
+        // A re-run with an unchanged shouldShow would restart the indeterminate animation from its first frame.
+        if (!hasShouldShowChanged(String(shouldShow))) {
+            return;
+        }
+
         if (shouldShow) {
             left.set(0);
             width.set(0);
@@ -61,7 +68,7 @@ function LoadingBar({shouldShow}: LoadingBarProps) {
         }
         // we want to update only when shouldShow changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shouldShow]);
+    }, [shouldShow, hasShouldShowChanged]);
 
     const animatedIndicatorStyle = useAnimatedStyle(() => ({
         left: `${left.get()}%`,

@@ -2,6 +2,7 @@ import type {ComposerProps, ComposerRef} from '@components/Composer/types';
 import type {AnimatedMarkdownTextInputRef} from '@components/RNMarkdownTextInput';
 import RNMarkdownTextInput from '@components/RNMarkdownTextInput';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useIsInLandscapeMode from '@hooks/useIsInLandscapeMode';
 import useMarkdownStyle from '@hooks/useMarkdownStyle';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -51,8 +52,13 @@ function Composer({
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const isInLandscapeMode = useIsInLandscapeMode();
+    const hasComposerFullSizeChanged = useLastApplied();
 
     useEffect(() => {
+        if (!hasComposerFullSizeChanged(String(isComposerFullSize))) {
+            return;
+        }
+
         if (!textInputRef.current?.setSelection || !selection || isComposerFullSize) {
             return;
         }
@@ -69,7 +75,7 @@ function Composer({
         return () => clearTimeout(timeoutID);
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isComposerFullSize]);
+    }, [isComposerFullSize, hasComposerFullSizeChanged]);
 
     /**
      * Set the TextInput Ref

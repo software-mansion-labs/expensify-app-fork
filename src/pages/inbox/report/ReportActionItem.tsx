@@ -12,6 +12,7 @@ import type {ShowContextMenuActionsContextType, ShowContextMenuStateContextType}
 import {ShowContextMenuActionsContext, ShowContextMenuStateContext} from '@components/ShowContextMenuContext';
 import UnreadActionIndicator from '@components/UnreadActionIndicator';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useConfirmModal from '@hooks/useConfirmModal';
 import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useLocalize from '@hooks/useLocalize';
@@ -217,6 +218,7 @@ function ReportActionItem({
     const [isEmojiPickerActive, setIsEmojiPickerActive] = useState<boolean | undefined>();
     const [isPaymentMethodPopoverActive, setIsPaymentMethodPopoverActive] = useState<boolean | undefined>();
     const [isHidden, setIsHidden] = useState(false);
+    const hasModerationStateChanged = useLastApplied();
     const {isActiveReportAction: isActiveReactionListReportAction, hideReactionList} = useContext(ReactionListContext);
     const {updateHiddenAttachments} = useContext(AttachmentModalContext);
     const popoverAnchorRef = useRef<Exclude<ContextMenuAnchor, TextInput>>(null);
@@ -351,6 +353,11 @@ function ReportActionItem({
     // Removed messages should not be shown anyway and should not need this flow
     const latestDecision = getReportActionMessage(action)?.moderationDecision?.decision ?? '';
     useEffect(() => {
+        // Re-applying the same moderation state would undo a reveal the user made through updateHiddenState.
+        if (!hasModerationStateChanged(`${action.actionName}|${latestDecision}|${String(isPendingRemove(action))}`)) {
+            return;
+        }
+
         if (action.actionName !== CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT) {
             return;
         }
@@ -366,7 +373,7 @@ function ReportActionItem({
             return;
         }
         setIsHidden(false);
-    }, [latestDecision, action]);
+    }, [latestDecision, action, hasModerationStateChanged]);
 
     const toggleContextMenuFromActiveReportAction = () => {
         setIsContextMenuActive(isActiveReportAction(action.reportActionID));

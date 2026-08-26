@@ -1,3 +1,4 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useScreenWrapperTransitionStatus from '@hooks/useScreenWrapperTransitionStatus';
 import useTheme from '@hooks/useTheme';
 
@@ -77,6 +78,7 @@ export default function useAnimatedHighlightStyle({
     const nonRepeatableProgress = useSharedValue(initialNonRepeatableProgressValue);
     const {didScreenTransitionEnd} = useScreenWrapperTransitionStatus();
     const theme = useTheme();
+    const hasShouldHighlightChanged = useLastApplied();
 
     const highlightBackgroundStyle = useAnimatedStyle(() => {
         'worklet';
@@ -92,6 +94,10 @@ export default function useAnimatedHighlightStyle({
     }, [borderRadius, height, backgroundColor, highlightColor, theme.appBG, theme.border]);
 
     React.useEffect(() => {
+        // The animation below disarms startHighlight, so a re-run with an unchanged shouldHighlight would replay it.
+        if (!hasShouldHighlightChanged(String(shouldHighlight))) {
+            return;
+        }
         if (!shouldHighlight || startHighlight) {
             return;
         }
@@ -100,7 +106,7 @@ export default function useAnimatedHighlightStyle({
         // if shouldHighlight stays at true the above early return will not be executed and this useEffect will be run
         // as long as shouldHighlight is true as we set startHighlight to false in the below useEffect.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shouldHighlight]);
+    }, [shouldHighlight, hasShouldHighlightChanged]);
 
     React.useEffect(() => {
         if (!startHighlight || !didScreenTransitionEnd) {

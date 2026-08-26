@@ -64,6 +64,8 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     const originalFileOrder = useRef<Map<string, number>>(new Map());
     const pendingAfterHide = useRef<() => void>(() => {});
     const loaderTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    // The pending hide is kept with its absolute deadline so a cover that clears the timeout can re-arm it for the time that is left.
+    const pendingLoaderHideRef = useRef<{hideLoader: () => void; deadline: number} | undefined>(undefined);
 
     const updateFileOrderMapping = (oldFile: FileObject | undefined, newFile: FileObject) => {
         const originalIndex = originalFileOrder.current.get(oldFile?.uri ?? '');
@@ -85,6 +87,18 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     };
 
     useEffect(() => {
+        const pendingLoaderHide = pendingLoaderHideRef.current;
+        if (pendingLoaderHide) {
+            loaderTimeoutRef.current = setTimeout(
+                () => {
+                    loaderTimeoutRef.current = undefined;
+                    pendingLoaderHideRef.current = undefined;
+                    pendingLoaderHide.hideLoader();
+                },
+                Math.max(0, pendingLoaderHide.deadline - Date.now()),
+            );
+        }
+
         return () => {
             if (!loaderTimeoutRef.current) {
                 return;
@@ -328,9 +342,13 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
                 return;
             }
 
+            const remainingDuration = MIN_LOADER_VISIBLE_DURATION_MS - elapsedTime;
+            pendingLoaderHideRef.current = {hideLoader: hideLoaderAndHandleNext, deadline: Date.now() + remainingDuration};
             loaderTimeoutRef.current = setTimeout(() => {
+                loaderTimeoutRef.current = undefined;
+                pendingLoaderHideRef.current = undefined;
                 hideLoaderAndHandleNext();
-            }, MIN_LOADER_VISIBLE_DURATION_MS - elapsedTime);
+            }, remainingDuration);
         };
 
         extendLoaderIfNeeded();

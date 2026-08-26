@@ -1,4 +1,3 @@
-import usePrevious from '@hooks/usePrevious';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 
 import isInLandscapeModeUtil from '@libs/isInLandscapeMode';
@@ -34,7 +33,6 @@ function isKeyboardOpeningAtGivenProgress(keyboardProgress: number, prevKeyboard
  */
 function CollapsibleHeaderOnKeyboard({children, collapsibleHeaderOffset = 0}: CollapsibleHeaderOnKeyboardProps) {
     const isFocused = useIsFocused();
-    const prevIsFocused = usePrevious(isFocused);
     // JS ref guards against re-measurement when the Reanimated.View fires onLayout with height=0
     const naturalHeightRef = useRef(-1);
     // Worklet-accessible mirror of naturalHeightRef. -1 signals "not yet measured".
@@ -98,17 +96,19 @@ function CollapsibleHeaderOnKeyboard({children, collapsibleHeaderOffset = 0}: Co
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isInLandscapeMode]);
 
-    // Restores the header when the screen loses focus
+    // Restores the header when the focused screen goes away, which the teardown of the focused run covers in every case.
     useEffect(() => {
-        if (!prevIsFocused || isFocused) {
+        if (!isFocused) {
             return;
         }
 
-        const naturalHeightValue = naturalHeight.get();
-        if (naturalHeightValue === -1) {
-            return;
-        }
-        animatedHeight.set(withTiming(naturalHeightValue, {duration: RESTORE_DURATION}));
+        return () => {
+            const naturalHeightValue = naturalHeight.get();
+            if (naturalHeightValue === -1) {
+                return;
+            }
+            animatedHeight.set(withTiming(naturalHeightValue, {duration: RESTORE_DURATION}));
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- we only want to run this effect when the screen loses focus
     }, [isFocused]);
 

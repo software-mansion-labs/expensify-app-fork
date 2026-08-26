@@ -1,5 +1,3 @@
-import {useLastApplied} from '@hooks/useActivityIdentityGuard';
-
 import Log from '@libs/Log';
 
 import CONST from '@src/CONST';
@@ -7,6 +5,8 @@ import CONST from '@src/CONST';
 import type {ImageSource} from 'expo-image';
 
 import {useEffect, useState} from 'react';
+
+import {useLastApplied} from './useActivityIdentityGuard';
 
 const clearAuthImagesCache = async () => {
     if (!('caches' in window)) {

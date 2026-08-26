@@ -39,6 +39,11 @@ const useScrollEventEmitter = () => {
                 return;
             }
             clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+
+            // The pending timeout was the only thing that would have ended the scroll, so the listeners are told here instead.
+            isScrollingRef.current = false;
+            DeviceEventEmitter.emit(CONST.EVENTS.SCROLLING, false);
         };
     }, []);
 

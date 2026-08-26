@@ -1,3 +1,4 @@
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -69,6 +70,7 @@ function PDFDownloadModal({
     onModalHide,
 }: PDFDownloadModalProps) {
     const shouldAutoDownloadPDF = useRef(false);
+    const hasVisibilityChanged = useLastApplied();
 
     const {translate} = useLocalize();
     // We need to use isSmallScreenWidth here because the Modal breaks in RHP with shouldUseNarrowLayout.
@@ -79,8 +81,12 @@ function PDFDownloadModal({
     const expensifyIcons = useMemoizedLazyExpensifyIcons(['Close']);
 
     useEffect(() => {
+        // The auto-download is a one shot that the effect below disarms, so it may only be re-armed when the modal's visibility actually changes.
+        if (!hasVisibilityChanged(String(isVisible))) {
+            return;
+        }
         shouldAutoDownloadPDF.current = isVisible;
-    }, [isVisible]);
+    }, [isVisible, hasVisibilityChanged]);
 
     useEffect(() => {
         if (!isVisible || !shouldAutoDownloadPDF.current || !hasFinishedPDFDownload) {

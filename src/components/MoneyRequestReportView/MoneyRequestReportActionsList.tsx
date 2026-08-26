@@ -73,7 +73,7 @@ import type {LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent} from 'r
 /* eslint-disable rulesdir/prefer-early-return */
 import {useIsFocused, useRoute} from '@react-navigation/native';
 import isEmpty from 'lodash/isEmpty';
-import React, {useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 import {DeviceEventEmitter, View} from 'react-native';
 
 import MoneyRequestReportTransactionList from './MoneyRequestReportTransactionList';
@@ -122,7 +122,9 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
 
     const lastMessageTime = useRef<string | null>(null);
     const didLayout = useRef(false);
-    const [isVisible, setIsVisible] = useState(Visibility.isVisible);
+    // Visibility changes are lost while the screen is hidden, and useSyncExternalStore re-reads the snapshot when it
+    // re-subscribes on a reveal, so the state cannot stay stale.
+    const isVisible = useSyncExternalStore(Visibility.onVisibilityChange, Visibility.isVisible);
     const isFocused = useIsFocused();
     const {shouldUseNarrowLayout} = useResponsiveLayoutOnWideRHP();
     // The table is visible whenever it's wide, or — on narrow — only when focused (the RHP has closed).
@@ -379,22 +381,13 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
     const [unreadMarkerTime, setUnreadMarkerTime] = useState(reportLastReadTime);
     const hasUnreadMarkerReportIDChanged = useLastApplied();
     useEffect(() => {
-        if (!hasUnreadMarkerReportIDChanged(report?.reportID ?? '')) {
+        if (!hasUnreadMarkerReportIDChanged(report?.reportID)) {
             return;
         }
+        // The marker has to be reconciled with the persisted read time when the report changes, and there is no snapshot to read it from.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUnreadMarkerTime(reportLastReadTime);
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [report?.reportID, hasUnreadMarkerReportIDChanged]);
-
-    useEffect(() => {
-        setIsVisible(Visibility.isVisible());
-        const unsubscribe = Visibility.onVisibilityChange(() => {
-            setIsVisible(Visibility.isVisible());
-        });
-
-        return unsubscribe;
-    }, []);
+    }, [report?.reportID, reportLastReadTime, hasUnreadMarkerReportIDChanged]);
 
     // A visible browser window can regain OS focus without any visibility change, and nothing else re-runs the
     // read catch-up in that case, so bump a counter on app focus to re-run it.
@@ -403,7 +396,7 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
 
     // One key for the whole trigger set, so a reveal that presents the same data does not repeat the read catch-up.
     const readCatchUpKey = [
-        report?.reportID ?? '',
+        report?.reportID,
         report?.lastVisibleActionCreated ?? '',
         transactionThreadReport?.lastVisibleActionCreated ?? '',
         String(isVisible),

@@ -1,5 +1,6 @@
 import ScrollView from '@components/ScrollView';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useKeyboardState from '@hooks/useKeyboardState';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
@@ -61,6 +62,7 @@ function FeatureTrainingContent({
     const insets = useSafeAreaInsets();
     const {isKeyboardActive} = useKeyboardState();
     const isInLandscapeMode = isInLandscapeModeUtil(windowWidth, windowHeight);
+    const hasScrollMeasurementChanged = useLastApplied();
 
     const shouldUseScrollView = shouldUseScrollViewProp || isInLandscapeMode;
 
@@ -77,11 +79,15 @@ function FeatureTrainingContent({
     };
 
     useEffect(() => {
+        // Scrolling to the end belongs to a new measurement, so a re-run with the same measurement must not discard where the user scrolled.
+        if (!hasScrollMeasurementChanged([contentHeight, containerHeight, onboardingIsMediumOrLargerScreenWidth, shouldUseScrollView].join('|'))) {
+            return;
+        }
         if (contentHeight <= containerHeight || onboardingIsMediumOrLargerScreenWidth || !shouldUseScrollView) {
             return;
         }
         scrollViewRef.current?.scrollToEnd({animated: false});
-    }, [contentHeight, containerHeight, onboardingIsMediumOrLargerScreenWidth, shouldUseScrollView]);
+    }, [contentHeight, containerHeight, onboardingIsMediumOrLargerScreenWidth, shouldUseScrollView, hasScrollMeasurementChanged]);
 
     const Wrapper = shouldUseScrollView ? ScrollView : View;
 

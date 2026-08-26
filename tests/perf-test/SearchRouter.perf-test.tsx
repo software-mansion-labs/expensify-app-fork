@@ -27,8 +27,10 @@ import wrapOnyxWithWaitForBatchedUpdates from '../utils/wrapOnyxWithWaitForBatch
 
 jest.mock('lodash/debounce', () =>
     jest.fn((fn: Record<string, jest.Mock>) => {
-        // eslint-disable-next-line no-param-reassign
+        /* eslint-disable no-param-reassign */
         fn.cancel = jest.fn();
+        fn.flush = jest.fn();
+        /* eslint-enable no-param-reassign */
         return fn;
     }),
 );

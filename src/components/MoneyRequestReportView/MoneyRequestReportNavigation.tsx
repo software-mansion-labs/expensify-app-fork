@@ -2,6 +2,7 @@ import PrevNextButtons from '@components/PrevNextButtons';
 import {useSearchResultsContext} from '@components/Search/SearchContext';
 import Text from '@components/Text';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useFilterPendingDeleteReports from '@hooks/useFilterPendingDeleteReports';
 import useOnyx from '@hooks/useOnyx';
 import useSearchSections from '@hooks/useSearchSections';
@@ -150,7 +151,15 @@ function MoneyRequestReportNavigationContent({reportID, shouldDisplayNarrowVersi
     const hidePrevButton = currentIndex === 0;
     const shouldDisplayNavigationArrows = effectiveAllReports.length > 1 && currentIndex !== -1 && !!lastSearchQuery?.queryJSON;
 
+    const hasLastSearchParamsWriteChanged = useLastApplied();
+    // Every value the effect below branches on, so a re-run that decided nothing new does not overwrite the shared record again.
+    const lastSearchParamsWriteKey = [lastSearchQuery?.queryJSON?.hash, lastSearchQuery?.allowPostSearchRecount, allReportsCount, effectiveAllReports.length, currentIndex].join('|');
+
     useEffect(() => {
+        if (!hasLastSearchParamsWriteChanged(lastSearchParamsWriteKey)) {
+            return;
+        }
+
         if (!lastSearchQuery?.queryJSON) {
             return;
         }
@@ -181,7 +190,7 @@ function MoneyRequestReportNavigationContent({reportID, shouldDisplayNarrowVersi
             ...lastSearchQuery,
             previousLengthOfResults: effectiveAllReports.length,
         });
-    }, [currentIndex, allReportsCount, effectiveAllReports.length, lastSearchQuery?.queryJSON, lastSearchQuery]);
+    }, [currentIndex, allReportsCount, effectiveAllReports.length, lastSearchQuery?.queryJSON, lastSearchQuery, lastSearchParamsWriteKey, hasLastSearchParamsWriteChanged]);
 
     const goToReportId = (reportId?: string) => {
         if (!reportId) {

@@ -4,6 +4,7 @@ import InlineIcon from '@components/Icon/InlineIcon';
 import PopoverMenu from '@components/PopoverMenu';
 import Text from '@components/Text';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import usePopoverPosition from '@hooks/usePopoverPosition';
@@ -127,9 +128,14 @@ function ButtonWithDropdownMenu<IValueType>({ref, ...props}: ButtonWithDropdownM
     const singleOptionButtonIcon = shouldUseOptionIcon && !shouldShowButtonRightIcon ? options.at(0)?.icon : icon;
     const rightOptionIcon = options.at(0)?.icon;
 
+    const hasDefaultSelectedIndexChanged = useLastApplied();
+
     useEffect(() => {
+        if (!hasDefaultSelectedIndexChanged(String(defaultSelectedIndex))) {
+            return;
+        }
         setSelectedItemIndex(defaultSelectedIndex);
-    }, [defaultSelectedIndex]);
+    }, [defaultSelectedIndex, hasDefaultSelectedIndexChanged]);
 
     const {paddingBottom} = useSafeAreaPaddings(true);
 

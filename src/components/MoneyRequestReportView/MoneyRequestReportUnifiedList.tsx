@@ -274,7 +274,7 @@ function MoneyRequestReportUnifiedList({
     const hasAnchoredLinkedActionRef = useRef(false);
     const hasLinkedReportActionIDChanged = useLastApplied();
     useEffect(() => {
-        if (!hasLinkedReportActionIDChanged(linkedReportActionID ?? '')) {
+        if (!hasLinkedReportActionIDChanged(linkedReportActionID)) {
             return;
         }
         hasAnchoredLinkedActionRef.current = false;

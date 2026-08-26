@@ -6,6 +6,7 @@ import ReportActionAvatars from '@components/ReportActionAvatars';
 import Text from '@components/Text';
 import UserDetailsTooltip from '@components/UserDetailsTooltip';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useAgentZeroStatusIndicator from '@hooks/useAgentZeroStatusIndicator';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
@@ -103,15 +104,19 @@ function ConciergeThinkingMessageContent({accountID, reasoningHistory, statusLab
     const hasExpanded = useSharedValue(isExpanded);
     const animationDuration = 300;
     const statusLabelOpacity = useSharedValue(1);
+    const hasStatusLabelChanged = useLastApplied();
 
     useEffect(() => {
         hasExpanded.set(isExpanded);
     }, [isExpanded, hasExpanded]);
 
     useEffect(() => {
+        if (!hasStatusLabelChanged(statusLabel)) {
+            return;
+        }
         statusLabelOpacity.set(0.3);
         statusLabelOpacity.set(withTiming(1, {duration: 100, easing: Easing.inOut(Easing.ease)}));
-    }, [statusLabel, statusLabelOpacity]);
+    }, [statusLabel, statusLabelOpacity, hasStatusLabelChanged]);
 
     const animatedHeight = useDerivedValue(() => {
         if (!contentHeight.get()) {

@@ -16,7 +16,7 @@ import type {ReportActions, ReportMetadata} from '@src/types/onyx';
 import type {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import Animated, {Keyframe, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import {scheduleOnRN} from 'react-native-worklets';
 
@@ -90,6 +90,7 @@ function AnimatedSettlementButton({
     const height = useSharedValue<number>(variables.componentSizeNormal);
     const [canShow, setCanShow] = useState(true);
     const [minWidth, setMinWidth] = useState<number>(0);
+    const hideDeadlineRef = useRef<number | undefined>(undefined);
 
     const containerStyles = useAnimatedStyle(() => ({
         height: height.get(),
@@ -149,10 +150,17 @@ function AnimatedSettlementButton({
     };
 
     useEffect(() => {
-        if (!isAnimationRunning || (isDEWApprovalAnimation && !isDEWApprovalComplete)) {
+        if (!isAnimationRunning) {
+            hideDeadlineRef.current = undefined;
             return;
         }
-        const timer = setTimeout(() => setCanShow(false), CONST.ANIMATION_PAID_BUTTON_HIDE_DELAY);
+        if (isDEWApprovalAnimation && !isDEWApprovalComplete) {
+            return;
+        }
+        // The deadline is kept per animation, so a re-run finishes the remaining delay instead of granting a new one.
+        const hideDeadline = hideDeadlineRef.current ?? Date.now() + CONST.ANIMATION_PAID_BUTTON_HIDE_DELAY;
+        hideDeadlineRef.current = hideDeadline;
+        const timer = setTimeout(() => setCanShow(false), Math.max(0, hideDeadline - Date.now()));
         return () => clearTimeout(timer);
     }, [isAnimationRunning, isDEWApprovalComplete, isDEWApprovalAnimation]);
 

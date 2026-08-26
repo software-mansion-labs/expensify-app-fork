@@ -29,6 +29,9 @@ function useIsResizing(): boolean {
         return () => {
             window.removeEventListener('resize', handleResize);
             clearTimeout(settleTimeoutID);
+
+            // The pending settle is dropped with the listener, so the state has to settle here or it stays stuck at true.
+            setIsResizing(false);
         };
     }, []);
 

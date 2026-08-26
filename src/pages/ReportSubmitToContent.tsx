@@ -6,6 +6,7 @@ import InviteMemberListItem from '@components/SelectionList/ListItem/InviteMembe
 import type {ListItem} from '@components/SelectionList/types';
 import Text from '@components/Text';
 
+import {useLastApplied} from '@hooks/useActivityIdentityGuard';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useDebouncedState from '@hooks/useDebouncedState';
 import useIsInLandscapeMode from '@hooks/useIsInLandscapeMode';
@@ -191,9 +192,15 @@ function ReportSubmitToContent({
         return tokenizedSearch(combinedSubmitToMembers, normalized, (item) => [item.text ?? '', item.alternateText ?? '', item.email]);
     }, [combinedSubmitToMembers, searchTerm, countryCode]);
 
+    const hasSearchedTermChanged = useLastApplied();
+
     useEffect(() => {
-        searchUserInServer(debouncedSearchTerm.trim());
-    }, [debouncedSearchTerm]);
+        const trimmedSearchTerm = debouncedSearchTerm.trim();
+        if (!hasSearchedTermChanged(trimmedSearchTerm)) {
+            return;
+        }
+        searchUserInServer(trimmedSearchTerm);
+    }, [debouncedSearchTerm, hasSearchedTermChanged]);
 
     const nonWorkspaceInviteRow = useMemo((): WorkspaceMemberItem | null => {
         const trimmed = searchTerm.trim();
