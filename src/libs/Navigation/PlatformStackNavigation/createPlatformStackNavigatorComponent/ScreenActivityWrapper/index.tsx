@@ -1,6 +1,7 @@
 import AlwaysPaintedView from '@components/AlwaysPaintedView';
 
 import useDeferVisibleUntilFocusTransitionEnd from '@hooks/useDeferVisibleUntilFocusTransitionEnd';
+import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffect/ScreenActivityEffectBoundaryContext';
 
 import type NonTopScreenWrapperProps from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/nonTopScreenWrapperTypes';
 
@@ -75,12 +76,16 @@ function ScreenActivityWrapper({isScreenBlurred, children}: NonTopScreenWrapperP
 
     const mode = isKeptVisible || isShownAfterTransition || (!isScreenCovered && isRevealLatched) ? 'visible' : 'hidden';
 
+    // The boundary renders outside the Activity, because a hide unmounts everything inside it while the screen is
+    // still on the stack. Its own unmount is what useScreenActivityEffect defers its cleanups to.
     return (
-        <Activity mode={mode}>
-            <AlwaysPaintedView inert={isScreenCovered}>
-                <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
-            </AlwaysPaintedView>
-        </Activity>
+        <ScreenActivityEffectBoundaryProvider>
+            <Activity mode={mode}>
+                <AlwaysPaintedView inert={isScreenCovered}>
+                    <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
+                </AlwaysPaintedView>
+            </Activity>
+        </ScreenActivityEffectBoundaryProvider>
     );
 }
 
