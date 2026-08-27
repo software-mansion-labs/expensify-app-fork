@@ -31,7 +31,6 @@ const onyxKeysToRemove = new Set<ValueOf<typeof ONYXKEYS> | ValueOf<typeof ONYXK
     ONYXKEYS.ONFIDO_APPLICANT_ID,
     // maskFragileData won't catch this one, since the secret sits in a field named "token"
     ONYXKEYS.MAPBOX_ACCESS_TOKEN,
-    // Same story: the QA OAuth tokens sit in fields maskFragileData doesn't key on
     ONYXKEYS.CLOUDFLARE_SESSION,
     // All three hold the picked image itself in "uri", as a base64 data URL on web. Masking it would only
     // trade a copy of the user's photo for an equally large blob of random characters.
@@ -330,7 +329,7 @@ const safeOnyxKeys = new Set<string>([
     ONYXKEYS.SHOULD_BILL_WHEN_DOWNGRADING,
     ONYXKEYS.SHOULD_MASK_ONYX_STATE,
     ONYXKEYS.SHOULD_SHOW_BRANCH_NAME_IN_TITLE,
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- every declared key needs a category or ExportOnyxStateTest fails
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     ONYXKEYS.SHOULD_USE_STAGING_SERVER,
     ONYXKEYS.SIGN_IN_HIGH_CONTRAST_INTENT,
     ONYXKEYS.STATUS_DRAFT_CUSTOM_CLEAR_AFTER_DATE,

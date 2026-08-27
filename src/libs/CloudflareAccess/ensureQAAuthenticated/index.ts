@@ -1,7 +1,6 @@
 /**
  * On a QA build every API call — including the Expensify sign-in POST — goes to a Zero Trust-protected
- * origin, so the Cloudflare handshake has to complete before that first request is sent, not after the user
- * signs in.
+ * origin, so the Cloudflare handshake has to complete before that first request is sent.
  */
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import {isQAServerActive, waitForActiveServerHydration} from '@libs/ApiUtils';
@@ -13,13 +12,9 @@ import {redirectToCloudflareSignIn, getCloudflareSession, getPendingCloudflareCo
 import type {EnsureQAAuthenticated, HandleQAReauthRequired} from './types';
 
 /**
- * The commands allowed to navigate this tab to Cloudflare. A redirect is a full page load: it discards
- * whatever the person had typed and takes the screen out from under them, so the right to cause one belongs
- * only to requests the app cannot get anywhere without.
- *
  * Denied does not mean blocked: such a request still goes out with whatever session exists, and still
- * refreshes a near-expiry token, because neither of those is visible. It just fails rather than navigating
- * when there is no session to be had, and the next allowlisted request re-establishes one.
+ * refreshes a near-expiry token. It fails rather than navigating when there is no session to be had, and the
+ * next allowlisted request re-establishes one.
  */
 const COMMANDS_THAT_MAY_START_HANDSHAKE = new Set<string>([
     READ_COMMANDS.BEGIN_SIGNIN,
@@ -50,10 +45,6 @@ async function startRedirect(): Promise<void> {
     }
 }
 
-/**
- * Every QA request awaits this: a request that goes out while the session is still hydrating can only 401,
- * which is a wasted round trip whatever the command.
- */
 async function awaitGateSignals(): Promise<'may-redirect' | 'must-not-redirect'> {
     // Deciding before these two Onyx-backed signals hydrate reads "production, no session" on every build,
     // QA included, and the first request of a page load can easily beat them.
@@ -93,7 +84,6 @@ async function runGate(): Promise<void> {
     await startRedirect();
 }
 
-/** Single-flight: the decision spans several awaits, so two callers must not both reach the redirect */
 let gatePromise: Promise<void> | null = null;
 
 const ensureQAAuthenticated: EnsureQAAuthenticated = (command) => {
@@ -108,16 +98,16 @@ const ensureQAAuthenticated: EnsureQAAuthenticated = (command) => {
         return awaitGateSignals().then(() => {});
     }
 
-    // The gate reads `activeServer`, which the test-tool switch changes mid-session: flipping it to QA signs
-    // the user out client-side without reloading, so a cached "nothing to do" from an earlier run would be
-    // the last word for the rest of the page and every QA request would go out with no bearer.
+    // The gate reads `activeServer`, which changes mid-session: flipping it to QA signs the user out
+    // client-side without reloading, so a cached "nothing to do" from an earlier run would be the last word
+    // for the rest of the page and every QA request would go out with no bearer.
     gatePromise ??= runGate().finally(() => {
         gatePromise = null;
     });
     return gatePromise;
 };
 
-/** No hydration await here, deliberately: a QA request already went out, which means the signal was hydrated to route it */
+/** No hydration await: a QA request already went out, which means the signal was hydrated to route it */
 const handleQAReauthRequired: HandleQAReauthRequired = (command) => {
     const mayRedirect = mayCommandStartHandshake(command);
     if (!shouldAuthenticate() || !mayRedirect) {

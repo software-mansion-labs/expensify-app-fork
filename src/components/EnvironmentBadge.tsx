@@ -26,10 +26,6 @@ const ENVIRONMENT_SHORT_FORM = {
     [CONST.ENVIRONMENT.ADHOC]: 'ADHOC',
 };
 
-/**
- * Which environment the badge is *about*. That is the server the app sends requests to, not the environment
- * baked into the bundle: the server switches in the test tool change the former without touching the latter.
- */
 function getBadgeEnvironment(activeServer: ValueOf<typeof CONST.SERVER>, environment: EnvironmentValue): EnvironmentValue {
     if (activeServer === CONST.SERVER.QA) {
         return CONST.ENVIRONMENT.QA;
@@ -47,8 +43,7 @@ function EnvironmentBadge() {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {environment, isProduction} = useEnvironment();
-    // Subscribed only to re-render when the switch flips; the value read is ApiUtils' own resolved answer
-    // rather than the raw stored one, so the badge cannot claim a server the router is not using.
+    // Subscribed only to re-render when the switch flips
     useOnyx(ONYXKEYS.ACTIVE_SERVER);
 
     const badgeEnvironment = getBadgeEnvironment(getActiveServer(), environment);

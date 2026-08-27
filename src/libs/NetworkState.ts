@@ -340,7 +340,6 @@ function configureAndSubscribe() {
 
     configuredReachabilityUrl = buildReachabilityUrl();
 
-    // IS_USING_LOCAL_WEB: there is no reachable Ping on a local dev server.
     // QA: the Ping URL sits behind Cloudflare Access and NetInfo issues that request itself, so it cannot
     // carry the bearer and would read as a permanent outage. NetInfo's `reachabilityHeaders` is not a way
     // out — that config is static and the access token rotates on Cloudflare's schedule.
@@ -419,9 +418,8 @@ Onyx.connectWithoutView({
     },
 });
 
-// queueMicrotask waits for ApiUtils' callback on the same key, which owns the value behind
-// getApiRoot(). Skip the rebuild when the URL is unchanged: rebuilding tears down NetInfo
-// state and fires extra Pings, and the switch can flip without changing the URL.
+// Skip the rebuild when the URL is unchanged: rebuilding tears down NetInfo state and fires extra
+// Pings, and the switch can flip without changing the URL.
 Onyx.connectWithoutView({
     key: ONYXKEYS.ACTIVE_SERVER,
     callback: () => {

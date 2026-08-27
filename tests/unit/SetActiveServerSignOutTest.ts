@@ -35,7 +35,6 @@ describe('setActiveServer', () => {
 
         setActiveServer(to);
 
-        // Pinned to the server being left, so the sign-out request still routes to the account it belongs to
         expect(signOutAndRedirectToSignIn).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, from);
     });
 

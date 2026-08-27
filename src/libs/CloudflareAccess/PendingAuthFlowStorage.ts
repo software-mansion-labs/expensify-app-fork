@@ -1,7 +1,6 @@
 /**
  * Parks the in-flight authorize round trip across the page unload: navigating to Cloudflare destroys module
- * memory, so the verifier, state and return URL survive here. sessionStorage because it is synchronous,
- * scoped to the tab that started the flow and dropped when the tab closes.
+ * memory, so the verifier, state and return URL survive here.
  */
 import {isRecord} from '@libs/ObjectUtils';
 
@@ -14,13 +13,12 @@ type PendingAuthFlow = {
     /** CSRF/provenance value echoed back by Cloudflare on the callback */
     state: string;
 
-    /** The PKCE secret, revealed only at the token exchange */
     codeVerifier: string;
 
     /** Absolute URL (route plus any open RHP) the user should land back on */
     returnURL: string;
 
-    /** Epoch ms. See PENDING_AUTH_FLOW_TTL_MS */
+    /** Epoch ms */
     createdAt: number;
 };
 

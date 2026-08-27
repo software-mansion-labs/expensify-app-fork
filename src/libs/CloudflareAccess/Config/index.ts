@@ -1,9 +1,8 @@
-/** Config and request classification for the Cloudflare Access-protected QA server */
 import CONFIG from '@src/CONFIG';
 
 import type {GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
 
-/** A bare hostname: no scheme, no slash, no port. Loose about labels (custom Access domains exist). */
+/** Loose about labels: custom Access domains exist */
 const TEAM_DOMAIN_SHAPE = /^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
 
 function parseHTTPSOrigin(value: string): string | null {
@@ -41,7 +40,6 @@ const isQAAuthConfigured: IsQAAuthConfigured = () => {
  * token still covers every host, provided they all belong to the same (multi-domain) Access application.
  */
 const getQAResource: GetQAResource = () => {
-    // The `??` is unreachable behind the isQAAuthConfigured() gate that every caller sits under
     return parseHTTPSOrigin(CONFIG.QA_AUTH.API_ROOT) ?? '';
 };
 
@@ -50,7 +48,6 @@ const getQAOrigins: GetQAOrigins = () => {
     return [API_ROOT, SECURE_API_ROOT].map((root) => parseHTTPSOrigin(root)).filter((origin) => origin !== null);
 };
 
-/** Exact-origin membership, never a substring, and never true on an incomplete config */
 const isQAServerRequest: IsQAServerRequest = (url) => {
     if (!isQAAuthConfigured()) {
         return false;

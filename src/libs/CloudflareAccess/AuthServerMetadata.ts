@@ -1,20 +1,16 @@
-/** RFC 8414 authorization server metadata discovery for the QA server's Managed OAuth */
 import {isRecord} from '@libs/ObjectUtils';
 
 import CONFIG from '@src/CONFIG';
 
 import {getQAResource} from './Config';
 
-/** RFC 8414 §3 fixes the path. Cloudflare serves the document at the edge on the protected origin */
+/** RFC 8414 §3 fixes the path */
 const WELL_KNOWN_PATH = '/.well-known/oauth-authorization-server';
 
 const METADATA_TIMEOUT_MS = 10_000;
 
 type AuthServerEndpoints = {
-    /** RFC 8414 `authorization_endpoint` */
     authorizationEndpoint: string;
-
-    /** RFC 8414 `token_endpoint` */
     tokenEndpoint: string;
 };
 
@@ -68,10 +64,7 @@ async function fetchAndValidateMetadata(): Promise<AuthServerEndpoints> {
     };
 }
 
-/**
- * The metadata is static per environment, so it is cached for the page's lifetime. A failure rejects as a
- * plain error, never an OAuthError: transient for the callers' terminal/transient split.
- */
+/** The metadata is static per environment, so it is cached for the page's lifetime */
 function getAuthServerEndpoints(): Promise<AuthServerEndpoints> {
     metadataPromise ??= fetchAndValidateMetadata().catch((error: unknown) => {
         metadataPromise = null;

@@ -17,21 +17,18 @@ import Onyx from 'react-native-onyx';
 import HttpUtils from '../../src/libs/HttpUtils';
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
 
-// The QA token policy itself is QARequestAuthTest's subject. What matters here is only how HttpUtils uses
-// it: what it does with the prepared credential, and what it does when a QA request comes back 401.
+// The QA token policy itself is QARequestAuthTest's subject.
 jest.mock('@libs/CloudflareAccess/QARequestAuth', () => ({
     prepareQARequestAuth: jest.fn(() => Promise.resolve(undefined)),
     handleQAUnauthorized: jest.fn(),
 }));
 // Only the QA origin classification matters here; the real module reads CONFIG, which this test does not mock
 jest.mock('@libs/CloudflareAccess/Config', () => ({isQAServerRequest: (url: string) => url.startsWith('https://qa.exops.io')}));
-// Only setTimeSkew is used from here, and the skew test below asserts on it
 jest.mock('@userActions/Network', () => ({...jest.requireActual<typeof NetworkActions>('@userActions/Network'), setTimeSkew: jest.fn()}));
 jest.mock('@userActions/UpdateRequired', () => ({
     ...jest.requireActual<typeof UpdateRequiredActions>('@userActions/UpdateRequired'),
     alertUser: jest.fn(),
 }));
-// The once-per-request stage that lives in a .finally, so a retry inside attempt() would double it
 jest.mock('@libs/telemetry/markAppStartupNetworkRequestEnd', () => ({__esModule: true, default: jest.fn()}));
 jest.mock('@libs/Prefetch/registerPrefetchOnAppStart', () => ({__esModule: true, default: jest.fn()}));
 
@@ -47,7 +44,7 @@ function fetchHeaders(callIndex: number): Record<string, unknown> {
     return isRecord(headers) ? headers : {};
 }
 
-/** One queued mock response per fetch call, in order. `dateHeader` drives the setTimeSkew maths. */
+/** One queued mock response per fetch call, in order. */
 function mockFetchSequence(responses: Array<{status: number; body?: unknown; dateHeader?: string}>) {
     const fetchMock = jest.fn();
     for (const {status, body, dateHeader} of responses) {
@@ -123,7 +120,6 @@ describe('HttpUtils QA bearer', () => {
         mockFetchSequence([OK]);
         await HttpUtils.processHTTPRequest(PROD_URL, 'post');
 
-        // Then not even a microtask is spent: every request in the app goes through here
         expect(prepareQARequestAuth).not.toHaveBeenCalled();
         expect(fetchHeaders(0).Authorization).toBeUndefined();
         expect(fetchInit(0).credentials).toBe('omit');
@@ -183,7 +179,6 @@ describe('HttpUtils QA bearer', () => {
 
         expect(handleQAUnauthorized).toHaveBeenNthCalledWith(2, ROTATED_AUTH, {isRetry: true});
         expect(global.fetch).toHaveBeenCalledTimes(2);
-        // The retry reuses the credential it was handed, so the gate is never re-entered mid-request
         expect(prepareQARequestAuth).toHaveBeenCalledTimes(1);
     });
 
@@ -195,7 +190,6 @@ describe('HttpUtils QA bearer', () => {
     });
 
     it('leaves a QA 401 alone when the request carried no bearer', async () => {
-        // Given no session: the 401 says nothing about a token, because none was sent
         jest.mocked(prepareQARequestAuth).mockResolvedValue(undefined);
         mockFetchSequence([UNAUTHORIZED]);
 
@@ -218,14 +212,13 @@ describe('HttpUtils QA bearer', () => {
 
     // Pins the `startTime` placement. `OPEN_APP` is in addSkewList, so the skew maths runs; the Date header is
     // the post-preparation clock, so a correct implementation reports ~0. Capturing startTime at the top of
-    // attempt() instead would report ~5000ms and silently shift the app-wide clock offset.
+    // attemptRequest() instead would report ~5000ms and silently shift the app-wide clock offset.
     it('does not count the credential round trip as request latency', async () => {
         jest.useFakeTimers();
         const t0 = new Date('2026-01-01T00:00:00.000Z').valueOf();
         jest.setSystemTime(t0);
 
         jest.mocked(prepareQARequestAuth).mockImplementation(() => {
-            // The token exchange costs 5s of wall clock
             jest.advanceTimersByTime(5_000);
             return Promise.resolve(AUTH);
         });
@@ -240,8 +233,8 @@ describe('HttpUtils QA bearer', () => {
         jest.useRealTimers();
     });
 
-    // The reason attempt()/processJSONResponse are separated: the parsed-response stage fires alerts, so a
-    // retried response passing through it twice would double every one of them
+    // The reason attemptRequest()/processJSONResponse are separated: the parsed-response stage fires
+    // alerts, so a retried response passing through it twice would double every one of them
     it('fires alertUser exactly once across a refresh and retry', async () => {
         jest.mocked(handleQAUnauthorized).mockResolvedValue(ROTATED_AUTH);
         mockFetchSequence([UNAUTHORIZED, {status: 200, body: {jsonCode: CONST.JSON_CODE.UPDATE_REQUIRED}}]);
@@ -250,8 +243,8 @@ describe('HttpUtils QA bearer', () => {
         expect(alertUser).toHaveBeenCalledTimes(1);
     });
 
-    // The sibling once-per-request stage. It lives in a .finally rather than the third .then, so it is the
-    // one an executor is most likely to leave attached to attempt() — where a retry fires it twice.
+    // The sibling once-per-request stage. It lives in a .finally rather than the third .then, so a retry
+    // attached to attemptRequest() fires it twice.
     it('ends the startup-network-request span exactly once across a refresh and retry', async () => {
         jest.mocked(handleQAUnauthorized).mockResolvedValue(ROTATED_AUTH);
         mockFetchSequence([UNAUTHORIZED, OK]);

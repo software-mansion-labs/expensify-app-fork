@@ -29,8 +29,8 @@ const mockQAAuth = {...mockDefaultQAAuth};
 
 jest.mock('@src/CONFIG', () => ({__esModule: true, default: {QA_AUTH: mockQAAuth}}));
 
-// Jest resolves getWebCrypto/index.native.ts (the throwing stub) under the jest-expo preset,
-// so the provider is mocked. The default implementation is Node's real WebCrypto.
+// Jest resolves getWebCrypto/index.native.ts under the jest-expo preset, so the provider is mocked.
+// The default implementation is Node's real WebCrypto.
 jest.mock('@libs/CloudflareAccess/getWebCrypto', () => ({
     __esModule: true,
     default: {

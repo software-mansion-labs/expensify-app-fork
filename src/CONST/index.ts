@@ -3752,7 +3752,6 @@ const CONST = {
         ADHOC: 'adhoc',
     },
 
-    /** Which backend the app talks to. */
     SERVER: {
         PRODUCTION: 'production',
         STAGING: 'staging',

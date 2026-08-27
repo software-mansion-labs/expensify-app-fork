@@ -43,18 +43,15 @@ function runCapture(): CapturedAuthCallback {
         return {outcome: 'not-a-callback'};
     }
 
-    // Flow consumed before any validation: a replayed callback finds nothing however this call ends
     const params = new URL(window.location.href).searchParams;
     const flow = consumePendingAuthFlow();
 
-    // Unconditional: even an invalid callback must leave the user on a real route
     window.history.replaceState(null, '', toSafeReturnPath(flow?.returnURL));
 
     if (!flow) {
         return {outcome: 'no-pending-flow', errorMessage: 'No pending QA auth flow in this tab — start the sign-in again'};
     }
 
-    // State first: a callback that fails provenance is discarded wholesale, its other params untrusted
     if (params.get('state') !== flow.state) {
         return {outcome: 'invalid-callback', errorMessage: 'OAuth callback state mismatch'};
     }

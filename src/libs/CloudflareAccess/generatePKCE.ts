@@ -6,7 +6,6 @@ type PKCEPair = {
     /** The secret the client keeps and reveals only at token exchange */
     codeVerifier: string;
 
-    /** base64url(SHA-256(codeVerifier)), sent with the authorize request */
     codeChallenge: string;
 };
 

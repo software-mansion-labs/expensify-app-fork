@@ -1,6 +1,6 @@
 /**
  * Exchange half of the same-tab OAuth redirect. The callback URL was already read and rewritten by the
- * capture phase, which runs earlier in boot; all that is left is to spend the authorization code it approved.
+ * capture phase, which runs earlier in boot.
  */
 import {getCapturedCloudflareAuthCallback} from '@libs/CloudflareAccess/captureAuthCallbackURL';
 import Log from '@libs/Log';

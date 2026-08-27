@@ -28,7 +28,6 @@ function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, en
         return CONST.SERVER.QA;
     }
 
-    // Switching servers is not allowed on production
     if (envName === CONST.ENVIRONMENT.PRODUCTION) {
         return CONST.SERVER.PRODUCTION;
     }
@@ -37,7 +36,6 @@ function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, en
     // turns the QA gate off, but leaves the old Onyx value behind
     const storedServer = value === CONST.SERVER.QA && !CONFIG.EXPENSIFY.QA_API_ROOT ? undefined : value;
 
-    // Toggling between APIs is not allowed on an internal dev environment, with QA as the one exception
     if (CONFIG.IS_USING_LOCAL_WEB && storedServer !== CONST.SERVER.QA) {
         return CONST.SERVER.PRODUCTION;
     }
@@ -47,7 +45,6 @@ function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, en
 }
 
 getEnvironment().then((envName) => {
-    // We subscribe inside the .then so `envName` is already resolved whenever the Onyx callback runs.
     // Since this isn't connected to a UI anywhere, it's OK to use connectWithoutView()
     Onyx.connectWithoutView({
         key: ONYXKEYS.ACTIVE_SERVER,

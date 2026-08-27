@@ -1,4 +1,3 @@
-/** Owns the Cloudflare Access OAuth session for the QA server. Web-only */
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import {generatePKCEPair, generateState} from '@libs/CloudflareAccess/generatePKCE';
 import {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} from '@libs/CloudflareAccess/OAuthClient';
@@ -15,11 +14,7 @@ const ACCESS_TOKEN_EXPIRY_BUFFER_MS = 60_000;
 /** `undefined` = Onyx not read yet, `null` = read and absent */
 let sessionCache: CloudflareSession | null | undefined;
 
-/**
- * The async flows below cannot be cancelled, so each captures this at the start and re-checks it after
- * awaits. A mismatch makes the late result inert. Every new `await` added to this module must re-check the
- * captured generation afterwards.
- */
+/** The async flows below cannot be cancelled, so each captures this at the start and re-checks it after awaits */
 let sessionGeneration = 0;
 
 let resolveHydration!: () => void;
@@ -67,7 +62,6 @@ async function redirectToCloudflareSignIn(returnURL: string = window.location.hr
     try {
         const pkce = await generatePKCEPair();
         const state = generateState();
-        // Resolved before the flow record is stored, so a failed discovery leaves nothing behind
         const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
         if (generation !== sessionGeneration) {
             throw new Error('Cloudflare auth flow was cancelled');
@@ -91,8 +85,7 @@ function exchangeCodeForCloudflareSession({code, codeVerifier}: {code: string; c
             if (generation !== sessionGeneration) {
                 return;
             }
-            // Cache first: requests during this boot must see the token before disk I/O settles. A failed
-            // persist is only logged, because the cache keeps the usable session and a reload self-heals
+            // Cache first: requests during this boot must see the token before disk I/O settles
             sessionCache = session;
             return Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session).catch((error: unknown) => {
                 Log.warn('[CloudflareSession] Failed to persist the exchanged session', {error});
@@ -129,7 +122,6 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
     if (!current?.refreshToken) {
         return 'reauth-required';
     }
-    // Rotation already completed, here or in another tab, while this caller's request was in flight
     if (current.accessToken !== staleAccessToken) {
         return 'skipped-newer-token';
     }
@@ -142,8 +134,7 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
             return 'reauth-required';
         }
         sessionCache = session;
-        // A failed persist is only logged: the rotation already spent the old token, so the cache
-        // holds the only usable pair
+        // The rotation already spent the old token, so the cache holds the only usable pair
         await Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session).catch((error: unknown) => {
             Log.warn('[CloudflareSession] Failed to persist the rotated session', {error});
         });
@@ -160,7 +151,7 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
             return 'skipped-newer-token';
         }
         // Both codes mean the submitted token is spent (invalid_response = CF rotated but the new pair was
-        // unreadable). Never delete the shared session here. Another tab may hold a working rotation.
+        // unreadable). Another tab may hold a working rotation, so the shared session is never deleted here
         return 'reauth-required';
     }
 }

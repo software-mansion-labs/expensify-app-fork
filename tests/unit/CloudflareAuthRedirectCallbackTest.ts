@@ -1,7 +1,4 @@
 /**
- * The boot-time callback handling: the gate table keeping a callback that fails provenance away from the
- * token exchange, plus the URL rewrite that keeps the boot off the redirect path.
- *
  * Boot runs this in two phases — capture (before the app is imported) and exchange (after Onyx.init) — so
  * the tests drive both, which is the only combination that ever happens in the app.
  */
@@ -148,11 +145,11 @@ describe('the boot-time QA auth callback handling', () => {
         pendingAuthFlowStorage.savePendingAuthFlow(FLOW);
 
         // When the handler runs
-        // Then state must be validated before anything else: a callback failing provenance is discarded wholesale with its other params untrusted, so the planted code never reaches the exchange and the reported error is our mismatch, not the attacker's (CSRF/injection protection)
+        // Then state must be validated before anything else: a callback failing provenance is discarded wholesale with its other params untrusted, so the reported error is our mismatch rather than the attacker's
         expect(runBoot()).toBe('invalid-callback');
         expect(sessionActions.exchangeCodeForCloudflareSession).not.toHaveBeenCalled();
         expect(mockLogWarn).toHaveBeenCalledWith('Cloudflare sign-in callback did not complete', {outcome: 'invalid-callback', errorMessage: 'OAuth callback state mismatch'});
-        // Then the boot is still rescued off the redirect path, which has no app route
+        // Then the boot is still rescued off the redirect path
         expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/settings/troubleshoot');
     });
 
@@ -162,7 +159,7 @@ describe('the boot-time QA auth callback handling', () => {
         pendingAuthFlowStorage.savePendingAuthFlow(FLOW);
 
         // When the handler runs
-        // Then the refusal is surfaced with the provider's own description and no exchange is ever attempted. The user said no, so there is nothing legitimate to redeem
+        // Then the provider's own description is surfaced. The user said no, so there is nothing legitimate to redeem
         expect(runBoot()).toBe('provider-error');
         expect(sessionActions.exchangeCodeForCloudflareSession).not.toHaveBeenCalled();
         expect(mockLogWarn).toHaveBeenCalledWith('Cloudflare sign-in callback did not complete', {outcome: 'provider-error', errorMessage: 'User refused'});
@@ -174,7 +171,7 @@ describe('the boot-time QA auth callback handling', () => {
         pendingAuthFlowStorage.savePendingAuthFlow(FLOW);
 
         // When the handler runs
-        // Then the malformed callback is rejected without an exchange: with no code there is nothing to redeem, so calling the token endpoint could only fail or mislead
+        // Then with no code there is nothing to redeem, so calling the token endpoint could only fail or mislead
         expect(runBoot()).toBe('invalid-callback');
         expect(sessionActions.exchangeCodeForCloudflareSession).not.toHaveBeenCalled();
     });
@@ -184,14 +181,14 @@ describe('the boot-time QA auth callback handling', () => {
         arrangeCallbackURL('?code=auth-code-1&state=state-1');
 
         // When the handler runs
-        // Then the callback is refused without an exchange (nothing proves this tab initiated it), and with no stored returnURL the boot falls back to the root. Still a safe route off the redirect path, which has no app route,
+        // Then the callback is refused because nothing proves this tab initiated it, and with no stored returnURL the boot falls back to the root
         expect(runBoot()).toBe('no-pending-flow');
         expect(sessionActions.exchangeCodeForCloudflareSession).not.toHaveBeenCalled();
         expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/');
     });
 
     it('never navigates to a foreign origin, even though the returnURL is our own storage', () => {
-        // Given a genuine callback whose stored flow carries a foreign-origin returnURL. The one stored field fed back into navigation, so it must be treated as tainted even though it came from our own storage
+        // Given a genuine callback whose stored flow carries a foreign-origin returnURL
         arrangeCallbackURL('?code=auth-code-1&state=state-1');
         pendingAuthFlowStorage.savePendingAuthFlow({...FLOW, returnURL: 'https://evil.example.com/steal'});
 

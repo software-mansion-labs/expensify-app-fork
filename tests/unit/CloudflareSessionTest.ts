@@ -22,7 +22,7 @@ type PKCEPair = PKCEModule.PKCEPair;
 
 const AUTHORIZE_URL = 'https://team.cloudflareaccess.com/cdn-cgi/access/oauth/authorization?mock=1';
 
-// The module gates its subscription and cleanup on a complete config. Everything under test is behind it
+// The module gates its subscription on a complete config. Everything under test is behind it
 jest.mock('@libs/CloudflareAccess/Config', () => ({
     __esModule: true,
     ...jest.requireActual<typeof ConfigModule>('@libs/CloudflareAccess/Config'),
@@ -69,9 +69,8 @@ beforeEach(() => {
     jest.resetModules();
     // Nothing here makes an HTTP request, but resetModules gives every test its own copy of the network
     // queues, and one of those flushes during an await in this suite, reaching jsdom's missing `Request`.
-    // Stubbed so a leaked request from any earlier test cannot fail whichever test happens to be running.
     global.fetch = jest.fn(() => Promise.reject(new Error('fetch is not available in CloudflareSessionTest')));
-    // The redirect flow record lives in jsdom's real sessionStorage. Drop leftovers from earlier tests
+    // The redirect flow record lives in jsdom's real sessionStorage
     window.sessionStorage.clear();
     // jsdom throws "Not implemented: navigation" on a real location.assign
     realLocation = window.location;
@@ -88,7 +87,6 @@ beforeEach(() => {
     pkce = require<typeof PKCEModule>('@libs/CloudflareAccess/generatePKCE');
     pendingAuthFlowStorage = require<typeof PendingAuthFlowStorageModule>('@libs/CloudflareAccess/PendingAuthFlowStorage');
     SessionActions = require<typeof SessionActionsModule>('@userActions/CloudflareSession');
-    // Required after the actions module, which registers its cleanup callback on import
     sessionCleanup = require<typeof SessionCleanupModule>('@libs/SessionCleanup');
 });
 
@@ -148,7 +146,6 @@ describe('refreshCloudflareSession', () => {
             return undefined;
         });
         await waitForBatchedUpdates();
-        // Not before the rotated pair is persisted
         expect(isSettled).toBe(false);
 
         persistDeferred.resolve();
@@ -167,8 +164,7 @@ describe('refreshCloudflareSession', () => {
     });
 
     it.each(['invalid_grant', 'invalid_response'])('keeps the session and resolves reauth-required on the terminal %s', async (code) => {
-        // Given a stored session whose refresh the server rejects with a terminal OAuth error (each
-        // parametrized code means this refresh token can never succeed again)
+        // Given a stored session whose refresh the server rejects with a terminal OAuth error
         await seedSession(SESSION_A);
         jest.mocked(oAuthClient.refreshTokens).mockRejectedValue(new oAuthClient.OAuthError(code));
 
@@ -209,8 +205,7 @@ describe('refreshCloudflareSession', () => {
     it('resolves reauth-required without a network call when there is no session', async () => {
         // Given an empty store: there is no refresh token to spend
         await seedSession(null);
-        // When a refresh is requested, Then it resolves reauth-required without touching the network,
-        // because the authorize round trip is the only path that can produce a session from nothing
+        // When a refresh is requested, Then it resolves reauth-required without touching the network
         await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('reauth-required');
         expect(oAuthClient.refreshTokens).not.toHaveBeenCalled();
     });
@@ -234,8 +229,7 @@ describe('refreshCloudflareSession', () => {
     });
 
     it('re-reads the session after acquiring the cross-tab lock, so the tab that waited cannot spend a rotated token', async () => {
-        // Given a Web Lock held by another tab, so this tab's refresh queues behind it (the cross-tab lock
-        // exists because refresh tokens are single-use and only one context may spend one at a time)
+        // Given a Web Lock held by another tab, so this tab's refresh queues behind it
         await seedSession(SESSION_A);
         const lockDeferred = Promise.withResolvers<void>();
         Object.defineProperty(navigator, 'locks', {
@@ -256,8 +250,7 @@ describe('refreshCloudflareSession', () => {
     });
 
     it('does not persist a rotation that resolves after the session was dropped', async () => {
-        // Given a stored session and a refresh that will still be in flight when the session is dropped.
-        // In-flight async work cannot be cancelled, only have its result discarded
+        // Given a stored session and a refresh that will still be in flight when the session is dropped
         await seedSession(SESSION_A);
         const refreshDeferred = Promise.withResolvers<CloudflareSession>();
         jest.mocked(oAuthClient.refreshTokens).mockReturnValue(refreshDeferred.promise);
@@ -306,8 +299,8 @@ describe('redirectToCloudflareSignIn', () => {
         await waitForBatchedUpdates();
 
         expect(assignSpy).toHaveBeenCalledWith(AUTHORIZE_URL);
-        // Then the record must already be readable at the moment the navigation is requested: module memory
-        // does not survive the unload, and without the stored verifier the returning code could never be exchanged
+        // Then the record must already be readable at the moment the navigation is requested: without the
+        // stored verifier the returning code could never be exchanged
         expect(savedBeforeAssign.at(0)).not.toBeNull();
         expect(pendingAuthFlowStorage.consumePendingAuthFlow()).toMatchObject({
             state: 'test-state',
@@ -413,8 +406,7 @@ describe('exchangeCodeForCloudflareSession', () => {
         });
         await waitForBatchedUpdates();
 
-        // Then the session is cached before the disk write settles. Requests fired during this boot need the
-        // token before disk I/O finishes. While the promise still waits for the write to actually complete
+        // Then the session is cached before the disk write settles, while the promise still waits for the write
         expect(oAuthClient.exchangeCode).toHaveBeenCalledWith({code: 'auth-code-1', codeVerifier: PAIR_1.codeVerifier});
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
         expect(isSettled).toBe(false);
@@ -508,7 +500,6 @@ describe('builds without QA auth configured', () => {
         const connectedKeys = connectSpy.mock.calls.map(([connection]) => connection.key);
         expect(connectedKeys).not.toContain(ONYXKEYS.CLOUDFLARE_SESSION);
         expect(sessionActions.getCloudflareSession()).toBeNull();
-        // Then hydration still resolves even though no subscription will ever fire, so no caller can hang on it
         await expect(sessionActions.waitForCloudflareSessionHydration()).resolves.toBeUndefined();
         connectSpy.mockRestore();
     });
@@ -533,7 +524,7 @@ describe('markCloudflareSessionRejected', () => {
         // When the caller reports the token it saw, which is now stale news
         await SessionActions.markCloudflareSessionRejected(SESSION_A.accessToken);
 
-        // Then the working rotation survives. Deleting it would take a live session down with the dead one
+        // Then the working rotation survives
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_B);
     });
 });

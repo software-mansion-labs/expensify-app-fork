@@ -1,7 +1,3 @@
-/**
- * Carries no page chrome of its own: it renders both in a full-height settings screen and in the
- * fixed-height test tools card, so each host supplies the wrapper.
- */
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {ModalActions} from '@components/Modal/Global/ModalContext';
 import SelectionList from '@components/SelectionList';
@@ -29,7 +25,6 @@ import React, {useState} from 'react';
 
 type Server = ValueOf<typeof CONST.SERVER>;
 
-/** Narrows keyForList so onSelectRow hands back a server rather than a bare string */
 type ServerListItem = ListItem & {keyForList: Server};
 
 const ALWAYS_SELECTABLE_SERVERS = [CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING] as const;
@@ -57,8 +52,8 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
     }));
 
     const confirmAndApplyServerChange = async () => {
-        // QA is a separate database, so the same email is a different account there and setActiveServer ends the
-        // session on either crossing. There is no session to lose on the sign-in screen.
+        // QA is a separate database, so the same email is a different account there and setActiveServer ends
+        // the session on either crossing.
         const shouldConfirmSignOut = isAuthenticated && selectedServer !== activeServer && (selectedServer === CONST.SERVER.QA || activeServer === CONST.SERVER.QA);
 
         if (shouldConfirmSignOut) {
@@ -70,7 +65,6 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
                 shouldShowCancelButton: true,
             });
             if (result.action !== ModalActions.CONFIRM) {
-                // Drop the pick as well, so the radio keeps reporting the server that is actually active
                 setSelectedServer(activeServer);
                 return;
             }

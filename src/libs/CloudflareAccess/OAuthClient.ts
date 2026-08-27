@@ -1,7 +1,3 @@
-/**
- * Protocol failures surface as OAuthError, so callers can tell terminal outcomes from transient transport
- * errors.
- */
 import {isRecord} from '@libs/ObjectUtils';
 
 import CONFIG from '@src/CONFIG';
@@ -32,14 +28,14 @@ async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSessi
         credentials: 'omit',
         // A 307/308 would re-send this body (code, verifier, refresh token) wherever the redirect points
         redirect: 'error',
-        // Times out as a transient transport error (not an OAuthError), so the session stays intact
+        // Times out as a transient transport error, not an OAuthError
         signal: AbortSignal.timeout(TOKEN_ENDPOINT_TIMEOUT_MS),
     });
 
     const json: unknown = await response.json().catch(() => null);
 
     if (!response.ok) {
-        // OAuth error responses come as {error, error_description} on a 4xx (RFC 6749 §5.2)
+        // RFC 6749 §5.2
         if (isRecord(json) && typeof json.error === 'string') {
             throw new OAuthError(json.error, typeof json.error_description === 'string' ? json.error_description : undefined);
         }

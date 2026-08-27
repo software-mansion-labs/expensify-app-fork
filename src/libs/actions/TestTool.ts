@@ -12,8 +12,8 @@ import throttle from 'lodash/throttle';
 import {close} from './Modal';
 
 /**
- * Get the backTo parameter the test tools modal was opened with. It lives on the modal's root screen, and the
- * focused route carries no backTo once a child screen such as the server selector is on top.
+ * The backTo lives on the modal's root screen; the focused route carries none once a child screen
+ * such as the server selector is on top.
  */
 function getBackToParam(): Route | undefined {
     const modalRoute = navigationRef.current?.getRootState()?.routes.find((route) => route.name === NAVIGATORS.TEST_TOOLS_MODAL_NAVIGATOR);
