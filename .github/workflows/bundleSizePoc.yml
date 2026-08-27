@@ -1,9 +1,12 @@
-# TEMPORARY POC - not for merge. Answers two questions about measuring the web bundle in CI:
-#   1. Do two builds of one commit report a delta of exactly 0 B? (the noise floor)
+# TEMPORARY POC - not for merge. Answers three questions about measuring the web bundle in CI:
+#   1. Do two builds of one commit on the SAME runner report a delta of exactly 0 B? (the noise floor)
 #   2. Does a deliberate byte increase show up in the rendered comment section?
+#   3. Do two builds of one commit on DIFFERENT runners report a delta of exactly 0 B? In the real design
+#      the pull request build and the `main` build run on two independently provisioned runners, so this is
+#      the floor that the comment actually inherits.
 # Runs on a branch push, so it needs no pull request and posts nothing. Results land in the job summary.
 name: Bundle size POC
-# cspell:ignore hashlib
+# cspell:ignore hashlib pipefail
 
 on:
   workflow_dispatch:
@@ -131,3 +134,71 @@ jobs:
             exit 1
           fi
           echo "::notice::CI builds are byte-identical, so a non-zero delta means a real change."
+
+  # Question 3. Two independently provisioned runners build the same commit once each. Nothing is shared
+  # between them, which is exactly the relationship between a pull request build and a `main` build.
+  cross-runner-build:
+    name: Cross-runner build ${{ matrix.runner }}
+    runs-on: ${{ github.repository_owner == 'Expensify' && 'blacksmith-8vcpu-ubuntu-2404' || 'ubuntu-latest' }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [a, b]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Build web
+        run: npm run build
+
+      - name: Measure
+        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out "runner-${{ matrix.runner }}.json"
+
+      - name: Upload measurement
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: bundle-size-runner-${{ matrix.runner }}
+          path: runner-${{ matrix.runner }}.json
+
+  cross-runner-floor:
+    name: Question 3 - is the floor 0 B across runners?
+    needs: cross-runner-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Download runner a measurement
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: bundle-size-runner-a
+
+      - name: Download runner b measurement
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: bundle-size-runner-b
+
+      - name: Compare
+        run: |
+          set -o pipefail
+          status=0
+          ./node_modules/.bin/bun ./scripts/bundleSize.ts --assert-same runner-a.json runner-b.json 2>&1 | tee cross.txt || status=$?
+          {
+            echo '## Question 3: is the floor 0 B across two runners?'
+            echo
+            echo '```'
+            cat cross.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Two runners building one commit disagree. Every delta the comment reports inherits this difference as its floor."
+          fi
+          exit "$status"

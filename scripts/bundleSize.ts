@@ -29,14 +29,42 @@ type BundleSizeReport = {
 const GZIP_LEVEL = 9;
 
 /**
- * A per-chunk row is promoted out of the collapsed block only above this. Measured cause: injecting one
- * module into `main` moved `vendors` by -4 B with no dependency touched, so small per-chunk moves are
- * module-id and hashing churn rather than signal. The aggregates are always shown, whatever they moved by.
+ * A per-chunk row is promoted out of the collapsed block only above this. The aggregates are always shown,
+ * whatever they moved by.
  */
 const CHUNK_HEADLINE_FLOOR_BYTES = 1024;
 
+/** Matches the debug id `sentry-webpack-plugin` injects, and captures the UUID itself. */
+const SENTRY_DEBUG_ID = /_sentryDebugIds\[[A-Za-z_$\d]+\]="([\da-f-]{36})"/;
+
+const SENTRY_DEBUG_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * `sentry-webpack-plugin` injects a fresh random UUID into every chunk on every build, after content
+ * hashing, so two builds of one commit emit the same 94 filenames with different bytes inside them. The UUID
+ * is always 36 characters, so raw sizes are unaffected, but random hex compresses differently: measured
+ * across all 94 chunks of one build, substituting random debug ids moves a single chunk by up to 10 B and
+ * the all-JS gzip total by up to 352 B. Replacing the UUID with a fixed one of the same length before
+ * compressing makes gzip reproducible, at the cost of reading 13-45 B per chunk below the shipped bytes -
+ * a constant offset that is identical on both sides of a comparison, so it cannot move a delta.
+ *
+ * Only the captured UUID is replaced, so the RFC 4122 namespace constants that appear in vendored UUID
+ * libraries (`6ba7b810-9dad-11d1-80b4-00c04fd430c8` and friends) are left alone.
+ *
+ * latin1 round-trips arbitrary bytes unchanged, and the replacement is the same length as the UUID, so the
+ * buffer handed to gzip differs from the file in exactly those 36-byte runs and nowhere else.
+ */
+function withStableDebugId(buffer: Buffer): Buffer {
+    const text = buffer.toString('latin1');
+    const debugId = text.match(SENTRY_DEBUG_ID)?.[1];
+    if (!debugId) {
+        return buffer;
+    }
+    return Buffer.from(text.replaceAll(debugId, SENTRY_DEBUG_ID_PLACEHOLDER), 'latin1');
+}
+
 function gzipSize(buffer: Buffer): number {
-    return zlib.gzipSync(buffer, {level: GZIP_LEVEL}).length;
+    return zlib.gzipSync(withStableDebugId(buffer), {level: GZIP_LEVEL}).length;
 }
 
 /**
@@ -146,8 +174,8 @@ function row(label: string, base: number, head: number): string {
 
 function render(base: BundleSizeReport, head: BundleSizeReport): string {
     const stable = Object.keys(head.chunks).filter((name) => !/^\d+$/.test(name));
-    // Raw first: it is reproducible to the byte across rebuilds, while gzip carries a few bytes of noise
-    // from per-build Sentry debug IDs and a non-deterministically ordered re-export list.
+    // Raw first: it is what the JavaScript engine parses on every load, cached or not, and it is emitted
+    // identically by every rebuild. Gzip is what crosses the network on the loads that are not cache hits.
     const headline: string[] = [
         row('initial JS (raw)', base.initialJsRaw, head.initialJsRaw),
         row('initial JS (gzip)', base.initialJsGzip, head.initialJsGzip),
@@ -197,7 +225,7 @@ function render(base: BundleSizeReport, head: BundleSizeReport): string {
         '| --- | --- | --- | --- |',
         ...detail,
         '',
-        `Measured with \`npm run build\`, gzip level ${GZIP_LEVEL}. Per-chunk rows below ${bytes(CHUNK_HEADLINE_FLOOR_BYTES)} stay in this block.`,
+        `Measured with \`npm run build\`, gzip level ${GZIP_LEVEL}, with the Sentry debug id held constant so gzip is reproducible. Per-chunk rows below ${bytes(CHUNK_HEADLINE_FLOOR_BYTES)} stay in this block.`,
         '',
         '</details>',
     ].join('\n');
@@ -235,7 +263,7 @@ function assertSame(aPath: string, bPath: string): void {
     }
 
     if (differences.length === 0) {
-        process.stdout.write('identical: two builds of this commit produced the same bytes in every measured key.\n');
+        process.stdout.write('identical: both measurements report the same size in every measured key.\n');
         return;
     }
     process.stdout.write(`NOT identical, ${differences.length} differing keys:\n${differences.map((line) => `  ${line}`).join('\n')}\n`);
