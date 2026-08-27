@@ -146,7 +146,14 @@ function row(label: string, base: number, head: number): string {
 
 function render(base: BundleSizeReport, head: BundleSizeReport): string {
     const stable = Object.keys(head.chunks).filter((name) => !/^\d+$/.test(name));
-    const headline: string[] = [row('initial JS (gzip)', base.initialJsGzip, head.initialJsGzip), row('all JS (gzip)', base.allJsGzip, head.allJsGzip)];
+    // Raw first: it is reproducible to the byte across rebuilds, while gzip carries a few bytes of noise
+    // from per-build Sentry debug IDs and a non-deterministically ordered re-export list.
+    const headline: string[] = [
+        row('initial JS (raw)', base.initialJsRaw, head.initialJsRaw),
+        row('initial JS (gzip)', base.initialJsGzip, head.initialJsGzip),
+        row('all JS (raw)', base.allJsRaw, head.allJsRaw),
+        row('all JS (gzip)', base.allJsGzip, head.allJsGzip),
+    ];
     for (const name of stable) {
         const headChunk = head.chunks[name];
         const baseChunk = base.chunks[name];
@@ -155,7 +162,7 @@ function render(base: BundleSizeReport, head: BundleSizeReport): string {
         }
     }
 
-    const detail: string[] = [row('initial JS (raw)', base.initialJsRaw, head.initialJsRaw), row('all JS (raw)', base.allJsRaw, head.allJsRaw)];
+    const detail: string[] = [];
     for (const name of stable) {
         const baseChunk = base.chunks[name];
         if (baseChunk) {
