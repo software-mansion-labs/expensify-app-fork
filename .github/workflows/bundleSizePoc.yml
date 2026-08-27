@@ -1,0 +1,127 @@
+# TEMPORARY POC - not for merge. Answers two questions about measuring the web bundle in CI:
+#   1. Do two builds of one commit report a delta of exactly 0 B? (the noise floor)
+#   2. Does a deliberate byte increase show up in the rendered comment section?
+# Runs on a branch push, so it needs no pull request and posts nothing. Results land in the job summary.
+name: Bundle size POC
+# cspell:ignore hashlib
+
+on:
+  workflow_dispatch:
+    inputs:
+      ballast-bytes:
+        description: Bytes of near-incompressible data to inject on the initial path
+        type: string
+        default: '200000'
+  push:
+    branches:
+      - 'poc/bundle-size**'
+
+permissions:
+  contents: read
+
+jobs:
+  bundle-size-poc:
+    name: Bundle size POC
+    runs-on: ${{ github.repository_owner == 'Expensify' && 'blacksmith-8vcpu-ubuntu-2404' || 'ubuntu-latest' }}
+    timeout-minutes: 60
+    env:
+      BALLAST_BYTES: ${{ inputs.ballast-bytes || '200000' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      # No SENTRY_AUTH_TOKEN: the source map upload 401s and the build still exits 0, which is what a
+      # secret-less job and a fork pull request both get.
+      - name: Build web (first build of this commit)
+        run: npm run build
+
+      - name: Measure first build
+        run: bun ./scripts/bundleSize.ts --out base.json
+
+      - name: Build web (second build of the same commit)
+        run: npm run build
+
+      - name: Measure second build
+        run: bun ./scripts/bundleSize.ts --out rebuild.json
+
+      # The floor question. The first build runs on a cold rspack cache and the second on a warm one, so
+      # this also tells us whether the cache changes the emitted bytes.
+      - name: Question 1 - is the CI build byte-identical?
+        id: floor
+        continue-on-error: true
+        run: |
+          {
+            echo '## Question 1: is the CI build byte-identical?'
+            echo
+            echo '```'
+            bun ./scripts/bundleSize.ts --assert-same base.json rebuild.json 2>&1 | tee floor.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Inject ballast on the initial path
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, io, os
+          target = int(os.environ['BALLAST_BYTES'])
+          buf, seed = b'', b'bundle-size-poc'
+          while len(buf) < target:
+              seed = hashlib.sha512(seed).digest()
+              buf += seed
+          payload = base64.b64encode(buf[:target]).decode()
+          io.open('src/libs/pocBallast.ts', 'w', encoding='utf-8').write(
+              '/* eslint-disable */\n'
+              '// TEMPORARY POC BALLAST. Assigns to globalThis so nothing can tree-shake it away.\n'
+              "const POC_BALLAST = '%s';\n"
+              "(globalThis as unknown as Record<string, string>).__POC_BALLAST__ = POC_BALLAST;\n"
+              'export default POC_BALLAST;\n' % payload
+          )
+          app = io.open('src/App.tsx', encoding='utf-8').read()
+          anchor = "import '../wdyr';"
+          assert app.count(anchor) == 1, 'anchor import not found in src/App.tsx'
+          io.open('src/App.tsx', 'w', encoding='utf-8').write(
+              app.replace(anchor, anchor + "\nimport './libs/pocBallast';")
+          )
+          print('injected %d bytes of payload' % target)
+          PY
+
+      - name: Build web (with ballast)
+        run: npm run build
+
+      - name: Measure build with ballast
+        run: bun ./scripts/bundleSize.ts --out head.json --sha "${{ github.sha }}-with-ballast"
+
+      - name: Question 2 - does the comment section show the increase?
+        run: |
+          {
+            echo '## Question 2: does the rendered section show the increase?'
+            echo
+            echo "Injected ${BALLAST_BYTES} B of near-incompressible data into a module imported by \`src/App.tsx\`."
+            echo
+            bun ./scripts/bundleSize.ts --compare base.json head.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Restore the tree
+        if: always()
+        run: git checkout src/App.tsx && rm -f src/libs/pocBallast.ts
+
+      - name: Upload measurements
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: bundle-size-poc
+          path: |
+            base.json
+            rebuild.json
+            head.json
+            floor.txt
+
+      - name: Verdict
+        run: |
+          if [ "${{ steps.floor.outcome }}" != 'success' ]; then
+            echo "::error::Two CI builds of one commit are NOT byte-identical. See the job summary: every delta this tooling reports carries an unknown floor until this is explained."
+            exit 1
+          fi
+          echo "::notice::CI builds are byte-identical, so a non-zero delta means a real change."
