@@ -1,0 +1,117 @@
+# Measures the web bundle a pull request emits, and every measurement `main` needs to be compared against.
+#
+# This workflow only measures and uploads. It never comments: a `pull_request` run from a fork holds a
+# read-only token, and giving this job a write token would mean running a fork's build with that token in
+# scope. `bundleSizeComment.yml` follows this workflow and does the posting, from the default branch's code.
+#
+# Artifact upload works from a fork run because artifacts use the runner's own runtime token rather than
+# `GITHUB_TOKEN`, which is what makes the split possible at all.
+name: Bundle size
+# cspell:ignore argjson
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # Everything that can change what `npm run build` emits: app sources, the bundler configuration, the
+    # assets it embeds, the dependency tree, and the patches applied to it. The measurement tooling itself
+    # is included so a change to how bytes are counted re-counts them.
+    paths:
+      - 'src/**'
+      - 'config/**'
+      - 'assets/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'patches/**'
+      - 'scripts/bundleSize.ts'
+      - '.github/workflows/bundleSize.yml'
+  push:
+    # `main` is the branch whose measurements are the baselines. `poc/bundle-size**` is TEMPORARY: while this
+    # is being proven out on a fork, the fork's default branch is the POC branch, and the follower resolves
+    # baselines from whatever the default branch is. Remove that line before this ships.
+    branches: [main, 'poc/bundle-size**']
+    paths:
+      - 'src/**'
+      - 'config/**'
+      - 'assets/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'patches/**'
+      - 'scripts/bundleSize.ts'
+      - '.github/workflows/bundleSize.yml'
+
+permissions:
+  contents: read
+
+# One measurement per pull request head is enough, so a superseded push is cancelled. A `main` commit is
+# never cancelled: its measurement is the baseline every later pull request is compared against, and the
+# grouping key is the commit itself so two `main` commits never contend.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  measure:
+    name: Measure
+    runs-on: ${{ github.repository_owner == 'Expensify' && 'blacksmith-8vcpu-ubuntu-2404' || 'ubuntu-latest' }}
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      # Exactly the command `buildWeb.yml` runs for a deploy, with no added flags: any bundler configuration
+      # change risks measuring a bundle that is not the bundle that ships. No `SENTRY_AUTH_TOKEN` is passed,
+      # so the source map upload 401s and the build still exits 0 - the same path a fork run takes.
+      - name: Build web
+        run: npm run build
+
+      # For a `pull_request` run, `actions/checkout` checks out the merge ref, so `git rev-parse HEAD` is the
+      # ephemeral merge commit. The head SHA is what the comment has to be keyed to.
+      - name: Measure
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node ./scripts/bundleSize.ts --out bundle-size.json --sha "$HEAD_SHA"
+
+      # The follower cannot read the pull request number from the `workflow_run` payload for a fork run, so
+      # it travels in the artifact. `base.sha` is the base branch tip this head was compared against, which
+      # is where the follower starts its merge-base lookup.
+      - name: Record what was measured
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          BASE_REF: ${{ github.event.pull_request.base.ref || '' }}
+        run: |
+          jq -n \
+            --argjson prNumber "${PR_NUMBER:-null}" \
+            --arg headSha "$HEAD_SHA" \
+            --arg baseSha "$BASE_SHA" \
+            --arg baseRef "$BASE_REF" \
+            --arg event "$GITHUB_EVENT_NAME" \
+            '{prNumber: $prNumber, headSha: $headSha, baseSha: $baseSha, baseRef: $baseRef, event: $event}' \
+            > bundle-size-meta.json
+          cat bundle-size-meta.json
+
+      # `main` measurements are baselines for every pull request opened afterwards, so they are kept for the
+      # maximum default retention. A pull request's own measurement is read once, minutes later.
+      - name: Upload measurement
+        # v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: bundle-size
+          retention-days: ${{ github.event_name == 'push' && 90 || 7 }}
+          path: |
+            bundle-size.json
+            bundle-size-meta.json
+
+      - name: Summarize
+        run: |
+          {
+            echo '## Bundle size measured'
+            echo
+            echo '```json'
+            cat bundle-size.json | jq 'del(.chunks)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

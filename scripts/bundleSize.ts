@@ -1,11 +1,17 @@
 /**
  * Measures the emitted web bundle in `dist/` and writes a JSON summary, or compares two summaries and
- * renders the `### Bundle size` section of the `## Performance` pull request comment.
+ * renders the body of the sticky `## Bundle size` pull request comment.
  *
  * Usage:
- *   bun ./scripts/bundleSize.ts [--dist dist] [--out bundle-size.json] [--sha <sha>]
- *   bun ./scripts/bundleSize.ts --compare <base.json> <head.json>
- *   bun ./scripts/bundleSize.ts --assert-same <a.json> <b.json>
+ *   node ./scripts/bundleSize.ts [--dist dist] [--out bundle-size.json] [--sha <sha>]
+ *   node ./scripts/bundleSize.ts --compare <base.json> <head.json> [--merge-base-sha <sha>]
+ *   node ./scripts/bundleSize.ts --no-baseline <head.json>
+ *   node ./scripts/bundleSize.ts --assert-same <a.json> <b.json>
+ *   node ./scripts/bundleSize.ts --marker
+ *
+ * This is type-stripping-only TypeScript with no dependency outside `node:`, so Node runs it with no
+ * `node_modules` present and the comment workflow needs no `npm ci`. bun runs it too, but bun and Node do
+ * not agree on gzip sizes, so every measurement records which one took it - see `MEASURED_WITH`.
  */
 import {execSync} from 'node:child_process';
 import fs from 'node:fs';
@@ -16,6 +22,8 @@ type ChunkSizes = {raw: number; gzip: number; initial: boolean};
 
 type BundleSizeReport = {
     sha: string;
+    /** Optional because reports written before this field existed are still readable. */
+    measuredWith?: string;
     initialJsRaw: number;
     initialJsGzip: number;
     allJsRaw: number;
@@ -26,7 +34,64 @@ type BundleSizeReport = {
     chunks: Record<string, ChunkSizes>;
 };
 
+/**
+ * Which `main` measurement the head is being compared against, and how it was found.
+ *
+ * `merge-base` is the intended case. `ancestor` is the honest degradation: the merge base itself has no
+ * measurement, so the nearest `main` commit that does stands in, and the comment says which and why.
+ * `missing` is no baseline at all, which renders the head's own sizes rather than inventing a delta.
+ */
+type Baseline = {kind: 'merge-base'; report: BundleSizeReport} | {kind: 'ancestor'; report: BundleSizeReport; mergeBaseSha: string} | {kind: 'missing'};
+
 const GZIP_LEVEL = 9;
+
+/**
+ * Hidden HTML comment that identifies the comment this script's output belongs in, so the workflow edits
+ * one comment on every push instead of appending a new one. It lives here rather than in the workflow so
+ * that the renderer and the poster cannot disagree about it; `--marker` prints it for the workflow to read.
+ */
+const STICKY_MARKER = '<!-- perf-bundle-size -->';
+
+/** Git's default abbreviation in this repository. Long enough to be unambiguous, short enough to read. */
+const SHORT_SHA_LENGTH = 11;
+
+/**
+ * Which runtime compressed the bytes, recorded in every report because the answer changes the numbers.
+ *
+ * Measured on one `dist/` of 94 chunks: raw sizes are identical, and every gzip size differs. bun and Node
+ * ship different zlib implementations, and at level 9 they disagree by up to 3,266 B on `main` and 12,617 B
+ * across all JavaScript - well above the 1,024 B at which this script promotes a per-chunk row. A baseline
+ * measured by one runtime and a head measured by the other would therefore report thousands of bytes of
+ * tooling difference as if a pull request had added them, so comparing across runtimes is refused outright.
+ *
+ * Everything that produces a comparable measurement runs `node`. bun would work equally well as the choice,
+ * but Node runs this file with no `node_modules` present, which is what lets the comment workflow skip
+ * `npm ci` entirely.
+ */
+const MEASURED_WITH = process.versions.bun ? `bun ${process.versions.bun}` : `node ${process.version}`;
+
+/** `node v26.5.0` -> `node`. The runtime is what decides the bytes; the version is recorded for a reader. */
+function runtimeName(measuredWith: string): string {
+    return measuredWith.split(' ').at(0) ?? measuredWith;
+}
+
+/**
+ * Refuses a comparison that would report a difference in compressors as a difference in code. A report
+ * written before this field existed cannot be checked, so it is allowed through with a warning rather than
+ * failing every comparison against an artifact that is already on disk.
+ */
+function assertComparable(a: BundleSizeReport, b: BundleSizeReport): void {
+    if (!a.measuredWith || !b.measuredWith) {
+        process.stderr.write('One of these measurements does not record which runtime measured it, so gzip sizes cannot be confirmed comparable.\n');
+        return;
+    }
+    if (runtimeName(a.measuredWith) !== runtimeName(b.measuredWith)) {
+        throw new Error(
+            `These measurements were taken by different runtimes (${a.measuredWith} and ${b.measuredWith}), which compress the same bytes to different sizes. ` +
+                'Comparing them would report the compressor as a code change. Re-measure both sides with the same runtime.',
+        );
+    }
+}
 
 /**
  * A per-chunk row is promoted out of the collapsed block only above this. The aggregates are always shown,
@@ -149,7 +214,7 @@ function measure(distDir: string, sha: string): BundleSizeReport {
         throw new Error(`index.html in ${distDir} references no chunk that exists on disk.`);
     }
 
-    return {sha, initialJsRaw, initialJsGzip, allJsRaw, allJsGzip, cssRaw, cssGzip, largestChunk, chunks};
+    return {sha, measuredWith: MEASURED_WITH, initialJsRaw, initialJsGzip, allJsRaw, allJsGzip, cssRaw, cssGzip, largestChunk, chunks};
 }
 
 function isReport(value: unknown): value is BundleSizeReport {
@@ -179,64 +244,100 @@ function delta(base: number, head: number): string {
     return `${sign}${bytes(diff)} (${sign}${percent.toFixed(2)}%)`;
 }
 
-function row(label: string, base: number, head: number): string {
+/** With no baseline the row is one value wide, so the comment cannot read as a delta of zero. */
+function row(label: string, head: number, base?: number): string {
+    if (base === undefined) {
+        return `| ${label} | ${bytes(head)} |`;
+    }
     return `| ${label} | ${bytes(head)} | ${bytes(base)} | ${delta(base, head)} |`;
 }
 
-function render(base: BundleSizeReport, head: BundleSizeReport): string {
+function shortSha(sha: string): string {
+    return sha.slice(0, SHORT_SHA_LENGTH);
+}
+
+/** States what was measured and what it was measured against, including when that is not the merge base. */
+function provenance(head: BundleSizeReport, baseline: Baseline): string {
+    if (baseline.kind === 'merge-base') {
+        return `Measured at \`${shortSha(head.sha)}\`, against \`main\` at \`${shortSha(baseline.report.sha)}\`, this pull request's merge base.`;
+    }
+    if (baseline.kind === 'ancestor') {
+        return (
+            `Measured at \`${shortSha(head.sha)}\`, against \`main\` at \`${shortSha(baseline.report.sha)}\`. ` +
+            `This pull request's merge base \`${shortSha(baseline.mergeBaseSha)}\` has no measurement, so the comparison uses the nearest \`main\` commit that does, ` +
+            'and the change column also carries whatever landed on `main` between those two commits.'
+        );
+    }
+    return `Measured at \`${shortSha(head.sha)}\`. No \`main\` measurement resolved, so these are this pull request's own sizes with nothing to compare them against.`;
+}
+
+function render(head: BundleSizeReport, baseline: Baseline): string {
+    const base = baseline.kind === 'missing' ? undefined : baseline.report;
     const stable = Object.keys(head.chunks).filter((name) => !/^\d+$/.test(name));
     // Raw first: it is what the JavaScript engine parses on every load, cached or not, and it is emitted
     // identically by every rebuild. Gzip is what crosses the network on the loads that are not cache hits.
     const headline: string[] = [
-        row('initial JS (raw)', base.initialJsRaw, head.initialJsRaw),
-        row('initial JS (gzip)', base.initialJsGzip, head.initialJsGzip),
-        row('all JS (raw)', base.allJsRaw, head.allJsRaw),
-        row('all JS (gzip)', base.allJsGzip, head.allJsGzip),
+        row('initial JS (raw)', head.initialJsRaw, base?.initialJsRaw),
+        row('initial JS (gzip)', head.initialJsGzip, base?.initialJsGzip),
+        row('all JS (raw)', head.allJsRaw, base?.allJsRaw),
+        row('all JS (gzip)', head.allJsGzip, base?.allJsGzip),
     ];
     for (const name of stable) {
         const headChunk = head.chunks[name];
-        const baseChunk = base.chunks[name];
+        const baseChunk = base?.chunks[name];
         if (headChunk.initial && baseChunk && Math.abs(headChunk.gzip - baseChunk.gzip) >= CHUNK_HEADLINE_FLOOR_BYTES) {
-            headline.push(row(`${name} (gzip)`, baseChunk.gzip, headChunk.gzip));
+            headline.push(row(`${name} (gzip)`, headChunk.gzip, baseChunk.gzip));
         }
     }
 
     const detail: string[] = [];
     for (const name of stable) {
-        const baseChunk = base.chunks[name];
-        if (baseChunk) {
-            detail.push(row(`${name} (gzip)`, baseChunk.gzip, head.chunks[name].gzip));
+        // With a baseline, a chunk the baseline does not have cannot be compared, so it stays out.
+        if (base && !base.chunks[name]) {
+            continue;
         }
+        detail.push(row(`${name} (gzip)`, head.chunks[name].gzip, base?.chunks[name].gzip));
     }
-    detail.push(row('emitted CSS (gzip)', base.cssGzip, head.cssGzip));
-    detail.push(row('largest chunk (raw)', base.largestChunk.raw, head.largestChunk.raw));
+    detail.push(row('emitted CSS (gzip)', head.cssGzip, base?.cssGzip));
+    detail.push(row('largest chunk (raw)', head.largestChunk.raw, base?.largestChunk.raw));
 
     const notes: string[] = [];
-    const mainMoved = base.chunks.main && head.chunks.main && Math.abs(head.chunks.main.gzip - base.chunks.main.gzip) >= CHUNK_HEADLINE_FLOOR_BYTES;
-    const vendorsMoved = base.chunks.vendors && head.chunks.vendors && Math.abs(head.chunks.vendors.gzip - base.chunks.vendors.gzip) >= CHUNK_HEADLINE_FLOOR_BYTES;
-    if (vendorsMoved && !mainMoved) {
-        notes.push('`vendors` grew while `main` did not, which usually means a dependency changed.');
-    }
-    if (base.largestChunk.name !== head.largestChunk.name) {
-        notes.push(`The largest chunk changed identity (\`${base.largestChunk.name}\` -> \`${head.largestChunk.name}\`), so the largest-chunk row compares two different chunks.`);
+    if (base) {
+        const mainMoved = base.chunks.main && head.chunks.main && Math.abs(head.chunks.main.gzip - base.chunks.main.gzip) >= CHUNK_HEADLINE_FLOOR_BYTES;
+        const vendorsMoved = base.chunks.vendors && head.chunks.vendors && Math.abs(head.chunks.vendors.gzip - base.chunks.vendors.gzip) >= CHUNK_HEADLINE_FLOOR_BYTES;
+        if (vendorsMoved && !mainMoved) {
+            notes.push('`vendors` grew while `main` did not, which usually means a dependency changed.');
+        }
+        if (base.measuredWith && head.measuredWith && base.measuredWith !== head.measuredWith) {
+            notes.push(
+                `These two builds were measured under different versions (\`${base.measuredWith}\` and \`${head.measuredWith}\`), so a small unexplained gzip move may be the compressor rather than the diff.`,
+            );
+        }
+        if (base.largestChunk.name !== head.largestChunk.name) {
+            notes.push(`The largest chunk changed identity (\`${base.largestChunk.name}\` -> \`${head.largestChunk.name}\`), so the largest-chunk row compares two different chunks.`);
+        }
     }
 
+    const columns = base ? ['| | this PR | `main` | change |', '|---|---|---|---|'] : ['| | this PR |', '|---|---|'];
+    const detailColumns = base ? ['| key | this PR | `main` | change |', '| --- | --- | --- | --- |'] : ['| key | this PR |', '| --- | --- |'];
+
     return [
-        '### Bundle size',
+        STICKY_MARKER,
+        '## Bundle size',
         '',
-        '| | this PR | `main` | change |',
-        '|---|---|---|---|',
+        provenance(head, baseline),
+        '',
+        ...columns,
         ...headline,
         '',
         ...(notes.length ? [notes.join('\n'), ''] : []),
         '<details>',
         '<summary>All measured keys</summary>',
         '',
-        '| key | this PR | `main` | change |',
-        '| --- | --- | --- | --- |',
+        ...detailColumns,
         ...detail,
         '',
-        `Measured with \`npm run build\`, gzip level ${GZIP_LEVEL}, with the per-build identifiers held constant so gzip is reproducible. Per-chunk rows below ${bytes(CHUNK_HEADLINE_FLOOR_BYTES)} stay in this block.`,
+        `Measured with \`npm run build\`, gzip level ${GZIP_LEVEL} under ${head.measuredWith ?? 'an unrecorded runtime'}, with the per-build identifiers held constant so gzip is reproducible. Per-chunk rows below ${bytes(CHUNK_HEADLINE_FLOOR_BYTES)} stay in this block.`,
         '',
         '</details>',
     ].join('\n');
@@ -258,6 +359,7 @@ function render(base: BundleSizeReport, head: BundleSizeReport): string {
 function assertSame(aPath: string, bPath: string): void {
     const a = readReport(aPath);
     const b = readReport(bPath);
+    assertComparable(a, b);
     const failures: string[] = [];
     const withinFloor: string[] = [];
 
@@ -312,6 +414,15 @@ function assertSame(aPath: string, bPath: string): void {
 
 function main(): void {
     const argv = process.argv.slice(2);
+    const flag = (name: string): string | undefined => {
+        const at = argv.indexOf(name);
+        return at === -1 ? undefined : argv.at(at + 1);
+    };
+
+    if (argv.includes('--marker')) {
+        process.stdout.write(`${STICKY_MARKER}\n`);
+        return;
+    }
 
     const assertAt = argv.indexOf('--assert-same');
     if (assertAt !== -1) {
@@ -323,19 +434,33 @@ function main(): void {
         return;
     }
 
+    const headOnlyPath = flag('--no-baseline');
+    if (headOnlyPath) {
+        process.stdout.write(`${render(readReport(headOnlyPath), {kind: 'missing'})}\n`);
+        return;
+    }
+
     const compareAt = argv.indexOf('--compare');
     if (compareAt !== -1) {
         const [basePath, headPath] = argv.slice(compareAt + 1, compareAt + 3);
         if (!basePath || !headPath) {
             throw new Error('--compare needs two JSON paths: <base> <head>');
         }
-        process.stdout.write(`${render(readReport(basePath), readReport(headPath))}\n`);
+        const baseReport = readReport(basePath);
+        const headReport = readReport(headPath);
+        assertComparable(baseReport, headReport);
+        // The caller knows the merge base; this script only decides how to describe the baseline it was
+        // handed. Omitting the flag asserts that the baseline IS the merge base, which is what a local
+        // comparison of two deliberate builds means.
+        const mergeBaseSha = flag('--merge-base-sha');
+        const baseline: Baseline = !mergeBaseSha || mergeBaseSha === baseReport.sha ? {kind: 'merge-base', report: baseReport} : {kind: 'ancestor', report: baseReport, mergeBaseSha};
+        process.stdout.write(`${render(headReport, baseline)}\n`);
         return;
     }
 
-    const distDir = argv.includes('--dist') ? argv[argv.indexOf('--dist') + 1] : 'dist';
-    const outPath = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : 'bundle-size.json';
-    const sha = argv.includes('--sha') ? argv[argv.indexOf('--sha') + 1] : execSync('git rev-parse HEAD', {encoding: 'utf8'}).trim();
+    const distDir = flag('--dist') ?? 'dist';
+    const outPath = flag('--out') ?? 'bundle-size.json';
+    const sha = flag('--sha') ?? execSync('git rev-parse HEAD', {encoding: 'utf8'}).trim();
 
     const report = measure(distDir, sha);
     fs.writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`);

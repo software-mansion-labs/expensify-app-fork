@@ -16,9 +16,9 @@ on:
         description: Bytes of near-incompressible data to inject on the initial path
         type: string
         default: '200000'
-  push:
-    branches:
-      - 'poc/bundle-size**'
+  # Dispatch only. Its three questions are answered, and while the comment is being tested on this branch a
+  # push trigger here would run four extra builds beside the ones that produce the comment. Re-add
+  # `push: {branches: ['poc/bundle-size**']}` to sample the floor on every push again.
 
 permissions:
   contents: read
@@ -42,9 +42,10 @@ jobs:
       - name: Build web (first build of this commit)
         run: npm run build
 
-      # `bun` is a devDependency, so it is only on PATH inside `npm run` scripts. Call it by path.
+      # Node, not bun: the two disagree on gzip sizes, and every workflow that produces a comparable
+      # measurement runs the same one. `scripts/bundleSize.ts` explains the measured difference.
       - name: Measure first build
-        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out base.json
+        run: node ./scripts/bundleSize.ts --out base.json
 
       # Kept so the residual-difference step can say WHAT changed, not only by how much. `vendors` is the
       # only chunk that has ever differed between two builds of one commit here.
@@ -55,7 +56,7 @@ jobs:
         run: npm run build
 
       - name: Measure second build
-        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out rebuild.json
+        run: node ./scripts/bundleSize.ts --out rebuild.json
 
       - name: Keep the second build's vendors chunk
         run: cp dist/vendors-*.bundle.js vendors-second.js
@@ -69,7 +70,7 @@ jobs:
           # `| tee` returns tee's exit code, so without pipefail a failed check reports success.
           set -o pipefail
           status=0
-          ./node_modules/.bin/bun ./scripts/bundleSize.ts --assert-same base.json rebuild.json 2>&1 | tee floor.txt || status=$?
+          node ./scripts/bundleSize.ts --assert-same base.json rebuild.json 2>&1 | tee floor.txt || status=$?
           {
             echo '## Question 1: do two builds on one runner agree?'
             echo
@@ -154,7 +155,7 @@ jobs:
         run: npm run build
 
       - name: Measure build with ballast
-        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out head.json --sha "${{ github.sha }}-with-ballast"
+        run: node ./scripts/bundleSize.ts --out head.json --sha "${{ github.sha }}-with-ballast"
 
       - name: Question 2 - does the comment section show the increase?
         run: |
@@ -163,7 +164,7 @@ jobs:
             echo
             echo "Injected ${BALLAST_BYTES} B of near-incompressible data into a module imported by \`src/App.tsx\`."
             echo
-            ./node_modules/.bin/bun ./scripts/bundleSize.ts --compare base.json head.json
+            node ./scripts/bundleSize.ts --compare base.json head.json
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Restore the tree
@@ -210,7 +211,7 @@ jobs:
         run: npm run build
 
       - name: Measure
-        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out "runner-${{ matrix.runner }}.json"
+        run: node ./scripts/bundleSize.ts --out "runner-${{ matrix.runner }}.json"
 
       - name: Upload measurement
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
@@ -244,7 +245,7 @@ jobs:
         run: |
           set -o pipefail
           status=0
-          ./node_modules/.bin/bun ./scripts/bundleSize.ts --assert-same runner-a.json runner-b.json 2>&1 | tee cross.txt || status=$?
+          node ./scripts/bundleSize.ts --assert-same runner-a.json runner-b.json 2>&1 | tee cross.txt || status=$?
           {
             echo '## Question 3: is the floor 0 B across two runners?'
             echo
