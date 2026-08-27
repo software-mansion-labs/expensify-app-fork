@@ -1,7 +1,6 @@
 import AlwaysPaintedView from '@components/AlwaysPaintedView';
 
 import useDeferVisibleUntilFocusTransitionEnd from '@hooks/useDeferVisibleUntilFocusTransitionEnd';
-import {ScreenActivityModeProvider} from '@hooks/useScreenActivityEffect/ScreenActivityModeContext';
 
 import type NonTopScreenWrapperProps from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/nonTopScreenWrapperTypes';
 
@@ -76,15 +75,12 @@ function ScreenActivityWrapper({isScreenBlurred, children}: NonTopScreenWrapperP
 
     const mode = isKeptVisible || isShownAfterTransition || (!isScreenCovered && isRevealLatched) ? 'visible' : 'hidden';
 
-    // The provider renders outside the Activity on purpose, because a subtree cannot observe its own hiding.
     return (
-        <ScreenActivityModeProvider isHidden={mode === 'hidden'}>
-            <Activity mode={mode}>
-                <AlwaysPaintedView inert={isScreenCovered}>
-                    <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
-                </AlwaysPaintedView>
-            </Activity>
-        </ScreenActivityModeProvider>
+        <Activity mode={mode}>
+            <AlwaysPaintedView inert={isScreenCovered}>
+                <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
+            </AlwaysPaintedView>
+        </Activity>
     );
 }
 
