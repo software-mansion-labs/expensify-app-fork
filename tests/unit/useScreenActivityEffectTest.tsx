@@ -104,6 +104,53 @@ describe('useScreenActivityEffect', () => {
         expect(log).toEqual([]);
     });
 
+    it('does not run the cleanup again for a dependency change that lands while the screen is hidden', () => {
+        const {rerender} = render(
+            <Screen
+                mode="visible"
+                value="a"
+            />,
+        );
+        rerender(
+            <Screen
+                mode="hidden"
+                value="a"
+            />,
+        );
+        log.length = 0;
+        rerender(
+            <Screen
+                mode="hidden"
+                value="b"
+            />,
+        );
+        rerender(
+            <Screen
+                mode="visible"
+                value="b"
+            />,
+        );
+        expect(log).toEqual(['setup:b']);
+    });
+
+    it('stops running the cleanup of a component that unmounted before the screen was hidden', () => {
+        const {rerender} = render(<Screen mode="visible" />);
+        rerender(
+            <Screen
+                mode="visible"
+                hasSubject={false}
+            />,
+        );
+        log.length = 0;
+        rerender(
+            <Screen
+                mode="hidden"
+                hasSubject={false}
+            />,
+        );
+        expect(log).toEqual([]);
+    });
+
     it('is plain useEffect with no Activity above it', () => {
         const {unmount} = render(
             <Screen

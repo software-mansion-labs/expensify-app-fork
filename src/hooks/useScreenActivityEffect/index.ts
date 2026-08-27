@@ -1,12 +1,16 @@
 import type {DependencyList, EffectCallback} from 'react';
 
-import {useContext, useEffect, useLayoutEffect, useRef} from 'react';
+import {useContext, useEffect, useRef} from 'react';
 
 import ScreenActivityModeContext from './ScreenActivityModeContext';
 
 /**
  * useEffect, except that the cleanup does not run when the component unmounts. It still runs when the dependencies
  * change and when a covering <Activity> hides the screen, which is the cycle the effect has to survive.
+ *
+ * The guarantee is structural rather than inferred: the effect hands React no cleanup, so neither an unmount nor a
+ * hide can make React run one. What the cleanup would have done happens in the two places that mean the work is
+ * genuinely over, the top of the next run of the body and the boundary that reports the hide.
  *
  * Use it for a teardown that only exists to release what the reveal re-creates, and pair it with a terminal release
  * that the screen boundary owns. Never use it for a resource whose leak at unmount would matter on its own.
@@ -16,32 +20,31 @@ import ScreenActivityModeContext from './ScreenActivityModeContext';
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     const screenActivityMode = useContext(ScreenActivityModeContext);
-    const isTearingDownRef = useRef(false);
-    const owedCleanupRef = useRef<ReturnType<EffectCallback>>(undefined);
+    const cleanupRef = useRef<ReturnType<EffectCallback>>(undefined);
 
-    // A layout effect with no dependencies is destroyed only when the subtree's effects are destroyed, so its cleanup
-    // separates a dependency change from a hide and from an unmount. It runs in the layout phase of the same commit
-    // that flushes the passive cleanup below, so the flag is already set when that cleanup reads it.
-    useLayoutEffect(() => {
-        isTearingDownRef.current = false;
-        // Reaching this setup again proves the teardown was not an unmount, so a cleanup held back by it is still owed.
-        owedCleanupRef.current?.();
-        owedCleanupRef.current = undefined;
-        return () => {
-            isTearingDownRef.current = true;
-        };
-    }, []);
+    // Registration is passive, so it outlives the layout phase in which the boundary runs the cleanups, and it is
+    // dropped by the same cleanup for a hide and for an unmount, which is why neither needs to be told apart here.
+    useEffect(() => {
+        if (screenActivityMode === null) {
+            return;
+        }
+        return screenActivityMode.registerHideCleanup(cleanupRef);
+    }, [screenActivityMode]);
 
     useEffect(() => {
-        const cleanup = setup();
+        // The previous run's teardown belongs at the top of this one, because the cleanup React would call is the
+        // one an unmount must not reach.
+        cleanupRef.current?.();
+        cleanupRef.current = setup();
+
+        // Without a boundary nothing else would ever run the teardown, so the effect keeps the ordinary contract.
+        // The context of an instance never changes, so it does not belong in the dependencies the call site owns.
+        if (screenActivityMode !== null) {
+            return;
+        }
         return () => {
-            // A teardown that is not a hide is either an unmount or a StrictMode remount, and the two are only told
-            // apart by whether the layout setup above runs again, which is why the cleanup is held instead of dropped.
-            if (isTearingDownRef.current && screenActivityMode !== null && !screenActivityMode.getIsHidden()) {
-                owedCleanupRef.current = cleanup;
-                return;
-            }
-            cleanup?.();
+            cleanupRef.current?.();
+            cleanupRef.current = undefined;
         };
         // The call site owns the dependencies, exactly as it would with useEffect.
         // eslint-disable-next-line react-hooks/exhaustive-deps
