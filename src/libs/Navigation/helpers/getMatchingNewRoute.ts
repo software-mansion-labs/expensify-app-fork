@@ -30,6 +30,23 @@ function patternToRegex(pattern: string): RegExp {
 }
 
 /**
+ * All `oldRoutes` patterns compiled once, sorted by pattern length descending.
+ *
+ * Compiling on every call cost ~170 `new RegExp()` per invocation, and `getMatchingNewRoute` runs
+ * several times per navigation (getStateFromPath, getAdaptedStateFromPath and linkTo each call it,
+ * and getStateFromPath recurses), so a single navigation compiled 500-1200 regexes.
+ *
+ * Sorting descending by pattern length lets the lookup return on the first match: the longest
+ * matching pattern wins, which is what the previous "track maxLength" loop selected. `sort` is
+ * stable, so patterns of equal length keep their declaration order and ties resolve identically.
+ *
+ * @private - Internal helper. Do not export or use outside this file.
+ */
+const compiledOldRoutes = Object.keys(oldRoutes)
+    .sort((a, b) => b.length - a.length)
+    .map((pattern) => ({regex: patternToRegex(pattern), replacement: oldRoutes[pattern]}));
+
+/**
  * Maps an old route path to its corresponding new route based on the `oldRoutes` map.
  * It finds the best matching pattern (with wildcard `*` support) and replaces the matched
  * part of the path with the new route value.
@@ -50,29 +67,18 @@ function getMatchingNewRoute(path: string) {
     // the query and the redirect's own params land inside it. Match on the path only and
     // re-append the original query, merging it with any query the redirect template adds.
     const [pathOnly, query] = path.split('?');
-    let bestMatch: string | undefined;
-    let bestRegex: RegExp | undefined;
-    let maxLength = -1;
 
-    for (const pattern of Object.keys(oldRoutes)) {
-        const regex = patternToRegex(pattern);
-
-        if (regex.test(pathOnly) && pattern.length > maxLength) {
-            bestMatch = pattern;
-            bestRegex = regex;
-            maxLength = pattern.length;
+    for (const {regex, replacement} of compiledOldRoutes) {
+        if (regex.test(pathOnly)) {
+            const replaced = pathOnly.replace(regex, replacement);
+            if (!query) {
+                return replaced;
+            }
+            return replaced.includes('?') ? `${replaced}&${query}` : `${replaced}?${query}`;
         }
     }
 
-    if (!bestMatch || !bestRegex) {
-        return undefined;
-    }
-
-    const replaced = pathOnly.replace(bestRegex, oldRoutes[bestMatch]);
-    if (!query) {
-        return replaced;
-    }
-    return replaced.includes('?') ? `${replaced}&${query}` : `${replaced}?${query}`;
+    return undefined;
 }
 
 export default getMatchingNewRoute;

@@ -236,7 +236,7 @@ function render(base: BundleSizeReport, head: BundleSizeReport): string {
         '| --- | --- | --- | --- |',
         ...detail,
         '',
-        `Measured with \`npm run build\`, gzip level ${GZIP_LEVEL}, with the Sentry debug id held constant so gzip is reproducible. Per-chunk rows below ${bytes(CHUNK_HEADLINE_FLOOR_BYTES)} stay in this block.`,
+        `Measured with \`npm run build\`, gzip level ${GZIP_LEVEL}, with the per-build identifiers held constant so gzip is reproducible. Per-chunk rows below ${bytes(CHUNK_HEADLINE_FLOOR_BYTES)} stay in this block.`,
         '',
         '</details>',
     ].join('\n');
