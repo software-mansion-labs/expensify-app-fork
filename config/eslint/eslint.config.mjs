@@ -249,6 +249,16 @@ const config = defineConfig([
         processor: expensifyProcessor,
     },
 
+    // useScreenActivityEffect takes a setup and a dependency list like useEffect, so its call sites get the same
+    // dependency linting.
+    {
+        settings: {
+            'react-hooks': {
+                additionalEffectHooks: '(useScreenActivityEffect)',
+            },
+        },
+    },
+
     // eslint-seatbelt config. The processor is stitched into `expensifyProcessor`
     // above, so we only wire up the plugin, settings, and `configure` rule here.
     {
