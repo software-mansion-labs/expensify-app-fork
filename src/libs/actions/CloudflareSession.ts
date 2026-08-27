@@ -157,10 +157,13 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
 }
 
 /**
- * Resolves only after the rotated pair is cached and its persist has settled. Terminal failures resolve
- * 'reauth-required' (recovery is a fresh authorize round trip), transient ones reject with the session
- * intact. `staleAccessToken` is the token the caller decided to refresh from: if it is no longer the current
- * one, a rotation beat this call and it resolves 'skipped-newer-token' without spending a token.
+ * Resolves only after the rotated pair is cached and its persist has settled. No outcome deletes the stored
+ * session: terminal failures resolve 'reauth-required' (recovery is a fresh authorize round trip) and
+ * transient ones reject, both leaving the session for another tab that may hold a working rotation — a
+ * caller that wants it gone must call `clearCloudflareSession`. `staleAccessToken` is the token the caller
+ * decided to refresh from: if it is no longer the current one, a rotation beat this call and it resolves
+ * 'skipped-newer-token' without spending a token, leaving the newer credential in place for the caller to
+ * read back.
  */
 function refreshCloudflareSession(staleAccessToken: string): Promise<CloudflareRefreshResult> {
     // Preconditions are re-checked inside the lock

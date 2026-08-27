@@ -97,9 +97,7 @@ function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request
  */
 function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
     // If request.command already contains ? then we don't need to append it
-    const url = `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
-
-    return url;
+    return `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
 }
 
 /**

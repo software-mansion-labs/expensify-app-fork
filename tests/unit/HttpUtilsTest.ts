@@ -96,8 +96,9 @@ describe('HttpUtils', () => {
 });
 
 describe('HttpUtils QA bearer', () => {
-    const QA_URL = 'https://qa.exops.io/api/OpenApp';
-    const PROD_URL = 'https://www.expensify.com/api/OpenApp';
+    const COMMAND = WRITE_COMMANDS.OPEN_APP;
+    const QA_URL = `https://qa.exops.io/api/${COMMAND}`;
+    const PROD_URL = `https://www.expensify.com/api/${COMMAND}`;
     const AUTH = {accessToken: 'oauth:abc', headers: {Authorization: 'Bearer oauth:abc'}};
     const ROTATED_AUTH = {accessToken: 'oauth:new', headers: {Authorization: 'Bearer oauth:new'}};
 
@@ -166,7 +167,7 @@ describe('HttpUtils QA bearer', () => {
         await HttpUtils.processHTTPRequest(QA_URL, 'post');
 
         expect(handleQAUnauthorized).toHaveBeenCalledTimes(1);
-        expect(handleQAUnauthorized).toHaveBeenCalledWith(AUTH, {isRetry: false});
+        expect(handleQAUnauthorized).toHaveBeenCalledWith(AUTH, {isRetry: false, command: COMMAND});
         expect(global.fetch).toHaveBeenCalledTimes(2);
         expect(fetchHeaders(1).Authorization).toBe(ROTATED_AUTH.headers.Authorization);
     });
@@ -177,7 +178,7 @@ describe('HttpUtils QA bearer', () => {
 
         await expect(HttpUtils.processHTTPRequest(QA_URL, 'post')).rejects.toThrow(CONST.ERROR.CF_REAUTH_REQUIRED);
 
-        expect(handleQAUnauthorized).toHaveBeenNthCalledWith(2, ROTATED_AUTH, {isRetry: true});
+        expect(handleQAUnauthorized).toHaveBeenNthCalledWith(2, ROTATED_AUTH, {isRetry: true, command: COMMAND});
         expect(global.fetch).toHaveBeenCalledTimes(2);
         expect(prepareQARequestAuth).toHaveBeenCalledTimes(1);
     });
