@@ -38,14 +38,15 @@ jobs:
       - name: Build web (first build of this commit)
         run: npm run build
 
+      # `bun` is a devDependency, so it is only on PATH inside `npm run` scripts. Call it by path.
       - name: Measure first build
-        run: bun ./scripts/bundleSize.ts --out base.json
+        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out base.json
 
       - name: Build web (second build of the same commit)
         run: npm run build
 
       - name: Measure second build
-        run: bun ./scripts/bundleSize.ts --out rebuild.json
+        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out rebuild.json
 
       # The floor question. The first build runs on a cold rspack cache and the second on a warm one, so
       # this also tells us whether the cache changes the emitted bytes.
@@ -57,7 +58,7 @@ jobs:
             echo '## Question 1: is the CI build byte-identical?'
             echo
             echo '```'
-            bun ./scripts/bundleSize.ts --assert-same base.json rebuild.json 2>&1 | tee floor.txt
+            ./node_modules/.bin/bun ./scripts/bundleSize.ts --assert-same base.json rebuild.json 2>&1 | tee floor.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -91,7 +92,7 @@ jobs:
         run: npm run build
 
       - name: Measure build with ballast
-        run: bun ./scripts/bundleSize.ts --out head.json --sha "${{ github.sha }}-with-ballast"
+        run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out head.json --sha "${{ github.sha }}-with-ballast"
 
       - name: Question 2 - does the comment section show the increase?
         run: |
@@ -100,7 +101,7 @@ jobs:
             echo
             echo "Injected ${BALLAST_BYTES} B of near-incompressible data into a module imported by \`src/App.tsx\`."
             echo
-            bun ./scripts/bundleSize.ts --compare base.json head.json
+            ./node_modules/.bin/bun ./scripts/bundleSize.ts --compare base.json head.json
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Restore the tree
