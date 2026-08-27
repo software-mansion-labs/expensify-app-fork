@@ -1,7 +1,8 @@
 # TEMPORARY POC - not for merge. Answers three questions about measuring the web bundle in CI:
-#   1. Do two builds of one commit on the SAME runner report a delta of exactly 0 B? (the noise floor)
+#   1. Do two builds of one commit on the SAME runner agree? Raw must match to the byte; gzip carries a
+#      wobble of a byte or two from rspack's re-export ordering, which the script reports as the floor.
 #   2. Does a deliberate byte increase show up in the rendered comment section?
-#   3. Do two builds of one commit on DIFFERENT runners report a delta of exactly 0 B? In the real design
+#   3. Do two builds of one commit on DIFFERENT runners agree? In the real design
 #      the pull request build and the `main` build run on two independently provisioned runners, so this is
 #      the floor that the comment actually inherits.
 # Runs on a branch push, so it needs no pull request and posts nothing. Results land in the job summary.
@@ -45,15 +46,23 @@ jobs:
       - name: Measure first build
         run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out base.json
 
+      # Kept so the residual-difference step can say WHAT changed, not only by how much. `vendors` is the
+      # only chunk that has ever differed between two builds of one commit here.
+      - name: Keep the first build's vendors chunk
+        run: cp dist/vendors-*.bundle.js vendors-first.js
+
       - name: Build web (second build of the same commit)
         run: npm run build
 
       - name: Measure second build
         run: ./node_modules/.bin/bun ./scripts/bundleSize.ts --out rebuild.json
 
+      - name: Keep the second build's vendors chunk
+        run: cp dist/vendors-*.bundle.js vendors-second.js
+
       # The floor question. The first build runs on a cold rspack cache and the second on a warm one, so
       # this also tells us whether the cache changes the emitted bytes.
-      - name: Question 1 - is the CI build byte-identical?
+      - name: Question 1 - do two builds on one runner agree?
         id: floor
         continue-on-error: true
         run: |
@@ -62,13 +71,58 @@ jobs:
           status=0
           ./node_modules/.bin/bun ./scripts/bundleSize.ts --assert-same base.json rebuild.json 2>&1 | tee floor.txt || status=$?
           {
-            echo '## Question 1: is the CI build byte-identical?'
+            echo '## Question 1: do two builds on one runner agree?'
             echo
             echo '```'
             cat floor.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$status"
+
+      # Names what still differs. Both per-build identifiers - the Sentry debug id and the source map hash -
+      # are already held constant when measuring, so they are masked here too: anything this step prints is a
+      # cause the measurement script does not mask, and is therefore real emitted content.
+      - name: Diagnose the residual difference
+        if: always()
+        continue-on-error: true
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import re
+          def load(path):
+              data = open(path, 'rb').read()
+              debug = re.search(rb'_sentryDebugIds\[[A-Za-z_$0-9]+\]="([0-9a-f-]{36})"', data)
+              if debug:
+                  data = data.replace(debug.group(1), b'0' * 36)
+              return re.sub(
+                  rb'(sourceMappingURL=\S*?-)([0-9a-f]{8,})(\.bundle\.js\.map)',
+                  lambda m: m.group(1) + b'0' * len(m.group(2)) + m.group(3),
+                  data,
+                  count=1,
+              )
+          a, b = load('vendors-first.js'), load('vendors-second.js')
+          print('## Residual difference in `vendors`, with the per-build identifiers masked')
+          print()
+          print('| | value |')
+          print('|---|---|')
+          print('| length, first build | %d B |' % len(a))
+          print('| length, second build | %d B |' % len(b))
+          if a == b:
+              print()
+              print('The two chunks are byte-identical once the per-build identifiers are masked, so nothing else varies.')
+              raise SystemExit(0)
+          offsets = [i for i in range(min(len(a), len(b))) if a[i] != b[i]]
+          print('| differing byte positions | %d |' % len(offsets))
+          print('| first differing offset | %d |' % offsets[0])
+          print()
+          for name, data in (('first', a), ('second', b)):
+              lo = max(0, offsets[0] - 160)
+              print('%s build, offset %d:' % (name, offsets[0]))
+              print()
+              print('```')
+              print(data[lo:offsets[0] + 160].decode('utf8', 'replace'))
+              print('```')
+              print()
+          PY
 
       - name: Inject ballast on the initial path
         run: |
@@ -130,10 +184,10 @@ jobs:
       - name: Verdict
         run: |
           if [ "${{ steps.floor.outcome }}" != 'success' ]; then
-            echo "::error::Two CI builds of one commit are NOT byte-identical. See the job summary: every delta this tooling reports carries an unknown floor until this is explained."
+            echo "::error::Two CI builds of one commit disagree beyond the documented floor. See the job summary: every delta this tooling reports carries an unknown floor until this is explained."
             exit 1
           fi
-          echo "::notice::CI builds are byte-identical, so a non-zero delta means a real change."
+          echo "::notice::Raw bytes are reproducible across builds, so a raw delta means a real change."
 
   # Question 3. Two independently provisioned runners build the same commit once each. Nothing is shared
   # between them, which is exactly the relationship between a pull request build and a `main` build.

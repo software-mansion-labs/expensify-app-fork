@@ -39,32 +39,43 @@ const SENTRY_DEBUG_ID = /_sentryDebugIds\[[A-Za-z_$\d]+\]="([\da-f-]{36})"/;
 
 const SENTRY_DEBUG_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000000';
 
+/** The content hash of the source map, in the `sourceMappingURL` comment at the end of every chunk. */
+const SOURCE_MAP_HASH = /(sourceMappingURL=\S*?-)([\da-f]{8,})(\.bundle\.js\.map)/;
+
 /**
- * `sentry-webpack-plugin` injects a fresh random UUID into every chunk on every build, after content
- * hashing, so two builds of one commit emit the same 94 filenames with different bytes inside them. The UUID
- * is always 36 characters, so raw sizes are unaffected, but random hex compresses differently: measured
- * across all 94 chunks of one build, substituting random debug ids moves a single chunk by up to 10 B and
- * the all-JS gzip total by up to 352 B. Replacing the UUID with a fixed one of the same length before
- * compressing makes gzip reproducible, at the cost of reading 13-45 B per chunk below the shipped bytes -
- * a constant offset that is identical on both sides of a comparison, so it cannot move a delta.
+ * Two builds of one commit emit the same 94 filenames with different bytes inside them, from two causes
+ * that are both per-build identifiers rather than app code:
+ *
+ * - `sentry-webpack-plugin` injects a fresh random UUID into every chunk, after content hashing.
+ * - The source map's own content hash moves with that UUID, and every chunk embeds the map's filename in
+ *   its `sourceMappingURL` comment.
+ *
+ * Both replacements are per-build noise of a fixed length, so raw sizes never saw either one. Gzip did:
+ * random hex compresses differently, and measured across all 94 chunks of one build, substituting random
+ * debug ids moves a single chunk by up to 10 B and the all-JS gzip total by up to 352 B. Masking both makes
+ * gzip reproducible, at the cost of reading a few tens of bytes per chunk below the shipped bytes - a
+ * constant offset that is identical on both sides of a comparison, so it cannot move a delta.
  *
  * Only the captured UUID is replaced, so the RFC 4122 namespace constants that appear in vendored UUID
  * libraries (`6ba7b810-9dad-11d1-80b4-00c04fd430c8` and friends) are left alone.
  *
- * latin1 round-trips arbitrary bytes unchanged, and the replacement is the same length as the UUID, so the
- * buffer handed to gzip differs from the file in exactly those 36-byte runs and nowhere else.
+ * latin1 round-trips arbitrary bytes unchanged, and both replacements keep the original length, so the
+ * buffer handed to gzip differs from the file in exactly those runs and nowhere else.
  */
-function withStableDebugId(buffer: Buffer): Buffer {
+function withStableBuildIds(buffer: Buffer): Buffer {
     const text = buffer.toString('latin1');
     const debugId = text.match(SENTRY_DEBUG_ID)?.[1];
-    if (!debugId) {
-        return buffer;
-    }
-    return Buffer.from(text.replaceAll(debugId, SENTRY_DEBUG_ID_PLACEHOLDER), 'latin1');
+    const masked = debugId ? text.replaceAll(debugId, SENTRY_DEBUG_ID_PLACEHOLDER) : text;
+    // The map's own hash changes with the debug id it contains, and every chunk embeds that filename in its
+    // `sourceMappingURL` comment. Same length, so raw sizes never saw it, but gzip did.
+    return Buffer.from(
+        masked.replace(SOURCE_MAP_HASH, (full, prefix: string, hash: string, suffix: string) => `${prefix}${'0'.repeat(hash.length)}${suffix}`),
+        'latin1',
+    );
 }
 
 function gzipSize(buffer: Buffer): number {
-    return zlib.gzipSync(withStableDebugId(buffer), {level: GZIP_LEVEL}).length;
+    return zlib.gzipSync(withStableBuildIds(buffer), {level: GZIP_LEVEL}).length;
 }
 
 /**
@@ -232,41 +243,70 @@ function render(base: BundleSizeReport, head: BundleSizeReport): string {
 }
 
 /**
- * Two builds of one commit must produce identical bytes, or every delta this script reports carries an
- * unknown floor. Compares every measured number, ignoring only the SHA.
+ * Compares two measurements of one commit, ignoring only the SHA.
+ *
+ * Raw and gzip are held to different standards, because the build meets different standards on each. Raw
+ * bytes are emitted identically by every build measured so far - cold cache against warm, and two separate
+ * runners - so any raw difference is a real finding and fails.
+ *
+ * Gzip carries an irreducible wobble of a byte or two. With the per-build identifiers masked, what is left
+ * is rspack emitting a star re-export's name list in a different order between builds: the same strings,
+ * the same total length, so raw cannot see it, but the permutation compresses differently. That is real
+ * emitted content, so the script reports it rather than hiding it, and only fails when it grows past the
+ * threshold the comment itself uses to promote a row - above that it could change what an author reads.
  */
 function assertSame(aPath: string, bPath: string): void {
     const a = readReport(aPath);
     const b = readReport(bPath);
-    const differences: string[] = [];
+    const failures: string[] = [];
+    const withinFloor: string[] = [];
+
+    /** Gzip differences below the comment's own reporting threshold cannot change what the comment says. */
+    const record = (line: string, difference: number, isGzip: boolean) => {
+        if (isGzip && Math.abs(difference) < CHUNK_HEADLINE_FLOOR_BYTES) {
+            withinFloor.push(line);
+            return;
+        }
+        failures.push(line);
+    };
 
     const scalars = ['initialJsRaw', 'initialJsGzip', 'allJsRaw', 'allJsGzip', 'cssRaw', 'cssGzip'] as const;
     for (const key of scalars) {
-        if (a[key] !== b[key]) {
-            differences.push(`${key}: ${bytes(a[key])} -> ${bytes(b[key])} (${b[key] - a[key] > 0 ? '+' : ''}${b[key] - a[key]} B)`);
+        if (a[key] === b[key]) {
+            continue;
         }
+        const difference = b[key] - a[key];
+        record(`${key}: ${bytes(a[key])} -> ${bytes(b[key])} (${difference > 0 ? '+' : ''}${difference} B)`, difference, key.endsWith('Gzip'));
     }
     if (a.largestChunk.name !== b.largestChunk.name) {
-        differences.push(`largestChunk.name: ${a.largestChunk.name} -> ${b.largestChunk.name}`);
+        failures.push(`largestChunk.name: ${a.largestChunk.name} -> ${b.largestChunk.name}`);
     }
 
     for (const name of new Set([...Object.keys(a.chunks), ...Object.keys(b.chunks)])) {
         const left = a.chunks[name];
         const right = b.chunks[name];
         if (!left || !right) {
-            differences.push(`chunk ${name}: ${left ? 'only in first' : 'only in second'}`);
+            failures.push(`chunk ${name}: ${left ? 'only in first' : 'only in second'}`);
             continue;
         }
-        if (left.raw !== right.raw || left.gzip !== right.gzip) {
-            differences.push(`chunk ${name}: raw ${left.raw} -> ${right.raw}, gzip ${left.gzip} -> ${right.gzip}`);
+        if (left.raw !== right.raw) {
+            failures.push(`chunk ${name}: raw ${left.raw} -> ${right.raw}`);
+        }
+        if (left.gzip !== right.gzip) {
+            record(`chunk ${name}: gzip ${left.gzip} -> ${right.gzip} (${right.gzip - left.gzip > 0 ? '+' : ''}${right.gzip - left.gzip} B)`, right.gzip - left.gzip, true);
         }
     }
 
-    if (differences.length === 0) {
-        process.stdout.write('identical: both measurements report the same size in every measured key.\n');
+    if (withinFloor.length > 0) {
+        process.stdout.write(
+            `gzip floor, ${withinFloor.length} key(s) below the ${bytes(CHUNK_HEADLINE_FLOOR_BYTES)} reporting threshold:\n${withinFloor.map((line) => `  ${line}`).join('\n')}\n`,
+        );
+    }
+    if (failures.length === 0) {
+        process.stdout.write('raw bytes are identical in every measured key, and no gzip key moved past the reporting threshold.\n');
         return;
     }
-    process.stdout.write(`NOT identical, ${differences.length} differing keys:\n${differences.map((line) => `  ${line}`).join('\n')}\n`);
+    process.stdout.write(`FAILED, ${failures.length} key(s) outside the floor:\n${failures.map((line) => `  ${line}`).join('\n')}\n`);
     process.exitCode = 1;
 }
 
