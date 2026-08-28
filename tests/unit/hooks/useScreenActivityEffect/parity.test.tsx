@@ -1,6 +1,21 @@
-import React from 'react';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
-import {expectEveryConfigToMatch, hidden, log, resetLog, runEveryConfig, Subject, track, useAnyEffect, visible} from '../../../utils/ScreenActivityEffectTestUtils';
+import React, {useEffect} from 'react';
+
+import {
+    ActivityScreen,
+    expectEveryConfigToMatch,
+    hidden,
+    LiveScreen,
+    log,
+    resetLog,
+    runEveryConfig,
+    runOn,
+    Subject,
+    track,
+    useAnyEffect,
+    visible,
+} from '../../../utils/ScreenActivityEffectTestUtils';
 
 /**
  * Every test here renders one structure on useEffect and on useScreenActivityEffect, once on a screen that stays live
@@ -46,6 +61,19 @@ function Child({value}: {value: string}) {
 function Parent({value}: {value: string}) {
     useAnyEffect(track(`parent:${value}`), [value]);
     return <Child value={value} />;
+}
+
+let setupCount = 0;
+
+/** A subject whose calls name the setup they came from, so a release can be tied to the instance that owns it. */
+function CountedSubject({value}: {value: string}) {
+    useAnyEffect(() => {
+        setupCount += 1;
+        const name = `s${setupCount}:${value}`;
+        log(`setup:${name}`);
+        return () => log(`cleanup:${name}`);
+    }, [value]);
+    return null;
 }
 
 /** Two call sites in one component, of which only the second depends on the value. */
@@ -532,17 +560,27 @@ describe('useScreenActivityEffect compared to useEffect', () => {
         });
 
         it('sets the new instance up before it releases the one removed while the screen was hidden', () => {
-            // Given a component that is removed and mounted again entirely behind the cover, which a remount is
-            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), hidden(null), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
+            // Given a component that is removed and mounted again entirely behind the cover, which a remount is, with
+            // every call naming the setup it belongs to so that a release cannot be read as the wrong instance
+            const steps = [
+                visible(<CountedSubject value="a" />),
+                hidden(<CountedSubject value="a" />),
+                hidden(null),
+                hidden(<CountedSubject value="a" />),
+                visible(<CountedSubject value="a" />),
+            ];
 
             // When the screen is revealed
-            const runs = runEveryConfig(steps);
+            setupCount = 0;
+            const live = runOn(useEffect, LiveScreen, steps);
+            setupCount = 0;
+            const activity = runOn(useScreenActivityEffect, ActivityScreen, steps);
 
             // Then a live screen releases the instance that went away before it sets the new one up
-            expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a'], ['setup:s:a'], [], ['cleanup:s:a']]);
+            expect(live).toEqual([['setup:s1:a'], [], ['cleanup:s1:a'], ['setup:s2:a'], [], ['cleanup:s2:a']]);
 
-            // And the reveal runs the body of the new instance first, because the boundary sweeps the old entry after it
-            expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], ['setup:s:a', 'cleanup:s:a'], ['cleanup:s:a']]);
+            // And the reveal sets the second instance up first and releases the first one after it
+            expect(activity).toEqual([['setup:s1:a'], [], [], [], ['setup:s2:a', 'cleanup:s1:a'], ['cleanup:s2:a']]);
         });
     });
 
