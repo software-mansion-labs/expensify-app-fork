@@ -8,10 +8,13 @@ import ScreenActivityEffectBoundaryContext, {createScreenActivityEffectEntry} fr
 
 function areDepsEqual(previous: DependencyList | undefined, next: DependencyList | undefined): boolean {
     // No dependency list means the effect runs on every render, exactly as useEffect does.
-    if (previous === undefined || next === undefined || previous.length !== next.length) {
+    if (previous === undefined || next === undefined) {
         return false;
     }
-    return previous.every((value, index) => Object.is(value, next.at(index)));
+    // A list that changed size is a mistake React warns about rather than a change it acts on: it compares the
+    // dependencies both lists have and nothing else. This does the same, so the size alone never re-runs the effect.
+    const shared = Math.min(previous.length, next.length);
+    return previous.slice(0, shared).every((value, index) => Object.is(value, next.at(index)));
 }
 
 /**
@@ -38,11 +41,10 @@ function areDepsEqual(previous: DependencyList | undefined, next: DependencyList
  * setup of the new instance before the release of the old one. Work that only one owner may hold at a time has to
  * tolerate that ordering.
  *
- * Three behaviors are not the ones of a live screen. A dependency list that changed size counts as a change here,
- * while React compares only the common prefix and warns. A <Suspense> below the boundary that suspends again on the
- * reveal has its setup released and set up again once it resolves, because the sweep of the boundary reads a body that
- * did not come back as a component that is gone. A boundary nested inside the <Activity> of another screen is released
- * together with that screen, so a screen of a nested navigator gets plain useEffect.
+ * Two behaviors are not the ones of a live screen. A <Suspense> below the boundary that suspends again on the reveal
+ * has its setup released and set up again once it resolves, because the sweep of the boundary reads a body that did not
+ * come back as a component that is gone. A boundary nested inside the <Activity> of another screen is released together
+ * with that screen, so a screen of a nested navigator gets plain useEffect.
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     const boundary = useContext(ScreenActivityEffectBoundaryContext);
