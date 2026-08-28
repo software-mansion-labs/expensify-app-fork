@@ -1,6 +1,6 @@
 import type {DependencyList, EffectCallback, ReactNode} from 'react';
 
-import React, {createContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 /** The live setup of one call site of useScreenActivityEffect, owned by the boundary from its first effect run on. */
 type ScreenActivityEffectEntry = {
@@ -64,6 +64,28 @@ function releaseEntries(entries: Set<ScreenActivityEffectEntry>, released: reado
     }
 }
 
+/**
+ * The set of one boundary together with the entry the boundary above holds for it. A boundary of a nested navigator
+ * renders inside the <Activity> of the screen holding it, so the same commit that hides that screen unmounts this
+ * boundary, and its own unmount therefore says nothing about the screen its effects belong to. Handing the whole set to
+ * the boundary above as one entry moves that decision to the only boundary that can make it.
+ */
+function createBoundaryState() {
+    const entries = new Set<ScreenActivityEffectEntry>();
+    return {
+        entries,
+        nestedEntry: {
+            cleanup: undefined,
+            deps: undefined,
+            isSetUp: false,
+            isAwaitingReveal: false,
+            release: () => {
+                releaseEntries(entries, [...entries]);
+            },
+        } satisfies ScreenActivityEffectEntry,
+    };
+}
+
 type ScreenActivityEffectBoundary = {
     /** Hands the boundary an entry to release when the screen goes away. Registering the same entry twice is a no-op. */
     register: (entry: ScreenActivityEffectEntry) => void;
@@ -86,13 +108,18 @@ const ScreenActivityEffectBoundaryContext = createContext<ScreenActivityEffectBo
  * are left over. It has to render outside the <Activity> it serves, because a component cannot observe its own hiding,
  * and because its own unmount is the only event that means the screen is really gone.
  *
+ * A boundary nested inside the <Activity> of another screen keeps the guarantee, because the boundary above holds its
+ * whole set as one entry. It is the reason nothing here reads its own unmount as the end of the screen without asking
+ * the boundary above first.
+ *
  * The flag is a layout effect. React runs the whole layout phase of a commit before its passive phase, so it is
  * already set when the passive cleanups of the hidden or deleted subtree ask about it. Everything else runs as a
  * passive effect, which is the phase the cleanups it runs were written for, and which for a deletion still comes
  * before the passive cleanups of the subtree.
  */
 function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: boolean; children: ReactNode}) {
-    const [entries] = useState(() => new Set<ScreenActivityEffectEntry>());
+    const parent = useContext(ScreenActivityEffectBoundaryContext);
+    const [{entries, nestedEntry}] = useState(createBoundaryState);
     const isScreenTeardownRef = useRef(false);
     const registrationCountRef = useRef(0);
     const sweptRegistrationCountRef = useRef(0);
@@ -147,12 +174,27 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
         );
     });
 
-    useEffect(
-        () => () => {
+    // Who releases what is left over when this boundary goes away. A boundary of its own screen answers for itself: its
+    // unmount is the screen leaving the navigation stack. A boundary inside the <Activity> of another screen hands the
+    // set to the boundary above instead, which is the one that can tell its screen being covered from it being popped.
+    useEffect(() => {
+        if (parent === null) {
+            return () => {
+                releaseEntries(entries, [...entries]);
+            };
+        }
+
+        parent.register(nestedEntry);
+        return () => {
+            if (parent.getIsScreenTeardown()) {
+                // The screen above is being covered or popped, and it is holding the entry for this whole set, so the
+                // reveal or the release of that screen is what answers for these effects.
+                return;
+            }
+            parent.unregister(nestedEntry);
             releaseEntries(entries, [...entries]);
-        },
-        [entries],
-    );
+        };
+    }, [entries, nestedEntry, parent]);
 
     return <ScreenActivityEffectBoundaryContext.Provider value={boundary}>{children}</ScreenActivityEffectBoundaryContext.Provider>;
 }

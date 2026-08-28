@@ -41,12 +41,11 @@ function areDepsEqual(previous: DependencyList | undefined, next: DependencyList
  * setup of the new instance before the release of the old one. Work that only one owner may hold at a time has to
  * tolerate that ordering.
  *
- * Two behaviors are not the ones of a live screen. The release of a component that was removed while the screen was
- * hidden waits for a reveal that runs an effect of the screen, and for a screen that has none left that is the moment it
- * leaves the stack. That is the price of never releasing the setup of a component which is only suspended, because a
- * reveal that runs no body at all cannot tell the two apart; where one part of the screen suspends while another runs,
- * the suspended part is released and set up again once it resolves. A boundary nested inside the <Activity> of another
- * screen is released together with that screen, so a screen of a nested navigator gets plain useEffect.
+ * One behavior is not the one of a live screen. The release of a component that was removed while the screen was hidden
+ * waits for a reveal that runs an effect of the screen, and for a screen that has none left that is the moment it leaves
+ * the stack. That is the price of never releasing the setup of a component which is only suspended, because a reveal
+ * that runs no body at all cannot tell the two apart; where one part of the screen suspends while another runs, the
+ * suspended part is released and set up again once it resolves.
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     const boundary = useContext(ScreenActivityEffectBoundaryContext);

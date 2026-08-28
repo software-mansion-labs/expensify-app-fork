@@ -59,6 +59,17 @@ function OuterHiddenNestedScreen({isHidden: isOuterHidden, children}: ScreenProp
     );
 }
 
+/** Two nested navigators deep, which is the shape the boundary has to keep working through unchanged. */
+function TwiceNestedScreen({isHidden: isOuterHidden, children}: ScreenProps) {
+    return (
+        <ActivityScreen isHidden={isOuterHidden}>
+            <ActivityScreen isHidden={false}>
+                <ActivityScreen isHidden={false}>{children}</ActivityScreen>
+            </ActivityScreen>
+        </ActivityScreen>
+    );
+}
+
 /** The same nesting, where the boundary of the screen itself is the one that hides. */
 function InnerHiddenNestedScreen({isHidden: isInnerHidden, children}: ScreenProps) {
     return (
@@ -225,14 +236,54 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
     describe('a boundary nested inside another screen', () => {
         const coverAndReveal = [visible(<Subject value="a" />), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
 
-        it('releases the setup when the screen holding the nested one hides, because the inner boundary hides with it', () => {
+        it('keeps the setup when the screen holding the nested one hides', () => {
             // Given a screen of a nested navigator, whose boundary sits inside the <Activity> of the screen holding it
             // When the outer screen is covered and revealed
             const nested = runOn(useScreenActivityEffect, OuterHiddenNestedScreen, coverAndReveal);
 
-            // Then the inner boundary unmounts on the hide, so a nested screen gets plain useEffect rather than the hook
-            expect(nested).toEqual(runOn(useEffect, ActivityScreen, coverAndReveal));
-            expect(nested).not.toEqual(runOn(useEffect, LiveScreen, coverAndReveal));
+            // Then the inner boundary keeps the setup, because the boundary above holds its whole set as one entry
+            expect(nested).toEqual(runOn(useEffect, LiveScreen, coverAndReveal));
+        });
+
+        it('keeps the setup two nested navigators deep', () => {
+            // Given the same screen one navigator deeper, so two boundaries hand their set to the one above them
+            // When the outermost screen is covered and revealed
+            const nested = runOn(useScreenActivityEffect, TwiceNestedScreen, coverAndReveal);
+
+            // Then the depth changes nothing, because every boundary asks the one above it the same question
+            expect(nested).toEqual(runOn(useEffect, LiveScreen, coverAndReveal));
+        });
+
+        it('releases the setup when the screen holding the nested one leaves the stack while covered', () => {
+            // Given a nested screen whose outer screen is popped without ever being revealed again
+            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />)];
+
+            // When the outer screen leaves the navigation stack
+            const nested = runOn(useScreenActivityEffect, OuterHiddenNestedScreen, steps);
+
+            // Then the entry the outer boundary holds for the inner one releases the whole nested screen
+            expect(nested).toEqual([['setup:s:a'], [], ['cleanup:s:a']]);
+            expect(nested.flat()).toEqual(runOn(useEffect, LiveScreen, steps).flat());
+        });
+
+        it('releases a component of the nested screen that was removed while the outer screen was hidden', () => {
+            // Given two components on a nested screen, of which one goes away while the outer screen is covered
+            const both = (
+                <>
+                    <Subject value="a" />
+                    <Subject value="b" />
+                </>
+            );
+            const steps = [visible(both), hidden(both), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
+
+            // When the outer screen is revealed
+            const nested = runOn(useScreenActivityEffect, OuterHiddenNestedScreen, steps);
+            const live = runOn(useEffect, LiveScreen, steps);
+
+            // Then the sweep of the inner boundary answers for it, exactly as it does on a screen of its own
+            expect(live).toEqual([['setup:s:a', 'setup:s:b'], [], ['cleanup:s:b'], [], ['cleanup:s:a']]);
+            expect(nested).toEqual([['setup:s:a', 'setup:s:b'], [], [], ['cleanup:s:b'], ['cleanup:s:a']]);
+            expect(nested.flat()).toEqual(live.flat());
         });
 
         it('keeps the setup live when the boundary of the nested screen itself hides', () => {
