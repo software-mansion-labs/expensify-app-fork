@@ -25,9 +25,9 @@ on:
       - 'scripts/bundleSize.ts'
       - '.github/workflows/bundleSize.yml'
   push:
-    # `main` is the branch whose measurements are the baselines. `poc/bundle-size**` is TEMPORARY: while this
-    # is being proven out on a fork, the fork's default branch is the POC branch, and the follower resolves
-    # baselines from whatever the default branch is. Remove that line before this ships.
+    # A pull request is compared against the branch it merges into, so every branch that is a base for pull
+    # requests has to measure its own commits. `main` is that branch. `poc/bundle-size**` is TEMPORARY: it
+    # is the base of the pull requests that prove this out on a fork. Remove that entry before this ships.
     branches: [main, 'poc/bundle-size**']
     paths:
       - 'src/**'
@@ -54,6 +54,10 @@ jobs:
     name: Measure
     runs-on: ${{ github.repository_owner == 'Expensify' && 'blacksmith-8vcpu-ubuntu-2404' || 'ubuntu-latest' }}
     timeout-minutes: 60
+    # Stated at the job rather than inherited, because the POC job below deliberately holds more. This is the
+    # job that builds a pull request's code, and it can do nothing but read.
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -115,3 +119,38 @@ jobs:
             cat bundle-size.json | jq 'del(.chunks)'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # TEMPORARY POC JOB - delete before this ships, along with the `poc/bundle-size**` push trigger above.
+  #
+  # `bundleSizeComment.yml` is the real poster, and it cannot be tested from a feature branch: `workflow_run`
+  # only fires for the copy of a workflow file on the repository's default branch. This job posts the same
+  # comment through the same composite action, from the branch, so the comment can be proven without
+  # changing where a repository's default branch points.
+  #
+  # It is not the shipping design, and must not become it. It holds `pull-requests: write` in the same run
+  # that built the pull request's code, which is exactly what the two-workflow split exists to avoid. That is
+  # only tolerable here because of the `head.repo.full_name == github.repository` guard: a pull request from
+  # a fork skips this job entirely and gets nothing from it, so no fork's code ever runs with the write
+  # token. On a fork-internal pull request the code being built is already the repository's own.
+  poc-comment:
+    name: POC - post the comment from the branch
+    needs: measure
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ github.repository_owner == 'Expensify' && 'blacksmith-2vcpu-ubuntu-2404' || 'ubuntu-latest' }}
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # The measurement is in this run's own artifact, uploaded by `measure`. The BASELINE still comes from
+      # an earlier run, so the cross-run artifact download that the real follower depends on is exercised
+      # here too. What is left untested is only whether `workflow_run` fires and hands over the right run id.
+      - name: Post the bundle size comment
+        uses: ./.github/actions/composite/postBundleSizeComment
+        with:
+          measurement-run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}

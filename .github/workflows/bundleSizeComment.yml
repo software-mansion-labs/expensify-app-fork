@@ -6,9 +6,11 @@
 # this job holds the write token but only ever reads one JSON file and renders text from its own checkout of
 # the default branch. A fork contribution cannot choose what gets posted under the bot's name.
 #
-# `workflow_run` only fires for the copy of this file on the repository's default branch.
+# The work itself is in the `postBundleSizeComment` composite action, because `workflow_run` only fires for
+# the copy of this file on the repository's default branch: this workflow cannot run from a feature branch,
+# so it cannot be tested from one. A composite action is resolved from whatever ref is checked out, so the
+# temporary POC job in `bundleSize.yml` can exercise the same steps on a branch.
 name: Bundle size comment
-# cspell:ignore nvmrc pipefail unshift
 
 on:
   workflow_run:
@@ -39,158 +41,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # `scripts/bundleSize.ts` is type-stripping-only TypeScript that imports nothing outside `node:`, so
-      # Node runs it directly and this job needs no `npm ci`.
-      - name: Setup Node
-        # v6.1.0
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+      - name: Post the bundle size comment
+        uses: ./.github/actions/composite/postBundleSizeComment
         with:
-          node-version-file: '.nvmrc'
-
-      - name: Download this pull request's measurement
-        # v7
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
-        with:
-          name: bundle-size
-          path: measure
-          run-id: ${{ github.event.workflow_run.id }}
+          measurement-run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-
-      - name: Resolve the baseline
-        id: baseline
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          script: |
-            const fs = require('fs');
-            const meta = JSON.parse(fs.readFileSync('measure/bundle-size-meta.json', 'utf8'));
-            const {owner, repo} = context.repo;
-            core.setOutput('pr-number', meta.prNumber);
-
-            // `base.sha` is the base branch tip this head was tested against, not the merge base. Comparing
-            // against the tip would charge the pull request for every byte that landed on `main` after it
-            // forked, so ask the API for the actual merge base. A fork's head commit is reachable in this
-            // repository through the pull request ref, so one comparison covers both cases - but if it ever
-            // does not, no baseline is the honest answer, and it is louder than a wrong one.
-            let mergeBaseSha = '';
-            try {
-              const comparison = await github.rest.repos.compareCommitsWithBasehead({
-                owner,
-                repo,
-                basehead: `${meta.baseSha}...${meta.headSha}`,
-              });
-              mergeBaseSha = comparison.data.merge_base_commit.sha;
-              core.info(`merge base of ${meta.headSha} and ${meta.baseSha} is ${mergeBaseSha}`);
-            } catch (error) {
-              core.warning(`Could not resolve the merge base of ${meta.headSha} and ${meta.baseSha}: ${error.message}`);
-              return;
-            }
-            core.setOutput('merge-base-sha', mergeBaseSha);
-
-            // Which baseline-branch commits have a measurement at all. The baseline branch is the default
-            // branch, read from the payload rather than hardcoded, so this is `main` in the repository that
-            // matters and the POC branch on a fork that has been pointed at it.
-            const baselineBranch = context.payload.repository.default_branch;
-            core.info(`resolving baselines from \`${baselineBranch}\``);
-            // Newest run wins for a re-run of one commit.
-            const runs = await github.rest.actions.listWorkflowRuns({
-              owner,
-              repo,
-              workflow_id: 'bundleSize.yml',
-              branch: baselineBranch,
-              event: 'push',
-              status: 'success',
-              per_page: 100,
-            });
-            const measured = new Map();
-            for (const run of runs.data.workflow_runs) {
-              if (!measured.has(run.head_sha)) {
-                measured.set(run.head_sha, run.id);
-              }
-            }
-
-            // The merge base itself is the baseline when it has a measurement. It often will not: the
-            // measure workflow is path-filtered, so a `main` commit that touched only tests never built.
-            // Every fallback is an ANCESTOR of the merge base, never `main`'s tip, so the comparison can
-            // only ever include commits this branch does not have, and the comment says when it did that.
-            const ancestors = await github.rest.repos.listCommits({owner, repo, sha: mergeBaseSha, per_page: 100});
-            const candidates = ancestors.data.map((commit) => commit.sha);
-            if (candidates[0] !== mergeBaseSha) {
-              candidates.unshift(mergeBaseSha);
-            }
-
-            // A retained artifact can still have expired, so confirm the file is really downloadable before
-            // settling on a run. Capped: if the nearest few measured ancestors have all expired, the honest
-            // answer is no baseline rather than a walk back through months of history.
-            let checked = 0;
-            for (const sha of candidates) {
-              const runId = measured.get(sha);
-              if (!runId) {
-                continue;
-              }
-              if (checked >= 5) {
-                break;
-              }
-              checked += 1;
-              const artifacts = await github.rest.actions.listWorkflowRunArtifacts({owner, repo, run_id: runId, per_page: 100});
-              if (!artifacts.data.artifacts.some((artifact) => artifact.name === 'bundle-size' && !artifact.expired)) {
-                core.info(`measurement for ${sha} (run ${runId}) has expired`);
-                continue;
-              }
-              core.setOutput('run-id', runId);
-              core.info(sha === mergeBaseSha ? `baseline is the merge base ${sha}` : `baseline is ${sha}, an ancestor of the merge base`);
-              return;
-            }
-            core.warning(`No \`${baselineBranch}\` measurement resolved for this pull request, so the comment will carry its own sizes only.`);
-
-      - name: Download the baseline measurement
-        if: steps.baseline.outputs.run-id != ''
-        # v7
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
-        with:
-          name: bundle-size
-          path: baseline
-          run-id: ${{ steps.baseline.outputs.run-id }}
-          github-token: ${{ github.token }}
-
-      # The script decides on the wording: it compares the baseline's own recorded SHA against the merge base
-      # it is handed, so the "this is not your merge base" sentence cannot drift out of step with the numbers.
-      - name: Render the comment
-        env:
-          BASELINE_RUN_ID: ${{ steps.baseline.outputs.run-id }}
-          MERGE_BASE_SHA: ${{ steps.baseline.outputs.merge-base-sha }}
-        run: |
-          set -o pipefail
-          if [ -n "$BASELINE_RUN_ID" ]; then
-            node ./scripts/bundleSize.ts --compare baseline/bundle-size.json measure/bundle-size.json --merge-base-sha "$MERGE_BASE_SHA" > comment.md
-          else
-            node ./scripts/bundleSize.ts --no-baseline measure/bundle-size.json > comment.md
-          fi
-          node ./scripts/bundleSize.ts --marker > marker.txt
-          cat comment.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Post or edit the comment
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        env:
-          PR_NUMBER: ${{ steps.baseline.outputs.pr-number }}
-        with:
-          script: |
-            const fs = require('fs');
-            const {owner, repo} = context.repo;
-            const issue_number = Number(process.env.PR_NUMBER);
-            if (!Number.isInteger(issue_number) || issue_number <= 0) {
-              throw new Error(`No pull request number came with the measurement (got ${JSON.stringify(process.env.PR_NUMBER)}), so there is nothing to comment on.`);
-            }
-            const body = fs.readFileSync('comment.md', 'utf8');
-            const marker = fs.readFileSync('marker.txt', 'utf8').trim();
-
-            // The marker is a hidden HTML comment in the body, so the same comment is reused on every push
-            // instead of the pull request collecting one comment per commit.
-            const comments = await github.paginate(github.rest.issues.listComments, {owner, repo, issue_number, per_page: 100});
-            const existing = comments.find((comment) => comment.body?.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
-              core.info(`edited comment ${existing.html_url}`);
-              return;
-            }
-            const created = await github.rest.issues.createComment({owner, repo, issue_number, body});
-            core.info(`posted comment ${created.data.html_url}`);
