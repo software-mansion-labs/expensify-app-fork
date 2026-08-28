@@ -4,71 +4,21 @@
  */
 import CONFIG from '@src/CONFIG';
 
-import type {GetOAuthRedirectURI, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
+import type {GetOAuthClientID, GetOAuthRedirectURI, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
 
-/** A bare hostname: no scheme, no slash, no port. Loose about labels (custom Access domains exist). */
-const TEAM_DOMAIN_SHAPE = /^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
+import {getQAResource, isQAAuthConfigValid, matchesQAOrigin, OAUTH_CALLBACK_PATH} from './common';
 
-function parseHTTPSOrigin(value: string): string | null {
-    try {
-        const url = new URL(value);
-        return url.protocol === 'https:' ? url.origin : null;
-    } catch {
-        return null;
-    }
-}
+const getOAuthClientID: GetOAuthClientID = () => CONFIG.QA_AUTH.CLIENT_ID;
 
 /** Anything short of a complete, well-formed config and every consumer behaves as if the feature is absent */
-const isQAAuthConfigured: IsQAAuthConfigured = () => {
-    const {API_ROOT, SECURE_API_ROOT, TEAM_DOMAIN, CLIENT_ID} = CONFIG.QA_AUTH;
+const isQAAuthConfigured: IsQAAuthConfigured = () => isQAAuthConfigValid(getOAuthClientID());
 
-    if (!API_ROOT || !TEAM_DOMAIN || !CLIENT_ID) {
-        return false;
-    }
-
-    if (!TEAM_DOMAIN_SHAPE.test(TEAM_DOMAIN)) {
-        return false;
-    }
-
-    // A malformed secure root disables the feature outright: the shouldUseSecure commands would otherwise
-    // go out bearer-less and 401 unrecoverably
-    if (SECURE_API_ROOT && !parseHTTPSOrigin(SECURE_API_ROOT)) {
-        return false;
-    }
-
-    return parseHTTPSOrigin(API_ROOT) !== null;
-};
-
-/**
- * RFC 8707 resource indicator: Cloudflare binds the issued token to exactly this one string, so one token
- * covers every allowlisted host only if they all belong to the same (multi-domain) Access application.
- */
-const getQAResource: GetQAResource = () => {
-    // The `??` is unreachable behind the isQAAuthConfigured() gate that every caller sits under
-    return parseHTTPSOrigin(CONFIG.QA_AUTH.API_ROOT) ?? '';
-};
-
-/** Every origin allowed to receive the QA bearer. Entries are configured hosts, never inferred from the primary name */
-function getQAOrigins(): string[] {
-    const {API_ROOT, SECURE_API_ROOT} = CONFIG.QA_AUTH;
-    return [API_ROOT, SECURE_API_ROOT].map((root) => parseHTTPSOrigin(root)).filter((origin) => origin !== null);
-}
-
-const isQAServerRequest: IsQAServerRequest = (url) => {
-    if (!isQAAuthConfigured()) {
-        return false;
-    }
-
-    try {
-        return getQAOrigins().includes(new URL(url).origin);
-    } catch {
-        return false;
-    }
-};
+const isQAServerRequest: IsQAServerRequest = (url) => isQAAuthConfigured() && matchesQAOrigin(url);
 
 /** Must be registered as an allowed redirect URI on the Access application. Read lazily: no `window` on native. */
 const getOAuthRedirectURI: GetOAuthRedirectURI = () => {
-    return `${window.location.origin}/oauth/callback`;
+    return `${window.location.origin}${OAUTH_CALLBACK_PATH}`;
 };
 
-export {getOAuthRedirectURI, getQAResource, isQAAuthConfigured, isQAServerRequest};
+export {getOAuthClientID, getOAuthRedirectURI, getQAResource, isQAAuthConfigured, isQAServerRequest};
+export type {GetOAuthClientID, GetOAuthRedirectURI, GetQAResource, IsQAAuthConfigured, IsQAServerRequest};

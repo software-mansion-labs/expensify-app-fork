@@ -1,6 +1,6 @@
+import type {RunAuthorizeRoundTrip} from '@libs/CloudflareAccess/authorizeRoundTrip/types';
 import type * as ConfigModule from '@libs/CloudflareAccess/Config';
 import type * as PKCEModule from '@libs/CloudflareAccess/generatePKCE';
-import type WebCryptoProvider from '@libs/CloudflareAccess/getWebCrypto/types';
 import type * as OAuthClientModule from '@libs/CloudflareAccess/OAuthClient';
 import type * as PendingAuthFlowStorageModule from '@libs/CloudflareAccess/PendingAuthFlowStorage';
 import type * as SessionCleanupModule from '@libs/SessionCleanup';
@@ -22,6 +22,9 @@ const AUTHORIZE_URL = 'https://team.cloudflareaccess.com/cdn-cgi/access/oauth/au
 
 jest.mock('@src/CONFIG', () => ({__esModule: true, default: {QA_AUTH: {CLIENT_ID: 'client-123'}}}));
 
+// Jest-expo resolves index.native.ts by default. These cases cover the web redirect, so the real web
+// implementation is required by explicit path rather than through platform resolution.
+jest.mock('@libs/CloudflareAccess/authorizeRoundTrip', () => jest.requireActual<{default: RunAuthorizeRoundTrip}>('../../src/libs/CloudflareAccess/authorizeRoundTrip/index.ts'));
 jest.mock('@libs/CloudflareAccess/Config', () => ({
     __esModule: true,
     ...jest.requireActual<typeof ConfigModule>('@libs/CloudflareAccess/Config'),
@@ -311,7 +314,7 @@ describe('refreshCloudflareSession', () => {
     });
 });
 
-describe('redirectToCloudflareSignIn', () => {
+describe('startCloudflareSignIn', () => {
     let addEventListenerSpy: jest.SpiedFunction<typeof window.addEventListener>;
 
     beforeEach(() => {
@@ -320,7 +323,7 @@ describe('redirectToCloudflareSignIn', () => {
 
     afterEach(() => {
         // jsdom's window outlives each test, so a pageshow listener left behind
-        // would reject this test's pending redirect, unhandled, when a later test dispatches the event
+        // would settle this test's pending redirect when a later test dispatches the event
         for (const [type, listener] of addEventListenerSpy.mock.calls) {
             if (type === 'pageshow') {
                 window.removeEventListener(type, listener);
@@ -339,7 +342,7 @@ describe('redirectToCloudflareSignIn', () => {
         });
 
         // When the redirect begins
-        SessionActions.redirectToCloudflareSignIn('http://localhost/settings/troubleshoot');
+        SessionActions.startCloudflareSignIn('http://localhost/settings/troubleshoot');
         await waitForBatchedUpdates();
 
         expect(assignSpy).toHaveBeenCalledWith(AUTHORIZE_URL);
@@ -359,7 +362,7 @@ describe('redirectToCloudflareSignIn', () => {
 
         // When the returned promise is observed after the navigation has been requested
         let isSettled = false;
-        SessionActions.redirectToCloudflareSignIn().then(
+        SessionActions.startCloudflareSignIn().then(
             () => {
                 isSettled = true;
             },
@@ -393,7 +396,7 @@ describe('redirectToCloudflareSignIn', () => {
 
         // When the redirect begins, Then it must reject and stay on the page: navigating away without a
         // stored verifier would strand the flow with no way to exchange the code that comes back
-        await expect(SessionActions.redirectToCloudflareSignIn()).rejects.toThrow('QuotaExceededError');
+        await expect(SessionActions.startCloudflareSignIn()).rejects.toThrow('QuotaExceededError');
         expect(assignSpy).not.toHaveBeenCalled();
     });
 
@@ -403,7 +406,7 @@ describe('redirectToCloudflareSignIn', () => {
         jest.mocked(pkce.generatePKCEPair).mockReturnValue(pkceDeferred.promise);
 
         // When the session is dropped, invalidating the flow, before the key material arrives
-        const redirect = SessionActions.redirectToCloudflareSignIn('http://localhost/settings/troubleshoot');
+        const redirect = SessionActions.startCloudflareSignIn('http://localhost/settings/troubleshoot');
         await SessionActions.clearCloudflareSession();
         pkceDeferred.resolve(PAIR_1);
 
@@ -419,8 +422,8 @@ describe('redirectToCloudflareSignIn', () => {
         jest.mocked(pkce.generatePKCEPair).mockResolvedValue(PAIR_1);
 
         // When the button is pressed again before the unload completes
-        SessionActions.redirectToCloudflareSignIn();
-        SessionActions.redirectToCloudflareSignIn();
+        SessionActions.startCloudflareSignIn();
+        SessionActions.startCloudflareSignIn();
         await waitForBatchedUpdates();
 
         // Then the second press joins the first and the flow runs once
@@ -432,8 +435,8 @@ describe('redirectToCloudflareSignIn', () => {
         // Given a first press whose discovery fails, and a second press that joined it while it was still running
         jest.mocked(pkce.generatePKCEPair).mockResolvedValue(PAIR_1);
         jest.mocked(oAuthClient.buildAuthorizeURL).mockRejectedValueOnce(new Error('Discovery failed'));
-        const firstPress = SessionActions.redirectToCloudflareSignIn();
-        const secondPress = SessionActions.redirectToCloudflareSignIn();
+        const firstPress = SessionActions.startCloudflareSignIn();
+        const secondPress = SessionActions.startCloudflareSignIn();
 
         // When the first press fails
         // Then the joined press fails with it rather than waiting on a navigation that will never happen
@@ -442,12 +445,12 @@ describe('redirectToCloudflareSignIn', () => {
         expect(assignSpy).not.toHaveBeenCalled();
     });
 
-    it('rejects every press when Back restores the page from the back/forward cache', async () => {
+    it('reports every press as cancelled when Back restores the page from the back/forward cache', async () => {
         // Given a redirect whose navigation has been requested, and a second press that joined it before the page left.
         // Both callers are waiting on the same round trip, so both must hear when it is abandoned
         jest.mocked(pkce.generatePKCEPair).mockResolvedValue(PAIR_1);
-        const firstPress = SessionActions.redirectToCloudflareSignIn();
-        const secondPress = SessionActions.redirectToCloudflareSignIn();
+        const firstPress = SessionActions.startCloudflareSignIn();
+        const secondPress = SessionActions.startCloudflareSignIn();
         await waitForBatchedUpdates();
 
         // When Back brings the page out of the back/forward cache
@@ -455,20 +458,20 @@ describe('redirectToCloudflareSignIn', () => {
 
         // Then both presses hear about it: the restored page keeps its React state,
         // so a redirect left pending would keep its caller's spinner running
-        await expect(firstPress).rejects.toThrow(SessionActions.CF_SIGN_IN_ABANDONED);
-        await expect(secondPress).rejects.toThrow(SessionActions.CF_SIGN_IN_ABANDONED);
+        await expect(firstPress).resolves.toBe('cancelled');
+        await expect(secondPress).resolves.toBe('cancelled');
     });
 
     it('starts a new round trip with fresh key material on the first press after Back', async () => {
         // Given a redirect that Back abandoned by restoring the page from the back/forward cache
         jest.mocked(pkce.generatePKCEPair).mockResolvedValueOnce(PAIR_1).mockResolvedValueOnce(PAIR_2);
-        const abandonedPress = SessionActions.redirectToCloudflareSignIn();
+        const abandonedPress = SessionActions.startCloudflareSignIn();
         await waitForBatchedUpdates();
         window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted: true}));
-        await expect(abandonedPress).rejects.toThrow(SessionActions.CF_SIGN_IN_ABANDONED);
+        await expect(abandonedPress).resolves.toBe('cancelled');
 
         // When the user presses again
-        SessionActions.redirectToCloudflareSignIn();
+        SessionActions.startCloudflareSignIn();
         await waitForBatchedUpdates();
 
         // Then it navigates again with a newly stored verifier: the restored page keeps its module memory,
@@ -488,7 +491,7 @@ describe('redirectToCloudflareSignIn', () => {
     ])('drops a round trip still waiting on its callback on $trigger', async ({reset}) => {
         // Given a round trip whose navigation to the Authorize screen has been requested
         jest.mocked(pkce.generatePKCEPair).mockResolvedValue(PAIR_1);
-        SessionActions.redirectToCloudflareSignIn();
+        SessionActions.startCloudflareSignIn();
         await waitForBatchedUpdates();
 
         // When the session is reset before the callback arrives
@@ -693,16 +696,5 @@ describe('markCloudflareSessionRejected', () => {
 
         // Then the working rotation survives
         expect(SessionActions.getCloudflareSession()).toEqual(SESSION_B);
-    });
-});
-
-describe('native platform safety', () => {
-    it('the real getWebCrypto resolves to the native stub here: import-safe and inert', () => {
-        // Given the real (unmocked) getWebCrypto. Jest-expo's haste config resolves index.native.ts, the same file native builds get.
-        // When the stub is exercised, Then it must be import-safe and inert: it is unreachable behind the
-        // native isQAAuthConfigured() gate, so it only needs to be a typed no-op that never crashes a native bundle.
-        const actualProvider = jest.requireActual<{default: WebCryptoProvider}>('@libs/CloudflareAccess/getWebCrypto').default;
-        const array = new Uint8Array(1);
-        expect(actualProvider.getRandomValues(array)).toBe(array);
     });
 });

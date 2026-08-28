@@ -10,4 +10,7 @@ type GetQAResource = () => string;
 /** The OAuth redirect URI this client sends and handles */
 type GetOAuthRedirectURI = () => string;
 
-export type {GetOAuthRedirectURI, GetQAResource, IsQAAuthConfigured, IsQAServerRequest};
+/** The dynamically registered client, which is per redirect URI and therefore per platform */
+type GetOAuthClientID = () => string;
+
+export type {GetOAuthClientID, GetOAuthRedirectURI, GetQAResource, IsQAAuthConfigured, IsQAServerRequest};
