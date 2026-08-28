@@ -180,4 +180,45 @@ describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
             ['cleanup:kept:b', 'cleanup:plain:b'],
         ]);
     });
+
+    it('applies a hidden dependency change when a resize temporarily shows the covered screen', () => {
+        // Given a covered screen whose dependency changes before a window resize needs to paint its hidden content
+        const {rerender, unmount} = render(activityScreen(false));
+        completeFirstRender();
+        const commits = [drainLog()];
+
+        rerender(activityScreen(true));
+        commits.push(drainLog());
+
+        rerender(activityScreen(true, 'b'));
+        commits.push(drainLog());
+
+        // When the resize temporarily makes the covered Activity visible and hides it again after the layout settles
+        mockedGetIsWindowSizeChanging.mockReturnValue(true);
+        rerender(activityScreen(true, 'b'));
+        commits.push(drainLog());
+
+        mockedGetIsWindowSizeChanging.mockReturnValue(false);
+        rerender(activityScreen(true, 'b'));
+        commits.push(drainLog());
+
+        // When the navigation reveal happens later and the screen finally leaves the stack
+        rerender(activityScreen(false, 'b'));
+        firePendingCallbacks();
+        commits.push(drainLog());
+
+        unmount();
+        commits.push(drainLog());
+
+        // Then the kept effect updates on the resize reveal and does not acquire the same work again on navigation reveal
+        expect(commits).toEqual([
+            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
+            ['cleanup:plain:a'],
+            [],
+            ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'],
+            ['cleanup:plain:b'],
+            ['setup:plain:b'],
+            ['cleanup:kept:b', 'cleanup:plain:b'],
+        ]);
+    });
 });

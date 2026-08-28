@@ -11,7 +11,21 @@ import React, {Activity, useEffect} from 'react';
 
 import type {AnyEffectHook, ScreenProps, Step} from '../../../utils/ScreenActivityEffectTestUtils';
 
-import {ActivityScreen, AnyEffectHookProvider, drainLog, hidden, log, LiveScreen, resetLog, runOn, Subject, track, useAnyEffect, visible} from '../../../utils/ScreenActivityEffectTestUtils';
+import {
+    ActivityScreen,
+    AnyEffectHookProvider,
+    drainLog,
+    hidden,
+    log,
+    LiveScreen,
+    record,
+    resetLog,
+    runOn,
+    Subject,
+    track,
+    useAnyEffect,
+    visible,
+} from '../../../utils/ScreenActivityEffectTestUtils';
 
 // The gate picks its implementation at module load, so the flag has to be mocked before the import above runs.
 jest.mock('@src/CONFIG', () => ({__esModule: true, default: {USE_ACTIVITY_SCREEN_STRICT_MODE_IN_DEV: true}}));
@@ -31,6 +45,20 @@ function ThrowingEffect() {
             throw new Error('cleanup of throwing threw');
         };
     }, []);
+    return null;
+}
+
+/** An effect whose first cleanup throws, so a dependency change can compare the two hooks after a live setup. */
+function ThrowingChangingEffect({value}: {value: string}) {
+    useAnyEffect(() => {
+        log(`setup:throwingChanging:${value}`);
+        return () => {
+            log(`cleanup:throwingChanging:${value}`);
+            if (value === 'a') {
+                throw new Error('cleanup of throwingChanging:a threw');
+            }
+        };
+    }, [value]);
     return null;
 }
 
@@ -79,6 +107,17 @@ function ThrowingScreenContent({hasThrowing = true}: {hasThrowing?: boolean}) {
     );
 }
 
+/** A throwing dependency effect next to an ordinary one, so a failure cannot hide work another call site owes. */
+function ThrowingChangingScreenContent({value}: {value: string}) {
+    return (
+        <>
+            <ThrowingChangingEffect value={value} />
+            <Subject value={value} />
+            <Survivor />
+        </>
+    );
+}
+
 /** The screen of a nested navigator, where the boundary of the screen holding it is the one that hides. */
 function OuterHiddenNestedScreen({isHidden: isOuterHidden, children}: ScreenProps) {
     return (
@@ -105,6 +144,19 @@ function InnerHiddenNestedScreen({isHidden: isInnerHidden, children}: ScreenProp
         <ActivityScreen isHidden={false}>
             <ActivityScreen isHidden={isInnerHidden}>{children}</ActivityScreen>
         </ActivityScreen>
+    );
+}
+
+/** Two independently covered screens, which is the state overlapping navigator transitions put the boundaries in. */
+function overlappingNestedScreen(isOuterHidden: boolean, isInnerHidden: boolean) {
+    return (
+        <AnyEffectHookProvider hook={useScreenActivityEffect}>
+            <ActivityScreen isHidden={isOuterHidden}>
+                <ActivityScreen isHidden={isInnerHidden}>
+                    <Subject value="a" />
+                </ActivityScreen>
+            </ActivityScreen>
+        </AnyEffectHookProvider>
     );
 }
 
@@ -214,6 +266,45 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
                 ['cleanup:survivor:a'],
             ]);
             expect(activity.commits).toEqual([['setup:throwing:a', 'setup:s:a', 'setup:survivor:a'], [], [], ['cleanup:throwing:a', 'cleanup:s:a', 'cleanup:survivor:a'], []]);
+            expect(activity.errors).toEqual(live.errors);
+        });
+
+        it('releases the rest of the screen when a dependency cleanup throws on the reveal', () => {
+            // Given a setup whose cleanup throws and a dependency change which Activity defers until the reveal
+            const content = (value: string) => <ThrowingChangingScreenContent value={value} />;
+            const liveSteps = [visible(content('a')), visible(content('b'))];
+            const activitySteps = [visible(content('a')), hidden(content('a')), hidden(content('b')), visible(content('b'))];
+
+            // When the same change runs on a live screen and on a screen whose previous setup survived the cover
+            const live = runCatching(useEffect, LiveScreen, liveSteps);
+            const activity = runCatching(useScreenActivityEffect, ActivityScreen, activitySteps);
+
+            // Then plain useEffect runs the next setup before React takes the failed tree down
+            expect(live.commits.flat()).toEqual([
+                'setup:throwingChanging:a',
+                'setup:s:a',
+                'setup:survivor:a',
+                'cleanup:throwingChanging:a',
+                'cleanup:s:a',
+                'setup:throwingChanging:b',
+                'setup:s:b',
+                'cleanup:throwingChanging:b',
+                'cleanup:s:b',
+                'cleanup:survivor:a',
+            ]);
+
+            // And the covered screen reports the same error and still releases every other call site, while the setup
+            // whose previous cleanup threw cannot continue because that release runs from inside its new setup
+            expect(activity.commits.flat()).toEqual([
+                'setup:throwingChanging:a',
+                'setup:s:a',
+                'setup:survivor:a',
+                'cleanup:throwingChanging:a',
+                'cleanup:s:a',
+                'setup:s:b',
+                'cleanup:s:b',
+                'cleanup:survivor:a',
+            ]);
             expect(activity.errors).toEqual(live.errors);
         });
     });
@@ -368,6 +459,34 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // Then the boundary that hid is above its own <Activity>, so it keeps the setup exactly as a flat screen does
             expect(nested).toEqual(runOn(useEffect, LiveScreen, coverAndReveal));
+        });
+
+        it('keeps the setup live when the covers of the outer and inner screens overlap', () => {
+            // Given two nested screens which can each be covered while the other one is already hidden
+            const innerFirst = [
+                overlappingNestedScreen(false, false),
+                overlappingNestedScreen(false, true),
+                overlappingNestedScreen(true, true),
+                overlappingNestedScreen(false, true),
+                overlappingNestedScreen(false, false),
+            ];
+            const outerFirst = [
+                overlappingNestedScreen(false, false),
+                overlappingNestedScreen(true, false),
+                overlappingNestedScreen(true, true),
+                overlappingNestedScreen(false, true),
+                overlappingNestedScreen(false, false),
+            ];
+
+            // When the outer cover starts before or after the inner one and both screens are eventually revealed
+            const innerFirstCalls = record(innerFirst);
+            resetLog();
+            const outerFirstCalls = record(outerFirst);
+
+            // Then the boundary handoff keeps one setup alive until the outer screen leaves the stack in both orders
+            const expected = [['setup:s:a'], [], [], [], [], ['cleanup:s:a']];
+            expect(innerFirstCalls).toEqual(expected);
+            expect(outerFirstCalls).toEqual(expected);
         });
     });
 
