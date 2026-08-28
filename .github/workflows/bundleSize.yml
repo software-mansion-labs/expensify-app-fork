@@ -28,16 +28,13 @@ on:
     # A pull request is compared against the branch it merges into, so every branch that is a base for pull
     # requests has to measure its own commits. `main` is that branch. `poc/bundle-size**` is TEMPORARY: it
     # is the base of the pull requests that prove this out on a fork. Remove that entry before this ships.
+    #
+    # Deliberately NOT path-filtered, unlike `pull_request` above. A filtered baseline branch leaves holes in
+    # the history - a commit touching only tests never builds - and every pull request whose merge base lands
+    # in a hole is then compared against an older ancestor, which charges it for whatever landed in between.
+    # The fallback still exists for a build that failed or has not finished, but it stops being the normal
+    # case. The price is one build per commit on this branch.
     branches: [main, 'poc/bundle-size**']
-    paths:
-      - 'src/**'
-      - 'config/**'
-      - 'assets/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'patches/**'
-      - 'scripts/bundleSize.ts'
-      - '.github/workflows/bundleSize.yml'
 
 permissions:
   contents: read
@@ -78,9 +75,10 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node ./scripts/bundleSize.ts --out bundle-size.json --sha "$HEAD_SHA"
 
-      # The follower cannot read the pull request number from the `workflow_run` payload for a fork run, so
-      # it travels in the artifact. `base.sha` is the base branch tip this head was compared against, which
-      # is where the follower starts its merge-base lookup.
+      # Informational only, for reading a run back later. NOTHING here is trusted by the follower: a
+      # `pull_request` run uses the copy of this workflow on the pull request's own branch, so a fork decides
+      # what this file says, and a pull request number taken from it would let one repository post a comment
+      # on another repository's pull request. The follower resolves all of this from the API instead.
       - name: Record what was measured
         env:
           PR_NUMBER: ${{ github.event.pull_request.number || '' }}
@@ -153,4 +151,7 @@ jobs:
         uses: ./.github/actions/composite/postBundleSizeComment
         with:
           measurement-run-id: ${{ github.run_id }}
+          head-branch: ${{ github.event.pull_request.head.ref }}
+          head-repository: ${{ github.event.pull_request.head.repo.full_name }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
           github-token: ${{ github.token }}

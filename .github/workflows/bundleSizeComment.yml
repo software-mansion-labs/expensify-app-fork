@@ -45,4 +45,8 @@ jobs:
         uses: ./.github/actions/composite/postBundleSizeComment
         with:
           measurement-run-id: ${{ github.event.workflow_run.id }}
+          # From the event, never from the artifact: these decide which pull request gets commented on.
+          head-branch: ${{ github.event.workflow_run.head_branch }}
+          head-repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          head-sha: ${{ github.event.workflow_run.head_sha }}
           github-token: ${{ github.token }}
