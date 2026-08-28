@@ -76,6 +76,12 @@ function wrapper(isScreenBlurred: boolean, value = 'a') {
     );
 }
 
+// A screen on the 'none' behavior is not wrapped in anything, which is what wrapDescriptorsWithNonTopScreensBehavior
+// leaves it as, so covering it is an ordinary render of a screen that stays live.
+function unwrapped(value = 'a') {
+    return <Subjects value={value} />;
+}
+
 // The wrapper keeps a freshly mounted screen visible until a frame was painted, so a test flushes that window before
 // it asserts the steady state.
 function completeFirstRender() {
@@ -142,6 +148,39 @@ describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
             // Only the plain effect is released when that frame is done and the screen goes hidden.
             ['cleanup:plain:a'],
             ['setup:plain:a'],
+        ]);
+    });
+
+    it('shows what the two behaviors cost the effects of the same screen', () => {
+        const runCoverAndReveal = (isWrapped: boolean) => {
+            resetLog();
+            const screen = (isScreenBlurred: boolean) => (isWrapped ? wrapper(isScreenBlurred) : unwrapped());
+            const {rerender, unmount} = render(screen(false));
+            completeFirstRender();
+            const steps = [drainLog()];
+
+            rerender(screen(true));
+            steps.push(drainLog());
+
+            rerender(screen(false));
+            firePendingCallbacks();
+            steps.push(drainLog());
+
+            unmount();
+            steps.push(drainLog());
+            return steps;
+        };
+
+        // The 'none' behavior keeps both effects live from the mount to the moment the screen leaves the stack.
+        expect(runCoverAndReveal(false)).toEqual([['setup:plain:a', 'setup:kept:a'], [], [], ['cleanup:plain:a', 'cleanup:kept:a']]);
+
+        // The 'activity' behavior adds the remount cycle of the gate for both hooks, and one release and setup per
+        // cover and reveal cycle for the plain effect alone.
+        expect(runCoverAndReveal(true)).toEqual([
+            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
+            ['cleanup:plain:a'],
+            ['setup:plain:a'],
+            ['cleanup:kept:a', 'cleanup:plain:a'],
         ]);
     });
 
