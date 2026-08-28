@@ -186,32 +186,39 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
         }
 
         it('keeps two screens with a boundary each independent', () => {
-            // Given two screens of one navigator, each with its own boundary and <Activity>
-            const stack = (left: Step, right: Step) => (
-                <AnyEffectHookProvider hook={useScreenActivityEffect}>
-                    <ActivityScreen isHidden={left.isHidden}>{left.children}</ActivityScreen>
-                    <ActivityScreen isHidden={right.isHidden}>{right.children}</ActivityScreen>
-                </AnyEffectHookProvider>
-            );
+            // Given two screens of one navigator, each with its own screen of the behavior under test
+            const runStack = (hook: AnyEffectHook, Screen: ComponentType<ScreenProps>) => {
+                resetLog();
+                const stack = (left: Step, right: Step) => (
+                    <AnyEffectHookProvider hook={hook}>
+                        <Screen isHidden={left.isHidden}>{left.children}</Screen>
+                        <Screen isHidden={right.isHidden}>{right.children}</Screen>
+                    </AnyEffectHookProvider>
+                );
+
+                const {rerender, unmount} = render(stack(visible(<LeftEffect />), visible(<RightEffect />)));
+                const commits = [drainLog()];
+
+                rerender(stack(hidden(<LeftEffect />), visible(<RightEffect />)));
+                commits.push(drainLog());
+
+                rerender(stack(hidden(<LeftEffect />), visible(null)));
+                commits.push(drainLog());
+
+                rerender(stack(visible(<LeftEffect />), visible(null)));
+                commits.push(drainLog());
+
+                unmount();
+                commits.push(drainLog());
+                return commits;
+            };
 
             // When the left screen is covered and a component of the visible right screen then goes away
-            const {rerender, unmount} = render(stack(visible(<LeftEffect />), visible(<RightEffect />)));
-            const commits = [drainLog()];
-
-            rerender(stack(hidden(<LeftEffect />), visible(<RightEffect />)));
-            commits.push(drainLog());
-
-            rerender(stack(hidden(<LeftEffect />), visible(null)));
-            commits.push(drainLog());
-
-            rerender(stack(visible(<LeftEffect />), visible(null)));
-            commits.push(drainLog());
-
-            unmount();
-            commits.push(drainLog());
-
             // Then the cover of one screen defers nothing of the other, because each boundary answers for itself alone
-            expect(commits).toEqual([['setup:left:a', 'setup:right:a'], [], ['cleanup:right:a'], [], ['cleanup:left:a']]);
+            expect(runStack(useScreenActivityEffect, ActivityScreen)).toEqual([['setup:left:a', 'setup:right:a'], [], ['cleanup:right:a'], [], ['cleanup:left:a']]);
+
+            // And that is what two screens that both stay live in the background do
+            expect(runStack(useEffect, LiveScreen)).toEqual(runStack(useScreenActivityEffect, ActivityScreen));
         });
     });
 
@@ -257,10 +264,12 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             const steps = [visible(<Subject value="a" />)];
 
             // When the screen mounts and then leaves the stack
+            const live = runOn(useEffect, GatedLiveScreen, steps);
             const activity = runOn(useScreenActivityEffect, GateAboveBoundaryScreen, steps);
 
             // Then the effect is set up again on the second mount, because the entry went away with the first boundary
             expect(activity).toEqual([['setup:s:a', 'cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
+            expect(activity).toEqual(live);
         });
 
         it('keeps the setup live through a cover and reveal cycle below the gate', () => {
