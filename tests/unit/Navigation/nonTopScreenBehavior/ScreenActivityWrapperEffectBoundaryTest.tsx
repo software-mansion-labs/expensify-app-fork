@@ -1,7 +1,5 @@
 import {act, render} from '@testing-library/react-native';
 
-import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
-
 import ScreenActivityWrapper, {FIRST_RENDER_FALLBACK_DELAY_MS} from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/ScreenActivityWrapper';
 import {
     getIsWindowSizeChanging,
@@ -9,9 +7,9 @@ import {
 } from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/ScreenActivityWrapper/windowSizeChangeStore';
 
 import {useIsFocused} from '@react-navigation/native';
-import React, {useEffect} from 'react';
+import React from 'react';
 
-import {drainLog, resetLog, Single} from '../../../utils/ScreenActivityEffectTestUtils';
+import {drainLog, KeptEffect, PlainEffect, resetLog} from '../../../utils/ScreenActivityEffectTestUtils';
 import createTransitionTrackerHarness from '../../../utils/TransitionTrackerTestUtils';
 
 // The gate below the <Activity> picks its implementation from this flag at module load, and mocking CONFIG also keeps
@@ -40,8 +38,9 @@ jest.mock('@react-navigation/native', () => {
 });
 
 /**
- * The hook only survives a cover because ScreenActivityWrapper renders the boundary outside the <Activity> it serves,
- * so these tests drive the real wrapper instead of a hand built tree, StrictMode gate and all.
+ * useScreenActivityEffect only survives a cover because ScreenActivityWrapper renders the boundary outside the
+ * <Activity> it serves, so these tests drive the real wrapper rather than a hand built tree, StrictMode gate and all.
+ * The calls named 'plain' come from useEffect and the ones named 'kept' from the hook.
  */
 
 const transitionTracker = createTransitionTrackerHarness();
@@ -50,25 +49,18 @@ const mockedUseIsFocused = jest.mocked(useIsFocused);
 const mockedGetIsWindowSizeChanging = jest.mocked(getIsWindowSizeChanging);
 const mockedSubscribeToWindowSizeChange = jest.mocked(subscribeToWindowSizeChange);
 
-/** One effect per hook, so every step shows what the cover did to each of them. */
+/** One effect per hook, so every step shows what the behavior of the screen did to each of them. */
 function Subjects({value}: {value: string}) {
     return (
         <>
-            <Single
-                useAnyEffect={useEffect}
-                id="plain"
-                value={value}
-            />
-            <Single
-                useAnyEffect={useScreenActivityEffect}
-                id="kept"
-                value={value}
-            />
+            <PlainEffect value={value} />
+            <KeptEffect value={value} />
         </>
     );
 }
 
-function wrapper(isScreenBlurred: boolean, value = 'a') {
+/** A screen on the 'activity' behavior, which is the wrapper the navigator puts around a screen that opted in. */
+function activityScreen(isScreenBlurred: boolean, value = 'a') {
     return (
         <ScreenActivityWrapper isScreenBlurred={isScreenBlurred}>
             <Subjects value={value} />
@@ -76,14 +68,12 @@ function wrapper(isScreenBlurred: boolean, value = 'a') {
     );
 }
 
-// A screen on the 'none' behavior is not wrapped in anything, which is what wrapDescriptorsWithNonTopScreensBehavior
-// leaves it as, so covering it is an ordinary render of a screen that stays live.
-function unwrapped(value = 'a') {
+/** A screen on the 'none' behavior, which wrapDescriptorsWithNonTopScreensBehavior leaves unwrapped. */
+function liveScreen(value = 'a') {
     return <Subjects value={value} />;
 }
 
-// The wrapper keeps a freshly mounted screen visible until a frame was painted, so a test flushes that window before
-// it asserts the steady state.
+/** The wrapper keeps a freshly mounted screen visible until a frame was painted, so a test flushes that window first. */
 function completeFirstRender() {
     act(() => {
         jest.advanceTimersByTime(FIRST_RENDER_FALLBACK_DELAY_MS);
@@ -105,77 +95,32 @@ afterEach(() => {
 });
 
 describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
-    it('keeps the setup of the hook live through a cover and reveal cycle and releases the plain effect next to it', () => {
-        const {rerender, unmount} = render(wrapper(false));
-        completeFirstRender();
-        const steps = [drainLog()];
-
-        rerender(wrapper(true));
-        steps.push(drainLog());
-
-        rerender(wrapper(false));
-        firePendingCallbacks();
-        steps.push(drainLog());
-
-        unmount();
-        steps.push(drainLog());
-
-        expect(steps).toEqual([
-            // The gate mounts the content one commit later and StrictMode puts it through a remount cycle at once.
-            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
-            // The cover releases the plain effect and leaves the one written for it alone.
-            ['cleanup:plain:a'],
-            ['setup:plain:a'],
-            // The boundary releases what it holds before React tears the subtree of the screen down.
-            ['cleanup:kept:a', 'cleanup:plain:a'],
-        ]);
-    });
-
-    it('runs the mount effects on the first, still visible frame of a screen that mounts covered', () => {
-        const {rerender} = render(wrapper(true));
-        const steps = [drainLog()];
-
-        completeFirstRender();
-        steps.push(drainLog());
-
-        rerender(wrapper(false));
-        firePendingCallbacks();
-        steps.push(drainLog());
-
-        expect(steps).toEqual([
-            // The first frame of a covered screen renders visible, so both effects run at mount time.
-            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
-            // Only the plain effect is released when that frame is done and the screen goes hidden.
-            ['cleanup:plain:a'],
-            ['setup:plain:a'],
-        ]);
-    });
-
-    it('shows what the two behaviors cost the effects of the same screen', () => {
+    it('shows what the two non-top screen behaviors cost the effects of one screen', () => {
+        // Given the same two effects on a screen left on the 'none' behavior and on a screen wrapped for 'activity'
         const runCoverAndReveal = (isWrapped: boolean) => {
             resetLog();
-            const screen = (isScreenBlurred: boolean) => (isWrapped ? wrapper(isScreenBlurred) : unwrapped());
+            const screen = (isScreenBlurred: boolean) => (isWrapped ? activityScreen(isScreenBlurred) : liveScreen());
             const {rerender, unmount} = render(screen(false));
             completeFirstRender();
-            const steps = [drainLog()];
+            const commits = [drainLog()];
 
             rerender(screen(true));
-            steps.push(drainLog());
+            commits.push(drainLog());
 
             rerender(screen(false));
             firePendingCallbacks();
-            steps.push(drainLog());
+            commits.push(drainLog());
 
             unmount();
-            steps.push(drainLog());
-            return steps;
+            commits.push(drainLog());
+            return commits;
         };
 
-        // The 'none' behavior keeps both effects live from the mount to the moment the screen leaves the stack.
+        // When another screen covers each of them and is then popped again
+        // Then 'none' keeps both effects live from the mount until the screen leaves the stack
         expect(runCoverAndReveal(false)).toEqual([['setup:plain:a', 'setup:kept:a'], [], [], ['cleanup:plain:a', 'cleanup:kept:a']]);
 
-        // The 'activity' behavior adds the remount cycle of the gate for both hooks, and one release and setup per
-        // cover and reveal cycle for the plain effect alone.
+        // And 'activity' adds the remount cycle of the gate for both, plus a release and a setup per cycle for the plain one
         expect(runCoverAndReveal(true)).toEqual([
             ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
             ['cleanup:plain:a'],
@@ -184,28 +129,52 @@ describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
         ]);
     });
 
-    it('runs a dependency change that landed while the screen was covered on the reveal', () => {
-        const {rerender, unmount} = render(wrapper(false));
+    it('runs the mount effects on the first, still visible frame of a screen that mounts covered', () => {
+        // Given a screen that mounts while it is already covered, which a deep link and a pre-mounted tab both do
+        const {rerender} = render(activityScreen(true));
+        const commits = [drainLog()];
+
+        // When the first frame is done and the screen is revealed later
         completeFirstRender();
-        const steps = [drainLog()];
+        commits.push(drainLog());
 
-        rerender(wrapper(true));
-        steps.push(drainLog());
-
-        rerender(wrapper(true, 'b'));
-        steps.push(drainLog());
-
-        rerender(wrapper(false, 'b'));
+        rerender(activityScreen(false));
         firePendingCallbacks();
-        steps.push(drainLog());
+        commits.push(drainLog());
+
+        // Then the mount work ran at mount time, because the wrapper renders that first frame visible on purpose
+        expect(commits).toEqual([
+            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
+            // Only the plain effect is released when that frame is done and the screen finally goes hidden.
+            ['cleanup:plain:a'],
+            ['setup:plain:a'],
+        ]);
+    });
+
+    it('runs a dependency change that landed while the screen was covered on the reveal', () => {
+        // Given a covered screen whose data changes behind the cover, which is what an Onyx update does
+        const {rerender, unmount} = render(activityScreen(false));
+        completeFirstRender();
+        const commits = [drainLog()];
+
+        rerender(activityScreen(true));
+        commits.push(drainLog());
+
+        rerender(activityScreen(true, 'b'));
+        commits.push(drainLog());
+
+        // When the screen is revealed after the change
+        rerender(activityScreen(false, 'b'));
+        firePendingCallbacks();
+        commits.push(drainLog());
 
         unmount();
-        steps.push(drainLog());
+        commits.push(drainLog());
 
-        expect(steps).toEqual([
+        // Then the kept effect re-runs for the new value on the reveal, and the render behind the cover ran nothing
+        expect(commits).toEqual([
             ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
             ['cleanup:plain:a'],
-            // The render that changed the dependency happened while the screen was covered, so it ran no effect.
             [],
             ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'],
             ['cleanup:kept:b', 'cleanup:plain:b'],
