@@ -76,6 +76,18 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], [], ['setup:plain:b', 'setup:kept:b', 'cleanup:kept:a'], ['cleanup:kept:b', 'cleanup:plain:b']]);
     });
 
+    it('does not treat a plain effect on the reveal as evidence that a kept call site was removed', () => {
+        // Given a mixed screen whose last kept call site is removed behind the cover while a plain sibling remains
+        const steps = [visible(<MixedSiblings value="a" />), hidden(<MixedSiblings value="a" />), hidden(<PlainEffect value="a" />), visible(<PlainEffect value="a" />)];
+
+        // When the plain sibling runs its setup on the reveal but no kept call site registers with the boundary
+        const commits = recordCovered(steps);
+
+        // Then the boundary holds the removed setup until the screen leaves the stack, because a plain effect is not
+        // evidence that the part of the screen owning a kept call site was able to run
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['setup:plain:a'], ['cleanup:kept:a', 'cleanup:plain:a']]);
+    });
+
     it('releases the kept call site when the screen leaves the stack while it is still covered', () => {
         // Given a covered screen that is popped without ever being revealed
         const steps = [visible(<MixedEffects value="a" />), hidden(<MixedEffects value="a" />)];
