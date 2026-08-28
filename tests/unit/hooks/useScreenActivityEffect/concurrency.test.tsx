@@ -4,16 +4,17 @@ import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import type {ComponentType, ReactNode} from 'react';
 
-import React, {Suspense, use, useEffect} from 'react';
+import React, {startTransition, Suspense, use, useEffect} from 'react';
 
 import type {AnyEffectHook, ScreenProps} from '../../../utils/ScreenActivityEffectTestUtils';
 
-import {ActivityScreen, AnyEffectHookProvider, drainLog, LiveScreen, log, resetLog, track, useAnyEffect} from '../../../utils/ScreenActivityEffectTestUtils';
+import {ActivityScreen, AnyEffectHookProvider, drainLog, LiveScreen, log, resetLog, Subject, track, useAnyEffect} from '../../../utils/ScreenActivityEffectTestUtils';
 
 /**
- * A reveal that does not run the body of a component the cover left alone is the one thing the boundary cannot tell from
- * a component that went away, and <Suspense> is how a real screen gets there. These tests hold the boundary to keeping
- * the setup of a component that is only suspended, and they pin the one shape where it cannot.
+ * Every other suite here flushes each commit before the next one. These tests are the ones where a commit does not
+ * finish when it starts: a subtree below the boundary that suspends, and a cover or a reveal that lands in a transition.
+ * A reveal which does not run the body of a component the cover left alone is the one thing the boundary cannot tell
+ * from a component that went away, and <Suspense> is how a real screen gets there.
  */
 
 type Resource = {promise: Promise<void>; resolve: () => void};
@@ -87,9 +88,38 @@ async function run(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, cont
     return commits;
 }
 
-describe('useScreenActivityEffect below a Suspense', () => {
+describe('useScreenActivityEffect in a commit that does not finish at once', () => {
     beforeEach(() => {
         resetLog();
+    });
+
+    it('keeps the setup live when the cover and the reveal land in a transition', async () => {
+        // Given a screen covered and revealed at the priority navigation gives its own updates
+        const tree = (isScreenHidden: boolean) => (
+            <AnyEffectHookProvider hook={useScreenActivityEffect}>
+                <ActivityScreen isHidden={isScreenHidden}>
+                    <Subject value="a" />
+                </ActivityScreen>
+            </AnyEffectHookProvider>
+        );
+
+        const {rerender, unmount} = render(tree(false));
+        const commits: string[][] = [];
+        const step = async (mutate?: () => void) => {
+            await act(async () => {
+                startTransition(() => mutate?.());
+            });
+            commits.push(drainLog());
+        };
+
+        // When each of those commits is a transition rather than a synchronous update
+        await step();
+        await step(() => rerender(tree(true)));
+        await step(() => rerender(tree(false)));
+        await step(() => unmount());
+
+        // Then the boundary answers exactly as it does for a synchronous cover and reveal
+        expect(commits).toEqual([['setup:s:a'], [], [], ['cleanup:s:a']]);
     });
 
     it('keeps the setup of a component that suspends again on the reveal', async () => {

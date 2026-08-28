@@ -1,12 +1,13 @@
 import {render} from '@testing-library/react-native';
 
 import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
+import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffect/ScreenActivityEffectBoundaryContext';
 
 import StrictModeMountGate from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/ScreenActivityWrapper/StrictModeMountGate';
 
 import type {ComponentType} from 'react';
 
-import React, {useEffect} from 'react';
+import React, {Activity, useEffect} from 'react';
 
 import type {AnyEffectHook, ScreenProps, Step} from '../../../utils/ScreenActivityEffectTestUtils';
 
@@ -31,6 +32,34 @@ function ThrowingEffect() {
         };
     }, []);
     return null;
+}
+
+/** An effect whose setup throws, which is a screen effect with a bug in the work it acquires. */
+function ThrowingSetup() {
+    useAnyEffect(() => {
+        log('setup:throwingSetup:a');
+        throw new Error('setup of throwingSetup threw');
+    }, []);
+    return null;
+}
+
+/** A screen whose first component fails to set up, leaving the rest of the screen to be released as usual. */
+function ThrowingSetupScreenContent() {
+    return (
+        <>
+            <ThrowingSetup />
+            <Survivor />
+        </>
+    );
+}
+
+/** The mis-wiring the boundary cannot survive: it reports a hidden screen while the <Activity> it wraps is visible. */
+function DriftedScreen({children}: ScreenProps) {
+    return (
+        <ScreenActivityEffectBoundaryProvider isHidden>
+            <Activity mode="visible">{children}</Activity>
+        </ScreenActivityEffectBoundaryProvider>
+    );
 }
 
 /** A component that outlives the two above it, so a test can see whether the throw took the rest of the screen with it. */
@@ -121,14 +150,18 @@ function runCatching(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, st
         commits.push(drainLog());
     };
 
+    // The mount is recorded like every other step, because a setup that throws throws out of the render itself.
+    let controls: ReturnType<typeof render> | undefined;
     const [first, ...rest] = steps;
-    const {rerender, unmount} = render(tree(first));
-    commits.push(drainLog());
+    runStep(() => {
+        controls = render(tree(first));
+    });
 
+    const rerenderStep = (step: Step) => controls?.rerender(tree(step));
     for (const step of rest) {
-        runStep(() => rerender(tree(step)));
+        runStep(() => rerenderStep(step));
     }
-    runStep(() => unmount());
+    runStep(() => controls?.unmount());
 
     return {commits, errors};
 }
@@ -293,6 +326,43 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // Then the boundary that hid is above its own <Activity>, so it keeps the setup exactly as a flat screen does
             expect(nested).toEqual(runOn(useEffect, LiveScreen, coverAndReveal));
+        });
+    });
+
+    describe('a setup that throws', () => {
+        it('leaves the boundary holding nothing for the call site whose setup failed', () => {
+            // Given a screen whose first effect throws while it is acquiring what it needs
+            const steps = [visible(<ThrowingSetupScreenContent />)];
+
+            // When the screen mounts and then leaves the navigation stack
+            const live = runCatching(useEffect, LiveScreen, steps);
+            const activity = runCatching(useScreenActivityEffect, ActivityScreen, steps);
+
+            // Then the failed setup left no cleanup behind, and the rest of the screen is set up and released as usual
+            expect(live.commits).toEqual([['setup:throwingSetup:a', 'setup:survivor:a', 'cleanup:survivor:a'], []]);
+            expect(live.errors).toEqual(['Error: setup of throwingSetup threw']);
+
+            // And the boundary is the same, because an entry only counts as set up once its body returned
+            expect(activity.commits).toEqual(live.commits);
+            expect(activity.errors).toEqual(live.errors);
+        });
+    });
+
+    describe('a boundary that reports a hidden screen over a live subtree', () => {
+        it('reports the drift in development, which is the only place the mis-wiring can be seen', () => {
+            // Given a boundary whose isHidden no longer describes the mode of the <Activity> it wraps
+            const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+            // When an effect of the subtree runs its body, which a hidden screen never does
+            const drifted = runOn(useScreenActivityEffect, DriftedScreen, [visible(<Subject value="a" />), visible(null)]);
+            const messages = reported.mock.calls.map((call) => String(call.at(0)));
+            reported.mockRestore();
+
+            // Then the boundary says so, because every cleanup of the subtree is deferred for as long as it lasts
+            expect(messages.filter((message) => message.includes('has drifted from the mode of the <Activity>'))).toHaveLength(1);
+
+            // And the deferred cleanup is the damage the message is about: the removal released nothing
+            expect(drifted).toEqual([['setup:s:a'], [], ['cleanup:s:a']]);
         });
     });
 
