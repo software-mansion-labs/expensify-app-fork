@@ -1,7 +1,7 @@
+import runAuthorizeRoundTrip from '@libs/CloudflareAccess/authorizeRoundTrip';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import {generatePKCEPair, generateState} from '@libs/CloudflareAccess/generatePKCE';
 import {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} from '@libs/CloudflareAccess/OAuthClient';
-import {savePendingAuthFlow} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
 import Log from '@libs/Log';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -49,30 +49,46 @@ function isSessionNearExpiry(session: CloudflareSession): boolean {
     return session.expiresAt - Date.now() < ACCESS_TOKEN_EXPIRY_BUFFER_MS;
 }
 
-let isRedirectInFlight = false;
+/** Native resolves this; web never does, because the page leaves for Cloudflare */
+type CloudflareSignInResult = 'session-established' | 'cancelled' | 'failed';
 
-/** Never settles once navigation is requested — the page is leaving */
-async function redirectToCloudflareSignIn(returnURL: string = window.location.href): Promise<never> {
-    if (isRedirectInFlight) {
-        // A second caller while the first navigation is settling must not overwrite the stored flow
-        return new Promise<never>(() => {});
-    }
-    isRedirectInFlight = true;
+let signInPromise: Promise<CloudflareSignInResult> | null = null;
+
+async function runSignIn(returnURL?: string): Promise<CloudflareSignInResult> {
     const generation = sessionGeneration;
-    try {
-        const pkce = await generatePKCEPair();
-        const state = generateState();
-        const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
-        if (generation !== sessionGeneration) {
-            throw new Error('Cloudflare auth flow was cancelled');
-        }
-        savePendingAuthFlow({state, codeVerifier: pkce.codeVerifier, returnURL, createdAt: Date.now()});
-        window.location.assign(authorizeURL);
-    } catch (error) {
-        isRedirectInFlight = false;
-        throw error;
+    const pkce = await generatePKCEPair();
+    const state = generateState();
+    const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
+
+    if (generation !== sessionGeneration) {
+        throw new Error('Cloudflare auth flow was cancelled');
     }
-    return new Promise<never>(() => {});
+
+    const result = await runAuthorizeRoundTrip({authorizeURL, state, codeVerifier: pkce.codeVerifier, returnURL});
+
+    if (result.outcome === 'cancelled') {
+        return 'cancelled';
+    }
+
+    if (result.outcome === 'failed') {
+        Log.warn('[CloudflareSession] Authorize round trip did not complete', {errorMessage: result.errorMessage});
+        return 'failed';
+    }
+
+    await exchangeCodeForCloudflareSession(result.exchange);
+    return getCloudflareSession() ? 'session-established' : 'failed';
+}
+
+/**
+ * Single-flight: a second caller joins the round trip already running rather than opening a second browser
+ * session, or — on web — overwriting the flow the first one parked. On web the promise never settles, so it
+ * is never cleared either, which is the intended one-shot-per-page behaviour.
+ */
+function startCloudflareSignIn(returnURL?: string): Promise<CloudflareSignInResult> {
+    signInPromise ??= runSignIn(returnURL).finally(() => {
+        signInPromise = null;
+    });
+    return signInPromise;
 }
 
 let codeExchangePromise: Promise<void> | null = null;
@@ -196,7 +212,7 @@ function markCloudflareSessionRejected(rejectedAccessToken: string): Promise<voi
 }
 
 export {
-    redirectToCloudflareSignIn,
+    startCloudflareSignIn,
     clearCloudflareSession,
     exchangeCodeForCloudflareSession,
     getCloudflareSession,
@@ -206,4 +222,4 @@ export {
     refreshCloudflareSession,
     waitForCloudflareSessionHydration,
 };
-export type {CloudflareRefreshResult};
+export type {CloudflareRefreshResult, CloudflareSignInResult};

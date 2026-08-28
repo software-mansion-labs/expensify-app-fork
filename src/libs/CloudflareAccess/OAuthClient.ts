@@ -1,10 +1,10 @@
 import {isRecord} from '@libs/ObjectUtils';
 
-import CONFIG from '@src/CONFIG';
 import type CloudflareSession from '@src/types/onyx/CloudflareSession';
 
 import {getAuthServerEndpoints} from './AuthServerMetadata';
-import {getOAuthRedirectURI, getQAResource} from './Config';
+import {getOAuthClientID, getOAuthRedirectURI, getQAResource} from './Config';
+import timeoutSignal from './timeoutSignal';
 
 /** A hung token endpoint would otherwise hold the cross-tab refresh lock indefinitely */
 const TOKEN_ENDPOINT_TIMEOUT_MS = 10_000;
@@ -29,7 +29,7 @@ async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSessi
         // A 307/308 would re-send this body (code, verifier, refresh token) wherever the redirect points
         redirect: 'error',
         // Times out as a transient transport error, not an OAuthError
-        signal: AbortSignal.timeout(TOKEN_ENDPOINT_TIMEOUT_MS),
+        signal: timeoutSignal(TOKEN_ENDPOINT_TIMEOUT_MS),
     });
 
     const json: unknown = await response.json().catch(() => null);
@@ -69,7 +69,7 @@ async function buildAuthorizeURL({state, codeChallenge}: {state: string; codeCha
     const {authorizationEndpoint} = await getAuthServerEndpoints();
     const url = new URL(authorizationEndpoint);
     url.searchParams.set('response_type', 'code');
-    url.searchParams.set('client_id', CONFIG.QA_AUTH.CLIENT_ID);
+    url.searchParams.set('client_id', getOAuthClientID());
     url.searchParams.set('redirect_uri', getOAuthRedirectURI());
     url.searchParams.set('state', state);
     url.searchParams.set('code_challenge', codeChallenge);
@@ -86,7 +86,7 @@ function exchangeCode({code, codeVerifier}: {code: string; codeVerifier: string}
     body.set('code_verifier', codeVerifier);
     // Must byte-match the redirect_uri sent in the authorize request
     body.set('redirect_uri', getOAuthRedirectURI());
-    body.set('client_id', CONFIG.QA_AUTH.CLIENT_ID);
+    body.set('client_id', getOAuthClientID());
     body.set('resource', getQAResource());
     return postTokenEndpoint(body);
 }
@@ -97,7 +97,7 @@ function refreshTokens(refreshToken: string): Promise<CloudflareSession> {
     body.set('grant_type', 'refresh_token');
     body.set('refresh_token', refreshToken);
     // No `resource` here. Cloudflare's refresh grant takes the client ID and the token only
-    body.set('client_id', CONFIG.QA_AUTH.CLIENT_ID);
+    body.set('client_id', getOAuthClientID());
     return postTokenEndpoint(body);
 }
 

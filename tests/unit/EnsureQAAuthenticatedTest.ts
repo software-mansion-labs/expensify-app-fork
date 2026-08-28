@@ -9,7 +9,7 @@ import type {ValueOf} from 'type-fest';
 
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
 
-const mockBeginRedirect = jest.fn(() => new Promise<never>(() => {}));
+const mockBeginRedirect = jest.fn<Promise<'session-established' | 'cancelled' | 'failed'>, []>(() => new Promise(() => {}));
 const mockGetSession = jest.fn<CloudflareSession | null | undefined, []>();
 const mockGetPending = jest.fn<Promise<void> | null, []>();
 const mockIsQAServerActive = jest.fn<boolean, []>();
@@ -18,7 +18,7 @@ const mockWaitForActiveServerHydration = jest.fn(() => Promise.resolve());
 const mockIsConfigured = jest.fn<boolean, []>();
 
 jest.mock('@userActions/CloudflareSession', () => ({
-    redirectToCloudflareSignIn: () => mockBeginRedirect(),
+    startCloudflareSignIn: () => mockBeginRedirect(),
     getCloudflareSession: () => mockGetSession(),
     getPendingCloudflareCodeExchange: () => mockGetPending(),
     waitForCloudflareSessionHydration: () => Promise.resolve(),

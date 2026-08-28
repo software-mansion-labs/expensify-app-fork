@@ -3,6 +3,7 @@ import {isRecord} from '@libs/ObjectUtils';
 import CONFIG from '@src/CONFIG';
 
 import {getQAResource} from './Config';
+import timeoutSignal from './timeoutSignal';
 
 /** RFC 8414 §3 fixes the path */
 const WELL_KNOWN_PATH = '/.well-known/oauth-authorization-server';
@@ -39,7 +40,7 @@ async function fetchAndValidateMetadata(): Promise<AuthServerEndpoints> {
     // serves the document on — the other allowlist entries do not carry it
     const response = await fetch(new URL(WELL_KNOWN_PATH, getQAResource()).href, {
         credentials: 'omit',
-        signal: AbortSignal.timeout(METADATA_TIMEOUT_MS),
+        signal: timeoutSignal(METADATA_TIMEOUT_MS),
     });
     if (!response.ok) {
         throw new Error(`Authorization server metadata request failed with HTTP ${response.status}`);

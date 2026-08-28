@@ -1,4 +1,5 @@
 import {hasAuthToken} from '@libs/actions/Session';
+import isCloudflareAuthCallbackURL from '@libs/CloudflareAccess/isAuthCallbackURL';
 import continuePlaidOAuth from '@libs/continuePlaidOAuth';
 import navigationRef from '@libs/Navigation/navigationRef';
 import type {RootNavigatorParamList} from '@libs/Navigation/types';
@@ -49,6 +50,12 @@ const subscribe: LinkingOptions<RootNavigatorParamList>['subscribe'] = (listener
             // Without this, the native SDK never sees the callback URL and retries OAuth in a loop
             // after app-to-app bank auth returns. See issue #87757.
             continuePlaidOAuth(url);
+            return;
+        }
+
+        // The auth session hands this URL back to the caller that opened it, so there is nothing to forward:
+        // no screen lives at the callback path, and routing it would tear down the screen the flow returns to.
+        if (isCloudflareAuthCallbackURL(url)) {
             return;
         }
         // For an unauthenticated session, a report deep link (`/r/<reportID>`) targets the Report screen,
