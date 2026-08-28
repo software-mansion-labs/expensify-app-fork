@@ -94,6 +94,8 @@ const ScreenActivityEffectBoundaryContext = createContext<ScreenActivityEffectBo
 function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: boolean; children: ReactNode}) {
     const [entries] = useState(() => new Set<ScreenActivityEffectEntry>());
     const isScreenTeardownRef = useRef(false);
+    const registrationCountRef = useRef(0);
+    const sweptRegistrationCountRef = useRef(0);
 
     const boundary = useMemo<ScreenActivityEffectBoundary>(
         () => ({
@@ -105,6 +107,7 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
                         '[useScreenActivityEffect] The boundary reports a hidden screen while its subtree is running effects. isHidden has drifted from the mode of the <Activity> it wraps.',
                     );
                 }
+                registrationCountRef.current += 1;
                 entries.add(entry);
             },
             unregister: (entry) => {
@@ -126,19 +129,23 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
 
     // A reveal runs the bodies of the subtree before this effect, so an entry whose cleanup the hide skipped and which
     // did not come back with the reveal belongs to a component that is gone. Sweeping it here keeps a component that
-    // was removed while the screen was covered from waiting for the screen to leave the stack. A body that the reveal
-    // did not run for another reason reads the same way: a <Suspense> below that suspends again on the reveal has its
-    // setup released here and set up again once it resolves, which is the one case where the hook does not keep what a
-    // live screen keeps.
+    // was removed while the screen was covered from waiting for the screen to leave the stack.
+    //
+    // A body that did not come back is only evidence of that once some body did come back, because a commit that ran no
+    // effect of the subtree at all ran none for the component that is still there either. That is what a <Suspense>
+    // below the boundary does when it suspends again on the reveal, so the sweep waits for a commit that registered
+    // something, which is every reveal of a subtree that is really there. The effect carries no dependency list so that
+    // a reveal which ran nothing is swept by the next commit that runs something, rather than only by the next reveal.
     useEffect(() => {
-        if (isHidden) {
+        if (isHidden || registrationCountRef.current === sweptRegistrationCountRef.current) {
             return;
         }
+        sweptRegistrationCountRef.current = registrationCountRef.current;
         releaseEntries(
             entries,
             [...entries].filter((entry) => entry.isAwaitingReveal),
         );
-    }, [entries, isHidden]);
+    });
 
     useEffect(
         () => () => {

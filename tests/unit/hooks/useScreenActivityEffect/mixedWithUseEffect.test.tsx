@@ -64,15 +64,16 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:kept:b', 'cleanup:plain:b']]);
     });
 
-    it('releases the kept call site on the reveal when the component is removed while hidden', () => {
+    it('holds the kept call site of a component removed while hidden until an effect of the screen runs again', () => {
         // Given a component that goes away behind the cover, so only one of its two effects is still held
-        const steps = [visible(<MixedEffects value="a" />), hidden(<MixedEffects value="a" />), hidden(null), visible(null)];
+        const steps = [visible(<MixedEffects value="a" />), hidden(<MixedEffects value="a" />), hidden(null), visible(null), visible(<MixedEffects value="b" />)];
 
-        // When the screen is revealed
+        // When the screen is revealed empty and another component mounts on it afterwards
         const commits = recordCovered(steps);
 
-        // Then the sweep releases what the cover left alone, and the plain effect was already gone
-        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['cleanup:kept:a'], []]);
+        // Then only a kept call site running again is evidence that a body which did not come back is really gone, so
+        // the reveal of an empty screen sweeps nothing and the mount that follows releases what the cover left alone
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], [], ['setup:plain:b', 'setup:kept:b', 'cleanup:kept:a'], ['cleanup:kept:b', 'cleanup:plain:b']]);
     });
 
     it('releases the kept call site when the screen leaves the stack while it is still covered', () => {
