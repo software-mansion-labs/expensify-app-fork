@@ -21,6 +21,19 @@ The mental model: **hide + reveal = full effect unmount + remount with surviving
 - During a window resize, the screen stays in visible mode to recalculate its layout.
 - While covered, the content stays painted but is inert to touch and accessibility.
 
+## Effects that must survive a cover
+
+`useScreenActivityEffect` is a passive-effect escape hatch for work that must remain set up while an Activity screen is covered. It keeps the existing setup through a hide/reveal cycle, but still runs its cleanup when the dependencies change, the component is removed, or the screen leaves the navigation stack. Outside a screen activity boundary it behaves like `useEffect`.
+
+It does not make the hidden subtree live: other effects and `useOnyx` subscriptions remain disconnected, and element refs remain detached. A retained listener must therefore tolerate running while the rest of its component is inactive. It is also not a replacement for `useLayoutEffect`.
+
+Compared with `useEffect` on a screen that stays live, it has these limits:
+
+- Dependency changes while hidden are deferred and coalesced until reveal, so the hook cannot observe the cover edge or every intermediate value.
+- A component removed while hidden may be cleaned up only after another screen effect runs or when the screen is popped. Suspense can look like such a removal and cause an unnecessary cleanup and setup.
+- On reveal, cleanup and setup are interleaved per call site. Screen teardown follows registration order rather than React tree order, and a hidden remount can set up the new instance before cleaning up the old one. Avoid order-sensitive or single-owner resources.
+- If a cleanup throws during a deferred dependency change, that call site's next setup does not run.
+
 ## Regressions caused by unsafe effects
 
 Effects that assume "mount happens once" or "cleanup means the user left" cause these classes of bugs:
