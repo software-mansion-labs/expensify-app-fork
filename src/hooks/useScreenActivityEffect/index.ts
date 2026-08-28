@@ -31,6 +31,18 @@ function areDepsEqual(previous: DependencyList | undefined, next: DependencyList
  *
  * Use it for work that has to outlive a cover. On a screen with no boundary above it there is nothing to survive, so
  * the hook is plain useEffect there.
+ *
+ * Three ordering limits of the boundary matter at a call site: a reveal that re-runs work releases and sets up per
+ * call site instead of releasing every call site first, the screen teardown releases in the order the effects
+ * registered in rather than in tree order, and a component removed and remounted while the screen was hidden gets the
+ * setup of the new instance before the release of the old one. Work that only one owner may hold at a time has to
+ * tolerate that ordering.
+ *
+ * Three behaviors are not the ones of a live screen. A dependency list that changed size counts as a change here,
+ * while React compares only the common prefix and warns. A <Suspense> below the boundary that suspends again on the
+ * reveal has its setup released and set up again once it resolves, because the sweep of the boundary reads a body that
+ * did not come back as a component that is gone. A boundary nested inside the <Activity> of another screen is released
+ * together with that screen, so a screen of a nested navigator gets plain useEffect.
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     const boundary = useContext(ScreenActivityEffectBoundaryContext);
@@ -69,8 +81,9 @@ function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): 
                 entry.isAwaitingReveal = true;
                 return;
             }
-            entry.release();
+            // The entry goes back first, so a cleanup that throws does not leave the boundary holding a released entry.
             boundary.unregister(entry);
+            entry.release();
         };
 
         // The call site owns the dependencies, exactly as it would with useEffect.

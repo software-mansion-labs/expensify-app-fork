@@ -1,12 +1,12 @@
 import AlwaysPaintedView from '@components/AlwaysPaintedView';
 
 import useDeferVisibleUntilFocusTransitionEnd from '@hooks/useDeferVisibleUntilFocusTransitionEnd';
-import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffect/ScreenActivityEffectBoundaryContext';
+import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
 
 import type NonTopScreenWrapperProps from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/nonTopScreenWrapperTypes';
 
 import {useIsFocused} from '@react-navigation/native';
-import React, {Activity, useEffect, useState, useSyncExternalStore} from 'react';
+import React, {useEffect, useState, useSyncExternalStore} from 'react';
 
 import DevStrictModeMountGate from './StrictModeMountGate';
 import {getIsWindowSizeChanging, subscribeToWindowSizeChange} from './windowSizeChangeStore';
@@ -78,17 +78,16 @@ function ScreenActivityWrapper({isScreenBlurred, children}: NonTopScreenWrapperP
 
     const mode = isKeptVisible || isShownAfterTransition || (!isScreenCovered && isRevealLatched) ? 'visible' : 'hidden';
 
-    // The boundary renders outside the Activity, because a hide unmounts everything inside it while the screen is
-    // still on the stack, and a component cannot observe its own hiding. It reports that hide and its own unmount to
-    // useScreenActivityEffect, which is how an effect of the subtree tells a cleanup of the screen from its own.
+    // The Activity comes with the boundary that serves it, because a hide unmounts everything inside the Activity while
+    // the screen is still on the stack, and a component cannot observe its own hiding. The boundary reports that hide
+    // and its own unmount to useScreenActivityEffect, which is how an effect of the subtree tells a cleanup of the
+    // screen from its own.
     return (
-        <ScreenActivityEffectBoundaryProvider isHidden={mode === 'hidden'}>
-            <Activity mode={mode}>
-                <AlwaysPaintedView inert={isScreenCovered}>
-                    <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
-                </AlwaysPaintedView>
-            </Activity>
-        </ScreenActivityEffectBoundaryProvider>
+        <ActivityWithEffectBoundary mode={mode}>
+            <AlwaysPaintedView inert={isScreenCovered}>
+                <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
+            </AlwaysPaintedView>
+        </ActivityWithEffectBoundary>
     );
 }
 
