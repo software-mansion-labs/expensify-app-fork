@@ -6,7 +6,7 @@ import {getUnreadMarkerReportAction} from '@pages/inbox/report/shouldDisplayNewM
 import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxTypes from '@src/types/onyx';
 
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {DeviceEventEmitter} from 'react-native';
 
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
@@ -15,6 +15,7 @@ import useLocalize from './useLocalize';
 import useNetworkWithOfflineStatus from './useNetworkWithOfflineStatus';
 import useOnyx from './useOnyx';
 import usePrevious from './usePrevious';
+import useScreenActivityEffect from './useScreenActivityEffect';
 
 type UseUnreadMarkerParams = {
     /** The report whose unread marker is being computed */
@@ -66,7 +67,9 @@ function useUnreadMarker({
 
     const [unreadMarkerTime, setUnreadMarkerTime] = useState(reportLastReadTime);
 
-    useEffect(() => {
+    // These one shot events are the only thing that advances unreadMarkerTime, so a cover that tore the listeners down
+    // would lose the events fired while hidden and leave the surviving marker time behind the truth after the reveal.
+    useScreenActivityEffect(() => {
         if (isAnonymousUser) {
             return;
         }

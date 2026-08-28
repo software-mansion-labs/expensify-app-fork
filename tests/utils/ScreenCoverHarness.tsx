@@ -1,8 +1,10 @@
 import {render} from '@testing-library/react-native';
 
+import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
+
 import type {ReactElement, ReactNode} from 'react';
 
-import React, {Activity} from 'react';
+import React from 'react';
 
 import waitForBatchedUpdatesWithAct from './waitForBatchedUpdatesWithAct';
 
@@ -12,7 +14,8 @@ import waitForBatchedUpdatesWithAct from './waitForBatchedUpdatesWithAct';
  * - `freeze` mirrors what ships today: `ScreenFreezeWrapper` suspends rendering of a covered screen but leaves its
  *   effect tree mounted, so covering and uncovering never runs a cleanup or re-runs an effect.
  * - `activity` mirrors `ScreenActivityWrapper`: a hidden `<Activity>` cleans up the subtree's effects and re-runs them
- *   from scratch on reveal, while state and refs survive.
+ *   from scratch on reveal, while state and refs survive. It comes with the same effect boundary the wrapper renders,
+ *   so an effect written with `useScreenActivityEffect` behaves here as it does in the app.
  *
  * Selected with the SCREEN_COVER_MODE env var so one suite can be run against both behaviors.
  */
@@ -27,7 +30,7 @@ function ScreenCover({isCovered, children}: {isCovered: boolean; children: React
         return children;
     }
 
-    return <Activity mode={isCovered ? 'hidden' : 'visible'}>{children}</Activity>;
+    return <ActivityWithEffectBoundary mode={isCovered ? 'hidden' : 'visible'}>{children}</ActivityWithEffectBoundary>;
 }
 
 type RenderCoverableScreenOptions = {

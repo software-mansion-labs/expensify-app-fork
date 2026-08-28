@@ -25,13 +25,14 @@ import type {NativeScrollEvent, NativeSyntheticEvent, ViewToken} from 'react-nat
 import type {OnyxEntry} from 'react-native-onyx';
 
 import {useRoute} from '@react-navigation/native';
-import {useEffect, useEffectEvent, useState} from 'react';
+import {useEffect, useEffectEvent, useRef, useState} from 'react';
 
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useNetworkWithOfflineStatus from './useNetworkWithOfflineStatus';
 import useOnyx from './useOnyx';
 import usePrevious from './usePrevious';
 import useReportScrollManager from './useReportScrollManager';
+import useScreenActivityEffect from './useScreenActivityEffect';
 import useScrollToEndOnNewMessageReceived from './useScrollToEndOnNewMessageReceived';
 import useWindowDimensions from './useWindowDimensions';
 
@@ -270,13 +271,17 @@ function useReportActionsScroll({
         });
     }, [draftAutoScrollKey, hasNewestReportAction, previousDraftAutoScrollKey, reportScrollManager, scrollOffsetRef, setIsFloatingMessageCounterVisible]);
 
+    // The scroll is owed until the deferred callback delivers it, so a schedule dropped before it fired can be taken up again while a delivered one never is.
+    const hasDeliveredInitialScrollRef = useRef(false);
+
     const scheduleInitialScrollToBottom = useEffectEvent(() => {
-        if (initialScrollKey) {
+        if (initialScrollKey || hasDeliveredInitialScrollRef.current) {
             return undefined;
         }
 
         return TransitionTracker.runAfterTransitions({
             callback: () => {
+                hasDeliveredInitialScrollRef.current = true;
                 if (shouldFocusToTopOnMount) {
                     return;
                 }
@@ -311,8 +316,9 @@ function useReportActionsScroll({
         return () => handle.cancel();
     }, [lastAction?.reportActionID, lastAction?.actionName, prevSortedVisibleReportActionsObjects, reportScrollManager]);
 
-    // Clear the highlighted report action after scrolling and highlighting
-    useEffect(() => {
+    // Clear the highlighted report action after scrolling and highlighting.
+    // The timer keeps running while the screen is covered, so the highlight expires on wall-clock time instead of restarting on every reveal.
+    useScreenActivityEffect(() => {
         if (actionIdToHighlight === '') {
             return;
         }

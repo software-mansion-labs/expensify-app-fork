@@ -5,6 +5,7 @@ import getActionBadgeText from '@components/utils/getActionBadgeText';
 
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -16,7 +17,7 @@ import type IconAsset from '@src/types/utils/IconAsset';
 import type {StyleProp, TextStyle} from 'react-native';
 import type {ValueOf} from 'type-fest';
 
-import React, {useCallback, useEffect} from 'react';
+import React, {useCallback} from 'react';
 import {View} from 'react-native';
 import Animated, {useAnimatedStyle, useSharedValue, withSpring} from 'react-native-reanimated';
 
@@ -126,7 +127,8 @@ function FloatingMessageCounter({
         translateY.set(withSpring(MARKER_INACTIVE_TRANSLATE_Y));
     }, [translateY]);
 
-    useEffect(() => {
+    // The shared value survives a cover already sitting at the target, so a reveal must not spring it there a second time.
+    useScreenActivityEffect(() => {
         if (isActive || shouldShowActionBadgePill) {
             show();
         } else {

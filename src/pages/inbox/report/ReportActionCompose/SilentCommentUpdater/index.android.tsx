@@ -1,8 +1,7 @@
 import useOnyx from '@hooks/useOnyx';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-
-import {useEffect} from 'react';
 
 import type SilentCommentUpdaterProps from './types';
 
@@ -19,7 +18,8 @@ import type SilentCommentUpdaterProps from './types';
 function SilentCommentUpdater({updateComment, reportID}: SilentCommentUpdaterProps) {
     const [comment = ''] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${reportID}`);
 
-    useEffect(() => {
+    // The seed belongs to the mount, so a reveal of a covered chat must not replay it over what the user has typed since.
+    useScreenActivityEffect(() => {
         updateComment(comment);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- We need to run this on mount
     }, []);

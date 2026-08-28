@@ -1,5 +1,6 @@
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnyx from '@hooks/useOnyx';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackRouteProp} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -13,7 +14,7 @@ import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 
 import {useIsFocused, useRoute} from '@react-navigation/native';
-import {useEffect, useRef} from 'react';
+import {useRef} from 'react';
 
 type UserTypingEventListenerProps = {
     /** The report currently being looked at */
@@ -27,7 +28,7 @@ function UserTypingEventListener({report}: UserTypingEventListenerProps) {
     const isFocused = useIsFocused();
     const route = useRoute<PlatformStackRouteProp<ReportsSplitNavigatorParamList, typeof SCREENS.REPORT>>();
 
-    useEffect(
+    useScreenActivityEffect(
         () => () => {
             if (!didSubscribeToReportTypingEvents.current) {
                 return;
@@ -45,7 +46,7 @@ function UserTypingEventListener({report}: UserTypingEventListenerProps) {
         [],
     );
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         // Ensures any optimistic report that is being created (ex: a thread report) gets created and initialized successfully before subscribing
         if (route?.params?.reportID !== reportID) {
             return;

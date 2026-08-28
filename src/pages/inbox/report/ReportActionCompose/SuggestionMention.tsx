@@ -10,6 +10,7 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePolicy from '@hooks/usePolicy';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import {areEmailsFromSamePrivateDomain} from '@libs/LoginUtils';
 import {temporaryGetDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
@@ -568,7 +569,8 @@ function SuggestionMention({
         debouncedCalculateMentionSuggestion(value, selection.start, selection.end);
     }, [value, selection.start, selection.end, debouncedCalculateMentionSuggestion]);
 
-    useEffect(() => {
+    // A reveal leaves the suggestions it was covered with, so the search runs on a real input change rather than on the reveal.
+    useScreenActivityEffect(() => {
         debouncedSearchInServer();
     }, [suggestionValues.suggestedMentions.length, suggestionValues.prefixType, policyID, value, debouncedSearchInServer]);
 

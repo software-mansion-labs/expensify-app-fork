@@ -1,3 +1,5 @@
+import type * as OnyxListItemProvider from '@components/OnyxListItemProvider';
+
 import ReportFetchHandler from '@pages/inbox/ReportFetchHandler';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -40,6 +42,11 @@ jest.mock('@userActions/Report', () => ({
     unsubscribeFromLeavingRoomReportChannel: jest.fn(),
     updateLastVisitTime: jest.fn(),
     updateLoadingInitialReportAction: jest.fn(),
+}));
+
+jest.mock('@components/OnyxListItemProvider', () => ({
+    ...jest.requireActual<typeof OnyxListItemProvider>('@components/OnyxListItemProvider'),
+    usePersonalDetails: () => ({}),
 }));
 
 jest.mock('@hooks/useCurrentUserPersonalDetails', () => () => ({accountID: 1, email: 'tester@expensify.com'}));

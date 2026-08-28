@@ -31,6 +31,8 @@ jest.mock('@libs/Pusher', () => ({
         CONCIERGE_DRAFT_FAILED: 'conciergeDraftFailed',
         CONCIERGE_DRAFT_CLEARED: 'conciergeDraftCleared',
     },
+    // A channel resubscribe never happens in these runs, so the hook only needs the unregister callback back.
+    onChannelResubscribe: jest.fn(() => () => {}),
     subscribe: jest.fn((channelName: string, eventName: string, callback: (data: unknown) => void) => {
         mockPusherListeners.set(eventName, callback);
         return Object.assign(Promise.resolve(), {

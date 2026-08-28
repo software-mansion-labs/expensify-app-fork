@@ -11,6 +11,7 @@ import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSafeAreaPaddings from '@hooks/useSafeAreaPaddings';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {isMobile} from '@libs/Browser';
@@ -214,7 +215,8 @@ function ScreenWrapper({
 
     useAccessibilityFocus({didScreenTransitionEnd, isFocused, ref: screenWrapperRef, shouldMoveAccessibilityFocus});
 
-    useEffect(() => {
+    // A cover would otherwise detach the beforeRemove keyboard listener and announce the entry transition again on reveal.
+    useScreenActivityEffect(() => {
         // On iOS, the transitionEnd event doesn't trigger some times. As such, we need to set a timeout
         const timeout = setTimeout(() => {
             setDidScreenTransitionEnd(true);

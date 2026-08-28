@@ -4,6 +4,7 @@ import {useWideRHPActions} from '@components/WideRHPContextProvider';
 
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnyx from '@hooks/useOnyx';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import {createTransactionThreadReport, setOptimisticTransactionThread} from '@libs/actions/Report';
 import {clearActiveTransactionIDs} from '@libs/actions/TransactionThreadNavigation';
@@ -23,7 +24,7 @@ import type {GestureResponderEvent} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
 
 import {findFocusedRoute} from '@react-navigation/native';
-import React, {startTransition, useCallback, useEffect, useMemo} from 'react';
+import React, {startTransition, useCallback, useMemo} from 'react';
 
 type MoneyRequestReportRHPNavigationButtonsProps = {
     currentTransactionID: string;
@@ -111,7 +112,7 @@ function MoneyRequestReportTransactionsNavigation({currentTransactionID, isFromR
      * We clear the sibling transactionThreadIDs when unmounting this component
      * only when the mount actually goes to a different SCREEN (and not a different version of the same SCREEN)
      */
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         return () => {
             const focusedRoute = findFocusedRoute(navigationRef.getRootState());
             if (focusedRoute?.name === SCREENS.RIGHT_MODAL.SEARCH_REPORT || focusedRoute?.name === SCREENS.TRANSACTION_DUPLICATE.DYNAMIC_REVIEW) {

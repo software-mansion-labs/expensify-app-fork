@@ -1,3 +1,5 @@
+import type * as OnyxListItemProvider from '@components/OnyxListItemProvider';
+
 import type * as MoneyRequestReportUtils from '@libs/MoneyRequestReportUtils';
 import type * as ReportActionsUtils from '@libs/ReportActionsUtils';
 
@@ -65,6 +67,11 @@ jest.mock('@libs/ReportActionsUtils', () => ({
 jest.mock('@libs/MoneyRequestReportUtils', () => ({
     ...jest.requireActual<typeof MoneyRequestReportUtils>('@libs/MoneyRequestReportUtils'),
     getAllNonDeletedTransactions: () => [mockTransaction],
+}));
+
+jest.mock('@components/OnyxListItemProvider', () => ({
+    ...jest.requireActual<typeof OnyxListItemProvider>('@components/OnyxListItemProvider'),
+    usePersonalDetails: () => ({}),
 }));
 
 jest.mock('@hooks/useCurrentUserPersonalDetails', () => () => ({accountID: 1, email: 'tester@expensify.com'}));

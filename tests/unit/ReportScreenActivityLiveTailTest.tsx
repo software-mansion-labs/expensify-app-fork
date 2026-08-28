@@ -1,17 +1,26 @@
-import {act} from '@testing-library/react-native';
+import {act, render} from '@testing-library/react-native';
+
+import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
 
 import useReportActionsNewActionLiveTail from '@pages/inbox/report/useReportActionsNewActionLiveTail';
 
 import type * as OnyxTypes from '@src/types/onyx';
 
-import React, {useEffect, useState} from 'react';
+import type * as ReactNavigation from '@react-navigation/native';
+
+import React, {useCallback, useEffect, useState} from 'react';
 
 import {getFakeReportAction} from '../utils/ReportTestUtils';
-import renderCoverableScreen from '../utils/ScreenCoverHarness';
+import {getCoverMode} from '../utils/ScreenCoverHarness';
 import createTransitionTrackerHarness from '../utils/TransitionTrackerTestUtils';
 import waitForBatchedUpdatesWithAct from '../utils/waitForBatchedUpdatesWithAct';
 
 const REPORT_ID = '1';
+
+jest.mock('@react-navigation/native', () => ({
+    ...jest.requireActual<typeof ReactNavigation>('@react-navigation/native'),
+    useNavigation: () => ({setParams: jest.fn(), addListener: jest.fn(() => () => {})}),
+}));
 
 jest.mock('@libs/Navigation/TransitionTracker', () => ({
     __esModule: true,
@@ -52,6 +61,13 @@ const setTreatAsNoPaginationAnchor = jest.fn();
 function LiveTailProbe() {
     // The initial report actions load is in flight until the openReport triggered by the jump resolves.
     const [isLoadingInitialReportActions, setIsLoadingInitialReportActions] = useState(true);
+    // ReportScreen owns this flag, and the jump only reaches its prune stage once the value it wrote comes back in.
+    const [treatAsNoPaginationAnchor, setTreatAsNoPaginationAnchorState] = useState(false);
+
+    const handleTreatAsNoPaginationAnchor = useCallback((value: boolean) => {
+        setTreatAsNoPaginationAnchor(value);
+        setTreatAsNoPaginationAnchorState(value);
+    }, []);
 
     const liveTail = useReportActionsNewActionLiveTail({
         reportID: REPORT_ID,
@@ -68,8 +84,8 @@ function LiveTailProbe() {
         sortedVisibleReportActions: [],
         sortedAllReportActionsForPagination: [],
         reportActionPages: undefined,
-        setTreatAsNoPaginationAnchor,
-        treatAsNoPaginationAnchor: false,
+        setTreatAsNoPaginationAnchor: handleTreatAsNoPaginationAnchor,
+        treatAsNoPaginationAnchor,
         prevIsLoadingInitialReportActions: true,
         reportLoadingState: {isLoadingInitialReportActions},
     });
@@ -80,6 +96,35 @@ function LiveTailProbe() {
     });
 
     return null;
+}
+
+/**
+ * The shared cover harness wraps a covered screen in a bare `<Activity>`, while `ScreenActivityWrapper` renders it
+ * together with the effect boundary `useScreenActivityEffect` reads, so this suite builds that production pair itself.
+ */
+function renderCoverableLiveTailScreen() {
+    const cover = (isCovered: boolean) =>
+        getCoverMode() === 'freeze' ? (
+            <LiveTailProbe />
+        ) : (
+            <ActivityWithEffectBoundary mode={isCovered ? 'hidden' : 'visible'}>
+                <LiveTailProbe />
+            </ActivityWithEffectBoundary>
+        );
+
+    // The first frame is always visible, so the mount lifecycle runs before anything can hide the screen.
+    const {rerender, unmount} = render(cover(false));
+
+    const setCovered = async (isCovered: boolean) => {
+        rerender(cover(isCovered));
+        await waitForBatchedUpdatesWithAct();
+    };
+
+    return {
+        hide: () => setCovered(true),
+        reveal: () => setCovered(false),
+        unmount,
+    };
 }
 
 /**
@@ -96,7 +141,7 @@ describe('useReportActionsNewActionLiveTail across a cover/reveal cycle', () => 
     });
 
     function renderLiveTail() {
-        const screen = renderCoverableScreen(<LiveTailProbe />);
+        const screen = renderCoverableLiveTailScreen();
 
         return {
             ...screen,

@@ -15,6 +15,7 @@ import useOnyx from '@hooks/useOnyx';
 import useReportIsArchived from '@hooks/useReportIsArchived';
 import useReportScrollManager from '@hooks/useReportScrollManager';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -153,9 +154,26 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
     const draftRef = useRef(draft);
     const emojiPickerSelectionRef = useRef<Selection | undefined>(undefined);
 
+    // A cover ends the editor for React but not for the user, so the mark tells the two apart, and it is set in time because this cleanup runs before the one that flushes the save below.
+    const isEditorGoneRef = useRef(false);
+    useScreenActivityEffect(() => {
+        isEditorGoneRef.current = false;
+        return () => {
+            isEditorGoneRef.current = true;
+        };
+    }, []);
+
+    const saveDraftWhileTheEditorIsThere = useCallback((...args: Parameters<typeof saveReportActionDraft>) => {
+        if (isEditorGoneRef.current) {
+            return;
+        }
+        saveReportActionDraft(...args);
+    }, []);
+
     // Save the draft of the comment. This debounced so that we're not ceaselessly saving your edit. Saving the draft
     // allows one to navigate somewhere else and come back to the comment and still have it in edit mode.
-    const {saveDraft, isSavePending: isDraftSavePending} = useDebouncedSaveDraft(saveReportActionDraft);
+    // A cover tears the debounce down while the edit session lives on, so the pending save is flushed rather than dropped and the last keystrokes still reach the draft.
+    const {saveDraft, isSavePending: isDraftSavePending} = useDebouncedSaveDraft(saveDraftWhileTheEditorIsThere, undefined, true);
 
     useDraftMessageVideoAttributeCache({
         draftMessage: editingMessage ?? '',
@@ -165,7 +183,14 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
         isEditInProgressRef: isDraftSavePending,
     });
 
+    // Opening the editor focuses it once, and the ref survives so that a reveal running the effects again does not steal the focus back and pop the keyboard on an edit already in progress.
+    const hasRequestedInitialFocusRef = useRef(false);
+
     useEffect(() => {
+        if (hasRequestedInitialFocusRef.current) {
+            return;
+        }
+        hasRequestedInitialFocusRef.current = true;
         focusComposerWithDelay(composerRef.current)(true);
     }, []);
 
@@ -182,7 +207,8 @@ function ReportActionItemMessageEdit({action, reportID, originalReportID, policy
         composerFocusKeepFocusOn(composerRef.current as HTMLElement, isFocused, modal, onyxInputFocused);
     }, [isFocused, modal, onyxInputFocused]);
 
-    useEffect(
+    // The editor keeps the focus manager pointed at its composer while it is covered, exactly as it does on a screen that stays live, so a cover never hands the slot back on its behalf.
+    useScreenActivityEffect(
         // Remove focus callback on unmount to avoid stale callbacks
         () => {
             if (composerRef.current) {

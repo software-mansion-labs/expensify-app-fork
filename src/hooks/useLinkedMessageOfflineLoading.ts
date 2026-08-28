@@ -1,8 +1,7 @@
 import {updateLoadingInitialReportAction} from '@libs/actions/Report';
 
-import {useEffect} from 'react';
-
 import useNetwork from './useNetwork';
+import useScreenActivityEffect from './useScreenActivityEffect';
 
 type UseLinkedMessageOfflineLoadingParams = {
     /** The ID of the report whose initial-actions loading flag should be cleared */
@@ -20,7 +19,7 @@ type UseLinkedMessageOfflineLoadingParams = {
 function useLinkedMessageOfflineLoading({reportID, reportActionIDFromRoute}: UseLinkedMessageOfflineLoadingParams) {
     const {isOffline} = useNetwork();
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         // When we linked to message - we do not need to wait for initial actions - they already exists
         if (!reportActionIDFromRoute || !isOffline) {
             return;

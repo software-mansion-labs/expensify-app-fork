@@ -3,6 +3,7 @@ import {act, screen} from '@testing-library/react-native';
 import MoneyReportHeader from '@components/MoneyReportHeader';
 import MoneyRequestReportTransactionList from '@components/MoneyRequestReportView/MoneyRequestReportTransactionList';
 import MoneyRequestReportTransactionsNavigation from '@components/MoneyRequestReportView/MoneyRequestReportTransactionsNavigation';
+import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import {useSearchSelectionActions, useSearchSelectionContext} from '@components/Search/SearchContext';
 import {SearchSelectionProvider} from '@components/Search/SearchSelectionProvider';
 import type {SearchSelectionActionsValue} from '@components/Search/types';
@@ -109,7 +110,6 @@ jest.mock('@hooks/useLazyAsset', () => ({
 
 const REPORT_ID = '1';
 const TRANSACTION_IDS = ['t1', 't2'];
-const SKELETON_REASON_ATTRIBUTES = {context: 'ReportScreenActivityMoneyRequestTest'};
 
 const expenseReport = ReportTestUtils.createMockReport({reportID: REPORT_ID, type: CONST.REPORT.TYPE.EXPENSE});
 
@@ -150,7 +150,11 @@ function SelectionProbe() {
 }
 
 function TransactionsNavigationScreen() {
-    return <MoneyRequestReportTransactionsNavigation currentTransactionID="t1" />;
+    return (
+        <OnyxListItemProvider>
+            <MoneyRequestReportTransactionsNavigation currentTransactionID="t1" />
+        </OnyxListItemProvider>
+    );
 }
 
 function ExpenseReportHeaderScreen() {
@@ -187,7 +191,6 @@ function TransactionListScreen() {
                 onStartReached={() => {}}
                 contentContainerStyle={null}
                 isLoadingInitialActions={false}
-                skeletonReasonAttributes={SKELETON_REASON_ATTRIBUTES}
             />
         </SearchSelectionProvider>
     );

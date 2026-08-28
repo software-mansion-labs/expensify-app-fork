@@ -1,6 +1,7 @@
 import EmojiPickerButton from '@components/EmojiPicker/EmojiPickerButton';
 
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
@@ -10,7 +11,7 @@ import {hideEmojiPicker, isActive as isActiveEmojiPickerAction} from '@userActio
 
 import CONST from '@src/CONST';
 
-import React, {useEffect} from 'react';
+import React from 'react';
 
 import {useComposerMeta, useComposerSendState, useComposerState} from './ComposerContext';
 
@@ -27,8 +28,9 @@ function ComposerEmojiPicker() {
     const emojiOffsetWithComposeBox = (styles.chatItemComposeBox.minHeight - styles.chatItemEmojiButton.height) / 2;
     const emojiShiftVertical = reportActionComposeHeight - emojiOffsetWithComposeBox - CONST.MENU_POSITION_REPORT_ACTION_COMPOSE_BOTTOM;
 
-    // Hide emoji picker on unmount or when switching reports
-    useEffect(
+    // The picker is anchored to this composer, so only the composer going away or the report changing closes it. A cover
+    // keeps the composer and its anchor in place, and the screen on top uses the same global picker.
+    useScreenActivityEffect(
         () => () => {
             if (!isActiveEmojiPickerAction(reportID)) {
                 return;

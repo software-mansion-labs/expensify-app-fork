@@ -19,6 +19,7 @@ import useOnyx from '@hooks/useOnyx';
 import useOriginalReportID from '@hooks/useOriginalReportID';
 import useReportTransactionsCollection from '@hooks/useReportTransactionsCollection';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -308,7 +309,9 @@ function ReportActionItem({
         }
     };
 
-    useEffect(
+    // These overlays are anchored to this row, so they are closed only when the row itself goes away. A cover leaves the
+    // row and its anchor in place, and the screen on top shares these global components, so it must not close them.
+    useScreenActivityEffect(
         () => () => {
             // ReportActionContextMenu, EmojiPicker and PopoverReactionList are global components,
             // we should also hide them when the current component is destroyed

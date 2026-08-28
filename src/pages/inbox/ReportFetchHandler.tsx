@@ -11,6 +11,7 @@ import usePaginatedReportActions from '@hooks/usePaginatedReportActions';
 import usePrevious from '@hooks/usePrevious';
 import useReportTransactionsCollection from '@hooks/useReportTransactionsCollection';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useStallLogger from '@hooks/useStallLogger';
 
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
@@ -329,7 +330,8 @@ function ReportFetchHandler() {
         prevIsAnonymousUser.current = true;
     }, [isAnonymousUser]);
 
-    useEffect(() => {
+    // Nothing but the conditions below guards this creation, so a cover that leaves them unchanged must not run it again.
+    useScreenActivityEffect(() => {
         if (
             transactionThreadReportID !== CONST.FAKE_REPORT_ID ||
             transactionThreadReport?.reportID ||
@@ -382,7 +384,8 @@ function ReportFetchHandler() {
         setViewingPublicRoomReportID(isThread(report) ? report.parentReportID : reportID);
     }, [reportID, report, isAnonymousUser, isFocused]);
 
-    useEffect(() => {
+    // The channel has to stay subscribed while the chat is covered, and the surviving ref would block a re-subscription.
+    useScreenActivityEffect(() => {
         return () => {
             onUnmount();
         };
@@ -392,7 +395,7 @@ function ReportFetchHandler() {
     // fetch leaves a stale `false` that can make ReportNotFoundGuard show "not here" before the fetch below
     // re-runs. When opening a report whose actions were never successfully loaded, mark it as loading again so
     // the guard waits for the real fetch result instead of trusting the leaked flag. See issue #92920.
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         if (reportLoadingState.hasOnceLoadedReportActions) {
             return;
         }
@@ -432,7 +435,7 @@ function ReportFetchHandler() {
         Navigation.navigate(ROUTES.EXPENSE_REPORT_RHP.getRoute({reportID: reportIDFromRoute, backTo: route.params?.backTo}), {forceReplace: true});
     }, [isFocused, report, reportIDFromRoute, route.params?.backTo, shouldReplaceWithExpenseReportRHP]);
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         // This function is triggered when a user clicks on a link to navigate to a report.
         // For each link click, we retrieve the report data again, even though it may already be cached.
         // Usually this triggers one openReport execution per page start or navigation. If guided setup is deferred while app data loads,
@@ -497,7 +500,8 @@ function ReportFetchHandler() {
         readNewestAction(report?.reportID, isReportActionsLoaded);
     }, [report, isReportActionsLoaded]);
 
-    useEffect(() => {
+    // The ref survives a cover, so only a real change of report may re-arm the creation below.
+    useScreenActivityEffect(() => {
         hasCreatedLegacyThreadRef.current = false;
     }, [reportID]);
 

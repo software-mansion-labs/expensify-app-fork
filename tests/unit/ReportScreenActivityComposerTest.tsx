@@ -31,7 +31,6 @@ import type * as NativeNavigation from '@react-navigation/native';
 import type {PropsWithChildren} from 'react';
 
 import React from 'react';
-import {View} from 'react-native';
 import Onyx from 'react-native-onyx';
 
 import * as LHNTestUtils from '../utils/LHNTestUtils';
@@ -196,7 +195,7 @@ describe('ReportActionCompose across a cover/reveal cycle', () => {
     });
 
     beforeEach(async () => {
-        jest.mocked(useAttachmentPicker).mockReturnValue({pickAttachments: jest.fn(), PDFValidationComponent: undefined, ErrorModal: <View />});
+        jest.mocked(useAttachmentPicker).mockReturnValue({pickAttachments: jest.fn(), PDFValidationComponent: undefined});
         mockRouteState.current = {key: '', name: '', params: {reportID: '1'}};
         mockedFocusComposerWithDelay.mockReturnValue(mockRequestComposerFocus);
         mockedUseWideRHPState.mockReturnValue(defaultWideRHPStateContextValue);

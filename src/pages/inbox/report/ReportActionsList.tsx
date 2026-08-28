@@ -10,6 +10,7 @@ import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useReportActionsScroll from '@hooks/useReportActionsScroll';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useUnreadMarker from '@hooks/useUnreadMarker';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -135,7 +136,8 @@ function ReportActionsListContent({reportID, onLayout}: ReportActionsListContent
 
     const didLayout = useRef(false);
 
-    useEffect(() => {
+    // The latch belongs to the report, not to the mount, so a cover and reveal of the same report must not re-arm it.
+    useScreenActivityEffect(() => {
         didLayout.current = false;
     }, [reportID]);
 
