@@ -319,6 +319,48 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             expect(nested.flat()).toEqual(live.flat());
         });
 
+        it('releases the nested screen that was removed while the screen holding it was hidden', () => {
+            // Given a nested screen whose whole boundary goes away behind the cover, on an outer screen with an effect
+            const content = (hasNested: boolean) => (
+                <>
+                    <Subject value="outer" />
+                    {hasNested ? (
+                        <ActivityScreen isHidden={false}>
+                            <Subject value="a" />
+                        </ActivityScreen>
+                    ) : null}
+                </>
+            );
+            const steps = [visible(content(true)), hidden(content(true)), hidden(content(false)), visible(content(false))];
+
+            // When the outer screen is revealed without it
+            const removed = runOn(useScreenActivityEffect, ActivityScreen, steps);
+            const live = runOn(useEffect, LiveScreen, steps);
+
+            // Then the reveal releases it, because the entry the outer boundary holds for a nested boundary is marked
+            // and swept like any other entry whose cleanup a cover skipped and which did not come back
+            expect(live).toEqual([['setup:s:outer', 'setup:s:a'], [], ['cleanup:s:a'], [], ['cleanup:s:outer']]);
+            expect(removed).toEqual([['setup:s:outer', 'setup:s:a'], [], [], ['cleanup:s:a'], ['cleanup:s:outer']]);
+            expect(removed.flat()).toEqual(live.flat());
+        });
+
+        it('holds a nested screen removed while hidden until the outer screen runs an effect again', () => {
+            // Given the same removal on an outer screen that has no effect of its own to run on the reveal
+            const nested = (
+                <ActivityScreen isHidden={false}>
+                    <Subject value="a" />
+                </ActivityScreen>
+            );
+            const steps = [visible(nested), hidden(nested), hidden(null), visible(null)];
+
+            // When the outer screen is revealed empty
+            const removed = runOn(useScreenActivityEffect, ActivityScreen, steps);
+
+            // Then the sweep waits for evidence that bodies run again, exactly as it does for a call site of its own,
+            // so the release lands when the outer screen leaves the stack
+            expect(removed).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a']]);
+        });
+
         it('keeps the setup live when the boundary of the nested screen itself hides', () => {
             // Given the same nesting, with the screen holding the nested one staying visible
             // When the nested screen is covered by a screen of its own navigator and revealed again

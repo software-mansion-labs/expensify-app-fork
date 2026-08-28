@@ -72,17 +72,26 @@ function releaseEntries(entries: Set<ScreenActivityEffectEntry>, released: reado
  */
 function createBoundaryState() {
     const entries = new Set<ScreenActivityEffectEntry>();
+    const nestedEntry: ScreenActivityEffectEntry = {
+        cleanup: undefined,
+        deps: undefined,
+        isSetUp: false,
+        isAwaitingReveal: false,
+        // The whole set is what this entry releases, and it stays able to release it however often it is asked, because
+        // the boundary above can ask on a reveal it was not swept by and again when its own screen leaves the stack.
+        release: () => {
+            nestedEntry.isAwaitingReveal = false;
+            releaseEntries(entries, [...entries]);
+        },
+    };
     return {
         entries,
-        nestedEntry: {
-            cleanup: undefined,
-            deps: undefined,
-            isSetUp: false,
-            isAwaitingReveal: false,
-            release: () => {
-                releaseEntries(entries, [...entries]);
-            },
-        } satisfies ScreenActivityEffectEntry,
+        nestedEntry,
+        // The mark is set through this rather than in the boundary itself, because the boundary holds the entry in state
+        // and the React Compiler treats what state holds as frozen.
+        markNestedEntry: (isAwaitingReveal: boolean) => {
+            nestedEntry.isAwaitingReveal = isAwaitingReveal;
+        },
     };
 }
 
@@ -119,7 +128,7 @@ const ScreenActivityEffectBoundaryContext = createContext<ScreenActivityEffectBo
  */
 function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: boolean; children: ReactNode}) {
     const parent = useContext(ScreenActivityEffectBoundaryContext);
-    const [{entries, nestedEntry}] = useState(createBoundaryState);
+    const [{entries, nestedEntry, markNestedEntry}] = useState(createBoundaryState);
     const isScreenTeardownRef = useRef(false);
     const registrationCountRef = useRef(0);
     const sweptRegistrationCountRef = useRef(0);
@@ -185,16 +194,19 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
         }
 
         parent.register(nestedEntry);
+        markNestedEntry(false);
         return () => {
             if (parent.getIsScreenTeardown()) {
-                // The screen above is being covered or popped, and it is holding the entry for this whole set, so the
-                // reveal or the release of that screen is what answers for these effects.
+                // The screen above is being covered or popped, and it is holding the entry for this whole set. The mark
+                // is what makes its reveal answer for this boundary exactly as it answers for a call site of its own:
+                // either the boundary comes back and clears the mark, or it does not and the sweep releases the set.
+                markNestedEntry(true);
                 return;
             }
             parent.unregister(nestedEntry);
             releaseEntries(entries, [...entries]);
         };
-    }, [entries, nestedEntry, parent]);
+    }, [entries, markNestedEntry, nestedEntry, parent]);
 
     return <ScreenActivityEffectBoundaryContext.Provider value={boundary}>{children}</ScreenActivityEffectBoundaryContext.Provider>;
 }
