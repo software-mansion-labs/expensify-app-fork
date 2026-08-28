@@ -9,6 +9,9 @@ import {PickerStateProvider} from 'react-native-picker-select';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import '../wdyr';
+// TEMPORARY POC: a comment-only change. It matches the bundle size workflow's path filters, so the
+// measurement runs, but the minifier strips it, so the emitted bytes should be identical and every row of
+// the comment should read "no change". Delete with the POC.
 import {ActionSheetAwareScrollViewProvider} from './components/ActionSheetAwareScrollView';
 import ActiveElementRoleProvider from './components/ActiveElementRoleProvider';
 import {AvatarTooltipsProvider} from './components/Avatar/tooltips/AvatarTooltipContext';
