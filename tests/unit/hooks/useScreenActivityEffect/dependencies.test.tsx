@@ -21,8 +21,8 @@ function NumericDependency({dependency}: {dependency: number}) {
 }
 
 /** An effect whose dependency list changes size, which React itself warns about and only partly compares. */
-function GrowingDependencies({hasSecond}: {hasSecond: boolean}) {
-    useAnyEffect(track('s:a'), hasSecond ? ['a', 'b'] : ['a']);
+function GrowingDependencies({first, hasSecond}: {first: string; hasSecond: boolean}) {
+    useAnyEffect(track('s:a'), hasSecond ? [first, 'b'] : [first]);
     return null;
 }
 
@@ -86,24 +86,82 @@ describe('useScreenActivityEffect dependencies', () => {
         expect(runs.activityScreenActivityEffect).toEqual(expected);
     });
 
-    it('treats a dependency list that changed size as a change, which useEffect does not', () => {
+    it('compares only the dependencies both lists have when the list changed size, exactly as useEffect does', () => {
         // Given a dependency list that grows while the screen is covered, which React only warns about
         const warning = jest.spyOn(console, 'error').mockImplementation(() => {});
         const steps = [
-            visible(<GrowingDependencies hasSecond={false} />),
-            hidden(<GrowingDependencies hasSecond={false} />),
-            hidden(<GrowingDependencies hasSecond />),
-            visible(<GrowingDependencies hasSecond />),
+            visible(
+                <GrowingDependencies
+                    first="a"
+                    hasSecond={false}
+                />,
+            ),
+            hidden(
+                <GrowingDependencies
+                    first="a"
+                    hasSecond={false}
+                />,
+            ),
+            hidden(
+                <GrowingDependencies
+                    first="a"
+                    hasSecond
+                />,
+            ),
+            visible(
+                <GrowingDependencies
+                    first="a"
+                    hasSecond
+                />,
+            ),
         ];
 
         // When the screen is revealed with the longer list
         const runs = runEveryConfig(steps);
         warning.mockRestore();
 
-        // Then React compares only the dependencies both lists have and runs nothing
-        expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a']]);
+        // Then the size change alone runs nothing, because only the dependencies both lists have are compared
+        const expected = [['setup:s:a'], [], [], [], ['cleanup:s:a']];
+        expect(runs.liveUseEffect).toEqual(expected);
+        expect(runs.activityScreenActivityEffect).toEqual(expected);
+    });
 
-        // And the hook takes the size itself for a change, which is the one place it is stricter than useEffect
+    it('runs a dependency that changed together with the size of the list, exactly as useEffect does', () => {
+        // Given a list that grows while the screen is covered and changes the dependency both lists have
+        const warning = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const steps = [
+            visible(
+                <GrowingDependencies
+                    first="a"
+                    hasSecond={false}
+                />,
+            ),
+            hidden(
+                <GrowingDependencies
+                    first="a"
+                    hasSecond={false}
+                />,
+            ),
+            hidden(
+                <GrowingDependencies
+                    first="b"
+                    hasSecond
+                />,
+            ),
+            visible(
+                <GrowingDependencies
+                    first="b"
+                    hasSecond
+                />,
+            ),
+        ];
+
+        // When the screen is revealed with the longer list
+        const runs = runEveryConfig(steps);
+        warning.mockRestore();
+
+        // Then the change of the shared dependency runs, so the size neither hides a change nor invents one
+        expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a', 'setup:s:a'], [], ['cleanup:s:a']]);
         expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], ['cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
     });
 
