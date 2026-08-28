@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func, no-console -- this evaluates a workflow's script body on purpose, and printing the report is the point. */
 /*
  * Runs the "Resolve the baseline" github-script body out of the `postBundleSizeComment` composite action
  * against mocked API responses, so the branch it takes on each shape of history is checked without pushing

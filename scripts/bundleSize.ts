@@ -4,8 +4,8 @@
  *
  * Usage:
  *   node ./scripts/bundleSize.ts [--dist dist] [--out bundle-size.json] [--sha <sha>]
- *   node ./scripts/bundleSize.ts --compare <base.json> <head.json> [--merge-base-sha <sha>]
- *   node ./scripts/bundleSize.ts --no-baseline <head.json>
+ *   node ./scripts/bundleSize.ts --compare <base.json> <head.json> [--merge-base-sha <sha>] [--baseline-branch <name>]
+ *   node ./scripts/bundleSize.ts --no-baseline <head.json> [--baseline-branch <name>]
  *   node ./scripts/bundleSize.ts --assert-same <a.json> <b.json>
  *   node ./scripts/bundleSize.ts --marker
  *
@@ -256,22 +256,28 @@ function shortSha(sha: string): string {
     return sha.slice(0, SHORT_SHA_LENGTH);
 }
 
-/** States what was measured and what it was measured against, including when that is not the merge base. */
-function provenance(head: BundleSizeReport, baseline: Baseline): string {
+/**
+ * States what was measured and what it was measured against, including when that is not the merge base.
+ *
+ * `branch` is the branch the pull request merges into, which is where baselines come from. It is `main` for
+ * every ordinary pull request, but naming it rather than hardcoding it keeps the sentence true for a pull
+ * request that targets anything else.
+ */
+function provenance(head: BundleSizeReport, baseline: Baseline, branch: string): string {
     if (baseline.kind === 'merge-base') {
-        return `Measured at \`${shortSha(head.sha)}\`, against \`main\` at \`${shortSha(baseline.report.sha)}\`, this pull request's merge base.`;
+        return `Measured at \`${shortSha(head.sha)}\`, against \`${branch}\` at \`${shortSha(baseline.report.sha)}\`, this pull request's merge base.`;
     }
     if (baseline.kind === 'ancestor') {
         return (
-            `Measured at \`${shortSha(head.sha)}\`, against \`main\` at \`${shortSha(baseline.report.sha)}\`. ` +
-            `This pull request's merge base \`${shortSha(baseline.mergeBaseSha)}\` has no measurement, so the comparison uses the nearest \`main\` commit that does, ` +
-            'and the change column also carries whatever landed on `main` between those two commits.'
+            `Measured at \`${shortSha(head.sha)}\`, against \`${branch}\` at \`${shortSha(baseline.report.sha)}\`. ` +
+            `This pull request's merge base \`${shortSha(baseline.mergeBaseSha)}\` has no measurement, so the comparison uses the nearest \`${branch}\` commit that does, ` +
+            `and the change column also carries whatever landed on \`${branch}\` between those two commits.`
         );
     }
-    return `Measured at \`${shortSha(head.sha)}\`. No \`main\` measurement resolved, so these are this pull request's own sizes with nothing to compare them against.`;
+    return `Measured at \`${shortSha(head.sha)}\`. No \`${branch}\` measurement resolved, so these are this pull request's own sizes with nothing to compare them against.`;
 }
 
-function render(head: BundleSizeReport, baseline: Baseline): string {
+function render(head: BundleSizeReport, baseline: Baseline, branch: string): string {
     const base = baseline.kind === 'missing' ? undefined : baseline.report;
     const stable = Object.keys(head.chunks).filter((name) => !/^\d+$/.test(name));
     // Raw first: it is what the JavaScript engine parses on every load, cached or not, and it is emitted
@@ -318,14 +324,14 @@ function render(head: BundleSizeReport, baseline: Baseline): string {
         }
     }
 
-    const columns = base ? ['| | this PR | `main` | change |', '|---|---|---|---|'] : ['| | this PR |', '|---|---|'];
-    const detailColumns = base ? ['| key | this PR | `main` | change |', '| --- | --- | --- | --- |'] : ['| key | this PR |', '| --- | --- |'];
+    const columns = base ? [`| | this PR | \`${branch}\` | change |`, '|---|---|---|---|'] : ['| | this PR |', '|---|---|'];
+    const detailColumns = base ? [`| key | this PR | \`${branch}\` | change |`, '| --- | --- | --- | --- |'] : ['| key | this PR |', '| --- | --- |'];
 
     return [
         STICKY_MARKER,
         '## Bundle size',
         '',
-        provenance(head, baseline),
+        provenance(head, baseline, branch),
         '',
         ...columns,
         ...headline,
@@ -414,9 +420,15 @@ function assertSame(aPath: string, bPath: string): void {
 
 function main(): void {
     const argv = process.argv.slice(2);
+    // A flag with an empty value counts as absent, so a workflow expression that resolved to nothing falls
+    // back to the default rather than rendering the empty string.
     const flag = (name: string): string | undefined => {
         const at = argv.indexOf(name);
-        return at === -1 ? undefined : argv.at(at + 1);
+        const value = at === -1 ? undefined : argv.at(at + 1);
+        if (!value) {
+            return undefined;
+        }
+        return value;
     };
 
     if (argv.includes('--marker')) {
@@ -434,9 +446,13 @@ function main(): void {
         return;
     }
 
+    // The branch baselines come from. Defaulted rather than required, because `main` is the answer for
+    // every ordinary pull request and a local comparison should not have to say so.
+    const baselineBranch = flag('--baseline-branch') ?? 'main';
+
     const headOnlyPath = flag('--no-baseline');
     if (headOnlyPath) {
-        process.stdout.write(`${render(readReport(headOnlyPath), {kind: 'missing'})}\n`);
+        process.stdout.write(`${render(readReport(headOnlyPath), {kind: 'missing'}, baselineBranch)}\n`);
         return;
     }
 
@@ -454,7 +470,7 @@ function main(): void {
         // comparison of two deliberate builds means.
         const mergeBaseSha = flag('--merge-base-sha');
         const baseline: Baseline = !mergeBaseSha || mergeBaseSha === baseReport.sha ? {kind: 'merge-base', report: baseReport} : {kind: 'ancestor', report: baseReport, mergeBaseSha};
-        process.stdout.write(`${render(headReport, baseline)}\n`);
+        process.stdout.write(`${render(headReport, baseline, baselineBranch)}\n`);
         return;
     }
 

@@ -50,6 +50,16 @@ runs:
           const {owner, repo} = context.repo;
           core.setOutput('pr-number', meta.prNumber);
 
+          // Baselines come from the branch this pull request is merging INTO, which the measurement recorded
+          // at build time. That is `main` for every ordinary pull request, and it means nothing here has to
+          // be told what the baseline branch is called - including a pull request that targets a long-lived
+          // branch, or a POC being proven out on a branch of its own. The default branch is the fallback for
+          // a measurement that recorded no base, which is a `push` run and never reaches this action.
+          // Resolved before anything can fail, because the comment names it whatever else happens.
+          const baselineBranch = meta.baseRef || context.payload.repository.default_branch;
+          core.setOutput('baseline-branch', baselineBranch);
+          core.info(`resolving baselines from \`${baselineBranch}\``);
+
           // `base.sha` is the base branch tip this head was tested against, not the merge base. Comparing
           // against the tip would charge the pull request for every byte that landed on `main` after it
           // forked, so ask the API for the actual merge base. A fork's head commit is reachable in this
@@ -70,13 +80,6 @@ runs:
           }
           core.setOutput('merge-base-sha', mergeBaseSha);
 
-          // Baselines come from the branch this pull request is merging INTO, which the measurement recorded
-          // at build time. That is `main` for every ordinary pull request, and it means nothing here has to
-          // be told what the baseline branch is called - including a pull request that targets a long-lived
-          // branch, or a POC being proven out on a branch of its own. The default branch is the fallback for
-          // a measurement that recorded no base, which is a `push` run and never reaches this action.
-          const baselineBranch = meta.baseRef || context.payload.repository.default_branch;
-          core.info(`resolving baselines from \`${baselineBranch}\``);
           // Newest run wins for a re-run of one commit.
           const runs = await github.rest.actions.listWorkflowRuns({
             owner,
@@ -145,12 +148,13 @@ runs:
       env:
         BASELINE_RUN_ID: ${{ steps.baseline.outputs.run-id }}
         MERGE_BASE_SHA: ${{ steps.baseline.outputs.merge-base-sha }}
+        BASELINE_BRANCH: ${{ steps.baseline.outputs.baseline-branch }}
       run: |
         set -o pipefail
         if [ -n "$BASELINE_RUN_ID" ]; then
-          node ./scripts/bundleSize.ts --compare baseline/bundle-size.json measure/bundle-size.json --merge-base-sha "$MERGE_BASE_SHA" > comment.md
+          node ./scripts/bundleSize.ts --compare baseline/bundle-size.json measure/bundle-size.json --merge-base-sha "$MERGE_BASE_SHA" --baseline-branch "$BASELINE_BRANCH" > comment.md
         else
-          node ./scripts/bundleSize.ts --no-baseline measure/bundle-size.json > comment.md
+          node ./scripts/bundleSize.ts --no-baseline measure/bundle-size.json --baseline-branch "$BASELINE_BRANCH" > comment.md
         fi
         node ./scripts/bundleSize.ts --marker > marker.txt
         cat comment.md >> "$GITHUB_STEP_SUMMARY"
