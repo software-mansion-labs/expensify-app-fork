@@ -3,280 +3,144 @@ import {render} from '@testing-library/react-native';
 import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffect/ScreenActivityEffectBoundaryContext';
 
-import type {ComponentType, DependencyList, EffectCallback} from 'react';
+import type {ComponentType, DependencyList, EffectCallback, ReactElement, ReactNode} from 'react';
 
-import React, {Activity, useEffect, useState} from 'react';
+import React, {Activity, createContext, useContext, useEffect} from 'react';
 
 /**
- * Runs one structure on useEffect and on useScreenActivityEffect and records the effect calls of every commit, so a
- * test can compare the two hooks step by step. The screen that stays live in the background, which is the 'none' tree
- * on plain useEffect, is the baseline every other configuration is measured against.
+ * The primitives a test needs to run one structure on useEffect and on useScreenActivityEffect and compare the effect
+ * calls commit by commit: the two screens a non-top screen behavior builds, the effect that records its calls, and the
+ * recorder around them. A test writes the tree it renders itself, so nothing here holds a table of structures.
  */
 
 type AnyEffectHook = (setup: EffectCallback, deps?: DependencyList) => void;
 
-const HOOKS = {useEffect, useScreenActivityEffect};
+let calls: string[] = [];
 
-type HookName = keyof typeof HOOKS;
-
-let log: string[] = [];
+function log(message: string) {
+    calls.push(message);
+}
 
 /** The calls recorded since the last drain, which is one commit worth of them when a test drains after every step. */
 function drainLog(): string[] {
-    const drained = log;
-    log = [];
+    const drained = calls;
+    calls = [];
     return drained;
 }
 
 function resetLog() {
-    log = [];
+    calls = [];
 }
 
-type TrackedSetupOptions = {hasCleanup?: boolean; throwsOnCleanup?: boolean};
-
-function trackedSetup(name: string, value: string, {hasCleanup = true, throwsOnCleanup = false}: TrackedSetupOptions = {}): EffectCallback {
+/** A setup that logs its own call and returns a cleanup logging the matching one under the same name. */
+function track(name: string): EffectCallback {
     return () => {
-        log.push(`setup:${name}:${value}`);
-        if (!hasCleanup) {
-            return undefined;
-        }
-        return () => {
-            log.push(`cleanup:${name}:${value}`);
-            if (throwsOnCleanup) {
-                throw new Error(`cleanup of ${name} threw`);
-            }
-        };
+        log(`setup:${name}`);
+        return () => log(`cleanup:${name}`);
     };
 }
 
-type BaseSubjectProps = {
-    /** useEffect or useScreenActivityEffect, which is the only difference between two runs of the same structure. */
-    useAnyEffect: AnyEffectHook;
+const AnyEffectHookContext = createContext<AnyEffectHook>(useEffect);
 
-    /** What the effect calls of this component are named in the log. */
-    id: string;
+/** The hook of the current run, which is the one thing a test changes when it runs the same structure twice. */
+function useAnyEffect(setup: EffectCallback, deps?: DependencyList) {
+    const hook = useContext(AnyEffectHookContext);
+    hook(setup, deps);
+}
 
-    /** The dependency of the effect, so a change of it is a dependency change. */
-    value: string;
-};
+/** Renders outside the screen, so the hook of a run is settled before the first component of it renders. */
+function AnyEffectHookProvider({hook, children}: {hook: AnyEffectHook; children: ReactNode}) {
+    return <AnyEffectHookContext.Provider value={hook}>{children}</AnyEffectHookContext.Provider>;
+}
 
-/** Every subject takes the props of every other one, so one map can render all of them. */
-type AnySubjectProps = BaseSubjectProps & {secondValue?: string; deps?: DependencyList; throwsOnCleanup?: boolean};
-
-function Single({useAnyEffect, id, value, throwsOnCleanup}: BaseSubjectProps & {throwsOnCleanup?: boolean}) {
-    useAnyEffect(trackedSetup(id, value, {throwsOnCleanup}), [value]);
+/** The effect a test renders when it has nothing to say about the component holding it. */
+function Subject({value}: {value: string}) {
+    useAnyEffect(track(`s:${value}`), [value]);
     return null;
 }
 
-function NoCleanup({useAnyEffect, id, value}: BaseSubjectProps) {
-    useAnyEffect(trackedSetup(id, value, {hasCleanup: false}), [value]);
+/** An effect that a cover releases and a reveal sets up again, for a test about a screen running both hooks. */
+function PlainEffect({value}: {value: string}) {
+    useEffect(() => track(`plain:${value}`)(), [value]);
     return null;
 }
 
-function NoDeps({useAnyEffect, id, value}: BaseSubjectProps) {
-    useAnyEffect(trackedSetup(id, value));
+/** An effect that is meant to survive a cover, for a test about a screen running both hooks. */
+function KeptEffect({value}: {value: string}) {
+    useScreenActivityEffect(() => track(`kept:${value}`)(), [value]);
     return null;
 }
 
-/** Takes the dependency list from the scenario, which is how a test covers a dependency list of another shape. */
-function GivenDeps({useAnyEffect, id, value, deps}: BaseSubjectProps & {deps?: DependencyList}) {
-    useAnyEffect(trackedSetup(id, value), deps);
-    return null;
+type ScreenProps = {isHidden: boolean; children: ReactNode};
+
+/** A screen on the 'none' behavior, which wrapDescriptorsWithNonTopScreensBehavior leaves unwrapped and so alive. */
+function LiveScreen({children}: ScreenProps) {
+    return children;
 }
 
-/** A dependency that is a new object on every render, which makes every render a dependency change. */
-function UnstableDeps({useAnyEffect, id, value}: BaseSubjectProps) {
-    useAnyEffect(trackedSetup(id, value), [{}]);
-    return null;
-}
-
-/** Writes state from the effect body once, which is the shape of an effect that seeds a component from a source. */
-function StateWriter({useAnyEffect, id, value}: BaseSubjectProps) {
-    const [step, setStep] = useState(0);
-    useAnyEffect(() => {
-        log.push(`setup:${id}:${value}(${step})`);
-        if (step === 0) {
-            setStep(1);
-        }
-        return () => {
-            log.push(`cleanup:${id}:${value}(${step})`);
-        };
-    }, [step, id, value]);
-    return null;
-}
-
-/** Reads a value it does not declare, so a test can tell which render the surviving setup captured. */
-function Undeclared({useAnyEffect, id, value, secondValue = value}: BaseSubjectProps & {secondValue?: string}) {
-    useAnyEffect(trackedSetup(id, `${value}(${secondValue})`), [value]);
-    return null;
-}
-
-function Pair({useAnyEffect, id, value, secondValue = value}: BaseSubjectProps & {secondValue?: string}) {
-    useAnyEffect(trackedSetup(`${id}(1)`, value), [value]);
-    useAnyEffect(trackedSetup(`${id}(2)`, secondValue), [secondValue]);
-    return null;
-}
-
-function Nested({useAnyEffect, id, value}: BaseSubjectProps) {
-    useAnyEffect(trackedSetup(`${id}(parent)`, value), [value]);
-    return (
-        <Single
-            useAnyEffect={useAnyEffect}
-            id={`${id}(child)`}
-            value={value}
-        />
-    );
-}
-
-/** One component on both hooks, which is what a screen looks like while its effects are being migrated. */
-function Mixed({id, value}: {id: string; value: string}) {
-    useEffect(() => trackedSetup(`${id}(effect)`, value)(), [id, value]);
-    useScreenActivityEffect(() => trackedSetup(`${id}(activity)`, value)(), [id, value]);
-    return null;
-}
-
-const SUBJECTS = {
-    single: Single,
-    noCleanup: NoCleanup,
-    noDeps: NoDeps,
-    givenDeps: GivenDeps,
-    unstableDeps: UnstableDeps,
-    stateWriter: StateWriter,
-    undeclared: Undeclared,
-    pair: Pair,
-    nested: Nested,
-    mixed: Mixed,
-};
-
-type SubjectKind = keyof typeof SUBJECTS;
-
-type SubjectSpec = {
-    id: string;
-    value: string;
-    secondValue?: string;
-    deps?: DependencyList;
-    throwsOnCleanup?: boolean;
-    kind?: SubjectKind;
-
-    /** Overrides the hook of the run for this subject alone, which is how a test mixes the two on one screen. */
-    hook?: HookName;
-};
-
-/** One rendered state of the screen: what it holds, and whether the <Activity> covers it. */
-type ScreenState = {isHidden?: boolean; subjects: SubjectSpec[]};
-
-/**
- * 'none' is the screen that stays live in the background, which never gets a boundary or an <Activity>. 'activity' is
- * the screen the wrapper builds, with the boundary outside the <Activity> it serves. The nested trees are that screen
- * inside another one, which is what a screen of a nested navigator gets: 'nestedActivity' hides the outer screen and
- * 'nestedActivityInnerHidden' hides the inner one.
- */
-type Tree = 'none' | 'activity' | 'nestedActivity' | 'nestedActivityInnerHidden';
-
-function Screen({useAnyEffect, tree, state}: {useAnyEffect: AnyEffectHook; tree: Tree; state: ScreenState}) {
-    const content = state.subjects.map(({id, value, secondValue, deps, throwsOnCleanup, kind = 'single', hook}) => {
-        const SubjectComponent: ComponentType<AnySubjectProps> = SUBJECTS[kind];
-        return (
-            <SubjectComponent
-                key={id}
-                useAnyEffect={hook ? HOOKS[hook] : useAnyEffect}
-                id={id}
-                value={value}
-                secondValue={secondValue}
-                deps={deps}
-                throwsOnCleanup={throwsOnCleanup}
-            />
-        );
-    });
-
-    if (tree === 'none') {
-        return content;
-    }
-
-    const isHidden = state.isHidden ?? false;
-    const mode = isHidden ? 'hidden' : 'visible';
-
-    if (tree === 'nestedActivity') {
-        return (
-            <ScreenActivityEffectBoundaryProvider isHidden={isHidden}>
-                <Activity mode={mode}>
-                    <ScreenActivityEffectBoundaryProvider isHidden={false}>
-                        <Activity mode="visible">{content}</Activity>
-                    </ScreenActivityEffectBoundaryProvider>
-                </Activity>
-            </ScreenActivityEffectBoundaryProvider>
-        );
-    }
-
-    if (tree === 'nestedActivityInnerHidden') {
-        return (
-            <ScreenActivityEffectBoundaryProvider isHidden={false}>
-                <Activity mode="visible">
-                    <ScreenActivityEffectBoundaryProvider isHidden={isHidden}>
-                        <Activity mode={mode}>{content}</Activity>
-                    </ScreenActivityEffectBoundaryProvider>
-                </Activity>
-            </ScreenActivityEffectBoundaryProvider>
-        );
-    }
-
+/** A screen on the 'activity' behavior, which is what ScreenActivityWrapper builds around the screen content. */
+function ActivityScreen({isHidden, children}: ScreenProps) {
     return (
         <ScreenActivityEffectBoundaryProvider isHidden={isHidden}>
-            <Activity mode={mode}>{content}</Activity>
+            <Activity mode={isHidden ? 'hidden' : 'visible'}>{children}</Activity>
         </ScreenActivityEffectBoundaryProvider>
     );
 }
 
-/** The effect calls of every step of the scenario, the last step being the screen leaving the navigation stack. */
-function runScenario(useAnyEffect: AnyEffectHook, tree: Tree, states: readonly ScreenState[]): string[][] {
-    const screen = (state: ScreenState) => (
-        <Screen
-            useAnyEffect={useAnyEffect}
-            tree={tree}
-            state={state}
-        />
-    );
+/** One rendered state of a screen: what it holds, and whether the screen on top of it covers it. */
+type Step = {isHidden: boolean; children: ReactNode};
 
-    const [first, ...rest] = states;
-    const {rerender, unmount} = render(screen(first));
-    const steps = [drainLog()];
+function visible(children: ReactNode): Step {
+    return {isHidden: false, children};
+}
 
-    for (const state of rest) {
-        rerender(screen(state));
-        steps.push(drainLog());
+function hidden(children: ReactNode): Step {
+    return {isHidden: true, children};
+}
+
+/** The calls of every commit of the trees given, the last commit being the screen leaving the navigation stack. */
+function record(trees: readonly ReactElement[]): string[][] {
+    const [first, ...rest] = trees;
+    const {rerender, unmount} = render(first);
+    const commits = [drainLog()];
+
+    for (const tree of rest) {
+        rerender(tree);
+        commits.push(drainLog());
     }
 
     unmount();
-    steps.push(drainLog());
+    commits.push(drainLog());
 
-    return steps;
+    return commits;
+}
+
+/** Puts the steps through one screen on one hook, which is one of the configurations a test compares. */
+function runOn(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: readonly Step[]): string[][] {
+    const tree = (step: Step) => (
+        <AnyEffectHookProvider hook={hook}>
+            <Screen isHidden={step.isHidden}>{step.children}</Screen>
+        </AnyEffectHookProvider>
+    );
+    return record(steps.map(tree));
 }
 
 /**
- * The same scenario on both hooks, on a screen with no <Activity> above it and on a screen wrapped in one.
- * liveUseEffect is the baseline, liveScreenActivityEffect is the hook with no boundary above it, activityUseEffect is
- * what the hook exists to avoid, and activityScreenActivityEffect is the hook doing its job.
+ * The same steps under the four configurations. liveUseEffect is the baseline of a screen that stays live in the
+ * background, activityUseEffect is what a screen gets today, and activityScreenActivityEffect is the hook at work.
  */
-function runEveryConfig(states: readonly ScreenState[]) {
+function runEveryConfig(steps: readonly Step[]) {
     return {
-        liveUseEffect: runScenario(useEffect, 'none', states),
-        liveScreenActivityEffect: runScenario(useScreenActivityEffect, 'none', states),
-        activityUseEffect: runScenario(useEffect, 'activity', states),
-        activityScreenActivityEffect: runScenario(useScreenActivityEffect, 'activity', states),
+        liveUseEffect: runOn(useEffect, LiveScreen, steps),
+        liveScreenActivityEffect: runOn(useScreenActivityEffect, LiveScreen, steps),
+        activityUseEffect: runOn(useEffect, ActivityScreen, steps),
+        activityScreenActivityEffect: runOn(useScreenActivityEffect, ActivityScreen, steps),
     };
-}
-
-function runNestedActivity(states: readonly ScreenState[]): string[][] {
-    return runScenario(useScreenActivityEffect, 'nestedActivity', states);
-}
-
-function runNestedActivityInnerHidden(states: readonly ScreenState[]): string[][] {
-    return runScenario(useScreenActivityEffect, 'nestedActivityInnerHidden', states);
 }
 
 type Runs = ReturnType<typeof runEveryConfig>;
 
-/** All four configurations run the scenario identically, which is the claim for every scenario that never hides. */
+/** All four configurations ran the steps identically, which is the claim for every structure that never hides. */
 function expectEveryConfigToMatch(runs: Runs, expected: string[][]) {
     expect(runs.liveUseEffect).toEqual(expected);
     expect(runs.liveScreenActivityEffect).toEqual(expected);
@@ -284,17 +148,23 @@ function expectEveryConfigToMatch(runs: Runs, expected: string[][]) {
     expect(runs.activityScreenActivityEffect).toEqual(expected);
 }
 
-function spec(id: string, value: string, extra: Partial<SubjectSpec> = {}): SubjectSpec {
-    return {id, value, ...extra};
-}
-
-function visible(...subjects: SubjectSpec[]): ScreenState {
-    return {isHidden: false, subjects};
-}
-
-function hidden(...subjects: SubjectSpec[]): ScreenState {
-    return {isHidden: true, subjects};
-}
-
-export {drainLog, expectEveryConfigToMatch, hidden, resetLog, runEveryConfig, runNestedActivity, runNestedActivityInnerHidden, runScenario, Screen, Single, spec, trackedSetup, visible};
-export type {AnyEffectHook, Runs, ScreenState, SubjectSpec, Tree};
+export {
+    ActivityScreen,
+    AnyEffectHookProvider,
+    drainLog,
+    expectEveryConfigToMatch,
+    hidden,
+    KeptEffect,
+    LiveScreen,
+    log,
+    PlainEffect,
+    record,
+    resetLog,
+    runEveryConfig,
+    runOn,
+    Subject,
+    track,
+    useAnyEffect,
+    visible,
+};
+export type {AnyEffectHook, Runs, ScreenProps, Step};
