@@ -38,6 +38,32 @@ function createScreenActivityEffectEntry(): ScreenActivityEffectEntry {
     return entry;
 }
 
+/**
+ * Releases the entries given and takes them out of the set. React runs every cleanup of a deleted tree and reports the
+ * error afterwards, so one cleanup that throws must not keep the rest of the screen from being released. The first
+ * error is rethrown once the loop is done, which leaves the failure where React would have put it.
+ */
+function releaseEntries(entries: Set<ScreenActivityEffectEntry>, released: readonly ScreenActivityEffectEntry[]): void {
+    let firstError: unknown;
+    let hasFailed = false;
+
+    for (const entry of released) {
+        entries.delete(entry);
+        try {
+            entry.release();
+        } catch (error) {
+            if (!hasFailed) {
+                hasFailed = true;
+                firstError = error;
+            }
+        }
+    }
+
+    if (hasFailed) {
+        throw firstError;
+    }
+}
+
 type ScreenActivityEffectBoundary = {
     /** Hands the boundary an entry to release when the screen goes away. Registering the same entry twice is a no-op. */
     register: (entry: ScreenActivityEffectEntry) => void;
@@ -72,6 +98,13 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
     const boundary = useMemo<ScreenActivityEffectBoundary>(
         () => ({
             register: (entry) => {
+                if (__DEV__ && isScreenTeardownRef.current) {
+                    // A body only runs for a subtree React is rendering, so a body arriving while the flag reports a
+                    // hidden screen means isHidden no longer describes the <Activity> this boundary wraps.
+                    console.error(
+                        '[useScreenActivityEffect] The boundary reports a hidden screen while its subtree is running effects. isHidden has drifted from the mode of the <Activity> it wraps.',
+                    );
+                }
                 entries.add(entry);
             },
             unregister: (entry) => {
@@ -93,26 +126,23 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
 
     // A reveal runs the bodies of the subtree before this effect, so an entry whose cleanup the hide skipped and which
     // did not come back with the reveal belongs to a component that is gone. Sweeping it here keeps a component that
-    // was removed while the screen was covered from waiting for the screen to leave the stack.
+    // was removed while the screen was covered from waiting for the screen to leave the stack. A body that the reveal
+    // did not run for another reason reads the same way: a <Suspense> below that suspends again on the reveal has its
+    // setup released here and set up again once it resolves, which is the one case where the hook does not keep what a
+    // live screen keeps.
     useEffect(() => {
         if (isHidden) {
             return;
         }
-        for (const entry of entries) {
-            if (!entry.isAwaitingReveal) {
-                continue;
-            }
-            entries.delete(entry);
-            entry.release();
-        }
+        releaseEntries(
+            entries,
+            [...entries].filter((entry) => entry.isAwaitingReveal),
+        );
     }, [entries, isHidden]);
 
     useEffect(
         () => () => {
-            for (const entry of entries) {
-                entry.release();
-            }
-            entries.clear();
+            releaseEntries(entries, [...entries]);
         },
         [entries],
     );
