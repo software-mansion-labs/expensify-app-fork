@@ -16,6 +16,7 @@
 import {execSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import zlib from 'node:zlib';
 
 type ChunkSizes = {raw: number; gzip: number; initial: boolean};
@@ -98,6 +99,31 @@ function assertComparable(a: BundleSizeReport, b: BundleSizeReport): void {
  * whatever they moved by.
  */
 const CHUNK_HEADLINE_FLOOR_BYTES = 1024;
+
+/**
+ * The named cache groups `config/rsbuild/rsbuild.common.ts` splits out, as a real build emits them.
+ *
+ * Chunk names come from the emitted filenames, so a rename in that file does not fail anything by itself: the
+ * group simply stops appearing in the measurement, and every later comparison reads "no change" for a chunk
+ * that no longer exists. That is a wrong answer rather than a missing one, so a group that has gone missing
+ * fails the measurement here, where the build is, rather than being rendered as if nothing had happened.
+ *
+ * `lottiePlayer` is configured alongside these but no build emits a chunk under that name, so it is not
+ * required. Add a name here when a new group starts being emitted.
+ */
+const EXPECTED_CACHE_GROUPS = ['main', 'vendors', 'heicTo', 'expensifyIcons', 'illustrations'];
+
+/**
+ * A measurement is written by a build of the pull request's own code and read by a job holding a write
+ * token, so everything in it is untrusted input. These bound what may reach the comment.
+ */
+const CHUNK_NAME_PATTERN = /^[A-Za-z0-9_@./+-]+$/;
+const SHA_PATTERN = /^[0-9a-f]{7,40}$/;
+const MEASURED_WITH_PATTERN = /^[A-Za-z0-9_. +-]{1,64}$/;
+const MAX_NAME_LENGTH = 512;
+
+/** 94 chunks today. The cap is a ceiling on how long a fork can make the comment, not a fit to the build. */
+const MAX_CHUNKS = 1000;
 
 /** Matches the debug id `sentry-webpack-plugin` injects, and captures the UUID itself. */
 const SENTRY_DEBUG_ID = /_sentryDebugIds\[[A-Za-z_$\d]+\]="([\da-f-]{36})"/;
@@ -214,27 +240,134 @@ function measure(distDir: string, sha: string): BundleSizeReport {
         throw new Error(`index.html in ${distDir} references no chunk that exists on disk.`);
     }
 
+    const missingGroups = EXPECTED_CACHE_GROUPS.filter((name) => !chunks[name]);
+    if (missingGroups.length > 0) {
+        throw new Error(
+            `The build emitted no chunk named ${missingGroups.join(', ')}. A cache group in config/rsbuild/rsbuild.common.ts has been renamed or removed, ` +
+                'and measuring around it would report "no change" for a chunk that no longer exists. Update EXPECTED_CACHE_GROUPS in this file to match.',
+        );
+    }
+
     return {sha, measuredWith: MEASURED_WITH, initialJsRaw, initialJsGzip, allJsRaw, allJsGzip, cssRaw, cssGzip, largestChunk, chunks};
 }
 
-function isReport(value: unknown): value is BundleSizeReport {
-    return typeof value === 'object' && value !== null && 'chunks' in value && 'initialJsGzip' in value && 'largestChunk' in value;
+/**
+ * A measurement that cannot be trusted enough to render. Kept separate from every other error because the
+ * caller answers it differently: a comment saying the results could not be read, rather than a crash that
+ * leaves the pull request with no comment and no explanation.
+ */
+class ReportValidationError extends Error {}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** `JSON.parse` returns `any`, so narrow before trusting the shape. */
-function readReport(filePath: string): BundleSizeReport {
-    const parsed: unknown = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    if (!isReport(parsed)) {
-        throw new Error(`${filePath} is not a bundle size report.`);
+function checkedName(value: unknown, what: string): string {
+    const invalid = typeof value !== 'string' || value.length === 0 || value.length > MAX_NAME_LENGTH || !CHUNK_NAME_PATTERN.test(value) || value.includes('..') || value.startsWith('/');
+    if (invalid || typeof value !== 'string') {
+        throw new ReportValidationError(`${what} is not a usable name: ${JSON.stringify(value)}`);
     }
-    return parsed;
+    return value;
+}
+
+function checkedSize(value: unknown, what: string): number {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+        throw new ReportValidationError(`${what} is not a size: ${JSON.stringify(value)}`);
+    }
+    return value;
+}
+
+/**
+ * Checks every field of a measurement, and returns a report built only from the fields that passed.
+ *
+ * A pull request from a fork runs its own copy of the measure workflow, so it decides what this file
+ * contains: the cache-group names come from its `config/`, and the workflow that writes the file is the copy
+ * on its own branch. The renderer runs from the default branch with a write token, which makes this file the
+ * one input a contributor controls and the bot repeats. Rebuilding the object rather than narrowing it also
+ * means nothing that was never checked can reach the comment.
+ */
+function parseReport(value: unknown, source: string): BundleSizeReport {
+    if (!isRecord(value)) {
+        throw new ReportValidationError(`${source} is not an object.`);
+    }
+
+    if (typeof value.sha !== 'string' || !SHA_PATTERN.test(value.sha)) {
+        throw new ReportValidationError(`${source} carries no commit SHA: ${JSON.stringify(value.sha)}`);
+    }
+    if (value.measuredWith !== undefined && (typeof value.measuredWith !== 'string' || !MEASURED_WITH_PATTERN.test(value.measuredWith))) {
+        throw new ReportValidationError(`${source} records an unusable runtime: ${JSON.stringify(value.measuredWith)}`);
+    }
+    if (!isRecord(value.largestChunk)) {
+        throw new ReportValidationError(`${source} has no largest chunk.`);
+    }
+    if (!isRecord(value.chunks)) {
+        throw new ReportValidationError(`${source} has no chunks.`);
+    }
+
+    const names = Object.keys(value.chunks);
+    if (names.length > MAX_CHUNKS) {
+        throw new ReportValidationError(`${source} reports ${names.length} chunks, past the ${MAX_CHUNKS} this renders.`);
+    }
+    const chunks: Record<string, ChunkSizes> = {};
+    for (const name of names) {
+        const chunk = value.chunks[name];
+        if (!isRecord(chunk)) {
+            throw new ReportValidationError(`${source}: chunk ${JSON.stringify(name)} is not an object.`);
+        }
+        if (typeof chunk.initial !== 'boolean') {
+            throw new ReportValidationError(`${source}: chunk ${JSON.stringify(name)} does not say whether it is on the initial path.`);
+        }
+        chunks[checkedName(name, `${source}: chunk name`)] = {
+            raw: checkedSize(chunk.raw, `${source}: chunk ${name} raw`),
+            gzip: checkedSize(chunk.gzip, `${source}: chunk ${name} gzip`),
+            initial: chunk.initial,
+        };
+    }
+
+    return {
+        sha: value.sha,
+        measuredWith: value.measuredWith,
+        initialJsRaw: checkedSize(value.initialJsRaw, `${source}: initialJsRaw`),
+        initialJsGzip: checkedSize(value.initialJsGzip, `${source}: initialJsGzip`),
+        allJsRaw: checkedSize(value.allJsRaw, `${source}: allJsRaw`),
+        allJsGzip: checkedSize(value.allJsGzip, `${source}: allJsGzip`),
+        cssRaw: checkedSize(value.cssRaw, `${source}: cssRaw`),
+        cssGzip: checkedSize(value.cssGzip, `${source}: cssGzip`),
+        largestChunk: {
+            name: checkedName(value.largestChunk.name, `${source}: largestChunk.name`),
+            raw: checkedSize(value.largestChunk.raw, `${source}: largestChunk.raw`),
+            gzip: checkedSize(value.largestChunk.gzip, `${source}: largestChunk.gzip`),
+        },
+        chunks,
+    };
+}
+
+/** `JSON.parse` returns `any`, and the file is untrusted, so validate before trusting the shape. */
+function readReport(filePath: string): BundleSizeReport {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown;
+    } catch (error) {
+        throw new ReportValidationError(`${filePath} is not readable JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    return parseReport(parsed, filePath);
 }
 
 function bytes(value: number): string {
     return `${value.toLocaleString('en-US')} B`;
 }
 
-function delta(base: number, head: number): string {
+/** A side that does not exist is `null`, never 0: a chunk this pull request added has no baseline size. */
+function delta(base: number | null, head: number | null): string {
+    if (base === null && head === null) {
+        return 'not measured';
+    }
+    if (base === null) {
+        return 'New file';
+    }
+    if (head === null) {
+        return 'Deleted';
+    }
     const diff = head - base;
     if (diff === 0) {
         return 'no change';
@@ -245,11 +378,12 @@ function delta(base: number, head: number): string {
 }
 
 /** With no baseline the row is one value wide, so the comment cannot read as a delta of zero. */
-function row(label: string, head: number, base?: number): string {
+function row(label: string, head: number | null, base?: number | null): string {
+    const headCell = head === null ? '-' : bytes(head);
     if (base === undefined) {
-        return `| ${label} | ${bytes(head)} |`;
+        return `| ${label} | ${headCell} |`;
     }
-    return `| ${label} | ${bytes(head)} | ${bytes(base)} | ${delta(base, head)} |`;
+    return `| ${label} | ${headCell} | ${base === null ? '-' : bytes(base)} | ${delta(base, head)} |`;
 }
 
 function shortSha(sha: string): string {
@@ -279,7 +413,9 @@ function provenance(head: BundleSizeReport, baseline: Baseline, branch: string):
 
 function render(head: BundleSizeReport, baseline: Baseline, branch: string): string {
     const base = baseline.kind === 'missing' ? undefined : baseline.report;
-    const stable = Object.keys(head.chunks).filter((name) => !/^\d+$/.test(name));
+    // The union of both sides, so a chunk this pull request added and a chunk it deleted are both rows.
+    // Taking head's keys alone hides an added chunk entirely and reports a deleted one as nothing at all.
+    const stable = [...new Set([...Object.keys(head.chunks), ...Object.keys(base?.chunks ?? {})])].filter((name) => !/^\d+$/.test(name));
     // Raw first: it is what the JavaScript engine parses on every load, cached or not, and it is emitted
     // identically by every rebuild. Gzip is what crosses the network on the loads that are not cache hits.
     const headline: string[] = [
@@ -291,18 +427,22 @@ function render(head: BundleSizeReport, baseline: Baseline, branch: string): str
     for (const name of stable) {
         const headChunk = head.chunks[name];
         const baseChunk = base?.chunks[name];
-        if (headChunk.initial && baseChunk && Math.abs(headChunk.gzip - baseChunk.gzip) >= CHUNK_HEADLINE_FLOOR_BYTES) {
-            headline.push(row(`${name} (gzip)`, headChunk.gzip, baseChunk.gzip));
+        if (!base) {
+            continue;
+        }
+        // A chunk that exists on one side only is a structural change, so it earns the headline on the same
+        // terms as one that moved: above the floor, and either on the initial path or newly there at all.
+        const appeared = !headChunk || !baseChunk;
+        const moved = (headChunk?.gzip ?? 0) - (baseChunk?.gzip ?? 0);
+        const onInitialPath = headChunk?.initial ?? baseChunk?.initial ?? false;
+        if ((onInitialPath || appeared) && Math.abs(moved) >= CHUNK_HEADLINE_FLOOR_BYTES) {
+            headline.push(row(`${name} (gzip)`, headChunk?.gzip ?? null, baseChunk?.gzip ?? null));
         }
     }
 
     const detail: string[] = [];
     for (const name of stable) {
-        // With a baseline, a chunk the baseline does not have cannot be compared, so it stays out.
-        if (base && !base.chunks[name]) {
-            continue;
-        }
-        detail.push(row(`${name} (gzip)`, head.chunks[name].gzip, base?.chunks[name].gzip));
+        detail.push(row(`${name} (gzip)`, head.chunks[name]?.gzip ?? null, base ? (base.chunks[name]?.gzip ?? null) : undefined));
     }
     detail.push(row('emitted CSS (gzip)', head.cssGzip, base?.cssGzip));
     detail.push(row('largest chunk (raw)', head.largestChunk.raw, base?.largestChunk.raw));
@@ -418,6 +558,23 @@ function assertSame(aPath: string, bPath: string): void {
     process.exitCode = 1;
 }
 
+/**
+ * The comment to post when the measurement cannot be trusted.
+ *
+ * The reason goes to the log, not into the comment: it quotes the file that failed validation, and the file
+ * is the input a fork controls. A missing comment and a broken bot look identical to a reader, so this says
+ * plainly that the results could not be read.
+ */
+function unreadable(error: unknown): string {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    return [
+        STICKY_MARKER,
+        '## Bundle size',
+        '',
+        'The size results for this commit could not be read, so there is nothing to compare. This is a problem with the measurement rather than with this pull request.',
+    ].join('\n');
+}
+
 function main(): void {
     const argv = process.argv.slice(2);
     // A flag with an empty value counts as absent, so a workflow expression that resolved to nothing falls
@@ -452,7 +609,14 @@ function main(): void {
 
     const headOnlyPath = flag('--no-baseline');
     if (headOnlyPath) {
-        process.stdout.write(`${render(readReport(headOnlyPath), {kind: 'missing'}, baselineBranch)}\n`);
+        try {
+            process.stdout.write(`${render(readReport(headOnlyPath), {kind: 'missing'}, baselineBranch)}\n`);
+        } catch (error) {
+            if (!(error instanceof ReportValidationError)) {
+                throw error;
+            }
+            process.stdout.write(`${unreadable(error)}\n`);
+        }
         return;
     }
 
@@ -462,8 +626,18 @@ function main(): void {
         if (!basePath || !headPath) {
             throw new Error('--compare needs two JSON paths: <base> <head>');
         }
-        const baseReport = readReport(basePath);
-        const headReport = readReport(headPath);
+        let baseReport: BundleSizeReport;
+        let headReport: BundleSizeReport;
+        try {
+            baseReport = readReport(basePath);
+            headReport = readReport(headPath);
+        } catch (error) {
+            if (!(error instanceof ReportValidationError)) {
+                throw error;
+            }
+            process.stdout.write(`${unreadable(error)}\n`);
+            return;
+        }
         assertComparable(baseReport, headReport);
         // The caller knows the merge base; this script only decides how to describe the baseline it was
         // handed. Omitting the flag asserts that the baseline IS the merge base, which is what a local
@@ -486,4 +660,12 @@ function main(): void {
     );
 }
 
-main();
+export type {BundleSizeReport, Baseline};
+export {measure, parseReport, render, ReportValidationError};
+
+// Only when this file is what was run. The tooling tests import the functions above directly, and importing
+// a module must not start reading `dist/` or writing a comment to stdout.
+const entrypoint = process.argv.at(1);
+if (entrypoint && path.resolve(entrypoint) === fileURLToPath(import.meta.url)) {
+    main();
+}
