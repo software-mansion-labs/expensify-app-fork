@@ -432,6 +432,14 @@ const getCommonConfiguration = async ({file = '.env', platform = 'web', isDevSer
                             name: 'lottiePlayer',
                             chunks: 'all',
                         },
+                        // TEMPORARY POC - delete with the POC. Gives the ballast its own chunk, so this
+                        // pull request adds a chunk the baseline does not have.
+                        pocBallast: {
+                            test: /[\\/]src[\\/]libs[\\/]pocBallast\.ts$/,
+                            name: 'pocBallast',
+                            chunks: 'all',
+                            priority: 20,
+                        },
                         heicTo: {
                             test: /[\\/]node_modules[\\/](heic-to)[\\/]/,
                             name: 'heicTo',
