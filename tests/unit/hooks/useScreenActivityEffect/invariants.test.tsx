@@ -72,14 +72,27 @@ function generateSequences(states: readonly ScreenState[], current: ScreenState,
     return sequences;
 }
 
-function toStep(state: ScreenState): Step {
-    const children = state.isMounted ? (
+function toChildren(state: ScreenState) {
+    if (!state.isMounted) {
+        return null;
+    }
+    return (
         <TrackedSubject
             key={state.instance}
             instance={state.instance}
             value={state.value}
         />
-    ) : null;
+    );
+}
+
+function toStep(state: ScreenState): Step {
+    const children = toChildren(state);
+    return state.isHidden ? hidden(children) : visible(children);
+}
+
+/** The same content one navigator deeper, where the boundary of the nested screen comes and goes with the content. */
+function toNestedStep(state: ScreenState): Step {
+    const children = state.isMounted ? <ActivityScreen isHidden={false}>{toChildren(state)}</ActivityScreen> : null;
     return state.isHidden ? hidden(children) : visible(children);
 }
 
@@ -142,21 +155,25 @@ function findViolations(states: readonly ScreenState[], commits: readonly string
     return violations;
 }
 
+function describeSequence(states: readonly ScreenState[]): string {
+    return states.map((state) => `${state.isHidden ? 'hidden' : 'visible'}(${state.isMounted ? `${state.instance}:${state.value}` : 'empty'})`).join(' ');
+}
+
 /** The violations of one configuration over every generated sequence, each one naming the sequence it came from. */
-function sweep(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, sequences: readonly ScreenState[][]) {
+function sweep(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, sequences: readonly ScreenState[][], asStep: (state: ScreenState) => Step = toStep) {
     const problems: string[] = [];
+    const runs: string[][][] = [];
     let setupCount = 0;
 
     for (const states of sequences) {
         resetLog();
-        const commits = runOn(hook, Screen, states.map(toStep));
+        const commits = runOn(hook, Screen, states.map(asStep));
+        runs.push(commits);
         setupCount += commits.flat().filter((call) => call.startsWith('setup:')).length;
-
-        const sequence = states.map((state) => `${state.isHidden ? 'hidden' : 'visible'}(${state.isMounted ? `${state.instance}:${state.value}` : 'empty'})`).join(' ');
-        problems.push(...findViolations(states, commits).map((violation) => `${violation} of ${sequence}`));
+        problems.push(...findViolations(states, commits).map((violation) => `${violation} of ${describeSequence(states)}`));
     }
 
-    return {problems, setupCount};
+    return {problems, runs, setupCount};
 }
 
 describe('useScreenActivityEffect over every generated sequence', () => {
@@ -191,5 +208,18 @@ describe('useScreenActivityEffect over every generated sequence', () => {
 
         // And it never ran more work than the live screen did, because a cover can only ever leave work out
         expect(activity.setupCount).toBeLessThanOrEqual(live.setupCount);
+    });
+
+    it('answers the same commit by commit when the screen sits one navigator deeper', () => {
+        // When the same sequences run on a screen of a nested navigator, whose boundary comes and goes with its content
+        const flat = sweep(useScreenActivityEffect, ActivityScreen, sequences);
+        const nested = sweep(useScreenActivityEffect, ActivityScreen, sequences, toNestedStep);
+
+        // Then nesting changes nothing at all: not what runs, not when, and not which invariant holds. A release that
+        // the nesting moves to a later commit is the shape a boundary of a nested screen leaks in, so it is the whole
+        // point of comparing commit by commit rather than comparing the flattened calls.
+        expect(nested.problems).toEqual([]);
+        const moved = sequences.filter((states, index) => JSON.stringify(nested.runs.at(index)) !== JSON.stringify(flat.runs.at(index))).map(describeSequence);
+        expect(moved).toEqual([]);
     });
 });
