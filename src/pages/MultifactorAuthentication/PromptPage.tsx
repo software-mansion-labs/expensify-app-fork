@@ -39,9 +39,9 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
     // - a returning device that skipped the soft prompt entirely (never approved this session) shows
     //   the plain "let's authenticate you",
     // - a device that just finished registering (approved the soft prompt and created a credential)
-    //   shows the "now" variant to bridge from registration into authorization.
+    //   shows the "now" variant, since it's moving straight from registration into authorization.
     // A device that approved the soft prompt without registering (no challenge) keeps the default
-    // copy - it never left the confirm-prompt content, so there is nothing to bridge from.
+    // copy, since it never left the confirm-prompt content and has no registration step behind it.
     let title: TranslationPaths = defaultTitle;
     let subtitle: TranslationPaths | undefined = defaultSubtitle;
     if (isAuthorizing) {
