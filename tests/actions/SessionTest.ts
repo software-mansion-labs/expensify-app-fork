@@ -1144,6 +1144,45 @@ describe('Session', () => {
         });
     });
 
+    describe('GPS trip on the sign in redirect', () => {
+        const gpsTrip = {
+            gpsPoints: [[{lat: 1, long: 2}]],
+            distanceInMeters: 100,
+            isTracking: true,
+            reportID: '1',
+            unit: CONST.CUSTOM_UNITS.DISTANCE_UNIT_MILES,
+        };
+
+        beforeEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        test('keeps the in-progress trip when a SAML re-auth forces the redirect', async () => {
+            await TestHelper.signInWithTestUser();
+            const accountID = (await getOnyxValue(ONYXKEYS.SESSION))?.accountID;
+            await Onyx.merge(ONYXKEYS.GPS_DRAFT_DETAILS, {...gpsTrip, accountID});
+            await waitForBatchedUpdates();
+
+            await SignInRedirect.default(undefined, true);
+            await waitForBatchedUpdates();
+
+            const draft = await getOnyxValue(ONYXKEYS.GPS_DRAFT_DETAILS);
+            expect(draft?.isTracking).toBe(true);
+            expect(draft?.accountID).toBe(accountID);
+        });
+
+        test('discards the in-progress trip on a sign out redirect', async () => {
+            await TestHelper.signInWithTestUser();
+            await Onyx.merge(ONYXKEYS.GPS_DRAFT_DETAILS, gpsTrip);
+            await waitForBatchedUpdates();
+
+            await SignInRedirect.default();
+            await waitForBatchedUpdates();
+
+            expect(await getOnyxValue(ONYXKEYS.GPS_DRAFT_DETAILS)).toBeUndefined();
+        });
+    });
+
     describe('signIn', () => {
         test('sends the login and validate code arguments to the API, independent of the CREDENTIALS Onyx cache', async () => {
             const writeSpy = jest.spyOn(API, 'write').mockResolvedValue(undefined);
