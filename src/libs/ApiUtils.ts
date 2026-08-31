@@ -22,8 +22,8 @@ let activeServer: ValueOf<typeof CONST.SERVER> = CONST.SERVER.PRODUCTION;
 const {promise: activeServerHydrationPromise, resolve: resolveActiveServerHydration} = Promise.withResolvers<void>();
 
 function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, envName: ValueOf<typeof CONST.ENVIRONMENT>): ValueOf<typeof CONST.SERVER> {
-    // The environment is baked into the bundle, and there is no meaningful way to point qa.new.exops.io at
-    // production
+    // The environment is baked into the bundle, and there is no meaningful way
+    // to point qa.new.exops.io at production
     if (envName === CONST.ENVIRONMENT.QA) {
         return CONST.SERVER.QA;
     }
@@ -100,13 +100,6 @@ function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
     return `${getApiRoot(request)}api/${request.command}${request.command.includes('?') ? '' : '?'}`;
 }
 
-/**
- * Check if we're currently using the staging API root
- */
-function isUsingStagingApi(): boolean {
-    return activeServer === CONST.SERVER.STAGING;
-}
-
 function isQAServerActive(): boolean {
     return activeServer === CONST.SERVER.QA;
 }
@@ -119,4 +112,4 @@ function waitForActiveServerHydration(): Promise<void> {
     return activeServerHydrationPromise;
 }
 
-export {getActiveServer, getApiRoot, getCommandURL, isQAServerActive, isUsingStagingApi, waitForActiveServerHydration};
+export {getActiveServer, getApiRoot, getCommandURL, isQAServerActive, waitForActiveServerHydration};

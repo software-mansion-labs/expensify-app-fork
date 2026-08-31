@@ -44,7 +44,6 @@ jest.mock('@libs/ApiUtils', () => ({
     __esModule: true,
     getApiRoot: jest.fn(() => 'https://test-api.expensify.com/'),
     getCommandURL: jest.fn(() => mockPingUrl),
-    isUsingStagingApi: jest.fn(() => false),
     isQAServerActive: jest.fn(() => false),
 }));
 

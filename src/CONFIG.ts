@@ -43,7 +43,7 @@ const secureNgrokURL = addTrailingForwardSlash(get(Config, 'SECURE_NGROK_URL', '
 const secureExpensifyUrl = addTrailingForwardSlash(get(Config, 'SECURE_EXPENSIFY_URL', 'https://secure.expensify.com/'));
 const useNgrok = get(Config, 'USE_NGROK', 'false') === 'true';
 const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';
-// Only normalize a non-empty value: addTrailingForwardSlash('') returns '/', which would look configured
+// addTrailingForwardSlash('') returns '/', which would look configured
 const normalizeOptionalRoot = (value: string): string => (value ? addTrailingForwardSlash(value) : '');
 const qaExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_EXPENSIFY_URL', CONST.QA_EXPENSIFY_URL));
 const qaSecureExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_SECURE_EXPENSIFY_URL', 'https://qa-secure.exops.io/'));

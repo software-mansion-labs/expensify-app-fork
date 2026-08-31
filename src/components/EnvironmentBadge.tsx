@@ -35,7 +35,7 @@ function getBadgeEnvironment(activeServer: ValueOf<typeof CONST.SERVER>, environ
         return CONST.ENVIRONMENT.STAGING;
     }
 
-    // Requests go to production, so a staging build reaching here is talking to production despite its name
+    // A staging build reaching here is talking to production despite its name
     return environment === CONST.ENVIRONMENT.STAGING ? CONST.ENVIRONMENT.PRODUCTION : environment;
 }
 
@@ -54,7 +54,7 @@ function EnvironmentBadge() {
 
     const badgeEnvironmentStyle = StyleUtils.getEnvironmentBadgeStyle(success, error, adhoc);
 
-    // A production build cannot switch servers, so this reads the bundled environment
+    // A production build cannot switch servers
     if (isProduction) {
         return null;
     }

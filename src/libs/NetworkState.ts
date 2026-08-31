@@ -395,11 +395,9 @@ function configureAndSubscribe() {
     });
 }
 
-// Subscribe to NetInfo once getEnvironment() resolves so the first ping uses the correct root.
-// queueMicrotask defers configureAndSubscribe past the current tick so ApiUtils' own
-// ACTIVE_SERVER Onyx callback — which is the source of truth for getApiRoot() — has
-// already updated its cached value. Without this defer, configureAndSubscribe samples ApiUtils'
-// stale module-level value and bakes the wrong reachabilityUrl into NetInfo.
+// Subscribe to NetInfo once getEnvironment() resolves so the first ping uses the correct root, and defer
+// configureAndSubscribe so ApiUtils' ACTIVE_SERVER callback — the source of truth for getApiRoot() — has
+// updated its cached value first. Sampling it early bakes the wrong reachabilityUrl into NetInfo.
 getEnvironment().then(() => {
     queueMicrotask(configureAndSubscribe);
 });
@@ -418,8 +416,8 @@ Onyx.connectWithoutView({
     },
 });
 
-// Skip the rebuild when the URL is unchanged: rebuilding tears down NetInfo state and fires extra
-// Pings, and the switch can flip without changing the URL.
+// Rebuilding tears down NetInfo state and fires extra Pings, and the switch
+// can flip without changing the URL.
 Onyx.connectWithoutView({
     key: ONYXKEYS.ACTIVE_SERVER,
     callback: () => {

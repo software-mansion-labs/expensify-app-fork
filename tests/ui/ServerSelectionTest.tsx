@@ -74,7 +74,7 @@ const mockGetRootState = jest.fn<RootState | undefined, []>();
 
 jest.mock('@libs/Navigation/navigationRef', () => ({
     __esModule: true,
-    // The factory is hoisted above mockGetRootState's initialisation, so it has to be read at call time
+    // The factory is hoisted above mockGetRootState's initialization, so it has to be read at call time
     default: {current: {getRootState: () => mockGetRootState()}},
 }));
 jest.mock('@userActions/User', () => ({

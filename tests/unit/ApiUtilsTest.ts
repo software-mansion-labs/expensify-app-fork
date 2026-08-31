@@ -177,7 +177,7 @@ describe('ApiUtils', () => {
             await setActiveServer(CONST.SERVER.QA);
 
             expect(ApiUtils.isQAServerActive()).toBe(true);
-            expect(ApiUtils.isUsingStagingApi()).toBe(false);
+            expect(ApiUtils.getActiveServer()).toBe(CONST.SERVER.QA);
             expect(ApiUtils.getApiRoot()).toBe('https://qa.exops.io/');
             expect(ApiUtils.getApiRoot({shouldUseSecure: true})).toBe('https://qa-secure.exops.io/');
         });
@@ -219,15 +219,20 @@ describe('ApiUtils', () => {
         });
     });
 
-    describe('isUsingStagingApi', () => {
-        it('returns true when toggle is on', async () => {
+    describe('getActiveServer', () => {
+        it('returns staging when the staging server is active', async () => {
             await setActiveServer(CONST.SERVER.STAGING);
-            expect(ApiUtils.isUsingStagingApi()).toBe(true);
+            expect(ApiUtils.getActiveServer()).toBe(CONST.SERVER.STAGING);
         });
 
-        it('returns false when toggle is off', async () => {
+        it('returns production when the production server is active', async () => {
             await setActiveServer(CONST.SERVER.PRODUCTION);
-            expect(ApiUtils.isUsingStagingApi()).toBe(false);
+            expect(ApiUtils.getActiveServer()).toBe(CONST.SERVER.PRODUCTION);
+        });
+
+        it('returns qa when the QA server is active', async () => {
+            await setActiveServer(CONST.SERVER.QA);
+            expect(ApiUtils.getActiveServer()).toBe(CONST.SERVER.QA);
         });
     });
 });
