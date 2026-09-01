@@ -286,13 +286,29 @@ function ComposerWithSuggestions({
         return initialValue;
     });
 
+    // A cover ends the composer for React but not for the user, so the mark tells the two apart, and it is set in time because this cleanup runs before the one that flushes the save below.
+    const isComposerGoneRef = useRef(false);
+    useScreenActivityEffect(() => {
+        isComposerGoneRef.current = false;
+        return () => {
+            isComposerGoneRef.current = true;
+        };
+    }, []);
+
+    const saveReportActionDraftWhileTheComposerIsThere = useCallback((...args: Parameters<typeof saveReportActionDraft>) => {
+        if (isComposerGoneRef.current) {
+            return;
+        }
+        saveReportActionDraft(...args);
+    }, []);
+
     // Save the draft of the report action. This debounced so that we're not ceaselessly saving your edit.
     // The pending save is flushed rather than dropped when the composer goes away, so the last keystrokes still reach the draft.
     const {
         saveDraft: debouncedSaveReportActionDraft,
         isSavePending: isDraftSavePending,
         cancelSaveDraft: cancelSaveReportActionDraft,
-    } = useDebouncedSaveDraft(saveReportActionDraft, undefined, true);
+    } = useDebouncedSaveDraft(saveReportActionDraftWhileTheComposerIsThere, undefined, true);
 
     // Save the draft of the report comment. This debounced so that we're not ceaselessly saving your edit. Saving the draft
     // allows one to navigate somewhere else and come back to the comment and still have it in edit mode.
