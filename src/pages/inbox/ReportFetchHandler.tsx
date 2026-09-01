@@ -460,7 +460,8 @@ function ReportFetchHandler() {
         rejoinThread();
     }, [isFocused, prevIsFocused]);
 
-    useEffect(() => {
+    // A cover would cancel the parked subscribe, leaving `didSubscribeToReportLeavingEvents` false and the removal from the room unnoticed.
+    useScreenActivityEffect(() => {
         if (!reportIDFromRoute || !isValidReportIDFromPath(reportIDFromRoute)) {
             return;
         }
