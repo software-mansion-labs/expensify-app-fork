@@ -7,6 +7,7 @@ import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import {hideEmojiPicker} from '@libs/actions/EmojiPickerAction';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
+import Navigation from '@libs/Navigation/Navigation';
 import clearReportNotifications from '@libs/Notification/clearReportNotifications';
 import {cancelSpan, cancelSpansByPrefix} from '@libs/telemetry/activeSpans';
 
@@ -68,7 +69,15 @@ function ReportLifecycleHandler({reportID}: ReportLifecycleHandlerProps) {
     };
 
     useEffect(clearNotifications, [clearNotifications]);
-    useAppFocusEvent(clearNotifications);
+
+    // The app focus listener outlives a cover, so its guard reads the top-most report now instead of trusting the value this render captured before the cover.
+    useAppFocusEvent(() => {
+        if (Navigation.getTopmostReportId() !== reportID) {
+            return;
+        }
+
+        clearReportNotifications(onyxReportID);
+    });
 
     return null;
 }

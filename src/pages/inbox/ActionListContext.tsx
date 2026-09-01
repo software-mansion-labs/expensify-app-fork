@@ -11,7 +11,7 @@ type ActionListContextType = {
     /** Snapshot of the persisted scroll offset. Safe to call during render (e.g. a useState initializer) to restore mount-time scroll state. */
     getScrollOffset: () => number;
 
-    /** Each list publishes its locally-owned ref on mount; the slot is last-writer-wins and `null` clears it. */
+    /** Each list publishes its locally-owned ref on mount; pass `null` to clear on unmount. */
     registerListRef: (ref: FlatListRefType) => void;
 
     /** Reads the currently registered list ref. Call from handlers only, never during render. */
@@ -30,17 +30,18 @@ function useActionListContext() {
 }
 
 /**
- * Owns a list ref and publishes it to the context. Layout effect so it's registered
+ * Owns a list ref and publishes it to the context (cleared on unmount). Layout effect so it's registered
  * at commit, before any layout-time handler reads it via `getListRef()`. Returns the ref to attach.
  */
 function useActionListRef() {
     const {registerListRef} = useActionListContext();
     const listRef = useRef<FlatList>(null);
 
-    // Nothing is unregistered because every mount publishes again and a list that went away leaves a ref whose
-    // `current` is null, which is what every consumer already guards on.
+    // Keeping the slot registered through a cover would buy nothing, because React detaches the element refs of a
+    // hidden <Activity> and every consumer already short-circuits on the `current` that is then null.
     useLayoutEffect(() => {
         registerListRef(listRef);
+        return () => registerListRef(null);
     }, [registerListRef]);
 
     return listRef;
