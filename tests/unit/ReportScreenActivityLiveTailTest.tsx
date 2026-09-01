@@ -1,6 +1,4 @@
-import {act, render} from '@testing-library/react-native';
-
-import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
+import {act} from '@testing-library/react-native';
 
 import useReportActionsNewActionLiveTail from '@pages/inbox/report/useReportActionsNewActionLiveTail';
 
@@ -11,7 +9,7 @@ import type * as ReactNavigation from '@react-navigation/native';
 import React, {useCallback, useEffect, useState} from 'react';
 
 import {getFakeReportAction} from '../utils/ReportTestUtils';
-import {getCoverMode} from '../utils/ScreenCoverHarness';
+import renderCoverableScreen from '../utils/ScreenCoverHarness';
 import createTransitionTrackerHarness from '../utils/TransitionTrackerTestUtils';
 import waitForBatchedUpdatesWithAct from '../utils/waitForBatchedUpdatesWithAct';
 
@@ -99,35 +97,6 @@ function LiveTailProbe() {
 }
 
 /**
- * The shared cover harness wraps a covered screen in a bare `<Activity>`, while `ScreenActivityWrapper` renders it
- * together with the effect boundary `useScreenActivityEffect` reads, so this suite builds that production pair itself.
- */
-function renderCoverableLiveTailScreen() {
-    const cover = (isCovered: boolean) =>
-        getCoverMode() === 'freeze' ? (
-            <LiveTailProbe />
-        ) : (
-            <ActivityWithEffectBoundary mode={isCovered ? 'hidden' : 'visible'}>
-                <LiveTailProbe />
-            </ActivityWithEffectBoundary>
-        );
-
-    // The first frame is always visible, so the mount lifecycle runs before anything can hide the screen.
-    const {rerender, unmount} = render(cover(false));
-
-    const setCovered = async (isCovered: boolean) => {
-        rerender(cover(isCovered));
-        await waitForBatchedUpdatesWithAct();
-    };
-
-    return {
-        hide: () => setCovered(true),
-        reveal: () => setCovered(false),
-        unmount,
-    };
-}
-
-/**
  * The live-tail jump is a four-stage machine (idle -> open_report -> await_scroll -> await_prune) that spans several
  * renders and an `openReport` round trip. Covering the chat with a thread mid-jump must not rewind it, or the list is
  * left permanently without its pagination anchor. The assertion describes behavior that ships today.
@@ -141,7 +110,7 @@ describe('useReportActionsNewActionLiveTail across a cover/reveal cycle', () => 
     });
 
     function renderLiveTail() {
-        const screen = renderCoverableLiveTailScreen();
+        const screen = renderCoverableScreen(<LiveTailProbe />);
 
         return {
             ...screen,
