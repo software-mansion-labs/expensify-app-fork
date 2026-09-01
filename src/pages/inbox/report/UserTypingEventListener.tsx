@@ -14,7 +14,7 @@ import type SCREENS from '@src/SCREENS';
 import type * as OnyxTypes from '@src/types/onyx';
 
 import {useIsFocused, useRoute} from '@react-navigation/native';
-import {useRef} from 'react';
+import {useEffect, useRef} from 'react';
 
 type UserTypingEventListenerProps = {
     /** The report currently being looked at */
@@ -46,7 +46,7 @@ function UserTypingEventListener({report}: UserTypingEventListenerProps) {
         [],
     );
 
-    useScreenActivityEffect(() => {
+    useEffect(() => {
         // Ensures any optimistic report that is being created (ex: a thread report) gets created and initialized successfully before subscribing
         if (route?.params?.reportID !== reportID) {
             return;

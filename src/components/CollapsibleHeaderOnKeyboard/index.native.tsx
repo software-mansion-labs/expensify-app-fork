@@ -1,5 +1,4 @@
 import usePrevious from '@hooks/usePrevious';
-import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 
 import isInLandscapeModeUtil from '@libs/isInLandscapeMode';
@@ -91,8 +90,7 @@ function CollapsibleHeaderOnKeyboard({children, collapsibleHeaderOffset = 0}: Co
     };
 
     // Restores the header when the screen goes from landscape to portrait mode.
-    // The height survives a cover, so only a real orientation change plays the restore animation.
-    useScreenActivityEffect(() => {
+    useEffect(() => {
         const naturalHeightValue = naturalHeight.get();
         if (!isInLandscapeMode && isFocused && naturalHeightValue !== -1) {
             animatedHeight.set(withTiming(naturalHeightValue, {duration: RESTORE_DURATION}));

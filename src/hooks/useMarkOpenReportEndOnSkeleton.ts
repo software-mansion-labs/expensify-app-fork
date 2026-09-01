@@ -3,8 +3,9 @@ import markOpenReportEnd from '@libs/telemetry/markOpenReportEnd';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
+import {useEffect} from 'react';
+
 import useOnyx from './useOnyx';
-import useScreenActivityEffect from './useScreenActivityEffect';
 
 /**
  * Closes the open-report span as a cold open (`warm: false`) while a skeleton shows. Call it from a component
@@ -14,7 +15,7 @@ import useScreenActivityEffect from './useScreenActivityEffect';
 function useMarkOpenReportEndOnSkeleton(reportID: string | undefined, isSkeletonVisible = true) {
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(reportID)}`);
 
-    useScreenActivityEffect(() => {
+    useEffect(() => {
         if (!isSkeletonVisible || !reportID) {
             return;
         }

@@ -4,7 +4,6 @@ import ZeroWidthView from '@components/ZeroWidthView';
 
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
-import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -26,6 +25,7 @@ import type {StyleProp, TextStyle} from 'react-native';
 
 import {Str} from 'expensify-common';
 import isEmpty from 'lodash/isEmpty';
+import {useEffect} from 'react';
 import {View} from 'react-native';
 
 import RenderCommentHTML from './RenderCommentHTML';
@@ -72,7 +72,7 @@ function TextCommentFragment({fragment, styleAsDeleted, reportActionID, styleAsM
     const processedTextArray = splitTextWithEmojis(message);
 
     // Original effect anchor, kept while the visible variant below is validated against it in Sentry.
-    useScreenActivityEffect(() => {
+    useEffect(() => {
         if (!reportActionID) {
             return;
         }
