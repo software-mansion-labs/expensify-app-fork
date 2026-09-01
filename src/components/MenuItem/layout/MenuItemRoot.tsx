@@ -110,3 +110,4 @@ function MenuItemRoot({children, onPress, isDisabled = false, sentryLabel, acces
 }
 
 export default MenuItemRoot;
+export type {MenuItemRootProps};
