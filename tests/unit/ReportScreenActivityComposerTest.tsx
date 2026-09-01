@@ -125,7 +125,7 @@ const mockedUseWideRHPState = jest.mocked(useWideRHPState);
 const mockedUseResponsiveLayout = jest.mocked(useResponsiveLayout);
 const mockedSaveReportActionDraft = jest.mocked(saveReportActionDraft);
 
-// The inner function focusComposerWithDelay returns; a call here is the focus request landing on the composer.
+// The inner function focusComposerWithDelay returns; a call here is the focus request being delivered, not the composer ending up focused.
 const mockRequestComposerFocus = jest.fn(() => Promise.resolve());
 
 const wideLayout: ReturnType<typeof useResponsiveLayout> = {
@@ -257,11 +257,12 @@ describe('ReportActionCompose across a cover/reveal cycle', () => {
         expect(mockedUpdateMultilineInputRange).not.toHaveBeenCalled();
     });
 
-    it('still lands the delayed autofocus scheduled behind the covering transition', async () => {
-        // A SearchReport stacked above a wide RHP skips the TextInput's own autoFocus and instead parks a manual
-        // `focus(true)` in TransitionTracker until the push transition finishes. Covering the screen mid-transition
-        // must not eat that focus request: `delayedAutoFocusRouteKeyRef` survives with the same `route.key`, so
-        // nothing ever re-arms it.
+    it('delivers the delayed autofocus parked behind the covering transition exactly once and never re-arms it on reveal', async () => {
+        // A SearchReport stacked above a wide RHP skips the TextInput's own autoFocus and parks a manual `focus(true)`
+        // in TransitionTracker until the push transition finishes. The transition ends while the screen is hidden, so
+        // the delivered request lands on a composer React detached at the hide and focuses nothing, and
+        // `delayedAutoFocusRouteKeyRef` keeps the same `route.key` across the reveal so nothing arms a second attempt.
+        // This pins that ordering, not a working focus.
         mockRouteState.current = {key: 'search-report-route', name: SCREENS.RIGHT_MODAL.SEARCH_REPORT, params: {reportID: defaultReport.reportID}};
         mockedUseWideRHPState.mockReturnValue({...defaultWideRHPStateContextValue, superWideRHPRouteKeys: ['covering-rhp-route']});
 
@@ -269,14 +270,45 @@ describe('ReportActionCompose across a cover/reveal cycle', () => {
         await waitForBatchedUpdatesWithAct();
 
         // The focus request is parked behind the still-running transition, not delivered yet.
+        expect(mockedRunAfterTransitions).toHaveBeenCalledTimes(1);
         expect(mockRequestComposerFocus).not.toHaveBeenCalled();
 
+        // The cover starts with the push and the transition ends while the screen is already hidden.
         await chatScreen.hide();
-        await chatScreen.reveal();
-
-        // The covering transition ends after the cover/reveal cycle; the parked autofocus must still be delivered.
         await act(async () => flushPendingTransitionCallbacks());
+        await chatScreen.reveal();
+        await waitForBatchedUpdatesWithAct();
+
+        expect(mockRequestComposerFocus).toHaveBeenCalledTimes(1);
         expect(mockRequestComposerFocus).toHaveBeenCalledWith(true, undefined, false);
+
+        // The route key guard survives the cover, so the reveal parks no replacement for the request spent while hidden.
+        expect(mockedRunAfterTransitions).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not write the report action draft back after the composer is gone', async () => {
+        // Editing a message in the main composer (narrow layout) and leaving the chat within the debounce window
+        // clears the drafts on the way out, so the pending save must not put the message back into edit mode.
+        jest.useFakeTimers();
+        mockedUseResponsiveLayout.mockReturnValue(narrowLayout);
+        await act(async () => {
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${defaultReport.reportID}`, {[editedAction.reportActionID]: editedAction});
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${defaultReport.reportID}`, {[editedAction.reportActionID]: {message: 'Original body'}});
+        });
+
+        const chatScreen = renderCoverableScreen(<ComposerScreen />);
+        await waitForBatchedUpdatesWithAct();
+
+        const composer = screen.getByTestId(CONST.COMPOSER.NATIVE_ID);
+        fireEvent.changeText(composer, 'Original body, edited');
+        mockedSaveReportActionDraft.mockClear();
+
+        chatScreen.unmount();
+        await act(async () => {
+            jest.advanceTimersByTime(CONST.TIMING.DRAFT_SAVE_DEBOUNCE_TIME + 1);
+        });
+
+        expect(mockedSaveReportActionDraft).not.toHaveBeenCalled();
     });
 
     it('persists a keystroke typed into a message edit just before the chat is covered', async () => {
