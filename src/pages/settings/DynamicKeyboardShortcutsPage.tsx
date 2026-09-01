@@ -38,13 +38,14 @@ function DynamicKeyboardShortcutsPage() {
         .filter((shortcut): shortcut is Shortcut => !!shortcut.descriptionKey);
 
     const renderShortcut = (shortcut: Shortcut) => (
-        <MenuItem
-            key={shortcut.displayName}
-            title={shortcut.displayName}
-            description={translate(`keyboardShortcutsPage.shortcuts.${shortcut.descriptionKey}`)}
-            wrapperStyle={[styles.ph0, styles.cursorAuto]}
-            interactive={false}
-        />
+        <MenuItem.Root key={shortcut.displayName}>
+            <MenuItem.Row>
+                <MenuItem.Content>
+                    <MenuItem.Title>{shortcut.displayName}</MenuItem.Title>
+                    <MenuItem.Description>{translate(`keyboardShortcutsPage.shortcuts.${shortcut.descriptionKey}`)}</MenuItem.Description>
+                </MenuItem.Content>
+            </MenuItem.Row>
+        </MenuItem.Root>
     );
 
     return (
@@ -57,8 +58,8 @@ function DynamicKeyboardShortcutsPage() {
                 onBackButtonPress={() => Navigation.goBack(backPath)}
             />
             <ScrollView contentContainerStyle={styles.flexGrow1}>
-                <View style={[styles.ph5, styles.pv3]}>
-                    <Text style={[styles.mb3, styles.webViewStyles.baseFontStyle]}>{translate('keyboardShortcutsPage.subtitle')}</Text>
+                <View style={styles.pv3}>
+                    <Text style={[styles.ph5, styles.mb3, styles.webViewStyles.baseFontStyle]}>{translate('keyboardShortcutsPage.subtitle')}</Text>
                     {shortcuts.map(renderShortcut)}
                 </View>
             </ScrollView>

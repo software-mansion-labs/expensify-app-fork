@@ -24,6 +24,8 @@ import {getDefaultWorkspaceAvatar, getRoom} from '@libs/ReportUtils';
 import shouldAllowDownloadQRCode from '@libs/shouldAllowDownloadQRCode';
 import addTrailingForwardSlash from '@libs/UrlUtils';
 
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
+
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 
@@ -112,7 +114,7 @@ function WorkspaceOverviewSharePage({policy}: WithPolicyProps) {
                                 logoMarginRatio={CONST.QR.DEFAULT_LOGO_MARGIN_RATIO}
                             />
                         </View>
-                        <View style={[styles.mt3, styles.ph4]}>
+                        <View style={[styles.mt3]}>
                             <ContextMenuItem
                                 isAnonymousAction
                                 text={translate('qrCodes.copy')}
@@ -121,21 +123,21 @@ function WorkspaceOverviewSharePage({policy}: WithPolicyProps) {
                                 successText={translate('qrCodes.copied')}
                                 onPress={() => Clipboard.setString(url)}
                                 shouldLimitWidth={false}
-                                wrapperStyle={styles.sectionMenuItemTopDescription}
                             />
                             {/* Remove this once https://github.com/Expensify/App/issues/19834 is done.
                             We shouldn't introduce platform specific code in our codebase.
                             This is a temporary solution while Web is not supported for the QR code download feature */}
-                            {shouldAllowDownloadQRCode && (
-                                <MenuItem
-                                    isAnonymousAction
-                                    title={translate('common.download')}
-                                    icon={icons.Download}
-                                    onPress={() => qrCodeRef.current?.download?.()}
-                                    wrapperStyle={styles.sectionMenuItemTopDescription}
-                                />
-                            )}
                         </View>
+                        {shouldAllowDownloadQRCode && (
+                            <MenuItem.Root onPress={() => qrCodeRef.current?.download?.()}>
+                                <MenuItem.Row>
+                                    <MenuItem.Icon src={icons.Download} />
+                                    <MenuItem.Content>
+                                        <MenuItem.Title>{translate('common.download')}</MenuItem.Title>
+                                    </MenuItem.Content>
+                                </MenuItem.Row>
+                            </MenuItem.Root>
+                        )}
                     </View>
                 </ScrollView>
             </ScreenWrapper>

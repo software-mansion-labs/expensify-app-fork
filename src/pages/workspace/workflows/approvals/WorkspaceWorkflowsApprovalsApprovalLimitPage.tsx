@@ -3,7 +3,7 @@ import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView
 import Button from '@components/ButtonComposed';
 import FixedFooter from '@components/FixedFooter';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import MenuItem from '@components/MenuItem';
+import MenuItemAction from '@components/MenuItem/presets/MenuItemAction';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import RenderHTML from '@components/RenderHTML';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -210,90 +210,90 @@ function WorkspaceWorkflowsApprovalsApprovalLimitPage({policy, isLoadingReportDa
                         style={styles.flex1}
                         contentContainerStyle={styles.flexGrow1}
                     >
-                        <View style={[styles.mh5, styles.flex1]}>
-                            {isEditFlow ? (
-                                <>
-                                    <MenuItemWithTopDescription
-                                        accessibilityLabel={approverDisplayName}
-                                        titleStyle={styles.textNormalThemeText}
-                                        description={translate('workflowsPage.approver')}
-                                        descriptionTextStyle={approverDisplayName ? styles.textLabelSupportingNormal : undefined}
-                                        titleComponent={
-                                            currentApprover ? (
-                                                <View style={styles.pr3}>
-                                                    <UserPill
-                                                        avatar={currentApprover.avatar}
-                                                        displayName={currentApprover.displayName}
-                                                        email={currentApprover.email}
-                                                        style={styles.userPillStandalone}
-                                                    />
-                                                </View>
-                                            ) : undefined
-                                        }
-                                        onPress={navigateToApproverChange}
-                                        shouldShowRightIcon
-                                        wrapperStyle={styles.sectionMenuItemTopDescription}
-                                    />
-                                    <View style={[styles.mt3, styles.mb5, styles.renderHTML]}>
-                                        <RenderHTML html={translate('workflowsApprovalLimitPage.description', {approverName: approverDisplayName})} />
-                                    </View>
-                                </>
-                            ) : (
-                                <>
-                                    <Text style={[styles.textHeadlineH1, styles.mv3]}>{translate('workflowsApprovalLimitPage.header')}</Text>
-                                    <View style={[styles.mb5, styles.renderHTML]}>
-                                        <RenderHTML html={translate('workflowsApprovalLimitPage.description', {approverName: approverDisplayName})} />
-                                    </View>
-                                </>
-                            )}
+                        <View style={styles.flex1}>
+                            <View style={styles.mh5}>
+                                {isEditFlow ? (
+                                    <>
+                                        <MenuItemWithTopDescription
+                                            accessibilityLabel={approverDisplayName}
+                                            titleStyle={styles.textNormalThemeText}
+                                            description={translate('workflowsPage.approver')}
+                                            descriptionTextStyle={approverDisplayName ? styles.textLabelSupportingNormal : undefined}
+                                            titleComponent={
+                                                currentApprover ? (
+                                                    <View style={styles.pr3}>
+                                                        <UserPill
+                                                            avatar={currentApprover.avatar}
+                                                            displayName={currentApprover.displayName}
+                                                            email={currentApprover.email}
+                                                            style={styles.userPillStandalone}
+                                                        />
+                                                    </View>
+                                                ) : undefined
+                                            }
+                                            onPress={navigateToApproverChange}
+                                            shouldShowRightIcon
+                                            wrapperStyle={styles.sectionMenuItemTopDescription}
+                                        />
+                                        <View style={[styles.mt3, styles.mb5, styles.renderHTML]}>
+                                            <RenderHTML html={translate('workflowsApprovalLimitPage.description', {approverName: approverDisplayName})} />
+                                        </View>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Text style={[styles.textHeadlineH1, styles.mv3]}>{translate('workflowsApprovalLimitPage.header')}</Text>
+                                        <View style={[styles.mb5, styles.renderHTML]}>
+                                            <RenderHTML html={translate('workflowsApprovalLimitPage.description', {approverName: approverDisplayName})} />
+                                        </View>
+                                    </>
+                                )}
 
-                            <View style={styles.mb4}>
-                                <AmountForm
-                                    key={approverEmail}
-                                    label={translate('workflowsApprovalLimitPage.reportAmountLabel')}
-                                    currency={currency}
-                                    value={approvalLimit}
-                                    onInputChange={handleAmountChange}
-                                    isCurrencyPressable={false}
-                                    displayAsTextInput
+                                <View style={styles.mb4}>
+                                    <AmountForm
+                                        key={approverEmail}
+                                        label={translate('workflowsApprovalLimitPage.reportAmountLabel')}
+                                        currency={currency}
+                                        value={approvalLimit}
+                                        onInputChange={handleAmountChange}
+                                        isCurrencyPressable={false}
+                                        displayAsTextInput
+                                        disabled={areLimitFieldsDisabled}
+                                        errorText={amountError}
+                                        onSubmitEditing={handleSubmit}
+                                    />
+                                </View>
+
+                                <MenuItemWithTopDescription
+                                    accessibilityLabel={selectedApproverDisplayName}
+                                    titleStyle={styles.textNormalThemeText}
+                                    description={translate('workflowsApprovalLimitPage.additionalApproverLabel')}
+                                    descriptionTextStyle={selectedApproverDisplayName ? styles.textLabelSupportingNormal : undefined}
+                                    titleComponent={
+                                        selectedApproverEmail ? (
+                                            <View style={styles.pr3}>
+                                                <UserPill
+                                                    avatar={selectedApproverPersonalDetails?.avatar}
+                                                    displayName={selectedApproverPersonalDetails?.displayName ?? selectedApproverEmail}
+                                                    email={selectedApproverEmail}
+                                                    style={styles.userPillStandalone}
+                                                />
+                                            </View>
+                                        ) : undefined
+                                    }
+                                    onPress={navigateToApproverSelector}
+                                    shouldShowRightIcon
+                                    wrapperStyle={styles.sectionMenuItemTopDescription}
+                                    brickRoadIndicator={approverErrorText ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
+                                    errorText={approverErrorText}
                                     disabled={areLimitFieldsDisabled}
-                                    errorText={amountError}
-                                    onSubmitEditing={handleSubmit}
+                                    shouldGreyOutWhenDisabled
                                 />
                             </View>
-
-                            <MenuItemWithTopDescription
-                                accessibilityLabel={selectedApproverDisplayName}
-                                titleStyle={styles.textNormalThemeText}
-                                description={translate('workflowsApprovalLimitPage.additionalApproverLabel')}
-                                descriptionTextStyle={selectedApproverDisplayName ? styles.textLabelSupportingNormal : undefined}
-                                titleComponent={
-                                    selectedApproverEmail ? (
-                                        <View style={styles.pr3}>
-                                            <UserPill
-                                                avatar={selectedApproverPersonalDetails?.avatar}
-                                                displayName={selectedApproverPersonalDetails?.displayName ?? selectedApproverEmail}
-                                                email={selectedApproverEmail}
-                                                style={styles.userPillStandalone}
-                                            />
-                                        </View>
-                                    ) : undefined
-                                }
-                                onPress={navigateToApproverSelector}
-                                shouldShowRightIcon
-                                wrapperStyle={styles.sectionMenuItemTopDescription}
-                                brickRoadIndicator={approverErrorText ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                                errorText={approverErrorText}
-                                disabled={areLimitFieldsDisabled}
-                                shouldGreyOutWhenDisabled
-                            />
-
                             {shouldShowRemoveLimitRow && (
-                                <MenuItem
+                                <MenuItemAction
                                     title={translate('workflowsApprovalLimitPage.removeLimit')}
                                     icon={icons.Trashcan}
                                     onPress={handleSkip}
-                                    wrapperStyle={styles.sectionMenuItemTopDescription}
                                 />
                             )}
                         </View>

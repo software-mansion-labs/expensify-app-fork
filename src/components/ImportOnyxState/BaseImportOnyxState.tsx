@@ -1,6 +1,7 @@
 import AttachmentPicker from '@components/AttachmentPicker';
 import DecisionModal from '@components/DecisionModal';
 import MenuItem from '@components/MenuItem';
+import MenuItemSectionRow from '@components/MenuItem/presets/MenuItemSectionRow';
 
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
@@ -37,16 +38,20 @@ function BaseImportOnyxState({
             >
                 {({openPicker}) => {
                     return (
-                        <MenuItem
-                            icon={icons.Upload}
-                            title={translate('initialSettingsPage.troubleshoot.importOnyxState')}
-                            wrapperStyle={[styles.sectionMenuItemTopDescription]}
+                        <MenuItemSectionRow
                             onPress={() => {
                                 openPicker({
                                     onPicked: (data) => onFileRead(data.at(0) ?? {}),
                                 });
                             }}
-                        />
+                        >
+                            <MenuItem.Row>
+                                <MenuItem.Icon src={icons.Upload} />
+                                <MenuItem.Content>
+                                    <MenuItem.Title>{translate('initialSettingsPage.troubleshoot.importOnyxState')}</MenuItem.Title>
+                                </MenuItem.Content>
+                            </MenuItem.Row>
+                        </MenuItemSectionRow>
                     );
                 }}
             </AttachmentPicker>

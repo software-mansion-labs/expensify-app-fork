@@ -1,4 +1,4 @@
-import MenuItem from '@components/MenuItem';
+import MenuItemAction from '@components/MenuItem/presets/MenuItemAction';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import ScrollView from '@components/ScrollView';
@@ -256,16 +256,17 @@ function ApprovalWorkflowEditor({approvalWorkflow, removeApprovalWorkflow, polic
                     errorText={approvalWorkflow?.errors?.additionalApprover ? translate(approvalWorkflow.errors.additionalApprover) : undefined}
                     brickRoadIndicator={approvalWorkflow?.errors?.additionalApprover ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
                 />
+            </View>
 
-                {!!removeApprovalWorkflow && !approvalWorkflow.isDefault && (
-                    <MenuItem
-                        wrapperStyle={[styles.sectionMenuItemTopDescription, styles.mt6]}
-                        icon={icons.Trashcan}
+            {!!removeApprovalWorkflow && !approvalWorkflow.isDefault && (
+                <View style={[styles.mt6]}>
+                    <MenuItemAction
                         title={translate('common.delete')}
+                        icon={icons.Trashcan}
                         onPress={removeApprovalWorkflow}
                     />
-                )}
-            </View>
+                </View>
+            )}
         </ScrollView>
     );
 }
