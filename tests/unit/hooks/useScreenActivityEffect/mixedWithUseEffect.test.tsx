@@ -4,9 +4,9 @@ import type {ComponentType} from 'react';
 
 import React, {useEffect} from 'react';
 
-import type {Step} from '../../../utils/ScreenActivityEffectTestUtils';
+import type {RenderStep, Step} from '../../../utils/ScreenActivityEffectTestUtils';
 
-import {ActivityScreen, hidden, KeptEffect, PlainEffect, record, resetLog, track, visible} from '../../../utils/ScreenActivityEffectTestUtils';
+import {ActivityScreen, hidden, isLeafStep, KeptEffect, leaf, Leaf, PlainEffect, record, resetLog, track, visible} from '../../../utils/ScreenActivityEffectTestUtils';
 
 /**
  * A screen that is being migrated runs both hooks at once, either in one component or across its components, so these
@@ -33,8 +33,8 @@ function MixedSiblings({value}: {value: string}) {
 
 /** The steps on a screen wrapped in an <Activity>, because the components above pick their hook themselves. */
 function recordCovered(steps: readonly Step[]): string[][] {
-    const screen = (step: Step) => <ActivityScreen isHidden={step.isHidden}>{step.children}</ActivityScreen>;
-    return record(steps.map(screen));
+    const screen = (step: RenderStep) => <ActivityScreen isHidden={step.isHidden}>{step.children}</ActivityScreen>;
+    return record(steps.map((step) => (isLeafStep(step) ? step : screen(step))));
 }
 
 describe('useScreenActivityEffect mixed with useEffect', () => {
@@ -66,9 +66,23 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
 
     it('holds the kept call site of a component removed while hidden until an effect of the screen runs again', () => {
         // Given a component that goes away behind the cover, so only one of its two effects is still held
-        const steps = [visible(<MixedEffects value="a" />), hidden(<MixedEffects value="a" />), hidden(null), visible(null), visible(<MixedEffects value="b" />)];
+        const steps = [
+            visible(
+                <Leaf>
+                    <MixedEffects value="a" />
+                </Leaf>,
+            ),
+            hidden(
+                <Leaf>
+                    <MixedEffects value="a" />
+                </Leaf>,
+            ),
+            hidden(<Leaf>{null}</Leaf>),
+            visible(<Leaf>{null}</Leaf>),
+            leaf(<MixedEffects value="b" />),
+        ];
 
-        // When the screen is revealed empty and another component mounts on it afterwards
+        // When the screen is revealed empty and another component mounts on it afterwards from state inside the screen
         const commits = recordCovered(steps);
 
         // Then only a kept call site running again is evidence that a body which did not come back is really gone, so

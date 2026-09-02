@@ -6,6 +6,8 @@ import {
     ActivityScreen,
     expectEveryConfigToMatch,
     hidden,
+    leaf,
+    Leaf,
     LiveScreen,
     log,
     resetLog,
@@ -344,8 +346,23 @@ describe('useScreenActivityEffect compared to useEffect', () => {
         });
 
         it('defers the cleanup of a component removed while hidden until the screen runs an effect again', () => {
-            // Given the only effect of the screen going away behind the cover, so the reveal runs no body of its own
-            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), hidden(null), visible(null), visible(<Subject value="b" />)];
+            // Given the only effect of the screen going away behind the cover, so the reveal runs no body of its own,
+            // and a component mounting afterwards from state inside the screen, so that commit renders no boundary
+            const steps = [
+                visible(
+                    <Leaf>
+                        <Subject value="a" />
+                    </Leaf>,
+                ),
+                hidden(
+                    <Leaf>
+                        <Subject value="a" />
+                    </Leaf>,
+                ),
+                hidden(<Leaf>{null}</Leaf>),
+                visible(<Leaf>{null}</Leaf>),
+                leaf(<Subject value="b" />),
+            ];
 
             // When the screen is revealed and a component with an effect mounts on it afterwards
             const runs = runEveryConfig(steps);
@@ -353,9 +370,39 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
 
             // Then the reveal itself sweeps nothing, because a commit that ran no effect of the screen says nothing
-            // about the one that is gone, and the next commit that runs one releases it before it sets anything up
+            // about the one that is gone, and the next effect that runs releases it right before its own setup
             expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
             expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
+        });
+
+        it('sets up a component that mounts from state inside the screen after a reveal that ran no effect', () => {
+            // Given an empty screen that is covered and revealed, and a component mounting afterwards from a leaf
+            const steps = [visible(<Leaf>{null}</Leaf>), hidden(<Leaf>{null}</Leaf>), visible(<Leaf>{null}</Leaf>), leaf(<Subject value="a" />)];
+
+            // When the component mounts in a commit that renders no boundary
+            const runs = runEveryConfig(steps);
+
+            // Then its setup runs in that commit, because the reveal batched nothing past its own commit
+            expectEveryConfigToMatch(runs, [[], [], [], ['setup:s:a'], ['cleanup:s:a']]);
+        });
+
+        it('leaves nothing behind for a component that mounts and goes away between two reveals that ran no effect', () => {
+            // Given the same component removed again from the leaf before the screen is covered and revealed once more
+            const steps = [
+                visible(<Leaf>{null}</Leaf>),
+                hidden(<Leaf>{null}</Leaf>),
+                visible(<Leaf>{null}</Leaf>),
+                leaf(<Subject value="a" />),
+                leaf(null),
+                hidden(<Leaf>{null}</Leaf>),
+                visible(<Leaf>{null}</Leaf>),
+            ];
+
+            // When the screen goes through the second cover and reveal
+            const runs = runEveryConfig(steps);
+
+            // Then the second reveal runs nothing, because no setup of the removed component was left in any queue
+            expectEveryConfigToMatch(runs, [[], [], [], ['setup:s:a'], ['cleanup:s:a'], [], [], []]);
         });
 
         it('runs the cleanup of a component removed while hidden when the screen leaves the stack before any reveal', () => {

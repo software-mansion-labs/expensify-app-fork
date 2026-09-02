@@ -9,13 +9,15 @@ import type {ComponentType, ReactNode} from 'react';
 
 import React, {Activity, useEffect} from 'react';
 
-import type {AnyEffectHook, ScreenProps, Step} from '../../../utils/ScreenActivityEffectTestUtils';
+import type {AnyEffectHook, RenderStep, ScreenProps} from '../../../utils/ScreenActivityEffectTestUtils';
 
 import {
     ActivityScreen,
     AnyEffectHookProvider,
     drainLog,
     hidden,
+    leaf,
+    Leaf,
     log,
     LiveScreen,
     record,
@@ -218,8 +220,8 @@ function GateAboveBoundaryScreen({isHidden: isScreenHidden, children}: ScreenPro
 }
 
 /** Records the steps and keeps going when one of them throws, which is what a cleanup that throws does to a commit. */
-function runCatching(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: readonly Step[]) {
-    const tree = (step: Step) => (
+function runCatching(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: readonly RenderStep[]) {
+    const tree = (step: RenderStep) => (
         <AnyEffectHookProvider hook={hook}>
             <Screen isHidden={step.isHidden}>{step.children}</Screen>
         </AnyEffectHookProvider>
@@ -243,7 +245,7 @@ function runCatching(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, st
         controls = render(tree(first));
     });
 
-    const rerenderStep = (step: Step) => controls?.rerender(tree(step));
+    const rerenderStep = (step: RenderStep) => controls?.rerender(tree(step));
     for (const step of rest) {
         runStep(() => rerenderStep(step));
     }
@@ -371,7 +373,7 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // Given two screens of one navigator, each with its own screen of the behavior under test
             const runStack = (hook: AnyEffectHook, Screen: ComponentType<ScreenProps>) => {
                 resetLog();
-                const stack = (left: Step, right: Step) => (
+                const stack = (left: RenderStep, right: RenderStep) => (
                     <AnyEffectHookProvider hook={hook}>
                         <Screen isHidden={left.isHidden}>{left.children}</Screen>
                         <Screen isHidden={right.isHidden}>{right.children}</Screen>
@@ -486,14 +488,20 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // Given a nested screen removed behind the cover and a new one mounting after a reveal that ran no effect,
             // so the stale entry sits in the outer boundary while the new subtree belongs to a brand new inner one
             const nested = (children: ReactNode) => <ActivityScreen isHidden={false}>{children}</ActivityScreen>;
-            const steps = [visible(nested(<Subject value="a" />)), hidden(nested(<Subject value="a" />)), hidden(null), visible(null), visible(nested(<Subject value="b" />))];
+            const steps = [
+                visible(<Leaf>{nested(<Subject value="a" />)}</Leaf>),
+                hidden(<Leaf>{nested(<Subject value="a" />)}</Leaf>),
+                hidden(<Leaf>{null}</Leaf>),
+                visible(<Leaf>{null}</Leaf>),
+                leaf(nested(<Subject value="b" />)),
+            ];
 
-            // When the new nested screen mounts
+            // When the new nested screen mounts from state inside the outer screen, in a commit that renders no boundary
             const removed = runOn(useScreenActivityEffect, ActivityScreen, steps);
             const live = runOn(useEffect, LiveScreen, steps);
 
-            // Then the stale entry releases before the new subtree sets up, because a fresh boundary hands its reveal
-            // work to the highest boundary still revealing rather than draining it below the sweep of the outer one
+            // Then the stale entry releases before the new subtree sets up, because a body registering in the fresh
+            // boundary asks the boundary above to release what did not come back before it sets up itself
             expect(live).toEqual([['setup:s:a'], [], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
             expect(removed).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
             expect(removed.flat()).toEqual(live.flat());
