@@ -31,8 +31,8 @@ Compared with `useEffect` on a screen that stays live, it has these limits:
 
 - Dependency changes while hidden are deferred and coalesced until reveal, so the hook cannot observe the cover edge or every intermediate value.
 - A component removed while hidden may be cleaned up only after another screen effect runs or when the screen is popped. Suspense can look like such a removal and cause an unnecessary cleanup and setup.
-- On reveal, cleanup and setup are interleaved per call site. Screen teardown follows registration order rather than React tree order, and a hidden remount can set up the new instance before cleaning up the old one. Avoid order-sensitive or single-owner resources.
-- If a cleanup throws during a deferred dependency change, that call site's next setup does not run.
+- On reveal, the boundary runs every pending release of the subtree before any setup, releasing components removed while hidden first, so a single-owner resource is never held by two owners at once. Screen teardown still follows registration order rather than React tree order, so avoid work that depends on releasing before or after a sibling.
+- A cleanup that throws is reported and the rest of the batch still runs, including the next setup of the call site whose cleanup threw, which is what React does with a destroy that throws.
 
 ## Regressions caused by unsafe effects
 

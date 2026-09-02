@@ -181,12 +181,13 @@ describe('useScreenActivityEffect dependencies', () => {
             ['cleanup:noDeps:a', 'cleanup:unstable:a'],
         ]);
 
-        // And the covered screen ran no effect for them, so the reveal is one release and one setup per call site
+        // And the covered screen ran no effect for them, so the reveal is one release and one setup per call site,
+        // every release running before any setup, which is how the phases of a live commit run
         expect(runs.activityScreenActivityEffect).toEqual([
             ['setup:noDeps:a', 'setup:unstable:a'],
             [],
             [],
-            ['cleanup:noDeps:a', 'setup:noDeps:a', 'cleanup:unstable:a', 'setup:unstable:a'],
+            ['cleanup:noDeps:a', 'cleanup:unstable:a', 'setup:noDeps:a', 'setup:unstable:a'],
             ['cleanup:noDeps:a', 'cleanup:unstable:a'],
         ]);
     });

@@ -20,6 +20,13 @@ type ScreenActivityEffectEntry = {
     release: () => void;
 };
 
+/** The release and setup one call site owes a reveal, queued so the boundary can run the whole subtree in phases. */
+type ScreenActivityRevealWork = {
+    entry: ScreenActivityEffectEntry;
+    setup: EffectCallback;
+    deps: DependencyList | undefined;
+};
+
 function createScreenActivityEffectEntry(): ScreenActivityEffectEntry {
     const entry: ScreenActivityEffectEntry = {
         cleanup: undefined,
@@ -38,30 +45,37 @@ function createScreenActivityEffectEntry(): ScreenActivityEffectEntry {
     return entry;
 }
 
-/**
- * Releases the entries given and takes them out of the set. React runs every cleanup of a deleted tree and reports the
- * error afterwards, so one cleanup that throws must not keep the rest of the screen from being released. The first
- * error is rethrown once the loop is done, which leaves the failure where React would have put it.
- */
-function releaseEntries(entries: Set<ScreenActivityEffectEntry>, released: readonly ScreenActivityEffectEntry[]): void {
-    let firstError: unknown;
-    let hasFailed = false;
-
+/** Releases the entries given, takes them out of the set, and collects instead of throwing, so a batch can go on. */
+function releaseEntriesIntoErrors(entries: Set<ScreenActivityEffectEntry>, released: readonly ScreenActivityEffectEntry[], errors: unknown[]): void {
     for (const entry of released) {
         entries.delete(entry);
         try {
             entry.release();
         } catch (error) {
-            if (!hasFailed) {
-                hasFailed = true;
-                firstError = error;
-            }
+            errors.push(error);
         }
     }
+}
 
-    if (hasFailed) {
-        throw firstError;
+/**
+ * What a batch does with the errors it collected. React reports every error a teardown hits and still runs the rest of
+ * the work, so the first error is rethrown where React would have put it and the others are reported directly, rather
+ * than being swallowed by the one that came first.
+ */
+function throwFirstAndReportRest(errors: readonly unknown[]): void {
+    for (const error of errors.slice(1)) {
+        console.error(error);
     }
+    if (errors.length > 0) {
+        throw errors.at(0);
+    }
+}
+
+/** Releases the entries given and takes them out of the set, reporting every failure and rethrowing the first. */
+function releaseEntries(entries: Set<ScreenActivityEffectEntry>, released: readonly ScreenActivityEffectEntry[]): void {
+    const errors: unknown[] = [];
+    releaseEntriesIntoErrors(entries, released, errors);
+    throwFirstAndReportRest(errors);
 }
 
 /**
@@ -72,6 +86,7 @@ function releaseEntries(entries: Set<ScreenActivityEffectEntry>, released: reado
  */
 function createBoundaryState() {
     const entries = new Set<ScreenActivityEffectEntry>();
+    const revealQueue = new Map<ScreenActivityEffectEntry, ScreenActivityRevealWork>();
     const nestedEntry: ScreenActivityEffectEntry = {
         cleanup: undefined,
         deps: undefined,
@@ -86,6 +101,7 @@ function createBoundaryState() {
     };
     return {
         entries,
+        revealQueue,
         nestedEntry,
         // The mark is set through this rather than in the boundary itself, because the boundary holds the entry in state
         // and the React Compiler treats what state holds as frozen.
@@ -107,6 +123,15 @@ type ScreenActivityEffectBoundary = {
      * while the <Activity> is hidden and from the moment this boundary starts unmounting.
      */
     getIsScreenTeardown: () => boolean;
+
+    /**
+     * Takes over the release and setup of a call site for the reveal commit, so the boundary can run every release of
+     * the subtree before any setup, exactly as the phases of one commit run on a live screen. The work travels to the
+     * highest boundary with a reveal under way, because that is the one whose drain runs after everything below it,
+     * including the sweep of what a boundary between them left behind. Outside a reveal it takes nothing and answers
+     * false, and the call site runs its work inline.
+     */
+    deferRevealWork: (entry: ScreenActivityEffectEntry, setup: EffectCallback, deps: DependencyList | undefined) => boolean;
 };
 
 // Null means no boundary above this subtree, which is every screen that did not opt into <Activity>.
@@ -121,20 +146,22 @@ const ScreenActivityEffectBoundaryContext = createContext<ScreenActivityEffectBo
  * whole set as one entry. It is the reason nothing here reads its own unmount as the end of the screen without asking
  * the boundary above first.
  *
- * The flag is a layout effect. React runs the whole layout phase of a commit before its passive phase, so it is
- * already set when the passive cleanups of the hidden or deleted subtree ask about it. Everything else runs as a
+ * The flags are layout effects. React runs the whole layout phase of a commit before its passive phase, so they are
+ * already set when the passive effects of the revealed or deleted subtree ask about them. Everything else runs as a
  * passive effect, which is the phase the cleanups it runs were written for, and which for a deletion still comes
  * before the passive cleanups of the subtree.
  */
 function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: boolean; children: ReactNode}) {
     const parent = useContext(ScreenActivityEffectBoundaryContext);
-    const [{entries, nestedEntry, markNestedEntry}] = useState(createBoundaryState);
+    const [{entries, revealQueue, nestedEntry, markNestedEntry}] = useState(createBoundaryState);
     const isScreenTeardownRef = useRef(false);
+    const isRevealPendingRef = useRef(false);
+    const wasHiddenRef = useRef(isHidden);
     const registrationCountRef = useRef(0);
     const sweptRegistrationCountRef = useRef(0);
 
-    const boundary = useMemo<ScreenActivityEffectBoundary>(
-        () => ({
+    const boundary = useMemo<ScreenActivityEffectBoundary>(() => {
+        return {
             register: (entry) => {
                 if (__DEV__ && isScreenTeardownRef.current) {
                     // A body only runs for a subtree React is rendering, so a body arriving while the flag reports a
@@ -150,11 +177,30 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
                 entries.delete(entry);
             },
             getIsScreenTeardown: () => isScreenTeardownRef.current,
-        }),
-        [entries],
-    );
+            deferRevealWork: (entry, setup, deps) => {
+                // The boundary above goes first, so the work of the whole tree gathers in the highest one revealing.
+                if (parent !== null && parent.deferRevealWork(entry, setup, deps)) {
+                    return true;
+                }
+                if (!isRevealPendingRef.current) {
+                    return false;
+                }
+                revealQueue.set(entry, {entry, setup, deps});
+                return true;
+            },
+        };
+    }, [entries, revealQueue, parent]);
 
     useLayoutEffect(() => {
+        // A change from hidden to visible starts a reveal, whose deferred work the drain below runs in phases. The
+        // mark survives past its commit on purpose: a reveal that ran no body at all, which a suspended subtree does,
+        // hands its batching to the first commit that runs bodies again, exactly as the sweep below waits for one.
+        if (wasHiddenRef.current && !isHidden) {
+            isRevealPendingRef.current = true;
+        } else if (isHidden) {
+            isRevealPendingRef.current = false;
+        }
+        wasHiddenRef.current = isHidden;
         isScreenTeardownRef.current = isHidden;
         // The setup above runs again right after this cleanup for a change of isHidden, which leaves the flag true only
         // when no setup follows, and that is the unmount of the boundary.
@@ -163,24 +209,51 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
         };
     }, [isHidden]);
 
-    // A reveal runs the bodies of the subtree before this effect, so an entry whose cleanup the hide skipped and which
-    // did not come back with the reveal belongs to a component that is gone. Sweeping it here keeps a component that
-    // was removed while the screen was covered from waiting for the screen to leave the stack.
+    // The drain of a reveal. It runs after every effect of the subtree, because the effect of a parent runs after the
+    // effects of its children, so by now every call site that is still there has registered and queued what it owes.
+    // The phases mirror one commit of a live screen: first the entries whose cleanup the hide skipped and which did not
+    // come back, because they belong to components that are gone, then every release the queue holds, then every setup,
+    // so no call site of the reveal acquires before another one has released.
     //
-    // A body that did not come back is only evidence of that once some body did come back, because a commit that ran no
-    // effect of the subtree at all ran none for the component that is still there either. That is what a <Suspense>
-    // below the boundary does when it suspends again on the reveal, so the sweep waits for a commit that registered
-    // something, which is every reveal of a subtree that is really there. The effect carries no dependency list so that
-    // a reveal which ran nothing is swept by the next commit that runs something, rather than only by the next reveal.
+    // A body that did not come back is only evidence of a removal once some body did come back, because a commit that
+    // ran no effect of the subtree at all ran none for the component that is still there either. That is what a
+    // <Suspense> below the boundary does when it suspends again on the reveal, so the whole drain waits for a commit
+    // that registered something, which is every reveal of a subtree that is really there. The effect carries no
+    // dependency list so that a reveal which ran nothing is drained by the next commit that runs something, rather
+    // than only by the next reveal.
     useEffect(() => {
         if (isHidden || registrationCountRef.current === sweptRegistrationCountRef.current) {
             return;
         }
         sweptRegistrationCountRef.current = registrationCountRef.current;
-        releaseEntries(
+        isRevealPendingRef.current = false;
+
+        const errors: unknown[] = [];
+        releaseEntriesIntoErrors(
             entries,
             [...entries].filter((entry) => entry.isAwaitingReveal),
+            errors,
         );
+
+        const work = [...revealQueue.values()];
+        revealQueue.clear();
+        for (const item of work) {
+            try {
+                item.entry.release();
+            } catch (error) {
+                errors.push(error);
+            }
+        }
+        for (const item of work) {
+            try {
+                item.entry.cleanup = item.setup();
+                item.entry.deps = item.deps;
+                item.entry.isSetUp = true;
+            } catch (error) {
+                errors.push(error);
+            }
+        }
+        throwFirstAndReportRest(errors);
     });
 
     // Who releases what is left over when this boundary goes away. A boundary of its own screen answers for itself: its
@@ -189,6 +262,16 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
     useEffect(() => {
         if (parent === null) {
             return () => {
+                if (__DEV__ && !wasHiddenRef.current) {
+                    // A visible screen only holds a mark for a component that was removed while it was hidden and
+                    // whose release the sweep never got evidence for, so these cleanups ran far from their removal.
+                    const deferredReleaseCount = [...entries].filter((entry) => entry.isAwaitingReveal).length;
+                    if (deferredReleaseCount > 0) {
+                        console.debug(
+                            `[useScreenActivityEffect] The screen leaves the stack holding ${deferredReleaseCount} cleanup(s) deferred since a removal behind a cover. They run now.`,
+                        );
+                    }
+                }
                 releaseEntries(entries, [...entries]);
             };
         }
