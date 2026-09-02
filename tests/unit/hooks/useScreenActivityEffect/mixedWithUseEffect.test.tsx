@@ -72,8 +72,9 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         const commits = recordCovered(steps);
 
         // Then only a kept call site running again is evidence that a body which did not come back is really gone, so
-        // the reveal of an empty screen sweeps nothing and the mount that follows releases what the cover left alone
-        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], [], ['setup:plain:b', 'setup:kept:b', 'cleanup:kept:a'], ['cleanup:kept:b', 'cleanup:plain:b']]);
+        // the reveal of an empty screen sweeps nothing, and the mount that follows releases what the cover left alone
+        // before the kept setup of that commit runs, while the plain effect runs at its own place as always
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:kept:b', 'cleanup:plain:b']]);
     });
 
     it('does not treat a plain effect on the reveal as evidence that a kept call site was removed', () => {

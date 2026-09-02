@@ -353,8 +353,9 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
 
             // Then the reveal itself sweeps nothing, because a commit that ran no effect of the screen says nothing
-            // about the one that is gone, and the next commit that runs one releases it
-            expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], ['setup:s:b', 'cleanup:s:a'], ['cleanup:s:b']]);
+            // about the one that is gone, and the next commit that runs one releases it before it sets anything up
+            expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
+            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
         });
 
         it('runs the cleanup of a component removed while hidden when the screen leaves the stack before any reveal', () => {
@@ -425,7 +426,7 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             ]);
         });
 
-        it('interleaves the cleanup and the setup of two siblings on a reveal that re-runs both', () => {
+        it('releases both siblings before either sets up again on a reveal that re-runs both', () => {
             // Given two siblings whose dependency changes behind the cover, so the reveal has to re-run both
             const steps = [visible(<Siblings value="a" />), hidden(<Siblings value="a" />), hidden(<Siblings value="b" />), visible(<Siblings value="b" />)];
 
@@ -435,24 +436,25 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then a live screen releases both siblings before it sets either of them up again
             expect(runs.liveUseEffect).toEqual([['setup:s1:a', 'setup:s2:a'], [], ['cleanup:s1:a', 'cleanup:s2:a', 'setup:s1:b', 'setup:s2:b'], [], ['cleanup:s1:b', 'cleanup:s2:b']]);
 
-            // And the hook releases from the setup phase, so each sibling releases right before its own setup
+            // And the boundary runs the reveal in the same phases, so neither sibling acquires before the other released
             expect(runs.activityScreenActivityEffect).toEqual([
                 ['setup:s1:a', 'setup:s2:a'],
                 [],
                 [],
-                ['cleanup:s1:a', 'setup:s1:b', 'cleanup:s2:a', 'setup:s2:b'],
+                ['cleanup:s1:a', 'cleanup:s2:a', 'setup:s1:b', 'setup:s2:b'],
                 ['cleanup:s1:b', 'cleanup:s2:b'],
             ]);
+            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
         });
 
-        it('interleaves the cleanup and the setup of a parent and its child on a reveal that re-runs both', () => {
+        it('releases a parent and its child before either sets up again on a reveal that re-runs both', () => {
             // Given a parent and a child whose shared dependency changes behind the cover
             const steps = [visible(<Parent value="a" />), hidden(<Parent value="a" />), hidden(<Parent value="b" />), visible(<Parent value="b" />)];
 
             // When the screen is revealed
             const runs = runEveryConfig(steps);
 
-            // Then the child no longer releases before the parent sets up, which a subtree of one screen can observe
+            // Then the reveal commit of the hook holds the phases of the live one, the deferral aside
             expect(runs.liveUseEffect).toEqual([
                 ['setup:child:a', 'setup:parent:a'],
                 [],
@@ -464,7 +466,7 @@ describe('useScreenActivityEffect compared to useEffect', () => {
                 ['setup:child:a', 'setup:parent:a'],
                 [],
                 [],
-                ['cleanup:child:a', 'setup:child:b', 'cleanup:parent:a', 'setup:parent:b'],
+                ['cleanup:child:a', 'cleanup:parent:a', 'setup:child:b', 'setup:parent:b'],
                 ['cleanup:child:b', 'cleanup:parent:b'],
             ]);
         });
@@ -559,7 +561,7 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             expect(runs.activityScreenActivityEffect).toEqual([['setup:s1:a', 'setup:s2:a'], [], [], ['cleanup:s1:a', 'cleanup:s2:a']]);
         });
 
-        it('sets the new instance up before it releases the one removed while the screen was hidden', () => {
+        it('releases the instance removed while the screen was hidden before the reveal sets the new one up', () => {
             // Given a component that is removed and mounted again entirely behind the cover, which a remount is, with
             // every call naming the setup it belongs to so that a release cannot be read as the wrong instance
             const steps = [
@@ -579,8 +581,9 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then a live screen releases the instance that went away before it sets the new one up
             expect(live).toEqual([['setup:s1:a'], [], ['cleanup:s1:a'], ['setup:s2:a'], [], ['cleanup:s2:a']]);
 
-            // And the reveal sets the second instance up first and releases the first one after it
-            expect(activity).toEqual([['setup:s1:a'], [], [], [], ['setup:s2:a', 'cleanup:s1:a'], ['cleanup:s2:a']]);
+            // And the reveal holds the same order, so a single-owner resource is never held by two instances at once
+            expect(activity).toEqual([['setup:s1:a'], [], [], [], ['cleanup:s1:a', 'setup:s2:a'], ['cleanup:s2:a']]);
+            expect(activity.flat()).toEqual(live.flat());
         });
     });
 

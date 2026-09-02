@@ -5,7 +5,7 @@ import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffe
 
 import StrictModeMountGate from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/ScreenActivityWrapper/StrictModeMountGate';
 
-import type {ComponentType} from 'react';
+import type {ComponentType, ReactNode} from 'react';
 
 import React, {Activity, useEffect} from 'react';
 
@@ -67,6 +67,40 @@ function ThrowingSetup() {
     useAnyEffect(() => {
         log('setup:throwingSetup:a');
         throw new Error('setup of throwingSetup threw');
+    }, []);
+    return null;
+}
+
+/** An effect whose second setup throws, so a dependency change can compare the two hooks after a live setup. */
+function ThrowingChangingSetup({value}: {value: string}) {
+    useAnyEffect(() => {
+        log(`setup:throwingSetup:${value}`);
+        if (value === 'b') {
+            throw new Error('setup of throwingSetup:b threw');
+        }
+        return () => log(`cleanup:throwingSetup:${value}`);
+    }, [value]);
+    return null;
+}
+
+/** Two effects that both throw from their cleanup, so a teardown has more than one error to answer for. */
+function TwoThrowingCleanupsScreenContent() {
+    return (
+        <>
+            <ThrowingEffect />
+            <SecondThrowingEffect />
+            <Survivor />
+        </>
+    );
+}
+
+function SecondThrowingEffect() {
+    useAnyEffect(() => {
+        log('setup:secondThrowing:a');
+        return () => {
+            log('cleanup:secondThrowing:a');
+            throw new Error('cleanup of secondThrowing threw');
+        };
     }, []);
     return null;
 }
@@ -293,19 +327,32 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
                 'cleanup:survivor:a',
             ]);
 
-            // And the covered screen reports the same error and still releases every other call site, while the setup
-            // whose previous cleanup threw cannot continue because that release runs from inside its new setup
-            expect(activity.commits.flat()).toEqual([
-                'setup:throwingChanging:a',
-                'setup:s:a',
-                'setup:survivor:a',
-                'cleanup:throwingChanging:a',
-                'cleanup:s:a',
-                'setup:s:b',
-                'cleanup:s:b',
-                'cleanup:survivor:a',
-            ]);
+            // And the covered screen runs the very same calls: the error is reported after the release phase and the
+            // setup of the call site whose previous cleanup threw still runs, exactly as it runs on the live screen
+            expect(activity.commits.flat()).toEqual(live.commits.flat());
             expect(activity.errors).toEqual(live.errors);
+        });
+    });
+
+    describe('two cleanups that throw in one batch', () => {
+        it('reports every error of the teardown and rethrows only the first', () => {
+            // Given a screen holding two cleanups that both throw when it leaves the stack
+            const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
+            const steps = [visible(<TwoThrowingCleanupsScreenContent />)];
+
+            // When the screen leaves the navigation stack
+            const activity = runCatching(useScreenActivityEffect, ActivityScreen, steps);
+            const reportedErrors = reported.mock.calls.map((call) => String(call.at(0)));
+            reported.mockRestore();
+
+            // Then every cleanup ran, the first error is what the teardown throws, and the second is reported rather
+            // than swallowed, which is how React answers for more than one failing destroy
+            expect(activity.commits).toEqual([
+                ['setup:throwing:a', 'setup:secondThrowing:a', 'setup:survivor:a'],
+                ['cleanup:throwing:a', 'cleanup:secondThrowing:a', 'cleanup:survivor:a'],
+            ]);
+            expect(activity.errors).toEqual(['Error: cleanup of throwing threw']);
+            expect(reportedErrors.filter((message) => message.includes('cleanup of secondThrowing threw'))).toHaveLength(1);
         });
     });
 
@@ -435,6 +482,23 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             expect(removed.flat()).toEqual(live.flat());
         });
 
+        it('releases through the boundary above before a fresh nested boundary sets its subtree up', () => {
+            // Given a nested screen removed behind the cover and a new one mounting after a reveal that ran no effect,
+            // so the stale entry sits in the outer boundary while the new subtree belongs to a brand new inner one
+            const nested = (children: ReactNode) => <ActivityScreen isHidden={false}>{children}</ActivityScreen>;
+            const steps = [visible(nested(<Subject value="a" />)), hidden(nested(<Subject value="a" />)), hidden(null), visible(null), visible(nested(<Subject value="b" />))];
+
+            // When the new nested screen mounts
+            const removed = runOn(useScreenActivityEffect, ActivityScreen, steps);
+            const live = runOn(useEffect, LiveScreen, steps);
+
+            // Then the stale entry releases before the new subtree sets up, because a fresh boundary hands its reveal
+            // work to the highest boundary still revealing rather than draining it below the sweep of the outer one
+            expect(live).toEqual([['setup:s:a'], [], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
+            expect(removed).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
+            expect(removed.flat()).toEqual(live.flat());
+        });
+
         it('holds a nested screen removed while hidden until the outer screen runs an effect again', () => {
             // Given the same removal on an outer screen that has no effect of its own to run on the reveal
             const nested = (
@@ -507,9 +571,46 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             expect(activity.commits).toEqual(live.commits);
             expect(activity.errors).toEqual(live.errors);
         });
+
+        it('runs the other setups of the reveal when one setup throws', () => {
+            // Given a setup that throws for the value a dependency change moved to behind the cover
+            const content = (value: string) => (
+                <>
+                    <ThrowingChangingSetup value={value} />
+                    <Subject value={value} />
+                </>
+            );
+            const liveSteps = [visible(content('a')), visible(content('b'))];
+            const activitySteps = [visible(content('a')), hidden(content('a')), hidden(content('b')), visible(content('b'))];
+
+            // When the same change runs on a live screen and lands on the reveal of a covered one
+            const live = runCatching(useEffect, LiveScreen, liveSteps);
+            const activity = runCatching(useScreenActivityEffect, ActivityScreen, activitySteps);
+
+            // Then the reveal releases both call sites, runs the setup that fails, and still runs the other one,
+            // which is what the phases of a live commit do with a create that throws
+            expect(live.commits.flat()).toEqual(['setup:throwingSetup:a', 'setup:s:a', 'cleanup:throwingSetup:a', 'cleanup:s:a', 'setup:throwingSetup:b', 'setup:s:b', 'cleanup:s:b']);
+            expect(activity.commits.flat()).toEqual(live.commits.flat());
+            expect(activity.errors).toEqual(live.errors);
+        });
     });
 
     describe('a boundary that reports a hidden screen over a live subtree', () => {
+        it('still runs the next setup when the release it runs inline throws', () => {
+            // Given the drifted shape, which is the one place a body releases inline because no destroy ran before it
+            const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
+            const steps = [visible(<ThrowingChangingEffect value="a" />), visible(<ThrowingChangingEffect value="b" />)];
+
+            // When the dependency changes and the release the body runs first throws
+            const drifted = runCatching(useScreenActivityEffect, DriftedScreen, steps);
+            reported.mockRestore();
+
+            // Then the setup of the new dependency still ran and the error surfaced after it, and the error taking the
+            // unprotected tree down releases that setup in the same commit, as it does with useEffect on a live screen
+            expect(drifted.commits).toEqual([['setup:throwingChanging:a'], ['cleanup:throwingChanging:a', 'setup:throwingChanging:b', 'cleanup:throwingChanging:b'], []]);
+            expect(drifted.errors).toEqual(['Error: cleanup of throwingChanging:a threw']);
+        });
+
         it('reports the drift in development, which is the only place the mis-wiring can be seen', () => {
             // Given a boundary whose isHidden no longer describes the mode of the <Activity> it wraps
             const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -524,6 +625,40 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // And the deferred cleanup is the damage the message is about: the removal released nothing
             expect(drifted).toEqual([['setup:s:a'], [], ['cleanup:s:a']]);
+        });
+    });
+
+    describe('what a development build says about deferred releases', () => {
+        it('reports how many cleanups of removals behind a cover the pop of a visible screen still owed', () => {
+            // Given a component removed behind the cover of a screen whose reveal ran no effect, so no sweep had
+            // evidence to release it and its cleanup waits all the way to the pop
+            // The spy can hand back a mock the environment already holds, so only the calls of this test count.
+            const reported = jest.spyOn(console, 'debug').mockImplementation(() => {});
+            reported.mockClear();
+            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), hidden(null), visible(null)];
+
+            // When the screen leaves the stack while visible
+            runOn(useScreenActivityEffect, ActivityScreen, steps);
+            const messages = reported.mock.calls.map((call) => String(call.at(0)));
+            reported.mockRestore();
+
+            // Then the boundary says how far these releases ran from their removal, because nothing else shows it
+            expect(messages.filter((message) => message.includes('1 cleanup(s) deferred since a removal behind a cover'))).toHaveLength(1);
+        });
+
+        it('says nothing about the pop of a covered screen, whose deferrals are the ordinary deep link pop', () => {
+            // Given a screen that leaves the stack while covered, where every entry is deferred by the cover itself
+            const reported = jest.spyOn(console, 'debug').mockImplementation(() => {});
+            reported.mockClear();
+            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />)];
+
+            // When the screen leaves the stack without a reveal
+            runOn(useScreenActivityEffect, ActivityScreen, steps);
+            const messages = reported.mock.calls.map((call) => String(call.at(0)));
+            reported.mockRestore();
+
+            // Then the pop stays quiet, because these releases run exactly where a popped screen runs them
+            expect(messages.filter((message) => message.includes('deferred since a removal'))).toHaveLength(0);
         });
     });
 
