@@ -206,6 +206,17 @@ const restrictedPaidGroupPolicyImportPatterns = [
     },
 ];
 
+// The boundary provider pairs its isHidden with the mode of the <Activity> it wraps, and a call site that renders it
+// directly can pair the two wrongly, which defers every cleanup of that subtree forever. ActivityWithEffectBoundary is
+// the one component that renders the pair, so everything else imports that instead.
+const restrictedScreenActivityBoundaryImportPatterns = [
+    {
+        group: ['**/ScreenActivityEffectBoundaryContext'],
+        importNames: ['ScreenActivityEffectBoundaryProvider'],
+        message: 'Do not render the boundary directly. Render ActivityWithEffectBoundary, which pairs isHidden with the mode of the <Activity> it serves.',
+    },
+];
+
 // Headless email chart CLI cannot use useTheme; charts always render with the light theme.
 const victoryChartRendererRestrictedImportPaths = restrictedImportPaths.filter((restriction) => restriction.name !== '@styles/theme');
 const victoryChartRendererRestrictedImportPatterns = [
@@ -702,19 +713,29 @@ const config = defineConfig([
         },
     },
 
-    // Restrict `computeReportName` imports everywhere except the one file that
-    // legitimately consumes it. This block overrides the main `no-restricted-imports`
-    // for ts/tsx files, so we re-apply the main `restrictedImportPaths`/`restrictedImportPatterns`
-    // here too (flat config is last-wins per rule, not additive).
+    // Restrict `computeReportName` and the screen activity boundary provider everywhere except the files that
+    // legitimately consume them (the ignores fall back to the main `no-restricted-imports` block). This block
+    // overrides the main `no-restricted-imports` for ts/tsx files, so we re-apply the main
+    // `restrictedImportPaths`/`restrictedImportPatterns` here too (flat config is last-wins per rule, not additive).
     {
         files: ['**/*.ts', '**/*.tsx'],
-        ignores: ['src/libs/actions/OnyxDerived/configs/reportAttributes.ts'],
+        ignores: [
+            'src/libs/actions/OnyxDerived/configs/reportAttributes.ts',
+            'src/hooks/useScreenActivityEffect/**',
+            'tests/unit/hooks/useScreenActivityEffect/**',
+            'tests/utils/ScreenActivityEffectTestUtils.tsx',
+        ],
         rules: {
             'no-restricted-imports': [
                 'error',
                 {
                     paths: restrictedImportPaths,
-                    patterns: [...restrictedImportPatterns, ...restrictedReportNameImportPatterns, ...restrictedPaidGroupPolicyImportPatterns],
+                    patterns: [
+                        ...restrictedImportPatterns,
+                        ...restrictedReportNameImportPatterns,
+                        ...restrictedPaidGroupPolicyImportPatterns,
+                        ...restrictedScreenActivityBoundaryImportPatterns,
+                    ],
                 },
             ],
         },
