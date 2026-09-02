@@ -1,6 +1,6 @@
 import type {DependencyList, EffectCallback, ReactNode} from 'react';
 
-import React, {createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {createContext, useContext, useEffect, useLayoutEffect, useRef, useState} from 'react';
 
 /** The live setup of one call site of useScreenActivityEffect, owned by the boundary from its first effect run on. */
 type ScreenActivityEffectEntry = {
@@ -128,10 +128,25 @@ type ScreenActivityEffectBoundary = {
      * Takes over the release and setup of a call site for the reveal commit, so the boundary can run every release of
      * the subtree before any setup, exactly as the phases of one commit run on a live screen. The work travels to the
      * highest boundary with a reveal under way, because that is the one whose drain runs after everything below it,
-     * including the sweep of what a boundary between them left behind. Outside a reveal it takes nothing and answers
-     * false, and the call site runs its work inline.
+     * including the sweep of what a boundary between them left behind. Outside the reveal commit it takes nothing and
+     * answers false, and the call site runs its work inline.
      */
     deferRevealWork: (entry: ScreenActivityEffectEntry, setup: EffectCallback, deps: DependencyList | undefined) => boolean;
+
+    /**
+     * Whether this commit reveals this boundary or one above it. Every boundary inside a revealing <Activity> runs its
+     * effects again in that commit, so each one batches the work of its own subtree in its own drain, and a body that
+     * registers anywhere below counts as evidence for all of them.
+     */
+    getIsInRevealCommit: () => boolean;
+
+    /**
+     * Releases every entry whose cleanup a cover skipped and which no body claimed back, after asking the boundary
+     * above to do the same. A body registering is the evidence that the subtree is live again, so the entries still
+     * marked belong to components that are gone. It is for commits outside a reveal: in the reveal commit the bodies
+     * that are still there have not all registered yet when the first one arrives, and the drain sweeps after all ran.
+     */
+    releaseRemoved: () => void;
 };
 
 // Null means no boundary above this subtree, which is every screen that did not opt into <Activity>.
@@ -156,49 +171,58 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
     const [{entries, revealQueue, nestedEntry, markNestedEntry}] = useState(createBoundaryState);
     const isScreenTeardownRef = useRef(false);
     const isRevealPendingRef = useRef(false);
+    const hasRegisteredInRevealRef = useRef(false);
     const wasHiddenRef = useRef(isHidden);
-    const registrationCountRef = useRef(0);
-    const sweptRegistrationCountRef = useRef(0);
 
-    const boundary = useMemo<ScreenActivityEffectBoundary>(() => {
-        return {
-            register: (entry) => {
-                if (__DEV__ && isScreenTeardownRef.current) {
-                    // A body only runs for a subtree React is rendering, so a body arriving while the flag reports a
-                    // hidden screen means isHidden no longer describes the <Activity> this boundary wraps.
-                    console.error(
-                        '[useScreenActivityEffect] The boundary reports a hidden screen while its subtree is running effects. isHidden has drifted from the mode of the <Activity> it wraps.',
-                    );
-                }
-                registrationCountRef.current += 1;
-                entries.add(entry);
-            },
-            unregister: (entry) => {
-                entries.delete(entry);
-            },
-            getIsScreenTeardown: () => isScreenTeardownRef.current,
-            deferRevealWork: (entry, setup, deps) => {
-                // The boundary above goes first, so the work of the whole tree gathers in the highest one revealing.
-                if (parent !== null && parent.deferRevealWork(entry, setup, deps)) {
-                    return true;
-                }
-                if (!isRevealPendingRef.current) {
-                    return false;
-                }
-                revealQueue.set(entry, {entry, setup, deps});
+    const boundary: ScreenActivityEffectBoundary = {
+        register: (entry) => {
+            if (__DEV__ && isScreenTeardownRef.current) {
+                // A body only runs for a subtree React is rendering, so a body arriving while the flag reports a
+                // hidden screen means isHidden no longer describes the <Activity> this boundary wraps.
+                console.error(
+                    '[useScreenActivityEffect] The boundary reports a hidden screen while its subtree is running effects. isHidden has drifted from the mode of the <Activity> it wraps.',
+                );
+            }
+            entries.add(entry);
+            if (boundary.getIsInRevealCommit()) {
+                hasRegisteredInRevealRef.current = true;
+                return;
+            }
+            boundary.releaseRemoved();
+        },
+        unregister: (entry) => {
+            entries.delete(entry);
+        },
+        getIsScreenTeardown: () => isScreenTeardownRef.current,
+        deferRevealWork: (entry, setup, deps) => {
+            // The boundary above goes first, so the work of the whole tree gathers in the highest one revealing.
+            if (parent !== null && parent.deferRevealWork(entry, setup, deps)) {
                 return true;
-            },
-        };
-    }, [entries, revealQueue, parent]);
+            }
+            if (!isRevealPendingRef.current) {
+                return false;
+            }
+            revealQueue.set(entry, {entry, setup, deps});
+            return true;
+        },
+        getIsInRevealCommit: () => isRevealPendingRef.current || (parent?.getIsInRevealCommit() ?? false),
+        releaseRemoved: () => {
+            // The boundary above goes first, so the entry it holds for a nested screen that went away releases before
+            // anything of the new subtree sets up, and a body running anywhere below is evidence for it as well.
+            parent?.releaseRemoved();
+            releaseEntries(
+                entries,
+                [...entries].filter((entry) => entry.isAwaitingReveal),
+            );
+        },
+    };
 
     useLayoutEffect(() => {
         // A change from hidden to visible starts a reveal, whose deferred work the drain below runs in phases. The
-        // mark survives past its commit on purpose: a reveal that ran no body at all, which a suspended subtree does,
-        // hands its batching to the first commit that runs bodies again, exactly as the sweep below waits for one.
+        // mark lives for that one commit only: the drain clears it, so work landing in any later commit runs inline,
+        // exactly as it does on a live screen once a suspended subtree resolves.
         if (wasHiddenRef.current && !isHidden) {
             isRevealPendingRef.current = true;
-        } else if (isHidden) {
-            isRevealPendingRef.current = false;
         }
         wasHiddenRef.current = isHidden;
         isScreenTeardownRef.current = isHidden;
@@ -209,24 +233,25 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
         };
     }, [isHidden]);
 
-    // The drain of a reveal. It runs after every effect of the subtree, because the effect of a parent runs after the
-    // effects of its children, so by now every call site that is still there has registered and queued what it owes.
-    // The phases mirror one commit of a live screen: first the entries whose cleanup the hide skipped and which did not
-    // come back, because they belong to components that are gone, then every release the queue holds, then every setup,
-    // so no call site of the reveal acquires before another one has released.
+    // The drain of the reveal commit. It runs after every effect of the subtree, because the effect of a parent runs
+    // after the effects of its children, so by now every call site that is still there has registered and queued what
+    // it owes. The phases mirror one commit of a live screen: first the entries whose cleanup the hide skipped and
+    // which did not come back, because they belong to components that are gone, then every release the queue holds,
+    // then every setup, so no call site of the reveal acquires before another one has released.
     //
     // A body that did not come back is only evidence of a removal once some body did come back, because a commit that
     // ran no effect of the subtree at all ran none for the component that is still there either. That is what a
-    // <Suspense> below the boundary does when it suspends again on the reveal, so the whole drain waits for a commit
-    // that registered something, which is every reveal of a subtree that is really there. The effect carries no
-    // dependency list so that a reveal which ran nothing is drained by the next commit that runs something, rather
-    // than only by the next reveal.
+    // <Suspense> below the boundary does when it suspends again on the reveal, so a reveal that registered nothing
+    // sweeps nothing, and the first body that registers afterwards sweeps for it through releaseRemoved. Nothing here
+    // outlives the commit: the boundary renders in the reveal commit, and a commit a leaf starts is never one.
     useEffect(() => {
-        if (isHidden || registrationCountRef.current === sweptRegistrationCountRef.current) {
+        const isRevealCommit = boundary.getIsInRevealCommit();
+        const hasRegistered = hasRegisteredInRevealRef.current;
+        isRevealPendingRef.current = false;
+        hasRegisteredInRevealRef.current = false;
+        if (!isRevealCommit || !hasRegistered) {
             return;
         }
-        sweptRegistrationCountRef.current = registrationCountRef.current;
-        isRevealPendingRef.current = false;
 
         const errors: unknown[] = [];
         releaseEntriesIntoErrors(
@@ -276,8 +301,8 @@ function ScreenActivityEffectBoundaryProvider({isHidden, children}: {isHidden: b
             };
         }
 
-        parent.register(nestedEntry);
         markNestedEntry(false);
+        parent.register(nestedEntry);
         return () => {
             if (parent.getIsScreenTeardown()) {
                 // The screen above is being covered or popped, and it is holding the entry for this whole set. The mark

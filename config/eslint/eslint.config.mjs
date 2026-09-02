@@ -708,12 +708,7 @@ const config = defineConfig([
     // `restrictedImportPaths`/`restrictedImportPatterns` here too (flat config is last-wins per rule, not additive).
     {
         files: ['**/*.ts', '**/*.tsx'],
-        ignores: [
-            'src/libs/actions/OnyxDerived/configs/reportAttributes.ts',
-            'src/hooks/useScreenActivityEffect/**',
-            'tests/unit/hooks/useScreenActivityEffect/**',
-            'tests/utils/ScreenActivityEffectTestUtils.tsx',
-        ],
+        ignores: ['src/libs/actions/OnyxDerived/configs/reportAttributes.ts'],
         rules: {
             'no-restricted-imports': [
                 'error',
@@ -725,6 +720,21 @@ const config = defineConfig([
                         ...restrictedPaidGroupPolicyImportPatterns,
                         ...restrictedScreenActivityBoundaryImportPatterns,
                     ],
+                },
+            ],
+        },
+    },
+
+    // The hook, its tests and its test utils render the boundary directly, which the pattern above forbids everywhere
+    // else. The rule does not merge between blocks, so this one repeats every other restriction for them.
+    {
+        files: ['src/hooks/useScreenActivityEffect/**', 'tests/unit/hooks/useScreenActivityEffect/**', 'tests/utils/ScreenActivityEffectTestUtils.tsx'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: restrictedImportPaths,
+                    patterns: [...restrictedImportPatterns, ...restrictedReportNameImportPatterns, ...restrictedPaidGroupPolicyImportPatterns],
                 },
             ],
         },

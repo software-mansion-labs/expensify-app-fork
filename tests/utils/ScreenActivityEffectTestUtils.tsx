@@ -5,7 +5,7 @@ import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffe
 
 import type {ComponentType, DependencyList, EffectCallback, ReactElement, ReactNode} from 'react';
 
-import React, {Activity, createContext, useContext, useEffect} from 'react';
+import React, {act, Activity, createContext, useContext, useEffect, useSyncExternalStore} from 'react';
 
 /**
  * The primitives a test needs to run one structure on useEffect and on useScreenActivityEffect and compare the effect
@@ -87,25 +87,81 @@ function ActivityScreen({isHidden, children}: ScreenProps) {
     );
 }
 
-/** One rendered state of a screen: what it holds, and whether the screen on top of it covers it. */
-type Step = {isHidden: boolean; children: ReactNode};
+type LeafOverride = {content: ReactNode} | null;
 
-function visible(children: ReactNode): Step {
+/** What the Leaf renders instead of its children after a leaf step, until the next render step clears it. */
+const leafStore = {
+    override: null as LeafOverride,
+    listeners: new Set<() => void>(),
+    subscribe: (listener: () => void) => {
+        leafStore.listeners.add(listener);
+        return () => leafStore.listeners.delete(listener);
+    },
+    getSnapshot: (): LeafOverride => leafStore.override,
+    /** Sets the override and re-renders every Leaf, as one commit that starts below the boundary. */
+    publish: (override: LeafOverride) => {
+        leafStore.override = override;
+        for (const listener of leafStore.listeners) {
+            listener();
+        }
+    },
+};
+
+/**
+ * Renders its children, or the content of the last leaf step, so a leaf step changes the content of the screen in a
+ * commit that starts below every boundary and renders nothing above it. A render step clears the override before it
+ * renders, so a step of either kind describes the whole content of the screen.
+ */
+function Leaf({children}: {children: ReactNode}) {
+    const override = useSyncExternalStore(leafStore.subscribe, leafStore.getSnapshot);
+    return override === null ? children : override.content;
+}
+
+/** One rendered state of a screen: what it holds, and whether the screen on top of it covers it. */
+type RenderStep = {isHidden: boolean; children: ReactNode};
+
+/** A change of what the Leaf of the screen holds, as a commit that starts below the boundary and renders nothing above it. */
+type LeafStep = {leafContent: ReactNode};
+
+type Step = RenderStep | LeafStep;
+
+function visible(children: ReactNode): RenderStep {
     return {isHidden: false, children};
 }
 
-function hidden(children: ReactNode): Step {
+function hidden(children: ReactNode): RenderStep {
     return {isHidden: true, children};
 }
 
-/** The calls of every commit of the trees given, the last commit being the screen leaving the navigation stack. */
-function record(trees: readonly ReactElement[]): string[][] {
+function leaf(content: ReactNode): LeafStep {
+    return {leafContent: content};
+}
+
+function isLeafStep(step: Step | ReactElement): step is LeafStep {
+    return 'leafContent' in step;
+}
+
+/**
+ * The calls of every commit of the trees given, the last commit being the screen leaving the navigation stack. A leaf
+ * step among them commits through the Leaf the previous tree rendered rather than through a render of the root.
+ */
+function record(trees: ReadonlyArray<ReactElement | LeafStep>): string[][] {
     const [first, ...rest] = trees;
+    if (first === undefined || isLeafStep(first)) {
+        throw new Error('The first step has to render the screen.');
+    }
+    leafStore.override = null;
     const {rerender, unmount} = render(first);
     const commits = [drainLog()];
 
     for (const tree of rest) {
-        rerender(tree);
+        if (isLeafStep(tree)) {
+            act(() => leafStore.publish({content: tree.leafContent}));
+        } else {
+            // The render below re-renders the Leaf anyway, so the override goes silently, as part of that one commit.
+            leafStore.override = null;
+            rerender(tree);
+        }
         commits.push(drainLog());
     }
 
@@ -117,12 +173,12 @@ function record(trees: readonly ReactElement[]): string[][] {
 
 /** Puts the steps through one screen on one hook, which is one of the configurations a test compares. */
 function runOn(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: readonly Step[]): string[][] {
-    const tree = (step: Step) => (
+    const tree = (step: RenderStep) => (
         <AnyEffectHookProvider hook={hook}>
             <Screen isHidden={step.isHidden}>{step.children}</Screen>
         </AnyEffectHookProvider>
     );
-    return record(steps.map(tree));
+    return record(steps.map((step) => (isLeafStep(step) ? step : tree(step))));
 }
 
 /**
@@ -154,7 +210,10 @@ export {
     drainLog,
     expectEveryConfigToMatch,
     hidden,
+    isLeafStep,
     KeptEffect,
+    leaf,
+    Leaf,
     LiveScreen,
     log,
     PlainEffect,
@@ -167,4 +226,4 @@ export {
     useAnyEffect,
     visible,
 };
-export type {AnyEffectHook, Runs, ScreenProps, Step};
+export type {AnyEffectHook, LeafStep, RenderStep, Runs, ScreenProps, Step};

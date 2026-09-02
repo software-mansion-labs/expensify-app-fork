@@ -1,13 +1,13 @@
 import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
-import type {ComponentType} from 'react';
+import type {ComponentType, ReactNode} from 'react';
 import type {TupleToUnion} from 'type-fest';
 
 import React, {useEffect} from 'react';
 
 import type {AnyEffectHook, ScreenProps, Step} from '../../../utils/ScreenActivityEffectTestUtils';
 
-import {ActivityScreen, hidden, LiveScreen, log, resetLog, runOn, useAnyEffect, visible} from '../../../utils/ScreenActivityEffectTestUtils';
+import {ActivityScreen, hidden, leaf, Leaf, LiveScreen, log, resetLog, runOn, useAnyEffect, visible} from '../../../utils/ScreenActivityEffectTestUtils';
 
 /**
  * Every other suite here is a scenario somebody thought of. This one generates them: it walks every sequence of a few
@@ -22,12 +22,20 @@ const SEQUENCE_LENGTH = 6;
 /** The commits a screen and its content can go through, each one changing something the hook has to answer for. */
 const OPERATIONS = ['cover', 'reveal', 'changeValue', 'remove', 'mount'] as const;
 
-type Operation = TupleToUnion<typeof OPERATIONS>;
+/**
+ * The same changes of the content started from state inside the screen, which commits without rendering the boundary.
+ * They make the generated set larger, so the sequences holding them are one commit shorter.
+ */
+const LEAF_OPERATIONS = ['leafChangeValue', 'leafRemove', 'leafMount'] as const;
 
-/** One rendered state of the generated screen: whether a screen covers it, and what it holds. */
-type ScreenState = {isHidden: boolean; instance: number; value: string; isMounted: boolean};
+const LEAF_SEQUENCE_LENGTH = 5;
 
-const FIRST_STATE: ScreenState = {isHidden: false, instance: 1, value: 'a', isMounted: true};
+type Operation = TupleToUnion<typeof OPERATIONS> | TupleToUnion<typeof LEAF_OPERATIONS>;
+
+/** One rendered state of the generated screen: whether a screen covers it, what it holds, and where the commit came from. */
+type ScreenState = {isHidden: boolean; instance: number; value: string; isMounted: boolean; isFromLeaf: boolean};
+
+const FIRST_STATE: ScreenState = {isHidden: false, instance: 1, value: 'a', isMounted: true, isFromLeaf: false};
 
 /** An effect whose calls name the instance they belong to and the value they were set up with. */
 function TrackedSubject({instance, value}: {instance: number; value: string}) {
@@ -40,33 +48,41 @@ function TrackedSubject({instance, value}: {instance: number; value: string}) {
 
 /** Applies one operation, or answers that it would change nothing here, which keeps the generated set to real commits. */
 function applyOperation(state: ScreenState, operation: Operation): ScreenState | undefined {
+    const fromRoot = {...state, isFromLeaf: false};
+    const fromLeaf = {...state, isFromLeaf: true};
     switch (operation) {
         case 'cover':
-            return state.isHidden ? undefined : {...state, isHidden: true};
+            return state.isHidden ? undefined : {...fromRoot, isHidden: true};
         case 'reveal':
-            return state.isHidden ? {...state, isHidden: false} : undefined;
+            return state.isHidden ? {...fromRoot, isHidden: false} : undefined;
         case 'changeValue':
-            return state.isMounted ? {...state, value: state.value === 'a' ? 'b' : 'a'} : undefined;
+            return state.isMounted ? {...fromRoot, value: state.value === 'a' ? 'b' : 'a'} : undefined;
         case 'remove':
-            return state.isMounted ? {...state, isMounted: false} : undefined;
+            return state.isMounted ? {...fromRoot, isMounted: false} : undefined;
         case 'mount':
-            return state.isMounted ? undefined : {...state, isMounted: true, instance: state.instance + 1};
+            return state.isMounted ? undefined : {...fromRoot, isMounted: true, instance: state.instance + 1};
+        case 'leafChangeValue':
+            return state.isMounted ? {...fromLeaf, value: state.value === 'a' ? 'b' : 'a'} : undefined;
+        case 'leafRemove':
+            return state.isMounted ? {...fromLeaf, isMounted: false} : undefined;
+        case 'leafMount':
+            return state.isMounted ? undefined : {...fromLeaf, isMounted: true, instance: state.instance + 1};
         default:
             return undefined;
     }
 }
 
 /** Every sequence of the length given, as the states the screen goes through, the mount included. */
-function generateSequences(states: readonly ScreenState[], current: ScreenState, remaining: number): ScreenState[][] {
+function generateSequences(operations: readonly Operation[], states: readonly ScreenState[], current: ScreenState, remaining: number): ScreenState[][] {
     if (remaining === 0) {
         return [[...states]];
     }
 
     const sequences: ScreenState[][] = [];
-    for (const operation of OPERATIONS) {
+    for (const operation of operations) {
         const next = applyOperation(current, operation);
         if (next !== undefined) {
-            sequences.push(...generateSequences([...states, next], next, remaining - 1));
+            sequences.push(...generateSequences(operations, [...states, next], next, remaining - 1));
         }
     }
     return sequences;
@@ -85,15 +101,22 @@ function toChildren(state: ScreenState) {
     );
 }
 
-function toStep(state: ScreenState): Step {
-    const children = toChildren(state);
+/** The content as the Leaf of the screen holds it, from the root for a render step and from its own state for a leaf step. */
+function toStepWithContent(state: ScreenState, content: ReactNode): Step {
+    if (state.isFromLeaf) {
+        return leaf(content);
+    }
+    const children = <Leaf>{content}</Leaf>;
     return state.isHidden ? hidden(children) : visible(children);
+}
+
+function toStep(state: ScreenState): Step {
+    return toStepWithContent(state, toChildren(state));
 }
 
 /** The same content one navigator deeper, where the boundary of the nested screen comes and goes with the content. */
 function toNestedStep(state: ScreenState): Step {
-    const children = state.isMounted ? <ActivityScreen isHidden={false}>{toChildren(state)}</ActivityScreen> : null;
-    return state.isHidden ? hidden(children) : visible(children);
+    return toStepWithContent(state, state.isMounted ? <ActivityScreen isHidden={false}>{toChildren(state)}</ActivityScreen> : null);
 }
 
 /** The live setup of one instance as the log describes it: how many are live, and the value the last one ran with. */
@@ -155,8 +178,15 @@ function findViolations(states: readonly ScreenState[], commits: readonly string
     return violations;
 }
 
+function describeCommit(state: ScreenState): string {
+    if (state.isFromLeaf) {
+        return 'leaf';
+    }
+    return state.isHidden ? 'hidden' : 'visible';
+}
+
 function describeSequence(states: readonly ScreenState[]): string {
-    return states.map((state) => `${state.isHidden ? 'hidden' : 'visible'}(${state.isMounted ? `${state.instance}:${state.value}` : 'empty'})`).join(' ');
+    return states.map((state) => `${describeCommit(state)}(${state.isMounted ? `${state.instance}:${state.value}` : 'empty'})`).join(' ');
 }
 
 /** The violations of one configuration over every generated sequence, each one naming the sequence it came from. */
@@ -177,7 +207,7 @@ function sweep(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, sequence
 }
 
 describe('useScreenActivityEffect over every generated sequence', () => {
-    const sequences = generateSequences([FIRST_STATE], FIRST_STATE, SEQUENCE_LENGTH);
+    const sequences = generateSequences(OPERATIONS, [FIRST_STATE], FIRST_STATE, SEQUENCE_LENGTH);
 
     beforeEach(() => {
         resetLog();
@@ -218,6 +248,50 @@ describe('useScreenActivityEffect over every generated sequence', () => {
         // Then nesting changes nothing at all: not what runs, not when, and not which invariant holds. A release that
         // the nesting moves to a later commit is the shape a boundary of a nested screen leaks in, so it is the whole
         // point of comparing commit by commit rather than comparing the flattened calls.
+        expect(nested.problems).toEqual([]);
+        const moved = sequences.filter((states, index) => JSON.stringify(nested.runs.at(index)) !== JSON.stringify(flat.runs.at(index))).map(describeSequence);
+        expect(moved).toEqual([]);
+    });
+});
+
+describe('useScreenActivityEffect over every generated sequence with commits that render no boundary', () => {
+    const sequences = generateSequences([...OPERATIONS, ...LEAF_OPERATIONS], [FIRST_STATE], FIRST_STATE, LEAF_SEQUENCE_LENGTH);
+
+    beforeEach(() => {
+        resetLog();
+    });
+
+    it('generates sequences in which the content changes from inside the screen', () => {
+        // Given the operations of the root and the ones a leaf starts
+        // Then the set holds sequences of both kinds, so the checks below run on commits the boundary never renders in
+        expect(sequences.some((states) => states.some((state) => state.isFromLeaf))).toBe(true);
+        expect(sequences.every((states) => states.length === LEAF_SEQUENCE_LENGTH + 1)).toBe(true);
+    });
+
+    it('holds the live screen on useEffect to the invariants, which is what the checks are calibrated against', () => {
+        // When the baseline goes through every generated sequence
+        const live = sweep(useEffect, LiveScreen, sequences);
+
+        // Then it violates nothing, so a violation below is the hook and not the checks
+        expect(live.problems).toEqual([]);
+    });
+
+    it('holds the covered screen on useScreenActivityEffect to the same invariants', () => {
+        // When the hook goes through every generated sequence behind an <Activity>, leaf commits included
+        const live = sweep(useEffect, LiveScreen, sequences);
+        const activity = sweep(useScreenActivityEffect, ActivityScreen, sequences);
+
+        // Then a commit that renders no boundary still sets up what mounted and releases what went away
+        expect(activity.problems).toEqual([]);
+        expect(activity.setupCount).toBeLessThanOrEqual(live.setupCount);
+    });
+
+    it('answers the same commit by commit when the screen sits one navigator deeper', () => {
+        // When the same sequences run on a screen of a nested navigator
+        const flat = sweep(useScreenActivityEffect, ActivityScreen, sequences);
+        const nested = sweep(useScreenActivityEffect, ActivityScreen, sequences, toNestedStep);
+
+        // Then nesting changes nothing, in the leaf commits as in the others
         expect(nested.problems).toEqual([]);
         const moved = sequences.filter((states, index) => JSON.stringify(nested.runs.at(index)) !== JSON.stringify(flat.runs.at(index))).map(describeSequence);
         expect(moved).toEqual([]);

@@ -35,17 +35,22 @@ function areDepsEqual(previous: DependencyList | undefined, next: DependencyList
  * Use it for work that has to outlive a cover. On a screen with no boundary above it there is nothing to survive, so
  * the hook is plain useEffect there.
  *
- * A reveal runs its work in the phases of a live commit: the boundary releases every call site that owes a release,
- * the entries of components removed while the screen was hidden first, before it runs any setup. One ordering limit
- * remains at a call site: the screen teardown releases in the order the effects registered in rather than in tree
- * order, so two entries of one commit release child before parent where React would release parent before child. Work
- * that reads its release order against a sibling has to tolerate that.
+ * The reveal commit runs its work in the phases of a live commit: the boundary releases every call site that owes a
+ * release, the entries of components removed while the screen was hidden first, before it runs any setup. Work that
+ * lands in a later commit runs inline, as it does on a live screen. One ordering limit remains at a call site: the
+ * screen teardown releases in the order the effects registered in rather than in tree order, so two entries of one
+ * commit release child before parent where React would release parent before child. Work that reads its release order
+ * against a sibling has to tolerate that.
  *
- * One behavior is not the one of a live screen. The release of a component that was removed while the screen was hidden
- * waits for a reveal that runs an effect of the screen, and for a screen that has none left that is the moment it leaves
- * the stack. That is the price of never releasing the setup of a component which is only suspended, because a reveal
- * that runs no body at all cannot tell the two apart; where one part of the screen suspends while another runs, the
- * suspended part is released and set up again once it resolves.
+ * One behavior is not the one of a live screen. A component removed while the screen was hidden is released by the
+ * first effect of the screen that runs after the removal: on the reveal if the reveal runs one, otherwise right before
+ * the setup of the next effect that runs, otherwise when the screen leaves the stack. That is the price of never
+ * releasing the setup of a component which is only suspended, because a reveal that runs no body at all cannot tell the
+ * two apart; where one part of the screen suspends while another runs, the suspended part is released and set up again
+ * once it resolves.
+ *
+ * A cleanup or setup that throws while the boundary runs it, on the reveal or when the screen leaves the stack, reaches
+ * the error boundary above the screen rather than one inside it.
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     const boundary = useContext(ScreenActivityEffectBoundaryContext);
@@ -63,8 +68,17 @@ function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): 
             entryRef.current = createScreenActivityEffectEntry();
         }
         const entry = entryRef.current;
-        boundary.register(entry);
+        // The mark comes off before the boundary looks for entries that did not come back, so this one is not among them.
         entry.isAwaitingReveal = false;
+        let hasReleaseFailed = false;
+        let releaseError: unknown;
+        // Registering releases the components removed behind the cover, and one of those cleanups can throw.
+        try {
+            boundary.register(entry);
+        } catch (error) {
+            hasReleaseFailed = true;
+            releaseError = error;
+        }
 
         // The setup that survived a hide is still live, so running it again for the reveal would acquire what is
         // already held. A dependency change that landed while the screen was hidden is what lands in the branch.
@@ -72,23 +86,25 @@ function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): 
             // On a reveal the boundary runs the work of the whole subtree in release and setup phases, so this call
             // site hands its work over instead of running it here, where it would interleave with its neighbors.
             if (!boundary.deferRevealWork(entry, setup, deps)) {
-                let hasReleaseFailed = false;
-                let releaseError: unknown;
                 try {
                     entry.release();
                 } catch (error) {
-                    hasReleaseFailed = true;
-                    releaseError = error;
+                    if (hasReleaseFailed) {
+                        console.error(error);
+                    } else {
+                        hasReleaseFailed = true;
+                        releaseError = error;
+                    }
                 }
                 entry.cleanup = setup();
                 entry.deps = deps;
                 entry.isSetUp = true;
-                // React reports a cleanup that throws and still runs the setup of that commit, so the setup above ran
-                // first and the error surfaces after it, where React would have surfaced it.
-                if (hasReleaseFailed) {
-                    throw releaseError;
-                }
             }
+        }
+        // React reports a cleanup that throws and still runs the setup of that commit, so the setup above ran first and
+        // the error surfaces after it, where React would have surfaced it.
+        if (hasReleaseFailed) {
+            throw releaseError;
         }
 
         // The cleanup is returned even when the body set nothing up, because a reveal that changed nothing still has

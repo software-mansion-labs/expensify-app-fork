@@ -30,9 +30,9 @@ It does not make the hidden subtree live: other effects and `useOnyx` subscripti
 Compared with `useEffect` on a screen that stays live, it has these limits:
 
 - Dependency changes while hidden are deferred and coalesced until reveal, so the hook cannot observe the cover edge or every intermediate value.
-- A component removed while hidden may be cleaned up only after another screen effect runs or when the screen is popped. Suspense can look like such a removal and cause an unnecessary cleanup and setup.
-- On reveal, the boundary runs every pending release of the subtree before any setup, releasing components removed while hidden first, so a single-owner resource is never held by two owners at once. Screen teardown still follows registration order rather than React tree order, so avoid work that depends on releasing before or after a sibling.
-- A cleanup that throws is reported and the rest of the batch still runs, including the next setup of the call site whose cleanup threw, which is what React does with a destroy that throws.
+- A component removed while hidden is released by the first effect of the screen that runs after the removal: on the reveal if the reveal runs one, otherwise right before the setup of the next effect that runs, otherwise when the screen is popped. Suspense can look like such a removal and cause an unnecessary cleanup and setup.
+- The reveal commit runs every pending release of the subtree before any setup, releasing components removed while hidden first, so a single-owner resource is never held by two owners at once. Work that lands in a later commit runs inline, as on a live screen. Screen teardown still follows registration order rather than React tree order, so avoid work that depends on releasing before or after a sibling.
+- A cleanup that throws is reported and the rest of the batch still runs, including the next setup of the call site whose cleanup threw, which is what React does with a destroy that throws. An error the boundary rethrows on a reveal or on pop reaches the error boundary above the screen, not one inside it.
 
 ## Regressions caused by unsafe effects
 
