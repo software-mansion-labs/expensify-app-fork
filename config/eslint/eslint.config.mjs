@@ -702,10 +702,11 @@ const config = defineConfig([
         rules: {'report-name-utils/no-function-call-in-get-report-name': 'error'},
     },
 
-    // Restrict `computeReportName` and the screen activity boundary provider everywhere except the files that
-    // legitimately consume them (the ignores fall back to the main `no-restricted-imports` block). This block
-    // overrides the main `no-restricted-imports` for ts/tsx files, so we re-apply the main
-    // `restrictedImportPaths`/`restrictedImportPatterns` here too (flat config is last-wins per rule, not additive).
+    // Restrict `computeReportName` everywhere except the file that legitimately consumes it (the ignore falls back
+    // to the main `no-restricted-imports` block), and the screen activity boundary provider everywhere except the
+    // hook files, which the next block handles. This block overrides the main `no-restricted-imports` for ts/tsx
+    // files, so we re-apply the main `restrictedImportPaths`/`restrictedImportPatterns` here too (flat config is
+    // last-wins per rule, not additive).
     {
         files: ['**/*.ts', '**/*.tsx'],
         ignores: ['src/libs/actions/OnyxDerived/configs/reportAttributes.ts'],

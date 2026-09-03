@@ -697,6 +697,18 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             expect(activity).toEqual(live);
         });
 
+        it('cleans up and sets up again on every reveal when the gate sits above the boundary', () => {
+            // Given a StrictMode above the boundary, which is what USE_REACT_STRICT_MODE_IN_DEV puts above the whole app
+            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
+
+            // When the screen is covered and revealed
+            const activity = runOn(useScreenActivityEffect, GateAboveBoundaryScreen, steps);
+
+            // Then the reveal releases the setup and runs it again, because React double-invokes the effects of a
+            // revealed <Activity> under a StrictMode above it and that cleanup cannot be told from a removal
+            expect(activity).toEqual([['setup:s:a', 'cleanup:s:a', 'setup:s:a'], [], ['cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
+        });
+
         it('keeps the setup live through a cover and reveal cycle below the gate', () => {
             // Given an effect that has already been through the remount cycle of the gate
             const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
