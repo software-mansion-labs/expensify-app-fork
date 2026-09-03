@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import type {UseAppFocusEvent, UseAppFocusEventCallback} from './types';
 
@@ -8,7 +8,9 @@ import type {UseAppFocusEvent, UseAppFocusEventCallback} from './types';
  * @param callback the function to run when the app is focused. This should be memoized with `useCallback`.
  */
 const useAppFocusEvent: UseAppFocusEvent = (callback: UseAppFocusEventCallback) => {
-    useEffect(() => {
+    // The listener is kept while an Activity screen is covered, because a window regaining focus behind a cover is the
+    // one signal nothing replays: visibilityState stays 'visible' the whole time.
+    useScreenActivityEffect(() => {
         window.addEventListener('focus', callback);
 
         return () => {

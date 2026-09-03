@@ -37,6 +37,8 @@ function useActionListRef() {
     const {registerListRef} = useActionListContext();
     const listRef = useRef<FlatList>(null);
 
+    // Keeping the slot registered through a cover would buy nothing, because React detaches the element refs of a
+    // hidden <Activity> and every consumer already short-circuits on the `current` that is then null.
     useLayoutEffect(() => {
         registerListRef(listRef);
         return () => registerListRef(null);

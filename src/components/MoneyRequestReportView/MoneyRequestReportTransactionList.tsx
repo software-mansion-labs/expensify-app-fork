@@ -24,6 +24,7 @@ import useOnyx from '@hooks/useOnyx';
 import useReportIsArchived from '@hooks/useReportIsArchived';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useResponsiveLayoutOnWideRHP from '@hooks/useResponsiveLayoutOnWideRHP';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -423,7 +424,8 @@ function MoneyRequestReportTransactionList({
         }, [showPendingExpensePlaceholder, reportID, transactions.length, hasOptimisticNewTransaction]),
     );
 
-    useEffect(() => {
+    // Only another report may drop the selection, so covering and revealing this one has to leave it alone.
+    useScreenActivityEffect(() => {
         clearSelectedTransactions(true);
         // We don't want to run the effect on change of clearSelectedTransactions since it can cause an infinite loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps

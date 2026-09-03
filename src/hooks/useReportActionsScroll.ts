@@ -25,13 +25,14 @@ import type {NativeScrollEvent, NativeSyntheticEvent, ViewToken} from 'react-nat
 import type {OnyxEntry} from 'react-native-onyx';
 
 import {useRoute} from '@react-navigation/native';
-import {useEffect, useEffectEvent, useState} from 'react';
+import {useEffect, useEffectEvent, useRef, useState} from 'react';
 
 import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useNetworkWithOfflineStatus from './useNetworkWithOfflineStatus';
 import useOnyx from './useOnyx';
 import usePrevious from './usePrevious';
 import useReportScrollManager from './useReportScrollManager';
+import useScreenActivityEffect from './useScreenActivityEffect';
 import useScrollToEndOnNewMessageReceived from './useScrollToEndOnNewMessageReceived';
 import useWindowDimensions from './useWindowDimensions';
 
@@ -270,13 +271,25 @@ function useReportActionsScroll({
         });
     }, [draftAutoScrollKey, hasNewestReportAction, previousDraftAutoScrollKey, reportScrollManager, scrollOffsetRef, setIsFloatingMessageCounterVisible]);
 
+    // The first run of the body settles where the list starts, either by declining because the list has its own initial
+    // target or by scheduling the scroll. Only a schedule dropped before its callback fired is still owed and can be
+    // taken up by a later run, so a target that clears afterwards never turns into a scroll the user did not ask for.
+    const initialScrollStateRef = useRef<'pending' | 'scheduled' | 'settled'>('pending');
+
     const scheduleInitialScrollToBottom = useEffectEvent(() => {
-        if (initialScrollKey) {
+        if (initialScrollStateRef.current !== 'pending') {
             return undefined;
         }
 
+        if (initialScrollKey) {
+            initialScrollStateRef.current = 'settled';
+            return undefined;
+        }
+
+        initialScrollStateRef.current = 'scheduled';
         return TransitionTracker.runAfterTransitions({
             callback: () => {
+                initialScrollStateRef.current = 'settled';
                 if (shouldFocusToTopOnMount) {
                     return;
                 }
@@ -290,7 +303,12 @@ function useReportActionsScroll({
     // The initial scroll-to-bottom must be scheduled exactly once, on mount; re-running it as deps change would yank the user back down while they read history.
     useEffect(() => {
         const handle = scheduleInitialScrollToBottom();
-        return () => handle?.cancel();
+        return () => {
+            handle?.cancel();
+            if (initialScrollStateRef.current === 'scheduled') {
+                initialScrollStateRef.current = 'pending';
+            }
+        };
     }, []);
 
     // Fixes Safari-specific issue where the whisper option is not highlighted correctly on hover after adding new transaction.
@@ -311,8 +329,9 @@ function useReportActionsScroll({
         return () => handle.cancel();
     }, [lastAction?.reportActionID, lastAction?.actionName, prevSortedVisibleReportActionsObjects, reportScrollManager]);
 
-    // Clear the highlighted report action after scrolling and highlighting
-    useEffect(() => {
+    // Clear the highlighted report action after scrolling and highlighting.
+    // The timer keeps running while the screen is covered, so the highlight expires on wall-clock time instead of restarting on every reveal.
+    useScreenActivityEffect(() => {
         if (actionIdToHighlight === '') {
             return;
         }

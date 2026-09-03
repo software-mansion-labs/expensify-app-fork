@@ -807,9 +807,12 @@ let newActionSubscribers: ActionSubscriber[] = [];
  * @returns Remove subscriber for report id
  */
 function subscribeToNewActionEvent(reportID: string, callback: SubscriberCallback): () => void {
-    newActionSubscribers.push({callback, reportID});
+    const subscriber = {callback, reportID};
+    newActionSubscribers.push(subscriber);
+    // Only this subscriber is removed, because a report can hold more than one and dropping them all leaves whoever is
+    // still mounted silently unsubscribed.
     return () => {
-        newActionSubscribers = newActionSubscribers.filter((subscriber) => subscriber.reportID !== reportID);
+        newActionSubscribers = newActionSubscribers.filter((candidate) => candidate !== subscriber);
     };
 }
 

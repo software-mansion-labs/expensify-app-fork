@@ -1,4 +1,5 @@
 import useOnyx from '@hooks/useOnyx';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import {clearConciergeThinkingKickoff, subscribeToReportReasoningEvents, unsubscribeFromReportReasoningChannel} from '@libs/actions/Report';
 import AgentZeroOptimisticStore from '@libs/AgentZeroOptimisticStore';
@@ -136,8 +137,9 @@ function AgentZeroStatusGate({
 
     // One reasoning Pusher subscription per report (not per agent). The handler in Report
     // actions routes each event to the right agent's reasoning history by its actorAccountID.
-    // Cleanup clears the report's reasoning history and the Pusher subscription.
-    useEffect(() => {
+    // Cleanup clears the report's reasoning history and the Pusher subscription. It is kept through a screen cover
+    // because the events an agent emits while the chat is hidden are one-shot and nothing replays them.
+    useScreenActivityEffect(() => {
         if (!isActive || !reportID) {
             return;
         }

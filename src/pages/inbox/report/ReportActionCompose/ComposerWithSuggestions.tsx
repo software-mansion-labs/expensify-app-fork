@@ -12,6 +12,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useSidePanelState from '@hooks/useSidePanelState';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
@@ -285,8 +286,29 @@ function ComposerWithSuggestions({
         return initialValue;
     });
 
+    // A cover ends the composer for React but not for the user, so the mark tells the two apart, and it is set in time because this cleanup runs before the one that flushes the save below.
+    const isComposerGoneRef = useRef(false);
+    useScreenActivityEffect(() => {
+        isComposerGoneRef.current = false;
+        return () => {
+            isComposerGoneRef.current = true;
+        };
+    }, []);
+
+    const saveReportActionDraftWhileTheComposerIsThere = useCallback((...args: Parameters<typeof saveReportActionDraft>) => {
+        if (isComposerGoneRef.current) {
+            return;
+        }
+        saveReportActionDraft(...args);
+    }, []);
+
     // Save the draft of the report action. This debounced so that we're not ceaselessly saving your edit.
-    const {saveDraft: debouncedSaveReportActionDraft, isSavePending: isDraftSavePending, cancelSaveDraft: cancelSaveReportActionDraft} = useDebouncedSaveDraft(saveReportActionDraft);
+    // The pending save is flushed rather than dropped when the composer goes away, so the last keystrokes still reach the draft.
+    const {
+        saveDraft: debouncedSaveReportActionDraft,
+        isSavePending: isDraftSavePending,
+        cancelSaveDraft: cancelSaveReportActionDraft,
+    } = useDebouncedSaveDraft(saveReportActionDraftWhileTheComposerIsThere, undefined, true);
 
     // Save the draft of the report comment. This debounced so that we're not ceaselessly saving your edit. Saving the draft
     // allows one to navigate somewhere else and come back to the comment and still have it in edit mode.
@@ -365,7 +387,7 @@ function ComposerWithSuggestions({
         }
     }, [focus, onFocus, editingState]);
 
-    useEffect(() => () => clearTimeout(ignoreEditSelectionResetTimeoutRef.current), []);
+    useScreenActivityEffect(() => () => clearTimeout(ignoreEditSelectionResetTimeoutRef.current), []);
 
     const handleEditValueChange = useCallback(
         (nextValue: string) => {
@@ -439,7 +461,7 @@ function ComposerWithSuggestions({
         RNTextInputReset.resetKeyboardInput(CONST.COMPOSER.NATIVE_ID);
     }, []);
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         const switchToCurrentReport = DeviceEventEmitter.addListener(`switchToPreExistingReport_${reportID}`, ({reportToCopyDraftTo, callback}: SwitchToCurrentReportProps) => {
             if (!commentRef.current) {
                 callback();
@@ -783,7 +805,7 @@ function ComposerWithSuggestions({
      * In the stacked-RHP SearchReport case we disable the TextInput's immediate `autoFocus` to avoid jank.
      * Make sure we still trigger a (delayed) manual focus on first render for that route.
      */
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         if (!shouldDelayAutoFocus) {
             delayedAutoFocusRouteKeyRef.current = null;
             return;
@@ -799,6 +821,7 @@ function ComposerWithSuggestions({
         }
         delayedAutoFocusRouteKeyRef.current = route.key;
 
+        // The route key guard only allows one attempt, so cancelling this handle for anything other than a route change loses the focus for good.
         const handle = TransitionTracker.runAfterTransitions({callback: () => focus(true)});
 
         return () => {
@@ -888,7 +911,9 @@ function ComposerWithSuggestions({
         return commentRef.current;
     }, []);
 
-    useEffect(() => {
+    // The focus manager is process wide, so releasing this registration while another composer owns it would drop that
+    // composer's callback instead of ours.
+    useScreenActivityEffect(() => {
         const unsubscribeNavigationBlur = navigation.addListener('blur', () => removeKeyDownPressListener(focusComposerOnKeyPress));
         const unsubscribeNavigationFocus = navigation.addListener('focus', () => {
             addKeyDownPressListener(focusComposerOnKeyPress);
@@ -949,7 +974,7 @@ function ComposerWithSuggestions({
         focus(true);
     }, [focus, prevIsFocused, editFocused, prevIsModalVisible, isFocused, modal?.isVisible, isNextModalWillOpenRef, shouldAutoFocus, isSidePanelHiddenOrLargeScreen, isInSidePanel]);
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         // Scrolls the composer to the bottom and sets the selection to the end, so that longer drafts are easier to edit
         updateMultilineInputRange(composerRef.current, !!shouldAutoFocus);
         // eslint-disable-next-line react-hooks/exhaustive-deps

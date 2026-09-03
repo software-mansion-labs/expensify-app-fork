@@ -16,6 +16,7 @@ import useReportIsArchived from '@hooks/useReportIsArchived';
 import useReportScrollManager from '@hooks/useReportScrollManager';
 import useReportTransactionsCollection from '@hooks/useReportTransactionsCollection';
 import useResponsiveLayoutOnWideRHP from '@hooks/useResponsiveLayoutOnWideRHP';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useScrollToEndOnNewMessageReceived from '@hooks/useScrollToEndOnNewMessageReceived';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -352,13 +353,15 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
      * - reads a new message as it is received
      */
     const [unreadMarkerTime, setUnreadMarkerTime] = useState(reportLastReadTime);
-    useEffect(() => {
+    // The reset belongs to the report rather than to the mount, so a reveal of the same report keeps the marker.
+    useScreenActivityEffect(() => {
         setUnreadMarkerTime(reportLastReadTime);
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [report?.reportID]);
 
-    useEffect(() => {
+    // The subscription is the only source of isVisible, so it has to stay up while the screen is covered.
+    useScreenActivityEffect(() => {
         const unsubscribe = Visibility.onVisibilityChange(() => {
             setIsVisible(Visibility.isVisible());
         });
@@ -371,7 +374,8 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
     const [appFocusCount, setAppFocusCount] = useState(0);
     useAppFocusEvent(useCallback(() => setAppFocusCount((count) => count + 1), []));
 
-    useEffect(() => {
+    // A cover changes none of the dependencies below, so the reveal must not repeat the read.
+    useScreenActivityEffect(() => {
         if (!isFocused) {
             return;
         }
@@ -397,7 +401,8 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [report?.lastVisibleActionCreated, transactionThreadReport?.lastVisibleActionCreated, report?.reportID, isVisible, isReportActionsLoaded]);
 
-    useEffect(() => {
+    // A cover is not the app losing and regaining focus, so the reveal must not run the catch-up again.
+    useScreenActivityEffect(() => {
         if (!isVisible || !Visibility.hasFocus() || !isFocused) {
             if (!lastMessageTime.current) {
                 lastMessageTime.current = lastAction?.created ?? '';
@@ -531,8 +536,10 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
 
     /**
      * Subscribe to read/unread events and update our unreadMarkerTime
+     *
+     * The events are one-shot, so the listeners have to stay attached while the screen is covered.
      */
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         const unreadActionSubscription = DeviceEventEmitter.addListener(`unreadAction_${report?.reportID}`, (newLastReadTime: string) => {
             setUnreadMarkerTime(newLastReadTime);
             userActiveSince.current = DateUtils.getDBTime();
@@ -595,7 +602,8 @@ function MoneyRequestReportActionsList({onLayout}: MoneyRequestReportListProps) 
         [scrollToBottom, setIsFloatingMessageCounterVisible, visibleReportActions],
     );
 
-    useEffect(() => {
+    // The new-action events are one-shot, so the subscription stays up while the screen is covered.
+    useScreenActivityEffect(() => {
         if (!report?.reportID) {
             return;
         }

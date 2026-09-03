@@ -1,5 +1,6 @@
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import type useReportScrollManager from '@hooks/useReportScrollManager';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import type {OpenReportActionParams} from '@libs/actions/Report';
 import {openReport, pruneReportActionPagesToNewestWindow, subscribeToNewActionEvent} from '@libs/actions/Report';
@@ -153,7 +154,8 @@ function useReportActionsNewActionLiveTail({
         liveTailJumpRef.current = {stage: 'idle'};
     }, [reportID, sortedAllReportActionsForPagination, reportActionPages, setTreatAsNoPaginationAnchor]);
 
-    useEffect(() => {
+    // Only a new report restarts the jump, so a cover that leaves the report unchanged must not rewind a jump in flight.
+    useScreenActivityEffect(() => {
         liveTailJumpRef.current = {stage: 'idle'};
     }, [reportID]);
 
@@ -189,7 +191,9 @@ function useReportActionsNewActionLiveTail({
         });
     }, [hasNewestReportAction, treatAsNoPaginationAnchor, setIsFloatingMessageCounterVisible]);
 
-    useEffect(() => {
+    // The subscription stays up while the screen is covered, because Pusher new-action events are one-shot and a
+    // teardown window would drop the ones that arrive in it.
+    useScreenActivityEffect(() => {
         // Why are we doing this, when in the cleanup of the useEffect we are already calling the unsubscribe function?
         // Answer: On web, when navigating to another report screen, the previous report screen doesn't get unmounted,
         //         meaning that the cleanup might not get called. When we then open a report we had open already previously, a new

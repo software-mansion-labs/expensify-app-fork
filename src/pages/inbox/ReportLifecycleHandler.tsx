@@ -3,9 +3,11 @@ import useBankAccountUnlockEffect from '@hooks/useBankAccountUnlockEffect';
 import {useCurrentReportIDState} from '@hooks/useCurrentReportID';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import {hideEmojiPicker} from '@libs/actions/EmojiPickerAction';
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
+import Navigation from '@libs/Navigation/Navigation';
 import clearReportNotifications from '@libs/Notification/clearReportNotifications';
 import {cancelSpan, cancelSpansByPrefix} from '@libs/telemetry/activeSpans';
 
@@ -44,8 +46,9 @@ function ReportLifecycleHandler({reportID}: ReportLifecycleHandlerProps) {
         hideEmojiPicker(true);
     }, [prevIsFocused, isFocused]);
 
-    // Telemetry cleanup
-    useEffect(() => {
+    // Telemetry cleanup. The cancellation belongs to leaving the report, so a cover must not run it while the spans of
+    // the screen on top are in flight.
+    useScreenActivityEffect(() => {
         return () => {
             // Cancel telemetry span when user leaves the screen before full report data is loaded
             cancelSpan(`${CONST.TELEMETRY.SPAN_OPEN_REPORT}_${onyxReportID}`);
@@ -66,7 +69,15 @@ function ReportLifecycleHandler({reportID}: ReportLifecycleHandlerProps) {
     };
 
     useEffect(clearNotifications, [clearNotifications]);
-    useAppFocusEvent(clearNotifications);
+
+    // The app focus listener outlives a cover, so its guard reads the top-most report now instead of trusting the value this render captured before the cover.
+    useAppFocusEvent(() => {
+        if (Navigation.getTopmostReportId() !== reportID) {
+            return;
+        }
+
+        clearReportNotifications(onyxReportID);
+    });
 
     return null;
 }

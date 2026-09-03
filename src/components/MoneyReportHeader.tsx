@@ -5,6 +5,7 @@ import useOnyx from '@hooks/useOnyx';
 import useReportPrimaryAction from '@hooks/useReportPrimaryAction';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useResponsiveLayoutOnWideRHP from '@hooks/useResponsiveLayoutOnWideRHP';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useTransactionsAndViolationsForReport from '@hooks/useTransactionsAndViolationsForReport';
 
@@ -18,7 +19,7 @@ import type {Route} from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 
 import {useRoute} from '@react-navigation/native';
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 
 import HeaderLoadingBar from './HeaderLoadingBar';
@@ -96,7 +97,7 @@ function MoneyReportHeaderContent({reportID: reportIDProp, shouldDisplayBackButt
 
     const isMobileSelectionModeEnabled = useMobileSelectionMode();
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         return () => {
             turnOffMobileSelectionMode();
         };

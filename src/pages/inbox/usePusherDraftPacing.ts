@@ -1,3 +1,5 @@
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
+
 import {getReportChannelName} from '@libs/actions/Report';
 import {ACCELERATED_REMAINING_MS, easeOut, getRevealDurationMS, MIN_TRICKLE_TOKEN_COUNT, TICK_INTERVAL_MS, TRICKLE_HARD_CAP_MS} from '@libs/ConciergeRevealUtils';
 import Log from '@libs/Log';
@@ -11,7 +13,7 @@ import type {ReportAction} from '@src/types/onyx';
 
 import type {Dispatch, SetStateAction} from 'react';
 
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 
 import type {ConciergeDraft} from './conciergeDraftState';
 
@@ -975,7 +977,10 @@ function usePusherDraftPacing(reportID: string, isGroupPolicyReport: boolean) {
         );
     };
 
-    useEffect(() => {
+    // Concierge streams its reply as one-shot Pusher events, so the bindings and the pacing timers have to outlive a
+    // cover to keep whatever arrives behind a thread. The listeners only touch refs and setDraft, which stay usable
+    // while the rest of the screen is inactive.
+    useScreenActivityEffect(() => {
         const runtime = {
             completedPusherDraftEventRef,
             currentDraftRef,

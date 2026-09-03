@@ -86,6 +86,9 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     };
 
     useEffect(() => {
+        // The ref outlives a cover and any remount that only replays the effects, so the mount has to claim it back.
+        isMountedRef.current = true;
+
         return () => {
             isMountedRef.current = false;
             if (!loaderTimeoutRef.current) {

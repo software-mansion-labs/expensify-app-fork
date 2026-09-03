@@ -4,7 +4,7 @@ import CONST from '@src/CONST';
 
 import type {RefObject} from 'react';
 
-import {useRef} from 'react';
+import {useEffect, useRef} from 'react';
 
 type UseDebouncedSaveDraftResult = {
     saveDraft: (...args: unknown[]) => void;
@@ -30,6 +30,14 @@ function useDebouncedSaveDraftImpl(saveDraftFn: (...args: unknown[]) => void, wa
         wait,
         {shouldExecuteOnUnmount},
     );
+
+    // A screen cover tears the debounce down and cancels the queued save, so the flag callers read has to fall with it.
+    // It is registered after useDebounce so this cleanup runs after the flush that shouldExecuteOnUnmount asks for.
+    useEffect(() => {
+        return () => {
+            isSavePending.current = false;
+        };
+    }, []);
 
     const saveDraft = (...args: unknown[]) => {
         isSavePending.current = true;

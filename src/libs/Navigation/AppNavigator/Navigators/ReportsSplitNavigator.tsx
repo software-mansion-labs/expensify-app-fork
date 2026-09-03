@@ -92,6 +92,7 @@ function ReportsSplitNavigator({navigation, route}: PlatformStackScreenProps<Tab
                 <Split.Screen
                     name={SCREENS.REPORT}
                     initialParams={reportScreenInitialParams}
+                    options={{nonTopScreenBehavior: 'activity'}}
                 >
                     {(screenProps: ReportScreenProps) => {
                         const ReportScreen = loadReportScreen();

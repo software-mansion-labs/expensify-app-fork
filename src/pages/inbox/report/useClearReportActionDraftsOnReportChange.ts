@@ -1,10 +1,10 @@
-import {clearAllReportActionDrafts} from '@libs/actions/Report';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
-import {useEffect} from 'react';
+import {clearAllReportActionDrafts} from '@libs/actions/Report';
 
 // When the report screen is navigated away from or the report changes, clear all report action edit drafts
 function useClearReportActionDraftsOnReportChange(reportID: string | undefined) {
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         clearAllReportActionDrafts();
 
         return () => {

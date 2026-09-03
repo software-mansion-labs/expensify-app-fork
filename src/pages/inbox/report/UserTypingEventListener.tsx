@@ -1,5 +1,6 @@
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useOnyx from '@hooks/useOnyx';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackRouteProp} from '@libs/Navigation/PlatformStackNavigation/types';
@@ -27,7 +28,7 @@ function UserTypingEventListener({report}: UserTypingEventListenerProps) {
     const isFocused = useIsFocused();
     const route = useRoute<PlatformStackRouteProp<ReportsSplitNavigatorParamList, typeof SCREENS.REPORT>>();
 
-    useEffect(
+    useScreenActivityEffect(
         () => () => {
             if (!didSubscribeToReportTypingEvents.current) {
                 return;

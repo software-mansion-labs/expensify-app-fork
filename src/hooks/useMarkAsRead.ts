@@ -24,6 +24,7 @@ import useCurrentUserPersonalDetails from './useCurrentUserPersonalDetails';
 import useIsAnonymousUser from './useIsAnonymousUser';
 import useIsReportActionsLoaded from './useIsReportActionsLoaded';
 import useReportIsArchived from './useReportIsArchived';
+import useScreenActivityEffect from './useScreenActivityEffect';
 
 // useRef gets reset when the reportID changes (the list reuses the same instance per report),
 // so we use a module-level variable to track the previous report across re-instantiations.
@@ -55,7 +56,8 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
     const isReportActionsLoaded = useIsReportActionsLoaded(reportID);
 
     const [isVisible, setIsVisible] = useState(Visibility.isVisible);
-    useEffect(() => {
+    // The subscription is the only source of isVisible, so it has to stay up while the screen is covered.
+    useScreenActivityEffect(() => {
         const unsubscribe = Visibility.onVisibilityChange(() => {
             setIsVisible(Visibility.isVisible());
         });
@@ -71,17 +73,24 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
     const userActiveSince = useRef<string>(DateUtils.getDBTime());
     const lastMessageTime = useRef<string | null>(null);
     const didMarkReportAsReadInitially = useRef(false);
+    const initializedReportID = useRef<string | undefined>(undefined);
 
     const lastAction = sortedVisibleReportActions.at(0);
     const isReportUnreadValue = isUnread(report, transactionThreadReport, isReportArchived) || (!!lastAction && isCurrentActionUnread(report, lastAction));
 
     useEffect(() => {
+        // The reset belongs to the report rather than to the mount, so a reveal does not re-arm the guards below.
+        if (initializedReportID.current === reportID) {
+            return;
+        }
+        initializedReportID.current = reportID;
         userActiveSince.current = DateUtils.getDBTime();
         didMarkReportAsReadInitially.current = false;
         prevReportID = reportID;
     }, [reportID]);
 
-    useEffect(() => {
+    // The listener is what keeps the watermark current, so tearing it down for a cover would lose the events fired then.
+    useScreenActivityEffect(() => {
         if (isAnonymousUser) {
             return;
         }
@@ -130,7 +139,7 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
     });
 
     // Only re-run on newest-action changes; otherwise any report update can prematurely consume unread state.
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         handleReportChangeMarkAsRead();
     }, [report?.lastVisibleActionCreated, transactionThreadReport?.lastVisibleActionCreated, reportID, isVisible, isReportActionsLoaded]);
 
@@ -179,7 +188,7 @@ function useMarkAsRead({reportID, report, transactionThreadReport, sortedVisible
     });
 
     // Only re-run when app visibility/focus changes, so action updates don't keep marking the report as read.
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         handleAppVisibilityMarkAsRead(isFocused);
     }, [isVisible, isFocused, appFocusCount]);
 

@@ -1,3 +1,5 @@
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
+
 import CONST from '@src/CONST';
 
 import type {RefObject} from 'react';
@@ -70,7 +72,8 @@ export default function useReportUnreadMessageScrollTracking({
     });
     // We want to save the updated value on ref to use it in onViewableItemsChanged
     // because FlatList requires the callback to be stable and we cannot add a dependency on the useCallback.
-    useEffect(() => {
+    // The cached rows only become meaningless when the report changes, so a cover must not drop them.
+    useScreenActivityEffect(() => {
         ref.current.reportID = reportID;
         ref.current.previousViewableItems = [];
     }, [reportID]);
@@ -177,7 +180,8 @@ export default function useReportUnreadMessageScrollTracking({
 
     // When unreadMarkerReportActionIndex changes we will manually call onViewableItemsChanged with previousViewableItems to recalculate
     // the state of floating button because onViewableItemsChanged on  FlatList will only be called when viewable items change.
-    useEffect(() => {
+    // The recalculation reports the unread action as visible to the consumer, so a reveal alone must not trigger it.
+    useScreenActivityEffect(() => {
         ref.current.unreadMarkerReportActionIndex = unreadMarkerReportActionIndex;
 
         if (ref.current.previousViewableItems.length) {
@@ -186,7 +190,7 @@ export default function useReportUnreadMessageScrollTracking({
     }, [onViewableItemsChanged, unreadMarkerReportActionIndex]);
 
     // When actionBadgeTargetIndex changes, recalculate visibility
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         ref.current.actionBadgeTargetIndex = actionBadgeTargetIndex;
         onViewableItemsChanged({viewableItems: ref.current.previousViewableItems, changed: []});
     }, [onViewableItemsChanged, actionBadgeTargetIndex]);

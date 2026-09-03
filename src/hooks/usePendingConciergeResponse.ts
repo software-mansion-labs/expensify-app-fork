@@ -3,11 +3,12 @@ import {applyPendingConciergeAction, clearPendingFollowupList, discardPendingCon
 import AgentZeroOptimisticStore, {MAX_AGE_MS} from '@libs/AgentZeroOptimisticStore';
 import {ACCELERATED_REMAINING_MS, getOptimisticRevealDurationMS, MIN_TRICKLE_TOKEN_COUNT, TICK_INTERVAL_MS, TRICKLE_HARD_CAP_MS} from '@libs/ConciergeRevealUtils';
 import Log from '@libs/Log';
+import {getIsOffline, subscribe as subscribeToNetworkState} from '@libs/NetworkState';
 import {rand64} from '@libs/NumberUtils';
 import type {ConciergeDraftEvent} from '@libs/Pusher/types';
 import {parseFollowupsFromHtml} from '@libs/ReportActionFollowupUtils';
 import tokenizeForReveal from '@libs/ReportActionFollowupUtils/tokenizeForReveal';
-import {getReportActionHtml} from '@libs/ReportActionsUtils';
+import {getReportAction, getReportActionHtml} from '@libs/ReportActionsUtils';
 
 import {useConciergeDraftActions} from '@pages/inbox/ConciergeDraftContext';
 
@@ -21,6 +22,7 @@ import {useEffect, useRef} from 'react';
 
 import useNetwork from './useNetwork';
 import useOnyx from './useOnyx';
+import useScreenActivityEffect from './useScreenActivityEffect';
 
 /** Hard cap on a pending followup-list skeleton. If the server never appends a real followup-list within this window, drop the marker so the UI stops showing a perpetual skeleton. */
 const PENDING_FOLLOWUP_LIST_HARD_CAP_MS = MAX_AGE_MS;
@@ -54,15 +56,16 @@ function usePendingConciergeResponse(reportID: string | undefined) {
     // pendingResponse/tokens/fullHtml — without this snapshot, those non-content
     // updates would cancel the running interval and restart the reveal. The
     // useEffect keeps ref writes in the commit phase (React-Compiler-safe).
-    const trickleInputsRef = useRef({pendingResponse, fullHtml, tokens, dispatchLocalDraftEvent, persistedAction});
+    const trickleInputsRef = useRef({pendingResponse, fullHtml, tokens, dispatchLocalDraftEvent});
     useEffect(() => {
-        trickleInputsRef.current = {pendingResponse, fullHtml, tokens, dispatchLocalDraftEvent, persistedAction};
+        trickleInputsRef.current = {pendingResponse, fullHtml, tokens, dispatchLocalDraftEvent};
     });
 
     // Reconciliation: when the canonical reportComment lands in REPORT_ACTIONS
     // mid-trickle, fire the running loop's accelerator so the remaining reveal
     // finishes in ~1.5s instead of snapping the synthetic bubble closed.
-    useEffect(() => {
+    // A reveal must not accelerate again for an arrival this already handled, because that would push the tail deadline back every time.
+    useScreenActivityEffect(() => {
         if (!persistedAction || !accelerateRef.current) {
             return;
         }
@@ -71,12 +74,19 @@ function usePendingConciergeResponse(reportID: string | undefined) {
 
     const lastOnlineTransitionAtRef = useRef<number>(0);
     const wasOfflineRef = useRef<boolean>(isOffline);
-    useEffect(() => {
-        if (wasOfflineRef.current && !isOffline) {
-            lastOnlineTransitionAtRef.current = Date.now();
-        }
-        wasOfflineRef.current = isOffline;
-    }, [isOffline]);
+    // The transition is read from the network store rather than from the rendered isOffline, and the subscription
+    // is kept through a cover, so an offline to online round trip that happens while the screen is hidden still
+    // extends the TTL below instead of being lost with the disconnected useSyncExternalStore.
+    useScreenActivityEffect(() => {
+        wasOfflineRef.current = getIsOffline();
+        return subscribeToNetworkState(() => {
+            const isCurrentlyOffline = getIsOffline();
+            if (wasOfflineRef.current && !isCurrentlyOffline) {
+                lastOnlineTransitionAtRef.current = Date.now();
+            }
+            wasOfflineRef.current = isCurrentlyOffline;
+        });
+    }, []);
 
     // Hide the followup-list skeleton when the user is offline.
     useEffect(() => {
@@ -122,7 +132,9 @@ function usePendingConciergeResponse(reportID: string | undefined) {
         return () => clearTimeout(ttlTimer);
     }, [reportID, pendingFollowupList, pendingFollowupAction, isOffline]);
 
-    useEffect(() => {
+    // A reveal must not restart a running trickle, which would mint a second telemetry session for one reply,
+    // replay the reveal from the start, or read the elapsed time as past the hard cap and discard the pending action.
+    useScreenActivityEffect(() => {
         if (!reportID || !reportActionID) {
             return;
         }
@@ -210,10 +222,11 @@ function usePendingConciergeResponse(reportID: string | undefined) {
             dispatch('completed', snapshotTokens.at(-1) ?? snapshotHtml);
             // Don't reapply our older optimistic when the canonical is already there —
             // it would clobber server-added markup (follow-up buttons, deep-link
-            // Pressables). `arrival` covers the accelerator path; the live ref read
-            // catches arrivals during the pre-trickle setTimeout where the accelerator
-            // no-ops on null intervalID.
-            if (arrival || trickleInputsRef.current.persistedAction) {
+            // Pressables). `arrival` covers the accelerator path. The direct read catches
+            // arrivals during the pre-trickle setTimeout where the accelerator no-ops on
+            // null intervalID, and arrivals while the screen is covered, where this hook's
+            // own Onyx subscriptions are disconnected and the module-level one is not.
+            if (arrival || getReportAction(reportID, reportActionID)) {
                 discardPendingConciergeAction(reportID);
             } else {
                 applyPendingConciergeAction(reportID, reportAction);
