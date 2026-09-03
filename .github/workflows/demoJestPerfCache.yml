@@ -1,0 +1,147 @@
+name: Demo - Jest perf cache speedup
+# cspell:ignore nvmrc -- the filename `.nvmrc`, hashed into the cache key
+
+# THROWAWAY. Never merge this file to main; it exists to prove in CI what the proposal measured
+# locally, that restoring a Jest transform cache removes ~45% of a Reassure measure job.
+#
+# The real arrangement cannot demonstrate itself in a PR. seedJestPerfCache.yml only writes the
+# entry once it is on main, and reassurePerformanceTests.yml ignores .github/**, so the patch's
+# own PR neither triggers the perf workflow nor finds an entry to restore. This workflow stands in
+# for the seed: the `cold` job writes the entry that the `warm` job restores, both inside one run,
+# so the comparison needs no coordination between runs and no manual pushes.
+#
+# It is keyed on github.run_id, so each run is self-contained, nothing collides with the real
+# cache, and the entries expire without displacing anything the rest of CI depends on.
+
+# The push trigger is the one that matters: workflow_dispatch is only offered in the Actions UI
+# for workflows that exist on the default branch, which this one deliberately never will. So every
+# run comes from pushing this branch.
+on:
+  workflow_dispatch:
+  push:
+    branches: [cache-jest-transforms-in-perf-tests-demo]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cold:
+    name: Cold (no transform cache)
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    outputs:
+      seconds: ${{ steps.measure.outputs.seconds }}
+      files: ${{ steps.report.outputs.files }}
+    steps:
+      - name: Checkout
+        uses: useblacksmith/checkout@1c9394c220d293645707b625ba9d79685f093a8f # v1
+
+      - name: Setup NodeJS
+        uses: ./.github/actions/composite/setupNode
+
+      # setupNode restores node_modules, which can carry a .jest-cache with it. Start from nothing
+      # so this job measures a genuinely cold transform.
+      - name: Guarantee an empty transform cache
+        run: rm -rf .jest-cache
+
+      - name: Run baseline performance tests (cold)
+        id: measure
+        shell: bash
+        run: |
+          START=$(date +%s)
+          NODE_OPTIONS=--experimental-vm-modules npx reassure --baseline
+          echo "seconds=$(( $(date +%s) - START ))" >> "$GITHUB_OUTPUT"
+
+      - name: Report what the run produced
+        id: report
+        shell: bash
+        run: |
+          FILES=$(find .jest-cache -type f | wc -l)
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          echo "::notice::Cold run: ${{ steps.measure.outputs.seconds }}s, produced $(du -sm .jest-cache | cut -f1)MB / $FILES files"
+
+      # Stands in for seedJestPerfCache.yml. The real key is in reassurePerformanceTests.yml; this
+      # one is deliberately different so the demo cannot read or clobber the real entry.
+      - name: Save the transform cache for the warm job
+        # v5.0.1
+        uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb
+        with:
+          path: .jest-cache
+          key: demo-jest-perf-${{ github.run_id }}
+
+  warm:
+    name: Warm (transform cache restored)
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: cold
+    outputs:
+      seconds: ${{ steps.measure.outputs.seconds }}
+    steps:
+      - name: Checkout
+        uses: useblacksmith/checkout@1c9394c220d293645707b625ba9d79685f093a8f # v1
+
+      - name: Setup NodeJS
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Guarantee an empty transform cache
+        run: rm -rf .jest-cache
+
+      - name: Restore the transform cache
+        id: restore
+        # v5.0.1
+        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb
+        with:
+          path: .jest-cache
+          key: demo-jest-perf-${{ github.run_id }}
+
+      # Without this the comparison is meaningless: a miss would silently measure cold twice and
+      # report a 0% saving. This also answers the proposal's first open question directly, since a
+      # hit here is Blacksmith's cache backend serving an entry another job wrote.
+      - name: Fail if the cache did not restore
+        if: steps.restore.outputs.cache-hit != 'true'
+        run: |
+          echo "::error::Cache miss. The warm job restored nothing, so there is nothing to compare."
+          exit 1
+
+      - name: Confirm what was restored
+        shell: bash
+        run: echo "::notice::Restored $(du -sm .jest-cache | cut -f1)MB / $(find .jest-cache -type f | wc -l) files"
+
+      - name: Run baseline performance tests (warm)
+        id: measure
+        shell: bash
+        run: |
+          START=$(date +%s)
+          NODE_OPTIONS=--experimental-vm-modules npx reassure --baseline
+          echo "seconds=$(( $(date +%s) - START ))" >> "$GITHUB_OUTPUT"
+
+  compare:
+    name: Compare
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    needs: [cold, warm]
+    steps:
+      - name: Write the comparison to the run summary
+        shell: bash
+        env:
+          COLD: ${{ needs.cold.outputs.seconds }}
+          WARM: ${{ needs.warm.outputs.seconds }}
+          FILES: ${{ needs.cold.outputs.files }}
+        run: |
+          if [[ -z "$COLD" || -z "$WARM" || "$COLD" -eq 0 ]]; then
+            echo "::error::Missing a duration (cold='$COLD' warm='$WARM'); a measure job did not report."
+            exit 1
+          fi
+          SAVED=$((COLD - WARM))
+          PERCENT=$(awk "BEGIN {printf \"%.1f\", ($SAVED / $COLD) * 100}")
+          {
+            echo "## Jest transform cache: measure step, cold vs warm"
+            echo
+            echo "| | seconds |"
+            echo "| --- | --- |"
+            echo "| Cold (no cache, $FILES files transformed) | ${COLD}s |"
+            echo "| Warm (cache restored) | ${WARM}s |"
+            echo "| **Saved** | **${SAVED}s (${PERCENT}%)** |"
+            echo
+            echo "Both jobs ran \`npx reassure --baseline\` on the same commit and the same runner"
+            echo "class. The only difference is whether \`.jest-cache\` was populated first."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::Cold ${COLD}s, warm ${WARM}s, saved ${SAVED}s (${PERCENT}%)"
