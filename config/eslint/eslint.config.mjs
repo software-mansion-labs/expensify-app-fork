@@ -726,10 +726,10 @@ const config = defineConfig([
         },
     },
 
-    // The hook, its tests and its test utils render the boundary directly, which the pattern above forbids everywhere
-    // else. The rule does not merge between blocks, so this one repeats every other restriction for them.
+    // The hook and its tests render the boundary directly, which the pattern above forbids everywhere else. The rule
+    // does not merge between blocks, so this one repeats every other restriction for them.
     {
-        files: ['src/hooks/useScreenActivityEffect/**', 'tests/unit/hooks/useScreenActivityEffect/**', 'tests/utils/ScreenActivityEffectTestUtils.tsx'],
+        files: ['src/hooks/useScreenActivityEffect/**', 'tests/unit/hooks/useScreenActivityEffect/**'],
         rules: {
             'no-restricted-imports': [
                 'error',

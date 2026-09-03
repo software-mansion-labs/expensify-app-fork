@@ -206,18 +206,21 @@ function sweep(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, sequence
     return {problems, runs, setupCount};
 }
 
-describe('useScreenActivityEffect over every generated sequence', () => {
-    const sequences = generateSequences(OPERATIONS, [FIRST_STATE], FIRST_STATE, SEQUENCE_LENGTH);
+/** The two generated sets: the commits the root renders, and those plus the ones a leaf starts without rendering the boundary. */
+const GENERATED_SETS = [
+    {name: 'from the root', operations: OPERATIONS, length: SEQUENCE_LENGTH, hasLeafCommits: false},
+    {name: 'from the root and from a leaf', operations: [...OPERATIONS, ...LEAF_OPERATIONS], length: LEAF_SEQUENCE_LENGTH, hasLeafCommits: true},
+];
 
-    beforeEach(() => {
-        resetLog();
-    });
+describe.each(GENERATED_SETS)('useScreenActivityEffect over every generated sequence of commits $name', ({operations, length, hasLeafCommits}) => {
+    const sequences = generateSequences(operations, [FIRST_STATE], FIRST_STATE, length);
 
     it('generates every sequence of commits the screen can go through', () => {
         // Given the operations a screen and its content can go through, with the ones that change nothing left out
         // Then there is a sequence for every combination of them, which is what the checks below run on
         expect(sequences.length).toBeGreaterThan(100);
-        expect(sequences.every((states) => states.length === SEQUENCE_LENGTH + 1)).toBe(true);
+        expect(sequences.every((states) => states.length === length + 1)).toBe(true);
+        expect(sequences.some((states) => states.some((state) => state.isFromLeaf))).toBe(hasLeafCommits);
     });
 
     it('holds the live screen on useEffect to the invariants, which is what the checks are calibrated against', () => {
@@ -248,50 +251,6 @@ describe('useScreenActivityEffect over every generated sequence', () => {
         // Then nesting changes nothing at all: not what runs, not when, and not which invariant holds. A release that
         // the nesting moves to a later commit is the shape a boundary of a nested screen leaks in, so it is the whole
         // point of comparing commit by commit rather than comparing the flattened calls.
-        expect(nested.problems).toEqual([]);
-        const moved = sequences.filter((states, index) => JSON.stringify(nested.runs.at(index)) !== JSON.stringify(flat.runs.at(index))).map(describeSequence);
-        expect(moved).toEqual([]);
-    });
-});
-
-describe('useScreenActivityEffect over every generated sequence with commits that render no boundary', () => {
-    const sequences = generateSequences([...OPERATIONS, ...LEAF_OPERATIONS], [FIRST_STATE], FIRST_STATE, LEAF_SEQUENCE_LENGTH);
-
-    beforeEach(() => {
-        resetLog();
-    });
-
-    it('generates sequences in which the content changes from inside the screen', () => {
-        // Given the operations of the root and the ones a leaf starts
-        // Then the set holds sequences of both kinds, so the checks below run on commits the boundary never renders in
-        expect(sequences.some((states) => states.some((state) => state.isFromLeaf))).toBe(true);
-        expect(sequences.every((states) => states.length === LEAF_SEQUENCE_LENGTH + 1)).toBe(true);
-    });
-
-    it('holds the live screen on useEffect to the invariants, which is what the checks are calibrated against', () => {
-        // When the baseline goes through every generated sequence
-        const live = sweep(useEffect, LiveScreen, sequences);
-
-        // Then it violates nothing, so a violation below is the hook and not the checks
-        expect(live.problems).toEqual([]);
-    });
-
-    it('holds the covered screen on useScreenActivityEffect to the same invariants', () => {
-        // When the hook goes through every generated sequence behind an <Activity>, leaf commits included
-        const live = sweep(useEffect, LiveScreen, sequences);
-        const activity = sweep(useScreenActivityEffect, ActivityScreen, sequences);
-
-        // Then a commit that renders no boundary still sets up what mounted and releases what went away
-        expect(activity.problems).toEqual([]);
-        expect(activity.setupCount).toBeLessThanOrEqual(live.setupCount);
-    });
-
-    it('answers the same commit by commit when the screen sits one navigator deeper', () => {
-        // When the same sequences run on a screen of a nested navigator
-        const flat = sweep(useScreenActivityEffect, ActivityScreen, sequences);
-        const nested = sweep(useScreenActivityEffect, ActivityScreen, sequences, toNestedStep);
-
-        // Then nesting changes nothing, in the leaf commits as in the others
         expect(nested.problems).toEqual([]);
         const moved = sequences.filter((states, index) => JSON.stringify(nested.runs.at(index)) !== JSON.stringify(flat.runs.at(index))).map(describeSequence);
         expect(moved).toEqual([]);

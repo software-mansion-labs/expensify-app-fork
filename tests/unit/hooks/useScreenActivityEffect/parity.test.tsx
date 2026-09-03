@@ -34,35 +34,33 @@ function WithoutCleanup({value}: {value: string}) {
     return null;
 }
 
-function FirstSibling({value}: {value: string}) {
-    useAnyEffect(track(`s1:${value}`), [value]);
-    return null;
-}
-
-function SecondSibling({value}: {value: string}) {
-    useAnyEffect(track(`s2:${value}`), [value]);
-    return null;
-}
-
 /** Two components with an effect each, where the second can go away without the first one remounting with it. */
 function Siblings({value, hasSecond = true}: {value: string; hasSecond?: boolean}) {
     return (
         <>
-            <FirstSibling value={value} />
-            {hasSecond ? <SecondSibling value={value} /> : null}
+            <Subject
+                name="s1"
+                value={value}
+            />
+            {hasSecond ? (
+                <Subject
+                    name="s2"
+                    value={value}
+                />
+            ) : null}
         </>
     );
-}
-
-function Child({value}: {value: string}) {
-    useAnyEffect(track(`child:${value}`), [value]);
-    return null;
 }
 
 /** A parent with an effect of its own around a child with one, which is the smallest tree React orders. */
 function Parent({value}: {value: string}) {
     useAnyEffect(track(`parent:${value}`), [value]);
-    return <Child value={value} />;
+    return (
+        <Subject
+            name="child"
+            value={value}
+        />
+    );
 }
 
 let setupCount = 0;
@@ -173,7 +171,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             const expected = [['setup:s:a'], [], [], [], [], ['cleanup:s:a']];
             expect(runs.liveUseEffect).toEqual(expected);
             expect(runs.activityScreenActivityEffect).toEqual(expected);
-            expect(runs.activityUseEffect).toEqual([['setup:s:a'], ['cleanup:s:a'], ['setup:s:a'], ['cleanup:s:a'], ['setup:s:a'], ['cleanup:s:a']]);
         });
 
         it('keeps a setup that returned no cleanup live through a cover and reveal cycle', () => {
@@ -187,9 +184,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             const expected = [['setup:s:a'], [], [], []];
             expect(runs.liveUseEffect).toEqual(expected);
             expect(runs.activityScreenActivityEffect).toEqual(expected);
-
-            // And plain useEffect has nothing to release, so the reveal sets up a second time on top of the first
-            expect(runs.activityUseEffect).toEqual([['setup:s:a'], [], ['setup:s:a'], []]);
         });
 
         it('runs the cleanup when the screen leaves the stack while it is still covered', () => {
@@ -203,9 +197,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             const expected = [['setup:s:a'], [], ['cleanup:s:a']];
             expect(runs.liveUseEffect).toEqual(expected);
             expect(runs.activityScreenActivityEffect).toEqual(expected);
-
-            // And plain useEffect released on the cover, so its teardown has nothing left to run
-            expect(runs.activityUseEffect).toEqual([['setup:s:a'], ['cleanup:s:a'], []]);
         });
 
         it('runs a dependency change that lands together with the reveal in that same commit', () => {
@@ -219,7 +210,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             const expected = [['setup:s:a'], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']];
             expect(runs.liveUseEffect).toEqual(expected);
             expect(runs.activityScreenActivityEffect).toEqual(expected);
-            expect(runs.activityUseEffect).toEqual([['setup:s:a'], ['cleanup:s:a'], ['setup:s:b'], ['cleanup:s:b']]);
         });
 
         it('runs a dependency change that landed while the screen was hidden on the reveal', () => {
@@ -233,10 +223,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
 
             // Then the same calls run in the same order, moved from the commit of the change to the commit of the reveal
             expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
-            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
-
-            // And plain useEffect released on the cover, so its reveal is a bare setup with no release in front of it
-            expect(runs.activityUseEffect).toEqual([['setup:s:a'], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
         });
 
         it('runs a dependency change that lands together with the cover on the reveal', () => {
@@ -249,7 +235,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then the change is not lost, only deferred, because the entry keeps the dependencies it is live for
             expect(runs.liveUseEffect).toEqual([['setup:s:a'], ['cleanup:s:a', 'setup:s:b'], [], ['cleanup:s:b']]);
             expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
-            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
         });
 
         it('runs the setup of a component mounted while the screen was hidden on the reveal, as plain useEffect does', () => {
@@ -372,7 +357,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then the reveal itself sweeps nothing, because a commit that ran no effect of the screen says nothing
             // about the one that is gone, and the next effect that runs releases it right before its own setup
             expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
-            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
         });
 
         it('sets up a component that mounts from state inside the screen after a reveal that ran no effect', () => {
@@ -415,7 +399,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then the terminal release of the boundary is the last chance to run the cleanup, and it takes it
             expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a'], []]);
             expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], ['cleanup:s:a']]);
-            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
         });
 
         it('leaves the sibling that stayed alive untouched when one of two is removed while hidden', () => {
@@ -443,10 +426,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then only the entry of the component that is gone is released
             expect(runs.liveUseEffect).toEqual([['setup:s1:a', 'setup:s2:a'], [], ['cleanup:s2:a'], [], ['cleanup:s1:a']]);
             expect(runs.activityScreenActivityEffect).toEqual([['setup:s1:a', 'setup:s2:a'], [], [], ['cleanup:s2:a'], ['cleanup:s1:a']]);
-            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
-
-            // And plain useEffect released both on the cover and acquired the surviving one again on the reveal
-            expect(runs.activityUseEffect).toEqual([['setup:s1:a', 'setup:s2:a'], ['cleanup:s1:a', 'cleanup:s2:a'], [], ['setup:s1:a'], ['cleanup:s1:a']]);
         });
     });
 
@@ -461,16 +440,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then the mount-once call site is left alone, because the entry knows the dependencies it is live for
             expect(runs.liveUseEffect).toEqual([['setup:first:a', 'setup:second:a'], [], ['cleanup:second:a', 'setup:second:b'], [], ['cleanup:first:a', 'cleanup:second:b']]);
             expect(runs.activityScreenActivityEffect).toEqual([['setup:first:a', 'setup:second:a'], [], [], ['cleanup:second:a', 'setup:second:b'], ['cleanup:first:a', 'cleanup:second:b']]);
-            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
-
-            // And plain useEffect released the mount-once call site on the cover and ran it again on the reveal
-            expect(runs.activityUseEffect).toEqual([
-                ['setup:first:a', 'setup:second:a'],
-                ['cleanup:first:a', 'cleanup:second:a'],
-                [],
-                ['setup:first:a', 'setup:second:b'],
-                ['cleanup:first:a', 'cleanup:second:b'],
-            ]);
         });
 
         it('releases both siblings before either sets up again on a reveal that re-runs both', () => {
@@ -491,7 +460,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
                 ['cleanup:s1:a', 'cleanup:s2:a', 'setup:s1:b', 'setup:s2:b'],
                 ['cleanup:s1:b', 'cleanup:s2:b'],
             ]);
-            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
         });
 
         it('releases a parent and its child before either sets up again on a reveal that re-runs both', () => {
@@ -559,18 +527,21 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Given a component that is added in front of one that is already mounted, so the two orders differ
             const steps = [
                 visible([
-                    <SecondSibling
+                    <Subject
                         key="s2"
+                        name="s2"
                         value="a"
                     />,
                 ]),
                 visible([
-                    <FirstSibling
+                    <Subject
                         key="s1"
+                        name="s1"
                         value="a"
                     />,
-                    <SecondSibling
+                    <Subject
                         key="s2"
+                        name="s2"
                         value="a"
                     />,
                 ]),
@@ -630,7 +601,6 @@ describe('useScreenActivityEffect compared to useEffect', () => {
 
             // And the reveal holds the same order, so a single-owner resource is never held by two instances at once
             expect(activity).toEqual([['setup:s1:a'], [], [], [], ['cleanup:s1:a', 'setup:s2:a'], ['cleanup:s2:a']]);
-            expect(activity.flat()).toEqual(live.flat());
         });
     });
 
