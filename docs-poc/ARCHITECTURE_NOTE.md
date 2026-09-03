@@ -30,6 +30,8 @@ zamiast proporcjonalnego do rozmiaru konta (dziś boot hydratuje całą bazę do
   `lhnEligibleDefault` / `lhnEligibleFocus` / `requiresAttention` jako 0|1, `lastVisibleActionCreated`,
   `isPinned` — bo indeksy nie liczą predykatów, tylko czytają pola.
 - **Nowy klucz meta** `derivedScopedMeta` — stempel wersji materializera → backfill po zmianie logiki.
+- (⚑ do decyzji, DUŻE) **layout `reportActions_<reportID>`: jeden rekord z mapą wszystkich akcji
+  raportu → klucze per akcja albo per strona** — patrz sekcja „⚑ Layout report actions" niżej.
 - (⚑ do decyzji) dodatkowe indeksy: `chatType`, visibility (public roomy), participant→reports
   (odwrotny), collation dla `sortName`.
 
@@ -186,6 +188,42 @@ cache'ów dzieje się nadal, tylko po interaktywności. Usunięcie go to wzorce 
 
 ---
 
+## ⚑ Layout report actions — granica obecnych mechanizmów
+
+`reportActions_<reportID>` to **jeden rekord Onyxa zawierający mapę WSZYSTKICH akcji raportu**
+(`{reportActionID: ReportAction}`). Lazy hydratacja jest więc drobnoziarnista **per raport**, ale
+nie per akcja — i tego żaden z mechanizmów opisanych wyżej nie rozwiązuje:
+
+1. **Odczyt jest atomowy na poziomie raportu** — otwarcie długiego czatu czyta i parsuje całą mapę
+   akcji tego raportu; paginacja (`reportActionsPages_`) dzieje się w JS **po** odczycie, więc nie
+   zmniejsza I/O ani kosztu parsowania.
+2. **Nie da się indeksować ani querować wewnątrz raportu** — brak wierszy per akcja, więc „ostatnie
+   20 akcji" zawsze wymaga pełnego odczytu rekordu. Indeksy i query API działają tylko między
+   raportami (`chatReportID`, `parentReportID`), nie w środku.
+3. **Materializer przelicza całą mapę raportu przy zapisie jednej akcji** — granularność zapisu
+   (delta na jedną akcję) jest lepsza niż granularność przeliczenia (cały raport).
+
+**Kandydat na zmianę**: rozbicie na klucze per akcja (`reportAction_<reportID>_<actionID>`) albo per
+stronę — dopiero to otwiera indeksy po `created`/`actionName`, prawdziwą paginację na poziomie
+storage i przeliczanie per akcja. Koszt: dotyka WSZYSTKICH konsumentów akcji, protokołu
+paginacji i optimistic writes — projekt większy niż całe dotychczasowe POC.
+
+**Rekomendacja: nie robić tego na wyczucie.** Zmiana nie dotyka boot z Home, tylko **landingu na
+czacie** (i płynności długich czatów) — czyli dokładnie tego, co pomiary fazy 4 mierzą osobno.
+Decyzja po liczbach: jeśli odczyt+parsowanie mapy akcji jest istotną częścią chat-landingu, layout
+staje się priorytetem; jeśli nie — zostaje jako znane ograniczenie.
+
+**Co w POC już zrobione po stronie report actions** (bez zmiany layoutu): dwa derived na scoped
+materializerach (`visibleReportActions`, `sortedReportActions` — per raport, fan-out czatu przez
+indeks `chatReportID`, sweep na flip online/offline); `useVisibleActionsEntryForReport` (member key)
+w 4 konsumentach; `useAncestors` na member ready (–12 subskrypcji rotów na każdy otwarty czat);
+`useActiveDraftReportAction` na member mapach; module cache'e w
+ReportActionsUtils/ReportUtils/OptionsListUtils/IOU i akcjach za deferem; paginacja i mark-all-read
+na warm cache / jawnym hydrate. Zostało ~20 gołych subskrypcji rota w kodzie interaction-time,
+z czego `useTodoCounts` i `useTimeSensitiveSignerInfo` należą do P2 (sekcje Home).
+
+---
+
 ## Otwarte decyzje przed/po pomiarach
 
 1. **P2**: bramkowanie subskrypcji sekcji Home za app-ready (skeleton przez chwilę) — czeka na go.
@@ -195,3 +233,5 @@ cache'ów dzieje się nadal, tylko po interaktywności. Usunięcie go to wzorce 
 4. Agregaty (liczniki Home): flagi w projekcji + `COUNT` w query API vs licznik przyrostowy —
    po pomiarach.
 5. Protokół openApp (kursor zamiast `policyIDList`) — backend, poza POC.
+6. **Layout report actions** (klucze per akcja/stronę) — decyzja wyłącznie po pomiarze
+   chat-landingu; największy pojedynczy kandydat wśród zmian, które POC świadomie pominął.
