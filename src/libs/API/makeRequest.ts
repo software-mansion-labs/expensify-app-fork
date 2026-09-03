@@ -28,7 +28,7 @@ import type {OnyxData, RequestConflictResolver} from '@src/types/onyx/Request';
 import type Response from '@src/types/onyx/Response';
 
 import type {OnyxKey} from 'react-native-onyx';
-import type {SetRequired} from 'type-fest';
+import type {SetRequired, ValueOf} from 'type-fest';
 
 import Onyx from 'react-native-onyx';
 
@@ -96,6 +96,7 @@ function prepareRequest<TCommand extends ApiCommand, TKey extends OnyxKey>(
     params: ApiRequestCommandParameters[TCommand],
     onyxData: OnyxData<TKey> = {},
     conflictResolver: RequestConflictResolver<TKey> = {},
+    server?: ValueOf<typeof CONST.SERVER>,
 ): OnyxRequest<TKey> {
     Log.info('[API] Preparing request', false, {command, type});
 
@@ -109,7 +110,7 @@ function prepareRequest<TCommand extends ApiCommand, TKey extends OnyxKey>(
     const {optimisticData, successData, failureData, ...onyxDataWithoutOptimisticData} = onyxData;
 
     if (optimisticData && shouldApplyOptimisticData) {
-        Log.info('[API] Applying optimistic data', false, {command, type});
+        Log.info('[API] Applying optimistic data', false, {command, type}, undefined, optimisticData);
         Onyx.update(optimisticData);
     }
 
@@ -140,6 +141,7 @@ function prepareRequest<TCommand extends ApiCommand, TKey extends OnyxKey>(
         successData,
         failureData,
         ...conflictResolver,
+        ...(server ? {server} : {}),
     };
 
     if (isWriteRequest) {

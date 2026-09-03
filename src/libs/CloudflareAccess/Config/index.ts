@@ -1,19 +1,23 @@
-/**
- * Config and request classification for the Cloudflare Access-protected QA server. The security boundary:
- * nothing else decides whether a URL may carry the QA bearer token.
- */
 import CONFIG from '@src/CONFIG';
 
-import type {GetOAuthRedirectURI, GetQAOrigin, IsQAAuthConfigured, IsQAServerRequest} from './types';
+import type {GetOAuthRedirectURI, GetQAOrigins, GetQAResource, IsQAAuthConfigured, IsQAServerRequest} from './types';
 
-/** A bare hostname: no scheme, no slash, no port. Loose about labels (custom Access domains exist). */
+/** Loose about labels: custom Access domains exist */
 const TEAM_DOMAIN_SHAPE = /^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
 
-/** Anything short of a complete, well-formed config and every consumer behaves as if the feature is absent */
-const isQAAuthConfigured: IsQAAuthConfigured = () => {
-    const {API_ROOT, TEAM_DOMAIN, CLIENT_ID, CHECK_PATH} = CONFIG.QA_AUTH;
+function parseHTTPSOrigin(value: string): string | null {
+    try {
+        const url = new URL(value);
+        return url.protocol === 'https:' ? url.origin : null;
+    } catch {
+        return null;
+    }
+}
 
-    if (!API_ROOT || !TEAM_DOMAIN || !CLIENT_ID || !CHECK_PATH) {
+const isQAAuthConfigured: IsQAAuthConfigured = () => {
+    const {API_ROOT, SECURE_API_ROOT, TEAM_DOMAIN, CLIENT_ID} = CONFIG.QA_AUTH;
+
+    if (!API_ROOT || !TEAM_DOMAIN || !CLIENT_ID) {
         return false;
     }
 
@@ -21,37 +25,44 @@ const isQAAuthConfigured: IsQAAuthConfigured = () => {
         return false;
     }
 
-    try {
-        return new URL(API_ROOT).protocol === 'https:';
-    } catch {
+    // A malformed secure root disables the feature outright: half an allowlist would send the
+    // shouldUseSecure commands out bearer-less, to an unrecoverable 401
+    if (SECURE_API_ROOT && !parseHTTPSOrigin(SECURE_API_ROOT)) {
         return false;
     }
-};
 
-/** Origin form of the QA API root. Doubles as the RFC 8707 `resource`. CF binds the token to this string. */
-const getQAOrigin: GetQAOrigin = () => {
-    return new URL(CONFIG.QA_AUTH.API_ROOT).origin;
+    return parseHTTPSOrigin(API_ROOT) !== null;
 };
 
 /**
- * Exact-origin match, never a substring, and never true on an incomplete config. More Cloudflare-protected
- * QA hosts have to be added here deliberately.
+ * RFC 8707 resource indicator. Single-valued by protocol — Cloudflare binds the issued token to exactly this
+ * string — so it stays the primary API root even when the allowlist below carries more than one host. One
+ * token still covers every host, provided they all belong to the same (multi-domain) Access application.
  */
+const getQAResource: GetQAResource = () => {
+    return parseHTTPSOrigin(CONFIG.QA_AUTH.API_ROOT) ?? '';
+};
+
+const getQAOrigins: GetQAOrigins = () => {
+    const {API_ROOT, SECURE_API_ROOT} = CONFIG.QA_AUTH;
+    return [API_ROOT, SECURE_API_ROOT].map((root) => parseHTTPSOrigin(root)).filter((origin) => origin !== null);
+};
+
 const isQAServerRequest: IsQAServerRequest = (url) => {
     if (!isQAAuthConfigured()) {
         return false;
     }
 
     try {
-        return new URL(url).origin === getQAOrigin();
+        return getQAOrigins().includes(new URL(url).origin);
     } catch {
         return false;
     }
 };
 
-/** Must be registered as an allowed redirect URI on the Access application. Read lazily: no `window` on native. */
+/** Must be registered as an allowed redirect URI on the Access application */
 const getOAuthRedirectURI: GetOAuthRedirectURI = () => {
     return `${window.location.origin}/oauth/callback`;
 };
 
-export {getOAuthRedirectURI, getQAOrigin, isQAAuthConfigured, isQAServerRequest};
+export {getOAuthRedirectURI, getQAOrigins, getQAResource, isQAAuthConfigured, isQAServerRequest};

@@ -1,14 +1,10 @@
-/**
- * Strictly-validating client for Cloudflare Access's Managed OAuth endpoints. Protocol failures surface as
- * OAuthError, so callers can tell terminal outcomes from transient transport errors.
- */
 import {isRecord} from '@libs/ObjectUtils';
 
 import CONFIG from '@src/CONFIG';
 import type CloudflareSession from '@src/types/onyx/CloudflareSession';
 
 import {getAuthServerEndpoints} from './AuthServerMetadata';
-import {getOAuthRedirectURI, getQAOrigin} from './Config';
+import {getOAuthRedirectURI, getQAResource} from './Config';
 
 /** A hung token endpoint would otherwise hold the cross-tab refresh lock indefinitely */
 const TOKEN_ENDPOINT_TIMEOUT_MS = 10_000;
@@ -23,7 +19,6 @@ class OAuthError extends Error {
     }
 }
 
-/** POSTs form-encoded params to the token endpoint and validates the response into a CloudflareSession */
 async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSession> {
     const {tokenEndpoint} = await getAuthServerEndpoints();
     const response = await fetch(tokenEndpoint, {
@@ -33,14 +28,14 @@ async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSessi
         credentials: 'omit',
         // A 307/308 would re-send this body (code, verifier, refresh token) wherever the redirect points
         redirect: 'error',
-        // Times out as a transient transport error (not an OAuthError), so the session stays intact
+        // Times out as a transient transport error, not an OAuthError
         signal: AbortSignal.timeout(TOKEN_ENDPOINT_TIMEOUT_MS),
     });
 
     const json: unknown = await response.json().catch(() => null);
 
     if (!response.ok) {
-        // OAuth error responses come as {error, error_description} on a 4xx (RFC 6749 §5.2)
+        // RFC 6749 §5.2
         if (isRecord(json) && typeof json.error === 'string') {
             throw new OAuthError(json.error, typeof json.error_description === 'string' ? json.error_description : undefined);
         }
@@ -59,7 +54,7 @@ async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSessi
         json.token_type.toLowerCase() !== 'bearer'
     ) {
         // Terminal: retrying won't fix a protocol mismatch. token_type is checked because callers hardcode
-        // the Bearer scheme. Another type must never be persisted as if it were one.
+        // the Bearer scheme
         throw new OAuthError('invalid_response', 'Token endpoint returned an unexpected response shape');
     }
 
@@ -70,7 +65,6 @@ async function postTokenEndpoint(body: URLSearchParams): Promise<CloudflareSessi
     };
 }
 
-/** Builds the authorization URL the browser navigates to */
 async function buildAuthorizeURL({state, codeChallenge}: {state: string; codeChallenge: string}): Promise<string> {
     const {authorizationEndpoint} = await getAuthServerEndpoints();
     const url = new URL(authorizationEndpoint);
@@ -80,12 +74,11 @@ async function buildAuthorizeURL({state, codeChallenge}: {state: string; codeCha
     url.searchParams.set('state', state);
     url.searchParams.set('code_challenge', codeChallenge);
     url.searchParams.set('code_challenge_method', 'S256');
-    // RFC 8707. Cloudflare binds the issued token to this resource, and omitting it breaks the exchange
-    url.searchParams.set('resource', getQAOrigin());
+    // RFC 8707. Omitting the resource breaks the exchange
+    url.searchParams.set('resource', getQAResource());
     return url.toString();
 }
 
-/** Exchanges an authorization code (plus the PKCE verifier) for a session */
 function exchangeCode({code, codeVerifier}: {code: string; codeVerifier: string}): Promise<CloudflareSession> {
     const body = new URLSearchParams();
     body.set('grant_type', 'authorization_code');
@@ -94,7 +87,7 @@ function exchangeCode({code, codeVerifier}: {code: string; codeVerifier: string}
     // Must byte-match the redirect_uri sent in the authorize request
     body.set('redirect_uri', getOAuthRedirectURI());
     body.set('client_id', CONFIG.QA_AUTH.CLIENT_ID);
-    body.set('resource', getQAOrigin());
+    body.set('resource', getQAResource());
     return postTokenEndpoint(body);
 }
 
