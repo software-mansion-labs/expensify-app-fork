@@ -9,6 +9,65 @@ zamiast proporcjonalnego do rozmiaru konta (dziś boot hydratuje całą bazę do
 
 ---
 
+## TL;DR — jakie zmiany architektoniczne muszą zajść
+
+**W bibliotece (Onyx):**
+
+- **Opt-in lazy dla kolekcji** — init czyta tylko key index + singletony; kolekcje dociągane na
+  żądanie (member key / query / jawny `hydrate`).
+- **Dodać indeksy w SQLite** — expression indexes po `json_extract`, deklarowane w kodzie aplikacji,
+  z reconcile (tworzenie brakujących + drop niezadeklarowanych) odpalanym z idle.
+- **Dodać query API nad indeksami** — `where` DSL + keyset cursor + dwa silniki (SQLite dla
+  niezhydratowanego, overlay JS dla cache) + strumienie zapisów (`registerQueryWatcher`).
+- **Dodać API startu na żądanie** — `onFirstSubscription` (silnik derived startuje przy pierwszej
+  subskrypcji outputu), `getHydrationStatus`, rehydratacja po `Onyx.clear`.
+
+**W bazie / layoucie kluczy:**
+
+- **`derivedReportAttributes`: pojedynczy blob → kolekcja per raport** (`derivedReportAttributes_<id>`)
+  — inaczej LHN nie może czytać wybiórczo ani sortować w SQLite. To jest ta zmiana layoutu.
+- **Materializowane pola sortujące/filtrujące w projekcji** — `sortName` (lowercase pod collation),
+  `lhnEligibleDefault` / `lhnEligibleFocus` / `requiresAttention` jako 0|1, `lastVisibleActionCreated`,
+  `isPinned` — bo indeksy nie liczą predykatów, tylko czytają pola.
+- **Nowy klucz meta** `derivedScopedMeta` — stempel wersji materializera → backfill po zmianie logiki.
+- (⚑ do decyzji) dodatkowe indeksy: `chatType`, visibility (public roomy), participant→reports
+  (odwrotny), collation dla `sortName`.
+
+**W warstwie derived data (liczyć lazy, nie „wszystko po każdym zapisie"):**
+
+- **Start na żądanie** zamiast przy boot (+ post-ready catch-all dla świeżości).
+- **Materializacja per-entry z fan-outu zapisów** zamiast subskrypcji całych kolekcji wejściowych:
+  delta zapisu → dotknięte entry (targeted ready + indeksowane query) → przelicz tylko je.
+- **Likwidacja wartości, które da się zastąpić zapytaniem** (rTAV, outstanding-by-policy).
+- **On-demand computes** dla wartości punktowych (nazwa raportu, atrybuty jednego raportu,
+  ancestory) — ta sama logika configa, ale nad scoped store z dociąganiem braków.
+- **Chunked sweepy + wersjonowanie** — pełny przelicz porcjami z yieldami, nigdy jednym blokiem.
+
+**W aplikacji (zejście z pełnych kolekcji):**
+
+- **Rot kolekcji → klucz członka / member map** wszędzie, gdzie ID jest znane (uwaga: selector NIE
+  ratuje — subskrypcja rota hydratuje całość).
+- **Listy → query z indeksem i oknem** (LHN: okno 50/200 + pinned + drafts).
+- **Odczyt jednorazowy na ścieżce zdarzenia → warm cache** (`tryGetCachedValue` / `getCachedCollection`).
+- **Łańcuchowe odczyty → async walk po member ready + watchery inwalidacji** (ancestory).
+- **Ratchet w CI** — licznik gołych subskrypcji rotów, tylko w dół (dziś 609).
+
+**W cyklu startu aplikacji:**
+
+- **`deferUntilAppReady`** — nic, co nie jest potrzebne do pierwszej klatki, nie startuje przed
+  app-ready (splash ukryty + nawigacja gotowa); priorytety high/medium/low, drain z idle, fallback
+  10 s dla headless. Świadomość ograniczenia: **defer przenosi koszt, nie usuwa go**.
+- **Zakaz side-effectów w importach** — module-level connecty do rotów rejestrują się z defera
+  (docelowo: znikają na rzecz odczytów punktowych).
+
+**Protokół z serwerem (poza POC, wymaga backendu):**
+
+- **OpenApp/ReconnectApp w trybie kursora** (`updateID` watermark) zamiast klienckiej listy
+  `policyIDList` — dziś to jedyne miejsce, które MUSI przeczytać całe POLICY/REPORT, żeby zbudować
+  parametry żądania.
+
+---
+
 ## 1. Lazy hydratacja kolekcji (fundament — fork Onyxa)
 
 - `Onyx.init({lazyCollections})` — kolekcje z allowlisty NIE są ładowane przy starcie; init czyta
