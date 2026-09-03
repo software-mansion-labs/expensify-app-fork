@@ -1,11 +1,11 @@
 import {render} from '@testing-library/react-native';
 
 import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
-import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffect/ScreenActivityEffectBoundaryContext';
+import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
 
 import type {ComponentType, DependencyList, EffectCallback, ReactElement, ReactNode} from 'react';
 
-import React, {act, Activity, createContext, useContext, useEffect, useSyncExternalStore} from 'react';
+import React, {act, createContext, useContext, useEffect, useSyncExternalStore} from 'react';
 
 /**
  * The primitives a test needs to run one structure on useEffect and on useScreenActivityEffect and compare the effect
@@ -53,9 +53,9 @@ function AnyEffectHookProvider({hook, children}: {hook: AnyEffectHook; children:
     return <AnyEffectHookContext.Provider value={hook}>{children}</AnyEffectHookContext.Provider>;
 }
 
-/** The effect a test renders when it has nothing to say about the component holding it. */
-function Subject({value}: {value: string}) {
-    useAnyEffect(track(`s:${value}`), [value]);
+/** The effect a test renders when it has nothing to say about the component holding it, named when a test holds several. */
+function Subject({name = 's', value}: {name?: string; value: string}) {
+    useAnyEffect(track(`${name}:${value}`), [value]);
     return null;
 }
 
@@ -80,11 +80,7 @@ function LiveScreen({children}: ScreenProps) {
 
 /** A screen on the 'activity' behavior, which is what ScreenActivityWrapper builds around the screen content. */
 function ActivityScreen({isHidden, children}: ScreenProps) {
-    return (
-        <ScreenActivityEffectBoundaryProvider isHidden={isHidden}>
-            <Activity mode={isHidden ? 'hidden' : 'visible'}>{children}</Activity>
-        </ScreenActivityEffectBoundaryProvider>
-    );
+    return <ActivityWithEffectBoundary mode={isHidden ? 'hidden' : 'visible'}>{children}</ActivityWithEffectBoundary>;
 }
 
 type LeafOverride = {content: ReactNode} | null;

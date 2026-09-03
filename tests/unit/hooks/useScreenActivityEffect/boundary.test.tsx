@@ -38,80 +38,46 @@ jest.mock('@src/CONFIG', () => ({__esModule: true, default: {USE_ACTIVITY_SCREEN
  * screen, and the StrictMode gate that every screen opting into <Activity> renders below it.
  */
 
-/** An effect whose cleanup throws, which is a screen effect with a bug in its own teardown. */
-function ThrowingEffect() {
-    useAnyEffect(() => {
-        log('setup:throwing:a');
-        return () => {
-            log('cleanup:throwing:a');
-            throw new Error('cleanup of throwing threw');
-        };
-    }, []);
-    return null;
-}
+type ThrowingProps = {name?: string; value?: string; throwsFor?: string};
 
-/** An effect whose first cleanup throws, so a dependency change can compare the two hooks after a live setup. */
-function ThrowingChangingEffect({value}: {value: string}) {
+/** An effect whose cleanup throws for one value, which is a screen effect with a bug in its own teardown. */
+function ThrowingCleanup({name = 'throwing', value = 'a', throwsFor = 'a'}: ThrowingProps) {
     useAnyEffect(() => {
-        log(`setup:throwingChanging:${value}`);
+        log(`setup:${name}:${value}`);
         return () => {
-            log(`cleanup:throwingChanging:${value}`);
-            if (value === 'a') {
-                throw new Error('cleanup of throwingChanging:a threw');
+            log(`cleanup:${name}:${value}`);
+            if (value === throwsFor) {
+                throw new Error(`cleanup of ${name}:${value} threw`);
             }
         };
     }, [value]);
     return null;
 }
 
-/** An effect whose setup throws, which is a screen effect with a bug in the work it acquires. */
-function ThrowingSetup() {
-    useAnyEffect(() => {
-        log('setup:throwingSetup:a');
-        throw new Error('setup of throwingSetup threw');
-    }, []);
-    return null;
-}
-
-/** An effect whose second setup throws, so a dependency change can compare the two hooks after a live setup. */
-function ThrowingChangingSetup({value}: {value: string}) {
+/** An effect whose setup throws for one value, which is a screen effect with a bug in the work it acquires. */
+function ThrowingSetup({value = 'a', throwsFor = 'a'}: Omit<ThrowingProps, 'name'>) {
     useAnyEffect(() => {
         log(`setup:throwingSetup:${value}`);
-        if (value === 'b') {
-            throw new Error('setup of throwingSetup:b threw');
+        if (value === throwsFor) {
+            throw new Error(`setup of throwingSetup:${value} threw`);
         }
         return () => log(`cleanup:throwingSetup:${value}`);
     }, [value]);
     return null;
 }
 
-/** Two effects that both throw from their cleanup, so a teardown has more than one error to answer for. */
-function TwoThrowingCleanupsScreenContent() {
-    return (
-        <>
-            <ThrowingEffect />
-            <SecondThrowingEffect />
-            <Survivor />
-        </>
-    );
-}
-
-function SecondThrowingEffect() {
-    useAnyEffect(() => {
-        log('setup:secondThrowing:a');
-        return () => {
-            log('cleanup:secondThrowing:a');
-            throw new Error('cleanup of secondThrowing threw');
-        };
-    }, []);
+/** A component that outlives the ones next to it, so a test can see whether a throw took the rest of the screen with it. */
+function Survivor() {
+    useAnyEffect(track('survivor:a'), []);
     return null;
 }
 
-/** A screen whose first component fails to set up, leaving the rest of the screen to be released as usual. */
-function ThrowingSetupScreenContent() {
+/** A screen where the throwing cleanup and an ordinary one can go away together, leaving the survivor behind. */
+function ThrowingScreenContent({hasThrowing = true}: {hasThrowing?: boolean}) {
     return (
         <>
-            <ThrowingSetup />
+            {hasThrowing ? <ThrowingCleanup /> : null}
+            {hasThrowing ? <Subject value="a" /> : null}
             <Survivor />
         </>
     );
@@ -123,34 +89,6 @@ function DriftedScreen({children}: ScreenProps) {
         <ScreenActivityEffectBoundaryProvider isHidden>
             <Activity mode="visible">{children}</Activity>
         </ScreenActivityEffectBoundaryProvider>
-    );
-}
-
-/** A component that outlives the two above it, so a test can see whether the throw took the rest of the screen with it. */
-function Survivor() {
-    useAnyEffect(track('survivor:a'), []);
-    return null;
-}
-
-/** A screen where the throwing cleanup and an ordinary one can go away together, leaving the survivor behind. */
-function ThrowingScreenContent({hasThrowing = true}: {hasThrowing?: boolean}) {
-    return (
-        <>
-            {hasThrowing ? <ThrowingEffect /> : null}
-            {hasThrowing ? <Subject value="a" /> : null}
-            <Survivor />
-        </>
-    );
-}
-
-/** A throwing dependency effect next to an ordinary one, so a failure cannot hide work another call site owes. */
-function ThrowingChangingScreenContent({value}: {value: string}) {
-    return (
-        <>
-            <ThrowingChangingEffect value={value} />
-            <Subject value={value} />
-            <Survivor />
-        </>
     );
 }
 
@@ -273,7 +211,7 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
                 ['setup:throwing:a', 'setup:s:a', 'setup:survivor:a'],
                 ['cleanup:throwing:a', 'cleanup:s:a', 'cleanup:survivor:a'],
             ]);
-            expect(live.errors).toEqual(['Error: cleanup of throwing threw']);
+            expect(live.errors).toEqual(['Error: cleanup of throwing:a threw']);
 
             // And the boundary owes the screen the same, because one effect with a bug must not hold the others open
             expect(activity.commits).toEqual(live.commits);
@@ -306,8 +244,14 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
         });
 
         it('releases the rest of the screen when a dependency cleanup throws on the reveal', () => {
-            // Given a setup whose cleanup throws and a dependency change which Activity defers until the reveal
-            const content = (value: string) => <ThrowingChangingScreenContent value={value} />;
+            // Given a setup whose cleanup throws next to an ordinary one, and a dependency change deferred until the reveal
+            const content = (value: string) => (
+                <>
+                    <ThrowingCleanup value={value} />
+                    <Subject value={value} />
+                    <Survivor />
+                </>
+            );
             const liveSteps = [visible(content('a')), visible(content('b'))];
             const activitySteps = [visible(content('a')), hidden(content('a')), hidden(content('b')), visible(content('b'))];
 
@@ -317,14 +261,14 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // Then plain useEffect runs the next setup before React takes the failed tree down
             expect(live.commits.flat()).toEqual([
-                'setup:throwingChanging:a',
+                'setup:throwing:a',
                 'setup:s:a',
                 'setup:survivor:a',
-                'cleanup:throwingChanging:a',
+                'cleanup:throwing:a',
                 'cleanup:s:a',
-                'setup:throwingChanging:b',
+                'setup:throwing:b',
                 'setup:s:b',
-                'cleanup:throwingChanging:b',
+                'cleanup:throwing:b',
                 'cleanup:s:b',
                 'cleanup:survivor:a',
             ]);
@@ -340,7 +284,15 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
         it('reports every error of the teardown and rethrows only the first', () => {
             // Given a screen holding two cleanups that both throw when it leaves the stack
             const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
-            const steps = [visible(<TwoThrowingCleanupsScreenContent />)];
+            const steps = [
+                visible(
+                    <>
+                        <ThrowingCleanup />
+                        <ThrowingCleanup name="second" />
+                        <Survivor />
+                    </>,
+                ),
+            ];
 
             // When the screen leaves the navigation stack
             const activity = runCatching(useScreenActivityEffect, ActivityScreen, steps);
@@ -350,25 +302,15 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // Then every cleanup ran, the first error is what the teardown throws, and the second is reported rather
             // than swallowed, which is how React answers for more than one failing destroy
             expect(activity.commits).toEqual([
-                ['setup:throwing:a', 'setup:secondThrowing:a', 'setup:survivor:a'],
-                ['cleanup:throwing:a', 'cleanup:secondThrowing:a', 'cleanup:survivor:a'],
+                ['setup:throwing:a', 'setup:second:a', 'setup:survivor:a'],
+                ['cleanup:throwing:a', 'cleanup:second:a', 'cleanup:survivor:a'],
             ]);
-            expect(activity.errors).toEqual(['Error: cleanup of throwing threw']);
-            expect(reportedErrors.filter((message) => message.includes('cleanup of secondThrowing threw'))).toHaveLength(1);
+            expect(activity.errors).toEqual(['Error: cleanup of throwing:a threw']);
+            expect(reportedErrors.filter((message) => message.includes('cleanup of second:a threw'))).toHaveLength(1);
         });
     });
 
     describe('a second boundary next to it', () => {
-        function LeftEffect() {
-            useAnyEffect(track('left:a'), []);
-            return null;
-        }
-
-        function RightEffect() {
-            useAnyEffect(track('right:a'), []);
-            return null;
-        }
-
         it('keeps two screens with a boundary each independent', () => {
             // Given two screens of one navigator, each with its own screen of the behavior under test
             const runStack = (hook: AnyEffectHook, Screen: ComponentType<ScreenProps>) => {
@@ -380,16 +322,16 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
                     </AnyEffectHookProvider>
                 );
 
-                const {rerender, unmount} = render(stack(visible(<LeftEffect />), visible(<RightEffect />)));
+                const {rerender, unmount} = render(stack(visible(<Subject value="left" />), visible(<Subject value="right" />)));
                 const commits = [drainLog()];
 
-                rerender(stack(hidden(<LeftEffect />), visible(<RightEffect />)));
+                rerender(stack(hidden(<Subject value="left" />), visible(<Subject value="right" />)));
                 commits.push(drainLog());
 
-                rerender(stack(hidden(<LeftEffect />), visible(null)));
+                rerender(stack(hidden(<Subject value="left" />), visible(null)));
                 commits.push(drainLog());
 
-                rerender(stack(visible(<LeftEffect />), visible(null)));
+                rerender(stack(visible(<Subject value="left" />), visible(null)));
                 commits.push(drainLog());
 
                 unmount();
@@ -399,7 +341,7 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // When the left screen is covered and a component of the visible right screen then goes away
             // Then the cover of one screen defers nothing of the other, because each boundary answers for itself alone
-            expect(runStack(useScreenActivityEffect, ActivityScreen)).toEqual([['setup:left:a', 'setup:right:a'], [], ['cleanup:right:a'], [], ['cleanup:left:a']]);
+            expect(runStack(useScreenActivityEffect, ActivityScreen)).toEqual([['setup:s:left', 'setup:s:right'], [], ['cleanup:s:right'], [], ['cleanup:s:left']]);
 
             // And that is what two screens that both stay live in the background do
             expect(runStack(useEffect, LiveScreen)).toEqual(runStack(useScreenActivityEffect, ActivityScreen));
@@ -456,7 +398,6 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // Then the sweep of the inner boundary answers for it, exactly as it does on a screen of its own
             expect(live).toEqual([['setup:s:a', 'setup:s:b'], [], ['cleanup:s:b'], [], ['cleanup:s:a']]);
             expect(nested).toEqual([['setup:s:a', 'setup:s:b'], [], [], ['cleanup:s:b'], ['cleanup:s:a']]);
-            expect(nested.flat()).toEqual(live.flat());
         });
 
         it('releases the nested screen that was removed while the screen holding it was hidden', () => {
@@ -481,7 +422,6 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // and swept like any other entry whose cleanup a cover skipped and which did not come back
             expect(live).toEqual([['setup:s:outer', 'setup:s:a'], [], ['cleanup:s:a'], [], ['cleanup:s:outer']]);
             expect(removed).toEqual([['setup:s:outer', 'setup:s:a'], [], [], ['cleanup:s:a'], ['cleanup:s:outer']]);
-            expect(removed.flat()).toEqual(live.flat());
         });
 
         it('releases through the boundary above before a fresh nested boundary sets its subtree up', () => {
@@ -504,7 +444,6 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // boundary asks the boundary above to release what did not come back before it sets up itself
             expect(live).toEqual([['setup:s:a'], [], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
             expect(removed).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
-            expect(removed.flat()).toEqual(live.flat());
         });
 
         it('holds a nested screen removed while hidden until the outer screen runs an effect again', () => {
@@ -565,7 +504,14 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
     describe('a setup that throws', () => {
         it('leaves the boundary holding nothing for the call site whose setup failed', () => {
             // Given a screen whose first effect throws while it is acquiring what it needs
-            const steps = [visible(<ThrowingSetupScreenContent />)];
+            const steps = [
+                visible(
+                    <>
+                        <ThrowingSetup />
+                        <Survivor />
+                    </>,
+                ),
+            ];
 
             // When the screen mounts and then leaves the navigation stack
             const live = runCatching(useEffect, LiveScreen, steps);
@@ -573,7 +519,7 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // Then the failed setup left no cleanup behind, and the rest of the screen is set up and released as usual
             expect(live.commits).toEqual([['setup:throwingSetup:a', 'setup:survivor:a', 'cleanup:survivor:a'], []]);
-            expect(live.errors).toEqual(['Error: setup of throwingSetup threw']);
+            expect(live.errors).toEqual(['Error: setup of throwingSetup:a threw']);
 
             // And the boundary is the same, because an entry only counts as set up once its body returned
             expect(activity.commits).toEqual(live.commits);
@@ -584,7 +530,10 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // Given a setup that throws for the value a dependency change moved to behind the cover
             const content = (value: string) => (
                 <>
-                    <ThrowingChangingSetup value={value} />
+                    <ThrowingSetup
+                        value={value}
+                        throwsFor="b"
+                    />
                     <Subject value={value} />
                 </>
             );
@@ -607,7 +556,7 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
         it('still runs the next setup when the release it runs inline throws', () => {
             // Given the drifted shape, which is the one place a body releases inline because no destroy ran before it
             const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
-            const steps = [visible(<ThrowingChangingEffect value="a" />), visible(<ThrowingChangingEffect value="b" />)];
+            const steps = [visible(<ThrowingCleanup value="a" />), visible(<ThrowingCleanup value="b" />)];
 
             // When the dependency changes and the release the body runs first throws
             const drifted = runCatching(useScreenActivityEffect, DriftedScreen, steps);
@@ -615,8 +564,8 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // Then the setup of the new dependency still ran and the error surfaced after it, and the error taking the
             // unprotected tree down releases that setup in the same commit, as it does with useEffect on a live screen
-            expect(drifted.commits).toEqual([['setup:throwingChanging:a'], ['cleanup:throwingChanging:a', 'setup:throwingChanging:b', 'cleanup:throwingChanging:b'], []]);
-            expect(drifted.errors).toEqual(['Error: cleanup of throwingChanging:a threw']);
+            expect(drifted.commits).toEqual([['setup:throwing:a'], ['cleanup:throwing:a', 'setup:throwing:b', 'cleanup:throwing:b'], []]);
+            expect(drifted.errors).toEqual(['Error: cleanup of throwing:a threw']);
         });
 
         it('reports the drift in development, which is the only place the mis-wiring can be seen', () => {

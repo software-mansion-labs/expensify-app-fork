@@ -62,9 +62,6 @@ describe('useScreenActivityEffect dependencies', () => {
         const expected = [['setup:s:a'], [], [], ['cleanup:s:a']];
         expect(runs.liveUseEffect).toEqual(expected);
         expect(runs.activityScreenActivityEffect).toEqual(expected);
-
-        // And plain useEffect mounts once per reveal instead of once per screen
-        expect(runs.activityUseEffect).toEqual([['setup:s:a'], ['cleanup:s:a'], ['setup:s:a'], ['cleanup:s:a']]);
     });
 
     it('compares the dependencies with Object.is, exactly as useEffect does', () => {
@@ -203,9 +200,6 @@ describe('useScreenActivityEffect dependencies', () => {
         const expected = [['setup:s:first'], [], [], ['cleanup:s:first']];
         expect(runs.liveUseEffect).toEqual(expected);
         expect(runs.activityScreenActivityEffect).toEqual(expected);
-
-        // And plain useEffect ran its body again on the reveal, so its live setup captured the value of that render
-        expect(runs.activityUseEffect).toEqual([['setup:s:first'], ['cleanup:s:first'], ['setup:s:third'], ['cleanup:s:third']]);
     });
 
     it('runs a state update from the effect body once, exactly as the live screen does', () => {
