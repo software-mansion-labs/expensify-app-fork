@@ -21,6 +21,20 @@ The mental model: **hide + reveal = full effect unmount + remount with surviving
 - During a window resize, the screen stays in visible mode to recalculate its layout.
 - While covered, the content stays painted but is inert to touch and accessibility.
 
+## Effects that must survive a cover
+
+`useScreenActivityEffect` is a passive-effect escape hatch for work that must remain set up while an Activity screen is covered. It keeps the existing setup through a hide/reveal cycle, but still runs its cleanup when the dependencies change, the component is removed, or the screen leaves the navigation stack. Outside a screen activity boundary it behaves like `useEffect`.
+
+It does not make the hidden subtree live: other effects and `useOnyx` subscriptions remain disconnected, and element refs remain detached. A retained listener must therefore tolerate running while the rest of its component is inactive. It is also not a replacement for `useLayoutEffect`.
+
+Compared with `useEffect` on a screen that stays live, it has these limits:
+
+- Dependency changes while hidden are deferred and coalesced until reveal, so the hook cannot observe the cover edge or every intermediate value.
+- A component removed while hidden is released by the first effect of the screen that runs after the removal: on the reveal if the reveal runs one, otherwise right before the setup of the next effect that runs, otherwise when the screen is popped. Suspense can look like such a removal and cause an unnecessary cleanup and setup.
+- The reveal commit runs every pending release of the subtree before any setup, releasing components removed while hidden first, so a single-owner resource is never held by two owners at once. Work that lands in a later commit runs inline, as on a live screen. Screen teardown still follows registration order rather than React tree order, so avoid work that depends on releasing before or after a sibling.
+- A cleanup that throws is reported and the rest of the batch still runs, including the next setup of the call site whose cleanup threw, which is what React does with a destroy that throws. An error the boundary rethrows on a reveal or on pop reaches the error boundary above the screen, not one inside it.
+- In dev, a `StrictMode` above the boundary makes React double-invoke every effect of a revealed `<Activity>`, and the hook cannot tell that cleanup from a removal, so the effect is cleaned up and set up again on every reveal. The wrapper's own gate sits below the boundary and does not do this; `USE_REACT_STRICT_MODE_IN_DEV` wraps the whole app and does, so keep it off when checking what the hook keeps alive.
+
 ## Regressions caused by unsafe effects
 
 Effects that assume "mount happens once" or "cleanup means the user left" cause these classes of bugs:

@@ -1,11 +1,12 @@
 import AlwaysPaintedView from '@components/AlwaysPaintedView';
 
 import useDeferVisibleUntilFocusTransitionEnd from '@hooks/useDeferVisibleUntilFocusTransitionEnd';
+import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
 
 import type NonTopScreenWrapperProps from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/nonTopScreenWrapperTypes';
 
 import {useIsFocused} from '@react-navigation/native';
-import React, {Activity, useEffect, useState, useSyncExternalStore} from 'react';
+import React, {useEffect, useState, useSyncExternalStore} from 'react';
 
 import DevStrictModeMountGate from './StrictModeMountGate';
 import {getIsWindowSizeChanging, subscribeToWindowSizeChange} from './windowSizeChangeStore';
@@ -21,10 +22,12 @@ const FIRST_RENDER_FALLBACK_DELAY_MS = 100;
  * covered screen that is still shown (for example dimmed under the RHP overlay) does not disappear, and it takes
  * that content out of accessibility and touch handling while it is covered.
  *
- * StrictMode is the qualification gate for screens that opt into Activity. Its double effect mount in dev exercises
- * the same cleanup and re-run lifecycle as a hide and reveal cycle, so an effect that would misbehave under a cover
- * fails during development instead. StrictModeMountGate commits StrictMode one commit ahead of the screen content,
- * which is what makes React run that cycle for a StrictMode nested below the root.
+ * StrictMode is the qualification gate for screens that opt into Activity. Its double effect mount in dev puts an
+ * ordinary effect through the cleanup and re-run that a hide and reveal cycle puts it through, so an effect that would
+ * misbehave under a cover fails during development instead. An effect written with useScreenActivityEffect is the
+ * exception: a cover no longer cleans it up, so the gate exercises its removal path rather than the cover it now
+ * survives. StrictModeMountGate commits StrictMode one commit ahead of the screen content, which is what makes React
+ * run that cycle for a StrictMode nested below the root.
  *
  * The mode does not simply mirror the covered state, because a covered screen sometimes has to render as visible.
  * Each case commented below compensates for a specific property of a hidden Activity.
@@ -75,12 +78,16 @@ function ScreenActivityWrapper({isScreenBlurred, children}: NonTopScreenWrapperP
 
     const mode = isKeptVisible || isShownAfterTransition || (!isScreenCovered && isRevealLatched) ? 'visible' : 'hidden';
 
+    // The Activity comes with the boundary that serves it, because a hide unmounts everything inside the Activity while
+    // the screen is still on the stack, and a component cannot observe its own hiding. The boundary reports that hide
+    // and its own unmount to useScreenActivityEffect, which is how an effect of the subtree tells a cleanup of the
+    // screen from its own.
     return (
-        <Activity mode={mode}>
+        <ActivityWithEffectBoundary mode={mode}>
             <AlwaysPaintedView inert={isScreenCovered}>
                 <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
             </AlwaysPaintedView>
-        </Activity>
+        </ActivityWithEffectBoundary>
     );
 }
 
