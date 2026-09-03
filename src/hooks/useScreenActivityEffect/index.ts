@@ -51,6 +51,12 @@ function areDepsEqual(previous: DependencyList | undefined, next: DependencyList
  *
  * A cleanup or setup that throws while the boundary runs it, on the reveal or when the screen leaves the stack, reaches
  * the error boundary above the screen rather than one inside it.
+ *
+ * In development, a <StrictMode> above the boundary, which CONFIG.USE_REACT_STRICT_MODE_IN_DEV puts above the whole
+ * app, makes React run the cleanup and the setup of every effect of a revealed <Activity> once more, and that cleanup
+ * cannot be told from a removal, so the effect goes through cleanup and setup on every reveal there. The gate
+ * ScreenActivityWrapper renders below the boundary does not do that, so keep the app-wide flag off when checking what
+ * this hook keeps alive.
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     const boundary = useContext(ScreenActivityEffectBoundaryContext);
