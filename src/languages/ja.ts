@@ -2280,6 +2280,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click、ナビゲーション、ui.load',
             showBranchNameInTitle: 'ブラウザのタイトルにブランチ名を表示',
             confirmServerChangeDescription: 'QA は独立したデータベースのため、QA への切り替えと QA からの切り替えではサインアウトされます。',
+            serverPinnedDescription: 'このビルドは常に単一のサーバーに接続するため、ここでは変更できません。',
         },
         security: 'セキュリティ',
         signOut: 'サインアウト',

@@ -4,6 +4,7 @@ import {ModalActions} from '@components/Modal/Global/ModalContext';
 import SelectionList from '@components/SelectionList';
 import TestToolMenu from '@components/TestToolMenu';
 
+import type {ActiveServerState} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import Navigation from '@libs/Navigation/Navigation';
 import type navigationRef from '@libs/Navigation/navigationRef';
@@ -15,7 +16,6 @@ import {setActiveServer} from '@userActions/User';
 
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 
@@ -25,14 +25,28 @@ import React from 'react';
 
 import createMock from '../utils/createMock';
 
-let mockActiveServer: ValueOf<typeof CONST.SERVER> = CONST.SERVER.PRODUCTION;
-
 // jest.mock factories cannot close over non-`mock`-prefixed module scope
-const mockActiveServerKey = ONYXKEYS.ACTIVE_SERVER;
+const mockQAServer = CONST.SERVER.QA;
+let mockActiveServer: ValueOf<typeof CONST.SERVER> = CONST.SERVER.PRODUCTION;
+let mockIsPinnedByEnvironment = false;
+
+// The resolved server, not the stored one, is what the row and the selector show. How it resolves is
+// `ApiUtilsTest` and its per-environment siblings; here it is an input.
+jest.mock('@hooks/useActiveServer', () => ({
+    __esModule: true,
+    default: (): ActiveServerState => ({activeServer: mockActiveServer, isPinnedByEnvironment: mockIsPinnedByEnvironment}),
+}));
+
+jest.mock('@libs/ApiUtils', () => ({
+    ...jest.requireActual<Record<string, unknown>>('@libs/ApiUtils'),
+    getActiveServer: () => mockActiveServer,
+    isQAServerActive: () => mockActiveServer === mockQAServer,
+    getCommandURL: () => 'https://test-api.expensify.com/api/Ping?',
+}));
 
 jest.mock('@hooks/useOnyx', () => ({
     __esModule: true,
-    default: (key: string) => [key === mockActiveServerKey ? mockActiveServer : undefined, {status: 'loaded'}],
+    default: () => [undefined, {status: 'loaded'}],
 }));
 
 let mockIsAuthenticated = false;
@@ -123,6 +137,7 @@ const mockTestToolsModalState = (backTo?: string) => {
 describe('Server selection', () => {
     beforeEach(() => {
         mockActiveServer = CONST.SERVER.PRODUCTION;
+        mockIsPinnedByEnvironment = false;
         mockIsAuthenticated = false;
         jest.clearAllMocks();
         jest.mocked(isQAAuthConfigured).mockReturnValue(false);
@@ -145,6 +160,16 @@ describe('Server selection', () => {
 
             expect(screen.getByLabelText('initialSettingsPage.troubleshoot.server')).toBeOnTheScreen();
             expect(screen.queryByText('initialSettingsPage.troubleshoot.useStagingServer')).not.toBeOnTheScreen();
+        });
+
+        it('states the pinned server without offering the page, so a QA build cannot advertise a choice it ignores', () => {
+            mockActiveServer = CONST.SERVER.QA;
+            mockIsPinnedByEnvironment = true;
+            render(<TestToolMenu serverPageRoute={ROUTES.TEST_TOOLS_SERVER} />);
+
+            expect(screen.getByText('initialSettingsPage.troubleshoot.servers.qa.label')).toBeOnTheScreen();
+            expect(screen.queryByLabelText('initialSettingsPage.troubleshoot.server')).not.toBeOnTheScreen();
+            expect(Navigation.navigate).not.toHaveBeenCalled();
         });
     });
 
@@ -173,6 +198,19 @@ describe('Server selection', () => {
             pressSave();
 
             expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.STAGING);
+        });
+
+        it('reports every server as fixed on a build that pins one, the pinned server included', () => {
+            mockActiveServer = CONST.SERVER.QA;
+            mockIsPinnedByEnvironment = true;
+            render(<ServerSelector />);
+
+            const {data, isDisabled, customListHeaderContent} = getSelectionListProps();
+            expect(data.map((item) => item.keyForList)).toEqual([CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING, CONST.SERVER.QA]);
+            expect(isDisabled).toBe(true);
+            expect(data.find((item) => item.isSelected)?.keyForList).toBe(CONST.SERVER.QA);
+            expect(customListHeaderContent).toBeTruthy();
+            expect(getConfirmButtonOptions().showButton).toBe(false);
         });
 
         it('offers QA as a third option once its auth is configured', () => {

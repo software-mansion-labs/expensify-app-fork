@@ -2303,6 +2303,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click, navigazione, ui.load',
             showBranchNameInTitle: 'Mostra nome del ramo nel titolo del browser',
             confirmServerChangeDescription: 'Passare a QA o uscirne effettua la disconnessione, perché QA è un database separato.',
+            serverPinnedDescription: 'Questa build comunica sempre con un solo server, quindi non può essere modificato qui.',
         },
         security: 'Sicurezza',
         signOut: 'Esci',

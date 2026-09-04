@@ -2360,6 +2360,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOps: 'Επισημασμένα ονόματα span',
             sentryHighlightedSpanOpsPlaceholder: 'κλικ αλληλεπίδρασης διεπαφής, πλοήγηση, φόρτωση διεπαφής',
             confirmServerChangeDescription: 'Η εναλλαγή προς ή από το QA σας αποσυνδέει, επειδή το QA είναι ξεχωριστή βάση δεδομένων.',
+            serverPinnedDescription: 'Αυτή η έκδοση επικοινωνεί πάντα με έναν διακομιστή, οπότε δεν μπορεί να αλλάξει εδώ.',
         },
         security: 'Ασφάλεια',
         signOut: 'Αποσύνδεση',

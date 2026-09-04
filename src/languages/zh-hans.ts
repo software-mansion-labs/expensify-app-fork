@@ -2220,6 +2220,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click，navigation，ui.load',
             showBranchNameInTitle: '在浏览器标题中显示分支名称',
             confirmServerChangeDescription: '切换到 QA 或从 QA 切换出去都会将你退出登录，因为 QA 是独立的数据库。',
+            serverPinnedDescription: '此版本始终连接到单一服务器，因此无法在此处更改。',
         },
         security: '安全',
         signOut: '退出登录',

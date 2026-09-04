@@ -2329,6 +2329,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'kliknięcie interfejsu, nawigacja, ładowanie interfejsu',
             showBranchNameInTitle: 'Pokaż nazwę gałęzi w tytule przeglądarki',
             confirmServerChangeDescription: 'Przejście do QA lub wyjście z niego wyloguje Cię, ponieważ QA to osobna baza danych.',
+            serverPinnedDescription: 'Ta wersja zawsze łączy się z jednym serwerem, więc nie można tego tutaj zmienić.',
         },
         security: 'Bezpieczeństwo',
         signOut: 'Wyloguj się',

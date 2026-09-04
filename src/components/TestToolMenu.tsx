@@ -1,3 +1,4 @@
+import useActiveServer from '@hooks/useActiveServer';
 import useIsAgentAccount from '@hooks/useIsAgentAccount';
 import useIsAuthenticated from '@hooks/useIsAuthenticated';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
@@ -7,7 +8,6 @@ import {useSidebarOrderedReportsActions} from '@hooks/useSidebarOrderedReports';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getActiveServer} from '@libs/ApiUtils';
 import Navigation from '@libs/Navigation/Navigation';
 
 import variables from '@styles/variables';
@@ -42,7 +42,7 @@ type TestToolMenuProps = {
 function TestToolMenu({serverPageRoute}: TestToolMenuProps) {
     const [network] = useOnyx(ONYXKEYS.NETWORK);
     const [isUsingImportedState] = useOnyx(ONYXKEYS.IS_USING_IMPORTED_STATE);
-    const [activeServer = getActiveServer()] = useOnyx(ONYXKEYS.ACTIVE_SERVER);
+    const {activeServer, isPinnedByEnvironment} = useActiveServer();
     const [isDebugModeEnabled = false] = useOnyx(ONYXKEYS.IS_DEBUG_MODE_ENABLED);
     const [shouldShowBranchNameInTitle = false] = useOnyx(ONYXKEYS.SHOULD_SHOW_BRANCH_NAME_IN_TITLE);
     const styles = useThemeStyles();
@@ -56,6 +56,27 @@ function TestToolMenu({serverPageRoute}: TestToolMenuProps) {
 
     // Agent accounts can't have biometric multifactor authentication, so hide the biometrics test row for them.
     const isAgentAccount = useIsAgentAccount();
+
+    // A pinned build ignores what the selector would store, so the row states the server instead of offering it.
+    // Without the pressable around it, the row's own title has to carry the label.
+    const serverRow = (
+        <TestToolRow
+            title={translate('initialSettingsPage.troubleshoot.server')}
+            isTitleAccessible={isPinnedByEnvironment}
+        >
+            <View style={[styles.flexRow, styles.alignItemsCenter, styles.gap1]}>
+                <Text style={styles.textSupporting}>{translate(`initialSettingsPage.troubleshoot.servers.${activeServer}.label`)}</Text>
+                {!isPinnedByEnvironment && (
+                    <Icon
+                        src={icons.ArrowRight}
+                        fill={theme.icon}
+                        width={variables.iconSizeSmall}
+                        height={variables.iconSizeSmall}
+                    />
+                )}
+            </View>
+        </TestToolRow>
+    );
 
     return (
         <>
@@ -138,29 +159,19 @@ function TestToolMenu({serverPageRoute}: TestToolMenuProps) {
             {/* This row enables QA, internal testers and external devs to take advantage of sandbox environments
         for 3rd party services like Plaid and Onfido. It is not rendered for internal devs, as they make
         environment changes directly to the .env file. */}
-            {!CONFIG.IS_USING_LOCAL_WEB && (
-                <PressableWithoutFeedback
-                    accessibilityLabel={translate('initialSettingsPage.troubleshoot.server')}
-                    sentryLabel={CONST.SENTRY_LABEL.TEST_TOOL_MENU.SERVER}
-                    role={CONST.ROLE.BUTTON}
-                    onPress={() => Navigation.navigate(serverPageRoute)}
-                >
-                    <TestToolRow
-                        title={translate('initialSettingsPage.troubleshoot.server')}
-                        isTitleAccessible={false}
+            {!CONFIG.IS_USING_LOCAL_WEB &&
+                (isPinnedByEnvironment ? (
+                    serverRow
+                ) : (
+                    <PressableWithoutFeedback
+                        accessibilityLabel={translate('initialSettingsPage.troubleshoot.server')}
+                        sentryLabel={CONST.SENTRY_LABEL.TEST_TOOL_MENU.SERVER}
+                        role={CONST.ROLE.BUTTON}
+                        onPress={() => Navigation.navigate(serverPageRoute)}
                     >
-                        <View style={[styles.flexRow, styles.alignItemsCenter, styles.gap1]}>
-                            <Text style={styles.textSupporting}>{translate(`initialSettingsPage.troubleshoot.servers.${activeServer}.label`)}</Text>
-                            <Icon
-                                src={icons.ArrowRight}
-                                fill={theme.icon}
-                                width={variables.iconSizeSmall}
-                                height={variables.iconSizeSmall}
-                            />
-                        </View>
-                    </TestToolRow>
-                </PressableWithoutFeedback>
-            )}
+                        {serverRow}
+                    </PressableWithoutFeedback>
+                ))}
 
             {/* When toggled the app will be forced offline. */}
             <TestToolRow

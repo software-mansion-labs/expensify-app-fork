@@ -82,7 +82,15 @@ jest.mock('@libs/actions/MultifactorAuthentication', () => ({
 }));
 
 const mockProductionServer = CONST.SERVER.PRODUCTION;
+
+// This suite is about the biometrics rows, so the server row is held at an unpinned production build
+jest.mock('@hooks/useActiveServer', () => ({
+    __esModule: true,
+    default: () => ({activeServer: mockProductionServer, isPinnedByEnvironment: false}),
+}));
+
 jest.mock('@libs/ApiUtils', () => ({
+    ...jest.requireActual<Record<string, unknown>>('@libs/ApiUtils'),
     isQAServerActive: () => false,
     getActiveServer: () => mockProductionServer,
     getCommandURL: () => 'https://test-api.expensify.com/api/Ping?',

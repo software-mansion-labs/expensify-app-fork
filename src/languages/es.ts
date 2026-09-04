@@ -2227,6 +2227,7 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.click, navigation, ui.load',
             showBranchNameInTitle: 'Mostrar nombre de rama en el título del navegador',
             confirmServerChangeDescription: 'Cambiar a QA o salir de QA cierra tu sesión, porque QA es una base de datos independiente.',
+            serverPinnedDescription: 'Esta versión siempre se conecta a un solo servidor, por lo que no se puede cambiar aquí.',
         },
         security: 'Seguridad',
         restoreStashed: 'Restablecer login guardado',

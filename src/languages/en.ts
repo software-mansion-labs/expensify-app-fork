@@ -2380,6 +2380,7 @@ const translations = {
                 qa: {label: 'QA', description: 'Experimental environment used for testing'},
             },
             confirmServerChangeDescription: 'Switching to or from QA signs you out, because QA is a separate database.',
+            serverPinnedDescription: 'This build always talks to one server, so it cannot be changed here.',
             forceOffline: 'Force offline',
             simulatePoorConnection: 'Simulate poor internet connection',
             simulateFailingNetworkRequests: 'Simulate failing network requests',

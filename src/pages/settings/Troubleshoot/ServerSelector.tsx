@@ -3,13 +3,14 @@ import {ModalActions} from '@components/Modal/Global/ModalContext';
 import SelectionList from '@components/SelectionList';
 import SingleSelectListItem from '@components/SelectionList/ListItem/SingleSelectListItem';
 import type {ListItem} from '@components/SelectionList/ListItem/types';
+import Text from '@components/Text';
 
+import useActiveServer from '@hooks/useActiveServer';
 import useConfirmModal from '@hooks/useConfirmModal';
 import useIsAuthenticated from '@hooks/useIsAuthenticated';
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
+import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getActiveServer} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
@@ -17,7 +18,6 @@ import Navigation from '@libs/Navigation/Navigation';
 import {setActiveServer} from '@userActions/User';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import type {ValueOf} from 'type-fest';
 
@@ -35,16 +35,22 @@ type ServerSelectorProps = {
 };
 
 function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelectorProps) {
+    const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {showConfirmModal} = useConfirmModal();
     const isAuthenticated = useIsAuthenticated();
-    const [activeServer = getActiveServer()] = useOnyx(ONYXKEYS.ACTIVE_SERVER);
+    const {activeServer, isPinnedByEnvironment} = useActiveServer();
 
-    const [selectedServer, setSelectedServer] = useState<Server>(activeServer);
+    // The resolved server arrives a tick after mount, so the selection follows it until a row is picked
+    const [pickedServer, setPickedServer] = useState<Server>();
+    const selectedServer = pickedServer ?? activeServer;
 
-    const selectableServers = [...ALWAYS_SELECTABLE_SERVERS, ...(isQAAuthConfigured() ? [CONST.SERVER.QA] : [])];
+    const offeredServers: Server[] = [...ALWAYS_SELECTABLE_SERVERS, ...(isQAAuthConfigured() ? [CONST.SERVER.QA] : [])];
 
-    const servers: ServerListItem[] = selectableServers.map((server) => ({
+    // A pinned build fixes the answer, so its server is listed even where the selector would not offer it
+    const listedServers: Server[] = offeredServers.includes(activeServer) ? offeredServers : [...offeredServers, activeServer];
+
+    const servers: ServerListItem[] = listedServers.map((server) => ({
         text: translate(`initialSettingsPage.troubleshoot.servers.${server}.label`),
         alternateText: translate(`initialSettingsPage.troubleshoot.servers.${server}.description`),
         keyForList: server,
@@ -65,7 +71,7 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
                 shouldShowCancelButton: true,
             });
             if (result.action !== ModalActions.CONFIRM) {
-                setSelectedServer(activeServer);
+                setPickedServer(undefined);
                 return;
             }
         }
@@ -73,7 +79,7 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
     };
 
     const confirmButtonOptions = {
-        showButton: true,
+        showButton: !isPinnedByEnvironment,
         text: translate('common.save'),
         onConfirm: () => {
             confirmAndApplyServerChange().catch((error: unknown) => {
@@ -92,9 +98,14 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
             <SelectionList
                 data={servers}
                 ListItem={SingleSelectListItem}
-                onSelectRow={(server: ServerListItem) => setSelectedServer(server.keyForList)}
+                onSelectRow={(server: ServerListItem) => setPickedServer(server.keyForList)}
                 shouldSingleExecuteRowSelect
                 confirmButtonOptions={confirmButtonOptions}
+                // A pinned build ignores whatever is stored, so the rows report the servers rather than offering them
+                isDisabled={isPinnedByEnvironment}
+                customListHeaderContent={
+                    isPinnedByEnvironment ? <Text style={[styles.mh5, styles.mv3]}>{translate('initialSettingsPage.troubleshoot.serverPinnedDescription')}</Text> : undefined
+                }
                 initiallyFocusedItemKey={activeServer}
                 addBottomSafeAreaPadding={shouldAddBottomSafeAreaPadding}
             />
