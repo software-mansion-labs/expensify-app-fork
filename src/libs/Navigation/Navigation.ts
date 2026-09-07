@@ -7,7 +7,7 @@ import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import {setupHadTabNavigation} from '@libs/hadTabNavigation';
 import Log from '@libs/Log';
 import {skipNextFocusRestore} from '@libs/NavigationFocusReturn';
-import {shallowCompare} from '@libs/ObjectUtils';
+import {isRecord, shallowCompare} from '@libs/ObjectUtils';
 import {getSpan, startSpan} from '@libs/telemetry/activeSpans';
 
 import variables from '@styles/variables';
@@ -57,7 +57,7 @@ import isReportOpenInRHP from './helpers/isReportOpenInRHP';
 import isReportTopmostSplitNavigator from './helpers/isReportTopmostSplitNavigator';
 import isSideModalNavigator from './helpers/isSideModalNavigator';
 import linkTo from './helpers/linkTo';
-import getMinimalAction from './helpers/linkTo/getMinimalAction';
+import getMinimalAction, {hasMatchingSplitScope} from './helpers/linkTo/getMinimalAction';
 import {popAndRealignMfaMarker} from './helpers/mfaModalMarkerPreservation';
 import replaceWithSplitNavigator from './helpers/replaceWithSplitNavigator';
 import setNavigationActionToMicrotaskQueue from './helpers/setNavigationActionToMicrotaskQueue';
@@ -70,6 +70,30 @@ type FocusedScreen = {
     name: string;
     params?: Record<string, unknown>;
 };
+
+type NestedActionTarget = {
+    screen: string;
+    params: Record<string, unknown> | undefined;
+    path?: string;
+};
+
+function getNestedActionTarget(payload: unknown): NestedActionTarget | undefined {
+    if (!isRecord(payload)) {
+        return;
+    }
+
+    const nestedParams = payload.params;
+    if (!isRecord(nestedParams) || typeof nestedParams.screen !== 'string') {
+        return;
+    }
+
+    return {
+        screen: nestedParams.screen,
+        // NavigationAction['payload'] is typed `object`, so an unvalidated value would reach the router as route params.
+        params: isRecord(nestedParams.params) ? nestedParams.params : undefined,
+        path: typeof nestedParams.path === 'string' ? nestedParams.path : undefined,
+    };
+}
 
 // Modality is module-load (must catch the first interaction); focus-return runs under NavigationRoot (needs navigationRef + a teardown point).
 setupHadTabNavigation();
@@ -468,9 +492,10 @@ function goUp(backToRoute: Route, options?: GoBackOptions): boolean {
         return false;
     }
 
-    const {action: minimalAction, targetState} = getMinimalAction(action, rootState);
+    const {action: minimalAction, targetState, isCrossScopeSplitPush} = getMinimalAction(action, rootState);
+    const minimalActionPayload = minimalAction.payload;
 
-    if (minimalAction.type !== CONST.NAVIGATION.ACTION_TYPE.NAVIGATE || !targetState) {
+    if ((minimalAction.type !== CONST.NAVIGATION.ACTION_TYPE.NAVIGATE && !isCrossScopeSplitPush) || !targetState) {
         Log.hmmm('[Navigation] Unable to go up. Minimal action type is wrong.');
         return false;
     }
@@ -509,13 +534,66 @@ function goUp(backToRoute: Route, options?: GoBackOptions): boolean {
         return true;
     }
 
-    const indexOfBackToRoute = targetState.routes.findLastIndex((route) => doesRouteMatchToMinimalActionPayload(route, minimalAction, compareParams));
+    const indexOfBackToRoute = targetState.routes.findLastIndex((route) =>
+        isCrossScopeSplitPush ? hasMatchingSplitScope(route, minimalActionPayload) : doesRouteMatchToMinimalActionPayload(route, minimalAction, compareParams),
+    );
     const distanceToPop = targetState.routes.length - indexOfBackToRoute - 1;
 
     // If we need to pop more than one route from rootState, we replace the current route to not lose visited routes from the navigation state
     if (indexOfBackToRoute === -1 || (isRootNavigatorState(targetState) && distanceToPop > 1)) {
         const replaceAction = {...minimalAction, type: CONST.NAVIGATION.ACTION_TYPE.REPLACE} as NavigationAction;
         dispatch(replaceAction);
+        return true;
+    }
+
+    if (isCrossScopeSplitPush) {
+        const matchingSplitState = targetState.routes.at(indexOfBackToRoute)?.state;
+        const nestedTarget = getNestedActionTarget(minimalActionPayload);
+        if (!matchingSplitState?.key || !nestedTarget) {
+            // Replace rather than returning false: a Back press that silently does nothing strands the user.
+            Log.hmmm('[Navigation] Scoped split target is missing nested state. Replacing the active split instead.');
+            dispatch({...minimalAction, type: CONST.NAVIGATION.ACTION_TYPE.REPLACE} as NavigationAction);
+            return true;
+        }
+
+        const nestedAction: Writable<NavigationAction> = {
+            type: CONST.NAVIGATION.ACTION_TYPE.NAVIGATE,
+            payload: {
+                name: nestedTarget.screen,
+                params: nestedTarget.params,
+                path: nestedTarget.path,
+            },
+            target: matchingSplitState.key,
+        };
+        const indexOfNestedBackToRoute = matchingSplitState.routes.findLastIndex((route) => doesRouteMatchToMinimalActionPayload(route, nestedAction, compareParams));
+
+        // findLastIndex scans past targetState.index, so a stale state could match at or above the active route.
+        // StackActions.pop(0) would be a no-op that leaks the just-armed focus-restore skip into the next Back/Esc.
+        if (distanceToPop > 0) {
+            dispatch({...StackActions.pop(distanceToPop), target: targetState.key});
+        }
+
+        const splitNavigatorName = isRecord(minimalActionPayload) ? minimalActionPayload.name : undefined;
+        const sidebarScreen = typeof splitNavigatorName === 'string' && isSplitNavigatorName(splitNavigatorName) ? SPLIT_TO_SIDEBAR[splitNavigatorName] : undefined;
+        const focusedRouteInSplit = matchingSplitState.routes.at(matchingSplitState.index ?? -1);
+        // Keep the sidebar in history when the restored split has no central screen to replace.
+        if (indexOfNestedBackToRoute === -1 && nestedTarget.screen !== sidebarScreen && focusedRouteInSplit?.name === sidebarScreen) {
+            dispatch({...nestedAction, type: CONST.NAVIGATION.ACTION_TYPE.PUSH});
+            return true;
+        }
+
+        if (!compareParams) {
+            dispatch({...nestedAction, type: CONST.NAVIGATION.ACTION_TYPE.POP_TO});
+            return true;
+        }
+        if (indexOfNestedBackToRoute === -1) {
+            dispatch({...nestedAction, type: CONST.NAVIGATION.ACTION_TYPE.REPLACE});
+            return true;
+        }
+        const nestedDistanceToPop = matchingSplitState.routes.length - indexOfNestedBackToRoute - 1;
+        if (nestedDistanceToPop > 0) {
+            dispatch({...StackActions.pop(nestedDistanceToPop), target: matchingSplitState.key});
+        }
         return true;
     }
 
