@@ -22,6 +22,9 @@ type PKCEPair = PKCEModule.PKCEPair;
 
 const AUTHORIZE_URL = 'https://team.cloudflareaccess.com/cdn-cgi/access/oauth/authorization?mock=1';
 
+// OAuthClient imports CONFIG, whose native dependency is unavailable in the Jest environment.
+jest.mock('@src/CONFIG', () => ({__esModule: true, default: {QA_AUTH: {CLIENT_ID: 'client-123'}}}));
+
 // The module gates its subscription on a complete config. Everything under test is behind it
 jest.mock('@libs/CloudflareAccess/Config', () => ({
     __esModule: true,

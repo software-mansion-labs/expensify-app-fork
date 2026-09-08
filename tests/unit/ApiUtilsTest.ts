@@ -35,7 +35,7 @@ jest.mock('@src/CONFIG', () => ({__esModule: true, default: mockConfig}));
 
 Onyx.init({keys: ONYXKEYS});
 
-// Lazy-require so the @src/CONFIG mock factory sees an initialized mockConfig — otherwise the
+// Lazy-require so the @src/CONFIG mock factory sees an initialized mockConfig. Otherwise the
 // hoisted import order would resolve CONFIG.default while mockConfig was still in the TDZ.
 const ApiUtils = require<typeof ApiUtilsModule>('@libs/ApiUtils');
 
@@ -54,6 +54,7 @@ beforeAll(async () => {
 beforeEach(async () => {
     mockConfig.IS_USING_WEB_PROXY = false;
     mockConfig.IS_USING_LOCAL_WEB = false;
+    mockConfig.EXPENSIFY.QA_API_ROOT = 'https://qa.exops.io/';
     // Clear so every test starts from the same Onyx state — otherwise same-value writes are deduped
     // and the ApiUtils subscription never re-runs with the updated CONFIG flags.
     await Onyx.clear();
@@ -193,6 +194,14 @@ describe('ApiUtils', () => {
             await setActiveServer(CONST.SERVER.QA);
 
             expect(ApiUtils.getApiRoot({shouldSkipWebProxy: false})).toBe('https://qa.exops.io/');
+        });
+
+        it('drops a stored qa once QA_EXPENSIFY_URL is cleared, rather than routing to an empty root', async () => {
+            mockConfig.EXPENSIFY.QA_API_ROOT = '';
+            await setActiveServer(CONST.SERVER.QA);
+
+            expect(ApiUtils.isQAServerActive()).toBe(false);
+            expect(ApiUtils.getApiRoot()).toBe('https://staging.expensify.com/');
         });
 
         it('stays on QA for an internal dev build \u2014 the one case IS_USING_LOCAL_WEB does not win', async () => {
