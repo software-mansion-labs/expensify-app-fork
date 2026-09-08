@@ -1,7 +1,15 @@
 import {getScenarioConfig} from '@components/MultifactorAuthentication/config';
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
 import snapshotToState from '@components/MultifactorAuthentication/machine/snapshotToState';
-import type {AuthorizeInput, AuthorizeOutput, LoadRegistrationStateInput, LoadRegistrationStateOutput, ValidateDeviceInput} from '@components/MultifactorAuthentication/machine/types';
+import type {
+    AuthorizeInput,
+    AuthorizeOutput,
+    FinalizeOutcomeInput,
+    FinalizeOutcomeOutput,
+    LoadRegistrationStateInput,
+    LoadRegistrationStateOutput,
+    ValidateDeviceInput,
+} from '@components/MultifactorAuthentication/machine/types';
 
 import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
@@ -10,13 +18,16 @@ import {createScenarioActionRunner} from '@userActions/MultifactorAuthentication
 
 import CONST from '@src/CONST';
 
-import {createActorAtState, createFlowContext, sendAuthorizeDone} from 'tests/utils/mfa/flowActors';
+import {createActorAtState, createFlowContext, sendAuthorizeDone, sendFinalizeOutcomeDone} from 'tests/utils/mfa/flowActors';
 import {MFA_TEST_AUTH_METHOD, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise, waitFor} from 'xstate';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
+// This suite pins `authorize`'s own outcome routing, not the finalize actor's - so every path to the
+// outcome settles `finalizingOutcome` with this fixed SHOW_OUTCOME_SCREEN response.
+const FINALIZE_OUTCOME_SHOW_SCREEN = {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN};
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
 // a wrong target adjusts those expectations and still passes. This suite pins the authorization
@@ -46,7 +57,15 @@ describe('MFA authorization', () => {
             const actor = createActor(machine);
 
             actor.start();
-            actor.send({type: 'INIT', accountID, scenarioName, scenario, payload: {transactionID}, runScenarioAction});
+            actor.send({
+                type: 'INIT',
+                accountID,
+                scenarioName,
+                scenario,
+                payload: {transactionID},
+                runScenarioAction,
+                registrationStateAtStart: {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false},
+            });
             await waitFor(actor, (snapshot) => snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}));
 
             expect(receivedInput).toEqual({accountID, runScenarioAction});
@@ -59,6 +78,7 @@ describe('MFA authorization', () => {
 
             actor.start();
             sendAuthorizeDone(actor, {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD});
+            sendFinalizeOutcomeDone(actor, FINALIZE_OUTCOME_SHOW_SCREEN);
 
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}})).toBe(true);
@@ -74,6 +94,7 @@ describe('MFA authorization', () => {
 
             actor.start();
             sendAuthorizeDone(actor, {success: false, error: failureError});
+            sendFinalizeOutcomeDone(actor, FINALIZE_OUTCOME_SHOW_SCREEN);
 
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
@@ -91,6 +112,7 @@ describe('MFA authorization', () => {
 
             actor.start();
             sendAuthorizeDone(actor, {success: false, error: recoverableError});
+            sendFinalizeOutcomeDone(actor, FINALIZE_OUTCOME_SHOW_SCREEN);
 
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
@@ -105,6 +127,7 @@ describe('MFA authorization', () => {
 
             actor.start();
             sendAuthorizeDone(actor, {success: false, error: registrationRequiredError});
+            sendFinalizeOutcomeDone(actor, FINALIZE_OUTCOME_SHOW_SCREEN);
 
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
@@ -123,6 +146,7 @@ describe('MFA authorization', () => {
             const machine = mfaMachine.provide({
                 actors: {
                     authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(() => Promise.reject(new Error('Authorization exploded'))),
+                    finalizeOutcome: fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(() => Promise.resolve(FINALIZE_OUTCOME_SHOW_SCREEN)),
                 },
             });
             const snapshot = machine.resolveState({

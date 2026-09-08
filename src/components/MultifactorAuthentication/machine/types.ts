@@ -7,10 +7,16 @@ import type {
     MultifactorAuthenticationScenarioParams,
     MultifactorAuthenticationScenarioResponse,
 } from '@components/MultifactorAuthentication/config/types';
+import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/observability/trackMFAFlowOutcome';
 
 import type {RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import type {AuthTypeInfo} from '@libs/MultifactorAuthentication/shared/types';
+import type {
+    AuthTypeInfo,
+    MultifactorAuthenticationCallbackInput,
+    MultifactorAuthenticationCallbackResponse,
+    MultifactorAuthenticationScenarioCallback,
+} from '@libs/MultifactorAuthentication/shared/types';
 
 import type {RunScenarioAction} from '@userActions/MultifactorAuthentication/processing';
 
@@ -67,6 +73,12 @@ type MfaContext = {
 
     /** Same idea as `promptPresentationPhase`, for the validate-code screen. */
     validateCodePresentationPhase: ValidateCodePresentationPhase | undefined;
+
+    /** Registration snapshot captured before INIT, carried only for the outcome telemetry's start/end comparison. */
+    registrationStateAtStart: MFARegistrationStateSnapshot | undefined;
+
+    /** Whether this flow completed a fresh credential registration (`creatingCredential` succeeded) before authorizing. */
+    isRegistrationComplete: boolean;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */
@@ -97,6 +109,7 @@ type MultifactorAuthenticationInitEvent<T extends MultifactorAuthenticationScena
     scenario: MultifactorAuthenticationScenarioConfigFor<T>;
     payload: MultifactorAuthenticationScenarioParams<T> | undefined;
     runScenarioAction: RunScenarioAction;
+    registrationStateAtStart: MFARegistrationStateSnapshot;
 };
 
 /** Events handled by the MFA state machine. */
@@ -142,11 +155,39 @@ type AuthorizeInput = {
 /** The authorization actor's result. A success carries the authentication method the ceremony signed with and the scenario action's response. */
 type AuthorizeOutput = MFAResult<{scenarioResponse: MultifactorAuthenticationScenarioResponse; authenticationMethod: AuthTypeInfo}>;
 
+/**
+ * Input the machine passes to the finalize-outcome actor: the scenario's own callback bound over its
+ * payload, everything the callback itself needs, and every field `trackMFAFlowOutcome` reads. Named
+ * `payload` (not e.g. `scenarioPayload`) so the dev-only XState inspector's name-based masking still
+ * covers it - see the inspector-safety note on the finalize actor.
+ */
+type FinalizeOutcomeInput = {
+    isSuccessful: boolean;
+    callback: MultifactorAuthenticationScenarioCallback;
+    callbackInput: MultifactorAuthenticationCallbackInput;
+    payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined;
+    accountID: number;
+    scenarioName: MultifactorAuthenticationScenario;
+    scenarioResponse: MultifactorAuthenticationScenarioResponse | undefined;
+    error: MFAError | undefined;
+    authenticationMethod: AuthTypeInfo | undefined;
+    isRegistrationComplete: boolean;
+    softPromptApproved: boolean;
+    registrationStateAtStart: MFARegistrationStateSnapshot | undefined;
+};
+
+/** The finalize-outcome actor's result: what the scenario callback decided about post-outcome navigation. */
+type FinalizeOutcomeOutput = {
+    callbackResponse: MultifactorAuthenticationCallbackResponse | undefined;
+};
+
 export type {
     AuthorizeInput,
     AuthorizeOutput,
     CreateCredentialInput,
     CreateCredentialOutput,
+    FinalizeOutcomeInput,
+    FinalizeOutcomeOutput,
     LoadRegistrationStateInput,
     LoadRegistrationStateOutput,
     MfaContext,
