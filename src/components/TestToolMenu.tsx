@@ -58,7 +58,8 @@ function TestToolMenu({serverPageRoute}: TestToolMenuProps) {
     const isAgentAccount = useIsAgentAccount();
 
     // A pinned build ignores what the selector would store, so the row states the server instead of offering it.
-    // Without the pressable around it, the row's own title has to carry the label.
+    // The pressable below announces the title on every other build, so only here does the title itself
+    // have to be readable.
     const serverRow = (
         <TestToolRow
             title={translate('initialSettingsPage.troubleshoot.server')}
