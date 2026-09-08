@@ -38,7 +38,7 @@ function fetchInit(callIndex: number): Record<string, unknown> {
     return isRecord(init) ? init : {};
 }
 
-/** Headers of the nth fetch call — always the plain object HttpUtils builds, never a Headers instance */
+/** Headers of the nth fetch call: always the plain object HttpUtils builds, never a Headers instance */
 function fetchHeaders(callIndex: number): Record<string, unknown> {
     const {headers} = fetchInit(callIndex);
     return isRecord(headers) ? headers : {};

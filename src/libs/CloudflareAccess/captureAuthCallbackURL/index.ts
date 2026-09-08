@@ -49,7 +49,7 @@ function runCapture(): CapturedAuthCallback {
     window.history.replaceState(null, '', toSafeReturnPath(flow?.returnURL));
 
     if (!flow) {
-        return {outcome: 'no-pending-flow', errorMessage: 'No pending QA auth flow in this tab — start the sign-in again'};
+        return {outcome: 'no-pending-flow', errorMessage: 'No pending QA auth flow in this tab. Start the sign-in again'};
     }
 
     if (params.get('state') !== flow.state) {

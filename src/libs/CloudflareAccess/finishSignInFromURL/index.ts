@@ -16,7 +16,7 @@ const finishCloudflareSignInFromURL: FinishCloudflareSignInFromURL = () => {
     }
 
     if (captured.exchange) {
-        // The catch is not optional — an unhandled rejection is reported as a crash
+        // The catch is not optional: an unhandled rejection is reported as a crash
         exchangeCodeForCloudflareSession(captured.exchange).catch((error: unknown) => {
             Log.warn('Cloudflare code exchange failed', {errorMessage: error instanceof Error ? error.message : String(error)});
         });

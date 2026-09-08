@@ -45,7 +45,7 @@ function getSessionStorage(): Storage | null {
 /**
  * A full-page navigation destroys the React state holding the typed login: on QA, pressing Continue leaves
  * the page while the first request awaits the Cloudflare Access handshake, before `BeginSignIn` can answer.
- * `credentials.login` is not a substitute — it is written only once the server answers, and setting it early
+ * `credentials.login` is not a substitute: it is written only once the server answers, and setting it early
  * hides the login form (see `shouldShowLoginForm`) and advances the screen before the account is known to exist.
  */
 function saveLoginDraft(login: string): void {

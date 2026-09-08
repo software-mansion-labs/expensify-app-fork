@@ -35,8 +35,8 @@ const isQAAuthConfigured: IsQAAuthConfigured = () => {
 };
 
 /**
- * RFC 8707 resource indicator. Single-valued by protocol — Cloudflare binds the issued token to exactly this
- * string — so it stays the primary API root even when the allowlist below carries more than one host. One
+ * RFC 8707 resource indicator. Single-valued by protocol: Cloudflare binds the issued token to exactly this
+ * string, so it stays the primary API root even when the allowlist below carries more than one host. One
  * token still covers every host, provided they all belong to the same (multi-domain) Access application.
  */
 const getQAResource: GetQAResource = () => {

@@ -36,7 +36,7 @@ function validateEndpoint(value: unknown, issuerOrigin: string, name: string): s
 
 async function fetchAndValidateMetadata(): Promise<AuthServerEndpoints> {
     // The resource indicator is the primary QA origin by construction, and that is the one origin Cloudflare
-    // serves the document on — the other allowlist entries do not carry it
+    // serves the document on. The other allowlist entries do not carry it
     const response = await fetch(new URL(WELL_KNOWN_PATH, getQAResource()).href, {
         credentials: 'omit',
         signal: AbortSignal.timeout(METADATA_TIMEOUT_MS),

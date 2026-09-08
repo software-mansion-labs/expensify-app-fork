@@ -1,5 +1,5 @@
 /**
- * On a QA build every API call — including the Expensify sign-in POST — goes to a Zero Trust-protected
+ * On a QA build every API call, including the Expensify sign-in POST, goes to a Zero Trust-protected
  * origin, so the Cloudflare handshake has to complete before that first request is sent.
  */
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
@@ -62,7 +62,7 @@ async function awaitGateSignals(): Promise<'may-redirect' | 'must-not-redirect'>
         return 'may-redirect';
     } catch (error) {
         // This page load WAS the callback and its exchange failed. Falling through to the session check
-        // would read "no session" and redirect — and Cloudflare, already holding a valid Zero Trust
+        // would read "no session" and redirect. Cloudflare, already holding a valid Zero Trust
         // session, bounces straight back here with a fresh code. That is an unbounded redirect loop, and no
         // module-state guard can stop it; every bounce is a fresh page load.
         return 'must-not-redirect';

@@ -56,7 +56,7 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('redirects when QA is active and there is no session', async () => {
-        // Given a QA build with no stored session — when the gate runs, then it must navigate to Cloudflare.
+        // Given a QA build with no stored session. When the gate runs, then it must navigate to Cloudflare.
         // Not awaited: the gate's promise never settles once it redirects, so the assertion runs off the side effect
         ensureQAAuthenticated(REDIRECTING_COMMAND);
         await waitForBatchedUpdates();
@@ -87,14 +87,14 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('does nothing when QA is not active', async () => {
-        // Given a hydrated non-QA build — when the gate runs, then nothing navigates
+        // Given a hydrated non-QA build. When the gate runs, then nothing navigates
         mockIsQAServerActive.mockReturnValue(false);
         await ensureQAAuthenticated(REDIRECTING_COMMAND);
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
 
-    it('does nothing when QA auth is not configured — a build without credentials must not pay for hydration', async () => {
-        // Given a build with no Cloudflare credentials — when the gate runs, then it returns without
+    it('does nothing when QA auth is not configured: a build without credentials must not pay for hydration', async () => {
+        // Given a build with no Cloudflare credentials. When the gate runs, then it returns without
         // awaiting hydration
         mockIsConfigured.mockReturnValue(false);
         await ensureQAAuthenticated(REDIRECTING_COMMAND);
@@ -103,7 +103,7 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('does nothing when a session already exists', async () => {
-        // Given a live session — when the gate runs, then it must not navigate away from a working tab
+        // Given a live session. When the gate runs, then it must not navigate away from a working tab
         mockGetSession.mockReturnValue(LIVE_SESSION);
         await ensureQAAuthenticated(REDIRECTING_COMMAND);
         expect(mockBeginRedirect).not.toHaveBeenCalled();
@@ -123,7 +123,7 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('does NOT redirect when the in-flight exchange rejects, so a failed callback cannot start a redirect loop', async () => {
-        // Given the callback exchange failed — when the gate runs, then it must stop rather than redirect
+        // Given the callback exchange failed. When the gate runs, then it must stop rather than redirect
         mockGetPending.mockReturnValue(Promise.reject(new Error('invalid_grant')));
         mockGetSession.mockReturnValue(undefined);
         ensureQAAuthenticated(REDIRECTING_COMMAND);
@@ -132,7 +132,7 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('redirects at most once even when called concurrently', async () => {
-        // Given two callers race — when both run, then the single-flight gate runs the decision chain once,
+        // Given two callers race. When both run, then the single-flight gate runs the decision chain once,
         // so a second caller cannot reach the redirect while the first is still awaiting hydration
         ensureQAAuthenticated(REDIRECTING_COMMAND);
         ensureQAAuthenticated(REDIRECTING_COMMAND);
@@ -165,7 +165,7 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('does not redirect for an unnamed command', async () => {
-        // Given a request that reached the QA layer without a command name — when the gate runs, then it is
+        // Given a request that reached the QA layer without a command name. When the gate runs, then it is
         // treated as background, because no allowlisted command is anonymous
         await ensureQAAuthenticated();
         expect(mockBeginRedirect).not.toHaveBeenCalled();
@@ -184,21 +184,21 @@ describe('ensureQAAuthenticated', () => {
     });
 
     it('handleQAReauthRequired does not redirect for a command the user is not waiting on', () => {
-        // Given a QA build where background traffic just gave up on the session — when the 401 path runs,
+        // Given a QA build where background traffic just gave up on the session. When the 401 path runs,
         // then it must not navigate either
         handleQAReauthRequired(BACKGROUND_COMMAND);
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
 
     it('handleQAReauthRequired redirects in QA mode', () => {
-        // Given a QA request came back CF_REAUTH_REQUIRED — when the handler runs, then it re-authorizes
+        // Given a QA request came back CF_REAUTH_REQUIRED. When the handler runs, then it re-authorizes
         // without awaiting hydration
         handleQAReauthRequired(REDIRECTING_COMMAND);
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);
     });
 
     it('handleQAReauthRequired does nothing outside QA mode', () => {
-        // Given a non-QA build — when the handler runs, then nothing navigates
+        // Given a non-QA build. When the handler runs, then nothing navigates
         mockIsQAServerActive.mockReturnValue(false);
         handleQAReauthRequired(REDIRECTING_COMMAND);
         expect(mockBeginRedirect).not.toHaveBeenCalled();

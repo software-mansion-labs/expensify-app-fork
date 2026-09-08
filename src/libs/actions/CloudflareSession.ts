@@ -51,7 +51,7 @@ function isSessionNearExpiry(session: CloudflareSession): boolean {
 
 let isRedirectInFlight = false;
 
-/** Never settles once navigation is requested — the page is leaving */
+/** Never settles once navigation is requested: the page is leaving */
 async function redirectToCloudflareSignIn(returnURL: string = window.location.href): Promise<never> {
     if (isRedirectInFlight) {
         // A second caller while the first navigation is settling must not overwrite the stored flow
@@ -159,7 +159,7 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
 /**
  * Resolves only after the rotated pair is cached and its persist has settled. No outcome deletes the stored
  * session: terminal failures resolve 'reauth-required' (recovery is a fresh authorize round trip) and
- * transient ones reject, both leaving the session for another tab that may hold a working rotation — a
+ * transient ones reject, both leaving the session for another tab that may hold a working rotation. A
  * caller that wants it gone must call `clearCloudflareSession`. `staleAccessToken` is the token the caller
  * decided to refresh from: if it is no longer the current one, a rotation beat this call and it resolves
  * 'skipped-newer-token' without spending a token, leaving the newer credential in place for the caller to
