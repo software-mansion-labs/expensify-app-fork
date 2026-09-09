@@ -73,6 +73,7 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
             }
         }
         setActiveServer(selectedServer);
+        Navigation.goBack();
     };
 
     const confirmButtonOptions = {
