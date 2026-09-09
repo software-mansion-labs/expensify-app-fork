@@ -5252,6 +5252,7 @@ export {
     getCreatedReportForUnapprovedTransactionsMessage,
     isOriginalReportDeleted,
     isSystemUserMentioned,
+    replaceBaseURLInPolicyChangeLogAction,
     withDEWRoutedActionsArray,
     withDEWRoutedActionsObject,
     getReportActionActorAccountID,

@@ -57,5 +57,8 @@ module.exports = {
         '^@lottiefiles/dotlottie-react$': '<rootDir>/__mocks__/@lottiefiles/dotlottie-react.tsx',
         '^group-ib-fp$': '<rootDir>/__mocks__/group-ib-fp.ts',
         '^parse-imports-exports$': '<rootDir>/node_modules/parse-imports-exports/index.cjs',
+        // Jest runs CommonJS and the package is ESM-only, so the SQL engine tests reach the real wasm
+        // build through a loader that performs a genuine dynamic import of its Node entry point.
+        '^@sqlite\\.org/sqlite-wasm$': '<rootDir>/jest/sqliteWasmNodeLoader.ts',
     },
 };

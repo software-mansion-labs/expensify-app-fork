@@ -1,5 +1,11 @@
 import {isProduction as isProductionLib} from '@libs/Environment/Environment';
 import navigationRef from '@libs/Navigation/navigationRef';
+import {getReportActionsOrderStats} from '@libs/ReportActionsOrder/ReportActionsOrderStore';
+import type {ReportActionsOrderStats} from '@libs/ReportActionsOrder/ReportActionsOrderStore';
+import {getEngineStats} from '@libs/SqlEngine/EngineClient';
+import {getReportActionsEngineMode, isReportActionsEngineMode, setReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
+import type {ReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
+import type {EngineStats} from '@libs/SqlEngine/wasm/protocol';
 
 import {setSupportAuthToken} from '@userActions/Session';
 
@@ -8,6 +14,20 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {CollectionKeyBase} from 'react-native-onyx/dist/types';
 
 import Onyx from 'react-native-onyx';
+
+type ReportActionsEngineDevTools = {
+    getMode: () => ReportActionsEngineMode;
+    setMode: (mode: string) => void;
+    getStats: () => Promise<{mode: ReportActionsEngineMode; store: ReportActionsOrderStats; engine: EngineStats | undefined}>;
+};
+
+declare global {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+    interface Window {
+        /** Dev-only toggle of the report-actions SQL engine POC. */
+        reportActionsEngine: ReportActionsEngineDevTools;
+    }
+}
 
 /**
  * This is used to inject development/debugging utilities into the window object on web.
@@ -50,6 +70,25 @@ export default function addUtilsToWindow() {
         };
 
         window.setSupportToken = setSupportAuthToken;
+
+        window.reportActionsEngine = {
+            getMode: getReportActionsEngineMode,
+            setMode: (mode: string) => {
+                if (!isReportActionsEngineMode(mode)) {
+                    /* eslint-disable-next-line no-console */
+                    console.warn(`Unknown report actions engine mode "${mode}". Use "off", "preview" or "strict".`);
+                    return;
+                }
+                setReportActionsEngineMode(mode);
+                /* eslint-disable-next-line no-console */
+                console.log(`Report actions engine mode is now "${mode}". It applies to report screens mounted from now on.`);
+            },
+            getStats: async () => ({
+                mode: getReportActionsEngineMode(),
+                store: getReportActionsOrderStats(),
+                engine: await getEngineStats().catch(() => undefined),
+            }),
+        };
 
         // Helper to get current route params
         const getRouteParams = () => {
