@@ -1,6 +1,7 @@
 import {setInboxTab} from '@libs/actions/User';
 import Log from '@libs/Log';
 import SidebarUtils from '@libs/SidebarUtils';
+import {getBufferedLHN, isSQLiteBufferFlipEnabled, refreshBufferedLHN, subscribeBufferedLHN} from '@libs/SQLiteBuffer';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 import {getChatTabBrickRoad} from '@libs/WorkspacesSettingsUtils';
 
@@ -10,7 +11,7 @@ import type * as OnyxTypes from '@src/types/onyx';
 
 import type {ValueOf} from 'type-fest';
 
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 
 import useCollectionDelta from './useCollectionDelta';
 import {useCurrentReportIDState} from './useCurrentReportID';
@@ -462,5 +463,58 @@ function useSidebarOrderedReports() {
     return useMemo(() => ({...state, ...actions}), [state, actions]);
 }
 
-export {SidebarOrderedReportsContextProvider, useSidebarOrderedReports, useSidebarOrderedReportsState, useSidebarOrderedReportsActions};
+// ===== SQLITE BUFFER FLIP (measurement mode) — LOCAL EXPERIMENT, DO NOT COMMIT AS-IS =====
+// When the flip flag is on, the LHN is served entirely by the SQLite buffer worker: ordering and
+// membership come from the buffer's full pipeline and row payloads from its window query, so the
+// report_/reportActions_/transactions_ collections never hydrate into the JS heap.
+function BufferedSidebarOrderedReportsContextProvider({children, currentReportIDForTests}: SidebarOrderedReportsContextProviderProps) {
+    const [priorityMode = CONST.PRIORITY_MODE.DEFAULT] = useOnyx(ONYXKEYS.NVP_PRIORITY_MODE);
+    const [conciergeReportID] = useOnyx(ONYXKEYS.CONCIERGE_REPORT_ID);
+    const {accountID} = useCurrentUserPersonalDetails();
+    const {currentReportID: currentReportIDValue} = useCurrentReportIDState();
+    const derivedCurrentReportID = currentReportIDForTests ?? currentReportIDValue;
+    const buffered = useSyncExternalStore(subscribeBufferedLHN, getBufferedLHN);
+    try {
+        performance.mark(`sqliteBuffer:providerRender:${buffered.orderedReportIDs.length}`);
+    } catch {
+        // best-effort
+    }
+
+    useEffect(() => {
+        if (!accountID) {
+            return;
+        }
+        refreshBufferedLHN({
+            focusMode: priorityMode === CONST.PRIORITY_MODE.GSD,
+            currentReportID: derivedCurrentReportID ?? null,
+            conciergeReportID: conciergeReportID ?? null,
+            currentUserAccountID: accountID,
+        });
+    }, [priorityMode, derivedCurrentReportID, conciergeReportID, accountID]);
+
+    const stateValue: SidebarOrderedReportsStateContextValue = useMemo(() => {
+        const filteredReports = buffered.orderedReportIDs.map((reportID) => buffered.reportsByID[reportID]).filter(Boolean);
+        return {
+            filteredReports,
+            orderedReportIDs: buffered.orderedReportIDs,
+            currentReportID: derivedCurrentReportID,
+            chatTabBrickRoad: undefined,
+            activeTab: CONST.INBOX_TAB.ALL,
+            inboxTabCounts: {[CONST.INBOX_TAB.TODO]: 0, [CONST.INBOX_TAB.UNREAD]: 0},
+        };
+    }, [derivedCurrentReportID, buffered]);
+
+    const actionsValue: SidebarOrderedReportsActionsContextValue = useMemo(() => ({clearLHNCache: () => undefined, setActiveTab: () => undefined, setStickyReportID: () => undefined}), []);
+
+    return (
+        <SidebarOrderedReportsStateContext.Provider value={stateValue}>
+            <SidebarOrderedReportsActionsContext.Provider value={actionsValue}>{children}</SidebarOrderedReportsActionsContext.Provider>
+        </SidebarOrderedReportsStateContext.Provider>
+    );
+}
+
+const ExportedSidebarOrderedReportsContextProvider = isSQLiteBufferFlipEnabled() ? BufferedSidebarOrderedReportsContextProvider : SidebarOrderedReportsContextProvider;
+// ===== END SQLITE BUFFER FLIP =====
+
+export {ExportedSidebarOrderedReportsContextProvider as SidebarOrderedReportsContextProvider, useSidebarOrderedReports, useSidebarOrderedReportsState, useSidebarOrderedReportsActions};
 export type {ReportsToDisplayInLHN};

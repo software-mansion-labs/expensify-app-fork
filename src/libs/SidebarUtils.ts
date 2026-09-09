@@ -1034,13 +1034,96 @@ export {
     buildSortKey as _buildSortKey,
 };
 
+// ===== LOCAL BASELINE INSTRUMENTATION — DO NOT COMMIT (sqlite-buffer baseline, 2026-09-07) =====
+// Wraps the LHN hot paths in performance.measure entries so the web-baseline harness
+// (scripts-local/web-baseline.mjs) can read their cost from the performance timeline.
+function withPerfMeasure<TArgs extends unknown[], TResult>(measureName: string, fn: (...args: TArgs) => TResult): (...args: TArgs) => TResult {
+    return (...args: TArgs): TResult => {
+        if (typeof performance === 'undefined' || !performance.measure) {
+            return fn(...args);
+        }
+        const start = performance.now();
+        const result = fn(...args);
+        try {
+            performance.measure(measureName, {start, end: performance.now()});
+        } catch {
+            // performance.measure with options is unsupported in some engines — instrumentation is best-effort
+        }
+        return result;
+    };
+}
+
+// Captures the JS LHN pipeline's inputs and output so the SQLite-buffer parity comparator
+// (scripts-local/web-baseline.mjs lhn-check) can diff the worker's ordering against ground truth.
+// Stashes the membership-filter params so the parity comparator can call the worker's full pipeline
+// with identical inputs.
+function captureLHNParams(params: Parameters<typeof getReportsToDisplayInLHN>[0]): ReturnType<typeof getReportsToDisplayInLHN> {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (globalThis as any).__lhnParams = {
+            currentReportID: params.currentReportId ?? null,
+            conciergeReportID: params.conciergeReportID ?? null,
+            currentUserAccountID: params.currentUserAccountID,
+            focusMode: params.priorityMode === 'gsd',
+        };
+    } catch {
+        // best-effort
+    }
+    return getReportsToDisplayInLHN(params);
+}
+
+// Same capture on the incremental path — it runs with the up-to-date currentReportId after navigation.
+function captureLHNParamsOnUpdate(params: Parameters<typeof updateReportsToDisplayInLHN>[0]): ReturnType<typeof updateReportsToDisplayInLHN> {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existing = (globalThis as any).__lhnParams ?? {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (globalThis as any).__lhnParams = {
+            ...existing,
+            currentReportID: params.currentReportId ?? null,
+            conciergeReportID: params.conciergeReportID ?? existing.conciergeReportID ?? null,
+            currentUserAccountID: params.currentUserAccountID ?? existing.currentUserAccountID,
+            focusMode: params.isInFocusMode,
+        };
+    } catch {
+        // best-effort
+    }
+    return updateReportsToDisplayInLHN(params);
+}
+
+function captureLHNForParity(...args: Parameters<typeof sortReportsToDisplayInLHN>): string[] {
+    const result = sortReportsToDisplayInLHN(...args);
+    try {
+        const [reportsToDisplay, priorityMode, , reportsDrafts] = args;
+        const displayFlags: Record<string, {p: boolean; a: boolean; e: boolean}> = {};
+        const displayIds: string[] = [];
+        // reportsToDisplay is keyed by full Onyx keys; the worker and the sorted output use bare reportIDs.
+        for (const report of Object.values(reportsToDisplay)) {
+            if (!report?.reportID) {
+                continue;
+            }
+            displayIds.push(report.reportID);
+            displayFlags[report.reportID] = {
+                p: !!report?.isPinned,
+                a: !!(report as {requiresAttention?: boolean})?.requiresAttention,
+                e: !!(report as {hasErrorsOtherThanFailedReceipt?: boolean})?.hasErrorsOtherThanFailedReceipt,
+            };
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (globalThis as any).__lhnJS = {orderedIds: result, displayIds, displayFlags, drafts: reportsDrafts, priorityMode, capturedAt: performance.now()};
+    } catch {
+        // capture is best-effort
+    }
+    return result;
+}
+
 export default {
     getOptionData,
-    sortReportsToDisplayInLHN,
+    sortReportsToDisplayInLHN: withPerfMeasure('LHN:sort', captureLHNForParity),
     getWelcomeMessage,
     getReasonAndReportActionThatHasRedBrickRoad,
-    getReportsToDisplayInLHN,
-    updateReportsToDisplayInLHN,
+    getReportsToDisplayInLHN: withPerfMeasure('LHN:getReportsToDisplay', captureLHNParams),
+    updateReportsToDisplayInLHN: withPerfMeasure('LHN:updateReportsToDisplay', captureLHNParamsOnUpdate),
     shouldDisplayReportInLHN,
     filterReportsForInboxTab,
     getInboxTabCounts,

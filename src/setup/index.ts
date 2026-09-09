@@ -2,6 +2,7 @@ import {finishCloudflareSignInFromURL} from '@libs/CloudflareAccess/finishSignIn
 import intlPolyfill from '@libs/IntlPolyfill';
 import registerMiddlewares from '@libs/Middleware/register';
 import registerReportActionsPagination from '@libs/registerReportActionsPagination';
+import initSQLiteBuffer from '@libs/SQLiteBuffer';
 
 import {setDeviceID} from '@userActions/Device';
 import initOnyxDerivedValues from '@userActions/OnyxDerived';
@@ -105,6 +106,10 @@ export default function () {
     finishCloudflareSignInFromURL();
 
     initOnyxDerivedValues();
+
+    // SQLite buffer experiment (web only, no-op unless the localStorage flag is set) — must come
+    // after Onyx.init so the echo-mode mirror can subscribe to collections.
+    initSQLiteBuffer();
 
     setDeviceID();
 

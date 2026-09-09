@@ -1,0 +1,10 @@
+# Local baseline/PoC tooling. Whitelist the source scripts; everything else here is a Chrome
+# user-data profile (any name, created by login/seed/verify), harness deps, or run output —
+# none of which belongs in git.
+/*
+!.gitignore
+!web-baseline.mjs
+!seed-realistic.mjs
+!verify-tables.mjs
+!harness/
+harness/node_modules/

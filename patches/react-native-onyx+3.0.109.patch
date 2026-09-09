@@ -1,0 +1,107 @@
+diff --git a/node_modules/react-native-onyx/dist/storage/providers/IDBKeyValProvider/index.js b/node_modules/react-native-onyx/dist/storage/providers/IDBKeyValProvider/index.js
+index e0de50f..556e2c1 100644
+--- a/node_modules/react-native-onyx/dist/storage/providers/IDBKeyValProvider/index.js
++++ b/node_modules/react-native-onyx/dist/storage/providers/IDBKeyValProvider/index.js
+@@ -209,4 +209,102 @@ const provider = {
+         });
+     },
+ };
++// ===== LOCAL BASELINE INSTRUMENTATION — DO NOT COMMIT (sqlite-buffer baseline, 2026-09-07) =====
++// Wraps the read paths so the web-baseline harness can attribute "disk" (IndexedDB) read time
++// per Onyx collection prefix. Stats land on globalThis.__onyxIDBStats; big multiGets also emit
++// performance.measure entries visible on the timeline.
++(function instrumentProviderReads() {
++    const g = typeof globalThis !== 'undefined' ? globalThis : window;
++    const stats = (g.__onyxIDBStats = {byPrefix: {}, totalMs: 0, totalKeys: 0});
++    // SQLite-buffer FLIP (measurement mode): hide the buffered collection prefixes from Onyx
++    // entirely — boot getAll skips them and collection subscriptions see empty collections, while
++    // the data stays intact in IndexedDB. The LHN is served from the SQLite buffer instead.
++    let flipEnabled = false;
++    try {
++        flipEnabled = typeof localStorage !== 'undefined' && localStorage.getItem('sqliteBufferFlip') === 'true';
++    } catch (e) {
++        flipEnabled = false;
++    }
++    const FLIP_HIDDEN_PREFIXES = ['report_', 'reportActions_', 'transactions_'];
++    const isHiddenKey = (key) => flipEnabled && FLIP_HIDDEN_PREFIXES.some((prefix) => String(key).startsWith(prefix));
++    stats.flipEnabled = flipEnabled;
++    const prefixOf = (key) => {
++        const underscore = String(key).indexOf('_');
++        return underscore === -1 ? String(key) : String(key).slice(0, underscore + 1);
++    };
++    const record = (keys, elapsedMs) => {
++        stats.totalMs += elapsedMs;
++        stats.totalKeys += keys.length;
++        const counts = {};
++        for (const key of keys) {
++            const prefix = prefixOf(key);
++            counts[prefix] = (counts[prefix] || 0) + 1;
++        }
++        for (const prefix of Object.keys(counts)) {
++            const entry = (stats.byPrefix[prefix] = stats.byPrefix[prefix] || {keys: 0, ms: 0, reads: 0});
++            entry.keys += counts[prefix];
++            // Attribute elapsed time proportionally when a read mixes prefixes.
++            entry.ms += elapsedMs * (counts[prefix] / keys.length);
++            entry.reads += 1;
++        }
++        return counts;
++    };
++    const originalMultiGet = provider.multiGet;
++    provider.multiGet = (keysParam) => {
++        const start = performance.now();
++        return originalMultiGet(keysParam).then((result) => {
++            const end = performance.now();
++            const counts = record(keysParam, end - start);
++            if (keysParam.length >= 10) {
++                const dominant = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
++                try {
++                    performance.measure(`onyx:multiGet:${dominant}x${keysParam.length}`, {start, end});
++                } catch (e) {
++                    // best-effort
++                }
++            }
++            return result;
++        });
++    };
++    const originalGetItem = provider.getItem;
++    provider.getItem = (key) => {
++        const start = performance.now();
++        return originalGetItem(key).then((result) => {
++            record([key], performance.now() - start);
++            return result;
++        });
++    };
++    const originalGetAll = provider.getAll;
++    provider.getAll = () => {
++        const start = performance.now();
++        return originalGetAll().then((allEntries) => {
++            const entries = flipEnabled ? allEntries.filter((entry) => !isHiddenKey(entry[0])) : allEntries;
++            const end = performance.now();
++            record(entries.map((entry) => entry[0]), end - start);
++            try {
++                performance.measure(`onyx:getAll:${entries.length}${flipEnabled ? `:flipHidden${allEntries.length - entries.length}` : ''}`, {start, end});
++            } catch (e) {
++                // best-effort
++            }
++            return entries;
++        });
++    };
++    const originalGetAllKeys = provider.getAllKeys;
++    provider.getAllKeys = () => {
++        const start = performance.now();
++        return originalGetAllKeys().then((allKeys) => {
++            const result = flipEnabled ? allKeys.filter((key) => !isHiddenKey(key)) : allKeys;
++            const end = performance.now();
++            stats.getAllKeysMs = (stats.getAllKeysMs || 0) + (end - start);
++            stats.getAllKeysCount = (stats.getAllKeysCount || 0) + 1;
++            try {
++                performance.measure(`onyx:getAllKeys:${result.length}`, {start, end});
++            } catch (e) {
++                // best-effort
++            }
++            return result;
++        });
++    };
++})();
++// ===== END LOCAL BASELINE INSTRUMENTATION =====
+ exports.default = provider;
