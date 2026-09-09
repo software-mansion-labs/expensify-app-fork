@@ -6,9 +6,9 @@ function isEngineAvailable(): boolean {
     return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- the parameter keeps parity with the web client
 function setEngineVfs(vfs: VfsMode) {
     // No engine on native; the VFS choice is web-only.
-    void vfs;
 }
 
 function ingestAndOrder(params: IngestAndOrderParams): Promise<OrderReply> {

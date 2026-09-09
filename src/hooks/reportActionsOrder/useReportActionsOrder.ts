@@ -17,7 +17,7 @@ const EMPTY_ACTIONS: ReportAction[] = [];
  * dev toggle applies on the next mount. The nullable return keeps the contract of the `useOnyx` selector
  * this hook replaced in `usePaginatedReportActions`.
  */
-function useReportActionsOrder(reportID: string | undefined, rawActions: OnyxEntry<ReportActions>, hasWriteAccess: boolean | undefined): ReportAction[] | undefined {
+function useReportActionsOrder(reportID: string | undefined, rawActions: OnyxEntry<ReportActions>): ReportAction[] | undefined {
     const mode = getReportActionsEngineMode();
     const isEngineActive = mode !== 'off' && isEngineAvailable();
 
@@ -42,7 +42,7 @@ function useReportActionsOrder(reportID: string | undefined, rawActions: OnyxEnt
         return snapshot?.actions ?? EMPTY_ACTIONS;
     }
 
-    return getSortedReportActionsForDisplay(rawActions, hasWriteAccess, true, undefined, reportID);
+    return getSortedReportActionsForDisplay(rawActions, undefined, true);
 }
 
 export default useReportActionsOrder;

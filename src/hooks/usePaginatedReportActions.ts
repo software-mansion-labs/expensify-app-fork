@@ -1,6 +1,5 @@
 import getNonEmptyStringOnyxID from '@libs/getNonEmptyStringOnyxID';
 import {getContinuousChain} from '@libs/PaginationUtils';
-import {canUserPerformWriteAction} from '@libs/ReportUtils';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -9,7 +8,6 @@ import {useMemo, useRef} from 'react';
 import useReportActionsOrder from './reportActionsOrder/useReportActionsOrder';
 import useInitial from './useInitial';
 import useOnyx from './useOnyx';
-import useReportIsArchived from './useReportIsArchived';
 
 type UsePaginatedReportActionsOptions = {
     /** Whether to link to the oldest unread report action, if no other report action id is provided. */
@@ -35,11 +33,9 @@ function usePaginatedReportActions(reportID: string | undefined, reportActionID?
 
     const nonEmptyStringReportID = getNonEmptyStringOnyxID(reportID);
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${nonEmptyStringReportID}`);
-    const isReportArchived = useReportIsArchived(report?.reportID);
-    const hasWriteAccess = canUserPerformWriteAction(report, isReportArchived);
 
     const [rawReportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${nonEmptyStringReportID}`);
-    const sortedAllReportActions = useReportActionsOrder(nonEmptyStringReportID, rawReportActions, hasWriteAccess);
+    const sortedAllReportActions = useReportActionsOrder(nonEmptyStringReportID, rawReportActions);
     const [reportActionPages] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_PAGES}${nonEmptyStringReportID}`);
 
     // Default (regular inbox chats): snapshot lastReadTime at first render via a ref — production behavior.

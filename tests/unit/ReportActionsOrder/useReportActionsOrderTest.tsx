@@ -55,7 +55,7 @@ describe('useReportActionsOrder', () => {
         const {result, rerender} = renderHook(
             ({actions}: {actions: ReportActions}) => {
                 renderCount += 1;
-                return useReportActionsOrder(REPORT_ID, actions, true);
+                return useReportActionsOrder(REPORT_ID, actions);
             },
             {initialProps: {actions: FIXTURE}},
         );
@@ -89,7 +89,7 @@ describe('useReportActionsOrder', () => {
         let renderCount = 0;
         const {result} = renderHook(() => {
             renderCount += 1;
-            return useReportActionsOrder(REPORT_ID, FIXTURE, true);
+            return useReportActionsOrder(REPORT_ID, FIXTURE);
         });
 
         await waitForBatchedUpdatesWithAct();
@@ -101,7 +101,7 @@ describe('useReportActionsOrder', () => {
     it('never falls back to the JS order in strict mode', async () => {
         setReportActionsEngineMode('strict');
 
-        const {result} = renderHook(() => useReportActionsOrder(REPORT_ID, FIXTURE, true));
+        const {result} = renderHook(() => useReportActionsOrder(REPORT_ID, FIXTURE));
 
         expect(result.current).toEqual([]);
 
