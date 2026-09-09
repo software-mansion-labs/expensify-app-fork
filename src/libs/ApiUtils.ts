@@ -11,11 +11,12 @@ import Onyx from 'react-native-onyx';
 import proxyConfig from '../../config/proxyConfig';
 import getEnvironment from './Environment/getEnvironment';
 
-type ActiveServerState = {
-    /** The server requests are addressed to. */
-    activeServer: ValueOf<typeof CONST.SERVER>;
+type Server = ValueOf<typeof CONST.SERVER>;
 
-    /** Whether the environment fixed that answer, leaving a stored ACTIVE_SERVER inert. */
+type ActiveServerState = {
+    activeServer: Server;
+
+    /** When true, a stored ACTIVE_SERVER is inert. */
     isPinnedByEnvironment: boolean;
 };
 
@@ -33,7 +34,7 @@ const {promise: activeServerHydrationPromise, resolve: resolveActiveServerHydrat
  * The server a stored value and an environment resolve to. Pure, so `useActiveServer` can call it during
  * render with the values its own Onyx and environment subscriptions hand back.
  */
-function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, envName: ValueOf<typeof CONST.ENVIRONMENT>): ActiveServerState {
+function resolveActiveServer(value: Server | undefined, envName: ValueOf<typeof CONST.ENVIRONMENT>): ActiveServerState {
     // Selecting QA with no QA root leaves getApiRoot returning an empty string, and getCommandURL turns
     // that into a relative `api/Command?` the browser resolves against the app's own origin
     const isQAConfigured = !!CONFIG.EXPENSIFY.QA_API_ROOT;
@@ -52,7 +53,6 @@ function resolveActiveServer(value: ValueOf<typeof CONST.SERVER> | undefined, en
     // turns the QA gate off, but leaves the old Onyx value behind
     const storedServer = value === CONST.SERVER.QA && !isQAConfigured ? undefined : value;
 
-    // A stored 'qa' still escapes this, so the answer is not pinned
     if (CONFIG.IS_USING_LOCAL_WEB && storedServer !== CONST.SERVER.QA) {
         return {activeServer: CONST.SERVER.PRODUCTION, isPinnedByEnvironment: false};
     }
@@ -126,5 +126,5 @@ function waitForActiveServerHydration(): Promise<void> {
     return activeServerHydrationPromise;
 }
 
-export type {ActiveServerState};
+export type {ActiveServerState, Server};
 export {getActiveServer, getApiRoot, getCommandURL, isQAServerActive, resolveActiveServer, waitForActiveServerHydration};

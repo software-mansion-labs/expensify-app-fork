@@ -11,6 +11,7 @@ import useIsAuthenticated from '@hooks/useIsAuthenticated';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import type {Server} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
@@ -19,18 +20,14 @@ import {setActiveServer} from '@userActions/User';
 
 import CONST from '@src/CONST';
 
-import type {ValueOf} from 'type-fest';
-
 import React, {useState} from 'react';
-
-type Server = ValueOf<typeof CONST.SERVER>;
 
 type ServerListItem = ListItem & {keyForList: Server};
 
 const ALWAYS_SELECTABLE_SERVERS = [CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING] as const;
 
 type ServerSelectorProps = {
-    /** Pads for the device safe area. The test tools modal floats, so it must not. */
+    /** The test tools modal floats, so it leaves this off. */
     shouldAddBottomSafeAreaPadding?: boolean;
 };
 
@@ -41,14 +38,14 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
     const isAuthenticated = useIsAuthenticated();
     const {activeServer, isPinnedByEnvironment} = useActiveServer();
 
-    // The resolved server arrives a tick after mount, so the selection follows it until a row is picked
+    // The resolved server arrives a tick after mount, so it cannot seed this state
     const [pickedServer, setPickedServer] = useState<Server>();
     const selectedServer = pickedServer ?? activeServer;
 
-    const offeredServers: Server[] = [...ALWAYS_SELECTABLE_SERVERS, ...(isQAAuthConfigured() ? [CONST.SERVER.QA] : [])];
+    const offeredServers = [...ALWAYS_SELECTABLE_SERVERS, ...(isQAAuthConfigured() ? [CONST.SERVER.QA] : [])];
 
-    // A pinned build fixes the answer, so its server is listed even where the selector would not offer it
-    const listedServers: Server[] = offeredServers.includes(activeServer) ? offeredServers : [...offeredServers, activeServer];
+    // A pinned build can be on a server the list would not otherwise offer
+    const listedServers = offeredServers.includes(activeServer) ? offeredServers : [...offeredServers, activeServer];
 
     const servers: ServerListItem[] = listedServers.map((server) => ({
         text: translate(`initialSettingsPage.troubleshoot.servers.${server}.label`),
@@ -101,7 +98,6 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
                 onSelectRow={(server: ServerListItem) => setPickedServer(server.keyForList)}
                 shouldSingleExecuteRowSelect
                 confirmButtonOptions={confirmButtonOptions}
-                // A pinned build ignores whatever is stored, so the rows report the servers rather than offering them
                 isDisabled={isPinnedByEnvironment}
                 customListHeaderContent={
                     isPinnedByEnvironment ? <Text style={[styles.mh5, styles.mv3]}>{translate('initialSettingsPage.troubleshoot.serverPinnedDescription')}</Text> : undefined
@@ -112,7 +108,5 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
         </>
     );
 }
-
-ServerSelector.displayName = 'ServerSelector';
 
 export default ServerSelector;
