@@ -17,4 +17,4 @@ type CaptureCloudflareAuthCallbackURL = () => CapturedAuthCallback;
 
 type GetCapturedCloudflareAuthCallback = () => CapturedAuthCallback;
 
-export type {AuthorizedCodeExchange, CapturedAuthCallback, CaptureCloudflareAuthCallbackURL, GetCapturedCloudflareAuthCallback};
+export type {CapturedAuthCallback, CaptureCloudflareAuthCallbackURL, GetCapturedCloudflareAuthCallback};
