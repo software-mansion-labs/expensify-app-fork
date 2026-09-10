@@ -23,6 +23,7 @@ import type {
 } from '@libs/API/parameters';
 import type LockAccountParams from '@libs/API/parameters/LockAccountParams';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import {getActiveServer} from '@libs/ApiUtils';
 import DateUtils from '@libs/DateUtils';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import type Platform from '@libs/getPlatform/types';
@@ -44,7 +45,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type {ExpenseRuleForm, FlagForReviewRuleForm, MerchantRuleForm, MerchantTypeRuleForm, RequireFieldsRuleForm, SpendRuleForm} from '@src/types/form';
-import type {AppReview, BlockedFromConcierge, CustomStatusDraft, ExpenseRule, NewLogin, ReportAttributesDerivedValue} from '@src/types/onyx';
+import type {AppReview, Beta, BlockedFromConcierge, CustomStatusDraft, ExpenseRule, NewLogin, ReportAttributesDerivedValue} from '@src/types/onyx';
 import type Login from '@src/types/onyx/Login';
 import type {Errors} from '@src/types/onyx/OnyxCommon';
 import type {AnyOnyxServerUpdate, OnyxServerUpdate} from '@src/types/onyx/OnyxUpdatesFromServer';
@@ -68,7 +69,7 @@ import applyOnyxUpdatesReliably from './applyOnyxUpdatesReliably';
 import {getDeviceInfoWithID} from './Device';
 import {openOldDotLink} from './Link';
 import {showReportActionNotification} from './Report';
-import {isAnonymousUser, resendValidateCode as sessionResendValidateCode} from './Session';
+import {isAnonymousUser, resendValidateCode as sessionResendValidateCode, signOutAndRedirectToSignIn} from './Session';
 import redirectToSignIn from './SignInRedirect';
 
 function getExpensifyLoginKey(contactMethod: string) {
@@ -939,10 +940,23 @@ function updateChatPriorityMode(mode: ValueOf<typeof CONST.PRIORITY_MODE>, autom
     }
 }
 
+/**
+ * QA and the other environments hold entirely separate databases, so the same email is a different account
+ * on each, and any move into or out of QA has to sign the user out.
+ */
 function setActiveServer(server: ValueOf<typeof CONST.SERVER>) {
+    const previousServer = getActiveServer();
+
     if (CONFIG.IS_HYBRID_APP) {
         HybridAppModule.shouldUseStaging(server === CONST.SERVER.STAGING);
     }
+
+    if (previousServer !== server && (previousServer === CONST.SERVER.QA || server === CONST.SERVER.QA)) {
+        // Pinned to the server being left: routing resolves the server when the request is sent, by which
+        // time the Onyx.set below has made it the new one.
+        signOutAndRedirectToSignIn(undefined, undefined, undefined, undefined, previousServer);
+    }
+
     Onyx.set(ONYXKEYS.ACTIVE_SERVER, server);
 }
 
@@ -1317,6 +1331,18 @@ function setIsDebugModeEnabled(isDebugModeEnabled: boolean) {
 
 function setShouldShowBranchNameInTitle(value: boolean) {
     Onyx.set(ONYXKEYS.SHOULD_SHOW_BRANCH_NAME_IN_TITLE, value);
+}
+
+function setBetaOverride(beta: Beta, value: boolean) {
+    Onyx.merge(ONYXKEYS.BETA_OVERRIDES, {[beta]: value});
+}
+
+function clearBetaOverride(beta: Beta) {
+    Onyx.merge(ONYXKEYS.BETA_OVERRIDES, {[beta]: null});
+}
+
+function clearBetaOverrides() {
+    Onyx.set(ONYXKEYS.BETA_OVERRIDES, null);
 }
 
 function lockAccount(currentUserAccountID: number, accountID: number | undefined, domainAccountID: number | undefined, domainName: string | undefined) {
@@ -1949,6 +1975,9 @@ export {
     clearValidateCodeActionError,
     setIsDebugModeEnabled,
     setShouldShowBranchNameInTitle,
+    setBetaOverride,
+    clearBetaOverride,
+    clearBetaOverrides,
     lockAccount,
     requestUnlockAccount,
     respondToProactiveAppReview,

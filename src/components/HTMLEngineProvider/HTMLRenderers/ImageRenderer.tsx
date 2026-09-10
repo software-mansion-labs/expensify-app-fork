@@ -1,14 +1,13 @@
 import {AttachmentContext} from '@components/AttachmentContext';
-import {getButtonRole} from '@components/Button/utils';
 import {isDeletedNode} from '@components/HTMLEngineProvider/htmlEngineUtils';
 import PressableWithoutFocus from '@components/Pressable/PressableWithoutFocus';
 import {showContextMenuForReport, useShowContextMenuActions, useShowContextMenuState} from '@components/ShowContextMenuContext';
 import ThumbnailImage from '@components/ThumbnailImage';
 
+import useActiveServer from '@hooks/useActiveServer';
 import useCachedAttachmentSource from '@hooks/useCachedAttachmentSource';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -17,7 +16,6 @@ import Navigation from '@libs/Navigation/Navigation';
 import tryResolveUrlFromApiRoot from '@libs/tryResolveUrlFromApiRoot';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
 import type {CustomRendererProps, TBlock} from 'react-native-render-html';
@@ -29,8 +27,9 @@ function ImageRenderer({tnode}: CustomRendererProps<TBlock>) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
-    // Re-render this component when the active server changes
-    useOnyx(ONYXKEYS.ACTIVE_SERVER);
+    // Re-render this component when the active server changes, since tryResolveUrlFromApiRoot below
+    // rewrites the image URLs against that server's API root
+    useActiveServer();
 
     const htmlAttribs = tnode.attributes;
     const isDeleted = isDeletedNode(tnode);
@@ -133,7 +132,7 @@ function ImageRenderer({tnode}: CustomRendererProps<TBlock>) {
                     }}
                     isNested
                     shouldUseHapticsOnLongPress
-                    role={getButtonRole(true)}
+                    role={CONST.ROLE.BUTTON}
                     accessibilityLabel={translate('accessibilityHints.viewAttachment')}
                     sentryLabel={CONST.SENTRY_LABEL.HTML_RENDERER.IMAGE}
                 >

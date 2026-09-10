@@ -465,6 +465,9 @@ const translations: TranslationDeepObject<typeof en> = {
         none: 'Aucun',
         unstableInternetConnection: 'Connexion Internet instable. Veuillez vérifier votre réseau et réessayer.',
         enableGlobalReimbursements: 'Activer les remboursements globaux',
+        corpayPayModalTitle: 'Payer la note de frais',
+        corpayPayModalPrompt:
+            "Cette personne a un compte bancaire qui n'est pas en USD. Activez les remboursements globaux pour payer la note de frais, ou demandez-lui d'ajouter un compte bancaire en USD.",
         purchaseAmount: "Montant de l'achat",
         originalAmount: 'Montant initial',
         frequency: 'Fréquence',
@@ -2274,7 +2277,14 @@ const translations: TranslationDeepObject<typeof en> = {
             results: 'Résultats',
             releaseOptions: 'Options de version',
             testingPreferences: 'Préférences de test',
-            useStagingServer: 'Utiliser le serveur de préproduction',
+            server: 'Serveur',
+            servers: {
+                production: {label: 'Production', description: "L'environnement en direct que voient les vrais utilisateurs"},
+                staging: {label: 'Préproduction', description: 'Copie de la production. Utilisée pour la validation finale'},
+                qa: {label: 'QA', description: 'Environnement expérimental utilisé pour les tests'},
+            },
+            confirmServerChangeDescription: 'Passer à QA ou en sortir vous déconnecte, car QA est une base de données distincte.',
+            serverPinnedDescription: 'Cette version communique toujours avec un seul serveur, il est donc impossible de le changer ici.',
             forceOffline: 'Forcer le mode hors ligne',
             simulatePoorConnection: 'Simuler une mauvaise connexion Internet',
             simulateFailingNetworkRequests: 'Simuler l’échec des requêtes réseau',
@@ -2302,14 +2312,11 @@ const translations: TranslationDeepObject<typeof en> = {
             sentryHighlightedSpanOps: 'Noms de segments surlignés',
             sentryHighlightedSpanOpsPlaceholder: 'ui.interaction.clic, navigation, ui.chargement',
             showBranchNameInTitle: 'Afficher le nom de la branche dans le titre du navigateur',
-            qaAuth: 'Authentification QA (Cloudflare)',
-            qaAuthRunProbe: 'Lancer le test',
-            qaAuthSession: 'Session d’authentification QA',
-            qaAuthClearSession: 'Effacer la session',
-            qaAuthStatusSuccess: 'Sonde réussie',
-            qaAuthStatusReauthRequired: 'Session expirée — relancez pour vous connecter',
-            qaAuthStatusSignInFailed: 'La connexion n’a pas abouti — relancez pour réessayer',
-            qaAuthStatusError: 'Sonde échouée',
+            betaOverrides: 'Remplacements de bêtas',
+            betaOverridesDescription:
+                "Les remplacements ne s'appliquent qu'à cet appareil et n'affectent que les vérifications côté frontend. Une bêta ne conserve un remplacement que tant qu'il diffère des bêtas de votre compte ; la rebasculer supprime donc le remplacement. « Réinitialiser tous les remplacements » rétablit les valeurs de votre compte. Certaines bêtas sont aussi contrôlées par le backend et peuvent donc échouer au niveau de la requête.",
+            resetAllOverrides: 'Réinitialiser tous les remplacements',
+            overridden: 'Remplacée',
         },
         security: 'Sécurité',
         signOut: 'Se déconnecter',
@@ -3167,6 +3174,7 @@ ${amount} pour ${merchant} - ${date}`,
         unread: 'Non lu',
         markAllAsRead: 'Tout marquer comme lu',
         markAllAsReadConfirmationPrompt: 'Voulez-vous vraiment marquer toutes les discussions comme lues ?',
+        markAllTodosAsReadConfirmationPrompt: 'Voulez-vous vraiment marquer comme lues toutes les discussions à traiter ?',
     },
     reportDetailsPage: {
         inWorkspace: (policyName: string) => `dans ${policyName}`,
@@ -7083,6 +7091,8 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         return 'Rillet';
                     case CONST.POLICY.CONNECTIONS.NAME.DUALENTRY:
                         return 'DualEntry';
+                    case CONST.POLICY.CONNECTIONS.NAME.CAMPFIRE:
+                        return 'Campfire';
                     default: {
                         return '';
                     }
@@ -7149,7 +7159,7 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         case 'netSuiteSyncImportEmployees':
                         case 'intacctImportEmployees':
                         case 'quickbooksDesktopImportEmployees':
-                            return 'Importation des employés';
+                            return 'Importation d’employés';
                         case 'quickbooksOnlineImportAccounts':
                         case 'quickbooksDesktopImportAccounts':
                             return 'Importation de comptes';
@@ -7157,14 +7167,14 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         case 'quickbooksDesktopImportClasses':
                             return 'Importation de classes';
                         case 'quickbooksOnlineImportLocations':
-                            return 'Importation des emplacements';
+                            return 'Importation des lieux';
                         case 'quickbooksOnlineImportProcessing':
                             return 'Traitement des données importées';
                         case 'quickbooksOnlineSyncBillPayments':
                         case 'intacctImportSyncBillPayments':
                             return 'Synchronisation des notes de frais remboursées et des paiements de factures';
                         case 'quickbooksOnlineSyncTaxCodes':
-                            return 'Importation des codes fiscaux';
+                            return 'Importation de codes fiscaux';
                         case 'quickbooksOnlineCheckConnection':
                             return `Vérification de la connexion ${integrationName}`;
                         case 'quickbooksOnlineImportMain':
@@ -7175,7 +7185,7 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                             return `Importation des données ${integrationName}`;
                         case 'startingImportQBD':
                         case 'quickbooksDesktopImportMore':
-                            return 'Importation des données QuickBooks Desktop';
+                            return 'Importation de données QuickBooks Desktop';
                         case 'quickbooksDesktopImportTitle':
                             return 'Importation du titre';
                         case 'quickbooksDesktopImportApproveCertificate':
@@ -7197,7 +7207,7 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         case 'quickbooksOnlineSyncApplyCustomers':
                             return 'Mise à jour des clients/projets';
                         case 'quickbooksOnlineSyncApplyEmployees':
-                            return 'Mise à jour de la liste de personnes';
+                            return 'Mise à jour de la liste des personnes';
                         case 'quickbooksOnlineSyncApplyClassesLocations':
                             return 'Mise à jour des champs de note de frais';
                         case 'jobDone':
@@ -7211,7 +7221,7 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         case 'xeroSyncXeroReimbursedReports':
                             return 'Marquer les notes de frais Expensify comme remboursées';
                         case 'xeroSyncExpensifyReimbursedReports':
-                            return 'Marquer les factures et notes de frais Xero comme payées';
+                            return 'Marquer les factures et avoirs Xero comme payés';
                         case 'xeroSyncImportTrackingCategories':
                             return 'Synchronisation des catégories de suivi';
                         case 'xeroSyncImportBankAccounts':
@@ -7249,7 +7259,7 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         case 'netSuiteSyncNetSuiteReimbursedReports':
                             return 'Marquer les notes de frais Expensify comme remboursées';
                         case 'netSuiteSyncExpensifyReimbursedReports':
-                            return 'Marquer les factures et notes de débit NetSuite comme payées';
+                            return 'Marquer les factures et notes de frais NetSuite comme payées';
                         case 'netSuiteImportVendorsTitle':
                             return 'Importation de fournisseurs';
                         case 'netSuiteImportCustomListsTitle':
@@ -7262,15 +7272,15 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         case 'quickbooksDesktopImportVendors':
                             return 'Importation de fournisseurs';
                         case 'intacctCheckConnection':
-                            return 'Vérification de la connexion Sage Intacct';
+                            return 'Vérification de la connexion à Sage Intacct';
                         case 'intacctImportDimensions':
                             return 'Importation des dimensions Sage Intacct';
                         case 'intacctImportTitle':
-                            return 'Importation de données Sage Intacct';
+                            return 'Importation des données Sage Intacct';
                         case 'financialForceSyncTitle':
                             return 'Synchronisation des données Certinia';
                         case 'financialForceSyncStep':
-                            return 'Synchronisation de la connexion Certinia';
+                            return 'Synchronisation de la connexion à Certinia';
                         case 'financialForceSyncCategories':
                             return 'Importation de catégories';
                         case 'financialForceSyncTags':
@@ -7304,6 +7314,18 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
                         case 'dualEntrySyncCardSettlements':
                             return 'Synchronisation des règlements de carte';
                         case 'dualEntrySyncTravelSettlements':
+                            return 'Synchronisation des règlements de voyage';
+                        case 'campfireSyncTitle':
+                            return 'Synchronisation des données Campfire';
+                        case 'campfireSyncConnection':
+                            return 'Initialisation de la connexion à Campfire';
+                        case 'campfireSyncImportData':
+                            return 'Chargement des données';
+                        case 'campfireSyncPayments':
+                            return 'Synchronisation des paiements fournisseurs';
+                        case 'campfireSyncCardSettlements':
+                            return 'Synchronisation des règlements de carte';
+                        case 'campfireSyncTravelSettlements':
                             return 'Synchronisation des règlements de voyage';
                         default: {
                             return `Traduction manquante pour l’étape : ${stage}`;
@@ -7347,6 +7369,7 @@ Le forfait Control commence à 9 $ par Membre actif et par mois.`,
             syncTravelInvoicingSettlements: 'Synchroniser les règlements de facturation de voyages consolidés',
             syncTravelInvoicingSettlementsNoAccountTooltip: 'Pour le déverrouiller, définissez un compte pour vos exports.',
             syncTravelInvoicingSettlementsNoAutoSyncTooltip: 'Pour le déverrouiller, activez la synchronisation automatique.',
+            campfire: 'Campfire',
         },
         export: {
             notReadyHeading: 'Pas prêt à être exporté',
@@ -7659,6 +7682,12 @@ ${reportName}`,
                 description: `Profitez de la synchronisation automatisée et réduisez les saisies manuelles grâce à l’intégration Expensify + DualEntry. Alignez les dimensions de codage des dépenses et la synchronisation fiscale sur votre configuration DualEntry pour une meilleure visibilité financière.`,
                 onlyAvailableOnPlan: ({formattedPrice, hasTeam2025Pricing}: {formattedPrice: string; hasTeam2025Pricing: boolean}) =>
                     `<muted-text>Notre intégration DualEntry est disponible uniquement avec l’offre Control, à partir de <strong>${formattedPrice}</strong> ${hasTeam2025Pricing ? `par membre et par mois.` : `par membre actif et par mois.`}</muted-text>`,
+            },
+            [CONST.POLICY.CONNECTIONS.NAME.CAMPFIRE]: {
+                title: 'Campfire',
+                description: `Profitez de la synchronisation automatisée et réduisez les saisies manuelles grâce à l’intégration Expensify + Campfire. Alignez les dimensions de codage des dépenses et la synchronisation fiscale sur votre configuration Campfire pour une meilleure visibilité financière.`,
+                onlyAvailableOnPlan: ({formattedPrice, hasTeam2025Pricing}: {formattedPrice: string; hasTeam2025Pricing: boolean}) =>
+                    `<muted-text>Notre intégration Campfire est disponible uniquement avec l’offre Control, à partir de <strong>${formattedPrice}</strong> ${hasTeam2025Pricing ? `par membre et par mois.` : `par membre actif et par mois.`}</muted-text>`,
             },
             [CONST.UPGRADE_FEATURE_INTRO_MAPPING.approvals.id]: {
                 title: 'Approbations avancées',
@@ -8068,6 +8097,8 @@ Rendez obligatoires des informations de dépense comme les reçus et les descrip
                 categoryRulesApplyGoingForwardTitle: 'Les règles de catégorie s’appliquent à partir de maintenant',
                 categoryRulesApplyGoingForwardPrompt:
                     'Un taux de taxe par défaut s’applique aux nouvelles dépenses de cette catégorie. Les dépenses déjà existantes ne seront pas modifiées.',
+                createRuleFromExpenseAction: 'Créer une règle',
+                createRuleFromExpensePrompt: 'pour appliquer vos modifications à toutes les dépenses qui correspondent à vos critères.',
             },
             categoryRules: {
                 title: 'Règles de catégorie',
@@ -8595,6 +8626,16 @@ Ajoutez davantage de règles de dépenses pour protéger la trésorerie de l’e
         emptyDomain: {
             title: 'Renforcez votre sécurité avec des domaines',
             subtitle: 'Obligez les membres de votre domaine à se connecter via l’authentification unique, restreignez la création d’espaces de travail, et plus encore.',
+        },
+        campfire: {
+            campfireSetup: 'Configuration de Campfire',
+            enterCredentials: 'Saisissez votre clé API Campfire',
+            howToFindAPIKey:
+                '<strong>Recherche de votre clé API.</strong><ol><li>Connectez-vous à Campfire</li><li>Accédez à Paramètres -> Clés API</li><li>Créez une clé API</li><li>Collez la clé API ci-dessous</li></ol>',
+            subsidiary: 'Filiale',
+            subsidiarySelectDescription: 'Choisissez la filiale dans Campfire à partir de laquelle vous souhaitez importer des données.',
+            noSubsidiariesFound: 'Aucune filiale trouvée',
+            noSubsidiariesFoundDescription: 'Veuillez ajouter une entité dans Campfire et synchroniser à nouveau la connexion',
         },
     },
     getAssistancePage: {
@@ -10963,6 +11004,7 @@ Voici un *reçu test* pour vous montrer comment ça fonctionne :`,
         notVerified: 'Non vérifié',
         retry: 'Réessayer',
         requestSent: 'Demande envoyée',
+        requestAccessError: "Nous n'avons pas pu envoyer votre demande. Veuillez réessayer.",
         verifyDomain: {
             title: 'Vérifier le domaine',
             beforeProceeding: ({domainName}: {domainName: string}) =>
@@ -11023,13 +11065,12 @@ Voici un *reçu test* pour vous montrer comment ça fonctionne :`,
             setMetadataGenericError: 'Impossible de définir les métadonnées SAML',
         },
         accessRestricted: {
-            title: 'Accès restreint',
-            subtitle: (domainName: string) =>
-                `Veuillez vous vérifier en tant qu’administrateur d’entreprise autorisé pour <strong>${domainName}</strong> si vous avez besoin de contrôle sur :`,
-            companyCardManagement: 'Gestion des cartes d’entreprise',
-            accountCreationAndDeletion: 'Création et suppression de compte',
-            workspaceCreation: 'Création d’espace de travail',
-            samlSSO: 'SSO SAML',
+            headerTitle: 'Accès restreint',
+            title: 'Vérification requise',
+            description: (domainName: string) =>
+                `<muted-text><centered-text>Veuillez vous vérifier en tant qu’administrateur d’entreprise autorisé pour <strong>${domainName}</strong> ou demander l’accès aux administrateurs existants.</centered-text></muted-text>`,
+            requestAdminAccess: 'Demander l’accès administrateur',
+            verifyYourself: 'Vérifiez-vous',
         },
         addDomain: {
             title: 'Ajouter un domaine',
@@ -11043,7 +11084,6 @@ Voici un *reçu test* pour vous montrer comment ça fonctionne :`,
             title: "Domaine déjà configuré. Demander l'accès ?",
             description: "Quelqu'un a déjà configuré ce domaine dans Expensify. Voulez-vous demander l'accès administrateur ?",
             requestAccess: "Demander l'accès administrateur",
-            requestAccessError: "Nous n'avons pas pu envoyer votre demande. Veuillez réessayer.",
         },
         domainAdded: {
             title: 'Domaine ajouté',

@@ -2,7 +2,6 @@ import type {MultifactorAuthenticationPromptType} from '@components/MultifactorA
 import type {SearchQueryString} from '@components/Search/types';
 
 import type {ReplacementReason} from '@libs/actions/Card';
-import type {SaveSearchParams} from '@libs/API/parameters';
 import type {ReimbursementAccountStepToOpen} from '@libs/ReimbursementAccountUtils';
 import type {AvatarSource} from '@libs/UserAvatarUtils';
 
@@ -106,6 +105,7 @@ type SettingsNavigatorParamList = {
     [SCREENS.SETTINGS.PREFERENCES.PAYMENT_CURRENCY]: undefined;
     [SCREENS.SETTINGS.PREFERENCES.LANGUAGE]: undefined;
     [SCREENS.SETTINGS.PREFERENCES.THEME]: undefined;
+    [SCREENS.SETTINGS.TROUBLESHOOT_SERVER]: undefined;
     [SCREENS.SETTINGS.CLOSE]: undefined;
     [SCREENS.SETTINGS.MERGE_ACCOUNTS.ACCOUNT_DETAILS]: {
         email?: string;
@@ -203,12 +203,35 @@ type SettingsNavigatorParamList = {
         bankAccountID: string;
         subPage: string;
         action?: 'edit';
+        bankCountry?: string;
+        bankCurrency?: string;
     };
     [SCREENS.SETTINGS.WALLET.ENABLE_GLOBAL_REIMBURSEMENTS_AGREEMENTS]: {
         bankAccountID: string;
+        bankCountry?: string;
+        bankCurrency?: string;
     };
     [SCREENS.SETTINGS.WALLET.ENABLE_GLOBAL_REIMBURSEMENTS_SIGN]: {
         bankAccountID: string;
+        bankCountry?: string;
+        bankCurrency?: string;
+    };
+    [SCREENS.SETTINGS.WALLET.DYNAMIC_ENABLE_GLOBAL_REIMBURSEMENTS_BUSINESS]: {
+        bankAccountID: string;
+        subPage: string;
+        action?: 'edit';
+        bankCountry?: string;
+        bankCurrency?: string;
+    };
+    [SCREENS.SETTINGS.WALLET.DYNAMIC_ENABLE_GLOBAL_REIMBURSEMENTS_AGREEMENTS]: {
+        bankAccountID: string;
+        bankCountry?: string;
+        bankCurrency?: string;
+    };
+    [SCREENS.SETTINGS.WALLET.DYNAMIC_ENABLE_GLOBAL_REIMBURSEMENTS_SIGN]: {
+        bankAccountID: string;
+        bankCountry?: string;
+        bankCurrency?: string;
     };
     [SCREENS.SETTINGS.WALLET.SHARE_BANK_ACCOUNT]: {
         bankAccountID: string;
@@ -1363,6 +1386,15 @@ type SettingsNavigatorParamList = {
     [SCREENS.WORKSPACE.ACCOUNTING.DUALENTRY_TRAVEL_BILLING_PAYABLE_ACCOUNT]: {
         policyID: string;
     };
+    [SCREENS.WORKSPACE.ACCOUNTING.CAMPFIRE_SETUP]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.ACCOUNTING.CAMPFIRE_EXISTING_CONNECTIONS]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.ACCOUNTING.CAMPFIRE_SUBSIDIARY_SELECTOR]: {
+        policyID: string;
+    };
     [SCREENS.WORKSPACE.ACCOUNTING.CARD_RECONCILIATION]: {
         policyID: string;
         connection: ValueOf<typeof CONST.POLICY.CONNECTIONS.ROUTE>;
@@ -1688,6 +1720,57 @@ type SettingsNavigatorParamList = {
     [SCREENS.WORKSPACE.RULES_MERCHANT_NEW]: {
         policyID: string;
         categoryName?: string;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_NEW]: {
+        policyID: string;
+        categoryName?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_MERCHANT_TO_MATCH]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_MATCH_TYPE]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_MERCHANT]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_CATEGORY]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_TAG]: {
+        policyID: string;
+        orderWeight: number | string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_TAX]: {
+        policyID: string;
+        ruleID?: undefined;
+        /** The callout flow only ever creates merchant rules, never a category tax default */
+        categoryName?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_VENDOR]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_DESCRIPTION]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_REIMBURSABLE]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_BILLABLE]: {
+        policyID: string;
+        ruleID?: undefined;
+    };
+    [SCREENS.WORKSPACE.DYNAMIC_RULES_MERCHANT_PREVIEW_MATCHES]: {
+        policyID: string;
+        ruleID?: undefined;
     };
     [SCREENS.WORKSPACE.RULES_MERCHANT_IMPORT]: {
         policyID: string;
@@ -2800,6 +2883,7 @@ type RightModalNavigatorParamList = {
     [SCREENS.RIGHT_MODAL.RESTRICTED_ACTION]: NavigatorScreenParams<RestrictedActionParamList>;
     [SCREENS.RIGHT_MODAL.SEARCH_ADVANCED_FILTERS]: NavigatorScreenParams<SearchAdvancedFiltersParamList>;
     [SCREENS.RIGHT_MODAL.SEARCH_SAVE]: undefined;
+    [SCREENS.RIGHT_MODAL.BETA_OVERRIDES]: undefined;
     [SCREENS.RIGHT_MODAL.SEARCH_SAVED_SEARCH]: NavigatorScreenParams<SearchSavedSearchParamList>;
     [SCREENS.RIGHT_MODAL.MISSING_PERSONAL_DETAILS]: NavigatorScreenParams<MissingPersonalDetailsParamList>;
     [SCREENS.RIGHT_MODAL.DEBUG]: NavigatorScreenParams<DebugParamList>;
@@ -2886,6 +2970,11 @@ type ReportsSplitNavigatorParamList = {
         referrer?: string;
         /** Submit-via-PDF secure access link key. When present, the viewer is validated and joined to the report. */
         secureKey?: string;
+        /**
+         * Set when reportID is a client-generated optimistic ID for a chat that doesn't exist on the server yet
+         * Suppresses openReport until the report exists locally.
+         */
+        isPendingCreation?: string;
         /** When 'true', a money-request report opens scrolled to its latest message instead of the top (used by the "X Replies" link). */
         shouldScrollToLatest?: string;
         // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
@@ -3346,6 +3435,7 @@ type AuthScreensParamList = SharedScreensParamList &
         [NAVIGATORS.SHARE_MODAL_NAVIGATOR]: NavigatorScreenParams<ShareNavigatorParamList>;
         [SCREENS.BANK_CONNECTION_COMPLETE]: undefined;
         [NAVIGATORS.TEST_TOOLS_MODAL_NAVIGATOR]: NavigatorScreenParams<TestToolsModalModalNavigatorParamList>;
+        [SCREENS.PRE_MOUNT_BUFFER]: undefined;
     };
 
 type SearchReportActionsParamList = {
@@ -3393,7 +3483,9 @@ type SearchAdvancedFiltersParamList = {
 };
 
 type SearchSavedSearchParamList = {
-    [SCREENS.SEARCH.SAVED_SEARCH_RENAME_RHP]: SaveSearchParams;
+    [SCREENS.SEARCH.SAVED_SEARCH_RENAME_RHP]: {
+        id: string;
+    };
 };
 
 type SearchColumnsParamList = {
@@ -3480,6 +3572,7 @@ type TestToolsModalModalNavigatorParamList = {
         // eslint-disable-next-line no-restricted-syntax -- `backTo` usages in this file are legacy. Do not add new `backTo` params to screens. See contributingGuides/NAVIGATION.md
         backTo?: Routes;
     };
+    [SCREENS.TEST_TOOLS_MODAL.SERVER]: undefined;
 };
 
 type MultifactorAuthenticationParamList = {

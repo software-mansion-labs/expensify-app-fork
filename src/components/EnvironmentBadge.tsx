@@ -1,17 +1,13 @@
+import useActiveServer from '@hooks/useActiveServer';
 import useEnvironment from '@hooks/useEnvironment';
-import useOnyx from '@hooks/useOnyx';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getActiveServer} from '@libs/ApiUtils';
-import * as Environment from '@libs/Environment/Environment';
+import {isInternalTestBuild} from '@libs/Environment/Environment';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import type {ValueOf} from 'type-fest';
-
-import React from 'react';
 
 import type {EnvironmentValue} from './EnvironmentContextProvider/types';
 
@@ -43,10 +39,9 @@ function EnvironmentBadge() {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {environment, isProduction} = useEnvironment();
-    // Subscribed only to re-render when the switch flips
-    useOnyx(ONYXKEYS.ACTIVE_SERVER);
+    const {activeServer} = useActiveServer();
 
-    const badgeEnvironment = getBadgeEnvironment(getActiveServer(), environment);
+    const badgeEnvironment = getBadgeEnvironment(activeServer, environment);
 
     const adhoc = badgeEnvironment === CONST.ENVIRONMENT.ADHOC;
     const success = badgeEnvironment === CONST.ENVIRONMENT.STAGING;
@@ -59,7 +54,7 @@ function EnvironmentBadge() {
         return null;
     }
 
-    const text = Environment.isInternalTestBuild() ? `v${pkg.version} PR:${CONST.PULL_REQUEST_NUMBER}` : ENVIRONMENT_SHORT_FORM[badgeEnvironment];
+    const text = isInternalTestBuild() ? `v${pkg.version} PR:${CONST.PULL_REQUEST_NUMBER}` : ENVIRONMENT_SHORT_FORM[badgeEnvironment];
 
     return (
         <Badge

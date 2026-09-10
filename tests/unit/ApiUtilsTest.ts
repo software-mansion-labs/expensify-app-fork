@@ -56,7 +56,6 @@ beforeEach(async () => {
     mockConfig.IS_USING_LOCAL_WEB = false;
     mockConfig.EXPENSIFY.QA_API_ROOT = 'https://qa.exops.io/';
     // Clear so every test starts from the same Onyx state — otherwise same-value writes are deduped
-    // and the ApiUtils subscription never re-runs with the updated CONFIG flags.
     await Onyx.clear();
     await waitForBatchedUpdates();
 });
@@ -210,6 +209,21 @@ describe('ApiUtils', () => {
 
             expect(ApiUtils.isQAServerActive()).toBe(true);
             expect(ApiUtils.getApiRoot()).toBe('https://qa.exops.io/');
+        });
+    });
+
+    // Switching servers signs the user out, and that LogOut has to reach the server being left.
+    describe('a request pinned to one server', () => {
+        it('routes to the pinned server rather than the active one', async () => {
+            await setActiveServer(CONST.SERVER.QA);
+
+            expect(ApiUtils.getApiRoot({server: CONST.SERVER.PRODUCTION})).toBe('https://www.expensify.com/');
+        });
+
+        it('routes to QA when QA is the pinned server and something else is active', async () => {
+            await setActiveServer(CONST.SERVER.PRODUCTION);
+
+            expect(ApiUtils.getApiRoot({server: CONST.SERVER.QA})).toBe('https://qa.exops.io/');
         });
     });
 

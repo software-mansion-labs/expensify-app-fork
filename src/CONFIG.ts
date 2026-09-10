@@ -45,8 +45,8 @@ const useNgrok = get(Config, 'USE_NGROK', 'false') === 'true';
 const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';
 // addTrailingForwardSlash('') returns '/', which would look configured
 const normalizeOptionalRoot = (value: string): string => (value ? addTrailingForwardSlash(value) : '');
-const qaExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_EXPENSIFY_URL', ''));
-const qaSecureExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_SECURE_EXPENSIFY_URL', ''));
+const qaExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_EXPENSIFY_URL', CONST.QA_EXPENSIFY_URL));
+const qaSecureExpensifyURL = normalizeOptionalRoot(get(Config, 'QA_SECURE_EXPENSIFY_URL', 'https://qa-secure.exops.io/'));
 const expensifyComWithProxy = getPlatform() === 'web' && useWebProxy ? '/' : expensifyURL;
 
 // Throw errors on dev if config variables are not set correctly
@@ -147,14 +147,11 @@ export default {
     SKIP_ONBOARDING: get(Config, 'SKIP_ONBOARDING', 'false') === 'true',
     // eslint-disable-next-line no-restricted-properties
     IS_HYBRID_APP: HybridAppModule.isHybridApp(),
-    // Auth for the Cloudflare Access-protected QA server. Empty values disable the feature entirely
     QA_AUTH: {
         API_ROOT: qaExpensifyURL,
+        SECURE_API_ROOT: qaSecureExpensifyURL,
         TEAM_DOMAIN: get(Config, 'QA_CF_TEAM_DOMAIN', ''),
         CLIENT_ID: get(Config, 'QA_CF_OAUTH_CLIENT_ID', ''),
-        // Which Access-protected endpoint the test tool calls to verify auth is a property of the
-        // environment. The dev worker exposes an echo route, another QA host will offer something else
-        CHECK_PATH: get(Config, 'QA_AUTH_CHECK_PATH', '').replace(/^\/+/, ''),
     },
     SENTRY_DSN: get(Config, 'SENTRY_DSN', 'https://7b463fb4d4402d342d1166d929a62f4e@o4510228013121536.ingest.us.sentry.io/4510228107427840'),
 } as const;
