@@ -55,9 +55,9 @@ describe('waitForActiveServerHydration', () => {
 
         await waitForBatchedUpdates();
 
-        // No amount of flushing can hydrate while getEnvironment() is unresolved, because that is what
-        // subscribes to ACTIVE_SERVER. Until then every build reads as an unpinned production one, which
-        // is exactly what a caller skipping the await would act on.
+        // No amount of flushing can hydrate while getEnvironment() is unresolved, since hydration waits on
+        // the environment as well as the stored preference. Until then every build reads as an unpinned
+        // production one, which is exactly what a caller skipping the await would act on.
         expect(isHydrated).toBe(false);
         expect(ApiUtils.getActiveServer()).toBe(CONST.SERVER.PRODUCTION);
         expect(ApiUtils.isQAServerActive()).toBe(false);
