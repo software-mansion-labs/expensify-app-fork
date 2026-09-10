@@ -1,3 +1,6 @@
+/**
+ * Lets a tester point the app at a different API server, and disables the choice on builds where the environment pins one.
+ */
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {ModalActions} from '@components/Modal/Global/ModalContext';
 import SelectionList from '@components/SelectionList';
