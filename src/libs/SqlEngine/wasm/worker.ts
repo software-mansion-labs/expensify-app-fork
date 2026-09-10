@@ -2,6 +2,7 @@ import type {InitRequest, OptionsMatcher, WorkerReply, WorkerRequest} from './pr
 import type {OrderActionNames} from './reportActionsTable';
 import type {WasmSqlEngine} from './WasmSqlDriver';
 
+import {createLhnSchema, ingestAndOrderLhn, readLhnRowCount} from './lhnTable';
 import {createOptionsSchema, ingestOptionRows, readOptionRowCount, searchOptionRows} from './optionsTable';
 import {isWorkerRequest} from './protocol';
 import {createReportActionsSchema, dropReportRows, ingestAndOrderReport, readTableCounts} from './reportActionsTable';
@@ -29,6 +30,9 @@ let optionIngestCount = 0;
 let totalOptionIngestMs = 0;
 let searchCount = 0;
 let totalSearchMs = 0;
+let lhnRequestCount = 0;
+let totalLhnIngestMs = 0;
+let totalLhnQueryMs = 0;
 
 /** Requests run one at a time so two transactions can never interleave at an await point. */
 let queue: Promise<void> = Promise.resolve();
@@ -45,6 +49,7 @@ async function startEngine(request: InitRequest): Promise<WorkerState> {
     const engine = await createWasmSqlEngine(request.vfs);
     await createReportActionsSchema(engine.driver);
     await createOptionsSchema(engine.driver, request.optionsMatcher);
+    await createLhnSchema(engine.driver);
     return {engine, names: {createdActionName: request.createdActionName, reportPreviewActionName: request.reportPreviewActionName}, optionsMatcher: request.optionsMatcher};
 }
 
@@ -105,8 +110,18 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         return;
     }
 
+    if (request.type === 'order-lhn') {
+        const result = await ingestAndOrderLhn(state.engine.driver, request);
+        lhnRequestCount += 1;
+        totalLhnIngestMs += result.ingestMs;
+        totalLhnQueryMs += result.queryMs;
+        post({type: 'lhn-ordered', requestID: request.requestID, version: request.version, ...result});
+        return;
+    }
+
     const counts = await readTableCounts(state.engine.driver);
     const optionRowCount = await readOptionRowCount(state.engine.driver);
+    const lhnRowCount = await readLhnRowCount(state.engine.driver);
     post({
         type: 'stats',
         requestID: request.requestID,
@@ -124,6 +139,10 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
             totalOptionIngestMs,
             searchCount,
             totalSearchMs,
+            lhnRowCount,
+            lhnRequestCount,
+            totalLhnIngestMs,
+            totalLhnQueryMs,
         },
     });
 }

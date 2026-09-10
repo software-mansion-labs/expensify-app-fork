@@ -5,6 +5,9 @@ import CONST from '@src/CONST';
 
 import type {
     EngineStats,
+    LhnIndexRow,
+    LhnOrderedReply,
+    LhnPriorityMode,
     OptionIndexRef,
     OptionIndexRow,
     OptionsFoundReply,
@@ -32,6 +35,14 @@ type IngestOptionsParams = {
     upserts: OptionIndexRow[];
     deletes: OptionIndexRef[];
     full: boolean;
+};
+
+type OrderLhnParams = {
+    version: number;
+    upserts: LhnIndexRow[];
+    deletes: string[];
+    full: boolean;
+    priorityMode: LhnPriorityMode;
 };
 
 type SearchOptionsParams = {
@@ -186,6 +197,14 @@ async function searchOptions(params: SearchOptionsParams): Promise<OptionsFoundR
     return reply;
 }
 
+async function orderLhn(params: OrderLhnParams): Promise<LhnOrderedReply> {
+    const reply = await sendRequest((requestID) => ({type: 'order-lhn', requestID, ...params}));
+    if (reply.type !== 'lhn-ordered') {
+        throw new Error(`SQL engine returned "${reply.type}" instead of an LHN order`);
+    }
+    return reply;
+}
+
 async function getEngineStats(): Promise<EngineStats> {
     const reply = await sendRequest((requestID) => ({type: 'stats', requestID}));
     if (reply.type !== 'stats') {
@@ -194,5 +213,5 @@ async function getEngineStats(): Promise<EngineStats> {
     return reply.stats;
 }
 
-export {isEngineAvailable, setEngineVfs, setEngineOptionsMatcher, getEngineOptionsMatcher, ingestAndOrder, dropReport, ingestOptions, searchOptions, getEngineStats};
-export type {IngestAndOrderParams, IngestOptionsParams, SearchOptionsParams};
+export {isEngineAvailable, setEngineVfs, setEngineOptionsMatcher, getEngineOptionsMatcher, ingestAndOrder, dropReport, ingestOptions, searchOptions, orderLhn, getEngineStats};
+export type {IngestAndOrderParams, IngestOptionsParams, SearchOptionsParams, OrderLhnParams};

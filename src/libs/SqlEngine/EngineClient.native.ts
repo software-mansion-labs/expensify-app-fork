@@ -1,5 +1,5 @@
-import type {IngestAndOrderParams, IngestOptionsParams, SearchOptionsParams} from './EngineClient';
-import type {EngineStats, OptionsFoundReply, OptionsIngestedReply, OptionsMatcher, OrderReply, VfsMode} from './wasm/protocol';
+import type {IngestAndOrderParams, IngestOptionsParams, OrderLhnParams, SearchOptionsParams} from './EngineClient';
+import type {EngineStats, LhnOrderedReply, OptionsFoundReply, OptionsIngestedReply, OptionsMatcher, OrderReply, VfsMode} from './wasm/protocol';
 
 /** Native has no worker-backed SQLite engine in this POC. The hook falls back to the JS order. */
 function isEngineAvailable(): boolean {
@@ -28,6 +28,10 @@ function searchOptions(params: SearchOptionsParams): Promise<OptionsFoundReply> 
     return Promise.reject(new Error(`SQL engine unavailable on native (options version ${params.version})`));
 }
 
+function orderLhn(params: OrderLhnParams): Promise<LhnOrderedReply> {
+    return Promise.reject(new Error(`SQL engine unavailable on native (LHN version ${params.version})`));
+}
+
 function ingestAndOrder(params: IngestAndOrderParams): Promise<OrderReply> {
     return Promise.reject(new Error(`SQL engine unavailable on native (report ${params.reportID})`));
 }
@@ -40,4 +44,4 @@ function getEngineStats(): Promise<EngineStats> {
     return Promise.reject(new Error('SQL engine unavailable on native'));
 }
 
-export {isEngineAvailable, setEngineVfs, setEngineOptionsMatcher, getEngineOptionsMatcher, ingestAndOrder, dropReport, ingestOptions, searchOptions, getEngineStats};
+export {isEngineAvailable, setEngineVfs, setEngineOptionsMatcher, getEngineOptionsMatcher, ingestAndOrder, dropReport, ingestOptions, searchOptions, orderLhn, getEngineStats};

@@ -1,5 +1,17 @@
-import type {IngestAndOrderParams, IngestOptionsParams, SearchOptionsParams} from '@libs/SqlEngine/EngineClient';
-import type {EngineStats, OptionIndexRow, OptionsFoundReply, OptionsIngestedReply, OptionsMatcher, OrderReply, SortRow} from '@libs/SqlEngine/wasm/protocol';
+import type {IngestAndOrderParams, IngestOptionsParams, OrderLhnParams, SearchOptionsParams} from '@libs/SqlEngine/EngineClient';
+import type {
+    EngineStats,
+    LhnIndexRow,
+    LhnOrderedReply,
+    LhnPriorityMode,
+    OptionIndexRow,
+    OptionsFoundReply,
+    OptionsIngestedReply,
+    OptionsMatcher,
+    OrderReply,
+    SortRow,
+} from '@libs/SqlEngine/wasm/protocol';
+import {LHN_FIRST_RECENCY_BUCKET} from '@libs/SqlEngine/wasm/protocol';
 
 import CONST from '@src/CONST';
 
@@ -13,6 +25,9 @@ type OrderOverride = (reportID: string, ids: string[]) => string[];
 const tables = new Map<string, Map<string, SortRow>>();
 /** The option index, keyed like the worker's unique (kind, id) pair. */
 const optionRows = new Map<string, OptionIndexRow>();
+/** The LHN index, keyed by report id like the worker's primary key. */
+const lhnRows = new Map<string, LhnIndexRow>();
+let lhnRequestCount = 0;
 let optionsMatcher: OptionsMatcher = 'like';
 let searchCount = 0;
 let pendingReplies: Array<() => void> = [];
@@ -140,6 +155,52 @@ function searchOptions({version, terms, reportLimit, contactLimit}: SearchOption
     });
 }
 
+/** Mirror of the worker's ORDER BY: bucket, then recency in the default mode for the last two buckets, then the sort key, then the id. */
+function compareLhnRows(first: LhnIndexRow, second: LhnIndexRow, priorityMode: LhnPriorityMode): number {
+    if (first.bucket !== second.bucket) {
+        return first.bucket - second.bucket;
+    }
+    if (priorityMode === 'default' && first.bucket >= LHN_FIRST_RECENCY_BUCKET && first.lastVisibleActionCreated !== second.lastVisibleActionCreated) {
+        return first.lastVisibleActionCreated < second.lastVisibleActionCreated ? 1 : -1;
+    }
+    if (first.sortKey !== second.sortKey) {
+        return first.sortKey < second.sortKey ? -1 : 1;
+    }
+    return first.reportID < second.reportID ? -1 : 1;
+}
+
+function orderLhn({version, upserts, deletes, full, priorityMode}: OrderLhnParams): Promise<LhnOrderedReply> {
+    requestCount += 1;
+    lhnRequestCount += 1;
+    if (full) {
+        lhnRows.clear();
+    }
+    for (const reportID of deletes) {
+        lhnRows.delete(reportID);
+    }
+    for (const row of upserts) {
+        lhnRows.set(row.reportID, row);
+    }
+
+    const ordered = Array.from(lhnRows.values()).sort((first, second) => compareLhnRows(first, second, priorityMode));
+    const reply: LhnOrderedReply = {
+        type: 'lhn-ordered',
+        requestID: requestCount,
+        version,
+        reportIDs: ordered.map((row) => row.reportID),
+        unreadReportIDs: ordered.filter((row) => row.isUnread).map((row) => row.reportID),
+        todoReportIDs: ordered.filter((row) => row.isTodo).map((row) => row.reportID),
+        ingestMs: 0,
+        queryMs: 0,
+    };
+    if (!isDeferred) {
+        return Promise.resolve(reply);
+    }
+    return new Promise((resolve) => {
+        pendingReplies.push(() => resolve(reply));
+    });
+}
+
 function setEngineOptionsMatcher(matcher: OptionsMatcher) {
     optionsMatcher = matcher;
 }
@@ -173,6 +234,10 @@ function getEngineStats(): Promise<EngineStats> {
         totalOptionIngestMs: 0,
         searchCount,
         totalSearchMs: 0,
+        lhnRowCount: lhnRows.size,
+        lhnRequestCount,
+        totalLhnIngestMs: 0,
+        totalLhnQueryMs: 0,
     });
 }
 
@@ -213,9 +278,19 @@ function getMockEngineOptionRowCount(): number {
     return optionRows.size;
 }
 
+function getMockEngineLhnRowCount(): number {
+    return lhnRows.size;
+}
+
+function getMockEngineLhnRequestCount(): number {
+    return lhnRequestCount;
+}
+
 function resetMockEngine() {
     tables.clear();
     optionRows.clear();
+    lhnRows.clear();
+    lhnRequestCount = 0;
     searchCount = 0;
     optionsMatcher = 'like';
     pendingReplies = [];
@@ -232,12 +307,15 @@ export {
     getEngineOptionsMatcher,
     getEngineStats,
     getMockEngineDropCount,
+    getMockEngineLhnRequestCount,
+    getMockEngineLhnRowCount,
     getMockEngineOptionRowCount,
     getMockEngineRequestCount,
     getMockEngineSearchCount,
     ingestAndOrder,
     ingestOptions,
     isEngineAvailable,
+    orderLhn,
     searchOptions,
     setEngineOptionsMatcher,
     resetMockEngine,

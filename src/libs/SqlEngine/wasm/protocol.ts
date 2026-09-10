@@ -30,6 +30,42 @@ type OptionIndexRow = {
 
 type OptionIndexRef = Pick<OptionIndexRow, 'kind' | 'id'>;
 
+/** How the LHN orders its five groups. `focus` is the App's GSD priority mode, which drops recency ordering. */
+type LhnPriorityMode = 'default' | 'focus';
+
+/**
+ * The five LHN groups, in the order they are shown. `categorizeReportsForLHN` builds the same groups in JS;
+ * the numbers live here because the worker sorts by them and must not import the app's `CONST`.
+ */
+const LHN_BUCKET = {
+    PINNED_AND_GBR: 0,
+    ERROR: 1,
+    DRAFT: 2,
+    NON_ARCHIVED: 3,
+    ARCHIVED: 4,
+} as const;
+
+/** The first bucket whose order is by recency in the default priority mode. Earlier buckets are always alphabetical. */
+const LHN_FIRST_RECENCY_BUCKET: number = LHN_BUCKET.NON_ARCHIVED;
+
+/**
+ * One report of the LHN, reduced to the fields its order and its two Inbox tabs read. Reports the LHN does not
+ * display have no row at all, so membership stays in JS where `shouldDisplayReportInLHN` already runs incrementally.
+ */
+type LhnIndexRow = {
+    reportID: string;
+    /** One of `LHN_BUCKET`. */
+    bucket: number;
+    /** `buildSortKey` of the report's display name: lowercased, with digit runs zero-padded so `<` orders them. */
+    sortKey: string;
+    /** `lastVisibleActionCreated`, or an empty string when the report has none. */
+    lastVisibleActionCreated: string;
+    /** Whether the report belongs to the Unread tab (`isUnreadReport` of the displayed entry). */
+    isUnread: boolean;
+    /** Whether the report belongs to the To-do tab (`requiresAttention` or errors). */
+    isTodo: boolean;
+};
+
 /**
  * Sent once, right after the worker starts. It carries the VFS choice and the two action names the
  * order query binds as parameters, so the worker never has to import `CONST` (and the app with it).
@@ -80,12 +116,27 @@ type SearchOptionsRequest = {
     contactLimit: number;
 };
 
+/**
+ * One write to the LHN: the rows that changed, then the whole order. Ingest and order share a message because the
+ * LHN needs both on every write, and two round trips would cost two boundary crossings for one user action.
+ */
+type OrderLhnRequest = {
+    type: 'order-lhn';
+    requestID: number;
+    version: number;
+    upserts: LhnIndexRow[];
+    deletes: string[];
+    /** When true the worker empties the LHN table before applying upserts. */
+    full: boolean;
+    priorityMode: LhnPriorityMode;
+};
+
 type StatsRequest = {
     type: 'stats';
     requestID: number;
 };
 
-type WorkerRequest = InitRequest | IngestAndOrderRequest | DropRequest | IngestOptionsRequest | SearchOptionsRequest | StatsRequest;
+type WorkerRequest = InitRequest | IngestAndOrderRequest | DropRequest | IngestOptionsRequest | SearchOptionsRequest | OrderLhnRequest | StatsRequest;
 
 type OrderTimings = {
     ingestMs: number;
@@ -127,6 +178,20 @@ type OptionsFoundReply = {
     queryMs: number;
 };
 
+type LhnOrderedReply = {
+    type: 'lhn-ordered';
+    requestID: number;
+    version: number;
+    /** Every displayed report, in LHN order. */
+    reportIDs: string[];
+    /** The Unread tab, in the same order. */
+    unreadReportIDs: string[];
+    /** The To-do tab, in the same order. */
+    todoReportIDs: string[];
+    ingestMs: number;
+    queryMs: number;
+};
+
 type EngineStats = {
     sqliteVersion: string;
     vfs: VfsMode;
@@ -141,6 +206,10 @@ type EngineStats = {
     totalOptionIngestMs: number;
     searchCount: number;
     totalSearchMs: number;
+    lhnRowCount: number;
+    lhnRequestCount: number;
+    totalLhnIngestMs: number;
+    totalLhnQueryMs: number;
 };
 
 type StatsReply = {
@@ -161,10 +230,10 @@ type ErrorReply = {
     message: string;
 };
 
-type WorkerReply = OrderReply | DroppedReply | OptionsIngestedReply | OptionsFoundReply | StatsReply | ReadyReply | ErrorReply;
+type WorkerReply = OrderReply | DroppedReply | OptionsIngestedReply | OptionsFoundReply | LhnOrderedReply | StatsReply | ReadyReply | ErrorReply;
 
-const REPLY_TYPES = new Set<string>(['order', 'dropped', 'options-ingested', 'options-found', 'stats', 'ready', 'error']);
-const REQUEST_TYPES = new Set<string>(['init', 'ingest-and-order', 'drop', 'ingest-options', 'search-options', 'stats']);
+const REPLY_TYPES = new Set<string>(['order', 'dropped', 'options-ingested', 'options-found', 'lhn-ordered', 'stats', 'ready', 'error']);
+const REQUEST_TYPES = new Set<string>(['init', 'ingest-and-order', 'drop', 'ingest-options', 'search-options', 'order-lhn', 'stats']);
 
 function isWorkerReply(value: unknown): value is WorkerReply {
     if (typeof value !== 'object' || value === null || !('type' in value)) {
@@ -180,7 +249,7 @@ function isWorkerRequest(value: unknown): value is WorkerRequest {
     return typeof value.type === 'string' && REQUEST_TYPES.has(value.type);
 }
 
-export {isWorkerReply, isWorkerRequest};
+export {isWorkerReply, isWorkerRequest, LHN_BUCKET, LHN_FIRST_RECENCY_BUCKET};
 export type {
     VfsMode,
     OptionsMatcher,
@@ -188,6 +257,10 @@ export type {
     OptionIndexKind,
     OptionIndexRow,
     OptionIndexRef,
+    LhnPriorityMode,
+    LhnIndexRow,
+    OrderLhnRequest,
+    LhnOrderedReply,
     InitRequest,
     IngestAndOrderRequest,
     DropRequest,
