@@ -10,18 +10,49 @@ import MenuItemChevron from '@components/MenuItem/leaves/trailing/icons/MenuItem
 
 import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
+import type {PropsWithChildren} from 'react';
+
 import React from 'react';
 
-type MenuItemFieldProps = Omit<MenuItemRootProps, 'accessibilityLabel'> & {
+type MenuItemFieldRowProps = PropsWithChildren<{
     /** Name of the field */
     name: string;
 
     /** Value the field holds. Omit it, or pass an empty string, for a field not filled in yet */
     value?: string;
-};
+}>;
 
-/** Field preset: a field name plus its value. With no `value` the name takes over the row */
-function MenuItemField({name, value, children, onPress, isDisabled = false, sentryLabel, testID}: MenuItemFieldProps) {
+type MenuItemFieldProps = Omit<MenuItemRootProps, 'accessibilityLabel'> & Omit<MenuItemFieldRowProps, 'children'>;
+
+/**
+ * The line a field preset draws, without a `MenuItem.Root` of its own. Reach for it over the
+ * `MenuItemField` preset when the row needs siblings inside the same `Root` — an error or a hint
+ * line under the row, say — and render the trailing leaves, chevron included, as its children.
+ */
+function MenuItemFieldRow({name, value, children}: MenuItemFieldRowProps) {
+    return (
+        <MenuItemRow>
+            <MenuItemContent>
+                {value ? (
+                    <>
+                        <MenuItemFieldName>{name}</MenuItemFieldName>
+                        <MenuItemFieldValue>{value}</MenuItemFieldValue>
+                    </>
+                ) : (
+                    <MenuItemFieldNamePlaceholder>{name}</MenuItemFieldNamePlaceholder>
+                )}
+            </MenuItemContent>
+            {!!children && <MenuItemTrailing>{children}</MenuItemTrailing>}
+        </MenuItemRow>
+    );
+}
+
+/**
+ * Field preset: a field name plus its value. With no `value` the name takes over the row.
+ *
+ * `children` land in the trailing cell, next to the chevron — not under the row.
+ */
+function MenuItemFieldPreset({name, value, children, onPress, isDisabled = false, sentryLabel, testID}: MenuItemFieldProps) {
     return (
         <MenuItemRoot
             onPress={onPress ? callFunctionIfActionIsAllowed(onPress) : undefined}
@@ -29,26 +60,22 @@ function MenuItemField({name, value, children, onPress, isDisabled = false, sent
             sentryLabel={sentryLabel}
             testID={testID}
         >
-            <MenuItemRow>
-                <MenuItemContent>
-                    {value ? (
-                        <>
-                            <MenuItemFieldName>{name}</MenuItemFieldName>
-                            <MenuItemFieldValue>{value}</MenuItemFieldValue>
-                        </>
-                    ) : (
-                        <MenuItemFieldNamePlaceholder>{name}</MenuItemFieldNamePlaceholder>
-                    )}
-                </MenuItemContent>
+            <MenuItemFieldRow
+                name={name}
+                value={value}
+            >
                 {(!!children || !!onPress) && (
-                    <MenuItemTrailing>
+                    <>
                         {children}
                         {!!onPress && <MenuItemChevron />}
-                    </MenuItemTrailing>
+                    </>
                 )}
-            </MenuItemRow>
+            </MenuItemFieldRow>
         </MenuItemRoot>
     );
 }
 
+const MenuItemField = Object.assign(MenuItemFieldPreset, {Row: MenuItemFieldRow});
+
 export default MenuItemField;
+export type {MenuItemFieldProps, MenuItemFieldRowProps};
