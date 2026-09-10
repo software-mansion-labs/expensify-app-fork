@@ -1,3 +1,6 @@
+import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItem from '@components/MenuItem';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import TextLink from '@components/TextLink';
 
@@ -63,12 +66,20 @@ function CardDetails({pan = '', expiration = '', cvv = '', onUpdateAddressPress,
                 />
             )}
             {!!limitType && (
-                <MenuItemWithTopDescription
-                    description={translate('workspace.card.issueNewCard.limitType')}
-                    title={translate(getTranslationKeyForLimitType(limitType))}
-                    interactive={false}
-                    hintText={cardHintText}
-                />
+                <MenuItem.Root>
+                    <MenuItemField.Row
+                        name={translate('workspace.card.issueNewCard.limitType')}
+                        value={translate(getTranslationKeyForLimitType(limitType))}
+                    />
+                    {!!cardHintText && (
+                        <FormHelpMessage
+                            isError={false}
+                            shouldShowRedDotIndicator={false}
+                            message={cardHintText}
+                            style={styles.menuItemError}
+                        />
+                    )}
+                </MenuItem.Root>
             )}
             {expiration?.length > 0 && (
                 <MenuItemWithTopDescription

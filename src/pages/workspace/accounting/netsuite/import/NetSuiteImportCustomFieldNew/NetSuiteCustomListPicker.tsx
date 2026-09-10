@@ -1,8 +1,13 @@
-import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
+import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItem from '@components/MenuItem';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 
 import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
 
 import Navigation from '@libs/Navigation/Navigation';
+
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
@@ -24,21 +29,33 @@ type NetSuiteCustomListPickerProps = {
 
 function NetSuiteCustomListPicker({value, policyID, errorText, isEditing}: NetSuiteCustomListPickerProps) {
     const {translate} = useLocalize();
+    const styles = useThemeStyles();
 
     return (
-        <MenuItemWithTopDescription
-            shouldShowRightIcon
-            title={value}
-            description={translate('workspace.netsuite.import.importCustomFields.customLists.fields.listName')}
-            onPress={() => {
+        <MenuItem.Root
+            onPress={callFunctionIfActionIsAllowed(() => {
                 if (!policyID) {
                     return;
                 }
                 Navigation.navigate(ROUTES.POLICY_ACCOUNTING_NETSUITE_IMPORT_CUSTOM_LIST_SELECTOR.getRoute(policyID, isEditing ? 'edit' : undefined));
-            }}
-            brickRoadIndicator={errorText ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-            errorText={errorText}
-        />
+            })}
+        >
+            <MenuItemField.Row
+                name={translate('workspace.netsuite.import.importCustomFields.customLists.fields.listName')}
+                value={value}
+            >
+                {!!errorText && <MenuItem.BrickRoadIndicator status={CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR} />}
+                <MenuItem.Chevron />
+            </MenuItemField.Row>
+            {!!errorText && (
+                <FormHelpMessage
+                    isError
+                    shouldShowRedDotIndicator={false}
+                    message={errorText}
+                    style={styles.menuItemError}
+                />
+            )}
+        </MenuItem.Root>
     );
 }
 

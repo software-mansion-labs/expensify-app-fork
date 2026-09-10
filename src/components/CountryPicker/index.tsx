@@ -1,8 +1,13 @@
-import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
+import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItem from '@components/MenuItem';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 
 import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {Option} from '@libs/searchOptions';
+
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
@@ -23,6 +28,7 @@ type CountryPickerProps = {
 
 function CountryPicker({value, errorText, onInputChange = () => {}}: CountryPickerProps) {
     const {translate} = useLocalize();
+    const styles = useThemeStyles();
     const [isPickerVisible, setIsPickerVisible] = useState(false);
 
     const hidePickerModal = () => {
@@ -36,14 +42,23 @@ function CountryPicker({value, errorText, onInputChange = () => {}}: CountryPick
 
     return (
         <>
-            <MenuItemWithTopDescription
-                shouldShowRightIcon
-                title={value ? translate(`allCountries.${value}` as TranslationPaths) : undefined}
-                description={translate('common.country')}
-                onPress={() => setIsPickerVisible(true)}
-                brickRoadIndicator={errorText ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                errorText={errorText}
-            />
+            <MenuItem.Root onPress={callFunctionIfActionIsAllowed(() => setIsPickerVisible(true))}>
+                <MenuItemField.Row
+                    name={translate('common.country')}
+                    value={value ? translate(`allCountries.${value}` as TranslationPaths) : undefined}
+                >
+                    {!!errorText && <MenuItem.BrickRoadIndicator status={CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR} />}
+                    <MenuItem.Chevron />
+                </MenuItemField.Row>
+                {!!errorText && (
+                    <FormHelpMessage
+                        isError
+                        shouldShowRedDotIndicator={false}
+                        message={errorText}
+                        style={styles.menuItemError}
+                    />
+                )}
+            </MenuItem.Root>
             <CountrySelectorModal
                 isVisible={isPickerVisible}
                 currentCountry={value ?? ''}

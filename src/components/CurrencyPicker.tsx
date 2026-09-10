@@ -1,8 +1,14 @@
+import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItem from '@components/MenuItem';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
+
 import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import Navigation from '@libs/Navigation/Navigation';
+
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 
@@ -60,15 +66,26 @@ function CurrencyPicker({label, value, errorText, headerContent, excludeCurrenci
 
     return (
         <>
-            <MenuItemWithTopDescription
-                shouldShowRightIcon
-                title={value ? `${value} - ${getCurrencySymbol(value)}` : undefined}
-                description={label}
-                onPress={() => setIsPickerVisible(true)}
-                brickRoadIndicator={errorText ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                errorText={errorText}
-                disabled={disabled}
-            />
+            <MenuItem.Root
+                onPress={callFunctionIfActionIsAllowed(() => setIsPickerVisible(true))}
+                isDisabled={disabled}
+            >
+                <MenuItemField.Row
+                    name={label}
+                    value={value ? `${value} - ${getCurrencySymbol(value)}` : undefined}
+                >
+                    {!!errorText && <MenuItem.BrickRoadIndicator status={CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR} />}
+                    <MenuItem.Chevron />
+                </MenuItemField.Row>
+                {!!errorText && (
+                    <FormHelpMessage
+                        isError
+                        shouldShowRedDotIndicator={false}
+                        message={errorText}
+                        style={styles.menuItemError}
+                    />
+                )}
+            </MenuItem.Root>
             <Modal
                 type={CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED}
                 isVisible={isPickerVisible}

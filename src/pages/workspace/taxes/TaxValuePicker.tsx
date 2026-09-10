@@ -1,10 +1,15 @@
-import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
+import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItem from '@components/MenuItem';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
+import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getTaxValueWithPercentage} from '@libs/actions/TaxRate';
 import Navigation from '@libs/Navigation/Navigation';
+
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
@@ -34,6 +39,7 @@ type TaxValuePickerProps = {
 
 function TaxValuePicker({policyID, value, errorText, rightLabel, onInputChange, onPress}: TaxValuePickerProps) {
     const {translate} = useLocalize();
+    const styles = useThemeStyles();
     const previousValue = usePrevious(value);
 
     useEffect(() => {
@@ -49,15 +55,24 @@ function TaxValuePicker({policyID, value, errorText, rightLabel, onInputChange, 
     };
 
     return (
-        <MenuItemWithTopDescription
-            shouldShowRightIcon
-            title={value ? getTaxValueWithPercentage(value) : ''}
-            description={translate('workspace.taxes.value')}
-            onPress={handlePress}
-            brickRoadIndicator={errorText ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-            rightLabel={rightLabel}
-            errorText={errorText}
-        />
+        <MenuItem.Root onPress={callFunctionIfActionIsAllowed(handlePress)}>
+            <MenuItemField.Row
+                name={translate('workspace.taxes.value')}
+                value={value ? getTaxValueWithPercentage(value) : ''}
+            >
+                {!!rightLabel && <MenuItem.RightLabel>{rightLabel}</MenuItem.RightLabel>}
+                {!!errorText && <MenuItem.BrickRoadIndicator status={CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR} />}
+                <MenuItem.Chevron />
+            </MenuItemField.Row>
+            {!!errorText && (
+                <FormHelpMessage
+                    isError
+                    shouldShowRedDotIndicator={false}
+                    message={errorText}
+                    style={styles.menuItemError}
+                />
+            )}
+        </MenuItem.Root>
     );
 }
 

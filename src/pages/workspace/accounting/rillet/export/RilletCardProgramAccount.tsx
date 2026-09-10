@@ -1,5 +1,7 @@
 import ConnectionLayout from '@components/ConnectionLayout';
-import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
+import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItem from '@components/MenuItem';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import Text from '@components/Text';
 
@@ -15,6 +17,8 @@ import {areSettingsInErrorFields, settingsPendingAction} from '@libs/PolicyUtils
 
 import withPolicyConnections from '@pages/workspace/withPolicyConnections';
 import type {WithPolicyConnectionsProps} from '@pages/workspace/withPolicyConnections';
+
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
@@ -69,24 +73,29 @@ function RilletCardProgramAccount({policy}: WithPolicyConnectionsProps) {
                             key={feedKey}
                             pendingAction={settingsPendingAction([`${CONST.RILLET_CONFIG.CARD_PROGRAM_ACCOUNT_PREFIX}${feedKey}`], rilletConfig?.pendingFields)}
                         >
-                            <MenuItemWithTopDescription
-                                title={cardProgramAccountDisplayName}
-                                description={feedName}
-                                hintText={
-                                    cardsUsingCustomAccountsCount.perFeedCount[feedKey]
-                                        ? translate('workspace.rillet.cardAccount.countInfo', cardsUsingCustomAccountsCount.perFeedCount[feedKey])
-                                        : undefined
-                                }
-                                onPress={() =>
-                                    policyID ? Navigation.navigate(ROUTES.POLICY_ACCOUNTING_RILLET_CARD_PROGRAM_ACCOUNT_SELECTOR.getRoute(policyID, feedWithDomainID)) : undefined
-                                }
-                                shouldShowRightIcon
-                                brickRoadIndicator={
-                                    areSettingsInErrorFields([`${CONST.RILLET_CONFIG.CARD_PROGRAM_ACCOUNT_PREFIX}${feedKey}`], rilletConfig?.errorFields)
-                                        ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR
-                                        : undefined
-                                }
-                            />
+                            <MenuItem.Root
+                                onPress={callFunctionIfActionIsAllowed(() =>
+                                    policyID ? Navigation.navigate(ROUTES.POLICY_ACCOUNTING_RILLET_CARD_PROGRAM_ACCOUNT_SELECTOR.getRoute(policyID, feedWithDomainID)) : undefined,
+                                )}
+                            >
+                                <MenuItemField.Row
+                                    name={feedName ?? ''}
+                                    value={cardProgramAccountDisplayName}
+                                >
+                                    {areSettingsInErrorFields([`${CONST.RILLET_CONFIG.CARD_PROGRAM_ACCOUNT_PREFIX}${feedKey}`], rilletConfig?.errorFields) && (
+                                        <MenuItem.BrickRoadIndicator status={CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR} />
+                                    )}
+                                    <MenuItem.Chevron />
+                                </MenuItemField.Row>
+                                {!!cardsUsingCustomAccountsCount.perFeedCount[feedKey] && (
+                                    <FormHelpMessage
+                                        isError={false}
+                                        shouldShowRedDotIndicator={false}
+                                        message={translate('workspace.rillet.cardAccount.countInfo', cardsUsingCustomAccountsCount.perFeedCount[feedKey])}
+                                        style={styles.menuItemError}
+                                    />
+                                )}
+                            </MenuItem.Root>
                         </OfflineWithFeedback>
                     );
                 })}

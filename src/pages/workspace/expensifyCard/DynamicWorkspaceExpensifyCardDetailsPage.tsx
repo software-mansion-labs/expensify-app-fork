@@ -2,6 +2,7 @@ import cardScarf from '@assets/images/card-scarf.svg';
 
 import Badge from '@components/Badge';
 import DecisionModal from '@components/DecisionModal';
+import FormHelpMessage from '@components/FormHelpMessage';
 import FrozenCardHeader from '@components/FrozenCardHeader';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ImageSVG from '@components/ImageSVG';
@@ -54,6 +55,7 @@ import {getExportMenuItem} from '@pages/workspace/companyCards/utils';
 import variables from '@styles/variables';
 
 import {deactivateCard as deactivateCardAction, freezeCard as freezeCardAction, openCardDetailsPage, unfreezeCard as unfreezeCardAction} from '@userActions/Card';
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -423,14 +425,26 @@ function DynamicWorkspaceExpensifyCardDetailsPage({route}: DynamicWorkspaceExpen
                         />
                     </OfflineWithFeedback>
                     <OfflineWithFeedback pendingAction={card?.nameValuePairs?.pendingFields?.limitType}>
-                        <MenuItemWithTopDescription
-                            description={translate('workspace.card.issueNewCard.limitType')}
-                            title={translationForLimitType ? translate(translationForLimitType) : ''}
-                            shouldShowRightIcon={canWriteExpensifyCard}
-                            onPress={() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.EXPENSIFY_CARD_LIMIT_TYPE.path))}
-                            interactive={canWriteExpensifyCard}
-                            hintText={getCardHintText(card?.nameValuePairs?.validFrom, card?.nameValuePairs?.validThru, cardholder?.timezone?.selected, dateFnsLocale, translate)}
-                        />
+                        <MenuItem.Root
+                            onPress={
+                                canWriteExpensifyCard
+                                    ? callFunctionIfActionIsAllowed(() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.EXPENSIFY_CARD_LIMIT_TYPE.path)))
+                                    : undefined
+                            }
+                        >
+                            <MenuItemField.Row
+                                name={translate('workspace.card.issueNewCard.limitType')}
+                                value={translationForLimitType ? translate(translationForLimitType) : ''}
+                            >
+                                {!!canWriteExpensifyCard && <MenuItem.Chevron />}
+                            </MenuItemField.Row>
+                            <FormHelpMessage
+                                isError={false}
+                                shouldShowRedDotIndicator={false}
+                                message={getCardHintText(card?.nameValuePairs?.validFrom, card?.nameValuePairs?.validThru, cardholder?.timezone?.selected, dateFnsLocale, translate)}
+                                style={styles.menuItemError}
+                            />
+                        </MenuItem.Root>
                     </OfflineWithFeedback>
                     <OfflineWithFeedback pendingAction={card?.nameValuePairs?.pendingFields?.unapprovedExpenseLimit}>
                         <MenuItemField

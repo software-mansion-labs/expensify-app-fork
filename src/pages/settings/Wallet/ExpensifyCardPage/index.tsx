@@ -6,10 +6,13 @@ import Button from '@components/ButtonComposed';
 import CardPreview from '@components/CardPreview';
 import ConfirmModal from '@components/ConfirmModal';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
+import FormHelpMessage from '@components/FormHelpMessage';
 import FrozenCardHeader from '@components/FrozenCardHeader';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useLockedAccountActions, useLockedAccountState} from '@components/LockedAccountModalProvider';
+import MenuItem from '@components/MenuItem';
 import MenuItemAction from '@components/MenuItem/presets/MenuItemAction';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 import MenuItemNavigation from '@components/MenuItem/presets/MenuItemNavigation';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import {useMultifactorAuthentication} from '@components/MultifactorAuthentication/Context';
@@ -435,18 +438,24 @@ function ExpensifyCardPage({route}: ExpensifyCardPageProps) {
                             titleStyle={styles.walletCardLimit}
                             hintText={remainingLimitHint}
                         />
-                        <MenuItemWithTopDescription
-                            description={translate('workspace.card.issueNewCard.limitType')}
-                            title={currentCardLimitTypeTranslationKey ? translate(currentCardLimitTypeTranslationKey) : ''}
-                            interactive={false}
-                            hintText={getCardHintText(
-                                currentCard?.nameValuePairs?.validFrom,
-                                currentCard?.nameValuePairs?.validThru,
-                                personalDetails?.[currentCard?.accountID ?? CONST.DEFAULT_NUMBER_ID]?.timezone?.selected,
-                                dateFnsLocale,
-                                translate,
-                            )}
-                        />
+                        <MenuItem.Root>
+                            <MenuItemField.Row
+                                name={translate('workspace.card.issueNewCard.limitType')}
+                                value={currentCardLimitTypeTranslationKey ? translate(currentCardLimitTypeTranslationKey) : ''}
+                            />
+                            <FormHelpMessage
+                                isError={false}
+                                shouldShowRedDotIndicator={false}
+                                message={getCardHintText(
+                                    currentCard?.nameValuePairs?.validFrom,
+                                    currentCard?.nameValuePairs?.validThru,
+                                    personalDetails?.[currentCard?.accountID ?? CONST.DEFAULT_NUMBER_ID]?.timezone?.selected,
+                                    dateFnsLocale,
+                                    translate,
+                                )}
+                                style={styles.menuItemError}
+                            />
+                        </MenuItem.Root>
                         {shouldShowReportLostCardButton && (
                             <>
                                 <MenuItemWithTopDescription

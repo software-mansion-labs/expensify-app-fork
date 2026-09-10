@@ -1,6 +1,8 @@
 import Accordion from '@components/Accordion';
 import ConnectionLayout from '@components/ConnectionLayout';
-import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
+import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItem from '@components/MenuItem';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 
 import useLocalize from '@hooks/useLocalize';
@@ -36,6 +38,8 @@ import {
 import type {WithPolicyConnectionsProps} from '@pages/workspace/withPolicyConnections';
 import withPolicyConnections from '@pages/workspace/withPolicyConnections';
 import ToggleSettingOptionRow from '@pages/workspace/workflows/ToggleSettingsOptionRow';
+
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
@@ -85,14 +89,23 @@ function NetSuiteAdvancedPage({policy}: WithPolicyConnectionsProps) {
                 key={item.description}
                 pendingAction={settingsPendingAction(item.subscribedSettings, config?.pendingFields) ?? settingsPendingAction(item.subscribedSettings, autoSyncConfig?.pendingFields)}
             >
-                <MenuItemWithTopDescription
-                    title={item.title}
-                    description={item.description}
-                    shouldShowRightIcon
-                    onPress={item?.onPress}
-                    brickRoadIndicator={areSettingsInErrorFields(item.subscribedSettings, config?.errorFields) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                    hintText={item.hintText}
-                />
+                <MenuItem.Root onPress={item?.onPress ? callFunctionIfActionIsAllowed(item.onPress) : undefined}>
+                    <MenuItemField.Row
+                        name={item.description ?? ''}
+                        value={item.title}
+                    >
+                        {areSettingsInErrorFields(item.subscribedSettings, config?.errorFields) && <MenuItem.BrickRoadIndicator status={CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR} />}
+                        <MenuItem.Chevron />
+                    </MenuItemField.Row>
+                    {!!item.hintText && (
+                        <FormHelpMessage
+                            isError={false}
+                            shouldShowRedDotIndicator={false}
+                            message={item.hintText}
+                            style={styles.menuItemError}
+                        />
+                    )}
+                </MenuItem.Root>
             </OfflineWithFeedback>
         );
     };
