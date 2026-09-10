@@ -1,7 +1,5 @@
 import ConnectionLayout from '@components/ConnectionLayout';
-import FormHelpMessage from '@components/FormHelpMessage';
-import MenuItem from '@components/MenuItem';
-import MenuItemField from '@components/MenuItem/presets/MenuItemField';
+import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 
 import useDynamicBackPath from '@hooks/useDynamicBackPath';
@@ -149,21 +147,15 @@ function DynamicXeroExportConfigurationPage({policy}: WithPolicyConnectionsProps
                     key={menuItem.description}
                     pendingAction={settingsPendingAction(menuItem?.subscribedSettings ?? [], pendingFields)}
                 >
-                    <MenuItemField
-                        name={menuItem.description}
-                        value={menuItem.title}
-                        onPress={menuItem?.interactive === false ? undefined : menuItem?.onPress}
-                    >
-                        {areSettingsInErrorFields(menuItem?.subscribedSettings ?? [], errorFields) && <MenuItem.BrickRoadIndicator status={CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR} />}
-                    </MenuItemField>
-                    {!!menuItem?.helperText && (
-                        <FormHelpMessage
-                            isError={false}
-                            shouldShowRedDotIndicator={false}
-                            message={menuItem.helperText}
-                            style={[styles.mt0, styles.mb0, styles.ph5, styles.pb5]}
-                        />
-                    )}
+                    <MenuItemWithTopDescription
+                        title={menuItem.title}
+                        interactive={menuItem?.interactive ?? true}
+                        description={menuItem.description}
+                        shouldShowRightIcon={menuItem?.shouldShowRightIcon ?? true}
+                        onPress={menuItem?.onPress}
+                        brickRoadIndicator={areSettingsInErrorFields(menuItem?.subscribedSettings ?? [], errorFields) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
+                        helperText={menuItem?.helperText}
+                    />
                 </OfflineWithFeedback>
             ))}
         </ConnectionLayout>
