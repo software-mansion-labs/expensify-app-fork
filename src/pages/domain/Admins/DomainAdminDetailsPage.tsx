@@ -1,3 +1,4 @@
+import FormHelpMessage from '@components/FormHelpMessage';
 import MenuItem from '@components/MenuItem';
 import MenuItemAction from '@components/MenuItem/presets/MenuItemAction';
 import {ModalActions} from '@components/Modal/Global/ModalContext';
@@ -6,6 +7,7 @@ import useConfirmModal from '@hooks/useConfirmModal';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useThemeStyles from '@hooks/useThemeStyles';
 
 import {temporaryGetDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
 
@@ -16,6 +18,7 @@ import type {SettingsNavigatorParamList} from '@navigation/types';
 import BaseDomainMemberDetailsComponent from '@pages/domain/BaseDomainMemberDetailsComponent';
 
 import {revokeDomainAdminAccess} from '@userActions/Domain';
+import {callFunctionIfActionIsAllowed} from '@userActions/Session';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -33,6 +36,7 @@ type DomainAdminDetailsPageProps = PlatformStackScreenProps<SettingsNavigatorPar
 function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
     const {domainAccountID, accountID} = route.params;
 
+    const styles = useThemeStyles();
     const {translate, formatPhoneNumber} = useLocalize();
     const icons = useMemoizedLazyExpensifyIcons(['Info', 'ClosedSign']);
 
@@ -86,13 +90,27 @@ function DomainAdminDetailsPage({route}: DomainAdminDetailsPageProps) {
                 />
             )}
             {!domainHasOnlyOneAdmin && (
-                <MenuItem
-                    disabled={isCurrentUserPrimaryContact}
-                    hintText={isCurrentUserPrimaryContact ? translate('domain.admins.cantRevokeAdminAccess') : undefined}
-                    title={translate('domain.admins.revokeAdminAccess')}
-                    icon={icons.ClosedSign}
-                    onPress={handleRevokeAdminAccess}
-                />
+                <MenuItem.Root
+                    isDisabled={isCurrentUserPrimaryContact}
+                    onPress={callFunctionIfActionIsAllowed(handleRevokeAdminAccess)}
+                >
+                    <MenuItem.Row>
+                        <MenuItem.Leading>
+                            <MenuItem.Icon src={icons.ClosedSign} />
+                        </MenuItem.Leading>
+                        <MenuItem.Content>
+                            <MenuItem.Title>{translate('domain.admins.revokeAdminAccess')}</MenuItem.Title>
+                        </MenuItem.Content>
+                    </MenuItem.Row>
+                    {isCurrentUserPrimaryContact && (
+                        <FormHelpMessage
+                            isError={false}
+                            shouldShowRedDotIndicator={false}
+                            message={translate('domain.admins.cantRevokeAdminAccess')}
+                            style={styles.menuItemError}
+                        />
+                    )}
+                </MenuItem.Root>
             )}
         </BaseDomainMemberDetailsComponent>
     );
