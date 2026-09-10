@@ -2,9 +2,19 @@ import {isProduction as isProductionLib} from '@libs/Environment/Environment';
 import navigationRef from '@libs/Navigation/navigationRef';
 import {getReportActionsOrderStats} from '@libs/ReportActionsOrder/ReportActionsOrderStore';
 import type {ReportActionsOrderStats} from '@libs/ReportActionsOrder/ReportActionsOrderStore';
+import {getSearchOptionsIndexStats} from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
+import type {SearchOptionsIndexStats} from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
 import {getEngineStats} from '@libs/SqlEngine/EngineClient';
 import {getReportActionsEngineMode, isReportActionsEngineMode, setReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
 import type {ReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
+import {
+    getSearchRouterEngineMode,
+    isSearchRouterEngineMode,
+    isSearchRouterGuardEnabled,
+    setSearchRouterEngineMode,
+    setSearchRouterGuardEnabled,
+} from '@libs/SqlEngine/searchRouterEngineMode';
+import type {SearchRouterEngineMode} from '@libs/SqlEngine/searchRouterEngineMode';
 import type {EngineStats} from '@libs/SqlEngine/wasm/protocol';
 
 import {setSupportAuthToken} from '@userActions/Session';
@@ -21,11 +31,21 @@ type ReportActionsEngineDevTools = {
     getStats: () => Promise<{mode: ReportActionsEngineMode; store: ReportActionsOrderStats; engine: EngineStats | undefined}>;
 };
 
+type SearchRouterEngineDevTools = {
+    getMode: () => SearchRouterEngineMode;
+    setMode: (mode: string) => void;
+    /** Compares every result with today's path and counts mismatches; expensive, so off by default. */
+    setGuard: (isEnabled: boolean) => void;
+    getStats: () => Promise<{mode: SearchRouterEngineMode; isGuardEnabled: boolean; store: SearchOptionsIndexStats; engine: EngineStats | undefined}>;
+};
+
 declare global {
     // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
     interface Window {
         /** Dev-only toggle of the report-actions SQL engine POC. */
         reportActionsEngine: ReportActionsEngineDevTools;
+        /** Dev-only toggle of the SearchRouter option-index POC. */
+        searchRouterEngine: SearchRouterEngineDevTools;
     }
 }
 
@@ -86,6 +106,27 @@ export default function addUtilsToWindow() {
             getStats: async () => ({
                 mode: getReportActionsEngineMode(),
                 store: getReportActionsOrderStats(),
+                engine: await getEngineStats().catch(() => undefined),
+            }),
+        };
+
+        window.searchRouterEngine = {
+            getMode: getSearchRouterEngineMode,
+            setMode: (mode: string) => {
+                if (!isSearchRouterEngineMode(mode)) {
+                    /* eslint-disable-next-line no-console */
+                    console.warn(`Unknown search router engine mode "${mode}". Use "off", "js-index", "sql-like" or "sql-fts".`);
+                    return;
+                }
+                setSearchRouterEngineMode(mode);
+                /* eslint-disable-next-line no-console */
+                console.log(`Search router engine mode is now "${mode}". It applies the next time the router opens; the SQL matcher is fixed once the worker has started.`);
+            },
+            setGuard: setSearchRouterGuardEnabled,
+            getStats: async () => ({
+                mode: getSearchRouterEngineMode(),
+                isGuardEnabled: isSearchRouterGuardEnabled(),
+                store: getSearchOptionsIndexStats(),
                 engine: await getEngineStats().catch(() => undefined),
             }),
         };

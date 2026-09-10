@@ -1050,9 +1050,13 @@ function buildFullOption(accountID: number, item: PersonalDetails | null, report
  * Step 5 of createFilteredOptionList: one lightweight shell per personal detail.
  * Only filter/rank fields are computed here. getValidOptions hydrates survivors via hydrateContactOption.
  */
-function buildPersonalDetailsOptions(reportMapForAccountIDs: Record<number, Report>, context: LazyHydrationContext): PersonalDetailShell[] {
+function buildPersonalDetailsOptions(
+    reportMapForAccountIDs: Record<number, Report>,
+    context: LazyHydrationContext,
+    personalDetailsToBuild: Array<PersonalDetails | null> = Object.values(context.personalDetails ?? {}),
+): PersonalDetailShell[] {
     const {personalDetails, translate} = context;
-    return Object.values(personalDetails ?? {}).map((personalDetail) => {
+    return personalDetailsToBuild.map((personalDetail) => {
         const accountID = personalDetail?.accountID ?? CONST.DEFAULT_NUMBER_ID;
         const report = reportMapForAccountIDs[accountID];
         // Match createOption's personal-details lookup.
@@ -3027,6 +3031,7 @@ function processSearchString(searchString: string | undefined): string[] {
 }
 
 export {
+    buildPersonalDetailsOptions,
     canCreateOptimisticPersonalDetailOption,
     clearFilteredOptionListCache,
     combineOrderingOfReportsAndPersonalDetails,
@@ -3047,6 +3052,7 @@ export {
     getIOUConfirmationOptionsFromPayeePersonalDetail,
     getNoneOption,
     getParticipantsOption,
+    getPersonalDetailOptionText,
     getPolicyExpenseReportOption,
     getReportDisplayOption,
     getReportOption,
@@ -3070,8 +3076,11 @@ export {
     shouldUseFullTitleForOption,
     sortAlphabetically,
     personalDetailsComparator,
+    processReport,
     processSearchString,
 };
+
+export type {SearchOptionsConfig};
 
 export type {
     GetOptionsConfig,

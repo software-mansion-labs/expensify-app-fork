@@ -1,7 +1,8 @@
-import type {InitRequest, WorkerReply, WorkerRequest} from './protocol';
+import type {InitRequest, OptionsMatcher, WorkerReply, WorkerRequest} from './protocol';
 import type {OrderActionNames} from './reportActionsTable';
 import type {WasmSqlEngine} from './WasmSqlDriver';
 
+import {createOptionsSchema, ingestOptionRows, readOptionRowCount, searchOptionRows} from './optionsTable';
 import {isWorkerRequest} from './protocol';
 import {createReportActionsSchema, dropReportRows, ingestAndOrderReport, readTableCounts} from './reportActionsTable';
 import createWasmSqlEngine from './WasmSqlDriver';
@@ -17,12 +18,17 @@ declare const self: WorkerScope;
 type WorkerState = {
     engine: WasmSqlEngine;
     names: OrderActionNames;
+    optionsMatcher: OptionsMatcher;
 };
 
 let statePromise: Promise<WorkerState> | undefined;
 let requestCount = 0;
 let totalIngestMs = 0;
 let totalOrderMs = 0;
+let optionIngestCount = 0;
+let totalOptionIngestMs = 0;
+let searchCount = 0;
+let totalSearchMs = 0;
 
 /** Requests run one at a time so two transactions can never interleave at an await point. */
 let queue: Promise<void> = Promise.resolve();
@@ -38,7 +44,8 @@ function toMessage(error: unknown): string {
 async function startEngine(request: InitRequest): Promise<WorkerState> {
     const engine = await createWasmSqlEngine(request.vfs);
     await createReportActionsSchema(engine.driver);
-    return {engine, names: {createdActionName: request.createdActionName, reportPreviewActionName: request.reportPreviewActionName}};
+    await createOptionsSchema(engine.driver, request.optionsMatcher);
+    return {engine, names: {createdActionName: request.createdActionName, reportPreviewActionName: request.reportPreviewActionName}, optionsMatcher: request.optionsMatcher};
 }
 
 async function handleInit(request: InitRequest): Promise<void> {
@@ -82,18 +89,41 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         return;
     }
 
+    if (request.type === 'ingest-options') {
+        const ingestMs = await ingestOptionRows(state.engine.driver, request);
+        optionIngestCount += 1;
+        totalOptionIngestMs += ingestMs;
+        post({type: 'options-ingested', requestID: request.requestID, version: request.version, ingestMs});
+        return;
+    }
+
+    if (request.type === 'search-options') {
+        const result = await searchOptionRows(state.engine.driver, request, state.optionsMatcher);
+        searchCount += 1;
+        totalSearchMs += result.queryMs;
+        post({type: 'options-found', requestID: request.requestID, version: request.version, ...result});
+        return;
+    }
+
     const counts = await readTableCounts(state.engine.driver);
+    const optionRowCount = await readOptionRowCount(state.engine.driver);
     post({
         type: 'stats',
         requestID: request.requestID,
         stats: {
             sqliteVersion: state.engine.sqliteVersion,
             vfs: state.engine.vfs,
+            optionsMatcher: state.optionsMatcher,
             reportCount: counts.reportCount,
             rowCount: counts.rowCount,
+            optionRowCount,
             requestCount,
             totalIngestMs,
             totalOrderMs,
+            optionIngestCount,
+            totalOptionIngestMs,
+            searchCount,
+            totalSearchMs,
         },
     });
 }

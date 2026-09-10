@@ -1,5 +1,5 @@
-import type {IngestAndOrderParams} from '@libs/SqlEngine/EngineClient';
-import type {EngineStats, OrderReply, SortRow} from '@libs/SqlEngine/wasm/protocol';
+import type {IngestAndOrderParams, IngestOptionsParams, SearchOptionsParams} from '@libs/SqlEngine/EngineClient';
+import type {EngineStats, OptionIndexRow, OptionsFoundReply, OptionsIngestedReply, OptionsMatcher, OrderReply, SortRow} from '@libs/SqlEngine/wasm/protocol';
 
 import CONST from '@src/CONST';
 
@@ -11,6 +11,10 @@ import CONST from '@src/CONST';
 type OrderOverride = (reportID: string, ids: string[]) => string[];
 
 const tables = new Map<string, Map<string, SortRow>>();
+/** The option index, keyed like the worker's unique (kind, id) pair. */
+const optionRows = new Map<string, OptionIndexRow>();
+let optionsMatcher: OptionsMatcher = 'like';
+let searchCount = 0;
 let pendingReplies: Array<() => void> = [];
 let isAvailable = true;
 let isDeferred = false;
@@ -70,6 +74,80 @@ function ingestAndOrder({reportID, version, upserts, deletes, full}: IngestAndOr
     });
 }
 
+function toOptionKey(kind: string, id: string): string {
+    return `${kind}:${id}`;
+}
+
+function ingestOptions({version, upserts, deletes, full}: IngestOptionsParams): Promise<OptionsIngestedReply> {
+    requestCount += 1;
+    if (full) {
+        optionRows.clear();
+    }
+    for (const ref of deletes) {
+        optionRows.delete(toOptionKey(ref.kind, ref.id));
+    }
+    for (const row of upserts) {
+        optionRows.set(toOptionKey(row.kind, row.id), row);
+    }
+    const reply: OptionsIngestedReply = {type: 'options-ingested', requestID: requestCount, version, ingestMs: 0};
+    if (!isDeferred) {
+        return Promise.resolve(reply);
+    }
+    return new Promise((resolve) => {
+        pendingReplies.push(() => resolve(reply));
+    });
+}
+
+/** Mirror of the worker's window query: hidden rows out, every term a substring, ordered by the row key, cut at the limit. */
+function selectWindow(kind: OptionIndexRow['kind'], terms: string[], limit: number): {ids: string[]; hasMore: boolean} {
+    const matches: OptionIndexRow[] = [];
+    for (const row of optionRows.values()) {
+        if (row.kind !== kind || row.isHidden || !terms.every((term) => row.searchText.includes(term))) {
+            continue;
+        }
+        matches.push(row);
+    }
+    matches.sort((first, second) => {
+        if (first.orderKey === second.orderKey) {
+            return 0;
+        }
+        const ascending = first.orderKey < second.orderKey ? -1 : 1;
+        return kind === 'report' ? -ascending : ascending;
+    });
+    return {ids: matches.slice(0, limit).map((row) => row.id), hasMore: matches.length > limit};
+}
+
+function searchOptions({version, terms, reportLimit, contactLimit}: SearchOptionsParams): Promise<OptionsFoundReply> {
+    requestCount += 1;
+    searchCount += 1;
+    const reports = selectWindow('report', terms, reportLimit);
+    const contacts = selectWindow('contact', terms, contactLimit);
+    const reply: OptionsFoundReply = {
+        type: 'options-found',
+        requestID: requestCount,
+        version,
+        reportIDs: reports.ids,
+        contactIDs: contacts.ids,
+        hasMoreReports: reports.hasMore,
+        hasMoreContacts: contacts.hasMore,
+        queryMs: 0,
+    };
+    if (!isDeferred) {
+        return Promise.resolve(reply);
+    }
+    return new Promise((resolve) => {
+        pendingReplies.push(() => resolve(reply));
+    });
+}
+
+function setEngineOptionsMatcher(matcher: OptionsMatcher) {
+    optionsMatcher = matcher;
+}
+
+function getEngineOptionsMatcher(): OptionsMatcher {
+    return optionsMatcher;
+}
+
 function dropReport(reportID: string): Promise<void> {
     dropCount += 1;
     tables.delete(reportID);
@@ -81,7 +159,21 @@ function getEngineStats(): Promise<EngineStats> {
     for (const table of tables.values()) {
         rowCount += table.size;
     }
-    return Promise.resolve({sqliteVersion: 'mock', vfs: 'memory', reportCount: tables.size, rowCount, requestCount, totalIngestMs: 0, totalOrderMs: 0});
+    return Promise.resolve({
+        sqliteVersion: 'mock',
+        vfs: 'memory',
+        optionsMatcher,
+        reportCount: tables.size,
+        rowCount,
+        optionRowCount: optionRows.size,
+        requestCount,
+        totalIngestMs: 0,
+        totalOrderMs: 0,
+        optionIngestCount: 0,
+        totalOptionIngestMs: 0,
+        searchCount,
+        totalSearchMs: 0,
+    });
 }
 
 function setMockEngineAvailable(value: boolean) {
@@ -113,8 +205,19 @@ function getMockEngineDropCount(): number {
     return dropCount;
 }
 
+function getMockEngineSearchCount(): number {
+    return searchCount;
+}
+
+function getMockEngineOptionRowCount(): number {
+    return optionRows.size;
+}
+
 function resetMockEngine() {
     tables.clear();
+    optionRows.clear();
+    searchCount = 0;
+    optionsMatcher = 'like';
     pendingReplies = [];
     isAvailable = true;
     isDeferred = false;
@@ -126,11 +229,17 @@ function resetMockEngine() {
 export {
     dropReport,
     flushMockEngineReplies,
+    getEngineOptionsMatcher,
     getEngineStats,
     getMockEngineDropCount,
+    getMockEngineOptionRowCount,
     getMockEngineRequestCount,
+    getMockEngineSearchCount,
     ingestAndOrder,
+    ingestOptions,
     isEngineAvailable,
+    searchOptions,
+    setEngineOptionsMatcher,
     resetMockEngine,
     setMockEngineAvailable,
     setMockEngineDeferred,

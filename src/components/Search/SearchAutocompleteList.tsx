@@ -19,6 +19,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useSearchRouterOptions from '@hooks/useSearchRouterOptions';
 import useSortedActions from '@hooks/useSortedActions';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -30,6 +31,7 @@ import {getAllTaxRates} from '@libs/PolicyUtils';
 import {getReportAction} from '@libs/ReportActionsUtils';
 import type {OptionData} from '@libs/ReportUtils';
 import {getReportOrDraftReport} from '@libs/ReportUtils';
+import {isSearchOptionsIndexActive} from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
 import {buildSearchQueryJSON, buildUserReadableQueryString, getQueryWithoutFilters, shouldHighlight} from '@libs/SearchQueryUtils';
 import StringUtils from '@libs/StringUtils';
 import {cancelSpan, endSpan, getSpan} from '@libs/telemetry/activeSpans';
@@ -221,6 +223,10 @@ function SearchAutocompleteList({
     const taxRates = useMemo(() => getAllTaxRates(policies), [policies]);
     const [isTrackIntentUser] = useOnyx(ONYXKEYS.NVP_INTRO_SELECTED, {selector: isTrackIntentUserSelector});
 
+    // POC: with the option index on, typing never rebuilds the full option list; the index answers the query and
+    // this hook only serves the empty-query "Recent chats" list, exactly as it does before the first keystroke.
+    const isIndexActive = isSearchOptionsIndexActive();
+    const hasDebouncedQuery = !!autocompleteQueryValue.trim();
     const {
         options: listOptions,
         isLoading: isLoadingOptions,
@@ -228,7 +234,37 @@ function SearchAutocompleteList({
         hasMore: hasMoreRecentReports,
     } = useFilteredOptions({
         ...SEARCH_ROUTER_OPTIONS_CONFIG,
-        isSearching: !!autocompleteQueryValue.trim(),
+        isSearching: isIndexActive ? false : hasDebouncedQuery,
+    });
+
+    const indexOptions = useSearchRouterOptions({
+        isEnabled: isIndexActive,
+        query: autocompleteQueryValue,
+        formatConfig: {
+            dateFnsLocale,
+            convertToDisplayString,
+            draftComments,
+            betas: betas ?? [],
+            isUsedInChatFinder: true,
+            includeReadOnly: true,
+            maxResults: CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS,
+            includeUserToInvite: true,
+            includeRecentReports: true,
+            includeCurrentUser: true,
+            countryCode,
+            shouldShowGBR: false,
+            shouldUnreadBeBold: true,
+            loginList,
+            visibleReportActionsData,
+            currentUserAccountID,
+            currentUserEmail,
+            policyCollection: policies,
+            personalDetails,
+            sortedActions,
+            conciergeReportID,
+            isTrackIntentUser,
+            translate,
+        },
     });
 
     const isRecentSearchesDataLoaded = !isLoadingOnyxValue(recentSearchesMetadata);
@@ -252,6 +288,9 @@ function SearchAutocompleteList({
     }, [isLoadingOptions]);
 
     const searchOptions = useMemo(() => {
+        if (isIndexActive && hasDebouncedQuery) {
+            return indexOptions ?? defaultListOptions;
+        }
         if (listOptions === null) {
             return defaultListOptions;
         }
@@ -283,6 +322,9 @@ function SearchAutocompleteList({
             translate,
         }).options;
     }, [
+        isIndexActive,
+        hasDebouncedQuery,
+        indexOptions,
         listOptions,
         draftComments,
         betas,

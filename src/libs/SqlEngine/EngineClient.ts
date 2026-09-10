@@ -3,7 +3,19 @@ import Log from '@libs/Log';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 
-import type {EngineStats, OrderReply, SortRow, VfsMode, WorkerReply, WorkerRequest} from './wasm/protocol';
+import type {
+    EngineStats,
+    OptionIndexRef,
+    OptionIndexRow,
+    OptionsFoundReply,
+    OptionsIngestedReply,
+    OptionsMatcher,
+    OrderReply,
+    SortRow,
+    VfsMode,
+    WorkerReply,
+    WorkerRequest,
+} from './wasm/protocol';
 
 import {isWorkerReply} from './wasm/protocol';
 
@@ -13,6 +25,20 @@ type IngestAndOrderParams = {
     upserts: SortRow[];
     deletes: string[];
     full: boolean;
+};
+
+type IngestOptionsParams = {
+    version: number;
+    upserts: OptionIndexRow[];
+    deletes: OptionIndexRef[];
+    full: boolean;
+};
+
+type SearchOptionsParams = {
+    version: number;
+    terms: string[];
+    reportLimit: number;
+    contactLimit: number;
 };
 
 type PendingRequest = {
@@ -27,6 +53,7 @@ const pendingRequests = new Map<number, PendingRequest>();
 let worker: Worker | undefined;
 let hasFailed = false;
 let requestedVfs: VfsMode = 'memory';
+let requestedOptionsMatcher: OptionsMatcher = 'fts';
 let nextRequestID = INIT_REQUEST_ID + 1;
 
 /** True when a worker-backed SQLite engine can be started on this platform. */
@@ -41,6 +68,19 @@ function setEngineVfs(vfs: VfsMode) {
         return;
     }
     requestedVfs = vfs;
+}
+
+/** Selects how the worker matches option rows. Like the VFS, it only takes effect before the worker starts. */
+function setEngineOptionsMatcher(matcher: OptionsMatcher) {
+    if (worker) {
+        Log.warn('[SqlEngine] the options matcher cannot be changed once the worker has started');
+        return;
+    }
+    requestedOptionsMatcher = matcher;
+}
+
+function getEngineOptionsMatcher(): OptionsMatcher {
+    return requestedOptionsMatcher;
 }
 
 function failEngine(message: string) {
@@ -94,6 +134,7 @@ function startWorker(): Worker {
         type: 'init',
         requestID: INIT_REQUEST_ID,
         vfs: requestedVfs,
+        optionsMatcher: requestedOptionsMatcher,
         createdActionName: CONST.REPORT.ACTIONS.TYPE.CREATED,
         reportPreviewActionName: CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW,
     });
@@ -129,6 +170,22 @@ async function dropReport(reportID: string): Promise<void> {
     }
 }
 
+async function ingestOptions(params: IngestOptionsParams): Promise<OptionsIngestedReply> {
+    const reply = await sendRequest((requestID) => ({type: 'ingest-options', requestID, ...params}));
+    if (reply.type !== 'options-ingested') {
+        throw new Error(`SQL engine returned "${reply.type}" instead of an options ingest confirmation`);
+    }
+    return reply;
+}
+
+async function searchOptions(params: SearchOptionsParams): Promise<OptionsFoundReply> {
+    const reply = await sendRequest((requestID) => ({type: 'search-options', requestID, ...params}));
+    if (reply.type !== 'options-found') {
+        throw new Error(`SQL engine returned "${reply.type}" instead of search results`);
+    }
+    return reply;
+}
+
 async function getEngineStats(): Promise<EngineStats> {
     const reply = await sendRequest((requestID) => ({type: 'stats', requestID}));
     if (reply.type !== 'stats') {
@@ -137,5 +194,5 @@ async function getEngineStats(): Promise<EngineStats> {
     return reply.stats;
 }
 
-export {isEngineAvailable, setEngineVfs, ingestAndOrder, dropReport, getEngineStats};
-export type {IngestAndOrderParams};
+export {isEngineAvailable, setEngineVfs, setEngineOptionsMatcher, getEngineOptionsMatcher, ingestAndOrder, dropReport, ingestOptions, searchOptions, getEngineStats};
+export type {IngestAndOrderParams, IngestOptionsParams, SearchOptionsParams};
