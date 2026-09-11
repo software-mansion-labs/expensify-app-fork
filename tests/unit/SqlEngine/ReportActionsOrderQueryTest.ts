@@ -1,7 +1,8 @@
+import splitOrderedIDs from '@libs/ReportActionsOrder/splitOrderedIDs';
 import {getSortedReportActions} from '@libs/ReportActionsUtils';
 import type {IngestAndOrderRequest, SortRow} from '@libs/SqlEngine/wasm/protocol';
 import type {OrderActionNames} from '@libs/SqlEngine/wasm/reportActionsTable';
-import {createReportActionsSchema, dropReportRows, ingestAndOrderReport, readTableCounts} from '@libs/SqlEngine/wasm/reportActionsTable';
+import {createReportActionsSchema, dropReportRows, ingestAndOrderReport, ORDER_QUERY, readTableCounts} from '@libs/SqlEngine/wasm/reportActionsTable';
 import type {WasmSqlEngine} from '@libs/SqlEngine/wasm/WasmSqlDriver';
 import createWasmSqlEngine from '@libs/SqlEngine/wasm/WasmSqlDriver';
 
@@ -72,6 +73,21 @@ function buildFixture(): ReportAction[] {
         created: undefined,
     });
 
+    /*
+     * Only one action per sort group may miss `created`: the JS comparator answers "first is newer" for both
+     * argument orders when both are missing one, so its order between them is whatever the sort happens to do.
+     */
+
+    // A CREATED action without `created` sorts after the CREATED actions that have one.
+    actions.push({
+        ...buildAction('905', '2024-06-04 00:00:00.000', CREATED),
+        // @ts-expect-error the comparator handles a missing `created`, which the type does not allow.
+        created: undefined,
+    });
+
+    // A CREATED action sharing its timestamp with a comment and a preview: the group decides, not the tie break.
+    actions.push(buildAction('906', '2024-04-02 09:00:00.000', CREATED));
+
     return actions;
 }
 
@@ -91,18 +107,37 @@ describe('report_actions order query', () => {
     let engine: WasmSqlEngine;
     const fixture = buildFixture();
 
+    async function explainPlan(sql: string, params: string[]): Promise<string[]> {
+        const rows = await engine.driver.execute(`EXPLAIN QUERY PLAN ${sql}`, params);
+        return rows.map((row) => (typeof row.detail === 'string' ? row.detail : ''));
+    }
+
     beforeEach(async () => {
         engine = await createWasmSqlEngine('memory');
         await createReportActionsSchema(engine.driver);
     });
 
     it('builds a fixture that exercises every comparator branch', () => {
-        expect(fixture).toHaveLength(50);
+        expect(fixture).toHaveLength(52);
     });
 
     it('orders a full ingest exactly like getSortedReportActions', async () => {
-        const {ids} = await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true}), NAMES);
-        expect(ids).toEqual(expectedOrder(fixture));
+        const {ids, total} = await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true}), NAMES);
+        expect(splitOrderedIDs(ids)).toEqual(expectedOrder(fixture));
+        expect(total).toBe(fixture.length);
+    });
+
+    it('returns the whole order as a single row', async () => {
+        await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true}), NAMES);
+        const rows = await engine.driver.execute(ORDER_QUERY, [REPORT_ID]);
+        expect(rows).toHaveLength(1);
+    });
+
+    it('serves the order from the covering index without a temporary b-tree', async () => {
+        await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true}), NAMES);
+        const plan = await explainPlan(ORDER_QUERY, [REPORT_ID]);
+        expect(plan).toContain('SEARCH report_actions USING COVERING INDEX report_actions_order (report_id=?)');
+        expect(plan.join(' | ')).not.toContain('TEMP B-TREE');
     });
 
     it('reaches the same order through upserts and deletes as through a fresh full ingest', async () => {
@@ -121,7 +156,7 @@ describe('report_actions order query', () => {
             NAMES,
         );
 
-        expect(ids).toEqual(expectedOrder(fixture));
+        expect(splitOrderedIDs(ids)).toEqual(expectedOrder(fixture));
     });
 
     it('keeps reports isolated and drops the rows of one report only', async () => {
@@ -132,7 +167,7 @@ describe('report_actions order query', () => {
         expect(await readTableCounts(engine.driver)).toEqual({reportCount: 2, rowCount: fixture.length + otherActions.length});
 
         const {ids} = await ingestAndOrderReport(engine.driver, buildRequest({version: 2}), NAMES);
-        expect(ids).toEqual(expectedOrder(fixture));
+        expect(splitOrderedIDs(ids)).toEqual(expectedOrder(fixture));
 
         await dropReportRows(engine.driver, OTHER_REPORT_ID);
         expect(await readTableCounts(engine.driver)).toEqual({reportCount: 1, rowCount: fixture.length});

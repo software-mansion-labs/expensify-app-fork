@@ -80,11 +80,11 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
     const state = await getState();
 
     if (request.type === 'ingest-and-order') {
-        const {ids, timings} = await ingestAndOrderReport(state.engine.driver, request, state.names);
+        const {ids, total, timings} = await ingestAndOrderReport(state.engine.driver, request, state.names);
         requestCount += 1;
         totalIngestMs += timings.ingestMs;
         totalOrderMs += timings.orderMs;
-        post({type: 'order', requestID: request.requestID, reportID: request.reportID, version: request.version, ids, timings});
+        post({type: 'order', requestID: request.requestID, reportID: request.reportID, version: request.version, ids, total, timings});
         return;
     }
 

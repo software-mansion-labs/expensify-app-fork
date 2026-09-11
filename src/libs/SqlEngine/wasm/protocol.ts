@@ -148,7 +148,10 @@ type OrderReply = {
     requestID: number;
     reportID: string;
     version: number;
-    ids: string[];
+    /** The whole order as one value: report action ids joined by a comma, split by the consumer. */
+    ids: string;
+    /** How many report actions the order holds, so the consumer can check the ids it split. */
+    total: number;
     timings: OrderTimings;
 };
 

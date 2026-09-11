@@ -1,6 +1,7 @@
 import compareLhnRows from '@libs/LhnOrderIndex/compareLhnRows';
 import type {IngestAndOrderParams, IngestOptionsParams, OrderLhnParams, SearchOptionsParams} from '@libs/SqlEngine/EngineClient';
 import type {EngineStats, LhnIndexRow, LhnOrderedReply, OptionIndexRow, OptionsFoundReply, OptionsIngestedReply, OptionsMatcher, OrderReply, SortRow} from '@libs/SqlEngine/wasm/protocol';
+import {ID_SEPARATOR} from '@libs/SqlEngine/wasm/reportActionsTable';
 
 import CONST from '@src/CONST';
 
@@ -67,7 +68,7 @@ function ingestAndOrder({reportID, version, upserts, deletes, full}: IngestAndOr
         .sort(compareRows)
         .map((row) => row.id);
     const ids = orderOverride ? orderOverride(reportID, orderedIDs) : orderedIDs;
-    const reply: OrderReply = {type: 'order', requestID: requestCount, reportID, version, ids, timings: {ingestMs: 0, orderMs: 0}};
+    const reply: OrderReply = {type: 'order', requestID: requestCount, reportID, version, ids: ids.join(ID_SEPARATOR), total: ids.length, timings: {ingestMs: 0, orderMs: 0}};
 
     if (!isDeferred) {
         return Promise.resolve(reply);

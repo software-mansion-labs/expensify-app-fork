@@ -8,6 +8,7 @@ import type {ReportAction, ReportActions} from '@src/types/onyx';
 import noop from 'lodash/noop';
 
 import diffReportActions, {isDiffEmpty} from './diffReportActions';
+import splitOrderedIDs from './splitOrderedIDs';
 
 /**
  * A confirmed order for one report. `raw` is the exact Onyx value `actions` was built from, so a consumer can
@@ -171,7 +172,7 @@ function setReportActionsOrderRawActions(reportID: string, raw: ReportActions | 
             }
             stats.roundTrips += 1;
             stats.totalRoundTripMs += Date.now() - startedAt;
-            confirm(reportID, entry.raw, reply.ids);
+            confirm(reportID, entry.raw, splitOrderedIDs(reply.ids));
         })
         .catch((error: unknown) => {
             stats.failures += 1;
