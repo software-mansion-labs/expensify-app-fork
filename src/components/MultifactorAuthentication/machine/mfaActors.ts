@@ -1,11 +1,15 @@
+import captureRegistrationState from '@components/MultifactorAuthentication/biometrics/captureRegistrationState';
 import checkDeviceEligibility from '@components/MultifactorAuthentication/biometrics/checkDeviceEligibility';
 import {areLocalCredentialsKnownToServer, authorize, createCredential, deleteLocalCredentials} from '@components/MultifactorAuthentication/biometrics/operations';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
+import trackMFAFlowOutcome from '@components/MultifactorAuthentication/observability/trackMFAFlowOutcome';
 
+import {getErrorMessage} from '@libs/ErrorUtils';
 import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {createCanceledMFAResult, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
+import type {MultifactorAuthenticationCallbackResponse} from '@libs/MultifactorAuthentication/shared/types';
 
 import {getDeviceBiometricsOnyxKey, requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
 import {processRegistration} from '@userActions/MultifactorAuthentication/processing';
@@ -19,6 +23,8 @@ import type {
     AuthorizeOutput,
     CreateCredentialInput,
     CreateCredentialOutput,
+    FinalizeOutcomeInput,
+    FinalizeOutcomeOutput,
     LoadRegistrationStateInput,
     LoadRegistrationStateOutput,
     RequestRegistrationChallengeInput,
@@ -139,6 +145,58 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
 });
 
 /**
+ * Runs the scenario's callback, then captures the end-of-flow telemetry. Both halves are contained:
+ * the callback is arbitrary scenario code (it fires backend side effects, e.g. `AuthorizeTransaction`'s
+ * fire-and-forget deny), so a throw there falls back to showing the outcome screen rather than
+ * stranding the modal, and the telemetry half swallows its own failures because by then the callback
+ * has already stored secrets or navigated - rejecting would drop its `SKIP_OUTCOME_SCREEN` answer and
+ * push an outcome screen on top of the screen it just navigated to.
+ *
+ * The input below is also what the dev-only XState inspector serializes, and that masking is by key
+ * name: `maskSensitive.ts` redacts the whole subtree under any key in its `SENSITIVE_KEYS` set, which
+ * includes `payload`. The field carrying the scenario payload therefore has to stay named exactly
+ * `payload` - renaming it to something more descriptive would silently ship arbitrary scenario PII to
+ * the stately.ai window.
+ */
+const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(async ({input}) => {
+    let callbackResponse: MultifactorAuthenticationCallbackResponse;
+    try {
+        callbackResponse = await input.callback(input.isSuccessful, input.callbackInput, input.payload);
+    } catch (error) {
+        addMFABreadcrumb('Scenario callback threw', {message: getErrorMessage(error)}, 'error');
+        callbackResponse = CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN;
+    }
+
+    addMFABreadcrumb('Flow completed', {
+        isSuccessful: input.isSuccessful,
+        callbackResponse,
+        httpStatusCode: input.scenarioResponse?.httpStatusCode ?? input.error?.httpStatusCode,
+        reason: input.scenarioResponse?.reason ?? input.error?.reason,
+        message: input.scenarioResponse?.message ?? input.error?.message,
+    });
+
+    try {
+        const endState = await captureRegistrationState(input.accountID);
+        trackMFAFlowOutcome({
+            isSuccessful: input.isSuccessful,
+            scenario: input.scenarioName,
+            scenarioResponse: input.scenarioResponse,
+            error: input.error,
+            authenticationMethod: input.authenticationMethod?.name,
+            isRegistrationComplete: input.isRegistrationComplete,
+            isAuthorizationComplete: input.scenarioResponse !== undefined,
+            softPromptApproved: input.softPromptApproved,
+            startState: input.registrationStateAtStart ?? endState,
+            endState,
+        });
+    } catch (error) {
+        addMFABreadcrumb('Flow outcome telemetry failed', {message: getErrorMessage(error)}, 'error');
+    }
+
+    return {callbackResponse};
+});
+
+/**
  * Builds the side-effect actors that the machine states invoke. The machine is always created with
  * these working implementations, so no caller needs to provide stubs or overrides.
  */
@@ -149,6 +207,7 @@ function createActors() {
         requestRegistrationChallenge: requestRegistrationChallengeActor,
         createCredential: createCredentialActor,
         authorize: authorizeActor,
+        finalizeOutcome: finalizeOutcomeActor,
     };
 }
 
