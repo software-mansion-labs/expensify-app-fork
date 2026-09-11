@@ -5,6 +5,7 @@ import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import {CurrentReportIDContextProvider} from '@hooks/useCurrentReportID';
 import {SidebarOrderedReportsContextProvider, useSidebarOrderedReports} from '@hooks/useSidebarOrderedReports';
 
+import {getJsLhnOrderSnapshot, resetJsLhnOrderStore} from '@libs/LhnOrderIndex/JsLhnOrderStore';
 import {getLhnOrderSnapshot, resetLhnOrderIndexStore} from '@libs/LhnOrderIndex/LhnOrderIndexStore';
 import {setLhnEngineMode} from '@libs/SqlEngine/lhnEngineMode';
 
@@ -41,7 +42,7 @@ async function renderSidebar() {
     return result;
 }
 
-describe('the sidebar provider in the LHN engine mode', () => {
+describe('the sidebar provider in the two LHN index modes', () => {
     beforeAll(() => {
         Onyx.init({keys: ONYXKEYS});
     });
@@ -49,6 +50,7 @@ describe('the sidebar provider in the LHN engine mode', () => {
     beforeEach(async () => {
         resetMockEngine();
         resetLhnOrderIndexStore();
+        resetJsLhnOrderStore();
         setMockEngineAvailable(true);
         const dataset = buildLhnDataset({reportCount: REPORT_COUNT, currentUserAccountID: CURRENT_USER_ACCOUNT_ID});
         await Onyx.clear();
@@ -78,6 +80,24 @@ describe('the sidebar provider in the LHN engine mode', () => {
         expect(withEngine.current.orderedReportIDs).toEqual(expectedOrder);
         expect(withEngine.current.inboxTabCounts).toEqual(expectedCounts);
         expect(withEngine.current.filteredReports.map((report) => report.reportID)).toEqual(today.current.filteredReports.map((report) => report.reportID));
+    });
+
+    it('shows the same reports, tabs and counts with the order kept in JS, without an engine at all', async () => {
+        setLhnEngineMode('off');
+        const today = await renderSidebar();
+        const expectedOrder = today.current.orderedReportIDs;
+        const expectedCounts = today.current.inboxTabCounts;
+
+        resetJsLhnOrderStore();
+        setLhnEngineMode('js');
+        setMockEngineAvailable(false);
+        const withJsIndex = await renderSidebar();
+
+        expect(getJsLhnOrderSnapshot()?.reportIDs).toEqual(expectedOrder);
+        expect(expectedOrder.length).toBeGreaterThan(0);
+        expect(withJsIndex.current.orderedReportIDs).toEqual(expectedOrder);
+        expect(withJsIndex.current.inboxTabCounts).toEqual(expectedCounts);
+        expect(withJsIndex.current.filteredReports.map((report) => report.reportID)).toEqual(today.current.filteredReports.map((report) => report.reportID));
     });
 
     it('keeps the JS order when the engine is unavailable', async () => {

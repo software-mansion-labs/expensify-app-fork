@@ -8,6 +8,7 @@ import type {LhnIndexInputs, LhnOrderSnapshot} from './types';
 
 import {buildLhnIndexRow} from './buildLhnIndexRows';
 import collectLhnChanges from './collectLhnChanges';
+import isSameRow from './isSameRow';
 
 type LhnOrderIndexStats = {
     /** How many versions have been sent to the engine. */
@@ -62,22 +63,9 @@ const EMPTY_STATS: LhnOrderIndexStats = {
 
 let stats: LhnOrderIndexStats = EMPTY_STATS;
 
-function isSameRow(first: LhnIndexRow | undefined, second: LhnIndexRow): boolean {
-    return (
-        !!first &&
-        first.bucket === second.bucket &&
-        first.sortKey === second.sortKey &&
-        first.lastVisibleActionCreated === second.lastVisibleActionCreated &&
-        first.isUnread === second.isUnread &&
-        first.isTodo === second.isTodo
-    );
-}
-
 /**
- * The rows that really changed, out of the reports whose inputs changed identity. The two counts differ a lot:
- * `updateReportsToDisplayInLHN` gives a new entry to every report carrying a flag (unread, attention, errors) on
- * every recheck, so a single incoming message hands this function about a third of the account, of which one row
- * is genuinely different. Comparing the rows keeps the boundary payload at the size of the real change.
+ * The rows that really changed, out of the reports whose inputs changed identity. Comparing the rows keeps the
+ * boundary payload at the size of the real change; see `./isSameRow.ts` for how far the two counts diverge.
  */
 function collectChangedRows(candidateIDs: readonly string[], inputs: LhnIndexInputs): LhnIndexRow[] {
     const upserts: LhnIndexRow[] = [];

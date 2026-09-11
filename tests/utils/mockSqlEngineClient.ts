@@ -1,17 +1,6 @@
+import compareLhnRows from '@libs/LhnOrderIndex/compareLhnRows';
 import type {IngestAndOrderParams, IngestOptionsParams, OrderLhnParams, SearchOptionsParams} from '@libs/SqlEngine/EngineClient';
-import type {
-    EngineStats,
-    LhnIndexRow,
-    LhnOrderedReply,
-    LhnPriorityMode,
-    OptionIndexRow,
-    OptionsFoundReply,
-    OptionsIngestedReply,
-    OptionsMatcher,
-    OrderReply,
-    SortRow,
-} from '@libs/SqlEngine/wasm/protocol';
-import {LHN_FIRST_RECENCY_BUCKET} from '@libs/SqlEngine/wasm/protocol';
+import type {EngineStats, LhnIndexRow, LhnOrderedReply, OptionIndexRow, OptionsFoundReply, OptionsIngestedReply, OptionsMatcher, OrderReply, SortRow} from '@libs/SqlEngine/wasm/protocol';
 
 import CONST from '@src/CONST';
 
@@ -156,19 +145,6 @@ function searchOptions({version, terms, reportLimit, contactLimit}: SearchOption
 }
 
 /** Mirror of the worker's ORDER BY: bucket, then recency in the default mode for the last two buckets, then the sort key, then the id. */
-function compareLhnRows(first: LhnIndexRow, second: LhnIndexRow, priorityMode: LhnPriorityMode): number {
-    if (first.bucket !== second.bucket) {
-        return first.bucket - second.bucket;
-    }
-    if (priorityMode === 'default' && first.bucket >= LHN_FIRST_RECENCY_BUCKET && first.lastVisibleActionCreated !== second.lastVisibleActionCreated) {
-        return first.lastVisibleActionCreated < second.lastVisibleActionCreated ? 1 : -1;
-    }
-    if (first.sortKey !== second.sortKey) {
-        return first.sortKey < second.sortKey ? -1 : 1;
-    }
-    return first.reportID < second.reportID ? -1 : 1;
-}
-
 function orderLhn({version, upserts, deletes, full, priorityMode}: OrderLhnParams): Promise<LhnOrderedReply> {
     requestCount += 1;
     lhnRequestCount += 1;

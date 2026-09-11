@@ -1,4 +1,6 @@
 import {isProduction as isProductionLib} from '@libs/Environment/Environment';
+import {getJsLhnOrderStats} from '@libs/LhnOrderIndex/JsLhnOrderStore';
+import type {JsLhnOrderStats} from '@libs/LhnOrderIndex/JsLhnOrderStore';
 import {getLhnOrderIndexStats} from '@libs/LhnOrderIndex/LhnOrderIndexStore';
 import type {LhnOrderIndexStats} from '@libs/LhnOrderIndex/LhnOrderIndexStore';
 import navigationRef from '@libs/Navigation/navigationRef';
@@ -46,9 +48,9 @@ type SearchRouterEngineDevTools = {
 type LhnEngineDevTools = {
     getMode: () => LhnEngineMode;
     setMode: (mode: string) => void;
-    /** Compares every engine order with today's order and counts mismatches; costs a full JS sort per write. */
+    /** Compares every index order with today's order and counts mismatches; costs a full JS sort per write. */
     setGuard: (isEnabled: boolean) => void;
-    getStats: () => Promise<{mode: LhnEngineMode; isGuardEnabled: boolean; store: LhnOrderIndexStats; engine: EngineStats | undefined}>;
+    getStats: () => Promise<{mode: LhnEngineMode; isGuardEnabled: boolean; store: LhnOrderIndexStats | JsLhnOrderStats; engine: EngineStats | undefined}>;
 };
 
 declare global {
@@ -150,7 +152,7 @@ export default function addUtilsToWindow() {
             setMode: (mode: string) => {
                 if (!isLhnEngineMode(mode)) {
                     /* eslint-disable-next-line no-console */
-                    console.warn(`Unknown LHN engine mode "${mode}". Use "off" or "sql".`);
+                    console.warn(`Unknown LHN engine mode "${mode}". Use "off", "sql" or "js".`);
                     return;
                 }
                 setLhnEngineMode(mode);
@@ -161,7 +163,7 @@ export default function addUtilsToWindow() {
             getStats: async () => ({
                 mode: getLhnEngineMode(),
                 isGuardEnabled: isLhnGuardEnabled(),
-                store: getLhnOrderIndexStats(),
+                store: getLhnEngineMode() === 'js' ? getJsLhnOrderStats() : getLhnOrderIndexStats(),
                 engine: await getEngineStats().catch(() => undefined),
             }),
         };

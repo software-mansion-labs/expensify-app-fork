@@ -1,9 +1,11 @@
 import {setInboxTab} from '@libs/actions/User';
+import {updateJsLhnOrder} from '@libs/LhnOrderIndex/JsLhnOrderStore';
 import {compareLhnOrder, getLhnOrderVersion} from '@libs/LhnOrderIndex/LhnOrderIndexStore';
 import type {LhnOrderSnapshot} from '@libs/LhnOrderIndex/types';
 import Log from '@libs/Log';
 import SidebarUtils from '@libs/SidebarUtils';
 import {getLhnEngineMode, isLhnGuardEnabled} from '@libs/SqlEngine/lhnEngineMode';
+import type {LhnPriorityMode} from '@libs/SqlEngine/wasm/protocol';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
 import {getChatTabBrickRoad} from '@libs/WorkspacesSettingsUtils';
 
@@ -76,15 +78,15 @@ const SidebarOrderedReportsActionsContext = createContext<SidebarOrderedReportsA
 });
 
 // This file does not compile with React Compiler (render-time ref cache below keeps referential
-/** The active tab's list out of one engine order. The engine returns the two tab lists with the full one, so a tab switch costs nothing. */
-function getEngineTabReportIDs(engineOrder: LhnOrderSnapshot, activeTab: ValueOf<typeof CONST.INBOX_TAB>): string[] {
+/** The active tab's list out of one index order. Both index arms return the two tab lists with the full one, so a tab switch costs nothing. */
+function getIndexTabReportIDs(indexOrder: LhnOrderSnapshot, activeTab: ValueOf<typeof CONST.INBOX_TAB>): string[] {
     switch (activeTab) {
         case CONST.INBOX_TAB.TODO:
-            return engineOrder.todoReportIDs;
+            return indexOrder.todoReportIDs;
         case CONST.INBOX_TAB.UNREAD:
-            return engineOrder.unreadReportIDs;
+            return indexOrder.unreadReportIDs;
         default:
-            return engineOrder.reportIDs;
+            return indexOrder.reportIDs;
     }
 }
 
@@ -333,31 +335,33 @@ function SidebarOrderedReportsContextProvider({
     );
 
     /*
-     * The LHN order POC (`repo/wasm-onyx/poc-lhn/`). In the `sql` mode the five groups are ordered by the SQLite
-     * worker from rows fed one per changed report, and the three JS passes below (sort, tab filter, tab counts)
-     * never run. Until the first order comes back the JS sort still answers, so the first paint is unchanged.
+     * The LHN order POC (`repo/wasm-onyx/poc-lhn/`). Both index modes keep one narrow row per displayed report and
+     * rebuild only the rows a user action changed, and in both the three JS passes below (sort, tab filter, tab
+     * counts) never run. In `sql` the SQLite worker holds the rows and the order arrives a tick later, so the JS
+     * sort still answers the first paint; in `js` the same order is kept in sorted lists and answered here.
      */
-    const isLhnEngineEnabled = getLhnEngineMode() === 'sql';
+    const lhnOrderMode = getLhnEngineMode();
+    const isLhnEngineEnabled = lhnOrderMode === 'sql';
+    const lhnPriorityMode: LhnPriorityMode = priorityMode === CONST.PRIORITY_MODE.GSD ? 'focus' : 'default';
     const lhnIndexInputs = useMemo(
         () => ({reportsToDisplay: reportsToDisplayInLHN, reportAttributes, reportNameValuePairs, draftComments: reportsDrafts}),
         [reportsToDisplayInLHN, reportAttributes, reportNameValuePairs, reportsDrafts],
     );
-    const engineOrder = useLhnOrder({
-        isEnabled: isLhnEngineEnabled,
-        inputs: lhnIndexInputs,
-        priorityMode: priorityMode === CONST.PRIORITY_MODE.GSD ? 'focus' : 'default',
-    });
-    const engineReportIDs = engineOrder?.reportIDs;
+    const engineOrder = useLhnOrder({isEnabled: isLhnEngineEnabled, inputs: lhnIndexInputs, priorityMode: lhnPriorityMode});
+    // Re-running this with inputs the store has already seen is a no-op that returns the same order, so the memo is free to retry it.
+    const jsOrder = useMemo(() => (lhnOrderMode === 'js' ? updateJsLhnOrder(lhnIndexInputs, lhnPriorityMode) : undefined), [lhnOrderMode, lhnIndexInputs, lhnPriorityMode]);
+    const indexOrder = engineOrder ?? jsOrder;
+    const indexReportIDs = indexOrder?.reportIDs;
 
-    const orderedReportIDs = useMemo(() => engineReportIDs ?? getOrderedReportIDs(), [engineReportIDs, getOrderedReportIDs]);
+    const orderedReportIDs = useMemo(() => indexReportIDs ?? getOrderedReportIDs(), [indexReportIDs, getOrderedReportIDs]);
 
-    // The guard of the POC: today's order against the engine's, in an effect so it costs nothing while it is off.
+    // The guard of the POC: today's order against the index's, in an effect so it costs nothing while it is off.
     useEffect(() => {
-        if (!isLhnEngineEnabled || !isLhnGuardEnabled() || !engineOrder || engineOrder.version !== getLhnOrderVersion()) {
+        if (!isLhnGuardEnabled() || !indexOrder || (isLhnEngineEnabled && indexOrder.version !== getLhnOrderVersion())) {
             return;
         }
-        compareLhnOrder(getOrderedReportIDs(), engineOrder.reportIDs);
-    }, [isLhnEngineEnabled, engineOrder, getOrderedReportIDs]);
+        compareLhnOrder(getOrderedReportIDs(), indexOrder.reportIDs);
+    }, [isLhnEngineEnabled, indexOrder, getOrderedReportIDs]);
 
     // When a report is opened from the To-do/Unread tab (see setStickyReportID), we remember it so it
     // stays visible after viewing it removes it from the tab (e.g. it gets read). It's only set on a
@@ -368,7 +372,7 @@ function SidebarOrderedReportsContextProvider({
     const stickyReportID = stickyReport?.reportID;
     const stickyReportTab = stickyReport?.tab;
     const filteredReportIDs = useMemo(() => {
-        const baseFilteredReportIDs = engineOrder ? getEngineTabReportIDs(engineOrder, activeTab) : SidebarUtils.filterReportsForInboxTab(orderedReportIDs, reportsToDisplayInLHN, activeTab);
+        const baseFilteredReportIDs = indexOrder ? getIndexTabReportIDs(indexOrder, activeTab) : SidebarUtils.filterReportsForInboxTab(orderedReportIDs, reportsToDisplayInLHN, activeTab);
         if (activeTab === CONST.INBOX_TAB.ALL || !stickyReportID || stickyReportTab !== activeTab || baseFilteredReportIDs.includes(stickyReportID)) {
             return baseFilteredReportIDs;
         }
@@ -379,15 +383,15 @@ function SidebarOrderedReportsContextProvider({
         }
         const baseSet = new Set(baseFilteredReportIDs);
         return orderedReportIDs.filter((reportID) => baseSet.has(reportID) || reportID === stickyReportID);
-    }, [orderedReportIDs, reportsToDisplayInLHN, activeTab, stickyReportTab, stickyReportID, engineOrder]);
+    }, [orderedReportIDs, reportsToDisplayInLHN, activeTab, stickyReportTab, stickyReportID, indexOrder]);
 
     // The count shown in each tab's badge, derived from the full "All" set (not the currently filtered view).
     const inboxTabCounts = useMemo(
         () =>
-            engineOrder
-                ? {[CONST.INBOX_TAB.TODO]: engineOrder.todoReportIDs.length, [CONST.INBOX_TAB.UNREAD]: engineOrder.unreadReportIDs.length}
+            indexOrder
+                ? {[CONST.INBOX_TAB.TODO]: indexOrder.todoReportIDs.length, [CONST.INBOX_TAB.UNREAD]: indexOrder.unreadReportIDs.length}
                 : SidebarUtils.getInboxTabCounts(orderedReportIDs, reportsToDisplayInLHN),
-        [engineOrder, orderedReportIDs, reportsToDisplayInLHN],
+        [indexOrder, orderedReportIDs, reportsToDisplayInLHN],
     );
 
     // Get the actual reports based on the filtered IDs

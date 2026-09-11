@@ -2,10 +2,11 @@
  * Runtime flag of the LHN order POC.
  * off: today's JS path (categorize, five sorts, tab filter and tab counts over the whole displayed set on every write).
  * sql: the same order served by the SQLite worker from an incrementally fed row table.
+ * js: the same rows and the same order, kept in JS as sorted lists and answered in the render that wrote them.
  */
-type LhnEngineMode = 'off' | 'sql';
+type LhnEngineMode = 'off' | 'sql' | 'js';
 
-const MODES: LhnEngineMode[] = ['off', 'sql'];
+const MODES: LhnEngineMode[] = ['off', 'sql', 'js'];
 
 let currentMode: LhnEngineMode = 'sql';
 
