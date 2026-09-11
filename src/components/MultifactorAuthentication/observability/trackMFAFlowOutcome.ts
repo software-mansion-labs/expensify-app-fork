@@ -1,3 +1,4 @@
+import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/biometrics/captureRegistrationState';
 import type {MultifactorAuthenticationScenarioResponse} from '@components/MultifactorAuthentication/config/types';
 
 import Log from '@libs/Log';
@@ -25,13 +26,6 @@ function classifyFailure(reason: MultifactorAuthenticationReason | undefined): F
     }
     return 'unclassified';
 }
-
-/** Snapshot of account and device registration signals captured at MFA flow boundaries for routing decisions and telemetry. */
-type MFARegistrationStateSnapshot = {
-    hasServerCredentials: boolean;
-    hasLocalCredentials: boolean;
-    hasEverAcceptedSoftPrompt: boolean;
-};
 
 type MFAFlowOutcomeContext = {
     isSuccessful: boolean;
@@ -110,4 +104,3 @@ function trackMFAFlowOutcome(rawContext: MFAFlowOutcomeContext): void {
 }
 
 export default trackMFAFlowOutcome;
-export type {MFARegistrationStateSnapshot};

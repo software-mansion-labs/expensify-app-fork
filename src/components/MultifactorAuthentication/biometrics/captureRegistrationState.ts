@@ -1,5 +1,3 @@
-import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/observability/trackMFAFlowOutcome';
-
 import readOnyxValueOnce from '@libs/MultifactorAuthentication/shared/readOnyxValueOnce';
 
 import {getDeviceBiometricsOnyxKey} from '@userActions/MultifactorAuthentication';
@@ -9,6 +7,13 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import {mfaCredentialIDsSelector} from '@selectors/Account';
 
 import {areLocalCredentialsKnownToServer} from './operations';
+
+/** Snapshot of account and device registration signals captured at MFA flow boundaries for routing decisions and telemetry. */
+type MFARegistrationStateSnapshot = {
+    hasServerCredentials: boolean;
+    hasLocalCredentials: boolean;
+    hasEverAcceptedSoftPrompt: boolean;
+};
 
 /**
  * Builds the account/device registration snapshot used for flow-boundary routing decisions and
@@ -31,3 +36,4 @@ async function captureRegistrationState(accountID: number, signal?: AbortSignal)
 }
 
 export default captureRegistrationState;
+export type {MFARegistrationStateSnapshot};

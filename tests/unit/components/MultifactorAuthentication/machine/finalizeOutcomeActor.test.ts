@@ -1,7 +1,7 @@
+import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/biometrics/captureRegistrationState';
 import createActors from '@components/MultifactorAuthentication/machine/mfaActors';
 import type {FinalizeOutcomeInput} from '@components/MultifactorAuthentication/machine/types';
 import trackMFAFlowOutcome from '@components/MultifactorAuthentication/observability/trackMFAFlowOutcome';
-import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/observability/trackMFAFlowOutcome';
 
 import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
