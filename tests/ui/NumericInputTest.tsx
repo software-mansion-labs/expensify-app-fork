@@ -33,6 +33,17 @@ function renderWithProviders(children: React.ReactNode) {
     return render(<ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>{children}</ComposeProviders>);
 }
 
+/** Selects the whole displayed magnitude, as a select-all before a paste does. */
+function selectAll(input: ReturnType<typeof screen.getByTestId>, length: number) {
+    fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: length}}});
+}
+
+/** Types a minus, which the input reports as a key press before the changed text reaches the controller. */
+function typeMinus(input: ReturnType<typeof screen.getByTestId>, text: string) {
+    fireEvent(input, 'keyPress', {nativeEvent: {key: MINUS_SIGN}});
+    fireEvent.changeText(input, text);
+}
+
 function ToggleSignTrigger() {
     const {toggleSign} = useNumericInputActions();
 
@@ -112,15 +123,104 @@ describe('NumericInput', () => {
             expect(onInputChange).toHaveBeenCalledWith('-123');
         });
 
-        it('clears the sign when the magnitude is cleared', () => {
+        it('keeps the sign when the magnitude is cleared, so a further backspace clears it', () => {
             renderNumericInput({value: '-12', allowNegative: true});
 
             const input = screen.getByTestId(INPUT_TEST_ID);
             fireEvent.changeText(input, '');
 
-            expect(screen.queryByText(MINUS_SIGN)).not.toBeOnTheScreen();
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
             expect(input).toHaveDisplayValue('');
-            expect(onInputChange).toHaveBeenCalledWith('');
+            expect(onInputChange).toHaveBeenLastCalledWith('-');
+
+            fireEvent(input, 'keyPress', {nativeEvent: {key: 'Backspace'}});
+
+            expect(screen.queryByText(MINUS_SIGN)).not.toBeOnTheScreen();
+            expect(onInputChange).toHaveBeenLastCalledWith('');
+        });
+
+        it('toggles the sign when a minus is typed into the input', () => {
+            renderNumericInput({value: '-12', allowNegative: true});
+
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            typeMinus(input, '-12');
+
+            expect(screen.queryByText(MINUS_SIGN)).not.toBeOnTheScreen();
+            expect(input).toHaveDisplayValue('12');
+            expect(onInputChange).toHaveBeenLastCalledWith('12');
+        });
+
+        it('does not carry a rejected minus over to the next edit', () => {
+            renderNumericInput({value: '-12', allowNegative: true});
+
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            // With the caret at the end, the typed minus produces "12-", which the validator rejects.
+            typeMinus(input, '12-');
+
+            expect(onInputChange).not.toHaveBeenCalled();
+
+            // The rejected minus must not be read as a toggle by the next edit, so the pasted sign survives.
+            fireEvent.changeText(input, '-50');
+
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(onInputChange).toHaveBeenLastCalledWith('-50');
+        });
+
+        it.each([
+            ['50', '50'],
+            // The digits of the pasted value must not decide the outcome, so a shared leading digit changes nothing.
+            ['15', '15'],
+        ])('clears the sign when the pasted positive value %s replaces the whole number', (pastedText, expectedValue) => {
+            renderNumericInput({value: '-12', allowNegative: true});
+
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            selectAll(input, 2);
+            fireEvent.changeText(input, pastedText);
+
+            expect(screen.queryByText(MINUS_SIGN)).not.toBeOnTheScreen();
+            expect(onInputChange).toHaveBeenLastCalledWith(expectedValue);
+        });
+
+        it('keeps the sign when a pasted positive value replaces only part of the number', () => {
+            renderNumericInput({value: '-12', allowNegative: true});
+
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 1, end: 1}}});
+            fireEvent.changeText(input, '1502');
+
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(onInputChange).toHaveBeenLastCalledWith('-1502');
+        });
+
+        it('keeps the sign when digits are appended to a fully selected empty magnitude', () => {
+            renderNumericInput({value: '-', allowNegative: true});
+
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            selectAll(input, 0);
+            fireEvent.changeText(input, '5');
+
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(onInputChange).toHaveBeenLastCalledWith('-5');
+        });
+
+        it('takes the sign from a pasted negative value', () => {
+            renderNumericInput({value: '12', allowNegative: true});
+
+            fireEvent.changeText(screen.getByTestId(INPUT_TEST_ID), '-50');
+
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(onInputChange).toHaveBeenLastCalledWith('-50');
+        });
+
+        it('keeps the sign when a negative value is pasted onto a negative value, because a paste never toggles', () => {
+            renderNumericInput({value: '-12', allowNegative: true});
+            const input = screen.getByTestId(INPUT_TEST_ID);
+
+            fireEvent.changeText(input, '-50');
+            fireEvent.changeText(input, '-50');
+
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(input).toHaveDisplayValue('50');
         });
 
         it('clears a standalone minus when backspace is pressed on an empty input', () => {
