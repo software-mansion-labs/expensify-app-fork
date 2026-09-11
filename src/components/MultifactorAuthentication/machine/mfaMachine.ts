@@ -128,8 +128,9 @@ const MFAMachine = setup({
             }
             markHasAcceptedSoftPrompt(context.accountID);
         },
-        // Runs on CLOSE_MODAL: drops the cancel-confirmation modal so it cannot linger over the
-        // closing navigator (CLOSE_MODAL can fire without the flow completing, e.g. an offline cancel).
+        // Runs on entering `closing`: drops the cancel-confirmation modal so it cannot linger over the
+        // closing navigator. The context is not wiped until `closed`, so without this the flag would
+        // survive the whole close animation.
         hideCancelConfirmModal: assign({isCancelConfirmVisible: false}),
         resetContext: assign(() => ({...DEFAULT_CONTEXT})),
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
@@ -160,7 +161,7 @@ const MFAMachine = setup({
         [MFA_STATE.OPEN]: {
             initial: MFA_STATE.PREPARING,
             on: {
-                CLOSE_MODAL: {target: MFA_STATE.CLOSING, actions: 'hideCancelConfirmModal'},
+                CLOSE_MODAL: MFA_STATE.CLOSING,
             },
             states: {
                 // This is the transparent initial screen, and its child states run the pre-screen
@@ -414,6 +415,7 @@ const MFAMachine = setup({
         // `closeFallback` timer re-enters `closed` instead.
         [MFA_STATE.CLOSING]: {
             id: MFA_STATE.CLOSING,
+            entry: ['hideCancelConfirmModal'],
             on: {
                 MODAL_CLOSED: MFA_STATE.CLOSED,
             },

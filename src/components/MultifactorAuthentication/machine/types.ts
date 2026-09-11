@@ -176,9 +176,14 @@ type FinalizeOutcomeInput = {
     registrationStateAtStart: MFARegistrationStateSnapshot | undefined;
 };
 
-/** The finalize-outcome actor's result: what the scenario callback decided about post-outcome navigation. */
+/**
+ * The finalize-outcome actor's result: what the scenario callback decided about post-outcome
+ * navigation. Always one of the two responses - `customConfig` gives every scenario a callback and the
+ * callback type returns one, and the actor's own catch falls back to `SHOW_OUTCOME_SCREEN` - so the
+ * machine's `onDone` guard on it is an exhaustive two-way choice.
+ */
 type FinalizeOutcomeOutput = {
-    callbackResponse: MultifactorAuthenticationCallbackResponse | undefined;
+    callbackResponse: MultifactorAuthenticationCallbackResponse;
 };
 
 export type {

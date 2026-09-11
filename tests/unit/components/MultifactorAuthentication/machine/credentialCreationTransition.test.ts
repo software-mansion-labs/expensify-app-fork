@@ -7,15 +7,12 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 import CONST from '@src/CONST';
 
 import {createActorAtState, createFlowContext, sendCreateCredentialDone, sendFinalizeOutcomeDone} from 'tests/utils/mfa/flowActors';
-import {MFA_TEST_REGISTRATION_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
+import {MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN, MFA_TEST_REGISTRATION_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise} from 'xstate';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
-// This suite pins `createCredential`'s own outcome routing, not the finalize actor's - so every path
-// to the outcome settles `finalizingOutcome` with this fixed SHOW_OUTCOME_SCREEN response.
-const FINALIZE_OUTCOME_SHOW_SCREEN = {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN};
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
 // a wrong target adjusts those expectations and still passes. This suite pins the single entry into
@@ -108,7 +105,7 @@ describe('MFA credential creation', () => {
 
             actor.start();
             sendCreateCredentialDone(actor, {success: false, error: failureError});
-            sendFinalizeOutcomeDone(actor, FINALIZE_OUTCOME_SHOW_SCREEN);
+            sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
@@ -125,7 +122,7 @@ describe('MFA credential creation', () => {
             const machine = mfaMachine.provide({
                 actors: {
                     createCredential: fromPromise<CreateCredentialOutput, CreateCredentialInput>(() => Promise.reject(new Error('Credential registration exploded'))),
-                    finalizeOutcome: fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(() => Promise.resolve(FINALIZE_OUTCOME_SHOW_SCREEN)),
+                    finalizeOutcome: fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(() => Promise.resolve(MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN)),
                 },
             });
             const snapshot = machine.resolveState({

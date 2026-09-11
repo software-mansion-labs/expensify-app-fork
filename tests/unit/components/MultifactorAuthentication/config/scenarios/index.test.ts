@@ -58,8 +58,8 @@ describe('MultifactorAuthentication Scenarios Config', () => {
 
     /**
      * Verifies that every scenario config exposes `onCancel`, present or `undefined`. `customConfig`
-     * normalizes it onto every resolved config the same way it normalizes `callback`, so the finalize
-     * actor's cancel guard (`scenario.onCancel !== undefined`) can read it uniformly.
+     * normalizes it onto every resolved config the same way it normalizes `callback`, so Slice B's
+     * cancel guard can read it uniformly.
      */
     it('should have an onCancel property for every scenario config', () => {
         const config = MULTIFACTOR_AUTHENTICATION_SCENARIO_CONFIG as MultifactorAuthenticationScenarioConfigRecord;

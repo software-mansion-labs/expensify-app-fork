@@ -151,9 +151,15 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
  * stranding the modal, and the telemetry half swallows its own failures because by then the callback
  * has already stored secrets or navigated - rejecting would drop its `SKIP_OUTCOME_SCREEN` answer and
  * push an outcome screen on top of the screen it just navigated to.
+ *
+ * The input below is also what the dev-only XState inspector serializes, and that masking is by key
+ * name: `maskSensitive.ts` redacts the whole subtree under any key in its `SENSITIVE_KEYS` set, which
+ * includes `payload`. The field carrying the scenario payload therefore has to stay named exactly
+ * `payload` - renaming it to something more descriptive would silently ship arbitrary scenario PII to
+ * the stately.ai window.
  */
 const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(async ({input}) => {
-    let callbackResponse: MultifactorAuthenticationCallbackResponse | undefined;
+    let callbackResponse: MultifactorAuthenticationCallbackResponse;
     try {
         callbackResponse = await input.callback(input.isSuccessful, input.callbackInput, input.payload);
     } catch (error) {
@@ -163,7 +169,7 @@ const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeI
 
     addMFABreadcrumb('Flow completed', {
         isSuccessful: input.isSuccessful,
-        callbackResponse: callbackResponse ?? 'none',
+        callbackResponse,
         httpStatusCode: input.scenarioResponse?.httpStatusCode ?? input.error?.httpStatusCode,
         reason: input.scenarioResponse?.reason ?? input.error?.reason,
         message: input.scenarioResponse?.message ?? input.error?.message,

@@ -16,13 +16,12 @@ import createInitEvent, {
     MFA_TEST_AUTHORIZATION_ORDINARY_ERROR,
     MFA_TEST_CREDENTIAL_CREATION_ERROR,
     MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR,
+    MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
     MFA_TEST_INVALID_CODE_ERROR,
     MFA_TEST_REGISTRATION_CHALLENGE,
     MFA_TEST_SCENARIO_RESPONSE,
     MFA_TEST_VALIDATE_CODE,
 } from './flowFixtures';
-
-const FINALIZE_OUTCOME_SHOW_SCREEN = {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN} as const;
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 
@@ -175,7 +174,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             {type: 'SOFT_PROMPT_APPROVED'},
             createActorDoneEvent('createCredential', {success: true}),
             createActorDoneEvent('authorize', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
-            createActorDoneEvent('finalizeOutcome', FINALIZE_OUTCOME_SHOW_SCREEN),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
     },
@@ -187,7 +186,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             createActorDoneEvent('validateDevice', {success: true}),
             createActorDoneEvent('loadRegistrationState', {hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
             createActorDoneEvent('authorize', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
-            createActorDoneEvent('finalizeOutcome', FINALIZE_OUTCOME_SHOW_SCREEN),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
     },
@@ -259,7 +258,7 @@ const MFA_ACTOR_EVENT_FIXTURES = {
     ),
     // SKIP_OUTCOME_SCREEN routes to `closing` instead of an outcome screen, so both variants need a
     // graph branch for the walk to reach both endpoints.
-    finalizeOutcome: createActorEvents('finalizeOutcome', FINALIZE_OUTCOME_SHOW_SCREEN, {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN}),
+    finalizeOutcome: createActorEvents('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN, {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN}),
 } satisfies MfaActorEventFixtures;
 
 /** Every concrete event the traversal can offer, in the order its fixtures declare them. */

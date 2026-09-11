@@ -1,6 +1,6 @@
 import {getScenarioConfig} from '@components/MultifactorAuthentication/config';
 import type {MultifactorAuthenticationScenarioResponse} from '@components/MultifactorAuthentication/config/types';
-import type {MultifactorAuthenticationInitEvent} from '@components/MultifactorAuthentication/machine/types';
+import type {FinalizeOutcomeOutput, MultifactorAuthenticationInitEvent} from '@components/MultifactorAuthentication/machine/types';
 import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/observability/trackMFAFlowOutcome';
 
 import {PASSKEY_AUTH_TYPE} from '@libs/MultifactorAuthentication/Passkeys/WebAuthn';
@@ -40,6 +40,7 @@ const MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR = createMFAErrorFromApiRespons
 // A reason outside the two device-check reasons, so the walk lands on the generic failure copy.
 const MFA_TEST_CREDENTIAL_CREATION_ERROR = createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_CREATION_FAILED, 'Graph-traversal credential creation failure');
 const MFA_TEST_AUTHORIZATION_ORDINARY_ERROR = createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.CANCELED, 'Graph-traversal authorization cancellation');
+const MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN: FinalizeOutcomeOutput = {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN};
 // The Provider's pre-INIT snapshot, carried only for the outcome telemetry's start/end comparison - no
 // transition depends on its values.
 const MFA_TEST_REGISTRATION_STATE_AT_START: MFARegistrationStateSnapshot = {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false};
@@ -66,6 +67,7 @@ export {
     MFA_TEST_AUTHORIZATION_ORDINARY_ERROR,
     MFA_TEST_CREDENTIAL_CREATION_ERROR,
     MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR,
+    MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
     MFA_TEST_INVALID_CODE_ERROR,
     MFA_TEST_REGISTRATION_CHALLENGE,
     MFA_TEST_REGISTRATION_STATE_AT_START,
