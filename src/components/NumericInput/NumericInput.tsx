@@ -1,5 +1,5 @@
 import {useNumericEditingController} from '@components/NumericEditingController';
-import type {NumericEditingRef} from '@components/NumericEditingController';
+import type {NumericEditingKeyPressEvent, NumericEditingRef, NumericEditingSelection} from '@components/NumericEditingController';
 import isTextInputFocused from '@components/TextInput/BaseTextInput/isTextInputFocused';
 import type {BaseTextInputRef} from '@components/TextInput/BaseTextInput/types';
 
@@ -14,11 +14,23 @@ import {NumericInputActionsContext, NumericInputStateContext} from './context';
 /** The composed input displays the magnitude because the sign is rendered separately. */
 const getMagnitude = (canonicalValue: string, allowNegative: boolean) => (allowNegative && canonicalValue.startsWith('-') ? canonicalValue.slice(1) : canonicalValue);
 
-/** Preserves the sign that is rendered outside the text input while the magnitude is edited. Clearing the display text also clears the sign. */
-const getSignedValue = (displayText: string, previousCanonicalValue: string, allowNegative: boolean) => {
-    const shouldPreserveNegativeSign = allowNegative && displayText && !displayText.startsWith('-') && previousCanonicalValue.startsWith('-');
-    return shouldPreserveNegativeSign ? `-${displayText}` : displayText;
+/**
+ * Because the sign is rendered outside the input, this function restores it in the canonical value. Typing a minus
+ * toggles the current sign, while a pasted minus sets it. Replacing the whole number with a positive value clears the
+ * old sign. Partial edits and clearing the magnitude keep the sign until it is explicitly cleared.
+ */
+const getSignedValue = (displayText: string, wasNegative: boolean, wasSignTyped: boolean, wasNumberReplaced: boolean) => {
+    if (displayText.startsWith('-')) {
+        const magnitude = displayText.slice(1);
+        return wasSignTyped && wasNegative ? magnitude : `-${magnitude}`;
+    }
+
+    return wasNegative && !wasNumberReplaced ? `-${displayText}` : displayText;
 };
+
+/** An edit that replaced a selection spanning the whole magnitude replaced the number rather than amending it. */
+const getWasNumberReplaced = (previousDisplayText: string, previousSelection: NumericEditingSelection) =>
+    !!previousDisplayText && previousSelection.start === 0 && previousSelection.end === previousDisplayText.length;
 
 type NumericInputProps = {
     /** Canonical value shared by composed primitives. Only an empty value resets editing state. */
@@ -48,15 +60,32 @@ type NumericInputProps = {
 
 function NumericInput({value = '', onInputChange, allowNegative = false, decimals = 0, maxLength, errorText, ref, children}: NumericInputProps) {
     const inputRef = useRef<BaseTextInputRef | null>(null);
-    const controller = useNumericEditingController({
-        value,
-        onInputChange,
-        allowNegative,
-        decimals,
-        maxLength,
-        toDisplayText: (canonicalValue) => getMagnitude(canonicalValue, allowNegative),
-        toCanonicalValue: (displayText, previousCanonicalValue) => getSignedValue(displayText, previousCanonicalValue, allowNegative),
-    });
+    const wasSignKeyPressedRef = useRef(false);
+
+    const toDisplayText = (canonicalValue: string) => getMagnitude(canonicalValue, allowNegative);
+
+    const toCanonicalValue = (displayText: string, previousCanonicalValue: string, previousSelection: NumericEditingSelection) => {
+        if (!allowNegative) {
+            return displayText;
+        }
+
+        const previousDisplayText = toDisplayText(previousCanonicalValue);
+
+        return getSignedValue(displayText, previousCanonicalValue.startsWith('-'), wasSignKeyPressedRef.current, getWasNumberReplaced(previousDisplayText, previousSelection));
+    };
+
+    const controller = useNumericEditingController({value, onInputChange, allowNegative, decimals, maxLength, toDisplayText, toCanonicalValue});
+
+    // Rejected edits never reach `toCanonicalValue`, so the sign key is consumed around every edit instead of inside it.
+    const setNumber = (displayText: string) => {
+        controller.setNumber(displayText);
+        wasSignKeyPressedRef.current = false;
+    };
+
+    const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
+        wasSignKeyPressedRef.current = event.nativeEvent.key === '-';
+        controller.handleKeyPress(event);
+    };
 
     useImperativeHandle(ref, () => ({
         clearSelection: controller.clearSelection,
@@ -64,7 +93,6 @@ function NumericInput({value = '', onInputChange, allowNegative = false, decimal
         updateNumber: controller.updateNumber,
     }));
 
-    // The displayed magnitude does not change when the sign toggles, so the selection remains valid.
     const toggleSign = () => {
         if (!allowNegative) {
             return;
@@ -102,12 +130,12 @@ function NumericInput({value = '', onInputChange, allowNegative = false, decimal
     };
 
     const actionsContextValue: NumericInputActionsContextValue = {
-        setNumber: controller.setNumber,
+        setNumber,
         clearSelection: controller.clearSelection,
         toggleSign,
         clearSign,
         handleSelectionChange: controller.handleSelectionChange,
-        handleKeyPress: controller.handleKeyPress,
+        handleKeyPress,
         focusInput,
     };
 
