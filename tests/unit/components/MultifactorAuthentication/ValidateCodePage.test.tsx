@@ -54,7 +54,7 @@ describe('MultifactorAuthenticationValidateCodePage', () => {
 
         await act(async () => validateDeviceControl.resolve({success: true}));
         await waitForBatchedUpdatesWithAct();
-        await act(async () => loadRegistrationStateControl.resolve({hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}));
+        await act(async () => loadRegistrationStateControl.resolve({hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}));
         await waitForBatchedUpdatesWithAct();
 
         const submitButton = screen.getByTestId(TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON);
