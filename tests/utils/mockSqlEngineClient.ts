@@ -89,7 +89,8 @@ function ingestAndOrder({reportID, version, upserts, deletes, full, lastReadTime
         reportID,
         version,
         ids: ids.join(ID_SEPARATOR),
-        total: ids.length,
+        // The worker counts the rows it ordered, before the override stands in for a joined value that lost ids.
+        total: orderedIDs.length,
         synthetic: syntheticPairs.join(ID_SEPARATOR),
         unreadAnchorID: findUnreadAnchorID(ordered, lastReadTime),
         timings: {ingestMs: 0, orderMs: 0},

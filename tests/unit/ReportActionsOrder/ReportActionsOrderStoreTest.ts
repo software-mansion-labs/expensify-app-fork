@@ -1,3 +1,4 @@
+import Log from '@libs/Log';
 import {
     getReportActionsOrderSnapshot,
     getReportActionsOrderStats,
@@ -198,6 +199,31 @@ describe('ReportActionsOrderStore', () => {
         await waitForBatchedUpdates();
 
         expect(getReportActionsOrderStats().mismatches).toBe(0);
+    });
+
+    it('warns when the joined order holds fewer ids than the worker ordered', async () => {
+        const warnSpy = jest.spyOn(Log, 'warn').mockImplementation(() => undefined);
+        setMockEngineOrderOverride((reportID, ids) => ids.slice(1));
+
+        setReportActionsOrderRawActions(REPORT_ID, FIXTURE);
+        await waitForBatchedUpdates();
+
+        expect(warnSpy).toHaveBeenCalledWith('[ReportActionsOrder] the joined order does not hold every ordered id', {
+            reportID: REPORT_ID,
+            idCount: expectedIDs(FIXTURE).length - 1,
+            total: expectedIDs(FIXTURE).length,
+        });
+        warnSpy.mockRestore();
+    });
+
+    it('does not warn when the joined order holds every ordered id', async () => {
+        const warnSpy = jest.spyOn(Log, 'warn').mockImplementation(() => undefined);
+
+        setReportActionsOrderRawActions(REPORT_ID, FIXTURE);
+        await waitForBatchedUpdates();
+
+        expect(warnSpy).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
     });
 
     it('places a Dynamic External Workflow routed action exactly where the JS display order puts it', async () => {

@@ -186,7 +186,12 @@ function requestOrder(reportID: string, entry: ReportEntry, diff: ReportActionsD
             stats.roundTrips += 1;
             stats.totalRoundTripMs += Date.now() - startedAt;
             currentEntry.anchorID = reply.unreadAnchorID;
-            confirm(reportID, currentRaw, {ids: splitOrderedIDs(reply.ids), syntheticParents: parseSyntheticParents(reply.synthetic)});
+            const ids = splitOrderedIDs(reply.ids);
+            // The worker counts the order it joined, so a shorter split means the joined value lost ids on the way.
+            if (ids.length !== reply.total) {
+                Log.warn('[ReportActionsOrder] the joined order does not hold every ordered id', {reportID, idCount: ids.length, total: reply.total});
+            }
+            confirm(reportID, currentRaw, {ids, syntheticParents: parseSyntheticParents(reply.synthetic)});
         })
         .catch((error: unknown) => {
             stats.failures += 1;
