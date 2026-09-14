@@ -7,7 +7,7 @@ import {
     requestSearchOptions,
     resetSearchOptionsIndexStore,
 } from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
-import {getSearchWindow} from '@libs/SearchOptionsIndex/searchWindow';
+import {getSearchWindow, REFILL_FACTOR} from '@libs/SearchOptionsIndex/searchWindow';
 import {setSearchRouterEngineMode} from '@libs/SqlEngine/searchRouterEngineMode';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -38,22 +38,21 @@ jest.mock('@react-navigation/native', () => {
 const REPORT_COUNT = 40_000;
 const CONTACT_COUNT = 5_000;
 const QUERY_COUNT = 500;
-/** Words the dataset builds its names from, so a drawn term reaches a dense part of the index. */
 /** The single JS-only rejection this dataset reaches, kept as a label so a new one stands out in the diff. */
 const EMPTY_CHAT_THREAD = 'empty chat thread';
 /** The contact rejection that depends on the result itself: its login already shows as one of the recent reports. */
 const SHOWN_AS_RECENT_REPORT = 'login already shown as a recent report';
-/** Ratchet over the measured rate, so a predicate that starts leaking shows up as more refills. */
+/** Reported when the formatter reorders the window, which is what makes its second sort pass redundant. */
+const ORDER_DIFFERS = 'formatter reordered the engine window';
 /** Measured at 12 of 500 on 2026-09-14; a ratchet, so a predicate that starts leaking shows up as more refills. */
 const MAX_UNDERFLOWS = 12;
 const RANDOM_MODULUS = 2_147_483_647;
 const RANDOM_MULTIPLIER = 16_807;
+/** Words the dataset builds its names from, so a drawn term reaches a dense part of the index. */
 const VOCABULARY = ['zephyr', 'chat', 'group', 'workspace', 'room', 'expense', 'report', 'thread', 'person', 'user', 'example.com', 'current'];
 
 const dataset = buildSearchRouterDataset({reportCount: REPORT_COUNT, contactCount: CONTACT_COUNT, currentUserAccountID: CURRENT_USER_ACCOUNT_ID});
 const formatConfig = buildSearchRouterFormatConfig(dataset);
-const window = getSearchWindow(formatConfig);
-
 /** A multiplicative generator, so the queries this suite draws are the same ones on the next run. */
 function createRandom(seed: number): () => number {
     let state = seed % RANDOM_MODULUS;
@@ -121,19 +120,31 @@ function classifyContactDrop(accountID: string, shownLogins: Set<string>): strin
     return `contact ${accountID} login=${login ?? 'none'}`;
 }
 
+/** Whether the rendered rows keep the order the engine gave them, which is the sort the formatter repeats. */
+function findReorderings(candidateIDs: string[], renderedIDs: string[]): string[] {
+    const rendered = new Set(renderedIDs);
+    const inEngineOrder = candidateIDs.filter((id) => rendered.has(id));
+    return inEngineOrder.length === renderedIDs.length && inEngineOrder.every((id, index) => id === renderedIDs.at(index)) ? [] : [ORDER_DIFFERS];
+}
+
 async function collectDropReasons(query: string): Promise<string[]> {
+    const underflowsBefore = getSearchOptionsIndexStats().underflows;
     requestSearchOptions(query, formatConfig);
     await waitForBatchedUpdates();
     // A refill runs on the wider window, so the snapshot needs one more turn before it carries this query.
     await waitForBatchedUpdates();
+    const hasRefilled = getSearchOptionsIndexStats().underflows > underflowsBefore;
+    const window = getSearchWindow(formatConfig, hasRefilled ? REFILL_FACTOR : 1);
     const options = getSearchOptionsIndexSnapshot()?.options;
     const renderedReports = new Set(options?.recentReports.map((option) => option.reportID));
     const renderedContacts = new Set(options?.personalDetails.map((option) => String(option.accountID)));
     const shownLogins = new Set((options?.recentReports ?? []).map((option) => option.login).filter((login): login is string => !!login));
-    const exactWindow = await searchMockEngine({version: 0, terms: processSearchString(query), reportLimit: window.reportLimit, contactLimit: window.contactLimit});
+    const engineWindow = await searchMockEngine({version: 0, terms: processSearchString(query), reportLimit: window.reportLimit, contactLimit: window.contactLimit});
     return [
-        ...findSkipped(exactWindow.reportIDs, renderedReports).map(classifyReportDrop),
-        ...findSkipped(exactWindow.contactIDs, renderedContacts).map((accountID) => classifyContactDrop(accountID, shownLogins)),
+        ...findSkipped(engineWindow.reportIDs, renderedReports).map(classifyReportDrop),
+        ...findSkipped(engineWindow.contactIDs, renderedContacts).map((accountID) => classifyContactDrop(accountID, shownLogins)),
+        ...findReorderings(engineWindow.reportIDs, options?.recentReports.map((option) => option.reportID) ?? []),
+        ...findReorderings(engineWindow.contactIDs, options?.personalDetails.map((option) => String(option.accountID)) ?? []),
     ];
 }
 
@@ -154,7 +165,7 @@ describe('SearchOptionsIndex exact window', () => {
         await Onyx.clear();
     });
 
-    it(`drops rows from the exact window of ${QUERY_COUNT} random queries for one predicate only`, async () => {
+    it(`renders the engine window in the engine order over ${QUERY_COUNT} random queries, bar one predicate`, async () => {
         const reasons: string[] = [];
         for (const query of buildQueries(QUERY_COUNT)) {
             // The queries run one after another because each one reads the counters the previous one moved.
