@@ -339,6 +339,33 @@ describe('NumericInput', () => {
             expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('1');
         });
 
+        it('preserves the sign when sanitizing a fully selected negative value after the accepted decimals decrease', () => {
+            // Given a negative value whose displayed magnitude is fully selected
+            const {rerender} = renderNumericInput({value: '-12.55', allowNegative: true});
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            selectAll(input, 5);
+
+            // When the accepted number of decimals drops to zero
+            rerender(
+                <ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>
+                    <NumericInput
+                        onInputChange={onInputChange}
+                        decimals={0}
+                        value="-12.55"
+                        allowNegative
+                    >
+                        <NumericInput.MinusSign />
+                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                    </NumericInput>
+                </ComposeProviders>,
+            );
+
+            // Then sanitization keeps the canonical negative sign
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('12');
+            expect(onInputChange).toHaveBeenLastCalledWith('-12');
+        });
+
         it('rejects an edit with more integer digits than the root maxLength allows', () => {
             // Given a composition limited to two integer digits and value "12"
             renderNumericInput({value: '12', maxLength: 2});

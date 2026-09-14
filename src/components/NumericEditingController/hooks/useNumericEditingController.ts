@@ -130,7 +130,11 @@ function useNumericEditingController({
             return;
         }
 
-        setNumber(toDisplayText(stripDecimalsFromAmount(currentValue)));
+        // Preserve the canonical sign because text conversion treats a full selection as a replacement.
+        const nextValue = stripDecimalsFromAmount(currentValue);
+        const previousValue = applyValue(nextValue);
+
+        syncAfterEdit({previousText: toDisplayText(previousValue), nextText: toDisplayText(nextValue)});
     });
 
     return {
