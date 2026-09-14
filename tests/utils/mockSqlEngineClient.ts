@@ -102,8 +102,8 @@ function ingestOptions({version, upserts, deletes, full}: IngestOptionsParams): 
     });
 }
 
-/** Mirror of the worker's window query: hidden and invalid rows out, every term a substring, ordered by the row key then the id, cut at the limit. */
-function selectWindow(kind: OptionIndexRow['kind'], terms: string[], limit: number): {ids: string[]; hasMore: boolean} {
+/** Mirror of the worker's window query: hidden and invalid rows out, every term a substring, ordered by the row key then the id, cut at the limit and counted one past it. */
+function selectWindow(kind: OptionIndexRow['kind'], terms: string[], limit: number): {ids: string[]; matched: number} {
     const matches: OptionIndexRow[] = [];
     for (const row of optionRows.values()) {
         if (row.kind !== kind || row.isHidden || !row.isValid || !terms.every((term) => row.searchText.includes(term))) {
@@ -115,7 +115,7 @@ function selectWindow(kind: OptionIndexRow['kind'], terms: string[], limit: numb
         const ascending = first.orderKey === second.orderKey ? compareIDs(first.id, second.id) : compareIDs(first.orderKey, second.orderKey);
         return kind === 'report' ? -ascending : ascending;
     });
-    return {ids: matches.slice(0, limit).map((row) => row.id), hasMore: matches.length > limit};
+    return {ids: matches.slice(0, limit).map((row) => row.id), matched: Math.min(matches.length, limit + 1)};
 }
 
 function compareIDs(first: string, second: string): number {
@@ -136,8 +136,8 @@ function searchOptions({version, terms, reportLimit, contactLimit}: SearchOption
         version,
         reportIDs: reports.ids,
         contactIDs: contacts.ids,
-        hasMoreReports: reports.hasMore,
-        hasMoreContacts: contacts.hasMore,
+        matchedReports: reports.matched,
+        matchedContacts: contacts.matched,
         queryMs: 0,
     };
     if (!isDeferred) {

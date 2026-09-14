@@ -26,8 +26,10 @@ type SearchOptionsIndexInputs = {
 type SearchCandidateIDs = {
     reportIDs: string[];
     accountIDs: string[];
-    hasMoreReports: boolean;
-    hasMoreContacts: boolean;
+    /** Reports the matcher counted, no further than one above the report window. */
+    matchedReports: number;
+    /** Contacts the matcher counted, no further than one above the contact window. */
+    matchedContacts: number;
 };
 
 /** What `getSearchOptions` needs besides the option list and the query. */

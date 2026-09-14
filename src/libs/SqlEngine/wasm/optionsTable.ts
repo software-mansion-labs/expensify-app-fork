@@ -8,8 +8,8 @@ import {buildOptionsSearchPlan, FTS_MIN_TERM_LENGTH} from './optionsSearchPlan';
 type OptionsSearchResult = {
     reportIDs: string[];
     contactIDs: string[];
-    hasMoreReports: boolean;
-    hasMoreContacts: boolean;
+    matchedReports: number;
+    matchedContacts: number;
     queryMs: number;
 };
 
@@ -167,16 +167,18 @@ function buildSearchStatement(terms: string[], kind: OptionIndexKind, limit: num
     };
 }
 
-function readWindow(rows: SqlRow[], limit: number): {ids: string[]; hasMore: boolean} {
+// `matched` counts the rows the statement read, which its own `LIMIT ? + 1` bounds: one above the window means
+// at least one match waits behind it.
+function readWindow(rows: SqlRow[], limit: number): {ids: string[]; matched: number} {
     const row = rows.at(0);
     const joined = row?.ids;
-    const matched = row?.matched;
+    const count = row?.matched;
     const ids = typeof joined === 'string' && joined.length > 0 ? joined.split(',') : [];
-    const hasMore = typeof matched === 'number' && matched > limit;
-    return {ids: hasMore ? ids.slice(0, limit) : ids, hasMore};
+    const matched = typeof count === 'number' ? count : 0;
+    return {ids: matched > limit ? ids.slice(0, limit) : ids, matched};
 }
 
-const EMPTY_WINDOW = {ids: [], hasMore: false} satisfies {ids: string[]; hasMore: boolean};
+const EMPTY_WINDOW = {ids: [], matched: 0} satisfies {ids: string[]; matched: number};
 
 async function readSearchWindow(driver: SqlDriver, terms: string[], kind: OptionIndexKind, limit: number, plan: OptionsSearchPlan) {
     if (plan.type === 'empty') {
@@ -194,8 +196,8 @@ async function searchOptionRows(driver: SqlDriver, request: SearchOptionsRequest
     return {
         reportIDs: reports.ids,
         contactIDs: contacts.ids,
-        hasMoreReports: reports.hasMore,
-        hasMoreContacts: contacts.hasMore,
+        matchedReports: reports.matched,
+        matchedContacts: contacts.matched,
         queryMs: performance.now() - startedAt,
     };
 }

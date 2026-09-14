@@ -291,7 +291,7 @@ function countMismatch(activeRequest: SearchRequest, activeInputs: SearchOptions
  * window. Contacts cannot leak: for the router's configuration their whole filter is the `isValid` column.
  */
 function hasReportLeaked(options: Options, candidates: SearchCandidateIDs, window: SearchWindow): boolean {
-    return options.recentReports.length < window.reportLimit && candidates.hasMoreReports;
+    return options.recentReports.length < window.reportLimit && candidates.matchedReports > window.reportLimit;
 }
 
 function finishSearch(activeRequest: SearchRequest, searchVersion: number, candidates: SearchCandidateIDs, startedAt: number) {
@@ -353,7 +353,7 @@ function runSearch() {
             finishSearch(
                 activeRequest,
                 searchVersion,
-                {reportIDs: reply.reportIDs, accountIDs: reply.contactIDs, hasMoreReports: reply.hasMoreReports, hasMoreContacts: reply.hasMoreContacts},
+                {reportIDs: reply.reportIDs, accountIDs: reply.contactIDs, matchedReports: reply.matchedReports, matchedContacts: reply.matchedContacts},
                 startedAt,
             );
         })

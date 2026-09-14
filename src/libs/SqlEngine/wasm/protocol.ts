@@ -178,8 +178,10 @@ type OptionsFoundReply = {
     reportIDs: string[];
     /** Alphabetical, at most `contactLimit` ids. */
     contactIDs: string[];
-    hasMoreReports: boolean;
-    hasMoreContacts: boolean;
+    /** Rows the report window matched, counted no further than `reportLimit + 1`. */
+    matchedReports: number;
+    /** Rows the contact window matched, counted no further than `contactLimit + 1`. */
+    matchedContacts: number;
     queryMs: number;
 };
 

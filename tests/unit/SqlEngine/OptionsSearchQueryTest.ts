@@ -100,8 +100,8 @@ describe.each(MATCHERS)('option_rows search with the %s matcher', (matcher) => {
 
         expect(result.reportIDs).toEqual(expected.reportIDs);
         expect(result.contactIDs).toEqual(expected.accountIDs);
-        expect(result.hasMoreReports).toBe(expected.hasMoreReports);
-        expect(result.hasMoreContacts).toBe(expected.hasMoreContacts);
+        expect(result.matchedReports).toBe(expected.matchedReports);
+        expect(result.matchedContacts).toBe(expected.matchedContacts);
     });
 
     it('applies upserts and deletes on top of the full ingest', async () => {

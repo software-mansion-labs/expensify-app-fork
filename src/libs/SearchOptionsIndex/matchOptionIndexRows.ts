@@ -18,8 +18,8 @@ function matchOptionIndexRows(rows: OptionIndexRow[], terms: string[], reportLim
     return {
         reportIDs: reports.options.map((row) => row.id),
         accountIDs: contacts.options.map((row) => row.id),
-        hasMoreReports: reports.hasMore,
-        hasMoreContacts: contacts.hasMore,
+        matchedReports: reports.options.length + (reports.hasMore ? 1 : 0),
+        matchedContacts: contacts.options.length + (contacts.hasMore ? 1 : 0),
     };
 }
 
