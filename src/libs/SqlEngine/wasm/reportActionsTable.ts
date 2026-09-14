@@ -14,6 +14,8 @@ type OrderResult = {
     total: number;
     /** The synthetic rows as one value: `<id><PAIR_SEPARATOR><parent id>` entries joined by `ID_SEPARATOR`. */
     synthetic: string;
+    /** The unread anchor for the `lastReadTime` of the request, empty when none was asked for or none is unread. */
+    unreadAnchorID: string;
     timings: OrderTimings;
 };
 
@@ -75,6 +77,14 @@ const ORDER_QUERY = `SELECT group_concat(id, '${ID_SEPARATOR}') AS ids, count(*)
 const SYNTHETIC_QUERY = `SELECT group_concat(id || '${PAIR_SEPARATOR}' || parent_id, '${ID_SEPARATOR}') AS pairs
 FROM report_actions WHERE report_id = ? AND parent_id IS NOT NULL;`;
 
+/*
+ * The oldest action newer than a `lastReadTime`, which is the last action of the display order that is still
+ * unread. Reading the order index backwards puts that action first, so `LIMIT 1` stops the walk there.
+ * `created` only filters the walk, because `sort_group` leads the index and the order starts with it.
+ * A row without `created` never satisfies the comparison, exactly as `undefined > string` is false in JS.
+ */
+const ANCHOR_QUERY = `SELECT id FROM report_actions WHERE report_id = ? AND created > ? ${REVERSE_ORDER} LIMIT 1;`;
+
 const COUNT_QUERY = 'SELECT COUNT(*) AS row_count, COUNT(DISTINCT report_id) AS report_count FROM report_actions;';
 
 /** Mirrors the two leading steps of the `getSortedReportActions` comparator: CREATED last, then a missing `created` last. */
@@ -128,12 +138,14 @@ function ingestAndOrderReport(driver: SqlDriver, request: IngestAndOrderRequest,
         const orderStartedAt = performance.now();
         const rows = await tx.execute(ORDER_QUERY, [request.reportID]);
         const syntheticRows = await tx.execute(SYNTHETIC_QUERY, [request.reportID]);
+        const anchorRows = request.lastReadTime === undefined ? [] : await tx.execute(ANCHOR_QUERY, [request.reportID, request.lastReadTime]);
         const orderMs = performance.now() - orderStartedAt;
 
         return {
             ids: readText(rows.at(0), 'ids'),
             total: readCount(rows.at(0), 'total'),
             synthetic: readText(syntheticRows.at(0), 'pairs'),
+            unreadAnchorID: readText(anchorRows.at(0), 'id'),
             timings: {ingestMs, orderMs},
         };
     });
@@ -148,5 +160,17 @@ async function readTableCounts(driver: SqlDriver): Promise<TableCounts> {
     return {reportCount: readCount(rows.at(0), 'report_count'), rowCount: readCount(rows.at(0), 'row_count')};
 }
 
-export {createReportActionsSchema, ingestAndOrderReport, dropReportRows, readTableCounts, ID_SEPARATOR, PAIR_SEPARATOR, ORDER_QUERY, SYNTHETIC_QUERY, DISPLAY_ORDER, REVERSE_ORDER};
+export {
+    createReportActionsSchema,
+    ingestAndOrderReport,
+    dropReportRows,
+    readTableCounts,
+    ID_SEPARATOR,
+    PAIR_SEPARATOR,
+    ANCHOR_QUERY,
+    ORDER_QUERY,
+    SYNTHETIC_QUERY,
+    DISPLAY_ORDER,
+    REVERSE_ORDER,
+};
 export type {OrderActionNames, OrderResult, TableCounts};

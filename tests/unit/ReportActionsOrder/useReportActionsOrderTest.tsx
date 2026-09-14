@@ -1,6 +1,7 @@
 import {renderHook} from '@testing-library/react-native';
 
 import useReportActionsOrder from '@hooks/reportActionsOrder/useReportActionsOrder';
+import type {ReportActionsOrderResult} from '@hooks/reportActionsOrder/useReportActionsOrder';
 
 import {resetReportActionsOrderStore} from '@libs/ReportActionsOrder/ReportActionsOrderStore';
 import {getSortedReportActionsForDisplay} from '@libs/ReportActionsUtils';
@@ -39,6 +40,10 @@ function expectedIDs(actions: ReportActions): string[] {
     return getSortedReportActionsForDisplay(actions, undefined, true, undefined, REPORT_ID).map((reportAction) => reportAction.reportActionID);
 }
 
+function orderedIDs(result: ReportActionsOrderResult): string[] | undefined {
+    return result.actions?.map((reportAction) => reportAction.reportActionID);
+}
+
 describe('useReportActionsOrder', () => {
     beforeEach(() => {
         resetMockEngine();
@@ -61,26 +66,26 @@ describe('useReportActionsOrder', () => {
         );
 
         expect(renderCount).toBe(1);
-        expect(result.current?.map((reportAction) => reportAction.reportActionID)).toEqual(expectedIDs(FIXTURE));
+        expect(orderedIDs(result.current)).toEqual(expectedIDs(FIXTURE));
 
         await waitForBatchedUpdatesWithAct();
 
         expect(renderCount).toBe(2);
-        const confirmed = result.current;
+        const confirmed = result.current.actions;
         expect(confirmed?.map((reportAction) => reportAction.reportActionID)).toEqual(expectedIDs(FIXTURE));
 
         rerender({actions: FIXTURE});
         expect(renderCount).toBe(3);
-        expect(result.current).toBe(confirmed);
+        expect(result.current.actions).toBe(confirmed);
 
         rerender({actions: WITH_NEW_ACTION});
         expect(renderCount).toBe(4);
-        expect(result.current?.map((reportAction) => reportAction.reportActionID)).toEqual(expectedIDs(WITH_NEW_ACTION));
+        expect(orderedIDs(result.current)).toEqual(expectedIDs(WITH_NEW_ACTION));
 
         await waitForBatchedUpdatesWithAct();
 
         expect(renderCount).toBe(5);
-        expect(result.current?.map((reportAction) => reportAction.reportActionID)).toEqual(expectedIDs(WITH_NEW_ACTION));
+        expect(orderedIDs(result.current)).toEqual(expectedIDs(WITH_NEW_ACTION));
     });
 
     it('stays on the JS path when the engine is unavailable', async () => {
@@ -95,7 +100,8 @@ describe('useReportActionsOrder', () => {
         await waitForBatchedUpdatesWithAct();
 
         expect(renderCount).toBe(1);
-        expect(result.current?.map((reportAction) => reportAction.reportActionID)).toEqual(expectedIDs(FIXTURE));
+        expect(orderedIDs(result.current)).toEqual(expectedIDs(FIXTURE));
+        expect(result.current.derived).toBeUndefined();
     });
 
     it('never falls back to the JS order in strict mode', async () => {
@@ -103,10 +109,38 @@ describe('useReportActionsOrder', () => {
 
         const {result} = renderHook(() => useReportActionsOrder(REPORT_ID, FIXTURE));
 
-        expect(result.current).toEqual([]);
+        expect(result.current.actions).toEqual([]);
 
         await waitForBatchedUpdatesWithAct();
 
-        expect(result.current?.map((reportAction) => reportAction.reportActionID)).toEqual(expectedIDs(FIXTURE));
+        expect(orderedIDs(result.current)).toEqual(expectedIDs(FIXTURE));
+    });
+
+    it('resolves the unread anchor for the lastReadTime it is given', async () => {
+        const lastReadTime = '2024-01-02 00:00:00.000';
+        const {result} = renderHook(() => useReportActionsOrder(REPORT_ID, FIXTURE, lastReadTime));
+
+        await waitForBatchedUpdatesWithAct();
+
+        expect(result.current.derived?.anchorTime).toBe(lastReadTime);
+        expect(result.current.derived?.unreadAnchorID).toBe('3');
+    });
+
+    it('reports no unread anchor when nothing is newer than the lastReadTime', async () => {
+        const {result} = renderHook(() => useReportActionsOrder(REPORT_ID, FIXTURE, '2024-02-01 00:00:00.000'));
+
+        await waitForBatchedUpdatesWithAct();
+
+        expect(result.current.derived?.unreadAnchorID).toBe('');
+    });
+
+    it('shares one id-to-index map with the confirmed order', async () => {
+        const {result} = renderHook(() => useReportActionsOrder(REPORT_ID, FIXTURE));
+
+        await waitForBatchedUpdatesWithAct();
+
+        const {actions, derived} = result.current;
+        expect(derived?.idToIndex.size).toBe(actions?.length);
+        expect(actions?.map((reportAction) => derived?.idToIndex.get(reportAction.reportActionID))).toEqual([0, 1, 2]);
     });
 });

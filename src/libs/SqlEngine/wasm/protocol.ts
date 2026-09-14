@@ -90,6 +90,8 @@ type IngestAndOrderRequest = {
     deletes: string[];
     /** When true the worker replaces every row of the report before applying upserts. */
     full: boolean;
+    /** When set, the worker also resolves the unread anchor against this time. */
+    lastReadTime?: string;
 };
 
 type DropRequest = {
@@ -156,6 +158,8 @@ type OrderReply = {
     total: number;
     /** Which ids of the order are synthetic: `<id>:<parent id>` entries joined by a comma. */
     synthetic: string;
+    /** The oldest action newer than the requested `lastReadTime`, empty when none was requested or none is unread. */
+    unreadAnchorID: string;
     timings: OrderTimings;
 };
 

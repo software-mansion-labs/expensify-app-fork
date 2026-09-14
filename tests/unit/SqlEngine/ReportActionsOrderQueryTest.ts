@@ -2,7 +2,16 @@ import splitOrderedIDs from '@libs/ReportActionsOrder/splitOrderedIDs';
 import {getSortedReportActions} from '@libs/ReportActionsUtils';
 import type {IngestAndOrderRequest, SortRow} from '@libs/SqlEngine/wasm/protocol';
 import type {OrderActionNames} from '@libs/SqlEngine/wasm/reportActionsTable';
-import {createReportActionsSchema, dropReportRows, ingestAndOrderReport, ORDER_QUERY, PAIR_SEPARATOR, readTableCounts, SYNTHETIC_QUERY} from '@libs/SqlEngine/wasm/reportActionsTable';
+import {
+    ANCHOR_QUERY,
+    createReportActionsSchema,
+    dropReportRows,
+    ingestAndOrderReport,
+    ORDER_QUERY,
+    PAIR_SEPARATOR,
+    readTableCounts,
+    SYNTHETIC_QUERY,
+} from '@libs/SqlEngine/wasm/reportActionsTable';
 import type {WasmSqlEngine} from '@libs/SqlEngine/wasm/WasmSqlDriver';
 import createWasmSqlEngine from '@libs/SqlEngine/wasm/WasmSqlDriver';
 
@@ -179,6 +188,32 @@ describe('report_actions order query', () => {
         const plan = await explainPlan(SYNTHETIC_QUERY, [REPORT_ID]);
         expect(plan).toContain('SEARCH report_actions USING COVERING INDEX report_actions_synthetic (report_id=?)');
         expect(plan.join(' | ')).not.toContain('TEMP B-TREE');
+    });
+
+    it('resolves the unread anchor exactly like findLast over the JS order', async () => {
+        const order = getSortedReportActions(fixture, true);
+        const anchorTimes = ['2024-01-01 00:00:00.000', '2024-04-02 09:00:00.000', '2024-05-10 12:34:56.789', '2024-12-31 23:59:59.999', '2025-01-01 00:00:00.000'];
+
+        for (const lastReadTime of anchorTimes) {
+            const {unreadAnchorID} = await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true, lastReadTime}), NAMES);
+            const expectedAction = order.findLast((action) => action.created !== undefined && action.created > lastReadTime);
+            expect(unreadAnchorID).toBe(expectedAction === undefined ? '' : expectedAction.reportActionID);
+        }
+    });
+
+    it('reads the unread anchor backwards from the covering index without a temporary b-tree', async () => {
+        await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true}), NAMES);
+
+        const params = [REPORT_ID, '2024-04-02 09:00:00.000'];
+        const plan = await explainPlan(ANCHOR_QUERY, params);
+        // `created` cannot narrow the seek because `sort_group` leads the index, so the index is walked backwards and filtered.
+        expect(plan).toContain('SEARCH report_actions USING COVERING INDEX report_actions_order (report_id=?)');
+        expect(plan.join(' | ')).not.toContain('TEMP B-TREE');
+    });
+
+    it('asks for no anchor when the request carries no lastReadTime', async () => {
+        const {unreadAnchorID} = await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true}), NAMES);
+        expect(unreadAnchorID).toBe('');
     });
 
     it('keeps reports isolated and drops the rows of one report only', async () => {

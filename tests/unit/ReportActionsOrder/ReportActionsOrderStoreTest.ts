@@ -2,6 +2,7 @@ import {
     getReportActionsOrderSnapshot,
     getReportActionsOrderStats,
     resetReportActionsOrderStore,
+    setReportActionsOrderAnchorTime,
     setReportActionsOrderRawActions,
     subscribeToReportActionsOrder,
 } from '@libs/ReportActionsOrder/ReportActionsOrderStore';
@@ -232,6 +233,41 @@ describe('ReportActionsOrderStore', () => {
         await waitForBatchedUpdates();
 
         expect(snapshotIDs()).toEqual(expectedIDs(DEW_FIXTURE).slice().reverse());
+    });
+
+    it('resolves the unread anchor against the anchor time it was given', async () => {
+        setReportActionsOrderAnchorTime(REPORT_ID, '2024-01-02 00:00:00.000');
+        setReportActionsOrderRawActions(REPORT_ID, FIXTURE);
+        await waitForBatchedUpdates();
+
+        const snapshot = getReportActionsOrderSnapshot(REPORT_ID);
+        expect(snapshot?.anchorTime).toBe('2024-01-02 00:00:00.000');
+        expect(snapshot?.anchorID).toBe('3');
+        expect(getMockEngineRequestCount()).toBe(1);
+    });
+
+    it('re-requests the order when only the anchor time changed', async () => {
+        setReportActionsOrderRawActions(REPORT_ID, FIXTURE);
+        await waitForBatchedUpdates();
+        expect(getMockEngineRequestCount()).toBe(1);
+        expect(getReportActionsOrderSnapshot(REPORT_ID)?.anchorID).toBe('');
+
+        setReportActionsOrderAnchorTime(REPORT_ID, '2024-01-01 00:00:00.000');
+        await waitForBatchedUpdates();
+
+        expect(getMockEngineRequestCount()).toBe(2);
+        expect(getReportActionsOrderSnapshot(REPORT_ID)?.anchorID).toBe('2');
+    });
+
+    it('ignores an anchor time it already holds', async () => {
+        setReportActionsOrderAnchorTime(REPORT_ID, '2024-01-02 00:00:00.000');
+        setReportActionsOrderRawActions(REPORT_ID, FIXTURE);
+        await waitForBatchedUpdates();
+
+        setReportActionsOrderAnchorTime(REPORT_ID, '2024-01-02 00:00:00.000');
+        await waitForBatchedUpdates();
+
+        expect(getMockEngineRequestCount()).toBe(1);
     });
 
     it('does nothing while the mode is off', async () => {

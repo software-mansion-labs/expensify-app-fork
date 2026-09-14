@@ -35,7 +35,6 @@ function usePaginatedReportActions(reportID: string | undefined, reportActionID?
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${nonEmptyStringReportID}`);
 
     const [rawReportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${nonEmptyStringReportID}`);
-    const sortedAllReportActions = useReportActionsOrder(nonEmptyStringReportID, rawReportActions);
     const [reportActionPages] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_PAGES}${nonEmptyStringReportID}`);
 
     // Default (regular inbox chats): snapshot lastReadTime at first render via a ref — production behavior.
@@ -45,8 +44,21 @@ function usePaginatedReportActions(reportID: string | undefined, reportActionID?
     // latching undefined like a first-render ref, so the unread anchor can still resolve after the report loads.
     const firstDefinedLastReadTime = useInitial(report?.lastReadTime);
 
-    const id = useMemo(() => {
+    // The lastReadTime this instance anchors to, which is also what the engine resolves its anchor against.
+    const anchorTime = useMemo(() => {
         /* eslint-disable react-hooks/refs -- firstRenderLastReadTime snapshots lastReadTime at first render for a stable unread anchor */
+        if (treatAsNoPaginationAnchor || reportActionID || !shouldLinkToOldestUnreadReportAction) {
+            return undefined;
+        }
+
+        return (shouldSnapshotInitialLastReadTime ? firstDefinedLastReadTime : firstRenderLastReadTime.current) ?? undefined;
+        /* eslint-enable react-hooks/refs */
+    }, [treatAsNoPaginationAnchor, reportActionID, shouldLinkToOldestUnreadReportAction, shouldSnapshotInitialLastReadTime, firstDefinedLastReadTime]);
+
+    const {actions: sortedAllReportActions, derived} = useReportActionsOrder(nonEmptyStringReportID, rawReportActions, anchorTime);
+
+    const id = useMemo(() => {
+        /* eslint-disable react-hooks/refs -- anchorTime carries the first-render lastReadTime snapshot, which is a ref by design */
         if (treatAsNoPaginationAnchor) {
             return undefined;
         }
@@ -55,18 +67,18 @@ function usePaginatedReportActions(reportID: string | undefined, reportActionID?
             return reportActionID;
         }
 
-        if (!shouldLinkToOldestUnreadReportAction) {
+        if (!anchorTime || !sortedAllReportActions?.length) {
             return undefined;
         }
 
-        const initialLastReadTime = shouldSnapshotInitialLastReadTime ? firstDefinedLastReadTime : firstRenderLastReadTime.current;
-        if (!initialLastReadTime || !sortedAllReportActions?.length) {
-            return undefined;
+        // The engine resolved this exact anchor against the order it returned, so nothing is scanned here.
+        if (derived && derived.anchorTime === anchorTime) {
+            return derived.unreadAnchorID || undefined;
         }
 
-        return sortedAllReportActions.findLast((reportAction) => reportAction.created > initialLastReadTime)?.reportActionID;
+        return sortedAllReportActions.findLast((reportAction) => reportAction.created > anchorTime)?.reportActionID;
         /* eslint-enable react-hooks/refs */
-    }, [treatAsNoPaginationAnchor, reportActionID, shouldLinkToOldestUnreadReportAction, sortedAllReportActions, shouldSnapshotInitialLastReadTime, firstDefinedLastReadTime]);
+    }, [treatAsNoPaginationAnchor, reportActionID, anchorTime, derived, sortedAllReportActions]);
 
     const {
         data: reportActions,
@@ -78,8 +90,8 @@ function usePaginatedReportActions(reportID: string | undefined, reportActionID?
             return {data: [], hasNextPage: false, hasPreviousPage: false};
         }
 
-        return getContinuousChain(sortedAllReportActions, reportActionPages ?? [], (reportAction) => reportAction.reportActionID, id);
-    }, [id, reportActionPages, sortedAllReportActions]);
+        return getContinuousChain(sortedAllReportActions, reportActionPages ?? [], (reportAction) => reportAction.reportActionID, id, derived?.idToIndex);
+    }, [derived?.idToIndex, id, reportActionPages, sortedAllReportActions]);
 
     // When `treatAsNoPaginationAnchor` is set, we intentionally ignore `reportActionID` for pagination
     // (same as `id` above), so we must not surface a "linked" action from that id either.

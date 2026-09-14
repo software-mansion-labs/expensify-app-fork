@@ -52,7 +52,16 @@ function isEngineAvailable(): boolean {
     return isAvailable;
 }
 
-function ingestAndOrder({reportID, version, upserts, deletes, full}: IngestAndOrderParams): Promise<OrderReply> {
+/** Mirror of the worker's anchor query: the last row of the display order that is newer than `lastReadTime`. */
+function findUnreadAnchorID(ordered: SortRow[], lastReadTime: string | undefined): string {
+    if (lastReadTime === undefined) {
+        return '';
+    }
+    const anchorRow = ordered.findLast((row) => row.created !== undefined && row.created > lastReadTime);
+    return anchorRow === undefined ? '' : anchorRow.id;
+}
+
+function ingestAndOrder({reportID, version, upserts, deletes, full, lastReadTime}: IngestAndOrderParams): Promise<OrderReply> {
     requestCount += 1;
 
     const table = full ? new Map<string, SortRow>() : (tables.get(reportID) ?? new Map<string, SortRow>());
@@ -82,6 +91,7 @@ function ingestAndOrder({reportID, version, upserts, deletes, full}: IngestAndOr
         ids: ids.join(ID_SEPARATOR),
         total: ids.length,
         synthetic: syntheticPairs.join(ID_SEPARATOR),
+        unreadAnchorID: findUnreadAnchorID(ordered, lastReadTime),
         timings: {ingestMs: 0, orderMs: 0},
     };
 

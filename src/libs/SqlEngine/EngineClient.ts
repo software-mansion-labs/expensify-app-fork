@@ -28,6 +28,8 @@ type IngestAndOrderParams = {
     upserts: SortRow[];
     deletes: string[];
     full: boolean;
+    /** When set, the reply also carries the unread anchor resolved against this time. */
+    lastReadTime?: string;
 };
 
 type IngestOptionsParams = {

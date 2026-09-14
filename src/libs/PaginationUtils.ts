@@ -362,10 +362,19 @@ function prunePagesToNewestWindow<TResource>(sortedItems: TResource[], pages: Pa
  * See unit tests for example of inputs and expected outputs.
  *
  * Note: sortedItems should be sorted in descending order.
+ *
+ * `prebuiltIDToIndex` lets a caller that already owns the id-to-index map of `sortedItems` pass it in, so
+ * several callers over the same order share one map instead of each building its own.
  */
-function getContinuousChain<TResource>(sortedItems: TResource[], pages: Pages, getID: (item: TResource) => string, id?: string): ContinuousPageChainResult<TResource> {
+function getContinuousChain<TResource>(
+    sortedItems: TResource[],
+    pages: Pages,
+    getID: (item: TResource) => string,
+    id?: string,
+    prebuiltIDToIndex?: Map<string, number>,
+): ContinuousPageChainResult<TResource> {
     const shouldBuildIdToIndex = !!id || pages.length > 0;
-    const idToIndex = shouldBuildIdToIndex ? buildIDToIndexMap(sortedItems, getID) : new Map<string, number>();
+    const idToIndex = prebuiltIDToIndex ?? (shouldBuildIdToIndex ? buildIDToIndexMap(sortedItems, getID) : new Map<string, number>());
 
     // If an id is provided, find the index of the item with that id
     let index = -1;

@@ -7,6 +7,8 @@ import type {ReportAction, ReportActions} from '@src/types/onyx';
 
 import noop from 'lodash/noop';
 
+import type {ReportActionsDiff} from './diffReportActions';
+
 import diffReportActions, {isDiffEmpty} from './diffReportActions';
 import parseSyntheticParents from './parseSyntheticParents';
 import splitOrderedIDs from './splitOrderedIDs';
@@ -18,6 +20,12 @@ import splitOrderedIDs from './splitOrderedIDs';
 type ReportActionsOrderSnapshot = {
     raw: ReportActions;
     actions: ReportAction[];
+    /** The position of every action in `actions`, built with the order so all consumers share one map. */
+    idToIndex: Map<string, number>;
+    /** The `lastReadTime` `anchorID` was resolved against, undefined while no consumer asked for an anchor. */
+    anchorTime: string | undefined;
+    /** The oldest action newer than `anchorTime`, empty when nothing is unread or nothing was asked for. */
+    anchorID: string;
 };
 
 type ReportActionsOrderStats = {
@@ -47,10 +55,16 @@ type ReportEntry = {
     subscribers: Set<() => void>;
     raw: ReportActions | undefined;
     order: ConfirmedOrder | undefined;
+    /** The `lastReadTime` the worker resolves this report's unread anchor against. */
+    anchorTime: string | undefined;
+    anchorID: string;
     snapshot: ReportActionsOrderSnapshot | undefined;
 };
 
 const entries = new Map<string, ReportEntry>();
+
+/** The diff of a request that only reads, sent when an anchor input changed but no report action did. */
+const EMPTY_REQUEST_DIFF: ReportActionsDiff = {upserts: [], deletes: [], full: false};
 
 const stats: ReportActionsOrderStats = {
     roundTrips: 0,
@@ -77,13 +91,15 @@ function notify(entry: ReportEntry) {
  * Maps a confirmed order to report actions in one pass. A synthetic id is rebuilt from the action the worker
  * paired it with, so the whole order, routed actions included, comes from SQL and nothing is re-sorted here.
  */
-function buildSnapshot(raw: ReportActions, order: ConfirmedOrder): ReportActionsOrderSnapshot {
+function buildSnapshot(raw: ReportActions, order: ConfirmedOrder, anchorTime: string | undefined, anchorID: string): ReportActionsOrderSnapshot {
     const actions: ReportAction[] = [];
+    const idToIndex = new Map<string, number>();
     for (const id of order.ids) {
         const parentID = order.syntheticParents.get(id);
         if (parentID === undefined) {
             const reportAction = raw[id];
             if (reportAction) {
+                idToIndex.set(id, actions.length);
                 actions.push(replaceBaseURLInPolicyChangeLogAction(reportAction));
             }
             continue;
@@ -91,10 +107,11 @@ function buildSnapshot(raw: ReportActions, order: ConfirmedOrder): ReportActions
         const parentAction = raw[parentID];
         const routedAction = parentAction ? getDEWRoutedActionFor(replaceBaseURLInPolicyChangeLogAction(parentAction)) : undefined;
         if (routedAction) {
+            idToIndex.set(id, actions.length);
             actions.push(routedAction);
         }
     }
-    return {raw, actions};
+    return {raw, actions, idToIndex, anchorTime, anchorID};
 }
 
 function countMismatch(reportID: string, snapshot: ReportActionsOrderSnapshot) {
@@ -116,7 +133,7 @@ function confirm(reportID: string, raw: ReportActions, order: ConfirmedOrder) {
         return;
     }
 
-    const snapshot = buildSnapshot(raw, order);
+    const snapshot = buildSnapshot(raw, order, entry.anchorTime, entry.anchorID);
     entry.order = order;
     entry.snapshot = snapshot;
 
@@ -136,6 +153,7 @@ function forgetReport(reportID: string) {
     const hadSnapshot = !!entry.snapshot;
     entry.raw = undefined;
     entry.order = undefined;
+    entry.anchorID = '';
     entry.snapshot = undefined;
 
     if (isEngineActive()) {
@@ -145,6 +163,35 @@ function forgetReport(reportID: string) {
     if (hadSnapshot) {
         notify(entry);
     }
+}
+
+/** Sends one diff to the worker. An empty diff is legal: the worker skips the ingest and only reads. */
+function requestOrder(reportID: string, entry: ReportEntry, diff: ReportActionsDiff) {
+    const {version, anchorTime} = entry;
+    const startedAt = Date.now();
+    stats.upsertedRows += diff.upserts.length;
+    stats.deletedRows += diff.deletes.length;
+
+    ingestAndOrder({reportID, version, upserts: diff.upserts, deletes: diff.deletes, full: diff.full, lastReadTime: anchorTime})
+        .then((reply) => {
+            const currentEntry = entries.get(reportID);
+            if (currentEntry !== entry) {
+                return;
+            }
+            const currentRaw = currentEntry.raw;
+            if (reply.version !== currentEntry.version || !currentRaw) {
+                stats.staleReplies += 1;
+                return;
+            }
+            stats.roundTrips += 1;
+            stats.totalRoundTripMs += Date.now() - startedAt;
+            currentEntry.anchorID = reply.unreadAnchorID;
+            confirm(reportID, currentRaw, {ids: splitOrderedIDs(reply.ids), syntheticParents: parseSyntheticParents(reply.synthetic)});
+        })
+        .catch((error: unknown) => {
+            stats.failures += 1;
+            Log.warn('[ReportActionsOrder] ingestAndOrder failed', {reportID, message: error instanceof Error ? error.message : String(error)});
+        });
 }
 
 /** Feeds a new raw Onyx value into the store. Safe to call with the value the store already holds. */
@@ -171,29 +218,27 @@ function setReportActionsOrderRawActions(reportID: string, raw: ReportActions | 
         return;
     }
 
-    const {version} = entry;
-    const startedAt = Date.now();
-    stats.upsertedRows += diff.upserts.length;
-    stats.deletedRows += diff.deletes.length;
+    requestOrder(reportID, entry, diff);
+}
 
-    ingestAndOrder({reportID, version, upserts: diff.upserts, deletes: diff.deletes, full: diff.full})
-        .then((reply) => {
-            const currentEntry = entries.get(reportID);
-            if (currentEntry !== entry) {
-                return;
-            }
-            if (reply.version !== entry.version || !entry.raw) {
-                stats.staleReplies += 1;
-                return;
-            }
-            stats.roundTrips += 1;
-            stats.totalRoundTripMs += Date.now() - startedAt;
-            confirm(reportID, entry.raw, {ids: splitOrderedIDs(reply.ids), syntheticParents: parseSyntheticParents(reply.synthetic)});
-        })
-        .catch((error: unknown) => {
-            stats.failures += 1;
-            Log.warn('[ReportActionsOrder] ingestAndOrder failed', {reportID, message: error instanceof Error ? error.message : String(error)});
-        });
+/**
+ * Names the `lastReadTime` the worker resolves this report's unread anchor against. One report has one anchor
+ * time, so a consumer holding a different snapshot of it keeps computing its own anchor from the ordered array.
+ */
+function setReportActionsOrderAnchorTime(reportID: string, anchorTime: string | undefined) {
+    const entry = entries.get(reportID);
+
+    if (!entry || !isEngineActive() || anchorTime === undefined || anchorTime === entry.anchorTime) {
+        return;
+    }
+
+    entry.anchorTime = anchorTime;
+    entry.anchorID = '';
+    entry.version += 1;
+
+    if (entry.raw) {
+        requestOrder(reportID, entry, EMPTY_REQUEST_DIFF);
+    }
 }
 
 function releaseReport(reportID: string) {
@@ -228,7 +273,16 @@ function subscribeToReportActionsOrder(reportID: string | undefined, listener: (
         return noop;
     }
 
-    const entry = entries.get(reportID) ?? {version: 0, refCount: 0, subscribers: new Set<() => void>(), raw: undefined, order: undefined, snapshot: undefined};
+    const entry = entries.get(reportID) ?? {
+        version: 0,
+        refCount: 0,
+        subscribers: new Set<() => void>(),
+        raw: undefined,
+        order: undefined,
+        anchorTime: undefined,
+        anchorID: '',
+        snapshot: undefined,
+    };
     entries.set(reportID, entry);
     entry.refCount += 1;
     entry.subscribers.add(listener);
@@ -263,5 +317,12 @@ function resetReportActionsOrderStore() {
     stats.totalRoundTripMs = 0;
 }
 
-export {getReportActionsOrderSnapshot, getReportActionsOrderStats, resetReportActionsOrderStore, setReportActionsOrderRawActions, subscribeToReportActionsOrder};
+export {
+    getReportActionsOrderSnapshot,
+    getReportActionsOrderStats,
+    resetReportActionsOrderStore,
+    setReportActionsOrderAnchorTime,
+    setReportActionsOrderRawActions,
+    subscribeToReportActionsOrder,
+};
 export type {ReportActionsOrderSnapshot, ReportActionsOrderStats};
