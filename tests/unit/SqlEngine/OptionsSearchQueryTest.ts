@@ -17,6 +17,12 @@ async function explainQueryPlan(driver: SqlDriver, statement: {sql: string; para
     return rows.map((row) => String(row.detail)).join(' | ');
 }
 
+/** The FTS triggers the bulk rebuild drops and recreates, so a test can prove the incremental path is intact. */
+async function readTriggerNames(driver: SqlDriver): Promise<string[]> {
+    const rows = await driver.execute("SELECT name FROM sqlite_master WHERE type = 'trigger' ORDER BY name;");
+    return rows.map((row) => String(row.name));
+}
+
 function report(id: string, searchText: string, orderKey: string, isHidden = false, isValid = true): OptionIndexRow {
     return {kind: 'report', id, searchText, orderKey, isHidden, isValid};
 }
@@ -85,7 +91,7 @@ describe.each(MATCHERS)('option_rows search with the %s matcher', (matcher) => {
     beforeEach(async () => {
         engine = await createWasmSqlEngine('memory');
         await createOptionsSchema(engine.driver, matcher);
-        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}), matcher);
     });
 
     it.each(QUERIES)('returns the same window as the JS matcher for %j', async (...terms) => {
@@ -109,6 +115,7 @@ describe.each(MATCHERS)('option_rows search with the %s matcher', (matcher) => {
                     {kind: 'contact', id: '101'},
                 ],
             }),
+            matcher,
         );
 
         const result = await searchOptionRows(engine.driver, searchRequest(['zephyr']), matcher);
@@ -118,7 +125,7 @@ describe.each(MATCHERS)('option_rows search with the %s matcher', (matcher) => {
     });
 
     it('breaks an order_key tie on the id so two clients see the same window edge', async () => {
-        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: [report('20', 'tie zephyr', '0_1_2024-03-08'), report('21', 'tie zephyr', '0_1_2024-03-08')]}));
+        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: [report('20', 'tie zephyr', '0_1_2024-03-08'), report('21', 'tie zephyr', '0_1_2024-03-08')]}), matcher);
         const result = await searchOptionRows(engine.driver, searchRequest(['tie']), matcher);
         // Row 8 shares the key; string ids compare, so '8' sorts above '21' and '20'.
         expect(result.reportIDs).toEqual(['8', '21', '20']);
@@ -142,7 +149,7 @@ describe('option_rows query plans', () => {
     beforeEach(async () => {
         engine = await createWasmSqlEngine('memory');
         await createOptionsSchema(engine.driver, 'like');
-        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}), 'like');
     });
 
     it.each(QUERIES)('walks the order index for %j without a temp b-tree', async (...terms) => {
@@ -161,7 +168,7 @@ describe('option_rows search plans with the fts matcher', () => {
     beforeEach(async () => {
         engine = await createWasmSqlEngine('memory');
         await createOptionsSchema(engine.driver, 'fts');
-        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}), 'fts');
     });
 
     it('drives the join from the term itself and reaches the rows by primary key', async () => {
@@ -209,7 +216,7 @@ describe('option_rows search plans with the fts matcher', () => {
 
     it('falls back to the ordered index walk once a term is too dense to drive the join', async () => {
         const dense = Array.from({length: DRIVER_DOC_CAP + 1}, (value, index) => report(`5${index}`, `dense filler ${index}`, `0_1_2024-04-01 ${index}`));
-        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: dense}));
+        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: dense}), 'fts');
 
         expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['dense'])).toEqual(SCAN_PLAN);
         // The trigram the short term starts now has more documents than the cap allows.
@@ -217,6 +224,30 @@ describe('option_rows search plans with the fts matcher', () => {
 
         const result = await searchOptionRows(engine.driver, searchRequest(['dense', '1000']), 'fts');
         expect(result.reportIDs).toEqual(['51000']);
+    });
+
+    it('leaves the index searchable after a bulk rebuild, and the triggers back in place for the next upsert', async () => {
+        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: FIXTURE, full: true}), 'fts');
+        expect(await readTriggerNames(engine.driver)).toEqual(['option_rows_ad', 'option_rows_ai', 'option_rows_au']);
+
+        await ingestOptionRows(
+            engine.driver,
+            ingestRequest({
+                version: 3,
+                upserts: [report('2', 'chat 2 became zephyr', '0_1_2024-12-31')],
+                deletes: [
+                    {kind: 'report', id: '9'},
+                    {kind: 'contact', id: '101'},
+                ],
+            }),
+            'fts',
+        );
+
+        expect((await searchOptionRows(engine.driver, searchRequest(['zephyr']), 'fts')).reportIDs).toEqual(['6', '2', '11', '8', '7']);
+        // The deleted rows left the FTS index too, so their own words no longer match.
+        expect(await searchOptionRows(engine.driver, searchRequest(['nine']), 'fts')).toMatchObject({reportIDs: [], contactIDs: []});
+        expect(await searchOptionRows(engine.driver, searchRequest(['zephyr@examplecom']), 'fts')).toMatchObject({contactIDs: []});
+        expect(await readOptionRowCount(engine.driver)).toBe(FIXTURE.length - 2);
     });
 
     it('caps how many trigrams a short term may start', () => {

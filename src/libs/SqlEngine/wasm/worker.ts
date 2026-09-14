@@ -95,7 +95,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
     }
 
     if (request.type === 'ingest-options') {
-        const ingestMs = await ingestOptionRows(state.engine.driver, request);
+        const ingestMs = await ingestOptionRows(state.engine.driver, request, state.optionsMatcher);
         optionIngestCount += 1;
         totalOptionIngestMs += ingestMs;
         post({type: 'options-ingested', requestID: request.requestID, version: request.version, ingestMs});
