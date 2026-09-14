@@ -20,8 +20,8 @@ const getMagnitude = (canonicalValue: string, allowNegative: boolean) => (allowN
 
 /**
  * Because the sign is rendered outside the input, this function restores it in the canonical value. Typing a minus
- * toggles the current sign, while a pasted minus sets it. Replacing the whole number with a positive value clears the
- * old sign. Partial edits and clearing the magnitude keep the sign until it is explicitly cleared.
+ * toggles the current sign, while a pasted minus sets it. A minus typed inside the magnitude is rejected as an invalid
+ * edit. Replacing the whole number with a positive or empty value clears the sign.
  */
 const getSignedValue = (displayText: string, wasNegative: boolean, wasSignTyped: boolean, wasNumberReplaced: boolean) => {
     if (displayText.startsWith('-')) {
