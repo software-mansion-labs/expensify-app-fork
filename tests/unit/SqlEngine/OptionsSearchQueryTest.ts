@@ -1,5 +1,7 @@
 import matchOptionIndexRows from '@libs/SearchOptionsIndex/matchOptionIndexRows';
 import type {SqlDriver, SqlValue} from '@libs/SqlEngine/SqlDriver';
+import type {OptionsSearchPlan} from '@libs/SqlEngine/wasm/optionsSearchPlan';
+import {buildOptionsSearchPlan, DRIVER_DOC_CAP, SHORT_TERM_TRIGRAM_CAP} from '@libs/SqlEngine/wasm/optionsSearchPlan';
 import {buildSearchStatement, createOptionsSchema, FTS_MIN_TERM_LENGTH, ingestOptionRows, readOptionRowCount, searchOptionRows} from '@libs/SqlEngine/wasm/optionsTable';
 import type {IngestOptionsRequest, OptionIndexKind, OptionIndexRow, OptionsMatcher, SearchOptionsRequest} from '@libs/SqlEngine/wasm/protocol';
 import type {WasmSqlEngine} from '@libs/SqlEngine/wasm/WasmSqlDriver';
@@ -23,6 +25,8 @@ function contact(id: string, searchText: string, isValid = true): OptionIndexRow
     return {kind: 'contact', id, searchText, orderKey: searchText.split(' ').at(0) ?? '', isHidden: false, isValid};
 }
 
+const SCAN_PLAN: OptionsSearchPlan = {type: 'scan'};
+
 /** Rows covering substring hits, a hidden match, an invalid match, LIKE and FTS special characters, a self-DM key and short terms. */
 const FIXTURE: OptionIndexRow[] = [
     report('1', 'zephyr team 1 me@example.com', '0_1_2024-03-01'),
@@ -37,6 +41,8 @@ const FIXTURE: OptionIndexRow[] = [
     report('10', 'ze 10', '0_1_2024-03-10'),
     report('11', 'zephyr eleven', '0_1_2024-03-11'),
     report('13', 'invalid zephyr notifications', '0_1_2024-03-13', false, false),
+    // The short term sits inside a word and at the very end of the text, the two cases a word-prefix index misses.
+    report('14', 'quarterly re14 budget qr', '0_1_2024-03-14'),
     contact('101', 'zephyr person zephyr@example.com zephyr@examplecom'),
     contact('102', 'person two two@example.com'),
     contact('103', 'anna zephyrson anna@example.com'),
@@ -44,7 +50,26 @@ const FIXTURE: OptionIndexRow[] = [
     contact('105', 'zephyr invalid contact', false),
 ];
 
-const QUERIES: string[][] = [['zephyr'], ['zep'], ['ze'], ['zephyr', 'nine'], ['zephyr', 'an'], ['%'], ['_score'], ['"quoted"'], ['zephyr@examplecom'], ['nomatch'], []];
+const QUERIES: string[][] = [
+    ['zephyr'],
+    ['zep'],
+    ['ze'],
+    ['zephyr', 'nine'],
+    ['zephyr', 'an'],
+    ['%'],
+    ['_score'],
+    ['"quoted"'],
+    ['zephyr@examplecom'],
+    ['nomatch'],
+    [],
+    ['qr'],
+    ['r1'],
+    ['e1'],
+    ['z'],
+    ['zq'],
+    ['zephyr', 'zq'],
+    ['qr', 'budget'],
+];
 
 function ingestRequest(overrides: Partial<IngestOptionsRequest>): IngestOptionsRequest {
     return {type: 'ingest-options', requestID: 1, version: 1, upserts: [], deletes: [], full: false, ...overrides};
@@ -122,11 +147,80 @@ describe('option_rows query plans', () => {
 
     it.each(QUERIES)('walks the order index for %j without a temp b-tree', async (...terms) => {
         for (const kind of KINDS) {
-            const statement = buildSearchStatement('like', terms, kind, LIMIT);
+            const statement = buildSearchStatement(terms, kind, LIMIT, SCAN_PLAN);
             const plan = await explainQueryPlan(engine.driver, statement);
             expect(plan).not.toContain('TEMP B-TREE');
             expect(plan).toContain('INDEX option_rows_order');
         }
+    });
+});
+
+describe('option_rows search plans with the fts matcher', () => {
+    let engine: WasmSqlEngine;
+
+    beforeEach(async () => {
+        engine = await createWasmSqlEngine('memory');
+        await createOptionsSchema(engine.driver, 'fts');
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
+    });
+
+    it('drives the join from the term itself and reaches the rows by primary key', async () => {
+        const plan = await buildOptionsSearchPlan(engine.driver, 'fts', ['zephyr', 'nine']);
+        expect(plan).toEqual({type: 'driver', match: '"zephyr"', exactTerm: 'zephyr'});
+
+        for (const kind of KINDS) {
+            const statement = buildSearchStatement(['zephyr', 'nine'], kind, LIMIT, plan);
+            const queryPlan = await explainQueryPlan(engine.driver, statement);
+            expect(queryPlan).toContain('SCAN f VIRTUAL TABLE');
+            expect(queryPlan).toContain('SEARCH o USING INTEGER PRIMARY KEY');
+            // The kind, is_hidden and is_valid predicates ride on the primary key lookup, so no row of the
+            // order index is read; the only sort is over the rows the driver matched, which the cap bounds.
+            expect(queryPlan).not.toContain('SCAN option_rows');
+        }
+    });
+
+    it('drives the join from the trigrams a short term starts, so it never scans for one', async () => {
+        const plan = await buildOptionsSearchPlan(engine.driver, 'fts', ['qr']);
+        expect(plan).toEqual({type: 'driver', match: '"qr "', exactTerm: ''});
+
+        const statement = buildSearchStatement(['qr'], 'report', LIMIT, plan);
+        const queryPlan = await explainQueryPlan(engine.driver, statement);
+        expect(queryPlan).toContain('SCAN f VIRTUAL TABLE');
+        expect(queryPlan).toContain('SEARCH o USING INTEGER PRIMARY KEY');
+    });
+
+    it('keeps the LIKE predicate of every term the driver does not prove', async () => {
+        const plan = await buildOptionsSearchPlan(engine.driver, 'fts', ['zephyr', 'nine']);
+        const statement = buildSearchStatement(['zephyr', 'nine'], 'report', LIMIT, plan);
+        expect(statement.sql.match(/LIKE \?/g)).toHaveLength(1);
+        expect(statement.params).toContain('%nine%');
+    });
+
+    it('proves an empty result from the vocabulary without building a statement', async () => {
+        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['zq'])).toEqual({type: 'empty'});
+        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['nomatch'])).toEqual({type: 'empty'});
+        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['zephyr', 'zq'])).toEqual({type: 'empty'});
+    });
+
+    it('leaves the like matcher on the ordered index walk', async () => {
+        expect(await buildOptionsSearchPlan(engine.driver, 'like', ['zephyr'])).toEqual(SCAN_PLAN);
+        expect(await buildOptionsSearchPlan(engine.driver, 'fts', [])).toEqual(SCAN_PLAN);
+    });
+
+    it('falls back to the ordered index walk once a term is too dense to drive the join', async () => {
+        const dense = Array.from({length: DRIVER_DOC_CAP + 1}, (value, index) => report(`5${index}`, `dense filler ${index}`, `0_1_2024-04-01 ${index}`));
+        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: dense}));
+
+        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['dense'])).toEqual(SCAN_PLAN);
+        // The trigram the short term starts now has more documents than the cap allows.
+        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['en'])).toEqual(SCAN_PLAN);
+
+        const result = await searchOptionRows(engine.driver, searchRequest(['dense', '1000']), 'fts');
+        expect(result.reportIDs).toEqual(['51000']);
+    });
+
+    it('caps how many trigrams a short term may start', () => {
+        expect(SHORT_TERM_TRIGRAM_CAP).toBeLessThan(DRIVER_DOC_CAP);
     });
 });
 

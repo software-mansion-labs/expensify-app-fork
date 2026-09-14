@@ -1,6 +1,9 @@
 import type {SqlBatchCommand, SqlDriver, SqlRow, SqlValue} from '@libs/SqlEngine/SqlDriver';
 
+import type {OptionsSearchPlan} from './optionsSearchPlan';
 import type {IngestOptionsRequest, OptionIndexKind, OptionsMatcher, SearchOptionsRequest} from './protocol';
+
+import {buildOptionsSearchPlan, FTS_MIN_TERM_LENGTH} from './optionsSearchPlan';
 
 type OptionsSearchResult = {
     reportIDs: string[];
@@ -12,8 +15,12 @@ type OptionsSearchResult = {
 
 const KIND_CODE: Record<OptionIndexKind, number> = {report: 0, contact: 1};
 
-/** The trigram tokenizer indexes nothing shorter than three characters, so shorter terms fall back to LIKE. */
-const FTS_MIN_TERM_LENGTH = 3;
+/*
+ * Two trailing spaces, so every one- and two-character substring of the text is also the prefix of an indexed
+ * trigram. Without them a short term sitting at the very end of the text has no trigram to be found by, and the
+ * prefix probe in `optionsSearchPlan` would report an empty result for a row that does match.
+ */
+const SEARCH_TEXT_SENTINEL = '  ';
 
 /*
  * `row_id` exists for FTS5, which addresses its external content table by rowid. The unique (kind, id)
@@ -38,6 +45,9 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS option_rows (
 const CREATE_ORDER_INDEX = 'CREATE INDEX IF NOT EXISTS option_rows_order ON option_rows (kind, is_hidden, is_valid, order_key, id);';
 
 const CREATE_FTS = `CREATE VIRTUAL TABLE IF NOT EXISTS option_fts USING fts5(search_text, content='option_rows', content_rowid='row_id', tokenize='trigram');`;
+
+/** A view over the terms of the index itself, so a query can be costed without reading a single option row. */
+const CREATE_VOCAB = `CREATE VIRTUAL TABLE IF NOT EXISTS option_vocab USING fts5vocab(option_fts, 'row');`;
 
 const CREATE_FTS_TRIGGERS = [
     `CREATE TRIGGER IF NOT EXISTS option_rows_ai AFTER INSERT ON option_rows BEGIN
@@ -64,7 +74,7 @@ const COUNT_QUERY = 'SELECT COUNT(*) AS option_row_count FROM option_rows;';
 async function createOptionsSchema(driver: SqlDriver, matcher: OptionsMatcher): Promise<void> {
     const commands: SqlBatchCommand[] = [{sql: CREATE_TABLE}, {sql: CREATE_ORDER_INDEX}];
     if (matcher === 'fts') {
-        commands.push({sql: CREATE_FTS}, ...CREATE_FTS_TRIGGERS.map((sql) => ({sql})));
+        commands.push({sql: CREATE_FTS}, {sql: CREATE_VOCAB}, ...CREATE_FTS_TRIGGERS.map((sql) => ({sql})));
     }
     await driver.executeBatch(commands);
 }
@@ -79,7 +89,7 @@ function buildIngestCommands(request: IngestOptionsRequest): SqlBatchCommand[] {
     if (request.upserts.length > 0) {
         commands.push({
             sql: UPSERT_ROW,
-            params: request.upserts.map((row) => [KIND_CODE[row.kind], row.id, row.searchText, row.orderKey, row.isHidden ? 1 : 0, row.isValid ? 1 : 0]),
+            params: request.upserts.map((row) => [KIND_CODE[row.kind], row.id, `${row.searchText}${SEARCH_TEXT_SENTINEL}`, row.orderKey, row.isHidden ? 1 : 0, row.isValid ? 1 : 0]),
         });
     }
     return commands;
@@ -98,10 +108,6 @@ function escapeLikePattern(term: string): string {
     return `%${term.replaceAll(/[\\%_]/g, (match) => `\\${match}`)}%`;
 }
 
-function toFtsPhrase(term: string): string {
-    return `"${term.replaceAll('"', '""')}"`;
-}
-
 type SearchStatement = {
     sql: string;
     params: SqlValue[];
@@ -111,16 +117,20 @@ type SearchStatement = {
  * One window per kind: rows the substring filter keeps, ordered by the router's own key (ties broken by id, which
  * the JS heap leaves unspecified), plus one extra row so the caller learns whether the window was cut. The ids come back joined so a single value
  * crosses the wasm boundary instead of one row per match.
+ *
+ * A `driver` plan reads the rows of one selective MATCH expression and filters them with LIKE; the trigram match
+ * of a whole term is already the substring match, so only that term may skip its LIKE predicate. A `scan` plan
+ * walks the order index and lets the LIMIT stop it.
  */
-function buildSearchStatement(matcher: OptionsMatcher, terms: string[], kind: OptionIndexKind, limit: number): SearchStatement {
+function buildSearchStatement(terms: string[], kind: OptionIndexKind, limit: number, plan: OptionsSearchPlan): SearchStatement {
     const direction = kind === 'report' ? 'DESC' : 'ASC';
-    const ftsTerms = matcher === 'fts' ? terms.filter((term) => term.length >= FTS_MIN_TERM_LENGTH) : [];
-    const likeTerms = terms.filter((term) => !ftsTerms.includes(term));
-    const rowsAlias = ftsTerms.length > 0 ? 'o' : 'option_rows';
+    const isDriven = plan.type === 'driver';
+    const likeTerms = isDriven ? terms.filter((term) => term !== plan.exactTerm) : terms;
+    const rowsAlias = isDriven ? 'o' : 'option_rows';
     const likePredicates = likeTerms.map(() => `AND ${rowsAlias}.search_text LIKE ? ESCAPE '\\'`).join(' ');
     const likeParams = likeTerms.map(escapeLikePattern);
 
-    if (ftsTerms.length > 0) {
+    if (plan.type === 'driver') {
         // CROSS JOIN pins the FTS table as the outer loop. Left to itself the planner drives from the covering
         // order index and runs one MATCH per row, which costs hundreds of milliseconds at 45,000 rows.
         return {
@@ -129,7 +139,7 @@ function buildSearchStatement(matcher: OptionsMatcher, terms: string[], kind: Op
     WHERE option_fts MATCH ? AND o.kind = ? AND o.is_hidden = 0 AND o.is_valid = 1 ${likePredicates}
     ORDER BY o.order_key ${direction}, o.id ${direction} LIMIT ?
 );`,
-            params: [ftsTerms.map(toFtsPhrase).join(' AND '), KIND_CODE[kind], ...likeParams, limit + 1],
+            params: [plan.match, KIND_CODE[kind], ...likeParams, limit + 1],
         };
     }
 
@@ -152,12 +162,21 @@ function readWindow(rows: SqlRow[], limit: number): {ids: string[]; hasMore: boo
     return {ids: hasMore ? ids.slice(0, limit) : ids, hasMore};
 }
 
+const EMPTY_WINDOW = {ids: [], hasMore: false} satisfies {ids: string[]; hasMore: boolean};
+
+async function readSearchWindow(driver: SqlDriver, terms: string[], kind: OptionIndexKind, limit: number, plan: OptionsSearchPlan) {
+    if (plan.type === 'empty') {
+        return EMPTY_WINDOW;
+    }
+    const statement = buildSearchStatement(terms, kind, limit, plan);
+    return readWindow(await driver.execute(statement.sql, statement.params), limit);
+}
+
 async function searchOptionRows(driver: SqlDriver, request: SearchOptionsRequest, matcher: OptionsMatcher): Promise<OptionsSearchResult> {
     const startedAt = performance.now();
-    const reportStatement = buildSearchStatement(matcher, request.terms, 'report', request.reportLimit);
-    const contactStatement = buildSearchStatement(matcher, request.terms, 'contact', request.contactLimit);
-    const reports = readWindow(await driver.execute(reportStatement.sql, reportStatement.params), request.reportLimit);
-    const contacts = readWindow(await driver.execute(contactStatement.sql, contactStatement.params), request.contactLimit);
+    const plan = await buildOptionsSearchPlan(driver, matcher, request.terms);
+    const reports = await readSearchWindow(driver, request.terms, 'report', request.reportLimit, plan);
+    const contacts = await readSearchWindow(driver, request.terms, 'contact', request.contactLimit, plan);
     return {
         reportIDs: reports.ids,
         contactIDs: contacts.ids,
@@ -173,5 +192,5 @@ async function readOptionRowCount(driver: SqlDriver): Promise<number> {
     return typeof value === 'number' ? value : 0;
 }
 
-export {createOptionsSchema, ingestOptionRows, searchOptionRows, readOptionRowCount, buildSearchStatement, FTS_MIN_TERM_LENGTH};
+export {createOptionsSchema, ingestOptionRows, searchOptionRows, readOptionRowCount, buildSearchStatement, SEARCH_TEXT_SENTINEL, FTS_MIN_TERM_LENGTH};
 export type {OptionsSearchResult};
