@@ -39,7 +39,7 @@ jest.mock('@react-navigation/native', () => {
     };
 });
 
-const MODES: SearchRouterEngineMode[] = ['js-index', 'sql-like'];
+const MODES: SearchRouterEngineMode[] = ['js-index', 'sql'];
 const QUERIES = [
     'Zephyr',
     'zephyr person',
@@ -112,7 +112,7 @@ describe("SearchOptionsIndex parity with today's path", () => {
     });
 
     afterEach(() => {
-        setSearchRouterEngineMode('sql-fts');
+        setSearchRouterEngineMode('sql');
     });
 
     it('builds a dataset the option list admits', () => {
@@ -189,7 +189,7 @@ describe("SearchOptionsIndex parity with today's path", () => {
         expect(getMockEngineSearchCount()).toBe(0);
 
         resetSearchOptionsIndexStore();
-        setSearchRouterEngineMode('sql-like');
+        setSearchRouterEngineMode('sql');
         feedSearchOptionsIndex(toSearchOptionsIndexInputs(dataset));
         await indexOptions('Zephyr');
         expect(getMockEngineOptionRowCount()).toBe(getSearchOptionsIndexStats().rowCount);

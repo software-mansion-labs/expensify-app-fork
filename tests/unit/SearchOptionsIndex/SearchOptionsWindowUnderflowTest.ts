@@ -156,12 +156,12 @@ describe('SearchOptionsIndex exact window', () => {
         await waitForBatchedUpdates();
         resetMockEngine();
         resetSearchOptionsIndexStore();
-        setSearchRouterEngineMode('sql-like');
+        setSearchRouterEngineMode('sql');
         feedSearchOptionsIndex(toSearchOptionsIndexInputs(dataset));
     });
 
     afterAll(async () => {
-        setSearchRouterEngineMode('sql-fts');
+        setSearchRouterEngineMode('sql');
         await Onyx.clear();
     });
 

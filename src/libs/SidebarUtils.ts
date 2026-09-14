@@ -1039,8 +1039,6 @@ export {
 
 export default {
     getOptionData,
-    buildSortKey,
-    getIsTodoReportForInboxTab,
     sortReportsToDisplayInLHN,
     getWelcomeMessage,
     getReasonAndReportActionThatHasRedBrickRoad,

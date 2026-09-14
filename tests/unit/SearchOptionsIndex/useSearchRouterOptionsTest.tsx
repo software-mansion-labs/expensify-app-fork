@@ -74,11 +74,11 @@ describe('useSearchRouterOptions', () => {
     beforeEach(() => {
         resetMockEngine();
         resetSearchOptionsIndexStore();
-        setSearchRouterEngineMode('sql-like');
+        setSearchRouterEngineMode('sql');
     });
 
     afterEach(() => {
-        setSearchRouterEngineMode('sql-fts');
+        setSearchRouterEngineMode('sql');
     });
 
     it('returns nothing while disabled and feeds no rows', async () => {

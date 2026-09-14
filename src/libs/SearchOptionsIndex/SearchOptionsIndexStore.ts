@@ -1,7 +1,7 @@
 import Log from '@libs/Log';
 import {createFilteredOptionList, getSearchOptions, processSearchString} from '@libs/OptionsListUtils';
 import type {Options} from '@libs/OptionsListUtils';
-import {getEngineOptionsMatcher, ingestOptions, isEngineAvailable, searchOptions, setEngineOptionsMatcher} from '@libs/SqlEngine/EngineClient';
+import {ingestOptions, isEngineAvailable, searchOptions} from '@libs/SqlEngine/EngineClient';
 import {getSearchRouterEngineMode, isSearchRouterGuardEnabled} from '@libs/SqlEngine/searchRouterEngineMode';
 import type {SearchRouterEngineMode} from '@libs/SqlEngine/searchRouterEngineMode';
 import type {OptionIndexRef, OptionIndexRow} from '@libs/SqlEngine/wasm/protocol';
@@ -97,8 +97,8 @@ function toRowKey(kind: OptionIndexRow['kind'], id: string): string {
     return `${kind}:${id}`;
 }
 
-function isSqlMode(mode: SearchRouterEngineMode): mode is 'sql-like' | 'sql-fts' {
-    return mode === 'sql-like' || mode === 'sql-fts';
+function isSqlMode(mode: SearchRouterEngineMode): mode is 'sql' {
+    return mode === 'sql';
 }
 
 /** True when the router should read its search results from the index instead of today's path. */
@@ -110,15 +110,7 @@ function isSearchOptionsIndexActive(): boolean {
     if (mode === 'js-index') {
         return true;
     }
-    if (!isEngineAvailable()) {
-        return false;
-    }
-    // The worker builds its FTS index at start, so the matcher has to be chosen before the first request.
-    const matcher = mode === 'sql-fts' ? 'fts' : 'like';
-    if (getEngineOptionsMatcher() !== matcher) {
-        setEngineOptionsMatcher(matcher);
-    }
-    return true;
+    return isEngineAvailable();
 }
 
 function notify() {

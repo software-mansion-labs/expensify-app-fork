@@ -3,11 +3,10 @@ import type {SqlDriver, SqlValue} from '@libs/SqlEngine/SqlDriver';
 import type {OptionsSearchPlan} from '@libs/SqlEngine/wasm/optionsSearchPlan';
 import {buildOptionsSearchPlan, DRIVER_DOC_CAP, SHORT_TERM_TRIGRAM_CAP} from '@libs/SqlEngine/wasm/optionsSearchPlan';
 import {buildSearchStatement, createOptionsSchema, FTS_MIN_TERM_LENGTH, ingestOptionRows, readOptionRowCount, searchOptionRows} from '@libs/SqlEngine/wasm/optionsTable';
-import type {IngestOptionsRequest, OptionIndexKind, OptionIndexRow, OptionsMatcher, SearchOptionsRequest} from '@libs/SqlEngine/wasm/protocol';
+import type {IngestOptionsRequest, OptionIndexKind, OptionIndexRow, SearchOptionsRequest} from '@libs/SqlEngine/wasm/protocol';
 import type {WasmSqlEngine} from '@libs/SqlEngine/wasm/WasmSqlDriver';
 import createWasmSqlEngine from '@libs/SqlEngine/wasm/WasmSqlDriver';
 
-const MATCHERS: OptionsMatcher[] = ['like', 'fts'];
 const KINDS: OptionIndexKind[] = ['report', 'contact'];
 const LIMIT = 5;
 
@@ -85,18 +84,18 @@ function searchRequest(terms: string[]): SearchOptionsRequest {
     return {type: 'search-options', requestID: 2, version: 1, terms, reportLimit: LIMIT, contactLimit: LIMIT};
 }
 
-describe.each(MATCHERS)('option_rows search with the %s matcher', (matcher) => {
+describe('option_rows search', () => {
     let engine: WasmSqlEngine;
 
     beforeEach(async () => {
         engine = await createWasmSqlEngine('memory');
-        await createOptionsSchema(engine.driver, matcher);
-        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}), matcher);
+        await createOptionsSchema(engine.driver);
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
     });
 
     it.each(QUERIES)('returns the same window as the JS matcher for %j', async (...terms) => {
         const expected = matchOptionIndexRows(FIXTURE, terms, LIMIT, LIMIT);
-        const result = await searchOptionRows(engine.driver, searchRequest(terms), matcher);
+        const result = await searchOptionRows(engine.driver, searchRequest(terms));
 
         expect(result.reportIDs).toEqual(expected.reportIDs);
         expect(result.contactIDs).toEqual(expected.accountIDs);
@@ -115,29 +114,28 @@ describe.each(MATCHERS)('option_rows search with the %s matcher', (matcher) => {
                     {kind: 'contact', id: '101'},
                 ],
             }),
-            matcher,
         );
 
-        const result = await searchOptionRows(engine.driver, searchRequest(['zephyr']), matcher);
+        const result = await searchOptionRows(engine.driver, searchRequest(['zephyr']));
         expect(result.reportIDs).toEqual(['6', '2', '12', '9', '8']);
         expect(result.contactIDs).toEqual(['103']);
         expect(await readOptionRowCount(engine.driver)).toBe(FIXTURE.length - 1);
     });
 
     it('breaks an order_key tie on the id so two clients see the same window edge', async () => {
-        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: [report('20', 'tie zephyr', '0_1_2024-03-08'), report('21', 'tie zephyr', '0_1_2024-03-08')]}), matcher);
-        const result = await searchOptionRows(engine.driver, searchRequest(['tie']), matcher);
+        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: [report('20', 'tie zephyr', '0_1_2024-03-08'), report('21', 'tie zephyr', '0_1_2024-03-08')]}));
+        const result = await searchOptionRows(engine.driver, searchRequest(['tie']));
         // Row 8 shares the key; string ids compare, so '8' sorts above '21' and '20'.
         expect(result.reportIDs).toEqual(['8', '21', '20']);
     });
 
     it('never reads a hidden row', async () => {
-        const result = await searchOptionRows(engine.driver, searchRequest(['hidden']), matcher);
+        const result = await searchOptionRows(engine.driver, searchRequest(['hidden']));
         expect(result.reportIDs).toEqual([]);
     });
 
     it('never reads a row the validity column rejected', async () => {
-        const result = await searchOptionRows(engine.driver, searchRequest(['invalid']), matcher);
+        const result = await searchOptionRows(engine.driver, searchRequest(['invalid']));
         expect(result.reportIDs).toEqual([]);
         expect(result.contactIDs).toEqual([]);
     });
@@ -148,8 +146,8 @@ describe('option_rows query plans', () => {
 
     beforeEach(async () => {
         engine = await createWasmSqlEngine('memory');
-        await createOptionsSchema(engine.driver, 'like');
-        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}), 'like');
+        await createOptionsSchema(engine.driver);
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
     });
 
     it.each(QUERIES)('walks the order index for %j without a temp b-tree', async (...terms) => {
@@ -162,17 +160,17 @@ describe('option_rows query plans', () => {
     });
 });
 
-describe('option_rows search plans with the fts matcher', () => {
+describe('option_rows search plans', () => {
     let engine: WasmSqlEngine;
 
     beforeEach(async () => {
         engine = await createWasmSqlEngine('memory');
-        await createOptionsSchema(engine.driver, 'fts');
-        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}), 'fts');
+        await createOptionsSchema(engine.driver);
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
     });
 
     it('drives the join from the term itself and reaches the rows by primary key', async () => {
-        const plan = await buildOptionsSearchPlan(engine.driver, 'fts', ['zephyr', 'nine']);
+        const plan = await buildOptionsSearchPlan(engine.driver, ['zephyr', 'nine']);
         expect(plan).toEqual({type: 'driver', match: '"zephyr"', exactTerm: 'zephyr'});
 
         for (const kind of KINDS) {
@@ -187,7 +185,7 @@ describe('option_rows search plans with the fts matcher', () => {
     });
 
     it('drives the join from the trigrams a short term starts, so it never scans for one', async () => {
-        const plan = await buildOptionsSearchPlan(engine.driver, 'fts', ['qr']);
+        const plan = await buildOptionsSearchPlan(engine.driver, ['qr']);
         expect(plan).toEqual({type: 'driver', match: '"qr "', exactTerm: ''});
 
         const statement = buildSearchStatement(['qr'], 'report', LIMIT, plan);
@@ -197,37 +195,36 @@ describe('option_rows search plans with the fts matcher', () => {
     });
 
     it('keeps the LIKE predicate of every term the driver does not prove', async () => {
-        const plan = await buildOptionsSearchPlan(engine.driver, 'fts', ['zephyr', 'nine']);
+        const plan = await buildOptionsSearchPlan(engine.driver, ['zephyr', 'nine']);
         const statement = buildSearchStatement(['zephyr', 'nine'], 'report', LIMIT, plan);
         expect(statement.sql.match(/LIKE \?/g)).toHaveLength(1);
         expect(statement.params).toContain('%nine%');
     });
 
     it('proves an empty result from the vocabulary without building a statement', async () => {
-        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['zq'])).toEqual({type: 'empty'});
-        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['nomatch'])).toEqual({type: 'empty'});
-        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['zephyr', 'zq'])).toEqual({type: 'empty'});
+        expect(await buildOptionsSearchPlan(engine.driver, ['zq'])).toEqual({type: 'empty'});
+        expect(await buildOptionsSearchPlan(engine.driver, ['nomatch'])).toEqual({type: 'empty'});
+        expect(await buildOptionsSearchPlan(engine.driver, ['zephyr', 'zq'])).toEqual({type: 'empty'});
     });
 
-    it('leaves the like matcher on the ordered index walk', async () => {
-        expect(await buildOptionsSearchPlan(engine.driver, 'like', ['zephyr'])).toEqual(SCAN_PLAN);
-        expect(await buildOptionsSearchPlan(engine.driver, 'fts', [])).toEqual(SCAN_PLAN);
+    it('leaves an empty term list on the ordered index walk', async () => {
+        expect(await buildOptionsSearchPlan(engine.driver, [])).toEqual(SCAN_PLAN);
     });
 
     it('falls back to the ordered index walk once a term is too dense to drive the join', async () => {
         const dense = Array.from({length: DRIVER_DOC_CAP + 1}, (value, index) => report(`5${index}`, `dense filler ${index}`, `0_1_2024-04-01 ${index}`));
-        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: dense}), 'fts');
+        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: dense}));
 
-        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['dense'])).toEqual(SCAN_PLAN);
+        expect(await buildOptionsSearchPlan(engine.driver, ['dense'])).toEqual(SCAN_PLAN);
         // The trigram the short term starts now has more documents than the cap allows.
-        expect(await buildOptionsSearchPlan(engine.driver, 'fts', ['en'])).toEqual(SCAN_PLAN);
+        expect(await buildOptionsSearchPlan(engine.driver, ['en'])).toEqual(SCAN_PLAN);
 
-        const result = await searchOptionRows(engine.driver, searchRequest(['dense', '1000']), 'fts');
+        const result = await searchOptionRows(engine.driver, searchRequest(['dense', '1000']));
         expect(result.reportIDs).toEqual(['51000']);
     });
 
     it('leaves the index searchable after a bulk rebuild, and the triggers back in place for the next upsert', async () => {
-        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: FIXTURE, full: true}), 'fts');
+        await ingestOptionRows(engine.driver, ingestRequest({version: 2, upserts: FIXTURE, full: true}));
         expect(await readTriggerNames(engine.driver)).toEqual(['option_rows_ad', 'option_rows_ai', 'option_rows_au']);
 
         await ingestOptionRows(
@@ -240,13 +237,12 @@ describe('option_rows search plans with the fts matcher', () => {
                     {kind: 'contact', id: '101'},
                 ],
             }),
-            'fts',
         );
 
-        expect((await searchOptionRows(engine.driver, searchRequest(['zephyr']), 'fts')).reportIDs).toEqual(['6', '2', '11', '8', '7']);
+        expect((await searchOptionRows(engine.driver, searchRequest(['zephyr']))).reportIDs).toEqual(['6', '2', '11', '8', '7']);
         // The deleted rows left the FTS index too, so their own words no longer match.
-        expect(await searchOptionRows(engine.driver, searchRequest(['nine']), 'fts')).toMatchObject({reportIDs: [], contactIDs: []});
-        expect(await searchOptionRows(engine.driver, searchRequest(['zephyr@examplecom']), 'fts')).toMatchObject({contactIDs: []});
+        expect(await searchOptionRows(engine.driver, searchRequest(['nine']))).toMatchObject({reportIDs: [], contactIDs: []});
+        expect(await searchOptionRows(engine.driver, searchRequest(['zephyr@examplecom']))).toMatchObject({contactIDs: []});
         expect(await readOptionRowCount(engine.driver)).toBe(FIXTURE.length - 2);
     });
 

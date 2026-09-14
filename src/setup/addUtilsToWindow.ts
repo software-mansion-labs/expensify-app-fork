@@ -1,18 +1,8 @@
 import {isProduction as isProductionLib} from '@libs/Environment/Environment';
-import {getJsLhnOrderStats} from '@libs/LhnOrderIndex/JsLhnOrderStore';
-import type {JsLhnOrderStats} from '@libs/LhnOrderIndex/JsLhnOrderStore';
-import {getLhnOrderIndexStats} from '@libs/LhnOrderIndex/LhnOrderIndexStore';
-import type {LhnOrderIndexStats} from '@libs/LhnOrderIndex/LhnOrderIndexStore';
 import navigationRef from '@libs/Navigation/navigationRef';
-import {getReportActionsOrderStats} from '@libs/ReportActionsOrder/ReportActionsOrderStore';
-import type {ReportActionsOrderStats} from '@libs/ReportActionsOrder/ReportActionsOrderStore';
 import {getSearchOptionsIndexStats} from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
 import type {SearchOptionsIndexStats} from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
 import {getEngineStats} from '@libs/SqlEngine/EngineClient';
-import {getReportActionsEngineMode, isReportActionsEngineMode, setReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
-import type {ReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
-import {getLhnEngineMode, isLhnEngineMode, isLhnGuardEnabled, setLhnEngineMode, setLhnGuardEnabled} from '@libs/SqlEngine/lhnEngineMode';
-import type {LhnEngineMode} from '@libs/SqlEngine/lhnEngineMode';
 import {
     getSearchRouterEngineMode,
     isSearchRouterEngineMode,
@@ -31,12 +21,6 @@ import type {CollectionKeyBase} from 'react-native-onyx/dist/types';
 
 import Onyx from 'react-native-onyx';
 
-type ReportActionsEngineDevTools = {
-    getMode: () => ReportActionsEngineMode;
-    setMode: (mode: string) => void;
-    getStats: () => Promise<{mode: ReportActionsEngineMode; store: ReportActionsOrderStats; engine: EngineStats | undefined}>;
-};
-
 type SearchRouterEngineDevTools = {
     getMode: () => SearchRouterEngineMode;
     setMode: (mode: string) => void;
@@ -45,23 +29,11 @@ type SearchRouterEngineDevTools = {
     getStats: () => Promise<{mode: SearchRouterEngineMode; isGuardEnabled: boolean; store: SearchOptionsIndexStats; engine: EngineStats | undefined}>;
 };
 
-type LhnEngineDevTools = {
-    getMode: () => LhnEngineMode;
-    setMode: (mode: string) => void;
-    /** Compares every index order with today's order and counts mismatches; costs a full JS sort per write. */
-    setGuard: (isEnabled: boolean) => void;
-    getStats: () => Promise<{mode: LhnEngineMode; isGuardEnabled: boolean; store: LhnOrderIndexStats | JsLhnOrderStats; engine: EngineStats | undefined}>;
-};
-
 declare global {
     // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
     interface Window {
-        /** Dev-only toggle of the report-actions SQL engine POC. */
-        reportActionsEngine: ReportActionsEngineDevTools;
         /** Dev-only toggle of the SearchRouter option-index POC. */
         searchRouterEngine: SearchRouterEngineDevTools;
-        /** Dev-only toggle of the LHN order POC. */
-        lhnEngine: LhnEngineDevTools;
     }
 }
 
@@ -107,63 +79,23 @@ export default function addUtilsToWindow() {
 
         window.setSupportToken = setSupportAuthToken;
 
-        window.reportActionsEngine = {
-            getMode: getReportActionsEngineMode,
-            setMode: (mode: string) => {
-                if (!isReportActionsEngineMode(mode)) {
-                    /* eslint-disable-next-line no-console */
-                    console.warn(`Unknown report actions engine mode "${mode}". Use "off", "preview" or "strict".`);
-                    return;
-                }
-                setReportActionsEngineMode(mode);
-                /* eslint-disable-next-line no-console */
-                console.log(`Report actions engine mode is now "${mode}". It applies to report screens mounted from now on.`);
-            },
-            getStats: async () => ({
-                mode: getReportActionsEngineMode(),
-                store: getReportActionsOrderStats(),
-                engine: await getEngineStats().catch(() => undefined),
-            }),
-        };
-
         window.searchRouterEngine = {
             getMode: getSearchRouterEngineMode,
             setMode: (mode: string) => {
                 if (!isSearchRouterEngineMode(mode)) {
                     /* eslint-disable-next-line no-console */
-                    console.warn(`Unknown search router engine mode "${mode}". Use "off", "js-index", "sql-like" or "sql-fts".`);
+                    console.warn(`Unknown search router engine mode "${mode}". Use "off", "js-index" or "sql".`);
                     return;
                 }
                 setSearchRouterEngineMode(mode);
                 /* eslint-disable-next-line no-console */
-                console.log(`Search router engine mode is now "${mode}". It applies the next time the router opens; the SQL matcher is fixed once the worker has started.`);
+                console.log(`Search router engine mode is now "${mode}". It applies the next time the router opens.`);
             },
             setGuard: setSearchRouterGuardEnabled,
             getStats: async () => ({
                 mode: getSearchRouterEngineMode(),
                 isGuardEnabled: isSearchRouterGuardEnabled(),
                 store: getSearchOptionsIndexStats(),
-                engine: await getEngineStats().catch(() => undefined),
-            }),
-        };
-
-        window.lhnEngine = {
-            getMode: getLhnEngineMode,
-            setMode: (mode: string) => {
-                if (!isLhnEngineMode(mode)) {
-                    /* eslint-disable-next-line no-console */
-                    console.warn(`Unknown LHN engine mode "${mode}". Use "off", "sql" or "js".`);
-                    return;
-                }
-                setLhnEngineMode(mode);
-                /* eslint-disable-next-line no-console */
-                console.log(`LHN engine mode is now "${mode}". It applies the next time the sidebar provider mounts.`);
-            },
-            setGuard: setLhnGuardEnabled,
-            getStats: async () => ({
-                mode: getLhnEngineMode(),
-                isGuardEnabled: isLhnGuardEnabled(),
-                store: getLhnEngineMode() === 'js' ? getJsLhnOrderStats() : getLhnOrderIndexStats(),
                 engine: await getEngineStats().catch(() => undefined),
             }),
         };

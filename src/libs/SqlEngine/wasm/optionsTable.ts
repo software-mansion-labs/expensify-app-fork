@@ -1,7 +1,7 @@
 import type {SqlBatchCommand, SqlDriver, SqlRow, SqlValue} from '@libs/SqlEngine/SqlDriver';
 
 import type {OptionsSearchPlan} from './optionsSearchPlan';
-import type {IngestOptionsRequest, OptionIndexKind, OptionsMatcher, SearchOptionsRequest} from './protocol';
+import type {IngestOptionsRequest, OptionIndexKind, SearchOptionsRequest} from './protocol';
 
 import {buildOptionsSearchPlan, FTS_MIN_TERM_LENGTH} from './optionsSearchPlan';
 
@@ -77,11 +77,8 @@ ON CONFLICT (kind, id) DO UPDATE SET search_text = excluded.search_text, order_k
 
 const COUNT_QUERY = 'SELECT COUNT(*) AS option_row_count FROM option_rows;';
 
-async function createOptionsSchema(driver: SqlDriver, matcher: OptionsMatcher): Promise<void> {
-    const commands: SqlBatchCommand[] = [{sql: CREATE_TABLE}, {sql: CREATE_ORDER_INDEX}];
-    if (matcher === 'fts') {
-        commands.push({sql: CREATE_FTS}, {sql: CREATE_VOCAB}, ...CREATE_FTS_TRIGGERS.map((sql) => ({sql})));
-    }
+async function createOptionsSchema(driver: SqlDriver): Promise<void> {
+    const commands: SqlBatchCommand[] = [{sql: CREATE_TABLE}, {sql: CREATE_ORDER_INDEX}, {sql: CREATE_FTS}, {sql: CREATE_VOCAB}, ...CREATE_FTS_TRIGGERS.map((sql) => ({sql}))];
     await driver.executeBatch(commands);
 }
 
@@ -89,8 +86,8 @@ async function createOptionsSchema(driver: SqlDriver, matcher: OptionsMatcher): 
  * A full load rebuilds the FTS index in one pass instead of paying three trigger statements per row: 206 ms
  * against 1338 ms at 45,000 rows. An incremental load keeps the triggers, which cost 0.036 ms per upserted row.
  */
-function buildIngestCommands(request: IngestOptionsRequest, matcher: OptionsMatcher): SqlBatchCommand[] {
-    const isBulkRebuild = request.full && matcher === 'fts';
+function buildIngestCommands(request: IngestOptionsRequest): SqlBatchCommand[] {
+    const isBulkRebuild = request.full;
     const commands: SqlBatchCommand[] = isBulkRebuild ? DROP_FTS_TRIGGERS.map((sql) => ({sql})) : [];
     if (request.full) {
         commands.push({sql: DELETE_ALL});
@@ -110,10 +107,10 @@ function buildIngestCommands(request: IngestOptionsRequest, matcher: OptionsMatc
 }
 
 /** Applies one version of the option index inside a single transaction and returns the time it took. */
-function ingestOptionRows(driver: SqlDriver, request: IngestOptionsRequest, matcher: OptionsMatcher): Promise<number> {
+function ingestOptionRows(driver: SqlDriver, request: IngestOptionsRequest): Promise<number> {
     return driver.transaction(async (tx) => {
         const startedAt = performance.now();
-        await tx.executeBatch(buildIngestCommands(request, matcher));
+        await tx.executeBatch(buildIngestCommands(request));
         return performance.now() - startedAt;
     });
 }
@@ -188,9 +185,9 @@ async function readSearchWindow(driver: SqlDriver, terms: string[], kind: Option
     return readWindow(await driver.execute(statement.sql, statement.params), limit);
 }
 
-async function searchOptionRows(driver: SqlDriver, request: SearchOptionsRequest, matcher: OptionsMatcher): Promise<OptionsSearchResult> {
+async function searchOptionRows(driver: SqlDriver, request: SearchOptionsRequest): Promise<OptionsSearchResult> {
     const startedAt = performance.now();
-    const plan = await buildOptionsSearchPlan(driver, matcher, request.terms);
+    const plan = await buildOptionsSearchPlan(driver, request.terms);
     const reports = await readSearchWindow(driver, request.terms, 'report', request.reportLimit, plan);
     const contacts = await readSearchWindow(driver, request.terms, 'contact', request.contactLimit, plan);
     return {

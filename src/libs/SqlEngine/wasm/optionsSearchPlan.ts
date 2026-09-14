@@ -1,7 +1,5 @@
 import type {SqlDriver, SqlValue} from '@libs/SqlEngine/SqlDriver';
 
-import type {OptionsMatcher} from './protocol';
-
 /** The trigram tokenizer indexes nothing shorter than three characters, so shorter terms are probed by trigram prefix. */
 const FTS_MIN_TERM_LENGTH = 3;
 
@@ -60,8 +58,8 @@ async function readShortTermMatch(driver: SqlDriver, term: string): Promise<stri
  * the first one under the cap drives the join. The LIKE predicates stay on every other term, so the driver
  * decides only the cost of the query, never its result.
  */
-async function buildOptionsSearchPlan(driver: SqlDriver, matcher: OptionsMatcher, terms: string[]): Promise<OptionsSearchPlan> {
-    if (matcher !== 'fts' || terms.length === 0) {
+async function buildOptionsSearchPlan(driver: SqlDriver, terms: string[]): Promise<OptionsSearchPlan> {
+    if (terms.length === 0) {
         return {type: 'scan'};
     }
     const shortMatches: string[] = [];
