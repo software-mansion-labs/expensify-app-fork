@@ -101,7 +101,13 @@ function BaseLoginForm({submitBehavior = 'submit', isVisible, ref}: BaseLoginFor
         (text: string) => {
             setLogin(text);
             if (firstBlurred.current) {
-                validate(text);
+                // Don't surface the "please enter an email or phone number" error while the user is still
+                // mid-edit (e.g. clearing the field to retype) — only blur/submit should validate emptiness.
+                if (!StringUtils.removeInvisibleCharacters(text.trim())) {
+                    setFormError(undefined);
+                } else {
+                    validate(text);
+                }
             }
 
             if (!!account?.errors || !!account?.message) {
