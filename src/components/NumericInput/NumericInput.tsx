@@ -26,7 +26,7 @@ const getMagnitude = (canonicalValue: string, allowNegative: boolean) => (allowN
 const getSignedValue = (displayText: string, wasNegative: boolean, wasSignTyped: boolean, wasNumberReplaced: boolean) => {
     if (displayText.startsWith('-')) {
         const magnitude = displayText.slice(1);
-        return wasSignTyped && wasNegative ? magnitude : `-${magnitude}`;
+        return wasSignTyped && wasNegative && !wasNumberReplaced ? magnitude : `-${magnitude}`;
     }
 
     return wasNegative && !wasNumberReplaced ? `-${displayText}` : displayText;
