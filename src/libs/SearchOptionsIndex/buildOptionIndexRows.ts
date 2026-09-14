@@ -129,7 +129,9 @@ function buildReportIndexEntry(report: Report, inputs: SearchOptionsIndexInputs)
             orderKey: `${isSelfDMReport ? 1 : 0}_${isArchived ? 0 : 1}_${report.lastVisibleActionCreated ?? ''}`,
             isHidden: isReportHiddenFromRouter(report, isThread, isArchived, inputs.currentUserAccountID),
             // `reasonForReportToBeInOptionList` keeps the focused report before every rejection, so only the
-            // checks `isValidReport` runs after it are safe to decide here. See RESULTS-sql-max.md.
+            // checks `isValidReport` runs after it are safe to decide here. Its empty-chat-thread rule is the
+            // only one measured to still drop a candidate, and it reads the focused report and the report's
+            // own actions, neither of which this row has.
             isValid: login !== CONST.EMAIL.NOTIFICATIONS,
         },
         dmAccountID: accountIDs.length <= 1 && isOneOnOneChat(report, inputs.currentUserAccountID) ? accountIDs.at(0) : undefined,

@@ -1,5 +1,3 @@
-import type {PrivateIsArchivedMap} from '@hooks/usePrivateIsArchivedMap';
-
 import {clearFilteredOptionListCache, createFilteredOptionList, getSearchOptions} from '@libs/OptionsListUtils';
 import type {Options} from '@libs/OptionsListUtils';
 import {
@@ -10,17 +8,13 @@ import {
     resetSearchOptionsIndexStore,
 } from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
 import {getSearchWindow} from '@libs/SearchOptionsIndex/searchWindow';
-import type {SearchOptionsFormatConfig, SearchOptionsIndexInputs} from '@libs/SearchOptionsIndex/types';
 import {setSearchRouterEngineMode} from '@libs/SqlEngine/searchRouterEngineMode';
 import type {SearchRouterEngineMode} from '@libs/SqlEngine/searchRouterEngineMode';
 
-import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report} from '@src/types/onyx';
-import type Login from '@src/types/onyx/Login';
 
 import type * as NativeNavigation from '@react-navigation/native';
-import type {OnyxEntry} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
@@ -28,7 +22,8 @@ import type {SearchRouterDataset} from '../../utils/collections/searchRouterData
 
 import buildSearchRouterDataset from '../../utils/collections/searchRouterDataset';
 import {getMockEngineOptionRowCount, getMockEngineSearchCount, resetMockEngine} from '../../utils/mockSqlEngineClient';
-import {convertToDisplayString, translateLocal} from '../../utils/TestHelper';
+import {buildSearchRouterFormatConfig, CURRENT_USER_ACCOUNT_ID, CURRENT_USER_EMAIL, optionIDs, toSearchOptionsIndexInputs} from '../../utils/searchRouterHarness';
+import {convertToDisplayString} from '../../utils/TestHelper';
 import waitForBatchedUpdates from '../../utils/waitForBatchedUpdates';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- a jest.mock factory cannot reach a typed import, so the stand-in module is pulled in with require
@@ -44,10 +39,6 @@ jest.mock('@react-navigation/native', () => {
     };
 });
 
-const CURRENT_USER_ACCOUNT_ID = 1;
-const CURRENT_USER_EMAIL = 'me@example.com';
-const EMPTY_LOGIN_LIST: OnyxEntry<Login> = {};
-const MOCKED_BETAS = Object.values(CONST.BETAS);
 const MODES: SearchRouterEngineMode[] = ['js-index', 'sql-like'];
 const QUERIES = [
     'Zephyr',
@@ -77,42 +68,7 @@ const QUERIES = [
 // Half the reports are DMs, so this many contacts gives every contact exactly one DM, as on a real account.
 const dataset = buildSearchRouterDataset({reportCount: 600, contactCount: 320, currentUserAccountID: CURRENT_USER_ACCOUNT_ID});
 
-const formatConfig: SearchOptionsFormatConfig = {
-    dateFnsLocale: undefined,
-    convertToDisplayString,
-    translate: translateLocal,
-    draftComments: {},
-    betas: MOCKED_BETAS,
-    loginList: EMPTY_LOGIN_LIST,
-    currentUserAccountID: CURRENT_USER_ACCOUNT_ID,
-    currentUserEmail: CURRENT_USER_EMAIL,
-    policyCollection: dataset.policies,
-    personalDetails: dataset.personalDetails,
-    sortedActions: undefined,
-    conciergeReportID: undefined,
-    isUsedInChatFinder: true,
-    includeReadOnly: true,
-    maxResults: CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS,
-    includeUserToInvite: true,
-    includeRecentReports: true,
-    includeCurrentUser: true,
-    shouldShowGBR: false,
-    shouldUnreadBeBold: true,
-};
-
-function toInputs(data: SearchRouterDataset, privateIsArchivedMap: PrivateIsArchivedMap = data.privateIsArchivedMap): SearchOptionsIndexInputs {
-    return {
-        reports: data.reports,
-        personalDetails: data.personalDetails,
-        reportAttributes: data.reportAttributes,
-        policies: data.policies,
-        privateIsArchivedMap,
-        conciergeReportID: undefined,
-        currentUserAccountID: CURRENT_USER_ACCOUNT_ID,
-        locale: undefined,
-        translate: translateLocal,
-    };
-}
+const formatConfig = buildSearchRouterFormatConfig(dataset);
 
 /** Today's path, verbatim: the full option list built in search mode, then `getSearchOptions` over all of it. */
 function todayOptions(data: SearchRouterDataset, query: string): Options {
@@ -128,14 +84,6 @@ function todayOptions(data: SearchRouterDataset, query: string): Options {
         deferContactsUntilSearch: true,
     });
     return getSearchOptions({...formatConfig, options: optionList, searchQuery: query}).options;
-}
-
-function ids(options: Options): string[] {
-    return [
-        ...options.recentReports.map((option) => `r:${option.reportID}`),
-        ...options.personalDetails.map((option) => `c:${option.accountID}`),
-        `invite:${options.userToInvite?.login ?? ''}`,
-    ];
 }
 
 async function indexOptions(query: string): Promise<Options> {
@@ -176,11 +124,11 @@ describe("SearchOptionsIndex parity with today's path", () => {
     describe.each(MODES)('in %s mode', (mode) => {
         beforeEach(() => {
             setSearchRouterEngineMode(mode);
-            feedSearchOptionsIndex(toInputs(dataset));
+            feedSearchOptionsIndex(toSearchOptionsIndexInputs(dataset));
         });
 
         it.each(QUERIES)('returns the rows today returns for "%s", in the same order', async (query) => {
-            expect(ids(await indexOptions(query))).toEqual(ids(todayOptions(dataset, query)));
+            expect(optionIDs(await indexOptions(query))).toEqual(optionIDs(todayOptions(dataset, query)));
         });
 
         it('hands the formatter the rows the list renders and nothing more', async () => {
@@ -208,14 +156,14 @@ describe("SearchOptionsIndex parity with today's path", () => {
                 },
             };
             const statsBefore = getSearchOptionsIndexStats();
-            feedSearchOptionsIndex(toInputs(next));
+            feedSearchOptionsIndex(toSearchOptionsIndexInputs(next));
             const statsAfter = getSearchOptionsIndexStats();
 
             expect(statsAfter.fullRebuilds).toBe(statsBefore.fullRebuilds);
             expect(statsAfter.upsertedRows - statsBefore.upsertedRows).toBe(1);
 
             await waitForBatchedUpdates();
-            expect(ids(getSearchOptionsIndexSnapshot()?.options ?? before)).toEqual(ids(todayOptions(next, 'renamed')));
+            expect(optionIDs(getSearchOptionsIndexSnapshot()?.options ?? before)).toEqual(optionIDs(todayOptions(next, 'renamed')));
         });
 
         it('drops a report that leaves the collection and rebuilds the contact that lost its DM', async () => {
@@ -224,25 +172,25 @@ describe("SearchOptionsIndex parity with today's path", () => {
             expect(removed).toBeDefined();
             const next: SearchRouterDataset = {...dataset, reports: remainingReports};
             const statsBefore = getSearchOptionsIndexStats();
-            feedSearchOptionsIndex(toInputs(next));
+            feedSearchOptionsIndex(toSearchOptionsIndexInputs(next));
             const statsAfter = getSearchOptionsIndexStats();
 
             expect(statsAfter.deletedRows - statsBefore.deletedRows).toBe(1);
             expect(statsAfter.upsertedRows - statsBefore.upsertedRows).toBe(1);
-            expect(ids(await indexOptions('Person 0'))).toEqual(ids(todayOptions(next, 'Person 0')));
+            expect(optionIDs(await indexOptions('Person 0'))).toEqual(optionIDs(todayOptions(next, 'Person 0')));
         });
     });
 
     it('only posts rows to the engine in a SQL mode', async () => {
         setSearchRouterEngineMode('js-index');
-        feedSearchOptionsIndex(toInputs(dataset));
+        feedSearchOptionsIndex(toSearchOptionsIndexInputs(dataset));
         await indexOptions('Zephyr');
         expect(getMockEngineOptionRowCount()).toBe(0);
         expect(getMockEngineSearchCount()).toBe(0);
 
         resetSearchOptionsIndexStore();
         setSearchRouterEngineMode('sql-like');
-        feedSearchOptionsIndex(toInputs(dataset));
+        feedSearchOptionsIndex(toSearchOptionsIndexInputs(dataset));
         await indexOptions('Zephyr');
         expect(getMockEngineOptionRowCount()).toBe(getSearchOptionsIndexStats().rowCount);
         expect(getMockEngineSearchCount()).toBe(1);
