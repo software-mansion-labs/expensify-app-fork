@@ -1,5 +1,5 @@
 import {useNumericEditingController} from '@components/NumericEditingController';
-import type {NumericEditingKeyPressEvent, NumericEditingRef, NumericEditingSelection} from '@components/NumericEditingController';
+import type {NumericEditingRef, NumericEditingSelection} from '@components/NumericEditingController';
 import ScrollView from '@components/ScrollView';
 import isTextInputFocused from '@components/TextInput/BaseTextInput/isTextInputFocused';
 import type {BaseTextInputRef} from '@components/TextInput/BaseTextInput/types';
@@ -36,6 +36,9 @@ const getSignedValue = (displayText: string, wasNegative: boolean, wasSignTyped:
 const getWasNumberReplaced = (previousDisplayText: string, previousSelection: NumericEditingSelection) =>
     !!previousDisplayText && previousSelection.start === 0 && previousSelection.end === previousDisplayText.length;
 
+const getWasSignTyped = (displayText: string, previousDisplayText: string, previousSelection: NumericEditingSelection) =>
+    displayText === `${previousDisplayText.slice(0, previousSelection.start)}-${previousDisplayText.slice(previousSelection.end)}`;
+
 type NumericInputProps = {
     /** Canonical value shared by composed primitives. Only an empty value resets editing state. */
     value?: string;
@@ -71,7 +74,6 @@ type NumericInputProps = {
 function NumericInput({value = '', onInputChange, allowNegative = false, decimals = 0, maxLength, errorText, ref, style, scrollViewStyle, children}: NumericInputProps) {
     const styles = useThemeStyles();
     const inputRef = useRef<BaseTextInputRef | null>(null);
-    const wasSignKeyPressedRef = useRef(false);
 
     const toDisplayText = (canonicalValue: string) => getMagnitude(canonicalValue, allowNegative);
 
@@ -82,21 +84,15 @@ function NumericInput({value = '', onInputChange, allowNegative = false, decimal
 
         const previousDisplayText = toDisplayText(previousCanonicalValue);
 
-        return getSignedValue(displayText, previousCanonicalValue.startsWith('-'), wasSignKeyPressedRef.current, getWasNumberReplaced(previousDisplayText, previousSelection));
+        return getSignedValue(
+            displayText,
+            previousCanonicalValue.startsWith('-'),
+            getWasSignTyped(displayText, previousDisplayText, previousSelection),
+            getWasNumberReplaced(previousDisplayText, previousSelection),
+        );
     };
 
     const controller = useNumericEditingController({value, onInputChange, allowNegative, decimals, maxLength, toDisplayText, toCanonicalValue});
-
-    // Rejected edits never reach `toCanonicalValue`, so the sign key is consumed around every edit instead of inside it.
-    const setNumber = (displayText: string) => {
-        controller.setNumber(displayText);
-        wasSignKeyPressedRef.current = false;
-    };
-
-    const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
-        wasSignKeyPressedRef.current = event.nativeEvent.key === '-';
-        controller.handleKeyPress(event);
-    };
 
     useImperativeHandle(ref, () => ({
         clearSelection: controller.clearSelection,
@@ -141,12 +137,12 @@ function NumericInput({value = '', onInputChange, allowNegative = false, decimal
     };
 
     const actionsContextValue: NumericInputActionsContextValue = {
-        setNumber,
+        setNumber: controller.setNumber,
         clearSelection: controller.clearSelection,
         toggleSign,
         clearSign,
         handleSelectionChange: controller.handleSelectionChange,
-        handleKeyPress,
+        handleKeyPress: controller.handleKeyPress,
         focusInput,
     };
 

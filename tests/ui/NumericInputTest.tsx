@@ -143,6 +143,7 @@ describe('NumericInput', () => {
             renderNumericInput({value: '-12', allowNegative: true});
 
             const input = screen.getByTestId(INPUT_TEST_ID);
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: 0}}});
             typeMinus(input, '-12');
 
             expect(screen.queryByText(MINUS_SIGN)).not.toBeOnTheScreen();
@@ -164,6 +165,31 @@ describe('NumericInput', () => {
 
             expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
             expect(onInputChange).toHaveBeenLastCalledWith('-50');
+        });
+
+        it('does not carry over a minus key press when the following edit is a paste', () => {
+            renderNumericInput({value: '-12', allowNegative: true});
+
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            // Simulates a minus key press that produces no text change, such as a browser zoom shortcut
+            fireEvent(input, 'keyPress', {nativeEvent: {key: MINUS_SIGN}});
+
+            fireEvent.changeText(input, '-50');
+
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(onInputChange).toHaveBeenLastCalledWith('-50');
+        });
+
+        it('toggles the sign when a minus is typed without a key press event, such as on Android hardware keyboards', () => {
+            renderNumericInput({value: '-12', allowNegative: true});
+
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: 0}}});
+            fireEvent.changeText(input, '-12');
+
+            expect(screen.queryByText(MINUS_SIGN)).not.toBeOnTheScreen();
+            expect(input).toHaveDisplayValue('12');
+            expect(onInputChange).toHaveBeenLastCalledWith('12');
         });
 
         it.each([
