@@ -1,7 +1,7 @@
 import compareLhnRows from '@libs/LhnOrderIndex/compareLhnRows';
 import type {IngestAndOrderParams, IngestOptionsParams, OrderLhnParams, SearchOptionsParams} from '@libs/SqlEngine/EngineClient';
 import type {EngineStats, LhnIndexRow, LhnOrderedReply, OptionIndexRow, OptionsFoundReply, OptionsIngestedReply, OptionsMatcher, OrderReply, SortRow} from '@libs/SqlEngine/wasm/protocol';
-import {ID_SEPARATOR} from '@libs/SqlEngine/wasm/reportActionsTable';
+import {ID_SEPARATOR, PAIR_SEPARATOR} from '@libs/SqlEngine/wasm/reportActionsTable';
 
 import CONST from '@src/CONST';
 
@@ -64,11 +64,26 @@ function ingestAndOrder({reportID, version, upserts, deletes, full}: IngestAndOr
     }
     tables.set(reportID, table);
 
-    const orderedIDs = Array.from(table.values())
-        .sort(compareRows)
-        .map((row) => row.id);
+    const ordered = Array.from(table.values()).sort(compareRows);
+    const orderedIDs = ordered.map((row) => row.id);
     const ids = orderOverride ? orderOverride(reportID, orderedIDs) : orderedIDs;
-    const reply: OrderReply = {type: 'order', requestID: requestCount, reportID, version, ids: ids.join(ID_SEPARATOR), total: ids.length, timings: {ingestMs: 0, orderMs: 0}};
+    const syntheticPairs: string[] = [];
+    for (const row of ordered) {
+        if (row.parentID === undefined) {
+            continue;
+        }
+        syntheticPairs.push(`${row.id}${PAIR_SEPARATOR}${row.parentID}`);
+    }
+    const reply: OrderReply = {
+        type: 'order',
+        requestID: requestCount,
+        reportID,
+        version,
+        ids: ids.join(ID_SEPARATOR),
+        total: ids.length,
+        synthetic: syntheticPairs.join(ID_SEPARATOR),
+        timings: {ingestMs: 0, orderMs: 0},
+    };
 
     if (!isDeferred) {
         return Promise.resolve(reply);

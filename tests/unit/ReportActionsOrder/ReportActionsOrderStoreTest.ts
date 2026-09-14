@@ -9,7 +9,7 @@ import {getSortedReportActionsForDisplay} from '@libs/ReportActionsUtils';
 import {setReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
 
 import CONST from '@src/CONST';
-import type {ReportActions} from '@src/types/onyx';
+import type {ReportAction, ReportActions} from '@src/types/onyx';
 import type ReportActionName from '@src/types/onyx/ReportActionName';
 
 import {flushMockEngineReplies, getMockEngineDropCount, getMockEngineRequestCount, resetMockEngine, setMockEngineDeferred, setMockEngineOrderOverride} from '../../utils/mockSqlEngineClient';
@@ -35,6 +35,20 @@ const FIXTURE = buildActions([
     {id: '3', created: '2024-01-03 00:00:00.000'},
     {id: '4', created: '2024-01-03 00:00:00.000', actionName: CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW},
 ]);
+
+const DEW_SUBMIT_ID = '5';
+
+/** A Dynamic External Workflow submit, which the display list expands into a second, synthetic routed action. */
+function buildDEWSubmitAction(id: string, created: string): ReportAction {
+    return getFakeReportAction(Number(id), {
+        reportActionID: id,
+        created,
+        actionName: CONST.REPORT.ACTIONS.TYPE.SUBMITTED,
+        originalMessage: {amount: 1, currency: CONST.CURRENCY.USD, workflow: CONST.POLICY.APPROVAL_MODE.DYNAMICEXTERNAL, to: 'approver@example.com'},
+    });
+}
+
+const DEW_FIXTURE: ReportActions = {...FIXTURE, [DEW_SUBMIT_ID]: buildDEWSubmitAction(DEW_SUBMIT_ID, '2024-01-04 00:00:00.000')};
 
 function requireAction(actions: ReportActions, id: string) {
     const action = actions[id];
@@ -183,6 +197,41 @@ describe('ReportActionsOrderStore', () => {
         await waitForBatchedUpdates();
 
         expect(getReportActionsOrderStats().mismatches).toBe(0);
+    });
+
+    it('places a Dynamic External Workflow routed action exactly where the JS display order puts it', async () => {
+        setReportActionsOrderRawActions(REPORT_ID, DEW_FIXTURE);
+        await waitForBatchedUpdates();
+
+        expect(snapshotIDs()).toEqual(expectedIDs(DEW_FIXTURE));
+        expect(snapshotIDs()).toHaveLength(Object.keys(DEW_FIXTURE).length + 1);
+
+        const routedAction = getReportActionsOrderSnapshot(REPORT_ID)?.actions.at(0);
+        expect(routedAction?.actionName).toBe(CONST.REPORT.ACTIONS.TYPE.DYNAMIC_EXTERNAL_WORKFLOW_ROUTED);
+    });
+
+    it('adds and removes the routed action as its parent arrives and leaves', async () => {
+        setReportActionsOrderRawActions(REPORT_ID, FIXTURE);
+        await waitForBatchedUpdates();
+        expect(snapshotIDs()).toEqual(expectedIDs(FIXTURE));
+
+        setReportActionsOrderRawActions(REPORT_ID, DEW_FIXTURE);
+        await waitForBatchedUpdates();
+        expect(snapshotIDs()).toEqual(expectedIDs(DEW_FIXTURE));
+
+        const withoutDEW: ReportActions = {...DEW_FIXTURE, [DEW_SUBMIT_ID]: {...requireAction(DEW_FIXTURE, DEW_SUBMIT_ID), originalMessage: {amount: 1, currency: CONST.CURRENCY.USD}}};
+        setReportActionsOrderRawActions(REPORT_ID, withoutDEW);
+        await waitForBatchedUpdates();
+        expect(snapshotIDs()).toEqual(expectedIDs(withoutDEW));
+    });
+
+    it('keeps the engine order for a routed action instead of re-sorting it', async () => {
+        setMockEngineOrderOverride((reportID, ids) => ids.slice().reverse());
+
+        setReportActionsOrderRawActions(REPORT_ID, DEW_FIXTURE);
+        await waitForBatchedUpdates();
+
+        expect(snapshotIDs()).toEqual(expectedIDs(DEW_FIXTURE).slice().reverse());
     });
 
     it('does nothing while the mode is off', async () => {

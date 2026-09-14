@@ -8,6 +8,8 @@ type SortRow = {
     id: string;
     created: string | undefined;
     actionName: string | undefined;
+    /** Set on a synthetic row only: the id of the action the display list expands into this one. */
+    parentID?: string;
 };
 
 type OptionIndexKind = 'report' | 'contact';
@@ -152,6 +154,8 @@ type OrderReply = {
     ids: string;
     /** How many report actions the order holds, so the consumer can check the ids it split. */
     total: number;
+    /** Which ids of the order are synthetic: `<id>:<parent id>` entries joined by a comma. */
+    synthetic: string;
     timings: OrderTimings;
 };
 

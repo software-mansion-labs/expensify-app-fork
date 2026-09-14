@@ -2,7 +2,7 @@ import type {SortRow} from '@libs/SqlEngine/wasm/protocol';
 
 import type {ReportActionsInput} from './toSortRows';
 
-import toSortRows, {toSortRow} from './toSortRows';
+import toSortRows, {toActionSortRows} from './toSortRows';
 
 type ReportActionsDiff = {
     upserts: SortRow[];
@@ -15,6 +15,26 @@ const EMPTY_DIFF: ReportActionsDiff = {upserts: [], deletes: [], full: false};
 
 function isDiffEmpty(diff: ReportActionsDiff): boolean {
     return !diff.full && diff.upserts.length === 0 && diff.deletes.length === 0;
+}
+
+function isSameRow(first: SortRow, second: SortRow): boolean {
+    return first.id === second.id && first.created === second.created && first.actionName === second.actionName && first.parentID === second.parentID;
+}
+
+/** One member holds at most two rows (itself and its routed action), so comparing the two lists is a pair of scans. */
+function appendRowDiff(previousRows: SortRow[], nextRows: SortRow[], upserts: SortRow[], deletes: string[]) {
+    for (const row of nextRows) {
+        if (previousRows.some((previousRow) => isSameRow(previousRow, row))) {
+            continue;
+        }
+        upserts.push(row);
+    }
+    for (const previousRow of previousRows) {
+        if (nextRows.some((row) => row.id === previousRow.id)) {
+            continue;
+        }
+        deletes.push(previousRow.id);
+    }
 }
 
 /**
@@ -38,27 +58,19 @@ function diffReportActions(previous: ReportActionsInput | undefined, next: Repor
     for (const [id, nextAction] of Object.entries(next)) {
         const previousAction = previous[id];
 
-        if (!nextAction) {
-            if (previousAction) {
-                deletes.push(id);
-            }
-            continue;
-        }
-
         if (previousAction === nextAction) {
             continue;
         }
 
-        if (previousAction && previousAction.created === nextAction.created && previousAction.actionName === nextAction.actionName) {
-            continue;
-        }
-
-        upserts.push(toSortRow(id, nextAction));
+        appendRowDiff(previousAction ? toActionSortRows(id, previousAction) : [], nextAction ? toActionSortRows(id, nextAction) : [], upserts, deletes);
     }
 
     for (const [id, previousAction] of Object.entries(previous)) {
-        if (previousAction && !(id in next)) {
-            deletes.push(id);
+        if (!previousAction || id in next) {
+            continue;
+        }
+        for (const row of toActionSortRows(id, previousAction)) {
+            deletes.push(row.id);
         }
     }
 

@@ -12,6 +12,8 @@ type OrderResult = {
     /** The whole order as one value: report action ids joined by `ID_SEPARATOR`. */
     ids: string;
     total: number;
+    /** The synthetic rows as one value: `<id><PAIR_SEPARATOR><parent id>` entries joined by `ID_SEPARATOR`. */
+    synthetic: string;
     timings: OrderTimings;
 };
 
@@ -22,12 +24,15 @@ type TableCounts = {
 
 const ID_SEPARATOR = ',';
 
+const PAIR_SEPARATOR = ':';
+
 /*
  * The index is rebuilt lazily from the Onyx cache on every worker start, so persisted rows are never read.
  * Dropping the table keeps a schema change from failing the init against an OPFS file of an older build.
  */
 const DROP_TABLE = 'DROP TABLE IF EXISTS report_actions;';
 
+/** `parent_id` is set on a synthetic row only: it is the id of the action that expands into it. */
 const CREATE_TABLE = `CREATE TABLE report_actions (
     report_id        TEXT NOT NULL,
     id               TEXT NOT NULL,
@@ -35,6 +40,7 @@ const CREATE_TABLE = `CREATE TABLE report_actions (
     action_name      TEXT,
     sort_group       INTEGER NOT NULL,
     preview_rank     INTEGER NOT NULL,
+    parent_id        TEXT,
     PRIMARY KEY (report_id, id)
 ) WITHOUT ROWID;`;
 
@@ -44,13 +50,16 @@ const CREATE_TABLE = `CREATE TABLE report_actions (
  */
 const CREATE_ORDER_INDEX = 'CREATE INDEX report_actions_order ON report_actions (report_id, sort_group ASC, created DESC, preview_rank ASC, id DESC);';
 
+/** Partial index over the few synthetic rows of a report, covering the query that pairs them with their parent. */
+const CREATE_SYNTHETIC_INDEX = 'CREATE INDEX report_actions_synthetic ON report_actions (report_id, id, parent_id) WHERE parent_id IS NOT NULL;';
+
 const DELETE_REPORT = 'DELETE FROM report_actions WHERE report_id = ?;';
 
 const DELETE_ROW = 'DELETE FROM report_actions WHERE report_id = ? AND id = ?;';
 
-const UPSERT_ROW = `INSERT INTO report_actions (report_id, id, created, action_name, sort_group, preview_rank) VALUES (?, ?, ?, ?, ?, ?)
+const UPSERT_ROW = `INSERT INTO report_actions (report_id, id, created, action_name, sort_group, preview_rank, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (report_id, id) DO UPDATE SET created = excluded.created, action_name = excluded.action_name,
-    sort_group = excluded.sort_group, preview_rank = excluded.preview_rank;`;
+    sort_group = excluded.sort_group, preview_rank = excluded.preview_rank, parent_id = excluded.parent_id;`;
 
 const DISPLAY_ORDER = 'ORDER BY sort_group ASC, created DESC, preview_rank ASC, id DESC';
 
@@ -61,6 +70,10 @@ const REVERSE_ORDER = 'ORDER BY sort_group DESC, created ASC, preview_rank DESC,
 const ORDER_QUERY = `SELECT group_concat(id, '${ID_SEPARATOR}') AS ids, count(*) AS total FROM (
     SELECT id FROM report_actions WHERE report_id = ? ${DISPLAY_ORDER}
 );`;
+
+/** Which ids of the order are synthetic, and which action each one belongs to, as a single row. */
+const SYNTHETIC_QUERY = `SELECT group_concat(id || '${PAIR_SEPARATOR}' || parent_id, '${ID_SEPARATOR}') AS pairs
+FROM report_actions WHERE report_id = ? AND parent_id IS NOT NULL;`;
 
 const COUNT_QUERY = 'SELECT COUNT(*) AS row_count, COUNT(DISTINCT report_id) AS report_count FROM report_actions;';
 
@@ -75,11 +88,11 @@ function toPreviewRank(row: SortRow, names: OrderActionNames): number {
 }
 
 function toUpsertParams(reportID: string, row: SortRow, names: OrderActionNames): SqlValue[] {
-    return [reportID, row.id, row.created ?? null, row.actionName ?? null, toSortGroup(row, names), toPreviewRank(row, names)];
+    return [reportID, row.id, row.created ?? null, row.actionName ?? null, toSortGroup(row, names), toPreviewRank(row, names), row.parentID ?? null];
 }
 
 function createReportActionsSchema(driver: SqlDriver): Promise<void> {
-    return driver.executeBatch([{sql: DROP_TABLE}, {sql: CREATE_TABLE}, {sql: CREATE_ORDER_INDEX}]);
+    return driver.executeBatch([{sql: DROP_TABLE}, {sql: CREATE_TABLE}, {sql: CREATE_ORDER_INDEX}, {sql: CREATE_SYNTHETIC_INDEX}]);
 }
 
 function readCount(row: SqlRow | undefined, column: string): number {
@@ -114,9 +127,15 @@ function ingestAndOrderReport(driver: SqlDriver, request: IngestAndOrderRequest,
 
         const orderStartedAt = performance.now();
         const rows = await tx.execute(ORDER_QUERY, [request.reportID]);
+        const syntheticRows = await tx.execute(SYNTHETIC_QUERY, [request.reportID]);
         const orderMs = performance.now() - orderStartedAt;
 
-        return {ids: readText(rows.at(0), 'ids'), total: readCount(rows.at(0), 'total'), timings: {ingestMs, orderMs}};
+        return {
+            ids: readText(rows.at(0), 'ids'),
+            total: readCount(rows.at(0), 'total'),
+            synthetic: readText(syntheticRows.at(0), 'pairs'),
+            timings: {ingestMs, orderMs},
+        };
     });
 }
 
@@ -129,5 +148,5 @@ async function readTableCounts(driver: SqlDriver): Promise<TableCounts> {
     return {reportCount: readCount(rows.at(0), 'report_count'), rowCount: readCount(rows.at(0), 'row_count')};
 }
 
-export {createReportActionsSchema, ingestAndOrderReport, dropReportRows, readTableCounts, ID_SEPARATOR, ORDER_QUERY, DISPLAY_ORDER, REVERSE_ORDER};
+export {createReportActionsSchema, ingestAndOrderReport, dropReportRows, readTableCounts, ID_SEPARATOR, PAIR_SEPARATOR, ORDER_QUERY, SYNTHETIC_QUERY, DISPLAY_ORDER, REVERSE_ORDER};
 export type {OrderActionNames, OrderResult, TableCounts};

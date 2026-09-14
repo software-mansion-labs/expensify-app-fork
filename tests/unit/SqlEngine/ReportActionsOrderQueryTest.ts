@@ -2,7 +2,7 @@ import splitOrderedIDs from '@libs/ReportActionsOrder/splitOrderedIDs';
 import {getSortedReportActions} from '@libs/ReportActionsUtils';
 import type {IngestAndOrderRequest, SortRow} from '@libs/SqlEngine/wasm/protocol';
 import type {OrderActionNames} from '@libs/SqlEngine/wasm/reportActionsTable';
-import {createReportActionsSchema, dropReportRows, ingestAndOrderReport, ORDER_QUERY, readTableCounts} from '@libs/SqlEngine/wasm/reportActionsTable';
+import {createReportActionsSchema, dropReportRows, ingestAndOrderReport, ORDER_QUERY, PAIR_SEPARATOR, readTableCounts, SYNTHETIC_QUERY} from '@libs/SqlEngine/wasm/reportActionsTable';
 import type {WasmSqlEngine} from '@libs/SqlEngine/wasm/WasmSqlDriver';
 import createWasmSqlEngine from '@libs/SqlEngine/wasm/WasmSqlDriver';
 
@@ -157,6 +157,28 @@ describe('report_actions order query', () => {
         );
 
         expect(splitOrderedIDs(ids)).toEqual(expectedOrder(fixture));
+    });
+
+    it('orders a synthetic row like any other and reports which parent it belongs to', async () => {
+        const parent = buildAction('8100', '2024-09-01 00:00:00.000', COMMENT);
+        const routed = buildAction('8100DEW', '2024-09-01 00:00:00.001', COMMENT);
+        const rows: SortRow[] = [...toSortRows([...fixture, parent]), {id: routed.reportActionID, created: routed.created, actionName: routed.actionName, parentID: parent.reportActionID}];
+
+        const {ids, synthetic} = await ingestAndOrderReport(engine.driver, buildRequest({upserts: rows, full: true}), NAMES);
+
+        expect(splitOrderedIDs(ids)).toEqual(expectedOrder([...fixture, parent, routed]));
+        expect(synthetic).toBe(`${routed.reportActionID}${PAIR_SEPARATOR}${parent.reportActionID}`);
+    });
+
+    it('reads the synthetic pairs from the partial index and returns them as a single row', async () => {
+        await ingestAndOrderReport(engine.driver, buildRequest({upserts: toSortRows(fixture), full: true}), NAMES);
+
+        const rows = await engine.driver.execute(SYNTHETIC_QUERY, [REPORT_ID]);
+        expect(rows).toHaveLength(1);
+
+        const plan = await explainPlan(SYNTHETIC_QUERY, [REPORT_ID]);
+        expect(plan).toContain('SEARCH report_actions USING COVERING INDEX report_actions_synthetic (report_id=?)');
+        expect(plan.join(' | ')).not.toContain('TEMP B-TREE');
     });
 
     it('keeps reports isolated and drops the rows of one report only', async () => {

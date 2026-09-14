@@ -1,5 +1,5 @@
 import Log from '@libs/Log';
-import {getSortedReportActions, getSortedReportActionsForDisplay, replaceBaseURLInPolicyChangeLogAction, withDEWRoutedActionsArray} from '@libs/ReportActionsUtils';
+import {getDEWRoutedActionFor, getSortedReportActionsForDisplay, replaceBaseURLInPolicyChangeLogAction} from '@libs/ReportActionsUtils';
 import {dropReport, ingestAndOrder, isEngineAvailable} from '@libs/SqlEngine/EngineClient';
 import {getReportActionsEngineMode} from '@libs/SqlEngine/engineMode';
 
@@ -8,6 +8,7 @@ import type {ReportAction, ReportActions} from '@src/types/onyx';
 import noop from 'lodash/noop';
 
 import diffReportActions, {isDiffEmpty} from './diffReportActions';
+import parseSyntheticParents from './parseSyntheticParents';
 import splitOrderedIDs from './splitOrderedIDs';
 
 /**
@@ -34,12 +35,18 @@ type ReportActionsOrderStats = {
     totalRoundTripMs: number;
 };
 
+/** The order of one report as the worker confirmed it, kept so a local confirm can rebuild the snapshot. */
+type ConfirmedOrder = {
+    ids: string[];
+    syntheticParents: Map<string, string>;
+};
+
 type ReportEntry = {
     version: number;
     refCount: number;
     subscribers: Set<() => void>;
     raw: ReportActions | undefined;
-    orderedIDs: string[] | undefined;
+    order: ConfirmedOrder | undefined;
     snapshot: ReportActionsOrderSnapshot | undefined;
 };
 
@@ -66,18 +73,27 @@ function notify(entry: ReportEntry) {
     }
 }
 
-function isDefinedAction(reportAction: ReportAction | undefined): reportAction is ReportAction {
-    return !!reportAction;
-}
-
-function buildSnapshot(raw: ReportActions, orderedIDs: string[]): ReportActionsOrderSnapshot {
-    const ordered = orderedIDs
-        .map((id) => raw[id])
-        .filter(isDefinedAction)
-        .map(replaceBaseURLInPolicyChangeLogAction);
-    const withRoutedActions = withDEWRoutedActionsArray(ordered);
-    // Synthetic DEW routed actions carry created + 1 ms, so the JS path sorts them before their parent; only a report that has them pays for a JS re-sort.
-    const actions = withRoutedActions.length === ordered.length ? withRoutedActions : getSortedReportActions(withRoutedActions, true);
+/**
+ * Maps a confirmed order to report actions in one pass. A synthetic id is rebuilt from the action the worker
+ * paired it with, so the whole order, routed actions included, comes from SQL and nothing is re-sorted here.
+ */
+function buildSnapshot(raw: ReportActions, order: ConfirmedOrder): ReportActionsOrderSnapshot {
+    const actions: ReportAction[] = [];
+    for (const id of order.ids) {
+        const parentID = order.syntheticParents.get(id);
+        if (parentID === undefined) {
+            const reportAction = raw[id];
+            if (reportAction) {
+                actions.push(replaceBaseURLInPolicyChangeLogAction(reportAction));
+            }
+            continue;
+        }
+        const parentAction = raw[parentID];
+        const routedAction = parentAction ? getDEWRoutedActionFor(replaceBaseURLInPolicyChangeLogAction(parentAction)) : undefined;
+        if (routedAction) {
+            actions.push(routedAction);
+        }
+    }
     return {raw, actions};
 }
 
@@ -94,14 +110,14 @@ function countMismatch(reportID: string, snapshot: ReportActionsOrderSnapshot) {
     Log.warn('[ReportActionsOrder] SQL order differs from the JS order', {reportID, engineCount: engineIDs.length, jsCount: jsIDs.length});
 }
 
-function confirm(reportID: string, raw: ReportActions, orderedIDs: string[]) {
+function confirm(reportID: string, raw: ReportActions, order: ConfirmedOrder) {
     const entry = entries.get(reportID);
     if (!entry) {
         return;
     }
 
-    const snapshot = buildSnapshot(raw, orderedIDs);
-    entry.orderedIDs = orderedIDs;
+    const snapshot = buildSnapshot(raw, order);
+    entry.order = order;
     entry.snapshot = snapshot;
 
     if (getReportActionsEngineMode() === 'strict') {
@@ -119,7 +135,7 @@ function forgetReport(reportID: string) {
 
     const hadSnapshot = !!entry.snapshot;
     entry.raw = undefined;
-    entry.orderedIDs = undefined;
+    entry.order = undefined;
     entry.snapshot = undefined;
 
     if (isEngineActive()) {
@@ -149,9 +165,9 @@ function setReportActionsOrderRawActions(reportID: string, raw: ReportActions | 
     const diff = diffReportActions(entry.raw, raw);
     entry.raw = raw;
 
-    if (isDiffEmpty(diff) && entry.orderedIDs) {
+    if (isDiffEmpty(diff) && entry.order) {
         stats.localConfirms += 1;
-        confirm(reportID, raw, entry.orderedIDs);
+        confirm(reportID, raw, entry.order);
         return;
     }
 
@@ -172,7 +188,7 @@ function setReportActionsOrderRawActions(reportID: string, raw: ReportActions | 
             }
             stats.roundTrips += 1;
             stats.totalRoundTripMs += Date.now() - startedAt;
-            confirm(reportID, entry.raw, splitOrderedIDs(reply.ids));
+            confirm(reportID, entry.raw, {ids: splitOrderedIDs(reply.ids), syntheticParents: parseSyntheticParents(reply.synthetic)});
         })
         .catch((error: unknown) => {
             stats.failures += 1;
@@ -212,7 +228,7 @@ function subscribeToReportActionsOrder(reportID: string | undefined, listener: (
         return noop;
     }
 
-    const entry = entries.get(reportID) ?? {version: 0, refCount: 0, subscribers: new Set<() => void>(), raw: undefined, orderedIDs: undefined, snapshot: undefined};
+    const entry = entries.get(reportID) ?? {version: 0, refCount: 0, subscribers: new Set<() => void>(), raw: undefined, order: undefined, snapshot: undefined};
     entries.set(reportID, entry);
     entry.refCount += 1;
     entry.subscribers.add(listener);

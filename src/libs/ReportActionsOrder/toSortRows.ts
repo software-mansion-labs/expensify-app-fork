@@ -1,3 +1,4 @@
+import {getDEWRoutedActionFor} from '@libs/ReportActionsUtils';
 import type {SortRow} from '@libs/SqlEngine/wasm/protocol';
 
 import type {ReportAction} from '@src/types/onyx';
@@ -14,16 +15,29 @@ function toSortRow(id: string, reportAction: ReportAction): SortRow {
     };
 }
 
+/**
+ * Every row one Onyx member contributes to the order. A Dynamic External Workflow submit or forward contributes
+ * a second row for the routed action the display list expands it into, so SQL orders that action too instead of
+ * leaving a JS re-sort behind.
+ */
+function toActionSortRows(id: string, reportAction: ReportAction): SortRow[] {
+    const routedAction = getDEWRoutedActionFor(reportAction);
+    if (!routedAction) {
+        return [toSortRow(id, reportAction)];
+    }
+    return [toSortRow(id, reportAction), {...toSortRow(routedAction.reportActionID, routedAction), parentID: id}];
+}
+
 function toSortRows(reportActions: ReportActionsInput): SortRow[] {
     const rows: SortRow[] = [];
     for (const [id, reportAction] of Object.entries(reportActions)) {
         if (reportAction) {
-            rows.push(toSortRow(id, reportAction));
+            rows.push(...toActionSortRows(id, reportAction));
         }
     }
     return rows;
 }
 
 export default toSortRows;
-export {toSortRow};
+export {toSortRow, toActionSortRows};
 export type {ReportActionsInput};

@@ -1632,12 +1632,18 @@ function getDynamicExternalWorkflowRoutedAction(
     };
 }
 
+/** The synthetic routed action a Dynamic External Workflow submit or forward expands into, when it expands at all. */
+function getDEWRoutedActionFor(reportAction: ReportAction): ReportAction<typeof CONST.REPORT.ACTIONS.TYPE.DYNAMIC_EXTERNAL_WORKFLOW_ROUTED> | undefined {
+    if ((isDynamicExternalWorkflowSubmitAction(reportAction) || isDynamicExternalWorkflowForwardedAction(reportAction)) && getOriginalMessage(reportAction)?.to) {
+        return getDynamicExternalWorkflowRoutedAction(reportAction);
+    }
+    return undefined;
+}
+
 function withDEWRoutedActionsArray(reportActions: ReportAction[]): ReportAction[] {
     return reportActions.flatMap((reportAction) => {
-        if ((isDynamicExternalWorkflowSubmitAction(reportAction) || isDynamicExternalWorkflowForwardedAction(reportAction)) && getOriginalMessage(reportAction)?.to) {
-            return [reportAction, getDynamicExternalWorkflowRoutedAction(reportAction)];
-        }
-        return reportAction;
+        const routedAction = getDEWRoutedActionFor(reportAction);
+        return routedAction ? [reportAction, routedAction] : reportAction;
     });
 }
 
@@ -1646,9 +1652,9 @@ function withDEWRoutedActionsObject(reportActions: OnyxEntry<ReportActions>): On
         const [reportActionID, reportAction] = value;
         acc[reportActionID] = reportAction;
 
-        if ((isDynamicExternalWorkflowSubmitAction(reportAction) || isDynamicExternalWorkflowForwardedAction(reportAction)) && getOriginalMessage(reportAction)?.to) {
-            const dynamicExternalWorkflowRoutedAction = getDynamicExternalWorkflowRoutedAction(reportAction);
-            acc[dynamicExternalWorkflowRoutedAction.reportActionID] = dynamicExternalWorkflowRoutedAction;
+        const routedAction = getDEWRoutedActionFor(reportAction);
+        if (routedAction) {
+            acc[routedAction.reportActionID] = routedAction;
         }
         return acc;
     }, {} as ReportActions);
@@ -5253,6 +5259,7 @@ export {
     isOriginalReportDeleted,
     isSystemUserMentioned,
     replaceBaseURLInPolicyChangeLogAction,
+    getDEWRoutedActionFor,
     withDEWRoutedActionsArray,
     withDEWRoutedActionsObject,
     getReportActionActorAccountID,
