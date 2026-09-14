@@ -11,12 +11,7 @@ import type {
 
 import type {RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import type {
-    AuthTypeInfo,
-    MultifactorAuthenticationCallbackInput,
-    MultifactorAuthenticationCallbackResponse,
-    MultifactorAuthenticationScenarioCallback,
-} from '@libs/MultifactorAuthentication/shared/types';
+import type {AuthTypeInfo, MultifactorAuthenticationCallbackResponse, MultifactorAuthenticationScenarioCallback} from '@libs/MultifactorAuthentication/shared/types';
 
 import type {RunScenarioAction} from '@userActions/MultifactorAuthentication/processing';
 
@@ -128,11 +123,12 @@ type ValidateDeviceInput = {allowedAuthenticationMethods: AllowedAuthenticationM
 /** Identifies the account whose device-local registration state the machine loads. */
 type LoadRegistrationStateInput = {accountID: number};
 
-/** Device-local signals needed to choose between registration and authorization. */
-type LoadRegistrationStateOutput = {
-    hasLocalCredentials: boolean;
-    hasEverAcceptedSoftPrompt: boolean;
-};
+/**
+ * The registration snapshot as read by the shared `captureRegistrationState` helper. The registration
+ * decision routes on `hasLocalCredentials` and `hasEverAcceptedSoftPrompt` only; `hasServerCredentials`
+ * comes along because the helper reads all three at once and the extra read is cheap.
+ */
+type LoadRegistrationStateOutput = MFARegistrationStateSnapshot;
 
 /** Validate code sent to the backend to obtain a registration challenge. */
 type RequestRegistrationChallengeInput = {validateCode: string};
@@ -156,15 +152,15 @@ type AuthorizeInput = {
 type AuthorizeOutput = MFAResult<{scenarioResponse: MultifactorAuthenticationScenarioResponse; authenticationMethod: AuthTypeInfo}>;
 
 /**
- * Input the machine passes to the finalize-outcome actor: the scenario's own callback bound over its
- * payload, everything the callback itself needs, and every field `trackMFAFlowOutcome` reads. Named
- * `payload` (not e.g. `scenarioPayload`) so the dev-only XState inspector's name-based masking still
- * covers it - see the inspector-safety note on the finalize actor.
+ * Input the machine passes to the finalize-outcome actor: the scenario's own callback and payload, and
+ * the raw flow results (`scenarioResponse`, `error`) plus every flag `trackMFAFlowOutcome` reads. The
+ * actor derives success, the callback input and `isAuthorizationComplete` from the raw results itself,
+ * so there is exactly one place that interprets them. Named `payload` (not e.g. `scenarioPayload`) so
+ * the dev-only XState inspector's name-based masking still covers it - see the inspector-safety note on
+ * the finalize actor.
  */
 type FinalizeOutcomeInput = {
-    isSuccessful: boolean;
     callback: MultifactorAuthenticationScenarioCallback;
-    callbackInput: MultifactorAuthenticationCallbackInput;
     payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined;
     accountID: number;
     scenarioName: MultifactorAuthenticationScenario;

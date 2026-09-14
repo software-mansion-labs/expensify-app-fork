@@ -43,7 +43,7 @@ describe('MFA authorization', () => {
                 actors: {
                     validateDevice: fromPromise<MFAResult, ValidateDeviceInput>(() => Promise.resolve({success: true})),
                     loadRegistrationState: fromPromise<LoadRegistrationStateOutput, LoadRegistrationStateInput>(() =>
-                        Promise.resolve({hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+                        Promise.resolve({hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
                     ),
                     authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(({input}) => {
                         receivedInput = input;

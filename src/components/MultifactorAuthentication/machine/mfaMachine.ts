@@ -366,15 +366,7 @@ const MFAMachine = setup({
                                         throw new Error('MFA account and scenario must be initialized before finalizing the outcome');
                                     }
                                     return {
-                                        isSuccessful: context.error === undefined,
                                         callback: context.scenario.callback,
-                                        // Odd but deliberate parity with legacy: `message` carries the reason,
-                                        // not the message, and `httpStatusCode` does not fall back to the error's.
-                                        callbackInput: {
-                                            httpStatusCode: context.scenarioResponse?.httpStatusCode,
-                                            message: context.scenarioResponse?.reason ?? context.error?.reason,
-                                            body: context.scenarioResponse?.body,
-                                        },
                                         payload: context.payload,
                                         accountID: context.accountID,
                                         scenarioName: context.scenarioName,

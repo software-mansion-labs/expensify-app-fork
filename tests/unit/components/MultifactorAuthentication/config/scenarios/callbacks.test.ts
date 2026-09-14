@@ -77,7 +77,6 @@ type ScenarioCallbackCase = {
     /** Test name, and the `it` block's description. */
     name: string;
     scenarioName: MultifactorAuthenticationScenario;
-    isSuccessful: boolean;
     scenarioResponse: MultifactorAuthenticationScenarioResponse | undefined;
     error: MFAError | undefined;
     payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined;
@@ -91,7 +90,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'BIOMETRICS_TEST shows the outcome screen and touches nothing else',
         scenarioName: SCENARIO.BIOMETRICS_TEST,
-        isSuccessful: true,
         scenarioResponse: SUCCESS_RESPONSE,
         error: undefined,
         payload: undefined,
@@ -106,7 +104,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'REVEAL_PIN stores the revealed PIN and skips the outcome screen',
         scenarioName: SCENARIO.REVEAL_PIN,
-        isSuccessful: true,
         scenarioResponse: {...SUCCESS_RESPONSE, body: {pin: REVEALED_PIN}},
         error: undefined,
         payload: {cardID: CARD_ID},
@@ -118,7 +115,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'REVEAL_PIN stores nothing and shows the outcome screen on failure',
         scenarioName: SCENARIO.REVEAL_PIN,
-        isSuccessful: false,
         scenarioResponse: undefined,
         error: CANCELED_ERROR,
         payload: {cardID: CARD_ID},
@@ -130,7 +126,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'SET_PERSONAL_DETAILS_AND_REVEAL_CARD_DETAILS stores the card secrets, leaves the details form, and skips the outcome screen',
         scenarioName: SCENARIO.SET_PERSONAL_DETAILS_AND_REVEAL_CARD_DETAILS,
-        isSuccessful: true,
         scenarioResponse: {...SUCCESS_RESPONSE, body: {...REVEALED_CARD_DETAILS}},
         error: undefined,
         payload: {...PERSONAL_DETAILS, addressState: '', cardID: CARD_ID, isFromMissingDetailsFlow: true},
@@ -145,7 +140,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'SET_PERSONAL_DETAILS_AND_REVEAL_CARD_DETAILS stays put when the reveal was not entered from the missing-details form',
         scenarioName: SCENARIO.SET_PERSONAL_DETAILS_AND_REVEAL_CARD_DETAILS,
-        isSuccessful: true,
         scenarioResponse: {...SUCCESS_RESPONSE, body: {...REVEALED_CARD_DETAILS}},
         error: undefined,
         payload: {...PERSONAL_DETAILS, addressState: '', cardID: CARD_ID},
@@ -159,7 +153,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'SET_PERSONAL_DETAILS_AND_REVEAL_CARD_DETAILS stores nothing and shows the outcome screen on failure',
         scenarioName: SCENARIO.SET_PERSONAL_DETAILS_AND_REVEAL_CARD_DETAILS,
-        isSuccessful: false,
         scenarioResponse: undefined,
         error: CANCELED_ERROR,
         payload: {...PERSONAL_DETAILS, addressState: '', cardID: CARD_ID, isFromMissingDetailsFlow: true},
@@ -172,7 +165,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'SET_PIN_ORDER_CARD lands the user on the card page and skips the outcome screen',
         scenarioName: SCENARIO.SET_PIN_ORDER_CARD,
-        isSuccessful: true,
         scenarioResponse: SUCCESS_RESPONSE,
         error: undefined,
         payload: {...PERSONAL_DETAILS, pin: '5739', cardID: CARD_ID},
@@ -186,7 +178,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'SET_PIN_ORDER_CARD keeps the user in place and shows the outcome screen on failure',
         scenarioName: SCENARIO.SET_PIN_ORDER_CARD,
-        isSuccessful: false,
         scenarioResponse: undefined,
         error: CANCELED_ERROR,
         payload: {...PERSONAL_DETAILS, pin: '5739', cardID: CARD_ID},
@@ -199,7 +190,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'CHANGE_PIN pops the set-PIN screen before the outcome screen is shown',
         scenarioName: SCENARIO.CHANGE_PIN,
-        isSuccessful: true,
         scenarioResponse: SUCCESS_RESPONSE,
         error: undefined,
         payload: {pin: '1234', cardID: CARD_ID},
@@ -211,7 +201,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'CHANGE_PIN pops the set-PIN screen on failure too, so the failure screen is not stacked on it',
         scenarioName: SCENARIO.CHANGE_PIN,
-        isSuccessful: false,
         scenarioResponse: undefined,
         error: CANCELED_ERROR,
         payload: {pin: '1234', cardID: CARD_ID},
@@ -223,7 +212,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'AUTHORIZE_TRANSACTION leaves an approved transaction alone and shows the outcome screen',
         scenarioName: SCENARIO.AUTHORIZE_TRANSACTION,
-        isSuccessful: true,
         scenarioResponse: SUCCESS_RESPONSE,
         error: undefined,
         payload: {transactionID: TRANSACTION_ID},
@@ -235,7 +223,6 @@ const cases: ScenarioCallbackCase[] = [
     {
         name: 'AUTHORIZE_TRANSACTION denies the transaction on failure so it cannot be approved elsewhere',
         scenarioName: SCENARIO.AUTHORIZE_TRANSACTION,
-        isSuccessful: false,
         scenarioResponse: undefined,
         error: CANCELED_ERROR,
         payload: {transactionID: TRANSACTION_ID},
@@ -247,19 +234,13 @@ const cases: ScenarioCallbackCase[] = [
 ];
 
 /**
- * Builds the finalize-outcome input for one case, mirroring the mapping `mfaMachine`'s
- * `finalizingOutcome` invoke builds from context. That mapping itself - including its two deliberate
- * parity quirks with legacy - is pinned by `machine/finalizeOutcomeTransition.test.ts`.
+ * Builds the finalize-outcome input for one case: the raw flow results the machine forwards from
+ * context. Success and the callback input are derived from `scenarioResponse` and `error` by the actor
+ * itself, which `machine/finalizeOutcomeActor.test.ts` pins.
  */
 function buildInput(testCase: ScenarioCallbackCase): FinalizeOutcomeInput {
     return {
-        isSuccessful: testCase.isSuccessful,
         callback: getScenarioConfig(testCase.scenarioName).callback,
-        callbackInput: {
-            httpStatusCode: testCase.scenarioResponse?.httpStatusCode,
-            message: testCase.scenarioResponse?.reason ?? testCase.error?.reason,
-            body: testCase.scenarioResponse?.body,
-        },
         payload: testCase.payload,
         accountID: ACCOUNT_ID,
         scenarioName: testCase.scenarioName,

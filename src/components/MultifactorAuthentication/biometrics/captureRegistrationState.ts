@@ -17,10 +17,10 @@ type MFARegistrationStateSnapshot = {
 
 /**
  * Builds the account/device registration snapshot used for flow-boundary routing decisions and
- * telemetry. This is the one non-React implementation, shared by the provider's start-of-flow read
- * and the finalize-outcome actor's end-of-flow read, so the two cannot drift into separate snapshots
- * of the same signals (see the "keep both implementations aligned" comment on the platform-resolved
- * `areLocalCredentialsKnownToServer`).
+ * telemetry. This is the one non-React implementation, shared by the provider's start-of-flow read,
+ * the machine's registration decision (`loadRegistrationState`) and the finalize-outcome actor's
+ * end-of-flow read, so none of them can drift into a separate snapshot of the same signals (see the
+ * "keep both implementations aligned" comment on the platform-resolved `areLocalCredentialsKnownToServer`).
  */
 async function captureRegistrationState(accountID: number, signal?: AbortSignal): Promise<MFARegistrationStateSnapshot> {
     const [hasLocalCredentials, account, deviceBiometrics] = await Promise.all([

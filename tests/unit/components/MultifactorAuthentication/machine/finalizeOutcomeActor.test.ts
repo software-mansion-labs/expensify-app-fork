@@ -3,11 +3,12 @@ import createActors from '@components/MultifactorAuthentication/machine/mfaActor
 import type {FinalizeOutcomeInput} from '@components/MultifactorAuthentication/machine/types';
 import trackMFAFlowOutcome from '@components/MultifactorAuthentication/observability/trackMFAFlowOutcome';
 
-import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import CONST from '@src/CONST';
 
 import {MFA_TEST_AUTH_METHOD, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
+import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, waitFor} from 'xstate';
 
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
@@ -35,9 +36,7 @@ const START_STATE: MFARegistrationStateSnapshot = {hasServerCredentials: false, 
 
 function buildInput(overrides: Partial<FinalizeOutcomeInput> = {}): FinalizeOutcomeInput {
     return {
-        isSuccessful: true,
         callback: jest.fn().mockResolvedValue(CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN),
-        callbackInput: {httpStatusCode: 200, message: undefined, body: undefined},
         payload: undefined,
         accountID: ACCOUNT_ID,
         scenarioName: CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.BIOMETRICS_TEST,
@@ -66,20 +65,31 @@ describe('finalizeOutcome actor', () => {
         mockCaptureRegistrationState.mockResolvedValue(END_STATE);
     });
 
-    it('calls the scenario callback with the exact callback input and payload it was given', async () => {
-        // The machine computes `callbackInput` from context (see mfaMachine.ts's finalizingOutcome
-        // input mapping) - the actor's job is only to forward it and the payload to the callback unchanged.
+    it('derives the callback input from the scenario response and forwards the payload unchanged', async () => {
         const callback = jest.fn().mockResolvedValue(CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN);
         const input = buildInput({
             callback,
-            callbackInput: {httpStatusCode: 200, message: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, body: {pin: '1234'}},
+            scenarioResponse: {httpStatusCode: 200, reason: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, message: 'ignored by the callback input', body: {pin: '1234'}},
             payload: {transactionID: 'txn-1'},
         });
 
         const snapshot = await runFinalizeOutcomeActor(input);
 
+        // `message` carries the reason, not the message - deliberate parity with the legacy callback input.
         expect(callback).toHaveBeenCalledWith(true, {httpStatusCode: 200, message: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, body: {pin: '1234'}}, {transactionID: 'txn-1'});
         expect(snapshot.output).toEqual({callbackResponse: CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN});
+    });
+
+    it("carries the error's reason into callbackInput.message but never its httpStatusCode, matching legacy", async () => {
+        const callback = jest.fn().mockResolvedValue(CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN);
+        const failureError = createMFAErrorFromApiResponse(404, REASON.LOCAL_ERRORS.HSM.CANCELED, 'Finalize actor spec failure');
+        const input = buildInput({callback, scenarioResponse: undefined, error: failureError});
+
+        await runFinalizeOutcomeActor(input);
+
+        // `httpStatusCode` is undefined here (not `failureError.httpStatusCode`) - odd but deliberate
+        // parity with legacy, which never fell back to the error's HTTP status for this field.
+        expect(callback).toHaveBeenCalledWith(false, {httpStatusCode: undefined, message: failureError.reason, body: undefined}, undefined);
     });
 
     it('returns SKIP_OUTCOME_SCREEN when the callback returns it', async () => {
@@ -100,7 +110,7 @@ describe('finalizeOutcome actor', () => {
     });
 
     it('captures the end-of-flow registration snapshot and reports telemetry exactly once', async () => {
-        const input = buildInput({isSuccessful: false, error: createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'user canceled'), isRegistrationComplete: true, softPromptApproved: true});
+        const input = buildInput({error: createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'user canceled'), isRegistrationComplete: true, softPromptApproved: true});
 
         await runFinalizeOutcomeActor(input);
 
@@ -139,6 +149,30 @@ describe('finalizeOutcome actor', () => {
         expect(snapshot.status).toBe('done');
         expect(snapshot.output).toEqual({callbackResponse: CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN});
         expect(trackMFAFlowOutcomeMock).not.toHaveBeenCalled();
+    });
+
+    it('still reports the outcome when the machine stops the actor mid-flow, e.g. the modal closed during finalization', async () => {
+        // The end-of-flow read deliberately ignores the actor's abort signal (see `finalizeOutcomeActor`):
+        // an abort would drop the telemetry for exactly the flows where the user bailed at the very end.
+        let resolveEndState: ((snapshot: MFARegistrationStateSnapshot) => void) | undefined;
+        mockCaptureRegistrationState.mockImplementation(
+            () =>
+                new Promise<MFARegistrationStateSnapshot>((resolve) => {
+                    resolveEndState = resolve;
+                }),
+        );
+        const {finalizeOutcome} = createActors();
+        const actorRef = createActor(finalizeOutcome, {input: buildInput()});
+
+        actorRef.start();
+        await waitForBatchedUpdates();
+        actorRef.stop();
+        expect(mockCaptureRegistrationState).toHaveBeenCalledWith(ACCOUNT_ID, undefined);
+
+        resolveEndState?.(END_STATE);
+        await waitForBatchedUpdates();
+
+        expect(trackMFAFlowOutcomeMock).toHaveBeenCalledTimes(1);
     });
 
     it('computes isAuthorizationComplete from whether a scenario response exists', async () => {
