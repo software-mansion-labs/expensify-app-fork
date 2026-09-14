@@ -26,6 +26,11 @@ type OptionIndexRow = {
     orderKey: string;
     /** Whether the router's `excludeHidden` filter drops the row before matching. */
     isHidden: boolean;
+    /**
+     * Whether the row survives every validity predicate that holds whatever the app's navigation state is.
+     * False rows can never be shown, so the worker filters them out instead of handing them to the formatter.
+     */
+    isValid: boolean;
 };
 
 type OptionIndexRef = Pick<OptionIndexRow, 'kind' | 'id'>;

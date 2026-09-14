@@ -12,7 +12,7 @@ function rowOrderKey(row: OptionIndexRow): string {
  * heap. Reports keep the most recent matches, contacts the alphabetically first ones.
  */
 function matchOptionIndexRows(rows: OptionIndexRow[], terms: string[], reportLimit: number, contactLimit: number): SearchCandidateIDs {
-    const matches = (kind: OptionIndexRow['kind']) => (row: OptionIndexRow) => row.kind === kind && !row.isHidden && terms.every((term) => row.searchText.includes(term));
+    const matches = (kind: OptionIndexRow['kind']) => (row: OptionIndexRow) => row.kind === kind && !row.isHidden && row.isValid && terms.every((term) => row.searchText.includes(term));
     const reports = optionsOrderBy(rows, rowOrderKey, reportLimit, matches('report'));
     const contacts = optionsOrderBy(rows, rowOrderKey, contactLimit, matches('contact'), true);
     return {

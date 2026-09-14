@@ -1,21 +1,29 @@
 import matchOptionIndexRows from '@libs/SearchOptionsIndex/matchOptionIndexRows';
-import {createOptionsSchema, FTS_MIN_TERM_LENGTH, ingestOptionRows, readOptionRowCount, searchOptionRows} from '@libs/SqlEngine/wasm/optionsTable';
-import type {IngestOptionsRequest, OptionIndexRow, OptionsMatcher, SearchOptionsRequest} from '@libs/SqlEngine/wasm/protocol';
+import type {SqlDriver, SqlValue} from '@libs/SqlEngine/SqlDriver';
+import {buildSearchStatement, createOptionsSchema, FTS_MIN_TERM_LENGTH, ingestOptionRows, readOptionRowCount, searchOptionRows} from '@libs/SqlEngine/wasm/optionsTable';
+import type {IngestOptionsRequest, OptionIndexKind, OptionIndexRow, OptionsMatcher, SearchOptionsRequest} from '@libs/SqlEngine/wasm/protocol';
 import type {WasmSqlEngine} from '@libs/SqlEngine/wasm/WasmSqlDriver';
 import createWasmSqlEngine from '@libs/SqlEngine/wasm/WasmSqlDriver';
 
 const MATCHERS: OptionsMatcher[] = ['like', 'fts'];
+const KINDS: OptionIndexKind[] = ['report', 'contact'];
 const LIMIT = 5;
 
-function report(id: string, searchText: string, orderKey: string, isHidden = false): OptionIndexRow {
-    return {kind: 'report', id, searchText, orderKey, isHidden};
+/** The plan of one prepared window query, as one string so a test can look for what must and must not be in it. */
+async function explainQueryPlan(driver: SqlDriver, statement: {sql: string; params: SqlValue[]}): Promise<string> {
+    const rows = await driver.execute(`EXPLAIN QUERY PLAN ${statement.sql}`, statement.params);
+    return rows.map((row) => String(row.detail)).join(' | ');
 }
 
-function contact(id: string, searchText: string): OptionIndexRow {
-    return {kind: 'contact', id, searchText, orderKey: searchText.split(' ').at(0) ?? '', isHidden: false};
+function report(id: string, searchText: string, orderKey: string, isHidden = false, isValid = true): OptionIndexRow {
+    return {kind: 'report', id, searchText, orderKey, isHidden, isValid};
 }
 
-/** Rows covering substring hits, a hidden match, LIKE and FTS special characters, a self-DM key and short terms. */
+function contact(id: string, searchText: string, isValid = true): OptionIndexRow {
+    return {kind: 'contact', id, searchText, orderKey: searchText.split(' ').at(0) ?? '', isHidden: false, isValid};
+}
+
+/** Rows covering substring hits, a hidden match, an invalid match, LIKE and FTS special characters, a self-DM key and short terms. */
 const FIXTURE: OptionIndexRow[] = [
     report('1', 'zephyr team 1 me@example.com', '0_1_2024-03-01'),
     report('2', 'chat 2', '0_1_2024-03-02'),
@@ -28,10 +36,12 @@ const FIXTURE: OptionIndexRow[] = [
     report('9', 'zephyr nine', '0_1_2024-03-09'),
     report('10', 'ze 10', '0_1_2024-03-10'),
     report('11', 'zephyr eleven', '0_1_2024-03-11'),
+    report('13', 'invalid zephyr notifications', '0_1_2024-03-13', false, false),
     contact('101', 'zephyr person zephyr@example.com zephyr@examplecom'),
     contact('102', 'person two two@example.com'),
     contact('103', 'anna zephyrson anna@example.com'),
     contact('104', 'ze short'),
+    contact('105', 'zephyr invalid contact', false),
 ];
 
 const QUERIES: string[][] = [['zephyr'], ['zep'], ['ze'], ['zephyr', 'nine'], ['zephyr', 'an'], ['%'], ['_score'], ['"quoted"'], ['zephyr@examplecom'], ['nomatch'], []];
@@ -92,6 +102,31 @@ describe.each(MATCHERS)('option_rows search with the %s matcher', (matcher) => {
     it('never reads a hidden row', async () => {
         const result = await searchOptionRows(engine.driver, searchRequest(['hidden']), matcher);
         expect(result.reportIDs).toEqual([]);
+    });
+
+    it('never reads a row the validity column rejected', async () => {
+        const result = await searchOptionRows(engine.driver, searchRequest(['invalid']), matcher);
+        expect(result.reportIDs).toEqual([]);
+        expect(result.contactIDs).toEqual([]);
+    });
+});
+
+describe('option_rows query plans', () => {
+    let engine: WasmSqlEngine;
+
+    beforeEach(async () => {
+        engine = await createWasmSqlEngine('memory');
+        await createOptionsSchema(engine.driver, 'like');
+        await ingestOptionRows(engine.driver, ingestRequest({upserts: FIXTURE, full: true}));
+    });
+
+    it.each(QUERIES)('walks the order index for %j without a temp b-tree', async (...terms) => {
+        for (const kind of KINDS) {
+            const statement = buildSearchStatement('like', terms, kind, LIMIT);
+            const plan = await explainQueryPlan(engine.driver, statement);
+            expect(plan).not.toContain('TEMP B-TREE');
+            expect(plan).toContain('INDEX option_rows_order');
+        }
     });
 });
 

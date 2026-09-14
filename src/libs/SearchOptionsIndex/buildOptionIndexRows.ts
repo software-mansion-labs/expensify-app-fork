@@ -24,6 +24,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {PersonalDetails, Report} from '@src/types/onyx';
 
+import {Str} from 'expensify-common';
 import deburr from 'lodash/deburr';
 
 import type {SearchOptionsIndexInputs} from './types';
@@ -42,6 +43,9 @@ const NEVER_HIDDEN_CHAT_TYPES = new Set<string>([
     CONST.REPORT.CHAT_TYPE.POLICY_EXPENSE_CHAT,
     CONST.REPORT.CHAT_TYPE.GROUP,
 ]);
+
+/** Logins the contact branch of `getValidOptions` never offers, whatever the rest of its configuration says. */
+const ALWAYS_EXCLUDED_CONTACT_LOGINS = new Set<string>([CONST.EMAIL.NOTIFICATIONS, CONST.ACCOUNT_EXECUTIVE_LOGIN, CONST.ACCOUNT_EXECUTIVE_LEGACY_LOGIN]);
 
 /** Same normalization `getValidOptions` applies to both the option text and the typed terms. */
 function normalizeSearchText(text: string): string {
@@ -124,9 +128,26 @@ function buildReportIndexEntry(report: Report, inputs: SearchOptionsIndexInputs)
             searchText: buildReportSearchText(report, text, login, extra),
             orderKey: `${isSelfDMReport ? 1 : 0}_${isArchived ? 0 : 1}_${report.lastVisibleActionCreated ?? ''}`,
             isHidden: isReportHiddenFromRouter(report, isThread, isArchived, inputs.currentUserAccountID),
+            // `reasonForReportToBeInOptionList` keeps the focused report before every rejection, so only the
+            // checks `isValidReport` runs after it are safe to decide here. See RESULTS-sql-max.md.
+            isValid: login !== CONST.EMAIL.NOTIFICATIONS,
         },
         dmAccountID: accountIDs.length <= 1 && isOneOnOneChat(report, inputs.currentUserAccountID) ? accountIDs.at(0) : undefined,
     };
+}
+
+/**
+ * The contact branch of `getValidOptions` filters on the personal detail alone, and the SearchRouter's
+ * configuration leaves no query-time input in that filter, so the whole of it decides one column here.
+ */
+function isContactValidForRouter(detail: PersonalDetails): boolean {
+    const {login} = detail;
+    // `isOptimisticPersonalDetail` is deliberately not checked: the shells `buildPersonalDetailsOptions` feeds
+    // `getValidOptions` never carry that flag, so today's path never drops a contact on it either.
+    if (!login || !detail.accountID) {
+        return false;
+    }
+    return !Str.isDomainEmail(login) && !ALWAYS_EXCLUDED_CONTACT_LOGINS.has(login);
 }
 
 /** Builds the index row of one contact with the same text its shell would carry. */
@@ -140,6 +161,7 @@ function buildContactIndexRow(detail: PersonalDetails, hasDMReport: boolean, inp
         searchText: normalizeSearchText([...terms, text].join(' ')),
         orderKey: text.toLowerCase(),
         isHidden: false,
+        isValid: isContactValidForRouter(detail),
     };
 }
 

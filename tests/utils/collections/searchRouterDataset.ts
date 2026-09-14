@@ -35,6 +35,8 @@ const ARCHIVED_EVERY = 13;
 const HIDDEN_EVERY = 17;
 const FIRST_CONTACT_ACCOUNT_ID = 2;
 const FIRST_CREATED_AT = Date.UTC(2024, 0, 1, 9, 0, 0);
+/** Ids of the rows that exercise one validity predicate each, out of the way of the generated ones. */
+const FIRST_EDGE_CASE_ID = 900_000;
 
 function formatCreated(epochMs: number): string {
     const iso = new Date(epochMs).toISOString();
@@ -151,7 +153,70 @@ function buildSearchRouterDataset({reportCount, contactCount, currentUserAccount
         }
     }
 
+    addEdgeCases({reports, personalDetails, reportAttributes, privateIsArchivedMap, reportNameValuePairs}, currentUserAccountID, token);
+
     return {reports, personalDetails, reportAttributes, policies, reportNameValuePairs, privateIsArchivedMap};
+}
+
+type EdgeCaseTarget = Pick<SearchRouterDataset, 'reports' | 'personalDetails' | 'reportAttributes' | 'reportNameValuePairs'> & {
+    /** The builder's own mutable map, before it is handed out as the read-only `PrivateIsArchivedMap`. */
+    privateIsArchivedMap: Record<string, boolean>;
+};
+
+/**
+ * One row per predicate the option index now decides at ingest, plus the report kinds the generated block does
+ * not produce. Every one of them carries the token so a single query reaches it.
+ */
+function addEdgeCases(target: EdgeCaseTarget, currentUserAccountID: number, token: string) {
+    const {reports, personalDetails, reportAttributes, privateIsArchivedMap, reportNameValuePairs} = target;
+    const ownParticipants = participantsOf([currentUserAccountID], undefined);
+    const addReport = (offset: number, report: Omit<Report, 'reportID'>, reportName: string) => {
+        const reportID = String(FIRST_EDGE_CASE_ID + offset);
+        reports[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`] = {...report, reportID};
+        reportAttributes[reportID] = {reportName, isEmpty: false, brickRoadStatus: undefined, requiresAttention: false, reportErrors: {}};
+        return reportID;
+    };
+
+    addReport(
+        1,
+        {type: CONST.REPORT.TYPE.CHAT, chatType: CONST.REPORT.CHAT_TYPE.SELF_DM, ownerAccountID: currentUserAccountID, participants: ownParticipants, reportName: ''},
+        `${token} self dm`,
+    );
+    addReport(
+        2,
+        {type: CONST.REPORT.TYPE.TASK, ownerAccountID: currentUserAccountID, participants: ownParticipants, reportName: '', lastVisibleActionCreated: formatCreated(FIRST_CREATED_AT)},
+        `${token} task report`,
+    );
+    const archivedRoomID = addReport(
+        3,
+        {type: CONST.REPORT.TYPE.CHAT, chatType: CONST.REPORT.CHAT_TYPE.POLICY_ROOM, participants: ownParticipants, reportName: ''},
+        `#${token.toLowerCase()}-archived-room`,
+    );
+    reportNameValuePairs[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${archivedRoomID}`] = {private_isArchived: '2024-06-01 00:00:00.000'};
+    privateIsArchivedMap[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${archivedRoomID}`] = true;
+    addReport(
+        4,
+        {
+            type: CONST.REPORT.TYPE.CHAT,
+            ownerAccountID: currentUserAccountID,
+            participants: participantsOf([currentUserAccountID], currentUserAccountID),
+            parentReportID: String(FIRST_EDGE_CASE_ID + 1),
+            parentReportActionID: String(FIRST_EDGE_CASE_ID + 1),
+            reportName: '',
+        },
+        `${token} hidden thread`,
+    );
+
+    const contacts: PersonalDetails[] = [
+        {accountID: FIRST_EDGE_CASE_ID + 11, login: CONST.EMAIL.NOTIFICATIONS, displayName: `${token} Notifications`},
+        {accountID: FIRST_EDGE_CASE_ID + 12, login: CONST.ACCOUNT_EXECUTIVE_LOGIN, displayName: `${token} Executive`},
+        {accountID: FIRST_EDGE_CASE_ID + 13, login: '+@example.com', displayName: `${token} Domain`},
+        {accountID: FIRST_EDGE_CASE_ID + 14, login: 'optimistic@example.com', displayName: `${token} Optimistic`, isOptimisticPersonalDetail: true},
+        {accountID: FIRST_EDGE_CASE_ID + 15, login: 'kept@example.com', displayName: `${token} Kept`},
+    ];
+    for (const detail of contacts) {
+        personalDetails[detail.accountID ?? CONST.DEFAULT_NUMBER_ID] = detail;
+    }
 }
 
 export default buildSearchRouterDataset;

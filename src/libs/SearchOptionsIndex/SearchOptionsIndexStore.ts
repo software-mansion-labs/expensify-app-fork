@@ -10,18 +10,14 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {PersonalDetails} from '@src/types/onyx';
 
+import type {SearchWindow} from './searchWindow';
 import type {SearchCandidateIDs, SearchOptionsFormatConfig, SearchOptionsIndexInputs} from './types';
 
 import buildCandidateOptionList from './buildCandidateOptionList';
 import {buildContactIndexRow, buildReportIndexEntry} from './buildOptionIndexRows';
 import collectIndexChanges, {REBUILD_ALL} from './collectIndexChanges';
 import matchOptionIndexRows from './matchOptionIndexRows';
-
-/**
- * The matcher returns a few times more candidates than the list shows, because `isValidReport` still runs in JS on
- * the survivors and drops some of them. `underflows` counts how often that slack was not enough.
- */
-const CANDIDATE_WINDOW = CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS * 5;
+import {getSearchWindow, REFILL_FACTOR} from './searchWindow';
 
 /** The SearchRouter's own list configuration, which the guard has to reproduce to compare against today's path. */
 const GUARD_MAX_RECENT_REPORTS = 100;
@@ -29,6 +25,8 @@ const GUARD_MAX_RECENT_REPORTS = 100;
 type SearchRequest = {
     query: string;
     formatConfig: SearchOptionsFormatConfig;
+    /** 1 for the exact window, `REFILL_FACTOR` once a report was dropped by a predicate that stayed in JS. */
+    windowFactor: number;
 };
 
 type SearchOptionsIndexSnapshot = {
@@ -51,7 +49,7 @@ type SearchOptionsIndexStats = {
     engineReplies: number;
     staleReplies: number;
     failures: number;
-    /** Results shorter than the list while the matcher reported more matches beyond the candidate window. */
+    /** Searches the exact window could not fill, each answered by one wider retry before anything was published. */
     underflows: number;
     lastFormatMs: number;
     totalSearchMs: number;
@@ -288,6 +286,14 @@ function countMismatch(activeRequest: SearchRequest, activeInputs: SearchOptions
     Log.warn("[SearchOptionsIndex] result differs from today's path", {query, today: todayIDs.join(' '), index: indexIDs.join(' ')});
 }
 
+/**
+ * Whether a report the engine handed over was dropped downstream while more matches were waiting behind the
+ * window. Contacts cannot leak: for the router's configuration their whole filter is the `isValid` column.
+ */
+function hasReportLeaked(options: Options, candidates: SearchCandidateIDs, window: SearchWindow): boolean {
+    return options.recentReports.length < window.reportLimit && candidates.hasMoreReports;
+}
+
 function finishSearch(activeRequest: SearchRequest, searchVersion: number, candidates: SearchCandidateIDs, startedAt: number) {
     if (!inputs) {
         return;
@@ -298,8 +304,11 @@ function finishSearch(activeRequest: SearchRequest, searchVersion: number, candi
     stats.lastFormatMs = performance.now() - formatStartedAt;
     stats.totalSearchMs += performance.now() - startedAt;
 
-    if (options.recentReports.length < CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS && candidates.hasMoreReports) {
+    if (activeRequest.windowFactor === 1 && hasReportLeaked(options, candidates, getSearchWindow(activeRequest.formatConfig))) {
         stats.underflows += 1;
+        request = {...activeRequest, windowFactor: REFILL_FACTOR};
+        runSearch();
+        return;
     }
 
     snapshot = {
@@ -326,14 +335,15 @@ function runSearch() {
     const terms = processSearchString(activeRequest.query);
     const searchVersion = version;
     const startedAt = performance.now();
+    const window = getSearchWindow(activeRequest.formatConfig, activeRequest.windowFactor);
     stats.searches += 1;
 
     if (!isSqlMode(mode)) {
-        finishSearch(activeRequest, searchVersion, matchOptionIndexRows([...rows.values()], terms, CANDIDATE_WINDOW, CANDIDATE_WINDOW), startedAt);
+        finishSearch(activeRequest, searchVersion, matchOptionIndexRows([...rows.values()], terms, window.reportLimit, window.contactLimit), startedAt);
         return;
     }
 
-    searchOptions({version: searchVersion, terms, reportLimit: CANDIDATE_WINDOW, contactLimit: CANDIDATE_WINDOW})
+    searchOptions({version: searchVersion, terms, reportLimit: window.reportLimit, contactLimit: window.contactLimit})
         .then((reply) => {
             if (request !== activeRequest || version !== searchVersion) {
                 stats.staleReplies += 1;
@@ -386,7 +396,7 @@ function requestSearchOptions(query: string, formatConfig: SearchOptionsFormatCo
     if (!isSearchOptionsIndexActive() || (request && request.query === query && isFormatConfigEqual(request.formatConfig, formatConfig))) {
         return;
     }
-    request = {query, formatConfig};
+    request = {query, formatConfig, windowFactor: 1};
     runSearch();
 }
 
@@ -419,7 +429,6 @@ function resetSearchOptionsIndexStore() {
 }
 
 export {
-    CANDIDATE_WINDOW,
     feedSearchOptionsIndex,
     getSearchOptionsIndexSnapshot,
     getSearchOptionsIndexStats,

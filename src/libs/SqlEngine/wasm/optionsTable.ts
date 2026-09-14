@@ -26,10 +26,16 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS option_rows (
     search_text TEXT NOT NULL,
     order_key   TEXT NOT NULL,
     is_hidden   INTEGER NOT NULL,
+    is_valid    INTEGER NOT NULL,
     UNIQUE (kind, id)
 );`;
 
-const CREATE_ORDER_INDEX = 'CREATE INDEX IF NOT EXISTS option_rows_order ON option_rows (kind, is_hidden, order_key);';
+/*
+ * The three filter columns come first as equalities, then the two ORDER BY terms in the order the query asks
+ * for them, so the whole window is one index walk that the LIMIT stops. Without `id` the tie-break costs a
+ * temp b-tree over every row of the kind.
+ */
+const CREATE_ORDER_INDEX = 'CREATE INDEX IF NOT EXISTS option_rows_order ON option_rows (kind, is_hidden, is_valid, order_key, id);';
 
 const CREATE_FTS = `CREATE VIRTUAL TABLE IF NOT EXISTS option_fts USING fts5(search_text, content='option_rows', content_rowid='row_id', tokenize='trigram');`;
 
@@ -50,8 +56,8 @@ const DELETE_ALL = 'DELETE FROM option_rows;';
 
 const DELETE_ROW = 'DELETE FROM option_rows WHERE kind = ? AND id = ?;';
 
-const UPSERT_ROW = `INSERT INTO option_rows (kind, id, search_text, order_key, is_hidden) VALUES (?, ?, ?, ?, ?)
-ON CONFLICT (kind, id) DO UPDATE SET search_text = excluded.search_text, order_key = excluded.order_key, is_hidden = excluded.is_hidden;`;
+const UPSERT_ROW = `INSERT INTO option_rows (kind, id, search_text, order_key, is_hidden, is_valid) VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT (kind, id) DO UPDATE SET search_text = excluded.search_text, order_key = excluded.order_key, is_hidden = excluded.is_hidden, is_valid = excluded.is_valid;`;
 
 const COUNT_QUERY = 'SELECT COUNT(*) AS option_row_count FROM option_rows;';
 
@@ -71,7 +77,10 @@ function buildIngestCommands(request: IngestOptionsRequest): SqlBatchCommand[] {
         commands.push({sql: DELETE_ROW, params: request.deletes.map((ref) => [KIND_CODE[ref.kind], ref.id])});
     }
     if (request.upserts.length > 0) {
-        commands.push({sql: UPSERT_ROW, params: request.upserts.map((row) => [KIND_CODE[row.kind], row.id, row.searchText, row.orderKey, row.isHidden ? 1 : 0])});
+        commands.push({
+            sql: UPSERT_ROW,
+            params: request.upserts.map((row) => [KIND_CODE[row.kind], row.id, row.searchText, row.orderKey, row.isHidden ? 1 : 0, row.isValid ? 1 : 0]),
+        });
     }
     return commands;
 }
@@ -112,10 +121,12 @@ function buildSearchStatement(matcher: OptionsMatcher, terms: string[], kind: Op
     const likeParams = likeTerms.map(escapeLikePattern);
 
     if (ftsTerms.length > 0) {
+        // CROSS JOIN pins the FTS table as the outer loop. Left to itself the planner drives from the covering
+        // order index and runs one MATCH per row, which costs hundreds of milliseconds at 45,000 rows.
         return {
             sql: `SELECT group_concat(id, ',') AS ids, COUNT(*) AS matched FROM (
-    SELECT o.id AS id FROM option_fts f JOIN option_rows o ON o.row_id = f.rowid
-    WHERE option_fts MATCH ? AND o.kind = ? AND o.is_hidden = 0 ${likePredicates}
+    SELECT o.id AS id FROM option_fts f CROSS JOIN option_rows o ON o.row_id = f.rowid
+    WHERE option_fts MATCH ? AND o.kind = ? AND o.is_hidden = 0 AND o.is_valid = 1 ${likePredicates}
     ORDER BY o.order_key ${direction}, o.id ${direction} LIMIT ?
 );`,
             params: [ftsTerms.map(toFtsPhrase).join(' AND '), KIND_CODE[kind], ...likeParams, limit + 1],
@@ -125,7 +136,7 @@ function buildSearchStatement(matcher: OptionsMatcher, terms: string[], kind: Op
     return {
         sql: `SELECT group_concat(id, ',') AS ids, COUNT(*) AS matched FROM (
     SELECT id FROM option_rows
-    WHERE kind = ? AND is_hidden = 0 ${likePredicates}
+    WHERE kind = ? AND is_hidden = 0 AND is_valid = 1 ${likePredicates}
     ORDER BY order_key ${direction}, id ${direction} LIMIT ?
 );`,
         params: [KIND_CODE[kind], ...likeParams, limit + 1],

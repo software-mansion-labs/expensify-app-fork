@@ -102,23 +102,27 @@ function ingestOptions({version, upserts, deletes, full}: IngestOptionsParams): 
     });
 }
 
-/** Mirror of the worker's window query: hidden rows out, every term a substring, ordered by the row key, cut at the limit. */
+/** Mirror of the worker's window query: hidden and invalid rows out, every term a substring, ordered by the row key then the id, cut at the limit. */
 function selectWindow(kind: OptionIndexRow['kind'], terms: string[], limit: number): {ids: string[]; hasMore: boolean} {
     const matches: OptionIndexRow[] = [];
     for (const row of optionRows.values()) {
-        if (row.kind !== kind || row.isHidden || !terms.every((term) => row.searchText.includes(term))) {
+        if (row.kind !== kind || row.isHidden || !row.isValid || !terms.every((term) => row.searchText.includes(term))) {
             continue;
         }
         matches.push(row);
     }
     matches.sort((first, second) => {
-        if (first.orderKey === second.orderKey) {
-            return 0;
-        }
-        const ascending = first.orderKey < second.orderKey ? -1 : 1;
+        const ascending = first.orderKey === second.orderKey ? compareIDs(first.id, second.id) : compareIDs(first.orderKey, second.orderKey);
         return kind === 'report' ? -ascending : ascending;
     });
     return {ids: matches.slice(0, limit).map((row) => row.id), hasMore: matches.length > limit};
+}
+
+function compareIDs(first: string, second: string): number {
+    if (first === second) {
+        return 0;
+    }
+    return first < second ? -1 : 1;
 }
 
 function searchOptions({version, terms, reportLimit, contactLimit}: SearchOptionsParams): Promise<OptionsFoundReply> {

@@ -3,13 +3,13 @@ import type {PrivateIsArchivedMap} from '@hooks/usePrivateIsArchivedMap';
 import {clearFilteredOptionListCache, createFilteredOptionList, getSearchOptions} from '@libs/OptionsListUtils';
 import type {Options} from '@libs/OptionsListUtils';
 import {
-    CANDIDATE_WINDOW,
     feedSearchOptionsIndex,
     getSearchOptionsIndexSnapshot,
     getSearchOptionsIndexStats,
     requestSearchOptions,
     resetSearchOptionsIndexStore,
 } from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
+import {getSearchWindow} from '@libs/SearchOptionsIndex/searchWindow';
 import type {SearchOptionsFormatConfig, SearchOptionsIndexInputs} from '@libs/SearchOptionsIndex/types';
 import {setSearchRouterEngineMode} from '@libs/SqlEngine/searchRouterEngineMode';
 import type {SearchRouterEngineMode} from '@libs/SqlEngine/searchRouterEngineMode';
@@ -49,7 +49,30 @@ const CURRENT_USER_EMAIL = 'me@example.com';
 const EMPTY_LOGIN_LIST: OnyxEntry<Login> = {};
 const MOCKED_BETAS = Object.values(CONST.BETAS);
 const MODES: SearchRouterEngineMode[] = ['js-index', 'sql-like'];
-const QUERIES = ['Zephyr', 'zephyr person', 'chat 12', 'group', 'workspace', '#room', 'expense', 'thread', 'user7', 'Ze', 'nothing-matches-this'];
+const QUERIES = [
+    'Zephyr',
+    'zephyr person',
+    'chat 12',
+    'group',
+    'workspace',
+    '#room',
+    'expense',
+    'thread',
+    'user7',
+    'Ze',
+    'nothing-matches-this',
+    // One per predicate the index now decides at ingest, and per report kind the generated block leaves out.
+    'zephyr self dm',
+    'zephyr task',
+    'zephyr-archived-room',
+    'zephyr hidden thread',
+    'zephyr notifications',
+    'zephyr executive',
+    'zephyr domain',
+    'zephyr optimistic',
+    'zephyr kept',
+    'Current User',
+];
 
 // Half the reports are DMs, so this many contacts gives every contact exactly one DM, as on a real account.
 const dataset = buildSearchRouterDataset({reportCount: 600, contactCount: 320, currentUserAccountID: CURRENT_USER_ACCOUNT_ID});
@@ -160,11 +183,12 @@ describe("SearchOptionsIndex parity with today's path", () => {
             expect(ids(await indexOptions(query))).toEqual(ids(todayOptions(dataset, query)));
         });
 
-        it('hands the formatter a candidate window instead of the whole account', async () => {
+        it('hands the formatter the rows the list renders and nothing more', async () => {
             await indexOptions('Zephyr');
             const snapshot = getSearchOptionsIndexSnapshot();
-            expect(snapshot?.candidateReportCount).toBeLessThanOrEqual(CANDIDATE_WINDOW);
-            expect(snapshot?.candidateContactCount).toBeLessThanOrEqual(CANDIDATE_WINDOW);
+            const window = getSearchWindow(formatConfig);
+            expect(snapshot?.candidateReportCount).toBeLessThanOrEqual(window.reportLimit);
+            expect(snapshot?.candidateContactCount).toBeLessThanOrEqual(window.contactLimit);
             expect(getSearchOptionsIndexStats().underflows).toBe(0);
         });
 
