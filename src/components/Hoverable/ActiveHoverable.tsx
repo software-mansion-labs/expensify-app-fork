@@ -3,7 +3,7 @@ import mergeRefs from '@libs/mergeRefs';
 
 import CONST from '@src/CONST';
 
-import {cloneElement, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {cloneElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {DeviceEventEmitter} from 'react-native';
 
 import type HoverableProps from './types';
@@ -20,6 +20,13 @@ function ActiveHoverable({onHoverIn, onHoverOut, shouldHandleScroll, isFocused =
     const isScrollingRef = useRef(false);
     const isHoveredRef = useRef(false);
     const isVisibilityHidden = useRef(false);
+    // Consumers pass fresh onHoverIn/onHoverOut closures every render; read them at event time so the handlers we
+    // clone onto the child (and the scroll listener) stay stable and the child can bail out.
+    const latestHandlers = {onHoverIn, onHoverOut};
+    const latest = useRef(latestHandlers);
+    useLayoutEffect(() => {
+        latest.current = latestHandlers;
+    });
 
     const updateIsHovered = useCallback(
         (hovered: boolean) => {
@@ -37,12 +44,12 @@ function ActiveHoverable({onHoverIn, onHoverOut, shouldHandleScroll, isFocused =
             setIsHovered(hovered);
 
             if (hovered) {
-                onHoverIn?.();
+                latest.current.onHoverIn?.();
             } else {
-                onHoverOut?.();
+                latest.current.onHoverOut?.();
             }
         },
-        [shouldHandleScroll, shouldFreezeCapture, onHoverIn, onHoverOut],
+        [shouldHandleScroll, shouldFreezeCapture, latest],
     );
 
     useEffect(() => {
@@ -55,16 +62,16 @@ function ActiveHoverable({onHoverIn, onHoverOut, shouldHandleScroll, isFocused =
             if (scrolling && isHoveredRef.current) {
                 isHoveredRef.current = false;
                 setIsHovered(false);
-                onHoverOut?.();
+                latest.current.onHoverOut?.();
             } else if (!scrolling && elementRef.current?.matches(':hover')) {
                 isHoveredRef.current = true;
                 setIsHovered(true);
-                onHoverIn?.();
+                latest.current.onHoverIn?.();
             }
         });
 
         return () => scrollingListener.remove();
-    }, [shouldHandleScroll, onHoverIn, onHoverOut]);
+    }, [shouldHandleScroll, latest]);
 
     useEffect(() => {
         const handleVisibilityChange = () => {

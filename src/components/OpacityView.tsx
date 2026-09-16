@@ -37,11 +37,14 @@ type OpacityViewProps = {
     onLayout?: ((event: LayoutChangeEvent) => void) | undefined;
 };
 
+// A fresh `[]` default per render would invalidate the memoized Animated.View style on every render.
+const EMPTY_STYLE: StyleProp<AnimatedStyle<ViewStyle>> = [];
+
 function OpacityView({
     shouldDim,
     dimAnimationDuration = variables.dimAnimationDuration,
     children,
-    style = [],
+    style = EMPTY_STYLE,
     dimmingValue = variables.hoverDimValue,
     needsOffscreenAlphaCompositing = false,
     onLayout,
