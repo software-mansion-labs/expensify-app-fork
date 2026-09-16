@@ -19,6 +19,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useSearchRouterOptions from '@hooks/useSearchRouterOptions';
 import useSortedActions from '@hooks/useSortedActions';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -212,7 +213,8 @@ function SearchAutocompleteList({
     // (rather than the immediate value) keeps the sections in sync with the data they render: during the debounce
     // window we keep showing recent chats instead of briefly rendering the previous/unfiltered rows under the search
     // layout and then reflowing once the debounced query catches up.
-    const hasActiveSearchResults = hasEffectiveInputQuery && autocompleteQueryValue.trim() !== '';
+    const hasDebouncedQuery = autocompleteQueryValue.trim() !== '';
+    const hasActiveSearchResults = hasEffectiveInputQuery && hasDebouncedQuery;
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
     const currentUserEmail = currentUserPersonalDetails.email ?? '';
     const currentUserAccountID = currentUserPersonalDetails.accountID;
@@ -227,7 +229,8 @@ function SearchAutocompleteList({
         hasMore: hasMoreRecentReports,
     } = useFilteredOptions({
         ...SEARCH_ROUTER_OPTIONS_CONFIG,
-        isSearching: !!autocompleteQueryValue.trim(),
+        // Typing is served by the option index, so the option list is only ever built for the empty state.
+        isSearching: false,
     });
 
     const isRecentSearchesDataLoaded = !isLoadingOnyxValue(recentSearchesMetadata);
@@ -250,19 +253,14 @@ function SearchAutocompleteList({
         }
     }, [isLoadingOptions]);
 
-    const searchOptions = useMemo(() => {
-        if (listOptions === null) {
-            return defaultListOptions;
-        }
-        return getSearchOptions({
+    const searchOptionsFormatConfig = useMemo(
+        () => ({
             dateFnsLocale,
             convertToDisplayString,
-            options: listOptions,
             draftComments,
             betas: betas ?? [],
             isUsedInChatFinder: true,
             includeReadOnly: true,
-            searchQuery: autocompleteQueryValue,
             maxResults: CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS,
             includeUserToInvite: true,
             includeRecentReports: true,
@@ -281,27 +279,39 @@ function SearchAutocompleteList({
             isTrackIntentUser,
             translate,
             rules,
-        }).options;
-    }, [
-        listOptions,
-        draftComments,
-        betas,
-        autocompleteQueryValue,
-        countryCode,
-        loginList,
-        visibleReportActionsData,
-        currentUserAccountID,
-        currentUserEmail,
-        policies,
-        personalDetails,
-        sortedActions,
-        conciergeReportID,
-        isTrackIntentUser,
-        translate,
-        dateFnsLocale,
-        convertToDisplayString,
-        rules,
-    ]);
+        }),
+        [
+            dateFnsLocale,
+            convertToDisplayString,
+            draftComments,
+            betas,
+            countryCode,
+            loginList,
+            visibleReportActionsData,
+            currentUserAccountID,
+            currentUserEmail,
+            policies,
+            personalDetails,
+            sortedActions,
+            conciergeReportID,
+            isTrackIntentUser,
+            translate,
+            rules,
+        ],
+    );
+
+    const indexedSearchOptions = useSearchRouterOptions({query: autocompleteQueryValue, formatConfig: searchOptionsFormatConfig});
+
+    const searchOptions = useMemo(() => {
+        if (hasDebouncedQuery) {
+            // The index answers in the tick the debounced query lands, so this is only empty before the first answer.
+            return indexedSearchOptions ?? defaultListOptions;
+        }
+        if (listOptions === null) {
+            return defaultListOptions;
+        }
+        return getSearchOptions({...searchOptionsFormatConfig, options: listOptions, searchQuery: autocompleteQueryValue}).options;
+    }, [hasDebouncedQuery, indexedSearchOptions, listOptions, searchOptionsFormatConfig, autocompleteQueryValue]);
 
     const [isInitialRender, setIsInitialRender] = useState(true);
     const prevQueryRef = useRef(effectiveInputQueryValue);

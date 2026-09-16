@@ -776,16 +776,9 @@ describe('SearchAutocompleteList', () => {
                 },
             });
 
-            // Trigger a re-render by returning a new options reference from useFilteredOptions
-            // (simulates server data arriving and updating Onyx-backed options).
-            mockUseFilteredOptions.mockReturnValue({
-                options: {...mockedOptions},
-                isLoading: false,
-                loadMore: jest.fn(),
-                hasMore: false,
-                isLoadingMore: false,
-            });
+            // Land the server result in Onyx, which is what makes the option index answer the query again.
             await act(async () => {
+                await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}201`, {reportID: '201', reportName: 'NewServer Report'});
                 await Onyx.set(ONYXKEYS.RAM_ONLY_IS_SEARCHING_FOR_REPORTS, false);
             });
             await flushAllUpdates();
