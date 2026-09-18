@@ -162,9 +162,9 @@ describe('useScreenActivityEffect in a commit that does not finish at once', () 
         // Then the effect of the suspended part is released and set up again, because the reveal proved that bodies run
         // and the body of a component that is gone reads exactly like the body of one that is suspended. Nothing tells
         // them apart: React never reports the deletion of a component inside a hidden subtree.
-        expect(activity).toEqual([['setup:s:a', 'setup:sibling:a'], [], [], ['fallback', 'cleanup:s:a'], ['resumed', 'setup:s:a'], ['cleanup:sibling:a', 'cleanup:s:a']]);
+        expect(activity).toEqual([['setup:s:a', 'setup:sibling:a'], [], [], ['fallback', 'cleanup:s:a'], ['resumed', 'setup:s:a'], ['cleanup:s:a', 'cleanup:sibling:a']]);
 
-        // And the teardown releases the two in the order they registered in, the suspended one having registered last
-        expect(activity.at(-1)).toEqual([...(live.at(-1) ?? [])].reverse());
+        // And the teardown releases the two in tree order, exactly as the live screen does
+        expect(activity.at(-1)).toEqual(live.at(-1));
     });
 });

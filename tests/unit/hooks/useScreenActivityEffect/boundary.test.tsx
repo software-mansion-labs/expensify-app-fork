@@ -1,13 +1,13 @@
 import {render} from '@testing-library/react-native';
 
 import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
-import {ScreenActivityEffectBoundaryProvider} from '@hooks/useScreenActivityEffect/ScreenActivityEffectBoundaryContext';
+import ScreenActivityEffectBoundaryProvider from '@hooks/useScreenActivityEffect/ScreenActivityEffectBoundaryProvider';
 
 import StrictModeMountGate from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/ScreenActivityWrapper/StrictModeMountGate';
 
 import type {ComponentType, ReactNode} from 'react';
 
-import React, {Activity, useEffect} from 'react';
+import React, {Activity, Component, useEffect} from 'react';
 
 import type {AnyEffectHook, RenderStep, ScreenProps} from '../../../utils/ScreenActivityEffectTestUtils';
 
@@ -72,6 +72,26 @@ function Survivor() {
     return null;
 }
 
+/** An error boundary inside the screen, which takes down what it wraps when an effect below it throws. */
+class InnerErrorBoundary extends Component<{children: ReactNode}, {hasFailed: boolean}> {
+    constructor(props: {children: ReactNode}) {
+        super(props);
+        this.state = {hasFailed: false};
+    }
+
+    static getDerivedStateFromError() {
+        return {hasFailed: true};
+    }
+
+    componentDidCatch(error: Error) {
+        log(`caught:${error.message}`);
+    }
+
+    render() {
+        return this.state.hasFailed ? null : this.props.children;
+    }
+}
+
 /** A screen where the throwing cleanup and an ordinary one can go away together, leaving the survivor behind. */
 function ThrowingScreenContent({hasThrowing = true}: {hasThrowing?: boolean}) {
     return (
@@ -83,7 +103,7 @@ function ThrowingScreenContent({hasThrowing = true}: {hasThrowing?: boolean}) {
     );
 }
 
-/** The mis-wiring the boundary cannot survive: it reports a hidden screen while the <Activity> it wraps is visible. */
+/** The mis-wiring the lint rule guards against: a boundary that reports a hidden screen while the <Activity> it wraps is visible. */
 function DriftedScreen({children}: ScreenProps) {
     return (
         <ScreenActivityEffectBoundaryProvider isHidden>
@@ -278,10 +298,33 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             expect(activity.commits.flat()).toEqual(live.commits.flat());
             expect(activity.errors).toEqual(live.errors);
         });
+
+        it('reports a swept cleanup that throws instead of throwing it through the body that swept it', () => {
+            // Given a throwing cleanup removed behind the cover, a reveal that runs no body, and a component that mounts
+            // afterwards behind an error boundary of the screen, so its body is the one that sweeps the removal
+            const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
+            const guarded = (value: string) => (
+                <InnerErrorBoundary>
+                    <Subject value={value} />
+                </InnerErrorBoundary>
+            );
+            const steps = [visible(<ThrowingCleanup />), hidden(<ThrowingCleanup />), hidden(null), visible(null), visible(guarded('a')), visible(guarded('b'))];
+
+            // When the sweep throws right before the setup of the new component
+            const activity = runCatching(useScreenActivityEffect, ActivityScreen, steps);
+            const reportedErrors = reported.mock.calls.map((call) => String(call.at(0)));
+            reported.mockRestore();
+
+            // Then the error is reported and the error boundary of the new component never sees it, so the component
+            // stays, its setup runs, and React holds its cleanup for the dependency change that follows
+            expect(activity.commits).toEqual([['setup:throwing:a'], [], [], [], ['cleanup:throwing:a', 'setup:s:a'], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
+            expect(activity.errors).toEqual([]);
+            expect(reportedErrors.filter((message) => message.includes('cleanup of throwing:a threw'))).toHaveLength(1);
+        });
     });
 
-    describe('two cleanups that throw in one batch', () => {
-        it('reports every error of the teardown and rethrows only the first', () => {
+    describe('two cleanups that throw at the teardown', () => {
+        it('fails exactly as the live screen does when the screen leaves the stack while visible', () => {
             // Given a screen holding two cleanups that both throw when it leaves the stack
             const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
             const steps = [
@@ -295,16 +338,38 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             ];
 
             // When the screen leaves the navigation stack
+            const live = runCatching(useEffect, LiveScreen, steps);
             const activity = runCatching(useScreenActivityEffect, ActivityScreen, steps);
-            const reportedErrors = reported.mock.calls.map((call) => String(call.at(0)));
             reported.mockRestore();
 
-            // Then every cleanup ran, the first error is what the teardown throws, and the second is reported rather
-            // than swallowed, which is how React answers for more than one failing destroy
+            // Then every cleanup ran at its own place and React answers for the two failing destroys as it does on the
+            // live screen, because a visible screen leaves nothing for the boundary to release
             expect(activity.commits).toEqual([
                 ['setup:throwing:a', 'setup:second:a', 'setup:survivor:a'],
                 ['cleanup:throwing:a', 'cleanup:second:a', 'cleanup:survivor:a'],
             ]);
+            expect(activity).toEqual(live);
+        });
+
+        it('reports every error and rethrows only the first when the screen leaves the stack while covered', () => {
+            // Given a covered screen holding two cleanups that both throw when it leaves the stack
+            const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
+            const content = (
+                <>
+                    <ThrowingCleanup />
+                    <ThrowingCleanup name="second" />
+                    <Survivor />
+                </>
+            );
+
+            // When the screen leaves the navigation stack without a reveal
+            const activity = runCatching(useScreenActivityEffect, ActivityScreen, [visible(content), hidden(content)]);
+            const reportedErrors = reported.mock.calls.map((call) => String(call.at(0)));
+            reported.mockRestore();
+
+            // Then every cleanup the cover skipped ran, the first error is what the teardown throws, and the second is
+            // reported rather than swallowed, which is how React answers for more than one failing destroy
+            expect(activity.commits).toEqual([['setup:throwing:a', 'setup:second:a', 'setup:survivor:a'], [], ['cleanup:throwing:a', 'cleanup:second:a', 'cleanup:survivor:a']]);
             expect(activity.errors).toEqual(['Error: cleanup of throwing:a threw']);
             expect(reportedErrors.filter((message) => message.includes('cleanup of second:a threw'))).toHaveLength(1);
         });
@@ -553,74 +618,23 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
     });
 
     describe('a boundary that reports a hidden screen over a live subtree', () => {
-        it('still runs the next setup when the release it runs inline throws', () => {
-            // Given the drifted shape, which is the one place a body releases inline because no destroy ran before it
-            const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
-            const steps = [visible(<ThrowingCleanup value="a" />), visible(<ThrowingCleanup value="b" />)];
-
-            // When the dependency changes and the release the body runs first throws
-            const drifted = runCatching(useScreenActivityEffect, DriftedScreen, steps);
-            reported.mockRestore();
-
-            // Then the setup of the new dependency still ran and the error surfaced after it, and the error taking the
-            // unprotected tree down releases that setup in the same commit, as it does with useEffect on a live screen
-            expect(drifted.commits).toEqual([['setup:throwing:a'], ['cleanup:throwing:a', 'setup:throwing:b', 'cleanup:throwing:b'], []]);
-            expect(drifted.errors).toEqual(['Error: cleanup of throwing:a threw']);
-        });
-
-        it('reports the drift in development, which is the only place the mis-wiring can be seen', () => {
+        it('runs the effect exactly as the live screen does, because no release is inferred from the mode it reports', () => {
             // Given a boundary whose isHidden no longer describes the mode of the <Activity> it wraps
-            const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
+            const steps = [visible(<Subject value="a" />), visible(<Subject value="b" />), visible(null)];
 
-            // When an effect of the subtree runs its body, which a hidden screen never does
-            const drifted = runOn(useScreenActivityEffect, DriftedScreen, [visible(<Subject value="a" />), visible(null)]);
-            const messages = reported.mock.calls.map((call) => String(call.at(0)));
-            reported.mockRestore();
+            // When the dependency changes and the component is then removed under it
+            const live = runOn(useEffect, LiveScreen, steps);
+            const drifted = runOn(useScreenActivityEffect, DriftedScreen, steps);
 
-            // Then the boundary says so, because every cleanup of the subtree is deferred for as long as it lasts
-            expect(messages.filter((message) => message.includes('has drifted from the mode of the <Activity>'))).toHaveLength(1);
-
-            // And the deferred cleanup is the damage the message is about: the removal released nothing
-            expect(drifted).toEqual([['setup:s:a'], [], ['cleanup:s:a']]);
-        });
-    });
-
-    describe('what a development build says about deferred releases', () => {
-        it('reports how many cleanups of removals behind a cover the pop of a visible screen still owed', () => {
-            // Given a component removed behind the cover of a screen whose reveal ran no effect, so no sweep had
-            // evidence to release it and its cleanup waits all the way to the pop
-            // The spy can hand back a mock the environment already holds, so only the calls of this test count.
-            const reported = jest.spyOn(console, 'debug').mockImplementation(() => {});
-            reported.mockClear();
-            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), hidden(null), visible(null)];
-
-            // When the screen leaves the stack while visible
-            runOn(useScreenActivityEffect, ActivityScreen, steps);
-            const messages = reported.mock.calls.map((call) => String(call.at(0)));
-            reported.mockRestore();
-
-            // Then the boundary says how far these releases ran from their removal, because nothing else shows it
-            expect(messages.filter((message) => message.includes('1 cleanup(s) deferred since a removal behind a cover'))).toHaveLength(1);
-        });
-
-        it('says nothing about the pop of a covered screen, whose deferrals are the ordinary deep link pop', () => {
-            // Given a screen that leaves the stack while covered, where every entry is deferred by the cover itself
-            const reported = jest.spyOn(console, 'debug').mockImplementation(() => {});
-            reported.mockClear();
-            const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />)];
-
-            // When the screen leaves the stack without a reveal
-            runOn(useScreenActivityEffect, ActivityScreen, steps);
-            const messages = reported.mock.calls.map((call) => String(call.at(0)));
-            reported.mockRestore();
-
-            // Then the pop stays quiet, because these releases run exactly where a popped screen runs them
-            expect(messages.filter((message) => message.includes('deferred since a removal'))).toHaveLength(0);
+            // Then every release ran where the live screen runs it, because the insertion effect tells a change and a
+            // removal apart on its own and the mode only decides where a commit that covers the screen runs its work
+            expect(live).toEqual([['setup:s:a'], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b'], []]);
+            expect(drifted).toEqual(live);
         });
     });
 
     describe('the StrictMode gate of a screen that opted into Activity', () => {
-        it('puts both hooks through the remount cycle of the gate', () => {
+        it('leaves the hook out of the remount cycle of the gate', () => {
             // Given the gate that qualifies a screen for <Activity> by mounting its effects twice in development
             const steps = [visible(<Subject value="a" />)];
 
@@ -628,47 +642,47 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             const live = runOn(useEffect, GatedLiveScreen, steps);
             const activity = runOn(useScreenActivityEffect, GatedActivityScreen, steps);
 
-            // Then the hook goes through the cycle too, because the gate removes the component rather than covering it
+            // Then plain useEffect goes through the cycle and the hook does not, because React never double-invokes an
+            // insertion effect, so the second passive run finds nothing owed
             expect(live).toEqual([['setup:s:a', 'cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
-            expect(activity).toEqual(live);
+            expect(activity).toEqual([['setup:s:a'], ['cleanup:s:a']]);
         });
 
-        it('sets up again when the remount cycle takes the boundary with it', () => {
-            // Given a StrictMode above the boundary, which remounts the boundary rather than the screen content
+        it('runs once under a StrictMode above the boundary as well', () => {
+            // Given a StrictMode above the boundary, which is what USE_REACT_STRICT_MODE_IN_DEV puts above the whole app
             const steps = [visible(<Subject value="a" />)];
 
             // When the screen mounts and then leaves the stack
-            const live = runOn(useEffect, GatedLiveScreen, steps);
             const activity = runOn(useScreenActivityEffect, GateAboveBoundaryScreen, steps);
 
-            // Then the effect is set up again on the second mount, because the entry went away with the first boundary
-            expect(activity).toEqual([['setup:s:a', 'cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
-            expect(activity).toEqual(live);
+            // Then the setup ran once, because the double invocation reaches the boundary and the hook alike as passive
+            // effects only
+            expect(activity).toEqual([['setup:s:a'], ['cleanup:s:a']]);
         });
 
-        it('cleans up and sets up again on every reveal when the gate sits above the boundary', () => {
-            // Given a StrictMode above the boundary, which is what USE_REACT_STRICT_MODE_IN_DEV puts above the whole app
+        it('keeps the setup live through a cover and reveal cycle under a StrictMode above the boundary', () => {
+            // Given a StrictMode above the boundary, which makes React double-invoke every effect of a revealed <Activity>
             const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
 
             // When the screen is covered and revealed
             const activity = runOn(useScreenActivityEffect, GateAboveBoundaryScreen, steps);
 
-            // Then the reveal releases the setup and runs it again, because React double-invokes the effects of a
-            // revealed <Activity> under a StrictMode above it and that cleanup cannot be told from a removal
-            expect(activity).toEqual([['setup:s:a', 'cleanup:s:a', 'setup:s:a'], [], ['cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
+            // Then the reveal leaves the setup alone, because that double invocation is a passive cleanup with nothing
+            // owed followed by a passive setup with nothing owed
+            expect(activity).toEqual([['setup:s:a'], [], [], ['cleanup:s:a']]);
         });
 
         it('keeps the setup live through a cover and reveal cycle below the gate', () => {
-            // Given an effect that has already been through the remount cycle of the gate
+            // Given an effect on a screen with the gate below the boundary, which is where the wrapper renders it
             const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
 
             // When the screen is covered and revealed
             const live = runOn(useEffect, GatedLiveScreen, steps);
             const activity = runOn(useScreenActivityEffect, GatedActivityScreen, steps);
 
-            // Then the gate changed nothing about the cover, which is the point of qualifying a screen with it
+            // Then the gate changed nothing about the cover, and the hook skipped the remount cycle of the mount as well
             expect(live).toEqual([['setup:s:a', 'cleanup:s:a', 'setup:s:a'], [], [], ['cleanup:s:a']]);
-            expect(activity).toEqual(live);
+            expect(activity).toEqual([['setup:s:a'], [], [], ['cleanup:s:a']]);
         });
     });
 });

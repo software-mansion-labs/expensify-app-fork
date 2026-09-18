@@ -120,12 +120,12 @@ describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
         // Then 'none' keeps both effects live from the mount until the screen leaves the stack
         expect(runCoverAndReveal(false)).toEqual([['setup:plain:a', 'setup:kept:a'], [], [], ['cleanup:plain:a', 'cleanup:kept:a']]);
 
-        // And 'activity' adds the remount cycle of the gate for both, plus a release and a setup per cycle for the plain one
+        // And 'activity' adds the remount cycle of the gate and a release and a setup per cycle, for the plain one only
         expect(runCoverAndReveal(true)).toEqual([
-            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
+            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'setup:plain:a'],
             ['cleanup:plain:a'],
             ['setup:plain:a'],
-            ['cleanup:kept:a', 'cleanup:plain:a'],
+            ['cleanup:plain:a', 'cleanup:kept:a'],
         ]);
     });
 
@@ -144,7 +144,7 @@ describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
 
         // Then the mount work ran at mount time, because the wrapper renders that first frame visible on purpose
         expect(commits).toEqual([
-            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
+            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'setup:plain:a'],
             // Only the plain effect is released when that frame is done and the screen finally goes hidden.
             ['cleanup:plain:a'],
             ['setup:plain:a'],
@@ -173,11 +173,11 @@ describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
 
         // Then the kept effect re-runs for the new value on the reveal, and the render behind the cover ran nothing
         expect(commits).toEqual([
-            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
+            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'setup:plain:a'],
             ['cleanup:plain:a'],
             [],
             ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'],
-            ['cleanup:kept:b', 'cleanup:plain:b'],
+            ['cleanup:plain:b', 'cleanup:kept:b'],
         ]);
     });
 
@@ -212,13 +212,13 @@ describe('ScreenActivityWrapper and useScreenActivityEffect', () => {
 
         // Then the kept effect updates on the resize reveal and does not acquire the same work again on navigation reveal
         expect(commits).toEqual([
-            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'cleanup:kept:a', 'setup:plain:a', 'setup:kept:a'],
+            ['setup:plain:a', 'setup:kept:a', 'cleanup:plain:a', 'setup:plain:a'],
             ['cleanup:plain:a'],
             [],
             ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'],
             ['cleanup:plain:b'],
             ['setup:plain:b'],
-            ['cleanup:kept:b', 'cleanup:plain:b'],
+            ['cleanup:plain:b', 'cleanup:kept:b'],
         ]);
     });
 });

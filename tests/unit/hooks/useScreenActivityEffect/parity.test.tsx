@@ -482,30 +482,22 @@ describe('useScreenActivityEffect compared to useEffect', () => {
                 [],
                 [],
                 ['cleanup:child:a', 'cleanup:parent:a', 'setup:child:b', 'setup:parent:b'],
-                ['cleanup:child:b', 'cleanup:parent:b'],
+                ['cleanup:parent:b', 'cleanup:child:b'],
             ]);
         });
 
-        it('releases a parent and its child in the order they registered when the screen leaves the stack', () => {
+        it('releases a parent and its child from the parent down when the screen leaves the stack, exactly as the live screen does', () => {
             // Given a parent and a child that are both still mounted when the screen is popped
             const steps = [visible(<Parent value="a" />)];
 
             // When the screen leaves the navigation stack
             const runs = runEveryConfig(steps);
 
-            // Then React tears a deleted tree down from the parent down, and every configuration without a cover agrees
-            const expected = [
+            // Then React tears a deleted tree down from the parent down, and every configuration agrees, because each
+            // cleanup of the hook runs at its own place when the screen is visible
+            expectEveryConfigToMatch(runs, [
                 ['setup:child:a', 'setup:parent:a'],
                 ['cleanup:parent:a', 'cleanup:child:a'],
-            ];
-            expect(runs.liveUseEffect).toEqual(expected);
-            expect(runs.liveScreenActivityEffect).toEqual(expected);
-            expect(runs.activityUseEffect).toEqual(expected);
-
-            // And the boundary owns that release instead, in the order the effects registered in
-            expect(runs.activityScreenActivityEffect).toEqual([
-                ['setup:child:a', 'setup:parent:a'],
-                ['cleanup:child:a', 'cleanup:parent:a'],
             ]);
         });
 
@@ -519,11 +511,11 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then plain useEffect gets the teardown of the whole subtree on the cover, parent first
             expect(runs.activityUseEffect).toEqual([['setup:child:a', 'setup:parent:a'], ['cleanup:parent:a', 'cleanup:child:a'], []]);
 
-            // And the hook gets it once, when the screen really goes away
-            expect(runs.activityScreenActivityEffect).toEqual([['setup:child:a', 'setup:parent:a'], [], ['cleanup:child:a', 'cleanup:parent:a']]);
+            // And the hook gets it once, when the screen really goes away, in the order the cover skipped the cleanups in
+            expect(runs.activityScreenActivityEffect).toEqual([['setup:child:a', 'setup:parent:a'], [], ['cleanup:parent:a', 'cleanup:child:a']]);
         });
 
-        it('releases in mount order rather than tree order when a sibling was added in front of another', () => {
+        it('releases in tree order when a sibling was added in front of another, exactly as the live screen does', () => {
             // Given a component that is added in front of one that is already mounted, so the two orders differ
             const steps = [
                 visible([
@@ -550,12 +542,9 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // When the screen leaves the navigation stack with both on it
             const runs = runEveryConfig(steps);
 
-            // Then React releases in tree order, which puts the one added last first
-            expect(runs.liveUseEffect).toEqual([['setup:s2:a'], ['setup:s1:a'], ['cleanup:s1:a', 'cleanup:s2:a']]);
-            expect(runs.activityUseEffect).toEqual(runs.liveUseEffect);
-
-            // And the boundary releases in the order the effects registered in, which is not the tree order here
-            expect(runs.activityScreenActivityEffect).toEqual([['setup:s2:a'], ['setup:s1:a'], ['cleanup:s2:a', 'cleanup:s1:a']]);
+            // Then React releases in tree order, which puts the one added last first, and the hook follows because every
+            // cleanup of a visible screen runs at its own place
+            expectEveryConfigToMatch(runs, [['setup:s2:a'], ['setup:s1:a'], ['cleanup:s1:a', 'cleanup:s2:a']]);
         });
 
         it('releases the entry of a deferred removal last when the screen leaves the stack', () => {
@@ -605,7 +594,7 @@ describe('useScreenActivityEffect compared to useEffect', () => {
     });
 
     describe('what a cover cannot reproduce', () => {
-        it('coalesces a dependency change that was undone before the reveal', () => {
+        it('coalesces a dependency change that was undone before the reveal into one run', () => {
             // Given a dependency that changes and changes back while the screen is covered
             const steps = [visible(<Subject value="a" />), hidden(<Subject value="a" />), hidden(<Subject value="b" />), hidden(<Subject value="a" />), visible(<Subject value="a" />)];
 
@@ -615,8 +604,9 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // Then a live screen ran the effect for the value nobody ever saw
             expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b', 'setup:s:a'], [], ['cleanup:s:a']]);
 
-            // And the hook ran nothing, because the setup it holds is live for the dependencies of the reveal
-            expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], [], ['cleanup:s:a']]);
+            // And the hook ran it once on the reveal, because React compares the dependencies render to render, so the
+            // change and its undoing both count as one, not against the setup that is live
+            expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
         });
     });
 });

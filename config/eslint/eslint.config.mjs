@@ -207,12 +207,12 @@ const restrictedPaidGroupPolicyImportPatterns = [
 ];
 
 // The boundary provider pairs its isHidden with the mode of the <Activity> it wraps, and a call site that renders it
-// directly can pair the two wrongly, which defers every cleanup of that subtree forever. ActivityWithEffectBoundary is
-// the one component that renders the pair, so everything else imports that instead.
+// directly can pair the two wrongly, which runs the work of a cover or a reveal in the wrong commit.
+// ActivityWithEffectBoundary is the one component that renders the pair, so everything else imports that instead.
 const restrictedScreenActivityBoundaryImportPatterns = [
     {
-        group: ['**/ScreenActivityEffectBoundaryContext'],
-        importNames: ['ScreenActivityEffectBoundaryProvider'],
+        group: ['**/ScreenActivityEffectBoundaryProvider'],
+        importNames: ['default'],
         message: 'Do not render the boundary directly. Render ActivityWithEffectBoundary, which pairs isHidden with the mode of the <Activity> it serves.',
     },
 ];

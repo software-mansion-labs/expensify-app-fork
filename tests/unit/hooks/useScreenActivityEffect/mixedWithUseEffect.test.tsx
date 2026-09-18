@@ -49,8 +49,8 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         // When the screen is covered, revealed, and finally leaves the stack
         const commits = recordCovered(steps);
 
-        // Then the cover and the reveal only ever touch the plain effect
-        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], ['setup:plain:a'], ['cleanup:kept:a', 'cleanup:plain:a']]);
+        // Then the cover and the reveal only ever touch the plain effect, and the pop releases both in tree order
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], ['setup:plain:a'], ['cleanup:plain:a', 'cleanup:kept:a']]);
     });
 
     it('runs a dependency change that landed while hidden on the reveal for both call sites', () => {
@@ -61,7 +61,7 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         const commits = recordCovered(steps);
 
         // Then both end up live for the new dependency, the plain one by mounting and the kept one by re-running
-        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:kept:b', 'cleanup:plain:b']]);
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:plain:b', 'cleanup:kept:b']]);
     });
 
     it('holds the kept call site of a component removed while hidden until an effect of the screen runs again', () => {
@@ -88,7 +88,7 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         // Then only a kept call site running again is evidence that a body which did not come back is really gone, so
         // the reveal of an empty screen sweeps nothing, and the mount that follows releases what the cover left alone
         // before the kept setup of that commit runs, while the plain effect runs at its own place as always
-        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:kept:b', 'cleanup:plain:b']]);
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:plain:b', 'cleanup:kept:b']]);
     });
 
     it('does not treat a plain effect on the reveal as evidence that a kept call site was removed', () => {

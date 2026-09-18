@@ -25,9 +25,9 @@ const FIRST_RENDER_FALLBACK_DELAY_MS = 100;
  * StrictMode is the qualification gate for screens that opt into Activity. Its double effect mount in dev puts an
  * ordinary effect through the cleanup and re-run that a hide and reveal cycle puts it through, so an effect that would
  * misbehave under a cover fails during development instead. An effect written with useScreenActivityEffect is the
- * exception: a cover no longer cleans it up, so the gate exercises its removal path rather than the cover it now
- * survives. StrictModeMountGate commits StrictMode one commit ahead of the screen content, which is what makes React
- * run that cycle for a StrictMode nested below the root.
+ * exception: React never double-invokes the insertion effect it relies on, so the gate leaves it alone and checks the
+ * plain effects of the screen only. StrictModeMountGate commits StrictMode one commit ahead of the screen content,
+ * which is what makes React run that cycle for a StrictMode nested below the root.
  *
  * The mode does not simply mirror the covered state, because a covered screen sometimes has to render as visible.
  * Each case commented below compensates for a specific property of a hidden Activity.
@@ -78,10 +78,9 @@ function ScreenActivityWrapper({isScreenBlurred, children}: NonTopScreenWrapperP
 
     const mode = isKeptVisible || isShownAfterTransition || (!isScreenCovered && isRevealLatched) ? 'visible' : 'hidden';
 
-    // The Activity comes with the boundary that serves it, because a hide unmounts everything inside the Activity while
-    // the screen is still on the stack, and a component cannot observe its own hiding. The boundary reports that hide
-    // and its own unmount to useScreenActivityEffect, which is how an effect of the subtree tells a cleanup of the
-    // screen from its own.
+    // The Activity comes with the boundary that serves it, because a hide disconnects every effect inside the Activity
+    // while the screen is still on the stack, and a component removed while hidden gets no cleanup of its own. The
+    // boundary keeps the effects of useScreenActivityEffect a hide skipped and releases the ones that never come back.
     return (
         <ActivityWithEffectBoundary mode={mode}>
             <AlwaysPaintedView inert={isScreenCovered}>

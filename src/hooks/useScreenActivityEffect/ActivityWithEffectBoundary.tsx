@@ -2,7 +2,7 @@ import type {ActivityProps, ReactNode} from 'react';
 
 import React, {Activity} from 'react';
 
-import {ScreenActivityEffectBoundaryProvider} from './ScreenActivityEffectBoundaryContext';
+import ScreenActivityEffectBoundaryProvider from './ScreenActivityEffectBoundaryProvider';
 
 type ActivityWithEffectBoundaryProps = {
     /** The mode of the <Activity>, which is also what the boundary reports to the effects of the subtree. */

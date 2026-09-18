@@ -1,91 +1,90 @@
 import type {DependencyList, EffectCallback} from 'react';
 
-import {useContext, useEffect, useRef} from 'react';
+import {useContext, useEffect, useInsertionEffect, useRef} from 'react';
 
 import type {ScreenActivityEffectEntry} from './ScreenActivityEffectBoundaryContext';
 
-import ScreenActivityEffectBoundaryContext, {createScreenActivityEffectEntry, throwFirstAndReportRest} from './ScreenActivityEffectBoundaryContext';
-
-function areDepsEqual(previous: DependencyList | undefined, next: DependencyList | undefined): boolean {
-    // No dependency list means the effect runs on every render, exactly as useEffect does.
-    if (previous === undefined || next === undefined) {
-        return false;
-    }
-    // A list that changed size is a mistake React warns about rather than a change it acts on: it compares the
-    // dependencies both lists have and nothing else. This does the same, so the size alone never re-runs the effect.
-    const shared = Math.min(previous.length, next.length);
-    return previous.slice(0, shared).every((value, index) => Object.is(value, next.at(index)));
-}
+import ScreenActivityEffectBoundaryContext, {createScreenActivityEffectEntry, reportErrors} from './ScreenActivityEffectBoundaryContext';
 
 /**
  * useEffect, except that a covering <Activity> hiding the screen does not run the cleanup. It runs when the
- * dependencies change, when the component itself is removed, and, for whatever is still live by then, when
- * ScreenActivityEffectBoundaryProvider unmounts, which is when the screen leaves the navigation stack.
+ * dependencies change, when the component itself is removed, and, for whatever is still live by then, when the screen
+ * leaves the navigation stack.
  *
- * React calls the same cleanup for all three, so the hook asks the boundary which one it is: a cleanup that arrives
- * while the boundary reports a screen teardown belongs to the screen and is skipped, and any other cleanup belongs to
- * the component and releases at once. Because a hide releases nothing, a reveal that runs the body again with
- * unchanged dependencies leaves the live setup alone, so the effect goes through a cover and reveal cycle exactly as
- * it goes through it on a screen that stays live in the background.
+ * React calls the same passive cleanup for a hide, a dependency change and a removal, but it runs an insertion effect
+ * for a mount, a dependency change and a removal only: a hide, a reveal, a Suspense fallback and the double invocation
+ * of StrictMode never reach it. The hook therefore pairs the two. The insertion effect records what the call site owes,
+ * which is a setup after a mount or a change and a release after a change or a removal, and the passive effect settles
+ * it, because a passive effect may set state and read refs where an insertion effect may not. A passive cleanup that
+ * finds no release owed is a hide, so it leaves the setup alone, and a reveal with unchanged dependencies finds no setup
+ * owed, so it leaves it alone as well.
  *
- * The guarantee is inferred from a signal rather than structural, which is the deliberate trade for the component
- * keeping the release it owns. The signal is only ever read from a cleanup, so no render and no effect body can branch
- * on being covered, and it only decides when a release happens, never what the effect sees.
- *
- * Use it for work that has to outlive a cover. On a screen with no boundary above it there is nothing to survive, so
- * the hook is plain useEffect there. Where it differs from useEffect on a screen that stays live (coalesced dependency
- * changes, the release of a component removed while hidden, the teardown order, errors, a StrictMode above the
- * boundary), see "Effects that must survive a cover" in contributingGuides/ACTIVITY_SCREENS.md.
+ * The boundary of the screen keeps the entries whose cleanup a hide skipped, because a component removed while hidden
+ * gets no passive cleanup of its own, and it runs the releases and setups a commit that covers or reveals the screen
+ * owes in the phases of one commit. Use the hook for work that has to outlive a cover. Where it differs from useEffect
+ * on a screen that stays live (coalesced dependency changes, the release of a component removed while hidden, where a
+ * cleanup that throws surfaces, a StrictMode that no longer double-invokes it), see "Effects that must survive a cover"
+ * in contributingGuides/ACTIVITY_SCREENS.md.
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     const boundary = useContext(ScreenActivityEffectBoundaryContext);
-    // The entry is mutated from the effect, which the React Compiler allows for a ref and rejects for a state.
+    // The entry is mutated from the effects, which the React Compiler allows for a ref and rejects for a state.
     const entryRef = useRef<ScreenActivityEffectEntry>(undefined);
 
-    useEffect(() => {
-        // The boundary of an instance never changes, so it does not belong in the dependencies the call site owns.
-        if (boundary === null) {
-            return setup();
-        }
-
+    useInsertionEffect(() => {
         if (entryRef.current === undefined) {
-            entryRef.current = createScreenActivityEffectEntry();
+            entryRef.current = createScreenActivityEffectEntry(setup);
         }
         const entry = entryRef.current;
+        entry.nextSetup = setup;
+        entry.owesSetup = true;
+        return () => {
+            entry.owesRelease = true;
+        };
+    }, deps);
 
-        // The mark comes off before the boundary looks for entries that did not come back, so this one is not among them.
-        entry.isAwaitingReveal = false;
-        // Registering releases the components removed behind the cover, and one of those cleanups can throw. React
-        // reports a cleanup that throws and still runs the setup of that commit, so the errors surface after it.
-        const errors: unknown[] = [];
-        try {
-            boundary.register(entry);
-        } catch (error) {
-            errors.push(error);
+    useEffect(() => {
+        const entry = entryRef.current;
+        if (entry === undefined) {
+            throw new Error('[useScreenActivityEffect] The passive effect ran before the insertion effect of the same call site.');
         }
 
-        // A setup that survived a hide is live for the dependencies it ran with, so only a change runs the body. On the
-        // reveal the boundary runs the work of the whole subtree in phases, so the call site hands its work over instead.
-        if (!areDepsEqual(entry.deps, deps) && !boundary.deferRevealWork(entry, setup, deps)) {
+        // Connecting can release the components removed behind the cover, and one of those cleanups can throw. The body
+        // reports the errors after its own setup instead of throwing, because a throw would surface a bug of another
+        // component through this one, and React would never receive the cleanup returned below.
+        let errors: unknown[] | undefined;
+        try {
+            boundary?.connect(entry);
+        } catch (error) {
+            errors = [error];
+        }
+
+        // On a reveal the boundary runs the work of the whole subtree in phases, so the call site hands its work over.
+        if (entry.owesSetup && !(boundary?.deferSetup(entry) ?? false)) {
             try {
                 entry.release();
             } catch (error) {
-                errors.push(error);
+                errors = [...(errors ?? []), error];
             }
-            entry.setUp(setup, deps);
+            entry.setUp();
         }
-        throwFirstAndReportRest(errors);
+        if (errors !== undefined) {
+            reportErrors(errors);
+        }
 
         // The cleanup is returned even when the body set nothing up, so React keeps the way to release the live setup.
         return () => {
-            if (boundary.getIsScreenTeardown()) {
-                // The reveal decides what this was: the body runs again for a component that is still there, and the
-                // boundary sweeps the mark for one that is not.
-                entry.isAwaitingReveal = true;
+            if (!entry.owesRelease) {
+                boundary?.disconnect(entry);
                 return;
             }
-            // The entry goes back first, so a cleanup that throws does not leave the boundary holding a released entry.
-            boundary.unregister(entry);
+            // The dependencies changed in the commit that covers the screen, so no body follows this cleanup until the
+            // reveal. The boundary runs the release and the setup of the new dependencies at the cover instead, in the
+            // phases of one commit, and keeps the entry as it keeps every entry the cover disconnected.
+            if (entry.owesSetup && boundary !== null && boundary.deferSetup(entry)) {
+                boundary.disconnect(entry);
+                return;
+            }
             entry.release();
         };
         // The call site owns the dependencies, exactly as it would with useEffect.
