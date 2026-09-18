@@ -64,7 +64,7 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:plain:b', 'cleanup:kept:b']]);
     });
 
-    it('holds the kept call site of a component removed while hidden until an effect of the screen runs again', () => {
+    it('releases the kept call site of a component removed while hidden on the reveal', () => {
         // Given a component that goes away behind the cover, so only one of its two effects is still held
         const steps = [
             visible(
@@ -85,22 +85,21 @@ describe('useScreenActivityEffect mixed with useEffect', () => {
         // When the screen is revealed empty and another component mounts on it afterwards from state inside the screen
         const commits = recordCovered(steps);
 
-        // Then only a kept call site running again is evidence that a body which did not come back is really gone, so
-        // the reveal of an empty screen sweeps nothing, and the mount that follows releases what the cover left alone
-        // before the kept setup of that commit runs, while the plain effect runs at its own place as always
-        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], [], ['setup:plain:b', 'cleanup:kept:a', 'setup:kept:b'], ['cleanup:plain:b', 'cleanup:kept:b']]);
+        // Then the reveal releases the kept call site the cover left alone, because the removal reached the boundary
+        // through the insertion cleanup, and the mount that follows finds nothing pending
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['cleanup:kept:a'], ['setup:plain:b', 'setup:kept:b'], ['cleanup:plain:b', 'cleanup:kept:b']]);
     });
 
-    it('does not treat a plain effect on the reveal as evidence that a kept call site was removed', () => {
+    it('releases a kept call site removed while hidden on a reveal that runs plain effects only', () => {
         // Given a mixed screen whose last kept call site is removed behind the cover while a plain sibling remains
         const steps = [visible(<MixedSiblings value="a" />), hidden(<MixedSiblings value="a" />), hidden(<PlainEffect value="a" />), visible(<PlainEffect value="a" />)];
 
-        // When the plain sibling runs its setup on the reveal but no kept call site registers with the boundary
+        // When the plain sibling runs its setup on the reveal and no kept call site runs at all
         const commits = recordCovered(steps);
 
-        // Then the boundary holds the removed setup until the screen leaves the stack, because a plain effect is not
-        // evidence that the part of the screen owning a kept call site was able to run
-        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['setup:plain:a'], ['cleanup:kept:a', 'cleanup:plain:a']]);
+        // Then the boundary releases the removed setup in that commit, after the plain setup, because the effects of
+        // the subtree run before the drain of the boundary above them
+        expect(commits).toEqual([['setup:plain:a', 'setup:kept:a'], ['cleanup:plain:a'], [], ['setup:plain:a', 'cleanup:kept:a'], ['cleanup:plain:a']]);
     });
 
     it('releases the kept call site when the screen leaves the stack while it is still covered', () => {

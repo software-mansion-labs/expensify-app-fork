@@ -79,8 +79,8 @@ function ScreenActivityWrapper({isScreenBlurred, children}: NonTopScreenWrapperP
     const mode = isKeptVisible || isShownAfterTransition || (!isScreenCovered && isRevealLatched) ? 'visible' : 'hidden';
 
     // The Activity comes with the boundary that serves it, because a hide disconnects every effect inside the Activity
-    // while the screen is still on the stack, and a component removed while hidden gets no cleanup of its own. The
-    // boundary keeps the effects of useScreenActivityEffect a hide skipped and releases the ones that never come back.
+    // while the screen is still on the stack, and a component removed while hidden gets no passive cleanup of its own.
+    // The boundary pays the releases of useScreenActivityEffect that React reports and never asks for.
     return (
         <ActivityWithEffectBoundary mode={mode}>
             <AlwaysPaintedView inert={isScreenCovered}>

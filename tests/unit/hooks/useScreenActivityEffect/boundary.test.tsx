@@ -163,6 +163,11 @@ function GatedActivityScreen({isHidden: isScreenHidden, children}: ScreenProps) 
     );
 }
 
+/** One component around several call sites, which is what the content of a screen is to the gate. */
+function Group({children}: {children: ReactNode}) {
+    return children;
+}
+
 /** A live screen with the same gate, which is what the gate alone does to an effect. */
 function GatedLiveScreen({children}: ScreenProps) {
     return <StrictModeMountGate>{children}</StrictModeMountGate>;
@@ -300,15 +305,30 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
         });
 
         it('reports a swept cleanup that throws instead of throwing it through the body that swept it', () => {
-            // Given a throwing cleanup removed behind the cover, a reveal that runs no body, and a component that mounts
-            // afterwards behind an error boundary of the screen, so its body is the one that sweeps the removal
+            // Given a throwing cleanup removed behind an <Activity> inside a visible screen, where no reveal of the screen
+            // is coming, and a component that mounts afterwards behind an error boundary of the screen, so its body is
+            // the one that sweeps the removal
             const reported = jest.spyOn(console, 'error').mockImplementation(() => {});
             const guarded = (value: string) => (
                 <InnerErrorBoundary>
                     <Subject value={value} />
                 </InnerErrorBoundary>
             );
-            const steps = [visible(<ThrowingCleanup />), hidden(<ThrowingCleanup />), hidden(null), visible(null), visible(guarded('a')), visible(guarded('b'))];
+            const steps = [
+                visible(
+                    <Activity mode="visible">
+                        <ThrowingCleanup />
+                    </Activity>,
+                ),
+                visible(
+                    <Activity mode="hidden">
+                        <ThrowingCleanup />
+                    </Activity>,
+                ),
+                visible(<Activity mode="hidden">{null}</Activity>),
+                visible(guarded('a')),
+                visible(guarded('b')),
+            ];
 
             // When the sweep throws right before the setup of the new component
             const activity = runCatching(useScreenActivityEffect, ActivityScreen, steps);
@@ -317,7 +337,7 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
 
             // Then the error is reported and the error boundary of the new component never sees it, so the component
             // stays, its setup runs, and React holds its cleanup for the dependency change that follows
-            expect(activity.commits).toEqual([['setup:throwing:a'], [], [], [], ['cleanup:throwing:a', 'setup:s:a'], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
+            expect(activity.commits).toEqual([['setup:throwing:a'], [], [], ['cleanup:throwing:a', 'setup:s:a'], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
             expect(activity.errors).toEqual([]);
             expect(reportedErrors.filter((message) => message.includes('cleanup of throwing:a threw'))).toHaveLength(1);
         });
@@ -489,9 +509,9 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             expect(removed).toEqual([['setup:s:outer', 'setup:s:a'], [], [], ['cleanup:s:a'], ['cleanup:s:outer']]);
         });
 
-        it('releases through the boundary above before a fresh nested boundary sets its subtree up', () => {
+        it('releases a nested screen removed while hidden on the reveal, before a fresh nested boundary mounts', () => {
             // Given a nested screen removed behind the cover and a new one mounting after a reveal that ran no effect,
-            // so the stale entry sits in the outer boundary while the new subtree belongs to a brand new inner one
+            // so the outer boundary holds the entry of the old one while the new subtree belongs to a brand new inner one
             const nested = (children: ReactNode) => <ActivityScreen isHidden={false}>{children}</ActivityScreen>;
             const steps = [
                 visible(<Leaf>{nested(<Subject value="a" />)}</Leaf>),
@@ -505,13 +525,13 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             const removed = runOn(useScreenActivityEffect, ActivityScreen, steps);
             const live = runOn(useEffect, LiveScreen, steps);
 
-            // Then the stale entry releases before the new subtree sets up, because a body registering in the fresh
-            // boundary asks the boundary above to release what did not come back before it sets up itself
+            // Then the reveal releases the old one, because the outer boundary owes its release since the insertion
+            // cleanup of its provider ran, and the new subtree sets up on a screen with nothing pending
             expect(live).toEqual([['setup:s:a'], [], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
-            expect(removed).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
+            expect(removed).toEqual([['setup:s:a'], [], [], ['cleanup:s:a'], ['setup:s:b'], ['cleanup:s:b']]);
         });
 
-        it('holds a nested screen removed while hidden until the outer screen runs an effect again', () => {
+        it('releases a nested screen removed while hidden on the reveal of an outer screen with no effect of its own', () => {
             // Given the same removal on an outer screen that has no effect of its own to run on the reveal
             const nested = (
                 <ActivityScreen isHidden={false}>
@@ -523,9 +543,8 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // When the outer screen is revealed empty
             const removed = runOn(useScreenActivityEffect, ActivityScreen, steps);
 
-            // Then the sweep waits for evidence that bodies run again, exactly as it does for a call site of its own,
-            // so the release lands when the outer screen leaves the stack
-            expect(removed).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a']]);
+            // Then the reveal releases it, because a removal is owed whether or not any body of the screen runs
+            expect(removed).toEqual([['setup:s:a'], [], [], ['cleanup:s:a'], []]);
         });
 
         it('keeps the setup live when the boundary of the nested screen itself hides', () => {
@@ -646,6 +665,40 @@ describe('ScreenActivityEffectBoundaryProvider', () => {
             // insertion effect, so the second passive run finds nothing owed
             expect(live).toEqual([['setup:s:a', 'cleanup:s:a', 'setup:s:a'], ['cleanup:s:a']]);
             expect(activity).toEqual([['setup:s:a'], ['cleanup:s:a']]);
+        });
+
+        it('leaves every call site of a subtree the gate mounts as one out of the cycle', () => {
+            // Given two call sites under one component, which is the shape of a screen: the gate mounts it as one placed
+            // subtree, so React disconnects every effect of it and then reconnects them one component at a time
+            const steps = [
+                visible(
+                    <Group>
+                        <Subject
+                            name="a"
+                            value="1"
+                        />
+                        <Subject
+                            name="b"
+                            value="1"
+                        />
+                    </Group>,
+                ),
+            ];
+
+            // When the screen mounts and then leaves the stack
+            const live = runOn(useEffect, GatedLiveScreen, steps);
+            const activity = runOn(useScreenActivityEffect, GatedActivityScreen, steps);
+
+            // Then neither call site goes through the cycle, because the body of the first one reconnected finds nothing
+            // owed by the second, which was hidden and not removed
+            expect(live).toEqual([
+                ['setup:a:1', 'setup:b:1', 'cleanup:a:1', 'cleanup:b:1', 'setup:a:1', 'setup:b:1'],
+                ['cleanup:a:1', 'cleanup:b:1'],
+            ]);
+            expect(activity).toEqual([
+                ['setup:a:1', 'setup:b:1'],
+                ['cleanup:a:1', 'cleanup:b:1'],
+            ]);
         });
 
         it('runs once under a StrictMode above the boundary as well', () => {

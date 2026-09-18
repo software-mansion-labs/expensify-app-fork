@@ -330,7 +330,7 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             expect(runs.activityScreenActivityEffect).toEqual(expected);
         });
 
-        it('defers the cleanup of a component removed while hidden until the screen runs an effect again', () => {
+        it('releases a component removed while hidden on the reveal, even when it left the screen with no effect to run', () => {
             // Given the only effect of the screen going away behind the cover, so the reveal runs no body of its own,
             // and a component mounting afterwards from state inside the screen, so that commit renders no boundary
             const steps = [
@@ -354,9 +354,9 @@ describe('useScreenActivityEffect compared to useEffect', () => {
 
             expect(runs.liveUseEffect).toEqual([['setup:s:a'], [], ['cleanup:s:a'], [], ['setup:s:b'], ['cleanup:s:b']]);
 
-            // Then the reveal itself sweeps nothing, because a commit that ran no effect of the screen says nothing
-            // about the one that is gone, and the next effect that runs releases it right before its own setup
-            expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], [], ['cleanup:s:a', 'setup:s:b'], ['cleanup:s:b']]);
+            // Then the reveal releases it, because the insertion cleanup of the removal told the boundary what it owes,
+            // and the component that mounts afterwards sets up as on a screen with nothing pending
+            expect(runs.activityScreenActivityEffect).toEqual([['setup:s:a'], [], [], ['cleanup:s:a'], ['setup:s:b'], ['cleanup:s:b']]);
         });
 
         it('sets up a component that mounts from state inside the screen after a reveal that ran no effect', () => {
@@ -547,7 +547,7 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             expectEveryConfigToMatch(runs, [['setup:s2:a'], ['setup:s1:a'], ['cleanup:s1:a', 'cleanup:s2:a']]);
         });
 
-        it('releases the entry of a deferred removal last when the screen leaves the stack', () => {
+        it('releases the sibling that went away first before the other when the screen leaves the stack covered', () => {
             // Given one of two siblings removed behind the cover, so its entry is waiting for a reveal that never comes
             const steps = [
                 visible(<Siblings value="a" />),
@@ -563,9 +563,11 @@ describe('useScreenActivityEffect compared to useEffect', () => {
             // When the screen leaves the stack while still covered
             const runs = runEveryConfig(steps);
 
-            // Then both are released in one commit, so the sibling that went away first is released last
+            // Then both are released in one commit, in the order React reported their removal, which is also the order
+            // the live screen releases them in
             expect(runs.liveUseEffect).toEqual([['setup:s1:a', 'setup:s2:a'], [], ['cleanup:s2:a'], ['cleanup:s1:a']]);
-            expect(runs.activityScreenActivityEffect).toEqual([['setup:s1:a', 'setup:s2:a'], [], [], ['cleanup:s1:a', 'cleanup:s2:a']]);
+            expect(runs.activityScreenActivityEffect).toEqual([['setup:s1:a', 'setup:s2:a'], [], [], ['cleanup:s2:a', 'cleanup:s1:a']]);
+            expect(runs.activityScreenActivityEffect.flat()).toEqual(runs.liveUseEffect.flat());
         });
 
         it('releases the instance removed while the screen was hidden before the reveal sets the new one up', () => {

@@ -21,36 +21,34 @@ type ScreenActivityEffectEntry = {
     /** Whether the component was removed or its dependencies changed since the cleanup last ran. */
     owesRelease: boolean;
 
-    /**
-     * Runs the live cleanup and forgets it, so the call site and the boundary can both ask for the release. A released
-     * entry owes a setup, so a component the boundary swept as removed sets up again if its body does run after all.
-     */
-    release: () => void;
-
-    /** Runs the latest setup and keeps what it returned. */
-    setUp: () => void;
+    /** Whether React still holds the passive cleanup of the call site, which a hide takes away until the next body. */
+    isConnected: boolean;
 };
 
 function createScreenActivityEffectEntry(setup: EffectCallback): ScreenActivityEffectEntry {
-    const entry: ScreenActivityEffectEntry = {
-        cleanup: undefined,
-        nextSetup: setup,
-        owesSetup: false,
-        owesRelease: false,
-        release: () => {
-            const {cleanup} = entry;
-            entry.cleanup = undefined;
-            entry.owesRelease = false;
-            entry.owesSetup = true;
-            cleanup?.();
-        },
-        setUp: () => {
-            entry.owesSetup = false;
-            entry.cleanup = entry.nextSetup();
-        },
-    };
-    return entry;
+    return {cleanup: undefined, nextSetup: setup, owesSetup: false, owesRelease: false, isConnected: false};
 }
+
+// The entry is the mutable record of its call site, and these two are the only writers of its setup and its debt.
+/* eslint-disable no-param-reassign */
+/**
+ * Runs the live cleanup and forgets it. A released entry owes a setup, so a call site whose body does run after all
+ * sets up again.
+ */
+function releaseScreenActivityEffectEntry(entry: ScreenActivityEffectEntry): void {
+    const {cleanup} = entry;
+    entry.cleanup = undefined;
+    entry.owesRelease = false;
+    entry.owesSetup = true;
+    cleanup?.();
+}
+
+/** Runs the latest setup and keeps what it returned. */
+function setUpScreenActivityEffectEntry(entry: ScreenActivityEffectEntry): void {
+    entry.owesSetup = false;
+    entry.cleanup = entry.nextSetup();
+}
+/* eslint-enable no-param-reassign */
 
 /**
  * What an effect body does with the errors it collected: it reports every one and rethrows none. A body that threw
@@ -77,18 +75,19 @@ function throwFirstAndReportRest(errors: readonly unknown[]): void {
 
 type ScreenActivityEffectBoundary = {
     /**
-     * A body ran for the entry, so the entry is connected again and whatever its skipped cleanup was waiting for is
-     * answered. Outside a reveal commit, the entries that were disconnected and did not come back release first, because
-     * a body running is the evidence that the screen is live and they belong to components that are gone.
+     * The insertion cleanup of the entry ran, so the entry owes a release. Its own passive cleanup pays it when React
+     * still holds that cleanup. A component removed while hidden has none, so the boundary pays for it instead.
      */
-    connect: (entry: ScreenActivityEffectEntry) => void;
+    owe: (entry: ScreenActivityEffectEntry) => void;
 
     /**
-     * A cleanup ran for the entry with nothing owed, which is a hide, a Suspense fallback or the double invocation of
-     * StrictMode. The entry keeps its setup and the boundary keeps the entry, until a body connects it again or a reveal
-     * or a pop sweeps it.
+     * Releases every owed entry whose passive cleanup is not coming, after asking the boundary above to do the same, so
+     * the entry a boundary above holds for a nested screen that went away releases before anything below sets up.
      */
-    disconnect: (entry: ScreenActivityEffectEntry) => void;
+    releaseOwed: () => void;
+
+    /** Whether this commit covers or reveals this boundary or one above it. */
+    getIsInModeChangeCommit: () => boolean;
 
     /**
      * Takes over the release and the setup an entry owes when the commit changes the mode of this boundary or of one
@@ -96,22 +95,12 @@ type ScreenActivityEffectBoundary = {
      * exactly as the phases of one commit run on a live screen. Outside such a commit it takes nothing and answers
      * false, and the call site runs its work inline.
      */
-    deferSetup: (entry: ScreenActivityEffectEntry) => boolean;
-
-    /** Whether this commit reveals this boundary or one above it. */
-    getIsInRevealCommit: () => boolean;
-
-    /**
-     * Releases every entry that was disconnected and not connected again, after asking the boundary above to do the
-     * same. It is for commits outside a reveal: in the reveal commit the bodies that are still there have not all run
-     * yet when the first one arrives, and the drain sweeps after all ran.
-     */
-    releaseDisconnected: () => void;
+    takeOverWork: (entry: ScreenActivityEffectEntry) => boolean;
 };
 
 // Null means no boundary above this subtree, which is every screen that did not opt into <Activity>.
 const ScreenActivityEffectBoundaryContext = createContext<ScreenActivityEffectBoundary | null>(null);
 
 export default ScreenActivityEffectBoundaryContext;
-export {createScreenActivityEffectEntry, reportErrors, throwFirstAndReportRest};
+export {createScreenActivityEffectEntry, releaseScreenActivityEffectEntry, reportErrors, setUpScreenActivityEffectEntry, throwFirstAndReportRest};
 export type {ScreenActivityEffectBoundary, ScreenActivityEffectEntry};

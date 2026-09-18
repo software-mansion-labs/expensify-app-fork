@@ -13,8 +13,8 @@ import {ActivityScreen, AnyEffectHookProvider, drainLog, LiveScreen, log, resetL
 /**
  * Every other suite here flushes each commit before the next one. These tests are the ones where a commit does not
  * finish when it starts: a subtree below the boundary that suspends, and a cover or a reveal that lands in a transition.
- * A reveal which does not run the body of a component the cover left alone is the one thing the boundary cannot tell
- * from a component that went away, and <Suspense> is how a real screen gets there.
+ * A reveal does not run the body of a component that suspends again, exactly as it runs none for a component that went
+ * away, and <Suspense> is how a real screen gets there.
  */
 
 type Resource = {promise: Promise<void>; resolve: () => void};
@@ -137,12 +137,13 @@ describe('useScreenActivityEffect in a commit that does not finish at once', () 
         // Then the live screen keeps the setup through the suspension, and the fallback shows that it really suspended
         expect(live).toEqual([['setup:s:a'], [], ['fallback'], [], ['resumed'], ['cleanup:s:a']]);
 
-        // And the covered screen keeps it too, because a reveal that ran no effect of the subtree sweeps nothing
+        // And the covered screen keeps it too, because a component that suspends ran no insertion cleanup, so it owes
+        // the boundary nothing
         expect(activity).toEqual([['setup:s:a'], [], [], ['fallback'], ['resumed'], ['cleanup:s:a']]);
         expect(activity.flat()).toEqual(live.flat());
     });
 
-    it('releases the setup of a suspended component when another part of the screen ran on the reveal', async () => {
+    it('keeps the setup of a suspended component when another part of the screen ran on the reveal', async () => {
         // Given the same suspension next to a component that is not suspended and runs its own effect on the reveal
         const content = (pending?: Resource) => (
             <>
@@ -159,10 +160,11 @@ describe('useScreenActivityEffect in a commit that does not finish at once', () 
 
         expect(live).toEqual([['setup:s:a', 'setup:sibling:a'], [], ['fallback'], [], ['resumed'], ['cleanup:s:a', 'cleanup:sibling:a']]);
 
-        // Then the effect of the suspended part is released and set up again, because the reveal proved that bodies run
-        // and the body of a component that is gone reads exactly like the body of one that is suspended. Nothing tells
-        // them apart: React never reports the deletion of a component inside a hidden subtree.
-        expect(activity).toEqual([['setup:s:a', 'setup:sibling:a'], [], [], ['fallback', 'cleanup:s:a'], ['resumed', 'setup:s:a'], ['cleanup:s:a', 'cleanup:sibling:a']]);
+        // Then the effect of the suspended part stays live, because the sibling running says nothing about it and only a
+        // removal, which React reports through the insertion cleanup, makes the boundary release a component whose
+        // body did not run
+        expect(activity).toEqual([['setup:s:a', 'setup:sibling:a'], [], [], ['fallback'], ['resumed'], ['cleanup:s:a', 'cleanup:sibling:a']]);
+        expect(activity.flat()).toEqual(live.flat());
 
         // And the teardown releases the two in tree order, exactly as the live screen does
         expect(activity.at(-1)).toEqual(live.at(-1));
