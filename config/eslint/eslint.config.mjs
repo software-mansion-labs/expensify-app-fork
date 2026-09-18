@@ -206,6 +206,17 @@ const restrictedPaidGroupPolicyImportPatterns = [
     },
 ];
 
+// The boundary provider pairs its isHidden with the mode of the <Activity> it wraps, and a call site that renders it
+// directly can pair the two wrongly, which runs the work of a cover or a reveal in the wrong commit.
+// ActivityWithEffectBoundary is the one component that renders the pair, so everything else imports that instead.
+const restrictedScreenActivityBoundaryImportPatterns = [
+    {
+        group: ['**/ScreenActivityEffectBoundaryProvider'],
+        importNames: ['default'],
+        message: 'Do not render the boundary directly. Render ActivityWithEffectBoundary, which pairs isHidden with the mode of the <Activity> it serves.',
+    },
+];
+
 // Headless email chart CLI cannot use useTheme; charts always render with the light theme.
 const victoryChartRendererRestrictedImportPaths = restrictedImportPaths.filter((restriction) => restriction.name !== '@styles/theme');
 const victoryChartRendererRestrictedImportPatterns = [
@@ -233,6 +244,16 @@ const config = defineConfig([
         settings: {
             progress: {
                 hide: process.env.CI === 'true' || process.env.LINT_PIPELINE === '1',
+            },
+        },
+    },
+
+    // useScreenActivityEffect takes a setup and a dependency list like useEffect, so its call sites get the same
+    // dependency linting.
+    {
+        settings: {
+            'react-hooks': {
+                additionalEffectHooks: '(useScreenActivityEffect)',
             },
         },
     },
@@ -692,13 +713,34 @@ const config = defineConfig([
         },
     },
 
-    // Restrict `computeReportName` imports everywhere except the one file that
-    // legitimately consumes it. This block overrides the main `no-restricted-imports`
-    // for ts/tsx files, so we re-apply the main `restrictedImportPaths`/`restrictedImportPatterns`
-    // here too (flat config is last-wins per rule, not additive).
+    // Restrict `computeReportName` everywhere except the file that legitimately consumes it (the ignore falls back
+    // to the main `no-restricted-imports` block), and the screen activity boundary provider everywhere except the
+    // hook files, which the next block handles. This block overrides the main `no-restricted-imports` for ts/tsx
+    // files, so we re-apply the main `restrictedImportPaths`/`restrictedImportPatterns` here too (flat config is
+    // last-wins per rule, not additive).
     {
         files: ['**/*.ts', '**/*.tsx'],
         ignores: ['src/libs/actions/OnyxDerived/configs/reportAttributes.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: restrictedImportPaths,
+                    patterns: [
+                        ...restrictedImportPatterns,
+                        ...restrictedReportNameImportPatterns,
+                        ...restrictedPaidGroupPolicyImportPatterns,
+                        ...restrictedScreenActivityBoundaryImportPatterns,
+                    ],
+                },
+            ],
+        },
+    },
+
+    // The hook and its tests render the boundary directly, which the pattern above forbids everywhere else. The rule
+    // does not merge between blocks, so this one repeats every other restriction for them.
+    {
+        files: ['src/hooks/useScreenActivityEffect/**', 'tests/unit/hooks/useScreenActivityEffect/**'],
         rules: {
             'no-restricted-imports': [
                 'error',
