@@ -176,6 +176,20 @@ describe('useScreenActivityEffect and an effect that throws', () => {
     });
 
     describe('a cleanup that throws', () => {
+        it('matches useEffect when a visible dependency change runs a cleanup that throws', async () => {
+            // Given a setup whose cleanup throws, and a dependency change while the screen is visible
+            const steps = [visible(<ThrowingCleanup value="a" />), visible(<ThrowingCleanup value="b" />)];
+
+            // When the change runs on a live screen and on a screen wrapped in an <Activity>
+            const live = await runCatching(useEffect, LiveScreen, steps);
+            const activity = await runCatching(useScreenActivityEffect, ActivityScreen, steps);
+
+            // Then the error reaches the boundary through React in both, because a visible cleanup is a passive cleanup
+            expect(live.errors).toEqual(['Error: cleanup of throwing:a threw']);
+            expect(activity.errors).toEqual(live.errors);
+            expect(activity.commits).toEqual(live.commits);
+        });
+
         it('releases the rest of the screen when one cleanup throws at the teardown', async () => {
             // Given a screen holding a cleanup that throws next to effects that have to be released too
             const steps = [visible(<ThrowingScreenContent />)];
@@ -266,6 +280,28 @@ describe('useScreenActivityEffect and an effect that throws', () => {
                 ['cleanup:throwing:a', 'setup:throwing:b', 'cleanup:s:a', 'setup:s:b'],
                 ['cleanup:throwing:b', 'cleanup:s:b', 'cleanup:survivor:a'],
             ]);
+            expect(activity.errors).toEqual([]);
+            expect(reportedMessages(reported).filter((message) => message.includes('cleanup of throwing:a threw'))).toHaveLength(1);
+        });
+
+        it('reports a hidden removal that throws before setting up its replacement', async () => {
+            // Given a throwing cleanup removed behind the cover in the commit that reveals its replacement
+            const steps = [
+                visible(<ThrowingCleanup key="old" />),
+                hidden(<ThrowingCleanup key="old" />),
+                visible(
+                    <Subject
+                        key="new"
+                        value="new"
+                    />,
+                ),
+            ];
+
+            // When the screen is revealed with the replacement
+            const activity = await runCatching(useScreenActivityEffect, ActivityScreen, steps);
+
+            // Then the body of the replacement reports the failed release before it runs its own setup
+            expect(activity.commits).toEqual([['setup:throwing:a'], [], ['cleanup:throwing:a', 'setup:s:new'], ['cleanup:s:new']]);
             expect(activity.errors).toEqual([]);
             expect(reportedMessages(reported).filter((message) => message.includes('cleanup of throwing:a threw'))).toHaveLength(1);
         });

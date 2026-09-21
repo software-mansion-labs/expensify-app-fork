@@ -600,6 +600,38 @@ describe('useScreenActivityEffect compared to useEffect', () => {
         });
     });
 
+    it('releases a replaced instance before setting up its replacement in the reveal commit', async () => {
+        // Given an instance replaced by one with another key in the commit that reveals the screen
+        const steps = [
+            visible(
+                <Subject
+                    key="old"
+                    value="old"
+                />,
+            ),
+            hidden(
+                <Subject
+                    key="old"
+                    value="old"
+                />,
+            ),
+            visible(
+                <Subject
+                    key="new"
+                    value="new"
+                />,
+            ),
+        ];
+
+        // When the screen is revealed with the replacement
+        const runs = await runEveryConfig(steps);
+
+        // Then the old instance is released before the new one sets up, exactly as on a live screen, so a single-owner
+        // resource passes from one to the other
+        expect(runs.activityScreenActivityEffect).toEqual(runs.liveUseEffect);
+        expect(runs.activityScreenActivityEffect).toEqual([['setup:s:old'], [], ['cleanup:s:old', 'setup:s:new'], ['cleanup:s:new']]);
+    });
+
     describe('what a cover cannot reproduce', () => {
         it('coalesces a dependency change that was undone before the reveal into one run', async () => {
             // Given a dependency that changes and changes back while the screen is covered

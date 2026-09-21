@@ -72,6 +72,39 @@ function overlappingNestedScreen(isOuterHidden: boolean, isInnerHidden: boolean)
     );
 }
 
+/** One step of two screens next to each other, where a null step means the screen has left the navigation stack. */
+type StackStep = [RenderStep | null, RenderStep | null];
+
+/** Two screens of one navigator next to each other, put through the steps as pairs of a left and a right step. */
+async function runStack(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: readonly StackStep[]): Promise<string[][]> {
+    const screen = (step: RenderStep | null) => (step === null ? null : <Screen isHidden={step.isHidden}>{step.children}</Screen>);
+    const stack = ([left, right]: StackStep) => (
+        <AnyEffectHookProvider hook={hook}>
+            {screen(left)}
+            {screen(right)}
+        </AnyEffectHookProvider>
+    );
+    const [first, ...rest] = steps;
+    if (first === undefined) {
+        throw new Error('The first step has to render both screens.');
+    }
+    resetLog();
+    const {rerender, unmount} = render(stack(first));
+    await settle();
+    const commits = [drainLog()];
+
+    for (const step of rest) {
+        rerender(stack(step));
+        await settle();
+        commits.push(drainLog());
+    }
+
+    unmount();
+    await settle();
+    commits.push(drainLog());
+    return commits;
+}
+
 describe('useScreenActivityEffect on nested screens', () => {
     beforeEach(() => {
         resetLog();
@@ -80,43 +113,37 @@ describe('useScreenActivityEffect on nested screens', () => {
     describe('a second screen next to it', () => {
         it('keeps two screens of one navigator independent', async () => {
             // Given two screens of one navigator, each with its own screen of the behavior under test
-            const runStack = async (hook: AnyEffectHook, Screen: ComponentType<ScreenProps>) => {
-                resetLog();
-                const stack = (left: RenderStep, right: RenderStep) => (
-                    <AnyEffectHookProvider hook={hook}>
-                        <Screen isHidden={left.isHidden}>{left.children}</Screen>
-                        <Screen isHidden={right.isHidden}>{right.children}</Screen>
-                    </AnyEffectHookProvider>
-                );
-
-                const {rerender, unmount} = render(stack(visible(<Subject value="left" />), visible(<Subject value="right" />)));
-                await settle();
-                const commits = [drainLog()];
-
-                rerender(stack(hidden(<Subject value="left" />), visible(<Subject value="right" />)));
-                await settle();
-                commits.push(drainLog());
-
-                rerender(stack(hidden(<Subject value="left" />), visible(null)));
-                await settle();
-                commits.push(drainLog());
-
-                rerender(stack(visible(<Subject value="left" />), visible(null)));
-                await settle();
-                commits.push(drainLog());
-
-                unmount();
-                await settle();
-                commits.push(drainLog());
-                return commits;
-            };
+            const steps: StackStep[] = [
+                [visible(<Subject value="left" />), visible(<Subject value="right" />)],
+                [hidden(<Subject value="left" />), visible(<Subject value="right" />)],
+                [hidden(<Subject value="left" />), visible(null)],
+                [visible(<Subject value="left" />), visible(null)],
+            ];
 
             // When the left screen is covered and a component of the visible right screen then goes away
             // Then the cover of one screen defers nothing of the other, because each call site answers for itself alone
-            expect(await runStack(useScreenActivityEffect, ActivityScreen)).toEqual([['setup:s:left', 'setup:s:right'], [], ['cleanup:s:right'], [], ['cleanup:s:left']]);
+            expect(await runStack(useScreenActivityEffect, ActivityScreen, steps)).toEqual([['setup:s:left', 'setup:s:right'], [], ['cleanup:s:right'], [], ['cleanup:s:left']]);
 
             // And that is what two screens that both stay live in the background do
-            expect(await runStack(useEffect, LiveScreen)).toEqual(await runStack(useScreenActivityEffect, ActivityScreen));
+            expect(await runStack(useEffect, LiveScreen, steps)).toEqual(await runStack(useScreenActivityEffect, ActivityScreen, steps));
+        });
+
+        it('releases a covered screen that leaves the stack before a body of the other screen sets up', async () => {
+            // Given a covered left screen popped in the commit that mounts a component on the visible right screen
+            const steps: StackStep[] = [
+                [visible(<Subject value="left" />), visible(null)],
+                [hidden(<Subject value="left" />), visible(null)],
+                [null, visible(<Subject value="right" />)],
+            ];
+
+            // When both changes land in one commit
+            const activity = await runStack(useScreenActivityEffect, ActivityScreen, steps);
+            const live = await runStack(useEffect, LiveScreen, steps);
+
+            // Then the body of the right screen drains the queued release before its own setup, exactly as a live
+            // screen runs every cleanup of a commit before any setup
+            expect(live).toEqual([['setup:s:left'], [], ['cleanup:s:left', 'setup:s:right'], ['cleanup:s:right']]);
+            expect(activity).toEqual(live);
         });
     });
 

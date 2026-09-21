@@ -40,9 +40,17 @@ function runAndReportError(work: () => void): void {
     }
 }
 
-/** Runs the work in a microtask, which is after React ran every effect of the current commit. */
-function runAfterCommit(work: () => void): void {
-    Promise.resolve().then(() => runAndReportError(work));
+/** Hidden removals have no passive cleanup. Drain them before another hook sets up, or after the synchronous commit. */
+const pendingCleanups = new Set<LiveEffect>();
+
+function flushPendingCleanups(): void {
+    for (const effect of pendingCleanups) {
+        // The entry leaves the set first so a cleanup that synchronously commits another root cannot release the same work twice.
+        pendingCleanups.delete(effect);
+        if (!effect.isMounted) {
+            runAndReportError(() => runCleanup(effect));
+        }
+    }
 }
 
 /**
@@ -55,8 +63,9 @@ function runAfterCommit(work: () => void): void {
  * alone cannot tell them apart. The insertion effect can, because a hide and a reveal never reach it. It records
  * whether the component is mounted and whether a setup is pending, and the passive effect acts on that: its body runs
  * the setup when one is pending, and its cleanup releases the work only when the component is gone or its dependencies
- * changed. Behind a cover no passive effect runs, so a component removed while hidden is released right after the
- * commit, once the insertion cleanup can tell a removal from a dependency change, which mounts the component again.
+ * changed. Behind a cover no passive effect runs, so a component removed while hidden queues its release. A dependency
+ * change cancels its own entry, because its insertion setup runs in the same commit. What stays queued is released by
+ * the next passive body of the hook, on any screen, or by a microtask after the commit when no body runs first.
  */
 function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
     // The effects mutate this record, which the React Compiler allows for a ref and rejects for state.
@@ -64,6 +73,8 @@ function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): 
 
     useInsertionEffect(() => {
         const effect = effectRef.current;
+        // An insertion setup in the same commit means a dependency change, not a removal.
+        pendingCleanups.delete(effect);
         effect.isSetupPending = true;
         effect.isMounted = true;
         return () => {
@@ -72,18 +83,18 @@ function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): 
             if (effect.isVisible) {
                 return;
             }
-            runAfterCommit(() => {
-                // The insertion effect ran again in this commit, so this was a dependency change, which the reveal applies.
-                if (effect.isMounted) {
-                    return;
-                }
-                runCleanup(effect);
-            });
+            if (pendingCleanups.size === 0) {
+                // Passive effects may run before or after this microtask, depending on the update priority.
+                Promise.resolve().then(flushPendingCleanups);
+            }
+            pendingCleanups.add(effect);
         };
     }, deps);
 
     useEffect(() => {
         const effect = effectRef.current;
+        // A reveal may replace a hidden instance and synchronously run this setup before the microtask.
+        flushPendingCleanups();
         effect.isVisible = true;
         if (effect.isSetupPending) {
             // A cleanup that throws must not stop the setup that follows it.
