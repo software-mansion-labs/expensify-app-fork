@@ -8,8 +8,8 @@ import {ActivityScreen, leaf, Leaf, LiveScreen, resetLog, runOn, Subject, visibl
 
 /**
  * A screen can render an <Activity> of its own, as a tab bar or a picker does, and the hook cannot tell that hide from
- * the cover of the screen: both are a passive cleanup with nothing owed. These tests pin down what that means under a
- * screen boundary and without one.
+ * the cover of the screen: both are a passive cleanup with nothing owed. These tests pin down what that means on a
+ * screen of either behavior.
  */
 
 /** A part of the screen behind an <Activity> of the screen itself, which the isHidden of the step drives. */
@@ -38,11 +38,11 @@ describe('useScreenActivityEffect behind an <Activity> inside the screen', () =>
         resetLog();
     });
 
-    it('keeps every setup through the hide and show of the tab under a screen boundary, as through a cover', () => {
+    it('keeps every setup through the hide and show of the tab on a screen that opted into <Activity>, as through a cover', async () => {
         // Given two call sites behind a tab of a screen that opted into <Activity>
         // When the tab hides and shows again
-        const live = runOn(useEffect, ActivityScreen, hideAndShowTab);
-        const activity = runOn(useScreenActivityEffect, ActivityScreen, hideAndShowTab);
+        const live = await runOn(useEffect, ActivityScreen, hideAndShowTab);
+        const activity = await runOn(useScreenActivityEffect, ActivityScreen, hideAndShowTab);
 
         // Then plain useEffect churns and the hook keeps both setups alike, because nothing was owed for either
         expect(live).toEqual([
@@ -54,17 +54,24 @@ describe('useScreenActivityEffect behind an <Activity> inside the screen', () =>
         expect(activity).toEqual([['setup:a:1', 'setup:b:1'], [], [], ['cleanup:a:1', 'cleanup:b:1']]);
     });
 
-    it('behaves like useEffect through the hide and show of the tab on a screen with no boundary', () => {
-        // Given the same tab on a screen that did not opt into <Activity>, so nothing would ever release a kept setup
+    it('keeps every setup through the hide and show of the tab on a screen that stays live as well', async () => {
+        // Given the same tab on a screen that did not opt into <Activity>
         // When the tab hides and shows again
-        const live = runOn(useEffect, LiveScreen, hideAndShowTab);
-        const activity = runOn(useScreenActivityEffect, LiveScreen, hideAndShowTab);
+        const live = await runOn(useEffect, LiveScreen, hideAndShowTab);
+        const activity = await runOn(useScreenActivityEffect, LiveScreen, hideAndShowTab);
 
-        // Then the hook releases on the hide and sets up again on the show, exactly as useEffect does
-        expect(activity).toEqual(live);
+        // Then the hook keeps the setups here too, because it answers to no screen: a setup survives every hide until
+        // the dependencies change or the component goes away, wherever the <Activity> that hid it sits
+        expect(live).toEqual([
+            ['setup:a:1', 'setup:b:1'],
+            ['cleanup:a:1', 'cleanup:b:1'],
+            ['setup:a:1', 'setup:b:1'],
+            ['cleanup:a:1', 'cleanup:b:1'],
+        ]);
+        expect(activity).toEqual([['setup:a:1', 'setup:b:1'], [], [], ['cleanup:a:1', 'cleanup:b:1']]);
     });
 
-    it('releases a call site removed behind the hidden tab right before the next body of the screen, or on the pop', () => {
+    it('releases a call site removed behind the hidden tab right after that commit, and the rest on the pop', async () => {
         // Given a call site removed while the tab hides it, next to a part of the screen outside the tab
         const outside = (value: string) => (
             <Subject
@@ -110,10 +117,11 @@ describe('useScreenActivityEffect behind an <Activity> inside the screen', () =>
         ];
 
         // When a dependency of the part outside the tab changes afterwards and the screen finally leaves the stack
-        const activity = runOn(useScreenActivityEffect, ActivityScreen, steps);
+        const activity = await runOn(useScreenActivityEffect, ActivityScreen, steps);
 
-        // Then the body outside the tab releases the removed call site before its own setup, and the pop releases the
-        // one still hidden behind the tab
-        expect(activity).toEqual([['setup:a:1', 'setup:b:1', 'setup:outside:1'], [], [], ['cleanup:outside:1', 'cleanup:b:1', 'setup:outside:2'], ['cleanup:a:1', 'cleanup:outside:2']]);
+        // Then the removal is released in its own commit, the change outside the tab is an ordinary swap, and the pop
+        // releases the part outside the tab from its passive cleanup and the one still hidden behind the tab after the
+        // commit, because a hidden component has no passive cleanup for React to run
+        expect(activity).toEqual([['setup:a:1', 'setup:b:1', 'setup:outside:1'], [], ['cleanup:b:1'], ['cleanup:outside:1', 'setup:outside:2'], ['cleanup:outside:2', 'cleanup:a:1']]);
     });
 });

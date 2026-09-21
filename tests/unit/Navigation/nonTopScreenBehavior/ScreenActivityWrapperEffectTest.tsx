@@ -38,9 +38,9 @@ jest.mock('@react-navigation/native', () => {
 });
 
 /**
- * useScreenActivityEffect only survives a cover because ScreenActivityWrapper renders the boundary outside the
- * <Activity> it serves, so these tests drive the real wrapper rather than a hand built tree, StrictMode gate and all.
- * The calls named 'plain' come from useEffect and the ones named 'kept' from the hook.
+ * The <Activity> of ScreenActivityWrapper is what covers a screen, so these tests drive the real wrapper rather than a
+ * hand built tree, StrictMode gate and all, and check what its modes do to an effect of each hook. The calls named
+ * 'plain' come from useEffect and the ones named 'kept' from useScreenActivityEffect.
  */
 
 const transitionTracker = createTransitionTrackerHarness();

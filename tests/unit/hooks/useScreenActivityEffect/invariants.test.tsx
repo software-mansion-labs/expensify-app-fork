@@ -23,7 +23,7 @@ const SEQUENCE_LENGTH = 6;
 const OPERATIONS = ['cover', 'reveal', 'changeValue', 'remove', 'mount'] as const;
 
 /**
- * The same changes of the content started from state inside the screen, which commits without rendering the boundary.
+ * The same changes of the content started from state inside the screen, which commits without rendering the screen.
  * They make the generated set larger, so the sequences holding them are one commit shorter.
  */
 const LEAF_OPERATIONS = ['leafChangeValue', 'leafRemove', 'leafMount'] as const;
@@ -114,7 +114,7 @@ function toStep(state: ScreenState): Step {
     return toStepWithContent(state, toChildren(state));
 }
 
-/** The same content one navigator deeper, where the boundary of the nested screen comes and goes with the content. */
+/** The same content one navigator deeper, where the <Activity> of the nested screen comes and goes with the content. */
 function toNestedStep(state: ScreenState): Step {
     return toStepWithContent(state, state.isMounted ? <ActivityScreen isHidden={false}>{toChildren(state)}</ActivityScreen> : null);
 }
@@ -190,14 +190,14 @@ function describeSequence(states: readonly ScreenState[]): string {
 }
 
 /** The violations of one configuration over every generated sequence, each one naming the sequence it came from. */
-function sweep(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, sequences: readonly ScreenState[][], asStep: (state: ScreenState) => Step = toStep) {
+async function sweep(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, sequences: readonly ScreenState[][], asStep: (state: ScreenState) => Step = toStep) {
     const problems: string[] = [];
     const runs: string[][][] = [];
     let setupCount = 0;
 
     for (const states of sequences) {
         resetLog();
-        const commits = runOn(hook, Screen, states.map(asStep));
+        const commits = await runOn(hook, Screen, states.map(asStep));
         runs.push(commits);
         setupCount += commits.flat().filter((call) => call.startsWith('setup:')).length;
         problems.push(...findViolations(states, commits).map((violation) => `${violation} of ${describeSequence(states)}`));
@@ -206,7 +206,7 @@ function sweep(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, sequence
     return {problems, runs, setupCount};
 }
 
-/** The two generated sets: the commits the root renders, and those plus the ones a leaf starts without rendering the boundary. */
+/** The two generated sets: the commits the root renders, and those plus the ones a leaf starts without rendering the screen. */
 const GENERATED_SETS = [
     {name: 'from the root', operations: OPERATIONS, length: SEQUENCE_LENGTH, hasLeafCommits: false},
     {name: 'from the root and from a leaf', operations: [...OPERATIONS, ...LEAF_OPERATIONS], length: LEAF_SEQUENCE_LENGTH, hasLeafCommits: true},
@@ -223,18 +223,18 @@ describe.each(GENERATED_SETS)('useScreenActivityEffect over every generated sequ
         expect(sequences.some((states) => states.some((state) => state.isFromLeaf))).toBe(hasLeafCommits);
     });
 
-    it('holds the live screen on useEffect to the invariants, which is what the checks are calibrated against', () => {
+    it('holds the live screen on useEffect to the invariants, which is what the checks are calibrated against', async () => {
         // When the baseline goes through every generated sequence
-        const live = sweep(useEffect, LiveScreen, sequences);
+        const live = await sweep(useEffect, LiveScreen, sequences);
 
         // Then it violates nothing, so a violation below is the hook and not the checks
         expect(live.problems).toEqual([]);
     });
 
-    it('holds the covered screen on useScreenActivityEffect to the same invariants', () => {
+    it('holds the covered screen on useScreenActivityEffect to the same invariants', async () => {
         // When the hook goes through every generated sequence behind an <Activity>
-        const live = sweep(useEffect, LiveScreen, sequences);
-        const activity = sweep(useScreenActivityEffect, ActivityScreen, sequences);
+        const live = await sweep(useEffect, LiveScreen, sequences);
+        const activity = await sweep(useScreenActivityEffect, ActivityScreen, sequences);
 
         // Then every setup is released exactly once, no instance ever holds two, and a visible screen is up to date
         expect(activity.problems).toEqual([]);
@@ -243,14 +243,14 @@ describe.each(GENERATED_SETS)('useScreenActivityEffect over every generated sequ
         expect(activity.setupCount).toBeLessThanOrEqual(live.setupCount);
     });
 
-    it('answers the same commit by commit when the screen sits one navigator deeper', () => {
-        // When the same sequences run on a screen of a nested navigator, whose boundary comes and goes with its content
-        const flat = sweep(useScreenActivityEffect, ActivityScreen, sequences);
-        const nested = sweep(useScreenActivityEffect, ActivityScreen, sequences, toNestedStep);
+    it('answers the same commit by commit when the screen sits one navigator deeper', async () => {
+        // When the same sequences run on a screen of a nested navigator, whose <Activity> comes and goes with its content
+        const flat = await sweep(useScreenActivityEffect, ActivityScreen, sequences);
+        const nested = await sweep(useScreenActivityEffect, ActivityScreen, sequences, toNestedStep);
 
         // Then nesting changes nothing at all: not what runs, not when, and not which invariant holds. A release that
-        // the nesting moves to a later commit is the shape a boundary of a nested screen leaks in, so it is the whole
-        // point of comparing commit by commit rather than comparing the flattened calls.
+        // the nesting moves to a later commit is the shape a nested <Activity> would leak in, so it is the whole point
+        // of comparing commit by commit rather than comparing the flattened calls.
         expect(nested.problems).toEqual([]);
         const moved = sequences.filter((states, index) => JSON.stringify(nested.runs.at(index)) !== JSON.stringify(flat.runs.at(index))).map(describeSequence);
         expect(moved).toEqual([]);

@@ -24,7 +24,7 @@ describe('ESLint configuration', () => {
     it('checks the dependencies of useScreenActivityEffect like useEffect', async () => {
         // Given the effective repository config for a hook file and the React Hooks plugin it resolves
         const eslint = new ESLint({cwd: projectRoot});
-        const config: unknown = await eslint.calculateConfigForFile('src/hooks/useScreenActivityEffect/index.ts');
+        const config: unknown = await eslint.calculateConfigForFile('src/hooks/useScreenActivityEffect.ts');
         const {plugins, settings} = pickPluginsAndSettings(config);
 
         expect(plugins['react-hooks']).toBeDefined();

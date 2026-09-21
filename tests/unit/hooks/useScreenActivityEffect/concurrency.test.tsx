@@ -12,14 +12,14 @@ import {ActivityScreen, AnyEffectHookProvider, drainLog, LiveScreen, log, resetL
 
 /**
  * Every other suite here flushes each commit before the next one. These tests are the ones where a commit does not
- * finish when it starts: a subtree below the boundary that suspends, and a cover or a reveal that lands in a transition.
+ * finish when it starts: a subtree of the screen that suspends, and a cover or a reveal that lands in a transition.
  * A reveal does not run the body of a component that suspends again, exactly as it runs none for a component that went
  * away, and <Suspense> is how a real screen gets there.
  */
 
 type Resource = {promise: Promise<void>; resolve: () => void};
 
-/** A promise the test resolves by hand, which is what makes a component below the boundary suspend on demand. */
+/** A promise the test resolves by hand, which is what makes a component of the screen suspend on demand. */
 function createResource(): Resource {
     let resolve = () => {};
     const promise = new Promise<void>((resolvePromise) => {
@@ -118,7 +118,7 @@ describe('useScreenActivityEffect in a commit that does not finish at once', () 
         await step(() => rerender(tree(false)));
         await step(() => unmount());
 
-        // Then the boundary answers exactly as it does for a synchronous cover and reveal
+        // Then the hook answers exactly as it does for a synchronous cover and reveal
         expect(commits).toEqual([['setup:s:a'], [], [], ['cleanup:s:a']]);
     });
 
@@ -138,7 +138,7 @@ describe('useScreenActivityEffect in a commit that does not finish at once', () 
         expect(live).toEqual([['setup:s:a'], [], ['fallback'], [], ['resumed'], ['cleanup:s:a']]);
 
         // And the covered screen keeps it too, because a component that suspends ran no insertion cleanup, so it owes
-        // the boundary nothing
+        // no release
         expect(activity).toEqual([['setup:s:a'], [], [], ['fallback'], ['resumed'], ['cleanup:s:a']]);
         expect(activity.flat()).toEqual(live.flat());
     });
@@ -161,8 +161,8 @@ describe('useScreenActivityEffect in a commit that does not finish at once', () 
         expect(live).toEqual([['setup:s:a', 'setup:sibling:a'], [], ['fallback'], [], ['resumed'], ['cleanup:s:a', 'cleanup:sibling:a']]);
 
         // Then the effect of the suspended part stays live, because the sibling running says nothing about it and only a
-        // removal, which React reports through the insertion cleanup, makes the boundary release a component whose
-        // body did not run
+        // removal, which React reports through the insertion cleanup, makes the hook release a component whose body
+        // did not run
         expect(activity).toEqual([['setup:s:a', 'setup:sibling:a'], [], [], ['fallback'], ['resumed'], ['cleanup:s:a', 'cleanup:sibling:a']]);
         expect(activity.flat()).toEqual(live.flat());
 

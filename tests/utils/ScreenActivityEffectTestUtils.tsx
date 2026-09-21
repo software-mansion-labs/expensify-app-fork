@@ -1,16 +1,18 @@
 import {render} from '@testing-library/react-native';
 
 import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
-import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
 
 import type {ComponentType, DependencyList, EffectCallback, ReactElement, ReactNode} from 'react';
 
-import React, {act, createContext, useContext, useEffect, useSyncExternalStore} from 'react';
+import React, {act, Activity, createContext, useContext, useEffect, useSyncExternalStore} from 'react';
 
 /**
  * The primitives a test needs to run one structure on useEffect and on useScreenActivityEffect and compare the effect
  * calls commit by commit: the two screens a non-top screen behavior builds, the effect that records its calls, and the
  * recorder around them. A test writes the tree it renders itself, so nothing here holds a table of structures.
+ *
+ * A recorded commit holds the work the hook runs right after it as well: the hook releases a component removed while
+ * hidden once the commit is over, from a microtask React does not wait for, so every step settles before it drains.
  */
 
 type AnyEffectHook = (setup: EffectCallback, deps?: DependencyList) => void;
@@ -30,6 +32,12 @@ function drainLog(): string[] {
 
 function resetLog() {
     calls = [];
+}
+
+/** Runs what the hook queued for right after the last commit, which is where it releases a component removed while hidden. */
+async function settle(): Promise<void> {
+    // eslint-disable-next-line testing-library/no-unnecessary-act -- the empty act is the point: it runs the microtask the hook queued and commits the updates a release makes
+    await act(async () => {});
 }
 
 /** A setup that logs its own call and returns a cleanup logging the matching one under the same name. */
@@ -80,7 +88,7 @@ function LiveScreen({children}: ScreenProps) {
 
 /** A screen on the 'activity' behavior, which is what ScreenActivityWrapper builds around the screen content. */
 function ActivityScreen({isHidden, children}: ScreenProps) {
-    return <ActivityWithEffectBoundary mode={isHidden ? 'hidden' : 'visible'}>{children}</ActivityWithEffectBoundary>;
+    return <Activity mode={isHidden ? 'hidden' : 'visible'}>{children}</Activity>;
 }
 
 type LeafOverride = {content: ReactNode} | null;
@@ -94,7 +102,7 @@ const leafStore = {
         return () => leafStore.listeners.delete(listener);
     },
     getSnapshot: (): LeafOverride => leafStore.override,
-    /** Sets the override and re-renders every Leaf, as one commit that starts below the boundary. */
+    /** Sets the override and re-renders every Leaf, as one commit that starts below the screen. */
     publish: (override: LeafOverride) => {
         leafStore.override = override;
         for (const listener of leafStore.listeners) {
@@ -105,7 +113,7 @@ const leafStore = {
 
 /**
  * Renders its children, or the content of the last leaf step, so a leaf step changes the content of the screen in a
- * commit that starts below every boundary and renders nothing above it. A render step clears the override before it
+ * commit that starts below the screen and renders nothing above it. A render step clears the override before it
  * renders, so a step of either kind describes the whole content of the screen.
  */
 function Leaf({children}: {children: ReactNode}) {
@@ -116,7 +124,7 @@ function Leaf({children}: {children: ReactNode}) {
 /** One rendered state of a screen: what it holds, and whether the screen on top of it covers it. */
 type RenderStep = {isHidden: boolean; children: ReactNode};
 
-/** A change of what the Leaf of the screen holds, as a commit that starts below the boundary and renders nothing above it. */
+/** A change of what the Leaf of the screen holds, as a commit that starts below the screen and renders nothing above it. */
 type LeafStep = {leafContent: ReactNode};
 
 type Step = RenderStep | LeafStep;
@@ -141,13 +149,14 @@ function isLeafStep(step: Step | ReactElement): step is LeafStep {
  * The calls of every commit of the trees given, the last commit being the screen leaving the navigation stack. A leaf
  * step among them commits through the Leaf the previous tree rendered rather than through a render of the root.
  */
-function record(trees: ReadonlyArray<ReactElement | LeafStep>): string[][] {
+async function record(trees: ReadonlyArray<ReactElement | LeafStep>): Promise<string[][]> {
     const [first, ...rest] = trees;
     if (first === undefined || isLeafStep(first)) {
         throw new Error('The first step has to render the screen.');
     }
     leafStore.override = null;
     const {rerender, unmount} = render(first);
+    await settle();
     const commits = [drainLog()];
 
     for (const tree of rest) {
@@ -158,17 +167,19 @@ function record(trees: ReadonlyArray<ReactElement | LeafStep>): string[][] {
             leafStore.override = null;
             rerender(tree);
         }
+        await settle();
         commits.push(drainLog());
     }
 
     unmount();
+    await settle();
     commits.push(drainLog());
 
     return commits;
 }
 
 /** Puts the steps through one screen on one hook, which is one of the configurations a test compares. */
-function runOn(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: readonly Step[]): string[][] {
+function runOn(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: readonly Step[]): Promise<string[][]> {
     const tree = (step: RenderStep) => (
         <AnyEffectHookProvider hook={hook}>
             <Screen isHidden={step.isHidden}>{step.children}</Screen>
@@ -181,16 +192,16 @@ function runOn(hook: AnyEffectHook, Screen: ComponentType<ScreenProps>, steps: r
  * The same steps under the four configurations. liveUseEffect is the baseline of a screen that stays live in the
  * background, activityUseEffect is what a screen gets today, and activityScreenActivityEffect is the hook at work.
  */
-function runEveryConfig(steps: readonly Step[]) {
+async function runEveryConfig(steps: readonly Step[]) {
     return {
-        liveUseEffect: runOn(useEffect, LiveScreen, steps),
-        liveScreenActivityEffect: runOn(useScreenActivityEffect, LiveScreen, steps),
-        activityUseEffect: runOn(useEffect, ActivityScreen, steps),
-        activityScreenActivityEffect: runOn(useScreenActivityEffect, ActivityScreen, steps),
+        liveUseEffect: await runOn(useEffect, LiveScreen, steps),
+        liveScreenActivityEffect: await runOn(useScreenActivityEffect, LiveScreen, steps),
+        activityUseEffect: await runOn(useEffect, ActivityScreen, steps),
+        activityScreenActivityEffect: await runOn(useScreenActivityEffect, ActivityScreen, steps),
     };
 }
 
-type Runs = ReturnType<typeof runEveryConfig>;
+type Runs = Awaited<ReturnType<typeof runEveryConfig>>;
 
 /** All four configurations ran the steps identically, which is the claim for every structure that never hides. */
 function expectEveryConfigToMatch(runs: Runs, expected: string[][]) {
@@ -217,6 +228,7 @@ export {
     resetLog,
     runEveryConfig,
     runOn,
+    settle,
     Subject,
     track,
     useAnyEffect,

@@ -1,12 +1,11 @@
 import AlwaysPaintedView from '@components/AlwaysPaintedView';
 
 import useDeferVisibleUntilFocusTransitionEnd from '@hooks/useDeferVisibleUntilFocusTransitionEnd';
-import ActivityWithEffectBoundary from '@hooks/useScreenActivityEffect/ActivityWithEffectBoundary';
 
 import type NonTopScreenWrapperProps from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/nonTopScreenWrapperTypes';
 
 import {useIsFocused} from '@react-navigation/native';
-import React, {useEffect, useState, useSyncExternalStore} from 'react';
+import React, {Activity, useEffect, useState, useSyncExternalStore} from 'react';
 
 import DevStrictModeMountGate from './StrictModeMountGate';
 import {getIsWindowSizeChanging, subscribeToWindowSizeChange} from './windowSizeChangeStore';
@@ -78,15 +77,12 @@ function ScreenActivityWrapper({isScreenBlurred, children}: NonTopScreenWrapperP
 
     const mode = isKeptVisible || isShownAfterTransition || (!isScreenCovered && isRevealLatched) ? 'visible' : 'hidden';
 
-    // The Activity comes with the boundary that serves it, because a hide disconnects every effect inside the Activity
-    // while the screen is still on the stack, and a component removed while hidden gets no passive cleanup of its own.
-    // The boundary pays the releases of useScreenActivityEffect that React reports and never asks for.
     return (
-        <ActivityWithEffectBoundary mode={mode}>
+        <Activity mode={mode}>
             <AlwaysPaintedView inert={isScreenCovered}>
                 <DevStrictModeMountGate>{children}</DevStrictModeMountGate>
             </AlwaysPaintedView>
-        </ActivityWithEffectBoundary>
+        </Activity>
     );
 }
 
