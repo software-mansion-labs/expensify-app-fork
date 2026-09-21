@@ -98,7 +98,7 @@ function resolveActiveServer(value: Server | undefined, environment: ValueOf<typ
  * The state the app itself runs on. Derived on demand rather than cached, so that a preference stored before
  * the environment resolved is still applied once it does.
  */
-function currentActiveServerState(): ActiveServerState {
+function getCurrentActiveServerState(): ActiveServerState {
     // An unread preference looks the same as an unset one, and defaulting to staging would ignore an opt-out,
     // so until it is read it stands in as an explicit production
     return resolveActiveServer(hasReadStoredServer ? storedServer : CONST.SERVER.PRODUCTION, envName);
@@ -110,7 +110,7 @@ function currentActiveServerState(): ActiveServerState {
  */
 function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request<TKey>, 'shouldUseSecure' | 'shouldSkipWebProxy' | 'command' | 'server'>>, forceProduction = false): string {
     const shouldUseSecure = request?.shouldUseSecure ?? false;
-    const server = forceProduction ? CONST.SERVER.PRODUCTION : (request?.server ?? currentActiveServerState().activeServer);
+    const server = forceProduction ? CONST.SERVER.PRODUCTION : (request?.server ?? getCurrentActiveServerState().activeServer);
 
     if (server === CONST.SERVER.QA) {
         // No web-proxy branch: Cloudflare Access answers the preflight and matches the bearer against the
@@ -147,11 +147,11 @@ function getCommandURL<TKey extends OnyxKey>(request: Request<TKey>): string {
 }
 
 function isQAServerActive(): boolean {
-    return currentActiveServerState().activeServer === CONST.SERVER.QA;
+    return getCurrentActiveServerState().activeServer === CONST.SERVER.QA;
 }
 
 function getActiveServer(): Server {
-    return currentActiveServerState().activeServer;
+    return getCurrentActiveServerState().activeServer;
 }
 
 function waitForActiveServerHydration(): Promise<void> {
