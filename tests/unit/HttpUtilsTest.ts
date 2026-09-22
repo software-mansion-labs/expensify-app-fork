@@ -96,6 +96,15 @@ describe('HttpUtils', () => {
         await expect(HttpUtils.xhr(WRITE_COMMANDS.PAY_MONEY_REQUEST, {})).resolves.toMatchObject({jsonCode: CONST.JSON_CODE.EXP_ERROR, message: 'Some other error'});
     });
 
+    it('rejects a jsonCode-503 response so the queue rolls back and retries it', async () => {
+        mockFetchSequence([{status: 200, body: {jsonCode: CONST.JSON_CODE.SERVICE_UNAVAILABLE, message: 'This action is unavailable right now. Please try again shortly.'}}]);
+
+        await expect(HttpUtils.xhr(WRITE_COMMANDS.ADD_COMMENT, {})).rejects.toMatchObject({
+            message: CONST.ERROR.SERVICE_UNAVAILABLE,
+            status: '503',
+        });
+    });
+
     it('still maps the duplicate-record message to DUPLICATE_RECORD when it arrives as a 400', async () => {
         mockFetchSequence([{status: 200, body: {jsonCode: CONST.JSON_CODE.BAD_REQUEST, message: '400 Unique Constraints Violation'}}]);
 
