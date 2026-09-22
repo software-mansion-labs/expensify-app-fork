@@ -3,7 +3,7 @@ import CONFIG from '@src/CONFIG';
 /** Loose about labels: custom Access domains exist */
 const TEAM_DOMAIN_SHAPE = /^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
 
-/** RFC 8252 §7.2: the callback path both platforms claim. Web serves it, native claims it as an app link */
+/** Web-only. Native claims CONST.CLOUDFLARE_ACCESS.NATIVE_OAUTH_CALLBACK_PATH so a browser sign-in never lands in the app */
 const OAUTH_CALLBACK_PATH = '/oauth/callback';
 
 function parseHTTPSOrigin(value: string): string | null {
@@ -59,4 +59,4 @@ function matchesQAOrigin(url: string): boolean {
     }
 }
 
-export {OAUTH_CALLBACK_PATH, getQAOrigins, getQAResource, isQAAuthConfigValid, matchesQAOrigin, parseHTTPSOrigin};
+export {OAUTH_CALLBACK_PATH, getQAOrigins, getQAResource, isQAAuthConfigValid, matchesQAOrigin};
