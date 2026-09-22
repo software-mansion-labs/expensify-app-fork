@@ -1,6 +1,5 @@
 import ScrollView from '@components/ScrollView';
 
-import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {LayoutChangeEvent} from 'react-native';
@@ -8,6 +7,11 @@ import type {LayoutChangeEvent} from 'react-native';
 import React from 'react';
 import {View} from 'react-native';
 
+import type {ColumnResizeController} from './columnResize/useColumnResize/types';
+
+import ColumnResizeIndicator from './columnResize/ColumnResizeIndicator';
+import ColumnResizeScope from './columnResize/ColumnResizeScope';
+import {getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
 import {getTableContainerAccessibilityProps} from './tableAccessibility';
 import TableBody from './TableBody';
 import TableHeader from './TableHeader';
@@ -38,8 +42,19 @@ type TableSemanticContainerProps = {
      * The width the rows need when the columns don't fit, which scrolls the header/body run horizontally as one so the
      * header stays aligned with its rows. Set only for tables whose filter bar isn't in the list; the others are
      * scrolled by the list itself (see `TableBody`).
+     *
+     * A resizable table passes an expression summing the columns' width custom properties instead of a number, and
+     * passes it always: the rows then scroll at whatever the columns currently add up to, so dragging one past the
+     * table's edge starts scrolling without React rendering anything. While nothing is dragged the expression resolves
+     * to the table's own width, so the scroller sits still.
      */
-    scrollWidth: number | undefined;
+    scrollWidth: number | string | undefined;
+
+    /**
+     * Owns the element the columns' width custom properties are written on, and the line drawn at the edge being
+     * hovered or dragged. `undefined` when the table isn't resizable.
+     */
+    columnResize: ColumnResizeController | undefined;
 
     /**
      * Measures the width the table's columns have to share. This node is the right thing to measure because it keeps the
@@ -63,11 +78,10 @@ type TableSemanticContainerProps = {
  * rows as one. Tables with an in-list filter bar can't use it — the scroller would drag that bar sideways too — so
  * their list takes the horizontal axis itself (see `TableBody`).
  */
-function TableSemanticContainer({isEnabled, title, rowCount, columnCount, hasHeaderRow, rendersBodyWhenEmpty, scrollWidth, onLayout, children}: TableSemanticContainerProps) {
+function TableSemanticContainer({isEnabled, title, rowCount, columnCount, hasHeaderRow, rendersBodyWhenEmpty, scrollWidth, columnResize, onLayout, children}: TableSemanticContainerProps) {
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
 
-    const shouldWrapTableRun = isEnabled || onLayout !== undefined || scrollWidth !== undefined;
+    const shouldWrapTableRun = isEnabled || onLayout !== undefined || scrollWidth !== undefined || !!columnResize;
     if (!shouldWrapTableRun) {
         return children;
     }
@@ -79,7 +93,7 @@ function TableSemanticContainer({isEnabled, title, rowCount, columnCount, hasHea
     // Use `React.Children.toArray` so the children's top-level keys (`.0`, `.1`, …) match the wrapped branch below;
     // otherwise React remounts a child across the empty↔non-empty boundary — for `Table.FilterBar` that runs its
     // unmount cleanup and wipes the active search string.
-    if (isEnabled && rowCount === 0 && !rendersBodyWhenEmpty && onLayout === undefined && scrollWidth === undefined) {
+    if (isEnabled && rowCount === 0 && !rendersBodyWhenEmpty && onLayout === undefined && scrollWidth === undefined && !columnResize) {
         return React.Children.toArray(children);
     }
 
@@ -102,26 +116,36 @@ function TableSemanticContainer({isEnabled, title, rowCount, columnCount, hasHea
                 {...getTableContainerAccessibilityProps(isEnabled, title, rowCount, columnCount, hasHeaderRow)}
             >
                 {rowGroup}
+
+                {/* Positioned against this node, which is the one box spanning the header row and every data row. */}
+                <ColumnResizeIndicator columnResize={columnResize} />
             </View>
         );
 
         // The columns don't fit, so the header and the body scroll horizontally as one and stay aligned. The content
         // container carries the width they need, and the rows fill it, matching how the Search table scrolls.
         renderedChildren.push(
-            scrollWidth ? (
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator
-                    key={`tableSemanticContainerScroll-${renderedChildren.length}`}
-                    style={[styles.flex1, styles.mnh0]}
-                    contentContainerStyle={StyleUtils.getWidthStyle(scrollWidth)}
-                    onLayout={onLayout}
-                >
-                    {rowGroupContainer}
-                </ScrollView>
-            ) : (
-                rowGroupContainer
-            ),
+            // The scope generates no box, so wrapping the run in it changes nothing about the layout — it only gives the
+            // resize interaction an element to write the column widths onto, above both the scroller and the rows so
+            // that every one of them inherits from it.
+            <ColumnResizeScope
+                key={`tableSemanticContainerScope-${renderedChildren.length}`}
+                onScopeElement={columnResize?.setScopeElement}
+            >
+                {scrollWidth ? (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator
+                        style={[styles.flex1, styles.mnh0]}
+                        contentContainerStyle={getColumnsWidthStyle(scrollWidth)}
+                        onLayout={onLayout}
+                    >
+                        {rowGroupContainer}
+                    </ScrollView>
+                ) : (
+                    rowGroupContainer
+                )}
+            </ColumnResizeScope>,
         );
         rowGroup = [];
     };

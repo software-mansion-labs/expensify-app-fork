@@ -54,6 +54,7 @@ const translations: TranslationDeepObject<typeof en> = {
         count: 'Liczba',
         cancel: 'Anuluj',
         dismiss: 'Zamknij',
+        resizeColumn: ({columnName}: {columnName: string}) => `Zmień szerokość kolumny ${columnName}`,
         proceed: 'Kontynuuj',
         unshare: 'Cofnij udostępnianie',
         yes: 'Tak',

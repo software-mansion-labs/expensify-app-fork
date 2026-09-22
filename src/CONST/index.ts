@@ -9073,6 +9073,57 @@ const CONST = {
             /** How wide a free-text column may be sized for its content once the table scrolls, so one unusually long value doesn't push every column after it out of view. A table that still fits its columns caps nothing: the spare room is there to be used. */
             MAX_FREE_TEXT_COLUMN_WIDTH: 180,
         },
+
+        /**
+         * Keys the widths of a table's columns are stored under, one per set of columns rather than one per screen: two
+         * tables showing the same columns share their widths, and a table showing a different set does not inherit them.
+         */
+        COLUMN_RESIZING_IDS: {
+            AGENTS: 'agents',
+            DOMAIN_ADMINS: 'domainAdmins',
+            DOMAIN_GROUPS: 'domainGroups',
+            DOMAIN_LIST: 'domainList',
+            DOMAIN_MEMBERS: 'domainMembers',
+            PERSONAL_EXPENSE_RULES: 'personalExpenseRules',
+            REPORT_PARTICIPANTS: 'reportParticipants',
+            ROOM_MEMBERS: 'roomMembers',
+            WORKSPACE_CATEGORIES: 'workspaceCategories',
+            WORKSPACE_CATEGORY_RULES: 'workspaceCategoryRules',
+            WORKSPACE_COMPANY_CARDS: 'workspaceCompanyCards',
+            WORKSPACE_DISTANCE_RATES: 'workspaceDistanceRates',
+            WORKSPACE_EXPENSE_DEFAULTS: 'workspaceExpenseDefaults',
+            WORKSPACE_EXPENSIFY_CARDS: 'workspaceExpensifyCards',
+            WORKSPACE_LIST: 'workspaceList',
+            WORKSPACE_MEMBERS: 'workspaceMembers',
+            WORKSPACE_PER_DIEM: 'workspacePerDiem',
+            WORKSPACE_REPORT_FIELD_LIST_VALUES: 'workspaceReportFieldListValues',
+            WORKSPACE_ROOMS: 'workspaceRooms',
+            WORKSPACE_SPEND_RULES: 'workspaceSpendRules',
+            WORKSPACE_TAGS: 'workspaceTags',
+            WORKSPACE_TAXES: 'workspaceTaxes',
+            WORKSPACE_VENDORS: 'workspaceVendors',
+            WORKSPACE_VIEW_TAGS: 'workspaceViewTags',
+        },
+
+        COLUMN_RESIZE: {
+            /** How narrow the user may drag a column. Low enough to hide most of a cell's content, since the user asked for it, but never so narrow that the column's own edge becomes unreachable. */
+            MIN_WIDTH: 48,
+
+            /** How wide the user may drag a column, so one drag can't push every column after it out of reach. */
+            MAX_WIDTH: 1200,
+
+            /** How far one arrow-key press moves a column's edge, for resizing without a pointer. */
+            KEYBOARD_STEP: 8,
+
+            /** How far the pointer may travel while pressing a column's edge and still count as a click rather than a drag, since a click on a mouse rarely lands on exactly the pixel it started from. */
+            DRAG_SLOP: 3,
+
+            /** Width of the invisible strip centred on a column's edge that reveals the resize affordance and starts a drag. */
+            HANDLE_HIT_WIDTH: 12,
+
+            /** Width of the line drawn down the table while a column's edge is hovered or dragged. */
+            INDICATOR_WIDTH: 2,
+        },
     },
 
     SENTRY_LABEL: {

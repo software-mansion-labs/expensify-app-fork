@@ -6,7 +6,6 @@ import Text from '@components/Text';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
-import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -22,6 +21,8 @@ import {StyleSheet, View} from 'react-native';
 import type {TableColumn, TableData} from './types';
 
 import {rendersColumnHeaderInListHeader} from './buildTableListData';
+import ColumnResizeHandle from './columnResize/ColumnResizeHandle';
+import {getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
 import getGridTemplateColumns from './getGridTemplateColumns';
 import {getColumnHeaderAccessibilityProps, getRowAccessibilityProps, shouldUseTableSemantics} from './tableAccessibility';
 import {useTableContext} from './TableContext';
@@ -69,7 +70,6 @@ type TableHeaderProps = ViewProps & {
 function TableHeader<DataType extends TableData, ColumnKey extends string = string>({style, isStickyListHeader = false, isAccessibilityHidden = false, ...props}: TableHeaderProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
     // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
     const {shouldUseNarrowLayout, isSmallScreenWidth} = useResponsiveLayout();
@@ -141,6 +141,12 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
                 // Use Grid on web when available (will override flex if supported)
                 styles.dGrid,
                 !shouldUseNarrowTableLayout && {gridTemplateColumns: gridTemplateColumns.join(' ')},
+                // `space-between` above is for the flexbox fallback, where the columns are flexible and fill the row
+                // whatever it measures. Explicit tracks don't have to fill it — a column the user narrowed leaves room
+                // at the end of the row on purpose — and grid would spread that room *between* the tracks, sliding the
+                // headings sideways out from under the cells they label. The rows pack their own tracks to the start, so
+                // the headings have to as well.
+                !!dynamicGridTemplateColumns && !shouldUseNarrowTableLayout && styles.justifyContentStart,
                 style,
             ]}
             {...getRowAccessibilityProps(isTableSemanticsEnabled, 0, true)}
@@ -212,7 +218,7 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
     // columns. Needs an explicit width because the list header stretches to the scrolled content, which would leave the
     // background and bottom border short of the columns. That background is what the rows scroll under once it's stuck.
     if (rendersColumnHeaderInListHeader(tableListMetadata) && !!scrollWidth) {
-        return <View style={[styles.appBG, StyleUtils.getWidthStyle(scrollWidth)]}>{header}</View>;
+        return <View style={[styles.appBG, getColumnsWidthStyle(scrollWidth)]}>{header}</View>;
     }
 
     if (!isStickyListHeader) {
@@ -248,6 +254,7 @@ function TableHeaderColumn<DataType extends TableData, ColumnKey extends string 
 
     const {
         activeSorting,
+        columnResize,
         tableMethods: {updateSorting, toggleColumnSorting},
     } = useTableContext<DataType, ColumnKey>();
 
@@ -344,6 +351,18 @@ function TableHeaderColumn<DataType extends TableData, ColumnKey extends string 
             {...getColumnHeaderAccessibilityProps(true, !!column.sortable, isSortingByColumn, activeSorting.order, columnIndex)}
         >
             {sortButton}
+
+            {/*
+             * The handle overhangs this cell's right edge, which is where the column ends, so nothing has to work out
+             * where that is. It is left out of the sticky header's hidden twin, so a sticky table doesn't end up with
+             * two handles stacked on the same edge, and renders nothing at all for a column the user can't drag.
+             */}
+            {!isAccessibilityHidden && (
+                <ColumnResizeHandle
+                    columnResize={columnResize}
+                    columnKey={column.key}
+                />
+            )}
         </View>
     );
 }

@@ -9,9 +9,11 @@ import variables from '@styles/variables';
 import CONST from '@src/CONST';
 
 import type {DynamicColumnConstraints} from './calculateDynamicColumnWidths';
+import type {ColumnWidthOverrides, ResizableColumn} from './columnResize/types';
 import type {TableColumn, TableData} from './types';
 
-import calculateDynamicColumnWidths from './calculateDynamicColumnWidths';
+import calculateDynamicColumnWidths, {distributeEqualWidths} from './calculateDynamicColumnWidths';
+import {getColumnWidthValue, getGrowableColumnTrack, getRowWidthExpression} from './columnResize/columnWidthExpressions';
 
 const {MIN_FREE_TEXT_COLUMN_WIDTH} = CONST.TABLES.DYNAMIC_COLUMNS;
 
@@ -33,7 +35,81 @@ type UseDynamicColumnWidthsParams<DataType extends TableData, ColumnKey extends 
 
     /** Whether the leading selection checkbox column is rendered, since it takes width from the data columns. */
     hasSelectionColumn: boolean;
+
+    /**
+     * Whether the user can drag the columns' edges. The columns then resolve to px tracks read from a custom property
+     * even when they would otherwise be left equal, because a drag needs a width to start from.
+     */
+    isColumnResizingEnabled: boolean;
+
+    /** Widths the user already dragged this table's columns to. Each one is honored as if the column declared it. */
+    columnWidthOverrides: ColumnWidthOverrides | undefined;
 };
+
+type UseDynamicColumnWidthsResult = {
+    /**
+     * The CSS grid tracks the header and every row must render. `undefined` means the columns keep their static tracks
+     * (fixed widths and equal `1fr` shares).
+     */
+    gridTemplateColumns: string[] | undefined;
+
+    /**
+     * The width the rows need when the columns are wider than the table, so the caller scrolls them horizontally. An
+     * expression over the columns' custom properties rather than a number while the columns are resizable, so dragging
+     * one past the table's edge starts scrolling without React rendering anything.
+     */
+    scrollWidth: number | string | undefined;
+
+    /** The columns whose right edge the user can drag, in column order. Empty unless the columns are resizable. */
+    resizableColumns: ResizableColumn[];
+
+    /**
+     * Keys of the columns that are laid out by sharing the row. A drag pins these where they are, so the columns the
+     * user never touched don't re-share the row and slide out from under the result they were looking at. Empty unless
+     * the columns are resizable.
+     */
+    columnKeysToFreeze: string[];
+
+    /** What each column resolved to, which is the width a drag on its edge starts from. */
+    resolvedColumnWidths: Record<string, number>;
+};
+
+/**
+ * Reads a stored column width back as a whole number of px.
+ *
+ * Deliberately neither floored at the narrowest a column may be *dragged* to nor capped at the widest. Those bounds
+ * belong to the gesture — they stop one drag collapsing a column or pushing every column after it out of reach — and a
+ * stored width doesn't only come from a gesture. It is also how the table remembers a column it froze at whatever the
+ * resolver or the column's own style had given it, which is legitimately narrower than a draggable minimum for an icon
+ * column and legitimately wider than a draggable maximum on a wide window.
+ */
+function getStoredColumnWidth(width: number): number {
+    return Math.max(Math.round(width), 0);
+}
+
+/**
+ * Which column takes the row's leftover width, so the run of headless columns at the end of a row — the arrow that
+ * opens it, a menu, an icon — stays pinned to the table's right edge instead of drifting left as the columns before it
+ * are narrowed. That is the first column of that run: everything after it is pushed right along with it.
+ *
+ * `undefined` for a table whose last column has a heading. Its columns are all the user's to size, so there is no
+ * chrome to keep pinned and the room a narrowed column gives up is simply left empty at the end of the row.
+ */
+function getGrowableColumnKey<DataType extends TableData, ColumnKey extends string>(columns: Array<TableColumn<ColumnKey, DataType>>): ColumnKey | undefined {
+    let growableColumnKey: ColumnKey | undefined;
+
+    for (let index = columns.length - 1; index >= 0; index--) {
+        const column = columns.at(index);
+
+        if (!column || column.label) {
+            break;
+        }
+
+        growableColumnKey = column.key;
+    }
+
+    return growableColumnKey;
+}
 
 /**
  * Measures how wide a column's widest cell content renders, or `null` when the platform can't measure text.
@@ -96,10 +172,12 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     tableWidth,
     isEnabled,
     hasSelectionColumn,
-}: UseDynamicColumnWidthsParams<DataType, ColumnKey>): {gridTemplateColumns: string[] | undefined; scrollWidth: number | undefined} {
+    isColumnResizingEnabled,
+    columnWidthOverrides,
+}: UseDynamicColumnWidthsParams<DataType, ColumnKey>): UseDynamicColumnWidthsResult {
     const styles = useThemeStyles();
 
-    const noDynamicWidths = {gridTemplateColumns: undefined, scrollWidth: undefined};
+    const noDynamicWidths: UseDynamicColumnWidthsResult = {gridTemplateColumns: undefined, scrollWidth: undefined, resizableColumns: [], columnKeysToFreeze: [], resolvedColumnWidths: {}};
 
     // Checked before anything else, so native never walks the data to gather text that it can't measure anyway.
     if (!isEnabled || tableWidth <= 0 || !canMeasureText()) {
@@ -107,6 +185,11 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     }
 
     const dynamicColumns: Array<TableColumn<ColumnKey, DataType>> = [];
+
+    // What each column that declared its own width is laid out at, which is that width unless the user dragged the
+    // column somewhere else. A column is resizable whether or not it declared a width, so this can differ from what the
+    // column configuration says.
+    const fixedColumnWidths = new Map<ColumnKey, number>();
     let fixedColumnsWidth = 0;
 
     for (const column of columns) {
@@ -117,7 +200,11 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
         }
 
         if (typeof column.width === 'number') {
-            fixedColumnsWidth += column.width;
+            const overriddenWidth = isColumnResizingEnabled ? columnWidthOverrides?.[column.key] : undefined;
+            const fixedWidth = overriddenWidth === undefined ? column.width : getStoredColumnWidth(overriddenWidth);
+
+            fixedColumnWidths.set(column.key, fixedWidth);
+            fixedColumnsWidth += fixedWidth;
         } else {
             dynamicColumns.push(column);
         }
@@ -138,6 +225,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     }
 
     const constraints: DynamicColumnConstraints[] = [];
+    const contentWidthByColumnKey = new Map<ColumnKey, number>();
 
     for (const column of dynamicColumns) {
         const contentWidth = measureColumnContentWidth(column, data);
@@ -151,6 +239,24 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
         // A column has to fit its header label as well as its cells, so the label is part of what its content needs
         // rather than a separate floor.
         const columnContentWidth = Math.max(contentWidth, headerLabelWidth);
+
+        // Only a column that said how to read the text it renders has a content width worth fitting to. For the rest
+        // this measurement is the header label alone, which is not "as wide as its content" by any reading, so they are
+        // left without one and a click on their edge does nothing rather than shrinking them to their heading.
+        if (column.dynamicSizing) {
+            contentWidthByColumnKey.set(column.key, columnContentWidth);
+        }
+
+        // A width the user dragged this column to outranks everything the content says: the column is pinned there and
+        // takes no part in sharing the row, which is the same shape a column sized to hug its content already uses.
+        const overriddenWidth = isColumnResizingEnabled ? columnWidthOverrides?.[column.key] : undefined;
+
+        if (overriddenWidth !== undefined) {
+            const pinnedWidth = getStoredColumnWidth(overriddenWidth);
+
+            constraints.push({contentWidth: pinnedWidth, minWidth: pinnedWidth, maxWidth: pinnedWidth});
+            continue;
+        }
 
         // A column holding a known, short set of values is never squeezed below its content, so it never truncates.
         // A free-text column is squeezed no further than a readable width, or its content when that is narrower.
@@ -170,31 +276,97 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
 
     const {widths, shouldScrollHorizontally} = calculateDynamicColumnWidths(constraints, availableWidth);
 
-    // The columns fit equally, which is exactly what the static `1fr` tracks already do.
-    if (widths.length === 0) {
+    // The columns fit equally, which is exactly what the static `1fr` tracks already do — unless the user can drag
+    // them, which needs each column to resolve to a width the drag can start from.
+    if (widths.length === 0 && !isColumnResizingEnabled) {
         return noDynamicWidths;
     }
+
+    const resolvedWidths = widths.length > 0 ? widths : distributeEqualWidths(dynamicColumns.length, availableWidth);
 
     // Keyed by column rather than tracked with a running index, so the tracks can be built without mutating a counter
     // from inside the mapping callback (which the React Compiler can't compile).
     const widthByColumnKey = new Map<ColumnKey, number>();
+    const resolvedColumnWidths: Record<string, number> = {};
     for (const [index, column] of dynamicColumns.entries()) {
-        widthByColumnKey.set(column.key, widths.at(index) ?? 0);
+        const resolvedWidth = resolvedWidths.at(index) ?? 0;
+
+        widthByColumnKey.set(column.key, resolvedWidth);
+        resolvedColumnWidths[column.key] = resolvedWidth;
     }
 
-    const gridTemplateColumns = columns.map((column) => (typeof column.width === 'number' ? `${column.width}px` : `${widthByColumnKey.get(column.key) ?? 0}px`));
-
-    if (!shouldScrollHorizontally) {
-        return {gridTemplateColumns, scrollWidth: undefined};
+    for (const [columnKey, fixedWidth] of fixedColumnWidths) {
+        resolvedColumnWidths[columnKey] = fixedWidth;
     }
 
-    // The rows are wider than the table, so the caller scrolls them horizontally at exactly the width they need. This
-    // adds back all of the row chrome subtracted above, margin included: the rows keep their horizontal margin inside
-    // the scrolled content, so leaving it out would make the content container too narrow and clip the rows' trailing
-    // edge at the end of the scroll.
-    const scrollWidth = widths.reduce((total, width) => total + width, 0) + fixedColumnsWidth + selectionColumnWidth + totalGapWidth + rowChromeWidth;
+    if (!isColumnResizingEnabled) {
+        const gridTemplateColumns = columns.map((column) => `${fixedColumnWidths.get(column.key) ?? widthByColumnKey.get(column.key) ?? 0}px`);
 
-    return {gridTemplateColumns, scrollWidth};
+        if (!shouldScrollHorizontally) {
+            return {...noDynamicWidths, gridTemplateColumns, resolvedColumnWidths};
+        }
+
+        // The rows are wider than the table, so the caller scrolls them horizontally at exactly the width they need.
+        // This adds back all of the row chrome subtracted above, margin included: the rows keep their horizontal margin
+        // inside the scrolled content, so leaving it out would make the content container too narrow and clip the rows'
+        // trailing edge at the end of the scroll.
+        const scrollWidth = resolvedWidths.reduce((total, width) => total + width, 0) + fixedColumnsWidth + selectionColumnWidth + totalGapWidth + rowChromeWidth;
+
+        return {...noDynamicWidths, gridTemplateColumns, scrollWidth, resolvedColumnWidths};
+    }
+
+    const growableColumnKey = getGrowableColumnKey(columns);
+
+    // What each column is laid out at, as a value that can be both summed into the row's width and used as a track.
+    // A resizable column reads its width from a custom property, so a drag repaints by rewriting one property instead of
+    // re-rendering the header and every row. The resolved width is the property's fallback, which is what paints until a
+    // drag writes one.
+    const columnWidthValues = columns.map((column) => getColumnWidthValue(column.key, fixedColumnWidths.get(column.key) ?? widthByColumnKey.get(column.key) ?? 0));
+
+    // The row's width is summed from the widths rather than from the tracks, so what the growable track grows into is
+    // the room the row actually has and not room the sum went and asked for.
+    const gridTemplateColumns = columnWidthValues.map((widthValue, index) => (columns.at(index)?.key === growableColumnKey ? getGrowableColumnTrack(widthValue) : widthValue));
+
+    // Every width the row lays out, in the order the header and the rows render them. The selection checkbox takes a
+    // column of the row like any other.
+    const rowWidthValues = hasSelectionColumn ? [`${selectionColumnWidth}px`, ...columnWidthValues] : columnWidthValues;
+    const resizableColumns: ResizableColumn[] = [];
+    const columnKeysToFreeze: string[] = [];
+
+    for (const column of columns) {
+        // Only the columns that share the row are held still when one of them is dragged. A column that declared its own
+        // width never took part in sharing it, so it can't drift and has nothing to pin, and the growable column is the
+        // one the leftover width is meant to reach.
+        if (fixedColumnWidths.get(column.key) === undefined && column.key !== growableColumnKey) {
+            columnKeysToFreeze.push(column.key);
+        }
+
+        // A column with no heading is an icon, a checkbox or the arrow that opens a row: it holds one fixed thing rather
+        // than content of a length the user might want more or less room for, so there is nothing to resize.
+        if (!column.label) {
+            continue;
+        }
+
+        resizableColumns.push({
+            columnKey: column.key,
+            columnLabel: column.label,
+            // A column that declared a width has no content measurement, so a click on its edge puts it back to the
+            // width it declared. A column with neither is left without one, and a click leaves it alone.
+            contentWidth: contentWidthByColumnKey.get(column.key) ?? (typeof column.width === 'number' ? column.width : undefined),
+        });
+    }
+
+    // The rows scroll at whatever the columns currently add up to rather than at a width measured once, so widening a
+    // column past the table's edge starts scrolling mid-drag. Narrowing one never takes the table below its own width:
+    // the expression is floored there, and the room the column gave up goes to the growable track at the end of the row,
+    // which keeps the arrow that opens a row against the table's edge.
+    return {
+        gridTemplateColumns,
+        scrollWidth: getRowWidthExpression(rowWidthValues, totalGapWidth + rowChromeWidth),
+        resizableColumns,
+        columnKeysToFreeze,
+        resolvedColumnWidths,
+    };
 }
 
 export default useDynamicColumnWidths;

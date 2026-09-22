@@ -58,6 +58,8 @@ const translations = {
         webGLNotSupported: "Your browser doesn't support WebGL. Please enable it or switch browsers.",
         // @context Refers to closing or hiding a notification or message, not rejecting or ignoring something.
         dismiss: 'Dismiss',
+        // @context Accessible name of the draggable edge between two columns of a table. "columnName" is the heading of the column to the left of the edge.
+        resizeColumn: ({columnName}: {columnName: string}) => `Resize ${columnName} column`,
         // @context Used on a button to continue an action or workflow, not the formal or procedural sense of “to proceed.”
         proceed: 'Proceed',
         unshare: 'Unshare',

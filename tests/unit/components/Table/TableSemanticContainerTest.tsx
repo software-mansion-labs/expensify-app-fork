@@ -65,6 +65,7 @@ function renderContainer(
             hasHeaderRow={hasHeaderRow}
             rendersBodyWhenEmpty={rendersBodyWhenEmpty}
             scrollWidth={undefined}
+            columnResize={undefined}
             onLayout={onLayout}
         >
             {children}
@@ -166,6 +167,7 @@ describe('TableSemanticContainer', () => {
                 hasHeaderRow
                 rendersBodyWhenEmpty={false}
                 scrollWidth={undefined}
+                columnResize={undefined}
                 onLayout={undefined}
             >
                 <TrackedFilterBar />

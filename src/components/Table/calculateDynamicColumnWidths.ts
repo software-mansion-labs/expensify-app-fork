@@ -119,6 +119,27 @@ function distributeAvailableWidth(desiredWidths: number[], maxWidths: number[], 
 }
 
 /**
+ * Splits the available width into equal whole-px columns that still add up to it exactly, handing the rounding
+ * remainder to the first column.
+ *
+ * This is what "every column fits an equal share" means in px. `calculateDynamicColumnWidths` returns no widths in that
+ * case, because equal shares are what a table's columns are already styled to take — but a column the user can drag has
+ * to start from a number.
+ */
+function distributeEqualWidths(columnCount: number, availableWidth: number): number[] {
+    if (columnCount <= 0) {
+        return [];
+    }
+
+    const equalWidth = Math.floor(availableWidth / columnCount);
+    const widths = Array.from({length: columnCount}, () => equalWidth);
+
+    widths[0] += availableWidth - equalWidth * columnCount;
+
+    return widths;
+}
+
+/**
  * Resolves the widths of a table's dynamically sized columns from what their content needs and how much room the table
  * has, implementing the three behaviors from https://github.com/Expensify/App/issues/96510:
  *
@@ -192,4 +213,5 @@ function calculateDynamicColumnWidths(constraints: DynamicColumnConstraints[], a
 }
 
 export default calculateDynamicColumnWidths;
+export {distributeEqualWidths};
 export type {DynamicColumnConstraints};
