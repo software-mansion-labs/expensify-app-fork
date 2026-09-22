@@ -4,7 +4,7 @@ import type {WebBrowserAuthSessionResult} from 'expo-web-browser';
 
 import {WebBrowserResultType} from 'expo-web-browser';
 
-const REDIRECT_URI = 'https://qa.new.expensify.com/oauth/callback';
+const REDIRECT_URI = 'https://staging.new.expensify.com/oauth/native-callback';
 const STATE = 'state-abc';
 const CODE_VERIFIER = 'verifier-abc';
 
