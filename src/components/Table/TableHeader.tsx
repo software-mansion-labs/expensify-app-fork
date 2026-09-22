@@ -22,7 +22,7 @@ import type {TableColumn, TableData} from './types';
 
 import {rendersColumnHeaderInListHeader} from './buildTableListData';
 import ColumnResizeHandle from './columnResize/ColumnResizeHandle';
-import {getColumnsMinWidthStyle, getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
+import {getColumnsMinWidthStyle} from './columnResize/columnWidthExpressions';
 import getGridTemplateColumns from './getGridTemplateColumns';
 import {getColumnHeaderAccessibilityProps, getRowAccessibilityProps, shouldUseTableSemantics} from './tableAccessibility';
 import {useTableContext} from './TableContext';
@@ -219,10 +219,14 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
     );
 
     // Sits in the list header rather than FlashList's sticky-row overlay, so the scroller carries it sideways with the
-    // columns. Needs an explicit width because the list header stretches to the scrolled content, which would leave the
-    // background and bottom border short of the columns. That background is what the rows scroll under once it's stuck.
+    // columns. Held open to the columns' width, because otherwise the background and the bottom border stop short of
+    // them — and that background is what the rows scroll under once it's stuck.
+    //
+    // A floor rather than a width: a width replaces whatever the box stretched to, and the `100%` in it resolves
+    // against this wrapper's own parent rather than against the scrolled content, so columns adding up to less than
+    // the table pulled the header in behind the rows. A floor can only ever widen it.
     if (rendersColumnHeaderInListHeader(tableListMetadata) && !!scrollWidth) {
-        return <View style={[styles.appBG, getColumnsWidthStyle(scrollWidth)]}>{header}</View>;
+        return <View style={[styles.appBG, getColumnsMinWidthStyle(scrollWidth)]}>{header}</View>;
     }
 
     if (!isStickyListHeader) {
