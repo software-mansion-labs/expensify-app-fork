@@ -113,6 +113,7 @@ function WorkspaceExpenseDefaultsTable({rulesData, selectionEnabled, selectedKey
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_EXPENSE_DEFAULTS}
             data={rulesData}
             columns={columns}
             selectionEnabled={selectionEnabled}

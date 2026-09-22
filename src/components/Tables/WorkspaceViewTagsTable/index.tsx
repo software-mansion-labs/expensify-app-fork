@@ -128,6 +128,7 @@ export default function WorkspaceViewTagsTable({tags, hasDependentTags, selectio
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_VIEW_TAGS}
             data={tags}
             columns={columns}
             selectionEnabled={selectionEnabled}

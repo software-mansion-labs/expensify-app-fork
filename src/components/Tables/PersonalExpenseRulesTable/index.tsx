@@ -102,6 +102,7 @@ export default function PersonalExpenseRulesTable({headerComponent, personalExpe
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.PERSONAL_EXPENSE_RULES}
             selectionEnabled
             title={translate('expenseRulesPage.title')}
             initialSortColumn="merchant"

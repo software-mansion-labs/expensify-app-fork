@@ -140,6 +140,7 @@ function WorkspaceRoomsTable({rooms, policyID, highlightedReportID, onSearchStri
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_ROOMS}
             ref={tableRef}
             data={rooms}
             columns={columns}

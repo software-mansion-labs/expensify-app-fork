@@ -10,6 +10,7 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
 
 import type {ListRenderItemInfo} from '@shopify/flash-list';
@@ -119,6 +120,7 @@ export default function WorkspacePerDiemTable({perDiemData, selectionEnabled, se
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_PER_DIEM}
             data={perDiemData}
             columns={columns}
             selectionEnabled={selectionEnabled}

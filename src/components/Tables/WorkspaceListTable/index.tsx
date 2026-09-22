@@ -197,6 +197,7 @@ export default function WorkspaceListTable({ref, workspaces, headerComponent, on
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_LIST}
             ref={ref}
             data={canSeeFilter ? workspaces : workspaces.filter((w) => !w.isArchived)}
             columns={workspaceTableColumns}

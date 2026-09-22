@@ -394,6 +394,7 @@ function WorkspaceCompanyCardsTable({
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_COMPANY_CARDS}
             ref={tableRef}
             data={cardsData}
             columns={columns}

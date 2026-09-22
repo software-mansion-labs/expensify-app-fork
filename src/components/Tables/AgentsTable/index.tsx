@@ -12,6 +12,7 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
 
@@ -110,6 +111,7 @@ export default function AgentsTable({ref, agents, headerComponent, canSelectAgen
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.AGENTS}
             ref={ref}
             data={agents}
             columns={agentsTableColumns}

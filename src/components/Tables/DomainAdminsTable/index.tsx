@@ -156,6 +156,7 @@ export default function DomainAdminsTable({domainAccountID, admins, requests}: D
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.DOMAIN_ADMINS}
             ref={tableRef}
             data={tableData}
             columns={domainAdminsTableColumns}

@@ -165,6 +165,7 @@ function WorkspaceDistanceRatesTable({
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_DISTANCE_RATES}
             data={ratesData}
             columns={columns}
             selectionEnabled={selectionEnabled}

@@ -9,6 +9,8 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
+
 import type {ListRenderItemInfo} from '@shopify/flash-list';
 
 import React from 'react';
@@ -105,6 +107,7 @@ export default function WorkspaceReportFieldListValuesTable({
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_REPORT_FIELD_LIST_VALUES}
             data={listValues}
             columns={columns}
             selectionEnabled={selectionEnabled}

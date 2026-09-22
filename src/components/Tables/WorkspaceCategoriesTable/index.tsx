@@ -11,6 +11,7 @@ import type {AvatarSource} from '@libs/UserAvatarUtils';
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
 
 import type {ListRenderItemInfo} from '@shopify/flash-list';
@@ -153,6 +154,7 @@ export default function WorkspaceCategoriesTable({
     return (
         <Table
             shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_CATEGORIES}
             ref={ref}
             data={categories}
             initialSortColumn="name"
