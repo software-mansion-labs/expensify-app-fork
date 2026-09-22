@@ -22,7 +22,7 @@ import type {TableColumn, TableData} from './types';
 
 import {rendersColumnHeaderInListHeader} from './buildTableListData';
 import ColumnResizeHandle from './columnResize/ColumnResizeHandle';
-import {getColumnsMinWidthStyle} from './columnResize/columnWidthExpressions';
+import {getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
 import getGridTemplateColumns from './getGridTemplateColumns';
 import {getColumnHeaderAccessibilityProps, getRowAccessibilityProps, shouldUseTableSemantics} from './tableAccessibility';
 import {useTableContext} from './TableContext';
@@ -84,7 +84,6 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
         isMobileSelectionEnabled,
         shouldEnableSelectionInNarrowPaneModal,
         dynamicGridTemplateColumns,
-        scrollWidth,
         rowWidth,
         tableListMetadata,
     } = useTableContext<DataType, ColumnKey>();
@@ -130,9 +129,11 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
             style={[
                 styles.pv2,
                 styles.mh5,
-                // Sized the same way a row's box is, for the same reason: as a sticky list row this header is
-                // positioned absolutely at a measured width, so its background has to follow a drag from CSS.
-                !!rowWidth && getColumnsMinWidthStyle(rowWidth),
+                // Exactly what a row's box is set to, from the same expression, so the headings can't drift out of
+                // line with the cells they label. A width rather than a floor: the two boxes stretch to different
+                // parents — this one to the list header, a row to the cell the list positions it in — so leaving
+                // either to its parent is what lets them disagree.
+                !!rowWidth && getColumnsWidthStyle(rowWidth),
                 styles.highlightBG,
                 styles.borderBottom,
                 styles.tableTopRadius,
@@ -218,15 +219,12 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
         </View>
     );
 
-    // Sits in the list header rather than FlashList's sticky-row overlay, so the scroller carries it sideways with the
-    // columns. Held open to the columns' width, because otherwise the background and the bottom border stop short of
-    // them — and that background is what the rows scroll under once it's stuck.
-    //
-    // A floor rather than a width: a width replaces whatever the box stretched to, and the `100%` in it resolves
-    // against this wrapper's own parent rather than against the scrolled content, so columns adding up to less than
-    // the table pulled the header in behind the rows. A floor can only ever widen it.
-    if (rendersColumnHeaderInListHeader(tableListMetadata) && !!scrollWidth) {
-        return <View style={[styles.appBG, getColumnsMinWidthStyle(scrollWidth)]}>{header}</View>;
+    // Sits in the list header rather than FlashList's sticky-row overlay, so the scroller carries it sideways with
+    // the columns. This box is only the backdrop the rows scroll under once the header is stuck; it needs no width of
+    // its own, since it stretches to the scrolled content, which is already held open to the columns. What has to span
+    // them is the header row inside it, and that carries the width.
+    if (rendersColumnHeaderInListHeader(tableListMetadata)) {
+        return <View style={styles.appBG}>{header}</View>;
     }
 
     if (!isStickyListHeader) {
