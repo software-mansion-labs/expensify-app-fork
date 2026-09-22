@@ -22,6 +22,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import {setActiveServer} from '@userActions/User';
 
 import CONST from '@src/CONST';
+import type {Route} from '@src/ROUTES';
 
 import React, {useState} from 'react';
 
@@ -29,9 +30,10 @@ type ServerListItem = ListItem & {keyForList: Server};
 
 type ServerSelectorProps = {
     shouldAddBottomSafeAreaPadding?: boolean;
+    backToRoute?: Route;
 };
 
-function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelectorProps) {
+function ServerSelector({shouldAddBottomSafeAreaPadding = false, backToRoute}: ServerSelectorProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {showConfirmModal} = useConfirmModal();
@@ -55,6 +57,8 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
         isSelected: selectedServer === server,
     }));
 
+    const goBack = () => Navigation.goBack(backToRoute, {compareParams: false});
+
     const confirmAndApplyServerChange = async () => {
         // QA is a separate database, so the same email is a different account there and setActiveServer ends
         // the session on either crossing.
@@ -74,7 +78,7 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
             }
         }
         setActiveServer(selectedServer);
-        Navigation.goBack();
+        goBack();
     };
 
     const confirmButtonOptions = {
@@ -92,7 +96,7 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false}: ServerSelector
         <>
             <HeaderWithBackButton
                 title={translate('initialSettingsPage.troubleshoot.server')}
-                onBackButtonPress={() => Navigation.goBack()}
+                onBackButtonPress={goBack}
             />
             <SelectionList
                 data={servers}
