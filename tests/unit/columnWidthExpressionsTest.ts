@@ -1,4 +1,4 @@
-import {getColumnWidthValue, getColumnWidthVariableName, getGrowableColumnTrack, getRowWidthExpression} from '@components/Table/columnResize/columnWidthExpressions';
+import {getColumnWidthValue, getColumnWidthVariableName, getColumnsWidthExpression, getGrowableColumnTrack} from '@components/Table/columnResize/columnWidthExpressions';
 
 describe('columnWidthExpressions', () => {
     describe('getColumnWidthVariableName', () => {
@@ -35,20 +35,28 @@ describe('columnWidthExpressions', () => {
         });
     });
 
-    describe('getRowWidthExpression', () => {
+    describe('getColumnsWidthExpression', () => {
         // Given a table with no columns to sum
-        // When the row width is built
-        // Then it is still floored at the table's own width, so an empty sum can't collapse the rows
-        it('floors a table with no columns at its own width', () => {
-            expect(getRowWidthExpression([], 64)).toBe('max(100%, 64px)');
+        // When the width is built
+        // Then it is still floored, so an empty sum can't collapse the rows
+        it('floors a table with no columns at the floor it was given', () => {
+            expect(getColumnsWidthExpression([], 64, '100%')).toBe('max(100%, 64px)');
         });
 
         // Given columns whose widths are custom properties, plus the chrome around them
-        // When the row width is built
+        // When the scrolled content's width is built
         // Then it sums to an expression floored at the table's width, so narrowing a column never shrinks the table
         // and widening one past its edge starts the horizontal scroller without React rendering anything
         it('sums the columns and the chrome, floored at the table width', () => {
-            expect(getRowWidthExpression(['var(--table-column-width-name, 200px)', '80px'], 64)).toBe('max(100%, calc(var(--table-column-width-name, 200px) + 80px + 64px))');
+            expect(getColumnsWidthExpression(['var(--table-column-width-name, 200px)', '80px'], 64, '100%')).toBe('max(100%, calc(var(--table-column-width-name, 200px) + 80px + 64px))');
+        });
+
+        // Given a row's own box, whose containing block is the cell the list positions it in
+        // When its width is built
+        // Then the floor is a length rather than `100%`, because a percentage there resolves against a block that is
+        // already the row's margin wider than the row and would leave it overhanging its cell
+        it('takes a length floor for a box measured against its own cell', () => {
+            expect(getColumnsWidthExpression(['var(--table-column-width-name, 200px)'], 24, '860px')).toBe('max(860px, calc(var(--table-column-width-name, 200px) + 24px))');
         });
     });
 });

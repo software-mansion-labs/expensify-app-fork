@@ -62,19 +62,24 @@ function getGrowableColumnTrack(widthValue: string): string {
 }
 
 /**
- * The width a resizable table's rows lay out at: its columns plus the chrome around them, summed as an expression so a
- * drag changes it without React rendering anything, and floored at the room the table is given.
+ * What a resizable table's columns add up to: the columns plus whatever chrome sits around them, summed as an
+ * expression so a drag changes it without React rendering anything, and floored at the room the table is given.
  *
  * The floor is what keeps the table full-width: columns adding up to less than the table leave it at exactly its own
  * width, and the room a narrowed column gave up goes to the growable track rather than being taken off the table.
  * Columns adding up to more take the row past the table's width, and it scrolls horizontally.
+ *
+ * `floor` is a CSS length rather than always `100%`, because the two boxes this sizes are measured against different
+ * containing blocks. The scrolled content's block is the table, so `100%` is the table's width; a row's block is the
+ * cell the list positions it in, which is that width *plus* the row's own margin, so `100%` there would floor the row
+ * 40px too wide and make it overhang its cell.
  */
-function getRowWidthExpression(columnWidthValues: string[], chromeWidth: number): string {
+function getColumnsWidthExpression(columnWidthValues: string[], chromeWidth: number, floor: string): string {
     if (columnWidthValues.length === 0) {
-        return `max(100%, ${chromeWidth}px)`;
+        return `max(${floor}, ${chromeWidth}px)`;
     }
 
-    return `max(100%, calc(${columnWidthValues.join(' + ')} + ${chromeWidth}px))`;
+    return `max(${floor}, calc(${columnWidthValues.join(' + ')} + ${chromeWidth}px))`;
 }
 
 /**
@@ -103,7 +108,7 @@ export {
     getColumnWidthValue,
     getColumnWidthVariableName,
     getColumnsMinWidthStyle,
+    getColumnsWidthExpression,
     getColumnsWidthStyle,
     getGrowableColumnTrack,
-    getRowWidthExpression,
 };

@@ -24,6 +24,7 @@ import {View} from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import {rendersColumnHeader} from './buildTableListData';
+import {getColumnsMinWidthStyle} from './columnResize/columnWidthExpressions';
 import getGridTemplateColumns from './getGridTemplateColumns';
 import {assignCellColumnIndexes, getCellAccessibilityProps, getRowAccessibilityProps, shouldUseTableSemantics} from './tableAccessibility';
 import {useTableContext, useTableRowSemanticID} from './TableContext';
@@ -89,6 +90,7 @@ export default function TableRow({
         shouldEnableSelectionInNarrowPaneModal = false,
         tableListMetadata,
         dynamicGridTemplateColumns,
+        rowWidth,
     } = useTableContext();
     const semanticRowID = useTableRowSemanticID();
     const semanticTableHasHeader = rendersColumnHeader(tableListMetadata);
@@ -143,6 +145,10 @@ export default function TableRow({
 
     const tableRowPressableStyles = [
         styles.mh5,
+        // The list positions this row absolutely at a width it measured, so the box painting the background, the
+        // separators and the table's rounded corners is sized by React while the columns inside it are sized by CSS.
+        // Without this the tracks widen under a drag and the background they sit on doesn't.
+        !!rowWidth && getColumnsMinWidthStyle(rowWidth),
         isGroupHeader ? styles.hoveredComponentBG : styles.highlightBG,
         styles.userSelectNone,
         !isFirstRow && styles.borderTop,

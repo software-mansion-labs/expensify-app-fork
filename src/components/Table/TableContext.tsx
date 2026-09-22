@@ -81,6 +81,15 @@ type TableContextValue<DataType extends TableData, ColumnKey extends string = st
     scrollWidth: number | string | undefined;
 
     /**
+     * The width one row's own box needs while the columns are resizable — the box painting the background, the
+     * separators and the table's rounded corners. `undefined` when the columns aren't resizable.
+     *
+     * The list positions every row absolutely at a width it measured, so without this the row's box is sized by React
+     * while the columns inside it are sized by CSS, and the background stops following a drag.
+     */
+    rowWidth: string | undefined;
+
+    /**
      * Lets the header put draggable handles over the columns' edges. `undefined` when the table hasn't opted into
      * resizing, which is also the case on native and on narrow layouts.
      */
@@ -143,6 +152,7 @@ const defaultTableContextValue: TableContextValue<TableData, string> = {
     columns: [],
     dynamicGridTemplateColumns: undefined,
     scrollWidth: undefined,
+    rowWidth: undefined,
     columnResize: undefined,
     tableWidth: 0,
     activeFilters: {},

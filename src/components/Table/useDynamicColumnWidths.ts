@@ -13,7 +13,7 @@ import type {ColumnWidthOverrides, ResizableColumn} from './columnResize/types';
 import type {TableColumn, TableData} from './types';
 
 import calculateDynamicColumnWidths, {distributeEqualWidths} from './calculateDynamicColumnWidths';
-import {getColumnWidthValue, getGrowableColumnTrack, getRowWidthExpression} from './columnResize/columnWidthExpressions';
+import {getColumnWidthValue, getColumnsWidthExpression, getGrowableColumnTrack} from './columnResize/columnWidthExpressions';
 import getAbsorbedColumnWidths from './columnResize/getAbsorbedColumnWidths';
 
 const {MIN_FREE_TEXT_COLUMN_WIDTH} = CONST.TABLES.DYNAMIC_COLUMNS;
@@ -60,6 +60,19 @@ type UseDynamicColumnWidthsResult = {
      * one past the table's edge starts scrolling without React rendering anything.
      */
     scrollWidth: number | string | undefined;
+
+    /**
+     * The width one row's own box needs — the box that paints the background, the separators and the table's rounded
+     * corners. `undefined` unless the columns are resizable.
+     *
+     * Needed separately from `scrollWidth` because the list positions every row absolutely at a width it measured, so
+     * a row's box is sized by React while the columns inside it are sized by CSS. Without this the tracks widen under
+     * a drag and the background they sit on doesn't, until the drag ends and the list measures again.
+     *
+     * Excludes the row's outer margin, which `scrollWidth` includes: the margin stays inside the scrolled content, so
+     * it is part of what scrolls but not part of the row's box.
+     */
+    rowWidth: string | undefined;
 
     /** The columns whose right edge the user can drag, in column order. Empty unless the columns are resizable. */
     resizableColumns: ResizableColumn[];
@@ -171,7 +184,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
 }: UseDynamicColumnWidthsParams<DataType, ColumnKey>): UseDynamicColumnWidthsResult {
     const styles = useThemeStyles();
 
-    const noDynamicWidths: UseDynamicColumnWidthsResult = {gridTemplateColumns: undefined, scrollWidth: undefined, resizableColumns: [], resolvedColumnWidths: {}};
+    const noDynamicWidths: UseDynamicColumnWidthsResult = {gridTemplateColumns: undefined, scrollWidth: undefined, rowWidth: undefined, resizableColumns: [], resolvedColumnWidths: {}};
 
     // Checked before anything else, so native never walks the data to gather text that it can't measure anyway.
     if (!isEnabled || tableWidth <= 0 || !canMeasureText()) {
@@ -208,7 +221,9 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     const selectionColumnWidth = hasSelectionColumn ? variables.tableCheckboxColumnWidth : 0;
     const totalColumnCount = columns.length + (hasSelectionColumn ? 1 : 0);
     const totalGapWidth = Math.max(totalColumnCount - 1, 0) * styles.gap3.gap;
-    const rowChromeWidth = (styles.mh5.marginHorizontal + styles.ph3.paddingHorizontal) * 2;
+    const rowMarginWidth = styles.mh5.marginHorizontal * 2;
+    const rowPaddingWidth = styles.ph3.paddingHorizontal * 2;
+    const rowChromeWidth = rowMarginWidth + rowPaddingWidth;
     const availableWidth = tableWidth - rowChromeWidth - totalGapWidth - fixedColumnsWidth - selectionColumnWidth;
 
     if (availableWidth <= 0) {
@@ -373,7 +388,10 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     // sum doesn't change at all and the table keeps exactly its own width.
     return {
         gridTemplateColumns,
-        scrollWidth: getRowWidthExpression(rowWidthValues, totalGapWidth + rowChromeWidth),
+        scrollWidth: getColumnsWidthExpression(rowWidthValues, totalGapWidth + rowChromeWidth, '100%'),
+        // The same sum without the row's outer margin, floored at the row's full-width box rather than at `100%` —
+        // which for a row resolves against the cell the list positions it in, and so is already the margin too wide.
+        rowWidth: getColumnsWidthExpression(rowWidthValues, totalGapWidth + rowPaddingWidth, `${tableWidth - rowMarginWidth}px`),
         resizableColumns,
         resolvedColumnWidths,
     };

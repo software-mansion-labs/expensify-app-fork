@@ -22,7 +22,7 @@ import type {TableColumn, TableData} from './types';
 
 import {rendersColumnHeaderInListHeader} from './buildTableListData';
 import ColumnResizeHandle from './columnResize/ColumnResizeHandle';
-import {getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
+import {getColumnsMinWidthStyle, getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
 import getGridTemplateColumns from './getGridTemplateColumns';
 import {getColumnHeaderAccessibilityProps, getRowAccessibilityProps, shouldUseTableSemantics} from './tableAccessibility';
 import {useTableContext} from './TableContext';
@@ -85,6 +85,7 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
         shouldEnableSelectionInNarrowPaneModal,
         dynamicGridTemplateColumns,
         scrollWidth,
+        rowWidth,
         tableListMetadata,
     } = useTableContext<DataType, ColumnKey>();
     // Tables inside a narrow pane modal (RHP) opt into keying the header checkbox off the real screen size, since
@@ -129,6 +130,9 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
             style={[
                 styles.pv2,
                 styles.mh5,
+                // Sized the same way a row's box is, for the same reason: as a sticky list row this header is
+                // positioned absolutely at a measured width, so its background has to follow a drag from CSS.
+                !!rowWidth && getColumnsMinWidthStyle(rowWidth),
                 styles.highlightBG,
                 styles.borderBottom,
                 styles.tableTopRadius,

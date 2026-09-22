@@ -365,6 +365,7 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
     const {
         gridTemplateColumns: dynamicGridTemplateColumns,
         scrollWidth: dynamicScrollWidth,
+        rowWidth: dynamicRowWidth,
         resizableColumns,
         resolvedColumnWidths,
     } = useDynamicColumnWidths<DataType, ColumnKey>({
@@ -507,6 +508,7 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
         columns,
         dynamicGridTemplateColumns,
         scrollWidth: dynamicScrollWidth,
+        rowWidth: dynamicRowWidth,
         columnResize,
         tableWidth,
         filterConfig: filters,
