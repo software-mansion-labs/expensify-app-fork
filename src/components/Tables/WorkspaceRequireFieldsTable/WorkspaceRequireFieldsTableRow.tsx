@@ -129,7 +129,10 @@ function WorkspaceRequireFieldsTableRow({item, rowIndex, shouldUseNarrowTableLay
                         </>
                     )}
 
-                    <View {...getCellAccessibilityProps(isTableSemanticsEnabled)}>
+                    <View
+                        style={styles.alignItemsEnd}
+                        {...getCellAccessibilityProps(isTableSemanticsEnabled)}
+                    >
                         <Icon
                             src={Expensicons.ArrowRight}
                             fill={theme.icon}
