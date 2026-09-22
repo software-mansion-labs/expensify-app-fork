@@ -14,7 +14,7 @@ import type {TableColumn, TableData} from './types';
 
 import calculateDynamicColumnWidths, {distributeEqualWidths} from './calculateDynamicColumnWidths';
 import {getColumnWidthValue, getColumnsWidthExpression, getGrowableColumnTrack} from './columnResize/columnWidthExpressions';
-import getAbsorbedColumnWidths from './columnResize/getAbsorbedColumnWidths';
+import resolveOverriddenColumnWidths from './columnResize/resolveOverriddenColumnWidths';
 
 const {MIN_FREE_TEXT_COLUMN_WIDTH} = CONST.TABLES.DYNAMIC_COLUMNS;
 
@@ -80,19 +80,6 @@ type UseDynamicColumnWidthsResult = {
     /** What each column resolved to, which is the width a drag on its edge starts from. */
     resolvedColumnWidths: Record<string, number>;
 };
-
-/**
- * Reads a stored column width back as a whole number of px.
- *
- * Deliberately neither floored at the narrowest a column may be *dragged* to nor capped at the widest. Those bounds
- * belong to the gesture — they stop one drag collapsing a column or pushing every column after it out of reach — and a
- * stored width doesn't only come from a gesture. It is also how the table remembers a column it froze at whatever the
- * resolver or the column's own style had given it, which is legitimately narrower than a draggable minimum for an icon
- * column and legitimately wider than a draggable maximum on a wide window.
- */
-function getStoredColumnWidth(width: number): number {
-    return Math.max(Math.round(width), 0);
-}
 
 /**
  * Which column takes the row's leftover width, so the run of headless columns at the end of a row — the arrow that
@@ -309,48 +296,18 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
 
     const growableColumnKey = getGrowableColumnKey(columns);
 
-    // Which columns can pay for a column the user resizes: the ones still laid out by sharing the row. A column that
-    // declared its own width never shared it, a column the user already sized keeps what they gave it, and the growable
-    // column is where whatever is left over at the end of the row goes rather than a share of a drag.
-    const canColumnPay = columns.map((column) => typeof column.width !== 'number' && columnWidthOverrides?.[column.key] === undefined && column.key !== growableColumnKey);
-
-    /** Keys of the columns after `index` that pay for it, in render order. */
-    const getPayingColumnKeys = (index: number): ColumnKey[] =>
-        columns
-            .slice(index + 1)
-            .filter((column, offset) => !!canColumnPay.at(index + 1 + offset))
-            .map((column) => column.key);
-
-    // Each stored width is applied in render order, and what it costs comes equally out of the columns after it that
-    // pay — the same shares the drag itself applied, from the same helper, so the columns don't jump when a drag is
-    // released. Reading a stored column's own width off the base is safe because a stored column never pays for
-    // another one, so nothing handled before it can have moved it.
-    for (const [index, column] of columns.entries()) {
-        const overriddenWidth = columnWidthOverrides?.[column.key];
-
-        if (overriddenWidth === undefined) {
-            continue;
-        }
-
-        const width = getStoredColumnWidth(overriddenWidth);
-        const payingColumnKeys = getPayingColumnKeys(index);
-        const absorbedWidths = getAbsorbedColumnWidths(
-            payingColumnKeys.map((columnKey) => resolvedColumnWidths[columnKey] ?? 0),
-            width - (resolvedColumnWidths[column.key] ?? 0),
-        );
-
-        resolvedColumnWidths[column.key] = width;
-
-        for (const [payingIndex, payingColumnKey] of payingColumnKeys.entries()) {
-            resolvedColumnWidths[payingColumnKey] = absorbedWidths.at(payingIndex) ?? 0;
-        }
-    }
+    const {columnWidths: overriddenColumnWidths, payingColumnKeysByIndex} = resolveOverriddenColumnWidths({
+        columns: columns.map((column) => ({key: column.key, hasDeclaredWidth: typeof column.width === 'number'})),
+        baseColumnWidths: resolvedColumnWidths,
+        columnWidthOverrides,
+        growableColumnKey,
+    });
 
     // What each column is laid out at, as a value that can be both summed into the row's width and used as a track.
     // A resizable column reads its width from a custom property, so a drag repaints by rewriting one property instead of
     // re-rendering the header and every row. The resolved width is the property's fallback, which is what paints until a
     // drag writes one.
-    const columnWidthValues = columns.map((column) => getColumnWidthValue(column.key, resolvedColumnWidths[column.key] ?? 0));
+    const columnWidthValues = columns.map((column) => getColumnWidthValue(column.key, overriddenColumnWidths[column.key] ?? 0));
 
     // The row's width is summed from the widths rather than from the tracks, so what the growable track grows into is
     // the room the row actually has and not room the sum went and asked for.
@@ -377,7 +334,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
             // A column that declared a width has no content measurement, so a click on its edge puts it back to the
             // width it declared. A column with neither is left without one, and a click leaves it alone.
             contentWidth: contentWidthByColumnKey.get(column.key) ?? (typeof column.width === 'number' ? column.width : undefined),
-            absorberColumnKeys: getPayingColumnKeys(index),
+            absorberColumnKeys: payingColumnKeysByIndex.at(index) ?? [],
         });
     }
 
@@ -391,7 +348,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
         // which for a row resolves against the cell the list positions it in, and so is already the margin too wide.
         rowWidth: getColumnsWidthExpression(rowWidthValues, totalGapWidth + rowPaddingWidth, `${tableWidth - rowMarginWidth}px`),
         resizableColumns,
-        resolvedColumnWidths,
+        resolvedColumnWidths: overriddenColumnWidths,
     };
 }
 

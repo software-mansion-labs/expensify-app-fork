@@ -18,6 +18,7 @@ import {acquireBackgroundInputFocusSuppression} from '@libs/ModalFocusManager';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import {tableColumnWidthsSelector} from '@src/selectors/TableColumnWidths';
 
 import type {FlashListRef} from '@shopify/flash-list';
 import type {ReactElement} from 'react';
@@ -357,8 +358,10 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
     // Resizing rides on dynamic sizing: a dragged width is honored by the same resolver that sizes a column from its
     // content, so a table that isn't being sized has nothing to apply one to.
     const isColumnResizingEnabled = isDynamicSizingEnabled && !!columnResizingID;
-    const [storedColumnWidths] = useOnyx(ONYXKEYS.TABLE_COLUMN_WIDTHS, {canBeMissing: true});
-    const columnWidthOverrides = columnResizingID ? storedColumnWidths?.[columnResizingID] : undefined;
+    // Narrowed to this table's own entry, because every table subscribes to the same key: without the selector a drag
+    // in one table would rewrite the root object and re-render every other table in the app, resizable or not.
+    const columnWidthsSelector = useMemo(() => tableColumnWidthsSelector(columnResizingID), [columnResizingID]);
+    const [columnWidthOverrides] = useOnyx(ONYXKEYS.TABLE_COLUMN_WIDTHS, {selector: columnWidthsSelector});
 
     // Columns are sized from the full data set rather than the processed one, so the widths stay put while the user
     // searches or filters instead of reflowing on every keystroke.
