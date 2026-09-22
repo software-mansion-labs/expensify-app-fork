@@ -346,10 +346,6 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
         }
     }
 
-    // A column with no heading is an icon, a checkbox or the arrow that opens a row: it holds one fixed thing rather
-    // than content of a length the user might want more or less room for, so there is nothing to resize.
-    const headedColumns = columns.filter((column) => !!column.label);
-
     // What each column is laid out at, as a value that can be both summed into the row's width and used as a track.
     // A resizable column reads its width from a custom property, so a drag repaints by rewriting one property instead of
     // re-rendering the header and every row. The resolved width is the property's fallback, which is what paints until a
@@ -366,10 +362,12 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     const resizableColumns: ResizableColumn[] = [];
 
     for (const [index, column] of columns.entries()) {
-        // The last headed column has no edge of its own to drag: everything after it is the row's trailing chrome,
-        // which isn't the user's to resize, so there is nothing left to pay for widening it. It is still resizable —
-        // from the left edge, by dragging the column before it, which is the same gesture from the other side.
-        if (!column.label || column.key === headedColumns.at(-1)?.key) {
+        // A column with no heading is an icon, a checkbox or the arrow that opens a row: it holds one fixed thing
+        // rather than content of a length the user might want more or less room for, so there is nothing to resize.
+        // Every column that does have one gets an edge, including the last: with nothing after it left to pay,
+        // widening it takes the row past the table and starts the horizontal scroller, and narrowing it hands the room
+        // to the growable trailing column so the table still spans its own width.
+        if (!column.label) {
             continue;
         }
 
