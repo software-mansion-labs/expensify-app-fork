@@ -101,6 +101,7 @@ export default function PersonalExpenseRulesTable({headerComponent, personalExpe
 
     return (
         <Table
+            shouldUseDynamicColumns
             selectionEnabled
             title={translate('expenseRulesPage.title')}
             initialSortColumn="merchant"

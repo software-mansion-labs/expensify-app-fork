@@ -155,6 +155,7 @@ export default function DomainAdminsTable({domainAccountID, admins, requests}: D
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={tableRef}
             data={tableData}
             columns={domainAdminsTableColumns}

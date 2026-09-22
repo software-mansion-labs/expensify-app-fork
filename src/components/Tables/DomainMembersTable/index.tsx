@@ -145,6 +145,7 @@ export default function DomainMembersTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={tableRef}
             data={members}
             columns={domainMembersTableColumns}

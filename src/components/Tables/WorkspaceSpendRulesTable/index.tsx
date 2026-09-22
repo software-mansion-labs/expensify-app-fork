@@ -105,6 +105,7 @@ function WorkspaceSpendRulesTable({rulesData, selectionEnabled, selectedKeys, em
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={rulesData}
             columns={columns}
             selectionEnabled={selectionEnabled}

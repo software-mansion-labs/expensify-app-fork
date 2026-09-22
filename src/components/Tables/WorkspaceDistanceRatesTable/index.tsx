@@ -164,6 +164,7 @@ function WorkspaceDistanceRatesTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={ratesData}
             columns={columns}
             selectionEnabled={selectionEnabled}

@@ -78,6 +78,7 @@ export default function DomainGroupsTable({domainAccountID, groups}: DomainGroup
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={tableRef}
             data={groups}
             columns={domainGroupsTableColumns}

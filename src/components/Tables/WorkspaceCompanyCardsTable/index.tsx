@@ -393,6 +393,7 @@ function WorkspaceCompanyCardsTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={tableRef}
             data={cardsData}
             columns={columns}

@@ -192,6 +192,7 @@ export default function WorkspaceTagsTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={tags}
             initialSortColumn="name"
             selectionEnabled={selectionEnabled}

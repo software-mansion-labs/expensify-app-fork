@@ -243,6 +243,7 @@ export default function WorkspaceExpensifyCardsTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={cards}
             columns={columns}
             renderItem={renderCardItem}

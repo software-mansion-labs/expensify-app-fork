@@ -110,6 +110,7 @@ export default function ReportParticipantsTable({ref, headerComponent, members, 
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={ref}
             data={members}
             columns={columns}

@@ -104,6 +104,7 @@ export default function WorkspaceReportFieldListValuesTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={listValues}
             columns={columns}
             selectionEnabled={selectionEnabled}

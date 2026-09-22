@@ -108,6 +108,7 @@ function WorkspaceCategoryRulesTableImpl({
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={rulesData}
             columns={columns}
             selectionEnabled={selectionEnabled}

@@ -139,6 +139,7 @@ function WorkspaceRoomsTable({rooms, policyID, highlightedReportID, onSearchStri
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={tableRef}
             data={rooms}
             columns={columns}

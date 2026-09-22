@@ -118,6 +118,7 @@ export default function WorkspacePerDiemTable({perDiemData, selectionEnabled, se
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={perDiemData}
             columns={columns}
             selectionEnabled={selectionEnabled}

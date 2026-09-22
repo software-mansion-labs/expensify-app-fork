@@ -127,6 +127,7 @@ export default function WorkspaceViewTagsTable({tags, hasDependentTags, selectio
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={tags}
             columns={columns}
             selectionEnabled={selectionEnabled}

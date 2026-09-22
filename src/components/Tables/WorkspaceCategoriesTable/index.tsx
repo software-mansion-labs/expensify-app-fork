@@ -152,6 +152,7 @@ export default function WorkspaceCategoriesTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={ref}
             data={categories}
             initialSortColumn="name"

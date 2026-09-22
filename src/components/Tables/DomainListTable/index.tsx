@@ -97,6 +97,7 @@ export default function DomainListTable({domains, headerComponent}: DomainListTa
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={domains}
             columns={domainTableColumns}
             renderItem={renderTableItem}

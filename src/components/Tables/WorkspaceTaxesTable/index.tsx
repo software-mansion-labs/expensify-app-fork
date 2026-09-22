@@ -86,6 +86,7 @@ export default function WorkspaceTaxesTable({taxes, selectionEnabled, selectedKe
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={taxes}
             initialSortColumn="name"
             narrowLayoutSortColumn="name"

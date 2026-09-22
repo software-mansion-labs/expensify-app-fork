@@ -71,6 +71,7 @@ function WorkspaceVendorsTable({vendors, headerComponent}: WorkspaceVendorsTable
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={vendors}
             initialSortColumn="name"
             title={translate('workspace.common.vendors')}

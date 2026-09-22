@@ -109,6 +109,7 @@ export default function AgentsTable({ref, agents, headerComponent, canSelectAgen
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={ref}
             data={agents}
             columns={agentsTableColumns}

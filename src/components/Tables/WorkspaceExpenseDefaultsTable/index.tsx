@@ -112,6 +112,7 @@ function WorkspaceExpenseDefaultsTable({rulesData, selectionEnabled, selectedKey
 
     return (
         <Table
+            shouldUseDynamicColumns
             data={rulesData}
             columns={columns}
             selectionEnabled={selectionEnabled}

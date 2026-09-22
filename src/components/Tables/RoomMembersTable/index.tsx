@@ -87,6 +87,7 @@ export default function RoomMembersTable({ref, headerComponent, members, selecti
 
     return (
         <Table
+            shouldUseDynamicColumns
             ref={ref}
             data={members}
             columns={columns}
