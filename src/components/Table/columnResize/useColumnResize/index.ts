@@ -31,6 +31,12 @@ const KEYBOARD_STEP_BY_KEY: Record<string, number> = {
 /** Keys that fit a column to its content and release it again, standing in for the pointer's click and double-click. */
 const FIT_TO_CONTENT_KEYS = new Set([' ', 'Enter']);
 
+/** What the indicator's opacity property is set to. Named because the line is shown and hidden from several places. */
+const INDICATOR_OPACITY = {
+    VISIBLE: '1',
+    HIDDEN: '0',
+} as const;
+
 const ROW_SELECTOR = `[role="${CONST.ROLE.ROW}"]`;
 
 type Drag = {
@@ -41,6 +47,9 @@ type Drag = {
 
     /** The column's width when the drag started, which the pointer's travel is added to. */
     startWidth: number;
+
+    /** The width last written for the column, so a scroll can work out how far the edge has already moved. */
+    width: number;
 
     /**
      * What the columns paying for this one were at when the drag started, in the order they pay.
@@ -107,6 +116,47 @@ function getHandleCenterOffset(handleElement: HTMLElement, containingBlock: Elem
 }
 
 /**
+ * Draws the line at the edge a handle sits on, running from the top of the header row to the bottom of the table, and
+ * returns where it was put relative to the block it is positioned in.
+ *
+ * Where the edge is comes off the handle, which sits in its column's own header cell and so already is where the
+ * column ends. Where the line begins and ends comes off the heading row and the lowest data row, because the block the
+ * line is positioned in matches neither: it starts above the heading row by however much the table scrolls, and it
+ * carries on below the last row to the bottom of the page.
+ *
+ * Takes its elements as arguments and touches nothing but the DOM, so the scroll listener can call it with whatever
+ * was current when the table last rendered rather than needing to be re-registered on every render.
+ */
+function drawIndicatorAtHandle(scopeElement: HTMLElement | null, indicatorElement: HTMLElement | null, handleElement: HTMLElement): number | undefined {
+    const scopeStyle = scopeElement?.style;
+    const containingBlock = indicatorElement?.offsetParent;
+
+    if (!containingBlock) {
+        scopeStyle?.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.VISIBLE);
+
+        return undefined;
+    }
+
+    const containingBlockRect = containingBlock.getBoundingClientRect();
+    const left = getHandleCenterOffset(handleElement, containingBlock);
+
+    scopeStyle?.setProperty(RESIZE_INDICATOR_LEFT_VARIABLE, `${left}px`);
+    scopeStyle?.setProperty(RESIZE_INDICATOR_TOP_VARIABLE, `${getHeaderRowTop(handleElement) - containingBlockRect.top - containingBlock.clientTop}px`);
+    scopeStyle?.setProperty(RESIZE_INDICATOR_BOTTOM_VARIABLE, `${getLastRowBottomGap(containingBlock, containingBlockRect)}px`);
+
+    // The line is positioned against the table rather than against the columns it points at, so an edge the user has
+    // scrolled out of view would otherwise go on being drawn where it used to be — over whichever column is there now.
+    // Only the table's own box is checked, since the block the line sits in is the table on the tables whose columns
+    // the list scrolls, and is the scrolled content itself on the ones where it can't go out of view at all.
+    const isEdgeInView = left >= 0 && left <= containingBlock.clientWidth;
+    const opacity = isEdgeInView ? INDICATOR_OPACITY.VISIBLE : INDICATOR_OPACITY.HIDDEN;
+
+    scopeStyle?.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, opacity);
+
+    return left;
+}
+
+/**
  * Lets the user drag a table's column edges, on web.
  *
  * Dragging an edge moves that column and takes the difference equally out of the columns after it that the user hasn't
@@ -132,6 +182,10 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
     const scopeElementRef = useRef<HTMLElement | null>(null);
     const indicatorElementRef = useRef<HTMLElement | null>(null);
     const dragRef = useRef<Drag | null>(null);
+
+    // The handle the line is currently pointing at, so it can be redrawn when the columns move under it without the
+    // pointer having left and re-entered the handle.
+    const activeHandleElementRef = useRef<HTMLElement | null>(null);
 
     // What was last written to each column's property, so a re-render doesn't rewrite a width that hasn't changed.
     const writtenWidthsRef = useRef<Record<string, number>>({});
@@ -174,26 +228,13 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
     };
 
     /**
-     * Shows the line at a column's edge, on the edge and running from the top of the header row to the bottom of the
-     * table.
-     *
-     * Where the edge is comes off the handle, which sits in its column's own header cell and so already is where the
-     * column ends. Where the line begins and ends comes off the heading row and the lowest data row, because the block
-     * the line is positioned in matches neither: it starts above the heading row by however much the table scrolls, and
-     * it carries on below the last row to the bottom of the page.
+     * Shows the line at a column's edge, and remembers which handle it is pointing at so a scroll that carries the
+     * edge sideways can take the line with it.
      */
     const revealIndicator = (handleElement: HTMLElement) => {
-        const containingBlock = indicatorElementRef.current?.offsetParent;
+        activeHandleElementRef.current = handleElement;
 
-        if (containingBlock) {
-            const containingBlockRect = containingBlock.getBoundingClientRect();
-
-            setScopeProperty(RESIZE_INDICATOR_LEFT_VARIABLE, `${getHandleCenterOffset(handleElement, containingBlock)}px`);
-            setScopeProperty(RESIZE_INDICATOR_TOP_VARIABLE, `${getHeaderRowTop(handleElement) - containingBlockRect.top - containingBlock.clientTop}px`);
-            setScopeProperty(RESIZE_INDICATOR_BOTTOM_VARIABLE, `${getLastRowBottomGap(containingBlock, containingBlockRect)}px`);
-        }
-
-        setScopeProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, '1');
+        return drawIndicatorAtHandle(scopeElementRef.current, indicatorElementRef.current, handleElement);
     };
 
     const hideIndicator = () => {
@@ -202,7 +243,8 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             return;
         }
 
-        setScopeProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, '0');
+        activeHandleElementRef.current = null;
+        setScopeProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
     };
 
     /**
@@ -355,16 +397,16 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
         // Measured before the drag starts, because the handle moves with the column and so stops being a reading of
         // where the edge began.
-        revealIndicator(event.currentTarget);
-
-        const containingBlock = indicatorElementRef.current?.offsetParent;
+        const startIndicatorLeft = revealIndicator(event.currentTarget) ?? 0;
+        const startWidth = readColumnWidth(column.columnKey) ?? 0;
 
         dragRef.current = {
             column,
             startClientX: event.clientX,
-            startWidth: readColumnWidth(column.columnKey) ?? 0,
+            startWidth,
+            width: startWidth,
             absorberStartWidths: readAbsorberWidths(column),
-            startIndicatorLeft: containingBlock ? getHandleCenterOffset(event.currentTarget, containingBlock) : 0,
+            startIndicatorLeft,
             hasMovedPointer: false,
         };
         document.body.style.cursor = 'col-resize';
@@ -397,6 +439,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         // column has hit the narrowest or widest it may be dragged to, the line stops where the edge stopped instead of
         // carrying on under the pointer.
         applyColumnWidths(drag.column, width, drag.startWidth, drag.absorberStartWidths);
+        drag.width = width;
         setScopeProperty(RESIZE_INDICATOR_LEFT_VARIABLE, `${drag.startIndicatorLeft + width - drag.startWidth}px`);
     };
 
@@ -473,6 +516,36 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         // The handle has moved with the column, so the line is re-read from it rather than stepped along with it.
         revealIndicator(event.currentTarget);
     };
+
+    // Scrolling the columns sideways moves the edge the line is pointing at, but not the line, which is positioned
+    // against the table rather than against the content that scrolls. Left alone it would stay where it was drawn and
+    // end up over whichever column had scrolled under it.
+    //
+    // Registered once and on the capture phase: `scroll` doesn't bubble, and which element scrolls the columns differs
+    // between the two layouts a table can take. Everything past the guard is DOM work, so the listener never has to be
+    // re-registered as the table re-renders.
+    useEffect(() => {
+        const redrawIndicator = () => {
+            const handleElement = activeHandleElementRef.current;
+
+            if (!handleElement) {
+                return;
+            }
+
+            const left = drawIndicatorAtHandle(scopeElementRef.current, indicatorElementRef.current, handleElement);
+            const drag = dragRef.current;
+
+            // A drag moves the line by however much the column has grown since it started, so where it started has to
+            // be re-read from where the edge is now rather than kept from before the scroll.
+            if (drag && left !== undefined) {
+                drag.startIndicatorLeft = left - (drag.width - drag.startWidth);
+            }
+        };
+
+        document.addEventListener('scroll', redrawIndicator, {capture: true, passive: true});
+
+        return () => document.removeEventListener('scroll', redrawIndicator, {capture: true});
+    }, []);
 
     // The cursor is set on the document while a column is dragged, so a table that unmounts mid-drag — the user
     // navigating away, the layout crossing into the narrow breakpoint — would otherwise leave every pointer in the app
