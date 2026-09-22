@@ -12,14 +12,6 @@ type UseColumnResizeParams = {
     /** The columns whose right edge the user can drag, in the order they are rendered. */
     columns: ResizableColumn[];
 
-    /**
-     * Keys of the columns a drag freezes where they are, so the columns the user never touched don't re-share the row
-     * and slide out from under the result they were looking at. Neither a subset nor a superset of the draggable
-     * columns: a column with no heading can't be dragged but still shares the row, and a column that declared its own
-     * width can be dragged but never shared it.
-     */
-    columnKeysToFreeze: string[];
-
     /** What each column resolved to, which is the width a drag on its edge starts from. */
     resolvedColumnWidths: Record<string, number>;
 

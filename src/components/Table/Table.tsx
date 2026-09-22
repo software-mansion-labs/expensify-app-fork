@@ -366,7 +366,6 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
         gridTemplateColumns: dynamicGridTemplateColumns,
         scrollWidth: dynamicScrollWidth,
         resizableColumns,
-        columnKeysToFreeze,
         resolvedColumnWidths,
     } = useDynamicColumnWidths<DataType, ColumnKey>({
         columns,
@@ -382,7 +381,6 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
     const columnResize = useColumnResize({
         columnResizingID: isColumnResizingEnabled ? columnResizingID : undefined,
         columns: resizableColumns,
-        columnKeysToFreeze,
         resolvedColumnWidths,
         columnWidthOverrides,
         columnGap: styles.gap3.gap,

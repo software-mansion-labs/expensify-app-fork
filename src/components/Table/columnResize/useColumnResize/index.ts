@@ -5,11 +5,12 @@ import {
     RESIZE_INDICATOR_TOP_VARIABLE,
     getColumnWidthVariableName,
 } from '@components/Table/columnResize/columnWidthExpressions';
+import getAbsorbedColumnWidths from '@components/Table/columnResize/getAbsorbedColumnWidths';
 import type {ResizableColumn} from '@components/Table/columnResize/types';
 
 import useLocalize from '@hooks/useLocalize';
 
-import {clearTableColumnWidth, setTableColumnWidths} from '@libs/actions/TableColumnWidths';
+import {clearTableColumnWidth, setTableColumnWidth} from '@libs/actions/TableColumnWidths';
 
 import CONST from '@src/CONST';
 
@@ -33,7 +34,7 @@ const FIT_TO_CONTENT_KEYS = new Set([' ', 'Enter']);
 const ROW_SELECTOR = `[role="${CONST.ROLE.ROW}"]`;
 
 type Drag = {
-    columnKey: string;
+    column: ResizableColumn;
 
     /** Where the pointer went down, which every later position is measured against. */
     startClientX: number;
@@ -41,12 +42,23 @@ type Drag = {
     /** The column's width when the drag started, which the pointer's travel is added to. */
     startWidth: number;
 
+    /**
+     * What the columns paying for this one were at when the drag started, in the order they pay.
+     *
+     * Read once rather than per move, so the shares are always taken off where the columns began instead of
+     * compounding off what the previous move left them at.
+     */
+    absorberStartWidths: AbsorberWidths;
+
     /** Where the indicator was when the drag started, so it can follow the width rather than the pointer. */
     startIndicatorLeft: number;
 
     /** Whether the pointer has travelled far enough to mean a drag rather than a click. */
     hasMovedPointer: boolean;
 };
+
+/** The columns paying for a resize, paired with the widths they are paying from. */
+type AbsorberWidths = {columnKeys: string[]; widths: number[]};
 
 function clampColumnWidth(width: number): number {
     return Math.min(Math.max(Math.round(width), MIN_WIDTH), MAX_WIDTH);
@@ -97,14 +109,17 @@ function getHandleCenterOffset(handleElement: HTMLElement, containingBlock: Elem
 /**
  * Lets the user drag a table's column edges, on web.
  *
+ * Dragging an edge moves that column and takes the difference equally out of the columns after it that the user hasn't
+ * sized themselves, so the table keeps the width it was given and only the columns after the edge move. Once those
+ * columns can give up no more, the row grows past the table and scrolls horizontally instead.
+ *
  * The widths live in CSS custom properties on one element the header and every row inherit from, so a drag rewrites a
  * single property and lets the browser repaint the whole table from it. React renders nothing between pointerdown and
  * pointerup, which is what keeps a virtualized table with a heavy cell per column from dropping frames mid-drag. The
  * indicator works the same way: hovering an edge writes its position and opacity as properties instead of raising state.
  *
- * Only the final width reaches Onyx, on pointerup. Once a column is stored it is pinned there and no longer sized from
- * its content, so the resolver treats it exactly like a column that declared a width, and the table scrolls when the
- * user drags a column wider than the room it has.
+ * Only the final width reaches Onyx, on pointerup, and only for the column the user actually dragged. Once a column is
+ * stored it is pinned there and no longer sized from its content, so it also stops paying for the columns before it.
  *
  * Three gestures on an edge, not one: dragging it sets the width, clicking it without moving sizes the column to its
  * widest content, and double-clicking it releases the column back to whatever the resolver gives it. The keyboard gets
@@ -112,7 +127,7 @@ function getHandleCenterOffset(handleElement: HTMLElement, containingBlock: Elem
  *
  * Returns `undefined` when the table hasn't opted into resizing, which is also what the native implementation returns.
  */
-function useColumnResize({columnResizingID, columns, columnKeysToFreeze, resolvedColumnWidths, columnWidthOverrides, columnGap}: UseColumnResizeParams): ColumnResizeController | undefined {
+function useColumnResize({columnResizingID, columns, resolvedColumnWidths, columnWidthOverrides, columnGap}: UseColumnResizeParams): ColumnResizeController | undefined {
     const {translate} = useLocalize();
     const scopeElementRef = useRef<HTMLElement | null>(null);
     const indicatorElementRef = useRef<HTMLElement | null>(null);
@@ -191,37 +206,66 @@ function useColumnResize({columnResizingID, columns, columnKeysToFreeze, resolve
     };
 
     /**
-     * Stores a column's new width, and freezes every other column that shares the row it currently sits in.
+     * The columns paying for this one and the widths they are currently painted at.
      *
-     * The width the user took has to come from somewhere. Left sized from their content, the other columns would
-     * re-share the row as soon as the drag ended and slide out from under the result the user had just been looking at.
-     * Frozen, they stay exactly where they were drawn mid-drag and the row grows or shrinks around them instead. A
-     * column the user has already resized is left alone, since its width is already theirs rather than the resolver's.
+     * A column whose width can't be read is left out rather than charged a guess, so it keeps sharing the row rather
+     * than being pinned at zero.
+     */
+    const readAbsorberWidths = (column: ResizableColumn): AbsorberWidths => {
+        const columnKeys: string[] = [];
+        const widths: number[] = [];
+
+        for (const absorberColumnKey of column.absorberColumnKeys) {
+            const width = readColumnWidth(absorberColumnKey);
+
+            if (width === undefined) {
+                continue;
+            }
+
+            columnKeys.push(absorberColumnKey);
+            widths.push(width);
+        }
+
+        return {columnKeys, widths};
+    };
+
+    /**
+     * Moves a column's edge to a new width, taking the difference out of the columns after it.
+     *
+     * The whole gesture, in one place: the drag calls this per pointer move, and the click and the arrow keys call it
+     * once. Only the columns after the dragged one move, so the row keeps the width it had and the columns before the
+     * edge stay exactly where the user was looking at them.
+     */
+    const applyColumnWidths = (column: ResizableColumn, width: number, startWidth: number, absorberStartWidths: AbsorberWidths) => {
+        writeColumnWidth(column.columnKey, width);
+
+        const absorbedWidths = getAbsorbedColumnWidths(absorberStartWidths.widths, width - startWidth);
+
+        for (const [index, absorberColumnKey] of absorberStartWidths.columnKeys.entries()) {
+            const absorbedWidth = absorbedWidths.at(index);
+
+            if (absorbedWidth === undefined) {
+                continue;
+            }
+
+            writeColumnWidth(absorberColumnKey, absorbedWidth);
+        }
+    };
+
+    /**
+     * Stores a column's new width.
+     *
+     * Only the column the user dragged is stored. What the columns after it gave up is not: the resolver applies the
+     * same shares to them on every render, from the same helper the drag just used, so storing them would be storing
+     * a result that is already derivable — and would mark them as columns the user had sized, taking them out of
+     * paying for the next drag.
      */
     const commitColumnWidth = (columnKey: string, width: number) => {
         if (!columnResizingID) {
             return;
         }
 
-        const widths: Record<string, number> = {[columnKey]: width};
-
-        for (const frozenColumnKey of columnKeysToFreeze) {
-            if (frozenColumnKey === columnKey || columnWidthOverrides?.[frozenColumnKey] !== undefined) {
-                continue;
-            }
-
-            const frozenWidth = readColumnWidth(frozenColumnKey);
-
-            // A column whose width can't be read is left out rather than frozen at a guess. It stays sized from its
-            // content, which is the one answer that is certainly not wrong.
-            if (frozenWidth === undefined) {
-                continue;
-            }
-
-            widths[frozenColumnKey] = frozenWidth;
-        }
-
-        setTableColumnWidths(columnResizingID, widths);
+        setTableColumnWidth(columnResizingID, columnKey, width);
     };
 
     /**
@@ -242,15 +286,15 @@ function useColumnResize({columnResizingID, columns, columnKeysToFreeze, resolve
             return;
         }
 
-        writeColumnWidth(column.columnKey, contentWidth);
+        applyColumnWidths(column, contentWidth, readColumnWidth(column.columnKey) ?? contentWidth, readAbsorberWidths(column));
         commitColumnWidth(column.columnKey, contentWidth);
     };
 
     /**
      * Releases a column back to the width the resolver gives it, which is what a double-click on its edge does.
      *
-     * Only this column is released. The columns frozen to pay for its width keep theirs, because those are the widths
-     * they were being drawn at and re-sharing the row would move columns the user never touched.
+     * Only this column's stored width is dropped. The columns that paid for it are given back what they gave up on the
+     * next render, by the resolver rather than from here, since nothing was stored for them to begin with.
      */
     const releaseToBaseWidth = (column: ResizableColumn) => {
         if (!columnResizingID || columnWidthOverrides?.[column.columnKey] === undefined) {
@@ -288,10 +332,10 @@ function useColumnResize({columnResizingID, columns, columnKeysToFreeze, resolve
         dragRef.current = null;
         document.body.style.cursor = '';
 
-        const width = readColumnWidth(drag.columnKey) ?? drag.startWidth;
+        const width = readColumnWidth(drag.column.columnKey) ?? drag.startWidth;
 
         if (width !== drag.startWidth) {
-            commitColumnWidth(drag.columnKey, width);
+            commitColumnWidth(drag.column.columnKey, width);
         }
     };
 
@@ -316,9 +360,10 @@ function useColumnResize({columnResizingID, columns, columnKeysToFreeze, resolve
         const containingBlock = indicatorElementRef.current?.offsetParent;
 
         dragRef.current = {
-            columnKey: column.columnKey,
+            column,
             startClientX: event.clientX,
             startWidth: readColumnWidth(column.columnKey) ?? 0,
+            absorberStartWidths: readAbsorberWidths(column),
             startIndicatorLeft: containingBlock ? getHandleCenterOffset(event.currentTarget, containingBlock) : 0,
             hasMovedPointer: false,
         };
@@ -351,7 +396,7 @@ function useColumnResize({columnResizingID, columns, columnKeysToFreeze, resolve
         // The only writes for the length of the drag. The line follows the width rather than the pointer, so once the
         // column has hit the narrowest or widest it may be dragged to, the line stops where the edge stopped instead of
         // carrying on under the pointer.
-        writeColumnWidth(drag.columnKey, width);
+        applyColumnWidths(drag.column, width, drag.startWidth, drag.absorberStartWidths);
         setScopeProperty(RESIZE_INDICATOR_LEFT_VARIABLE, `${drag.startIndicatorLeft + width - drag.startWidth}px`);
     };
 
@@ -419,9 +464,10 @@ function useColumnResize({columnResizingID, columns, columnKeysToFreeze, resolve
         // Otherwise the arrow key scrolls the table sideways as well as resizing the column.
         event.preventDefault();
 
-        const width = clampColumnWidth((readColumnWidth(column.columnKey) ?? 0) + step);
+        const startWidth = readColumnWidth(column.columnKey) ?? 0;
+        const width = clampColumnWidth(startWidth + step);
 
-        writeColumnWidth(column.columnKey, width);
+        applyColumnWidths(column, width, startWidth, readAbsorberWidths(column));
         commitColumnWidth(column.columnKey, width);
 
         // The handle has moved with the column, so the line is re-read from it rather than stepped along with it.

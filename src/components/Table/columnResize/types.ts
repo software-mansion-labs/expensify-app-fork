@@ -25,6 +25,15 @@ type ResizableColumn = {
      * anything here can name. Double-clicking it still releases it back to automatic sizing.
      */
     contentWidth?: number;
+
+    /**
+     * Keys of the columns that pay for this one, in render order: the columns after it that still share the row —
+     * neither sized by the user nor declaring a width of their own.
+     *
+     * Empty when nothing after this column can give width up. Dragging it then takes the row past the table's width
+     * and starts the horizontal scroller rather than moving another column.
+     */
+    absorberColumnKeys: string[];
 };
 
 /** Props shared by the three pieces that only exist while a table is resizable. */
