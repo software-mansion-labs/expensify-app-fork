@@ -15,7 +15,7 @@ import React, {act, Activity, createContext, useContext, useEffect, useSyncExter
  * hidden once the commit is over, from a microtask React does not wait for, so every step settles before it drains.
  */
 
-type AnyEffectHook = (setup: EffectCallback, deps?: DependencyList) => void;
+type AnyEffectHook = (setup: EffectCallback, deps: DependencyList) => void;
 
 let calls: string[] = [];
 
@@ -51,7 +51,7 @@ function track(name: string): EffectCallback {
 const AnyEffectHookContext = createContext<AnyEffectHook>(useEffect);
 
 /** The hook of the current run, which is the one thing a test changes when it runs the same structure twice. */
-function useAnyEffect(setup: EffectCallback, deps?: DependencyList) {
+function useAnyEffect(setup: EffectCallback, deps: DependencyList) {
     const hook = useContext(AnyEffectHookContext);
     hook(setup, deps);
 }

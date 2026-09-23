@@ -1,6 +1,10 @@
-import React, {useState} from 'react';
+import {render} from '@testing-library/react-native';
 
-import {hidden, log, resetLog, runEveryConfig, track, useAnyEffect, visible} from '../../../utils/ScreenActivityEffectTestUtils';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
+
+import React, {useEffectEvent, useLayoutEffect, useRef, useState} from 'react';
+
+import {ActivityScreen, drainLog, hidden, LiveScreen, log, resetLog, runEveryConfig, settle, track, useAnyEffect, visible} from '../../../utils/ScreenActivityEffectTestUtils';
 
 /**
  * The hook leaves the dependency comparison to React, which runs its insertion effect for a change and not for a reveal,
@@ -26,10 +30,10 @@ function GrowingDependencies({first, hasSecond}: {first: string; hasSecond: bool
     return null;
 }
 
-/** Two dependency lists that make every render a change: no list at all, and one holding a fresh object. */
+/** Two call sites whose dependency list holds a fresh object, which makes every render a change for both. */
 function EveryRender({value}: {value: string}) {
-    useAnyEffect(track(`noDeps:${value}`));
-    useAnyEffect(track(`unstable:${value}`), [{}]);
+    useAnyEffect(track(`first:${value}`), [{}]);
+    useAnyEffect(track(`second:${value}`), [{}]);
     return null;
 }
 
@@ -43,6 +47,34 @@ function StateWriter({value}: {value: string}) {
         }
         return () => log(`cleanup:s:${value}(${step})`);
     }, [step, value]);
+    return null;
+}
+
+const eventListeners = new Set<() => void>();
+
+function emitEvent() {
+    for (const listener of eventListeners) {
+        listener();
+    }
+}
+
+/** A listener kept with an empty dependency list that reads the value through an effect event and through a ref a layout effect writes. */
+function LatestValueReader({value}: {value: string}) {
+    const readEvent = useEffectEvent(() => log(`event:${value}`));
+    const layoutRef = useRef(value);
+    useLayoutEffect(() => {
+        layoutRef.current = value;
+    });
+    useScreenActivityEffect(() => {
+        const listener = () => {
+            readEvent();
+            log(`layoutRef:${layoutRef.current}`);
+        };
+        eventListeners.add(listener);
+        return () => {
+            eventListeners.delete(listener);
+        };
+    }, []);
     return null;
 }
 
@@ -163,7 +195,7 @@ describe('useScreenActivityEffect dependencies', () => {
     });
 
     it('coalesces dependencies that change on every render into one run per reveal', async () => {
-        // Given an effect with no dependency list next to one holding a fresh object, so every render is a change
+        // Given two call sites whose dependency list holds a fresh object, so every render is a change
         const steps = [visible(<EveryRender value="a" />), hidden(<EveryRender value="a" />), hidden(<EveryRender value="a" />), visible(<EveryRender value="a" />)];
 
         // When two renders happen while the screen is covered
@@ -171,21 +203,21 @@ describe('useScreenActivityEffect dependencies', () => {
 
         // Then a live screen runs both call sites for every one of those renders
         expect(runs.liveUseEffect).toEqual([
-            ['setup:noDeps:a', 'setup:unstable:a'],
-            ['cleanup:noDeps:a', 'cleanup:unstable:a', 'setup:noDeps:a', 'setup:unstable:a'],
-            ['cleanup:noDeps:a', 'cleanup:unstable:a', 'setup:noDeps:a', 'setup:unstable:a'],
-            ['cleanup:noDeps:a', 'cleanup:unstable:a', 'setup:noDeps:a', 'setup:unstable:a'],
-            ['cleanup:noDeps:a', 'cleanup:unstable:a'],
+            ['setup:first:a', 'setup:second:a'],
+            ['cleanup:first:a', 'cleanup:second:a', 'setup:first:a', 'setup:second:a'],
+            ['cleanup:first:a', 'cleanup:second:a', 'setup:first:a', 'setup:second:a'],
+            ['cleanup:first:a', 'cleanup:second:a', 'setup:first:a', 'setup:second:a'],
+            ['cleanup:first:a', 'cleanup:second:a'],
         ]);
 
         // And the covered screen ran no effect for them, so the reveal is one release and one setup per call site,
         // each call site swapping at its own place, because the body of a call site is what releases its old setup
         expect(runs.activityScreenActivityEffect).toEqual([
-            ['setup:noDeps:a', 'setup:unstable:a'],
+            ['setup:first:a', 'setup:second:a'],
             [],
             [],
-            ['cleanup:noDeps:a', 'setup:noDeps:a', 'cleanup:unstable:a', 'setup:unstable:a'],
-            ['cleanup:noDeps:a', 'cleanup:unstable:a'],
+            ['cleanup:first:a', 'setup:first:a', 'cleanup:second:a', 'setup:second:a'],
+            ['cleanup:first:a', 'cleanup:second:a'],
         ]);
     });
 
@@ -200,6 +232,33 @@ describe('useScreenActivityEffect dependencies', () => {
         const expected = [['setup:s:first'], [], [], ['cleanup:s:first']];
         expect(runs.liveUseEffect).toEqual(expected);
         expect(runs.activityScreenActivityEffect).toEqual(expected);
+    });
+
+    it.each([
+        {screenName: 'a live screen', Screen: LiveScreen, layoutRefValue: 'b'},
+        {screenName: 'a covered screen', Screen: ActivityScreen, layoutRefValue: 'a'},
+    ])('lets a kept listener read the latest value through useEffectEvent on $screenName', async ({Screen, layoutRefValue}) => {
+        // Given a listener kept with an empty dependency list, which is how a subscription that must survive a cover is written
+        const {rerender, unmount} = render(
+            <Screen isHidden={false}>
+                <LatestValueReader value="a" />
+            </Screen>,
+        );
+        await settle();
+
+        // When the value changes while the screen is covered and the event fires before any reveal
+        rerender(
+            <Screen isHidden>
+                <LatestValueReader value="b" />
+            </Screen>,
+        );
+        await settle();
+        emitEvent();
+
+        // Then the effect event reads the new value on both screens, because React updates it in a hidden subtree too,
+        // while the ref keeps the old value behind a cover, because no layout effect runs there
+        expect(drainLog()).toEqual(['event:b', `layoutRef:${layoutRefValue}`]);
+        unmount();
     });
 
     it('runs a state update from the effect body once, exactly as the live screen does', async () => {

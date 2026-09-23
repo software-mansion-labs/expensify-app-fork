@@ -67,7 +67,7 @@ function flushPendingCleanups(): void {
  * change cancels its own entry, because its insertion setup runs in the same commit. What stays queued is released by
  * the next passive body of the hook, on any screen, or by a microtask after the commit when no body runs first.
  */
-function useScreenActivityEffect(setup: EffectCallback, deps?: DependencyList): void {
+function useScreenActivityEffect(setup: EffectCallback, deps: DependencyList): void {
     // The effects mutate this record, which the React Compiler allows for a ref and rejects for state.
     const effectRef = useRef<LiveEffect>({cleanup: undefined, isSetupPending: false, isVisible: false, isMounted: false});
 
