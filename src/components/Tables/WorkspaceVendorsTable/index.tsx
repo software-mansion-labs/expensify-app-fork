@@ -71,6 +71,8 @@ function WorkspaceVendorsTable({vendors, headerComponent}: WorkspaceVendorsTable
 
     return (
         <Table
+            shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_VENDORS}
             data={vendors}
             initialSortColumn="name"
             title={translate('workspace.common.vendors')}

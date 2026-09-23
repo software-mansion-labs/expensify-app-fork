@@ -10,6 +10,8 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
+
 import type {ListRenderItemInfo} from '@shopify/flash-list';
 
 import React from 'react';
@@ -105,6 +107,8 @@ function WorkspaceSpendRulesTable({rulesData, selectionEnabled, selectedKeys, em
 
     return (
         <Table
+            shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_SPEND_RULES}
             data={rulesData}
             columns={columns}
             selectionEnabled={selectionEnabled}

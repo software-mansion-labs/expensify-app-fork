@@ -13,6 +13,7 @@ import WorkspaceCardListLabels from '@pages/workspace/expensifyCard/WorkspaceCar
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
 import type {Card, PersonalDetails, PersonalDetailsList} from '@src/types/onyx';
 import type {CardLimitType} from '@src/types/onyx/Card';
 import type ExpensifyCardSettings from '@src/types/onyx/ExpensifyCardSettings';
@@ -243,6 +244,8 @@ export default function WorkspaceExpensifyCardsTable({
 
     return (
         <Table
+            shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.WORKSPACE_EXPENSIFY_CARDS}
             data={cards}
             columns={columns}
             renderItem={renderCardItem}

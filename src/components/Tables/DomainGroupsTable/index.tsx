@@ -9,6 +9,8 @@ import tokenizedSearch from '@libs/tokenizedSearch';
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
+
 import type {ListRenderItemInfo} from '@shopify/flash-list';
 
 import React, {useRef} from 'react';
@@ -78,6 +80,8 @@ export default function DomainGroupsTable({domainAccountID, groups}: DomainGroup
 
     return (
         <Table
+            shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.DOMAIN_GROUPS}
             ref={tableRef}
             data={groups}
             columns={domainGroupsTableColumns}

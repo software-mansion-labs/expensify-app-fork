@@ -199,7 +199,10 @@ function WorkspaceExpenseDefaultsTableRow({item, rowIndex, shouldUseNarrowTableL
                             </>
                         )}
 
-                        <View {...getCellAccessibilityProps(isTableSemanticsEnabled)}>
+                        <View
+                            style={styles.alignItemsEnd}
+                            {...getCellAccessibilityProps(isTableSemanticsEnabled)}
+                        >
                             <Icon
                                 src={Expensicons.ArrowRight}
                                 fill={theme.icon}

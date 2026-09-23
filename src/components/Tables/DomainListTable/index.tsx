@@ -97,6 +97,8 @@ export default function DomainListTable({domains, headerComponent}: DomainListTa
 
     return (
         <Table
+            shouldUseDynamicColumns
+            columnResizingID={CONST.TABLES.COLUMN_RESIZING_IDS.DOMAIN_LIST}
             data={domains}
             columns={domainTableColumns}
             renderItem={renderTableItem}

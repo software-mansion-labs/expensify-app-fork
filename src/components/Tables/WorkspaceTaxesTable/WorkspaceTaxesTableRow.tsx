@@ -105,7 +105,10 @@ function WorkspaceTaxesTableRow({item, rowIndex, shouldUseNarrowTableLayout}: Wo
                         />
                     </View>
 
-                    <View {...getCellAccessibilityProps(isTableSemanticsEnabled)}>
+                    <View
+                        style={styles.alignItemsEnd}
+                        {...getCellAccessibilityProps(isTableSemanticsEnabled)}
+                    >
                         <Icon
                             src={icons.ArrowRight}
                             fill={theme.icon}
