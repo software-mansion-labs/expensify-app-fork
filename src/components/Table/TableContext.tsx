@@ -73,26 +73,16 @@ type TableContextValue<DataType extends TableData, ColumnKey extends string = st
      */
     dynamicGridTemplateColumns: string[] | undefined;
 
-    /**
-     * The width the rows need when the columns don't fit, which makes the list scroll horizontally too. `undefined`
-     * means they fit. An expression over the columns' width custom properties rather than a number while the columns
-     * are resizable, so a drag past the table's edge starts scrolling without React rendering anything.
-     */
+    /** Row width when the columns overflow (scrolls horizontally); `undefined` when they fit. A CSS expression while resizable, so drags need no re-render. */
     scrollWidth: number | string | undefined;
 
     /**
-     * The width one row's own box needs while the columns are resizable — the box painting the background, the
-     * separators and the table's rounded corners. `undefined` when the columns aren't resizable.
-     *
-     * The list positions every row absolutely at a width it measured, so without this the row's box is sized by React
-     * while the columns inside it are sized by CSS, and the background stops following a drag.
+     * Width of the row's own box (background, separators, corners) while resizable, else `undefined`.
+     * The list sizes rows from a measurement, so without this the background wouldn't follow a drag.
      */
     rowWidth: string | undefined;
 
-    /**
-     * Lets the header put draggable handles over the columns' edges. `undefined` when the table hasn't opted into
-     * resizing, which is also the case on native and on narrow layouts.
-     */
+    /** Lets the header render column edge handles. `undefined` when resizing is off (including native and narrow layouts). */
     columnResize: ColumnResizeController | undefined;
 
     /** Measured width of the area the table lays out into. Content-sized columns only; `0` until the first layout. */

@@ -129,10 +129,7 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
             style={[
                 styles.pv2,
                 styles.mh5,
-                // Exactly what a row's box is set to, from the same expression, so the headings can't drift out of
-                // line with the cells they label. A width rather than a floor: the two boxes stretch to different
-                // parents — this one to the list header, a row to the cell the list positions it in — so leaving
-                // either to its parent is what lets them disagree.
+                // Same expression as the row box, so headings can't drift from their cells. An exact width, not a floor: each box's parent differs.
                 !!rowWidth && getColumnsWidthStyle(rowWidth),
                 styles.highlightBG,
                 styles.borderBottom,
@@ -146,11 +143,8 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
                 // Use Grid on web when available (will override flex if supported)
                 styles.dGrid,
                 !shouldUseNarrowTableLayout && {gridTemplateColumns: gridTemplateColumns.join(' ')},
-                // `space-between` above is for the flexbox fallback, where the columns are flexible and fill the row
-                // whatever it measures. Explicit tracks don't have to fill it — a column the user narrowed leaves room
-                // at the end of the row on purpose — and grid would spread that room *between* the tracks, sliding the
-                // headings sideways out from under the cells they label. The rows pack their own tracks to the start, so
-                // the headings have to as well.
+                // `space-between` is only for the flex fallback. Grid would spread a narrowed column's leftover room between tracks and shift the
+                // headings off their cells, so pack to the start like the rows do.
                 !!dynamicGridTemplateColumns && !shouldUseNarrowTableLayout && styles.justifyContentStart,
                 style,
             ]}
@@ -219,10 +213,7 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
         </View>
     );
 
-    // Sits in the list header rather than FlashList's sticky-row overlay, so the scroller carries it sideways with
-    // the columns. This box is only the backdrop the rows scroll under once the header is stuck; it needs no width of
-    // its own, since it stretches to the scrolled content, which is already held open to the columns. What has to span
-    // them is the header row inside it, and that carries the width.
+    // In the list header (not FlashList's sticky overlay) so it scrolls sideways with the columns. Only a backdrop; the inner header row carries the width.
     if (rendersColumnHeaderInListHeader(tableListMetadata)) {
         return <View style={styles.appBG}>{header}</View>;
     }
@@ -358,11 +349,7 @@ function TableHeaderColumn<DataType extends TableData, ColumnKey extends string 
         >
             {sortButton}
 
-            {/*
-             * The handle overhangs this cell's right edge, which is where the column ends, so nothing has to work out
-             * where that is. It is left out of the sticky header's hidden twin, so a sticky table doesn't end up with
-             * two handles stacked on the same edge, and renders nothing at all for a column the user can't drag.
-             */}
+            {/* Overhangs the cell's right edge; omitted from the sticky header's hidden twin to avoid duplicate handles. */}
             {!isAccessibilityHidden && (
                 <ColumnResizeHandle
                     columnResize={columnResize}

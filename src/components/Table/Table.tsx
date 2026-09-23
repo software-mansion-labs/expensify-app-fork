@@ -431,9 +431,7 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
     const hasColumnHeaderElement = !!tableHeaderElement;
     const hasRows = processedData.length > 0;
     const isColumnHeaderHiddenInNarrowLayout = shouldUseNarrowTableLayout && !title;
-    // Always true for a resizable table, whose width is an expression over the columns rather than a measurement: a
-    // drag can take the columns past the table's edge without React rendering anything, so the layout that can scroll
-    // them has to already be in place.
+    // Always true when resizable: a drag can overflow the table without a React render, so the scrollable layout must already be in place.
     const areColumnsScrollable = !!dynamicScrollWidth;
 
     const tableListMetadata = useMemo(

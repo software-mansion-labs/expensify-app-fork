@@ -21,10 +21,7 @@ type ResolveOverriddenColumnWidthsParams = {
     /** Widths the user already dragged this table's columns to. */
     columnWidthOverrides: ColumnWidthOverrides | undefined;
 
-    /**
-     * The column that takes the row's leftover width, if the table has one. It is where room a narrowed column gives
-     * up goes, so it never also pays a share of a drag.
-     */
+    /** Column absorbing the row's leftover width, if any; it never pays a share of a drag. */
     growableColumnKey: string | undefined;
 };
 
@@ -37,29 +34,16 @@ type ResolvedOverriddenColumnWidths = {
 };
 
 /**
- * Reads a stored column width back as a whole number of px.
- *
- * Deliberately neither floored at the narrowest a column may be *dragged* to nor capped at the widest. Those bounds
- * belong to the gesture — they stop one drag collapsing a column or pushing every column after it out of reach — and a
- * stored width doesn't only come from a gesture. It is also how the table remembers a column it froze at whatever the
- * resolver or the column's own style had given it, which is legitimately narrower than a draggable minimum for an icon
- * column and legitimately wider than a draggable maximum on a wide window.
+ * Reads a stored width as whole px. Not clamped to drag bounds: stored widths can also be frozen resolved widths,
+ * which may legitimately fall outside them.
  */
 function getStoredColumnWidth(width: number): number {
     return Math.max(Math.round(width), 0);
 }
 
 /**
- * Applies every width the user dragged to the widths the columns otherwise resolved to.
- *
- * Each stored width is applied in render order, and what it costs comes equally out of the columns after it that pay —
- * the same shares the drag itself applied, from the same helper, so the columns don't jump when a drag is released.
- * Reading a stored column's own width off the base is safe because a stored column never pays for another one, so
- * nothing handled before it can have moved it.
- *
- * Who pays: the columns still laid out by sharing the row. A column that declared its own width never shared it, a
- * column the user already sized keeps what they gave it, and the growable column is where whatever is left over at the
- * end of the row goes rather than a share of a drag.
+ * Applies stored widths in render order, each paid equally by the later columns still sharing the row (not fixed, user-sized
+ * or growable). Uses the same helper as the drag, so columns don't jump on release.
  */
 function resolveOverriddenColumnWidths({columns, baseColumnWidths, columnWidthOverrides, growableColumnKey}: ResolveOverriddenColumnWidthsParams): ResolvedOverriddenColumnWidths {
     const canColumnPay = columns.map((column) => !column.hasDeclaredWidth && columnWidthOverrides?.[column.key] === undefined && column.key !== growableColumnKey);

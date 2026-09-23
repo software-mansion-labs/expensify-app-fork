@@ -243,11 +243,7 @@ describe('resolveOverriddenColumnWidths', () => {
     });
 
     describe('agreement with the drag', () => {
-        /**
-         * What the drag writes straight to the DOM: the dragged column at its new width, and the columns paying for it
-         * at what the shared helper works out. The resolver has to reproduce this from the stored width alone on the
-         * next render, or the columns jump the moment the pointer is released.
-         */
+        /** What the drag writes to the DOM; the resolver must reproduce it from the stored width alone, or columns jump on release. */
         function applyDrag(baseColumnWidths: Record<string, number>, columnKey: string, payingColumnKeys: string[], width: number): Record<string, number> {
             const absorbedWidths = getAbsorbedColumnWidths(
                 payingColumnKeys.map((payingColumnKey) => baseColumnWidths[payingColumnKey] ?? 0),

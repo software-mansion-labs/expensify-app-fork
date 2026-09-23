@@ -9074,10 +9074,7 @@ const CONST = {
             MAX_FREE_TEXT_COLUMN_WIDTH: 180,
         },
 
-        /**
-         * Keys the widths of a table's columns are stored under, one per set of columns rather than one per screen: two
-         * tables showing the same columns share their widths, and a table showing a different set does not inherit them.
-         */
+        /** Storage keys for column widths, one per column set (not per screen) so tables with the same columns share widths. */
         COLUMN_RESIZING_IDS: {
             AGENTS: 'agents',
             DOMAIN_ADMINS: 'domainAdmins',

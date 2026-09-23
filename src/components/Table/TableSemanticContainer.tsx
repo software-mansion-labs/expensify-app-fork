@@ -42,18 +42,11 @@ type TableSemanticContainerProps = {
      * The width the rows need when the columns don't fit, which scrolls the header/body run horizontally as one so the
      * header stays aligned with its rows. Set only for tables whose filter bar isn't in the list; the others are
      * scrolled by the list itself (see `TableBody`).
-     *
-     * A resizable table passes an expression summing the columns' width custom properties instead of a number, and
-     * passes it always: the rows then scroll at whatever the columns currently add up to, so dragging one past the
-     * table's edge starts scrolling without React rendering anything. While nothing is dragged the expression resolves
-     * to the table's own width, so the scroller sits still.
+     * Resizable tables always pass a CSS sum of the column widths instead, so a drag past the edge scrolls without a re-render.
      */
     scrollWidth: number | string | undefined;
 
-    /**
-     * Owns the element the columns' width custom properties are written on, and the line drawn at the edge being
-     * hovered or dragged. `undefined` when the table isn't resizable.
-     */
+    /** Owns the element holding the column width custom properties and the resize indicator line. `undefined` when not resizable. */
     columnResize: ColumnResizeController | undefined;
 
     /**
@@ -125,9 +118,7 @@ function TableSemanticContainer({isEnabled, title, rowCount, columnCount, hasHea
         // The columns don't fit, so the header and the body scroll horizontally as one and stay aligned. The content
         // container carries the width they need, and the rows fill it, matching how the Search table scrolls.
         renderedChildren.push(
-            // The scope generates no box, so wrapping the run in it changes nothing about the layout — it only gives the
-            // resize interaction an element to write the column widths onto, above both the scroller and the rows so
-            // that every one of them inherits from it.
+            // The scope has no box (`display: contents`); it just gives the resize logic an element above the scroller and rows to write widths onto.
             <ColumnResizeScope
                 key={`tableSemanticContainerScope-${renderedChildren.length}`}
                 onScopeElement={columnResize?.setScopeElement}

@@ -872,11 +872,7 @@ const ONYXKEYS = {
     /** Stores the user's report details columns preference */
     NVP_REPORT_DETAILS_COLUMNS: 'nvp_reportDetailsColumns',
 
-    /**
-     * Widths the user dragged table columns to, keyed by the table's `columnResizingID` and then by column key. Stored
-     * per device rather than on the account, because the width a column wants depends on the size of the window it is
-     * being read in.
-     */
+    /** Dragged table column widths, keyed by `columnResizingID` then column key. Per device, since ideal widths depend on window size. */
     TABLE_COLUMN_WIDTHS: 'tableColumnWidths',
 
     /** Partial transaction data used for MFA authorize transaction preview */

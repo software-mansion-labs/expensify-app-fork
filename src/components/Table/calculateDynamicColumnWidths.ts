@@ -119,12 +119,8 @@ function distributeAvailableWidth(desiredWidths: number[], maxWidths: number[], 
 }
 
 /**
- * Splits the available width into equal whole-px columns that still add up to it exactly, handing the rounding
- * remainder to the first column.
- *
- * This is what "every column fits an equal share" means in px. `calculateDynamicColumnWidths` returns no widths in that
- * case, because equal shares are what a table's columns are already styled to take — but a column the user can drag has
- * to start from a number.
+ * Splits the width into equal whole-px columns summing exactly to it, remainder going to the first column.
+ * Resizable columns need these numbers as a drag starting point, whereas static equal columns are just styled `1fr`.
  */
 function distributeEqualWidths(columnCount: number, availableWidth: number): number[] {
     if (columnCount <= 0) {

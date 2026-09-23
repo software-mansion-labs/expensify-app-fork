@@ -3,10 +3,7 @@ import type {ColumnWidthOverrides, ResizableColumn} from '@components/Table/colu
 import type React from 'react';
 
 type UseColumnResizeParams = {
-    /**
-     * The key this table's column widths persist under. `undefined` leaves resizing off, which is the case on native,
-     * on narrow layouts, and for every table that hasn't opted in.
-     */
+    /** Key the column widths persist under. `undefined` disables resizing (native, narrow layouts, tables not opted in). */
     columnResizingID: string | undefined;
 
     /** The columns whose right edge the user can drag, in the order they are rendered. */
@@ -28,16 +25,10 @@ type ColumnResizeHandleDOMProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 type ColumnResizeController = {
-    /**
-     * Attached to the element the columns' width custom properties are written on. The header and every row inherit
-     * from it, so one write repaints all of them.
-     */
+    /** Element holding the width custom properties; the header and rows inherit them, so one write repaints all. */
     setScopeElement: (element: HTMLElement | null) => void;
 
-    /**
-     * Attached to the line drawn at the edge being hovered or dragged. Its containing block is what the line's
-     * position is measured against, so the line lands on the edge and starts at the header row.
-     */
+    /** Resize indicator line; positioned against its containing block. */
     setIndicatorElement: (element: HTMLElement | null) => void;
 
     /** The columns whose right edge the user can drag, in the order they are rendered. */

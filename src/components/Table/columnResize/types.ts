@@ -2,11 +2,7 @@ import type ChildrenProps from '@src/types/utils/ChildrenProps';
 
 import type {ColumnResizeController} from './useColumnResize/types';
 
-/**
- * The widths the user dragged a table's columns to, keyed by column key. A column absent from this is sized from its
- * content by the resolver, so a table only ever stores the columns the user actually touched and a column added later
- * still sizes itself.
- */
+/** User-dragged widths by column key. Absent columns are sized from content, so only touched columns get stored. */
 type ColumnWidthOverrides = Record<string, number>;
 
 /** A column whose right edge the user can drag. */
@@ -17,22 +13,10 @@ type ResizableColumn = {
     /** The column's heading, used to name its edge for assistive technology. */
     columnLabel: string;
 
-    /**
-     * Width the column's content needs, which is what a click on its edge sizes the column to.
-     *
-     * `undefined` for a column whose content can't be measured — one that declared neither a width nor a way to read
-     * the text it renders. Clicking such a column's edge does nothing, since "as wide as its content" isn't a width
-     * anything here can name. Double-clicking it still releases it back to automatic sizing.
-     */
+    /** Content width a click on the edge fits to. `undefined` when unmeasurable, making the click a no-op. */
     contentWidth?: number;
 
-    /**
-     * Keys of the columns that pay for this one, in render order: the columns after it that still share the row —
-     * neither sized by the user nor declaring a width of their own.
-     *
-     * Empty when nothing after this column can give width up. Dragging it then takes the row past the table's width
-     * and starts the horizontal scroller rather than moving another column.
-     */
+    /** Keys of later columns that pay for this one, in render order. Empty means resizing it overflows the table and scrolls. */
     absorberColumnKeys: string[];
 };
 

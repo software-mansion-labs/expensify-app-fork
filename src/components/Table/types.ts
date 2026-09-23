@@ -211,12 +211,8 @@ type TableProps<DataType extends TableData, ColumnKey extends string = string, F
         shouldUseDynamicColumns?: boolean;
 
         /**
-         * Lets the user drag the columns' edges, and is the key their widths are stored under. Requires
-         * `shouldUseDynamicColumns`, since a dragged width is applied through the same resolver that sizes the columns
-         * from their content. Web-only and wide-layout-only, for the same reasons dynamic sizing is.
-         *
-         * Pick a value that identifies the set of columns rather than the screen: two tables showing the same columns
-         * should share their widths, and one table showing a different set of columns should not inherit them.
+         * Enables column resizing and keys the stored widths; requires `shouldUseDynamicColumns`, web and wide layout only.
+         * Name it after the column set, not the screen, so tables with the same columns share widths.
          */
         columnResizingID?: string;
 
