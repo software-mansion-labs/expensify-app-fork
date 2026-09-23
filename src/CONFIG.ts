@@ -153,6 +153,9 @@ export default {
         SECURE_API_ROOT: qaSecureExpensifyURL,
         TEAM_DOMAIN: get(Config, 'QA_CF_TEAM_DOMAIN', ''),
         CLIENT_ID: get(Config, 'QA_CF_OAUTH_CLIENT_ID', ''),
+        // A second registration, because the two platforms authorize against different redirect URIs and
+        // Cloudflare issues one client per redirect URI set
+        NATIVE_CLIENT_ID: get(Config, 'QA_CF_OAUTH_CLIENT_ID_NATIVE', ''),
     },
     SENTRY_DSN: get(Config, 'SENTRY_DSN', 'https://7b463fb4d4402d342d1166d929a62f4e@o4510228013121536.ingest.us.sentry.io/4510228107427840'),
 } as const;
