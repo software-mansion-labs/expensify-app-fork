@@ -9,12 +9,12 @@ import BootSplash from '@libs/BootSplash';
 
 import CONST from '@src/CONST';
 
-import React, {Activity, useEffect, useState, useSyncExternalStore} from 'react';
+import React, {Activity, useEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {View} from 'react-native';
 
 /*
- * The smallest screen that shows the one thing a useScreenActivityEffect call site must not do: share a variable with
- * a plain useEffect. App.tsx renders this instead of the navigation root. Nothing here touches Onyx or navigation.
+ * The smallest screen that shows the one thing a useScreenActivityEffect call site must not do: share a ref with a
+ * plain useEffect. App.tsx renders this instead of the navigation root. Nothing here touches Onyx or navigation.
  */
 
 const REPORT_ID = 'design';
@@ -29,9 +29,6 @@ const reports: Record<string, Report> = {[REPORT_ID]: {name: 'Design team', unre
 /** Stands in for Pusher. A subscription is open while its id sits here; every open one gets an event on each tick. */
 const openSubscriptions = new Map<number, () => void>();
 let nextID = 1;
-
-/** The shared variable. Written by useScreenActivityEffect, cleared by a plain useEffect. This is the trap. */
-let shared: Subscription | null = null;
 
 const log: string[] = [];
 
@@ -94,10 +91,10 @@ function onNewMessage(reportID: string) {
 }
 
 const STEPS_BROKEN = [
-    '1. Cover: the screen goes under <Activity mode="hidden">. React runs the plain useEffect cleanup: shared = null. The hook does nothing, the subscription stays open. Log: "useEffect cleanup: shared variable = null".',
-    '2. Leave chat: the report is deleted and the widget leaves the tree while hidden. Now the hook cleanup runs, reads shared, finds null, skips close(). The subscription is open with no owner. Status turns red.',
+    '1. Cover: the screen goes under <Activity mode="hidden">. React runs the plain useEffect cleanup: subscriptionRef.current = null. The hook does nothing, the subscription stays open. Log: "useEffect cleanup: subscriptionRef.current = null".',
+    '2. Leave chat: the report is deleted and the widget leaves the tree while hidden. Now the hook cleanup runs, reads the ref, finds null, skips close(). The subscription is open with no owner. Status turns red.',
     '3. Wait a second. Pusher delivers the next event to the leaked handler. It does reports["design"].unread += 1 on a report that no longer exists: TypeError. On native this is a crash. Here the app\'s ErrorBoundary shows it.',
-    'Control: skip step 1 and click Leave chat on the uncovered screen. Both cleanups run in the same commit, hook first: close() succeeds, then shared = null. This is why the code looks correct in every test that never covers the screen.',
+    'Control: skip step 1 and click Leave chat on the uncovered screen. Both cleanups run in the same commit, hook first: close() succeeds, then the ref is nulled. This is why the code looks correct in every test that never covers the screen.',
 ];
 
 const STEPS_FIXED = [
@@ -107,23 +104,28 @@ const STEPS_FIXED = [
 ];
 
 function WidgetBroken() {
+    // The trap: one ref written by useScreenActivityEffect and cleared by a plain useEffect, the way an isMountedRef is.
+    const subscriptionRef = useRef<Subscription | null>(null);
+
     useScreenActivityEffect(() => {
-        shared = subscribe(() => onNewMessage(REPORT_ID));
-        note(`hook setup: subscribed #${shared.id}, shared variable set`);
+        const subscription = subscribe(() => onNewMessage(REPORT_ID));
+        subscriptionRef.current = subscription;
+        note(`hook setup: subscribed #${subscription.id}, stored in subscriptionRef`);
         return () => {
-            if (shared) {
-                shared.close();
-                note(`hook cleanup: closed #${shared.id} via the shared variable`);
+            const current = subscriptionRef.current;
+            if (current) {
+                current.close();
+                note(`hook cleanup: closed #${current.id} via subscriptionRef`);
                 return;
             }
-            note('hook cleanup: shared variable is null, close() skipped');
+            note('hook cleanup: subscriptionRef.current is null, close() skipped');
         };
     }, []);
 
     useEffect(() => {
         return () => {
-            shared = null;
-            note('useEffect cleanup: shared variable = null');
+            subscriptionRef.current = null;
+            note('useEffect cleanup: subscriptionRef.current = null');
         };
     }, []);
 
@@ -185,8 +187,8 @@ function SharedCleanupDemo() {
                     <Text>Fixed variant: the widget keeps the subscription in the closure of the effect and closes it from there. Nothing else touches it.</Text>
                 ) : (
                     <Text>
-                        Broken variant: the widget stores the subscription in a module-level variable, shared. Its useScreenActivityEffect cleanup closes whatever shared points to. A plain
-                        useEffect next to it sets shared = null in its cleanup. Two cleanups, one variable.
+                        Broken variant: the widget stores the subscription in a ref. Its useScreenActivityEffect cleanup closes whatever the ref points to. A plain useEffect next to it nulls
+                        the ref in its cleanup, the way an isMountedRef is cleared. Two cleanups, one ref.
                     </Text>
                 )}
             </View>
@@ -210,7 +212,6 @@ function SharedCleanupDemo() {
                     size={CONST.BUTTON_SIZE.SMALL}
                     onPress={() => {
                         openSubscriptions.clear();
-                        shared = null;
                         nextID = 1;
                         reports[REPORT_ID] = {name: 'Design team', unread: 0};
                         log.length = 0;
@@ -260,7 +261,9 @@ function SharedCleanupDemo() {
                 ))}
                 <Text style={[styles.textLabelSupporting, styles.mt2]}>THE RULE</Text>
                 <Text>A useScreenActivityEffect cleanup touches only what its own setup created, through the closure: const s = subscribe(); return () =&gt; s.close().</Text>
-                <Text>No module-level variables, no refs written from another effect, no counters shared with a plain useEffect. Then the moment the cleanup runs stops mattering.</Text>
+                <Text>
+                    No refs written or cleared from another effect, no module-level variables, no counters shared with a plain useEffect. Then the moment the cleanup runs stops mattering.
+                </Text>
             </View>
         </View>
     );
