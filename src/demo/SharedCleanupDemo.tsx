@@ -17,29 +17,36 @@ import {View} from 'react-native';
  * a plain useEffect. App.tsx renders this instead of the navigation root. Nothing here touches Onyx or navigation.
  */
 
-type Resource = {id: number; close: () => void};
+const REPORT_ID = 'design';
+const EVENT_INTERVAL_MS = 1500;
 
-/** What "Pusher" really holds. A resource is open while its id sits here. */
-const openResources = new Set<number>();
+type Report = {name: string; unread: number};
+type Subscription = {id: number; close: () => void};
+
+/** Stands in for the Onyx report collection. Leaving a chat deletes its entry, as Onyx does. */
+const reports: Record<string, Report> = {[REPORT_ID]: {name: 'Design team', unread: 0}};
+
+/** Stands in for Pusher. A subscription is open while its id sits here; every open one gets an event on each tick. */
+const openSubscriptions = new Map<number, () => void>();
 let nextID = 1;
 
 /** The shared variable. Written by useScreenActivityEffect, cleared by a plain useEffect. This is the trap. */
-let shared: Resource | null = null;
+let shared: Subscription | null = null;
 
 const log: string[] = [];
 
-/** The sets above live outside React, so every change publishes a fresh snapshot for the screen to render. */
-let snapshot = {log: [] as string[], open: [] as number[]};
+/** Everything above lives outside React, so every change publishes a fresh snapshot for the screen to render. */
+let snapshot = {log: [] as string[], open: [] as number[], unread: 0, crash: null as Error | null};
 const listeners = new Set<() => void>();
 
-function publish() {
-    snapshot = {log: [...log], open: [...openResources]};
+function publish(crash: Error | null = snapshot.crash) {
+    snapshot = {log: [...log], open: [...openSubscriptions.keys()], unread: reports[REPORT_ID]?.unread ?? 0, crash};
     for (const listener of listeners) {
         listener();
     }
 }
 
-function subscribe(listener: () => void) {
+function subscribeStore(listener: () => void) {
     listeners.add(listener);
     return () => listeners.delete(listener);
 }
@@ -50,49 +57,59 @@ function getSnapshot() {
 
 function note(line: string) {
     log.unshift(line);
-    log.length = Math.min(log.length, 4);
+    log.length = Math.min(log.length, 5);
     publish();
 }
 
-function open(): Resource {
-    if (openResources.size > 0) {
-        throw new Error(
-            `open(): resource #${[...openResources].join(', #')} is still open and nobody owns it.\n\n` +
-                'It was opened by useScreenActivityEffect and stored in a shared variable. A plain useEffect cleared that variable when the screen was covered, ' +
-                'because React runs plain effect cleanups on cover. The hook cleanup ran later, on removal, found the variable empty and skipped close(). ' +
-                "Mounting again opens a second copy on top of the leaked one. The app's own error boundary shows this page.",
-        );
-    }
+function subscribe(onEvent: () => void): Subscription {
     const id = nextID;
     nextID += 1;
-    openResources.add(id);
+    openSubscriptions.set(id, onEvent);
     publish();
     return {
         id,
         close: () => {
-            openResources.delete(id);
+            openSubscriptions.delete(id);
             publish();
         },
     };
 }
 
+// Pusher delivers events on its own schedule. An uncaught error in an event callback is a hard crash on native and an
+// unhandled exception on web. The demo catches it only to hand it to the app's ErrorBoundary, so it is visible here.
+setInterval(() => {
+    for (const onEvent of openSubscriptions.values()) {
+        try {
+            onEvent();
+        } catch (error) {
+            publish(error instanceof Error ? error : new Error(String(error)));
+        }
+    }
+}, EVENT_INTERVAL_MS);
+
+/** The event handler a chat would have: bump the unread count of its report. Correct as long as the report exists. */
+function onNewMessage(reportID: string) {
+    reports[reportID].unread += 1;
+    note(`event: unread for ${reportID} is now ${reports[reportID].unread}`);
+}
+
 const STEPS_BROKEN = [
-    '1. Cover: the screen goes under <Activity mode="hidden">. React runs the plain useEffect cleanup: shared = null. The hook does nothing, the resource stays open. Log: "useEffect cleanup: shared variable = null".',
-    '2. Remove widget: the component leaves the tree while hidden. Now the hook cleanup runs, reads shared, finds null, skips close(). The resource is open with no owner. Status turns red.',
-    '3. Uncover and mount again: a new Widget calls open(). The demo open() refuses while a leaked resource exists and throws. The error reaches the app\'s ErrorBoundary: "Uh-oh, something went wrong!".',
-    'Control: skip step 1 and click Remove on the live screen. Both cleanups run in the same commit, hook first: close() succeeds, then shared = null. This is why the code looks correct in every test that never covers the screen.',
+    '1. Cover: the screen goes under <Activity mode="hidden">. React runs the plain useEffect cleanup: shared = null. The hook does nothing, the subscription stays open. Log: "useEffect cleanup: shared variable = null".',
+    '2. Leave chat: the report is deleted and the widget leaves the tree while hidden. Now the hook cleanup runs, reads shared, finds null, skips close(). The subscription is open with no owner. Status turns red.',
+    '3. Wait a second. Pusher delivers the next event to the leaked handler. It does reports["design"].unread += 1 on a report that no longer exists: TypeError. On native this is a crash. Here the app\'s ErrorBoundary shows it.',
+    'Control: skip step 1 and click Leave chat on the uncovered screen. Both cleanups run in the same commit, hook first: close() succeeds, then shared = null. This is why the code looks correct in every test that never covers the screen.',
 ];
 
 const STEPS_FIXED = [
-    '1. Cover: the screen goes under <Activity mode="hidden">. There is no plain useEffect, so nothing runs. The hook keeps the resource open.',
-    '2. Remove widget: the component leaves the tree while hidden. The hook cleanup runs and calls close() on the resource from its own closure. Status stays green.',
-    '3. Uncover and mount again: a new Widget calls open(). Nothing is leaked, so it opens a fresh resource. No error.',
+    '1. Cover: the screen goes under <Activity mode="hidden">. There is no plain useEffect, so nothing runs. The hook keeps the subscription open.',
+    '2. Leave chat: the report is deleted and the widget leaves the tree while hidden. The hook cleanup runs and calls close() on the subscription from its own closure. Status stays green.',
+    '3. Wait a second. No subscription is open, so no event is delivered. Nothing to crash.',
 ];
 
 function WidgetBroken() {
     useScreenActivityEffect(() => {
-        shared = open();
-        note(`hook setup: opened #${shared.id}, shared variable set`);
+        shared = subscribe(() => onNewMessage(REPORT_ID));
+        note(`hook setup: subscribed #${shared.id}, shared variable set`);
         return () => {
             if (shared) {
                 shared.close();
@@ -110,26 +127,35 @@ function WidgetBroken() {
         };
     }, []);
 
-    return <Text>Widget mounted (broken)</Text>;
+    return <ChatBox label="broken" />;
 }
 
 function WidgetFixed() {
     useScreenActivityEffect(() => {
-        const resource = open();
-        note(`hook setup: opened #${resource.id}, held in the closure`);
+        const subscription = subscribe(() => onNewMessage(REPORT_ID));
+        note(`hook setup: subscribed #${subscription.id}, held in the closure`);
         return () => {
-            resource.close();
-            note(`hook cleanup: closed #${resource.id} via the closure`);
+            subscription.close();
+            note(`hook cleanup: closed #${subscription.id} via the closure`);
         };
     }, []);
 
-    return <Text>Widget mounted (fixed)</Text>;
+    return <ChatBox label="fixed" />;
+}
+
+function ChatBox({label}: {label: string}) {
+    const {unread} = useSyncExternalStore(subscribeStore, getSnapshot);
+    return (
+        <Text>
+            Design team chat ({label}), unread: {unread}
+        </Text>
+    );
 }
 
 function SharedCleanupDemo() {
     const styles = useThemeStyles();
     const theme = useTheme();
-    const {log: lines, open: openIDs} = useSyncExternalStore(subscribe, getSnapshot);
+    const {log: lines, open: openIDs, crash} = useSyncExternalStore(subscribeStore, getSnapshot);
     const [isFixed, setIsFixed] = useState(false);
     const [isCovered, setIsCovered] = useState(false);
     const [isMounted, setIsMounted] = useState(true);
@@ -140,6 +166,10 @@ function SharedCleanupDemo() {
         BootSplash.hide();
     }, []);
 
+    if (crash) {
+        throw crash;
+    }
+
     return (
         <View style={[styles.flex1, styles.p5, styles.gap4, {backgroundColor: theme.appBG}]}>
             <Text style={styles.textHeadlineH2}>useScreenActivityEffect: shared cleanup trap ({isFixed ? 'fixed' : 'broken'})</Text>
@@ -148,14 +178,14 @@ function SharedCleanupDemo() {
                 <Text style={styles.textLabelSupporting}>SETUP</Text>
                 <Text>
                     Screens wrapped in {'<Activity mode="hidden">'} (a chat covered by the RHP) keep their state, but React runs every plain useEffect cleanup on cover and the setup again on
-                    reveal. useScreenActivityEffect is a useEffect whose cleanup skips the cover and runs only when the component is really removed. Below, one Widget uses it to open a
-                    resource (think: a Pusher subscription).
+                    reveal. useScreenActivityEffect is a useEffect whose cleanup skips the cover and runs only when the component is really removed. Below, one chat widget uses it to
+                    subscribe to Pusher events for report &quot;design&quot;. The handler bumps the unread count of that report, which is correct as long as the report exists.
                 </Text>
                 {isFixed ? (
-                    <Text>Fixed variant: the Widget keeps the resource in the closure of the effect and closes it from there. Nothing else touches it.</Text>
+                    <Text>Fixed variant: the widget keeps the subscription in the closure of the effect and closes it from there. Nothing else touches it.</Text>
                 ) : (
                     <Text>
-                        Broken variant: the Widget stores the resource in a module-level variable, shared. Its useScreenActivityEffect cleanup closes whatever shared points to. A plain
+                        Broken variant: the widget stores the subscription in a module-level variable, shared. Its useScreenActivityEffect cleanup closes whatever shared points to. A plain
                         useEffect next to it sets shared = null in its cleanup. Two cleanups, one variable.
                     </Text>
                 )}
@@ -166,28 +196,25 @@ function SharedCleanupDemo() {
                     <Button.Text>{isCovered ? '1. Uncover' : '1. Cover (open RHP)'}</Button.Text>
                 </Button>
                 <Button
-                    onPress={() => setIsMounted(false)}
+                    variant={CONST.BUTTON_VARIANT.DANGER}
+                    onPress={() => {
+                        delete reports[REPORT_ID];
+                        setIsMounted(false);
+                        publish();
+                    }}
                     isDisabled={!isMounted}
                 >
-                    <Button.Text>2. Remove widget</Button.Text>
-                </Button>
-                <Button
-                    onPress={() => {
-                        setIsCovered(false);
-                        setIsMounted(true);
-                    }}
-                    isDisabled={isMounted}
-                >
-                    <Button.Text>3. Uncover and mount again</Button.Text>
+                    <Button.Text>2. Leave chat (delete report, remove widget)</Button.Text>
                 </Button>
                 <Button
                     size={CONST.BUTTON_SIZE.SMALL}
                     onPress={() => {
-                        openResources.clear();
+                        openSubscriptions.clear();
                         shared = null;
                         nextID = 1;
+                        reports[REPORT_ID] = {name: 'Design team', unread: 0};
                         log.length = 0;
-                        publish();
+                        publish(null);
                         setIsFixed((value) => !value);
                         setIsCovered(false);
                         setIsMounted(true);
@@ -198,8 +225,8 @@ function SharedCleanupDemo() {
             </View>
 
             <Text style={[styles.textHeadlineH2, {color: isLeaked ? theme.danger : theme.success}]}>
-                {openIDs.length === 0 ? 'resource closed' : `resource #${openIDs.join(', #')} OPEN`}
-                {isLeaked ? ', nobody owns it (leak)' : ''}
+                {openIDs.length === 0 ? 'subscription closed' : `subscription #${openIDs.join(', #')} OPEN`}
+                {isLeaked ? ', nobody owns it, next event crashes' : ''}
             </Text>
 
             <View
@@ -210,11 +237,11 @@ function SharedCleanupDemo() {
                 ]}
             >
                 <Text style={styles.textLabelSupporting}>SCREEN {isCovered ? '(covered)' : '(visible)'}</Text>
-                <Activity mode={isCovered ? 'hidden' : 'visible'}>{isMounted ? <Widget /> : <Text style={styles.textSupporting}>no widget</Text>}</Activity>
+                <Activity mode={isCovered ? 'hidden' : 'visible'}>{isMounted ? <Widget /> : <Text style={styles.textSupporting}>no chat, report deleted</Text>}</Activity>
             </View>
 
             <View style={styles.gap1}>
-                <Text style={styles.textLabelSupporting}>CLEANUP LOG</Text>
+                <Text style={styles.textLabelSupporting}>LOG</Text>
                 {lines.length === 0 ? <Text style={styles.textSupporting}>nothing yet</Text> : null}
                 {lines.map((line) => (
                     <Text
@@ -232,7 +259,7 @@ function SharedCleanupDemo() {
                     <Text key={line}>{line}</Text>
                 ))}
                 <Text style={[styles.textLabelSupporting, styles.mt2]}>THE RULE</Text>
-                <Text>A useScreenActivityEffect cleanup touches only what its own setup created, through the closure: const r = open(); return () =&gt; r.close().</Text>
+                <Text>A useScreenActivityEffect cleanup touches only what its own setup created, through the closure: const s = subscribe(); return () =&gt; s.close().</Text>
                 <Text>No module-level variables, no refs written from another effect, no counters shared with a plain useEffect. Then the moment the cleanup runs stops mattering.</Text>
             </View>
         </View>
