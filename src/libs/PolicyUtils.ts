@@ -3341,22 +3341,27 @@ function hasAnyPaidPolicy(policies: OnyxCollection<Policy> | null) {
 }
 
 /**
- * Returns the group workspaces where the user can create a report: paid (Team/Corporate) workspaces,
- * plus Submit workspaces. Submit workspaces are free but still support report creation, so they belong
- * here even though they're excluded from `getGroupPaidPolicies`.
+ * Whether the user can create a report on this workspace: a paid (Team/Corporate) or Submit workspace the user
+ * has a role on. Submit workspaces are free but still support report creation, so they belong here even though
+ * they're excluded from `getGroupPaidPolicies`. A policy stub (e.g. the `{id, name}` the backend sends for a
+ * preferred workspace the user is not a member of) has no type or role and is rejected.
  */
+function canCreateReportOnPolicy(policy: OnyxEntry<Policy>, currentUserLogin?: string): policy is Policy {
+    return (
+        !!policy &&
+        !policy.isJoinRequestPending &&
+        (isPaidGroupPolicy(policy) || isSubmitPolicy(policy)) &&
+        shouldShowPolicy(policy, false, currentUserLogin) &&
+        !isTeachersUnitePolicyID(policy.id)
+    );
+}
+
+/** Returns the group workspaces where the user can create a report; the collection form of `canCreateReportOnPolicy`. */
 function getGroupPoliciesWhereReportCanBeCreated(policies: OnyxCollection<Policy> | null, currentUserLogin?: string) {
     if (isEmptyObject(policies)) {
         return CONST.EMPTY_ARRAY;
     }
-    return Object.values(policies).filter(
-        (policy): policy is Policy =>
-            !!policy &&
-            !policy.isJoinRequestPending &&
-            (isPaidGroupPolicy(policy) || isSubmitPolicy(policy)) &&
-            shouldShowPolicy(policy, false, currentUserLogin) &&
-            !isTeachersUnitePolicyID(policy.id),
-    );
+    return Object.values(policies).filter((policy): policy is Policy => canCreateReportOnPolicy(policy, currentUserLogin));
 }
 
 /**
@@ -3840,6 +3845,7 @@ export {
     areSettingsInErrorFields,
     settingsPendingAction,
     getGroupPaidPolicies,
+    canCreateReportOnPolicy,
     getGroupPoliciesWhereReportCanBeCreated,
     getDefaultChatEnabledPolicy,
     getDefaultChatEnabledPolicySelection,
