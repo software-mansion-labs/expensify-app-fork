@@ -42,7 +42,8 @@ import {EditingCellProvider} from './components/TransactionItemRow/EditableCell'
 import {KeyboardStateProvider} from './components/withKeyboardState';
 import CONFIG from './CONFIG';
 import CONST from './CONST';
-import Expensify from './Expensify';
+// Demo branch: the navigation root is replaced by the shared cleanup demo, see src/demo/SharedCleanupDemo.tsx.
+import SharedCleanupDemo from './demo/SharedCleanupDemo';
 import {CurrentReportIDContextProvider} from './hooks/useCurrentReportID';
 import useDefaultDragAndDrop from './hooks/useDefaultDragAndDrop';
 import HybridAppHandler from './HybridAppHandler';
@@ -134,7 +135,7 @@ function App() {
                                     <CustomStatusBarAndBackground />
                                     <ErrorBoundary errorMessage="NewExpensify crash caught by error boundary">
                                         <ColorSchemeWrapper>
-                                            <Expensify />
+                                            <SharedCleanupDemo />
                                         </ColorSchemeWrapper>
                                     </ErrorBoundary>
                                     <NavigationBar />
