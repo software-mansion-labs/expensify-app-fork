@@ -2,7 +2,8 @@ import type {GetOAuthRedirectURI, GetQAResource, IsQAAuthConfigured, IsQAServerR
 
 /**
  * QA auth is web-only: receiving the OAuth callback needs claimed Universal/App Links, so the feature is
- * structurally off on native regardless of build configuration.
+ * structurally off on native regardless of build configuration. Everything downstream gates on
+ * isQAAuthConfigured(), which makes the remaining exports unreachable. They only satisfy the module shape.
  */
 const isQAAuthConfigured: IsQAAuthConfigured = () => false;
 

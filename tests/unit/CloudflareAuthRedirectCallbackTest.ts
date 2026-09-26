@@ -1,7 +1,4 @@
-/**
- * Boot runs this in two phases, capture (before the app is imported) and exchange (after Onyx.init), so
- * the tests drive both, which is the only combination that ever happens in the app.
- */
+/** Boot runs capture and exchange as two phases, so the tests drive both: the only combination the app ever produces */
 import type * as CaptureAuthCallbackModule from '@libs/CloudflareAccess/captureAuthCallbackURL/index.ts';
 import type * as ConfigModule from '@libs/CloudflareAccess/Config/index.ts';
 import type * as AuthRedirectCallbackModule from '@libs/CloudflareAccess/finishSignInFromURL/index.ts';

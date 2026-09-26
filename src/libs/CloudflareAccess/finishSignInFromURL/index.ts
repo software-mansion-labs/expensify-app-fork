@@ -1,6 +1,6 @@
 /**
- * Exchange half of the same-tab OAuth redirect. The callback URL was already read and rewritten by the
- * capture phase, which runs earlier in boot.
+ * Exchange half of the same-tab OAuth redirect. Separate from the capture phase because persisting the
+ * session needs an initialized Onyx, so this half cannot run as early as the URL rewrite has to.
  */
 import {getCapturedCloudflareAuthCallback} from '@libs/CloudflareAccess/captureAuthCallbackURL';
 import Log from '@libs/Log';
@@ -16,7 +16,8 @@ const finishCloudflareSignInFromURL: FinishCloudflareSignInFromURL = () => {
     }
 
     if (captured.exchange) {
-        // The catch is not optional: an unhandled rejection is reported as a crash
+        // Fire and forget: boot cannot wait on the round trip. The catch is not optional
+        // because an unhandled rejection is reported as a crash
         exchangeCodeForCloudflareSession(captured.exchange).catch((error: unknown) => {
             Log.warn('[CloudflareSession] Code exchange failed', {errorMessage: error instanceof Error ? error.message : String(error)});
         });

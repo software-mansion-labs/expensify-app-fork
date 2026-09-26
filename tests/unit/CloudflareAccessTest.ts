@@ -1,3 +1,7 @@
+/**
+ * PKCE encoding pinned to the RFC 7636 Appendix B vector, the config security boundary
+ * (isQAServerRequest), and the OAuth client's request/response contract.
+ */
 import type * as AuthServerMetadataModule from '@libs/CloudflareAccess/AuthServerMetadata';
 import type * as ConfigModule from '@libs/CloudflareAccess/Config/index.ts';
 import type * as PKCEModule from '@libs/CloudflareAccess/generatePKCE';
@@ -185,7 +189,6 @@ describe('config', () => {
     it('derives the RFC 8707 resource in origin form (no trailing slash)', () => {
         // Given the configured API root, when the resource indicator is derived, then it must be the bare origin. RFC 8707 resource values are matched literally, so a trailing slash would name a different resource
         expect(getQAResource()).toBe('https://qa.example.com');
-        // Cloudflare binds the token to exactly one resource string, so a second allowlist host must not widen it
     });
 
     it('drops the secure origin from the allowlist when it is not configured', () => {
@@ -197,7 +200,7 @@ describe('config', () => {
     });
 
     it.each(['http://qa-secure.example.com/', 'not a url at all'])('a malformed secure root (%s) disables the whole feature', (secureRoot) => {
-        // Given a malformed secure root. When checked, then the entire feature must disable, because half an allowlist is worse than none: the shouldUseSecure commands would go out bearer-less and 401 unrecoverably
+        // Given a malformed secure root. When checked, then the entire feature must disable, because the shouldUseSecure commands would otherwise go out without the bearer and 401 unrecoverably
         mockQAAuth.SECURE_API_ROOT = secureRoot;
         expect(isQAAuthConfigured()).toBe(false);
         expect(isQAServerRequest('https://qa.example.com/api/OpenApp')).toBe(false);
@@ -357,7 +360,8 @@ describe('oAuthClient', () => {
 });
 
 describe('authServerMetadata', () => {
-    // The real Cloudflare response shape, captured from a live team
+    // The real Cloudflare response shape, captured from a live team. Built from entries because the
+    // protocol uses snake_case keys, which the naming-convention lint rule forbids as literal properties.
     const VALID_METADATA_ENTRIES: Array<[string, unknown]> = [
         ['issuer', 'https://team.cloudflareaccess.com'],
         ['authorization_endpoint', 'https://team.cloudflareaccess.com/cdn-cgi/access/oauth/authorization'],
