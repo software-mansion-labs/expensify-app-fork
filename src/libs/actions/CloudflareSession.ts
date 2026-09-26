@@ -14,7 +14,14 @@ const ACCESS_TOKEN_EXPIRY_BUFFER_MS = 60_000;
 /** `undefined` = Onyx not read yet, `null` = read and absent */
 let sessionCache: CloudflareSession | null | undefined;
 
-/** The async flows below cannot be cancelled, so each captures this at the start and re-checks it after awaits */
+/**
+ * Bumped only by `clearCloudflareSession`. The async flows below cannot be cancelled, so each captures this
+ * at the start and re-checks it after awaits.
+ *
+ * A sign-out does not cancel work in flight here: a rotation or exchange that resolves after it persists.
+ * The Cloudflare identity belongs to the developer, not to the Expensify account, so there is nothing to
+ * protect by discarding it, and keeping it spares the next QA request a fresh authorize round trip.
+ */
 let sessionGeneration = 0;
 
 let resolveHydration!: () => void;
@@ -47,6 +54,17 @@ function waitForCloudflareSessionHydration(): Promise<void> {
 
 function isSessionNearExpiry(session: CloudflareSession): boolean {
     return session.expiresAt - Date.now() < ACCESS_TOKEN_EXPIRY_BUFFER_MS;
+}
+
+/**
+ * Cache first: requests during this boot must see the token before disk I/O settles. A failed persist is
+ * not fatal, because the cache holds the only usable credential and a reload self-heals.
+ */
+function cacheAndPersistSession(session: CloudflareSession, flow: 'exchanged' | 'rotated'): Promise<void> {
+    sessionCache = session;
+    return Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session).catch((error: unknown) => {
+        Log.warn(`[CloudflareSession] Failed to persist the ${flow} session`, {error});
+    });
 }
 
 let isRedirectInFlight = false;
@@ -85,11 +103,7 @@ function exchangeCodeForCloudflareSession({code, codeVerifier}: {code: string; c
             if (generation !== sessionGeneration) {
                 return;
             }
-            // Cache first: requests during this boot must see the token before disk I/O settles
-            sessionCache = session;
-            return Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session).catch((error: unknown) => {
-                Log.warn('[CloudflareSession] Failed to persist the exchanged session', {error});
-            });
+            return cacheAndPersistSession(session, 'exchanged');
         })
         .finally(() => {
             codeExchangePromise = null;
@@ -133,11 +147,7 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
             // Persisting the rotated pair would resurrect the dead session
             return 'reauth-required';
         }
-        sessionCache = session;
-        // The rotation already spent the old token, so the cache holds the only usable pair
-        await Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, session).catch((error: unknown) => {
-            Log.warn('[CloudflareSession] Failed to persist the rotated session', {error});
-        });
+        await cacheAndPersistSession(session, 'rotated');
         return 'refreshed';
     } catch (error) {
         if (!(error instanceof OAuthError) || (error.code !== 'invalid_grant' && error.code !== 'invalid_response')) {
