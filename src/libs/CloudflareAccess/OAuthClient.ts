@@ -79,7 +79,12 @@ async function buildAuthorizeURL({state, codeChallenge}: {state: string; codeCha
     return url.toString();
 }
 
-function exchangeCode({code, codeVerifier}: {code: string; codeVerifier: string}): Promise<CloudflareSession> {
+type AuthorizationCodeExchange = {
+    code: string;
+    codeVerifier: string;
+};
+
+function exchangeCode({code, codeVerifier}: AuthorizationCodeExchange): Promise<CloudflareSession> {
     const body = new URLSearchParams();
     body.set('grant_type', 'authorization_code');
     body.set('code', code);
@@ -102,3 +107,4 @@ function refreshTokens(refreshToken: string): Promise<CloudflareSession> {
 }
 
 export {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens};
+export type {AuthorizationCodeExchange};

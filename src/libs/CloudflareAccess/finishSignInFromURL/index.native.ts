@@ -1,4 +1,4 @@
-import type {FinishCloudflareSignInFromURL} from './types';
+import type FinishCloudflareSignInFromURL from './types';
 
 const finishCloudflareSignInFromURL: FinishCloudflareSignInFromURL = () => 'not-a-callback';
 
