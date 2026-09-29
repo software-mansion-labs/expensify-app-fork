@@ -394,42 +394,6 @@ describe('NumericInput.BigNumberPad', () => {
         }
     });
 
-    it('focuses the input and collapses the selection when its own empty area is clicked on web', async () => {
-        // Given an input with a selection and rendered BigNumberPad with a testID
-        const inputRef = React.createRef<BaseTextInputRef>();
-        renderInputWithPad({value: '1234'}, {testID: 'pad-container'}, inputRef);
-        await waitForBatchedUpdatesWithAct();
-
-        const input = screen.getByTestId(INPUT_TEST_ID);
-        fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: 2}}});
-        await waitForBatchedUpdatesWithAct();
-
-        const inputElement = inputRef.current;
-        if (!inputElement) {
-            throw new Error('Numeric input ref was not assigned');
-        }
-        const focusSpy = jest.spyOn(inputElement, 'focus');
-
-        const padContainer = screen.getByTestId('pad-container');
-        if (typeof padContainer.props.id !== 'string') {
-            throw new Error('BigNumberPad container id was not assigned');
-        }
-        const containerId = padContainer.props.id;
-
-        // When clicking directly on the pad container's empty area
-        const target = document.createElement('div');
-        target.id = containerId;
-        const preventDefault = jest.fn();
-        fireEvent(padContainer, 'mouseDown', {nativeEvent: {target}, preventDefault});
-        await waitForBatchedUpdatesWithAct();
-
-        // Then the event is prevented, the selection collapses, and the input is focused
-        expect(preventDefault).toHaveBeenCalledTimes(1);
-        expect(input.props.selection).toEqual({start: 2, end: 2});
-        expect(focusSpy).toHaveBeenCalledTimes(1);
-        focusSpy.mockRestore();
-    });
-
     it('focuses the input and collapses the selection when the number pad gap area is clicked on web', async () => {
         // Given an input with a selection and rendered BigNumberPad with a testID
         const inputRef = React.createRef<BaseTextInputRef>();
@@ -488,5 +452,30 @@ describe('NumericInput.BigNumberPad', () => {
         // Then preventDefault is not called and the selection remains unchanged
         expect(preventDefault).not.toHaveBeenCalled();
         expect(input.props.selection).toEqual({start: 0, end: 2});
+    });
+
+    it('applies the custom style and leaves the container id and spacing to the layout', async () => {
+        // Given an input rendered with BigNumberPad and a custom style
+        renderInputWithPad({}, {testID: 'pad-custom', style: {padding: 0}});
+        await waitForBatchedUpdatesWithAct();
+
+        // When checking the pad view
+        const padView = screen.getByTestId('pad-custom');
+
+        // Then it carries the custom style but no layout-owned `numPadContainerView` id, so the id stays unique in the DOM
+        expect(padView.props).toHaveProperty('style', expect.arrayContaining([expect.objectContaining({padding: 0})]));
+        expect(padView.props.id).toBeUndefined();
+    });
+
+    it('fills the width of its container', async () => {
+        // Given an input rendered with BigNumberPad, as the responsive layout places it inside the centering `pageWrapper`
+        renderInputWithPad({}, {testID: 'pad-width'});
+        await waitForBatchedUpdatesWithAct();
+
+        // When checking the pad view
+        const padView = screen.getByTestId('pad-width');
+
+        // Then it spans the full width, because a centered pad would shrink to its content and stack the key columns onto each other
+        expect(padView.props).toHaveProperty('style', expect.arrayContaining([expect.objectContaining({width: '100%'})]));
     });
 });

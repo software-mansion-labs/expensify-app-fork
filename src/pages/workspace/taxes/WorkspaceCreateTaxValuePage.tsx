@@ -89,7 +89,7 @@ function WorkspaceCreateTaxValuePage({
                             />
                             <NumericInput.Symbol>%</NumericInput.Symbol>
                         </NumericInput.Container>
-                        <NumericInput.BigNumberPad />
+                        <NumericInput.BigNumberPad style={[styles.w100, styles.justifyContentEnd, styles.pageWrapper, styles.pt0]} />
                     </NumericInput>
                     <Button
                         variant={CONST.BUTTON_VARIANT.SUCCESS}

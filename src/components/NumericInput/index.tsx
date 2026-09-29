@@ -7,7 +7,6 @@ import NumericFlipButton from './primitives/NumericFlipButton';
 import NumericInputContainer from './primitives/NumericInputContainer';
 import NumericMinusSign from './primitives/NumericMinusSign';
 import NumericSymbol from './primitives/NumericSymbol';
-import NumericSymbolButton from './primitives/NumericSymbolButton';
 import NumericTextInput from './primitives/NumericTextInput';
 
 /**
@@ -53,9 +52,6 @@ const NumericInput = Object.assign(NumericInputComponent, {
 
     /** Renders its children as the symbol (currency or unit) displayed beside the number. */
     Symbol: NumericSymbol,
-
-    /** Renders a pressable symbol (currency or unit) selector. */
-    SymbolButton: NumericSymbolButton,
 
     /** Renders the minus sign of a negative value, which the input itself does not display. */
     MinusSign: NumericMinusSign,

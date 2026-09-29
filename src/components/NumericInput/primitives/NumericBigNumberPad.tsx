@@ -9,20 +9,21 @@ import isHTMLElement from '@libs/isHTMLElement';
 
 import type {MouseEvent} from 'react';
 
-import {useId} from 'react';
 import {View} from 'react-native';
 
 const canUseTouchScreen = canUseTouchScreenUtil();
 
 /**
  * Renders the touch number pad wired to NumericInput actions, state, and selection.
+ * It carries no page spacing or container id: `NumericInput.ResponsiveLayout` (or the screen composing it) owns both.
+ * It always fills the width of its container, because the layout's `pageWrapper` centers its children and would otherwise
+ * shrink the pad to its content, collapsing the three key columns onto each other.
  */
 function NumericBigNumberPad({longPressHandlerStateChanged, numberPressed, style, testID}: NumericBigNumberPadProps) {
     const styles = useThemeStyles();
     const {formattedNumber, isNegative, selection} = useNumericInputState();
-    const {clearSelection, clearSign, focusInput, setNumber} = useNumericInputActions();
-    const containerViewId = useId();
-    const numPadViewId = useId();
+    const {clearSelection, clearSign, focusInput, setNumber, setShouldUpdateSelection} = useNumericInputActions();
+    const numPadViewId = 'numPadView';
 
     if (!canUseTouchScreen) {
         return null;
@@ -53,6 +54,7 @@ function NumericBigNumberPad({longPressHandlerStateChanged, numberPressed, style
     };
 
     const handleLongPressHandlerStateChanged = (isUserLongPressingBackspace: boolean) => {
+        setShouldUpdateSelection?.(!isUserLongPressingBackspace);
         if (!isUserLongPressingBackspace) {
             focusInput();
         }
@@ -60,9 +62,9 @@ function NumericBigNumberPad({longPressHandlerStateChanged, numberPressed, style
     };
 
     const handleMouseDown = (event: MouseEvent<Element>) => {
-        // Only the container's and keypad's own empty areas refocus the input. Presses bubbling up from children keep their selection.
+        // Only the keypad's own gap area refocuses the input. Presses bubbling up from its buttons keep their selection.
         const targetId = isHTMLElement(event.nativeEvent?.target) ? event.nativeEvent.target.id : undefined;
-        if (targetId !== containerViewId && targetId !== numPadViewId) {
+        if (targetId !== numPadViewId) {
             return;
         }
 
@@ -73,9 +75,8 @@ function NumericBigNumberPad({longPressHandlerStateChanged, numberPressed, style
 
     return (
         <View
-            id={containerViewId}
             onMouseDown={handleMouseDown}
-            style={[styles.w100, styles.justifyContentEnd, styles.pageWrapper, styles.pt0, style]}
+            style={[styles.w100, style]}
             testID={testID}
         >
             <BigNumberPad
