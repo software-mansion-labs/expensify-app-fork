@@ -94,6 +94,7 @@ const SCREENS = {
         REPORT_CARD_LOST_OR_DAMAGED_CONFIRM_VALIDATE_CODE: 'Settings_ReportCardLostOrDamaged_ConfirmValidateCode',
         TROUBLESHOOT: 'Settings_Troubleshoot',
         HELP: 'Settings_Help',
+        EMAIL_ISSUE: 'Settings_Email_Issue',
         DYNAMIC_VERIFY_ACCOUNT: 'Dynamic_Verify_Account',
         DYNAMIC_ADD_BANK_ACCOUNT_VERIFY_ACCOUNT: 'Dynamic_Add_Bank_Account_Verify_Account',
         DYNAMIC_EXIT_SURVEY_CONFIRM: 'Dynamic_ExitSurvey_Confirm',
