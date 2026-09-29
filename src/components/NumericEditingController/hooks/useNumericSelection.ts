@@ -33,6 +33,7 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
     const willSelectionBeRestoredAfterInvalidInput = useRef(false);
     // Forward-delete removes the next character, so the caret offset stays.
     const forwardDeletePressedRef = useRef(false);
+    const shouldUpdateSelectionRef = useRef(true);
 
     const collapse = () => {
         setSelection(collapseSelection);
@@ -70,7 +71,12 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
 
     // Tracks whether the next edit follows a forward-delete key press.
     const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
-        forwardDeletePressedRef.current = isForwardDeleteKeyPress(event);
+        const isForwardDelete = isForwardDeleteKeyPress(event);
+        forwardDeletePressedRef.current = isForwardDelete;
+    };
+
+    const setShouldUpdateSelection = (shouldUpdate: boolean) => {
+        shouldUpdateSelectionRef.current = shouldUpdate;
     };
 
     // Restores the last valid caret after a rejected edit.
@@ -96,6 +102,10 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
     };
 
     const handleNativeSelectionChange = (selectionStart: number, selectionEnd: number) => {
+        if (!shouldUpdateSelectionRef.current) {
+            return;
+        }
+
         if (willSelectionBeRestoredAfterInvalidInput.current) {
             willSelectionBeRestoredAfterInvalidInput.current = false;
             return;
@@ -142,6 +152,7 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
         handleKeyPress,
         rejectEdit,
         handleNativeSelectionChange,
+        setShouldUpdateSelection,
     };
 }
 

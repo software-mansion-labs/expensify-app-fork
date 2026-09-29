@@ -17,16 +17,26 @@ function NumericTextInput({
     onBlur,
     accessibilityLabel,
     autoFocus,
+    autoGrow,
+    autoGrowExtraSpace,
+    autoGrowMarginSide,
+    containerStyle,
     contentWidth,
     disabled,
     disableKeyboard,
+    hideFocusedState,
     keyboardType,
     label,
     onFocus,
     prefixContainerStyle,
+    prefixStyle,
+    rightHandSideComponent,
     shouldApplyPaddingToContainer,
     shouldUseDefaultLineHeightForPrefix,
     onSubmitEditing,
+    submitBehavior = 'submit',
+    suffixCharacter,
+    suffixStyle,
     testID,
     touchableInputWrapperStyle,
     style,
@@ -47,10 +57,14 @@ function NumericTextInput({
             // See https://github.com/Expensify/App/issues/51868 for more information
             autoCapitalize="words"
             autoFocus={autoFocus}
+            autoGrow={autoGrow}
+            autoGrowExtraSpace={autoGrowExtraSpace}
+            autoGrowMarginSide={autoGrowMarginSide}
             contentWidth={contentWidth}
             disabled={disabled}
             disableKeyboard={disableKeyboard}
             errorText={errorText}
+            hideFocusedState={hideFocusedState}
             inputMode={!keyboardType ? CONST.INPUT_MODE.DECIMAL : undefined}
             inputStyle={style}
             keyboardType={keyboardType ?? CONST.KEYBOARD_TYPE.DECIMAL_PAD}
@@ -63,13 +77,17 @@ function NumericTextInput({
             onSubmitEditing={onSubmitEditing}
             prefixCharacter={prefixCharacter}
             prefixContainerStyle={prefixContainerStyle}
-            prefixStyle={styles.colorMuted}
+            prefixStyle={prefixStyle ?? styles.colorMuted}
             ref={ref}
+            rightHandSideComponent={rightHandSideComponent}
             selection={selection}
             shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
             shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
-            submitBehavior="submit"
+            submitBehavior={submitBehavior}
+            suffixCharacter={suffixCharacter}
+            suffixStyle={suffixStyle}
             testID={testID}
+            textInputContainerStyles={containerStyle}
             touchableInputWrapperStyle={touchableInputWrapperStyle}
             value={formattedNumber}
         />
