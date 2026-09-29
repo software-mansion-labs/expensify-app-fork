@@ -26,10 +26,9 @@ function useAccessibilityAnnouncement(message: string | ReactNode, shouldAnnounc
             return;
         }
 
-        previousAnnouncedMessageRef.current = message;
-
         // On iOS real devices, a brief delay helps the accessibility tree sync before announcing.
         const timeout = setTimeout(() => {
+            previousAnnouncedMessageRef.current = message;
             AccessibilityInfo.announceForAccessibility(message);
         }, DELAY_FOR_ACCESSIBILITY_TREE_SYNC);
 

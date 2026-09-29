@@ -1,33 +1,34 @@
-import type {AppStateStatus} from 'react-native';
-
 import React from 'react';
 import {AppState} from 'react-native';
 
 import type AppStateType from './types';
 import type {UseAppStateProps} from './types';
 
-function useAppState({onAppStateChange}: UseAppStateProps = {}) {
-    const [appState, setAppState] = React.useState<AppStateType>({
-        isForeground: AppState.currentState === 'active',
-        isInactive: AppState.currentState === 'inactive',
-        isBackground: AppState.currentState === 'background',
-    });
+function subscribeToAppState(onStoreChange: () => void) {
+    const subscription = AppState.addEventListener('change', onStoreChange);
+    return () => subscription.remove();
+}
+
+function getAppStateSnapshot() {
+    return AppState.currentState;
+}
+
+function useAppState({onAppStateChange}: UseAppStateProps = {}): AppStateType {
+    const appStateStatus = React.useSyncExternalStore(subscribeToAppState, getAppStateSnapshot);
 
     React.useEffect(() => {
-        function handleAppStateChange(nextAppState: AppStateStatus) {
-            setAppState({
-                isForeground: nextAppState === 'active',
-                isInactive: nextAppState === 'inactive',
-                isBackground: nextAppState === 'background',
-            });
-
-            onAppStateChange?.(nextAppState);
+        if (!onAppStateChange) {
+            return;
         }
-        const subscription = AppState.addEventListener('change', handleAppStateChange);
+        const subscription = AppState.addEventListener('change', onAppStateChange);
         return () => subscription.remove();
     }, [onAppStateChange]);
 
-    return appState;
+    return {
+        isForeground: appStateStatus === 'active',
+        isInactive: appStateStatus === 'inactive',
+        isBackground: appStateStatus === 'background',
+    };
 }
 
 export default useAppState;

@@ -53,6 +53,7 @@ function Composer({
     ...props
 }: ComposerProps) {
     const textInputRef = useRef<MarkdownTextInput | null>(null);
+    const handledIsComposerFullSizeRef = useRef<boolean | undefined>(undefined);
     const textContainsOnlyEmojis = useMemo(() => containsOnlyEmojis(Parser.htmlToText(Parser.replace(value ?? ''))), [value]);
     const theme = useTheme();
     const markdownStyle = useMarkdownStyle(textContainsOnlyEmojis, !isGroupPolicyReport ? excludeReportMentionStyle : excludeNoStyles);
@@ -64,6 +65,10 @@ function Composer({
     useBlurOnKeyboardHide(textInputRef);
 
     useEffect(() => {
+        if (handledIsComposerFullSizeRef.current === isComposerFullSize) {
+            return;
+        }
+        handledIsComposerFullSizeRef.current = isComposerFullSize;
         if (!textInputRef.current?.setSelection || !selection || isComposerFullSize) {
             return;
         }

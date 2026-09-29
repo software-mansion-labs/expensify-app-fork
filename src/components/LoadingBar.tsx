@@ -2,7 +2,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import Animated, {cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming} from 'react-native-reanimated';
 
 type LoadingBarProps = {
@@ -14,8 +14,14 @@ function LoadingBar({shouldShow}: LoadingBarProps) {
     const width = useSharedValue(0);
     const opacity = useSharedValue(0);
     const styles = useThemeStyles();
+    const lastAppliedShouldShowRef = useRef(false);
 
     useEffect(() => {
+        if (lastAppliedShouldShowRef.current === shouldShow) {
+            return;
+        }
+        lastAppliedShouldShowRef.current = shouldShow;
+
         if (shouldShow) {
             left.set(0);
             width.set(0);

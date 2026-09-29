@@ -59,17 +59,15 @@ function useFreeTrial(): FreeTrialState {
             setDiscountInfo(getEarlyDiscountInfo(firstDayFreeTrial));
         }, CONST.MILLISECONDS_PER_SECOND);
 
-        return () => {
-            clearInterval(intervalID);
-            setDiscountInfo(null);
-        };
+        return () => clearInterval(intervalID);
     }, [firstDayFreeTrial, showDiscount]);
 
     if (!onFreeTrial || hasPaymentCard || !hasOwnedPaidPolicies) {
         return {shouldShowFreeTrialSection: false, discountType: null, daysLeft: 0, discountInfo: null};
     }
 
-    return {shouldShowFreeTrialSection: true, discountType: getDiscountType(showDiscount, discountInfo), daysLeft, discountInfo};
+    const visibleDiscountInfo = showDiscount ? discountInfo : null;
+    return {shouldShowFreeTrialSection: true, discountType: getDiscountType(showDiscount, visibleDiscountInfo), daysLeft, discountInfo: visibleDiscountInfo};
 }
 
 export default useFreeTrial;

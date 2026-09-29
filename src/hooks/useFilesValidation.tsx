@@ -86,6 +86,7 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     };
 
     useEffect(() => {
+        isMountedRef.current = true;
         return () => {
             isMountedRef.current = false;
             if (!loaderTimeoutRef.current) {

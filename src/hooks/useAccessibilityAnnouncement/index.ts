@@ -85,9 +85,8 @@ function useAccessibilityAnnouncement(message: string | ReactNode, shouldAnnounc
             return;
         }
 
-        previousMessageRef.current = message;
-
         const timer = setTimeout(() => {
+            previousMessageRef.current = message;
             const container = getWrapper(politeness);
 
             while (container.firstChild) {

@@ -112,13 +112,11 @@ function ReanimatedModal({
 
     useEffect(
         () => () => {
-            if (transitionHandleRef.current) {
-                TransitionTracker.endTransition(transitionHandleRef.current);
-                transitionHandleRef.current = null;
+            if (!transitionHandleRef.current) {
+                return;
             }
-
-            setIsVisibleState(false);
-            setIsContainerOpen(false);
+            TransitionTracker.endTransition(transitionHandleRef.current);
+            transitionHandleRef.current = null;
         },
 
         [],
