@@ -4,6 +4,7 @@ import NumericInputActions from './layout/NumericInputActions';
 import NumericInputFooter from './layout/NumericInputFooter';
 import NumericInputResponsiveLayout from './layout/NumericInputResponsiveLayout';
 import NumericInputComponent from './NumericInput';
+import NumericInputResponsivePreset, {NumericResponsivePreset} from './presets/NumericInputResponsivePreset';
 import NumericBigNumberPad from './primitives/NumericBigNumberPad';
 import NumericError from './primitives/NumericError';
 import NumericFlipButton from './primitives/NumericFlipButton';
@@ -70,6 +71,9 @@ const NumericInput = Object.assign(NumericInputComponent, {
     /** Responsive layout template handling 4 layout variants (portrait/landscape x touch/non-touch) with explicit slots. */
     ResponsiveLayout: NumericInputResponsiveLayout,
 
+    /** Responsive preset composing the standard full-screen layout, with `pad`, `flipButton`, and `footer` slots. */
+    ResponsivePreset: NumericInputResponsivePreset,
+
     /** Renders its children as the symbol (currency or unit) displayed beside the number. */
     Symbol: NumericSymbol,
 
@@ -78,5 +82,6 @@ const NumericInput = Object.assign(NumericInputComponent, {
 });
 
 export default NumericInput;
+export {NumericResponsivePreset};
 export {useNumericInputActions} from './context';
 export {default as useNumericDynamicFontSize} from './hooks/useNumericDynamicFontSize';

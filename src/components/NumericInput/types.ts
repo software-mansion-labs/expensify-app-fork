@@ -196,6 +196,60 @@ type NumericInputResponsiveLayoutProps = {
     shouldRefocusOnScrollViewClick?: boolean;
 };
 
+type NumericInputResponsivePresetProps = Pick<
+    NumericInputResponsiveLayoutProps,
+    'footer' | 'disableScrollView' | 'shouldRefocusOnScrollViewClick' | 'scrollViewStyle' | 'style' | 'footerStyle' | 'testID'
+> &
+    Omit<NumericTextInputProps, 'style' | 'testID' | 'shouldUseDynamicFontSize'> & {
+        /** Currency code (e.g. 'USD', 'EUR') shown on the currency button. The button renders only when this or `currencyButtonLabel` is provided. */
+        currency?: string;
+
+        /** Custom label on the currency button (overrides `currency` if set), e.g. a duration unit. */
+        currencyButtonLabel?: string;
+
+        /** Accessibility label for the currency button (defaults to currency-based copy when unset). */
+        currencyButtonAccessibilityLabel?: string;
+
+        /** Callback when the currency button is pressed. */
+        onCurrencyButtonPress?: () => void;
+
+        /** Symbol (currency or unit) displayed beside the number (e.g. '$', '€', 'km', '%'). Omit it to render no symbol. */
+        symbol?: string;
+
+        /** Position of the symbol relative to the input ('prefix' or 'suffix'). Defaults to 'prefix'. */
+        symbolPosition?: ValueOf<typeof CONST.TEXT_INPUT_SYMBOL_POSITION>;
+
+        /** Style applied to the symbol text, appended to the primitive's defaults. */
+        symbolTextStyle?: StyleProp<TextStyle>;
+
+        /** Style applied to the minus sign, appended to the primitive's defaults. */
+        negativeSymbolStyle?: StyleProp<TextStyle>;
+
+        /** Style applied to the text input. */
+        textInputStyle?: StyleProp<TextStyle>;
+
+        /** Test identifier applied to the text input primitive. */
+        inputTestID?: string;
+
+        /** Test identifier applied to the amount container. Transitional: only NumberWithSymbolForm sets it, to keep its legacy `numberView` id; remove with the adapter. */
+        amountContainerTestID?: string;
+
+        /** Flip button slot. Defaults to `NumericInput.FlipButton`; pass `null` to render none. */
+        flipButton?: ReactNode;
+
+        /** Number pad slot. Defaults to `NumericInput.BigNumberPad`; pass `null` for a screen without the number pad. */
+        pad?: ReactNode;
+
+        /** Custom children to render inside the amount container (overrides default minus sign, symbol, and input composition). */
+        children?: ReactNode;
+    };
+
+type NumericResponsivePresetProps = Omit<NumericInputProps, 'children' | 'ref' | 'style' | 'testID'> &
+    NumericInputResponsivePresetProps & {
+        /** Ref exposing the number editing imperative API of the wrapping NumericInput root. */
+        editingRef?: ForwardedRef<NumericEditingRef>;
+    };
+
 export type {
     NumericBigNumberPadProps,
     NumericErrorProps,
@@ -205,7 +259,9 @@ export type {
     NumericInputFooterProps,
     NumericInputProps,
     NumericInputResponsiveLayoutProps,
+    NumericInputResponsivePresetProps,
     NumericMinusSignProps,
+    NumericResponsivePresetProps,
     NumericSymbolProps,
     NumericTextInputProps,
 };
