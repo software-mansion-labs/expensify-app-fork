@@ -1,45 +1,28 @@
 import useIsInLandscapeMode from '@hooks/useIsInLandscapeMode';
-import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
-import useLocalize from '@hooks/useLocalize';
-import {useMouseActions} from '@hooks/useMouseContext';
 import usePrevious from '@hooks/usePrevious';
-import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {isMobileSafari} from '@libs/Browser';
 import {canUseTouchScreen as canUseTouchScreenUtil} from '@libs/DeviceCapabilities';
-import getOperatingSystem from '@libs/getOperatingSystem';
-import {
-    addLeadingZero,
-    handleNegativeAmountFlipping,
-    replaceAllDigits,
-    replaceCommasWithPeriod,
-    stripCommaFromAmount,
-    stripDecimalsFromAmount,
-    stripSpacesFromAmount,
-    validateAmount,
-} from '@libs/MoneyRequestUtils';
-import shouldIgnoreSelectionWhenUpdatedManually from '@libs/shouldIgnoreSelectionWhenUpdatedManually';
 
 import CONST from '@src/CONST';
 
 import type {ForwardedRef} from 'react';
-import type {KeyboardTypeOptions, NativeSyntheticEvent, StyleProp, TextStyle, ViewStyle} from 'react-native';
+import type {KeyboardTypeOptions, StyleProp, TextStyle, ViewStyle} from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
-import React, {useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useImperativeHandle, useRef} from 'react';
 import {View} from 'react-native';
 
+import type {NumericFlipButtonProps} from './NumericButtons';
+import type {NumericEditingKeyPressEvent, NumericEditingRef} from './NumericEditingController/types';
 import type {BaseTextInputRef} from './TextInput/BaseTextInput/types';
 import type {TextInputWithSymbolProps} from './TextInputWithSymbol/types';
 
-import BigNumberPad from './BigNumberPad';
-import Button from './Button';
-import FormHelpMessage from './FormHelpMessage';
+import {NumericFlipButton as BaseNumericFlipButton} from './NumericButtons';
+import NumericField from './NumericField';
+import NumericInput from './NumericInput';
+import {useNumericInputActions} from './NumericInput/context';
 import ScrollView from './ScrollView';
-import TextInput from './TextInput';
-import isTextInputFocused from './TextInput/BaseTextInput/isTextInputFocused';
-import TextInputWithCurrencySymbol from './TextInputWithSymbol';
 
 type NumberWithSymbolFormProps = {
     /** Value to display, should already be formatted */
@@ -128,26 +111,38 @@ type NumberWithSymbolFormRef = {
 
 const canUseTouchScreen = canUseTouchScreenUtil();
 
-/**
- * Returns the new selection object based on the updated number's length
- */
-const getNewSelection = (oldSelection: {start: number; end: number}, prevLength: number, newLength: number) => {
-    const cursorPosition = oldSelection.end + (newLength - prevLength);
-    return {start: cursorPosition, end: cursorPosition};
+const stripSign = (number: string) => (number.startsWith('-') ? number.slice(1) : number);
+
+type RootFlipButtonProps = Pick<NumericFlipButtonProps, 'style'> & {
+    /** Receives the root's own sign toggle so the adapter can flip the canonical value and notify the parent together */
+    onFlip: (toggleRootSign: () => void) => void;
 };
 
-const NUMBER_VIEW_ID = 'numberView';
-const NUM_PAD_CONTAINER_VIEW_ID = 'numPadContainerView';
-const NUM_PAD_VIEW_ID = 'numPadView';
+/** Flip button wired to the NumericInput root, so the minus sign renders from the root's canonical value right away. */
+function RootFlipButton({onFlip, style}: RootFlipButtonProps) {
+    const {toggleSign} = useNumericInputActions();
+
+    return (
+        <BaseNumericFlipButton
+            isDisabled={false}
+            onPress={() => onFlip(toggleSign)}
+            style={style}
+        />
+    );
+}
 
 /**
- * Generic number input form with symbol (currency or unit).
+ * Adapter bridging the legacy NumberWithSymbolForm interface to the composable numeric components.
+ * Inline inputs (`displayAsTextInput`, or `shouldWrapInputInContainer={false}` for table cells and split rows) render
+ * through NumericField. Full-screen forms render through `NumericInput.ResponsivePreset`, with or without the number pad.
+ * The legacy display flags are translated into composition here, so the numeric components never receive them.
  *
- * Can render either a standard TextInput or a number input with BigNumberPad and symbol interaction.
- * Already handles number decimals and input validation.
+ * Transitional: callers should migrate to NumericField (inline fields) or NumericInput (full-screen forms) directly,
+ * owning a signed value instead of `isNegative`/`toggleNegative`. This adapter, its parent-owned sign bridge, and the
+ * legacy `numberView` test id are removed once no caller is left.
  */
 function NumberWithSymbolForm({
-    value: number,
+    value = '',
     symbol = '',
     currency = '',
     symbolPosition = CONST.TEXT_INPUT_SYMBOL_POSITION.PREFIX,
@@ -193,146 +188,33 @@ function NumberWithSymbolForm({
     currencyButtonAccessibilityLabel,
     ...props
 }: NumberWithSymbolFormProps) {
-    const icons = useMemoizedLazyExpensifyIcons(['DownArrow', 'PlusMinus', 'CoinsButton']);
-    const isInLandscapeMode = useIsInLandscapeMode();
-
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
-    const {toLocaleDigit, numberFormat, translate} = useLocalize();
-
-    const textInput = useRef<BaseTextInputRef | null>(null);
-    const numberRef = useRef<string | undefined>(undefined);
-    const [currentNumber, setCurrentNumber] = useState(typeof number === 'string' ? number : '');
-
-    const [shouldUpdateSelection, setShouldUpdateSelection] = useState(true);
-
+    const isInLandscapeMode = useIsInLandscapeMode();
     const isFocused = useIsFocused();
     const wasFocused = usePrevious(isFocused);
+    const wasNegative = usePrevious(isNegative);
+    const innerEditingRef = useRef<NumericEditingRef | null>(null);
+    const textInputRef = useRef<BaseTextInputRef | null>(null);
 
-    const [selection, setSelection] = useState({
-        start: currentNumber.length,
-        end: currentNumber.length,
-    });
+    // Set only while the flip button toggles the root's sign, so the resulting change is reported as a flip rather than an edit
+    const isFlippingSignRef = useRef(false);
 
-    // When the prop resets to empty, mirror that in internal state so the field doesn't stay stuck at "0.00".
-    useEffect(() => {
-        if (number !== '') {
-            return;
+    // The caller owns the sign through `isNegative` while the root keeps it inside its canonical value; the adapter bridges the two
+    const isSignOwnedByParent = !displayAsTextInput && !allowNegativeInput && (allowFlippingAmount || isNegative);
+    const allowNegativeInRoot = allowNegativeInput || allowFlippingAmount || isNegative;
+    const canonicalValue = isNegative && !value.startsWith('-') ? `-${value}` : value;
+
+    // A hidden symbol is composed as no symbol at all
+    const visibleSymbol = hideSymbol ? '' : symbol;
+
+    const setTextInputRef = (newRef: BaseTextInputRef | null) => {
+        textInputRef.current = newRef;
+        if (typeof ref === 'function') {
+            ref(newRef);
+        } else if (ref && 'current' in ref) {
+            // eslint-disable-next-line no-param-reassign
+            ref.current = newRef;
         }
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing internal state to an externally-driven prop reset (Onyx); mirrors the existing pattern in this file
-        setCurrentNumber('');
-        setSelection({start: 0, end: 0});
-    }, [number]);
-
-    const forwardDeletePressedRef = useRef(false);
-    // The ref is used to ignore any onSelectionChange event that happens while we are updating the selection manually in setNewNumber
-    const willSelectionBeUpdatedManually = useRef(false);
-
-    const currencyOrUnitButtonText = currencyButtonLabel ?? currency;
-    const onTrailingDropdownPress = onCurrencyButtonPress ?? onSymbolButtonPress;
-
-    const {setMouseDown, setMouseUp} = useMouseActions();
-    const handleMouseDown = (e: React.MouseEvent<Element, MouseEvent>) => {
-        e.stopPropagation();
-        setMouseDown();
-    };
-    const handleMouseUp = (e: React.MouseEvent<Element, MouseEvent>) => {
-        e.stopPropagation();
-        setMouseUp();
-    };
-
-    const clearSelection = useCallback(() => {
-        setSelection({start: selection.end, end: selection.end});
-    }, [selection.end]);
-
-    /**
-     * Event occurs when a user presses a mouse button over an DOM element.
-     */
-    const focusTextInput = (event: React.MouseEvent, ids: string[]) => {
-        const relatedTargetId = (event.nativeEvent?.target as HTMLElement)?.id;
-        if (!ids.includes(relatedTargetId)) {
-            return;
-        }
-
-        event.preventDefault();
-        clearSelection();
-
-        if (!textInput.current) {
-            return;
-        }
-        if (!isTextInputFocused(textInput)) {
-            textInput.current.focus();
-        }
-    };
-
-    /**
-     * Sets the selection and the number accordingly to the number passed to the input
-     * @param newNumber - Changed number from user input
-     */
-    const setNewNumber = useCallback(
-        (newNumber: string) => {
-            // Remove spaces from the newNumber number because Safari on iOS adds spaces when pasting a copied number
-            // More info: https://github.com/Expensify/App/issues/16974
-            const newNumberWithoutSpaces = stripSpacesFromAmount(newNumber);
-            const rawFinalNumber = newNumberWithoutSpaces.includes('.') ? stripCommaFromAmount(newNumberWithoutSpaces) : replaceCommasWithPeriod(newNumberWithoutSpaces);
-
-            // When allowNegativeInput is true, keep negative sign as-is (for split amounts)
-            // When allowFlippingAmount is true, strip the negative sign and call toggleNegative
-            const finalNumber = allowNegativeInput ? rawFinalNumber : handleNegativeAmountFlipping(rawFinalNumber, allowFlippingAmount, toggleNegative);
-
-            // Use a shallow copy of selection to trigger setSelection
-            // More info: https://github.com/Expensify/App/issues/16385
-            if (!validateAmount(finalNumber, decimals, maxLength, allowNegativeInput)) {
-                setSelection((prevSelection) => ({...prevSelection}));
-                return;
-            }
-
-            willSelectionBeUpdatedManually.current = true;
-            let hasSelectionBeenSet = false;
-            const strippedNumber = stripCommaFromAmount(finalNumber);
-            numberRef.current = strippedNumber;
-            setCurrentNumber((prevNumber) => {
-                const isForwardDelete = prevNumber.length > strippedNumber.length && forwardDeletePressedRef.current;
-                if (!hasSelectionBeenSet) {
-                    hasSelectionBeenSet = true;
-                    setSelection((prevSelection) => getNewSelection(prevSelection, isForwardDelete ? strippedNumber.length : prevNumber.length, strippedNumber.length));
-                    willSelectionBeUpdatedManually.current = false;
-                }
-                return strippedNumber;
-            });
-            onInputChange?.(strippedNumber);
-        },
-        [decimals, maxLength, onInputChange, allowFlippingAmount, toggleNegative, allowNegativeInput],
-    );
-
-    /**
-     * Set a new number number properly formatted, used for the TextInput
-     * @param text - Changed text from user input
-     */
-    const setFormattedNumber = (text: string) => {
-        // Remove spaces from the new number because Safari on iOS adds spaces when pasting a copied number
-        // More info: https://github.com/Expensify/App/issues/16974
-        const newNumberWithoutSpaces = stripSpacesFromAmount(text);
-        // When allowNegativeInput is true, keep negative sign as-is
-        const replacedCommasNumber = allowNegativeInput
-            ? replaceCommasWithPeriod(newNumberWithoutSpaces)
-            : handleNegativeAmountFlipping(replaceCommasWithPeriod(newNumberWithoutSpaces), allowFlippingAmount, toggleNegative);
-
-        const withLeadingZero = addLeadingZero(replacedCommasNumber, allowNegativeInput);
-
-        if (!validateAmount(withLeadingZero, decimals, maxLength, allowNegativeInput)) {
-            setSelection((prevSelection) => ({...prevSelection}));
-            return;
-        }
-
-        const strippedNumber = stripCommaFromAmount(withLeadingZero);
-        const isForwardDelete = currentNumber.length > strippedNumber.length && forwardDeletePressedRef.current;
-
-        willSelectionBeUpdatedManually.current = true;
-        numberRef.current = strippedNumber;
-        setCurrentNumber(strippedNumber);
-        setSelection(getNewSelection(selection, isForwardDelete ? strippedNumber.length : currentNumber.length, strippedNumber.length));
-        onInputChange?.(strippedNumber);
     };
 
     // Clears text selection if user visits symbol (currency) selector and comes back
@@ -340,475 +222,353 @@ function NumberWithSymbolForm({
         if (!isFocused || wasFocused) {
             return;
         }
-        clearSelection();
-    }, [isFocused, wasFocused, clearSelection]);
+        innerEditingRef.current?.clearSelection();
+    }, [isFocused, wasFocused]);
 
-    // Modifies the number to match changed decimals.
+    // The root only adopts external values when they are cleared, so a sign the parent changes without an edit is pushed in here.
+    // Only a change counts: on mount the root already starts from the signed value, which may carry the sign before `isNegative` does.
+    // Edits and flips made through the root already hold the new sign, so they are skipped and keep their caret.
     useEffect(() => {
-        // If the field is intentionally empty (e.g. new manual expense flow before the user enters an amount)
-        // or the current number is already valid for the new decimal count, nothing to do.
-        if (number === '' || validateAmount(currentNumber, decimals, maxLength, allowNegativeInput || allowFlippingAmount)) {
+        if (displayAsTextInput || allowNegativeInput || wasNegative === isNegative) {
             return;
         }
 
-        // If the number doesn't support decimals, we can strip the decimals
-        setNewNumber(stripDecimalsFromAmount(currentNumber));
-
-        // we want to update only when decimals change.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [decimals]);
-
-    /**
-     * Update number with number or Backspace pressed for BigNumberPad.
-     * Validate new number with decimal number regex up to 6 digits and 2 decimal digit to enable Next button
-     */
-    const updateValueNumberPad = useCallback(
-        (key: string) => {
-            if (shouldUpdateSelection && !isTextInputFocused(textInput)) {
-                textInput.current?.focus();
-            }
-            // Backspace button is pressed
-            if (key === '<' || key === 'Backspace') {
-                if (currentNumber.length > 0) {
-                    const selectionStart = selection.start === selection.end ? selection.start - 1 : selection.start;
-                    const newNumber = `${currentNumber.substring(0, selectionStart)}${currentNumber.substring(selection.end)}`;
-                    setNewNumber(addLeadingZero(newNumber, allowNegativeInput));
-                }
-                return;
-            }
-            const newNumber = addLeadingZero(`${currentNumber.substring(0, selection.start)}${key}${currentNumber.substring(selection.end)}`, allowNegativeInput);
-            setNewNumber(newNumber);
-        },
-        [currentNumber, selection.start, selection.end, shouldUpdateSelection, setNewNumber, allowNegativeInput],
-    );
-
-    /**
-     * Update long press number, to remove items pressing on <
-     *
-     * @param value - Changed text from user input
-     */
-    const updateLongPressHandlerState = useCallback((value: boolean) => {
-        setShouldUpdateSelection(!value);
-        if (!value && !isTextInputFocused(textInput)) {
-            textInput.current?.focus();
-        }
-    }, []);
-
-    /**
-     * Input handler to check for a forward-delete key (or keyboard shortcut) press.
-     */
-    const textInputKeyPress = (event: NativeSyntheticEvent<KeyboardEvent>) => {
-        const key = event.nativeEvent.key.toLowerCase();
-
-        if (!textInput.current?.value && key === 'backspace' && isNegative) {
-            clearNegative?.();
-        }
-
-        if (isMobileSafari() && key === CONST.PLATFORM_SPECIFIC_KEYS.CTRL.DEFAULT) {
-            // Optimistically anticipate forward-delete on iOS Safari (in cases where the Mac Accessibility keyboard is being
-            // used for input). If the Control-D shortcut doesn't get sent, the ref will still be reset on the next key press.
-            forwardDeletePressedRef.current = true;
+        const rootValue = innerEditingRef.current?.getNumber() ?? '';
+        if (rootValue.startsWith('-') === isNegative) {
             return;
         }
-        // Control-D on Mac is a keyboard shortcut for forward-delete. See https://support.apple.com/en-us/HT201236 for Mac keyboard shortcuts.
-        // Also check for the keyboard shortcut on iOS in cases where a hardware keyboard may be connected to the device.
-        const operatingSystem = getOperatingSystem() as string | null;
-        const allowedOS: string[] = [CONST.OS.MAC_OS, CONST.OS.IOS];
-        forwardDeletePressedRef.current = key === 'delete' || (allowedOS.includes(operatingSystem ?? '') && event.nativeEvent.ctrlKey && key === 'd');
-    };
+
+        const magnitude = stripSign(rootValue);
+        innerEditingRef.current?.updateNumber(isNegative ? `-${magnitude}` : magnitude);
+    }, [isNegative, wasNegative, displayAsTextInput, allowNegativeInput]);
 
     useImperativeHandle(numberFormRef, () => ({
-        clearSelection,
-        updateNumber: (newNumber: string) => {
-            const updatedNumber = handleNegativeAmountFlipping(newNumber, allowFlippingAmount, toggleNegative);
-
-            setCurrentNumber(updatedNumber);
-            setSelection({start: updatedNumber.length, end: updatedNumber.length});
+        clearSelection: () => innerEditingRef.current?.clearSelection(),
+        getNumber: () => {
+            const val = innerEditingRef.current?.getNumber() ?? '';
+            return isSignOwnedByParent ? stripSign(val) : val;
         },
-        getNumber: () => currentNumber,
+        updateNumber: (newNumber: string) => {
+            if (!isSignOwnedByParent) {
+                innerEditingRef.current?.updateNumber(newNumber);
+                return;
+            }
+
+            // A signed number makes the amount negative. Only a positive amount flips the parent-owned sign, the same way a typed
+            // minus does, so re-applying the negative amount the form already shows (e.g. the formatted draft amount) is not a flip.
+            if (allowFlippingAmount && newNumber.startsWith('-')) {
+                const isRootNegative = (innerEditingRef.current?.getNumber() ?? '').startsWith('-');
+                if (!isRootNegative) {
+                    toggleNegative?.();
+                }
+                innerEditingRef.current?.updateNumber(newNumber);
+                return;
+            }
+
+            // Callers pass the magnitude, so the root keeps the sign the parent currently holds
+            innerEditingRef.current?.updateNumber(isNegative ? `-${newNumber}` : newNumber);
+        },
     }));
 
-    const formattedNumber = replaceAllDigits(currentNumber, toLocaleDigit);
+    /**
+     * Reports root changes to the parent: the magnitude through `onInputChange` and a changed sign through `toggleNegative`
+     * or `clearNegative`. The sign is compared against `isNegative`, so edits that keep the sign never toggle it again.
+     */
+    const handleInputChange = (newValue: string) => {
+        if (!isSignOwnedByParent) {
+            onInputChange?.(newValue);
+            return;
+        }
 
-    const handleSelectionChange = (selectionStart: number, selectionEnd: number) => {
-        if (shouldIgnoreSelectionWhenUpdatedManually && willSelectionBeUpdatedManually.current) {
-            willSelectionBeUpdatedManually.current = false;
+        const isNewValueNegative = newValue.startsWith('-');
+
+        // A flip only changes the sign, so the magnitude the parent holds is still current
+        if (isFlippingSignRef.current) {
+            toggleNegative?.();
             return;
         }
-        if (!shouldUpdateSelection) {
+
+        // Report the magnitude first so a parent that reports its signed amount on toggle has the final word
+        onInputChange?.(stripSign(newValue));
+
+        if (isNewValueNegative === isNegative) {
             return;
         }
-        // When the number is updated in setNewNumber on iOS, in onSelectionChange formattedNumber stores the number before the update. Using numberRef allows us to read the updated number
-        const maxSelection = numberRef.current?.length ?? formattedNumber.length;
-        numberRef.current = undefined;
-        const start = Math.min(selectionStart, maxSelection);
-        const end = Math.min(selectionEnd, maxSelection);
-        setSelection({start, end});
+
+        if (isNewValueNegative || !clearNegative) {
+            toggleNegative?.();
+            return;
+        }
+
+        clearNegative();
     };
 
-    // Calculate dynamic font size based on the total length of the amount display
-    const dynamicAmountStyle = useMemo(() => {
-        const totalLength = formattedNumber.length + (hideSymbol ? 0 : symbol.length) + (isNegative ? 1 : 0);
-        return StyleUtils.getAmountInputFontSize(totalLength);
-    }, [StyleUtils, formattedNumber.length, hideSymbol, symbol.length, isNegative]);
+    const flipSign = (toggleRootSign: () => void) => {
+        // A root that owns the sign reports the flipped value through `onInputChange` like any other edit
+        if (!isSignOwnedByParent) {
+            toggleRootSign();
+            return;
+        }
 
-    /**
-     * Handles pressing the flip button (+/-) to toggle negative sign
-     * Only available in displayAsTextInput mode for manual expense flow
-     */
-    const handleFlipPress = useCallback(() => {
-        // Toggle the minus sign prefix in the value
-        const isRemovingSign = currentNumber.startsWith('-');
-        const newValue = isRemovingSign ? currentNumber.slice(1) : `-${currentNumber}`;
-        // Guard the manual selection update the same way setNewNumber/setFormattedNumber do: on native the
-        // controlled TextInput can emit onSelectionChange with the stale selection while the value update is
-        // applied, which would write the old cursor position back and undo the shift below. numberRef lets
-        // handleSelectionChange read the updated value length when computing maxSelection.
-        willSelectionBeUpdatedManually.current = true;
-        numberRef.current = newValue;
-        setCurrentNumber(newValue);
-        // Shift the cursor by the length of the toggled sign so it stays in the same logical position
-        // relative to the digits (e.g. on an empty field {0,0} -> {1,1}, placing the cursor after the "-").
-        // Without this the cursor stays before the "-", so typing produces an invalid string like "5-" that
-        // validateAmount rejects, making the entered number disappear.
-        const offset = isRemovingSign ? -1 : 1;
-        setSelection((prevSelection) => ({
-            start: Math.max(prevSelection.start + offset, 0),
-            end: Math.max(prevSelection.end + offset, 0),
-        }));
-        onInputChange?.(newValue);
-    }, [currentNumber, onInputChange]);
+        // The root notifies synchronously, so the flag covers exactly the change this toggle produces
+        isFlippingSignRef.current = true;
+        toggleRootSign();
+        isFlippingSignRef.current = false;
+    };
 
-    /**
-     * Creates the right-hand side component for text input mode
-     * Renders flip (+/-) button and/or currency selection button when enabled
-     * Only shown when clear button is not visible (see TextInput conditional rendering)
-     */
-    const textInputRightHandSideComponent = useMemo(() => {
-        return (
-            <View style={[styles.flexRow, styles.gap2, styles.alignItemsCenter]}>
-                {leadingRightHandSideComponent}
-                {shouldShowFlipButton && allowNegativeInput && canUseTouchScreen && (
-                    <Button
-                        size={CONST.BUTTON_SIZE.SMALL}
-                        onPress={handleFlipPress}
-                        onMouseDown={(e) => e.preventDefault()}
-                        contentContainerStyle={styles.justifyContentCenter}
-                        accessibilityLabel={translate('iou.flip')}
-                        isDisabled={disabled}
-                    >
-                        <Button.Icon
-                            src={icons.PlusMinus}
-                            accessibilityLabel={translate('iou.flip')}
-                        />
-                        <Button.Text>{translate('iou.flip')}</Button.Text>
-                    </Button>
-                )}
-                {shouldShowCurrencyButton && !!currencyOrUnitButtonText && (
-                    <Button
-                        size={CONST.BUTTON_SIZE.SMALL}
-                        onPress={onTrailingDropdownPress}
-                        // Keep the press from blurring the input. Callers that only reveal these buttons while the
-                        // field is focused would otherwise unmount this one before the press lands, leaving the
-                        // currency unreachable until an amount is typed.
-                        onMouseDown={(e) => e.preventDefault()}
-                        contentContainerStyle={styles.justifyContentCenter}
-                        accessibilityLabel={currencyButtonAccessibilityLabel ?? `${translate('common.selectCurrency')}, ${currencyOrUnitButtonText}`}
-                        isDisabled={disabled}
-                    >
-                        <Button.Icon
-                            src={icons.CoinsButton}
-                            accessibilityLabel={translate('common.currency')}
-                        />
-                        <Button.Text>{currencyOrUnitButtonText}</Button.Text>
-                    </Button>
-                )}
-            </View>
-        );
-    }, [
-        shouldShowFlipButton,
-        allowNegativeInput,
-        disabled,
-        shouldShowCurrencyButton,
-        leadingRightHandSideComponent,
-        styles,
-        icons,
-        handleFlipPress,
-        onTrailingDropdownPress,
-        currencyOrUnitButtonText,
-        currencyButtonAccessibilityLabel,
-        translate,
-    ]);
+    // Only the text-input path needs this: the other paths clear a negative sign through the root and `handleInputChange`
+    const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
+        const key = event.nativeEvent.key.toLowerCase();
+        if (!value && key === 'backspace' && isNegative) {
+            clearNegative?.();
+        }
+    };
 
     if (displayAsTextInput) {
+        const currencyOrUnitButtonText = currencyButtonLabel ?? currency;
+        const onTrailingDropdownPress = onCurrencyButtonPress ?? onSymbolButtonPress;
+
+        const isFlipButtonVisible = shouldShowFlipButton && allowNegativeInput && canUseTouchScreen;
+        const isCurrencyButtonVisible = shouldShowCurrencyButton && !!currencyOrUnitButtonText;
+
+        const textInputRightHandSideComponent =
+            isFlipButtonVisible || isCurrencyButtonVisible || !!leadingRightHandSideComponent ? (
+                <View style={[styles.flexRow, styles.gap2, styles.alignItemsCenter]}>
+                    {leadingRightHandSideComponent}
+                    {isFlipButtonVisible && <NumericField.FlipButton isDisabled={disabled} />}
+                    {isCurrencyButtonVisible && (
+                        <NumericField.CurrencyButton
+                            currency={currencyOrUnitButtonText}
+                            onPress={onTrailingDropdownPress}
+                            accessibilityLabel={currencyButtonAccessibilityLabel}
+                            isDisabled={disabled}
+                        />
+                    )}
+                </View>
+            ) : undefined;
+
+        // The text-input path takes the sign from the typed value, so it ignores the parent-owned `isNegative`
         return (
-            <TextInput
-                label={label}
-                accessibilityLabel={label}
-                value={formattedNumber}
-                onChangeText={setFormattedNumber}
-                selection={selection}
-                onSelectionChange={(e) => handleSelectionChange(e.nativeEvent.selection.start, e.nativeEvent.selection.end)}
-                ref={(newRef: BaseTextInputRef | null) => {
-                    if (typeof ref === 'function') {
-                        ref(newRef);
-                    } else if (ref && 'current' in ref) {
-                        // eslint-disable-next-line no-param-reassign
-                        ref.current = newRef;
-                    }
-                    textInput.current = newRef;
-                }}
-                disabled={disabled}
-                prefixCharacter={hideSymbol ? '' : symbol}
-                prefixStyle={styles.colorMuted}
-                keyboardType={props.keyboardType ?? CONST.KEYBOARD_TYPE.DECIMAL_PAD}
-                // On android autoCapitalize="words" is necessary when keyboardType="decimal-pad" or inputMode="decimal" to prevent input lag.
-                // See https://github.com/Expensify/App/issues/51868 for more information
-                autoCapitalize="words"
-                inputMode={!props.keyboardType ? CONST.INPUT_MODE.DECIMAL : undefined}
+            <NumericField
+                value={value}
+                onInputChange={onInputChange}
+                allowNegative={allowNegativeInput}
+                decimals={decimals}
+                maxLength={maxLength}
                 errorText={errorText}
-                style={style}
-                autoFocus={props.autoFocus}
-                autoGrowExtraSpace={props.autoGrowExtraSpace}
-                autoGrowMarginSide={props.autoGrowMarginSide}
-                onSubmitEditing={onSubmitEditing}
-                onFocus={props.onFocus}
-                onBlur={props.onBlur}
-                testID={props.testID}
-                rightHandSideComponent={shouldShowCurrencyButton || shouldShowFlipButton || !!leadingRightHandSideComponent ? textInputRightHandSideComponent : undefined}
-            />
+                ref={innerEditingRef}
+            >
+                <NumericField.TextInput
+                    ref={setTextInputRef}
+                    label={label}
+                    accessibilityLabel={label}
+                    prefixCharacter={visibleSymbol || prefixCharacter}
+                    keyboardType={props.keyboardType}
+                    style={style}
+                    autoFocus={props.autoFocus}
+                    autoGrowExtraSpace={props.autoGrowExtraSpace}
+                    autoGrowMarginSide={props.autoGrowMarginSide}
+                    disabled={disabled}
+                    shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
+                    onSubmitEditing={onSubmitEditing}
+                    onFocus={props.onFocus}
+                    onBlur={props.onBlur}
+                    onKeyPress={handleKeyPress}
+                    testID={props.testID}
+                    rightHandSideComponent={textInputRightHandSideComponent}
+                />
+            </NumericField>
         );
     }
 
-    const textInputComponent = (
-        <TextInputWithCurrencySymbol
-            formattedAmount={formattedNumber}
-            onChangeAmount={setNewNumber}
-            onSymbolButtonPress={onSymbolButtonPress}
-            placeholder={numberFormat(0)}
-            ref={(newRef: BaseTextInputRef | null) => {
-                if (typeof ref === 'function') {
-                    ref(newRef);
-                } else if (ref && 'current' in ref) {
-                    // eslint-disable-next-line no-param-reassign
-                    ref.current = newRef;
-                }
-                textInput.current = newRef;
-            }}
-            disabled={disabled}
-            symbol={symbol}
-            hideSymbol={hideSymbol}
-            symbolPosition={symbolPosition}
-            selection={selection}
-            onSelectionChange={handleSelectionChange}
-            onKeyPress={textInputKeyPress}
-            isSymbolPressable={isSymbolPressable && !shouldWrapInputInContainer}
-            symbolTextStyle={[symbolTextStyle, shouldUseDynamicFontSize ? dynamicAmountStyle : undefined]}
-            style={[style, shouldUseDynamicFontSize ? dynamicAmountStyle : undefined]}
-            containerStyle={containerStyle}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            autoFocus={props.autoFocus}
-            autoGrow={autoGrow}
-            disableKeyboard={disableKeyboard}
-            prefixCharacter={prefixCharacter}
-            hideFocusedState={hideFocusedState}
-            shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
-            shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
-            autoGrowExtraSpace={props.autoGrowExtraSpace}
-            autoGrowMarginSide={props.autoGrowMarginSide}
-            contentWidth={props.contentWidth}
-            onPress={props.onPress}
-            onBlur={props.onBlur}
-            submitBehavior={props.submitBehavior}
-            testID={props.testID}
-            prefixStyle={props.prefixStyle}
-            prefixContainerStyle={props.prefixContainerStyle}
-            touchableInputWrapperStyle={props.touchableInputWrapperStyle}
-            isNegative={isNegative}
-            negativeSymbolStyle={negativeSymbolStyle}
-            toggleNegative={toggleNegative}
-            onFocus={props.onFocus}
-            accessibilityLabel={props.accessibilityLabel}
-            keyboardType={props.keyboardType}
-            shouldAllowFocusInLandscapeMode
-        />
-    );
+    if (!shouldWrapInputInContainer) {
+        // None of the inline callers make the symbol pressable, so `isSymbolPressable` and `onSymbolButtonPress` do not apply here.
+        const isSuffix = symbolPosition === CONST.TEXT_INPUT_SYMBOL_POSITION.SUFFIX;
 
-    if (isInLandscapeMode) {
+        // Cells that show the symbol or a parent-owned sign (TotalCell) keep the legacy layout: the minus sign and the symbol are
+        // separate texts beside the auto-growing input. As the input's own prefix or suffix they would get no room, because the
+        // auto-grow measurement leaves out the prefix/suffix padding and the value is clipped to zero width.
+        const hasStandaloneSymbolOrSign = !!visibleSymbol || isSignOwnedByParent;
+
+        const symbolNode = visibleSymbol ? (
+            <View style={[styles.flexRow, styles.alignItemsCenter, styles.gap1]}>
+                <NumericInput.Symbol textStyle={symbolTextStyle}>{visibleSymbol}</NumericInput.Symbol>
+            </View>
+        ) : null;
+
+        const field = hasStandaloneSymbolOrSign ? (
+            <NumericInput
+                value={canonicalValue}
+                onInputChange={handleInputChange}
+                allowNegative={allowNegativeInRoot}
+                decimals={decimals}
+                maxLength={maxLength}
+                errorText={errorText}
+                shouldUseDynamicFontSize={shouldUseDynamicFontSize}
+                symbol={visibleSymbol}
+                ref={innerEditingRef}
+            >
+                <NumericInput.MinusSign style={negativeSymbolStyle} />
+                {!isSuffix && symbolNode}
+                <NumericInput.TextInput
+                    ref={setTextInputRef}
+                    testID={props.testID}
+                    accessibilityLabel={props.accessibilityLabel}
+                    style={style}
+                    containerStyle={containerStyle}
+                    touchableInputWrapperStyle={props.touchableInputWrapperStyle}
+                    prefixCharacter={prefixCharacter}
+                    prefixStyle={props.prefixStyle}
+                    prefixContainerStyle={props.prefixContainerStyle}
+                    shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
+                    shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
+                    contentWidth={props.contentWidth}
+                    autoGrow={autoGrow}
+                    autoGrowExtraSpace={props.autoGrowExtraSpace}
+                    autoGrowMarginSide={props.autoGrowMarginSide}
+                    disableKeyboard={disableKeyboard}
+                    disabled={disabled}
+                    hideFocusedState={hideFocusedState}
+                    keyboardType={props.keyboardType}
+                    autoFocus={props.autoFocus}
+                    onPress={props.onPress}
+                    onSubmitEditing={onSubmitEditing}
+                    submitBehavior={props.submitBehavior}
+                    onFocus={props.onFocus}
+                    onBlur={props.onBlur}
+                />
+                {isSuffix && symbolNode}
+            </NumericInput>
+        ) : (
+            // Split rows hide the symbol and keep the sign inside the value, which the input displays as typed
+            <NumericField
+                value={canonicalValue}
+                onInputChange={handleInputChange}
+                allowNegative={allowNegativeInRoot}
+                decimals={decimals}
+                maxLength={maxLength}
+                errorText={errorText}
+                ref={innerEditingRef}
+            >
+                <NumericField.TextInput
+                    ref={setTextInputRef}
+                    testID={props.testID}
+                    label={label}
+                    accessibilityLabel={props.accessibilityLabel ?? label}
+                    style={style}
+                    containerStyle={containerStyle}
+                    touchableInputWrapperStyle={props.touchableInputWrapperStyle}
+                    prefixCharacter={prefixCharacter}
+                    prefixStyle={props.prefixStyle}
+                    prefixContainerStyle={props.prefixContainerStyle}
+                    shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
+                    shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
+                    contentWidth={props.contentWidth}
+                    autoGrow={autoGrow}
+                    autoGrowExtraSpace={props.autoGrowExtraSpace}
+                    autoGrowMarginSide={props.autoGrowMarginSide}
+                    disableKeyboard={disableKeyboard}
+                    disabled={disabled}
+                    hideFocusedState={hideFocusedState}
+                    keyboardType={props.keyboardType}
+                    autoFocus={props.autoFocus}
+                    onSubmitEditing={onSubmitEditing}
+                    submitBehavior={props.submitBehavior}
+                    onFocus={props.onFocus}
+                    onBlur={props.onBlur}
+                />
+            </NumericField>
+        );
+
+        if (!scrollViewStyle && !shouldRefocusOnScrollViewClick) {
+            // The sign, symbol and input are siblings, so without the caller's scroll view row they need a row of their own
+            return hasStandaloneSymbolOrSign ? <View style={[styles.flexRow, styles.alignItemsCenter]}>{field}</View> : field;
+        }
+
         return (
-            <>
-                <ScrollView
-                    contentContainerStyle={[styles.flexGrow1, styles.flexRow]}
-                    style={[styles.flex1, styles.ph5]}
-                >
-                    <View style={[styles.justifyContentCenter, styles.alignItemsCenter, styles.numberWithSymbolFormInputContainerLandscape]}>
-                        <View style={[styles.flexRow, styles.alignItemsCenter, styles.justifyContentCenter]}>{textInputComponent}</View>
-                        <View style={[styles.flexRow, styles.justifyContentCenter, styles.gap2]}>
-                            {isSymbolPressable && (
-                                <Button
-                                    size={CONST.BUTTON_SIZE.SMALL}
-                                    onPress={onSymbolButtonPress}
-                                    style={styles.minWidth18}
-                                    contentContainerStyle={styles.justifyContentCenter}
-                                    accessibilityLabel={`${translate('common.selectCurrency')}, ${currency}`}
-                                >
-                                    <Button.Icon
-                                        src={icons.CoinsButton}
-                                        accessibilityLabel={translate('common.currency')}
-                                    />
-                                    <Button.Text>{currency}</Button.Text>
-                                </Button>
-                            )}
-                            {allowFlippingAmount && (
-                                <Button
-                                    size={CONST.BUTTON_SIZE.SMALL}
-                                    onPress={toggleNegative}
-                                    style={styles.minWidth18}
-                                    contentContainerStyle={styles.justifyContentCenter}
-                                    accessibilityLabel={translate('iou.flip')}
-                                >
-                                    <Button.Icon
-                                        src={icons.PlusMinus}
-                                        accessibilityLabel={translate('iou.flip')}
-                                    />
-                                    <Button.Text>{translate('iou.flip')}</Button.Text>
-                                </Button>
-                            )}
-                        </View>
-                        {!!errorText && (
-                            <FormHelpMessage
-                                style={[styles.ph5, styles.w100]}
-                                isError
-                                message={errorText}
-                            />
-                        )}
-                    </View>
-
-                    {shouldShowBigNumberPad ? (
-                        <View
-                            style={[styles.flex1, styles.justifyContentCenter]}
-                            id={NUM_PAD_CONTAINER_VIEW_ID}
-                        >
-                            {shouldShowBigNumberPad ? (
-                                <BigNumberPad
-                                    id={NUM_PAD_VIEW_ID}
-                                    numberPressed={updateValueNumberPad}
-                                    longPressHandlerStateChanged={updateLongPressHandlerState}
-                                />
-                            ) : null}
-                        </View>
-                    ) : null}
-                </ScrollView>
-
-                {!!footer && <View style={[styles.w100, styles.justifyContentEnd, styles.pageWrapper, styles.pt0]}>{footer}</View>}
-            </>
+            <ScrollView
+                contentContainerStyle={[styles.flexGrow1, scrollViewStyle]}
+                style={[styles.flexGrow0, shouldRefocusOnScrollViewClick && styles.cursorAuto]}
+                onMouseDown={(e) => {
+                    if (!shouldRefocusOnScrollViewClick) {
+                        return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    textInputRef.current?.focus();
+                }}
+            >
+                {field}
+            </ScrollView>
         );
     }
+
+    // Full-screen forms: the legacy precedence lets onSymbolButtonPress win over onCurrencyButtonPress, and a symbol
+    // that is not pressable is composed as no currency button at all
+    const currencyButtonText = isSymbolPressable ? (currencyButtonLabel ?? currency) : undefined;
+
+    // The flip button only toggles a parent-owned sign when the parent can be told about it
+    const isFlipButtonVisible = allowFlippingAmount && canUseTouchScreen && (!!toggleNegative || !isSignOwnedByParent);
+    const flipButton = isFlipButtonVisible ? (
+        <RootFlipButton
+            onFlip={flipSign}
+            style={styles.minWidth18}
+        />
+    ) : null;
 
     return (
-        <ScrollView
-            contentContainerStyle={[styles.flexGrow1, scrollViewStyle]}
-            style={[
-                !shouldWrapInputInContainer && styles.flexGrow0,
-                // Hide pointer cursor when refocus feature is enabled (empty space shouldn't look clickable)
-                shouldRefocusOnScrollViewClick && styles.cursorAuto,
-            ]}
-            onMouseDown={(e) => {
-                if (!shouldRefocusOnScrollViewClick) {
-                    return;
-                }
-                e.preventDefault();
-                e.stopPropagation();
-                textInput.current?.focus();
-            }}
+        <NumericInput
+            value={canonicalValue}
+            onInputChange={handleInputChange}
+            allowNegative={allowNegativeInRoot}
+            decimals={decimals}
+            maxLength={maxLength}
+            errorText={errorText}
+            shouldUseDynamicFontSize={shouldUseDynamicFontSize}
+            symbol={visibleSymbol}
+            ref={innerEditingRef}
         >
-            {shouldWrapInputInContainer ? (
-                <View style={[styles.flex1, styles.justifyContentCenter, styles.alignItemsCenter]}>
-                    <View
-                        id={NUMBER_VIEW_ID}
-                        onMouseDown={(event) => focusTextInput(event, [NUMBER_VIEW_ID])}
-                        style={[styles.flex1, styles.w100, styles.alignItemsCenter, styles.justifyContentCenter]}
-                    >
-                        <View style={[styles.flexRow, styles.moneyRequestAmountContainer, styles.alignItemsCenter, styles.justifyContentCenter]}>{textInputComponent}</View>
-                        {isSymbolPressable && !!currency && !canUseTouchScreen && (
-                            <Button
-                                size={CONST.BUTTON_SIZE.SMALL}
-                                onPress={onSymbolButtonPress}
-                                style={styles.minWidth18}
-                                contentContainerStyle={styles.justifyContentCenter}
-                                accessibilityLabel={`${translate('common.selectCurrency')}, ${currency}`}
-                            >
-                                <Button.Icon
-                                    src={icons.CoinsButton}
-                                    accessibilityLabel={translate('common.currency')}
-                                />
-                                <Button.Text>{currency}</Button.Text>
-                            </Button>
-                        )}
-                        {!!errorText && (
-                            <FormHelpMessage
-                                style={[styles.pAbsolute, styles.b0, shouldShowBigNumberPad ? styles.mb5 : styles.mb3, styles.ph5, styles.w100]}
-                                isError
-                                message={errorText}
-                            />
-                        )}
-                    </View>
-                </View>
-            ) : (
-                textInputComponent
-            )}
-
-            <View style={[styles.flexRow, styles.justifyContentCenter, shouldShowBigNumberPad ? styles.mb2 : styles.mb0, styles.gap2]}>
-                {isSymbolPressable && canUseTouchScreen && (
-                    <Button
-                        size={CONST.BUTTON_SIZE.SMALL}
-                        onPress={onSymbolButtonPress}
-                        style={styles.minWidth18}
-                        contentContainerStyle={styles.justifyContentCenter}
-                        accessibilityLabel={`${translate('common.selectCurrency')}, ${currency}`}
-                    >
-                        <Button.Icon
-                            src={icons.CoinsButton}
-                            accessibilityLabel={translate('common.currency')}
-                        />
-                        <Button.Text>{currency}</Button.Text>
-                    </Button>
-                )}
-                {allowFlippingAmount && canUseTouchScreen && (
-                    <Button
-                        size={CONST.BUTTON_SIZE.SMALL}
-                        onPress={toggleNegative}
-                        style={styles.minWidth18}
-                        contentContainerStyle={styles.justifyContentCenter}
-                        accessibilityLabel={translate('iou.flip')}
-                    >
-                        <Button.Icon
-                            src={icons.PlusMinus}
-                            accessibilityLabel={translate('iou.flip')}
-                        />
-                        <Button.Text>{translate('iou.flip')}</Button.Text>
-                    </Button>
-                )}
-            </View>
-
-            {shouldShowBigNumberPad || !!footer ? (
-                <View
-                    onMouseDown={(event) => focusTextInput(event, [NUM_PAD_CONTAINER_VIEW_ID, NUM_PAD_VIEW_ID])}
-                    style={[styles.w100, styles.justifyContentEnd, styles.pageWrapper, styles.pt0]}
-                    id={NUM_PAD_CONTAINER_VIEW_ID}
-                >
-                    {shouldShowBigNumberPad ? (
-                        <BigNumberPad
-                            id={NUM_PAD_VIEW_ID}
-                            numberPressed={updateValueNumberPad}
-                            longPressHandlerStateChanged={updateLongPressHandlerState}
-                        />
-                    ) : null}
-                    {footer}
-                </View>
-            ) : null}
-        </ScrollView>
+            <NumericInput.ResponsivePreset
+                symbol={visibleSymbol}
+                symbolPosition={symbolPosition}
+                symbolTextStyle={symbolTextStyle}
+                currency={currencyButtonText}
+                onCurrencyButtonPress={onSymbolButtonPress ?? onCurrencyButtonPress}
+                currencyButtonAccessibilityLabel={currencyButtonAccessibilityLabel}
+                flipButton={flipButton}
+                pad={shouldShowBigNumberPad ? <NumericInput.BigNumberPad /> : null}
+                footer={footer}
+                amountContainerTestID={isInLandscapeMode ? undefined : 'numberView'}
+                scrollViewStyle={scrollViewStyle}
+                shouldRefocusOnScrollViewClick={shouldRefocusOnScrollViewClick}
+                negativeSymbolStyle={negativeSymbolStyle}
+                textInputStyle={style}
+                inputTestID={props.testID}
+                ref={ref}
+                accessibilityLabel={props.accessibilityLabel}
+                autoFocus={props.autoFocus}
+                autoGrow={autoGrow}
+                autoGrowExtraSpace={props.autoGrowExtraSpace}
+                autoGrowMarginSide={props.autoGrowMarginSide}
+                containerStyle={containerStyle}
+                contentWidth={props.contentWidth}
+                disabled={disabled}
+                disableKeyboard={disableKeyboard}
+                hideFocusedState={hideFocusedState}
+                keyboardType={props.keyboardType}
+                onBlur={props.onBlur}
+                onFocus={props.onFocus}
+                onPress={props.onPress}
+                onSubmitEditing={onSubmitEditing}
+                prefixCharacter={prefixCharacter}
+                prefixContainerStyle={props.prefixContainerStyle}
+                prefixStyle={props.prefixStyle}
+                shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
+                shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
+                submitBehavior={props.submitBehavior}
+                touchableInputWrapperStyle={props.touchableInputWrapperStyle}
+            />
+        </NumericInput>
     );
 }
 
