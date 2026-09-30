@@ -12,6 +12,7 @@ import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
 const mockBeginRedirect = jest.fn(() => new Promise<never>(() => {}));
 const mockGetSession = jest.fn<CloudflareSession | null | undefined, []>();
 const mockGetPending = jest.fn<Promise<void> | null, []>();
+const mockGetExchangeError = jest.fn<string | undefined, []>();
 const mockIsQAServerActive = jest.fn<boolean, []>();
 const mockGetActiveServer = jest.fn<ValueOf<typeof CONST.SERVER>, []>();
 const mockWaitForActiveServerHydration = jest.fn(() => Promise.resolve());
@@ -19,6 +20,7 @@ const mockIsConfigured = jest.fn<boolean, []>();
 
 jest.mock('@userActions/CloudflareSession', () => ({
     redirectToCloudflareSignIn: () => mockBeginRedirect(),
+    getCloudflareCodeExchangeError: () => mockGetExchangeError(),
     getCloudflareSession: () => mockGetSession(),
     getPendingCloudflareCodeExchange: () => mockGetPending(),
     waitForCloudflareSessionHydration: () => Promise.resolve(),
@@ -51,6 +53,7 @@ describe('ensureQAAuthenticated', () => {
         mockIsConfigured.mockReturnValue(true);
         mockGetSession.mockReturnValue(null);
         mockGetPending.mockReturnValue(null);
+        mockGetExchangeError.mockReturnValue(undefined);
         // Explicit /index.ts: the jest-expo preset resolves the native platform first, and the native variant is a stub
         ({ensureQAAuthenticated, handleQAReauthRequired} = require<typeof EnsureQAAuthenticatedModule>('@libs/CloudflareAccess/ensureQAAuthenticated/index.ts'));
     });
@@ -128,6 +131,18 @@ describe('ensureQAAuthenticated', () => {
         mockGetSession.mockReturnValue(undefined);
         ensureQAAuthenticated(REDIRECTING_COMMAND);
         await waitForBatchedUpdates();
+        expect(mockBeginRedirect).not.toHaveBeenCalled();
+    });
+
+    it('does NOT redirect when the exchange already failed before the request, with nothing left to join', async () => {
+        // Given the callback exchange rejected and settled before this request arrived, so only its recorded failure remains
+        mockGetExchangeError.mockReturnValue('invalid_grant');
+
+        // When an allowlisted request runs the gate
+        ensureQAAuthenticated(REDIRECTING_COMMAND);
+        await waitForBatchedUpdates();
+
+        // Then it must stop, because a redirect would bring Cloudflare straight back into the same failure, the loop the in-flight case prevents
         expect(mockBeginRedirect).not.toHaveBeenCalled();
     });
 

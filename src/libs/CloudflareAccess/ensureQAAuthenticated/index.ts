@@ -7,7 +7,13 @@ import {isQAServerActive, waitForActiveServerHydration} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import Log from '@libs/Log';
 
-import {redirectToCloudflareSignIn, getCloudflareSession, getPendingCloudflareCodeExchange, waitForCloudflareSessionHydration} from '@userActions/CloudflareSession';
+import {
+    redirectToCloudflareSignIn,
+    getCloudflareCodeExchangeError,
+    getCloudflareSession,
+    getPendingCloudflareCodeExchange,
+    waitForCloudflareSessionHydration,
+} from '@userActions/CloudflareSession';
 
 import type {EnsureQAAuthenticated, HandleQAReauthRequired} from './types';
 
@@ -54,7 +60,9 @@ async function awaitGateSignals(): Promise<'may-redirect' | 'must-not-redirect'>
     const pendingCompletion = getPendingCloudflareCodeExchange();
 
     if (!pendingCompletion) {
-        return 'may-redirect';
+        // The exchange may have failed before this request arrived, leaving nothing to join. Redirecting then
+        // starts the same loop as the catch below, so a failure recorded this page load blocks it too
+        return getCloudflareCodeExchangeError() === undefined ? 'may-redirect' : 'must-not-redirect';
     }
 
     try {
