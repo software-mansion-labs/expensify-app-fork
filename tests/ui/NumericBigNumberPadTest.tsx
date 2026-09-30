@@ -34,26 +34,23 @@ function renderWithProviders(children: React.ReactNode) {
     return render(<ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>{children}</ComposeProviders>);
 }
 
-type NumericInputProps = React.ComponentProps<typeof NumericInput>;
+type UncontrolledSignNumericInputProps = Omit<React.ComponentProps<typeof NumericInput>, 'isNegative' | 'onSignChange'>;
 type NumericBigNumberPadProps = React.ComponentProps<typeof NumericInput.BigNumberPad>;
 
 describe('NumericInput.BigNumberPad', () => {
     const onInputChange = jest.fn();
 
-    const renderInputWithPad = (inputProps: Partial<NumericInputProps> = {}, padProps: Partial<NumericBigNumberPadProps> = {}, inputRef?: React.Ref<BaseTextInputRef>) =>
+    const renderInputWithPad = (inputProps: Partial<UncontrolledSignNumericInputProps> = {}, padProps: Partial<NumericBigNumberPadProps> = {}, inputRef?: React.Ref<BaseTextInputRef>) =>
         renderWithProviders(
             <NumericInput
                 onInputChange={onInputChange}
                 decimals={2}
                 {...inputProps}
             >
-                <NumericInput.Container>
-                    <NumericInput.MinusSign />
-                    <NumericInput.TextInput
-                        testID={INPUT_TEST_ID}
-                        ref={inputRef}
-                    />
-                </NumericInput.Container>
+                <NumericInput.AmountRow
+                    testID={INPUT_TEST_ID}
+                    ref={inputRef}
+                />
                 <NumericInput.BigNumberPad {...padProps} />
             </NumericInput>,
         );
@@ -286,43 +283,6 @@ describe('NumericInput.BigNumberPad', () => {
         expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('1');
     });
 
-    it('calls custom numberPressed callback when a key is pressed', async () => {
-        // Given an input with a custom numberPressed callback
-        const customNumberPressed = jest.fn();
-        renderInputWithPad({value: '1'}, {numberPressed: customNumberPressed});
-        await waitForBatchedUpdatesWithAct();
-
-        // When the digit '5' is pressed on the number pad
-        fireEvent.press(screen.getByTestId('button_5'));
-        await waitForBatchedUpdatesWithAct();
-
-        // Then the custom callback is invoked with the pressed key
-        expect(customNumberPressed).toHaveBeenCalledWith('5');
-    });
-
-    it('calls custom longPressHandlerStateChanged callback on long press and release', async () => {
-        // Given an input with a custom longPressHandlerStateChanged callback
-        const customLongPress = jest.fn();
-        renderInputWithPad({value: '12'}, {longPressHandlerStateChanged: customLongPress});
-        await waitForBatchedUpdatesWithAct();
-
-        const backspaceButton = screen.getByTestId('button_<');
-
-        // When the user starts long-pressing the backspace button
-        fireEvent(backspaceButton, 'longPress');
-        await waitForBatchedUpdatesWithAct();
-
-        // Then the callback is called with true indicating long-press started
-        expect(customLongPress).toHaveBeenCalledWith(true);
-
-        // When the user releases the backspace button
-        fireEvent(backspaceButton, 'pressOut');
-        await waitForBatchedUpdatesWithAct();
-
-        // Then the callback is called with false indicating long-press ended
-        expect(customLongPress).toHaveBeenCalledWith(false);
-    });
-
     it('focuses the input when a keypad number is pressed', async () => {
         // Given an input rendered with BigNumberPad and a ref tracking focus
         const inputRef = React.createRef<BaseTextInputRef>();
@@ -431,6 +391,62 @@ describe('NumericInput.BigNumberPad', () => {
         focusSpy.mockRestore();
     });
 
+    it('focuses the input when a press lands on the pad wrapper itself on web', async () => {
+        // Given an input with a selection and rendered BigNumberPad with a testID
+        const inputRef = React.createRef<BaseTextInputRef>();
+        renderInputWithPad({value: '1234'}, {testID: 'pad-container'}, inputRef);
+        await waitForBatchedUpdatesWithAct();
+
+        const input = screen.getByTestId(INPUT_TEST_ID);
+        fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: 2}}});
+        await waitForBatchedUpdatesWithAct();
+
+        const inputElement = inputRef.current;
+        if (!inputElement) {
+            throw new Error('Numeric input ref was not assigned');
+        }
+        const focusSpy = jest.spyOn(inputElement, 'focus');
+
+        // When a mousedown lands on the wrapper view, which has no id, rather than bubbling up from a child
+        const target = document.createElement('div');
+        const preventDefault = jest.fn();
+        fireEvent(screen.getByTestId('pad-container'), 'mouseDown', {nativeEvent: {target}, currentTarget: target, preventDefault});
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the press refocuses the input with a collapsed caret, because the wrapper is empty area too
+        expect(preventDefault).toHaveBeenCalledTimes(1);
+        expect(input.props.selection).toEqual({start: 2, end: 2});
+        expect(focusSpy).toHaveBeenCalledTimes(1);
+        focusSpy.mockRestore();
+    });
+
+    it('gives each number pad its own refocus id', async () => {
+        // Given two numeric inputs, each with its own BigNumberPad, on one screen
+        renderWithProviders(
+            <>
+                <NumericInput>
+                    <NumericInput.AmountRow />
+                    <NumericInput.BigNumberPad testID="pad-a" />
+                </NumericInput>
+                <NumericInput>
+                    <NumericInput.AmountRow />
+                    <NumericInput.BigNumberPad testID="pad-b" />
+                </NumericInput>
+            </>,
+        );
+        await waitForBatchedUpdatesWithAct();
+
+        // When reading the id each pad gives its inner view
+        const getPadViewId = (testID: string) => {
+            const children: unknown = screen.getByTestId(testID).props.children;
+            return React.isValidElement<{id?: unknown}>(children) ? children.props.id : undefined;
+        };
+
+        // Then the ids differ, so a press on one pad never matches the other pad's view in the DOM
+        expect(typeof getPadViewId('pad-a')).toBe('string');
+        expect(getPadViewId('pad-a')).not.toBe(getPadViewId('pad-b'));
+    });
+
     it('ignores mousedown events bubbling from keypad buttons to preserve selection on web', async () => {
         // Given an input with a selection and rendered BigNumberPad with a testID
         renderInputWithPad({value: '1234'}, {testID: 'pad-container'});
@@ -454,7 +470,7 @@ describe('NumericInput.BigNumberPad', () => {
         expect(input.props.selection).toEqual({start: 0, end: 2});
     });
 
-    it('applies the custom style and leaves the container id and spacing to the layout', async () => {
+    it('applies the custom style and leaves the spacing to the layout', async () => {
         // Given an input rendered with BigNumberPad and a custom style
         renderInputWithPad({}, {testID: 'pad-custom', style: {padding: 0}});
         await waitForBatchedUpdatesWithAct();
@@ -462,7 +478,7 @@ describe('NumericInput.BigNumberPad', () => {
         // When checking the pad view
         const padView = screen.getByTestId('pad-custom');
 
-        // Then it carries the custom style but no layout-owned `numPadContainerView` id, so the id stays unique in the DOM
+        // Then it carries the custom style and no id of its own, since the refocus id sits on the inner pad view
         expect(padView.props).toHaveProperty('style', expect.arrayContaining([expect.objectContaining({padding: 0})]));
         expect(padView.props.id).toBeUndefined();
     });

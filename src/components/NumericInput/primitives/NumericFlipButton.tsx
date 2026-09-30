@@ -2,16 +2,12 @@ import {NumericFlipButton as NumericFlipButtonComponent} from '@components/Numer
 import {useNumericInputActions, useNumericInputState} from '@components/NumericInput/context';
 import type {NumericInputFlipButtonProps} from '@components/NumericInput/types';
 
-import {canUseTouchScreen as canUseTouchScreenUtil} from '@libs/DeviceCapabilities';
-
-const canUseTouchScreen = canUseTouchScreenUtil();
-
-/** Toggles the sign of the canonical value. Rendered only when the root allows negative values and the device has a touchscreen. */
+/** Toggles the sign of the canonical value. Rendered only when the root allows negative values; the composing screen or layout decides whether a device shows it. */
 function NumericFlipButton(props: NumericInputFlipButtonProps) {
     const {allowNegative} = useNumericInputState();
     const {toggleSign} = useNumericInputActions();
 
-    if (!allowNegative || !canUseTouchScreen) {
+    if (!allowNegative) {
         return null;
     }
 

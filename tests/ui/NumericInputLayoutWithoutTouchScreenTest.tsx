@@ -69,15 +69,13 @@ describe('NumericInput layout composition without touch screen', () => {
                 errorText="Non-touch error"
             >
                 <NumericInput.ResponsiveLayout
-                    actions={
-                        <NumericInput.Actions>
-                            <NumericInput.CurrencyButton
-                                currency="USD"
-                                onPress={jest.fn()}
-                            />
-                            <NumericInput.FlipButton />
-                        </NumericInput.Actions>
+                    currencyButton={
+                        <NumericInput.CurrencyButton
+                            currency="USD"
+                            onPress={jest.fn()}
+                        />
                     }
+                    flipButton={<NumericInput.FlipButton />}
                     pad={<NumericInput.BigNumberPad />}
                     footer={
                         <Button
@@ -88,21 +86,19 @@ describe('NumericInput layout composition without touch screen', () => {
                         </Button>
                     }
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                        <NumericInput.Symbol>$</NumericInput.Symbol>
-                    </NumericInput.Container>
-                    <NumericInput.Error />
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        symbol="$"
+                    />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
 
         // When examining the screen elements
-        // Then the text input, currency button, error, and footer are displayed, while touch-only elements like FlipButton and BigNumberPad are hidden
+        // Then the text input, currency button, error, and footer are displayed, while the layout leaves out the touch-only flip button and pad
         expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
         expect(screen.getByText('USD')).toBeOnTheScreen();
-        // FlipButton and BigNumberPad are touch-only, so they should not render
         expect(screen.queryByText('Flip')).toBeNull();
         expect(screen.queryByTestId('button_1')).toBeNull();
         expect(screen.getByText('Non-touch error')).toBeOnTheScreen();
@@ -119,15 +115,13 @@ describe('NumericInput layout composition without touch screen', () => {
                 allowNegative
             >
                 <NumericInput.ResponsiveLayout
-                    actions={
-                        <NumericInput.Actions>
-                            <NumericInput.CurrencyButton
-                                currency="USD"
-                                onPress={jest.fn()}
-                            />
-                            <NumericInput.FlipButton />
-                        </NumericInput.Actions>
+                    currencyButton={
+                        <NumericInput.CurrencyButton
+                            currency="USD"
+                            onPress={jest.fn()}
+                        />
                     }
+                    flipButton={<NumericInput.FlipButton />}
                     pad={<NumericInput.BigNumberPad />}
                     footer={
                         <Button
@@ -138,10 +132,10 @@ describe('NumericInput layout composition without touch screen', () => {
                         </Button>
                     }
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                        <NumericInput.Symbol>$</NumericInput.Symbol>
-                    </NumericInput.Container>
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        symbol="$"
+                    />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
@@ -156,8 +150,8 @@ describe('NumericInput layout composition without touch screen', () => {
         expect(screen.getByTestId(FOOTER_TEST_ID)).toBeOnTheScreen();
     });
 
-    it('renders action inside NumericInput.Container in non-touch mode', async () => {
-        // Given an input in non-touch mode with a currency button passed via the action prop of NumericInput.Container
+    it('places the currency button inside the amount area in non-touch mode', async () => {
+        // Given a non-touch layout with a currency button and a tagged amount area
         const onCurrencyPress = jest.fn();
         renderWithProviders(
             <NumericInput
@@ -165,134 +159,37 @@ describe('NumericInput layout composition without touch screen', () => {
                 errorText="Test error"
             >
                 <NumericInput.ResponsiveLayout
-                    actions={
-                        <NumericInput.Actions hideOnNonTouch>
-                            <NumericInput.FlipButton />
-                        </NumericInput.Actions>
+                    amountTestID="numeric-container"
+                    currencyButton={
+                        <NumericInput.CurrencyButton
+                            currency="USD"
+                            onPress={onCurrencyPress}
+                        />
                     }
-                    footer={
-                        <Button
-                            testID={FOOTER_TEST_ID}
-                            onPress={jest.fn()}
-                        >
-                            Next
-                        </Button>
-                    }
+                    flipButton={<NumericInput.FlipButton />}
                 >
-                    <NumericInput.Container
-                        action={
-                            <NumericInput.CurrencyButton
-                                currency="USD"
-                                onPress={onCurrencyPress}
-                            />
-                        }
-                        testID="numeric-container"
-                    >
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                        <NumericInput.Symbol>$</NumericInput.Symbol>
-                    </NumericInput.Container>
-                    <NumericInput.Error />
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        symbol="$"
+                    />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
 
-        // When inspecting the container and the currency button
+        // When inspecting the amount area and the currency button
         const container = screen.getByTestId('numeric-container');
         const currencyButton = screen.getByText('USD');
 
-        // Then the currency button is rendered inside the centered amount container alongside the input and error
-        expect(currencyButton).toBeOnTheScreen();
+        // Then the currency button sits under the amount, next to the input and the error, since there is no actions row
         expect(container).toContainElement(currencyButton);
-        expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
-        expect(screen.getByText('Test error')).toBeOnTheScreen();
+        expect(container).toContainElement(screen.getByTestId(INPUT_TEST_ID));
+        expect(container).toContainElement(screen.getByText('Test error'));
 
-        // And pressing the currency button triggers the press handler
+        // When pressing the currency button
         fireEvent.press(currencyButton);
+
+        // Then the press handler runs
         expect(onCurrencyPress).toHaveBeenCalledTimes(1);
-    });
-
-    it('hides NumericInput.Actions in non-touch mode when hideOnNonTouch is enabled', async () => {
-        // Given an input in non-touch mode with NumericInput.Actions configured with hideOnNonTouch
-        renderWithProviders(
-            <NumericInput value="100">
-                <NumericInput.ResponsiveLayout
-                    actions={
-                        <NumericInput.Actions
-                            hideOnNonTouch
-                            testID="actions-container"
-                        >
-                            <NumericInput.CurrencyButton
-                                currency="USD"
-                                onPress={jest.fn()}
-                            />
-                        </NumericInput.Actions>
-                    }
-                >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput.Container>
-                </NumericInput.ResponsiveLayout>
-            </NumericInput>,
-        );
-        await waitForBatchedUpdatesWithAct();
-
-        // When querying for the actions container
-        const actionsContainer = screen.queryByTestId('actions-container');
-
-        // Then NumericInput.Actions returns null to avoid displaying actions in non-touch layouts
-        expect(actionsContainer).toBeNull();
-        expect(screen.queryByText('USD')).toBeNull();
-    });
-
-    it('hides NumericInput.Actions when children render null', async () => {
-        // Given an input on a non-touch screen where the only action child is NumericFlipButton which renders null on non-touch
-        renderWithProviders(
-            <NumericInput
-                value="100"
-                allowNegative
-            >
-                <NumericInput.ResponsiveLayout
-                    actions={
-                        <NumericInput.Actions testID="actions-container">
-                            <NumericInput.FlipButton />
-                        </NumericInput.Actions>
-                    }
-                >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput.Container>
-                </NumericInput.ResponsiveLayout>
-            </NumericInput>,
-        );
-        await waitForBatchedUpdatesWithAct();
-
-        // When querying for the actions container
-        const actionsContainer = screen.queryByTestId('actions-container');
-
-        // Then NumericInput.Actions returns null to prevent an empty View from rendering
-        expect(actionsContainer).toBeNull();
-    });
-
-    it('hides NumericInput.Actions when children are explicitly null or undefined', async () => {
-        // Given an input with NumericInput.Actions containing only null and undefined children
-        renderWithProviders(
-            <NumericInput value="100">
-                <NumericInput.Actions testID="actions-container">
-                    {null}
-                    {undefined}
-                </NumericInput.Actions>
-                <NumericInput.Container>
-                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                </NumericInput.Container>
-            </NumericInput>,
-        );
-        await waitForBatchedUpdatesWithAct();
-
-        // When querying for the actions container
-        const actionsContainer = screen.queryByTestId('actions-container');
-
-        // Then NumericInput.Actions returns null because no visible children exist
-        expect(actionsContainer).toBeNull();
     });
 });

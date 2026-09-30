@@ -49,7 +49,7 @@ function getMouseDownEvent(targetId: string) {
 function getContainerViewId(testID: string) {
     const container = screen.getByTestId(testID);
     if (typeof container.props.id !== 'string') {
-        throw new Error(`Numeric input container id was not assigned for ${testID}`);
+        throw new Error(`Numeric input amount area id was not assigned for ${testID}`);
     }
 
     return container.props.id;
@@ -94,9 +94,12 @@ function renderPressSelection(inputRef: {current: BaseTextInputRef | null}, onPr
             <NumericInputActionsContext.Provider
                 value={{
                     setNumber: jest.fn(),
+                    insertAtCaret: jest.fn(),
+                    deleteBackward: jest.fn(),
+                    beginRepeatedDelete: jest.fn(),
+                    endRepeatedDelete: jest.fn(),
                     clearSelection: jest.fn(),
                     toggleSign: jest.fn(),
-                    clearSign: jest.fn(),
                     handleSelectionChange,
                     handleKeyPress: jest.fn(),
                     focusInput: jest.fn(),
@@ -146,22 +149,22 @@ describe('NumericInput web behavior', () => {
         expect(input.props.selection).toEqual({start: 0, end: 0});
     });
 
-    describe('container primitive', () => {
+    describe('layout amount area', () => {
         const renderContainerComposition = (inputRef?: React.Ref<BaseTextInputRef>) =>
             renderWithProviders(
                 <NumericInput value="12">
-                    <NumericInput.Container testID={CONTAINER_TEST_ID}>
-                        <NumericInput.TextInput
+                    <NumericInput.ResponsiveLayout amountTestID={CONTAINER_TEST_ID}>
+                        <NumericInput.AmountRow
                             testID={INPUT_TEST_ID}
                             ref={inputRef}
+                            symbol="%"
                         />
-                        <NumericInput.Symbol>%</NumericInput.Symbol>
-                    </NumericInput.Container>
+                    </NumericInput.ResponsiveLayout>
                 </NumericInput>,
             );
 
         it('focuses the input and collapses the selection when its own empty area is pressed', () => {
-            // Given a container composition with a range selection on the input
+            // Given a layout composition with a range selection on the input
             const inputRef = React.createRef<BaseTextInputRef>();
             renderContainerComposition(inputRef);
 
@@ -177,7 +180,7 @@ describe('NumericInput web behavior', () => {
             }
             const focus = jest.spyOn(inputElement, 'focus');
 
-            // When the container's own empty area is pressed
+            // When the amount area's own empty space is pressed
             const event = getMouseDownEvent(getContainerViewId(CONTAINER_TEST_ID));
             fireEvent(screen.getByTestId(CONTAINER_TEST_ID), 'mouseDown', event);
 
@@ -189,7 +192,7 @@ describe('NumericInput web behavior', () => {
         });
 
         it('ignores a press that originates from a nested view instead of its own empty area', () => {
-            // Given a container composition with a range selection on the input
+            // Given a layout composition with a range selection on the input
             const inputRef = React.createRef<BaseTextInputRef>();
             renderContainerComposition(inputRef);
 
@@ -208,29 +211,32 @@ describe('NumericInput web behavior', () => {
             const event = getMouseDownEvent('some-nested-view-id');
             fireEvent(screen.getByTestId(CONTAINER_TEST_ID), 'mouseDown', event);
 
-            // Then the container leaves the press and the selection alone
+            // Then the amount area leaves the press and the selection alone
             expect(event.preventDefault).not.toHaveBeenCalled();
             expect(focus).not.toHaveBeenCalled();
             expect(input.props.selection).toEqual({start: 0, end: 2});
             focus.mockRestore();
         });
 
-        it('assigns a distinct target id to each mounted container, so a press only refocuses its own input', () => {
+        it('assigns a distinct target id to each mounted amount area, so a press only refocuses its own input', () => {
+            // Given two layouts on one screen
             renderWithProviders(
                 <>
                     <NumericInput value="12">
-                        <NumericInput.Container testID={`${CONTAINER_TEST_ID}-one`}>
-                            <NumericInput.TextInput />
-                        </NumericInput.Container>
+                        <NumericInput.ResponsiveLayout amountTestID={`${CONTAINER_TEST_ID}-one`}>
+                            <NumericInput.AmountRow />
+                        </NumericInput.ResponsiveLayout>
                     </NumericInput>
                     <NumericInput value="34">
-                        <NumericInput.Container testID={`${CONTAINER_TEST_ID}-two`}>
-                            <NumericInput.TextInput />
-                        </NumericInput.Container>
+                        <NumericInput.ResponsiveLayout amountTestID={`${CONTAINER_TEST_ID}-two`}>
+                            <NumericInput.AmountRow />
+                        </NumericInput.ResponsiveLayout>
                     </NumericInput>
                 </>,
             );
 
+            // When reading the id of each amount area
+            // Then the ids differ, where the hard-coded ids made both areas answer to one press target
             expect(getContainerViewId(`${CONTAINER_TEST_ID}-one`)).not.toBe(getContainerViewId(`${CONTAINER_TEST_ID}-two`));
         });
     });

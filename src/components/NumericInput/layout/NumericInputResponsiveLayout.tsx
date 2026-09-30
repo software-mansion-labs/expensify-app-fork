@@ -1,4 +1,6 @@
 import {useNumericInputActions} from '@components/NumericInput/context';
+import useRefocusOnEmptyAreaPress from '@components/NumericInput/hooks/useRefocusOnEmptyAreaPress';
+import NumericError from '@components/NumericInput/primitives/NumericError';
 import type {NumericInputResponsiveLayoutProps} from '@components/NumericInput/types';
 import ScrollView from '@components/ScrollView';
 
@@ -6,31 +8,33 @@ import useIsInLandscapeMode from '@hooks/useIsInLandscapeMode';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {canUseTouchScreen as canUseTouchScreenUtil} from '@libs/DeviceCapabilities';
-import isHTMLElement from '@libs/isHTMLElement';
 
 import type {MouseEvent} from 'react';
 
 import React from 'react';
 import {View} from 'react-native';
 
+import NumericInputActions from './NumericInputActions';
+import NumericInputContainer from './NumericInputContainer';
+import NumericInputFooter from './NumericInputFooter';
+
 const canUseTouchScreen = canUseTouchScreenUtil();
 
-/** Empty area around the pad (and, in portrait, the footer). The layout is the only owner of this id. */
-const containerId = 'numPadContainerView';
-
-/** Empty area around the footer in landscape, where the footer sits apart from the pad column. */
-const footerId = 'numPadFooterView';
-
 /**
- * Responsive layout template for NumericInput handling 4 layout variants
- * (portrait/landscape x touch/non-touch), with two columns in landscape and a single ScrollView in portrait.
+ * Responsive layout of a full-screen numeric form, and the only owner of its device policy: the touch capability,
+ * the orientation, where the amount, the error, the actions, the pad and the footer sit, scrolling, and refocusing
+ * the input after a press on an empty area. The slots take an element or `null` and are placed as received,
+ * except that the pad and the flip button are left out on devices without a touch screen.
+ * In portrait everything stacks in one scroll view; in landscape the amount and its actions sit in the left column
+ * and the pad in the right one.
  */
 function NumericInputResponsiveLayout({
     children,
-    actions,
+    currencyButton,
+    flipButton,
     pad,
     footer,
-    error,
+    amountTestID,
     style,
     scrollViewStyle,
     footerStyle,
@@ -41,48 +45,59 @@ function NumericInputResponsiveLayout({
     const styles = useThemeStyles();
     const isInLandscapeMode = useIsInLandscapeMode();
     const {clearSelection, focusInput} = useNumericInputActions();
+    const {id: padColumnId, onMouseDown: handlePadColumnMouseDown} = useRefocusOnEmptyAreaPress();
 
-    const handlePadAndFooterMouseDown = (event: MouseEvent<Element>) => {
-        const targetId = isHTMLElement(event.nativeEvent?.target) ? event.nativeEvent.target.id : undefined;
-        if (targetId !== containerId && targetId !== footerId) {
-            return;
-        }
+    const padNode = canUseTouchScreen ? pad : null;
+    const flipButtonNode = canUseTouchScreen ? flipButton : null;
+    const isPadShown = !!padNode;
 
-        event.preventDefault();
-        clearSelection();
-        focusInput();
-    };
-
+    // The web content container of a scroll view is not the view that receives the handler, so any press on it refocuses.
     const handleScrollViewMouseDown = (event: MouseEvent<Element>) => {
-        if (!shouldRefocusOnScrollViewClick) {
-            return;
-        }
-
         event.preventDefault();
         clearSelection();
         focusInput();
     };
 
-    const footerNode = footer ? (
-        <View
-            id={footerId}
-            onMouseDown={handlePadAndFooterMouseDown}
-            style={[styles.w100, styles.justifyContentEnd, styles.pageWrapper, styles.pt0, footerStyle]}
+    // Without a touch screen there is no actions row, so the currency button sits under the amount instead.
+    const actionsNode =
+        canUseTouchScreen && (!!currencyButton || !!flipButtonNode) ? (
+            <NumericInputActions>
+                {currencyButton}
+                {flipButtonNode}
+            </NumericInputActions>
+        ) : null;
+
+    const amountNode = (
+        <NumericInputContainer
+            isInLandscapeMode={isInLandscapeMode}
+            testID={amountTestID}
+            action={canUseTouchScreen ? null : currencyButton}
+            // In portrait the error floats over the bottom of the amount area, so it never moves the amount or the pad
+            error={isInLandscapeMode ? null : <NumericError style={[styles.pAbsolute, styles.b0, isPadShown ? styles.mb5 : styles.mb3, styles.ph5, styles.w100]} />}
         >
-            {footer}
-        </View>
-    ) : null;
+            {children}
+        </NumericInputContainer>
+    );
 
     if (isInLandscapeMode) {
-        const padColumn = pad ? (
-            <View
-                id={containerId}
-                onMouseDown={handlePadAndFooterMouseDown}
-                style={[styles.flex1, styles.justifyContentCenter]}
-            >
-                {pad}
-            </View>
-        ) : null;
+        const landscapeContent = (
+            <>
+                <View style={[styles.justifyContentCenter, styles.alignItemsCenter, styles.numberWithSymbolFormInputContainerLandscape]}>
+                    {amountNode}
+                    {actionsNode}
+                    <NumericError style={[styles.ph5, styles.w100]} />
+                </View>
+                {isPadShown && (
+                    <View
+                        id={padColumnId}
+                        onMouseDown={handlePadColumnMouseDown}
+                        style={[styles.flex1, styles.justifyContentCenter]}
+                    >
+                        {padNode}
+                    </View>
+                )}
+            </>
+        );
 
         return (
             <>
@@ -91,12 +106,7 @@ function NumericInputResponsiveLayout({
                         testID={testID}
                         style={[styles.flex1, styles.ph5, styles.flexRow, style]}
                     >
-                        <View style={[styles.justifyContentCenter, styles.alignItemsCenter, styles.numberWithSymbolFormInputContainerLandscape]}>
-                            {children}
-                            {actions}
-                            {error}
-                        </View>
-                        {padColumn}
+                        {landscapeContent}
                     </View>
                 ) : (
                     <ScrollView
@@ -105,42 +115,25 @@ function NumericInputResponsiveLayout({
                         style={[styles.flex1, styles.ph5, shouldRefocusOnScrollViewClick && styles.cursorAuto, style]}
                         onMouseDown={shouldRefocusOnScrollViewClick ? handleScrollViewMouseDown : undefined}
                     >
-                        <View style={[styles.justifyContentCenter, styles.alignItemsCenter, styles.numberWithSymbolFormInputContainerLandscape]}>
-                            {children}
-                            {actions}
-                            {error}
-                        </View>
-                        {padColumn}
+                        {landscapeContent}
                     </ScrollView>
                 )}
-                {footerNode}
+                {!!footer && <NumericInputFooter style={footerStyle}>{footer}</NumericInputFooter>}
             </>
         );
     }
 
-    const shouldShowPadOrFooter = !!(pad ?? footer);
-
-    // The number pad renders only on touch screens. When it does, it keeps a fixed gap below the amount and its actions,
-    // with or without action buttons, so the centred amount does not move between screens.
-    const isPadRendered = !!pad && canUseTouchScreen;
-
-    const padAndFooterNode = shouldShowPadOrFooter ? (
-        <View
-            id={containerId}
-            onMouseDown={handlePadAndFooterMouseDown}
-            style={[styles.w100, styles.justifyContentEnd, styles.pageWrapper, styles.pt0, isPadRendered && styles.mt2, footerStyle]}
-        >
-            {pad}
-            {footer}
-        </View>
-    ) : null;
-
     const portraitContent = (
         <>
-            {children}
-            {actions}
-            {error}
-            {padAndFooterNode}
+            {amountNode}
+            {actionsNode}
+            {(isPadShown || !!footer) && (
+                // The pad keeps a fixed gap below the amount and its actions, so the centered amount does not move between screens
+                <NumericInputFooter style={[isPadShown && styles.mt2, footerStyle]}>
+                    {padNode}
+                    {footer}
+                </NumericInputFooter>
+            )}
         </>
     );
 

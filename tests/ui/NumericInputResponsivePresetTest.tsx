@@ -3,7 +3,7 @@ import {fireEvent, render, screen} from '@testing-library/react-native';
 import Button from '@components/Button';
 import ComposeProviders from '@components/ComposeProviders';
 import {LocaleContextProvider} from '@components/LocaleContextProvider';
-import NumericInput, {NumericResponsivePreset} from '@components/NumericInput';
+import NumericInput from '@components/NumericInput';
 import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import Text from '@components/Text';
 import type {BaseTextInputRef} from '@components/TextInput/BaseTextInput/types';
@@ -75,10 +75,8 @@ describe('NumericInput.ResponsivePreset', () => {
                     errorText="Portrait error"
                 >
                     <NumericInput.ResponsivePreset
-                        symbol="$"
                         currency="USD"
                         onCurrencyButtonPress={onCurrencyPress}
-                        inputTestID={INPUT_TEST_ID}
                         footer={
                             <Button
                                 testID={FOOTER_TEST_ID}
@@ -87,7 +85,12 @@ describe('NumericInput.ResponsivePreset', () => {
                                 Next
                             </Button>
                         }
-                    />
+                    >
+                        <NumericInput.AmountRow
+                            testID={INPUT_TEST_ID}
+                            symbol="$"
+                        />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -137,9 +140,7 @@ describe('NumericInput.ResponsivePreset', () => {
                     errorText="Landscape touch error"
                 >
                     <NumericInput.ResponsivePreset
-                        symbol="$"
                         currency="USD"
-                        inputTestID={INPUT_TEST_ID}
                         footer={
                             <Button
                                 testID={FOOTER_TEST_ID}
@@ -148,7 +149,12 @@ describe('NumericInput.ResponsivePreset', () => {
                                 Submit
                             </Button>
                         }
-                    />
+                    >
+                        <NumericInput.AmountRow
+                            testID={INPUT_TEST_ID}
+                            symbol="$"
+                        />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -176,8 +182,9 @@ describe('NumericInput.ResponsivePreset', () => {
                     <NumericInput.ResponsivePreset
                         disableScrollView
                         testID="preset-root-view"
-                        inputTestID={INPUT_TEST_ID}
-                    />
+                    >
+                        <NumericInput.AmountRow testID={INPUT_TEST_ID} />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -199,8 +206,9 @@ describe('NumericInput.ResponsivePreset', () => {
                     <NumericInput.ResponsivePreset
                         disableScrollView
                         testID="preset-root-view-landscape"
-                        inputTestID={INPUT_TEST_ID}
-                    />
+                    >
+                        <NumericInput.AmountRow testID={INPUT_TEST_ID} />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -224,9 +232,12 @@ describe('NumericInput.ResponsivePreset', () => {
                     <NumericInput.ResponsivePreset
                         shouldRefocusOnScrollViewClick
                         testID="scroll-view-test"
-                        inputTestID={INPUT_TEST_ID}
-                        ref={inputRef}
-                    />
+                    >
+                        <NumericInput.AmountRow
+                            testID={INPUT_TEST_ID}
+                            ref={inputRef}
+                        />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -260,11 +271,12 @@ describe('NumericInput.ResponsivePreset', () => {
 
             renderWithProviders(
                 <NumericInput value="5678">
-                    <NumericInput.ResponsivePreset
-                        amountContainerTestID="amount-container-refocus"
-                        inputTestID={INPUT_TEST_ID}
-                        ref={inputRef}
-                    />
+                    <NumericInput.ResponsivePreset amountTestID="amount-container-refocus">
+                        <NumericInput.AmountRow
+                            testID={INPUT_TEST_ID}
+                            ref={inputRef}
+                        />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -300,52 +312,14 @@ describe('NumericInput.ResponsivePreset', () => {
         });
     });
 
-    describe('Standalone NumericResponsivePreset usage', () => {
-        it('works as a standalone component wrapping NumericInput root with full feature set', async () => {
-            // Given the standalone preset used without a NumericInput root, receiving the root's props directly
-            const onInputChange = jest.fn();
-
-            renderWithProviders(
-                <NumericResponsivePreset
-                    value="999"
-                    onInputChange={onInputChange}
-                    allowNegative
-                    decimals={2}
-                    symbol="$"
-                    currency="USD"
-                    errorText="Standalone preset error"
-                    inputTestID={INPUT_TEST_ID}
-                    footer={
-                        <Button
-                            testID={FOOTER_TEST_ID}
-                            onPress={jest.fn()}
-                        >
-                            Pay
-                        </Button>
-                    }
-                />,
-            );
-            await waitForBatchedUpdatesWithAct();
-
-            // Then it provides its own root, so the value, symbol, currency and flip buttons, error, and footer all render as with the composed version
-            expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
-            expect(screen.getByDisplayValue('999')).toBeOnTheScreen();
-            expect(screen.getByText('$')).toBeOnTheScreen();
-            expect(screen.getByText('USD')).toBeOnTheScreen();
-            expect(screen.getByText('Flip')).toBeOnTheScreen();
-            expect(screen.getByText('Standalone preset error')).toBeOnTheScreen();
-            expect(screen.getByTestId(FOOTER_TEST_ID)).toBeOnTheScreen();
-        });
-    });
-
     describe('Custom children support', () => {
-        it('renders custom children in place of the default amount row when provided', async () => {
-            // Given a preset whose screen supplies its own amount area as children
+        it('renders custom content next to the amount row', async () => {
+            // Given a preset whose screen adds its own content to the amount area
             renderWithProviders(
                 <NumericInput value="10">
                     <NumericInput.ResponsivePreset>
                         <Text testID="custom-child">Custom Header</Text>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                        <NumericInput.AmountRow testID={INPUT_TEST_ID} />
                     </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
@@ -367,9 +341,10 @@ describe('NumericInput.ResponsivePreset', () => {
                 >
                     <NumericInput.ResponsivePreset
                         currency="USD"
-                        inputTestID={INPUT_TEST_ID}
                         pad={null}
-                    />
+                    >
+                        <NumericInput.AmountRow testID={INPUT_TEST_ID} />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -391,7 +366,9 @@ describe('NumericInput.ResponsivePreset', () => {
                     <NumericInput.ResponsivePreset
                         currency="USD"
                         flipButton={null}
-                    />
+                    >
+                        <NumericInput.AmountRow />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -401,11 +378,37 @@ describe('NumericInput.ResponsivePreset', () => {
             expect(screen.queryByText('Flip')).toBeNull();
         });
 
-        it('renders no currency button and no symbol when neither is provided', async () => {
-            // Given a preset without a currency, a currency button label, or a symbol, as on a unit-less screen
+        it('labels the currency button with the custom label over the currency code', async () => {
+            // Given a preset on a unit screen that passes both a currency and a custom button label
+            const onCurrencyPress = jest.fn();
             renderWithProviders(
                 <NumericInput value="10">
-                    <NumericInput.ResponsivePreset inputTestID={INPUT_TEST_ID} />
+                    <NumericInput.ResponsivePreset
+                        currency="USD"
+                        currencyButtonLabel="Hours"
+                        onCurrencyButtonPress={onCurrencyPress}
+                    >
+                        <NumericInput.AmountRow />
+                    </NumericInput.ResponsivePreset>
+                </NumericInput>,
+            );
+            await waitForBatchedUpdatesWithAct();
+
+            // When the user presses the button
+            fireEvent.press(screen.getByText('Hours'));
+
+            // Then the button shows the custom label instead of the code and still calls the screen's handler
+            expect(screen.queryByText('USD')).toBeNull();
+            expect(onCurrencyPress).toHaveBeenCalledTimes(1);
+        });
+
+        it('renders no currency button and no symbol when neither is provided', async () => {
+            // Given a preset without a currency or a currency button label, around an amount row without a symbol, as on a unit-less screen
+            renderWithProviders(
+                <NumericInput value="10">
+                    <NumericInput.ResponsivePreset>
+                        <NumericInput.AmountRow testID={INPUT_TEST_ID} />
+                    </NumericInput.ResponsivePreset>
                 </NumericInput>,
             );
             await waitForBatchedUpdatesWithAct();
@@ -414,33 +417,6 @@ describe('NumericInput.ResponsivePreset', () => {
             expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
             expect(screen.queryByLabelText(/Select a currency/)).toBeNull();
             expect(screen.queryByText('$')).toBeNull();
-        });
-    });
-
-    describe('Text input props', () => {
-        it('forwards the props it does not consume to the text input', async () => {
-            // Given a preset configured with text input behavior a screen relies on
-            renderWithProviders(
-                <NumericInput value="10">
-                    <NumericInput.ResponsivePreset
-                        inputTestID={INPUT_TEST_ID}
-                        accessibilityLabel="Amount (USD)"
-                        keyboardType="number-pad"
-                        disableKeyboard={false}
-                        submitBehavior="blurAndSubmit"
-                    />
-                </NumericInput>,
-            );
-            await waitForBatchedUpdatesWithAct();
-
-            // When inspecting the rendered input
-            const input = screen.getByTestId(INPUT_TEST_ID);
-
-            // Then the accessibility label, keyboard type, soft keyboard, and submit behavior follow the preset's props
-            expect(input.props.accessibilityLabel).toBe('Amount (USD)');
-            expect(input.props.keyboardType).toBe('number-pad');
-            expect(input.props.showSoftInputOnFocus).not.toBe(false);
-            expect(input.props.submitBehavior).toBe('blurAndSubmit');
         });
     });
 });

@@ -1,28 +1,31 @@
 import {NumericCurrencyButton} from '@components/NumericButtons';
 
-import NumericInputActions from './layout/NumericInputActions';
-import NumericInputFooter from './layout/NumericInputFooter';
 import NumericInputResponsiveLayout from './layout/NumericInputResponsiveLayout';
 import NumericInputComponent from './NumericInput';
-import NumericInputResponsivePreset, {NumericResponsivePreset} from './presets/NumericInputResponsivePreset';
+import NumericInputResponsivePreset from './presets/NumericInputResponsivePreset';
+import NumericAmountRow from './primitives/NumericAmountRow';
 import NumericBigNumberPad from './primitives/NumericBigNumberPad';
 import NumericError from './primitives/NumericError';
 import NumericFlipButton from './primitives/NumericFlipButton';
-import NumericInputContainer from './primitives/NumericInputContainer';
 import NumericMinusSign from './primitives/NumericMinusSign';
 import NumericSymbol from './primitives/NumericSymbol';
 import NumericTextInput from './primitives/NumericTextInput';
 
 /**
- * NumericInput is a composable numeric editing experience for symbol and number-pad interactions.
+ * NumericInput is the large-amount presentation of a number: the sign and the symbol render as siblings of a big
+ * auto-growing amount, with or without the number pad.
  *
- * The root owns the canonical signed value, the selection, and validation through the same root-instantiated
- * edit controller as NumericField. The composed input displays only the magnitude. The sign and symbol are
- * primitives placed by the composition, in the order and layout it wants.
+ * Choosing a presentation: use NumericField when the number is edited as a standard form field, with the sign typed in
+ * the text. Use NumericInput when the sign and the symbol render beside the large amount. The two are separate modules on
+ * purpose, sharing only the editing controller, the imperative ref and `NumericButtons`, so neither tree branches on
+ * which presentation it is. A screen picks one and never switches at runtime.
  *
- * Full-screen numeric forms (typically filling the RHP, with or without the number pad) can use
- * `NumericInput.ResponsivePreset` inside the root, or the standalone `NumericResponsivePreset`. Inline text
- * fields should use NumericField instead.
+ * The root owns the canonical signed value, the selection, and validation through the same root-instantiated edit
+ * controller as NumericField, and renders no view of its own. The composed input displays only the magnitude. A caller
+ * that keeps the sign apart from the number passes `isNegative` and `onSignChange`, and exchanges magnitudes with the root.
+ * `NumericInput.AmountRow` composes the sign, the symbol and the input; the primitives stay available for unusual screens.
+ * `NumericInput.ResponsiveLayout` owns the device policy of a full-screen form, and `NumericInput.ResponsivePreset`
+ * fills it with the standard buttons and pad.
  *
  * @example
  * ```tsx
@@ -38,20 +41,19 @@ import NumericTextInput from './primitives/NumericTextInput';
  *     currency="USD"
  *     onCurrencyButtonPress={handleCurrency}
  *     footer={<Button text="Next" onPress={handleSubmit} />}
- *   />
+ *   >
+ *     <NumericInput.AmountRow symbol="$" shouldUseDynamicFontSize />
+ *   </NumericInput.ResponsivePreset>
  * </NumericInput>
  * ```
  */
 
 const NumericInput = Object.assign(NumericInputComponent, {
-    /** Layout container grouping action controls (`NumericInput.CurrencyButton`, `NumericInput.FlipButton`). */
-    Actions: NumericInputActions,
+    /** Renders the minus sign, the symbol and the number in one row with a shared font size. */
+    AmountRow: NumericAmountRow,
 
-    /** Renders the touch number pad wired to NumericInput actions and selection. */
+    /** Renders the number pad wired to NumericInput actions and selection. The layout decides where, and whether, it shows. */
     BigNumberPad: NumericBigNumberPad,
-
-    /** Renders the centered, full-size amount layout with legacy empty-area refocus behavior. */
-    Container: NumericInputContainer,
 
     /** Opens the currency selector. */
     CurrencyButton: NumericCurrencyButton,
@@ -62,16 +64,13 @@ const NumericInput = Object.assign(NumericInputComponent, {
     /** Toggles the sign of the value. Renders only when the root allows negative values. */
     FlipButton: NumericFlipButton,
 
-    /** Layout container for the footer/CTA at the bottom of the screen. */
-    Footer: NumericInputFooter,
-
     /** Renders the minus sign of a negative value, which the input itself does not display. */
     MinusSign: NumericMinusSign,
 
-    /** Responsive layout template handling 4 layout variants (portrait/landscape x touch/non-touch) with explicit slots. */
+    /** Responsive layout of a full-screen form, owning touch, orientation, placement, scrolling and refocus, with element slots. */
     ResponsiveLayout: NumericInputResponsiveLayout,
 
-    /** Responsive preset composing the standard full-screen layout, with `pad`, `flipButton`, and `footer` slots. */
+    /** Scaffold filling `ResponsiveLayout` with the standard flip button, pad and currency button around the given amount row. */
     ResponsivePreset: NumericInputResponsivePreset,
 
     /** Renders its children as the symbol (currency or unit) displayed beside the number. */
@@ -82,6 +81,5 @@ const NumericInput = Object.assign(NumericInputComponent, {
 });
 
 export default NumericInput;
-export {NumericResponsivePreset};
 export {useNumericInputActions} from './context';
 export {default as useNumericDynamicFontSize} from './hooks/useNumericDynamicFontSize';

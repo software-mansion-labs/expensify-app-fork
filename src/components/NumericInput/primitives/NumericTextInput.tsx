@@ -42,7 +42,6 @@ function NumericTextInput({
     shouldAllowFocusInLandscapeMode = true,
     shouldApplyPaddingToContainer = false,
     shouldUseDefaultLineHeightForPrefix,
-    shouldUseDynamicFontSize,
     submitBehavior = 'submit',
     testID,
     touchableInputWrapperStyle,
@@ -51,19 +50,12 @@ function NumericTextInput({
     const {setMouseDown, setMouseUp} = useMouseActions();
     const styles = useThemeStyles();
     const navigation = useNavigation();
-    const {dynamicAmountStyle, formattedNumber, inputRef, isNegative, selection} = useNumericInputState();
-    const {clearSign, handleKeyPress, handleSelectionChange, setNumber} = useNumericInputActions();
+    const {formattedNumber, inputRef, selection} = useNumericInputState();
+    const {handleKeyPress, handleSelectionChange, setNumber} = useNumericInputActions();
 
     const handlePress = useNumericPressSelection(onPress);
 
     const handleInputKeyPress = (event: NumericEditingKeyPressEvent) => {
-        const key = event.nativeEvent.key.toLowerCase();
-        const isCaretAtStart = selection.start === 0 && selection.end === 0;
-
-        if ((!formattedNumber || isCaretAtStart) && key === 'backspace' && isNegative) {
-            clearSign();
-        }
-
         handleKeyPress(event);
         onKeyPress?.(event);
     };
@@ -97,7 +89,7 @@ function NumericTextInput({
             disableKeyboardShortcuts
             hideFocusedState={hideFocusedState}
             inputMode={!keyboardType ? CONST.INPUT_MODE.DECIMAL : undefined}
-            inputStyle={[styles.pr1, style, shouldUseDynamicFontSize === false ? undefined : dynamicAmountStyle]}
+            inputStyle={[styles.pr1, style]}
             keyboardType={keyboardType}
             // The navigation prop keeps disableKeyboard working when the app returns from the background.
             navigation={navigation}

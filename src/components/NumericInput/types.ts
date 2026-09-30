@@ -8,14 +8,31 @@ import type {ForwardedRef, ReactNode} from 'react';
 import type {StyleProp, TextStyle, ViewStyle} from 'react-native';
 import type {ValueOf} from 'type-fest';
 
-type NumericInputProps = {
-    /** Canonical value shared by composed primitives. Only an empty value resets editing state. */
+/**
+ * A caller that keeps the sign apart from the number passes both props. The root then reports and accepts the magnitude
+ * through `value`, `onInputChange` and its ref, and reports a changed sign through `onSignChange`.
+ */
+type NumericInputSignProps =
+    | {
+          /** Sign of the value, owned by the caller. The root adopts a change to it, and applies edits and flips right away before reporting them. */
+          isNegative: boolean;
+
+          /** Called after an edit or a flip changes the sign, with the new sign. */
+          onSignChange: (isNegative: boolean) => void;
+      }
+    | {
+          isNegative?: never;
+          onSignChange?: never;
+      };
+
+type NumericInputProps = NumericInputSignProps & {
+    /** Canonical value shared by composed primitives. Only an empty value resets editing state. It is signed unless the caller owns the sign. */
     value?: string;
 
-    /** Called with the canonical signed value when a composed primitive changes it. */
+    /** Called with the canonical value when a composed primitive changes it. It is signed unless the caller owns the sign. */
     onInputChange?: (value: string) => void;
 
-    /** Whether negative values are allowed. The canonical value always stores its sign. */
+    /** Whether negative values are allowed. */
     allowNegative?: boolean;
 
     /** Number of decimal places accepted by the composer. */
@@ -30,37 +47,25 @@ type NumericInputProps = {
     /** Ref exposing the number editing imperative API. */
     ref?: ForwardedRef<NumericEditingRef>;
 
-    /** Style applied to the root container. */
-    style?: StyleProp<ViewStyle>;
-
-    /** Test identifier applied to the root container. */
-    testID?: string;
-
-    /** Composed primitives that consume NumericInput state and actions through context. */
+    /** Composed primitives that consume NumericInput state and actions through context. The root renders no view of its own. */
     children: ReactNode;
-
-    /** Whether to dynamically scale the font size down when the amount is long. */
-    shouldUseDynamicFontSize?: boolean;
-
-    /** Optional symbol used to calculate total display length when dynamic font sizing is enabled. */
-    symbol?: string;
 };
 
 type NumericInputContainerProps = {
-    /** Composed numeric primitives rendered inside the centered amount layout. */
+    /** The amount row, centered in the amount area. */
     children: ReactNode;
 
-    /** Optional error node positioned relative to the amount container without displacing it. */
+    /** Action rendered below the amount row, such as the currency button on devices without the actions row. */
+    action?: ReactNode;
+
+    /** Error rendered below the action. In portrait the layout positions it absolutely, so it never displaces the amount. */
     error?: ReactNode;
 
-    /** Additional styles applied to the outer container. */
-    style?: StyleProp<ViewStyle>;
+    /** Whether the layout renders in landscape, where the amount sits in the left column instead of filling the screen. */
+    isInLandscapeMode: boolean;
 
-    /** Test identifier applied to the interactive number view. */
+    /** Test identifier applied to the amount area. */
     testID?: string;
-
-    /** Optional action node (such as `NumericInput.CurrencyButton`) rendered below the amount row and above the error node. */
-    action?: ReactNode;
 };
 
 type NumericTextInputProps = {
@@ -75,9 +80,6 @@ type NumericTextInputProps = {
 
     /** Style applied to the input container. */
     containerStyle?: StyleProp<ViewStyle>;
-
-    /** Whether to dynamically scale the font size down when the amount is long. */
-    shouldUseDynamicFontSize?: boolean;
 } & Pick<
     BaseTextInputProps,
     | 'accessibilityLabel'
@@ -105,6 +107,23 @@ type NumericTextInputProps = {
     | 'touchableInputWrapperStyle'
 >;
 
+type NumericAmountRowProps = NumericTextInputProps & {
+    /** Symbol (currency or unit) rendered beside the number, e.g. '$' or '%'. Omit it to render none. */
+    symbol?: string;
+
+    /** Position of the symbol relative to the number. Defaults to prefix. */
+    symbolPosition?: ValueOf<typeof CONST.TEXT_INPUT_SYMBOL_POSITION>;
+
+    /** Whether the number, the symbol and the sign scale down together as the amount grows. */
+    shouldUseDynamicFontSize?: boolean;
+
+    /** Style applied to the symbol text, appended to the primitive's defaults. */
+    symbolStyle?: StyleProp<TextStyle>;
+
+    /** Style applied to the minus sign, appended to the primitive's defaults. */
+    signStyle?: StyleProp<TextStyle>;
+};
+
 type NumericSymbolProps = {
     /** Symbol (currency or unit) rendered beside the number. */
     children: ReactNode;
@@ -126,16 +145,10 @@ type NumericErrorProps = {
 };
 
 type NumericBigNumberPadProps = {
-    /** Style applied to the pad container */
+    /** Style applied to the pad container. */
     style?: StyleProp<ViewStyle>;
 
-    /** Called when the user starts or stops long pressing the "<" (backspace) button */
-    longPressHandlerStateChanged?: (isUserLongPressingBackspace: boolean) => void;
-
-    /** Optional callback when a number or backspace is pressed */
-    numberPressed?: (key: string) => void;
-
-    /** Test identifier for the pad */
+    /** Test identifier applied to the pad container. */
     testID?: string;
 };
 
@@ -145,9 +158,6 @@ type NumericInputActionsProps = {
 
     /** Additional styles applied to the actions container. */
     style?: StyleProp<ViewStyle>;
-
-    /** Whether to hide the container on non-touch devices. */
-    hideOnNonTouch?: boolean;
 
     /** Test identifier applied to the actions container. */
     testID?: string;
@@ -159,25 +169,31 @@ type NumericInputFooterProps = {
 
     /** Additional styles applied to the footer container. */
     style?: StyleProp<ViewStyle>;
+
+    /** Test identifier applied to the footer container. */
+    testID?: string;
 };
 
 type NumericInputResponsiveLayoutProps = {
-    /** Main content, typically `NumericInput.Container`, `NumericInput.Error`, and any contextual text. */
-    children?: ReactNode;
+    /** The amount row, typically `NumericInput.AmountRow`. */
+    children: ReactNode;
 
-    /** Action controls, such as `NumericInput.Actions`. In landscape, placed in the left column under the amount. In portrait, placed below the amount. */
-    actions?: ReactNode;
+    /** Currency button, such as `NumericInput.CurrencyButton`. Shown in the actions row on touch screens and under the amount otherwise. */
+    currencyButton?: ReactNode;
 
-    /** Touch number pad, such as `NumericInput.BigNumberPad`. In landscape, placed in the right column. In portrait, placed below actions/content. */
+    /** Flip button, such as `NumericInput.FlipButton`. Shown in the actions row, on touch screens only. */
+    flipButton?: ReactNode;
+
+    /** Number pad, such as `NumericInput.BigNumberPad`. Shown on touch screens only: under the amount in portrait, in the right column in landscape. */
     pad?: ReactNode;
 
     /** Footer or submit button rendered at the bottom of the screen. */
     footer?: ReactNode;
 
-    /** Optional error node rendered under actions in landscape, and under actions in portrait (if not already inside container). */
-    error?: ReactNode;
+    /** Test identifier applied to the amount area. */
+    amountTestID?: string;
 
-    /** Additional styles applied to the scroll view content container. */
+    /** Additional styles applied to the scroll view content container in portrait. */
     scrollViewStyle?: StyleProp<ViewStyle>;
 
     /** Additional styles applied to the outer container / scroll view. */
@@ -189,68 +205,29 @@ type NumericInputResponsiveLayoutProps = {
     /** Test identifier applied to the root scroll view. */
     testID?: string;
 
-    /** Whether to disable ScrollView and render a View container instead. */
+    /** Whether to disable ScrollView and render a View container instead, for screens that already scroll. */
     disableScrollView?: boolean;
 
     /** Whether to refocus the input when clicking on the ScrollView empty space. */
     shouldRefocusOnScrollViewClick?: boolean;
 };
 
-type NumericInputResponsivePresetProps = Pick<
-    NumericInputResponsiveLayoutProps,
-    'footer' | 'disableScrollView' | 'shouldRefocusOnScrollViewClick' | 'scrollViewStyle' | 'style' | 'footerStyle' | 'testID'
-> &
-    Omit<NumericTextInputProps, 'style' | 'testID' | 'shouldUseDynamicFontSize'> & {
-        /** Currency code (e.g. 'USD', 'EUR') shown on the currency button. The button renders only when this or `currencyButtonLabel` is provided. */
-        currency?: string;
+type NumericInputResponsivePresetProps = Omit<NumericInputResponsiveLayoutProps, 'currencyButton'> & {
+    /** Currency code (e.g. 'USD', 'EUR') shown on the currency button. The button renders only when this or `currencyButtonLabel` is provided. */
+    currency?: string;
 
-        /** Custom label on the currency button (overrides `currency` if set), e.g. a duration unit. */
-        currencyButtonLabel?: string;
+    /** Custom label on the currency button (overrides `currency` if set), e.g. a duration unit. */
+    currencyButtonLabel?: string;
 
-        /** Accessibility label for the currency button (defaults to currency-based copy when unset). */
-        currencyButtonAccessibilityLabel?: string;
+    /** Accessibility label for the currency button (defaults to currency-based copy when unset). */
+    currencyButtonAccessibilityLabel?: string;
 
-        /** Callback when the currency button is pressed. */
-        onCurrencyButtonPress?: () => void;
-
-        /** Symbol (currency or unit) displayed beside the number (e.g. '$', '€', 'km', '%'). Omit it to render no symbol. */
-        symbol?: string;
-
-        /** Position of the symbol relative to the input ('prefix' or 'suffix'). Defaults to 'prefix'. */
-        symbolPosition?: ValueOf<typeof CONST.TEXT_INPUT_SYMBOL_POSITION>;
-
-        /** Style applied to the symbol text, appended to the primitive's defaults. */
-        symbolTextStyle?: StyleProp<TextStyle>;
-
-        /** Style applied to the minus sign, appended to the primitive's defaults. */
-        negativeSymbolStyle?: StyleProp<TextStyle>;
-
-        /** Style applied to the text input. */
-        textInputStyle?: StyleProp<TextStyle>;
-
-        /** Test identifier applied to the text input primitive. */
-        inputTestID?: string;
-
-        /** Test identifier applied to the amount container. Transitional: only NumberWithSymbolForm sets it, to keep its legacy `numberView` id; remove with the adapter. */
-        amountContainerTestID?: string;
-
-        /** Flip button slot. Defaults to `NumericInput.FlipButton`; pass `null` to render none. */
-        flipButton?: ReactNode;
-
-        /** Number pad slot. Defaults to `NumericInput.BigNumberPad`; pass `null` for a screen without the number pad. */
-        pad?: ReactNode;
-
-        /** Custom children to render inside the amount container (overrides default minus sign, symbol, and input composition). */
-        children?: ReactNode;
-    };
-
-type NumericResponsivePresetProps = Omit<NumericInputProps, 'children' | 'ref' | 'style' | 'testID'> &
-    NumericInputResponsivePresetProps & {
-        /** Ref exposing the number editing imperative API of the wrapping NumericInput root. */
-        editingRef?: ForwardedRef<NumericEditingRef>;
-    };
+    /** Callback when the currency button is pressed. */
+    onCurrencyButtonPress?: () => void;
+};
 
 export type {
+    NumericAmountRowProps,
     NumericBigNumberPadProps,
     NumericErrorProps,
     NumericInputFlipButtonProps,
@@ -261,7 +238,6 @@ export type {
     NumericInputResponsiveLayoutProps,
     NumericInputResponsivePresetProps,
     NumericMinusSignProps,
-    NumericResponsivePresetProps,
     NumericSymbolProps,
     NumericTextInputProps,
 };

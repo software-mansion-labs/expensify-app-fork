@@ -25,13 +25,18 @@ jest.mock('@react-navigation/native', () => ({
     })),
 }));
 
-type NumericInputProps = React.ComponentProps<typeof NumericInput>;
+type UncontrolledSignNumericInputProps = Omit<React.ComponentProps<typeof NumericInput>, 'isNegative' | 'onSignChange'>;
 
 const INPUT_TEST_ID = 'numeric-text-input';
 const MINUS_SIGN = '-';
 
-function renderWithProviders(children: React.ReactNode) {
-    return render(<ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>{children}</ComposeProviders>);
+function Providers({children}: {children: React.ReactNode}) {
+    return <ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>{children}</ComposeProviders>;
+}
+
+/** Renders inside the app providers, which a later `screen.rerender` keeps. */
+function renderWithProviders(children: React.ReactElement) {
+    return render(children, {wrapper: Providers});
 }
 
 /** Selects the whole displayed magnitude, as a select-all before a paste does. */
@@ -54,7 +59,7 @@ function ToggleSignTrigger() {
 describe('NumericInput', () => {
     const onInputChange = jest.fn();
 
-    const renderNumericInput = (props: Partial<NumericInputProps> = {}, children?: React.ReactNode) =>
+    const renderNumericInput = (props: Partial<UncontrolledSignNumericInputProps> = {}, children?: React.ReactNode) =>
         renderWithProviders(
             <NumericInput
                 onInputChange={onInputChange}
@@ -294,6 +299,210 @@ describe('NumericInput', () => {
         });
     });
 
+    describe('caller-owned sign', () => {
+        const onSignChange = jest.fn();
+
+        it('shows the caller sign beside the magnitude the caller passes', () => {
+            // Given a caller that keeps a negative sign apart from the magnitude
+            renderWithProviders(
+                <NumericInput
+                    value="12"
+                    isNegative
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
+            );
+
+            // Then the minus renders beside the magnitude, as it does for a signed value
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('12');
+        });
+
+        it('reports only the magnitude when a digit is typed', () => {
+            // Given a negative caller-owned amount
+            renderWithProviders(
+                <NumericInput
+                    value="12"
+                    isNegative
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
+            );
+
+            // When the user types a digit
+            fireEvent.changeText(screen.getByTestId(INPUT_TEST_ID), '123');
+
+            // Then the caller receives the magnitude and keeps its sign, because an edit of the digits never changes the sign
+            expect(onInputChange).toHaveBeenLastCalledWith('123');
+            expect(onSignChange).not.toHaveBeenCalled();
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+        });
+
+        it('reports the new sign when the sign is flipped', () => {
+            // Given a positive caller-owned amount
+            renderWithProviders(
+                <NumericInput
+                    value="12"
+                    isNegative={false}
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                >
+                    <NumericInput.MinusSign />
+                    <ToggleSignTrigger />
+                </NumericInput>,
+            );
+
+            // When the sign is flipped
+            fireEvent.press(screen.getByTestId('toggle-sign'));
+
+            // Then the caller learns the new sign, and the unchanged magnitude is not reported again
+            expect(onSignChange).toHaveBeenCalledWith(true);
+            expect(onInputChange).not.toHaveBeenCalled();
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+        });
+
+        it('reports a positive sign when Backspace removes the minus', () => {
+            // Given a negative caller-owned amount with the caret before the digits
+            renderWithProviders(
+                <NumericInput
+                    value="5"
+                    isNegative
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
+            );
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: 0}}});
+
+            // When the user presses Backspace, which at caret 0 can only delete the sign
+            fireEvent(input, 'keyPress', {nativeEvent: {key: 'Backspace'}});
+
+            // Then the caller learns the amount is positive, and the magnitude stays
+            expect(onSignChange).toHaveBeenCalledWith(false);
+            expect(onInputChange).toHaveBeenLastCalledWith('5');
+            expect(screen.queryByText(MINUS_SIGN)).not.toBeOnTheScreen();
+            expect(input).toHaveDisplayValue('5');
+        });
+
+        it('adopts a sign the caller changes on its own', () => {
+            // Given a positive caller-owned amount
+            renderWithProviders(
+                <NumericInput
+                    value="12"
+                    isNegative={false}
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
+            );
+
+            // When the caller makes the amount negative
+            screen.rerender(
+                <NumericInput
+                    value="12"
+                    isNegative
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
+            );
+
+            // Then the minus appears without a report back, because the caller already knows its sign
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('12');
+            expect(onSignChange).not.toHaveBeenCalled();
+            expect(onInputChange).not.toHaveBeenCalled();
+        });
+
+        it('exchanges magnitudes through the ref and keeps the caller sign', () => {
+            // Given a negative caller-owned amount and a root ref
+            const ref = React.createRef<NumericEditingRef>();
+            renderWithProviders(
+                <NumericInput
+                    value="12"
+                    isNegative
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                    ref={ref}
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
+            );
+
+            // Then the ref reads the magnitude, the same shape the caller passes in
+            expect(ref.current?.getNumber()).toBe('12');
+
+            // When the caller replaces the magnitude imperatively
+            act(() => {
+                ref.current?.updateNumber('7');
+            });
+
+            // Then the new magnitude keeps the caller's sign, and nothing is reported back
+            expect(ref.current?.getNumber()).toBe('7');
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+            expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('7');
+            expect(onSignChange).not.toHaveBeenCalled();
+            expect(onInputChange).not.toHaveBeenCalled();
+        });
+
+        it('reports the sign of a signed value set through the ref', () => {
+            // Given a positive caller-owned amount and a root ref
+            const ref = React.createRef<NumericEditingRef>();
+            renderWithProviders(
+                <NumericInput
+                    value="12"
+                    isNegative={false}
+                    onSignChange={onSignChange}
+                    onInputChange={onInputChange}
+                    allowNegative
+                    decimals={2}
+                    ref={ref}
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
+            );
+
+            // When a caller sets a signed value imperatively, as legacy amount forms still do
+            act(() => {
+                ref.current?.updateNumber('-7');
+            });
+
+            // Then the root takes the sign apart and reports it, so the caller's sign follows the value
+            expect(onSignChange).toHaveBeenCalledWith(true);
+            expect(ref.current?.getNumber()).toBe('7');
+            expect(screen.getByText(MINUS_SIGN)).toBeOnTheScreen();
+        });
+    });
+
     describe('text input primitive', () => {
         it('commits a valid edit through the root and displays it', () => {
             // Given a composition with two accepted decimal places and value "12"
@@ -355,15 +564,13 @@ describe('NumericInput', () => {
 
             // When the accepted number of decimals drops to zero
             rerender(
-                <ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>
-                    <NumericInput
-                        onInputChange={onInputChange}
-                        decimals={0}
-                        value=""
-                    >
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput>
-                </ComposeProviders>,
+                <NumericInput
+                    onInputChange={onInputChange}
+                    decimals={0}
+                    value=""
+                >
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
             );
 
             // Then the in-progress value is sanitized to the new precision
@@ -378,17 +585,15 @@ describe('NumericInput', () => {
 
             // When the accepted number of decimals drops to zero
             rerender(
-                <ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>
-                    <NumericInput
-                        onInputChange={onInputChange}
-                        decimals={0}
-                        value="-12.55"
-                        allowNegative
-                    >
-                        <NumericInput.MinusSign />
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput>
-                </ComposeProviders>,
+                <NumericInput
+                    onInputChange={onInputChange}
+                    decimals={0}
+                    value="-12.55"
+                    allowNegative
+                >
+                    <NumericInput.MinusSign />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput>,
             );
 
             // Then sanitization keeps the canonical negative sign
@@ -490,7 +695,7 @@ describe('NumericInput', () => {
         });
     });
 
-    describe('dynamic font size (shouldUseDynamicFontSize)', () => {
+    describe('amount row', () => {
         function extractFontSize(style: unknown): number | undefined {
             if (!style) {
                 return undefined;
@@ -518,62 +723,131 @@ describe('NumericInput', () => {
             return extractFontSize(rawProps.style);
         }
 
-        it('does not apply dynamic font size when shouldUseDynamicFontSize is not set', () => {
-            // Given a NumericInput with a short amount and default dynamic font size (disabled)
-            renderNumericInput({value: '12'});
+        it('renders no symbol when none is given', () => {
+            // Given an amount row without a symbol
+            renderNumericInput({value: '12'}, <NumericInput.AmountRow testID={INPUT_TEST_ID} />);
+
+            // Then only the number renders, because the row adds nothing it was not given
+            expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('12');
+            expect(screen.queryByText('$')).not.toBeOnTheScreen();
+        });
+
+        it('forwards the props it does not consume to the text input', () => {
+            // Given an amount row configured with text input behavior a screen relies on
+            renderNumericInput(
+                {value: '10'},
+                <NumericInput.AmountRow
+                    testID={INPUT_TEST_ID}
+                    accessibilityLabel="Amount (USD)"
+                    keyboardType="number-pad"
+                    disableKeyboard={false}
+                    submitBehavior="blurAndSubmit"
+                />,
+            );
+
+            // When inspecting the rendered input
+            const input = screen.getByTestId(INPUT_TEST_ID);
+
+            // Then the accessibility label, keyboard type, soft keyboard, and submit behavior follow the row's props
+            expect(input.props.accessibilityLabel).toBe('Amount (USD)');
+            expect(input.props.keyboardType).toBe('number-pad');
+            expect(input.props.showSoftInputOnFocus).not.toBe(false);
+            expect(input.props.submitBehavior).toBe('blurAndSubmit');
+        });
+
+        it('keeps the static font size when dynamic font size is not enabled', () => {
+            // Given an amount row with a short amount and dynamic font size left disabled
+            renderNumericInput(
+                {value: '12'},
+                <NumericInput.AmountRow
+                    symbol="$"
+                    testID={INPUT_TEST_ID}
+                />,
+            );
             const shortInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
 
             screen.unmount();
 
-            // When a long amount is rendered without dynamic font size
-            renderNumericInput({value: '1234567890123'});
+            // When a long amount is rendered the same way
+            renderNumericInput(
+                {value: '1234567890123'},
+                <NumericInput.AmountRow
+                    symbol="$"
+                    testID={INPUT_TEST_ID}
+                />,
+            );
             const longInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
 
-            // Then the font size remains the default input size and does not scale with length
+            // Then the font size does not scale with the length of the amount
             expect(longInputFontSize).toBe(shortInputFontSize);
-            expect(longInputFontSize).not.toBe(getElementFontSize(screen.getByText('$')));
         });
 
-        it('scales font size down across input and symbol when shouldUseDynamicFontSize is enabled', () => {
-            // Given a NumericInput with dynamic font size enabled and a short amount
-            renderNumericInput({value: '12', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
-            // When inspecting font sizes for a short amount
+        it('scales the input and the symbol down together when dynamic font size is enabled', () => {
+            // Given an amount row with dynamic font size and a short amount
+            renderNumericInput(
+                {value: '12', allowNegative: true},
+                <NumericInput.AmountRow
+                    symbol="$"
+                    shouldUseDynamicFontSize
+                    testID={INPUT_TEST_ID}
+                />,
+            );
             const shortInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
             const shortSymbolFontSize = getElementFontSize(screen.getByText('$'));
 
-            // Then short amounts use the base font size for both symbol and input
+            // Then a short amount uses one base size for the symbol and the input
             expect(shortInputFontSize).toBeDefined();
             expect(shortSymbolFontSize).toBe(shortInputFontSize);
 
             screen.unmount();
 
-            // When rendered with a long amount that requires scaling
-            renderNumericInput({value: '1234567890123', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
+            // When a long amount that needs scaling is rendered
+            renderNumericInput(
+                {value: '1234567890123', allowNegative: true},
+                <NumericInput.AmountRow
+                    symbol="$"
+                    shouldUseDynamicFontSize
+                    testID={INPUT_TEST_ID}
+                />,
+            );
             const longInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
             const longSymbolFontSize = getElementFontSize(screen.getByText('$'));
 
-            // Then the font size is scaled down equally for both input and symbol
+            // Then the input and the symbol shrink by the same amount
             expect(longInputFontSize).toBeDefined();
-            expect(shortInputFontSize).toBeDefined();
             if (longInputFontSize !== undefined && shortInputFontSize !== undefined) {
                 expect(longInputFontSize).toBeLessThan(shortInputFontSize);
             }
             expect(longSymbolFontSize).toBe(longInputFontSize);
         });
 
-        it('accounts for minus sign and symbol length when calculating dynamic font size', () => {
-            // Given a positive value with dynamic font size enabled
-            renderNumericInput({value: '1234567890', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
+        it('counts the minus sign and the symbol length when scaling', () => {
+            // Given a positive amount row with dynamic font size
+            renderNumericInput(
+                {value: '1234567890', allowNegative: true},
+                <NumericInput.AmountRow
+                    symbol="$"
+                    shouldUseDynamicFontSize
+                    testID={INPUT_TEST_ID}
+                />,
+            );
             const positiveFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
 
             screen.unmount();
 
-            // When the value is negative and the minus sign is shown
-            renderNumericInput({value: '-1234567890', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
+            // When the same amount is negative, so the minus sign takes room beside it
+            renderNumericInput(
+                {value: '-1234567890', allowNegative: true},
+                <NumericInput.AmountRow
+                    symbol="$"
+                    shouldUseDynamicFontSize
+                    testID={INPUT_TEST_ID}
+                />,
+            );
             const negativeFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
             const minusSignFontSize = getElementFontSize(screen.getByText(MINUS_SIGN));
 
-            // Then the negative value scales down more because the minus sign consumes space, and the minus sign matches the input
+            // Then the negative amount scales further, and the minus sign matches the input
             expect(positiveFontSize).toBeDefined();
             expect(negativeFontSize).toBeDefined();
             if (negativeFontSize !== undefined && positiveFontSize !== undefined) {
@@ -583,57 +857,57 @@ describe('NumericInput', () => {
 
             screen.unmount();
 
-            // When a longer symbol is provided
-            renderNumericInput({value: '1234567890', shouldUseDynamicFontSize: true, symbol: 'PLN', allowNegative: true});
+            // When a longer symbol is rendered beside the positive amount
+            renderNumericInput(
+                {value: '1234567890', allowNegative: true},
+                <NumericInput.AmountRow
+                    symbol="PLN"
+                    shouldUseDynamicFontSize
+                    testID={INPUT_TEST_ID}
+                />,
+            );
             const longSymbolFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
 
-            // Then font size is further reduced to fit the longer symbol
+            // Then the longer symbol leaves less room, so the amount scales further
             expect(longSymbolFontSize).toBeDefined();
             if (longSymbolFontSize !== undefined && positiveFontSize !== undefined) {
                 expect(longSymbolFontSize).toBeLessThan(positiveFontSize);
             }
         });
 
-        it('allows disabling dynamic font size on NumericTextInput specifically', () => {
-            // Given a NumericInput with dynamic font size enabled but disabled on the primitive
+        it('leaves directly composed primitives at their static size', () => {
+            // Given a long amount composed from the primitives instead of the amount row
             renderNumericInput(
-                {value: '1234567890123', shouldUseDynamicFontSize: true, symbol: '$'},
+                {value: '1234567890123'},
                 <>
                     <NumericInput.Symbol>$</NumericInput.Symbol>
-                    <NumericInput.TextInput
-                        testID={INPUT_TEST_ID}
-                        shouldUseDynamicFontSize={false}
-                    />
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
                 </>,
             );
 
-            // When inspecting styles of input and symbol
-            const inputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
-            const symbolFontSize = getElementFontSize(screen.getByText('$'));
-
-            // Then symbol receives the scaled font size while the input retains default size rather than matching the symbol
-            expect(symbolFontSize).toBeDefined();
-            expect(inputFontSize).not.toBe(symbolFontSize);
+            // Then the input keeps its own size, because only the amount row scales the pieces together
+            expect(getElementFontSize(screen.getByTestId(INPUT_TEST_ID))).not.toBe(getElementFontSize(screen.getByText('$')));
         });
 
-        it('ensures dynamic font size takes precedence over static fontSize in style prop', () => {
-            // Given a NumericInput with dynamic font size enabled and a custom style with static fontSize (like styles.iouAmountTextInput)
+        it('lets the dynamic font size win over a static font size in the row styles', () => {
+            // Given a suffix amount row with dynamic font size and static font sizes, like styles.iouAmountTextInput
             renderNumericInput(
-                {value: '0', shouldUseDynamicFontSize: true, symbol: 'hrs'},
-                <>
-                    <NumericInput.TextInput
-                        testID={INPUT_TEST_ID}
-                        style={{fontSize: variables.iouAmountTextSize}}
-                    />
-                    <NumericInput.Symbol textStyle={{fontSize: variables.iouAmountTextSize}}>hrs</NumericInput.Symbol>
-                </>,
+                {value: '0'},
+                <NumericInput.AmountRow
+                    symbol="hrs"
+                    symbolPosition={CONST.TEXT_INPUT_SYMBOL_POSITION.SUFFIX}
+                    shouldUseDynamicFontSize
+                    style={{fontSize: variables.iouAmountTextSize}}
+                    symbolStyle={{fontSize: variables.iouAmountTextSize}}
+                    testID={INPUT_TEST_ID}
+                />,
             );
 
-            // When inspecting font sizes
+            // When inspecting the font sizes
             const inputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
             const symbolFontSize = getElementFontSize(screen.getByText('hrs'));
 
-            // Then both input and symbol receive the dynamic font size rather than the static fontSize, matching each other
+            // Then the input and the symbol share the dynamic size instead of the static one
             expect(inputFontSize).toBeDefined();
             expect(symbolFontSize).toBe(inputFontSize);
             expect(inputFontSize).not.toBe(variables.iouAmountTextSize);
@@ -714,7 +988,7 @@ describe('NumericInput', () => {
             // When the sign is toggled
             fireEvent.press(screen.getByTestId('toggle-sign-sync'));
 
-            // Then the parent was notified before toggleSign returned. NumberWithSymbolForm relies on this to tell a flip from an edit.
+            // Then the parent was notified before toggleSign returned, so it can read the flipped value right after the call
             expect(wasParentUpdatedDuringToggle).toBe(true);
         });
     });

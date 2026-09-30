@@ -49,8 +49,25 @@ jest.mock('@react-navigation/native', () => ({
 const INPUT_TEST_ID = 'numeric-text-input';
 const FOOTER_TEST_ID = 'numeric-footer-button';
 
-function renderWithProviders(children: React.ReactNode) {
-    return render(<ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>{children}</ComposeProviders>);
+function Providers({children}: {children: React.ReactNode}) {
+    return <ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>{children}</ComposeProviders>;
+}
+
+/** Renders inside the app providers, which a later `screen.rerender` keeps. */
+function renderWithProviders(children: React.ReactElement) {
+    return render(children, {wrapper: Providers});
+}
+
+/** Finds the closest host view above `element` with an id, which is how the layout marks the areas that refocus the input. */
+function getClosestViewWithId(element: ReturnType<typeof screen.getByTestId>) {
+    let ancestor = element.parent;
+    while (ancestor && (typeof ancestor.type !== 'string' || typeof ancestor.props.id !== 'string')) {
+        ancestor = ancestor.parent;
+    }
+    if (!ancestor) {
+        throw new Error('No ancestor view with an id was rendered');
+    }
+    return ancestor;
 }
 
 describe('NumericInput layout composition', () => {
@@ -62,7 +79,8 @@ describe('NumericInput layout composition', () => {
         jest.clearAllMocks();
     });
 
-    it('renders portrait touch layout with centered container, action buttons, number pad, and footer', async () => {
+    it('renders portrait touch layout with the amount, action buttons, error, number pad, and footer', async () => {
+        // Given a portrait touch layout with every slot filled
         renderWithProviders(
             <NumericInput
                 value="100"
@@ -70,15 +88,13 @@ describe('NumericInput layout composition', () => {
                 errorText="Test error"
             >
                 <NumericInput.ResponsiveLayout
-                    actions={
-                        <NumericInput.Actions>
-                            <NumericInput.CurrencyButton
-                                currency="USD"
-                                onPress={jest.fn()}
-                            />
-                            <NumericInput.FlipButton />
-                        </NumericInput.Actions>
+                    currencyButton={
+                        <NumericInput.CurrencyButton
+                            currency="USD"
+                            onPress={jest.fn()}
+                        />
                     }
+                    flipButton={<NumericInput.FlipButton />}
                     pad={<NumericInput.BigNumberPad />}
                     footer={
                         <Button
@@ -89,17 +105,17 @@ describe('NumericInput layout composition', () => {
                         </Button>
                     }
                 >
-                    <NumericInput.Container>
-                        <NumericInput.MinusSign />
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                        <NumericInput.Symbol>$</NumericInput.Symbol>
-                    </NumericInput.Container>
-                    <NumericInput.Error />
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        symbol="$"
+                    />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
 
+        // When examining the screen
+        // Then every slot renders, and the layout places the root error itself
         expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
         expect(screen.getByText('USD')).toBeOnTheScreen();
         expect(screen.getByText('Flip')).toBeOnTheScreen();
@@ -109,6 +125,7 @@ describe('NumericInput layout composition', () => {
     });
 
     it('renders landscape touch layout with 2-column layout and footer outside ScrollView', async () => {
+        // Given a landscape touch layout with every slot filled
         mockIsInLandscapeMode.mockReturnValue(true);
 
         renderWithProviders(
@@ -118,15 +135,13 @@ describe('NumericInput layout composition', () => {
                 errorText="Landscape error"
             >
                 <NumericInput.ResponsiveLayout
-                    actions={
-                        <NumericInput.Actions>
-                            <NumericInput.CurrencyButton
-                                currency="EUR"
-                                onPress={jest.fn()}
-                            />
-                            <NumericInput.FlipButton />
-                        </NumericInput.Actions>
+                    currencyButton={
+                        <NumericInput.CurrencyButton
+                            currency="EUR"
+                            onPress={jest.fn()}
+                        />
                     }
+                    flipButton={<NumericInput.FlipButton />}
                     pad={<NumericInput.BigNumberPad />}
                     footer={
                         <Button
@@ -137,16 +152,17 @@ describe('NumericInput layout composition', () => {
                         </Button>
                     }
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                        <NumericInput.Symbol>€</NumericInput.Symbol>
-                    </NumericInput.Container>
-                    <NumericInput.Error />
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        symbol="€"
+                    />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
 
+        // When examining the screen
+        // Then every slot renders in the two columns and the footer below them
         expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
         expect(screen.getByText('EUR')).toBeOnTheScreen();
         expect(screen.getByText('Flip')).toBeOnTheScreen();
@@ -155,43 +171,43 @@ describe('NumericInput layout composition', () => {
         expect(screen.getByTestId(FOOTER_TEST_ID)).toBeOnTheScreen();
     });
 
-    it('supports headless NumericInput with direct composition without ResponsiveLayout', async () => {
+    it('supports composing the primitives directly without ResponsiveLayout', async () => {
+        // Given a headless NumericInput that places the amount, the pad and a button itself
         renderWithProviders(
             <NumericInput value="50">
-                <NumericInput.Container>
-                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                </NumericInput.Container>
+                <NumericInput.AmountRow testID={INPUT_TEST_ID} />
                 <NumericInput.BigNumberPad />
-                <NumericInput.Footer>
-                    <Button
-                        testID="footer-composed-button"
-                        onPress={jest.fn()}
-                    >
-                        Continue
-                    </Button>
-                </NumericInput.Footer>
+                <Button
+                    testID="footer-composed-button"
+                    onPress={jest.fn()}
+                >
+                    Continue
+                </Button>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
 
+        // When examining the screen
+        // Then all three render without the layout
         expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
         expect(screen.getByTestId('button_1')).toBeOnTheScreen();
         expect(screen.getByTestId('footer-composed-button')).toBeOnTheScreen();
     });
 
-    it('renders custom children in the main content container without errors', async () => {
+    it('renders custom children in the amount area without errors', async () => {
+        // Given a layout whose amount area holds extra content next to the amount row
         renderWithProviders(
             <NumericInput value="10">
                 <NumericInput.ResponsiveLayout>
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput.Container>
+                    <NumericInput.AmountRow testID={INPUT_TEST_ID} />
                     <Text>Custom info text</Text>
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
 
+        // When examining the screen
+        // Then the extra content renders
         expect(screen.getByText('Custom info text')).toBeOnTheScreen();
     });
 
@@ -214,12 +230,10 @@ describe('NumericInput layout composition', () => {
                         </Button>
                     }
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput
-                            testID={INPUT_TEST_ID}
-                            ref={inputRef}
-                        />
-                    </NumericInput.Container>
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        ref={inputRef}
+                    />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
@@ -235,26 +249,19 @@ describe('NumericInput layout composition', () => {
         }
         const focusSpy = jest.spyOn(inputElement, 'focus');
 
-        // The pad itself carries no id, so the closest ancestor with one is the layout-owned unified container
-        let padParent = screen.getByTestId('pad-container').parent;
-        while (padParent && typeof padParent.props.id !== 'string') {
-            padParent = padParent.parent;
-        }
-        if (!padParent) {
-            throw new Error('Unified container was not found');
-        }
-        const containerId: unknown = padParent.props.id;
+        // The pad wrapper carries no id, so the closest view with one is the layout-owned unified container
+        const container = getClosestViewWithId(screen.getByTestId('pad-container'));
+        const containerId: unknown = container.props.id;
         if (typeof containerId !== 'string') {
             throw new Error('Unified container id was not assigned');
         }
-        expect(containerId).toBe('numPadContainerView');
-        expect(padParent).toContainElement(screen.getByTestId(FOOTER_TEST_ID));
+        expect(container).toContainElement(screen.getByTestId(FOOTER_TEST_ID));
 
         // When pressing the unified container's empty area
         const target = document.createElement('div');
         target.id = containerId;
         const preventDefault = jest.fn();
-        fireEvent(padParent, 'mouseDown', {nativeEvent: {target}, preventDefault});
+        fireEvent(container, 'mouseDown', {nativeEvent: {target}, preventDefault});
         await waitForBatchedUpdatesWithAct();
 
         // Then browser blur is prevented, selection is cleared, and input is refocused
@@ -267,7 +274,7 @@ describe('NumericInput layout composition', () => {
         focusSpy.mockClear();
         const childTarget = document.createElement('div');
         childTarget.id = 'button_1';
-        fireEvent(padParent, 'mouseDown', {nativeEvent: {target: childTarget}, preventDefault});
+        fireEvent(container, 'mouseDown', {nativeEvent: {target: childTarget}, preventDefault});
         await waitForBatchedUpdatesWithAct();
 
         // Then the event is ignored and does not clear selection
@@ -276,51 +283,103 @@ describe('NumericInput layout composition', () => {
         focusSpy.mockRestore();
     });
 
+    it('refocuses the input when the empty amount area is pressed in portrait', async () => {
+        // Given an input with a selection, rendered in a portrait layout that tags its amount area
+        const inputRef = React.createRef<BaseTextInputRef>();
+        renderWithProviders(
+            <NumericInput value="1234">
+                <NumericInput.ResponsiveLayout amountTestID="amount-area">
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        ref={inputRef}
+                    />
+                </NumericInput.ResponsiveLayout>
+            </NumericInput>,
+        );
+        await waitForBatchedUpdatesWithAct();
+
+        const input = screen.getByTestId(INPUT_TEST_ID);
+        fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: 2}}});
+        await waitForBatchedUpdatesWithAct();
+
+        const inputElement = inputRef.current;
+        if (!inputElement) {
+            throw new Error('Numeric input ref was not assigned');
+        }
+        const focusSpy = jest.spyOn(inputElement, 'focus');
+
+        // When a mousedown lands on the amount area itself
+        const target = document.createElement('div');
+        const preventDefault = jest.fn();
+        fireEvent(screen.getByTestId('amount-area'), 'mouseDown', {nativeEvent: {target}, currentTarget: target, preventDefault});
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the input is refocused with a collapsed caret
+        expect(preventDefault).toHaveBeenCalledTimes(1);
+        expect(input.props.selection).toEqual({start: 2, end: 2});
+        expect(focusSpy).toHaveBeenCalledTimes(1);
+        focusSpy.mockRestore();
+    });
+
+    it('gives the pad container of each layout its own id', async () => {
+        // Given two portrait layouts with a number pad on one screen
+        renderWithProviders(
+            <>
+                <NumericInput>
+                    <NumericInput.ResponsiveLayout pad={<NumericInput.BigNumberPad testID="pad-a" />}>
+                        <NumericInput.AmountRow />
+                    </NumericInput.ResponsiveLayout>
+                </NumericInput>
+                <NumericInput>
+                    <NumericInput.ResponsiveLayout pad={<NumericInput.BigNumberPad testID="pad-b" />}>
+                        <NumericInput.AmountRow />
+                    </NumericInput.ResponsiveLayout>
+                </NumericInput>
+            </>,
+        );
+        await waitForBatchedUpdatesWithAct();
+
+        // When reading the id of the container that holds each pad
+        const firstId: unknown = getClosestViewWithId(screen.getByTestId('pad-a')).props.id;
+        const secondId: unknown = getClosestViewWithId(screen.getByTestId('pad-b')).props.id;
+
+        // Then the ids differ, so a press on one container never refocuses the other input
+        expect(firstId).not.toBe(secondId);
+    });
+
     it('keeps the same gap above the number pad whether or not any action renders', async () => {
-        // Given two portrait touch layouts with a number pad, one with a currency action (like the amount step) and one
+        // Given two portrait touch layouts with a number pad, one with a currency button (like the amount step) and one
         // without any action (like the hours or tax rate pages)
-        const renderLayout = (actions: React.ReactNode) =>
+        const renderLayout = (currencyButton: React.ReactElement | null) =>
             renderWithProviders(
                 <NumericInput value="10">
                     <NumericInput.ResponsiveLayout
-                        actions={actions}
-                        pad={<NumericInput.BigNumberPad />}
+                        currencyButton={currencyButton}
+                        pad={<NumericInput.BigNumberPad testID="pad" />}
                     >
-                        <NumericInput.Container>
-                            <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                        </NumericInput.Container>
+                        <NumericInput.AmountRow testID={INPUT_TEST_ID} />
                     </NumericInput.ResponsiveLayout>
                 </NumericInput>,
             );
         // The layout's 8 pt gap above the pad, the same `mb2` the legacy form kept under its actions row whenever the pad showed
         const PAD_GAP = {marginTop: 8};
-        const getPadContainer = () => {
-            const hostContainer = screen.UNSAFE_getAllByProps({id: 'numPadContainerView'}).find((element) => typeof element.type === 'string');
-            if (!hostContainer) {
-                throw new Error('Pad container was not rendered');
-            }
-            return hostContainer;
-        };
 
         renderLayout(
-            <NumericInput.Actions testID="actions">
-                <NumericInput.CurrencyButton
-                    currency="USD"
-                    onPress={jest.fn()}
-                />
-            </NumericInput.Actions>,
+            <NumericInput.CurrencyButton
+                currency="USD"
+                onPress={jest.fn()}
+            />,
         );
         await waitForBatchedUpdatesWithAct();
-        expect(getPadContainer()).toHaveStyle(PAD_GAP);
-        expect(screen.getByTestId('actions')).not.toHaveStyle({marginBottom: 8});
+        expect(getClosestViewWithId(screen.getByTestId('pad'))).toHaveStyle(PAD_GAP);
         screen.unmount();
 
         // When the layout renders without any action
-        renderLayout(<NumericInput.Actions />);
+        renderLayout(null);
         await waitForBatchedUpdatesWithAct();
 
         // Then the layout keeps the same gap above the pad, so the centred amount sits at the same height on both screens
-        expect(getPadContainer()).toHaveStyle(PAD_GAP);
+        expect(getClosestViewWithId(screen.getByTestId('pad'))).toHaveStyle(PAD_GAP);
     });
 
     it('adds no gap above the footer when there is no number pad', async () => {
@@ -329,28 +388,16 @@ describe('NumericInput layout composition', () => {
             <NumericInput value="10">
                 <NumericInput.ResponsiveLayout
                     pad={null}
-                    footer={
-                        <Button
-                            testID={FOOTER_TEST_ID}
-                            onPress={jest.fn()}
-                        >
-                            Next
-                        </Button>
-                    }
+                    footer={<Text testID={FOOTER_TEST_ID}>Next</Text>}
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput.Container>
+                    <NumericInput.AmountRow testID={INPUT_TEST_ID} />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
 
         // When reading the spacing of the container holding the footer
-        const container = screen.UNSAFE_getAllByProps({id: 'numPadContainerView'}).find((element) => typeof element.type === 'string');
-        if (!container) {
-            throw new Error('Footer container was not rendered');
-        }
+        const container = getClosestViewWithId(screen.getByTestId(FOOTER_TEST_ID));
 
         // Then the pad gap is not reserved, matching the legacy form that only spaced the actions when the pad was shown
         expect(container).not.toHaveStyle({marginTop: 8});
@@ -364,9 +411,7 @@ describe('NumericInput layout composition', () => {
                     disableScrollView
                     testID="responsive-view-container"
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput.Container>
+                    <NumericInput.AmountRow testID={INPUT_TEST_ID} />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
@@ -391,9 +436,7 @@ describe('NumericInput layout composition', () => {
                     testID="responsive-view-landscape-container"
                     pad={<NumericInput.BigNumberPad />}
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput.Container>
+                    <NumericInput.AmountRow testID={INPUT_TEST_ID} />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
@@ -416,12 +459,10 @@ describe('NumericInput layout composition', () => {
                     shouldRefocusOnScrollViewClick
                     testID="responsive-scroll-view"
                 >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput
-                            testID={INPUT_TEST_ID}
-                            ref={inputRef}
-                        />
-                    </NumericInput.Container>
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        ref={inputRef}
+                    />
                 </NumericInput.ResponsiveLayout>
             </NumericInput>,
         );
@@ -451,62 +492,30 @@ describe('NumericInput layout composition', () => {
         focusSpy.mockRestore();
     });
 
-    it('renders error passed via error prop in NumericInput.Container', async () => {
-        // Given an input with an error node passed to NumericInput.Container
-        renderWithProviders(
-            <NumericInput value="50">
-                <NumericInput.Container
-                    testID="amount-container"
-                    error={<Text testID="custom-error">Amount is too high</Text>}
-                >
-                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                </NumericInput.Container>
-            </NumericInput>,
-        );
-        await waitForBatchedUpdatesWithAct();
-
-        // Then both the input and the error are displayed
-        expect(screen.getByTestId(INPUT_TEST_ID)).toBeOnTheScreen();
-        expect(screen.getByTestId('custom-error')).toBeOnTheScreen();
-        expect(screen.getByText('Amount is too high')).toBeOnTheScreen();
-    });
-
-    it('positions NumericInput.Error in portrait mode and landscape mode', async () => {
-        // Given an input with errorText rendered in portrait mode
-        const {rerender} = renderWithProviders(
+    it('places the root error exactly once in portrait mode and in landscape mode', async () => {
+        // Given an input with errorText rendered in a portrait layout
+        const renderLayout = () => (
             <NumericInput
                 value="100"
                 errorText="Test error"
             >
-                <NumericInput.Container>
-                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                </NumericInput.Container>
-                <NumericInput.Error />
-            </NumericInput>,
+                <NumericInput.ResponsiveLayout pad={<NumericInput.BigNumberPad />}>
+                    <NumericInput.AmountRow testID={INPUT_TEST_ID} />
+                </NumericInput.ResponsiveLayout>
+            </NumericInput>
         );
+        renderWithProviders(renderLayout());
         await waitForBatchedUpdatesWithAct();
 
-        // Then in portrait mode the error container is rendered
-        expect(screen.getByText('Test error')).toBeOnTheScreen();
+        // Then in portrait mode the error renders once, floating over the amount area
+        expect(screen.getAllByText('Test error')).toHaveLength(1);
 
         // When switching to landscape mode
         mockIsInLandscapeMode.mockReturnValue(true);
-        rerender(
-            <ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>
-                <NumericInput
-                    value="100"
-                    errorText="Test error"
-                >
-                    <NumericInput.Container>
-                        <NumericInput.TextInput testID={INPUT_TEST_ID} />
-                    </NumericInput.Container>
-                    <NumericInput.Error />
-                </NumericInput>
-            </ComposeProviders>,
-        );
+        screen.rerender(renderLayout());
         await waitForBatchedUpdatesWithAct();
 
-        // Then the error remains displayed in landscape mode
-        expect(screen.getByText('Test error')).toBeOnTheScreen();
+        // Then the error still renders once, now in the left column under the actions
+        expect(screen.getAllByText('Test error')).toHaveLength(1);
     });
 });

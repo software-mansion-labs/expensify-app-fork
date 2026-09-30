@@ -71,11 +71,9 @@ describe('NumericInput.ResponsivePreset without touch screen', () => {
                 errorText="Desktop error"
             >
                 <NumericInput.ResponsivePreset
-                    symbol="€"
                     currency="EUR"
                     onCurrencyButtonPress={onCurrencyPress}
-                    inputTestID={INPUT_TEST_ID}
-                    amountContainerTestID="amount-container"
+                    amountTestID="amount-container"
                     footer={
                         <Button
                             testID={FOOTER_TEST_ID}
@@ -84,7 +82,12 @@ describe('NumericInput.ResponsivePreset without touch screen', () => {
                             Continue
                         </Button>
                     }
-                />
+                >
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        symbol="€"
+                    />
+                </NumericInput.ResponsivePreset>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
@@ -119,9 +122,7 @@ describe('NumericInput.ResponsivePreset without touch screen', () => {
                 errorText="Landscape non-touch error"
             >
                 <NumericInput.ResponsivePreset
-                    symbol="£"
                     currency="GBP"
-                    inputTestID={INPUT_TEST_ID}
                     footer={
                         <Button
                             testID={FOOTER_TEST_ID}
@@ -130,7 +131,12 @@ describe('NumericInput.ResponsivePreset without touch screen', () => {
                             Done
                         </Button>
                     }
-                />
+                >
+                    <NumericInput.AmountRow
+                        testID={INPUT_TEST_ID}
+                        symbol="£"
+                    />
+                </NumericInput.ResponsivePreset>
             </NumericInput>,
         );
         await waitForBatchedUpdatesWithAct();
