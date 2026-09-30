@@ -354,6 +354,47 @@ describe('NumericInput.BigNumberPad', () => {
         }
     });
 
+    it('ignores native caret reports while backspace is held and applies them again once it is released', async () => {
+        jest.useFakeTimers();
+        try {
+            // Given an input with value '12345' and the caret at the end
+            renderInputWithPad({value: '12345'});
+            await waitForBatchedUpdatesWithAct();
+            const input = screen.getByTestId(INPUT_TEST_ID);
+            const backspaceButton = screen.getByTestId('button_<');
+
+            // When backspace is held for one deletion tick
+            fireEvent(backspaceButton, 'longPress');
+            act(() => {
+                jest.advanceTimersByTime(100);
+            });
+
+            // And native echoes the new caret, then reports a stale caret mid-way through the hold
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 4, end: 4}}});
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 1, end: 1}}});
+
+            // And the hold deletes once more, without flushing timers in between since every flush fires another delete
+            act(() => {
+                jest.advanceTimersByTime(100);
+            });
+
+            // Then the stale caret is ignored and the delete keeps removing from the end
+            expect(input).toHaveDisplayValue('123');
+
+            // When backspace is released and native reports a caret after the echo of the last delete
+            fireEvent(backspaceButton, 'pressOut');
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 3, end: 3}}});
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 1, end: 1}}});
+            fireEvent.press(backspaceButton);
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the reported caret applies and the next delete removes the character before it
+            expect(input).toHaveDisplayValue('23');
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
     it('focuses the input and collapses the selection when the number pad gap area is clicked on web', async () => {
         // Given an input with a selection and rendered BigNumberPad with a testID
         const inputRef = React.createRef<BaseTextInputRef>();

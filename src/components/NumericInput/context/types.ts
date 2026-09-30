@@ -36,11 +36,8 @@ type NumericInputActionsContextValue = {
     /** Removes the selection or the character before the caret, and a hidden sign when the caret is at the start. Used by the number pad backspace. */
     deleteBackward: () => void;
 
-    /** Starts a held backspace, which deletes on a timer while native selection events are dropped. */
-    beginRepeatedDelete: () => void;
-
-    /** Ends a held backspace, so native selection events apply again. */
-    endRepeatedDelete: () => void;
+    /** Marks the number pad backspace as held or released. While it is held, deletes repeat on a timer and the caret stays where the controller put it. */
+    setDeleteBackwardHeld: (isHeld: boolean) => void;
 
     /** Places the caret at the selection end, clearing any highlighted range. */
     clearSelection: () => void;

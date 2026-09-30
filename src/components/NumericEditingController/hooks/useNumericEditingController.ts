@@ -148,6 +148,16 @@ function useNumericEditingController({
         setNumber(`${formattedNumber.slice(0, deleteStart)}${formattedNumber.slice(selection.end)}`);
     };
 
+    // A held backspace deletes on a timer while native keeps reporting the caret it started from, so those reports are dropped until it is released.
+    const setDeleteBackwardHeld = (isHeld: boolean) => {
+        if (isHeld) {
+            pauseNativeSelection();
+            return;
+        }
+
+        resumeNativeSelection();
+    };
+
     const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
         trackKeyPress(event);
 
@@ -194,9 +204,7 @@ function useNumericEditingController({
         setNumber,
         insertAtCaret,
         deleteBackward,
-        // A held backspace deletes on a timer while native keeps reporting the caret it started from, so those reports are dropped until it ends.
-        beginRepeatedDelete: pauseNativeSelection,
-        endRepeatedDelete: resumeNativeSelection,
+        setDeleteBackwardHeld,
         setCanonicalValue,
         updateNumber,
         getNumber,

@@ -15,7 +15,7 @@ import {View} from 'react-native';
  */
 function NumericBigNumberPad({style, testID}: NumericBigNumberPadProps) {
     const styles = useThemeStyles();
-    const {beginRepeatedDelete, deleteBackward, endRepeatedDelete, focusInput, insertAtCaret} = useNumericInputActions();
+    const {deleteBackward, focusInput, insertAtCaret, setDeleteBackwardHeld} = useNumericInputActions();
     const {id: padViewId, onMouseDown} = useRefocusOnEmptyAreaPress();
 
     const handleNumberPressed = (key: string) => {
@@ -30,12 +30,12 @@ function NumericBigNumberPad({style, testID}: NumericBigNumberPadProps) {
     };
 
     const handleLongPressHandlerStateChanged = (isUserLongPressingBackspace: boolean) => {
+        setDeleteBackwardHeld(isUserLongPressingBackspace);
+
         if (isUserLongPressingBackspace) {
-            beginRepeatedDelete();
             return;
         }
 
-        endRepeatedDelete();
         focusInput();
     };
 
