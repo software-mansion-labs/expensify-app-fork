@@ -2716,6 +2716,7 @@ const CONST = {
         UNKNOWN_ERROR: 'Unknown error',
         REQUEST_CANCELLED: 'AbortError',
         FAILED_TO_FETCH: 'Failed to fetch',
+        CF_REAUTH_REQUIRED: 'Cloudflare re-authentication required',
         ENSURE_BUG_BOT: 'ENSURE_BUGBOT',
         PUSHER_ERROR: 'PusherError',
         WEB_SOCKET_ERROR: 'WebSocketError',
@@ -7207,6 +7208,7 @@ const CONST = {
             SETTINGS_TAB: 'LAST_VISITED_PATH_SETTINGS_TAB',
         },
         QA_AUTH_REDIRECT_FLOW: 'QA_AUTH_REDIRECT_FLOW',
+        SIGN_IN_LOGIN_DRAFT: 'SIGN_IN_LOGIN_DRAFT',
     },
 
     RESERVATION_TYPE,
@@ -9094,6 +9096,9 @@ const CONST = {
     },
 
     SENTRY_LABEL: {
+        TEST_TOOL_MENU: {
+            SERVER: 'TestToolMenu-Server',
+        },
         BILLING_BANNER: {
             RIGHT_ICON: 'BillingBanner-RightIcon',
         },
