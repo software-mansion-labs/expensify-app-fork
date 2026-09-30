@@ -374,6 +374,66 @@ describe('useNumericSelection', () => {
         });
     });
 
+    describe('pauseNativeSelection', () => {
+        it('drops native selection events while paused', () => {
+            // Given a paused selection, as during a repeated delete
+            const {result} = renderSelection('123');
+            act(() => {
+                result.current.pauseNativeSelection();
+            });
+
+            // When native reports a new caret position
+            act(() => {
+                result.current.handleNativeSelectionChange(1, 1);
+            });
+
+            // Then the caret stays where the hook placed it
+            expect(result.current.selection).toEqual({start: 3, end: 3});
+        });
+
+        it('applies native selection events again after resuming', () => {
+            // Given a selection that was paused and then resumed
+            const {result} = renderSelection('123');
+            act(() => {
+                result.current.pauseNativeSelection();
+            });
+            act(() => {
+                result.current.resumeNativeSelection();
+            });
+
+            // When native reports a new caret position
+            act(() => {
+                result.current.handleNativeSelectionChange(1, 1);
+            });
+
+            // Then the reported position is applied
+            expect(result.current.selection).toEqual({start: 1, end: 1});
+        });
+
+        it('lets the manual-update guard consume its echo while paused, so it does not swallow the first event after resuming', () => {
+            // Given a manual update whose native echo arrives while the selection is paused
+            const {result} = renderSelection('12');
+            act(() => {
+                result.current.syncAfterEdit({previousText: '12', nextText: '123'});
+                result.current.pauseNativeSelection();
+            });
+            act(() => {
+                result.current.handleNativeSelectionChange(0, 0);
+            });
+
+            // When the selection resumes and native reports a real caret move
+            act(() => {
+                result.current.resumeNativeSelection();
+            });
+            act(() => {
+                result.current.handleNativeSelectionChange(1, 1);
+            });
+
+            // Then the real move is applied instead of being taken for the stale echo
+            expect(result.current.selection).toEqual({start: 1, end: 1});
+        });
+    });
+
     describe('rejectEdit', () => {
         it('keeps the caret at its last valid position', () => {
             const {result} = renderSelection('12');

@@ -33,7 +33,8 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
     const willSelectionBeRestoredAfterInvalidInput = useRef(false);
     // Forward-delete removes the next character, so the caret offset stays.
     const forwardDeletePressedRef = useRef(false);
-    const shouldUpdateSelectionRef = useRef(true);
+    // Native reports the caret mid-way through a repeated delete, so its events are dropped until the delete ends.
+    const isSelectionPausedRef = useRef(false);
 
     const collapse = () => {
         setSelection(collapseSelection);
@@ -75,8 +76,12 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
         forwardDeletePressedRef.current = isForwardDelete;
     };
 
-    const setShouldUpdateSelection = (shouldUpdate: boolean) => {
-        shouldUpdateSelectionRef.current = shouldUpdate;
+    const pauseNativeSelection = () => {
+        isSelectionPausedRef.current = true;
+    };
+
+    const resumeNativeSelection = () => {
+        isSelectionPausedRef.current = false;
     };
 
     // Restores the last valid caret after a rejected edit.
@@ -102,10 +107,6 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
     };
 
     const handleNativeSelectionChange = (selectionStart: number, selectionEnd: number) => {
-        if (!shouldUpdateSelectionRef.current) {
-            return;
-        }
-
         if (willSelectionBeRestoredAfterInvalidInput.current) {
             willSelectionBeRestoredAfterInvalidInput.current = false;
             return;
@@ -113,6 +114,11 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
 
         if (willSelectionBeUpdatedManually.current) {
             willSelectionBeUpdatedManually.current = false;
+            return;
+        }
+
+        // The guards above still consume their echo while paused, so none of them outlives the pause and swallows a real event.
+        if (isSelectionPausedRef.current) {
             return;
         }
 
@@ -152,7 +158,8 @@ function useNumericSelection({displayText}: UseNumericSelectionParams) {
         handleKeyPress,
         rejectEdit,
         handleNativeSelectionChange,
-        setShouldUpdateSelection,
+        pauseNativeSelection,
+        resumeNativeSelection,
     };
 }
 

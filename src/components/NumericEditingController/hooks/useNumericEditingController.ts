@@ -1,4 +1,4 @@
-import type {NumericEditingSelection} from '@components/NumericEditingController/types';
+import type {NumericEditingKeyPressEvent, NumericEditingSelection} from '@components/NumericEditingController/types';
 import {normalizeNumericInput, toCanonicalValueDefault, toDisplayTextDefault} from '@components/NumericEditingController/utils';
 
 import useLocalize from '@hooks/useLocalize';
@@ -66,9 +66,23 @@ function useNumericEditingController({
 
     const formattedNumber = replaceAllDigits(toDisplayText(currentValue), toLocaleDigit);
 
-    const {selection, collapse, reset, syncToEnd, syncAfterEdit, handleKeyPress, rejectEdit, handleNativeSelectionChange, setShouldUpdateSelection} = useNumericSelection({
+    const {
+        selection,
+        collapse,
+        reset,
+        syncToEnd,
+        syncAfterEdit,
+        handleKeyPress: trackKeyPress,
+        rejectEdit,
+        handleNativeSelectionChange,
+        pauseNativeSelection,
+        resumeNativeSelection,
+    } = useNumericSelection({
         displayText: formattedNumber,
     });
+
+    // A backspace here has no character to remove, so it removes a sign the display text hides (the sign sits before the caret).
+    const isCaretAtStart = !formattedNumber || (selection.start === 0 && selection.end === 0);
 
     // Reset when the external value is cleared. Ignore other external changes while editing.
     if (previousExternalValue !== externalValue) {
@@ -108,6 +122,40 @@ function useNumericEditingController({
         syncAfterEdit({previousText: toDisplayText(previousValue), nextText: toDisplayText(nextValue)});
     };
 
+    // Presentations that render the sign outside the text keep it only in the canonical value, where the text cannot delete it.
+    const clearHiddenSign = () => {
+        const committedValue = committedValueRef.current;
+        if (!committedValue.startsWith('-') || toDisplayText(committedValue).startsWith('-')) {
+            return;
+        }
+
+        applyValue(committedValue.slice(1));
+    };
+
+    // Replaces the selected text with `text`, the way typing does.
+    const insertAtCaret = (text: string) => {
+        setNumber(`${formattedNumber.slice(0, selection.start)}${text}${formattedNumber.slice(selection.end)}`);
+    };
+
+    // Removes the selected text, or the character before the caret, the way a backspace key does.
+    const deleteBackward = () => {
+        if (isCaretAtStart) {
+            clearHiddenSign();
+            return;
+        }
+
+        const deleteStart = selection.start === selection.end ? selection.start - 1 : selection.start;
+        setNumber(`${formattedNumber.slice(0, deleteStart)}${formattedNumber.slice(selection.end)}`);
+    };
+
+    const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
+        trackKeyPress(event);
+
+        if (event.nativeEvent.key.toLowerCase() === 'backspace' && isCaretAtStart) {
+            clearHiddenSign();
+        }
+    };
+
     // Replaces the canonical value without validation or notification and moves the caret to the end.
     const updateNumber = (newNumber: string) => {
         applyValue(newNumber, {notify: false});
@@ -144,13 +192,17 @@ function useNumericEditingController({
         formattedNumber,
         selection,
         setNumber,
+        insertAtCaret,
+        deleteBackward,
+        // A held backspace deletes on a timer while native keeps reporting the caret it started from, so those reports are dropped until it ends.
+        beginRepeatedDelete: pauseNativeSelection,
+        endRepeatedDelete: resumeNativeSelection,
         setCanonicalValue,
         updateNumber,
         getNumber,
         clearSelection: collapse,
         handleSelectionChange: handleNativeSelectionChange,
         handleKeyPress,
-        setShouldUpdateSelection,
     };
 }
 
