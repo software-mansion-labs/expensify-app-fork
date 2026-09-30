@@ -14,7 +14,6 @@ import type {NumberWithSymbolFormRef} from './NumberWithSymbolForm';
 import type {BaseTextInputProps, BaseTextInputRef} from './TextInput/BaseTextInput/types';
 
 import NumberWithSymbolForm from './NumberWithSymbolForm';
-import NumericField from './NumericField';
 
 type AmountFormProps = {
     /** Amount supplied by the FormProvider */
@@ -104,32 +103,6 @@ function AmountForm({
     const {getCurrencyDecimals} = useCurrencyListActions();
     const decimals = decimalsProp ?? getCurrencyDecimals(currency);
     const symbol = getLocalizedCurrencySymbol(preferredLocale, currency) ?? '';
-
-    // Use NumericField for standard text input. Currency-button variants still use the legacy form.
-    if (displayAsTextInput && !shouldShowCurrencyButton) {
-        return (
-            <NumericField
-                value={value ?? ''}
-                onInputChange={onInputChange}
-                decimals={decimals}
-                maxLength={amountMaxLength}
-                errorText={errorText}
-                ref={numberFormRef}
-            >
-                <NumericField.TextInput
-                    prefixCharacter={hideCurrencySymbol ? '' : symbol}
-                    accessibilityLabel={label}
-                    label={label}
-                    disabled={disabled}
-                    autoFocus={autoFocus}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                    onSubmitEditing={onSubmitEditing}
-                    ref={ref}
-                />
-            </NumericField>
-        );
-    }
 
     return (
         <NumberWithSymbolForm

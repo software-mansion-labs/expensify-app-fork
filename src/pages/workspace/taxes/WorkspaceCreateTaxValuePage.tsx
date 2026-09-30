@@ -78,8 +78,13 @@ function WorkspaceCreateTaxValuePage({
                         decimals={CONST.MAX_TAX_RATE_DECIMAL_PLACES}
                         maxLength={CONST.MAX_TAX_RATE_INTEGER_PLACES}
                     >
-                        <NumericInput.Container>
-                            <NumericInput.TextInput
+                        <NumericInput.ResponsiveLayout
+                            disableScrollView
+                            pad={<NumericInput.BigNumberPad />}
+                        >
+                            <NumericInput.AmountRow
+                                symbol="%"
+                                symbolPosition={CONST.TEXT_INPUT_SYMBOL_POSITION.SUFFIX}
                                 autoGrowExtraSpace={variables.w80}
                                 autoGrowMarginSide="left"
                                 style={[styles.iouAmountTextInput, styles.textAlignRight]}
@@ -87,9 +92,7 @@ function WorkspaceCreateTaxValuePage({
                                 touchableInputWrapperStyle={styles.heightUndefined}
                                 ref={inputRef}
                             />
-                            <NumericInput.Symbol>%</NumericInput.Symbol>
-                        </NumericInput.Container>
-                        <NumericInput.BigNumberPad style={[styles.w100, styles.justifyContentEnd, styles.pageWrapper, styles.pt0]} />
+                        </NumericInput.ResponsiveLayout>
                     </NumericInput>
                     <Button
                         variant={CONST.BUTTON_VARIANT.SUCCESS}

@@ -82,7 +82,6 @@ type StatefulParentWrapperProps = Omit<Partial<NumberWithSymbolFormProps>, 'valu
 
     /** Spies notified whenever the parent's real handlers run */
     onToggleNegative?: () => void;
-    onClearNegative?: () => void;
     onValueChange?: (value: string) => void;
 };
 
@@ -90,7 +89,7 @@ type StatefulParentWrapperProps = Omit<Partial<NumberWithSymbolFormProps>, 'valu
  * Owns the sign and the magnitude the same way MoneyRequestAmountForm and TotalCell do, so the form is exercised against
  * a parent whose `isNegative` actually changes instead of against stateless `jest.fn()` callbacks.
  */
-function StatefulParentWrapper({initialValue = '', initialNegative = false, onToggleNegative, onClearNegative, onValueChange, ...formProps}: StatefulParentWrapperProps) {
+function StatefulParentWrapper({initialValue = '', initialNegative = false, onToggleNegative, onValueChange, ...formProps}: StatefulParentWrapperProps) {
     const [isNegative, setIsNegative] = useState(initialNegative);
     const [value, setValue] = useState(initialValue);
 
@@ -99,10 +98,7 @@ function StatefulParentWrapper({initialValue = '', initialNegative = false, onTo
         setIsNegative((prev) => !prev);
     };
 
-    const clearNegative = () => {
-        onClearNegative?.();
-        setIsNegative(false);
-    };
+    const clearNegative = () => setIsNegative(false);
 
     const onInputChange = (newValue: string) => {
         onValueChange?.(newValue);
@@ -243,7 +239,6 @@ describe('NumberWithSymbolForm', () => {
             expect(screen.queryByTestId('button_1')).toBeNull();
             expect(screen.queryByTestId('button_<')).toBeNull();
             expect(queryAllById('numberView')).toHaveLength(0);
-            expect(queryAllById('numPadContainerView')).toHaveLength(0);
         });
 
         it('clears the internal number and selection when the value prop resets to empty', async () => {
@@ -645,7 +640,6 @@ describe('NumberWithSymbolForm', () => {
             expect(screen.getByText('USD')).toBeTruthy();
             // The landscape branch never renders the portrait `numberView` wrapper
             expect(queryAllById('numberView')).toHaveLength(0);
-            expect(queryAllById('numPadContainerView').length).toBeGreaterThan(0);
         });
 
         it('hides the currency button when the symbol is not pressable', async () => {
@@ -663,7 +657,6 @@ describe('NumberWithSymbolForm', () => {
             await waitForBatchedUpdatesWithAct();
 
             // Then the number pad is hidden
-            expect(queryAllById('numPadContainerView')).toHaveLength(0);
             expect(screen.queryByTestId('button_1')).toBeNull();
         });
 
@@ -785,7 +778,6 @@ describe('NumberWithSymbolForm', () => {
             // Then the input is wrapped and the number pad is shown below it
             expect(screen.getByDisplayValue('10')).toBeTruthy();
             expect(queryAllById('numberView').length).toBeGreaterThan(0);
-            expect(queryAllById('numPadContainerView').length).toBeGreaterThan(0);
             expect(screen.getByTestId('button_1')).toBeTruthy();
         });
 
@@ -952,7 +944,6 @@ describe('NumberWithSymbolForm', () => {
 
             // Then the footer is shown and the pad buttons are hidden
             expect(screen.getByText('Portrait footer')).toBeTruthy();
-            expect(queryAllById('numPadContainerView').length).toBeGreaterThan(0);
             expect(screen.queryByTestId('button_1')).toBeNull();
         });
 
@@ -1585,13 +1576,11 @@ describe('NumberWithSymbolForm', () => {
         describe('Backspace at caret 0', () => {
             it('clears the sign when Backspace is pressed on an empty negative amount', async () => {
                 // Given an empty amount that the parent marks as negative, e.g. after Flip was pressed before any digit
-                const onClearNegative = jest.fn();
                 const onToggleNegative = jest.fn();
                 render(
                     <StatefulParentWrapper
                         {...amountFormProps}
                         initialNegative
-                        onClearNegative={onClearNegative}
                         onToggleNegative={onToggleNegative}
                     />,
                 );
@@ -1601,16 +1590,14 @@ describe('NumberWithSymbolForm', () => {
                 fireEvent(getTextInput(), 'keyPress', {nativeEvent: {key: 'Backspace'}});
                 await waitForBatchedUpdatesWithAct();
 
-                // Then the parent clears its sign through clearNegative, not by toggling, and the minus disappears
-                expect(onClearNegative).toHaveBeenCalledTimes(1);
-                expect(onToggleNegative).not.toHaveBeenCalled();
+                // Then the parent's sign changes exactly once, to positive, and the minus disappears
+                expect(onToggleNegative).toHaveBeenCalledTimes(1);
                 expect(getParentSign()).toBe('positive');
                 expect(countVisibleMinusSigns()).toBe(0);
             });
 
             it('clears the sign when Backspace is pressed after all digits of a negative amount were deleted', async () => {
                 // Given a negative single-digit amount with the caret after the digit
-                const onClearNegative = jest.fn();
                 const onToggleNegative = jest.fn();
                 const onValueChange = jest.fn();
                 render(
@@ -1618,7 +1605,6 @@ describe('NumberWithSymbolForm', () => {
                         {...amountFormProps}
                         initialValue="5"
                         initialNegative
-                        onClearNegative={onClearNegative}
                         onToggleNegative={onToggleNegative}
                         onValueChange={onValueChange}
                     />,
@@ -1641,23 +1627,22 @@ describe('NumberWithSymbolForm', () => {
                 fireEvent(getTextInput(), 'keyPress', {nativeEvent: {key: 'Backspace'}});
                 await waitForBatchedUpdatesWithAct();
 
-                // Then the parent clears its sign and no minus is left behind
-                expect(onClearNegative).toHaveBeenCalledTimes(1);
-                expect(onToggleNegative).not.toHaveBeenCalled();
+                // Then the parent's sign changes exactly once, to positive, and no minus is left behind
+                expect(onToggleNegative).toHaveBeenCalledTimes(1);
                 expect(getParentSign()).toBe('positive');
                 expect(countVisibleMinusSigns()).toBe(0);
             });
 
             it('clears the sign when keyboard Backspace is pressed with the caret before the digits', async () => {
                 // Given a negative amount with the caret placed before the first digit, right after the minus
-                const onClearNegative = jest.fn();
+                const onToggleNegative = jest.fn();
                 const onValueChange = jest.fn();
                 render(
                     <StatefulParentWrapper
                         {...amountFormProps}
                         initialValue="5"
                         initialNegative
-                        onClearNegative={onClearNegative}
+                        onToggleNegative={onToggleNegative}
                         onValueChange={onValueChange}
                     />,
                 );
@@ -1671,7 +1656,7 @@ describe('NumberWithSymbolForm', () => {
                 await waitForBatchedUpdatesWithAct();
 
                 // Then the parent clears its sign too, because otherwise the form shows a positive amount while the parent submits a negative one
-                expect(onClearNegative).toHaveBeenCalledTimes(1);
+                expect(onToggleNegative).toHaveBeenCalledTimes(1);
                 expect(getParentSign()).toBe('positive');
                 expect(countVisibleMinusSigns()).toBe(0);
                 expect(screen.getByDisplayValue('5')).toBeTruthy();
@@ -1679,13 +1664,13 @@ describe('NumberWithSymbolForm', () => {
 
             it('clears the sign when the number pad Backspace is pressed with the caret before the digits', async () => {
                 // Given a negative amount with the caret placed before the first digit, right after the minus
-                const onClearNegative = jest.fn();
+                const onToggleNegative = jest.fn();
                 render(
                     <StatefulParentWrapper
                         {...amountFormProps}
                         initialValue="5"
                         initialNegative
-                        onClearNegative={onClearNegative}
+                        onToggleNegative={onToggleNegative}
                     />,
                 );
                 await waitForBatchedUpdatesWithAct();
@@ -1698,7 +1683,7 @@ describe('NumberWithSymbolForm', () => {
                 await waitForBatchedUpdatesWithAct();
 
                 // Then the parent clears its sign together with the form, so both agree the amount is positive
-                expect(onClearNegative).toHaveBeenCalledTimes(1);
+                expect(onToggleNegative).toHaveBeenCalledTimes(1);
                 expect(getParentSign()).toBe('positive');
                 expect(countVisibleMinusSigns()).toBe(0);
                 expect(screen.getByDisplayValue('5')).toBeTruthy();

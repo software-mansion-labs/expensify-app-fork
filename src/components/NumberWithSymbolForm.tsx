@@ -3,6 +3,7 @@ import usePrevious from '@hooks/usePrevious';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {canUseTouchScreen as canUseTouchScreenUtil} from '@libs/DeviceCapabilities';
+import mergeRefs from '@libs/mergeRefs';
 
 import CONST from '@src/CONST';
 
@@ -10,18 +11,15 @@ import type {ForwardedRef} from 'react';
 import type {KeyboardTypeOptions, StyleProp, TextStyle, ViewStyle} from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
-import React, {useEffect, useImperativeHandle, useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {View} from 'react-native';
 
-import type {NumericFlipButtonProps} from './NumericButtons';
-import type {NumericEditingKeyPressEvent, NumericEditingRef} from './NumericEditingController/types';
+import type {NumericEditingKeyPressEvent, NumericEditingRef} from './NumericEditingController';
 import type {BaseTextInputRef} from './TextInput/BaseTextInput/types';
 import type {TextInputWithSymbolProps} from './TextInputWithSymbol/types';
 
-import {NumericFlipButton as BaseNumericFlipButton} from './NumericButtons';
 import NumericField from './NumericField';
 import NumericInput from './NumericInput';
-import {useNumericInputActions} from './NumericInput/context';
 import ScrollView from './ScrollView';
 
 type NumberWithSymbolFormProps = {
@@ -103,43 +101,58 @@ type NumberWithSymbolFormProps = {
     currencyButtonAccessibilityLabel?: string;
 } & Omit<TextInputWithSymbolProps, 'formattedAmount' | 'onAmountChange' | 'placeholder' | 'onSelectionChange' | 'onKeyPress' | 'onMouseDown' | 'onMouseUp'>;
 
-type NumberWithSymbolFormRef = {
-    clearSelection: () => void;
-    updateNumber: (newNumber: string) => void;
-    getNumber: () => string;
-};
+type NumberWithSymbolFormRef = NumericEditingRef;
 
 const canUseTouchScreen = canUseTouchScreenUtil();
 
-const stripSign = (number: string) => (number.startsWith('-') ? number.slice(1) : number);
+/**
+ * Legacy path -> presentation. Every branch of the adapter is one row here, or one of the named legacy edge cases below.
+ *
+ * | Path           | Legacy props                                                          | Presentation                                            | Callers                              |
+ * | -------------- | --------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------ |
+ * | `field`        | `displayAsTextInput`                                                  | `NumericField`, sign typed in the text                  | AmountForm, TaxFields, AmountField   |
+ * | `inlineAmount` | `shouldWrapInputInContainer={false}` with a symbol or a bridged sign  | `NumericInput` + `AmountRow` in a row                   | TotalCell                            |
+ * | `inlineField`  | `shouldWrapInputInContainer={false}` with neither                     | `NumericField`, sign typed in the text                  | split rows (OptionRow, SplitAmount)  |
+ * | `fullScreen`   | anything else                                                         | `NumericInput` + `ResponsivePreset` + `AmountRow`       | amount, distance, hours, tax pages   |
+ *
+ * Legacy edge cases:
+ * - Sign bridge: without `allowNegativeInput`, the caller owns the sign through `isNegative` / `toggleNegative` /
+ *   `clearNegative`. It maps onto the root's controlled sign, and every reported change is a flip of the caller's sign.
+ * - `hideSymbol` composes no symbol at all, and a symbol that is not pressable composes no currency button.
+ * - `onSymbolButtonPress` wins over `onCurrencyButtonPress`.
+ * - The flip button only shows when the caller can be told about a flip of a sign it owns.
+ * - On the `field` path, a backspace in an empty negative field clears the caller's sign.
+ * - The portrait amount container keeps the `numberView` test id.
+ */
+type LegacyPath = 'field' | 'inlineAmount' | 'inlineField' | 'fullScreen';
 
-type RootFlipButtonProps = Pick<NumericFlipButtonProps, 'style'> & {
-    /** Receives the root's own sign toggle so the adapter can flip the canonical value and notify the parent together */
-    onFlip: (toggleRootSign: () => void) => void;
+type LegacyPathFlags = {
+    displayAsTextInput: boolean;
+    shouldWrapInputInContainer: boolean;
+    hasSymbol: boolean;
+    isSignShownBesideAmount: boolean;
 };
 
-/** Flip button wired to the NumericInput root, so the minus sign renders from the root's canonical value right away. */
-function RootFlipButton({onFlip, style}: RootFlipButtonProps) {
-    const {toggleSign} = useNumericInputActions();
+function getLegacyPath({displayAsTextInput, shouldWrapInputInContainer, hasSymbol, isSignShownBesideAmount}: LegacyPathFlags): LegacyPath {
+    if (displayAsTextInput) {
+        return 'field';
+    }
 
-    return (
-        <BaseNumericFlipButton
-            isDisabled={false}
-            onPress={() => onFlip(toggleSign)}
-            style={style}
-        />
-    );
+    if (shouldWrapInputInContainer) {
+        return 'fullScreen';
+    }
+
+    // Cells that show the symbol or a bridged sign render them beside the amount, which only the amount presentation does
+    return hasSymbol || isSignShownBesideAmount ? 'inlineAmount' : 'inlineField';
 }
 
 /**
- * Adapter bridging the legacy NumberWithSymbolForm interface to the composable numeric components.
- * Inline inputs (`displayAsTextInput`, or `shouldWrapInputInContainer={false}` for table cells and split rows) render
- * through NumericField. Full-screen forms render through `NumericInput.ResponsivePreset`, with or without the number pad.
- * The legacy display flags are translated into composition here, so the numeric components never receive them.
+ * Adapter mapping the legacy NumberWithSymbolForm interface onto the composable numeric components, through the path
+ * table above. The legacy display flags are translated into composition here, so the numeric components never receive them.
  *
- * Transitional: callers should migrate to NumericField (inline fields) or NumericInput (full-screen forms) directly,
- * owning a signed value instead of `isNegative`/`toggleNegative`. This adapter, its parent-owned sign bridge, and the
- * legacy `numberView` test id are removed once no caller is left.
+ * Transitional: callers should migrate to NumericField or NumericInput directly, owning a signed value instead of
+ * `isNegative`/`toggleNegative`. This adapter, its sign bridge, and the legacy `numberView` test id are removed once no
+ * caller is left.
  */
 function NumberWithSymbolForm({
     value = '',
@@ -192,30 +205,35 @@ function NumberWithSymbolForm({
     const isInLandscapeMode = useIsInLandscapeMode();
     const isFocused = useIsFocused();
     const wasFocused = usePrevious(isFocused);
-    const wasNegative = usePrevious(isNegative);
     const innerEditingRef = useRef<NumericEditingRef | null>(null);
     const textInputRef = useRef<BaseTextInputRef | null>(null);
 
-    // Set only while the flip button toggles the root's sign, so the resulting change is reported as a flip rather than an edit
-    const isFlippingSignRef = useRef(false);
+    const editingRef = mergeRefs(innerEditingRef, numberFormRef);
+    const inputRef = mergeRefs(textInputRef, ref);
 
-    // The caller owns the sign through `isNegative` while the root keeps it inside its canonical value; the adapter bridges the two
-    const isSignOwnedByParent = !displayAsTextInput && !allowNegativeInput && (allowFlippingAmount || isNegative);
-    const allowNegativeInRoot = allowNegativeInput || allowFlippingAmount || isNegative;
-    const canonicalValue = isNegative && !value.startsWith('-') ? `-${value}` : value;
-
-    // A hidden symbol is composed as no symbol at all
     const visibleSymbol = hideSymbol ? '' : symbol;
 
-    const setTextInputRef = (newRef: BaseTextInputRef | null) => {
-        textInputRef.current = newRef;
-        if (typeof ref === 'function') {
-            ref(newRef);
-        } else if (ref && 'current' in ref) {
-            // eslint-disable-next-line no-param-reassign
-            ref.current = newRef;
+    // The caller keeps the sign apart from the number, and the root takes it as a controlled sign
+    const isSignBridged = !displayAsTextInput && !allowNegativeInput;
+    const isSignShownBesideAmount = isSignBridged && (allowFlippingAmount || isNegative);
+    const allowNegative = allowNegativeInput || allowFlippingAmount || isNegative;
+
+    // Paths without the bridge take the sign inside the value
+    const signedValue = isNegative && !value.startsWith('-') ? `-${value}` : value;
+
+    // Every reported change flips the sign the caller holds, so a toggle is exact; `clearNegative` is only a fallback
+    const handleSignChange = (nextIsNegative: boolean) => {
+        if (toggleNegative) {
+            toggleNegative();
+            return;
+        }
+
+        if (!nextIsNegative) {
+            clearNegative?.();
         }
     };
+
+    const rootValueProps = isSignBridged ? {value, isNegative, onSignChange: handleSignChange} : {value: signedValue};
 
     // Clears text selection if user visits symbol (currency) selector and comes back
     useEffect(() => {
@@ -225,106 +243,35 @@ function NumberWithSymbolForm({
         innerEditingRef.current?.clearSelection();
     }, [isFocused, wasFocused]);
 
-    // The root only adopts external values when they are cleared, so a sign the parent changes without an edit is pushed in here.
-    // Only a change counts: on mount the root already starts from the signed value, which may carry the sign before `isNegative` does.
-    // Edits and flips made through the root already hold the new sign, so they are skipped and keep their caret.
-    useEffect(() => {
-        if (displayAsTextInput || allowNegativeInput || wasNegative === isNegative) {
-            return;
-        }
+    const path = getLegacyPath({displayAsTextInput, shouldWrapInputInContainer, hasSymbol: !!visibleSymbol, isSignShownBesideAmount});
 
-        const rootValue = innerEditingRef.current?.getNumber() ?? '';
-        if (rootValue.startsWith('-') === isNegative) {
-            return;
-        }
-
-        const magnitude = stripSign(rootValue);
-        innerEditingRef.current?.updateNumber(isNegative ? `-${magnitude}` : magnitude);
-    }, [isNegative, wasNegative, displayAsTextInput, allowNegativeInput]);
-
-    useImperativeHandle(numberFormRef, () => ({
-        clearSelection: () => innerEditingRef.current?.clearSelection(),
-        getNumber: () => {
-            const val = innerEditingRef.current?.getNumber() ?? '';
-            return isSignOwnedByParent ? stripSign(val) : val;
-        },
-        updateNumber: (newNumber: string) => {
-            if (!isSignOwnedByParent) {
-                innerEditingRef.current?.updateNumber(newNumber);
-                return;
-            }
-
-            // A signed number makes the amount negative. Only a positive amount flips the parent-owned sign, the same way a typed
-            // minus does, so re-applying the negative amount the form already shows (e.g. the formatted draft amount) is not a flip.
-            if (allowFlippingAmount && newNumber.startsWith('-')) {
-                const isRootNegative = (innerEditingRef.current?.getNumber() ?? '').startsWith('-');
-                if (!isRootNegative) {
-                    toggleNegative?.();
-                }
-                innerEditingRef.current?.updateNumber(newNumber);
-                return;
-            }
-
-            // Callers pass the magnitude, so the root keeps the sign the parent currently holds
-            innerEditingRef.current?.updateNumber(isNegative ? `-${newNumber}` : newNumber);
-        },
-    }));
-
-    /**
-     * Reports root changes to the parent: the magnitude through `onInputChange` and a changed sign through `toggleNegative`
-     * or `clearNegative`. The sign is compared against `isNegative`, so edits that keep the sign never toggle it again.
-     */
-    const handleInputChange = (newValue: string) => {
-        if (!isSignOwnedByParent) {
-            onInputChange?.(newValue);
-            return;
-        }
-
-        const isNewValueNegative = newValue.startsWith('-');
-
-        // A flip only changes the sign, so the magnitude the parent holds is still current
-        if (isFlippingSignRef.current) {
-            toggleNegative?.();
-            return;
-        }
-
-        // Report the magnitude first so a parent that reports its signed amount on toggle has the final word
-        onInputChange?.(stripSign(newValue));
-
-        if (isNewValueNegative === isNegative) {
-            return;
-        }
-
-        if (isNewValueNegative || !clearNegative) {
-            toggleNegative?.();
-            return;
-        }
-
-        clearNegative();
+    const textInputProps = {
+        ref: inputRef,
+        testID: props.testID,
+        style,
+        containerStyle,
+        touchableInputWrapperStyle: props.touchableInputWrapperStyle,
+        prefixCharacter,
+        prefixStyle: props.prefixStyle,
+        prefixContainerStyle: props.prefixContainerStyle,
+        shouldApplyPaddingToContainer,
+        shouldUseDefaultLineHeightForPrefix,
+        contentWidth: props.contentWidth,
+        autoGrow,
+        autoGrowExtraSpace: props.autoGrowExtraSpace,
+        autoGrowMarginSide: props.autoGrowMarginSide,
+        disableKeyboard,
+        disabled,
+        hideFocusedState,
+        keyboardType: props.keyboardType,
+        autoFocus: props.autoFocus,
+        onSubmitEditing,
+        submitBehavior: props.submitBehavior,
+        onFocus: props.onFocus,
+        onBlur: props.onBlur,
     };
 
-    const flipSign = (toggleRootSign: () => void) => {
-        // A root that owns the sign reports the flipped value through `onInputChange` like any other edit
-        if (!isSignOwnedByParent) {
-            toggleRootSign();
-            return;
-        }
-
-        // The root notifies synchronously, so the flag covers exactly the change this toggle produces
-        isFlippingSignRef.current = true;
-        toggleRootSign();
-        isFlippingSignRef.current = false;
-    };
-
-    // Only the text-input path needs this: the other paths clear a negative sign through the root and `handleInputChange`
-    const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
-        const key = event.nativeEvent.key.toLowerCase();
-        if (!value && key === 'backspace' && isNegative) {
-            clearNegative?.();
-        }
-    };
-
-    if (displayAsTextInput) {
+    if (path === 'field') {
         const currencyOrUnitButtonText = currencyButtonLabel ?? currency;
         const onTrailingDropdownPress = onCurrencyButtonPress ?? onSymbolButtonPress;
 
@@ -347,7 +294,15 @@ function NumberWithSymbolForm({
                 </View>
             ) : undefined;
 
-        // The text-input path takes the sign from the typed value, so it ignores the parent-owned `isNegative`
+        // Legacy edge case: the sign is typed in the text, so an empty negative field has no character left to delete it
+        const handleKeyPress = (event: NumericEditingKeyPressEvent) => {
+            if (value || !isNegative || event.nativeEvent.key.toLowerCase() !== 'backspace') {
+                return;
+            }
+
+            clearNegative?.();
+        };
+
         return (
             <NumericField
                 value={value}
@@ -356,10 +311,10 @@ function NumberWithSymbolForm({
                 decimals={decimals}
                 maxLength={maxLength}
                 errorText={errorText}
-                ref={innerEditingRef}
+                ref={editingRef}
             >
                 <NumericField.TextInput
-                    ref={setTextInputRef}
+                    ref={inputRef}
                     label={label}
                     accessibilityLabel={label}
                     prefixCharacter={visibleSymbol || prefixCharacter}
@@ -381,194 +336,114 @@ function NumberWithSymbolForm({
         );
     }
 
-    if (!shouldWrapInputInContainer) {
-        // None of the inline callers make the symbol pressable, so `isSymbolPressable` and `onSymbolButtonPress` do not apply here.
-        const isSuffix = symbolPosition === CONST.TEXT_INPUT_SYMBOL_POSITION.SUFFIX;
+    if (path === 'fullScreen') {
+        const currencyButtonText = isSymbolPressable ? (currencyButtonLabel ?? currency) : undefined;
+        const isFlipButtonVisible = allowFlippingAmount && (!!toggleNegative || !isSignShownBesideAmount);
 
-        // Cells that show the symbol or a parent-owned sign (TotalCell) keep the legacy layout: the minus sign and the symbol are
-        // separate texts beside the auto-growing input. As the input's own prefix or suffix they would get no room, because the
-        // auto-grow measurement leaves out the prefix/suffix padding and the value is clipped to zero width.
-        const hasStandaloneSymbolOrSign = !!visibleSymbol || isSignOwnedByParent;
-
-        const symbolNode = visibleSymbol ? (
-            <View style={[styles.flexRow, styles.alignItemsCenter, styles.gap1]}>
-                <NumericInput.Symbol textStyle={symbolTextStyle}>{visibleSymbol}</NumericInput.Symbol>
-            </View>
-        ) : null;
-
-        const field = hasStandaloneSymbolOrSign ? (
+        return (
             <NumericInput
-                value={canonicalValue}
-                onInputChange={handleInputChange}
-                allowNegative={allowNegativeInRoot}
+                {...rootValueProps}
+                onInputChange={onInputChange}
+                allowNegative={allowNegative}
                 decimals={decimals}
                 maxLength={maxLength}
                 errorText={errorText}
-                shouldUseDynamicFontSize={shouldUseDynamicFontSize}
-                symbol={visibleSymbol}
-                ref={innerEditingRef}
+                ref={editingRef}
             >
-                <NumericInput.MinusSign style={negativeSymbolStyle} />
-                {!isSuffix && symbolNode}
-                <NumericInput.TextInput
-                    ref={setTextInputRef}
-                    testID={props.testID}
+                <NumericInput.ResponsivePreset
+                    currency={currencyButtonText}
+                    onCurrencyButtonPress={onSymbolButtonPress ?? onCurrencyButtonPress}
+                    currencyButtonAccessibilityLabel={currencyButtonAccessibilityLabel}
+                    flipButton={
+                        isFlipButtonVisible ? (
+                            <NumericInput.FlipButton
+                                isDisabled={false}
+                                style={styles.minWidth18}
+                            />
+                        ) : null
+                    }
+                    pad={shouldShowBigNumberPad ? <NumericInput.BigNumberPad /> : null}
+                    footer={footer}
+                    amountTestID={isInLandscapeMode ? undefined : 'numberView'}
+                    scrollViewStyle={scrollViewStyle}
+                    shouldRefocusOnScrollViewClick={shouldRefocusOnScrollViewClick}
+                >
+                    <NumericInput.AmountRow
+                        {...textInputProps}
+                        symbol={visibleSymbol}
+                        symbolPosition={symbolPosition}
+                        symbolStyle={symbolTextStyle}
+                        signStyle={negativeSymbolStyle}
+                        shouldUseDynamicFontSize={shouldUseDynamicFontSize}
+                        accessibilityLabel={props.accessibilityLabel}
+                        onPress={props.onPress}
+                    />
+                </NumericInput.ResponsivePreset>
+            </NumericInput>
+        );
+    }
+
+    // None of the inline callers make the symbol pressable, so `isSymbolPressable` and `onSymbolButtonPress` do not apply here
+    const field =
+        path === 'inlineAmount' ? (
+            <NumericInput
+                {...rootValueProps}
+                onInputChange={onInputChange}
+                allowNegative={allowNegative}
+                decimals={decimals}
+                maxLength={maxLength}
+                errorText={errorText}
+                ref={editingRef}
+            >
+                <NumericInput.AmountRow
+                    {...textInputProps}
+                    symbol={visibleSymbol}
+                    symbolPosition={symbolPosition}
+                    symbolStyle={symbolTextStyle}
+                    signStyle={negativeSymbolStyle}
+                    shouldUseDynamicFontSize={shouldUseDynamicFontSize}
                     accessibilityLabel={props.accessibilityLabel}
-                    style={style}
-                    containerStyle={containerStyle}
-                    touchableInputWrapperStyle={props.touchableInputWrapperStyle}
-                    prefixCharacter={prefixCharacter}
-                    prefixStyle={props.prefixStyle}
-                    prefixContainerStyle={props.prefixContainerStyle}
-                    shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
-                    shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
-                    contentWidth={props.contentWidth}
-                    autoGrow={autoGrow}
-                    autoGrowExtraSpace={props.autoGrowExtraSpace}
-                    autoGrowMarginSide={props.autoGrowMarginSide}
-                    disableKeyboard={disableKeyboard}
-                    disabled={disabled}
-                    hideFocusedState={hideFocusedState}
-                    keyboardType={props.keyboardType}
-                    autoFocus={props.autoFocus}
                     onPress={props.onPress}
-                    onSubmitEditing={onSubmitEditing}
-                    submitBehavior={props.submitBehavior}
-                    onFocus={props.onFocus}
-                    onBlur={props.onBlur}
                 />
-                {isSuffix && symbolNode}
             </NumericInput>
         ) : (
-            // Split rows hide the symbol and keep the sign inside the value, which the input displays as typed
             <NumericField
-                value={canonicalValue}
-                onInputChange={handleInputChange}
-                allowNegative={allowNegativeInRoot}
+                value={signedValue}
+                onInputChange={onInputChange}
+                allowNegative={allowNegative}
                 decimals={decimals}
                 maxLength={maxLength}
                 errorText={errorText}
-                ref={innerEditingRef}
+                ref={editingRef}
             >
                 <NumericField.TextInput
-                    ref={setTextInputRef}
-                    testID={props.testID}
+                    {...textInputProps}
                     label={label}
                     accessibilityLabel={props.accessibilityLabel ?? label}
-                    style={style}
-                    containerStyle={containerStyle}
-                    touchableInputWrapperStyle={props.touchableInputWrapperStyle}
-                    prefixCharacter={prefixCharacter}
-                    prefixStyle={props.prefixStyle}
-                    prefixContainerStyle={props.prefixContainerStyle}
-                    shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
-                    shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
-                    contentWidth={props.contentWidth}
-                    autoGrow={autoGrow}
-                    autoGrowExtraSpace={props.autoGrowExtraSpace}
-                    autoGrowMarginSide={props.autoGrowMarginSide}
-                    disableKeyboard={disableKeyboard}
-                    disabled={disabled}
-                    hideFocusedState={hideFocusedState}
-                    keyboardType={props.keyboardType}
-                    autoFocus={props.autoFocus}
-                    onSubmitEditing={onSubmitEditing}
-                    submitBehavior={props.submitBehavior}
-                    onFocus={props.onFocus}
-                    onBlur={props.onBlur}
                 />
             </NumericField>
         );
 
-        if (!scrollViewStyle && !shouldRefocusOnScrollViewClick) {
-            // The sign, symbol and input are siblings, so without the caller's scroll view row they need a row of their own
-            return hasStandaloneSymbolOrSign ? <View style={[styles.flexRow, styles.alignItemsCenter]}>{field}</View> : field;
-        }
-
-        return (
-            <ScrollView
-                contentContainerStyle={[styles.flexGrow1, scrollViewStyle]}
-                style={[styles.flexGrow0, shouldRefocusOnScrollViewClick && styles.cursorAuto]}
-                onMouseDown={(e) => {
-                    if (!shouldRefocusOnScrollViewClick) {
-                        return;
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                    textInputRef.current?.focus();
-                }}
-            >
-                {field}
-            </ScrollView>
-        );
+    if (!scrollViewStyle && !shouldRefocusOnScrollViewClick) {
+        // The amount row renders siblings, so without the caller's scroll view it needs a row of its own
+        return path === 'inlineAmount' ? <View style={[styles.flexRow, styles.alignItemsCenter]}>{field}</View> : field;
     }
 
-    // Full-screen forms: the legacy precedence lets onSymbolButtonPress win over onCurrencyButtonPress, and a symbol
-    // that is not pressable is composed as no currency button at all
-    const currencyButtonText = isSymbolPressable ? (currencyButtonLabel ?? currency) : undefined;
-
-    // The flip button only toggles a parent-owned sign when the parent can be told about it
-    const isFlipButtonVisible = allowFlippingAmount && canUseTouchScreen && (!!toggleNegative || !isSignOwnedByParent);
-    const flipButton = isFlipButtonVisible ? (
-        <RootFlipButton
-            onFlip={flipSign}
-            style={styles.minWidth18}
-        />
-    ) : null;
-
     return (
-        <NumericInput
-            value={canonicalValue}
-            onInputChange={handleInputChange}
-            allowNegative={allowNegativeInRoot}
-            decimals={decimals}
-            maxLength={maxLength}
-            errorText={errorText}
-            shouldUseDynamicFontSize={shouldUseDynamicFontSize}
-            symbol={visibleSymbol}
-            ref={innerEditingRef}
+        <ScrollView
+            contentContainerStyle={[styles.flexGrow1, scrollViewStyle]}
+            style={[styles.flexGrow0, shouldRefocusOnScrollViewClick && styles.cursorAuto]}
+            onMouseDown={(e) => {
+                if (!shouldRefocusOnScrollViewClick) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                textInputRef.current?.focus();
+            }}
         >
-            <NumericInput.ResponsivePreset
-                symbol={visibleSymbol}
-                symbolPosition={symbolPosition}
-                symbolTextStyle={symbolTextStyle}
-                currency={currencyButtonText}
-                onCurrencyButtonPress={onSymbolButtonPress ?? onCurrencyButtonPress}
-                currencyButtonAccessibilityLabel={currencyButtonAccessibilityLabel}
-                flipButton={flipButton}
-                pad={shouldShowBigNumberPad ? <NumericInput.BigNumberPad /> : null}
-                footer={footer}
-                amountContainerTestID={isInLandscapeMode ? undefined : 'numberView'}
-                scrollViewStyle={scrollViewStyle}
-                shouldRefocusOnScrollViewClick={shouldRefocusOnScrollViewClick}
-                negativeSymbolStyle={negativeSymbolStyle}
-                textInputStyle={style}
-                inputTestID={props.testID}
-                ref={ref}
-                accessibilityLabel={props.accessibilityLabel}
-                autoFocus={props.autoFocus}
-                autoGrow={autoGrow}
-                autoGrowExtraSpace={props.autoGrowExtraSpace}
-                autoGrowMarginSide={props.autoGrowMarginSide}
-                containerStyle={containerStyle}
-                contentWidth={props.contentWidth}
-                disabled={disabled}
-                disableKeyboard={disableKeyboard}
-                hideFocusedState={hideFocusedState}
-                keyboardType={props.keyboardType}
-                onBlur={props.onBlur}
-                onFocus={props.onFocus}
-                onPress={props.onPress}
-                onSubmitEditing={onSubmitEditing}
-                prefixCharacter={prefixCharacter}
-                prefixContainerStyle={props.prefixContainerStyle}
-                prefixStyle={props.prefixStyle}
-                shouldApplyPaddingToContainer={shouldApplyPaddingToContainer}
-                shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
-                submitBehavior={props.submitBehavior}
-                touchableInputWrapperStyle={props.touchableInputWrapperStyle}
-            />
-        </NumericInput>
+            {field}
+        </ScrollView>
     );
 }
 
