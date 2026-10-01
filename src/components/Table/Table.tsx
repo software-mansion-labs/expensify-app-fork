@@ -461,8 +461,9 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
     const hasColumnHeaderElement = !!tableHeaderElement;
     const hasRows = processedData.length > 0;
     const isColumnHeaderHiddenInNarrowLayout = shouldUseNarrowTableLayout && !title;
-    // Always true when resizable: a drag can overflow the table without a React render, so the scrollable layout must already be in place.
-    const areColumnsScrollable = !!dynamicScrollWidth;
+    // Resizable tables keep the scroller even while their columns fit: a drag can overflow the table without a React render,
+    // and switching the column header's placement mid-drag would remount the handle under the pointer.
+    const hasHorizontalScrollContainer = isColumnResizingEnabled || !!dynamicScrollWidth;
 
     const tableListMetadata = useMemo(
         () =>
@@ -472,9 +473,9 @@ function Table<DataType extends TableData, ColumnKey extends string = string, Fi
                 hasColumnHeaderElement,
                 hasRows,
                 isColumnHeaderHiddenInNarrowLayout,
-                areColumnsScrollable,
+                hasHorizontalScrollContainer,
             }),
-        [listHeaderElement, listProps.ListHeaderComponent, hasColumnHeaderElement, hasRows, isColumnHeaderHiddenInNarrowLayout, areColumnsScrollable],
+        [listHeaderElement, listProps.ListHeaderComponent, hasColumnHeaderElement, hasRows, isColumnHeaderHiddenInNarrowLayout, hasHorizontalScrollContainer],
     );
     /**
      * Exposes table control methods through the ref.
