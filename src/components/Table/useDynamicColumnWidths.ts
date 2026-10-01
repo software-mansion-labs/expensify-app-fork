@@ -13,8 +13,8 @@ import type {ColumnWidthOverrides, ResizableColumn} from './columnResize/types';
 import type {TableColumn, TableData} from './types';
 
 import calculateDynamicColumnWidths, {distributeEqualWidths} from './calculateDynamicColumnWidths';
-import {getColumnWidthValue, getColumnsWidthExpression, getGrowableColumnTrack} from './columnResize/columnWidthExpressions';
-import resolveOverriddenColumnWidths from './columnResize/resolveOverriddenColumnWidths';
+import applyColumnWidthOverrides from './columnResize/applyColumnWidthOverrides';
+import {getColumnsWidthExpression, getGrowableColumnTrack} from './columnResize/columnWidthExpressions';
 
 const {MIN_FREE_TEXT_COLUMN_WIDTH} = CONST.TABLES.DYNAMIC_COLUMNS;
 
@@ -273,15 +273,21 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
 
     const growableColumnKey = getGrowableColumnKey(columns);
 
-    const {columnWidths: overriddenColumnWidths, payingColumnKeysByIndex} = resolveOverriddenColumnWidths({
-        columns: columns.map((column) => ({key: column.key, hasDeclaredWidth: typeof column.width === 'number'})),
+    const {
+        columnWidths: overriddenColumnWidths,
+        columnWidthValues,
+        resizableColumns,
+    } = applyColumnWidthOverrides({
+        columns: columns.map((column) => ({
+            key: column.key,
+            label: column.label,
+            hasDeclaredWidth: typeof column.width === 'number',
+            contentWidth: contentWidthByColumnKey.get(column.key),
+        })),
         baseColumnWidths: resolvedColumnWidths,
         columnWidthOverrides,
         growableColumnKey,
     });
-
-    // Each column's width as a value usable both as a track and in the row sum; resizable ones read a custom property with the resolved fallback.
-    const columnWidthValues = columns.map((column) => getColumnWidthValue(column.key, overriddenColumnWidths[column.key] ?? 0));
 
     // The row's width is summed from the widths rather than from the tracks, so what the growable track grows into is
     // the room the row actually has and not room the sum went and asked for.
@@ -290,23 +296,6 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     // Every width the row lays out, in the order the header and the rows render them. The selection checkbox takes a
     // column of the row like any other.
     const rowWidthValues = hasSelectionColumn ? [`${selectionColumnWidth}px`, ...columnWidthValues] : columnWidthValues;
-    const resizableColumns: ResizableColumn[] = [];
-
-    for (const [index, column] of columns.entries()) {
-        // Headless columns (icon, checkbox, arrow) and columns that declared a width (switch, status, count) hold
-        // fixed-size content, so only headed, content-sized ones get an edge, including the last: widening it scrolls,
-        // narrowing it hands room to the growable column.
-        if (!column.label || typeof column.width === 'number') {
-            continue;
-        }
-
-        resizableColumns.push({
-            columnKey: column.key,
-            columnLabel: column.label,
-            contentWidth: contentWidthByColumnKey.get(column.key),
-            absorberColumnKeys: payingColumnKeysByIndex.at(index) ?? [],
-        });
-    }
 
     // Scroll at the live column sum, so a drag that exhausts the payers starts scrolling mid-drag; otherwise the sum is unchanged.
     return {
