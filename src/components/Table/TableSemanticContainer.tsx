@@ -2,6 +2,8 @@ import ScrollView from '@components/ScrollView';
 
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import {canMeasureText} from '@libs/measureTextWidth';
+
 import type {LayoutChangeEvent} from 'react-native';
 
 import React from 'react';
@@ -39,8 +41,17 @@ type TableSemanticContainerProps = {
     rendersBodyWhenEmpty: boolean;
 
     /**
+     * Whether the table sizes its columns from their content. `onLayout` and `scrollWidth` below are both derived from
+     * this, but only in the wide layout, so the wrapper has to be kept for the narrow one too. Dropping it there would
+     * change the returned tree across the layout breakpoint and remount the body, losing its scroll position and the
+     * active search string along with it. Platforms that cannot measure text never set either, so they never see that
+     * change and keep the wrapper out.
+     */
+    shouldUseDynamicColumns: boolean;
+
+    /**
      * The width the rows need when the columns don't fit, which scrolls the header/body run horizontally as one so the
-     * header stays aligned with its rows. Set only for tables whose filter bar isn't in the list; the others are
+     * header stays aligned with its rows. Set only for tables whose filter bar isn't in the list. The others are
      * scrolled by the list itself (see `TableBody`).
      * Resizable tables always pass a CSS sum of the column widths instead, so a drag past the edge scrolls without a re-render.
      */
@@ -68,13 +79,25 @@ type TableSemanticContainerProps = {
  * consecutive run keeps a single table container while preserving child order.
  *
  * Columns that don't fit are scrolled here by wrapping that run in a horizontal scroller, which carries header and
- * rows as one. Tables with an in-list filter bar can't use it — the scroller would drag that bar sideways too — so
- * their list takes the horizontal axis itself (see `TableBody`).
+ * rows as one. Tables with an in-list filter bar can't use it, because the scroller would drag that bar sideways too,
+ * so their list takes the horizontal axis itself (see `TableBody`).
  */
-function TableSemanticContainer({isEnabled, title, rowCount, columnCount, hasHeaderRow, rendersBodyWhenEmpty, scrollWidth, columnResize, onLayout, children}: TableSemanticContainerProps) {
+function TableSemanticContainer({
+    isEnabled,
+    title,
+    rowCount,
+    columnCount,
+    rendersBodyWhenEmpty,
+    shouldUseDynamicColumns,
+    hasHeaderRow,
+    scrollWidth,
+    columnResize,
+    onLayout,
+    children,
+}: TableSemanticContainerProps) {
     const styles = useThemeStyles();
 
-    const shouldWrapTableRun = isEnabled || onLayout !== undefined || scrollWidth !== undefined || !!columnResize;
+    const shouldWrapTableRun = isEnabled || (shouldUseDynamicColumns && canMeasureText()) || onLayout !== undefined || scrollWidth !== undefined || !!columnResize;
     if (!shouldWrapTableRun) {
         return children;
     }
