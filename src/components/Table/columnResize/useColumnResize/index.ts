@@ -1,3 +1,12 @@
+import type {AbsorberWidths} from '@components/Table/columnResize/columnResizeGestures';
+import {
+    clampColumnWidth,
+    getDraggedColumnWidth,
+    getKeyboardResizeAction,
+    getResizedColumnWidths,
+    getToggleFitAction,
+    hasPointerPassedDragSlop,
+} from '@components/Table/columnResize/columnResizeGestures';
 import {
     RESIZE_GRIP_OPACITY_VARIABLE,
     RESIZE_INDICATOR_HEIGHT_VARIABLE,
@@ -6,7 +15,6 @@ import {
     TABLE_ROW_SELECTOR,
     getColumnWidthVariableName,
 } from '@components/Table/columnResize/columnWidthExpressions';
-import getAbsorbedColumnWidths from '@components/Table/columnResize/getAbsorbedColumnWidths';
 import type {ResizableColumn} from '@components/Table/columnResize/types';
 
 import useLocalize from '@hooks/useLocalize';
@@ -21,16 +29,7 @@ import {useEffect, useLayoutEffect, useRef} from 'react';
 
 import type {ColumnResizeController, ColumnResizeHandleDOMProps, UseColumnResizeParams} from './types';
 
-const {MIN_WIDTH, MAX_WIDTH, KEYBOARD_STEP, DRAG_SLOP, HANDLE_HIT_WIDTH} = CONST.TABLES.COLUMN_RESIZE;
-
-/** How far each arrow key moves a column's edge. Other keys leave the column alone. */
-const KEYBOARD_STEP_BY_KEY: Record<string, number> = {
-    ArrowLeft: -KEYBOARD_STEP,
-    ArrowRight: KEYBOARD_STEP,
-};
-
-/** Keys that fit a column to its content and release it again, standing in for the pointer's click and double-click. */
-const FIT_TO_CONTENT_KEYS = new Set([' ', 'Enter']);
+const {MIN_WIDTH, MAX_WIDTH, HANDLE_HIT_WIDTH} = CONST.TABLES.COLUMN_RESIZE;
 
 /** What the indicator's and the edge marks' opacity properties are set to. */
 const INDICATOR_OPACITY = {
@@ -53,13 +52,6 @@ type Drag = {
     /** Whether the pointer has travelled far enough to mean a drag rather than a click. */
     hasMovedPointer: boolean;
 };
-
-/** The columns paying for a resize, paired with the widths they are paying from. */
-type AbsorberWidths = {columnKeys: string[]; widths: number[]};
-
-function clampColumnWidth(width: number): number {
-    return Math.min(Math.max(Math.round(width), MIN_WIDTH), MAX_WIDTH);
-}
 
 /** Removes the width properties of the given columns, so they paint the fallback React rendered. */
 function removeColumnWidthProperties(scopeElement: HTMLElement | null, liveWidths: Record<string, number>) {
@@ -183,18 +175,8 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
     /** Sets a column's width, taking the difference out of later columns. Used by drag, click and arrow keys. */
     const applyColumnWidths = (column: ResizableColumn, width: number, startWidth: number, absorberStartWidths: AbsorberWidths) => {
-        writeColumnWidth(column.columnKey, width);
-
-        const absorbedWidths = getAbsorbedColumnWidths(absorberStartWidths.widths, width - startWidth);
-
-        for (const [index, absorberColumnKey] of absorberStartWidths.columnKeys.entries()) {
-            const absorbedWidth = absorbedWidths.at(index);
-
-            if (absorbedWidth === undefined) {
-                continue;
-            }
-
-            writeColumnWidth(absorberColumnKey, absorbedWidth);
+        for (const [columnKey, resizedWidth] of Object.entries(getResizedColumnWidths(column.columnKey, width, startWidth, absorberStartWidths))) {
+            writeColumnWidth(columnKey, resizedWidth);
         }
     };
 
@@ -238,9 +220,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
     /** Keyboard stand-in for click/double-click: toggles between fitted and released. */
     const toggleFitToContent = (column: ResizableColumn) => {
-        const contentWidth = column.contentWidth === undefined ? undefined : clampColumnWidth(column.contentWidth);
-
-        if (contentWidth !== undefined && columnWidthOverrides?.[column.columnKey] !== contentWidth) {
+        if (getToggleFitAction(column.contentWidth, columnWidthOverrides?.[column.columnKey]) === 'fit') {
             fitToContent(column);
             return;
         }
@@ -298,7 +278,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         }
 
         // Tracked explicitly so a drag that returns to its start isn't a click. A few px of slop so clicks don't read as tiny drags.
-        drag.hasMovedPointer = drag.hasMovedPointer || Math.abs(event.clientX - drag.startClientX) > DRAG_SLOP;
+        drag.hasMovedPointer = drag.hasMovedPointer || hasPointerPassedDragSlop(drag.startClientX, event.clientX);
 
         // Nothing is written until the pointer has travelled far enough to mean it, so a click leaves the column
         // exactly where it was for the fit to size it from.
@@ -306,7 +286,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             return;
         }
 
-        const width = clampColumnWidth(drag.startWidth + (event.clientX - drag.startClientX));
+        const width = getDraggedColumnWidth(drag.startWidth, drag.startClientX, event.clientX);
 
         // The only writes during a drag. The line rides the handle, so it follows the clamped width, not the pointer.
         applyColumnWidths(drag.column, width, drag.startWidth, drag.absorberStartWidths);
@@ -355,23 +335,22 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
     };
 
     const handleKeyDown = (column: ResizableColumn, event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (FIT_TO_CONTENT_KEYS.has(event.key)) {
-            event.preventDefault();
+        const action = getKeyboardResizeAction(event.key);
+
+        if (!action) {
+            return;
+        }
+
+        // Otherwise Space scrolls the page and the arrow keys scroll the table sideways as well.
+        event.preventDefault();
+
+        if (action.type === 'toggleFit') {
             toggleFitToContent(column);
             return;
         }
 
-        const step = KEYBOARD_STEP_BY_KEY[event.key];
-
-        if (step === undefined) {
-            return;
-        }
-
-        // Otherwise the arrow key scrolls the table sideways as well as resizing the column.
-        event.preventDefault();
-
         const startWidth = readColumnWidth(column.columnKey) ?? 0;
-        const width = clampColumnWidth(startWidth + step);
+        const width = clampColumnWidth(startWidth + action.step);
 
         applyColumnWidths(column, width, startWidth, readAbsorberWidths(column));
         commitColumnWidth(column.columnKey, width);
