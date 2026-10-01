@@ -8,17 +8,19 @@ import type {DimensionValue, ViewStyle} from 'react-native';
 /** Prefix of the custom property a resizable column reads its width from. */
 const COLUMN_WIDTH_VARIABLE_PREFIX = '--table-column-width-';
 
-/** Custom property holding the resize indicator's horizontal position. */
-const RESIZE_INDICATOR_LEFT_VARIABLE = '--table-resize-indicator-left';
-
-/** Custom property the resize indicator reads its top from, measured off the header row rather than declared. */
+/** Custom property a handle's line reads its top from: the heading row's top, relative to the handle. */
 const RESIZE_INDICATOR_TOP_VARIABLE = '--table-resize-indicator-top';
 
-/** Custom property the resize indicator reads its bottom from, measured off the last row rather than declared. */
-const RESIZE_INDICATOR_BOTTOM_VARIABLE = '--table-resize-indicator-bottom';
+/** Custom property a handle's line reads its height from: the heading row's top down to the lowest drawn row's bottom. */
+const RESIZE_INDICATOR_HEIGHT_VARIABLE = '--table-resize-indicator-height';
 
-/** Custom property the resize indicator reads its opacity from, so hovering an edge never re-renders the table. */
+/** Custom property a handle's line reads its opacity from, set on that handle alone so hovering an edge never re-renders the table. */
 const RESIZE_INDICATOR_OPACITY_VARIABLE = '--table-resize-indicator-opacity';
+
+/** Marks the header row and the data rows, so the line can find where the table's rows start and end. */
+const TABLE_ROW_DATA_SET = {tableRow: true};
+
+const TABLE_ROW_SELECTOR = '[data-table-row]';
 
 /** Custom property the header's edge marks read their opacity from, so hovering the header never re-renders it. */
 const RESIZE_GRIP_OPACITY_VARIABLE = '--table-resize-grip-opacity';
@@ -67,10 +69,11 @@ function getColumnsMinWidthStyle(minWidth: number | string): ViewStyle {
 
 export {
     RESIZE_GRIP_OPACITY_VARIABLE,
-    RESIZE_INDICATOR_BOTTOM_VARIABLE,
-    RESIZE_INDICATOR_LEFT_VARIABLE,
+    RESIZE_INDICATOR_HEIGHT_VARIABLE,
     RESIZE_INDICATOR_OPACITY_VARIABLE,
     RESIZE_INDICATOR_TOP_VARIABLE,
+    TABLE_ROW_DATA_SET,
+    TABLE_ROW_SELECTOR,
     getColumnWidthValue,
     getColumnWidthVariableName,
     getColumnsMinWidthStyle,

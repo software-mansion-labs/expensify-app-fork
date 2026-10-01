@@ -28,9 +28,6 @@ type ColumnResizeController = {
     /** Element holding the width custom properties; the header and rows inherit them, so one write repaints all. */
     setScopeElement: (element: HTMLElement | null) => void;
 
-    /** Resize indicator line; positioned against its containing block. */
-    setIndicatorElement: (element: HTMLElement | null) => void;
-
     /** The columns whose right edge the user can drag, in the order they are rendered. */
     columns: ResizableColumn[];
 

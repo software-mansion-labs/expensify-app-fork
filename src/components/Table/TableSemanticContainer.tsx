@@ -11,7 +11,6 @@ import {View} from 'react-native';
 
 import type {ColumnResizeController} from './columnResize/useColumnResize/types';
 
-import ColumnResizeIndicator from './columnResize/ColumnResizeIndicator';
 import ColumnResizeScope from './columnResize/ColumnResizeScope';
 import {getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
 import {getTableContainerAccessibilityProps} from './tableAccessibility';
@@ -132,9 +131,6 @@ function TableSemanticContainer({
                 {...getTableContainerAccessibilityProps(isEnabled, title, rowCount, columnCount, hasHeaderRow)}
             >
                 {rowGroup}
-
-                {/* Positioned against this node, which is the one box spanning the header row and every data row. */}
-                <ColumnResizeIndicator columnResize={columnResize} />
             </View>
         );
 

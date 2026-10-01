@@ -20,13 +20,10 @@ type ResizableColumn = {
     absorberColumnKeys: string[];
 };
 
-/** Props shared by the three pieces that only exist while a table is resizable. */
-type ColumnResizeProps = {
-    /** The controller the piece reads from. `undefined` when the table isn't resizable, and then nothing renders. */
+type ColumnResizeHandleProps = {
+    /** The controller the handle reads from. `undefined` when the table isn't resizable, and then nothing renders. */
     columnResize: ColumnResizeController | undefined;
-};
 
-type ColumnResizeHandleProps = ColumnResizeProps & {
     /** The column this handle resizes. Its edge is the right edge of the cell the handle renders in. */
     columnKey: string;
 };
@@ -36,4 +33,4 @@ type ColumnResizeScopeProps = ChildrenProps & {
     onScopeElement?: (element: HTMLElement | null) => void;
 };
 
-export type {ColumnResizeHandleProps, ColumnResizeProps, ColumnResizeScopeProps, ColumnWidthOverrides, ResizableColumn};
+export type {ColumnResizeHandleProps, ColumnResizeScopeProps, ColumnWidthOverrides, ResizableColumn};

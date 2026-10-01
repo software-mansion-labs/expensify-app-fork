@@ -24,7 +24,7 @@ import {View} from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import {rendersColumnHeader} from './buildTableListData';
-import {getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
+import {TABLE_ROW_DATA_SET, getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
 import getGridTemplateColumns from './getGridTemplateColumns';
 import {assignCellColumnIndexes, getCellAccessibilityProps, getRowAccessibilityProps, shouldUseTableSemantics} from './tableAccessibility';
 import {useTableContext, useTableRowSemanticID} from './TableContext';
@@ -277,6 +277,7 @@ export default function TableRow({
                 hoverStyle={tableRowPressableHoverStyle}
                 pressDimmingValue={!interactive ? undefined : 1}
                 role={interactive ? CONST.ROLE.BUTTON : CONST.ROLE.PRESENTATION}
+                dataSet={TABLE_ROW_DATA_SET}
                 {...getRowAccessibilityProps(isTableSemanticsEnabled, rowIndex, false, semanticTableHasHeader)}
                 onMouseDown={(e) => {
                     const target = e?.target;

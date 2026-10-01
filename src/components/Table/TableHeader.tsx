@@ -22,7 +22,7 @@ import type {TableColumn, TableData} from './types';
 
 import {rendersColumnHeaderInListHeader} from './buildTableListData';
 import ColumnResizeHandle from './columnResize/ColumnResizeHandle';
-import {getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
+import {TABLE_ROW_DATA_SET, getColumnsWidthStyle} from './columnResize/columnWidthExpressions';
 import getGridTemplateColumns from './getGridTemplateColumns';
 import {getColumnHeaderAccessibilityProps, getRowAccessibilityProps, shouldUseTableSemantics} from './tableAccessibility';
 import {useTableContext} from './TableContext';
@@ -147,8 +147,11 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
                 // `space-between` is only for the flex fallback. Grid would spread a narrowed column's leftover room between tracks and shift the
                 // headings off their cells, so pack to the start like the rows do.
                 !!dynamicGridTemplateColumns && !shouldUseNarrowTableLayout && styles.justifyContentStart,
+                // Lifts the edges' lines, which hang below the header, above the rows that paint after it.
+                !!columnResize && styles.zIndex1,
                 style,
             ]}
+            dataSet={TABLE_ROW_DATA_SET}
             onPointerEnter={columnResize?.showGrips}
             onPointerLeave={columnResize?.hideGrips}
             {...getRowAccessibilityProps(isTableSemanticsEnabled, 0, true)}

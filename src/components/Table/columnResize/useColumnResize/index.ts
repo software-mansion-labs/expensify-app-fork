@@ -1,9 +1,9 @@
 import {
     RESIZE_GRIP_OPACITY_VARIABLE,
-    RESIZE_INDICATOR_BOTTOM_VARIABLE,
-    RESIZE_INDICATOR_LEFT_VARIABLE,
+    RESIZE_INDICATOR_HEIGHT_VARIABLE,
     RESIZE_INDICATOR_OPACITY_VARIABLE,
     RESIZE_INDICATOR_TOP_VARIABLE,
+    TABLE_ROW_SELECTOR,
     getColumnWidthVariableName,
 } from '@components/Table/columnResize/columnWidthExpressions';
 import getAbsorbedColumnWidths from '@components/Table/columnResize/getAbsorbedColumnWidths';
@@ -38,8 +38,6 @@ const INDICATOR_OPACITY = {
     HIDDEN: '0',
 } as const;
 
-const ROW_SELECTOR = `[role="${CONST.ROLE.ROW}"]`;
-
 type Drag = {
     column: ResizableColumn;
 
@@ -49,14 +47,8 @@ type Drag = {
     /** The column's width when the drag started, which the pointer's travel is added to. */
     startWidth: number;
 
-    /** The width last written for the column, so a scroll can work out how far the edge has already moved. */
-    width: number;
-
     /** Paying columns' widths at drag start, read once so shares don't compound across moves. */
     absorberStartWidths: AbsorberWidths;
-
-    /** Where the indicator was when the drag started, so it can follow the width rather than the pointer. */
-    startIndicatorLeft: number;
 
     /** Whether the pointer has travelled far enough to mean a drag rather than a click. */
     hasMovedPointer: boolean;
@@ -69,37 +61,6 @@ function clampColumnWidth(width: number): number {
     return Math.min(Math.max(Math.round(width), MIN_WIDTH), MAX_WIDTH);
 }
 
-/** Top of the handle's heading row in client coordinates (not the handle's top, which is inset by the row's padding). */
-function getHeaderRowTop(handleElement: HTMLElement): number {
-    return (handleElement.closest(ROW_SELECTOR) ?? handleElement).getBoundingClientRect().top;
-}
-
-/**
- * Distance from the lowest row's bottom to the bottom of `containingBlock`'s padding box, clamped at zero. Uses the lowest
- * row, not the last in DOM order, since virtualized lists may reorder rows.
- */
-function getLastRowBottomGap(containingBlock: Element, containingBlockRect: DOMRect): number {
-    // The hidden twins a virtualized list keeps around — one for measuring, one for its sticky header — are skipped,
-    // since neither is where a row is actually drawn.
-    const rowBottoms = Array.from(containingBlock.querySelectorAll(`${ROW_SELECTOR}:not([aria-hidden="true"])`), (row) => row.getBoundingClientRect().bottom);
-
-    if (rowBottoms.length === 0) {
-        return 0;
-    }
-
-    // `clientTop` plus `clientHeight` is the padding box, since an element reports no `clientBottom`.
-    const paddingBoxBottom = containingBlockRect.top + containingBlock.clientTop + containingBlock.clientHeight;
-
-    return Math.max(paddingBoxBottom - Math.max(...rowBottoms), 0);
-}
-
-/** Where a handle's own centre line sits inside the block the indicator is positioned in. */
-function getHandleCenterOffset(handleElement: HTMLElement, containingBlock: Element): number {
-    const handleRect = handleElement.getBoundingClientRect();
-
-    return handleRect.left + handleRect.width / 2 - containingBlock.getBoundingClientRect().left - containingBlock.clientLeft;
-}
-
 /** Removes the width properties of the given columns, so they paint the fallback React rendered. */
 function removeColumnWidthProperties(scopeElement: HTMLElement | null, liveWidths: Record<string, number>) {
     for (const columnKey of Object.keys(liveWidths)) {
@@ -108,33 +69,29 @@ function removeColumnWidthProperties(scopeElement: HTMLElement | null, liveWidth
 }
 
 /**
- * Positions the line at the handle's edge, from the heading row to the lowest row, and returns its offsets.
- * DOM-only and takes elements as args, so the scroll listener can call it without re-registering.
+ * Shows the handle's line, running from its heading row's top to the lowest row's bottom. Measured once per reveal: the
+ * line sits in the handle, so drags and sideways scrolls carry it along, and the scroller clips whatever runs past the rows.
  */
-function drawIndicatorAtHandle(scopeElement: HTMLElement | null, indicatorElement: HTMLElement | null, handleElement: HTMLElement): number | undefined {
-    const scopeStyle = scopeElement?.style;
-    const containingBlock = indicatorElement?.offsetParent;
+function drawIndicatorAtHandle(scopeElement: HTMLElement | null, handleElement: HTMLElement) {
+    const handleRect = handleElement.getBoundingClientRect();
+    const headerRowTop = (handleElement.closest(TABLE_ROW_SELECTOR) ?? handleElement).getBoundingClientRect().top;
+    let lowestRowBottom = handleRect.bottom;
 
-    if (!containingBlock) {
-        scopeStyle?.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.VISIBLE);
+    for (const row of scopeElement?.querySelectorAll(TABLE_ROW_SELECTOR) ?? []) {
+        // The hidden twins a virtualized list keeps around aren't where a row is drawn. Only hiding within the table
+        // counts: a modal hiding the whole screen from assistive tech hides every row and leaves them all drawn.
+        const hiddenAncestor = row.closest('[aria-hidden="true"]');
 
-        return undefined;
+        if (hiddenAncestor && scopeElement?.contains(hiddenAncestor)) {
+            continue;
+        }
+
+        lowestRowBottom = Math.max(lowestRowBottom, row.getBoundingClientRect().bottom);
     }
 
-    const containingBlockRect = containingBlock.getBoundingClientRect();
-    const left = getHandleCenterOffset(handleElement, containingBlock);
-
-    scopeStyle?.setProperty(RESIZE_INDICATOR_LEFT_VARIABLE, `${left}px`);
-    scopeStyle?.setProperty(RESIZE_INDICATOR_TOP_VARIABLE, `${getHeaderRowTop(handleElement) - containingBlockRect.top - containingBlock.clientTop}px`);
-    scopeStyle?.setProperty(RESIZE_INDICATOR_BOTTOM_VARIABLE, `${getLastRowBottomGap(containingBlock, containingBlockRect)}px`);
-
-    // The line is positioned against the table, not the columns, so hide it once its edge scrolls out of the table's box.
-    const isEdgeInView = left >= 0 && left <= containingBlock.clientWidth;
-    const opacity = isEdgeInView ? INDICATOR_OPACITY.VISIBLE : INDICATOR_OPACITY.HIDDEN;
-
-    scopeStyle?.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, opacity);
-
-    return left;
+    handleElement.style.setProperty(RESIZE_INDICATOR_TOP_VARIABLE, `${headerRowTop - handleRect.top}px`);
+    handleElement.style.setProperty(RESIZE_INDICATOR_HEIGHT_VARIABLE, `${lowestRowBottom - headerRowTop}px`);
+    handleElement.style.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.VISIBLE);
 }
 
 /**
@@ -144,11 +101,9 @@ function drawIndicatorAtHandle(scopeElement: HTMLElement | null, indicatorElemen
 function useColumnResize({columnResizingID, columns, resolvedColumnWidths, columnWidthOverrides, columnGap}: UseColumnResizeParams): ColumnResizeController | undefined {
     const {translate} = useLocalize();
     const scopeElementRef = useRef<HTMLElement | null>(null);
-    const indicatorElementRef = useRef<HTMLElement | null>(null);
     const dragRef = useRef<Drag | null>(null);
 
-    // The handle the line is currently pointing at, so it can be redrawn when the columns move under it without the
-    // pointer having left and re-entered the handle.
+    // The handle whose line is showing, so a drag ending away from it can still hide it.
     const activeHandleElementRef = useRef<HTMLElement | null>(null);
 
     // Widths written mid-gesture, ahead of React. At rest it's empty and every column paints the fallback React rendered,
@@ -160,10 +115,6 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
         // The properties live on the element, so a new one starts out with none of them.
         liveWidthsRef.current = {};
-    };
-
-    const setIndicatorElement = (element: HTMLElement | null) => {
-        indicatorElementRef.current = element;
     };
 
     const setScopeProperty = (name: string, value: string) => {
@@ -184,11 +135,13 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
     /** Column's currently painted width (ahead of React mid-gesture). `undefined` if it has none, never zero, to avoid collapsing it. */
     const readColumnWidth = (columnKey: string): number | undefined => liveWidthsRef.current[columnKey] ?? resolvedColumnWidths[columnKey];
 
-    /** Shows the line at a column edge and remembers the handle so scrolling can move the line along. */
     const revealIndicator = (handleElement: HTMLElement) => {
-        activeHandleElementRef.current = handleElement;
+        if (activeHandleElementRef.current !== handleElement) {
+            activeHandleElementRef.current?.style.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
+        }
 
-        return drawIndicatorAtHandle(scopeElementRef.current, indicatorElementRef.current, handleElement);
+        activeHandleElementRef.current = handleElement;
+        drawIndicatorAtHandle(scopeElementRef.current, handleElement);
     };
 
     const hideIndicator = () => {
@@ -197,8 +150,8 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             return;
         }
 
+        activeHandleElementRef.current?.style.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
         activeHandleElementRef.current = null;
-        setScopeProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
     };
 
     const showGrips = () => {
@@ -324,18 +277,14 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         // survives the pointer crossing into the rows, the window chrome, or another column's handle.
         event.currentTarget.setPointerCapture(event.pointerId);
 
-        // Measured before the drag starts, because the handle moves with the column and so stops being a reading of
-        // where the edge began.
-        const startIndicatorLeft = revealIndicator(event.currentTarget) ?? 0;
+        revealIndicator(event.currentTarget);
         const startWidth = readColumnWidth(column.columnKey) ?? 0;
 
         dragRef.current = {
             column,
             startClientX: event.clientX,
             startWidth,
-            width: startWidth,
             absorberStartWidths: readAbsorberWidths(column),
-            startIndicatorLeft,
             hasMovedPointer: false,
         };
         document.body.style.cursor = 'col-resize';
@@ -359,10 +308,8 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
         const width = clampColumnWidth(drag.startWidth + (event.clientX - drag.startClientX));
 
-        // The only writes during a drag. The line follows the clamped width, not the pointer.
+        // The only writes during a drag. The line rides the handle, so it follows the clamped width, not the pointer.
         applyColumnWidths(drag.column, width, drag.startWidth, drag.absorberStartWidths);
-        drag.width = width;
-        setScopeProperty(RESIZE_INDICATOR_LEFT_VARIABLE, `${drag.startIndicatorLeft + width - drag.startWidth}px`);
     };
 
     const handlePointerUp = (column: ResizableColumn, event: React.PointerEvent<HTMLDivElement>) => {
@@ -428,35 +375,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
         applyColumnWidths(column, width, startWidth, readAbsorberWidths(column));
         commitColumnWidth(column.columnKey, width);
-
-        // The handle has moved with the column, so the line is re-read from it rather than stepped along with it.
-        revealIndicator(event.currentTarget);
     };
-
-    // Sideways scroll moves the edge but not the line, so reposition it. Capture phase since `scroll` doesn't bubble and the
-    // scrolling element varies by layout; registered once as it only touches the DOM.
-    useEffect(() => {
-        const redrawIndicator = () => {
-            const handleElement = activeHandleElementRef.current;
-
-            if (!handleElement) {
-                return;
-            }
-
-            const left = drawIndicatorAtHandle(scopeElementRef.current, indicatorElementRef.current, handleElement);
-            const drag = dragRef.current;
-
-            // A drag moves the line by however much the column has grown since it started, so where it started has to
-            // be re-read from where the edge is now rather than kept from before the scroll.
-            if (drag && left !== undefined) {
-                drag.startIndicatorLeft = left - (drag.width - drag.startWidth);
-            }
-        };
-
-        document.addEventListener('scroll', redrawIndicator, {capture: true, passive: true});
-
-        return () => document.removeEventListener('scroll', redrawIndicator, {capture: true});
-    }, []);
 
     // Unmounting mid-drag would otherwise leave the resize cursor on the document and a dangling drag.
     useEffect(
@@ -520,7 +439,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         onBlur: hideIndicator,
     });
 
-    return {setScopeElement, setIndicatorElement, columns, getHandleProps, showGrips, hideGrips};
+    return {setScopeElement, columns, getHandleProps, showGrips, hideGrips};
 }
 
 export default useColumnResize;
