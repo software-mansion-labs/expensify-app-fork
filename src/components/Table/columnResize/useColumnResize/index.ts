@@ -100,6 +100,13 @@ function getHandleCenterOffset(handleElement: HTMLElement, containingBlock: Elem
     return handleRect.left + handleRect.width / 2 - containingBlock.getBoundingClientRect().left - containingBlock.clientLeft;
 }
 
+/** Removes the width properties of the given columns, so they paint the fallback React rendered. */
+function removeColumnWidthProperties(scopeElement: HTMLElement | null, liveWidths: Record<string, number>) {
+    for (const columnKey of Object.keys(liveWidths)) {
+        scopeElement?.style.removeProperty(getColumnWidthVariableName(columnKey));
+    }
+}
+
 /**
  * Positions the line at the handle's edge, from the heading row to the lowest row, and returns its offsets.
  * DOM-only and takes elements as args, so the scroll listener can call it without re-registering.
@@ -144,14 +151,15 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
     // pointer having left and re-entered the handle.
     const activeHandleElementRef = useRef<HTMLElement | null>(null);
 
-    // What was last written to each column's property, so a re-render doesn't rewrite a width that hasn't changed.
-    const writtenWidthsRef = useRef<Record<string, number>>({});
+    // Widths written mid-gesture, ahead of React. At rest it's empty and every column paints the fallback React rendered,
+    // so the custom properties never have to be kept in sync with the resolved widths.
+    const liveWidthsRef = useRef<Record<string, number>>({});
 
     const setScopeElement = (element: HTMLElement | null) => {
         scopeElementRef.current = element;
 
         // The properties live on the element, so a new one starts out with none of them.
-        writtenWidthsRef.current = {};
+        liveWidthsRef.current = {};
     };
 
     const setIndicatorElement = (element: HTMLElement | null) => {
@@ -164,20 +172,17 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
     const writeColumnWidth = (columnKey: string, width: number) => {
         setScopeProperty(getColumnWidthVariableName(columnKey), `${width}px`);
-        writtenWidthsRef.current[columnKey] = width;
+        liveWidthsRef.current[columnKey] = width;
     };
 
-    const clearColumnWidth = (columnKey: string) => {
-        scopeElementRef.current?.style.removeProperty(getColumnWidthVariableName(columnKey));
-        delete writtenWidthsRef.current[columnKey];
+    /** Hands every column back to the fallback React rendered. */
+    const clearLiveWidths = () => {
+        removeColumnWidthProperties(scopeElementRef.current, liveWidthsRef.current);
+        liveWidthsRef.current = {};
     };
 
-    /** Column's currently painted width (ahead of React mid-drag). `undefined` if it has none, never zero, to avoid collapsing it. */
-    const readColumnWidth = (columnKey: string): number | undefined => {
-        const writtenWidth = Number.parseFloat(scopeElementRef.current?.style.getPropertyValue(getColumnWidthVariableName(columnKey)) ?? '');
-
-        return Number.isFinite(writtenWidth) ? writtenWidth : resolvedColumnWidths[columnKey];
-    };
+    /** Column's currently painted width (ahead of React mid-gesture). `undefined` if it has none, never zero, to avoid collapsing it. */
+    const readColumnWidth = (columnKey: string): number | undefined => liveWidthsRef.current[columnKey] ?? resolvedColumnWidths[columnKey];
 
     /** Shows the line at a column edge and remembers the handle so scrolling can move the line along. */
     const revealIndicator = (handleElement: HTMLElement) => {
@@ -240,9 +245,13 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         }
     };
 
-    /** Stores only the dragged column; the resolver re-derives the payers, and storing them would mark them as user-sized. */
+    /**
+     * Stores only the dragged column; the resolver re-derives the payers, and storing them would mark them as user-sized.
+     * The live widths are cleared once React renders the stored one, or right away when nothing is stored, since then no render follows.
+     */
     const commitColumnWidth = (columnKey: string, width: number) => {
-        if (!columnResizingID) {
+        if (!columnResizingID || columnWidthOverrides?.[columnKey] === width) {
+            clearLiveWidths();
             return;
         }
 
@@ -271,7 +280,6 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             return;
         }
 
-        clearColumnWidth(column.columnKey);
         clearTableColumnWidth(columnResizingID, column.columnKey);
     };
 
@@ -294,9 +302,12 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
         const width = readColumnWidth(drag.column.columnKey) ?? drag.startWidth;
 
-        if (width !== drag.startWidth) {
-            commitColumnWidth(drag.column.columnKey, width);
+        if (width === drag.startWidth) {
+            clearLiveWidths();
+            return;
         }
+
+        commitColumnWidth(drag.column.columnKey, width);
     };
 
     const handlePointerDown = (column: ResizableColumn, event: React.PointerEvent<HTMLDivElement>) => {
@@ -456,21 +467,17 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         [],
     );
 
-    // Syncs resolved widths into the properties for unpinned columns, so resize/data changes still apply. No deps since widths are a
-    // new object every render; diffing against the last write avoids DOM churn.
+    // A committed width has now been rendered as the columns' fallbacks, so the live widths step aside before paint. The
+    // payers land where the drag left them because the resolver splits the width the same way.
     useLayoutEffect(() => {
-        if (!columnResizingID) {
+        // A width stored from elsewhere mid-drag mustn't yank the column out from under the pointer; the drag's own commit clears later.
+        if (dragRef.current) {
             return;
         }
 
-        for (const [columnKey, resolvedWidth] of Object.entries(resolvedColumnWidths)) {
-            if (columnWidthOverrides?.[columnKey] !== undefined || writtenWidthsRef.current[columnKey] === resolvedWidth) {
-                continue;
-            }
-
-            writeColumnWidth(columnKey, resolvedWidth);
-        }
-    });
+        removeColumnWidthProperties(scopeElementRef.current, liveWidthsRef.current);
+        liveWidthsRef.current = {};
+    }, [columnWidthOverrides]);
 
     if (!columnResizingID || columns.length === 0) {
         return undefined;
