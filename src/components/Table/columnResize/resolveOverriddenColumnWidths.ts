@@ -60,7 +60,8 @@ function resolveOverriddenColumnWidths({columns, baseColumnWidths, columnWidthOv
     for (const [index, column] of columns.entries()) {
         const overriddenWidth = columnWidthOverrides?.[column.key];
 
-        if (overriddenWidth === undefined) {
+        // A declared width can't be dragged, so a width stored for it is stale (stored before the column stopped being resizable).
+        if (overriddenWidth === undefined || column.hasDeclaredWidth) {
             continue;
         }
 

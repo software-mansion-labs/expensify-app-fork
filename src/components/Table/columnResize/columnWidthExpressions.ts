@@ -20,6 +20,9 @@ const RESIZE_INDICATOR_BOTTOM_VARIABLE = '--table-resize-indicator-bottom';
 /** Custom property the resize indicator reads its opacity from, so hovering an edge never re-renders the table. */
 const RESIZE_INDICATOR_OPACITY_VARIABLE = '--table-resize-indicator-opacity';
 
+/** Custom property the header's edge marks read their opacity from, so hovering the header never re-renders it. */
+const RESIZE_GRIP_OPACITY_VARIABLE = '--table-resize-grip-opacity';
+
 /** Custom property name for a column's width. Invalid CSS name characters in the key are replaced. */
 function getColumnWidthVariableName(columnKey: string): string {
     return `${COLUMN_WIDTH_VARIABLE_PREFIX}${columnKey.replaceAll(/[^\w-]/g, '_')}`;
@@ -63,6 +66,7 @@ function getColumnsMinWidthStyle(minWidth: number | string): ViewStyle {
 }
 
 export {
+    RESIZE_GRIP_OPACITY_VARIABLE,
     RESIZE_INDICATOR_BOTTOM_VARIABLE,
     RESIZE_INDICATOR_LEFT_VARIABLE,
     RESIZE_INDICATOR_OPACITY_VARIABLE,

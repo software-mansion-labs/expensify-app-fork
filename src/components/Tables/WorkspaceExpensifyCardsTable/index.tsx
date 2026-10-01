@@ -301,7 +301,6 @@ export default function WorkspaceExpensifyCardsTable({
             renderItem={renderCardItem}
             compareItems={compareItems}
             isItemInSearch={isItemInSearch}
-            shouldUseDynamicColumns
             initialSortColumn="name"
             narrowLayoutSortColumn="name"
             title={translate('workspace.common.expensifyCard')}

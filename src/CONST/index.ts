@@ -9241,6 +9241,9 @@ const CONST = {
 
             /** Width of the line drawn down the table while a column's edge is hovered or dragged. */
             INDICATOR_WIDTH: 2,
+
+            /** Height of the short mark drawn on each resizable column's edge while the header is hovered, so the edges can be found. */
+            GRIP_HEIGHT: 16,
         },
     },
 

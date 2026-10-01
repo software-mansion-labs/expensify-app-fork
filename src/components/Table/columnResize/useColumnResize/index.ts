@@ -1,4 +1,5 @@
 import {
+    RESIZE_GRIP_OPACITY_VARIABLE,
     RESIZE_INDICATOR_BOTTOM_VARIABLE,
     RESIZE_INDICATOR_LEFT_VARIABLE,
     RESIZE_INDICATOR_OPACITY_VARIABLE,
@@ -31,7 +32,7 @@ const KEYBOARD_STEP_BY_KEY: Record<string, number> = {
 /** Keys that fit a column to its content and release it again, standing in for the pointer's click and double-click. */
 const FIT_TO_CONTENT_KEYS = new Set([' ', 'Enter']);
 
-/** What the indicator's opacity property is set to. Named because the line is shown and hidden from several places. */
+/** What the indicator's and the edge marks' opacity properties are set to. */
 const INDICATOR_OPACITY = {
     VISIBLE: '1',
     HIDDEN: '0',
@@ -193,6 +194,14 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
         activeHandleElementRef.current = null;
         setScopeProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
+    };
+
+    const showGrips = () => {
+        setScopeProperty(RESIZE_GRIP_OPACITY_VARIABLE, INDICATOR_OPACITY.VISIBLE);
+    };
+
+    const hideGrips = () => {
+        setScopeProperty(RESIZE_GRIP_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
     };
 
     /** Paying columns with their painted widths. Unreadable ones are skipped rather than pinned at zero. */
@@ -504,7 +513,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         onBlur: hideIndicator,
     });
 
-    return {setScopeElement, setIndicatorElement, columns, getHandleProps};
+    return {setScopeElement, setIndicatorElement, columns, getHandleProps, showGrips, hideGrips};
 }
 
 export default useColumnResize;

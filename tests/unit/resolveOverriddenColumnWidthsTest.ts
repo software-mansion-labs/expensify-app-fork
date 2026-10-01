@@ -103,6 +103,21 @@ describe('resolveOverriddenColumnWidths', () => {
             expect(columnWidths).toEqual({a: 360, b: 240, icon: 40});
         });
 
+        // Given a width stored for a column that declared its own width, left over from when such columns had an edge
+        // When the stored widths are applied
+        // Then it is ignored and nobody pays for it, since the column can no longer be dragged and so the user would have
+        // no way to put it back
+        it('ignores a stored width on a column that declared its own width', () => {
+            const {columnWidths} = resolveOverriddenColumnWidths({
+                columns: [sharedColumn('a'), fixedColumn('enabled'), sharedColumn('b')],
+                baseColumnWidths: {a: 300, enabled: 80, b: 300},
+                columnWidthOverrides: {enabled: 200},
+                growableColumnKey: undefined,
+            });
+
+            expect(columnWidths).toEqual({a: 300, enabled: 80, b: 300});
+        });
+
         // Given the column that takes the row's leftover width
         // When the stored widths are applied
         // Then it is not charged a share, because it is where room a narrowed column gives up is meant to go — taking

@@ -36,6 +36,12 @@ type ColumnResizeController = {
 
     /** Everything a column's handle renders with: its position within the column's own header cell, and its handlers. */
     getHandleProps: (column: ResizableColumn) => ColumnResizeHandleDOMProps;
+
+    /** Reveals a short mark on every resizable column's edge, for while the pointer is over the header. */
+    showGrips: () => void;
+
+    /** Hides the edge marks again. */
+    hideGrips: () => void;
 };
 
 export type {ColumnResizeController, ColumnResizeHandleDOMProps, UseColumnResizeParams};

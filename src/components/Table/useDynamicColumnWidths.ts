@@ -293,18 +293,17 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     const resizableColumns: ResizableColumn[] = [];
 
     for (const [index, column] of columns.entries()) {
-        // Headless columns (icon, checkbox, arrow) hold fixed content, so only headed ones get an edge, including the last:
-        // widening it scrolls, narrowing it hands room to the growable column.
-        if (!column.label) {
+        // Headless columns (icon, checkbox, arrow) and columns that declared a width (switch, status, count) hold
+        // fixed-size content, so only headed, content-sized ones get an edge, including the last: widening it scrolls,
+        // narrowing it hands room to the growable column.
+        if (!column.label || typeof column.width === 'number') {
             continue;
         }
 
         resizableColumns.push({
             columnKey: column.key,
             columnLabel: column.label,
-            // A column that declared a width has no content measurement, so a click on its edge puts it back to the
-            // width it declared. A column with neither is left without one, and a click leaves it alone.
-            contentWidth: contentWidthByColumnKey.get(column.key) ?? (typeof column.width === 'number' ? column.width : undefined),
+            contentWidth: contentWidthByColumnKey.get(column.key),
             absorberColumnKeys: payingColumnKeysByIndex.at(index) ?? [],
         });
     }

@@ -219,6 +219,7 @@ describe('TableSemanticContainer', () => {
                 rendersBodyWhenEmpty={false}
                 shouldUseDynamicColumns
                 scrollWidth={undefined}
+                columnResize={undefined}
                 onLayout={isWideLayout ? onLayout : undefined}
             >
                 <TrackedFilterBar />

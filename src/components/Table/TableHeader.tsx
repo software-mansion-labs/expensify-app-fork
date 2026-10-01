@@ -85,6 +85,7 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
         shouldEnableSelectionInNarrowPaneModal,
         dynamicGridTemplateColumns,
         rowWidth,
+        columnResize,
         tableListMetadata,
     } = useTableContext<DataType, ColumnKey>();
     // Tables inside a narrow pane modal (RHP) opt into keying the header checkbox off the real screen size, since
@@ -148,6 +149,8 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
                 !!dynamicGridTemplateColumns && !shouldUseNarrowTableLayout && styles.justifyContentStart,
                 style,
             ]}
+            onPointerEnter={columnResize?.showGrips}
+            onPointerLeave={columnResize?.hideGrips}
             {...getRowAccessibilityProps(isTableSemanticsEnabled, 0, true)}
             {...props}
             {...inertProps}
