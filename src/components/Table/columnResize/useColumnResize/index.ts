@@ -7,14 +7,6 @@ import {
     getToggleFitAction,
     hasPointerPassedDragSlop,
 } from '@components/Table/columnResize/columnResizeGestures';
-import {
-    RESIZE_GRIP_OPACITY_VARIABLE,
-    RESIZE_INDICATOR_HEIGHT_VARIABLE,
-    RESIZE_INDICATOR_OPACITY_VARIABLE,
-    RESIZE_INDICATOR_TOP_VARIABLE,
-    TABLE_ROW_SELECTOR,
-    getColumnWidthVariableName,
-} from '@components/Table/columnResize/columnWidthExpressions';
 import type {ResizableColumn} from '@components/Table/columnResize/types';
 
 import useLocalize from '@hooks/useLocalize';
@@ -25,17 +17,14 @@ import CONST from '@src/CONST';
 
 import type React from 'react';
 
-import {useEffect, useLayoutEffect, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 
 import type {ColumnResizeController, ColumnResizeHandleDOMProps, UseColumnResizeParams} from './types';
 
-const {MIN_WIDTH, MAX_WIDTH, HANDLE_HIT_WIDTH} = CONST.TABLES.COLUMN_RESIZE;
+import useLiveColumnWidths from './useLiveColumnWidths';
+import useResizeIndicator from './useResizeIndicator';
 
-/** What the indicator's and the edge marks' opacity properties are set to. */
-const INDICATOR_OPACITY = {
-    VISIBLE: '1',
-    HIDDEN: '0',
-} as const;
+const {MIN_WIDTH, MAX_WIDTH, HANDLE_HIT_WIDTH} = CONST.TABLES.COLUMN_RESIZE;
 
 type Drag = {
     column: ResizableColumn;
@@ -53,105 +42,20 @@ type Drag = {
     hasMovedPointer: boolean;
 };
 
-/** Removes the width properties of the given columns, so they paint the fallback React rendered. */
-function removeColumnWidthProperties(scopeElement: HTMLElement | null, liveWidths: Record<string, number>) {
-    for (const columnKey of Object.keys(liveWidths)) {
-        scopeElement?.style.removeProperty(getColumnWidthVariableName(columnKey));
-    }
-}
-
-/**
- * Shows the handle's line, running from its heading row's top to the lowest row's bottom. Measured once per reveal: the
- * line sits in the handle, so drags and sideways scrolls carry it along, and the scroller clips whatever runs past the rows.
- */
-function drawIndicatorAtHandle(scopeElement: HTMLElement | null, handleElement: HTMLElement) {
-    const handleRect = handleElement.getBoundingClientRect();
-    const headerRowTop = (handleElement.closest(TABLE_ROW_SELECTOR) ?? handleElement).getBoundingClientRect().top;
-    let lowestRowBottom = handleRect.bottom;
-
-    for (const row of scopeElement?.querySelectorAll(TABLE_ROW_SELECTOR) ?? []) {
-        // The hidden twins a virtualized list keeps around aren't where a row is drawn. Only hiding within the table
-        // counts: a modal hiding the whole screen from assistive tech hides every row and leaves them all drawn.
-        const hiddenAncestor = row.closest('[aria-hidden="true"]');
-
-        if (hiddenAncestor && scopeElement?.contains(hiddenAncestor)) {
-            continue;
-        }
-
-        lowestRowBottom = Math.max(lowestRowBottom, row.getBoundingClientRect().bottom);
-    }
-
-    handleElement.style.setProperty(RESIZE_INDICATOR_TOP_VARIABLE, `${headerRowTop - handleRect.top}px`);
-    handleElement.style.setProperty(RESIZE_INDICATOR_HEIGHT_VARIABLE, `${lowestRowBottom - headerRowTop}px`);
-    handleElement.style.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.VISIBLE);
-}
-
 /**
  * Web column resizing: drag sets width (paid by later columns), click fits content, double-click resets. Widths live in
  * CSS custom properties so React doesn't render mid-drag; only the dragged column's final width is stored in Onyx.
  */
 function useColumnResize({columnResizingID, columns, resolvedColumnWidths, columnWidthOverrides, columnGap}: UseColumnResizeParams): ColumnResizeController | undefined {
     const {translate} = useLocalize();
-    const scopeElementRef = useRef<HTMLElement | null>(null);
     const dragRef = useRef<Drag | null>(null);
+    const {scopeElementRef, setScopeElement, writeColumnWidth, readColumnWidth, clearLiveWidths} = useLiveColumnWidths({resolvedColumnWidths, columnWidthOverrides, dragRef});
+    const {revealIndicator, hideIndicator, showGrips, hideGrips} = useResizeIndicator(scopeElementRef, dragRef);
 
-    // The handle whose line is showing, so a drag ending away from it can still hide it.
-    const activeHandleElementRef = useRef<HTMLElement | null>(null);
-
-    // Widths written mid-gesture, ahead of React. At rest it's empty and every column paints the fallback React rendered,
-    // so the custom properties never have to be kept in sync with the resolved widths.
-    const liveWidthsRef = useRef<Record<string, number>>({});
-
-    const setScopeElement = (element: HTMLElement | null) => {
-        scopeElementRef.current = element;
-
-        // The properties live on the element, so a new one starts out with none of them.
-        liveWidthsRef.current = {};
-    };
-
-    const setScopeProperty = (name: string, value: string) => {
-        scopeElementRef.current?.style.setProperty(name, value);
-    };
-
-    const writeColumnWidth = (columnKey: string, width: number) => {
-        setScopeProperty(getColumnWidthVariableName(columnKey), `${width}px`);
-        liveWidthsRef.current[columnKey] = width;
-    };
-
-    /** Hands every column back to the fallback React rendered. */
-    const clearLiveWidths = () => {
-        removeColumnWidthProperties(scopeElementRef.current, liveWidthsRef.current);
-        liveWidthsRef.current = {};
-    };
-
-    /** Column's currently painted width (ahead of React mid-gesture). `undefined` if it has none, never zero, to avoid collapsing it. */
-    const readColumnWidth = (columnKey: string): number | undefined => liveWidthsRef.current[columnKey] ?? resolvedColumnWidths[columnKey];
-
-    const revealIndicator = (handleElement: HTMLElement) => {
-        if (activeHandleElementRef.current !== handleElement) {
-            activeHandleElementRef.current?.style.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
-        }
-
-        activeHandleElementRef.current = handleElement;
-        drawIndicatorAtHandle(scopeElementRef.current, handleElement);
-    };
-
-    const hideIndicator = () => {
-        // A drag that has left the handle behind still shows where the edge is going.
-        if (dragRef.current) {
-            return;
-        }
-
-        activeHandleElementRef.current?.style.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
-        activeHandleElementRef.current = null;
-    };
-
-    const showGrips = () => {
-        setScopeProperty(RESIZE_GRIP_OPACITY_VARIABLE, INDICATOR_OPACITY.VISIBLE);
-    };
-
-    const hideGrips = () => {
-        setScopeProperty(RESIZE_GRIP_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
+    /** Forgets the drag and restores the document cursor. Doesn't commit anything. */
+    const resetDrag = () => {
+        dragRef.current = null;
+        document.body.style.cursor = '';
     };
 
     /** Paying columns with their painted widths. Unreadable ones are skipped rather than pinned at zero. */
@@ -230,8 +134,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
     /** Ends the drag and stores its width. Shared by pointerup, lost capture and cancel. */
     const endDrag = (drag: Drag) => {
-        dragRef.current = null;
-        document.body.style.cursor = '';
+        resetDrag();
 
         const width = readColumnWidth(drag.column.columnKey) ?? drag.startWidth;
 
@@ -307,8 +210,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         if (drag.hasMovedPointer) {
             endDrag(drag);
         } else {
-            dragRef.current = null;
-            document.body.style.cursor = '';
+            resetDrag();
             fitToContent(column);
         }
 
@@ -357,25 +259,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
     };
 
     // Unmounting mid-drag would otherwise leave the resize cursor on the document and a dangling drag.
-    useEffect(
-        () => () => {
-            dragRef.current = null;
-            document.body.style.cursor = '';
-        },
-        [],
-    );
-
-    // A committed width has now been rendered as the columns' fallbacks, so the live widths step aside before paint. The
-    // payers land where the drag left them because the resolver splits the width the same way.
-    useLayoutEffect(() => {
-        // A width stored from elsewhere mid-drag mustn't yank the column out from under the pointer; the drag's own commit clears later.
-        if (dragRef.current) {
-            return;
-        }
-
-        removeColumnWidthProperties(scopeElementRef.current, liveWidthsRef.current);
-        liveWidthsRef.current = {};
-    }, [columnWidthOverrides]);
+    useEffect(() => resetDrag, []);
 
     if (!columnResizingID || columns.length === 0) {
         return undefined;
