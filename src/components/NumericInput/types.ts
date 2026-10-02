@@ -141,11 +141,23 @@ type NumericBigNumberPadProps = {
     testID?: string;
 };
 
+type NumericInputActionsProps = {
+    /** Action buttons, such as `NumericInput.CurrencyButton` and `NumericInput.FlipButton`. */
+    children?: ReactNode;
+
+    /** Additional styles applied to the actions container. */
+    style?: StyleProp<ViewStyle>;
+
+    /** Test identifier applied to the actions container. */
+    testID?: string;
+};
+
 export type {
     NumericBigNumberPadProps,
     NumericErrorProps,
-    NumericInputContainerProps,
     NumericInputFlipButtonProps,
+    NumericInputActionsProps,
+    NumericInputContainerProps,
     NumericInputProps,
     NumericMinusSignProps,
     NumericSymbolButtonProps,

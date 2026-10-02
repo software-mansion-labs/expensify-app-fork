@@ -117,8 +117,9 @@ describe('NumericInput.BigNumberPad', () => {
         fireEvent.press(screen.getByTestId('button_9'));
         await waitForBatchedUpdatesWithAct();
 
-        // Then '9' is inserted at the caret position resulting in '12934'
+        // Then '9' is inserted at the caret position resulting in '12934', with the caret right after it
         expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('12934');
+        expect(screen.getByTestId(INPUT_TEST_ID).props.selection).toEqual({start: 3, end: 3});
         expect(onInputChange).toHaveBeenLastCalledWith('12934');
     });
 
@@ -187,8 +188,9 @@ describe('NumericInput.BigNumberPad', () => {
         fireEvent.press(screen.getByTestId('button_<'));
         await waitForBatchedUpdatesWithAct();
 
-        // Then the selected range is deleted, leaving '14'
+        // Then the selected range is deleted, leaving '14' with the caret where the range started
         expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('14');
+        expect(screen.getByTestId(INPUT_TEST_ID).props.selection).toEqual({start: 1, end: 1});
         expect(onInputChange).toHaveBeenLastCalledWith('14');
     });
 
@@ -267,9 +269,10 @@ describe('NumericInput.BigNumberPad', () => {
         fireEvent.press(screen.getByTestId('button_<'));
         await waitForBatchedUpdatesWithAct();
 
-        // Then no change is reported and the input remains empty
+        // Then no change is reported and the input remains empty with the caret at the start
         expect(onInputChange).not.toHaveBeenCalled();
         expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('');
+        expect(screen.getByTestId(INPUT_TEST_ID).props.selection).toEqual({start: 0, end: 0});
     });
 
     it('rejects input that violates validation', async () => {
@@ -325,6 +328,89 @@ describe('NumericInput.BigNumberPad', () => {
         // Then the last valid character '4' is deleted immediately, leaving '123'
         expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('123');
         expect(onInputChange).toHaveBeenLastCalledWith('123');
+    });
+
+    it('adds the leading zero inside the magnitude when the decimal separator is pressed on an empty negative input', async () => {
+        // Given a negative input whose magnitude is still empty ('-')
+        renderInputWithPad({value: '-', allowNegative: true});
+        await waitForBatchedUpdatesWithAct();
+
+        // When the decimal separator '.' is pressed on the number pad
+        fireEvent.press(screen.getByTestId('button_.'));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the zero goes after the sign, because the pad edits only the magnitude
+        expect(onInputChange).toHaveBeenLastCalledWith('-0.');
+        expect(screen.getByText('-')).toBeOnTheScreen();
+        expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('0.');
+    });
+
+    it('rejects a digit that would exceed maxLength', async () => {
+        // Given an input limited to two integer digits and displaying '12'
+        renderInputWithPad({value: '12', maxLength: 2});
+        await waitForBatchedUpdatesWithAct();
+
+        // When the digit '3' is pressed on the number pad
+        fireEvent.press(screen.getByTestId('button_3'));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the press is rejected like typing, and the value remains '12'
+        expect(onInputChange).not.toHaveBeenCalled();
+        expect(screen.getByTestId(INPUT_TEST_ID)).toHaveDisplayValue('12');
+    });
+
+    it('keeps the caret position for a forward-delete keypress followed by a pad deletion', async () => {
+        // Given an input with value '1234' and the caret positioned after '12'
+        renderInputWithPad({value: '1234'});
+        await waitForBatchedUpdatesWithAct();
+
+        const input = screen.getByTestId(INPUT_TEST_ID);
+        fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 2, end: 2}}});
+        await waitForBatchedUpdatesWithAct();
+
+        // When the character after the caret is forward-deleted with the keyboard
+        fireEvent(input, 'keyPress', {nativeEvent: {key: 'Delete', ctrlKey: false}});
+        fireEvent.changeText(input, '124');
+        await waitForBatchedUpdatesWithAct();
+
+        // And the backspace button is pressed on the number pad
+        fireEvent.press(screen.getByTestId('button_<'));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the forward delete left the caret in place, so the pad deletes the character before it, leaving '14'
+        expect(input).toHaveDisplayValue('14');
+        expect(input.props.selection).toEqual({start: 1, end: 1});
+        expect(onInputChange).toHaveBeenLastCalledWith('14');
+    });
+
+    it('ignores selection changes while backspace is long pressed', async () => {
+        // Given an input with value '1234' and the caret positioned after '12'
+        renderInputWithPad({value: '1234'});
+        await waitForBatchedUpdatesWithAct();
+
+        const input = screen.getByTestId(INPUT_TEST_ID);
+        fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 2, end: 2}}});
+        await waitForBatchedUpdatesWithAct();
+        expect(input.props.selection).toEqual({start: 2, end: 2});
+
+        // Fake timers keep the repeating deletion from firing, so only the selection guard is exercised
+        jest.useFakeTimers({doNotFake: ['nextTick']});
+        try {
+            const backspaceButton = screen.getByTestId('button_<');
+
+            // When the backspace button is long pressed and native reports a selection change
+            fireEvent(backspaceButton, 'longPress');
+            fireEvent(input, 'selectionChange', {nativeEvent: {selection: {start: 0, end: 0}}});
+
+            // Then the selection is unchanged, because the held key keeps deleting from the caret it started at
+            expect(input.props.selection).toEqual({start: 2, end: 2});
+            expect(input).toHaveDisplayValue('1234');
+
+            fireEvent(backspaceButton, 'pressOut');
+        } finally {
+            jest.runOnlyPendingTimers();
+            jest.useRealTimers();
+        }
     });
 
     it('focuses the input when a keypad number is pressed', async () => {

@@ -17,7 +17,7 @@ const NUM_PAD_VIEW_ID = 'numPadView';
 
 /**
  * Renders the touch number pad wired to NumericInput actions, state, and selection.
- * It carries no page spacing or container id: the screen layout composing it owns both.
+ * It carries no page spacing or container id: the screen layout composing it (e.g. `FullScreenAmountLayout.Pad`) owns both.
  * It always fills the width of its container, because the layout's `pageWrapper` centers its children and would otherwise
  * shrink the pad to its content, collapsing the three key columns onto each other.
  */
