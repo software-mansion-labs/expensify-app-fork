@@ -61,8 +61,7 @@ function useLiveColumnWidths({resolvedColumnWidths, columnWidthOverrides, dragRe
         liveWidthsRef.current = {};
     };
 
-    // A committed width has now been rendered as the columns' fallbacks, so the live widths step aside before paint. The
-    // payers land where the drag left them because the resolver splits the width the same way.
+    // A committed width has now been rendered as the columns' fallbacks, so the live widths step aside before paint.
     useLayoutEffect(() => {
         // The drag's own commit clears later.
         if (dragRef.current) {

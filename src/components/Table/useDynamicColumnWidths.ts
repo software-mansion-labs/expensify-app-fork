@@ -166,7 +166,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
 
     const dynamicColumns: Array<TableColumn<ColumnKey, DataType>> = [];
 
-    // Fixed-width columns' base widths. Stored widths and their payers are applied further down.
+    // Fixed-width columns' base widths. Stored widths are applied further down.
     const fixedColumnWidths = new Map<ColumnKey, number>();
     let fixedColumnsWidth = 0;
 
@@ -286,7 +286,6 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
         })),
         baseColumnWidths: resolvedColumnWidths,
         columnWidthOverrides,
-        growableColumnKey,
     });
 
     // The row's width is summed from the widths rather than from the tracks, so what the growable track grows into is
@@ -297,7 +296,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     // column of the row like any other.
     const rowWidthValues = hasSelectionColumn ? [`${selectionColumnWidth}px`, ...columnWidthValues] : columnWidthValues;
 
-    // Scroll at the live column sum, so a drag that exhausts the payers starts scrolling mid-drag; otherwise the sum is unchanged.
+    // Scroll at the live column sum, so a drag that widens the row past the table starts scrolling mid-drag.
     return {
         gridTemplateColumns,
         scrollWidth: getColumnsWidthExpression(rowWidthValues, totalGapWidth + rowChromeWidth, '100%'),

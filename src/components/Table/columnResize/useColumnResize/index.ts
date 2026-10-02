@@ -1,12 +1,4 @@
-import type {AbsorberWidths} from '@components/Table/columnResize/columnResizeGestures';
-import {
-    clampColumnWidth,
-    getDraggedColumnWidth,
-    getKeyboardResizeAction,
-    getResizedColumnWidths,
-    getToggleFitAction,
-    hasPointerPassedDragSlop,
-} from '@components/Table/columnResize/columnResizeGestures';
+import {clampColumnWidth, getDraggedColumnWidth, getKeyboardResizeAction, getToggleFitAction, hasPointerPassedDragSlop} from '@components/Table/columnResize/columnResizeGestures';
 import type {ResizableColumn} from '@components/Table/columnResize/types';
 
 import useLocalize from '@hooks/useLocalize';
@@ -35,15 +27,12 @@ type Drag = {
     /** The column's width when the drag started, which the pointer's travel is added to. */
     startWidth: number;
 
-    /** Paying columns' widths at drag start, read once so shares don't compound across moves. */
-    absorberStartWidths: AbsorberWidths;
-
     /** Whether the pointer has travelled far enough to mean a drag rather than a click. */
     hasMovedPointer: boolean;
 };
 
 /**
- * Web column resizing: drag sets width (paid by later columns), click fits content, double-click resets. Widths live in
+ * Web column resizing: drag sets width (other columns stay put, overflow scrolls), click fits content, double-click resets. Widths live in
  * CSS custom properties so React doesn't render mid-drag; only the dragged column's final width is stored in Onyx.
  */
 function useColumnResize({columnResizingID, columns, resolvedColumnWidths, columnWidthOverrides, columnGap}: UseColumnResizeParams): ColumnResizeController | undefined {
@@ -61,34 +50,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         document.body.style.cursor = '';
     };
 
-    /** Paying columns with their painted widths. Unreadable ones are skipped rather than pinned at zero. */
-    const readAbsorberWidths = (column: ResizableColumn): AbsorberWidths => {
-        const columnKeys: string[] = [];
-        const widths: number[] = [];
-
-        for (const absorberColumnKey of column.absorberColumnKeys) {
-            const width = readColumnWidth(absorberColumnKey);
-
-            if (width === undefined) {
-                continue;
-            }
-
-            columnKeys.push(absorberColumnKey);
-            widths.push(width);
-        }
-
-        return {columnKeys, widths};
-    };
-
-    /** Sets a column's width, taking the difference out of later columns. Used by drag, click and arrow keys. */
-    const applyColumnWidths = (column: ResizableColumn, width: number, startWidth: number, absorberStartWidths: AbsorberWidths) => {
-        for (const [columnKey, resizedWidth] of Object.entries(getResizedColumnWidths(column.columnKey, width, startWidth, absorberStartWidths))) {
-            writeColumnWidth(columnKey, resizedWidth);
-        }
-    };
-
     /**
-     * Stores only the dragged column; the resolver re-derives the payers, and storing them would mark them as user-sized.
      * The live widths are cleared once React renders the stored one, or right away when nothing is stored, since then no render follows.
      */
     const commitColumnWidth = (columnKey: string, width: number) => {
@@ -112,11 +74,11 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             return;
         }
 
-        applyColumnWidths(column, contentWidth, readColumnWidth(column.columnKey) ?? contentWidth, readAbsorberWidths(column));
+        writeColumnWidth(column.columnKey, contentWidth);
         commitColumnWidth(column.columnKey, contentWidth);
     };
 
-    /** Resets a column to its resolved width (double-click); the resolver gives the payers back their width next render. */
+    /** Resets a column to its resolved width (double-click). */
     const releaseToBaseWidth = (column: ResizableColumn) => {
         if (!columnResizingID || columnWidthOverrides?.[column.columnKey] === undefined) {
             return;
@@ -169,7 +131,6 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             column,
             startClientX: event.clientX,
             startWidth,
-            absorberStartWidths: readAbsorberWidths(column),
             hasMovedPointer: false,
         };
         document.body.style.cursor = 'col-resize';
@@ -197,7 +158,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         const width = getDraggedColumnWidth(drag.startWidth, drag.startClientX, event.clientX);
 
         // The only writes during a drag. The line rides the handle, so it follows the clamped width, not the pointer.
-        applyColumnWidths(drag.column, width, drag.startWidth, drag.absorberStartWidths);
+        writeColumnWidth(drag.column.columnKey, width);
     };
 
     const handlePointerUp = (column: ResizableColumn, event: React.PointerEvent<HTMLDivElement>) => {
@@ -264,7 +225,7 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         const startWidth = readColumnWidth(column.columnKey) ?? 0;
         const width = clampColumnWidth(startWidth + action.step);
 
-        applyColumnWidths(column, width, startWidth, readAbsorberWidths(column));
+        writeColumnWidth(column.columnKey, width);
         commitColumnWidth(column.columnKey, width);
     };
 

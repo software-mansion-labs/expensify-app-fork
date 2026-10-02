@@ -32,7 +32,6 @@ const nameColumn: ResizableColumn = {
     columnKey: 'name',
     columnLabel: 'Name',
     contentWidth: 150,
-    absorberColumnKeys: ['email', 'role'],
 };
 
 const resolvedColumnWidths = {name: 200, email: 200, role: 200};
@@ -111,7 +110,7 @@ describe('useColumnResize', () => {
     });
 
     it('paints a drag onto the scope and stores only the dragged column on release', () => {
-        // Given a 200px column with two 200px columns after it paying
+        // Given a 200px column with two 200px columns after it
         const {handleElement, getHandleProps, readWidth} = renderColumnResize();
 
         // When its edge is dragged 60px right
@@ -120,10 +119,11 @@ describe('useColumnResize', () => {
             getHandleProps().onPointerMove?.(createPointerEvent(handleElement, {clientX: 160}));
         });
 
-        // Then the widths are painted straight onto the scope, so the drag repaints without a React render
+        // Then only the dragged column's width is painted straight onto the scope, so the drag repaints without a React
+        // render and the other columns keep their widths instead of shrinking to make room
         expect(readWidth('name')).toBe('260px');
-        expect(readWidth('email')).toBe('170px');
-        expect(readWidth('role')).toBe('170px');
+        expect(readWidth('email')).toBe('');
+        expect(readWidth('role')).toBe('');
         expect(document.body.style.cursor).toBe('col-resize');
 
         // When the pointer is released
@@ -131,7 +131,7 @@ describe('useColumnResize', () => {
             getHandleProps().onPointerUp?.(createPointerEvent(handleElement, {clientX: 160}));
         });
 
-        // Then only the dragged column is stored, once, since storing the payers would mark them as user-sized
+        // Then only the dragged column is stored, once
         expect(setTableColumnWidth).toHaveBeenCalledTimes(1);
         expect(setTableColumnWidth).toHaveBeenCalledWith(COLUMN_RESIZING_ID, 'name', 260);
         expect(document.body.style.cursor).toBe('');

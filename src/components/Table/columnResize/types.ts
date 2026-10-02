@@ -15,9 +15,6 @@ type ResizableColumn = {
 
     /** Content width a click on the edge fits to. `undefined` when unmeasurable, making the click a no-op. */
     contentWidth?: number;
-
-    /** Keys of later columns that pay for this one, in render order. Empty means resizing it overflows the table and scrolls. */
-    absorberColumnKeys: string[];
 };
 
 type ColumnResizeHandleProps = {
