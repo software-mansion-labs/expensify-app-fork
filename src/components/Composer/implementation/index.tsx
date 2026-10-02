@@ -88,6 +88,7 @@ function Composer({
     const [prevScroll, setPrevScroll] = useState<number | undefined>();
     const [prevHeight, setPrevHeight] = useState<number | undefined>();
     const isReportFlatListScrolling = useRef(false);
+    const handledIsComposerFullSizeRef = useRef<boolean | undefined>(undefined);
 
     useEffect(() => {
         if (!!selection && selectionProp.start === selection.start && selectionProp.end === selection.end) {
@@ -274,6 +275,10 @@ function Composer({
     }, []);
 
     useEffect(() => {
+        if (handledIsComposerFullSizeRef.current === isComposerFullSize) {
+            return;
+        }
+        handledIsComposerFullSizeRef.current = isComposerFullSize;
         if (!textInputRef.current || prevScroll === undefined || prevHeight === undefined) {
             return;
         }
