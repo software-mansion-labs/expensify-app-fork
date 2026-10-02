@@ -2,8 +2,11 @@ import type {NumericFlipButtonProps as BaseNumericFlipButtonProps} from '@compon
 import type {NumericEditingKeyPressEvent, NumericEditingRef} from '@components/NumericEditingController/types';
 import type {BaseTextInputProps, BaseTextInputRef} from '@components/TextInput/BaseTextInput/types';
 
+import type CONST from '@src/CONST';
+
 import type {ForwardedRef, ReactNode} from 'react';
 import type {StyleProp, TextStyle, ViewStyle} from 'react-native';
+import type {ValueOf} from 'type-fest';
 
 type NumericInputProps = {
     /** Canonical value shared by composed primitives. Only an empty value resets editing state. */
@@ -136,12 +139,72 @@ type NumericBigNumberPadProps = {
     testID?: string;
 };
 
+type NumericInputActionsProps = {
+    /** Action buttons, such as `NumericInput.CurrencyButton` and `NumericInput.FlipButton`. */
+    children?: ReactNode;
+
+    /** Additional styles applied to the actions container. */
+    style?: StyleProp<ViewStyle>;
+
+    /** Whether to hide the container on non-touch devices. */
+    hideOnNonTouch?: boolean;
+
+    /** Test identifier applied to the actions container. */
+    testID?: string;
+};
+
+type NumericInputFooterProps = {
+    /** Content rendered inside the footer container, typically a submit Button. */
+    children: ReactNode;
+
+    /** Additional styles applied to the footer container. */
+    style?: StyleProp<ViewStyle>;
+};
+
+type NumericInputResponsiveLayoutProps = {
+    /** Main content, typically `NumericInput.Container`, `NumericInput.Error`, and any contextual text. */
+    children?: ReactNode;
+
+    /** Action controls, such as `NumericInput.Actions`. In landscape, placed in the left column under the amount. In portrait, placed below the amount. */
+    actions?: ReactNode;
+
+    /** Touch number pad, such as `NumericInput.BigNumberPad`. In landscape, placed in the right column. In portrait, placed below actions/content. */
+    pad?: ReactNode;
+
+    /** Footer or submit button rendered at the bottom of the screen. */
+    footer?: ReactNode;
+
+    /** Optional error node rendered under actions in landscape, and under actions in portrait (if not already inside container). */
+    error?: ReactNode;
+
+    /** Additional styles applied to the scroll view content container. */
+    scrollViewStyle?: StyleProp<ViewStyle>;
+
+    /** Additional styles applied to the outer container / scroll view. */
+    style?: StyleProp<ViewStyle>;
+
+    /** Additional styles applied to the footer wrapper. */
+    footerStyle?: StyleProp<ViewStyle>;
+
+    /** Test identifier applied to the root scroll view. */
+    testID?: string;
+
+    /** Whether to disable ScrollView and render a View container instead. */
+    disableScrollView?: boolean;
+
+    /** Whether to refocus the input when clicking on the ScrollView empty space. */
+    shouldRefocusOnScrollViewClick?: boolean;
+};
+
 export type {
     NumericBigNumberPadProps,
     NumericErrorProps,
-    NumericInputContainerProps,
     NumericInputFlipButtonProps,
+    NumericInputActionsProps,
+    NumericInputContainerProps,
+    NumericInputFooterProps,
     NumericInputProps,
+    NumericInputResponsiveLayoutProps,
     NumericMinusSignProps,
     NumericSymbolProps,
     NumericTextInputProps,
