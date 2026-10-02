@@ -50,18 +50,23 @@ function useFreeTrial(): FreeTrialState {
 
     const [discountInfo, setDiscountInfo] = useState<DiscountInfo | null>(() => (showDiscount ? getEarlyDiscountInfo(firstDayFreeTrial) : null));
 
+    if (!showDiscount && discountInfo) {
+        setDiscountInfo(null);
+    }
+
     useEffect(() => {
         if (!showDiscount) {
             return;
         }
 
-        const intervalID = setInterval(() => {
-            setDiscountInfo(getEarlyDiscountInfo(firstDayFreeTrial));
-        }, CONST.MILLISECONDS_PER_SECOND);
+        const refreshDiscountInfo = () => setDiscountInfo(getEarlyDiscountInfo(firstDayFreeTrial));
+        // The state survives a hide, so refresh right away instead of showing the pre-hide countdown until the next tick.
+        const timeoutID = setTimeout(refreshDiscountInfo, 0);
+        const intervalID = setInterval(refreshDiscountInfo, CONST.MILLISECONDS_PER_SECOND);
 
         return () => {
+            clearTimeout(timeoutID);
             clearInterval(intervalID);
-            setDiscountInfo(null);
         };
     }, [firstDayFreeTrial, showDiscount]);
 
