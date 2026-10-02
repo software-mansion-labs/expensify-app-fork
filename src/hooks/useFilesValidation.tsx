@@ -14,7 +14,7 @@ import CONST from '@src/CONST';
 import type {FileObject} from '@src/types/utils/Attachment';
 
 import {Str} from 'expensify-common';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useEffectEvent, useRef, useState} from 'react';
 
 import useConfirmModal from './useConfirmModal';
 import useLocalize from './useLocalize';
@@ -43,9 +43,9 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     const {translate} = useLocalize();
     const {showConfirmModal} = useConfirmModal();
 
-    const [isValidatingFiles, setIsValidatingFiles] = useState(false);
-
     const [pdfFilesToRender, setPdfFilesToRender] = useState<FileObject[]>([]);
+    // Generation of the run that mounted the current thumbnails, so a thumbnail that settles after its run was dropped is ignored.
+    const [pdfRunGeneration, setPdfRunGeneration] = useState(0);
     // Index of the PDF currently being validated — thumbnails are rendered one at a time (see
     // PDFValidationComponent below), and this advances to the next PDF when the current one settles.
     const [validatedPDFCount, setValidatedPDFCount] = useState(0);
@@ -64,7 +64,11 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
         isValidatingReceipts: false,
         isValidatingMultipleFiles: false,
     });
-    const isMountedRef = useRef(true);
+    const isValidatingFilesRef = useRef(false);
+    // False while the host is hidden or unmounted, so a late picker callback cannot start a run there.
+    const isActiveRef = useRef(true);
+    // Bumped whenever a run ends or is dropped, so a run that is still awaiting stops at its next step.
+    const validationGenerationRef = useRef(0);
 
     const updateFileOrderMapping = (oldFile: FileObject | undefined, newFile: FileObject) => {
         const originalIndex = originalFileOrder.current.get(oldFile?.uri ?? '');
@@ -85,19 +89,11 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
         });
     };
 
-    useEffect(() => {
-        return () => {
-            isMountedRef.current = false;
-            if (!loaderTimeoutRef.current) {
-                return;
-            }
-            clearTimeout(loaderTimeoutRef.current);
-            loaderTimeoutRef.current = undefined;
-        };
-    }, []);
+    const isValidationStale = (generation: number) => validationGenerationRef.current !== generation;
 
     const reset = () => {
-        setIsValidatingFiles(false);
+        isValidatingFilesRef.current = false;
+        validationGenerationRef.current += 1;
         setPdfFilesToRender([]);
         setValidatedPDFCount(0);
         setIsLoaderVisible(false);
@@ -113,6 +109,24 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
             isValidatingMultipleFiles: false,
         };
     };
+
+    const dropValidationInFlight = useEffectEvent(() => {
+        if (!isValidatingFilesRef.current) {
+            return;
+        }
+        reset();
+    });
+
+    // A hide or an unmount drops the run in flight, so the hook is idle and the loader is hidden on reveal.
+    useEffect(() => {
+        isActiveRef.current = true;
+        return () => {
+            isActiveRef.current = false;
+            clearTimeout(loaderTimeoutRef.current);
+            loaderTimeoutRef.current = undefined;
+            dropValidationInFlight();
+        };
+    }, []);
 
     const runPendingAfterHide = () => {
         const action = pendingAfterHide.current;
@@ -140,6 +154,7 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     };
 
     const showErrorModal = async (error: FileValidationError, currentIndex: number, allErrors: FileValidationError[]) => {
+        const generation = validationGenerationRef.current;
         const fileValidationErrorText = getFileValidationErrorText(translate, error, {
             isValidatingReceipt: currentValidationState.current.isValidatingReceipts,
         });
@@ -152,7 +167,7 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
             shouldShowCancelButton: currentValidationState.current.isValidatingMultipleFiles,
         });
 
-        if (!isMountedRef.current) {
+        if (isValidationStale(generation)) {
             return;
         }
 
@@ -206,7 +221,7 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     };
 
     const checkIfAllValidatedAndProceed = () => {
-        if (!isMountedRef.current) {
+        if (!isValidatingFilesRef.current) {
             return;
         }
 
@@ -240,6 +255,7 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
             return;
         }
 
+        const generation = validationGenerationRef.current;
         let loaderStartTime: number | undefined;
         const showLoader = () => {
             if (loaderStartTime === undefined) {
@@ -267,6 +283,9 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
         for (const [index, file] of files.entries()) {
             // eslint-disable-next-line no-await-in-loop
             const result = await validateAttachmentFile(file, items.at(index), validationState.isValidatingReceipts);
+            if (isValidationStale(generation)) {
+                return;
+            }
 
             if (result.isValid) {
                 if (Str.isPDF(result.file.name ?? '')) {
@@ -307,6 +326,11 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
                 await new Promise<void>((resolve) => {
                     convertHeicImage(file, {
                         onSuccess: (convertedFile) => {
+                            if (isValidationStale(generation)) {
+                                resolve();
+                                return;
+                            }
+
                             if (validationState.isValidatingReceipts && convertedFile.size && convertedFile.size > CONST.API_ATTACHMENT_VALIDATIONS.RECEIPT_MAX_SIZE) {
                                 convertedFilesToResize.push(convertedFile);
                                 resolve();
@@ -327,6 +351,11 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
                             resolve();
                         },
                         onError: () => {
+                            if (isValidationStale(generation)) {
+                                resolve();
+                                return;
+                            }
+
                             Log.warn('HEIC conversion failed, blocking file', {fileName: file.name});
                             collectedErrors.current.push({
                                 error: CONST.FILE_VALIDATION_ERRORS.HEIC_CONVERSION_FAILED,
@@ -336,6 +365,9 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
                         },
                     });
                 });
+                if (isValidationStale(generation)) {
+                    return;
+                }
             }
 
             filesToResize.push(...convertedFilesToResize);
@@ -346,6 +378,9 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
             showLoader();
 
             const toResizeResults = await Promise.allSettled(filesToResize.map((file) => resizeImageIfNeeded(file)));
+            if (isValidationStale(generation)) {
+                return;
+            }
 
             for (const [index, result] of toResizeResults.entries()) {
                 if (result.status === 'fulfilled') {
@@ -370,13 +405,15 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
         }
 
         const handleNext = () => {
-            if (!isMountedRef.current) {
+            if (isValidationStale(generation)) {
                 return;
             }
 
             if (pdfsToLoad.length) {
                 validFiles.current = validNonPdfFiles;
+                validatedPDFs.current = [];
                 setValidatedPDFCount(0);
+                setPdfRunGeneration(generation);
                 setPdfFilesToRender(pdfsToLoad);
                 return;
             }
@@ -426,12 +463,16 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
     };
 
     const validateFiles = (files: FileObject[], items?: DataTransferItem[], validationOptions?: ValidationOptions) => {
-        if (isValidatingFiles) {
+        if (!isActiveRef.current) {
+            return;
+        }
+
+        if (isValidatingFilesRef.current) {
             Log.warn('Files are already being validated. Please wait for the current validation to complete before calling `validateFiles` again.');
             return;
         }
 
-        setIsValidatingFiles(true);
+        isValidatingFilesRef.current = true;
 
         const validationState: ValidationState = {
             isValidatingReceipts: validationOptions?.isValidatingReceipts ?? DEFAULT_IS_VALIDATING_RECEIPTS,
@@ -466,12 +507,18 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
             style={styles.invisiblePDF}
             previewSourceURL={pdfFileToValidate.uri ?? ''}
             onLoadSuccess={() => {
+                if (isValidationStale(pdfRunGeneration)) {
+                    return;
+                }
                 validatedPDFs.current.push(pdfFileToValidate);
                 validFiles.current.push(pdfFileToValidate);
                 setValidatedPDFCount((count) => count + 1);
                 checkIfAllValidatedAndProceed();
             }}
             onPassword={() => {
+                if (isValidationStale(pdfRunGeneration)) {
+                    return;
+                }
                 validatedPDFs.current.push(pdfFileToValidate);
                 if (currentValidationState.current.isValidatingReceipts === true) {
                     collectedErrors.current.push({error: CONST.FILE_VALIDATION_ERRORS.PROTECTED_FILE});
@@ -482,6 +529,9 @@ function useFilesValidation(onFilesValidated: (files: FileObject[], dataTransfer
                 checkIfAllValidatedAndProceed();
             }}
             onLoadError={() => {
+                if (isValidationStale(pdfRunGeneration)) {
+                    return;
+                }
                 validatedPDFs.current.push(pdfFileToValidate);
                 collectedErrors.current.push({error: CONST.FILE_VALIDATION_ERRORS.FILE_CORRUPTED});
                 setValidatedPDFCount((count) => count + 1);

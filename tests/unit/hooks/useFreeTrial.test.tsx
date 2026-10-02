@@ -1,4 +1,4 @@
-import {renderHook} from '@testing-library/react-native';
+import {act, render, renderHook} from '@testing-library/react-native';
 
 import useHasTeam2025Pricing from '@hooks/useHasTeam2025Pricing';
 import useSubscriptionPlan from '@hooks/useSubscriptionPlan';
@@ -7,10 +7,12 @@ import {getOwnedPaidPolicies} from '@libs/PolicyUtils';
 import {calculateRemainingFreeTrialDays, doesUserHavePaymentCardAdded, getEarlyDiscountInfo, isUserOnFreeTrial, shouldShowDiscountBanner} from '@libs/SubscriptionUtils';
 
 import useFreeTrial from '@pages/home/FreeTrialSection/useFreeTrial';
+import type {FreeTrialState} from '@pages/home/FreeTrialSection/useFreeTrial';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
+import {Activity} from 'react';
 import Onyx from 'react-native-onyx';
 
 import createMock from '../../utils/createMock';
@@ -46,6 +48,11 @@ const mockedGetEarlyDiscountInfo = jest.mocked(getEarlyDiscountInfo);
 const mockedIsUserOnFreeTrial = jest.mocked(isUserOnFreeTrial);
 const mockedDoesUserHavePaymentCardAdded = jest.mocked(doesUserHavePaymentCardAdded);
 const mockedCalculateRemainingFreeTrialDays = jest.mocked(calculateRemainingFreeTrialDays);
+
+function FreeTrialProbe({onRender}: {onRender: (state: FreeTrialState) => void}) {
+    onRender(useFreeTrial());
+    return null;
+}
 
 describe('useFreeTrial', () => {
     beforeAll(() => {
@@ -287,6 +294,112 @@ describe('useFreeTrial', () => {
             const {result} = renderHook(() => useFreeTrial());
 
             expect(result.current.discountType).toBeNull();
+        });
+    });
+
+    describe('discount countdown freshness', () => {
+        let latestState: FreeTrialState | undefined;
+        const recordState = (state: FreeTrialState) => {
+            latestState = state;
+        };
+
+        beforeEach(() => {
+            jest.useFakeTimers();
+            latestState = undefined;
+            mockedIsUserOnFreeTrial.mockReturnValue(true);
+            mockedDoesUserHavePaymentCardAdded.mockReturnValue(false);
+            mockedCalculateRemainingFreeTrialDays.mockReturnValue(20);
+            mockedShouldShowDiscountBanner.mockReturnValue(true);
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('should refresh the discount on reveal when the 24 hour mark passed while hidden', () => {
+            // Given a 50% countdown that ticked once while the screen was visible
+            mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 50, days: 0, hours: 1, minutes: 0, seconds: 50});
+            const probe = <FreeTrialProbe onRender={recordState} />;
+            const {rerender} = render(<Activity mode="visible">{probe}</Activity>);
+            act(() => {
+                mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 50, days: 0, hours: 1, minutes: 0, seconds: 49});
+                jest.advanceTimersByTime(CONST.MILLISECONDS_PER_SECOND);
+            });
+            expect(latestState?.discountInfo?.seconds).toBe(49);
+
+            // When the screen stays hidden past the 24 hour mark and is revealed again without re-rendering the hook
+            rerender(<Activity mode="hidden">{probe}</Activity>);
+            act(() => {
+                mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 25, days: 5, hours: 22, minutes: 0, seconds: 10});
+                jest.advanceTimersByTime(2 * 60 * 60 * CONST.MILLISECONDS_PER_SECOND);
+            });
+            // Then the covered screen keeps the pre-hide countdown instead of blanking the banner
+            expect(latestState?.discountInfo?.seconds).toBe(49);
+            rerender(<Activity mode="visible">{probe}</Activity>);
+            act(() => {
+                jest.advanceTimersByTime(0);
+            });
+
+            // Then the immediate refresh shows the 25% offer instead of the pre-hide 50% countdown
+            expect(latestState?.discountType).toBe(25);
+            expect(latestState?.discountInfo).toEqual({discountType: 25, days: 5, hours: 22, minutes: 0, seconds: 10});
+        });
+
+        it('should drop the discount on reveal when the offer ended while hidden', () => {
+            // Given a 25% countdown that ticked once while the screen was visible
+            mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 25, days: 0, hours: 0, minutes: 5, seconds: 0});
+            const probe = <FreeTrialProbe onRender={recordState} />;
+            const {rerender} = render(<Activity mode="visible">{probe}</Activity>);
+            act(() => {
+                mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 25, days: 0, hours: 0, minutes: 4, seconds: 59});
+                jest.advanceTimersByTime(CONST.MILLISECONDS_PER_SECOND);
+            });
+            expect(latestState?.discountType).toBe(25);
+
+            // When the screen stays hidden past the end of the offer and is revealed again without re-rendering the hook
+            rerender(<Activity mode="hidden">{probe}</Activity>);
+            act(() => {
+                mockedGetEarlyDiscountInfo.mockReturnValue(null);
+                mockedShouldShowDiscountBanner.mockReturnValue(false);
+                jest.advanceTimersByTime(60 * 60 * CONST.MILLISECONDS_PER_SECOND);
+            });
+            rerender(<Activity mode="visible">{probe}</Activity>);
+            act(() => {
+                jest.advanceTimersByTime(0);
+            });
+
+            // Then the immediate refresh removes the expired offer instead of showing the pre-hide countdown
+            expect(latestState?.discountType).toBeNull();
+            expect(latestState?.discountInfo).toBeNull();
+        });
+
+        it('should not resurface the last countdown when the discount applies again', () => {
+            // Given a 50% countdown that ticked once
+            mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 50, days: 0, hours: 1, minutes: 0, seconds: 50});
+            const {rerender} = render(<FreeTrialProbe onRender={recordState} />);
+            act(() => {
+                mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 50, days: 0, hours: 1, minutes: 0, seconds: 49});
+                jest.advanceTimersByTime(CONST.MILLISECONDS_PER_SECOND);
+            });
+
+            // When the discount stops applying for a minute
+            mockedShouldShowDiscountBanner.mockReturnValue(false);
+            rerender(<FreeTrialProbe onRender={recordState} />);
+            expect(latestState?.discountInfo).toBeNull();
+            act(() => {
+                mockedGetEarlyDiscountInfo.mockReturnValue({discountType: 25, days: 5, hours: 0, minutes: 0, seconds: 5});
+                jest.advanceTimersByTime(60 * CONST.MILLISECONDS_PER_SECOND);
+            });
+
+            // Then the hook never returns the countdown from a minute ago once the discount applies again
+            mockedShouldShowDiscountBanner.mockReturnValue(true);
+            rerender(<FreeTrialProbe onRender={recordState} />);
+            expect(latestState?.discountInfo).toBeNull();
+            act(() => {
+                jest.advanceTimersByTime(0);
+            });
+            expect(latestState?.discountType).toBe(25);
+            expect(latestState?.discountInfo).toEqual({discountType: 25, days: 5, hours: 0, minutes: 0, seconds: 5});
         });
     });
 });

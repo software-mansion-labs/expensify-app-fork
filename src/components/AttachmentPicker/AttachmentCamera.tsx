@@ -80,6 +80,7 @@ function AttachmentCamera({isVisible, onCapture, onClose, onModalHide}: Attachme
     const [cameraPermissionStatus, setCameraPermissionStatus] = useState<string | null>(null);
     const isCapturing = useRef(false);
     const isActiveRef = useRef(false);
+    const hasAutoRequestedPermissionRef = useRef(false);
     const cameraRef = useRef<Camera>(null);
 
     const device = useCameraDevice(cameraPosition, {
@@ -108,6 +109,7 @@ function AttachmentCamera({isVisible, onCapture, onClose, onModalHide}: Attachme
     // Refresh permissions when modal becomes visible or when returning from app settings
     useEffect(() => {
         if (!isVisible) {
+            hasAutoRequestedPermissionRef.current = false;
             return;
         }
 
@@ -119,7 +121,8 @@ function AttachmentCamera({isVisible, onCapture, onClose, onModalHide}: Attachme
                         return;
                     }
                     setCameraPermissionStatus(status);
-                    if (autoRequest && status === RESULTS.DENIED) {
+                    if (autoRequest && status === RESULTS.DENIED && !hasAutoRequestedPermissionRef.current) {
+                        hasAutoRequestedPermissionRef.current = true;
                         requestCameraPermission(translate, setCameraPermissionStatus);
                     }
                 })
