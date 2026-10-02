@@ -4,7 +4,9 @@ import type {NumericErrorProps} from '@components/NumericInput/types';
 
 import useThemeStyles from '@hooks/useThemeStyles';
 
-/** Renders the root error wherever the composition places this primitive. */
+import React from 'react';
+
+/** Renders the root error, positioned by the composition or preset. */
 function NumericError({style}: NumericErrorProps) {
     const styles = useThemeStyles();
     const {errorText} = useNumericInputState();
@@ -15,9 +17,9 @@ function NumericError({style}: NumericErrorProps) {
 
     return (
         <FormHelpMessage
-            style={[styles.ph5, styles.w100, style]}
             isError
             message={errorText}
+            style={[styles.ph5, styles.w100, style]}
         />
     );
 }

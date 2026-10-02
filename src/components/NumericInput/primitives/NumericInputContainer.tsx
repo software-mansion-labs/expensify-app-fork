@@ -1,21 +1,23 @@
 import {useNumericInputActions} from '@components/NumericInput/context';
 import type {NumericInputContainerProps} from '@components/NumericInput/types';
 
+import useIsInLandscapeMode from '@hooks/useIsInLandscapeMode';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import isHTMLElement from '@libs/isHTMLElement';
 
 import type {MouseEvent} from 'react';
 
-import {useId} from 'react';
+import React, {useId} from 'react';
 import {View} from 'react-native';
 
 /**
  * Renders the centered, full-size amount layout used by the legacy number form.
  * Clicking its empty web area keeps the numeric input focused instead of letting the browser blur it.
  */
-function NumericInputContainer({children, style, testID}: NumericInputContainerProps) {
+function NumericInputContainer({action, children, error, style, testID}: NumericInputContainerProps) {
     const styles = useThemeStyles();
+    const isInLandscapeMode = useIsInLandscapeMode();
     const {clearSelection, focusInput} = useNumericInputActions();
     const numberViewId = useId();
 
@@ -31,15 +33,23 @@ function NumericInputContainer({children, style, testID}: NumericInputContainerP
         focusInput();
     };
 
+    const containerStyle = isInLandscapeMode ? [styles.justifyContentCenter, styles.alignItemsCenter, style] : [styles.flex1, styles.justifyContentCenter, styles.alignItemsCenter, style];
+
+    const innerViewStyle = isInLandscapeMode
+        ? [styles.w100, styles.alignItemsCenter, styles.justifyContentCenter]
+        : [styles.flex1, styles.w100, styles.alignItemsCenter, styles.justifyContentCenter];
+
     return (
-        <View style={[styles.flex1, styles.justifyContentCenter, styles.alignItemsCenter, style]}>
+        <View style={containerStyle}>
             <View
-                id={numberViewId}
+                id={isInLandscapeMode ? undefined : numberViewId}
                 onMouseDown={handleMouseDown}
-                style={[styles.flex1, styles.w100, styles.alignItemsCenter, styles.justifyContentCenter]}
+                style={innerViewStyle}
                 testID={testID}
             >
-                <View style={[styles.flexRow, styles.moneyRequestAmountContainer, styles.alignItemsCenter, styles.justifyContentCenter]}>{children}</View>
+                <View style={[styles.flexRow, !isInLandscapeMode && styles.moneyRequestAmountContainer, styles.alignItemsCenter, styles.justifyContentCenter]}>{children}</View>
+                {action}
+                {error}
             </View>
         </View>
     );
