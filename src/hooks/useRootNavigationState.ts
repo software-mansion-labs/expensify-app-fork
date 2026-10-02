@@ -33,11 +33,17 @@ function useRootNavigationState<T>(selector: Selector<T>): T {
     });
 
     useEffect(() => {
-        const unsubscribe = navigationRef.addListener('state', () => {
+        const syncResult = () => {
             // State from the event data may be incomplete. (defined params but no nested state for the route)
             const newResult = selectorRef.current(navigationRef.getRootState());
             setResult((prev) => (Object.is(prev, newResult) ? prev : newResult));
-        });
+        };
+        const unsubscribe = navigationRef.addListener('state', syncResult);
+
+        // Catches up on state changes missed while unsubscribed, e.g. while the screen was hidden.
+        if (navigationRef.isReady()) {
+            syncResult();
+        }
 
         return unsubscribe;
     }, []);
