@@ -12,7 +12,7 @@ import {onModalDidClose, setCloseModal, willAlertModalBecomeVisible} from '@libs
 import CONST from '@src/CONST';
 import viewRef from '@src/types/utils/viewRef';
 
-import React, {useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo, useRef} from 'react';
 import {View} from 'react-native';
 
 import type PopoverWithoutOverlayProps from './types';
@@ -53,30 +53,28 @@ function PopoverWithoutOverlay({
             enableEdgeToEdgeBottomSafeAreaPadding,
         });
 
+    const lastAppliedIsVisibleRef = useRef<boolean | undefined>(undefined);
+
     useEffect(() => {
-        let removeOnClose: () => void;
-        if (isVisible) {
-            onModalShow();
+        if (lastAppliedIsVisibleRef.current !== isVisible) {
+            lastAppliedIsVisibleRef.current = isVisible;
+            if (isVisible) {
+                onModalShow();
 
-            onOpen?.({
-                ref: withoutOverlayRef,
-                close: onClose ?? NOOP,
-                anchorRef,
-            });
-            removeOnClose = setCloseModal(onClose ?? NOOP);
-        } else {
-            onModalHide();
-            close(anchorRef);
-            onModalDidClose();
-        }
-        willAlertModalBecomeVisible(isVisible, true);
-
-        return () => {
-            if (!removeOnClose) {
-                return;
+                onOpen?.({
+                    ref: withoutOverlayRef,
+                    close: onClose ?? NOOP,
+                    anchorRef,
+                });
+            } else {
+                onModalHide();
+                close(anchorRef);
+                onModalDidClose();
             }
-            removeOnClose();
-        };
+            willAlertModalBecomeVisible(isVisible, true);
+        }
+
+        return isVisible ? setCloseModal(onClose ?? NOOP) : undefined;
         // We want this effect to run strictly ONLY when isVisible prop changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isVisible]);
