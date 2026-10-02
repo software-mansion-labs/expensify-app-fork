@@ -50,7 +50,10 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
     const {translate} = useLocalize();
     const dragRef = useRef<Drag | null>(null);
     const {scopeElementRef, setScopeElement, writeColumnWidth, readColumnWidth, clearLiveWidths} = useLiveColumnWidths({resolvedColumnWidths, columnWidthOverrides, dragRef});
-    const {revealIndicator, hideIndicator, showGrips, hideGrips} = useResizeIndicator(scopeElementRef, dragRef);
+    const {revealIndicator, hideIndicator, showGrip, hideGrip} = useResizeIndicator(scopeElementRef, dragRef);
+
+    // Each column's handle, so hovering its heading can find the grip to show.
+    const handleElementsRef = useRef(new Map<string, HTMLElement>());
 
     /** Forgets the drag and restores the document cursor. Doesn't commit anything. */
     const resetDrag = () => {
@@ -160,7 +163,6 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         // survives the pointer crossing into the rows, the window chrome, or another column's handle.
         event.currentTarget.setPointerCapture(event.pointerId);
 
-        revealIndicator(event.currentTarget);
         const startWidth = readColumnWidth(column.columnKey) ?? 0;
 
         dragRef.current = {
@@ -180,13 +182,16 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             return;
         }
 
-        // Tracked explicitly so a drag that returns to its start isn't a click. A few px of slop so clicks don't read as tiny drags.
-        drag.hasMovedPointer = drag.hasMovedPointer || hasPointerPassedDragSlop(drag.startClientX, event.clientX);
-
         // Nothing is written until the pointer has travelled far enough to mean it, so a click leaves the column
         // exactly where it was for the fit to size it from.
-        if (!drag.hasMovedPointer) {
+        if (!drag.hasMovedPointer && !hasPointerPassedDragSlop(drag.startClientX, event.clientX)) {
             return;
+        }
+
+        // Tracked explicitly so a drag that returns to its start isn't a click. The line waits for this too, so clicks never show it.
+        if (!drag.hasMovedPointer) {
+            drag.hasMovedPointer = true;
+            revealIndicator(event.currentTarget);
         }
 
         const width = getDraggedColumnWidth(drag.startWidth, drag.startClientX, event.clientX);
@@ -214,13 +219,15 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             fitToContent(column);
         }
 
-        // The handle has moved with the column, so whether the pointer is still on it decides whether the edge stays
-        // visible. Releasing capture doesn't reliably raise a boundary event, so this is read rather than waited for.
-        const handleRect = event.currentTarget.getBoundingClientRect();
-        const isPointerStillOnHandle = event.clientX >= handleRect.left && event.clientX <= handleRect.right && event.clientY >= handleRect.top && event.clientY <= handleRect.bottom;
+        hideIndicator();
 
-        if (!isPointerStillOnHandle) {
-            hideIndicator();
+        // The heading has moved with the column, so whether the pointer is still on it decides whether the grip comes
+        // back. Releasing capture doesn't reliably raise a boundary event, so this is read rather than waited for.
+        const headingRect = (event.currentTarget.parentElement ?? event.currentTarget).getBoundingClientRect();
+        const isPointerStillOnHeading = event.clientX >= headingRect.left && event.clientX <= headingRect.right && event.clientY >= headingRect.top && event.clientY <= headingRect.bottom;
+
+        if (!isPointerStillOnHeading) {
+            hideGrip(event.currentTarget);
         }
     };
 
@@ -245,6 +252,9 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
 
         // Otherwise Space scrolls the page and the arrow keys scroll the table sideways as well.
         event.preventDefault();
+
+        // An edge focused by a press shows no line until the keyboard starts resizing it.
+        revealIndicator(event.currentTarget);
 
         if (action.type === 'toggleFit') {
             toggleFitToContent(column);
@@ -287,6 +297,13 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
             // Otherwise a touch drag on the handle is taken over by the table's own horizontal scrolling.
             touchAction: 'none',
         },
+        ref: (element) => {
+            if (element) {
+                handleElementsRef.current.set(column.columnKey, element);
+            } else {
+                handleElementsRef.current.delete(column.columnKey);
+            }
+        },
         onPointerDown: (event) => handlePointerDown(column, event),
         onPointerMove: handlePointerMove,
         onPointerUp: (event) => handlePointerUp(column, event),
@@ -294,15 +311,36 @@ function useColumnResize({columnResizingID, columns, resolvedColumnWidths, colum
         // the browser does: whatever width was already written stands, and nothing is fitted.
         onPointerCancel: handleLostPointerCapture,
         onLostPointerCapture: handleLostPointerCapture,
-        onPointerEnter: (event) => revealIndicator(event.currentTarget),
-        onPointerLeave: hideIndicator,
         onDoubleClick: () => releaseToBaseWidth(column),
         onKeyDown: (event) => handleKeyDown(column, event),
-        onFocus: (event) => revealIndicator(event.currentTarget),
+        // The edge only counts as active for keyboard focus; a pointer shows the line once it starts dragging.
+        onFocus: (event) => {
+            if (!event.currentTarget.matches(':focus-visible')) {
+                return;
+            }
+
+            revealIndicator(event.currentTarget);
+        },
         onBlur: hideIndicator,
     });
 
-    return {setScopeElement, columns, getHandleProps, showGrips, hideGrips};
+    const showColumnGrip = (columnKey: string) => {
+        const handleElement = handleElementsRef.current.get(columnKey);
+
+        if (handleElement) {
+            showGrip(handleElement);
+        }
+    };
+
+    const hideColumnGrip = (columnKey: string) => {
+        const handleElement = handleElementsRef.current.get(columnKey);
+
+        if (handleElement) {
+            hideGrip(handleElement);
+        }
+    };
+
+    return {setScopeElement, columns, getHandleProps, showGrip: showColumnGrip, hideGrip: hideColumnGrip};
 }
 
 export default useColumnResize;

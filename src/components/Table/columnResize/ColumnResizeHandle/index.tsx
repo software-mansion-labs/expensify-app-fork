@@ -1,5 +1,6 @@
 import {
     RESIZE_GRIP_OPACITY_VARIABLE,
+    RESIZE_INDICATOR_DATA_ATTRIBUTE,
     RESIZE_INDICATOR_HEIGHT_VARIABLE,
     RESIZE_INDICATOR_OPACITY_VARIABLE,
     RESIZE_INDICATOR_TOP_VARIABLE,
@@ -15,9 +16,9 @@ import React from 'react';
 const {INDICATOR_WIDTH, GRIP_HEIGHT} = CONST.TABLES.COLUMN_RESIZE;
 
 /**
- * Drag strip over a column's right edge, inside its header cell. Carries a short mark shown while the header is hovered,
- * so the user can find which edges drag, and the line drawn down the table while this edge is hovered or dragged. Both
- * sit in the handle so they move with the column on their own, through drags and sideways scrolls alike.
+ * Drag strip over a column's right edge, inside its header cell. Carries a short grip shown while the column's heading is
+ * hovered, so the user can find the edge, and the line it stretches into down the table while the edge is pressed or
+ * keyboard-focused. Both sit in the handle so they move with the column on their own, through drags and sideways scrolls alike.
  * Renders nothing for non-draggable columns. A plain `div` because it relies on DOM pointer capture and focus handling.
  */
 function ColumnResizeHandle({columnResize, columnKey}: ColumnResizeHandleProps) {
@@ -40,7 +41,7 @@ function ColumnResizeHandle({columnResize, columnKey}: ColumnResizeHandleProps) 
                     height: GRIP_HEIGHT,
                     borderRadius: INDICATOR_WIDTH / 2,
                     transform: 'translate(-50%, -50%)',
-                    backgroundColor: theme.icon,
+                    backgroundColor: theme.border,
                     opacity: `var(${RESIZE_GRIP_OPACITY_VARIABLE}, 0)`,
                     transition: 'opacity 150ms',
                     pointerEvents: 'none',
@@ -48,6 +49,7 @@ function ColumnResizeHandle({columnResize, columnKey}: ColumnResizeHandleProps) 
             />
             <div
                 aria-hidden
+                {...{[RESIZE_INDICATOR_DATA_ATTRIBUTE]: true}}
                 style={{
                     position: 'absolute',
                     // Runs from the heading row's top to the lowest row's bottom; neither matches the handle's box, so the handle measures and writes both.

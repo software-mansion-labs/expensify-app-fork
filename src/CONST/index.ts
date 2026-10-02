@@ -9242,8 +9242,11 @@ const CONST = {
             /** Width of the line drawn down the table while a column's edge is hovered or dragged. */
             INDICATOR_WIDTH: 2,
 
-            /** Height of the short mark drawn on each resizable column's edge while the header is hovered, so the edges can be found. */
+            /** Height of the short mark drawn on a column's edge while its heading is hovered, so the edge can be found. */
             GRIP_HEIGHT: 16,
+
+            /** How long, in ms, the grip takes to stretch into the line drawn down the table once its edge is pressed or focused. */
+            INDICATOR_MORPH_DURATION: 150,
         },
     },
 

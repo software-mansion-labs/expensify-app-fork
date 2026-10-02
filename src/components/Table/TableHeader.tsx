@@ -152,8 +152,6 @@ function TableHeader<DataType extends TableData, ColumnKey extends string = stri
                 style,
             ]}
             dataSet={TABLE_ROW_DATA_SET}
-            onPointerEnter={columnResize?.showGrips}
-            onPointerLeave={columnResize?.hideGrips}
             {...getRowAccessibilityProps(isTableSemanticsEnabled, 0, true)}
             {...props}
             {...inertProps}
@@ -351,6 +349,8 @@ function TableHeaderColumn<DataType extends TableData, ColumnKey extends string 
     return (
         <View
             style={[columnFlexStyle, columnCellSizingStyle]}
+            onPointerEnter={isAccessibilityHidden ? undefined : () => columnResize?.showGrip(column.key)}
+            onPointerLeave={isAccessibilityHidden ? undefined : () => columnResize?.hideGrip(column.key)}
             {...getColumnHeaderAccessibilityProps(true, !!column.sortable, isSortingByColumn, activeSorting.order, columnIndex)}
         >
             {sortButton}

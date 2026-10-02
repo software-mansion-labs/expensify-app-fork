@@ -22,8 +22,13 @@ const TABLE_ROW_DATA_SET = {tableRow: true};
 
 const TABLE_ROW_SELECTOR = '[data-table-row]';
 
-/** Custom property the header's edge marks read their opacity from, so hovering the header never re-renders it. */
+/** Custom property a handle's grip reads its opacity from, set on that handle alone so hovering a heading never re-renders the table. */
 const RESIZE_GRIP_OPACITY_VARIABLE = '--table-resize-grip-opacity';
+
+/** Marks a handle's line, so a reveal can animate it out of the grip. */
+const RESIZE_INDICATOR_DATA_ATTRIBUTE = 'data-resize-indicator';
+
+const RESIZE_INDICATOR_SELECTOR = `[${RESIZE_INDICATOR_DATA_ATTRIBUTE}]`;
 
 /** Custom property name for a column's width. Invalid CSS name characters in the key are replaced. */
 function getColumnWidthVariableName(columnKey: string): string {
@@ -70,7 +75,9 @@ function getColumnsMinWidthStyle(minWidth: number | string): ViewStyle {
 export {
     RESIZE_GRIP_OPACITY_VARIABLE,
     RESIZE_INDICATOR_HEIGHT_VARIABLE,
+    RESIZE_INDICATOR_DATA_ATTRIBUTE,
     RESIZE_INDICATOR_OPACITY_VARIABLE,
+    RESIZE_INDICATOR_SELECTOR,
     RESIZE_INDICATOR_TOP_VARIABLE,
     TABLE_ROW_DATA_SET,
     TABLE_ROW_SELECTOR,

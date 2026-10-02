@@ -22,6 +22,7 @@ type UseColumnResizeParams = {
 /** The DOM props one resize handle renders with. Everything the interaction needs lives in here. */
 type ColumnResizeHandleDOMProps = React.HTMLAttributes<HTMLDivElement> & {
     tabIndex: number;
+    ref: React.RefCallback<HTMLDivElement>;
 };
 
 type ColumnResizeController = {
@@ -34,11 +35,11 @@ type ColumnResizeController = {
     /** Everything a column's handle renders with: its position within the column's own header cell, and its handlers. */
     getHandleProps: (column: ResizableColumn) => ColumnResizeHandleDOMProps;
 
-    /** Reveals a short mark on every resizable column's edge, for while the pointer is over the header. */
-    showGrips: () => void;
+    /** Reveals the short mark on a column's edge, for while the pointer is over that column's heading. */
+    showGrip: (columnKey: string) => void;
 
-    /** Hides the edge marks again. */
-    hideGrips: () => void;
+    /** Hides that column's edge mark again. */
+    hideGrip: (columnKey: string) => void;
 };
 
 export type {ColumnResizeController, ColumnResizeHandleDOMProps, UseColumnResizeParams};
