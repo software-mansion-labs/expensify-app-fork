@@ -1,4 +1,4 @@
-import {act, renderHook, waitFor} from '@testing-library/react-native';
+import {act, render, renderHook, waitFor} from '@testing-library/react-native';
 
 import type PDFThumbnailProps from '@components/PDFThumbnail/types';
 
@@ -14,9 +14,12 @@ import type {FileObject} from '@src/types/utils/Attachment';
 
 import type {ValueOf} from 'type-fest';
 
+import React, {Activity} from 'react';
+
 import type * as MockUseConfirmModalUtil from '../../utils/mockUseConfirmModal';
 
 import {getShowConfirmModalOption, mockShowConfirmModal, resetMockConfirmModal, resolveShowConfirmModal} from '../../utils/mockUseConfirmModal';
+import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
 jest.mock('@hooks/useConfirmModal', () => {
     const {default: mockUseConfirmModal} = jest.requireActual<typeof MockUseConfirmModalUtil>('../../utils/mockUseConfirmModal');
@@ -36,8 +39,10 @@ jest.mock('@hooks/useThemeStyles', () => () => ({
     invisiblePDF: {},
 }));
 
+const mockSetIsLoaderVisible = jest.fn();
+
 jest.mock('@components/FullScreenLoaderContext', () => ({
-    useFullScreenLoaderActions: () => ({setIsLoaderVisible: jest.fn()}),
+    useFullScreenLoaderActions: () => ({setIsLoaderVisible: mockSetIsLoaderVisible}),
 }));
 
 jest.mock('@libs/validateAttachmentFile', () => jest.fn());
@@ -94,6 +99,26 @@ function mockValid(file: FileObject) {
 
 function mockInvalid(error: ValueOf<typeof CONST.FILE_VALIDATION_ERRORS>) {
     mockValidateAttachmentFile.mockResolvedValue({isValid: false, error});
+}
+
+type FilesValidationProbeProps = {
+    onFilesValidated: (files: FileObject[], dataTransferItems: DataTransferItem[]) => void;
+    onRender: (result: UseFilesValidationResult) => void;
+};
+
+/** Hands the hook's return value to the test on every render so it can drive the hook inside an Activity. */
+function FilesValidationProbe({onFilesValidated, onRender}: FilesValidationProbeProps) {
+    onRender(useFilesValidation(onFilesValidated));
+    return null;
+}
+
+/** Keeps the latest hook result so the test can call validateFiles after a hide or a reveal. */
+function createResultHolder() {
+    const holder: {current?: UseFilesValidationResult} = {};
+    const onRender = (result: UseFilesValidationResult) => {
+        holder.current = result;
+    };
+    return {result: holder, onRender};
 }
 
 function getPDFValidationProps(pdfValidationComponent: UseFilesValidationResult['PDFValidationComponent']): PDFThumbnailProps | undefined {
@@ -460,6 +485,372 @@ describe('useFilesValidation', () => {
         });
     });
 
+    describe('Activity hide and reveal', () => {
+        it('validates a pick made after the screen was hidden and revealed', async () => {
+            // Given a hook host inside a visible Activity that is hidden and then revealed while idle
+            const file = createFile({uri: 'file-1'});
+            mockValid(file);
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+
+            // When the user picks a file after the reveal
+            act(() => {
+                result.current?.validateFiles([file]);
+            });
+
+            // Then the pick is delivered because the hide did not leave the hook in an unmounted state
+            await waitFor(() => expect(onFilesValidated).toHaveBeenCalledWith([file], []));
+        });
+
+        it('drops a pick that arrives while the screen is hidden', async () => {
+            // Given a hook host inside an Activity that is hidden while idle
+            const file = createFile({uri: 'file-hidden'});
+            mockValid(file);
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+
+            // When a late picker callback delivers a file while the screen is hidden
+            act(() => {
+                result.current?.validateFiles([file]);
+            });
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the hidden screen neither validates nor delivers it, like a hide drops a run in flight
+            expect(mockValidateAttachmentFile).not.toHaveBeenCalled();
+            expect(onFilesValidated).not.toHaveBeenCalled();
+        });
+
+        it('accepts a new pick after a validation finished while the screen was hidden', async () => {
+            // Given a validation that is still waiting for validateAttachmentFile when the screen is hidden
+            const staleFile = createFile({uri: 'file-stale'});
+            const newFile = createFile({uri: 'file-new'});
+            let resolveStaleValidation: ((value: ValidateAttachmentResult) => void) | undefined;
+            mockValidateAttachmentFile.mockImplementationOnce(
+                () =>
+                    new Promise<ValidateAttachmentResult>((resolve) => {
+                        resolveStaleValidation = resolve;
+                    }),
+            );
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            act(() => {
+                result.current?.validateFiles([staleFile]);
+            });
+            await waitFor(() => expect(mockValidateAttachmentFile).toHaveBeenCalledTimes(1));
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+
+            // When the pending step finishes while hidden, the screen is revealed and the user picks again
+            await act(async () => {
+                resolveStaleValidation?.({isValid: true, file: staleFile});
+            });
+            rerender(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            mockValid(newFile);
+            act(() => {
+                result.current?.validateFiles([newFile]);
+            });
+
+            // Then the new pick is validated because the hide dropped the old run instead of wedging the hook
+            await waitFor(() => expect(onFilesValidated).toHaveBeenCalledWith([newFile], []));
+            expect(onFilesValidated).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not deliver a validation that was in flight across a hide once it finishes after the reveal', async () => {
+            // Given a validation that is still waiting for validateAttachmentFile across a hide and a reveal
+            const staleFile = createFile({uri: 'file-stale'});
+            let resolveStaleValidation: ((value: ValidateAttachmentResult) => void) | undefined;
+            mockValidateAttachmentFile.mockImplementationOnce(
+                () =>
+                    new Promise<ValidateAttachmentResult>((resolve) => {
+                        resolveStaleValidation = resolve;
+                    }),
+            );
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            act(() => {
+                result.current?.validateFiles([staleFile]);
+            });
+            await waitFor(() => expect(mockValidateAttachmentFile).toHaveBeenCalledTimes(1));
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+
+            // When the old step finishes only after the reveal
+            await act(async () => {
+                resolveStaleValidation?.({isValid: true, file: staleFile});
+            });
+
+            // Then the dropped pick is not delivered because the stale run stops at its next step
+            expect(onFilesValidated).not.toHaveBeenCalled();
+        });
+
+        it('hides the full-screen loader when the screen is hidden during a HEIC conversion', async () => {
+            // Given a HEIC conversion that shows the loader and is still running when the screen is hidden
+            const heicFile = createFile({uri: 'file-heic', name: 'photo.heic'});
+            mockInvalid(CONST.FILE_VALIDATION_ERRORS.HEIC_OR_HEIF_IMAGE);
+            mockConvertHeicImage.mockImplementation(() => {});
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            act(() => {
+                result.current?.validateFiles([heicFile]);
+            });
+            await waitFor(() => expect(mockSetIsLoaderVisible).toHaveBeenLastCalledWith(true));
+
+            // When the screen is hidden
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+
+            // Then the app-wide loader is hidden because it would otherwise cover the screen now on top
+            expect(mockSetIsLoaderVisible).toHaveBeenLastCalledWith(false);
+        });
+
+        it('hides the full-screen loader and shows no error when the screen is hidden during the minimum loader time', async () => {
+            // Given a failed HEIC conversion whose error waits for the minimum loader time when the screen is hidden
+            jest.useFakeTimers();
+            const heicFile = createFile({uri: 'file-heic', name: 'photo.heic'});
+            mockInvalid(CONST.FILE_VALIDATION_ERRORS.HEIC_OR_HEIF_IMAGE);
+            mockConvertHeicImage.mockImplementation((file, callbacks) => callbacks?.onError?.(new Error('conversion failed'), file));
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            await act(async () => {
+                result.current?.validateFiles([heicFile]);
+            });
+            expect(mockSetIsLoaderVisible).toHaveBeenLastCalledWith(true);
+
+            // When the screen is hidden before the timer fires and is revealed after it would have fired
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            act(() => {
+                jest.runOnlyPendingTimers();
+            });
+            jest.useRealTimers();
+
+            // Then the loader is hidden and the dropped pick does not pop an error over the revealed screen
+            expect(mockSetIsLoaderVisible).toHaveBeenLastCalledWith(false);
+            expect(mockShowConfirmModal).not.toHaveBeenCalled();
+        });
+
+        it('drops a PDF that was still being checked when the screen was hidden', async () => {
+            // Given a PDF thumbnail check that is still pending when the screen is hidden
+            const pdfFile = createFile({uri: 'file-pdf', name: 'document.pdf'});
+            mockValid(pdfFile);
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            act(() => {
+                result.current?.validateFiles([pdfFile]);
+            });
+            await waitFor(() => expect(result.current?.PDFValidationComponent).toBeDefined());
+            const stalePDFProps = getPDFValidationProps(result.current?.PDFValidationComponent);
+
+            // When the screen is hidden and revealed and the old thumbnail reports a successful load
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            const pdfValidationComponentAfterReveal = result.current?.PDFValidationComponent;
+            act(() => {
+                stalePDFProps?.onLoadSuccess?.();
+            });
+
+            // Then the thumbnail is gone and the dropped PDF is not delivered after the reveal
+            expect(pdfValidationComponentAfterReveal).toBeUndefined();
+            expect(onFilesValidated).not.toHaveBeenCalled();
+        });
+
+        it('validates the next PDF pick after a dropped thumbnail settles late', async () => {
+            // Given a PDF thumbnail check that was dropped by a hide and settles only after the reveal
+            const stalePdfFile = createFile({uri: 'file-pdf-stale', name: 'stale.pdf'});
+            const nextPdfFile = createFile({uri: 'file-pdf-next', name: 'next.pdf'});
+            mockValid(stalePdfFile);
+            const onFilesValidated = jest.fn();
+            const {result, onRender} = createResultHolder();
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            act(() => {
+                result.current?.validateFiles([stalePdfFile]);
+            });
+            await waitFor(() => expect(result.current?.PDFValidationComponent).toBeDefined());
+            const stalePDFProps = getPDFValidationProps(result.current?.PDFValidationComponent);
+            rerender(
+                <Activity mode="hidden">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="visible">
+                    <FilesValidationProbe
+                        onFilesValidated={onFilesValidated}
+                        onRender={onRender}
+                    />
+                </Activity>,
+            );
+            act(() => {
+                stalePDFProps?.onLoadSuccess?.();
+            });
+
+            // When the user picks another PDF and its thumbnail loads
+            mockValid(nextPdfFile);
+            act(() => {
+                result.current?.validateFiles([nextPdfFile]);
+            });
+            await waitFor(() => expect(result.current?.PDFValidationComponent).toBeDefined());
+            act(() => {
+                getPDFValidationProps(result.current?.PDFValidationComponent)?.onLoadSuccess?.();
+            });
+
+            // Then the late stale load is ignored and only the new PDF is delivered
+            await waitFor(() => expect(onFilesValidated).toHaveBeenCalledTimes(1));
+            expect(onFilesValidated).toHaveBeenCalledWith([nextPdfFile], expect.anything());
+        });
+    });
+
     describe('unmount safety', () => {
         it('does not call onFilesValidated once a pending HEIC conversion resolves after unmount', async () => {
             const heicFile = createFile({uri: 'file-heic', name: 'photo.heic'});
@@ -476,12 +867,30 @@ describe('useFilesValidation', () => {
 
             unmount();
 
-            // handleNext() checks isMountedRef before touching onFilesValidated/state, so a conversion that
-            // finishes after unmount is a safe no-op rather than firing the callback on a torn-down component.
+            // The unmount drops the run, so a conversion that finishes afterwards stops before touching onFilesValidated.
             act(() => {
                 resolveConversion?.();
             });
 
+            expect(onFilesValidated).not.toHaveBeenCalled();
+        });
+
+        it('does not start a validation for a pick that arrives after unmount', async () => {
+            // Given an idle hook that has been unmounted
+            const file = createFile({uri: 'file-late'});
+            mockValid(file);
+            const {result, unmount, onFilesValidated} = setup();
+            const {validateFiles} = result.current;
+            unmount();
+
+            // When a late picker callback still calls validateFiles
+            act(() => {
+                validateFiles([file]);
+            });
+            await waitForBatchedUpdatesWithAct();
+
+            // Then nothing is validated or delivered, so a gone screen cannot open the attachment flow
+            expect(mockValidateAttachmentFile).not.toHaveBeenCalled();
             expect(onFilesValidated).not.toHaveBeenCalled();
         });
     });
