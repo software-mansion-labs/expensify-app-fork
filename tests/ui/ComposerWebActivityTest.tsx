@@ -3,11 +3,14 @@ import {act, fireEvent, render, screen} from '@testing-library/react-native';
 import type * as WebComposerModule from '@components/Composer/implementation/index.tsx';
 import type * as OnyxListItemProviderModule from '@components/OnyxListItemProvider';
 
+import CONST from '@src/CONST';
+
 import type * as NativeNavigation from '@react-navigation/native';
 import type {Ref} from 'react';
 import type {TextInput, TextInputProps} from 'react-native';
 
 import React, {Activity} from 'react';
+import {DeviceEventEmitter} from 'react-native';
 
 // The explicit extension skips the jest platform resolution, which picks index.native.tsx for a bare path.
 const {default: Composer} = jest.requireActual<typeof WebComposerModule>('@components/Composer/implementation/index.tsx');
@@ -87,6 +90,18 @@ function scrollComposerTo(scrollTop: number) {
     });
 }
 
+function emitReportListScrolling(isScrolling: boolean) {
+    act(() => {
+        DeviceEventEmitter.emit(CONST.EVENTS.SCROLLING, isScrolling);
+    });
+}
+
+function isWheelBlocked() {
+    const wheelEvent = new Event('wheel', {cancelable: true});
+    mockComposerElement.dispatchEvent(wheelEvent);
+    return wheelEvent.defaultPrevented;
+}
+
 describe('web Composer across Activity hide and reveal', () => {
     beforeEach(() => {
         jest.useFakeTimers();
@@ -94,6 +109,7 @@ describe('web Composer across Activity hide and reveal', () => {
     });
 
     afterEach(() => {
+        DeviceEventEmitter.removeAllListeners(CONST.EVENTS.SCROLLING);
         jest.useRealTimers();
     });
 
@@ -201,6 +217,81 @@ describe('web Composer across Activity hide and reveal', () => {
 
             // Then the real change is still applied once on reveal, so the skip covers only unchanged values
             expect(mockComposerElement.scrollTop).toBe(RESTORED_SCROLL);
+        });
+    });
+
+    describe('wheel blocking while the report list scrolls', () => {
+        it('blocks wheel events while the report list scrolls and releases them when it stops', () => {
+            // Given a visible composer
+            render(
+                <Activity mode="visible">
+                    <Composer testID={COMPOSER_TEST_ID} />
+                </Activity>,
+            );
+
+            // When the report list starts scrolling
+            emitReportListScrolling(true);
+
+            // Then wheel events over the composer are blocked, which is the live behavior the fix keeps
+            expect(isWheelBlocked()).toBe(true);
+
+            // When the report list stops scrolling
+            emitReportListScrolling(false);
+
+            // Then wheel events pass again
+            expect(isWheelBlocked()).toBe(false);
+        });
+
+        it('releases wheel events on reveal when the list stopped scrolling while hidden', () => {
+            // Given a visible composer whose report list is scrolling
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <Composer testID={COMPOSER_TEST_ID} />
+                </Activity>,
+            );
+            emitReportListScrolling(true);
+
+            // When the screen is hidden, the list stops while the listener is gone, and the screen is revealed
+            rerender(
+                <Activity mode="hidden">
+                    <Composer testID={COMPOSER_TEST_ID} />
+                </Activity>,
+            );
+            emitReportListScrolling(false);
+            rerender(
+                <Activity mode="visible">
+                    <Composer testID={COMPOSER_TEST_ID} />
+                </Activity>,
+            );
+
+            // Then wheel events pass, as they do on a composer that heard the stop event
+            expect(isWheelBlocked()).toBe(false);
+        });
+
+        it('blocks wheel events again when the report list scrolls after a reveal', () => {
+            // Given a composer that was hidden while its report list was scrolling and then revealed
+            const {rerender} = render(
+                <Activity mode="visible">
+                    <Composer testID={COMPOSER_TEST_ID} />
+                </Activity>,
+            );
+            emitReportListScrolling(true);
+            rerender(
+                <Activity mode="hidden">
+                    <Composer testID={COMPOSER_TEST_ID} />
+                </Activity>,
+            );
+            rerender(
+                <Activity mode="visible">
+                    <Composer testID={COMPOSER_TEST_ID} />
+                </Activity>,
+            );
+
+            // When the report list scrolls again
+            emitReportListScrolling(true);
+
+            // Then wheel events are blocked, so the reveal resubscribed to the scrolling event
+            expect(isWheelBlocked()).toBe(true);
         });
     });
 });
