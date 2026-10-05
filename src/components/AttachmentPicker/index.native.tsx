@@ -7,6 +7,7 @@ import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -27,7 +28,7 @@ import type {Asset, Callback, CameraOptions, ImageLibraryOptions, ImagePickerRes
 
 import {keepLocalCopy, pick, types} from '@react-native-documents/picker';
 import {Str} from 'expensify-common';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Alert, View} from 'react-native';
 import RNFetchBlob from 'react-native-blob-util';
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -172,7 +173,8 @@ function AttachmentPicker({
     const popoverRef = useRef(null);
     const modalDismissTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    useEffect(() => {
+    // A cover does not cancel the picker launch that waits for the popover to close.
+    useScreenActivityEffect(() => {
         return () => {
             if (!modalDismissTimeoutRef.current) {
                 return;
