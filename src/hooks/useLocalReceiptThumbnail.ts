@@ -1,6 +1,8 @@
 import {generateThumbnail} from '@pages/iou/request/step/IOURequestStepScan/cropImageToAspectRatio';
 
-import {useEffect, useRef, useState, useTransition} from 'react';
+import {useRef, useState, useTransition} from 'react';
+
+import useScreenActivityEffect from './useScreenActivityEffect';
 
 const thumbnailCache = new Map<string, string>();
 /** Track how many mounted hook instances reference each sourceUri */
@@ -52,8 +54,8 @@ function useLocalReceiptThumbnail(sourceUri: string | undefined, isLocalFile: bo
 
     // Retain / release the cache entry so it lives as long as at least one
     // mounted hook instance references it, and is cleaned up after the last
-    // consumer unmounts.
-    useEffect(() => {
+    // consumer unmounts. A cover is not an unmount, so the entry stays retained behind it.
+    useScreenActivityEffect(() => {
         if (!sourceUri || !isLocalFile) {
             return;
         }
@@ -67,8 +69,8 @@ function useLocalReceiptThumbnail(sourceUri: string | undefined, isLocalFile: bo
         };
     }, [sourceUri, isLocalFile]);
 
-    // Fallback: generate if not already in cache (e.g. gallery pick path)
-    useEffect(() => {
+    // Fallback: generate if not already in cache (e.g. gallery pick path). A generation in flight survives a cover.
+    useScreenActivityEffect(() => {
         if (!sourceUri || !isLocalFile || thumbnailCache.has(sourceUri)) {
             return;
         }
