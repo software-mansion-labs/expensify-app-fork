@@ -61,24 +61,13 @@ function Composer({
         if (handledIsComposerFullSizeRef.current === isComposerFullSize) {
             return;
         }
-        if (!textInputRef.current?.setSelection || !selection || isComposerFullSize) {
-            handledIsComposerFullSizeRef.current = isComposerFullSize;
+        handledIsComposerFullSizeRef.current = isComposerFullSize;
+        if (isComposerFullSize || !selection) {
             return;
         }
 
-        // We need the delay for setSelection to properly work for IOS in bridgeless mode due to a react native
-        // internal bug of dispatching the event before the component is ready for it.
-        // (see https://github.com/Expensify/App/pull/50520#discussion_r1861960311 for more context)
-        const timeoutID = setTimeout(() => {
-            // The value is recorded only once the caret work ran, so a timer cancelled by a hide or a StrictMode remount is retried on the next setup.
-            handledIsComposerFullSizeRef.current = isComposerFullSize;
-            // We are setting selection twice to trigger a scroll to the cursor on toggling to smaller composer size.
-            textInputRef.current?.setSelection((selection.start || 1) - 1, selection.start);
-            textInputRef.current?.setSelection(selection.start, selection.start);
-        }, 0);
-
-        return () => clearTimeout(timeoutID);
-
+        // iOS does not scroll to the caret when the composer shrinks, but setting the selection again does.
+        textInputRef.current?.setSelection(selection.start, selection.start);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isComposerFullSize]);
 
