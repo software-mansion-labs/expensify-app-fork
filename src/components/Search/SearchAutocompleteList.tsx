@@ -21,10 +21,12 @@ import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useSearchRouterOptions from '@hooks/useSearchRouterOptions';
 import useSortedReportActionsData from '@hooks/useSortedReportActionsData';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import FS from '@libs/Fullstory';
+import TransitionTracker from '@libs/Navigation/TransitionTracker';
 import type {Options, SearchOption} from '@libs/OptionsListUtils';
 import {combineOrderingOfReportsAndPersonalDetails, getSearchOptions} from '@libs/OptionsListUtils';
 import Parser from '@libs/Parser';
@@ -32,6 +34,7 @@ import {getAllTaxRates} from '@libs/PolicyUtils';
 import {getReportAction} from '@libs/ReportActionsUtils';
 import type {OptionData} from '@libs/ReportUtils';
 import {getReportOrDraftReport} from '@libs/ReportUtils';
+import {startSearchOptionsIndexWarmup} from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
 import {buildSearchQueryJSON, buildUserReadableQueryString, getQueryWithoutFilters, shouldHighlight} from '@libs/SearchQueryUtils';
 import StringUtils from '@libs/StringUtils';
 import {cancelSpan, endSpan, getSpan} from '@libs/telemetry/activeSpans';
@@ -217,7 +220,8 @@ function SearchAutocompleteList({
     // (rather than the immediate value) keeps the sections in sync with the data they render: during the debounce
     // window we keep showing recent chats instead of briefly rendering the previous/unfiltered rows under the search
     // layout and then reflowing once the debounced query catches up.
-    const hasActiveSearchResults = hasEffectiveInputQuery && autocompleteQueryValue.trim() !== '';
+    const hasDebouncedQuery = autocompleteQueryValue.trim() !== '';
+    const hasActiveSearchResults = hasEffectiveInputQuery && hasDebouncedQuery;
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
     const currentUserEmail = currentUserPersonalDetails.email ?? '';
     const currentUserAccountID = currentUserPersonalDetails.accountID;
@@ -233,7 +237,8 @@ function SearchAutocompleteList({
         getReportByID,
     } = useFilteredOptions({
         ...SEARCH_ROUTER_OPTIONS_CONFIG,
-        isSearching: !!autocompleteQueryValue.trim(),
+        // Typing is served by the option index, so the option list is only ever built for the empty state.
+        isSearching: false,
     });
 
     const isRecentSearchesDataLoaded = !isLoadingOnyxValue(recentSearchesMetadata);
@@ -256,128 +261,83 @@ function SearchAutocompleteList({
         }
     }, [isLoadingOptions]);
 
-    const searchOptions = useMemo(() => {
-        if (listOptions === null) {
-            return defaultListOptions;
-        }
-        return getSearchOptions({
-            dateFnsLocale,
-            convertToDisplayString,
-            options: listOptions,
-            draftComments,
-            isDefaultRoomsBetaEnabled,
-            isUsedInChatFinder: true,
-            includeReadOnly: true,
-            searchQuery: autocompleteQueryValue,
-            maxResults: CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS,
-            includeUserToInvite: true,
-            includeRecentReports: true,
-            includeCurrentUser: true,
-            countryCode,
-            shouldShowGBR: false,
-            shouldUnreadBeBold: true,
-            loginList,
-            visibleReportActionsData,
-            currentUserAccountID,
-            currentUserEmail,
-            policyCollection: policies,
-            personalDetails,
-            sortedActions,
-            conciergeReportID,
-            isTrackIntentUser,
-            translate,
-            getReportByID,
-            rules,
-        }).options;
-    }, [
-        listOptions,
+    const searchOptionsFormatConfig = {
+        dateFnsLocale,
+        convertToDisplayString,
         draftComments,
         isDefaultRoomsBetaEnabled,
-        autocompleteQueryValue,
+        isUsedInChatFinder: true,
+        includeReadOnly: true,
+        maxResults: CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS,
+        includeUserToInvite: true,
+        includeRecentReports: true,
+        includeCurrentUser: true,
         countryCode,
+        shouldShowGBR: false,
+        shouldUnreadBeBold: true,
         loginList,
         visibleReportActionsData,
         currentUserAccountID,
         currentUserEmail,
-        policies,
+        policyCollection: policies,
         personalDetails,
         sortedActions,
         conciergeReportID,
         isTrackIntentUser,
         translate,
         getReportByID,
-        dateFnsLocale,
-        convertToDisplayString,
         rules,
-    ]);
+    };
 
     // Deduped once and read everywhere the order is needed, so a repeated reportID ranks at its first position.
     const orderedSearchResultReportIDs = useMemo<string[]>(() => (searchResultReportIDs?.length ? [...new Set(searchResultReportIDs)] : []), [searchResultReportIDs]);
+    const serverReportIDs: readonly string[] = hasActiveSearchResults ? orderedSearchResultReportIDs.slice(0, CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS) : CONST.EMPTY_ARRAY;
+
+    const {searchOptions: indexedSearchOptions, serverReportOptions} = useSearchRouterOptions({
+        query: autocompleteQueryValue,
+        formatConfig: searchOptionsFormatConfig,
+        serverReportIDs,
+    });
+
+    const searchOptions = useMemo(() => {
+        if (hasDebouncedQuery) {
+            // The index answers synchronously in render when the debounced query lands.
+            return indexedSearchOptions ?? defaultListOptions;
+        }
+        if (listOptions === null) {
+            return defaultListOptions;
+        }
+        return getSearchOptions({...searchOptionsFormatConfig, options: listOptions, searchQuery: autocompleteQueryValue}).options;
+    }, [hasDebouncedQuery, indexedSearchOptions, listOptions, searchOptionsFormatConfig, autocompleteQueryValue]);
 
     const serverReportsOptions = useMemo(() => {
-        if (!hasActiveSearchResults || listOptions === null || orderedSearchResultReportIDs.length === 0) {
+        if (serverReportIDs.length === 0) {
             return CONST.EMPTY_ARRAY;
         }
 
-        const orderedReportIDs = orderedSearchResultReportIDs.slice(0, CONST.AUTO_COMPLETE_SUGGESTER.MAX_AMOUNT_OF_SUGGESTIONS);
-        const reportIDs = new Set(orderedReportIDs);
         const options = getSearchOptions({
-            dateFnsLocale,
-            convertToDisplayString,
-            options: {reports: listOptions.reports.filter((option) => reportIDs.has(option.reportID)), personalDetails: []},
-            draftComments,
-            isDefaultRoomsBetaEnabled,
-            isUsedInChatFinder: true,
-            includeReadOnly: true,
+            ...searchOptionsFormatConfig,
+            options: {reports: serverReportOptions, personalDetails: []},
             // Auth's ID list is the filter here. Re-running the client matcher would drop the reports Auth matched on
             // criteria the client doesn't check (e.g. you own it) — the rows this pass exists to surface.
             searchQuery: '',
-            maxResults: orderedReportIDs.length,
+            maxResults: serverReportIDs.length,
             includeUserToInvite: false,
-            includeRecentReports: true,
             includeCurrentUser: false,
-            countryCode,
-            shouldShowGBR: false,
-            shouldUnreadBeBold: true,
-            loginList,
-            visibleReportActionsData,
-            currentUserAccountID,
-            currentUserEmail,
-            policyCollection: policies,
-            personalDetails,
-            sortedActions,
-            conciergeReportID,
-            isTrackIntentUser,
-            translate,
-            getReportByID,
-            rules,
         }).options;
         const optionsByReportID = new Map(options.recentReports.map((option) => [option.reportID, option]));
-        return orderedReportIDs.map((reportID) => optionsByReportID.get(reportID)).filter((option): option is OptionData => !!option && !option.isSelfDM);
-    }, [
-        hasActiveSearchResults,
-        listOptions,
-        orderedSearchResultReportIDs,
-        dateFnsLocale,
-        convertToDisplayString,
-        draftComments,
-        isDefaultRoomsBetaEnabled,
-        countryCode,
-        loginList,
-        visibleReportActionsData,
-        currentUserAccountID,
-        currentUserEmail,
-        policies,
-        personalDetails,
-        sortedActions,
-        conciergeReportID,
-        isTrackIntentUser,
-        translate,
-        getReportByID,
-        rules,
-    ]);
+        return serverReportIDs.map((reportID) => optionsByReportID.get(reportID)).filter((option): option is OptionData => !!option && !option.isSelfDM);
+    }, [serverReportIDs, serverReportOptions, searchOptionsFormatConfig]);
 
     const [isInitialRender, setIsInitialRender] = useState(true);
+    // Once the list has laid out, finish building the index in idle chunks, after the router's open transition.
+    useEffect(() => {
+        if (isInitialRender) {
+            return;
+        }
+        const handle = TransitionTracker.runAfterTransitions({callback: () => startSearchOptionsIndexWarmup()});
+        return () => handle.cancel();
+    }, [isInitialRender]);
     const prevQueryRef = useRef(effectiveInputQueryValue);
     const innerListRef = useRef<SelectionListWithSectionsHandle | null>(null);
     const hasSetInitialFocusRef = useRef(false);

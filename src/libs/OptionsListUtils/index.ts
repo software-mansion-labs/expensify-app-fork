@@ -1102,39 +1102,43 @@ function buildFullOption(
 }
 
 /**
- * Step 5 of createFilteredOptionList: one lightweight shell per personal detail.
+ * One lightweight shell for one personal detail, displaying `report` when the account has a 1:1 DM.
  * Only filter/rank fields are computed here. getValidOptions hydrates survivors via hydrateContactOption.
  */
-function buildPersonalDetailsOptions(reportMapForAccountIDs: Record<number, Report>, context: LazyHydrationContext, rules: OnyxCollection<Rule>): PersonalDetailShell[] {
+function buildPersonalDetailShell(personalDetail: PersonalDetails | null, report: Report | undefined, context: LazyHydrationContext, rules: OnyxCollection<Rule>): PersonalDetailShell {
     const {personalDetails, translate} = context;
-    return Object.values(personalDetails ?? {}).map((personalDetail) => {
-        const accountID = personalDetail?.accountID ?? CONST.DEFAULT_NUMBER_ID;
-        const report = reportMapForAccountIDs[accountID];
-        // Match createOption's personal-details lookup.
-        const detail = getPersonalDetailForAccountID(accountID, personalDetails);
-        // Keep shell text identical to the hydrated option.
-        const text = getPersonalDetailOptionText({accountID, hasReport: !!report, personalDetails, login: detail?.login, translate});
+    const accountID = personalDetail?.accountID ?? CONST.DEFAULT_NUMBER_ID;
+    // Match createOption's personal-details lookup.
+    const detail = getPersonalDetailForAccountID(accountID, personalDetails);
+    // Keep shell text identical to the hydrated option.
+    const text = getPersonalDetailOptionText({accountID, hasReport: !!report, personalDetails, login: detail?.login, translate});
 
-        // Do not capture the shell: getValidOptions mutates its transient marks.
-        let built: HydratedPersonalDetailOption | undefined;
-        const hydrate = () => (built ??= buildFullOption(accountID, personalDetail, report, context, rules));
+    // Do not capture the shell: getValidOptions mutates its transient marks.
+    let built: HydratedPersonalDetailOption | undefined;
+    const hydrate = () => (built ??= buildFullOption(accountID, personalDetail, report, context, rules));
 
-        return {
-            item: personalDetail,
-            isHydrated: false,
-            hydrate,
-            // Keep the falsy default expected by existing callers.
-            // eslint-disable-next-line rulesdir/no-default-id-values
-            reportID: report?.reportID ?? '',
-            keyForList: report ? String(report.reportID) : String(accountID),
-            text,
-            login: detail?.login,
-            accountID: Number(detail?.accountID),
-            participantsList: detail ? [detail] : [],
-            isSelected: false,
-            selected: false,
-        };
-    });
+    return {
+        item: personalDetail,
+        isHydrated: false,
+        hydrate,
+        // Keep the falsy default expected by existing callers.
+        // eslint-disable-next-line rulesdir/no-default-id-values
+        reportID: report?.reportID ?? '',
+        keyForList: report ? String(report.reportID) : String(accountID),
+        text,
+        login: detail?.login,
+        accountID: Number(detail?.accountID),
+        participantsList: detail ? [detail] : [],
+        isSelected: false,
+        selected: false,
+    };
+}
+
+/** Step 5 of createFilteredOptionList: one shell per personal detail of the account. */
+function buildPersonalDetailsOptions(reportMapForAccountIDs: Record<number, Report>, context: LazyHydrationContext, rules: OnyxCollection<Rule>): PersonalDetailShell[] {
+    return Object.values(context.personalDetails ?? {}).map((personalDetail) =>
+        buildPersonalDetailShell(personalDetail, reportMapForAccountIDs[personalDetail?.accountID ?? CONST.DEFAULT_NUMBER_ID], context, rules),
+    );
 }
 
 /** Hydrates a shell, reusing its memoized display option. */
@@ -1522,7 +1526,7 @@ function decorateOption<T>(option: T, comparator: (option: T) => number | string
  * Function uses a min heap to efficiently get the first sorted options.
  */
 function optionsOrderBy<T = SearchOptionData | PersonalDetailOptionData>(
-    options: T[],
+    options: Iterable<T>,
     comparator: (option: T) => number | string,
     limit?: number,
     filter?: (option: T) => boolean | undefined,
@@ -1542,7 +1546,7 @@ function optionsOrderBy<T = SearchOptionData | PersonalDetailOptionData>(
  */
 function optionsOrderAndGroupBy<T = SearchOptionData>(
     separators: Array<(option: T) => boolean | undefined>,
-    options: T[],
+    options: Iterable<T>,
     comparator: (option: T) => number | string,
     limit?: number,
     filter?: (option: T) => boolean | undefined,
@@ -3185,6 +3189,7 @@ function processSearchString(searchString: string | undefined): string[] {
 }
 
 export {
+    buildPersonalDetailShell,
     canCreateOptimisticPersonalDetailOption,
     clearFilteredOptionListCache,
     combineOrderingOfReportsAndPersonalDetails,
@@ -3206,6 +3211,7 @@ export {
     getIOUConfirmationOptionsFromPayeePersonalDetail,
     getNoneOption,
     getParticipantsOption,
+    getPersonalDetailOptionText,
     getPolicyExpenseReportOption,
     getReportDisplayOption,
     getReportOption,
@@ -3226,11 +3232,15 @@ export {
     orderPersonalDetailsOptions,
     orderWorkspaceOptions,
     recentReportComparator,
+    reportSortComparator,
     shouldUseBoldText,
     shouldUseFullTitleForOption,
     personalDetailsComparator,
+    processReport,
     processSearchString,
 };
+
+export type {SearchOptionsConfig};
 
 export type {
     GetOptionsConfig,

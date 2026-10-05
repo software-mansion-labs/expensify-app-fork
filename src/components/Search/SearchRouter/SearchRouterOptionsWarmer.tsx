@@ -1,11 +1,16 @@
+import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useFilteredOptions from '@hooks/useFilteredOptions';
+import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import {useAllPersonalDetails} from '@hooks/usePersonalDetails';
+import usePrivateIsArchivedMap from '@hooks/usePrivateIsArchivedMap';
 import useReportAttributes from '@hooks/useReportAttributes';
 import useSortedReportActionsData from '@hooks/useSortedReportActionsData';
 
 import {Scheduler} from '@libs/Scheduler';
 import type {IdleTask} from '@libs/Scheduler';
+import {warmSearchOptionsIndexChunk} from '@libs/SearchOptionsIndex/SearchOptionsIndexStore';
+import type {SearchOptionsIndexInputs} from '@libs/SearchOptionsIndex/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -24,9 +29,10 @@ const MAX_QUIET_WAIT_ATTEMPTS = 5;
 
 /**
  * Builds the SearchRouter's empty-query option list so the first open of the session hits
- * `createFilteredOptionList`'s cache instead of building it on the critical path. The build waits until
- * the list's Onyx inputs hold still across idle windows, because the cache is keyed on the identity of
- * the `useOnyx` snapshots and a list built mid-write is discarded.
+ * `createFilteredOptionList`'s cache instead of building it on the critical path, then pre-warms
+ * the search options index in time-boxed chunks, one per idle window, so keystroke search is warm before the router opens.
+ * The build waits until the list's Onyx inputs hold still across idle windows, because the cache is keyed
+ * on the identity of the `useOnyx` snapshots and a list built mid-write is discarded.
  */
 function SearchRouterOptionsWarmer({onDone}: SearchRouterOptionsWarmerProps) {
     const [shouldBuild, setShouldBuild] = useState(false);
@@ -38,10 +44,17 @@ function SearchRouterOptionsWarmer({onDone}: SearchRouterOptionsWarmerProps) {
     const reportAttributes = useReportAttributes();
     const sortedReportActionsData = useSortedReportActionsData();
 
+    // Inputs needed for SearchOptionsIndex
+    const [rules] = useOnyx(ONYXKEYS.COLLECTION.RULE);
+    const [conciergeReportID] = useOnyx(ONYXKEYS.CONCIERGE_REPORT_ID);
+    const privateIsArchivedMap = usePrivateIsArchivedMap();
+    const {preferredLocale, translate} = useLocalize();
+    const {accountID: currentUserAccountID} = useCurrentUserPersonalDetails();
+
     const churnVersionRef = useRef(0);
     useEffect(() => {
         churnVersionRef.current += 1;
-    }, [reports, policies, personalDetails, reportAttributes, sortedReportActionsData]);
+    }, [reports, policies, personalDetails, reportAttributes, sortedReportActionsData, rules, conciergeReportID, privateIsArchivedMap]);
 
     useEffect(() => {
         let attempts = 0;
@@ -76,13 +89,59 @@ function SearchRouterOptionsWarmer({onDone}: SearchRouterOptionsWarmerProps) {
         isSearching: false,
         enabled: shouldBuild,
     });
+    const hasOptions = !!options;
+
+    // The snapshots the next chunk is fed. A ref, so an Onyx write does not cancel and reschedule the chunk loop: the
+    // index takes newer snapshots in between chunks by itself, without losing what it built.
+    const indexInputsRef = useRef<SearchOptionsIndexInputs | undefined>(undefined);
+    const indexInputs = {reports, personalDetails, reportAttributes, policies, rules, privateIsArchivedMap, conciergeReportID, currentUserAccountID, locale: preferredLocale, translate};
+    useEffect(() => {
+        indexInputsRef.current = indexInputs;
+    }, [indexInputs]);
 
     useEffect(() => {
-        if (!options) {
+        if (!hasOptions) {
             return;
         }
-        onDone();
-    }, [options, onDone]);
+
+        let idleTask: IdleTask | undefined;
+        let isCancelled = false;
+
+        const scheduleNextChunk = () => {
+            idleTask = Scheduler.scheduleWhenIdle(() => {
+                if (isCancelled) {
+                    return;
+                }
+
+                // If the user opens the router during warm-up, yield immediately and let the live screen finish.
+                if (getIsSearchRouterOpenOrOpening()) {
+                    onDone();
+                    return;
+                }
+
+                // Set by the effect above, which runs first.
+                const inputs = indexInputsRef.current;
+                if (!inputs) {
+                    scheduleNextChunk();
+                    return;
+                }
+
+                if (warmSearchOptionsIndexChunk(inputs)) {
+                    onDone();
+                    return;
+                }
+
+                scheduleNextChunk();
+            });
+        };
+
+        scheduleNextChunk();
+
+        return () => {
+            isCancelled = true;
+            idleTask?.cancel();
+        };
+    }, [hasOptions, onDone]);
 
     return null;
 }
