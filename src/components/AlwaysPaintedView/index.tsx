@@ -1,3 +1,5 @@
+import type {PropsWithChildren} from 'react';
+
 import {useRef} from 'react';
 
 import type AlwaysPaintedViewProps from './types';
@@ -61,4 +63,10 @@ function AlwaysPaintedView({inert, children}: AlwaysPaintedViewProps) {
     );
 }
 
+/** The `display: contents` node alone, for content that never turns inert. On web that is the same div without the attribute. */
+function AlwaysPaintedContents({children}: PropsWithChildren) {
+    return <AlwaysPaintedView>{children}</AlwaysPaintedView>;
+}
+
+export {AlwaysPaintedContents};
 export default AlwaysPaintedView;

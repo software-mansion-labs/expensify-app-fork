@@ -1,5 +1,6 @@
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import type {PropsWithChildren} from 'react';
 import type {ViewProps, ViewStyle} from 'react-native';
 
 import {NativeComponentRegistry, View} from 'react-native';
@@ -40,6 +41,14 @@ function getAlwaysPaintedViewConfig() {
 const NativeAlwaysPaintedView = NativeComponentRegistry.get<ViewProps>('AlwaysPaintedView', getAlwaysPaintedViewConfig);
 
 /**
+ * The `display: contents` node alone, for content that never turns inert. It adds no box, so a wrapped child still takes
+ * part in the layout of the parent, including its gap, and a child that renders nothing leaves no trace.
+ */
+function AlwaysPaintedContents({children}: PropsWithChildren) {
+    return <NativeAlwaysPaintedView style={DISPLAY_CONTENTS}>{children}</NativeAlwaysPaintedView>;
+}
+
+/**
  * Native implementation that renders with `display: 'contents'` so wrapper nodes don't hide the navigation
  * underlay during swipe-back or Activity visibility toggles. Web pins the same value on a div (see index.tsx).
  *
@@ -52,7 +61,7 @@ function AlwaysPaintedView({inert = false, children}: AlwaysPaintedViewProps) {
     const styles = useThemeStyles();
 
     return (
-        <NativeAlwaysPaintedView style={DISPLAY_CONTENTS}>
+        <AlwaysPaintedContents>
             <View
                 aria-hidden={inert}
                 // The shared `pointerEventsBoxNone` style is an empty object on native, so the value is set as a prop.
@@ -62,9 +71,9 @@ function AlwaysPaintedView({inert = false, children}: AlwaysPaintedViewProps) {
             >
                 {children}
             </View>
-        </NativeAlwaysPaintedView>
+        </AlwaysPaintedContents>
     );
 }
 
-export {getAlwaysPaintedViewConfig};
+export {AlwaysPaintedContents, getAlwaysPaintedViewConfig};
 export default AlwaysPaintedView;
