@@ -2,6 +2,7 @@ import type DotLottieAnimation from '@components/LottieAnimations/types';
 
 import useAppState from '@hooks/useAppState';
 import useNetwork from '@hooks/useNetwork';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import Accessibility from '@libs/Accessibility';
@@ -65,7 +66,8 @@ function Lottie({ref, source, webStyle, shouldLoadAfterInteractions, ...props}: 
     const navigationContainerRef = useContext(NavigationContainerRefContext);
     const navigator = useContext(NavigationContext);
 
-    useEffect(() => {
+    // The focus and blur listeners survive a cover, so the events that cover and uncover the screen still reach them.
+    useScreenActivityEffect(() => {
         if (!browser || !navigationContainerRef || !navigator) {
             return;
         }
@@ -78,7 +80,7 @@ function Lottie({ref, source, webStyle, shouldLoadAfterInteractions, ...props}: 
         return unsubscribeNavigationFocus;
     }, [browser, navigationContainerRef, navigator, isReduceMotionEnabled]);
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         if (!browser || !navigationContainerRef || !navigator) {
             return;
         }
