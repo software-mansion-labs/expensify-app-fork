@@ -23,13 +23,6 @@
 - E/App issue: https://github.com/Expensify/App/issues/83976 (original), https://github.com/Expensify/App/issues/90756 (scroll-while-hidden follow-up)
 - PR introducing patch: https://github.com/Expensify/App/pull/84887
 
-### [@shopify+flash-list+2.3.2+003+fix-inverted-scroll-direction-on-web.patch](@shopify+flash-list+2.3.2+003+fix-inverted-scroll-direction-on-web.patch)
-
-- Reason: Fixes inverted scroll direction on web. FlashList uses `scaleY: -1` / `scaleX: -1` CSS transform to visually invert the list, but the browser's native wheel scroll doesn't flip accordingly — scrolling down visually scrolls up and vice versa. This patch adds a `useEffect` in `RecyclerView` that attaches a `wheel` event listener on web when `inverted` is true, intercepting the event, negating the scroll delta, and manually adjusting `scrollTop`/`scrollLeft`. Mirrors the same fix applied in react-native-web's `VirtualizedList`.
-- Upstream PR/issue: TBD
-- E/App issue: https://github.com/Expensify/App/issues/33725
-- PR introducing patch: https://github.com/Expensify/App/pull/85114
-
 ### [@shopify+flash-list+2.3.2+004+fix-inverted-first-item-offset.patch](@shopify+flash-list+2.3.2+004+fix-inverted-first-item-offset.patch)
 
 - Reason: Fixes inverted lists rendering only a few items with white space on scroll. FlashList's `RecyclerView` measures `firstItemOffset` by calling `measureFirstChildLayout` relative to the outer container. When `inverted` is true, the outer container has `scaleY: -1`, which flips the coordinate system — causing the measured y-offset to equal the container height instead of 0. This makes all scroll offsets negative after adjustment (`adjustedOffset = scrollOffset - firstItemOffset`), so the viewport thinks it's in negative space where no items exist. Only items caught by the draw-distance buffer render. The fix forces `firstItemOffset` to 0 for inverted lists, since the transform already handles visual inversion.
@@ -201,3 +194,13 @@
 - E/App issue: https://github.com/Expensify/App/issues/97472
 - Sentry: https://expensify.sentry.io/issues/APP-8PG
 - PR introducing patch: https://github.com/Expensify/App/pull/98015
+
+### [@shopify+flash-list+2.3.2+017+mvcp-stable-anchor.patch](@shopify+flash-list+2.3.2+017+mvcp-stable-anchor.patch)
+
+- Reason: Keeps the report actions in place when older messages load on web, where the list renders in the regular order and older messages are prepended above the viewport. Two changes in `computeFirstVisibleIndexForOffsetCorrection`, both limited to how the `maintainVisibleContentPosition` anchor is picked:
+  1. **Anchor on an item that does not resize on a prepend**: the anchor used to be the first intersecting item. A prepend lands next to the first data item, which can re-render with a different size: a chat message loses its sender header once older messages from the same sender land above it. Keeping the leading edge of a resizing anchor in place shifts every message the user is looking at (about 20px per page in a plain chat, more with richer content), both when the anchor is partially scrolled out and when the user sits at the very top. The anchor is now the first item whose leading edge is inside the viewport, skipping the first data item when another item qualifies, and falls back to the first intersecting item when none does (a single item taller than the viewport). Inverted lists keep the original anchor, since they grow away from the viewport edge.
+  2. **Drop the anchor over the header only when a header exists**: patch `015` drops the anchor while the scroll offset is smaller than `firstItemOffset`, so the header is the visual anchor. Without a `ListHeaderComponent` that offset is only the content padding, and dropping the anchor there made a page of older messages that arrived while the user sat at the very top push the visible messages down by the whole page height. The first items stay the anchor in that case, as they do upstream.
+- Files changed: `src/recyclerview/hooks/useRecyclerViewController.tsx` and its `dist` counterpart.
+- Upstream PR/issue: TBD
+- E/App issue: TBD
+- PR introducing patch: TBD

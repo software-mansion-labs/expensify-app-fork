@@ -1,8 +1,8 @@
 diff --git a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-index 3deea98..bcaa951 100644
+index 4324707..d6bc120 100644
 --- a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 +++ b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-@@ -143,9 +143,11 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -83,9 +83,11 @@ const RecyclerViewComponent = (props, ref) => {
              containerViewSizeRef.current = outerViewSize;
              // firstChildViewLayout is already relative to the outer container,
              // so its x/y directly gives the first item offset.
@@ -18,10 +18,10 @@ index 3deea98..bcaa951 100644
              recyclerViewManager.updateLayoutParams({
                  width: horizontal ? outerViewSize.width : firstChildViewLayout.width,
 diff --git a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-index 42a901f..a6db0d9 100644
+index 3c25e7e..0525156 100644
 --- a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
 +++ b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-@@ -260,9 +260,11 @@ const RecyclerViewComponent = <T,>(
+@@ -176,9 +176,11 @@ const RecyclerViewComponent = <T,>(
  
        // firstChildViewLayout is already relative to the outer container,
        // so its x/y directly gives the first item offset.

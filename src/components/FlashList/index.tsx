@@ -6,8 +6,13 @@ import type {NativeScrollEvent, NativeSyntheticEvent} from 'react-native';
 import {FlashList as ShopifyFlashList} from '@shopify/flash-list';
 import React from 'react';
 
-function FlashList<T>({onScroll: onScrollProp, inverted, ...restProps}: FlashListProps<T>) {
-    const emitComposerScrollEvents = useEmitComposerScrollEvents({enabled: true, inverted});
+type FlashListWrapperProps<T> = FlashListProps<T> & {
+    /** Whether this list renders report actions next to the composer, so its scrolling suppresses hover effects and tooltips */
+    isChatList?: boolean;
+};
+
+function FlashList<T>({onScroll: onScrollProp, isChatList = false, ...restProps}: FlashListWrapperProps<T>) {
+    const emitComposerScrollEvents = useEmitComposerScrollEvents({enabled: isChatList});
 
     const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
         onScrollProp?.(e);
@@ -18,7 +23,6 @@ function FlashList<T>({onScroll: onScrollProp, inverted, ...restProps}: FlashLis
     return (
         <ShopifyFlashList<T>
             {...restProps}
-            inverted={inverted}
             onScroll={handleScroll}
         />
     );

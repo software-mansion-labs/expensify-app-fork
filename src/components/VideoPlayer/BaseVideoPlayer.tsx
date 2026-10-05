@@ -271,8 +271,6 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
         debouncedHideControl();
     }, [canUseTouchScreen, controlStatusState, debouncedHideControl, isPlaying, isPopoverVisible]);
 
-    const stopWheelPropagation = useCallback((ev: WheelEvent) => ev.stopPropagation(), []);
-
     const toggleControl = useCallback(() => {
         if (controlStatusState === CONST.VIDEO_PLAYER.CONTROLS_STATUS.SHOW) {
             hideControl();
@@ -622,18 +620,9 @@ function BaseVideoPlayer(props: BaseVideoPlayerProps) {
                                             contentFit="contain"
                                             onFullscreenEnter={() => {
                                                 setIsFullScreen(true);
-                                                if (!(videoPlayerElementParentRef.current && 'addEventListener' in videoPlayerElementParentRef.current)) {
-                                                    return;
-                                                }
-                                                // When the video is in fullscreen, we don't want the scroll to be captured by the InvertedFlashList of report screen.
-                                                // This will also allow the user to scroll the video playback speed.
-                                                videoPlayerElementParentRef.current.addEventListener('wheel', stopWheelPropagation);
                                             }}
                                             onFullscreenExit={() => {
                                                 setIsFullScreen(false);
-                                                if (videoPlayerElementParentRef.current && 'removeEventListener' in videoPlayerElementParentRef.current) {
-                                                    videoPlayerElementParentRef.current.removeEventListener('wheel', stopWheelPropagation);
-                                                }
                                                 updateVolume(videoPlayerRef.current.muted ? 0 : videoPlayerRef.current.volume || 1);
                                             }}
                                         />

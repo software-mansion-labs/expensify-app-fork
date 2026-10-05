@@ -1,0 +1,96 @@
+diff --git a/node_modules/@shopify/flash-list/dist/recyclerview/hooks/useRecyclerViewController.js b/node_modules/@shopify/flash-list/dist/recyclerview/hooks/useRecyclerViewController.js
+index 4c3862c7d29..7a3c9910d6d 100644
+--- a/node_modules/@shopify/flash-list/dist/recyclerview/hooks/useRecyclerViewController.js
++++ b/node_modules/@shopify/flash-list/dist/recyclerview/hooks/useRecyclerViewController.js
+@@ -82,6 +82,7 @@ export function useRecyclerViewController(recyclerViewManager, ref, scrollViewRe
+         }
+     }, [recyclerViewManager]);
+     const computeFirstVisibleIndexForOffsetCorrection = useCallback(() => {
++        var _a;
+         if (recyclerViewManager.getIsFirstLayoutComplete() &&
+             recyclerViewManager.hasStableDataKeys() &&
+             recyclerViewManager.getDataLength() > 0 &&
+@@ -90,14 +91,29 @@ export function useRecyclerViewController(recyclerViewManager, ref, scrollViewRe
+             // user's visual anchor. The Math.max(0, startIndex) clamp below would otherwise anchor item 0 (which can
+             // be far below the fold) and "maintain" its position through header resizes or data prepends, yanking
+             // the viewport away from what the user is looking at. The header's own top never moves, so the correct
+-            // correction while it is the anchor is none — drop the tracked item instead.
+-            if (recyclerViewManager.getAbsoluteLastScrollOffset() <
+-                recyclerViewManager.firstItemOffset) {
++            // correction while it is the anchor is none — drop the tracked item instead. Without a header the offset
++            // only covers the content padding, and the first item stays the anchor so a prepend keeps it in view.
++            if (recyclerViewManager.props.ListHeaderComponent &&
++                recyclerViewManager.getAbsoluteLastScrollOffset() <
++                    recyclerViewManager.firstItemOffset) {
+                 firstVisibleItemKey.current = undefined;
+                 return;
+             }
+-            // Update the tracked first visible item
+-            const firstVisibleIndex = Math.max(0, recyclerViewManager.computeVisibleIndices().startIndex);
++            // Update the tracked first visible item. Prefer an item whose leading edge is inside the viewport, and not the
++            // first data item when another one qualifies: a prepend lands next to the first item, which can re-render with
++            // a different size (a chat message losing its sender header once older messages from the same sender land
++            // above it), and keeping a resizing anchor's leading edge in place would shift every item the user is
++            // looking at. Inverted lists grow away from the viewport edge, so they keep the original anchor.
++            const visibleIndices = recyclerViewManager.computeVisibleIndices();
++            const viewportStart = recyclerViewManager.getLastScrollOffset();
++            const isLeadingEdgeVisible = (index) => {
++                const layout = recyclerViewManager.getLayout(index);
++                return (recyclerViewManager.props.horizontal ? layout.x : layout.y) >= viewportStart;
++            };
++            const stableAnchorIndex = recyclerViewManager.props.inverted
++                ? undefined
++                : (_a = visibleIndices.findValue((index) => index > 0 && isLeadingEdgeVisible(index))) !== null && _a !== void 0 ? _a : visibleIndices.findValue(isLeadingEdgeVisible);
++            const firstVisibleIndex = stableAnchorIndex !== null && stableAnchorIndex !== void 0 ? stableAnchorIndex : Math.max(0, visibleIndices.startIndex);
+             if (firstVisibleIndex !== undefined && firstVisibleIndex >= 0) {
+                 firstVisibleItemKey.current =
+                     recyclerViewManager.getDataKey(firstVisibleIndex);
+diff --git a/node_modules/@shopify/flash-list/src/recyclerview/hooks/useRecyclerViewController.tsx b/node_modules/@shopify/flash-list/src/recyclerview/hooks/useRecyclerViewController.tsx
+index 1308c15b53c..d75331972da 100644
+--- a/node_modules/@shopify/flash-list/src/recyclerview/hooks/useRecyclerViewController.tsx
++++ b/node_modules/@shopify/flash-list/src/recyclerview/hooks/useRecyclerViewController.tsx
+@@ -104,19 +104,37 @@ export function useRecyclerViewController<T>(
+       // user's visual anchor. The Math.max(0, startIndex) clamp below would otherwise anchor item 0 (which can
+       // be far below the fold) and "maintain" its position through header resizes or data prepends, yanking
+       // the viewport away from what the user is looking at. The header's own top never moves, so the correct
+-      // correction while it is the anchor is none — drop the tracked item instead.
++      // correction while it is the anchor is none — drop the tracked item instead. Without a header the offset
++      // only covers the content padding, and the first item stays the anchor so a prepend keeps it in view.
+       if (
++        recyclerViewManager.props.ListHeaderComponent &&
+         recyclerViewManager.getAbsoluteLastScrollOffset() <
+-        recyclerViewManager.firstItemOffset
++          recyclerViewManager.firstItemOffset
+       ) {
+         firstVisibleItemKey.current = undefined;
+         return;
+       }
+-      // Update the tracked first visible item
+-      const firstVisibleIndex = Math.max(
+-        0,
+-        recyclerViewManager.computeVisibleIndices().startIndex
+-      );
++      // Update the tracked first visible item. Prefer an item whose leading edge is inside the viewport, and not the
++      // first data item when another one qualifies: a prepend lands next to the first item, which can re-render with
++      // a different size (a chat message losing its sender header once older messages from the same sender land
++      // above it), and keeping a resizing anchor's leading edge in place would shift every item the user is
++      // looking at. Inverted lists grow away from the viewport edge, so they keep the original anchor.
++      const visibleIndices = recyclerViewManager.computeVisibleIndices();
++      const viewportStart = recyclerViewManager.getLastScrollOffset();
++      const isLeadingEdgeVisible = (index: number) => {
++        const layout = recyclerViewManager.getLayout(index);
++        return (
++          (recyclerViewManager.props.horizontal ? layout.x : layout.y) >=
++          viewportStart
++        );
++      };
++      const stableAnchorIndex = recyclerViewManager.props.inverted
++        ? undefined
++        : visibleIndices.findValue(
++            (index) => index > 0 && isLeadingEdgeVisible(index)
++          ) ?? visibleIndices.findValue(isLeadingEdgeVisible);
++      const firstVisibleIndex =
++        stableAnchorIndex ?? Math.max(0, visibleIndices.startIndex);
+       if (firstVisibleIndex !== undefined && firstVisibleIndex >= 0) {
+         firstVisibleItemKey.current =
+           recyclerViewManager.getDataKey(firstVisibleIndex);

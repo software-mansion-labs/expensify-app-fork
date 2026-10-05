@@ -25,7 +25,7 @@ import type {TextInputKeyPressEvent, TextInputSelectionChangeEvent} from 'react-
 import {useIsFocused} from '@react-navigation/native';
 import lodashDebounce from 'lodash/debounce';
 import React, {useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
-import {DeviceEventEmitter, StyleSheet} from 'react-native';
+import {StyleSheet} from 'react-native';
 
 const excludeNoStyles: Array<keyof MarkdownStyle> = [];
 const excludeReportMentionStyle: Array<keyof MarkdownStyle> = ['mentionReport'];
@@ -87,7 +87,6 @@ function Composer({
     const isScrollBarVisible = useIsScrollBarVisible(textInputRef, value ?? '');
     const [prevScroll, setPrevScroll] = useState<number | undefined>();
     const [prevHeight, setPrevHeight] = useState<number | undefined>();
-    const isReportFlatListScrolling = useRef(false);
 
     useEffect(() => {
         if (!!selection && selectionProp.start === selection.start && selectionProp.end === selection.end) {
@@ -236,37 +235,6 @@ function Composer({
 
         return () => {
             inputRef?.removeEventListener('scroll', debouncedSetPrevScroll);
-        };
-    }, []);
-
-    useEffect(() => {
-        const scrollingListener = DeviceEventEmitter.addListener(CONST.EVENTS.SCROLLING, (scrolling: boolean) => {
-            isReportFlatListScrolling.current = scrolling;
-        });
-
-        return () => scrollingListener.remove();
-    }, []);
-
-    useEffect(() => {
-        const inputRef = textInputRef.current;
-
-        const handleWheel = (e: MouseEvent) => {
-            if (isReportFlatListScrolling.current) {
-                e.preventDefault();
-                return;
-            }
-
-            // When the composer has no scrollable content, the stopPropagation will prevent the inverted wheel event handler on the Chat body
-            // which defaults to the browser wheel behavior. This causes the chat body to scroll in the opposite direction creating jerky behavior.
-            if (inputRef && inputRef.scrollHeight <= inputRef.clientHeight) {
-                return;
-            }
-            e.stopPropagation();
-        };
-        inputRef?.addEventListener('wheel', handleWheel, {passive: false});
-
-        return () => {
-            inputRef?.removeEventListener('wheel', handleWheel);
         };
     }, []);
 

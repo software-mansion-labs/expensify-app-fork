@@ -34,7 +34,7 @@ index 08b83f3..05a64b1 100644
       * Scrolls to a specific item in the list.
       *
 diff --git a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-index b8ab103..27d9f87 100644
+index 621226f..b5efe7d 100644
 --- a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 +++ b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 @@ -59,7 +59,7 @@ const RecyclerViewComponent = (props, ref) => {
@@ -46,7 +46,7 @@ index b8ab103..27d9f87 100644
      // Initialize view holder collection ref
      const viewHolderCollectionRef = useRef(null);
      // Hook to handle list loading
-@@ -239,12 +239,19 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -179,12 +179,19 @@ const RecyclerViewComponent = (props, ref) => {
                  return;
              }
              if (isMomentumEnd) {
@@ -66,7 +66,7 @@ index b8ab103..27d9f87 100644
              // Update scroll position and trigger re-render if needed
              if (recyclerViewManager.updateScrollOffset(scrollOffset, velocity)) {
                  setRenderId((prev) => prev + 1);
-@@ -267,6 +274,9 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -207,6 +214,9 @@ const RecyclerViewComponent = (props, ref) => {
          computeFirstVisibleIndexForOffsetCorrection,
          horizontal,
          isHorizontalRTL,
@@ -76,7 +76,7 @@ index b8ab103..27d9f87 100644
          recyclerViewManager,
          velocityTracker,
      ]);
-@@ -463,7 +473,7 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -403,7 +413,7 @@ const RecyclerViewComponent = (props, ref) => {
                          recyclerViewManager.animationOptimizationsEnabled = false;
                      }, CellRendererComponent: CellRendererComponent, ItemSeparatorComponent: ItemSeparatorComponent, isInLastRow: (index) => recyclerViewManager.isInLastRow(index), getChildContainerLayout: () => recyclerViewManager.hasLayout()
                          ? recyclerViewManager.getChildContainerDimensions()

@@ -1,8 +1,8 @@
 diff --git a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-index a65347b..562f92c 100644
+index efeb090..358b4a9 100644
 --- a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 +++ b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-@@ -469,7 +469,7 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -409,7 +409,7 @@ const RecyclerViewComponent = (props, ref) => {
                  isHorizontalRTL && viewToMeasureBoundedSize,
                  renderHeader,
                  !isHorizontalRTL && viewToMeasureBoundedSize,
@@ -52,10 +52,10 @@ index e66d406..3d3e4b0 100644
          })));
  };
 diff --git a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-index 3782805..cac633c 100644
+index ece028a..1311ba8 100644
 --- a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
 +++ b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-@@ -709,7 +709,7 @@ const RecyclerViewComponent = <T,>(
+@@ -625,7 +625,7 @@ const RecyclerViewComponent = <T,>(
              data={data}
              horizontal={horizontal}
              renderStack={recyclerViewManager.getRenderStack()}

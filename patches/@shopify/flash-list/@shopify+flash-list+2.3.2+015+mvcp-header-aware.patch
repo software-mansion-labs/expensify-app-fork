@@ -1,8 +1,8 @@
 diff --git a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-index c00fc99..a65347b 100644
+index e9f1405..efeb090 100644
 --- a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 +++ b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-@@ -350,8 +350,27 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -290,8 +290,27 @@ const RecyclerViewComponent = (props, ref) => {
              recyclerViewContext.layout();
          }
      }, [recyclerViewContext, recyclerViewManager]);
@@ -160,18 +160,18 @@ index 4d7a945..26133d6 100644
       * Creates the footer component with optional styling.
       */
 diff --git a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-index 4d6b24e..3782805 100644
+index cc3a17f..ece028a 100644
 --- a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
 +++ b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-@@ -16,6 +16,7 @@ import React, {
+@@ -15,6 +15,7 @@ import React, {
  import {
    Animated,
    I18nManager,
 +  LayoutChangeEvent,
    NativeScrollEvent,
    NativeSyntheticEvent,
-   Platform,
-@@ -502,6 +503,31 @@ const RecyclerViewComponent = <T,>(
+ } from "react-native";
+@@ -418,6 +419,31 @@ const RecyclerViewComponent = <T,>(
      [recyclerViewContext, recyclerViewManager]
    );
  
@@ -203,7 +203,7 @@ index 4d6b24e..3782805 100644
    // Get secondary props and components
    const {
      refreshControl,
-@@ -510,7 +536,7 @@ const RecyclerViewComponent = <T,>(
+@@ -426,7 +452,7 @@ const RecyclerViewComponent = <T,>(
      renderEmpty,
      CompatScrollView,
      renderStickyHeaderBackdrop,

@@ -520,7 +520,6 @@ function ReportActionsListContent({reportID, conciergeChat, onLayout}: ReportAct
                     extraData={extraData}
                     key={listID}
                     overrideProps={{
-                        isInvertedVirtualizedList: true,
                         contentOffset: shouldFocusToTopOnMount ? {x: 0, y: windowHeight} : undefined,
                     }}
                     getItemType={(item) => item.actionName}

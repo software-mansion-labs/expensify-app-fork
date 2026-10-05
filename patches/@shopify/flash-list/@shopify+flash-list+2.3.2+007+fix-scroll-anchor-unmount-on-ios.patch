@@ -1,8 +1,8 @@
 diff --git a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-index 88ca8b1..085c819 100644
+index 9e0b3dc..0196182 100644
 --- a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 +++ b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-@@ -382,16 +382,15 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -322,16 +322,15 @@ const RecyclerViewComponent = (props, ref) => {
          }
          return onScrollHandler;
      }, [onScrollHandler, scrollY, stickyHeaders, stickyHeaderUseNativeDriver]);
@@ -21,7 +21,7 @@ index 88ca8b1..085c819 100644
      const shouldRenderFromBottom = recyclerViewManager.getDataLength() > 0 &&
          ((_e = maintainVisibleContentPosition === null || maintainVisibleContentPosition === void 0 ? void 0 : maintainVisibleContentPosition.startRenderingFromBottom) !== null && _e !== void 0 ? _e : false);
      // Create view for measuring bounded size
-@@ -403,11 +402,11 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -343,11 +342,11 @@ const RecyclerViewComponent = (props, ref) => {
              }, ref: firstChildViewRef }));
      }, [horizontal, stickyHeaderOffset]);
      const scrollAnchor = useMemo(() => {
@@ -36,10 +36,10 @@ index 88ca8b1..085c819 100644
      // Render the main RecyclerView structure
      return (React.createElement(RecyclerViewContextProvider, { value: recyclerViewContext },
 diff --git a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-index c09ba9b..974b485 100644
+index a9da5dd..d3c61ee 100644
 --- a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
 +++ b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-@@ -575,18 +575,15 @@ const RecyclerViewComponent = <T,>(
+@@ -491,18 +491,15 @@ const RecyclerViewComponent = <T,>(
      return onScrollHandler;
    }, [onScrollHandler, scrollY, stickyHeaders, stickyHeaderUseNativeDriver]);
  
@@ -60,7 +60,7 @@ index c09ba9b..974b485 100644
  
    const shouldRenderFromBottom =
      recyclerViewManager.getDataLength() > 0 &&
-@@ -607,7 +604,7 @@ const RecyclerViewComponent = <T,>(
+@@ -523,7 +520,7 @@ const RecyclerViewComponent = <T,>(
    }, [horizontal, stickyHeaderOffset]);
  
    const scrollAnchor = useMemo(() => {
@@ -69,7 +69,7 @@ index c09ba9b..974b485 100644
        return (
          <ScrollAnchor
            horizontal={Boolean(horizontal)}
-@@ -616,7 +613,7 @@ const RecyclerViewComponent = <T,>(
+@@ -532,7 +529,7 @@ const RecyclerViewComponent = <T,>(
        );
      }
      return null;

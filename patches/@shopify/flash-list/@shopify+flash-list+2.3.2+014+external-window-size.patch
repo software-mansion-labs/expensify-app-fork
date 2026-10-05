@@ -19,7 +19,7 @@ index cd99ea1..d926c81 100644
       * Draw distance for advanced rendering (in dp/px)
       */
 diff --git a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
-index 27d9f87..c00fc99 100644
+index b5efe7d..e9f1405 100644
 --- a/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 +++ b/node_modules/@shopify/flash-list/dist/recyclerview/RecyclerView.js
 @@ -28,7 +28,7 @@ import { RenderTimeTracker } from "./helpers/RenderTimeTracker";
@@ -31,7 +31,7 @@ index 27d9f87..c00fc99 100644
      const [renderTimeTracker] = useState(() => new RenderTimeTracker());
      renderTimeTracker.startTracking();
      // Sticky header config
-@@ -148,12 +148,15 @@ const RecyclerViewComponent = (props, ref) => {
+@@ -88,12 +88,15 @@ const RecyclerViewComponent = (props, ref) => {
                  : horizontal
                      ? firstChildViewLayout.x
                      : firstChildViewLayout.y;
@@ -71,10 +71,10 @@ index 1dba06c..9531d92 100644
     * Draw distance for advanced rendering (in dp/px)
     */
 diff --git a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-index ea42f73..4d6b24e 100644
+index 9f61766..cc3a17f 100644
 --- a/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
 +++ b/node_modules/@shopify/flash-list/src/recyclerview/RecyclerView.tsx
-@@ -90,6 +90,7 @@ const RecyclerViewComponent = <T,>(
+@@ -88,6 +88,7 @@ const RecyclerViewComponent = <T,>(
      onChangeStickyIndex,
      stickyHeaderConfig,
      inverted,
@@ -82,7 +82,7 @@ index ea42f73..4d6b24e 100644
      ...rest
    } = props;
  
-@@ -266,13 +267,17 @@ const RecyclerViewComponent = <T,>(
+@@ -182,13 +183,17 @@ const RecyclerViewComponent = <T,>(
            ? firstChildViewLayout.x
            : firstChildViewLayout.y;
  
