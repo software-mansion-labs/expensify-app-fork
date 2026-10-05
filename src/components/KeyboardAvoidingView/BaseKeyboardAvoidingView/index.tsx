@@ -1,5 +1,7 @@
 import type {KeyboardAvoidingViewProps} from '@components/KeyboardAvoidingView/types';
 
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
+
 import {isMobileSafariOnIos26} from '@libs/Browser';
 
 import KeyboardUtil from '@src/utils/keyboard';
@@ -7,7 +9,7 @@ import KeyboardUtil from '@src/utils/keyboard';
 /*
  * The KeyboardAvoidingView stub implementation for web and other platforms where the keyboard is handled automatically.
  */
-import React, {useEffect} from 'react';
+import React from 'react';
 import Animated, {Easing, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 
 const isMobileSafariIos26 = isMobileSafariOnIos26();
@@ -22,7 +24,8 @@ function BaseKeyboardAvoidingView(props: KeyboardAvoidingViewProps) {
         return {paddingBottom: sharedValue.get() * BUBBLE_DOMAIN_HEIGHT_SAFARI_26};
     });
 
-    useEffect(() => {
+    // The keyboard subscription survives a cover, so the padding follows a keyboard change that happens behind it.
+    useScreenActivityEffect(() => {
         if (!isMobileSafariIos26) {
             return;
         }
