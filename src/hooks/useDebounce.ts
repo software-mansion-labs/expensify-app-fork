@@ -2,7 +2,9 @@
 import type {DebouncedFunc, DebounceSettings} from 'lodash';
 
 import lodashDebounce from 'lodash/debounce';
-import {useEffect, useRef} from 'react';
+import {useRef} from 'react';
+
+import useScreenActivityEffect from './useScreenActivityEffect';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GenericFunction = (...args: any[]) => void;
@@ -31,8 +33,9 @@ function useDebounceImpl(func: GenericFunction, wait: number, options?: UseDebou
     const {leading, maxWait, trailing = true, shouldExecuteOnUnmount = false} = options ?? {};
 
     // Registered before the debounce effect so this cleanup runs first on unmount and can flush
-    // before the debounced function is cancelled.
-    useEffect(() => {
+    // before the debounced function is cancelled. A cover neither flushes nor cancels a pending call,
+    // which keeps its timer running as on a screen that stays live.
+    useScreenActivityEffect(() => {
         return () => {
             if (!shouldExecuteOnUnmount) {
                 return;
@@ -41,7 +44,7 @@ function useDebounceImpl(func: GenericFunction, wait: number, options?: UseDebou
         };
     }, [shouldExecuteOnUnmount]);
 
-    useEffect(() => {
+    useScreenActivityEffect(() => {
         // Lodash checks whether `maxWait` is present, not its value, so `{maxWait: undefined}` would cap the wait at `wait`.
         const debouncedFn = maxWait === undefined ? lodashDebounce(func, wait, {leading, trailing}) : lodashDebounce(func, wait, {leading, maxWait, trailing});
 
