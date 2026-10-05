@@ -4,6 +4,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import ScreenActivityWrapper from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/ScreenActivityWrapper';
 import {bottomTabScreenLayoutWrapper} from '@libs/Navigation/PlatformStackNavigation/ScreenLayout';
 import type {TabNavigatorParamList} from '@libs/Navigation/types';
 import {getSpan} from '@libs/telemetry/activeSpans';
@@ -67,6 +68,14 @@ function withSuspense<P extends Record<string, unknown>>(LazyComponent: React.La
 }
 
 const HomePageScreen = withSuspense(LazyHomePage);
+
+function HomeWithActivity() {
+    return (
+        <ScreenActivityWrapper isScreenBlurred={false}>
+            <HomePageScreen />
+        </ScreenActivityWrapper>
+    );
+}
 const ReportsSplitNavigatorScreen = withSuspense(LazyReportsSplitNavigator, CONST.TELEMETRY.SPAN_NAVIGATE_TO_INBOX_TAB);
 const SettingsSplitNavigatorScreen = withSuspense(LazySettingsSplitNavigator);
 const WorkspaceNavigatorScreen = withSuspense(LazyWorkspaceNavigator);
@@ -119,7 +128,7 @@ function TabNavigator() {
         >
             <Tab.Screen
                 name={SCREENS.HOME}
-                component={HomePageScreen}
+                component={HomeWithActivity}
             />
             <Tab.Screen
                 name={NAVIGATORS.REPORTS_SPLIT_NAVIGATOR}
