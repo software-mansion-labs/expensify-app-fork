@@ -3,6 +3,7 @@ import {usePopoverActions, usePopoverState} from '@components/PopoverProvider';
 import PopoverWithoutOverlay from '@components/PopoverWithoutOverlay';
 
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 import useSidePanelState from '@hooks/useSidePanelState';
 
 import subscribeToRootNavigation from '@libs/Navigation/helpers/subscribeToRootNavigation';
@@ -60,7 +61,8 @@ function Popover(props: PopoverProps) {
 
     // Not adding this inside the PopoverProvider
     // because this is an issue on smaller screens as well.
-    React.useEffect(() => {
+    // The listener survives a cover, so the navigation that covers the screen still closes the popover.
+    useScreenActivityEffect(() => {
         // When this Popover manages its own back-guard (`shouldHandleNavigationBack`), the Modal-level
         // history sync (useSyncModalWithHistory) closes it on browser Back and consumes the entry. This
         // listener only covers the other case: dismissing the popover when the active navigation route
