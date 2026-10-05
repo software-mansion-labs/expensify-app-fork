@@ -1,3 +1,5 @@
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
+
 import getImageRecyclingKey from '@libs/getImageRecyclingKey';
 
 import type {ImageProps as ExpoImageProps} from 'expo-image';
@@ -10,8 +12,8 @@ import type ImageSVGProps from './types';
 function ImageSVG({src, width = '100%', height = '100%', fill, contentFit = 'cover', style, onLoadEnd}: ImageSVGProps) {
     const isReactComponent = typeof src === 'function';
 
-    // Clear memory cache when unmounting images to avoid memory overload
-    useEffect(() => {
+    // Clear memory cache when unmounting images to avoid memory overload. A cover is not an unmount, so it keeps the cache.
+    useScreenActivityEffect(() => {
         const clearMemoryCache = () => Image.clearMemoryCache();
         return () => {
             clearMemoryCache();
