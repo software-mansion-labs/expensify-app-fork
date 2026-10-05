@@ -44,3 +44,4 @@ const FullScreenAmountLayout = Object.assign(FullScreenAmountLayoutRoot, {
 });
 
 export default FullScreenAmountLayout;
+export {useFullScreenAmountLayout} from './context';
