@@ -10,6 +10,7 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePolicy from '@hooks/usePolicy';
+import useScreenActivityEffect from '@hooks/useScreenActivityEffect';
 
 import {areEmailsFromSamePrivateDomain} from '@libs/LoginUtils';
 import {temporaryGetDisplayNameOrDefault} from '@libs/PersonalDetailsUtils';
@@ -585,7 +586,8 @@ function SuggestionMention({
         debouncedCalculateMentionSuggestion(value, selection.start, selection.end);
     }, [value, selection.start, selection.end, debouncedCalculateMentionSuggestion]);
 
-    useEffect(() => {
+    // A reveal does not search again for the values the screen already searched before the cover.
+    useScreenActivityEffect(() => {
         debouncedSearchInServer(suggestionValues.prefixType, serverSearchPrefix, foundSuggestionsCountForServerSearch);
     }, [suggestionValues.prefixType, serverSearchPrefix, foundSuggestionsCountForServerSearch, policyID, value, debouncedSearchInServer]);
 
