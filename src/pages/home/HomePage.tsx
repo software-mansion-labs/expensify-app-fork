@@ -13,6 +13,8 @@ import useOnyx from '@hooks/useOnyx';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import ScreenActivitySection from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigatorComponent/ScreenActivityWrapper/ScreenActivitySection';
+
 import variables from '@styles/variables';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -63,11 +65,13 @@ function HomePage() {
                     bottomContent={<TabBarBottomContent selectedTab={NAVIGATION_TABS.HOME} />}
                     bottomContentStyle={styles.overflowVisible}
                 >
-                    <TopBar
-                        breadcrumbLabel={translate('common.home')}
-                        shouldShowLoadingBar={isForYouLoading}
-                        shouldDisplayHelpButton
-                    />
+                    <ScreenActivitySection>
+                        <TopBar
+                            breadcrumbLabel={translate('common.home')}
+                            shouldShowLoadingBar={isForYouLoading}
+                            shouldDisplayHelpButton
+                        />
+                    </ScreenActivitySection>
                     <ScrollView
                         contentContainerStyle={styles.homePageContentContainer}
                         addBottomSafeAreaPadding
@@ -75,24 +79,37 @@ function HomePage() {
                     >
                         {!shouldUseNarrowLayout && (
                             <View style={styles.centeredContentWidthLimiter}>
-                                <QuickCreationActionsBar />
+                                <ScreenActivitySection>
+                                    <QuickCreationActionsBar />
+                                </ScreenActivitySection>
                             </View>
                         )}
                         <View style={styles.homePageMainLayout(shouldUseNarrowLayout)}>
                             {/* Widgets handle their own visibility and may return null to avoid duplicating visibility logic here */}
+                            {/* Home stays live under a cover, so only the widgets whose effects survive a hide go under ScreenActivitySection */}
                             {shouldUseNarrowLayout ? (
                                 <>
-                                    <FreeTrialSection />
+                                    <ScreenActivitySection>
+                                        <FreeTrialSection />
+                                    </ScreenActivitySection>
                                     <ForYouSection
                                         isConciergeMenuVisible={isConciergeMenuVisible}
                                         setIsConciergeMenuVisible={setIsConciergeMenuVisible}
                                     />
-                                    <GettingStartedSection />
-                                    <UpcomingTravelSection />
-                                    <YourSpendSection />
+                                    <ScreenActivitySection>
+                                        <GettingStartedSection />
+                                    </ScreenActivitySection>
+                                    <ScreenActivitySection>
+                                        <UpcomingTravelSection />
+                                    </ScreenActivitySection>
+                                    <ScreenActivitySection>
+                                        <YourSpendSection />
+                                    </ScreenActivitySection>
                                     <RecentlyAddedSection />
                                     <InsightsSection />
-                                    <DiscoverSection />
+                                    <ScreenActivitySection>
+                                        <DiscoverSection />
+                                    </ScreenActivitySection>
                                 </>
                             ) : (
                                 <>
@@ -104,18 +121,28 @@ function HomePage() {
                                             isConciergeMenuVisible={isConciergeMenuVisible}
                                             setIsConciergeMenuVisible={setIsConciergeMenuVisible}
                                         />
-                                        <GettingStartedSection />
+                                        <ScreenActivitySection>
+                                            <GettingStartedSection />
+                                        </ScreenActivitySection>
                                         <InsightsSection />
                                     </View>
                                     <View
                                         testID="homePageRightColumn"
                                         style={styles.homePageRightColumn}
                                     >
-                                        <FreeTrialSection />
-                                        <YourSpendSection />
+                                        <ScreenActivitySection>
+                                            <FreeTrialSection />
+                                        </ScreenActivitySection>
+                                        <ScreenActivitySection>
+                                            <YourSpendSection />
+                                        </ScreenActivitySection>
                                         <RecentlyAddedSection />
-                                        <UpcomingTravelSection />
-                                        <DiscoverSection />
+                                        <ScreenActivitySection>
+                                            <UpcomingTravelSection />
+                                        </ScreenActivitySection>
+                                        <ScreenActivitySection>
+                                            <DiscoverSection />
+                                        </ScreenActivitySection>
                                     </View>
                                 </>
                             )}
