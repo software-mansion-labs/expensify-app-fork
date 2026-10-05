@@ -45,7 +45,7 @@ import type {FileObject} from '@src/types/utils/Attachment';
 
 import type {NativeMethods, TextInputKeyPressEvent} from 'react-native';
 
-import {useIsFocused} from '@react-navigation/core';
+import {useNavigation} from '@react-navigation/core';
 import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {useAnimatedRef} from 'react-native-reanimated';
@@ -82,7 +82,7 @@ function ConciergePromptBox({isMenuVisible, setIsMenuVisible}: ConciergePromptBo
     const {calculatePopoverPosition} = usePopoverPosition();
     const [draft] = useOnyx(ONYXKEYS.CONCIERGE_PROMPT_DRAFT);
     const [value, setValue] = useState(draft ?? '');
-    const isScreenFocused = useIsFocused();
+    const navigation = useNavigation();
 
     const {debouncedCommentMaxLengthValidation, exceededMaxLength, isExceedingMaxLength, isTaskTitle} = useDebouncedCommentMaxLengthValidation({reportID: conciergeTargetReportID});
 
@@ -215,13 +215,9 @@ function ConciergePromptBox({isMenuVisible, setIsMenuVisible}: ConciergePromptBo
         submit();
     };
 
-    useEffect(() => {
-        if (isScreenFocused) {
-            return;
-        }
-
-        hideSuggestionMenu();
-    }, [isScreenFocused, hideSuggestionMenu]);
+    // The blur event fires before the cover hides the screen, while the suggestion handles are still attached. An effect on
+    // useIsFocused would run only behind the cover, where it cannot reach them.
+    useEffect(() => navigation.addListener('blur', hideSuggestionMenu), [navigation, hideSuggestionMenu]);
 
     return (
         <View style={styles.gap6}>
