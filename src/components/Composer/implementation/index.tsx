@@ -244,7 +244,10 @@ function Composer({
             isReportFlatListScrolling.current = scrolling;
         });
 
-        return () => scrollingListener.remove();
+        return () => {
+            scrollingListener.remove();
+            isReportFlatListScrolling.current = false;
+        };
     }, []);
 
     useEffect(() => {
