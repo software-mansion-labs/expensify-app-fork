@@ -7,7 +7,7 @@ import trackMFAFlowOutcome from '@components/MultifactorAuthentication/observabi
 import {getErrorMessage} from '@libs/ErrorUtils';
 import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import {createCanceledMFAResult, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createCanceledMFAResult, createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MultifactorAuthenticationCallbackInput, MultifactorAuthenticationCallbackResponse} from '@libs/MultifactorAuthentication/shared/types';
 
 import {requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
@@ -20,8 +20,12 @@ import {fromPromise} from 'xstate';
 import type {
     AuthorizeInput,
     AuthorizeOutput,
+    CancelScenarioInput,
+    CancelScenarioOutput,
     CreateCredentialInput,
     CreateCredentialOutput,
+    ExecuteScenarioActionInput,
+    ExecuteScenarioActionOutput,
     FinalizeOutcomeInput,
     FinalizeOutcomeOutput,
     LoadRegistrationStateInput,
@@ -81,11 +85,11 @@ const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredenti
 });
 
 /**
- * Requests the authorization challenge, runs the platform ceremony, then invokes the scenario's
- * action with the signed challenge. While the flow is active, a local failure showing that the device
- * credential is unusable clears it before returning; cancellation skips that cleanup. The reason itself
- * is forwarded unchanged so the recovery slice can route recoverable failures to re-registration. No
- * rollback happens after the scenario action fails, matching `createCredentialActor`'s contract.
+ * Requests the authorization challenge and runs the platform ceremony that signs it. While the flow is
+ * active, a local failure showing that the device credential is unusable clears it before returning;
+ * cancellation skips that cleanup. The reason itself is forwarded unchanged so the recovery slice can
+ * route recoverable failures to re-registration. The scenario action runs in its own actor, so the
+ * machine can hold it while the cancel confirmation is up.
  */
 const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({input, signal}) => {
     const {httpStatusCode, challenge, reason, message} = await requestAuthorizationChallenge();
@@ -108,23 +112,22 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
         authResult.success ? {success: true, authMethod: authResult.authenticationMethod.code} : authResult.error,
         authResult.success ? 'info' : 'error',
     );
-    if (!authResult.success) {
-        if (!signal.aborted && CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(authResult.error.reason)) {
-            addMFABreadcrumb('Authorization key reset', authResult.error, 'warning');
-            await deleteLocalCredentials(input.accountID, signal);
-        }
-        return authResult;
+    if (!authResult.success && !signal.aborted && CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(authResult.error.reason)) {
+        addMFABreadcrumb('Authorization key reset', authResult.error, 'warning');
+        await deleteLocalCredentials(input.accountID, signal);
     }
+    return authResult;
+});
 
-    // The native ceremony cannot be interrupted mid-flight, so it can still succeed after the flow
-    // was cancelled. Skip the scenario action rather than invoking one nobody asked for anymore.
-    if (signal.aborted) {
-        return createCanceledMFAResult('MFA flow canceled before the scenario action');
-    }
-
+/**
+ * Sends the scenario's backend action with the signed challenge. The request can't be taken back once
+ * sent, so the machine invokes this only while no cancel confirmation is up. No rollback happens after
+ * the action fails, matching `createCredentialActor`'s contract.
+ */
+const executeScenarioActionActor = fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(async ({input}) => {
     const scenarioResult = await input.runScenarioAction({
-        signedChallenge: authResult.signedChallenge,
-        authenticationMethod: authResult.authenticationMethod.marqetaValue,
+        signedChallenge: input.signedChallenge,
+        authenticationMethod: input.authenticationMethod.marqetaValue,
     });
     addMFABreadcrumb('Scenario action completed', scenarioResult.success ? {success: true} : scenarioResult.error, scenarioResult.success ? 'info' : 'error');
     if (!scenarioResult.success) {
@@ -132,7 +135,7 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
     }
 
     const {success, ...scenarioResponse} = scenarioResult;
-    return {success, scenarioResponse, authenticationMethod: authResult.authenticationMethod};
+    return {success, scenarioResponse};
 });
 
 /**
@@ -200,6 +203,21 @@ const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeI
 });
 
 /**
+ * Runs the scenario's cancel logic and returns the error the cancelled flow fails with, so the outcome
+ * path (callback, telemetry, failure screen) runs as for any other failure. The signal is ignored: a
+ * cancel request already sent (e.g. `AuthorizeTransaction`'s deny) can't be taken back.
+ */
+const cancelScenarioActor = fromPromise<CancelScenarioOutput, CancelScenarioInput>(async ({input}) => {
+    if (input.onCancel) {
+        const error = await input.onCancel(input.payload);
+        addMFABreadcrumb('Scenario onCancel completed', error, 'warning');
+        return error;
+    }
+    addMFABreadcrumb('Flow cancelled', {reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED}, 'warning');
+    return createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'User cancelled the MFA flow');
+});
+
+/**
  * Builds the side-effect actors that the machine states invoke. The machine is always created with
  * these working implementations, so no caller needs to provide stubs or overrides.
  */
@@ -210,7 +228,9 @@ function createActors() {
         requestRegistrationChallenge: requestRegistrationChallengeActor,
         createCredential: createCredentialActor,
         authorize: authorizeActor,
+        executeScenarioAction: executeScenarioActionActor,
         finalizeOutcome: finalizeOutcomeActor,
+        cancelScenario: cancelScenarioActor,
     };
 }
 
