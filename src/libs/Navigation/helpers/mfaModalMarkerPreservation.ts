@@ -25,6 +25,14 @@ function isMfaMarkerStripInProgress(): boolean {
     return stripInProgress;
 }
 
+/** Whether the MFA modal is open: its marker is in the root history, or a strip is about to re-attach it. */
+function isMfaModalNavigatorOpen(): boolean {
+    if (stripInProgress) {
+        return true;
+    }
+    return navigationRef.isReady() && (navigationRef.getRootState()?.history?.includes(MFA_MARKER) ?? false);
+}
+
 function toggleMfaMarker(isVisible: boolean): void {
     navigationRef.dispatch({
         type: CONST.NAVIGATION.ACTION_TYPE.TOGGLE_MFA_MODAL_NAVIGATOR_WITH_HISTORY,
@@ -63,4 +71,4 @@ function popAndRealignMfaMarker(pop: () => void, scheduleReattach: (callback: ()
     }
 }
 
-export {cancelPendingMfaMarkerReattach, isMfaMarkerStripInProgress, popAndRealignMfaMarker, toggleMfaMarker};
+export {cancelPendingMfaMarkerReattach, isMfaMarkerStripInProgress, isMfaModalNavigatorOpen, popAndRealignMfaMarker, toggleMfaMarker};
