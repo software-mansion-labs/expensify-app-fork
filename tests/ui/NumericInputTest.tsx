@@ -3,10 +3,11 @@ import {act, fireEvent, render, screen} from '@testing-library/react-native';
 import ComposeProviders from '@components/ComposeProviders';
 import {LocaleContextProvider} from '@components/LocaleContextProvider';
 import type {NumericEditingRef} from '@components/NumericEditingController';
-import NumericInput, {useNumericDynamicFontSize, useNumericInputActions} from '@components/NumericInput';
+import NumericInput, {useNumericInputActions} from '@components/NumericInput';
 import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import {PressableWithoutFeedback} from '@components/Pressable';
-import Text from '@components/Text';
+
+import variables from '@styles/variables';
 
 import CONST from '@src/CONST';
 
@@ -76,21 +77,91 @@ describe('NumericInput', () => {
 
     describe('symbol primitive', () => {
         it('renders its children as a passive symbol, without a button', () => {
+            // Given a passive symbol composed beside the number
             renderNumericInput({value: '12'}, <NumericInput.Symbol>km</NumericInput.Symbol>);
 
+            // Then the symbol is shown as plain text, so pressing it cannot open a selector
             expect(screen.getByText('km')).toBeOnTheScreen();
             expect(screen.queryAllByRole(CONST.ROLE.BUTTON, {name: SYMBOL_ACCESSIBILITY_LABEL})).toHaveLength(0);
         });
 
         it('renders its children inside the symbol button and calls onPress when it is pressed', () => {
+            // Given a pressable symbol, which opens the symbol or currency selector
             const onPress = jest.fn();
             renderNumericInput({value: '12'}, <NumericInput.SymbolButton onPress={onPress}>km</NumericInput.SymbolButton>);
-
             expect(screen.getByText('km')).toBeOnTheScreen();
 
+            // When the symbol button is pressed
             fireEvent.press(screen.getByRole(CONST.ROLE.BUTTON, {name: SYMBOL_ACCESSIBILITY_LABEL}));
 
+            // Then the caller is notified so it can open the selector
             expect(onPress).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('container primitive', () => {
+        const CONTAINER_TEST_ID = 'amount-container';
+
+        /** Minimum height the legacy amount row reserved for its floating error */
+        const LEGACY_RESERVED_HEIGHT = variables.inputHeight + 2 * (variables.formErrorLineHeight + 8);
+
+        /** Outer view of the container, the nearest host element above the interactive number view that carries the test id */
+        function getOuterContainer() {
+            let node = screen.getByTestId(CONTAINER_TEST_ID).parent;
+            while (node && typeof node.type !== 'string') {
+                node = node.parent;
+            }
+            if (!node) {
+                throw new Error('Outer amount container was not rendered');
+            }
+            return node;
+        }
+
+        function renderContainer(style?: React.ComponentProps<typeof NumericInput.Container>['style']) {
+            renderNumericInput(
+                {value: '12'},
+                <NumericInput.Container
+                    testID={CONTAINER_TEST_ID}
+                    style={style}
+                >
+                    <NumericInput.TextInput testID={INPUT_TEST_ID} />
+                </NumericInput.Container>,
+            );
+        }
+
+        it('grows into the space its parent gives it while keeping its content height as the basis', () => {
+            // Given an amount container composed directly in the root
+            renderContainer();
+
+            // Then both of its views only grow (no `flex: 1`, whose zero basis would let a short screen squeeze the amount
+            // under the pad), and its empty area keeps the id used to refocus the input
+            const numberView = screen.getByTestId(CONTAINER_TEST_ID);
+            expect(numberView).toHaveStyle({flexGrow: 1});
+            expect(numberView).not.toHaveStyle({flex: 1});
+            expect(getOuterContainer()).toHaveStyle({flexGrow: 1});
+            expect(getOuterContainer()).not.toHaveStyle({flex: 1});
+            expect(typeof numberView.props.id).toBe('string');
+        });
+
+        it('reserves no height of its own, leaving any room for a floating error to the layout', () => {
+            // Given an amount container without a layout style
+            renderContainer();
+
+            // Then none of the rendered elements reserves the legacy error room, so its geometry never depends on the error
+            const hostElements = screen.UNSAFE_root.findAll((node) => typeof node.type === 'string');
+            expect(hostElements).toContain(screen.getByTestId(CONTAINER_TEST_ID));
+            for (const element of hostElements) {
+                expect(element).not.toHaveStyle({minHeight: LEGACY_RESERVED_HEIGHT});
+            }
+        });
+
+        it('applies the layout style to the outer container, which still only grows', () => {
+            // Given a layout that reserves room for a floating error through the container style
+            renderContainer({minHeight: LEGACY_RESERVED_HEIGHT});
+
+            // Then the outer container carries the reserved height on top of its own grow-only flex
+            expect(getOuterContainer()).toHaveStyle({flexGrow: 1, minHeight: LEGACY_RESERVED_HEIGHT});
+            expect(getOuterContainer()).not.toHaveStyle({flex: 1});
         });
     });
 
@@ -471,33 +542,153 @@ describe('NumericInput', () => {
         });
     });
 
-    describe('useNumericDynamicFontSize', () => {
-        function FontSizeReadout({symbol}: {symbol?: string}) {
-            const {fontSize} = useNumericDynamicFontSize(symbol);
-
-            return <Text testID="font-size">{String(fontSize)}</Text>;
+    describe('dynamic font size (shouldUseDynamicFontSize)', () => {
+        function extractFontSize(style: unknown): number | undefined {
+            if (!style) {
+                return undefined;
+            }
+            if (Array.isArray(style)) {
+                for (let i = style.length - 1; i >= 0; i--) {
+                    const nested = extractFontSize(style.at(i));
+                    if (nested !== undefined) {
+                        return nested;
+                    }
+                }
+                return undefined;
+            }
+            if (typeof style === 'object' && 'fontSize' in style && typeof style.fontSize === 'number') {
+                return style.fontSize;
+            }
+            return undefined;
         }
 
-        it('scales down when the symbol is longer', () => {
-            renderNumericInput({value: '1234567890'}, <FontSizeReadout />);
-            const withoutSymbolFontSize = Number(screen.getByTestId('font-size').props.children);
+        function getElementFontSize(element: {props: unknown}): number | undefined {
+            const rawProps: unknown = element.props;
+            if (typeof rawProps !== 'object' || rawProps === null || !('style' in rawProps)) {
+                return undefined;
+            }
+            return extractFontSize(rawProps.style);
+        }
+
+        it('does not apply dynamic font size when shouldUseDynamicFontSize is not set', () => {
+            // Given a NumericInput with a short amount and default dynamic font size (disabled)
+            renderNumericInput({value: '12'});
+            const shortInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
 
             screen.unmount();
-            renderNumericInput({value: '1234567890'}, <FontSizeReadout symbol="PLN" />);
-            const withSymbolFontSize = Number(screen.getByTestId('font-size').props.children);
 
-            expect(withSymbolFontSize).toBeLessThan(withoutSymbolFontSize);
+            // When a long amount is rendered without dynamic font size
+            renderNumericInput({value: '1234567890123'});
+            const longInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+
+            // Then the font size remains the default input size and does not scale with length
+            expect(longInputFontSize).toBe(shortInputFontSize);
+            expect(longInputFontSize).not.toBe(getElementFontSize(screen.getByText('$')));
         });
 
-        it('scales down for negative values, because the sign takes room the input does not display', () => {
-            renderNumericInput({value: '1234567890'}, <FontSizeReadout />);
-            const positiveFontSize = Number(screen.getByTestId('font-size').props.children);
+        it('scales font size down across input and symbol when shouldUseDynamicFontSize is enabled', () => {
+            // Given a NumericInput with dynamic font size enabled and a short amount
+            renderNumericInput({value: '12', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
+            // When inspecting font sizes for a short amount
+            const shortInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+            const shortSymbolFontSize = getElementFontSize(screen.getByText('$'));
+
+            // Then short amounts use the base font size for both symbol and input
+            expect(shortInputFontSize).toBeDefined();
+            expect(shortSymbolFontSize).toBe(shortInputFontSize);
 
             screen.unmount();
-            renderNumericInput({value: '-1234567890', allowNegative: true}, <FontSizeReadout />);
-            const negativeFontSize = Number(screen.getByTestId('font-size').props.children);
 
-            expect(negativeFontSize).toBeLessThan(positiveFontSize);
+            // When rendered with a long amount that requires scaling
+            renderNumericInput({value: '1234567890123', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
+            const longInputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+            const longSymbolFontSize = getElementFontSize(screen.getByText('$'));
+
+            // Then the font size is scaled down equally for both input and symbol
+            expect(longInputFontSize).toBeDefined();
+            expect(shortInputFontSize).toBeDefined();
+            if (longInputFontSize !== undefined && shortInputFontSize !== undefined) {
+                expect(longInputFontSize).toBeLessThan(shortInputFontSize);
+            }
+            expect(longSymbolFontSize).toBe(longInputFontSize);
+        });
+
+        it('accounts for minus sign and symbol length when calculating dynamic font size', () => {
+            // Given a positive value with dynamic font size enabled
+            renderNumericInput({value: '1234567890', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
+            const positiveFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+
+            screen.unmount();
+
+            // When the value is negative and the minus sign is shown
+            renderNumericInput({value: '-1234567890', shouldUseDynamicFontSize: true, symbol: '$', allowNegative: true});
+            const negativeFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+            const minusSignFontSize = getElementFontSize(screen.getByText(MINUS_SIGN));
+
+            // Then the negative value scales down more because the minus sign consumes space, and the minus sign matches the input
+            expect(positiveFontSize).toBeDefined();
+            expect(negativeFontSize).toBeDefined();
+            if (negativeFontSize !== undefined && positiveFontSize !== undefined) {
+                expect(negativeFontSize).toBeLessThan(positiveFontSize);
+            }
+            expect(minusSignFontSize).toBe(negativeFontSize);
+
+            screen.unmount();
+
+            // When a longer symbol is provided
+            renderNumericInput({value: '1234567890', shouldUseDynamicFontSize: true, symbol: 'PLN', allowNegative: true});
+            const longSymbolFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+
+            // Then font size is further reduced to fit the longer symbol
+            expect(longSymbolFontSize).toBeDefined();
+            if (longSymbolFontSize !== undefined && positiveFontSize !== undefined) {
+                expect(longSymbolFontSize).toBeLessThan(positiveFontSize);
+            }
+        });
+
+        it('allows disabling dynamic font size on NumericTextInput specifically', () => {
+            // Given a NumericInput with dynamic font size enabled but disabled on the primitive
+            renderNumericInput(
+                {value: '1234567890123', shouldUseDynamicFontSize: true, symbol: '$'},
+                <>
+                    <NumericInput.Symbol>$</NumericInput.Symbol>
+                    <NumericInput.TextInput
+                        testID={INPUT_TEST_ID}
+                        shouldUseDynamicFontSize={false}
+                    />
+                </>,
+            );
+
+            // When inspecting styles of input and symbol
+            const inputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+            const symbolFontSize = getElementFontSize(screen.getByText('$'));
+
+            // Then symbol receives the scaled font size while the input retains default size rather than matching the symbol
+            expect(symbolFontSize).toBeDefined();
+            expect(inputFontSize).not.toBe(symbolFontSize);
+        });
+
+        it('ensures dynamic font size takes precedence over static fontSize in style prop', () => {
+            // Given a NumericInput with dynamic font size enabled and a custom style with static fontSize (like styles.iouAmountTextInput)
+            renderNumericInput(
+                {value: '0', shouldUseDynamicFontSize: true, symbol: 'hrs'},
+                <>
+                    <NumericInput.TextInput
+                        testID={INPUT_TEST_ID}
+                        style={{fontSize: variables.iouAmountTextSize}}
+                    />
+                    <NumericInput.Symbol textStyle={{fontSize: variables.iouAmountTextSize}}>hrs</NumericInput.Symbol>
+                </>,
+            );
+
+            // When inspecting font sizes
+            const inputFontSize = getElementFontSize(screen.getByTestId(INPUT_TEST_ID));
+            const symbolFontSize = getElementFontSize(screen.getByText('hrs'));
+
+            // Then both input and symbol receive the dynamic font size rather than the static fontSize, matching each other
+            expect(inputFontSize).toBeDefined();
+            expect(symbolFontSize).toBe(inputFontSize);
+            expect(inputFontSize).not.toBe(variables.iouAmountTextSize);
         });
     });
 
@@ -539,6 +730,44 @@ describe('NumericInput', () => {
 
             // Then the selection collapses onto its end
             expect(input.props.selection).toEqual({start: 3, end: 3});
+        });
+
+        it('notifies onInputChange synchronously from toggleSign', () => {
+            // Given a negative-capable composition whose parent records whether it was notified inside the toggle call
+            let wasParentUpdatedDuringToggle = false;
+            let isInsideToggle = false;
+            function SynchronousToggleProbe() {
+                const {toggleSign} = useNumericInputActions();
+
+                return (
+                    <PressableWithoutFeedback
+                        accessibilityLabel="Toggle sign synchronously"
+                        testID="toggle-sign-sync"
+                        onPress={() => {
+                            isInsideToggle = true;
+                            toggleSign();
+                            isInsideToggle = false;
+                        }}
+                    />
+                );
+            }
+            renderWithProviders(
+                <NumericInput
+                    value="12"
+                    allowNegative
+                    onInputChange={() => {
+                        wasParentUpdatedDuringToggle = isInsideToggle;
+                    }}
+                >
+                    <SynchronousToggleProbe />
+                </NumericInput>,
+            );
+
+            // When the sign is toggled
+            fireEvent.press(screen.getByTestId('toggle-sign-sync'));
+
+            // Then the parent was notified before toggleSign returned. NumberWithSymbolForm relies on this to tell a flip from an edit.
+            expect(wasParentUpdatedDuringToggle).toBe(true);
         });
     });
 });

@@ -1,17 +1,14 @@
 import {useNumericEditingController} from '@components/NumericEditingController';
-import type {NumericEditingRef, NumericEditingSelection} from '@components/NumericEditingController';
-import ScrollView from '@components/ScrollView';
+import type {NumericEditingSelection} from '@components/NumericEditingController';
 import isTextInputFocused from '@components/TextInput/BaseTextInput/isTextInputFocused';
 import type {BaseTextInputRef} from '@components/TextInput/BaseTextInput/types';
 
-import useThemeStyles from '@hooks/useThemeStyles';
-
-import type {ForwardedRef, ReactNode} from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
+import useStyleUtils from '@hooks/useStyleUtils';
 
 import {useImperativeHandle, useRef} from 'react';
 
 import type {NumericInputActionsContextValue, NumericInputStateContextValue} from './context/types';
+import type {NumericInputProps} from './types';
 
 import {NumericInputActionsContext, NumericInputStateContext} from './context';
 
@@ -39,41 +36,20 @@ const getWasNumberReplaced = (previousDisplayText: string, previousSelection: Nu
 const getWasSignTyped = (displayText: string, previousDisplayText: string, previousSelection: NumericEditingSelection) =>
     displayText === `${previousDisplayText.slice(0, previousSelection.start)}-${previousDisplayText.slice(previousSelection.end)}`;
 
-type NumericInputProps = {
-    /** Canonical value shared by composed primitives. Only an empty value resets editing state. */
-    value?: string;
-
-    /** Called with the canonical signed value when a composed primitive changes it. */
-    onInputChange?: (value: string) => void;
-
-    /** Whether negative values are allowed. The canonical value always stores its sign. */
-    allowNegative?: boolean;
-
-    /** Number of decimal places accepted by the composer. */
-    decimals?: number;
-
-    /** Maximum number of integer digits accepted by the composer. */
-    maxLength?: number;
-
-    /** Error supplied by FormProvider and rendered by `NumericInput.Error`. */
-    errorText?: string;
-
-    /** Ref exposing the number editing imperative API. */
-    ref?: ForwardedRef<NumericEditingRef>;
-
-    /** Style applied to the form scroll view. */
-    style?: StyleProp<ViewStyle>;
-
-    /** Additional styles applied to the form scroll view content container. */
-    scrollViewStyle?: StyleProp<ViewStyle>;
-
-    /** Composed primitives that consume NumericInput state and actions through context. */
-    children: ReactNode;
-};
-
-function NumericInput({value = '', onInputChange, allowNegative = false, decimals = 0, maxLength, errorText, ref, style, scrollViewStyle, children}: NumericInputProps) {
-    const styles = useThemeStyles();
+function NumericInput({
+    value = '',
+    onInputChange,
+    allowNegative = false,
+    decimals = 0,
+    maxLength,
+    errorText,
+    ref,
+    children,
+    shouldUseDynamicFontSize = false,
+    symbol = '',
+}: NumericInputProps) {
     const inputRef = useRef<BaseTextInputRef | null>(null);
+    const StyleUtils = useStyleUtils();
 
     const toDisplayText = (canonicalValue: string) => getMagnitude(canonicalValue, allowNegative);
 
@@ -126,6 +102,10 @@ function NumericInput({value = '', onInputChange, allowNegative = false, decimal
         inputRef.current?.focus();
     };
 
+    const dynamicAmountStyle = shouldUseDynamicFontSize
+        ? StyleUtils.getAmountInputFontSize(controller.formattedNumber.length + symbol.length + (allowNegative && controller.value.startsWith('-') ? 1 : 0))
+        : undefined;
+
     const stateContextValue: NumericInputStateContextValue = {
         value: controller.value,
         formattedNumber: controller.formattedNumber,
@@ -134,6 +114,7 @@ function NumericInput({value = '', onInputChange, allowNegative = false, decimal
         allowNegative,
         errorText,
         inputRef,
+        dynamicAmountStyle,
     };
 
     const actionsContextValue: NumericInputActionsContextValue = {
@@ -144,18 +125,12 @@ function NumericInput({value = '', onInputChange, allowNegative = false, decimal
         handleSelectionChange: controller.handleSelectionChange,
         handleKeyPress: controller.handleKeyPress,
         focusInput,
+        setShouldUpdateSelection: controller.setShouldUpdateSelection,
     };
 
     return (
         <NumericInputStateContext.Provider value={stateContextValue}>
-            <NumericInputActionsContext.Provider value={actionsContextValue}>
-                <ScrollView
-                    contentContainerStyle={[styles.flexGrow1, scrollViewStyle]}
-                    style={style}
-                >
-                    {children}
-                </ScrollView>
-            </NumericInputActionsContext.Provider>
+            <NumericInputActionsContext.Provider value={actionsContextValue}>{children}</NumericInputActionsContext.Provider>
         </NumericInputStateContext.Provider>
     );
 }

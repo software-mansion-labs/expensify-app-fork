@@ -1,6 +1,7 @@
 import {NumericCurrencyButton} from '@components/NumericButtons';
 
 import NumericInputComponent from './NumericInput';
+import NumericBigNumberPad from './primitives/NumericBigNumberPad';
 import NumericError from './primitives/NumericError';
 import NumericFlipButton from './primitives/NumericFlipButton';
 import NumericInputContainer from './primitives/NumericInputContainer';
@@ -36,8 +37,7 @@ import NumericTextInput from './primitives/NumericTextInput';
  * ```
  *
  * A suffix symbol is the same composition with the symbol placed after the input. The error is rendered by its own
- * primitive because number-pad layouts position it differently. A composition that needs shared dynamic sizing can
- * read `useNumericDynamicFontSize` once and pass the resulting style to its rendered primitives.
+ * primitive because number-pad layouts position it differently.
  */
 
 const NumericInput = Object.assign(NumericInputComponent, {
@@ -53,7 +53,7 @@ const NumericInput = Object.assign(NumericInputComponent, {
     /** Renders its children as the symbol (currency or unit) displayed beside the number. */
     Symbol: NumericSymbol,
 
-    /** Renders a pressable symbol (currency or unit) selector. */
+    /** Renders a pressable symbol control with the shared NumericInput symbol styling. */
     SymbolButton: NumericSymbolButton,
 
     /** Renders the minus sign of a negative value, which the input itself does not display. */
@@ -64,8 +64,10 @@ const NumericInput = Object.assign(NumericInputComponent, {
 
     /** Renders the centered, full-size amount layout with legacy empty-area refocus behavior. */
     Container: NumericInputContainer,
+
+    /** Renders the touch number pad wired to NumericInput actions and selection. */
+    BigNumberPad: NumericBigNumberPad,
 });
 
 export default NumericInput;
 export {useNumericInputActions} from './context';
-export {default as useNumericDynamicFontSize} from './hooks/useNumericDynamicFontSize';

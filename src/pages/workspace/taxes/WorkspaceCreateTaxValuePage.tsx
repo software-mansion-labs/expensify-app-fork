@@ -1,9 +1,8 @@
 import Button from '@components/Button';
+import FullScreenAmountLayout from '@components/FullScreenAmountLayout';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import NumberWithSymbolForm from '@components/NumberWithSymbolForm';
 import NumericInput from '@components/NumericInput';
 import ScreenWrapper from '@components/ScreenWrapper';
-import ScrollView from '@components/ScrollView';
 import type {BaseTextInputRef} from '@components/TextInput/BaseTextInput/types';
 
 import useLocalize from '@hooks/useLocalize';
@@ -27,11 +26,10 @@ import INPUT_IDS from '@src/types/form/WorkspaceNewTaxForm';
 
 import {useFocusEffect} from '@react-navigation/native';
 import React, {useRef, useState} from 'react';
-import {View} from 'react-native';
+
+const canUseTouchScreen = canUseTouchScreenUtil();
 
 type WorkspaceCreateTaxValuePageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.WORKSPACE.TAX_CREATE_VALUE>;
-
-const shouldUseLegacyInput = canUseTouchScreenUtil();
 
 function WorkspaceCreateTaxValuePage({
     route: {
@@ -71,34 +69,15 @@ function WorkspaceCreateTaxValuePage({
                 title={translate('workspace.taxes.value')}
                 onBackButtonPress={goBack}
             />
-            <ScrollView
-                contentContainerStyle={[styles.flexGrow1, styles.mb5]}
-                addBottomSafeAreaPadding
+            <NumericInput
+                value={currentValue}
+                onInputChange={setCurrentValue}
+                decimals={CONST.MAX_TAX_RATE_DECIMAL_PLACES}
+                maxLength={CONST.MAX_TAX_RATE_INTEGER_PLACES}
             >
-                <View style={styles.flex1}>
-                    {shouldUseLegacyInput ? (
-                        <NumberWithSymbolForm
-                            value={currentValue}
-                            onInputChange={setCurrentValue}
-                            ref={inputRef}
-                            decimals={CONST.MAX_TAX_RATE_DECIMAL_PLACES}
-                            maxLength={CONST.MAX_TAX_RATE_INTEGER_PLACES}
-                            isSymbolPressable={false}
-                            symbol="%"
-                            symbolPosition={CONST.TEXT_INPUT_SYMBOL_POSITION.SUFFIX}
-                            autoGrowExtraSpace={variables.w80}
-                            autoGrowMarginSide="left"
-                            style={[styles.iouAmountTextInput, styles.textAlignRight]}
-                            containerStyle={styles.iouAmountTextInputContainer}
-                            touchableInputWrapperStyle={styles.heightUndefined}
-                        />
-                    ) : (
-                        <NumericInput
-                            value={currentValue}
-                            onInputChange={setCurrentValue}
-                            decimals={CONST.MAX_TAX_RATE_DECIMAL_PLACES}
-                            maxLength={CONST.MAX_TAX_RATE_INTEGER_PLACES}
-                        >
+                <FullScreenAmountLayout>
+                    <FullScreenAmountLayout.Body>
+                        <FullScreenAmountLayout.Main>
                             <NumericInput.Container>
                                 <NumericInput.TextInput
                                     autoGrowExtraSpace={variables.w80}
@@ -110,19 +89,25 @@ function WorkspaceCreateTaxValuePage({
                                 />
                                 <NumericInput.Symbol>%</NumericInput.Symbol>
                             </NumericInput.Container>
-                        </NumericInput>
-                    )}
-                    <Button
-                        variant={CONST.BUTTON_VARIANT.SUCCESS}
-                        size={CONST.BUTTON_SIZE.LARGE}
-                        onPress={save}
-                        style={styles.mh5}
-                    >
-                        <Button.KeyboardShortcut />
-                        <Button.Text>{translate('common.save')}</Button.Text>
-                    </Button>
-                </View>
-            </ScrollView>
+                        </FullScreenAmountLayout.Main>
+                        <FullScreenAmountLayout.Pad>
+                            <NumericInput.BigNumberPad />
+                        </FullScreenAmountLayout.Pad>
+                    </FullScreenAmountLayout.Body>
+                    <FullScreenAmountLayout.Footer>
+                        <Button
+                            variant={CONST.BUTTON_VARIANT.SUCCESS}
+                            size={CONST.BUTTON_SIZE.LARGE}
+                            onPress={save}
+                            // On touch screens the button sits right under the number pad, so it keeps a gap from the keys
+                            style={[styles.w100, canUseTouchScreen ? styles.mt5 : styles.mt0]}
+                        >
+                            <Button.KeyboardShortcut />
+                            <Button.Text>{translate('common.save')}</Button.Text>
+                        </Button>
+                    </FullScreenAmountLayout.Footer>
+                </FullScreenAmountLayout>
+            </NumericInput>
         </ScreenWrapper>
     );
 }

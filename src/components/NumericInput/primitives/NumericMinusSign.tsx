@@ -7,13 +7,13 @@ import useThemeStyles from '@hooks/useThemeStyles';
 /** Renders the sign separately from the editable numeric magnitude. */
 function NumericMinusSign({style}: NumericMinusSignProps) {
     const styles = useThemeStyles();
-    const {isNegative} = useNumericInputState();
+    const {dynamicAmountStyle, isNegative} = useNumericInputState();
 
     if (!isNegative) {
         return null;
     }
 
-    return <Text style={[styles.iouAmountText, style]}>-</Text>;
+    return <Text style={[styles.iouAmountText, style, dynamicAmountStyle]}>-</Text>;
 }
 
 export default NumericMinusSign;

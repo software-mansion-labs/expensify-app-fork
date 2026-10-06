@@ -100,6 +100,7 @@ function renderPressSelection(inputRef: {current: BaseTextInputRef | null}, onPr
                     handleSelectionChange,
                     handleKeyPress: jest.fn(),
                     focusInput: jest.fn(),
+                    setShouldUpdateSelection: jest.fn(),
                 }}
             >
                 <WebPressSelectionTest onPress={onPress} />

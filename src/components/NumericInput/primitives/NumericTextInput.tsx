@@ -28,6 +28,7 @@ function NumericTextInput({
     autoGrowExtraSpace,
     autoGrowMarginSide,
     containerStyle,
+    contentWidth,
     disabled,
     disableKeyboard = true,
     hideFocusedState = true,
@@ -41,6 +42,8 @@ function NumericTextInput({
     shouldAllowFocusInLandscapeMode = true,
     shouldApplyPaddingToContainer = false,
     shouldUseDefaultLineHeightForPrefix,
+    shouldUseDynamicFontSize = true,
+    submitBehavior = 'submit',
     testID,
     touchableInputWrapperStyle,
 }: NumericTextInputProps) {
@@ -48,7 +51,7 @@ function NumericTextInput({
     const {setMouseDown, setMouseUp} = useMouseActions();
     const styles = useThemeStyles();
     const navigation = useNavigation();
-    const {formattedNumber, inputRef, isNegative, selection} = useNumericInputState();
+    const {dynamicAmountStyle, formattedNumber, inputRef, isNegative, selection} = useNumericInputState();
     const {clearSign, handleKeyPress, handleSelectionChange, setNumber} = useNumericInputActions();
 
     const handlePress = useNumericPressSelection(onPress);
@@ -88,12 +91,13 @@ function NumericTextInput({
             autoGrow={autoGrow}
             autoGrowExtraSpace={autoGrowExtraSpace}
             autoGrowMarginSide={autoGrowMarginSide}
+            contentWidth={contentWidth}
             disabled={disabled}
             disableKeyboard={disableKeyboard}
             disableKeyboardShortcuts
             hideFocusedState={hideFocusedState}
             inputMode={!keyboardType ? CONST.INPUT_MODE.DECIMAL : undefined}
-            inputStyle={[styles.pr1, style]}
+            inputStyle={[styles.pr1, style, shouldUseDynamicFontSize ? dynamicAmountStyle : undefined]}
             keyboardType={keyboardType}
             // The navigation prop keeps disableKeyboard working when the app returns from the background.
             navigation={navigation}
@@ -119,7 +123,7 @@ function NumericTextInput({
             shouldUseDefaultLineHeightForPrefix={shouldUseDefaultLineHeightForPrefix}
             shouldUseFullInputHeight
             spellCheck={false}
-            submitBehavior="submit"
+            submitBehavior={submitBehavior}
             testID={testID}
             textInputContainerStyles={containerStyle}
             touchableInputWrapperStyle={touchableInputWrapperStyle}

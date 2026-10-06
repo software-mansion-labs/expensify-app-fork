@@ -11,10 +11,13 @@ import {useId} from 'react';
 import {View} from 'react-native';
 
 /**
- * Renders the centered, full-size amount layout used by the legacy number form.
+ * Renders the centered amount area. It grows into the space its parent gives it but keeps its content height as the basis
+ * (`flexGrow1`, not `flex1`), so on a short screen the parent can scroll instead of squeezing the amount to zero height.
+ * The surrounding layout decides how much space that is (and any height reserved for a floating error, through `style`),
+ * so the container itself is the same in every orientation.
  * Clicking its empty web area keeps the numeric input focused instead of letting the browser blur it.
  */
-function NumericInputContainer({children, style, testID}: NumericInputContainerProps) {
+function NumericInputContainer({action, children, error, style, testID}: NumericInputContainerProps) {
     const styles = useThemeStyles();
     const {clearSelection, focusInput} = useNumericInputActions();
     const numberViewId = useId();
@@ -32,14 +35,16 @@ function NumericInputContainer({children, style, testID}: NumericInputContainerP
     };
 
     return (
-        <View style={[styles.flex1, styles.justifyContentCenter, styles.alignItemsCenter, style]}>
+        <View style={[styles.flexGrow1, styles.justifyContentCenter, styles.alignItemsCenter, style]}>
             <View
                 id={numberViewId}
                 onMouseDown={handleMouseDown}
-                style={[styles.flex1, styles.w100, styles.alignItemsCenter, styles.justifyContentCenter]}
+                style={[styles.flexGrow1, styles.w100, styles.alignItemsCenter, styles.justifyContentCenter]}
                 testID={testID}
             >
-                <View style={[styles.flexRow, styles.moneyRequestAmountContainer, styles.alignItemsCenter, styles.justifyContentCenter]}>{children}</View>
+                <View style={[styles.flexRow, styles.alignItemsCenter, styles.justifyContentCenter]}>{children}</View>
+                {action}
+                {error}
             </View>
         </View>
     );
