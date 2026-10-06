@@ -8,7 +8,7 @@ import type * as WebGetPlatformModule from '@libs/getPlatform/index.ts';
 import type {ReactNode, Ref} from 'react';
 import type {ViewProps} from 'react-native';
 
-import React, {StrictMode, useEffect, useLayoutEffect, useState} from 'react';
+import React, {Activity, StrictMode, useEffect, useLayoutEffect, useState} from 'react';
 import {Modal, View} from 'react-native';
 
 type MockAnimationCallback = (finished: boolean) => void;
@@ -186,7 +186,7 @@ function readLatestContainerStyle() {
     return mockAnimatedStyleUpdaters.at(-1)?.();
 }
 
-describe('web ReanimatedModal across a StrictMode remount', () => {
+describe('web ReanimatedModal lifecycle', () => {
     beforeEach(() => {
         mockRunningAnimationFinishers.length = 0;
         mockPendingExitCallbacks.length = 0;
@@ -279,6 +279,86 @@ describe('web ReanimatedModal across a StrictMode remount', () => {
         finishExitAnimations();
 
         // Then the close goes through once and the native modal is no longer visible
+        expect(onModalWillHide).toHaveBeenCalledTimes(1);
+        expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
+    });
+
+    it('reports one open when a responsive breakpoint changes the entry timing of an open modal', () => {
+        // Given an open desktop modal whose entry animation has completed
+        const onModalShow = jest.fn();
+        const modal = (animationInTiming: number) => (
+            <ReanimatedModal
+                swipeThreshold={SWIPE_THRESHOLD}
+                isVisible
+                animationInTiming={animationInTiming}
+                onModalShow={onModalShow}
+            >
+                <View testID="modalContent" />
+            </ReanimatedModal>
+        );
+        const {rerender} = render(modal(150));
+        finishRunningAnimations();
+        expect(onModalShow).toHaveBeenCalledTimes(1);
+
+        // When resizing crosses the mobile breakpoint and then returns to desktop
+        rerender(modal(300));
+        finishRunningAnimations();
+        rerender(modal(150));
+        finishRunningAnimations();
+
+        // Then the already-open modal keeps its content without reporting another open
+        expect(screen.getByTestId('modalContent')).toBeTruthy();
+        expect(readLatestContainerStyle()).toEqual({opacity: 1});
+        expect(onModalShow).toHaveBeenCalledTimes(1);
+    });
+
+    it('finishes opening after Activity hides it during the entry animation and reveals it', () => {
+        // Given a modal whose entry animation is still running
+        const onModalShow = jest.fn();
+        const onModalWillHide = jest.fn();
+        const modal = (
+            <ReanimatedModal
+                swipeThreshold={SWIPE_THRESHOLD}
+                isVisible
+                onModalShow={onModalShow}
+                onModalWillHide={onModalWillHide}
+            >
+                <View testID="modalContent" />
+            </ReanimatedModal>
+        );
+        const {rerender} = render(<Activity mode="visible">{modal}</Activity>);
+        expect(onModalShow).not.toHaveBeenCalled();
+
+        // When Activity cancels the entry and the hidden container exits before the screen is revealed
+        rerender(<Activity mode="hidden">{modal}</Activity>);
+        finishExitAnimations();
+        rerender(<Activity mode="visible">{modal}</Activity>);
+        finishRunningAnimations();
+        finishExitAnimations();
+
+        // Then the modal recovers its content and finishes opening once without treating the hide as a user close
+        expect(screen.getByTestId('modalContent')).toBeTruthy();
+        expect(readLatestContainerStyle()).toEqual({opacity: 1});
+        expect(onModalShow).toHaveBeenCalledTimes(1);
+        expect(onModalWillHide).not.toHaveBeenCalled();
+        expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(true);
+
+        // When the user closes the recovered modal and its exit finishes
+        rerender(
+            <Activity mode="visible">
+                <ReanimatedModal
+                    swipeThreshold={SWIPE_THRESHOLD}
+                    isVisible={false}
+                    onModalShow={onModalShow}
+                    onModalWillHide={onModalWillHide}
+                >
+                    <View testID="modalContent" />
+                </ReanimatedModal>
+            </Activity>,
+        );
+        finishExitAnimations();
+
+        // Then the recovered state also permits a real close
         expect(onModalWillHide).toHaveBeenCalledTimes(1);
         expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
     });

@@ -32,9 +32,14 @@ function Container({
     const Entering = useMemo(() => {
         const AnimationIn = new Keyframe(getModalInAnimation(animationIn));
 
-        return AnimationIn.duration(animationInTiming).withCallback(() => {
+        // Removing the view mid-entry, which an Activity hide does, cancels the animation with finished=false,
+        // and reporting that as an open would present a Modal with no content.
+        return AnimationIn.duration(animationInTiming).withCallback((finished) => {
             'worklet';
 
+            if (!finished) {
+                return;
+            }
             scheduleOnRN(onOpenCallBack);
         });
     }, [animationIn, animationInTiming, onOpenCallBack]);

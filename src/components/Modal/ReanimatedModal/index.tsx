@@ -118,6 +118,8 @@ function ReanimatedModal({
 
             setIsVisibleState(false);
             setIsContainerOpen(false);
+            // An Activity hide can cancel the entry before either animation callback clears this flag.
+            setIsTransitioning(false);
         },
 
         [],

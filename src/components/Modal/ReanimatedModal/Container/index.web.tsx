@@ -23,6 +23,7 @@ function Container({
     const styles = useThemeStyles();
     const onCloseCallbackRef = useRef(onCloseCallBack);
     const onOpenCallbackRef = useRef(onOpenCallBack);
+    const animationInTimingRef = useRef(animationInTiming);
     const initProgress = useSharedValue(0);
 
     useEffect(() => {
@@ -31,16 +32,17 @@ function Container({
 
     useEffect(() => {
         onOpenCallbackRef.current = onOpenCallBack;
-    }, [onOpenCallBack]);
+        animationInTimingRef.current = animationInTiming;
+    }, [onOpenCallBack, animationInTiming]);
 
-    // Reading the callback through a ref keeps these dependencies stable, so the animation starts exactly once per mount.
+    // Read the latest callback and timing on setup without restarting the entry when a responsive breakpoint changes its timing.
     // A shared value guarding the start would outlive a remount that cancelled the animation, leaving the modal at progress 0 forever.
     useEffect(() => {
         initProgress.set(
             withTiming(
                 1,
                 {
-                    duration: animationInTiming,
+                    duration: animationInTimingRef.current,
                     easing,
                     // on web the callbacks are not called when animations are disabled with the reduced motion setting on
                     // we enable the animations to make sure they are called
@@ -55,7 +57,7 @@ function Container({
                 },
             ),
         );
-    }, [animationInTiming, initProgress]);
+    }, [initProgress]);
 
     // instead of an entering transition since keyframe animations break keyboard on mWeb Chrome (#62799)
     const animatedStyles = useAnimatedStyle(() => getModalInAnimationStyle(animationIn)(initProgress.get()), [initProgress]);
