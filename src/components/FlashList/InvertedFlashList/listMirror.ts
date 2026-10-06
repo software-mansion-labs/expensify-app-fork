@@ -11,14 +11,14 @@ type ScrollTargetRequest = {
     viewOffset?: number;
 };
 
-type WebScrollTarget = {type: 'start'} | {type: 'end'} | {type: 'index'; index: number; viewPosition: number; viewOffset: number};
+type RegularScrollTarget = {type: 'start'} | {type: 'end'} | {type: 'index'; index: number; viewPosition: number; viewOffset: number};
 
-type WebInitialScroll = {
+type RegularInitialScroll = {
     initialScrollIndex?: number;
     initialScrollIndexParams?: {viewPosition: number; viewOffset?: number};
 };
 
-/** Maps an index between the inverted order (newest first) and the web order (oldest first). The mapping is its own inverse. */
+/** Maps an index between the inverted order (newest first) and the rendered order (oldest first). The mapping is its own inverse. */
 function mirrorIndex(index: number, length: number): number {
     return length - 1 - index;
 }
@@ -28,29 +28,29 @@ function mirrorViewToken<T>(token: ViewToken<T>, length: number): ViewToken<T> {
 }
 
 /**
- * Translates an inverted scroll request into the web list. In the inverted list viewPosition 0 is the visual bottom and a
+ * Translates an inverted scroll request into the rendered list. In the inverted list viewPosition 0 is the visual bottom and a
  * positive viewOffset moves the viewport towards older items, so both flip.
  */
-function toWebScrollTarget({index, viewPosition = 0, viewOffset = 0}: ScrollTargetRequest, length: number): WebScrollTarget {
-    const webIndex = mirrorIndex(index, length);
-    const webViewPosition = 1 - viewPosition;
-    const webViewOffset = -viewOffset;
+function toRegularScrollTarget({index, viewPosition = 0, viewOffset = 0}: ScrollTargetRequest, length: number): RegularScrollTarget {
+    const regularIndex = mirrorIndex(index, length);
+    const regularViewPosition = 1 - viewPosition;
+    const regularViewOffset = -viewOffset;
 
     // The newest item resting on the bottom edge is the end of the list; scrollToEnd also reveals the footer below it.
-    if (webIndex === length - 1 && webViewPosition === 1 && webViewOffset === 0) {
+    if (regularIndex === length - 1 && regularViewPosition === 1 && regularViewOffset === 0) {
         return {type: 'end'};
     }
 
     // Any position at or above the oldest item clamps to the top of the content, header included.
-    if (webIndex === 0 && webViewPosition >= 0 && webViewOffset <= 0) {
+    if (regularIndex === 0 && regularViewPosition >= 0 && regularViewOffset <= 0) {
         return {type: 'start'};
     }
 
-    return {type: 'index', index: webIndex, viewPosition: webViewPosition, viewOffset: webViewOffset};
+    return {type: 'index', index: regularIndex, viewPosition: regularViewPosition, viewOffset: regularViewOffset};
 }
 
-/** Without an explicit target the inverted list opens at its newest item, so the web list starts at its last one. */
-function toWebInitialScroll(target: WebScrollTarget, length: number): WebInitialScroll {
+/** Without an explicit target the inverted list opens at its newest item, so the rendered list starts at its last one. */
+function toRegularInitialScroll(target: RegularScrollTarget, length: number): RegularInitialScroll {
     if (target.type === 'start' || length === 0) {
         return {};
     }
@@ -75,7 +75,7 @@ function mirrorJustifyContent(justifyContent: ViewStyle['justifyContent']): View
 }
 
 /** Swaps the vertical paddings and the main axis alignment, and keeps short content at the bottom like the inverted list does. */
-function toWebContentContainerStyle(style: StyleProp<ViewStyle>): ViewStyle {
+function toRegularContentContainerStyle(style: StyleProp<ViewStyle>): ViewStyle {
     const {paddingTop, paddingBottom, justifyContent = 'flex-start', ...restStyle} = StyleSheet.flatten([style]);
 
     return {
@@ -88,11 +88,11 @@ function toWebContentContainerStyle(style: StyleProp<ViewStyle>): ViewStyle {
 }
 
 /**
- * The web list keeps the visible items in place when older items are prepended above them, and follows new content at the
- * bottom while the user is near it. An inverted list asked to autoscroll is pinned to its visual top instead, which on web is
- * offset 0, where a list without position maintenance already stays.
+ * The rendered list keeps the visible items in place when older items are prepended above them, and follows new content at the
+ * bottom while the user is near it. An inverted list asked to autoscroll is pinned to its visual top instead, which in the
+ * rendered list is offset 0, where a list without position maintenance already stays.
  */
-function toWebMaintainVisibleContentPosition(config: MaintainVisibleContentPosition, autoscrollToBottomThreshold: number): MaintainVisibleContentPosition {
+function toRegularMaintainVisibleContentPosition(config: MaintainVisibleContentPosition, autoscrollToBottomThreshold: number): MaintainVisibleContentPosition {
     if ((config?.autoscrollToBottomThreshold ?? 0) > 0) {
         return {disabled: true};
     }
@@ -113,5 +113,5 @@ function toInvertedScrollEvent<TEvent extends {nativeEvent: NativeScrollEvent}>(
     };
 }
 
-export {mirrorIndex, mirrorViewToken, toWebScrollTarget, toWebInitialScroll, toWebContentContainerStyle, toWebMaintainVisibleContentPosition, toInvertedScrollEvent};
-export type {WebScrollTarget};
+export {mirrorIndex, mirrorViewToken, toRegularScrollTarget, toRegularInitialScroll, toRegularContentContainerStyle, toRegularMaintainVisibleContentPosition, toInvertedScrollEvent};
+export type {RegularScrollTarget};

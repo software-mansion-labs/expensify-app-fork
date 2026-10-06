@@ -16,7 +16,7 @@ function CellRendererComponent(props: CellRendererComponentProps) {
                 props.style,
                 /**
                  * To achieve absolute positioning and handle overflows for list items,
-                 * it is necessary to assign zIndex values. The web list renders the oldest
+                 * it is necessary to assign zIndex values. The list renders the oldest
                  * item first, so the lower list items have higher indexes and zIndex values
                  * than the upper list items. Consequently, lower list items can overflow the upper list items.
                  * See: https://github.com/Expensify/App/issues/20451

@@ -197,10 +197,18 @@
 
 ### [@shopify+flash-list+2.3.2+017+mvcp-stable-anchor.patch](@shopify+flash-list+2.3.2+017+mvcp-stable-anchor.patch)
 
-- Reason: Keeps the report actions in place when older messages load on web, where the list renders in the regular order and older messages are prepended above the viewport. Two changes in `computeFirstVisibleIndexForOffsetCorrection`, both limited to how the `maintainVisibleContentPosition` anchor is picked:
+- Reason: Keeps the report actions in place when older messages load, now that the list renders in the regular order and older messages are prepended above the viewport. Two changes in `computeFirstVisibleIndexForOffsetCorrection`, both limited to how the `maintainVisibleContentPosition` anchor is picked:
   1. **Anchor on an item that does not resize on a prepend**: the anchor used to be the first intersecting item. A prepend lands next to the first data item, which can re-render with a different size: a chat message loses its sender header once older messages from the same sender land above it. Keeping the leading edge of a resizing anchor in place shifts every message the user is looking at (about 20px per page in a plain chat, more with richer content), both when the anchor is partially scrolled out and when the user sits at the very top. The anchor is now the first item whose leading edge is inside the viewport, skipping the first data item when another item qualifies, and falls back to the first intersecting item when none does (a single item taller than the viewport). Inverted lists keep the original anchor, since they grow away from the viewport edge.
   2. **Drop the anchor over the header only when a header exists**: patch `015` drops the anchor while the scroll offset is smaller than `firstItemOffset`, so the header is the visual anchor. Without a `ListHeaderComponent` that offset is only the content padding, and dropping the anchor there made a page of older messages that arrived while the user sat at the very top push the visible messages down by the whole page height. The first items stay the anchor in that case, as they do upstream.
 - Files changed: `src/recyclerview/hooks/useRecyclerViewController.tsx` and its `dist` counterpart.
+- Upstream PR/issue: TBD
+- E/App issue: TBD
+- PR introducing patch: TBD
+
+### [@shopify+flash-list+2.3.2+018+mvcp-android-scroll-to-fallback.patch](@shopify+flash-list+2.3.2+018+mvcp-android-scroll-to-fallback.patch)
+
+- Reason: Keeps the report actions in place on Android when older messages are prepended above the viewport of a list rendered in the regular order. FlashList corrects the offset by moving its `ScrollAnchor`, an invisible view at `top: 1000000`, and relying on the native `maintainVisibleContentPosition` to follow it. On Android the native helper (with `react-native` patch `002`) anchors the child whose bottom edge is the closest one below the scroll offset, which is never the anchor far below the content, so the correction is silently dropped and a page of older messages pushes the visible messages down by the page height. Patch `006` already bypasses the anchor with a deferred `scrollTo` for inverted lists on Android when the data changes; this patch applies that fallback to regular lists that follow new content at the bottom (an `autoscrollToBottomThreshold` of 0 or more), which grow at both ends like a chat. Other regular lists, such as selection lists that keep the default `maintainVisibleContentPosition`, keep the original path so their Android behavior does not change. The skip after a programmatic scroll stays limited to inverted lists, matching iOS, where regular lists have no such skip.
+- Files changed: `dist/recyclerview/hooks/useRecyclerViewController.js`.
 - Upstream PR/issue: TBD
 - E/App issue: TBD
 - PR introducing patch: TBD

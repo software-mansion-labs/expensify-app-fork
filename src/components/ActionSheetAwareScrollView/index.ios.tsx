@@ -12,8 +12,9 @@ function ActionSheetAwareScrollView({style, children, ref, ...restProps}: Action
     const {onRef, animatedRef} = useActionSheetAwareScrollViewRef(ref);
 
     const spacing = useActionSheetKeyboardSpacing(animatedRef);
+    // The list clips its scroll view, so moving the scroll view up lifts the content above the action sheet while the viewport stays in place.
     const animatedStyle = useAnimatedStyle(() => ({
-        paddingTop: spacing.get(),
+        transform: [{translateY: -spacing.get()}],
     }));
 
     usePreventScrollOnKeyboardInteraction({scrollViewRef: animatedRef});

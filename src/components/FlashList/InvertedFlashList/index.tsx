@@ -7,20 +7,30 @@ import type {LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent} from 'r
 
 import React, {useImperativeHandle, useRef, useState} from 'react';
 
+import type {RegularScrollTarget} from './listMirror';
 import type InvertedFlashListProps from './types';
-import type {WebScrollTarget} from './webListMirror';
 
 import FlashList from '..';
+import createBottomAnchoredScrollComponent from './BottomAnchoredScrollView';
 import CellRendererComponent from './CellRendererComponent';
-import {mirrorIndex, mirrorViewToken, toInvertedScrollEvent, toWebContentContainerStyle, toWebInitialScroll, toWebMaintainVisibleContentPosition, toWebScrollTarget} from './webListMirror';
+import {
+    mirrorIndex,
+    mirrorViewToken,
+    toInvertedScrollEvent,
+    toRegularContentContainerStyle,
+    toRegularInitialScroll,
+    toRegularMaintainVisibleContentPosition,
+    toRegularScrollTarget,
+} from './listMirror';
 
 /** Within this distance from the bottom the list follows new content, the same distance at which the report stops treating the user as reading history. */
 const AUTOSCROLL_TO_BOTTOM_DISTANCE = CONST.REPORT.ACTIONS.ACTION_VISIBLE_THRESHOLD;
 
 /**
- * Web renders the list in the regular order instead of flipping it with a transform, so the browser keeps its native wheel,
- * touchpad and scroll chaining behavior. Callers keep the contract of the native inverted list (the newest item at index 0,
- * the header at the visual bottom, offsets measured from the bottom), and this component translates props, events and the ref.
+ * Renders the list in the regular order instead of flipping it with a transform, so the platform keeps its native wheel,
+ * touchpad, scroll chaining, scroll indicator and accessibility behavior. Callers keep the contract of an inverted list (the
+ * newest item at index 0, the header at the visual bottom, offsets measured from the bottom), and this component translates
+ * props, events and the ref.
  */
 function InvertedFlashList<T>({
     ref,
@@ -30,6 +40,7 @@ function InvertedFlashList<T>({
     onViewableItemsChanged,
     onScroll,
     onLayout,
+    onContentSizeChange,
     onEndReached,
     onEndReachedThreshold,
     onStartReached,
@@ -42,14 +53,17 @@ function InvertedFlashList<T>({
     initialScrollIndex,
     initialScrollIndexParams,
     maintainVisibleContentPosition,
+    renderScrollComponent,
     ...restProps
 }: InvertedFlashListProps<T>) {
     const listRef = useRef<FlashListRef<T>>(null);
     const [listHeight, setListHeight] = useState(0);
+    const scrollMetricsRef = useRef({contentHeight: 0, layoutHeight: 0});
     const length = data.length;
-    const webData = [...data].reverse();
+    const bottomAnchoredScrollComponent = createBottomAnchoredScrollComponent(renderScrollComponent);
+    const regularData = [...data].reverse();
 
-    const scrollToWebTarget = (target: WebScrollTarget, animated: boolean | undefined) => {
+    const scrollToRegularTarget = (target: RegularScrollTarget, animated: boolean | undefined) => {
         const list = listRef.current;
         if (!list) {
             return;
@@ -72,33 +86,37 @@ function InvertedFlashList<T>({
         ref,
         (): ListScrollHandle => ({
             scrollToIndex: ({index, animated, viewPosition, viewOffset}) => {
-                scrollToWebTarget(toWebScrollTarget({index, viewPosition, viewOffset}, length), animated ?? undefined);
+                scrollToRegularTarget(toRegularScrollTarget({index, viewPosition, viewOffset}, length), animated ?? undefined);
             },
             scrollToEnd: (params) => {
                 listRef.current?.scrollToTop({animated: params?.animated ?? undefined});
             },
             scrollToOffset: ({offset, animated}) => {
-                const scrollableNode: unknown = listRef.current?.getScrollableNode();
-                if (!(scrollableNode instanceof HTMLElement)) {
-                    return;
-                }
-
-                const maxOffset = scrollableNode.scrollHeight - scrollableNode.clientHeight;
-                listRef.current?.scrollToOffset({offset: Math.max(0, maxOffset - offset), animated: animated ?? undefined});
+                const {contentHeight, layoutHeight} = scrollMetricsRef.current;
+                listRef.current?.scrollToOffset({offset: Math.max(0, contentHeight - layoutHeight - offset), animated: animated ?? undefined});
             },
         }),
     );
 
-    const initialTarget: WebScrollTarget =
-        initialScrollIndex === undefined || initialScrollIndex === null ? {type: 'end'} : toWebScrollTarget({index: initialScrollIndex, ...initialScrollIndexParams}, length);
-    const webInitialScroll = toWebInitialScroll(initialTarget, length);
+    const initialTarget: RegularScrollTarget =
+        initialScrollIndex === undefined || initialScrollIndex === null ? {type: 'end'} : toRegularScrollTarget({index: initialScrollIndex, ...initialScrollIndexParams}, length);
+    const regularInitialScroll = toRegularInitialScroll(initialTarget, length);
 
     const handleLayout = (event: LayoutChangeEvent) => {
-        setListHeight(event.nativeEvent.layout.height);
+        const {height} = event.nativeEvent.layout;
+        scrollMetricsRef.current.layoutHeight = height;
+        setListHeight(height);
         onLayout?.(event);
     };
 
+    const handleContentSizeChange = (width: number, height: number) => {
+        scrollMetricsRef.current.contentHeight = height;
+        onContentSizeChange?.(width, height);
+    };
+
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const {contentSize, layoutMeasurement} = event.nativeEvent;
+        scrollMetricsRef.current = {contentHeight: contentSize.height, layoutHeight: layoutMeasurement.height};
         onScroll?.(toInvertedScrollEvent(event));
     };
 
@@ -111,21 +129,22 @@ function InvertedFlashList<T>({
           }
         : onViewableItemsChanged;
 
-    const renderWebItem = renderItem ? (info: ListRenderItemInfo<T>) => renderItem({...info, index: mirrorIndex(info.index, length)}) : renderItem;
+    const renderRegularItem = renderItem ? (info: ListRenderItemInfo<T>) => renderItem({...info, index: mirrorIndex(info.index, length)}) : renderItem;
 
-    // @components/FlashList forwards the ref to the Shopify list as an untyped runtime prop, like the native variant does.
+    // @components/FlashList forwards the ref to the Shopify list as an untyped runtime prop.
     const flashListProps = {...restProps, ref: listRef};
 
     return (
         <FlashList<T>
             {...flashListProps}
             isChatList
-            data={webData}
-            renderItem={renderWebItem}
+            data={regularData}
+            renderItem={renderRegularItem}
             keyExtractor={(item, index) => keyExtractor(item, mirrorIndex(index, length))}
             onViewableItemsChanged={handleViewableItemsChanged}
             onScroll={handleScroll}
             onLayout={handleLayout}
+            onContentSizeChange={handleContentSizeChange}
             onStartReached={onEndReached}
             onStartReachedThreshold={onEndReachedThreshold}
             onEndReached={onStartReached}
@@ -134,11 +153,12 @@ function InvertedFlashList<T>({
             ListHeaderComponentStyle={ListFooterComponentStyle}
             ListFooterComponent={ListHeaderComponent}
             ListFooterComponentStyle={ListHeaderComponentStyle}
-            contentContainerStyle={toWebContentContainerStyle(contentContainerStyle)}
-            initialScrollIndex={webInitialScroll.initialScrollIndex}
-            initialScrollIndexParams={webInitialScroll.initialScrollIndexParams}
-            maintainVisibleContentPosition={toWebMaintainVisibleContentPosition(maintainVisibleContentPosition, listHeight > 0 ? AUTOSCROLL_TO_BOTTOM_DISTANCE / listHeight : 0)}
+            contentContainerStyle={toRegularContentContainerStyle(contentContainerStyle)}
+            initialScrollIndex={regularInitialScroll.initialScrollIndex}
+            initialScrollIndexParams={regularInitialScroll.initialScrollIndexParams}
+            maintainVisibleContentPosition={toRegularMaintainVisibleContentPosition(maintainVisibleContentPosition, listHeight > 0 ? AUTOSCROLL_TO_BOTTOM_DISTANCE / listHeight : 0)}
             CellRendererComponent={CellRendererComponent}
+            renderScrollComponent={bottomAnchoredScrollComponent}
         />
     );
 }
