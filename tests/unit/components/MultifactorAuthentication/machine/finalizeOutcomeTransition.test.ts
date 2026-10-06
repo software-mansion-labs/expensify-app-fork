@@ -1,6 +1,7 @@
 import type {MfaMachineEvent} from '@components/MultifactorAuthentication/machine/machineEvents';
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
-import type {FinalizeOutcomeInput, FinalizeOutcomeOutput, MfaContext} from '@components/MultifactorAuthentication/machine/types';
+import snapshotToState from '@components/MultifactorAuthentication/machine/snapshotToState';
+import type {ExecuteScenarioActionInput, ExecuteScenarioActionOutput, FinalizeOutcomeInput, FinalizeOutcomeOutput, MfaContext} from '@components/MultifactorAuthentication/machine/types';
 
 import {createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
@@ -15,6 +16,7 @@ import {
     MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
     MFA_TEST_REGISTRATION_STATE_AT_START,
     MFA_TEST_SCENARIO_RESPONSE,
+    MFA_TEST_SIGNED_CHALLENGE,
 } from 'tests/utils/mfa/flowFixtures';
 import {createActorDoneEvent} from 'tests/utils/mfa/flowPaths';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
@@ -24,8 +26,9 @@ const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 const CALLBACK_RESPONSE = CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE;
 
-const FINALIZING_OUTCOME_STATE = {[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FINALIZING_OUTCOME}};
-const AUTHORIZING_STATE = {[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}};
+const FINALIZING_OUTCOME_STATE = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FINALIZING_OUTCOME}}};
+const AUTHORIZING_STATE = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}};
+const CANCEL_CONFIRM_VISIBLE = {[MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE};
 
 /**
  * `mfaMachine` only declares `MfaEvent`, so production code cannot send the events XState raises
@@ -40,14 +43,22 @@ function withLifecycleEvents<M>(machine: M) {
 /**
  * Starts a live actor one hop before `finalizingOutcome`, with the finalize actor replaced by the given
  * logic. `resolveState` cannot land inside the state and have the invoke fire, so the spec drives the
- * real transition with a fabricated `authorize` done event.
+ * real transition with fabricated actor done events.
  */
 function startFlowEnteringFinalization(finalizeOutcome: ReturnType<typeof fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>>, contextOverrides: Partial<MfaContext> = {}) {
-    const machine = mfaMachine.provide({actors: {finalizeOutcome}});
+    // The scenario action never settles on its own, so the real one never reaches the backend.
+    const executeScenarioAction = fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(() => new Promise(() => {}));
+    const machine = mfaMachine.provide({actors: {finalizeOutcome, executeScenarioAction}});
     const context = createFlowContext(contextOverrides);
     const actor = createActor(withLifecycleEvents(machine), {snapshot: machine.resolveState({value: AUTHORIZING_STATE, context})});
     actor.start();
     return {actor, context};
+}
+
+/** Drives a successful ceremony and scenario action, which enters `finalizingOutcome`. */
+function sendAuthorizationSuccess(actor: ReturnType<typeof startFlowEnteringFinalization>['actor']) {
+    actor.send(createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}));
+    actor.send(createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}));
 }
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
@@ -67,7 +78,7 @@ describe('MFA outcome finalization', () => {
                 {softPromptApproved: true, isRegistrationComplete: true},
             );
 
-            actor.send(createActorDoneEvent('authorize', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD}));
+            sendAuthorizationSuccess(actor);
 
             // `toEqual` on purpose: this pins exactly which context fields cross the boundary. Derived
             // values (success, the callback input) are the actor's business, so none appear here.
@@ -106,31 +117,30 @@ describe('MFA outcome finalization', () => {
     });
 
     describe('routing on the actor result', () => {
-        it('moves to closing on SKIP_OUTCOME_SCREEN and drops the cancel-confirmation modal on entry', () => {
-            const actor = createActorAtState(FINALIZING_OUTCOME_STATE, {scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, isCancelConfirmVisible: true});
+        it('moves to closing on SKIP_OUTCOME_SCREEN and leaves no cancel-confirmation dialog behind', () => {
+            const actor = createActorAtState({[MFA_STATE.OPEN]: {...FINALIZING_OUTCOME_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}}, {scenarioResponse: MFA_TEST_SCENARIO_RESPONSE});
 
             actor.start();
             sendFinalizeOutcomeDone(actor, {callbackResponse: CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN});
 
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
-            expect(result.context.isCancelConfirmVisible).toBe(false);
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
             // The flow data outlives the close animation on purpose; only `closed` wipes it.
             expect(result.context.scenarioResponse).toBe(MFA_TEST_SCENARIO_RESPONSE);
 
             actor.stop();
         });
 
-        it('shows the outcome screen on SHOW_OUTCOME_SCREEN even when the cancel-confirmation modal was up', () => {
-            const actor = createActorAtState(FINALIZING_OUTCOME_STATE, {isCancelConfirmVisible: true});
+        it('shows the outcome screen on SHOW_OUTCOME_SCREEN and hides a cancel-confirmation dialog that was up', () => {
+            const actor = createActorAtState({[MFA_STATE.OPEN]: {...FINALIZING_OUTCOME_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}});
 
             actor.start();
             sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}})).toBe(true);
-            // Only entering `closing` drops the flag; an outcome screen is still inside the open modal.
-            expect(result.context.isCancelConfirmVisible).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}}})).toBe(true);
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
 
             actor.stop();
         });
@@ -143,7 +153,7 @@ describe('MFA outcome finalization', () => {
             await waitForBatchedUpdates();
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
             expect(result.context.error).toBe(failureError);
 
             actor.stop();
@@ -152,11 +162,11 @@ describe('MFA outcome finalization', () => {
         it('falls back to the success outcome when the actor rejects without a stored error', async () => {
             const {actor} = startFlowEnteringFinalization(fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(() => Promise.reject(new Error('Finalize outcome exploded'))));
 
-            actor.send(createActorDoneEvent('authorize', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD}));
+            sendAuthorizationSuccess(actor);
             await waitForBatchedUpdates();
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}})).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}}})).toBe(true);
             expect(result.context.error).toBeUndefined();
 
             actor.stop();
@@ -164,7 +174,7 @@ describe('MFA outcome finalization', () => {
     });
 
     describe('closing while the actor is in flight', () => {
-        it('moves to closing on CLOSE_MODAL, drops the cancel-confirmation modal, and ignores the late actor result', async () => {
+        it('moves to closing on CLOSE_MODAL and ignores the late actor result', async () => {
             let resolveFinalize: ((output: FinalizeOutcomeOutput) => void) | undefined;
             const {actor} = startFlowEnteringFinalization(
                 fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(
@@ -173,18 +183,15 @@ describe('MFA outcome finalization', () => {
                             resolveFinalize = resolve;
                         }),
                 ),
-                {isCancelConfirmVisible: true},
             );
 
-            actor.send(createActorDoneEvent('authorize', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD}));
+            sendAuthorizationSuccess(actor);
             expect(actor.getSnapshot().matches(FINALIZING_OUTCOME_STATE)).toBe(true);
             expect(resolveFinalize).toBeDefined();
 
             actor.send({type: 'CLOSE_MODAL'});
 
-            const closing = actor.getSnapshot();
-            expect(closing.matches(MFA_STATE.CLOSING)).toBe(true);
-            expect(closing.context.isCancelConfirmVisible).toBe(false);
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
 
             // The callback promise cannot be cancelled and may still navigate on its own; its answer,
             // however, must not push an outcome screen over a modal the user already closed.
@@ -196,15 +203,15 @@ describe('MFA outcome finalization', () => {
             actor.stop();
         });
 
-        it('drops the cancel-confirmation modal on the explicit CLOSE_MODAL route too', () => {
-            const actor = createActorAtState(AUTHORIZING_STATE, {isCancelConfirmVisible: true});
+        it('leaves no cancel-confirmation dialog behind when CLOSE_MODAL arrives while it is up', () => {
+            const actor = createActorAtState({[MFA_STATE.OPEN]: {...AUTHORIZING_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}});
 
             actor.start();
             actor.send({type: 'CLOSE_MODAL'});
 
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
-            expect(result.context.isCancelConfirmVisible).toBe(false);
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
 
             actor.stop();
         });

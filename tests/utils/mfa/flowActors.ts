@@ -25,8 +25,8 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         validateCode: undefined,
         registrationChallenge: undefined,
         softPromptApproved: false,
-        isCancelConfirmVisible: false,
         authenticationMethod: undefined,
+        signedChallenge: undefined,
         scenarioResponse: undefined,
         promptPresentationPhase: undefined,
         validateCodePresentationPhase: undefined,
@@ -74,10 +74,26 @@ function sendAuthorizeDone(actor: ReturnType<typeof createActorAtState>, output:
 }
 
 /**
+ * Completes the invoked scenario-action actor by sending its done event carrying the given output.
+ */
+function sendExecuteScenarioActionDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'executeScenarioAction'>) {
+    actor.send(createActorDoneEvent('executeScenarioAction', output));
+}
+
+/**
  * Completes the invoked finalize-outcome actor by sending its done event carrying the given output.
  */
 function sendFinalizeOutcomeDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'finalizeOutcome'>) {
     actor.send(createActorDoneEvent('finalizeOutcome', output));
 }
 
-export {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendFinalizeOutcomeDone, sendLoadRegistrationStateDone, sendRequestRegistrationChallengeDone};
+export {
+    createActorAtState,
+    createFlowContext,
+    sendAuthorizeDone,
+    sendCreateCredentialDone,
+    sendExecuteScenarioActionDone,
+    sendFinalizeOutcomeDone,
+    sendLoadRegistrationStateDone,
+    sendRequestRegistrationChallengeDone,
+};

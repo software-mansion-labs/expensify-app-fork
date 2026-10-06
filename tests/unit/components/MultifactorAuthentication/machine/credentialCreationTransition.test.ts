@@ -21,13 +21,16 @@ const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 describe('MFA credential creation', () => {
     describe('soft-prompt approval', () => {
         it('moves to credential creation when a registration challenge is pending', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
+            const actor = createActorAtState(
+                {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}},
+                {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE},
+            );
 
             actor.start();
             actor.send({type: 'SOFT_PROMPT_APPROVED'});
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}})).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}})).toBe(true);
             expect(snapshotToState(result).isProcessingPrompt).toBe(true);
             expect(result.context.softPromptApproved).toBe(true);
 
@@ -35,20 +38,20 @@ describe('MFA credential creation', () => {
         });
 
         it('moves to authorizing without a pending challenge (returning user)', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
+            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}});
 
             actor.start();
             actor.send({type: 'SOFT_PROMPT_APPROVED'});
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}})).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}})).toBe(true);
             expect(snapshotToState(result).isProcessingPrompt).toBe(true);
 
             actor.stop();
         });
 
         it('does not mark the prompt as processing when the flow is cancelled', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
+            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}});
 
             actor.start();
             actor.send({type: 'CLOSE_MODAL'});
@@ -74,7 +77,7 @@ describe('MFA credential creation', () => {
                 },
             });
             const snapshot = machine.resolveState({
-                value: {[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
+                value: {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}},
                 context: createFlowContext({accountID, registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE}),
             });
             const actor = createActor(machine, {snapshot});
@@ -89,20 +92,26 @@ describe('MFA credential creation', () => {
         });
 
         it('moves to authorizing when the actor resolves successfully', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
+            const actor = createActorAtState(
+                {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}},
+                {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE},
+            );
 
             actor.start();
             sendCreateCredentialDone(actor, {success: true});
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}})).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}})).toBe(true);
             expect(result.context.isRegistrationComplete).toBe(true);
 
             actor.stop();
         });
 
         it('reaches the failure outcome carrying the exact reason when the actor resolves with a failure', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
+            const actor = createActorAtState(
+                {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}}},
+                {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE},
+            );
             const failureError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.KEY_CREATION_FAILED, 'Credential creation transition spec failure');
 
             actor.start();
@@ -110,7 +119,7 @@ describe('MFA credential creation', () => {
             sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
             expect(result.context.error).toBe(failureError);
 
             actor.stop();
@@ -128,7 +137,7 @@ describe('MFA credential creation', () => {
                 },
             });
             const snapshot = machine.resolveState({
-                value: {[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
+                value: {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}},
                 context: createFlowContext({registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE}),
             });
             const actor = createActor(machine, {snapshot});
@@ -138,7 +147,7 @@ describe('MFA credential creation', () => {
             await waitForBatchedUpdates();
 
             const result = actor.getSnapshot();
-            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
             expect(result.context.error?.reason).toBe(REASON.LOCAL_ERRORS.UNHANDLED_EXCEPTION);
             expect(result.context.error?.message).toContain('Credential registration threw:');
 
