@@ -60,7 +60,7 @@ describe('ensureQAAuthenticated', () => {
 
     it('redirects when QA is active and there is no session', async () => {
         // Given a QA build with no stored session. When the gate runs, then it must navigate to Cloudflare.
-        // Not awaited: the gate's promise never settles once it redirects, so the assertion runs off the side effect
+        // Not awaited: the gate's promise stays pending once it redirects, so the assertion runs off the side effect
         ensureQAAuthenticated(REDIRECTING_COMMAND);
         await waitForBatchedUpdates();
         expect(mockBeginRedirect).toHaveBeenCalledTimes(1);

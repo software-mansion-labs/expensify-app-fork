@@ -74,35 +74,34 @@ function cacheAndPersistSession(session: CloudflareSession, source: 'exchanged' 
     });
 }
 
-let isRedirectInFlight = false;
+let redirectPromise: Promise<never> | null = null;
+
+async function startCloudflareSignInRoundTrip(returnURL: string): Promise<never> {
+    const generation = sessionGeneration;
+    const pkce = await generatePKCEPair();
+    const state = generateState();
+    // Resolved before the flow record is stored, so a failed discovery leaves nothing behind
+    const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
+    if (generation !== sessionGeneration) {
+        throw new Error('Cloudflare auth flow was cancelled');
+    }
+    // Must be stored before the navigation. Module memory does not survive the unload
+    savePendingAuthFlow({state, codeVerifier: pkce.codeVerifier, returnURL, createdAt: Date.now()});
+    window.location.assign(authorizeURL);
+    return new Promise<never>((_resolve, reject) => {
+        window.addEventListener('pageshow', () => reject(new Error('Cloudflare sign-in was abandoned')), {once: true});
+    });
+}
 
 /**
- * Navigates this tab to Cloudflare to start the authorize round trip. Never settles once navigation is
- * requested. The page is leaving. Rejects only if the round trip could not start.
+ * Navigates this tab to Cloudflare to start the authorize round trip. Stays pending while the page is leaving.
+ * Rejects if the round trip could not start, or if Back restores this page from the back/forward cache.
  */
-async function redirectToCloudflareSignIn(returnURL: string = window.location.href): Promise<never> {
-    if (isRedirectInFlight) {
-        // A second caller while the first navigation is settling must not overwrite the stored flow
-        return new Promise<never>(() => {});
-    }
-    isRedirectInFlight = true;
-    const generation = sessionGeneration;
-    try {
-        const pkce = await generatePKCEPair();
-        const state = generateState();
-        // Resolved before the flow record is stored, so a failed discovery leaves nothing behind
-        const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
-        if (generation !== sessionGeneration) {
-            throw new Error('Cloudflare auth flow was cancelled');
-        }
-        // Must be stored before the navigation. Module memory does not survive the unload
-        savePendingAuthFlow({state, codeVerifier: pkce.codeVerifier, returnURL, createdAt: Date.now()});
-        window.location.assign(authorizeURL);
-    } catch (error) {
-        isRedirectInFlight = false;
-        throw error;
-    }
-    return new Promise<never>(() => {});
+function redirectToCloudflareSignIn(returnURL: string = window.location.href): Promise<never> {
+    redirectPromise ??= startCloudflareSignInRoundTrip(returnURL).finally(() => {
+        redirectPromise = null;
+    });
+    return redirectPromise;
 }
 
 let codeExchangePromise: Promise<void> | null = null;

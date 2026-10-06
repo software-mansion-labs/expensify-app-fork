@@ -47,7 +47,7 @@ async function startRedirect(): Promise<void> {
     try {
         await redirectToCloudflareSignIn();
     } catch (error) {
-        Log.warn('[CloudflareAccess] Failed to start the QA auth redirect', {error});
+        Log.warn('[CloudflareAccess] QA auth redirect did not complete', {error});
     }
 }
 
