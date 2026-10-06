@@ -14,12 +14,15 @@ import {getShortestPaths, TestModel} from 'xstate/graph';
 import createInitEvent, {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_AUTHORIZATION_ORDINARY_ERROR,
+    MFA_TEST_CANCEL_ERROR,
     MFA_TEST_CREDENTIAL_CREATION_ERROR,
     MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR,
     MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
     MFA_TEST_INVALID_CODE_ERROR,
     MFA_TEST_REGISTRATION_CHALLENGE,
+    MFA_TEST_SCENARIO_ACTION_ERROR,
     MFA_TEST_SCENARIO_RESPONSE,
+    MFA_TEST_SIGNED_CHALLENGE,
     MFA_TEST_VALIDATE_CODE,
 } from './flowFixtures';
 
@@ -95,7 +98,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
     {
         description: 'the re-entry journey starts a second flow after a full teardown',
         events: [createInitEvent(), {type: 'CLOSE_MODAL'}, {type: 'MODAL_CLOSED'}, createInitEvent()],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.PREPARING}.${MFA_STATE.VALIDATING_DEVICE}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PREPARING}.${MFA_STATE.VALIDATING_DEVICE}`,
     },
     // A resend is a self-transition, and a self-transition never lies on a shortest path, so only
     // this journey drives the resend gesture through the real UI.
@@ -109,7 +112,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
             createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.PROMPT}.${MFA_STATE.AWAITING_SOFT_PROMPT}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AWAITING_SOFT_PROMPT}`,
     },
     {
         description: 'the invalid-code journey clears the inline error and accepts a corrected code',
@@ -123,7 +126,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
             createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.PROMPT}.${MFA_STATE.AWAITING_SOFT_PROMPT}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AWAITING_SOFT_PROMPT}`,
     },
     {
         description: 'the credential-creation journey reaches creatingCredential after the user accepts the soft prompt',
@@ -135,7 +138,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
             {type: 'SOFT_PROMPT_APPROVED'},
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.PROMPT}.${MFA_STATE.CREATING_CREDENTIAL}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.CREATING_CREDENTIAL}`,
     },
     // A (re-)registration always requires approval, even if the account accepted the soft prompt
     // before - the persisted flag only matters on the returning-user branch below.
@@ -148,7 +151,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
             createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.PROMPT}.${MFA_STATE.AWAITING_SOFT_PROMPT}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AWAITING_SOFT_PROMPT}`,
     },
     // A returning user who already accepted the soft prompt skips the soft prompt entirely and lands
     // directly on authorization instead of re-confirming.
@@ -159,7 +162,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             createActorDoneEvent('validateDevice', {success: true}),
             createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}`,
     },
     // A fresh registration continues straight into authorization once the credential is created,
     // rather than stopping at the outcome.
@@ -173,10 +176,11 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
             {type: 'SOFT_PROMPT_APPROVED'},
             createActorDoneEvent('createCredential', {success: true}),
-            createActorDoneEvent('authorize', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
             createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
     },
     // A returning user who skipped the soft prompt still authorizes before reaching the outcome.
     {
@@ -185,10 +189,67 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             createInitEvent(),
             createActorDoneEvent('validateDevice', {success: true}),
             createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
-            createActorDoneEvent('authorize', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
             createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
+    },
+    // The ceremony finishes while the dialog is up, so the scenario action waits for the answer.
+    // Dismissing releases it and the flow still reaches the success outcome.
+    {
+        description: 'the dismiss journey holds the scenario action behind the cancel confirmation and sends it once dismissed',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            {type: 'REQUEST_CANCEL'},
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            {type: 'DISMISS_CANCEL'},
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
+    },
+    {
+        description: 'the confirm journey runs the scenario cancel and lands on the failure outcome',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            {type: 'REQUEST_CANCEL'},
+            {type: 'CONFIRM_CANCEL'},
+            createActorDoneEvent('cancelScenario', MFA_TEST_CANCEL_ERROR),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.FAILURE}`,
+    },
+    // A scenario action already sent can't be held, so it finishes behind the open dialog and the flow
+    // reaches the outcome with the question still up.
+    {
+        description: 'the auto-hide journey drops the cancel confirmation once the flow reaches the outcome',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            {type: 'REQUEST_CANCEL'},
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.CANCEL_CONFIRM}.${MFA_STATE.CANCEL_CONFIRM_HIDDEN}`,
+    },
+    {
+        description: 'the outcome back journey closes the modal without asking',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
+            {type: 'REQUEST_CANCEL'},
+        ],
+        endState: MFA_STATE.CLOSING,
     },
 ];
 
@@ -214,6 +275,9 @@ const MFA_GRAPH_EVENT_FIXTURES = {
     VALIDATE_CODE_ENTERED: [{type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE}],
     RESEND_VALIDATE_CODE: [{type: 'RESEND_VALIDATE_CODE'}],
     VALIDATE_CODE_CHANGED: [{type: 'VALIDATE_CODE_CHANGED'}],
+    REQUEST_CANCEL: [{type: 'REQUEST_CANCEL'}],
+    DISMISS_CANCEL: [{type: 'DISMISS_CANCEL'}],
+    CONFIRM_CANCEL: [{type: 'CONFIRM_CANCEL'}],
 } satisfies MfaEventFixtures;
 
 /**
@@ -253,12 +317,14 @@ const MFA_ACTOR_EVENT_FIXTURES = {
     // adding coverage. `authorizationTransition.test.ts` pins the individual reasons by hand instead.
     authorize: createActorEvents(
         'authorize',
-        {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD},
+        {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD},
         {success: false, error: MFA_TEST_AUTHORIZATION_ORDINARY_ERROR},
     ),
+    executeScenarioAction: createActorEvents('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}, {success: false, error: MFA_TEST_SCENARIO_ACTION_ERROR}),
     // SKIP_OUTCOME_SCREEN routes to `closing` instead of an outcome screen, so both variants need a
     // graph branch for the walk to reach both endpoints.
     finalizeOutcome: createActorEvents('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN, {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN}),
+    cancelScenario: createActorEvents('cancelScenario', MFA_TEST_CANCEL_ERROR),
 } satisfies MfaActorEventFixtures;
 
 /** Every concrete event the traversal can offer, in the order its fixtures declare them. */
