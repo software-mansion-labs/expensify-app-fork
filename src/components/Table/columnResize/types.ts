@@ -5,6 +5,14 @@ import type {ColumnResizeController} from './useColumnResize/types';
 /** User-dragged widths by column key. Absent columns are sized from content, so only touched columns get stored. */
 type ColumnWidthOverrides = Record<string, number>;
 
+/** A later column that pays for another column's resize, down to the narrowest it may be squeezed to. */
+type ColumnAbsorber = {
+    columnKey: string;
+
+    /** Usually the column's content width, so paying never truncates what it shows. */
+    minWidth: number;
+};
+
 /** A column whose right edge the user can drag. */
 type ResizableColumn = {
     /** The column's key, which also names the custom property its width is read from. */
@@ -15,6 +23,9 @@ type ResizableColumn = {
 
     /** Content width a click on the edge fits to. `undefined` when unmeasurable, making the click a no-op. */
     contentWidth?: number;
+
+    /** Later columns that pay for this one, in render order. Empty means resizing it overflows the table and scrolls. */
+    absorbers: ColumnAbsorber[];
 };
 
 type ColumnResizeHandleProps = {
@@ -30,4 +41,4 @@ type ColumnResizeScopeProps = ChildrenProps & {
     onScopeElement?: (element: HTMLElement | null) => void;
 };
 
-export type {ColumnResizeHandleProps, ColumnResizeScopeProps, ColumnWidthOverrides, ResizableColumn};
+export type {ColumnAbsorber, ColumnResizeHandleProps, ColumnResizeScopeProps, ColumnWidthOverrides, ResizableColumn};

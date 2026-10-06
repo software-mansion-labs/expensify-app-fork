@@ -166,7 +166,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
 
     const dynamicColumns: Array<TableColumn<ColumnKey, DataType>> = [];
 
-    // Fixed-width columns' base widths. Stored widths are applied further down.
+    // Fixed-width columns' base widths. Stored widths and their payers are applied further down.
     const fixedColumnWidths = new Map<ColumnKey, number>();
     let fixedColumnsWidth = 0;
 
@@ -204,6 +204,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
 
     const constraints: DynamicColumnConstraints[] = [];
     const contentWidthByColumnKey = new Map<ColumnKey, number>();
+    const fitWidthByColumnKey = new Map<ColumnKey, number>();
 
     for (const column of dynamicColumns) {
         const contentWidth = measureColumnContentWidth(column, data);
@@ -217,6 +218,8 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
         // A column has to fit its header label as well as its cells, so the label is part of what its content needs
         // rather than a separate floor.
         const columnContentWidth = Math.max(contentWidth, headerLabelWidth);
+
+        fitWidthByColumnKey.set(column.key, columnContentWidth);
 
         // Only columns that can read their text get a content width; otherwise it'd just be the label, so clicking their edge does nothing.
         if (column.dynamicSizing) {
@@ -283,9 +286,11 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
             label: column.label,
             hasDeclaredWidth: typeof column.width === 'number',
             contentWidth: contentWidthByColumnKey.get(column.key),
+            fitWidth: fitWidthByColumnKey.get(column.key),
         })),
         baseColumnWidths: resolvedColumnWidths,
         columnWidthOverrides,
+        growableColumnKey,
     });
 
     // The row's width is summed from the widths rather than from the tracks, so what the growable track grows into is
@@ -296,7 +301,7 @@ function useDynamicColumnWidths<DataType extends TableData, ColumnKey extends st
     // column of the row like any other.
     const rowWidthValues = hasSelectionColumn ? [`${selectionColumnWidth}px`, ...columnWidthValues] : columnWidthValues;
 
-    // Scroll at the live column sum, so a drag that widens the row past the table starts scrolling mid-drag.
+    // Scroll at the live column sum, so a drag that exhausts the payers starts scrolling mid-drag; otherwise the sum is unchanged.
     return {
         gridTemplateColumns,
         scrollWidth: getColumnsWidthExpression(rowWidthValues, totalGapWidth + rowChromeWidth, '100%'),

@@ -1,4 +1,12 @@
-import {clampColumnWidth, getDraggedColumnWidth, getKeyboardResizeAction, getToggleFitAction, hasPointerPassedDragSlop} from '@components/Table/columnResize/columnResizeGestures';
+import type {AbsorberWidths} from '@components/Table/columnResize/columnResizeGestures';
+import {
+    clampColumnWidth,
+    getDraggedColumnWidth,
+    getKeyboardResizeAction,
+    getResizedColumnWidths,
+    getToggleFitAction,
+    hasPointerPassedDragSlop,
+} from '@components/Table/columnResize/columnResizeGestures';
 
 import CONST from '@src/CONST';
 
@@ -66,6 +74,33 @@ describe('columnResizeGestures', () => {
             // Then the width stops at the bounds, so the edge stays reachable however far the pointer goes
             expect(narrowestWidth).toBe(MIN_WIDTH);
             expect(widestWidth).toBe(MAX_WIDTH);
+        });
+    });
+
+    describe('getResizedColumnWidths', () => {
+        it('writes the column and takes the difference out of the payers', () => {
+            // Given a 200px column with two 200px columns after it paying
+            const absorberStartWidths = [
+                {columnKey: 'email', startWidth: 200, minWidth: 0},
+                {columnKey: 'role', startWidth: 200, minWidth: 0},
+            ];
+
+            // When it is widened by 60px
+            const widths = getResizedColumnWidths('name', 260, 200, absorberStartWidths);
+
+            // Then the column takes its new width and each payer gives up half, so the row keeps its width
+            expect(widths).toEqual({name: 260, email: 170, role: 170});
+        });
+
+        it('writes only the column when nothing pays', () => {
+            // Given a column with nothing after it that can pay
+            const absorberStartWidths: AbsorberWidths = [];
+
+            // When it is widened
+            const widths = getResizedColumnWidths('name', 260, 200, absorberStartWidths);
+
+            // Then only its own width is written, and the table scrolls rather than moving a column the user sized
+            expect(widths).toEqual({name: 260});
         });
     });
 

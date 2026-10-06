@@ -1,6 +1,13 @@
 import CONST from '@src/CONST';
 
+import type {AbsorbingColumn} from './getAbsorbedColumnWidths';
+
+import getAbsorbedColumnWidths from './getAbsorbedColumnWidths';
+
 const {MIN_WIDTH, MAX_WIDTH, KEYBOARD_STEP, DRAG_SLOP} = CONST.TABLES.COLUMN_RESIZE;
+
+/** The columns paying for a resize, with the widths they are paying from. */
+type AbsorberWidths = Array<AbsorbingColumn & {columnKey: string}>;
 
 /** What a key pressed on a column's edge does. */
 type KeyboardResizeAction = {type: 'step'; step: number} | {type: 'toggleFit'};
@@ -28,6 +35,24 @@ function getDraggedColumnWidth(startWidth: number, startClientX: number, clientX
     return clampColumnWidth(startWidth + (clientX - startClientX));
 }
 
+/** Every width a resize writes: the column's own, and each paying column's after giving up its share of the difference. */
+function getResizedColumnWidths(columnKey: string, width: number, startWidth: number, absorberStartWidths: AbsorberWidths): Record<string, number> {
+    const resizedWidths: Record<string, number> = {[columnKey]: width};
+    const absorbedWidths = getAbsorbedColumnWidths(absorberStartWidths, width - startWidth);
+
+    for (const [index, absorber] of absorberStartWidths.entries()) {
+        const absorbedWidth = absorbedWidths.at(index);
+
+        if (absorbedWidth === undefined) {
+            continue;
+        }
+
+        resizedWidths[absorber.columnKey] = absorbedWidth;
+    }
+
+    return resizedWidths;
+}
+
 function getKeyboardResizeAction(key: string): KeyboardResizeAction | undefined {
     if (FIT_TO_CONTENT_KEYS.has(key)) {
         return {type: 'toggleFit'};
@@ -47,5 +72,5 @@ function getToggleFitAction(contentWidth: number | undefined, storedWidth: numbe
     return 'release';
 }
 
-export {clampColumnWidth, getDraggedColumnWidth, getKeyboardResizeAction, getToggleFitAction, hasPointerPassedDragSlop};
-export type {KeyboardResizeAction};
+export {clampColumnWidth, getDraggedColumnWidth, getKeyboardResizeAction, getResizedColumnWidths, getToggleFitAction, hasPointerPassedDragSlop};
+export type {AbsorberWidths, KeyboardResizeAction};
