@@ -1,4 +1,4 @@
-/** The returned promise stays pending when it redirects, because the page is leaving */
+/** The returned promise stays pending while the page leaves for Cloudflare, and resolves if Back restores it */
 type EnsureQAAuthenticated = (command?: string) => Promise<void>;
 
 type HandleQAReauthRequired = (command?: string) => void;
