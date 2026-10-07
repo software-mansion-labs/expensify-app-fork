@@ -253,6 +253,7 @@ const MFA_STATE = {
     AWAITING_SOFT_PROMPT: 'awaitingSoftPrompt',
     CREATING_CREDENTIAL: 'creatingCredential',
     AUTHORIZING: 'authorizing',
+    READY_TO_SIGN: 'readyToSign',
     SIGNING_CHALLENGE: 'signingChallenge',
     READY_TO_EXECUTE: 'readyToExecute',
     EXECUTING_SCENARIO_ACTION: 'executingScenarioAction',

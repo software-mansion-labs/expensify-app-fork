@@ -10,9 +10,13 @@ import type {
     ExecuteScenarioActionOutput,
     FinalizeOutcomeInput,
     FinalizeOutcomeOutput,
+    LoadRegistrationStateInput,
+    LoadRegistrationStateOutput,
     MfaContext,
+    ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
 
+import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import CONST from '@src/CONST';
@@ -20,10 +24,16 @@ import CONST from '@src/CONST';
 import type {StateValue} from 'xstate';
 
 import {createActorAtState, createFlowContext, sendExecuteScenarioActionDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
-import {MFA_TEST_AUTH_METHOD, MFA_TEST_CANCEL_ERROR, MFA_TEST_REGISTRATION_CHALLENGE, MFA_TEST_SCENARIO_RESPONSE, MFA_TEST_SIGNED_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
+import createInitEvent, {
+    MFA_TEST_AUTH_METHOD,
+    MFA_TEST_CANCEL_ERROR,
+    MFA_TEST_REGISTRATION_CHALLENGE,
+    MFA_TEST_SCENARIO_RESPONSE,
+    MFA_TEST_SIGNED_CHALLENGE,
+} from 'tests/utils/mfa/flowFixtures';
 import {createActorDoneEvent} from 'tests/utils/mfa/flowPaths';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
-import {createActor, fromPromise, matchesState} from 'xstate';
+import {createActor, fromPromise, matchesState, waitFor} from 'xstate';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 
@@ -49,6 +59,8 @@ const FINALIZING_OUTCOME = {[MFA_STATE.OUTCOME]: MFA_STATE.FINALIZING_OUTCOME};
 const AUTHORIZING = {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}};
 const READY_TO_EXECUTE = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.READY_TO_EXECUTE}};
+const READY_TO_SIGN = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.READY_TO_SIGN}};
+const SIGNING_CHALLENGE = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}};
 
 /** Never settles, so the invoked actor stays running until the machine stops it. */
 const pendingCancelScenario = fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => new Promise(() => {}));
@@ -415,6 +427,137 @@ describe('MFA cancel', () => {
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
             expect(result.context.signedChallenge).toBeUndefined();
+
+            actor.stop();
+        });
+    });
+
+    describe('holding the ceremony', () => {
+        /**
+         * Starts a live flow for a returning user, optionally opening the dialog during the device check.
+         * The preparing steps resolve on their own, so the flow reaches `authorizing` without a user action,
+         * the way a credential registration finishing behind the dialog does.
+         */
+        async function reachAuthorizing({isDialogUp}: {isDialogUp: boolean}) {
+            let authorizeRuns = 0;
+            const machine = mfaMachine.provide({
+                actors: {
+                    validateDevice: fromPromise<MFAResult, ValidateDeviceInput>(() => Promise.resolve({success: true})),
+                    loadRegistrationState: fromPromise<LoadRegistrationStateOutput, LoadRegistrationStateInput>(() =>
+                        Promise.resolve({hasServerCredentials: true, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+                    ),
+                    authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(() => {
+                        authorizeRuns += 1;
+                        return new Promise(() => {});
+                    }),
+                    cancelScenario: pendingCancelScenario,
+                },
+            });
+            const actor = createActor(machine);
+            actor.start();
+            actor.send(createInitEvent());
+            if (isDialogUp) {
+                actor.send({type: 'REQUEST_CANCEL'});
+            }
+            await waitFor(actor, (snapshot) => snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}}));
+            return {actor, getAuthorizeRuns: () => authorizeRuns};
+        }
+
+        it('starts the ceremony straight away when no dialog is up', async () => {
+            const {actor, getAuthorizeRuns} = await reachAuthorizing({isDialogUp: false});
+
+            expect(matchesState(openAt(SIGNING_CHALLENGE), actor.getSnapshot().value)).toBe(true);
+            expect(getAuthorizeRuns()).toBe(1);
+
+            actor.stop();
+        });
+
+        it('holds the ceremony while the dialog is up, so the platform prompt never covers it', async () => {
+            const {actor, getAuthorizeRuns} = await reachAuthorizing({isDialogUp: true});
+
+            expect(matchesState(openAt(READY_TO_SIGN, MFA_STATE.CANCEL_CONFIRM_VISIBLE), actor.getSnapshot().value)).toBe(true);
+            expect(actor.getSnapshot().children).not.toHaveProperty('authorize');
+            expect(getAuthorizeRuns()).toBe(0);
+
+            actor.stop();
+        });
+
+        it('starts the held ceremony once the dialog is dismissed', async () => {
+            const {actor, getAuthorizeRuns} = await reachAuthorizing({isDialogUp: true});
+
+            actor.send({type: 'DISMISS_CANCEL'});
+
+            expect(matchesState(openAt(SIGNING_CHALLENGE), actor.getSnapshot().value)).toBe(true);
+            expect(getAuthorizeRuns()).toBe(1);
+
+            actor.stop();
+        });
+
+        it('never starts the held ceremony once the cancel is confirmed', async () => {
+            const {actor, getAuthorizeRuns} = await reachAuthorizing({isDialogUp: true});
+
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            expect(matchesState(openAt(MFA_STATE.CANCELLING), actor.getSnapshot().value)).toBe(true);
+            expect(getAuthorizeRuns()).toBe(0);
+
+            actor.stop();
+        });
+    });
+
+    describe('while the scenario action is in flight', () => {
+        it('reports the request in flight only while the scenario action runs', () => {
+            expect(snapshotToState(mfaMachine.resolveState({value: openAt(SIGNING_CHALLENGE), context: createFlowContext()})).isScenarioActionInFlight).toBe(false);
+            expect(snapshotToState(mfaMachine.resolveState({value: openAt(READY_TO_EXECUTE), context: createFlowContext()})).isScenarioActionInFlight).toBe(false);
+            expect(snapshotToState(mfaMachine.resolveState({value: openAt(EXECUTING_SCENARIO_ACTION), context: createFlowContext()})).isScenarioActionInFlight).toBe(true);
+        });
+
+        it('opens the dialog but ignores CONFIRM_CANCEL, so no cancel races the request already sent', () => {
+            let cancelRuns = 0;
+            const machine = mfaMachine.provide({
+                actors: {
+                    executeScenarioAction: fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(() => new Promise(() => {})),
+                    cancelScenario: fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => {
+                        cancelRuns += 1;
+                        return new Promise(() => {});
+                    }),
+                },
+            });
+            const actor = createActor(machine, {
+                snapshot: machine.resolveState({
+                    value: openAt(READY_TO_EXECUTE),
+                    context: createFlowContext({signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+                }),
+            });
+            actor.start();
+            // A restored snapshot doesn't evaluate `always`, so a live event releases the held action.
+            actor.send({type: 'DISMISS_CANCEL'});
+            expect(actor.getSnapshot().children).toHaveProperty('executeScenarioAction');
+
+            actor.send({type: 'REQUEST_CANCEL'});
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(EXECUTING_SCENARIO_ACTION, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
+            expect(result.children).toHaveProperty('executeScenarioAction');
+            expect(snapshotToState(result).isScenarioActionInFlight).toBe(true);
+            expect(cancelRuns).toBe(0);
+
+            actor.stop();
+        });
+
+        it('shows the request result once it settles, hides the dialog and never runs the cancel', () => {
+            const actor = createActorAtState(openAt(EXECUTING_SCENARIO_ACTION, MFA_STATE.CANCEL_CONFIRM_VISIBLE));
+
+            actor.start();
+            actor.send({type: 'CONFIRM_CANCEL'});
+            sendExecuteScenarioActionDone(actor, {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE});
+
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+            expect(result.context.scenarioResponse).toBe(MFA_TEST_SCENARIO_RESPONSE);
+            expect(result.context.error).toBeUndefined();
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
 
             actor.stop();
         });

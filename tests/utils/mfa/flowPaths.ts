@@ -195,6 +195,22 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
     },
+    // The flow reaches authorization on its own while the dialog is up, so the platform prompt waits for
+    // the answer instead of covering the dialog. Dismissing starts it and the flow still succeeds.
+    {
+        description: 'the dismiss journey holds the ceremony behind the cancel confirmation and starts it once dismissed',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            {type: 'REQUEST_CANCEL'},
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            {type: 'DISMISS_CANCEL'},
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
+    },
     // The ceremony finishes while the dialog is up, so the scenario action waits for the answer.
     // Dismissing releases it and the flow still reaches the success outcome.
     {
@@ -224,16 +240,17 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.FAILURE}`,
     },
-    // A scenario action already sent can't be held, so it finishes behind the open dialog and the flow
-    // reaches the outcome with the question still up.
+    // A scenario action already sent can't be taken back, so confirming is held off while it runs. It
+    // finishes behind the open dialog, and reaching the outcome hides the question.
     {
-        description: 'the auto-hide journey drops the cancel confirmation once the flow reaches the outcome',
+        description: 'the auto-hide journey ignores a confirm during the scenario action and drops the cancel confirmation once the flow reaches the outcome',
         events: [
             createInitEvent(),
             createActorDoneEvent('validateDevice', {success: true}),
             createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
             createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
             {type: 'REQUEST_CANCEL'},
+            {type: 'CONFIRM_CANCEL'},
             createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.CANCEL_CONFIRM}.${MFA_STATE.CANCEL_CONFIRM_HIDDEN}`,

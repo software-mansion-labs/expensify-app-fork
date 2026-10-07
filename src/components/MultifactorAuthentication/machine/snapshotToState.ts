@@ -22,6 +22,9 @@ type MfaState = MfaContext & {
     /** Whether the cancel-confirmation dialog is currently visible. */
     isCancelConfirmVisible: boolean;
 
+    /** Whether the scenario action is in flight, so the cancel-confirmation dialog can't be confirmed until it settles. */
+    isScenarioActionInFlight: boolean;
+
     /** Whether the validate-code screen currently shows the inline invalid-code error. */
     showsInvalidCodeError: boolean;
 
@@ -61,6 +64,11 @@ function snapshotToState(snapshot: MfaSnapshot): MfaState {
         isProcessingPrompt: snapshot.context.promptPresentationPhase === MFA_STATE.CREATING_CREDENTIAL || snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
         isAuthorizing: snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
         isCancelConfirmVisible: snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE}}),
+        isScenarioActionInFlight: snapshot.matches({
+            [MFA_STATE.OPEN]: {
+                [MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}},
+            },
+        }),
         showsInvalidCodeError: snapshot.matches({
             [MFA_STATE.OPEN]: {
                 [MFA_STATE.FLOW]: {

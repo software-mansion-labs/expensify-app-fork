@@ -35,6 +35,7 @@ import {createActor, fromPromise, waitFor} from 'xstate';
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
+const SIGNING_CHALLENGE = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}}}};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}}}};
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
@@ -83,7 +84,7 @@ describe('MFA authorization', () => {
         });
 
         it('moves to the scenario action with the signed challenge and authentication method once the ceremony succeeds', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}});
+            const actor = createActorAtState(SIGNING_CHALLENGE);
 
             actor.start();
             sendAuthorizeDone(actor, {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
@@ -97,7 +98,7 @@ describe('MFA authorization', () => {
         });
 
         it('reaches the failure outcome carrying the exact error for an ordinary failure', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}});
+            const actor = createActorAtState(SIGNING_CHALLENGE);
             const failureError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.CANCELED, 'Authorization transition spec cancellation');
 
             actor.start();
@@ -115,7 +116,7 @@ describe('MFA authorization', () => {
         // outcome like any other, with `error.reason` preserved verbatim so the recovery slice has an
         // exact value to route on once it adds its own branch.
         it('reaches the failure outcome preserving the exact reason for a recoverable credential failure', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}});
+            const actor = createActorAtState(SIGNING_CHALLENGE);
             const recoverableError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL, 'Authorization transition spec recoverable failure');
 
             actor.start();
@@ -130,7 +131,7 @@ describe('MFA authorization', () => {
         });
 
         it('reaches the failure outcome preserving the exact REGISTRATION_REQUIRED reason', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}});
+            const actor = createActorAtState(SIGNING_CHALLENGE);
             const registrationRequiredError = createLocalMFAError(REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED, 'Authorization transition spec registration required');
 
             actor.start();
@@ -177,7 +178,7 @@ describe('MFA authorization', () => {
 
         it('moves to closing on CLOSE_MODAL and keeps the authorizing presentation during the close animation', () => {
             // The context override stands in for the entry action a live transition would have run.
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}}, {promptPresentationPhase: MFA_STATE.AUTHORIZING});
+            const actor = createActorAtState(SIGNING_CHALLENGE, {promptPresentationPhase: MFA_STATE.AUTHORIZING});
 
             actor.start();
             actor.send({type: 'CLOSE_MODAL'});
@@ -191,7 +192,7 @@ describe('MFA authorization', () => {
         });
 
         it('marks the prompt as processing while authorizing', () => {
-            const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}}, {promptPresentationPhase: MFA_STATE.AUTHORIZING});
+            const actor = createActorAtState(SIGNING_CHALLENGE, {promptPresentationPhase: MFA_STATE.AUTHORIZING});
 
             actor.start();
 

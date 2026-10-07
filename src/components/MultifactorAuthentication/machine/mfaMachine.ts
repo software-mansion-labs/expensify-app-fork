@@ -29,6 +29,7 @@ const AUTHORIZING_TARGET = `#${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}` as co
 // needs an absolute target the same way the branches above do.
 const CLOSING_TARGET = `#${MFA_STATE.CLOSING}` as const;
 const CANCELLING_TARGET = `#${MFA_STATE.CANCELLING}` as const;
+const EXECUTING_SCENARIO_ACTION_TARGET = `#${MFA_STATE.EXECUTING_SCENARIO_ACTION}` as const;
 const CANCEL_CONFIRM_VISIBLE_STATE = {[MFA_STATE.OPEN]: {[MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE}};
 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
@@ -80,6 +81,9 @@ const MFAMachine = setup({
         // Once the flow reaches the outcome there is nothing left to cancel, so back closes the modal
         // instead; while the cancel itself runs, there is nothing left to ask.
         isCancelable: and([not(stateIn(OUTCOME_TARGET)), not(stateIn(CANCELLING_TARGET))]),
+        // The scenario action can't be taken back once sent, so a cancel waits until it settles; its
+        // result then reaches the outcome and hides the dialog.
+        canConfirmCancel: not(stateIn(EXECUTING_SCENARIO_ACTION_TARGET)),
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -172,7 +176,7 @@ const MFAMachine = setup({
                     on: {
                         // Declared once for every step. Leaving the step stops its actor and aborts its signal,
                         // so a late result is discarded. The guard reads the dialog region before this step.
-                        CONFIRM_CANCEL: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_STATE), target: `.${MFA_STATE.CANCELLING}`},
+                        CONFIRM_CANCEL: {guard: and([stateIn(CANCEL_CONFIRM_VISIBLE_STATE), 'canConfirmCancel']), target: `.${MFA_STATE.CANCELLING}`},
                     },
                     states: {
                         // This is the transparent initial screen, and its child states run the pre-screen
@@ -337,8 +341,15 @@ const MFAMachine = setup({
                                 [MFA_STATE.AUTHORIZING]: {
                                     entry: assign({promptPresentationPhase: MFA_STATE.AUTHORIZING}),
                                     exit: assign({signedChallenge: undefined}),
-                                    initial: MFA_STATE.SIGNING_CHALLENGE,
+                                    initial: MFA_STATE.READY_TO_SIGN,
                                     states: {
+                                        // The flow can reach authorization on its own while the cancel confirmation is up (e.g. the
+                                        // credential registration finishes behind it). The platform prompt would cover the dialog,
+                                        // so the ceremony starts only while no cancel is pending: dismissing starts it, confirming
+                                        // leaves for `cancelling`. With no dialog up, this passes straight through.
+                                        [MFA_STATE.READY_TO_SIGN]: {
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_STATE)), target: MFA_STATE.SIGNING_CHALLENGE},
+                                        },
                                         [MFA_STATE.SIGNING_CHALLENGE]: {
                                             invoke: {
                                                 id: 'authorize',
@@ -377,6 +388,7 @@ const MFAMachine = setup({
                                             always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_STATE)), target: MFA_STATE.EXECUTING_SCENARIO_ACTION},
                                         },
                                         [MFA_STATE.EXECUTING_SCENARIO_ACTION]: {
+                                            id: MFA_STATE.EXECUTING_SCENARIO_ACTION,
                                             invoke: {
                                                 id: 'executeScenarioAction',
                                                 src: 'executeScenarioAction',
@@ -496,7 +508,7 @@ const MFAMachine = setup({
                         [MFA_STATE.CANCEL_CONFIRM_VISIBLE]: {
                             on: {
                                 DISMISS_CANCEL: MFA_STATE.CANCEL_CONFIRM_HIDDEN,
-                                CONFIRM_CANCEL: MFA_STATE.CANCEL_CONFIRM_HIDDEN,
+                                CONFIRM_CANCEL: {guard: 'canConfirmCancel', target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},
                             },
                             // The flow keeps running behind the dialog; once it reaches the outcome there is nothing left to cancel, so the dialog hides.
                             always: {guard: stateIn(OUTCOME_TARGET), target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},

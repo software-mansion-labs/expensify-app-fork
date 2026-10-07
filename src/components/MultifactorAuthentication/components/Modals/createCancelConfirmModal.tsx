@@ -9,13 +9,15 @@ type BaseProps = Required<MultifactorAuthenticationCancelConfirm>;
 
 type CancelConfirmModalProps = {
     isVisible: boolean;
+    /** Blocks the confirm button with a spinner while a request that a cancel can't take back is in flight. */
+    isConfirmLoading?: boolean;
     onConfirm: () => void;
     onCancel: () => void;
 };
 
 type CancelConfirmModalBaseProps = CancelConfirmModalProps & BaseProps;
 
-function CancelConfirmModalBase({isVisible, onConfirm, onCancel, title, description, confirmButtonText, cancelButtonText}: CancelConfirmModalBaseProps) {
+function CancelConfirmModalBase({isVisible, isConfirmLoading, onConfirm, onCancel, title, description, confirmButtonText, cancelButtonText}: CancelConfirmModalBaseProps) {
     const {translate} = useLocalize();
 
     return (
@@ -25,6 +27,7 @@ function CancelConfirmModalBase({isVisible, onConfirm, onCancel, title, descript
             onConfirm={onConfirm}
             onCancel={onCancel}
             isVisible={isVisible}
+            isConfirmLoading={isConfirmLoading}
             prompt={translate(description)}
             confirmText={translate(confirmButtonText)}
             cancelText={translate(cancelButtonText)}

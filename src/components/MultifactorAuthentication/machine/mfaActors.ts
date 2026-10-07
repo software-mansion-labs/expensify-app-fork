@@ -121,8 +121,8 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
 
 /**
  * Sends the scenario's backend action with the signed challenge. The request can't be taken back once
- * sent, so the machine invokes this only while no cancel confirmation is up. No rollback happens after
- * the action fails, matching `createCredentialActor`'s contract.
+ * sent, so the machine starts it only while no cancel confirmation is up and doesn't accept a cancel
+ * until it settles. No rollback happens after the action fails, matching `createCredentialActor`'s contract.
  */
 const executeScenarioActionActor = fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(async ({input}) => {
     const scenarioResult = await input.runScenarioAction({
