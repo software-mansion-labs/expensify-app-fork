@@ -16,9 +16,11 @@ import createInitEvent, {
     MFA_TEST_AUTHORIZATION_ORDINARY_ERROR,
     MFA_TEST_CANCEL_ERROR,
     MFA_TEST_CREDENTIAL_CREATION_ERROR,
+    MFA_TEST_CREDENTIAL_REGISTRATION_ERROR,
     MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR,
     MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
     MFA_TEST_INVALID_CODE_ERROR,
+    MFA_TEST_KEY_INFO,
     MFA_TEST_REGISTRATION_CHALLENGE,
     MFA_TEST_SCENARIO_ACTION_ERROR,
     MFA_TEST_SCENARIO_RESPONSE,
@@ -175,7 +177,8 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
             createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
             {type: 'SOFT_PROMPT_APPROVED'},
-            createActorDoneEvent('createCredential', {success: true}),
+            createActorDoneEvent('createCredential', {success: true, keyInfo: MFA_TEST_KEY_INFO}),
+            createActorDoneEvent('registerCredential', {success: true}),
             createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
             createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
             createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
@@ -226,6 +229,24 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
+    },
+    // The dialog opens while the credential ceremony runs, so the ceremony stops instead of prompting over
+    // it. Dismissing restarts it with the same registration challenge and registration carries on.
+    {
+        description: 'the dismiss journey stops the credential ceremony behind the cancel confirmation and restarts it once dismissed',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
+            createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
+            {type: 'SOFT_PROMPT_APPROVED'},
+            {type: 'REQUEST_CANCEL'},
+            {type: 'DISMISS_CANCEL'},
+            createActorDoneEvent('createCredential', {success: true, keyInfo: MFA_TEST_KEY_INFO}),
+            createActorDoneEvent('registerCredential', {success: true}),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}`,
     },
     {
         description: 'the confirm journey runs the scenario cancel and lands on the failure outcome',
@@ -328,7 +349,8 @@ const MFA_ACTOR_EVENT_FIXTURES = {
         {success: false, error: MFA_TEST_INVALID_CODE_ERROR},
         {success: false, error: MFA_TEST_FATAL_REGISTRATION_CHALLENGE_ERROR},
     ),
-    createCredential: createActorEvents('createCredential', {success: true}, {success: false, error: MFA_TEST_CREDENTIAL_CREATION_ERROR}),
+    createCredential: createActorEvents('createCredential', {success: true, keyInfo: MFA_TEST_KEY_INFO}, {success: false, error: MFA_TEST_CREDENTIAL_CREATION_ERROR}),
+    registerCredential: createActorEvents('registerCredential', {success: true}, {success: false, error: MFA_TEST_CREDENTIAL_REGISTRATION_ERROR}),
     // Deliberately two variants: every authorization failure reason routes through the same branch and
     // renders the same generic screen, so a third fixture would only multiply walked paths without
     // adding coverage. `authorizationTransition.test.ts` pins the individual reasons by hand instead.

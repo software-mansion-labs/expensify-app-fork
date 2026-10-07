@@ -15,6 +15,10 @@ import type {
     LoadRegistrationStateInput,
     LoadRegistrationStateOutput,
     MfaContext,
+    RegisterCredentialInput,
+    RegisterCredentialOutput,
+    RequestRegistrationChallengeInput,
+    RequestRegistrationChallengeOutput,
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
 
@@ -29,6 +33,7 @@ import {createActorAtState, createFlowContext, sendExecuteScenarioActionDone, se
 import createInitEvent, {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_CANCEL_ERROR,
+    MFA_TEST_KEY_INFO,
     MFA_TEST_REGISTRATION_CHALLENGE,
     MFA_TEST_SCENARIO_RESPONSE,
     MFA_TEST_SIGNED_CHALLENGE,
@@ -52,7 +57,7 @@ const STEP_STATES: Array<{description: string; flow: StateValue}> = [
     {description: 'awaiting the validate code', flow: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}}},
     {description: 'requesting the registration challenge', flow: {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}},
     {description: 'awaiting the soft prompt', flow: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
-    {description: 'creating the credential', flow: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}},
+    {description: 'registering the credential', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.REGISTERING_KEY}}},
     {description: 'executing the scenario action', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}}},
 ];
 
@@ -61,20 +66,24 @@ const AUTHORIZING = {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}};
 const READY_TO_SIGN = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.READY_TO_SIGN}};
 const SIGNING_CHALLENGE = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}};
+const READY_TO_CREATE = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.READY_TO_CREATE}};
+const CREATING_KEY = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.CREATING_KEY}};
+const REGISTERING_KEY = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.REGISTERING_KEY}};
 
 /** Never settles, so the invoked actor stays running until the machine stops it. */
 const pendingCancelScenario = fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => new Promise(() => {}));
 
 /**
- * Starts a live actor in `creatingCredential` with the dialog up and the given cancel actor. `resolveState`
- * cannot start an invoke, so the actor is restored one step earlier and enters `creatingCredential` live.
+ * Starts a live actor requesting the registration challenge, a step that keeps running behind the dialog,
+ * with the dialog up and the given cancel actor. `resolveState` cannot start an invoke, so the actor is
+ * restored one step earlier and enters the request live.
  */
-function startCreatingCredentialWithDialog(cancelScenario = pendingCancelScenario, contextOverrides: Partial<MfaContext> = {}) {
-    let createCredentialSignal: AbortSignal | undefined;
+function startRunningStepWithDialog(cancelScenario = pendingCancelScenario, contextOverrides: Partial<MfaContext> = {}) {
+    let runningStepSignal: AbortSignal | undefined;
     const machine = mfaMachine.provide({
         actors: {
-            createCredential: fromPromise<CreateCredentialOutput, CreateCredentialInput>(({signal}) => {
-                createCredentialSignal = signal;
+            requestRegistrationChallenge: fromPromise<RequestRegistrationChallengeOutput, RequestRegistrationChallengeInput>(({signal}) => {
+                runningStepSignal = signal;
                 return new Promise(() => {});
             }),
             cancelScenario,
@@ -82,14 +91,14 @@ function startCreatingCredentialWithDialog(cancelScenario = pendingCancelScenari
         },
     });
     const snapshot = machine.resolveState({
-        value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}),
-        context: createFlowContext({registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE, ...contextOverrides}),
+        value: openAt({[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}}),
+        context: createFlowContext(contextOverrides),
     });
     const actor = createActor(machine, {snapshot});
     actor.start();
-    actor.send({type: 'SOFT_PROMPT_APPROVED'});
+    actor.send({type: 'VALIDATE_CODE_ENTERED', validateCode: '123456'});
     actor.send({type: 'REQUEST_CANCEL'});
-    return {actor, getCreateCredentialSignal: () => createCredentialSignal};
+    return {actor, getRunningStepSignal: () => runningStepSignal};
 }
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
@@ -215,21 +224,21 @@ describe('MFA cancel', () => {
         });
 
         it('stops the running step and aborts its signal', () => {
-            const {actor, getCreateCredentialSignal} = startCreatingCredentialWithDialog();
-            expect(actor.getSnapshot().children).toHaveProperty('createCredential');
-            expect(getCreateCredentialSignal()?.aborted).toBe(false);
+            const {actor, getRunningStepSignal} = startRunningStepWithDialog();
+            expect(actor.getSnapshot().children).toHaveProperty('requestRegistrationChallenge');
+            expect(getRunningStepSignal()?.aborted).toBe(false);
 
             actor.send({type: 'CONFIRM_CANCEL'});
 
-            expect(actor.getSnapshot().children).not.toHaveProperty('createCredential');
-            expect(getCreateCredentialSignal()?.aborted).toBe(true);
+            expect(actor.getSnapshot().children).not.toHaveProperty('requestRegistrationChallenge');
+            expect(getRunningStepSignal()?.aborted).toBe(true);
 
             actor.stop();
         });
 
         it('hands the scenario cancel logic and payload to the cancel actor', () => {
             let receivedInput: CancelScenarioInput | undefined;
-            const {actor} = startCreatingCredentialWithDialog(
+            const {actor} = startRunningStepWithDialog(
                 fromPromise<CancelScenarioOutput, CancelScenarioInput>(({input}) => {
                     receivedInput = input;
                     return new Promise(() => {});
@@ -249,7 +258,7 @@ describe('MFA cancel', () => {
             const scenario = getScenarioConfig(scenarioName);
             const payload = {transactionID: 'txn-cancel'};
             let receivedInput: CancelScenarioInput | undefined;
-            const {actor} = startCreatingCredentialWithDialog(
+            const {actor} = startRunningStepWithDialog(
                 fromPromise<CancelScenarioOutput, CancelScenarioInput>(({input}) => {
                     receivedInput = input;
                     return new Promise(() => {});
@@ -267,7 +276,7 @@ describe('MFA cancel', () => {
 
         it('runs the cancel actor once on a double confirm', () => {
             let cancelRuns = 0;
-            const {actor} = startCreatingCredentialWithDialog(
+            const {actor} = startRunningStepWithDialog(
                 fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => {
                     cancelRuns += 1;
                     return new Promise(() => {});
@@ -309,7 +318,7 @@ describe('MFA cancel', () => {
         });
 
         it('fails the flow with an unhandled-exception error when the cancel logic throws', async () => {
-            const {actor} = startCreatingCredentialWithDialog(fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => Promise.reject(new Error('Deny exploded'))));
+            const {actor} = startRunningStepWithDialog(fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => Promise.reject(new Error('Deny exploded'))));
 
             actor.send({type: 'CONFIRM_CANCEL'});
             await waitForBatchedUpdates();
@@ -332,6 +341,144 @@ describe('MFA cancel', () => {
             actor.stop();
         });
     });
+    describe('stopping the credential ceremony when the dialog opens', () => {
+        /**
+         * Starts a live actor that enters credential creation with controllable actors. Each ceremony run settles
+         * only when the spec resolves it, and the backend registration records each run and never settles.
+         */
+        function startCreatingKey() {
+            let resolveCreateCredential: (output: CreateCredentialOutput) => void = () => {};
+            const createCredentialInputs: Array<{input: CreateCredentialInput; signal: AbortSignal}> = [];
+            const registerCredentialInputs: RegisterCredentialInput[] = [];
+            const machine = mfaMachine.provide({
+                actors: {
+                    createCredential: fromPromise<CreateCredentialOutput, CreateCredentialInput>(({input, signal}) => {
+                        createCredentialInputs.push({input, signal});
+                        return new Promise((resolve) => {
+                            resolveCreateCredential = resolve;
+                        });
+                    }),
+                    registerCredential: fromPromise<RegisterCredentialOutput, RegisterCredentialInput>(({input}) => {
+                        registerCredentialInputs.push(input);
+                        return new Promise(() => {});
+                    }),
+                    cancelScenario: pendingCancelScenario,
+                },
+            });
+            const snapshot = machine.resolveState({
+                value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}),
+                context: createFlowContext({registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE}),
+            });
+            const actor = createActor(machine, {snapshot});
+            actor.start();
+            actor.send({type: 'SOFT_PROMPT_APPROVED'});
+            const finishCreatingKey = async () => {
+                resolveCreateCredential({success: true, keyInfo: MFA_TEST_KEY_INFO});
+                await waitForBatchedUpdates();
+            };
+            return {actor, createCredentialInputs, registerCredentialInputs, finishCreatingKey};
+        }
+
+        it('registers the key straight away when no dialog is up', async () => {
+            const {actor, registerCredentialInputs, finishCreatingKey} = startCreatingKey();
+
+            await finishCreatingKey();
+
+            expect(matchesState(openAt(REGISTERING_KEY), actor.getSnapshot().value)).toBe(true);
+            expect(registerCredentialInputs).toEqual([{keyInfo: MFA_TEST_KEY_INFO}]);
+
+            actor.stop();
+        });
+
+        it('stops the ceremony and aborts its signal, so the platform prompt never opens over the dialog', () => {
+            const {actor, createCredentialInputs} = startCreatingKey();
+            expect(createCredentialInputs.at(0)?.signal.aborted).toBe(false);
+
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(READY_TO_CREATE, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
+            expect(result.children).not.toHaveProperty('createCredential');
+            expect(createCredentialInputs.at(0)?.signal.aborted).toBe(true);
+
+            actor.stop();
+        });
+
+        it('drops a ceremony that finishes after the dialog opened and never registers its key', async () => {
+            const {actor, registerCredentialInputs, finishCreatingKey} = startCreatingKey();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            await finishCreatingKey();
+
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(READY_TO_CREATE, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
+            expect(result.context.registrationKeyInfo).toBeUndefined();
+            expect(registerCredentialInputs).toHaveLength(0);
+
+            actor.stop();
+        });
+
+        it('restarts the ceremony with the same registration challenge once the dialog is dismissed', async () => {
+            const {actor, createCredentialInputs, registerCredentialInputs, finishCreatingKey} = startCreatingKey();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            actor.send({type: 'DISMISS_CANCEL'});
+
+            expect(matchesState(openAt(CREATING_KEY), actor.getSnapshot().value)).toBe(true);
+            expect(createCredentialInputs).toHaveLength(2);
+            expect(createCredentialInputs.at(1)?.input.registrationChallenge).toBe(MFA_TEST_REGISTRATION_CHALLENGE);
+            expect(createCredentialInputs.at(1)?.signal.aborted).toBe(false);
+
+            await finishCreatingKey();
+
+            expect(matchesState(openAt(REGISTERING_KEY), actor.getSnapshot().value)).toBe(true);
+            expect(registerCredentialInputs).toEqual([{keyInfo: MFA_TEST_KEY_INFO}]);
+
+            actor.stop();
+        });
+
+        it('never restarts the ceremony once the cancel is confirmed', () => {
+            const {actor, createCredentialInputs, registerCredentialInputs} = startCreatingKey();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            expect(matchesState(openAt(MFA_STATE.CANCELLING), actor.getSnapshot().value)).toBe(true);
+            expect(createCredentialInputs).toHaveLength(1);
+            expect(registerCredentialInputs).toHaveLength(0);
+
+            actor.stop();
+        });
+
+        it('keeps the backend registration running behind the dialog', async () => {
+            const {actor, registerCredentialInputs, finishCreatingKey} = startCreatingKey();
+            await finishCreatingKey();
+
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(REGISTERING_KEY, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
+            expect(result.children).toHaveProperty('registerCredential');
+            expect(registerCredentialInputs).toHaveLength(1);
+
+            actor.stop();
+        });
+
+        it('drops the key info when the flow leaves credential creation', async () => {
+            const {actor, finishCreatingKey} = startCreatingKey();
+            await finishCreatingKey();
+            expect(actor.getSnapshot().context.registrationKeyInfo).toBe(MFA_TEST_KEY_INFO);
+
+            actor.send({type: 'CLOSE_MODAL'});
+
+            const result = actor.getSnapshot();
+            expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(result.context.registrationKeyInfo).toBeUndefined();
+
+            actor.stop();
+        });
+    });
+
     describe('stopping the ceremony when the dialog opens', () => {
         /**
          * Starts a live actor that enters `authorizing` with controllable actors. Each ceremony run settles only

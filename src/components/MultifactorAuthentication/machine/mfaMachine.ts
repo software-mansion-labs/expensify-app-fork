@@ -47,6 +47,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     runScenarioAction: undefined,
     validateCode: undefined,
     registrationChallenge: undefined,
+    registrationKeyInfo: undefined,
     softPromptApproved: false,
     authenticationMethod: undefined,
     signedChallenge: undefined,
@@ -315,24 +316,73 @@ const MFAMachine = setup({
                                 },
                                 // Registration and authorization stay under `prompt` so the prompt screen and its
                                 // fingerprint animation remain mounted throughout.
+                                // The platform ceremony, then the backend registration of the key it created.
                                 [MFA_STATE.CREATING_CREDENTIAL]: {
                                     entry: assign({promptPresentationPhase: MFA_STATE.CREATING_CREDENTIAL}),
-                                    invoke: {
-                                        id: 'createCredential',
-                                        src: 'createCredential',
-                                        input: ({context}) => {
-                                            if (context.accountID === undefined || context.registrationChallenge === undefined) {
-                                                throw new Error('MFA account and registration challenge must be stored before creating a credential');
-                                            }
-                                            return {accountID: context.accountID, registrationChallenge: context.registrationChallenge};
+                                    exit: assign({registrationKeyInfo: undefined}),
+                                    initial: MFA_STATE.READY_TO_CREATE,
+                                    states: {
+                                        // The platform prompt would cover the cancel confirmation, so the ceremony runs only while
+                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
+                                        // dialog up, this passes straight through.
+                                        [MFA_STATE.READY_TO_CREATE]: {
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_STATE)), target: MFA_STATE.CREATING_KEY},
                                         },
-                                        onDone: [
-                                            {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
-                                            {target: MFA_STATE.AUTHORIZING, actions: assign({isRegistrationComplete: true})},
-                                        ],
-                                        onError: {
-                                            target: OUTCOME_TARGET,
-                                            actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential registration', event.error)}),
+                                        [MFA_STATE.CREATING_KEY]: {
+                                            // Opening the dialog stops the ceremony, so the prompt never opens over it. Nothing has
+                                            // reached the backend yet, so dismissing restarts it with the same registration challenge.
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_STATE), target: MFA_STATE.READY_TO_CREATE},
+                                            invoke: {
+                                                id: 'createCredential',
+                                                src: 'createCredential',
+                                                input: ({context}) => {
+                                                    if (context.accountID === undefined || context.registrationChallenge === undefined) {
+                                                        throw new Error('MFA account and registration challenge must be stored before creating a credential');
+                                                    }
+                                                    return {accountID: context.accountID, registrationChallenge: context.registrationChallenge};
+                                                },
+                                                onDone: [
+                                                    {
+                                                        guard: ({event}) => !event.output.success,
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
+                                                    },
+                                                    {
+                                                        target: MFA_STATE.REGISTERING_KEY,
+                                                        actions: assign({registrationKeyInfo: ({event}) => (event.output.success ? event.output.keyInfo : undefined)}),
+                                                    },
+                                                ],
+                                                onError: {
+                                                    target: OUTCOME_TARGET,
+                                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential creation', event.error)}),
+                                                },
+                                            },
+                                        },
+                                        // A registration request can't be taken back once sent, so it keeps running behind the
+                                        // dialog rather than being dropped halfway.
+                                        [MFA_STATE.REGISTERING_KEY]: {
+                                            invoke: {
+                                                id: 'registerCredential',
+                                                src: 'registerCredential',
+                                                input: ({context}) => {
+                                                    if (context.registrationKeyInfo === undefined) {
+                                                        throw new Error('MFA key info must be stored before registering a credential');
+                                                    }
+                                                    return {keyInfo: context.registrationKeyInfo};
+                                                },
+                                                onDone: [
+                                                    {
+                                                        guard: ({event}) => !event.output.success,
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
+                                                    },
+                                                    {target: AUTHORIZING_TARGET, actions: assign({isRegistrationComplete: true})},
+                                                ],
+                                                onError: {
+                                                    target: OUTCOME_TARGET,
+                                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential registration', event.error)}),
+                                                },
+                                            },
                                         },
                                     },
                                 },

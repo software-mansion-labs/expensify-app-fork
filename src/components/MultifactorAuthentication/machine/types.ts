@@ -1,6 +1,6 @@
 import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/biometrics/captureRegistrationState';
 import type {AllowedAuthenticationMethods} from '@components/MultifactorAuthentication/biometrics/checkDeviceEligibility';
-import type {CreateCredentialParams} from '@components/MultifactorAuthentication/biometrics/shared/types';
+import type {CreateCredentialParams, CreateCredentialResult} from '@components/MultifactorAuthentication/biometrics/shared/types';
 import type {MultifactorAuthenticationScenarioConfigFor} from '@components/MultifactorAuthentication/config';
 import type {
     MultifactorAuthenticationScenario,
@@ -12,7 +12,7 @@ import type {
 
 import type {RegistrationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import type {AuthTypeInfo, MultifactorAuthenticationCallbackResponse, MultifactorAuthenticationScenarioCallback} from '@libs/MultifactorAuthentication/shared/types';
+import type {AuthTypeInfo, MultifactorAuthenticationCallbackResponse, MultifactorAuthenticationScenarioCallback, RegistrationKeyInfo} from '@libs/MultifactorAuthentication/shared/types';
 
 import type {RunScenarioAction} from '@userActions/MultifactorAuthentication/processing';
 
@@ -47,6 +47,9 @@ type MfaContext = {
 
     /** Registration challenge retained through post-registration authorization; recovery clears it before re-registration. */
     registrationChallenge: RegistrationChallenge | undefined;
+
+    /** Key info from the credential ceremony, held until backend registration consumes it. Cleared on leaving `creatingCredential`. */
+    registrationKeyInfo: RegistrationKeyInfo | undefined;
 
     /** Whether the user approved the soft prompt during this flow. The durable acceptance lives in Onyx under the device-biometrics key. */
     softPromptApproved: boolean;
@@ -143,8 +146,14 @@ type RequestRegistrationChallengeOutput = MFAResult<{challenge: RegistrationChal
 /** Input the machine passes to the credential-creation actor: everything `CreateCredentialParams` needs except the abort signal, which the actor supplies itself. */
 type CreateCredentialInput = Omit<CreateCredentialParams, 'signal'>;
 
-/** The credential-creation actor's result. `keyInfo` never leaves the actor, so a success carries no additional data. */
-type CreateCredentialOutput = MFAResult;
+/** The credential-creation actor's result. A success carries the key info that backend registration needs. */
+type CreateCredentialOutput = CreateCredentialResult;
+
+/** Input the machine passes to the backend-registration actor: the key info the credential ceremony produced. */
+type RegisterCredentialInput = {keyInfo: RegistrationKeyInfo};
+
+/** The backend-registration actor's result. A success carries no additional data. */
+type RegisterCredentialOutput = MFAResult;
 
 /** Input the machine passes to the authorization actor: the account whose credential signs the challenge. */
 type AuthorizeInput = {
@@ -224,6 +233,8 @@ export type {
     MfaEvent,
     MfaModalState,
     MultifactorAuthenticationInitEvent,
+    RegisterCredentialInput,
+    RegisterCredentialOutput,
     RequestRegistrationChallengeInput,
     RequestRegistrationChallengeOutput,
     ValidateDeviceInput,

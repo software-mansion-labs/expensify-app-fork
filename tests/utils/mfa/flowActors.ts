@@ -24,6 +24,7 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         runScenarioAction: initEvent.runScenarioAction,
         validateCode: undefined,
         registrationChallenge: undefined,
+        registrationKeyInfo: undefined,
         softPromptApproved: false,
         authenticationMethod: undefined,
         signedChallenge: undefined,
@@ -67,6 +68,13 @@ function sendCreateCredentialDone(actor: ReturnType<typeof createActorAtState>, 
 }
 
 /**
+ * Completes the invoked backend-registration actor by sending its done event carrying the given output.
+ */
+function sendRegisterCredentialDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'registerCredential'>) {
+    actor.send(createActorDoneEvent('registerCredential', output));
+}
+
+/**
  * Completes the invoked authorization actor by sending its done event carrying the given output.
  */
 function sendAuthorizeDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'authorize'>) {
@@ -92,6 +100,7 @@ export {
     createFlowContext,
     sendAuthorizeDone,
     sendCreateCredentialDone,
+    sendRegisterCredentialDone,
     sendExecuteScenarioActionDone,
     sendFinalizeOutcomeDone,
     sendLoadRegistrationStateDone,

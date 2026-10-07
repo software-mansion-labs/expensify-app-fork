@@ -30,6 +30,8 @@ import type {
     FinalizeOutcomeOutput,
     LoadRegistrationStateInput,
     LoadRegistrationStateOutput,
+    RegisterCredentialInput,
+    RegisterCredentialOutput,
     RequestRegistrationChallengeInput,
     RequestRegistrationChallengeOutput,
     ValidateDeviceInput,
@@ -62,24 +64,22 @@ const requestRegistrationChallengeActor = fromPromise<RequestRegistrationChallen
 });
 
 /**
- * Platform ceremony, then backend registration. A refusal on the platform side short-circuits
- * before the backend is ever called; a backend failure is returned as-is, with no rollback of the
- * credential the platform already created. Breadcrumb labels match legacy `Main.tsx` for telemetry
- * continuity.
+ * Runs the platform credential ceremony. It is kept apart from backend registration so the machine can
+ * stop and restart it while the cancel confirmation is up without ever abandoning a registration
+ * request halfway. Breadcrumb labels match legacy `Main.tsx` for telemetry continuity.
  */
 const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredentialInput>(async ({input, signal}) => {
     const creationResult = await createCredential({...input, signal});
     addMFABreadcrumb('Biometric registration completed', creationResult.success ? {success: true} : creationResult.error, creationResult.success ? 'info' : 'error');
-    if (!creationResult.success) {
-        return creationResult;
-    }
-    // The flow may have been cancelled while the ceremony ran. Skip the backend call rather than
-    // registering a key nobody asked for — this only catches it before the request starts, there's
-    // no way to cancel one already in flight.
-    if (signal.aborted) {
-        return createCanceledMFAResult('MFA flow canceled before backend registration');
-    }
-    const registrationResult = await processRegistration({keyInfo: creationResult.keyInfo});
+    return creationResult;
+});
+
+/**
+ * Registers the key the ceremony created with the backend. A failure is returned as-is, with no
+ * rollback of the credential the platform already created.
+ */
+const registerCredentialActor = fromPromise<RegisterCredentialOutput, RegisterCredentialInput>(async ({input}) => {
+    const registrationResult = await processRegistration({keyInfo: input.keyInfo});
     addMFABreadcrumb('Backend registration completed', registrationResult.success ? {success: true} : registrationResult.error, registrationResult.success ? 'info' : 'error');
     return registrationResult;
 });
@@ -121,7 +121,7 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
 /**
  * Sends the scenario's backend action with the signed challenge. The request can't be taken back once
  * sent, so the machine starts it only while no cancel confirmation is up and doesn't accept a cancel
- * until it settles. No rollback happens after the action fails, matching `createCredentialActor`'s contract.
+ * until it settles. No rollback happens after the action fails, matching `registerCredentialActor`'s contract.
  */
 const executeScenarioActionActor = fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(async ({input}) => {
     const scenarioResult = await input.runScenarioAction({
@@ -226,6 +226,7 @@ function createActors() {
         loadRegistrationState,
         requestRegistrationChallenge: requestRegistrationChallengeActor,
         createCredential: createCredentialActor,
+        registerCredential: registerCredentialActor,
         authorize: authorizeActor,
         executeScenarioAction: executeScenarioActionActor,
         finalizeOutcome: finalizeOutcomeActor,
