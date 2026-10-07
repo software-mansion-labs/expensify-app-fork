@@ -343,14 +343,16 @@ const MFAMachine = setup({
                                     exit: assign({signedChallenge: undefined}),
                                     initial: MFA_STATE.READY_TO_SIGN,
                                     states: {
-                                        // The flow can reach authorization on its own while the cancel confirmation is up (e.g. the
-                                        // credential registration finishes behind it). The platform prompt would cover the dialog,
-                                        // so the ceremony starts only while no cancel is pending: dismissing starts it, confirming
-                                        // leaves for `cancelling`. With no dialog up, this passes straight through.
+                                        // The platform prompt would cover the cancel confirmation, so the ceremony runs only while
+                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
+                                        // dialog up, this passes straight through.
                                         [MFA_STATE.READY_TO_SIGN]: {
                                             always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_STATE)), target: MFA_STATE.SIGNING_CHALLENGE},
                                         },
                                         [MFA_STATE.SIGNING_CHALLENGE]: {
+                                            // Opening the dialog stops the ceremony, so the prompt never opens over it and the scenario
+                                            // action never goes out while it is up. Dismissing restarts it with a fresh challenge.
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_STATE), target: MFA_STATE.READY_TO_SIGN},
                                             invoke: {
                                                 id: 'authorize',
                                                 src: 'authorize',
@@ -367,7 +369,7 @@ const MFAMachine = setup({
                                                         actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
                                                     },
                                                     {
-                                                        target: MFA_STATE.READY_TO_EXECUTE,
+                                                        target: MFA_STATE.EXECUTING_SCENARIO_ACTION,
                                                         actions: assign(({event}) =>
                                                             event.output.success
                                                                 ? {signedChallenge: event.output.signedChallenge, authenticationMethod: event.output.authenticationMethod}
@@ -380,12 +382,6 @@ const MFAMachine = setup({
                                                     actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Authorization', event.error)}),
                                                 },
                                             },
-                                        },
-                                        // The challenge is signed and the scenario action is ready. The action can't be taken
-                                        // back once sent, so it goes out only while no cancel is pending: dismissing sends it,
-                                        // confirming leaves for `cancelling`. With no dialog up, this passes straight through.
-                                        [MFA_STATE.READY_TO_EXECUTE]: {
-                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_STATE)), target: MFA_STATE.EXECUTING_SCENARIO_ACTION},
                                         },
                                         [MFA_STATE.EXECUTING_SCENARIO_ACTION]: {
                                             id: MFA_STATE.EXECUTING_SCENARIO_ACTION,

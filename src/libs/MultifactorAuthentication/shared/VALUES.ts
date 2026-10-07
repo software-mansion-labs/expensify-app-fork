@@ -255,7 +255,6 @@ const MFA_STATE = {
     AUTHORIZING: 'authorizing',
     READY_TO_SIGN: 'readyToSign',
     SIGNING_CHALLENGE: 'signingChallenge',
-    READY_TO_EXECUTE: 'readyToExecute',
     EXECUTING_SCENARIO_ACTION: 'executingScenarioAction',
     OUTCOME: 'outcome',
     FINALIZING_OUTCOME: 'finalizingOutcome',

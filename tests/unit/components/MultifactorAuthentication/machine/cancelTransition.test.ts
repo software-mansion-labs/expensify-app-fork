@@ -6,6 +6,8 @@ import type {
     AuthorizeOutput,
     CancelScenarioInput,
     CancelScenarioOutput,
+    CreateCredentialInput,
+    CreateCredentialOutput,
     ExecuteScenarioActionInput,
     ExecuteScenarioActionOutput,
     FinalizeOutcomeInput,
@@ -51,14 +53,12 @@ const STEP_STATES: Array<{description: string; flow: StateValue}> = [
     {description: 'requesting the registration challenge', flow: {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}},
     {description: 'awaiting the soft prompt', flow: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
     {description: 'creating the credential', flow: {[MFA_STATE.PROMPT]: MFA_STATE.CREATING_CREDENTIAL}},
-    {description: 'signing the challenge', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}}},
     {description: 'executing the scenario action', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}}},
 ];
 
 const FINALIZING_OUTCOME = {[MFA_STATE.OUTCOME]: MFA_STATE.FINALIZING_OUTCOME};
 const AUTHORIZING = {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}};
-const READY_TO_EXECUTE = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.READY_TO_EXECUTE}};
 const READY_TO_SIGN = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.READY_TO_SIGN}};
 const SIGNING_CHALLENGE = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}};
 
@@ -66,27 +66,30 @@ const SIGNING_CHALLENGE = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STA
 const pendingCancelScenario = fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => new Promise(() => {}));
 
 /**
- * Starts a live actor in `authorizing` with the dialog up and the given cancel actor. `resolveState`
- * cannot start an invoke, so the actor is restored one step earlier and enters `authorizing` live.
+ * Starts a live actor in `creatingCredential` with the dialog up and the given cancel actor. `resolveState`
+ * cannot start an invoke, so the actor is restored one step earlier and enters `creatingCredential` live.
  */
-function startAuthorizingWithDialog(cancelScenario = pendingCancelScenario, contextOverrides: Partial<MfaContext> = {}) {
-    let authorizeSignal: AbortSignal | undefined;
+function startCreatingCredentialWithDialog(cancelScenario = pendingCancelScenario, contextOverrides: Partial<MfaContext> = {}) {
+    let createCredentialSignal: AbortSignal | undefined;
     const machine = mfaMachine.provide({
         actors: {
-            authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(({signal}) => {
-                authorizeSignal = signal;
+            createCredential: fromPromise<CreateCredentialOutput, CreateCredentialInput>(({signal}) => {
+                createCredentialSignal = signal;
                 return new Promise(() => {});
             }),
             cancelScenario,
             finalizeOutcome: fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(() => new Promise(() => {})),
         },
     });
-    const snapshot = machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context: createFlowContext(contextOverrides)});
+    const snapshot = machine.resolveState({
+        value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}),
+        context: createFlowContext({registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE, ...contextOverrides}),
+    });
     const actor = createActor(machine, {snapshot});
     actor.start();
     actor.send({type: 'SOFT_PROMPT_APPROVED'});
     actor.send({type: 'REQUEST_CANCEL'});
-    return {actor, getAuthorizeSignal: () => authorizeSignal};
+    return {actor, getCreateCredentialSignal: () => createCredentialSignal};
 }
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
@@ -212,21 +215,21 @@ describe('MFA cancel', () => {
         });
 
         it('stops the running step and aborts its signal', () => {
-            const {actor, getAuthorizeSignal} = startAuthorizingWithDialog();
-            expect(actor.getSnapshot().children).toHaveProperty('authorize');
-            expect(getAuthorizeSignal()?.aborted).toBe(false);
+            const {actor, getCreateCredentialSignal} = startCreatingCredentialWithDialog();
+            expect(actor.getSnapshot().children).toHaveProperty('createCredential');
+            expect(getCreateCredentialSignal()?.aborted).toBe(false);
 
             actor.send({type: 'CONFIRM_CANCEL'});
 
-            expect(actor.getSnapshot().children).not.toHaveProperty('authorize');
-            expect(getAuthorizeSignal()?.aborted).toBe(true);
+            expect(actor.getSnapshot().children).not.toHaveProperty('createCredential');
+            expect(getCreateCredentialSignal()?.aborted).toBe(true);
 
             actor.stop();
         });
 
         it('hands the scenario cancel logic and payload to the cancel actor', () => {
             let receivedInput: CancelScenarioInput | undefined;
-            const {actor} = startAuthorizingWithDialog(
+            const {actor} = startCreatingCredentialWithDialog(
                 fromPromise<CancelScenarioOutput, CancelScenarioInput>(({input}) => {
                     receivedInput = input;
                     return new Promise(() => {});
@@ -246,7 +249,7 @@ describe('MFA cancel', () => {
             const scenario = getScenarioConfig(scenarioName);
             const payload = {transactionID: 'txn-cancel'};
             let receivedInput: CancelScenarioInput | undefined;
-            const {actor} = startAuthorizingWithDialog(
+            const {actor} = startCreatingCredentialWithDialog(
                 fromPromise<CancelScenarioOutput, CancelScenarioInput>(({input}) => {
                     receivedInput = input;
                     return new Promise(() => {});
@@ -264,7 +267,7 @@ describe('MFA cancel', () => {
 
         it('runs the cancel actor once on a double confirm', () => {
             let cancelRuns = 0;
-            const {actor} = startAuthorizingWithDialog(
+            const {actor} = startCreatingCredentialWithDialog(
                 fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => {
                     cancelRuns += 1;
                     return new Promise(() => {});
@@ -306,7 +309,7 @@ describe('MFA cancel', () => {
         });
 
         it('fails the flow with an unhandled-exception error when the cancel logic throws', async () => {
-            const {actor} = startAuthorizingWithDialog(fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => Promise.reject(new Error('Deny exploded'))));
+            const {actor} = startCreatingCredentialWithDialog(fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => Promise.reject(new Error('Deny exploded'))));
 
             actor.send({type: 'CONFIRM_CANCEL'});
             await waitForBatchedUpdates();
@@ -329,23 +332,24 @@ describe('MFA cancel', () => {
             actor.stop();
         });
     });
-    describe('holding the scenario action', () => {
+    describe('stopping the ceremony when the dialog opens', () => {
         /**
-         * Starts a live actor that enters `authorizing` with controllable actors. The ceremony settles only
+         * Starts a live actor that enters `authorizing` with controllable actors. Each ceremony run settles only
          * when the spec resolves it, and the scenario action records each run and never settles.
          */
         function startSigning() {
             let resolveAuthorize: (output: AuthorizeOutput) => void = () => {};
+            const authorizeSignals: AbortSignal[] = [];
             const scenarioActionInputs: ExecuteScenarioActionInput[] = [];
             const context = createFlowContext();
             const machine = mfaMachine.provide({
                 actors: {
-                    authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(
-                        () =>
-                            new Promise((resolve) => {
-                                resolveAuthorize = resolve;
-                            }),
-                    ),
+                    authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(({signal}) => {
+                        authorizeSignals.push(signal);
+                        return new Promise((resolve) => {
+                            resolveAuthorize = resolve;
+                        });
+                    }),
                     executeScenarioAction: fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(({input}) => {
                         scenarioActionInputs.push(input);
                         return new Promise(() => {});
@@ -361,7 +365,7 @@ describe('MFA cancel', () => {
                 resolveAuthorize({success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
                 await waitForBatchedUpdates();
             };
-            return {actor, context, scenarioActionInputs, finishSigning};
+            return {actor, context, authorizeSignals, scenarioActionInputs, finishSigning};
         }
 
         it('sends the scenario action straight away when no dialog is up', async () => {
@@ -375,25 +379,45 @@ describe('MFA cancel', () => {
             actor.stop();
         });
 
-        it('holds the scenario action while the dialog is up', async () => {
+        it('stops the ceremony and aborts its signal, so the platform prompt never opens over the dialog', () => {
+            const {actor, authorizeSignals} = startSigning();
+            expect(authorizeSignals.at(0)?.aborted).toBe(false);
+
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(READY_TO_SIGN, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
+            expect(result.children).not.toHaveProperty('authorize');
+            expect(authorizeSignals.at(0)?.aborted).toBe(true);
+
+            actor.stop();
+        });
+
+        it('drops a ceremony that finishes after the dialog opened and never sends the scenario action', async () => {
             const {actor, scenarioActionInputs, finishSigning} = startSigning();
             actor.send({type: 'REQUEST_CANCEL'});
 
             await finishSigning();
 
-            expect(matchesState(openAt(READY_TO_EXECUTE, MFA_STATE.CANCEL_CONFIRM_VISIBLE), actor.getSnapshot().value)).toBe(true);
-            expect(actor.getSnapshot().children).not.toHaveProperty('executeScenarioAction');
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(READY_TO_SIGN, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
+            expect(result.context.signedChallenge).toBeUndefined();
             expect(scenarioActionInputs).toHaveLength(0);
 
             actor.stop();
         });
 
-        it('sends the held scenario action with the signed challenge once the dialog is dismissed', async () => {
-            const {actor, context, scenarioActionInputs, finishSigning} = startSigning();
+        it('restarts the ceremony once the dialog is dismissed and sends the scenario action with its signed challenge', async () => {
+            const {actor, context, authorizeSignals, scenarioActionInputs, finishSigning} = startSigning();
             actor.send({type: 'REQUEST_CANCEL'});
-            await finishSigning();
 
             actor.send({type: 'DISMISS_CANCEL'});
+
+            expect(matchesState(openAt(SIGNING_CHALLENGE), actor.getSnapshot().value)).toBe(true);
+            expect(authorizeSignals).toHaveLength(2);
+            expect(authorizeSignals.at(1)?.aborted).toBe(false);
+
+            await finishSigning();
 
             expect(matchesState(openAt(EXECUTING_SCENARIO_ACTION), actor.getSnapshot().value)).toBe(true);
             expect(scenarioActionInputs).toEqual([{runScenarioAction: context.runScenarioAction, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}]);
@@ -401,23 +425,20 @@ describe('MFA cancel', () => {
             actor.stop();
         });
 
-        it('never sends the held scenario action once the cancel is confirmed, and drops the signed challenge', async () => {
-            const {actor, scenarioActionInputs, finishSigning} = startSigning();
+        it('never restarts the ceremony once the cancel is confirmed', () => {
+            const {actor, authorizeSignals, scenarioActionInputs} = startSigning();
             actor.send({type: 'REQUEST_CANCEL'});
-            await finishSigning();
-            expect(actor.getSnapshot().context.signedChallenge).toBe(MFA_TEST_SIGNED_CHALLENGE);
 
             actor.send({type: 'CONFIRM_CANCEL'});
 
-            const result = actor.getSnapshot();
-            expect(matchesState(openAt(MFA_STATE.CANCELLING), result.value)).toBe(true);
+            expect(matchesState(openAt(MFA_STATE.CANCELLING), actor.getSnapshot().value)).toBe(true);
+            expect(authorizeSignals).toHaveLength(1);
             expect(scenarioActionInputs).toHaveLength(0);
-            expect(result.context.signedChallenge).toBeUndefined();
 
             actor.stop();
         });
 
-        it('drops the signed challenge when the flow leaves authorizing some other way', async () => {
+        it('drops the signed challenge when the flow leaves authorizing', async () => {
             const {actor, finishSigning} = startSigning();
             await finishSigning();
             expect(actor.getSnapshot().context.signedChallenge).toBe(MFA_TEST_SIGNED_CHALLENGE);
@@ -508,14 +529,16 @@ describe('MFA cancel', () => {
     describe('while the scenario action is in flight', () => {
         it('reports the request in flight only while the scenario action runs', () => {
             expect(snapshotToState(mfaMachine.resolveState({value: openAt(SIGNING_CHALLENGE), context: createFlowContext()})).isScenarioActionInFlight).toBe(false);
-            expect(snapshotToState(mfaMachine.resolveState({value: openAt(READY_TO_EXECUTE), context: createFlowContext()})).isScenarioActionInFlight).toBe(false);
             expect(snapshotToState(mfaMachine.resolveState({value: openAt(EXECUTING_SCENARIO_ACTION), context: createFlowContext()})).isScenarioActionInFlight).toBe(true);
         });
 
-        it('opens the dialog but ignores CONFIRM_CANCEL, so no cancel races the request already sent', () => {
+        it('opens the dialog but ignores CONFIRM_CANCEL, so no cancel races the request already sent', async () => {
             let cancelRuns = 0;
             const machine = mfaMachine.provide({
                 actors: {
+                    authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(() =>
+                        Promise.resolve({success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+                    ),
                     executeScenarioAction: fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(() => new Promise(() => {})),
                     cancelScenario: fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => {
                         cancelRuns += 1;
@@ -523,15 +546,10 @@ describe('MFA cancel', () => {
                     }),
                 },
             });
-            const actor = createActor(machine, {
-                snapshot: machine.resolveState({
-                    value: openAt(READY_TO_EXECUTE),
-                    context: createFlowContext({signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
-                }),
-            });
+            const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context: createFlowContext()})});
             actor.start();
-            // A restored snapshot doesn't evaluate `always`, so a live event releases the held action.
-            actor.send({type: 'DISMISS_CANCEL'});
+            actor.send({type: 'SOFT_PROMPT_APPROVED'});
+            await waitForBatchedUpdates();
             expect(actor.getSnapshot().children).toHaveProperty('executeScenarioAction');
 
             actor.send({type: 'REQUEST_CANCEL'});
