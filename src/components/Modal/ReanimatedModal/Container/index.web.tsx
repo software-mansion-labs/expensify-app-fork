@@ -6,7 +6,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
 
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, {useEffect, useEffectEvent, useMemo, useRef} from 'react';
 import Animated, {Keyframe, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 
 function Container({
@@ -22,27 +22,20 @@ function Container({
 }: ReanimatedModalProps & ContainerProps) {
     const styles = useThemeStyles();
     const onCloseCallbackRef = useRef(onCloseCallBack);
-    const onOpenCallbackRef = useRef(onOpenCallBack);
-    const animationInTimingRef = useRef(animationInTiming);
     const initProgress = useSharedValue(0);
 
     useEffect(() => {
         onCloseCallbackRef.current = onCloseCallBack;
     }, [onCloseCallBack]);
 
-    useEffect(() => {
-        onOpenCallbackRef.current = onOpenCallBack;
-        animationInTimingRef.current = animationInTiming;
-    }, [onOpenCallBack, animationInTiming]);
-
-    // Read the latest callback and timing on setup without restarting the entry when a responsive breakpoint changes its timing.
+    // An effect event reads the latest callback and timing without restarting the entry when a responsive breakpoint changes its timing.
     // A shared value guarding the start would outlive a remount that cancelled the animation, leaving the modal at progress 0 forever.
-    useEffect(() => {
+    const startEntryAnimation = useEffectEvent(() => {
         initProgress.set(
             withTiming(
                 1,
                 {
-                    duration: animationInTimingRef.current,
+                    duration: animationInTiming,
                     easing,
                     // on web the callbacks are not called when animations are disabled with the reduced motion setting on
                     // we enable the animations to make sure they are called
@@ -53,10 +46,14 @@ function Container({
                     if (!finished) {
                         return;
                     }
-                    onOpenCallbackRef.current();
+                    onOpenCallBack();
                 },
             ),
         );
+    });
+
+    useEffect(() => {
+        startEntryAnimation();
     }, [initProgress]);
 
     // instead of an entering transition since keyframe animations break keyboard on mWeb Chrome (#62799)
