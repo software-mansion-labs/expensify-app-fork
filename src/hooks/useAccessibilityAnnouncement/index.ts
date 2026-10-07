@@ -86,8 +86,10 @@ function useAccessibilityAnnouncement(message: string | ReactNode, shouldAnnounc
         }
 
         previousMessageRef.current = message;
+        let hasAnnounced = false;
 
         const timer = setTimeout(() => {
+            hasAnnounced = true;
             const container = getWrapper(politeness);
 
             while (container.firstChild) {
@@ -105,6 +107,11 @@ function useAccessibilityAnnouncement(message: string | ReactNode, shouldAnnounc
 
         return () => {
             clearTimeout(timer);
+            if (hasAnnounced) {
+                return;
+            }
+            // Forget an announcement that never fired (hide, unmount or a newer message) so the next setup schedules it again.
+            previousMessageRef.current = '';
         };
     }, [message, shouldAnnounceMessage, shouldAnnounceOnWeb, politeness, options?.announcementKey]);
 }

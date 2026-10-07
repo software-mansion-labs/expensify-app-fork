@@ -6,7 +6,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
 
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, {useEffect, useEffectEvent, useMemo, useRef} from 'react';
 import Animated, {Keyframe, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 
 function Container({
@@ -23,17 +23,14 @@ function Container({
     const styles = useThemeStyles();
     const onCloseCallbackRef = useRef(onCloseCallBack);
     const initProgress = useSharedValue(0);
-    const isInitiated = useSharedValue(false);
 
     useEffect(() => {
         onCloseCallbackRef.current = onCloseCallBack;
     }, [onCloseCallBack]);
 
-    useEffect(() => {
-        if (isInitiated.get()) {
-            return;
-        }
-        isInitiated.set(true);
+    // An effect event reads the latest callback and timing without restarting the entry when a responsive breakpoint changes its timing.
+    // A shared value guarding the start would outlive a remount that cancelled the animation, leaving the modal at progress 0 forever.
+    const startEntryAnimation = useEffectEvent(() => {
         initProgress.set(
             withTiming(
                 1,
@@ -44,10 +41,20 @@ function Container({
                     // we enable the animations to make sure they are called
                     reduceMotion: ReduceMotion.Never,
                 },
-                onOpenCallBack,
+                // The remount cleanup cancels the running animation with finished=false, and only the animation that completes opens the modal.
+                (finished) => {
+                    if (!finished) {
+                        return;
+                    }
+                    onOpenCallBack();
+                },
             ),
         );
-    }, [animationInTiming, onOpenCallBack, initProgress, isInitiated]);
+    });
+
+    useEffect(() => {
+        startEntryAnimation();
+    }, [initProgress]);
 
     // instead of an entering transition since keyframe animations break keyboard on mWeb Chrome (#62799)
     const animatedStyles = useAnimatedStyle(() => getModalInAnimationStyle(animationIn)(initProgress.get()), [initProgress]);

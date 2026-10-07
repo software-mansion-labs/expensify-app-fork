@@ -29,6 +29,7 @@ function useIsResizing(): boolean {
         return () => {
             window.removeEventListener('resize', handleResize);
             clearTimeout(settleTimeoutID);
+            setIsResizing(false);
         };
     }, []);
 
