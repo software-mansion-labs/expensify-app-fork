@@ -906,6 +906,7 @@ export {
     getPreInsertedOriginalTabRoute,
     clearPreInsertedOriginalTabRoute,
     MODAL_ROUTES_TO_DISMISS,
+    getFocusedRouteFromNavigatorState,
     getTargetTabRoute,
     // Exported for unit-test access; not used outside of testing.
     getTabStateWithFreshTarget,
