@@ -209,7 +209,7 @@ const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeI
 const cancelScenarioActor = fromPromise<CancelScenarioOutput, CancelScenarioInput>(async ({input}) => {
     if (input.onCancel) {
         const error = await input.onCancel(input.payload);
-        addMFABreadcrumb('Scenario onCancel completed', error, 'warning');
+        addMFABreadcrumb('Flow cancelled with onCancel', error, 'warning');
         return error;
     }
     addMFABreadcrumb('Flow cancelled', {reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED}, 'warning');

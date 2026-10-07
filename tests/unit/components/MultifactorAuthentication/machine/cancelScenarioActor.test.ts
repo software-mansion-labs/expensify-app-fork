@@ -46,7 +46,7 @@ describe('cancelScenario actor', () => {
 
             await runCancelScenarioActor({onCancel: jest.fn().mockResolvedValue(deniedError), payload: PAYLOAD});
 
-            expect(addMFABreadcrumbMock).toHaveBeenCalledWith('Scenario onCancel completed', deniedError, 'warning');
+            expect(addMFABreadcrumbMock).toHaveBeenCalledWith('Flow cancelled with onCancel', deniedError, 'warning');
         });
 
         it('rejects when onCancel throws, so the machine routes it as an unhandled exception', async () => {
