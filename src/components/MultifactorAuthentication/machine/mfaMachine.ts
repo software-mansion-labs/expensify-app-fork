@@ -30,7 +30,7 @@ const AUTHORIZING_TARGET = `#${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}` as co
 const CLOSING_TARGET = `#${MFA_STATE.CLOSING}` as const;
 const CANCELLING_TARGET = `#${MFA_STATE.CANCELLING}` as const;
 const EXECUTING_SCENARIO_ACTION_TARGET = `#${MFA_STATE.EXECUTING_SCENARIO_ACTION}` as const;
-const CANCEL_CONFIRM_VISIBLE_STATE = {[MFA_STATE.OPEN]: {[MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE}};
+const CANCEL_CONFIRM_VISIBLE_TARGET = `#${MFA_STATE.CANCEL_CONFIRM_VISIBLE}` as const;
 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
 const SOFT_PROMPT_ACCEPTED_ACTIONS = ['approveSoftPrompt', 'persistSoftPromptAcceptance'] as const;
@@ -176,8 +176,8 @@ const MFAMachine = setup({
                     initial: MFA_STATE.PREPARING,
                     on: {
                         // Declared once for every step. Leaving the step stops its actor and aborts its signal,
-                        // so a late result is discarded. The guard reads the dialog region before this step.
-                        CONFIRM_CANCEL: {guard: and([stateIn(CANCEL_CONFIRM_VISIBLE_STATE), 'canConfirmCancel']), target: `.${MFA_STATE.CANCELLING}`},
+                        // so a late result is discarded. The dialog hides itself once the flow reaches `cancelling`.
+                        CONFIRM_CANCEL: {guard: and([stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), 'canConfirmCancel']), target: `.${MFA_STATE.CANCELLING}`},
                     },
                     states: {
                         // This is the transparent initial screen, and its child states run the pre-screen
@@ -326,12 +326,12 @@ const MFAMachine = setup({
                                         // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
                                         // dialog up, this passes straight through.
                                         [MFA_STATE.READY_TO_CREATE]: {
-                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_STATE)), target: MFA_STATE.CREATING_KEY},
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), target: MFA_STATE.CREATING_KEY},
                                         },
                                         [MFA_STATE.CREATING_KEY]: {
                                             // Opening the dialog stops the ceremony, so the prompt never opens over it. Nothing has
                                             // reached the backend yet, so dismissing restarts it with the same registration challenge.
-                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_STATE), target: MFA_STATE.READY_TO_CREATE},
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: MFA_STATE.READY_TO_CREATE},
                                             invoke: {
                                                 id: 'createCredential',
                                                 src: 'createCredential',
@@ -397,12 +397,12 @@ const MFAMachine = setup({
                                         // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
                                         // dialog up, this passes straight through.
                                         [MFA_STATE.READY_TO_SIGN]: {
-                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_STATE)), target: MFA_STATE.SIGNING_CHALLENGE},
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), target: MFA_STATE.SIGNING_CHALLENGE},
                                         },
                                         [MFA_STATE.SIGNING_CHALLENGE]: {
                                             // Opening the dialog stops the ceremony, so the prompt never opens over it and the scenario
                                             // action never goes out while it is up. Dismissing restarts it with a fresh challenge.
-                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_STATE), target: MFA_STATE.READY_TO_SIGN},
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: MFA_STATE.READY_TO_SIGN},
                                             invoke: {
                                                 id: 'authorize',
                                                 src: 'authorize',
@@ -552,12 +552,13 @@ const MFAMachine = setup({
                             },
                         },
                         [MFA_STATE.CANCEL_CONFIRM_VISIBLE]: {
+                            id: MFA_STATE.CANCEL_CONFIRM_VISIBLE,
                             on: {
                                 DISMISS_CANCEL: MFA_STATE.CANCEL_CONFIRM_HIDDEN,
-                                CONFIRM_CANCEL: {guard: 'canConfirmCancel', target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},
                             },
-                            // The flow keeps running behind the dialog; once it reaches the outcome there is nothing left to cancel, so the dialog hides.
-                            always: {guard: stateIn(OUTCOME_TARGET), target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},
+                            // The flow owns CONFIRM_CANCEL. Once it moves on to the cancel, or reaches the outcome behind
+                            // the dialog, there is nothing left to cancel, so the dialog hides.
+                            always: {guard: not('isCancelable'), target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},
                         },
                     },
                 },
