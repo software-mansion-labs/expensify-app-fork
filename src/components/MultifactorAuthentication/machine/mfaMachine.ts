@@ -358,8 +358,8 @@ const MFAMachine = setup({
                                                 },
                                             },
                                         },
-                                        // A registration request can't be taken back once sent, so it keeps running behind the
-                                        // dialog rather than being dropped halfway.
+                                        // A registration request can't be taken back once sent, so opening the dialog doesn't stop
+                                        // it. A confirmed cancel still leaves and drops its result; the server keeps the key, which is harmless.
                                         [MFA_STATE.REGISTERING_KEY]: {
                                             invoke: {
                                                 id: 'registerCredential',

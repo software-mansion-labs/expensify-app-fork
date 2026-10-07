@@ -29,7 +29,7 @@ import CONST from '@src/CONST';
 
 import type {StateValue} from 'xstate';
 
-import {createActorAtState, createFlowContext, sendExecuteScenarioActionDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
+import {createActorAtState, createFlowContext, sendExecuteScenarioActionDone, sendRegisterCredentialDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
 import createInitEvent, {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_CANCEL_ERROR,
@@ -167,6 +167,20 @@ describe('MFA cancel', () => {
             sendRequestRegistrationChallengeDone(actor, {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE});
 
             expect(matchesState(openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}, MFA_STATE.CANCEL_CONFIRM_VISIBLE), actor.getSnapshot().value)).toBe(true);
+
+            actor.stop();
+        });
+
+        it('holds a registration that finishes behind the dialog before the ceremony, so the scenario action never starts', () => {
+            const actor = createActorAtState(openAt(REGISTERING_KEY, MFA_STATE.CANCEL_CONFIRM_VISIBLE), {registrationKeyInfo: MFA_TEST_KEY_INFO});
+
+            actor.start();
+            sendRegisterCredentialDone(actor, {success: true});
+
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(READY_TO_SIGN, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
+            expect(result.children).not.toHaveProperty('authorize');
+            expect(snapshotToState(result).isScenarioActionInFlight).toBe(false);
 
             actor.stop();
         });

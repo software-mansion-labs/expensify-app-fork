@@ -65,8 +65,8 @@ const requestRegistrationChallengeActor = fromPromise<RequestRegistrationChallen
 
 /**
  * Runs the platform credential ceremony. It is kept apart from backend registration so the machine can
- * stop and restart it while the cancel confirmation is up without ever abandoning a registration
- * request halfway. Breadcrumb labels match legacy `Main.tsx` for telemetry continuity.
+ * stop and restart it while the cancel confirmation is up without touching a registration request
+ * already sent. Breadcrumb labels match legacy `Main.tsx` for telemetry continuity.
  */
 const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredentialInput>(async ({input, signal}) => {
     const creationResult = await createCredential({...input, signal});
