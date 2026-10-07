@@ -50,6 +50,7 @@ const translations: TranslationDeepObject<typeof en> = {
         webGLNotSupported: 'Το πρόγραμμα περιήγησής σας δεν υποστηρίζει WebGL. Παρακαλούμε ενεργοποιήστε το ή αλλάξτε πρόγραμμα περιήγησης.',
         chartFailedToLoad: 'Δεν ήταν δυνατή η φόρτωση του γραφήματος. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.',
         dismiss: 'Κλείσιμο',
+        resizeColumn: ({columnName}: {columnName: string}) => `Αλλαγή μεγέθους της στήλης ${columnName}`,
         proceed: 'Συνέχεια',
         unshare: 'Αναίρεση κοινής χρήσης',
         yes: 'Ναι',

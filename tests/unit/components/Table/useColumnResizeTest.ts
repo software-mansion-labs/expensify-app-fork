@@ -36,6 +36,25 @@ function createPointerEvent(handleElement: HTMLDivElement, {clientX, button = 0}
     return event as unknown as React.PointerEvent<HTMLDivElement>;
 }
 
+/** A key press carrying only what the hook reads, aimed at the given handle, with its mocks to assert on. */
+function createKeyboardEvent(handleElement: HTMLDivElement, key: string) {
+    const preventDefault = jest.fn();
+    const stopPropagation = jest.fn();
+    const event = {key, currentTarget: handleElement, preventDefault, stopPropagation};
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the hook only reads the fields above
+    return {event: event as unknown as React.KeyboardEvent<HTMLDivElement>, preventDefault, stopPropagation};
+}
+
+/** A focus event aimed at the given handle, which matches `:focus-visible` only when focused from the keyboard. */
+function createFocusEvent(handleElement: HTMLDivElement, isFocusVisible: boolean): React.FocusEvent<HTMLDivElement> {
+    // jsdom doesn't track how an element got focus.
+    jest.spyOn(handleElement, 'matches').mockImplementation((selector: string) => selector === ':focus-visible' && isFocusVisible);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the hook only reads the field above
+    return {currentTarget: handleElement} as unknown as React.FocusEvent<HTMLDivElement>;
+}
+
 /** Renders the hook with a scope element and one handle inside it, the way the table mounts them. */
 function renderColumnResize(params?: Partial<UseColumnResizeParams>) {
     const scopeElement = document.createElement('div');
@@ -464,5 +483,222 @@ describe('useColumnResize', () => {
         // Then the column keeps its width, rather than guessing one
         expect(readWidth(NAME_COLUMN_KEY)).toBe('');
         expect(setTableColumnWidth).not.toHaveBeenCalled();
+    });
+
+    it('exposes the edge to assistive technology as a focusable separator holding the column width', () => {
+        // Given a 200px resizable column
+        const {getHandleProps} = renderColumnResize();
+
+        // When the header renders its edge
+        const handleProps = getHandleProps();
+
+        // Then it can be reached with Tab and is announced as a vertical separator at the column's width
+        expect(handleProps.role).toBe('separator');
+        expect(handleProps.tabIndex).toBe(0);
+        expect(handleProps['aria-orientation']).toBe('vertical');
+        expect(handleProps['aria-valuenow']).toBe(200);
+        expect(handleProps['aria-valuemin']).toBe(CONST.TABLES.COLUMN_RESIZE.MIN_WIDTH);
+        expect(handleProps['aria-valuemax']).toBe(CONST.TABLES.COLUMN_RESIZE.MAX_WIDTH);
+    });
+
+    it('moves a focused edge by one step per arrow key and stores the width once the key is released', () => {
+        // Given a 200px column whose edge has focus
+        const {handleElement, getHandleProps, readWidth} = renderColumnResize();
+        const arrowRight = createKeyboardEvent(handleElement, 'ArrowRight');
+
+        // When the right arrow is pressed and held for one repeat
+        act(() => {
+            getHandleProps().onKeyDown?.(arrowRight.event);
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'ArrowRight').event);
+        });
+
+        // Then the column widens by a step per press right away, without the table also scrolling sideways, and nothing
+        // is stored yet, since each store's render would pull the edge back to the stored width mid-hold
+        const widenedWidth = 200 + 2 * CONST.TABLES.COLUMN_RESIZE.KEYBOARD_STEP;
+        expect(readWidth(NAME_COLUMN_KEY)).toBe(`${widenedWidth}px`);
+        expect(arrowRight.preventDefault).toHaveBeenCalled();
+        expect(setTableColumnWidth).not.toHaveBeenCalled();
+
+        // When the key is released
+        act(() => {
+            getHandleProps().onKeyUp?.(createKeyboardEvent(handleElement, 'ArrowRight').event);
+        });
+
+        // Then the width the user sees is stored, once
+        expect(setTableColumnWidth).toHaveBeenCalledTimes(1);
+        expect(setTableColumnWidth).toHaveBeenCalledWith(COLUMN_RESIZING_ID, NAME_COLUMN_KEY, widenedWidth);
+    });
+
+    it('stores an arrow-key width when focus leaves before the key is released', () => {
+        // Given a column edge moved by the left arrow
+        const {handleElement, getHandleProps} = renderColumnResize();
+
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'ArrowLeft').event);
+        });
+
+        // When focus moves on, so the key release lands elsewhere
+        act(() => {
+            getHandleProps().onBlur?.(createFocusEvent(handleElement, false));
+        });
+
+        // Then the width is stored anyway, rather than left painted until the next render drops it
+        expect(setTableColumnWidth).toHaveBeenCalledWith(COLUMN_RESIZING_ID, NAME_COLUMN_KEY, 200 - CONST.TABLES.COLUMN_RESIZE.KEYBOARD_STEP);
+    });
+
+    it('stops a focused edge at the drag bounds and stores nothing past them', () => {
+        // Given a column already at the narrowest width a drag allows it
+        const {handleElement, getHandleProps, readWidth} = renderColumnResize({dragMinWidths: {[NAME_COLUMN_KEY]: 200}});
+
+        // When the left arrow is pressed and released
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'ArrowLeft').event);
+            getHandleProps().onKeyUp?.(createKeyboardEvent(handleElement, 'ArrowLeft').event);
+        });
+
+        // Then nothing changes, the same as dragging past the bound
+        expect(readWidth(NAME_COLUMN_KEY)).toBe('');
+        expect(setTableColumnWidth).not.toHaveBeenCalled();
+    });
+
+    it('leaves a column narrower than the drag bound alone when narrowing it', () => {
+        // Given a column content-sized below the narrowest width a drag allows
+        const {handleElement, getHandleProps, readWidth} = renderColumnResize({resolvedColumnWidths: {...resolvedColumnWidths, name: 40}});
+
+        // When the left arrow is pressed and released
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'ArrowLeft').event);
+            getHandleProps().onKeyUp?.(createKeyboardEvent(handleElement, 'ArrowLeft').event);
+        });
+
+        // Then the column stays put, rather than jumping wider to the bound against the arrow pressed
+        expect(readWidth(NAME_COLUMN_KEY)).toBe('');
+        expect(setTableColumnWidth).not.toHaveBeenCalled();
+    });
+
+    it('ignores the arrow keys mid-drag', () => {
+        // Given a column being dragged 60px right
+        const {handleElement, getHandleProps, readWidth} = renderColumnResize();
+
+        act(() => {
+            getHandleProps().onPointerDown?.(createPointerEvent(handleElement, {clientX: 100}));
+            getHandleProps().onPointerMove?.(createPointerEvent(handleElement, {clientX: 160}));
+        });
+
+        // When an arrow key is pressed and released before the drag ends
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'ArrowRight').event);
+            getHandleProps().onKeyUp?.(createKeyboardEvent(handleElement, 'ArrowRight').event);
+        });
+
+        // Then the drag keeps the width, and nothing is stored behind its back
+        expect(readWidth(NAME_COLUMN_KEY)).toBe('260px');
+        expect(setTableColumnWidth).not.toHaveBeenCalled();
+    });
+
+    it('fits a focused column to its content on Enter, and resets it on the next press', () => {
+        // Given a 200px column whose content fits in 120px
+        const {handleElement, getHandleProps, readWidth, rerender, initialProps} = renderColumnResize();
+
+        // When Enter is pressed on its edge
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'Enter').event);
+        });
+
+        // Then the column is fitted to its content, the same as a click
+        expect(readWidth(NAME_COLUMN_KEY)).toBe('120px');
+        expect(setTableColumnWidth).toHaveBeenCalledWith(COLUMN_RESIZING_ID, NAME_COLUMN_KEY, 120);
+        expect(clearTableColumnWidth).not.toHaveBeenCalled();
+
+        // When the stored width renders and Space is pressed
+        rerender({...initialProps, resolvedColumnWidths: {...resolvedColumnWidths, name: 120}, columnWidthOverrides: {[NAME_COLUMN_KEY]: 120}});
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, ' ').event);
+        });
+
+        // Then the stored width is cleared, the same as a double-click, since one key can't tell the two apart
+        expect(clearTableColumnWidth).toHaveBeenCalledWith(COLUMN_RESIZING_ID, NAME_COLUMN_KEY);
+        expect(setTableColumnWidth).toHaveBeenCalledTimes(1);
+    });
+
+    it('resets a fitted column painted wider than its content on Enter', () => {
+        // Given the last column, stored at its 120px content width but painted 300px wide by the leftover room it grows into
+        const {handleElement, getHandleProps} = renderColumnResize({
+            resolvedColumnWidths: {...resolvedColumnWidths, name: 300},
+            columnWidthOverrides: {[NAME_COLUMN_KEY]: 120},
+        });
+
+        // When Enter is pressed on its edge
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'Enter').event);
+        });
+
+        // Then it resets, since the stored width, not the painted one, says it is already fitted
+        expect(clearTableColumnWidth).toHaveBeenCalledWith(COLUMN_RESIZING_ID, NAME_COLUMN_KEY);
+        expect(setTableColumnWidth).not.toHaveBeenCalled();
+    });
+
+    it('toggles once while Enter is held', () => {
+        // Given a column whose content fits in 120px, fitted by a first Enter press whose width has rendered
+        const {handleElement, getHandleProps, rerender, initialProps} = renderColumnResize();
+
+        act(() => {
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, 'Enter').event);
+        });
+        rerender({...initialProps, resolvedColumnWidths: {...resolvedColumnWidths, name: 120}, columnWidthOverrides: {[NAME_COLUMN_KEY]: 120}});
+
+        // When the held key auto-repeats
+        act(() => {
+            getHandleProps().onKeyDown?.({...createKeyboardEvent(handleElement, 'Enter').event, repeat: true});
+        });
+
+        // Then the repeat doesn't reset the column, so holding the key doesn't flip between fitted and reset
+        expect(clearTableColumnWidth).not.toHaveBeenCalled();
+    });
+
+    it('leaves other keys to the page', () => {
+        // Given a focused column edge
+        const {handleElement, getHandleProps} = renderColumnResize();
+        const tab = createKeyboardEvent(handleElement, 'Tab');
+
+        // When Tab is pressed
+        act(() => {
+            getHandleProps().onKeyDown?.(tab.event);
+        });
+
+        // Then the key does its usual job, moving focus on, and the column is untouched
+        expect(tab.preventDefault).not.toHaveBeenCalled();
+        expect(tab.stopPropagation).not.toHaveBeenCalled();
+        expect(setTableColumnWidth).not.toHaveBeenCalled();
+    });
+
+    it('shows the edge line while the edge has keyboard focus', () => {
+        // Given a resizable column
+        const {handleElement, getHandleProps} = renderColumnResize();
+        const readLineOpacity = () => handleElement.style.getPropertyValue(RESIZE_INDICATOR_OPACITY_VARIABLE);
+
+        // When its edge is focused by a pointer press
+        act(() => {
+            getHandleProps().onFocus?.(createFocusEvent(handleElement, false));
+        });
+
+        // Then no line appears, since a press shows it only once a drag starts
+        expect(readLineOpacity()).toBe('');
+
+        // When the edge is focused from the keyboard
+        act(() => {
+            getHandleProps().onFocus?.(createFocusEvent(handleElement, true));
+        });
+
+        // Then the line appears, so the user sees which edge the arrow keys move
+        expect(readLineOpacity()).toBe('1');
+
+        // When focus moves on
+        act(() => {
+            getHandleProps().onBlur?.(createFocusEvent(handleElement, false));
+        });
+
+        // Then the line goes away
+        expect(readLineOpacity()).toBe('0');
     });
 });

@@ -2,6 +2,7 @@ import {RESIZE_INDICATOR_HEIGHT_VARIABLE, RESIZE_INDICATOR_OPACITY_VARIABLE, RES
 import type {ColumnResizeHandleProps} from '@components/Table/columnResize/types';
 import {useTableContext} from '@components/Table/TableContext';
 
+import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 
 import CONST from '@src/CONST';
@@ -25,8 +26,9 @@ const INDICATOR_STYLE: React.CSSProperties = {
  * Drag the strip over a column's right edge. Carries the indicator line, so it moves with the column through drags and scrolls.
  * A plain `div` because it relies on DOM pointer capture.
  */
-function ColumnResizeHandle({columnKey}: ColumnResizeHandleProps) {
+function ColumnResizeHandle({columnKey, columnLabel}: ColumnResizeHandleProps) {
     const theme = useTheme();
+    const {translate} = useLocalize();
     const {columnResize} = useTableContext();
     const handleProps = columnResize?.getHandleProps(columnKey);
 
@@ -35,7 +37,10 @@ function ColumnResizeHandle({columnKey}: ColumnResizeHandleProps) {
     }
 
     return (
-        <div {...handleProps}>
+        <div
+            {...handleProps}
+            aria-label={translate('common.resizeColumn', {columnName: columnLabel})}
+        >
             <div
                 aria-hidden
                 style={{...INDICATOR_STYLE, backgroundColor: theme.iconMenu}}

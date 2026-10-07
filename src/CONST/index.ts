@@ -9298,6 +9298,9 @@ const CONST = {
             /** Widest drag width, so one drag can't push later columns out of reach. */
             MAX_WIDTH: 1200,
 
+            /** How far, in px, one arrow key press on a focused column edge moves it. */
+            KEYBOARD_STEP: 8,
+
             /** Pointer travel, in px, under which pressing a column's edge counts as a click rather than a drag. */
             DRAG_SLOP: 3,
 

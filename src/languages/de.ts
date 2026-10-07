@@ -50,6 +50,7 @@ const translations: TranslationDeepObject<typeof en> = {
         count: 'Anzahl',
         cancel: 'Abbrechen',
         dismiss: 'Schließen',
+        resizeColumn: ({columnName}: {columnName: string}) => `Spalte ${columnName} in der Größe ändern`,
         proceed: 'Weiter',
         unshare: 'Freigabe aufheben',
         yes: 'Ja',

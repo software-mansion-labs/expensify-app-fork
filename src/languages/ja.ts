@@ -50,6 +50,7 @@ const translations: TranslationDeepObject<typeof en> = {
         count: '数',
         cancel: 'キャンセル',
         dismiss: '閉じる',
+        resizeColumn: ({columnName}: {columnName: string}) => `${columnName}列のサイズを変更`,
         proceed: '続行',
         unshare: '共有を解除',
         yes: 'はい',

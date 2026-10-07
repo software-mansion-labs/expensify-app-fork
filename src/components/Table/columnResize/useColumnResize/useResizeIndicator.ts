@@ -42,14 +42,19 @@ function useResizeIndicator(scopeElementRef: RefObject<HTMLElement | null>): Res
     // Lost pointer capture hands over no element, so the dragged handle is remembered to hide its line.
     const activeHandleElementRef = useRef<HTMLElement | null>(null);
 
-    const revealIndicator = (handleElement: HTMLElement) => {
-        activeHandleElementRef.current = handleElement;
-        drawIndicatorAtHandle(scopeElementRef.current, handleElement);
-    };
-
     const hideIndicator = () => {
         activeHandleElementRef.current?.style.setProperty(RESIZE_INDICATOR_OPACITY_VARIABLE, INDICATOR_OPACITY.HIDDEN);
         activeHandleElementRef.current = null;
+    };
+
+    const revealIndicator = (handleElement: HTMLElement) => {
+        // A keyboard-focused edge keeps its line, so pressing another edge would otherwise leave two.
+        if (activeHandleElementRef.current !== handleElement) {
+            hideIndicator();
+        }
+
+        activeHandleElementRef.current = handleElement;
+        drawIndicatorAtHandle(scopeElementRef.current, handleElement);
     };
 
     return {revealIndicator, hideIndicator};
