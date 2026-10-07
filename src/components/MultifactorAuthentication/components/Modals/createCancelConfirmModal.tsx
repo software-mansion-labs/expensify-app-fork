@@ -3,7 +3,7 @@ import type {MultifactorAuthenticationCancelConfirm} from '@components/Multifact
 
 import useLocalize from '@hooks/useLocalize';
 
-import React from 'react';
+import React, {useState} from 'react';
 
 type BaseProps = Required<MultifactorAuthenticationCancelConfirm>;
 
@@ -20,6 +20,13 @@ type CancelConfirmModalBaseProps = CancelConfirmModalProps & BaseProps;
 function CancelConfirmModalBase({isVisible, isConfirmLoading, onConfirm, onCancel, title, description, confirmButtonText, cancelButtonText}: CancelConfirmModalBaseProps) {
     const {translate} = useLocalize();
 
+    // The modal keeps rendering while it animates out, so a request settling as it hides would flash the
+    // enabled confirm button. Hold the last value seen while visible until the modal opens again.
+    const [displayedConfirmLoading, setDisplayedConfirmLoading] = useState(isConfirmLoading);
+    if (isVisible && displayedConfirmLoading !== isConfirmLoading) {
+        setDisplayedConfirmLoading(isConfirmLoading);
+    }
+
     return (
         <ConfirmModal
             danger
@@ -27,7 +34,7 @@ function CancelConfirmModalBase({isVisible, isConfirmLoading, onConfirm, onCance
             onConfirm={onConfirm}
             onCancel={onCancel}
             isVisible={isVisible}
-            isConfirmLoading={isConfirmLoading}
+            isConfirmLoading={displayedConfirmLoading}
             prompt={translate(description)}
             confirmText={translate(confirmButtonText)}
             cancelText={translate(cancelButtonText)}
