@@ -19,18 +19,23 @@ function getDraggedColumnWidth(startWidth: number, startClientX: number, clientX
 }
 
 /** `undefined` for keys a column edge leaves alone. */
-function getKeyboardResizeAction(key: string): KeyboardResizeAction | undefined {
-    switch (key) {
-        case 'ArrowLeft':
-            return {type: 'step', step: -CONST.TABLES.COLUMN_RESIZE.KEYBOARD_STEP};
-        case 'ArrowRight':
-            return {type: 'step', step: CONST.TABLES.COLUMN_RESIZE.KEYBOARD_STEP};
-        case 'Enter':
-        case ' ':
-            return {type: 'toggleFit'};
-        default:
-            return undefined;
+function getKeyboardResizeAction({key, code}: Pick<KeyboardEvent, 'key' | 'code'>): KeyboardResizeAction | undefined {
+    if (key === CONST.KEYBOARD_SHORTCUTS.ARROW_LEFT.shortcutKey) {
+        return {type: 'step', step: -CONST.TABLES.COLUMN_RESIZE.KEYBOARD_STEP};
     }
+
+    if (key === CONST.KEYBOARD_SHORTCUTS.ARROW_RIGHT.shortcutKey) {
+        return {type: 'step', step: CONST.TABLES.COLUMN_RESIZE.KEYBOARD_STEP};
+    }
+
+    const isEnter = key === CONST.KEYBOARD_SHORTCUTS.ENTER.shortcutKey;
+    const isSpace = code === CONST.KEYBOARD_SHORTCUTS.SPACE.shortcutKey && key === CONST.KEYBOARD_SHORTCUTS.SPACE.trigger.DEFAULT.input;
+
+    if (isEnter || isSpace) {
+        return {type: 'toggleFit'};
+    }
+
+    return undefined;
 }
 
 export default getDraggedColumnWidth;

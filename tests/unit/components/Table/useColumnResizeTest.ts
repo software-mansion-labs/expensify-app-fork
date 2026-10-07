@@ -37,10 +37,10 @@ function createPointerEvent(handleElement: HTMLDivElement, {clientX, button = 0}
 }
 
 /** A key press carrying only what the hook reads, aimed at the given handle, with its mocks to assert on. */
-function createKeyboardEvent(handleElement: HTMLDivElement, key: string) {
+function createKeyboardEvent(handleElement: HTMLDivElement, key: string, code = key) {
     const preventDefault = jest.fn();
     const stopPropagation = jest.fn();
-    const event = {key, currentTarget: handleElement, preventDefault, stopPropagation};
+    const event = {key, code, currentTarget: handleElement, preventDefault, stopPropagation};
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the hook only reads the fields above
     return {event: event as unknown as React.KeyboardEvent<HTMLDivElement>, preventDefault, stopPropagation};
@@ -613,7 +613,7 @@ describe('useColumnResize', () => {
         // When the stored width renders and Space is pressed
         rerender({...initialProps, resolvedColumnWidths: {...resolvedColumnWidths, name: 120}, columnWidthOverrides: {[NAME_COLUMN_KEY]: 120}});
         act(() => {
-            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, ' ').event);
+            getHandleProps().onKeyDown?.(createKeyboardEvent(handleElement, ' ', 'Space').event);
         });
 
         // Then the stored width is cleared, the same as a double-click, since one key can't tell the two apart

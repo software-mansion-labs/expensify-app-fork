@@ -201,7 +201,7 @@ function useColumnResize({
     };
 
     const handleKeyDown = (columnKey: string, event: React.KeyboardEvent<HTMLDivElement>) => {
-        const action = getKeyboardResizeAction(event.key);
+        const action = getKeyboardResizeAction(event);
 
         // A drag owns the column's width until it ends.
         if (!action || dragRef.current) {
