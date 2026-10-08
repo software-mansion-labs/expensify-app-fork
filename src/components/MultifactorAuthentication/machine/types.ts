@@ -1,17 +1,18 @@
 import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/biometrics/captureRegistrationState';
 import type {AllowedAuthenticationMethods} from '@components/MultifactorAuthentication/biometrics/checkDeviceEligibility';
-import type {CreateCredentialParams} from '@components/MultifactorAuthentication/biometrics/shared/types';
+import type {CreateCredentialParams, CreateCredentialResult} from '@components/MultifactorAuthentication/biometrics/shared/types';
 import type {MultifactorAuthenticationScenarioConfigFor} from '@components/MultifactorAuthentication/config';
 import type {
     MultifactorAuthenticationScenario,
     MultifactorAuthenticationScenarioAdditionalParams,
+    MultifactorAuthenticationScenarioConfig,
     MultifactorAuthenticationScenarioParams,
     MultifactorAuthenticationScenarioResponse,
 } from '@components/MultifactorAuthentication/config/types';
 
-import type {RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
+import type {RegistrationChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import type {AuthTypeInfo, MultifactorAuthenticationCallbackResponse, MultifactorAuthenticationScenarioCallback} from '@libs/MultifactorAuthentication/shared/types';
+import type {AuthTypeInfo, MultifactorAuthenticationCallbackResponse, MultifactorAuthenticationScenarioCallback, RegistrationKeyInfo} from '@libs/MultifactorAuthentication/shared/types';
 
 import type {RunScenarioAction} from '@userActions/MultifactorAuthentication/processing';
 
@@ -47,16 +48,19 @@ type MfaContext = {
     /** Registration challenge retained through post-registration authorization; recovery clears it before re-registration. */
     registrationChallenge: RegistrationChallenge | undefined;
 
+    /** Key info from the credential ceremony, held until backend registration consumes it. Cleared on leaving `creatingCredential`. */
+    registrationKeyInfo: RegistrationKeyInfo | undefined;
+
     /** Whether the user approved the soft prompt during this flow. The durable acceptance lives in Onyx under the device-biometrics key. */
     softPromptApproved: boolean;
-
-    /** Whether the cancel-confirmation modal triggered by a back press is currently visible */
-    isCancelConfirmVisible: boolean;
 
     /** Authentication method the authorization actor signed the challenge with */
     authenticationMethod: AuthTypeInfo | undefined;
 
-    /** Response from the scenario action, carried for the outcome/callback slice that will consume it */
+    /** Challenge signed by the ceremony, held until the scenario action consumes it. Cleared on leaving `authorizing`. */
+    signedChallenge: SignedChallenge | undefined;
+
+    /** Response from the scenario action, handed to the scenario callback and the outcome telemetry */
     scenarioResponse: MultifactorAuthenticationScenarioResponse | undefined;
 
     /**
@@ -115,7 +119,10 @@ type MfaEvent =
     | {type: 'SOFT_PROMPT_APPROVED'}
     | {type: 'VALIDATE_CODE_ENTERED'; validateCode: string}
     | {type: 'RESEND_VALIDATE_CODE'}
-    | {type: 'VALIDATE_CODE_CHANGED'};
+    | {type: 'VALIDATE_CODE_CHANGED'}
+    | {type: 'REQUEST_CANCEL'}
+    | {type: 'DISMISS_CANCEL'}
+    | {type: 'CONFIRM_CANCEL'};
 
 /** Describes the input the machine passes to the device-check actor. */
 type ValidateDeviceInput = {allowedAuthenticationMethods: AllowedAuthenticationMethods};
@@ -139,17 +146,32 @@ type RequestRegistrationChallengeOutput = MFAResult<{challenge: RegistrationChal
 /** Input the machine passes to the credential-creation actor: everything `CreateCredentialParams` needs except the abort signal, which the actor supplies itself. */
 type CreateCredentialInput = Omit<CreateCredentialParams, 'signal'>;
 
-/** The credential-creation actor's result. `keyInfo` never leaves the actor, so a success carries no additional data. */
-type CreateCredentialOutput = MFAResult;
+/** The credential-creation actor's result. A success carries the key info that backend registration needs. */
+type CreateCredentialOutput = CreateCredentialResult;
 
-/** Input the machine passes to the authorization actor: the account and the scenario runner bound at INIT. */
+/** Input the machine passes to the backend-registration actor: the key info the credential ceremony produced. */
+type RegisterCredentialInput = {keyInfo: RegistrationKeyInfo};
+
+/** The backend-registration actor's result. A success carries no additional data. */
+type RegisterCredentialOutput = MFAResult;
+
+/** Input the machine passes to the authorization actor: the account whose credential signs the challenge. */
 type AuthorizeInput = {
     accountID: number;
-    runScenarioAction: RunScenarioAction;
 };
 
-/** The authorization actor's result. A success carries the authentication method the ceremony signed with and the scenario action's response. */
-type AuthorizeOutput = MFAResult<{scenarioResponse: MultifactorAuthenticationScenarioResponse; authenticationMethod: AuthTypeInfo}>;
+/** The authorization actor's result. A success carries the signed challenge and the authentication method the ceremony signed it with. */
+type AuthorizeOutput = MFAResult<{signedChallenge: SignedChallenge; authenticationMethod: AuthTypeInfo}>;
+
+/** Input the machine passes to the scenario-action actor: the runner bound at INIT and the ceremony's result. */
+type ExecuteScenarioActionInput = {
+    runScenarioAction: RunScenarioAction;
+    signedChallenge: SignedChallenge;
+    authenticationMethod: AuthTypeInfo;
+};
+
+/** The scenario-action actor's result. A success carries the scenario action's response. */
+type ExecuteScenarioActionOutput = MFAResult<{scenarioResponse: MultifactorAuthenticationScenarioResponse}>;
 
 /**
  * Input the machine passes to the finalize-outcome actor: the scenario's own callback and payload, and
@@ -182,11 +204,27 @@ type FinalizeOutcomeOutput = {
     callbackResponse: MultifactorAuthenticationCallbackResponse;
 };
 
+/**
+ * Input the machine passes to the cancel actor: the scenario's optional cancel logic and its payload.
+ * Named `payload` for the inspector masking, same as `FinalizeOutcomeInput`.
+ */
+type CancelScenarioInput = {
+    onCancel: MultifactorAuthenticationScenarioConfig['onCancel'];
+    payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined;
+};
+
+/** The cancel actor's result: the error the cancelled flow fails with, which picks the outcome screen. */
+type CancelScenarioOutput = MFAError;
+
 export type {
     AuthorizeInput,
     AuthorizeOutput,
+    CancelScenarioInput,
+    CancelScenarioOutput,
     CreateCredentialInput,
     CreateCredentialOutput,
+    ExecuteScenarioActionInput,
+    ExecuteScenarioActionOutput,
     FinalizeOutcomeInput,
     FinalizeOutcomeOutput,
     LoadRegistrationStateInput,
@@ -195,6 +233,8 @@ export type {
     MfaEvent,
     MfaModalState,
     MultifactorAuthenticationInitEvent,
+    RegisterCredentialInput,
+    RegisterCredentialOutput,
     RequestRegistrationChallengeInput,
     RequestRegistrationChallengeOutput,
     ValidateDeviceInput,

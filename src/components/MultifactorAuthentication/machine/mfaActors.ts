@@ -7,7 +7,7 @@ import trackMFAFlowOutcome from '@components/MultifactorAuthentication/observabi
 import {getErrorMessage} from '@libs/ErrorUtils';
 import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import {createCanceledMFAResult, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createCanceledMFAResult, createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MultifactorAuthenticationCallbackInput, MultifactorAuthenticationCallbackResponse} from '@libs/MultifactorAuthentication/shared/types';
 
 import {requestAuthorizationChallenge, requestRegistrationChallenge} from '@userActions/MultifactorAuthentication';
@@ -20,12 +20,18 @@ import {fromPromise} from 'xstate';
 import type {
     AuthorizeInput,
     AuthorizeOutput,
+    CancelScenarioInput,
+    CancelScenarioOutput,
     CreateCredentialInput,
     CreateCredentialOutput,
+    ExecuteScenarioActionInput,
+    ExecuteScenarioActionOutput,
     FinalizeOutcomeInput,
     FinalizeOutcomeOutput,
     LoadRegistrationStateInput,
     LoadRegistrationStateOutput,
+    RegisterCredentialInput,
+    RegisterCredentialOutput,
     RequestRegistrationChallengeInput,
     RequestRegistrationChallengeOutput,
     ValidateDeviceInput,
@@ -58,34 +64,31 @@ const requestRegistrationChallengeActor = fromPromise<RequestRegistrationChallen
 });
 
 /**
- * Platform ceremony, then backend registration. A refusal on the platform side short-circuits
- * before the backend is ever called; a backend failure is returned as-is, with no rollback of the
- * credential the platform already created. Breadcrumb labels match legacy `Main.tsx` for telemetry
- * continuity.
+ * Runs the platform credential ceremony. It is kept apart from backend registration so the machine can
+ * stop and restart it while the cancel confirmation is up without touching a registration request
+ * already sent. Breadcrumb labels match legacy `Main.tsx` for telemetry continuity.
  */
 const createCredentialActor = fromPromise<CreateCredentialOutput, CreateCredentialInput>(async ({input, signal}) => {
     const creationResult = await createCredential({...input, signal});
     addMFABreadcrumb('Biometric registration completed', creationResult.success ? {success: true} : creationResult.error, creationResult.success ? 'info' : 'error');
-    if (!creationResult.success) {
-        return creationResult;
-    }
-    // The flow may have been cancelled while the ceremony ran. Skip the backend call rather than
-    // registering a key nobody asked for — this only catches it before the request starts, there's
-    // no way to cancel one already in flight.
-    if (signal.aborted) {
-        return createCanceledMFAResult('MFA flow canceled before backend registration');
-    }
-    const registrationResult = await processRegistration({keyInfo: creationResult.keyInfo});
+    return creationResult;
+});
+
+/**
+ * Registers the key the ceremony created with the backend. A failure is returned as-is, with no
+ * rollback of the credential the platform already created.
+ */
+const registerCredentialActor = fromPromise<RegisterCredentialOutput, RegisterCredentialInput>(async ({input}) => {
+    const registrationResult = await processRegistration({keyInfo: input.keyInfo});
     addMFABreadcrumb('Backend registration completed', registrationResult.success ? {success: true} : registrationResult.error, registrationResult.success ? 'info' : 'error');
     return registrationResult;
 });
 
 /**
- * Requests the authorization challenge, runs the platform ceremony, then invokes the scenario's
- * action with the signed challenge. While the flow is active, a local failure showing that the device
- * credential is unusable clears it before returning; cancellation skips that cleanup. The reason itself
- * is forwarded unchanged so the recovery slice can route recoverable failures to re-registration. No
- * rollback happens after the scenario action fails, matching `createCredentialActor`'s contract.
+ * Requests the authorization challenge and runs the platform ceremony that signs it. While the flow is
+ * active, a local failure showing that the device credential is unusable clears it before returning;
+ * cancellation skips that cleanup. The reason itself is forwarded unchanged so the recovery slice can
+ * route recoverable failures to re-registration.
  */
 const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({input, signal}) => {
     const {httpStatusCode, challenge, reason, message} = await requestAuthorizationChallenge();
@@ -96,8 +99,8 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
     }
     addMFABreadcrumb('Authorization challenge received');
 
-    // The flow may have been cancelled while the challenge request was in flight. Skip opening the
-    // platform dialog rather than prompting for a ceremony nobody asked for anymore.
+    // The flow may have been cancelled, or the cancel confirmation opened, while the challenge request was
+    // in flight. Skip opening the platform dialog rather than prompting for a ceremony nobody is waiting on.
     if (signal.aborted) {
         return createCanceledMFAResult('MFA flow canceled before the authorization ceremony');
     }
@@ -108,23 +111,22 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
         authResult.success ? {success: true, authMethod: authResult.authenticationMethod.code} : authResult.error,
         authResult.success ? 'info' : 'error',
     );
-    if (!authResult.success) {
-        if (!signal.aborted && CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(authResult.error.reason)) {
-            addMFABreadcrumb('Authorization key reset', authResult.error, 'warning');
-            await deleteLocalCredentials(input.accountID, signal);
-        }
-        return authResult;
+    if (!authResult.success && !signal.aborted && CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(authResult.error.reason)) {
+        addMFABreadcrumb('Authorization key reset', authResult.error, 'warning');
+        await deleteLocalCredentials(input.accountID, signal);
     }
+    return authResult;
+});
 
-    // The native ceremony cannot be interrupted mid-flight, so it can still succeed after the flow
-    // was cancelled. Skip the scenario action rather than invoking one nobody asked for anymore.
-    if (signal.aborted) {
-        return createCanceledMFAResult('MFA flow canceled before the scenario action');
-    }
-
+/**
+ * Sends the scenario's backend action with the signed challenge. The request can't be taken back once
+ * sent, so the machine starts it only while no cancel confirmation is up and doesn't accept a cancel
+ * until it settles. No rollback happens after the action fails, matching `registerCredentialActor`'s contract.
+ */
+const executeScenarioActionActor = fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(async ({input}) => {
     const scenarioResult = await input.runScenarioAction({
-        signedChallenge: authResult.signedChallenge,
-        authenticationMethod: authResult.authenticationMethod.marqetaValue,
+        signedChallenge: input.signedChallenge,
+        authenticationMethod: input.authenticationMethod.marqetaValue,
     });
     addMFABreadcrumb('Scenario action completed', scenarioResult.success ? {success: true} : scenarioResult.error, scenarioResult.success ? 'info' : 'error');
     if (!scenarioResult.success) {
@@ -132,7 +134,7 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
     }
 
     const {success, ...scenarioResponse} = scenarioResult;
-    return {success, scenarioResponse, authenticationMethod: authResult.authenticationMethod};
+    return {success, scenarioResponse};
 });
 
 /**
@@ -200,6 +202,21 @@ const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeI
 });
 
 /**
+ * Runs the scenario's cancel logic and returns the error the cancelled flow fails with, so the outcome
+ * path (callback, telemetry, failure screen) runs as for any other failure. The signal is ignored: a
+ * cancel request already sent (e.g. `AuthorizeTransaction`'s deny) can't be taken back.
+ */
+const cancelScenarioActor = fromPromise<CancelScenarioOutput, CancelScenarioInput>(async ({input}) => {
+    if (input.onCancel) {
+        const error = await input.onCancel(input.payload);
+        addMFABreadcrumb('Flow cancelled with onCancel', error, 'warning');
+        return error;
+    }
+    addMFABreadcrumb('Flow cancelled', {reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED}, 'warning');
+    return createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'User cancelled the MFA flow');
+});
+
+/**
  * Builds the side-effect actors that the machine states invoke. The machine is always created with
  * these working implementations, so no caller needs to provide stubs or overrides.
  */
@@ -209,8 +226,11 @@ function createActors() {
         loadRegistrationState,
         requestRegistrationChallenge: requestRegistrationChallengeActor,
         createCredential: createCredentialActor,
+        registerCredential: registerCredentialActor,
         authorize: authorizeActor,
+        executeScenarioAction: executeScenarioActionActor,
         finalizeOutcome: finalizeOutcomeActor,
+        cancelScenario: cancelScenarioActor,
     };
 }
 

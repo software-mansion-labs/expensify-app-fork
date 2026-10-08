@@ -2,8 +2,10 @@ import {DefaultCancelConfirmModal} from '@components/MultifactorAuthentication/c
 import {useMultifactorAuthenticationInternal} from '@components/MultifactorAuthentication/Context/MultifactorAuthenticationInternalApiContext';
 import type {MultifactorAuthenticationModalNavigatorInternalParamList} from '@components/MultifactorAuthentication/mfaNavigation';
 import {handleInitialScreenLayout, MFA_INITIAL_SCREEN, mfaNavigationRef} from '@components/MultifactorAuthentication/mfaNavigation';
+import useMFACancelOnEscape from '@components/MultifactorAuthentication/useMFACancelOnEscape';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 
+import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSidePanelActions from '@hooks/useSidePanelActions';
@@ -86,7 +88,7 @@ function useAwaitSidePanelClose(shouldMount: boolean): boolean {
 
 function MultifactorAuthenticationModalNavigator() {
     const {state, requestCancel, hideCancelConfirm, confirmCancel, notifyModalClosed} = useMultifactorAuthenticationInternal();
-    const {isCancelConfirmVisible, modalState, scenario} = state;
+    const {isCancelConfirmVisible, isScenarioActionInFlight, modalState, scenario} = state;
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const theme = useTheme();
     const themePreference = useThemePreference();
@@ -98,6 +100,15 @@ function MultifactorAuthenticationModalNavigator() {
     const CancelConfirmModal = scenario?.modals.cancelConfirmation ?? DefaultCancelConfirmModal;
 
     const isStackReadyToMount = useAwaitSidePanelClose(modalState !== MFA_STATE.CLOSED);
+
+    // One shortcut for every MFA screen, including the transparent initial screen and the outcome screens.
+    // While the confirmation modal is up, its own Escape handling dismisses it.
+    const cancelOnEscape = useMFACancelOnEscape();
+    useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ESCAPE, cancelOnEscape, {
+        captureOnInputs: true,
+        shouldBubble: false,
+        isActive: modalState === MFA_STATE.OPEN && !isCancelConfirmVisible,
+    });
 
     const navigationThemeBase = getNavigationBaseTheme(themePreference);
     const navigationTheme = {
@@ -224,6 +235,7 @@ function MultifactorAuthenticationModalNavigator() {
             </View>
             <CancelConfirmModal
                 isVisible={isCancelConfirmVisible}
+                isConfirmLoading={isScenarioActionInFlight}
                 onConfirm={confirmCancel}
                 onCancel={hideCancelConfirm}
             />
