@@ -14,8 +14,16 @@ const revealedRouteKeys = new Set<string>();
 const preloadedRouteKeysAddedByPreMount = new Set<string>();
 let livePreloadedRouteKey: string | undefined;
 
+function createWideTabPreMountRouteKey(routeName: string): string {
+    return `${routeName}${ROUTE_KEY_INFIX}${Date.now()}`;
+}
+
 function setLiveWideTabPreMountRouteKey(key: string | undefined) {
     liveRouteKey = key;
+}
+
+function getLiveWideTabPreMountRouteKey(): string | undefined {
+    return liveRouteKey;
 }
 
 function isLiveWideTabPreMountRouteKey(key: string | undefined): boolean {
@@ -52,7 +60,9 @@ function isStaleWideTabPreMountPreloadedRouteKey(key: string): boolean {
 }
 
 export {
+    createWideTabPreMountRouteKey,
     setLiveWideTabPreMountRouteKey,
+    getLiveWideTabPreMountRouteKey,
     isLiveWideTabPreMountRouteKey,
     setLiveWideTabPreMountTabRouteKey,
     isLiveWideTabPreMountTabRouteKey,
