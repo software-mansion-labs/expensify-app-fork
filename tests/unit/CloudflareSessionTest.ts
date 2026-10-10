@@ -168,7 +168,7 @@ describe('refreshCloudflareSession', () => {
         expect(oAuthClient.refreshTokens).not.toHaveBeenCalled();
     });
 
-    it.each(['invalid_grant', 'invalid_response'])('keeps the session and resolves reauth-required on the terminal %s', async (code) => {
+    it.each(['invalid_grant', 'invalid_response'])('forgets the session in this tab but keeps the stored one on the terminal %s', async (code) => {
         // Given a stored session whose refresh the server rejects with a terminal OAuth error (each
         // parametrized code means this refresh token can never succeed again)
         await seedSession(SESSION_A);
@@ -177,9 +177,26 @@ describe('refreshCloudflareSession', () => {
         // When the refresh runs, Then it resolves reauth-required rather than rejecting: only a fresh
         // authorize round trip can recover, so callers must be told to re-auth, not tempted to retry
         await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('reauth-required');
-        // Then the session is deliberately not cleared: the store is shared across tabs and recovery is by
+        // Then this tab stops treating the dead session as a session, so the next sign-in or app load starts that
+        // round trip instead of every request refreshing the spent token and failing before it is sent
+        expect(SessionActions.getCloudflareSession()).toBeNull();
+        // Then the stored session is deliberately not cleared: the store is shared across tabs and recovery is by
         // replacement. A deletion here could destroy a working rotation another tab persisted moments earlier
-        expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
+        const OnyxUtils = require<{default: {get: (key: string) => Promise<unknown>}}>('react-native-onyx/dist/OnyxUtils').default;
+        await expect(OnyxUtils.get(ONYXKEYS.CLOUDFLARE_SESSION)).resolves.toEqual(SESSION_A);
+    });
+
+    it('does not spend the rejected refresh token again on the next refresh', async () => {
+        // Given a session whose refresh token the server already rejected as spent
+        await seedSession(SESSION_A);
+        jest.mocked(oAuthClient.refreshTokens).mockRejectedValue(new oAuthClient.OAuthError('invalid_grant'));
+        await SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
+
+        // When the next request asks for a refresh with the same access token
+        // Then it resolves reauth-required without another network call: the token can never succeed again, and
+        // re-sending it on every request is what turned one expired login into a request that fails forever
+        await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('reauth-required');
+        expect(oAuthClient.refreshTokens).toHaveBeenCalledTimes(1);
     });
 
     it('rethrows transient failures and keeps the session', async () => {

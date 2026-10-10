@@ -181,6 +181,9 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
         }
         // Both codes mean the submitted token is spent (invalid_response = CF rotated but the new pair was
         // unreadable). Never delete the shared session here. Another tab may hold a working rotation.
+        // Forgetting it in this tab only stops every request from re-spending it. A rotation or a fresh
+        // sign-in from any tab still lands here through the Onyx callback.
+        sessionCache = null;
         return 'reauth-required';
     }
 }
