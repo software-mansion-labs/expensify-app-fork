@@ -140,8 +140,9 @@ type CloudflareRefreshResult = 'refreshed' | 'skipped-newer-token' | 'reauth-req
 let refreshPromise: Promise<CloudflareRefreshResult> | null = null;
 
 /**
- * Cloudflare rotates the refresh token on every call, so two tabs refreshing at once each spend a token
- * the other still needs. Web Locks serialize the read-refresh-persist across the origin's tabs.
+ * In our testing, Cloudflare answers renewals of one refresh token sent close together with the same pair, but a
+ * later renewal with the previous refresh token issues a new pair and kills the current one. Web Locks serialize
+ * the read-refresh-persist across tabs, so the pair persisted last is the live one.
  */
 function withCrossTabRefreshLock(callback: () => Promise<CloudflareRefreshResult>): Promise<CloudflareRefreshResult> {
     if (!navigator.locks) {
@@ -181,6 +182,9 @@ async function refreshCloudflareSessionUnderLock(staleAccessToken: string): Prom
         }
         // Both codes mean the submitted token is spent (invalid_response = CF rotated but the new pair was
         // unreadable). Never delete the shared session here. Another tab may hold a working rotation.
+        // Forgetting it in this tab only stops every request from re-spending it. A rotation or a fresh
+        // sign-in from any tab still lands here through the Onyx callback.
+        sessionCache = null;
         return 'reauth-required';
     }
 }
@@ -201,6 +205,18 @@ function clearCloudflareSession(): Promise<void> {
     return Onyx.set(ONYXKEYS.CLOUDFLARE_SESSION, null);
 }
 
+/**
+ * Drops a session a *freshly refreshed* access token was still rejected with. Token-guarded: another tab may
+ * have rotated since the 401 was seen, and deleting that rotation would take a working session down with the
+ * dead one.
+ */
+function markCloudflareSessionRejected(rejectedAccessToken: string): Promise<void> {
+    if (sessionCache?.accessToken !== rejectedAccessToken) {
+        return Promise.resolve();
+    }
+    return clearCloudflareSession();
+}
+
 export {
     CF_SIGN_IN_ABANDONED,
     redirectToCloudflareSignIn,
@@ -210,6 +226,7 @@ export {
     getCloudflareSession,
     getPendingCloudflareCodeExchange,
     isSessionNearExpiry,
+    markCloudflareSessionRejected,
     refreshCloudflareSession,
     waitForCloudflareSessionHydration,
 };

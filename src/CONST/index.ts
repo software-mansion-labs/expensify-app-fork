@@ -2812,6 +2812,7 @@ const CONST = {
         UNKNOWN_ERROR: 'Unknown error',
         REQUEST_CANCELLED: 'AbortError',
         FAILED_TO_FETCH: 'Failed to fetch',
+        CF_REAUTH_REQUIRED: 'Cloudflare re-authentication required',
         ENSURE_BUG_BOT: 'ENSURE_BUGBOT',
         PUSHER_ERROR: 'PusherError',
         WEB_SOCKET_ERROR: 'WebSocketError',
@@ -7484,6 +7485,7 @@ const CONST = {
             WORKSPACES_TAB: 'LAST_VISITED_PATH_WORKSPACES_TAB',
             SETTINGS_TAB: 'LAST_VISITED_PATH_SETTINGS_TAB',
         },
+        SIGN_IN_LOGIN_DRAFT: 'SIGN_IN_LOGIN_DRAFT',
     },
 
     LOCAL_STORAGE_KEYS: {

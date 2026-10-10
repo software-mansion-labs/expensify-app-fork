@@ -25,6 +25,9 @@ switch (process.env.ENV) {
     case 'staging':
         envFile = '.env.staging';
         break;
+    case 'qa':
+        envFile = '.env.qa';
+        break;
     case 'adhoc':
         envFile = '.env.adhoc';
         break;
