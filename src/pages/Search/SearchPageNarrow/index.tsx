@@ -17,6 +17,7 @@ import type {SearchParams, SearchQueryJSON} from '@components/Search/types';
 import useAndroidBackButtonHandler from '@hooks/useAndroidBackButtonHandler';
 import useEndSubmitNavigationSpans from '@hooks/useEndSubmitNavigationSpans';
 import {useLoadingBarVisibility} from '@hooks/useInFlightRequests';
+import useLayoutSpacing from '@hooks/useLayoutSpacing';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import usePrevious from '@hooks/usePrevious';
@@ -40,6 +41,8 @@ import {search} from '@userActions/Search';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import type {SearchResults} from '@src/types/onyx';
+
+import type {ComponentRef} from 'react';
 
 import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native';
 import React, {useCallback, useContext, useEffect, useRef, useState, useTransition} from 'react';
@@ -97,6 +100,7 @@ function SearchPageNarrow({
     const {translate} = useLocalize();
     const {windowHeight} = useWindowDimensions();
     const styles = useThemeStyles();
+    const {pageGutterMargin} = useLayoutSpacing();
     const StyleUtils = useStyleUtils();
     const {clearSelectedTransactions} = useSearchSelectionActions();
     const {shouldUseLiveData} = useSearchResultsContext();
@@ -108,7 +112,7 @@ function SearchPageNarrow({
     const triggerScrollEvent = useScrollEventEmitter();
     const route = useRoute();
     const {saveScrollOffset} = useContext(ScrollOffsetContext);
-    const receiptDropTargetRef = useRef<View>(null);
+    const receiptDropTargetRef = useRef<ComponentRef<typeof View>>(null);
 
     const scrollOffset = useSharedValue(0);
     const topBarOffset = useSharedValue<number>(StyleUtils.searchHeaderDefaultOffset);
@@ -286,7 +290,7 @@ function SearchPageNarrow({
                                                 showStatic={!isHeaderInteractive}
                                                 queryJSON={queryJSON}
                                             />
-                                            <View style={[styles.flex1, styles.flexRow, styles.pt2, styles.mh5, styles.mb3, styles.gap3]}>
+                                            <View style={[styles.flex1, styles.flexRow, styles.pt2, pageGutterMargin, styles.mb3, styles.gap3]}>
                                                 <SearchPageInputSwitch
                                                     showStatic={!isHeaderInteractive}
                                                     queryJSON={queryJSON}
