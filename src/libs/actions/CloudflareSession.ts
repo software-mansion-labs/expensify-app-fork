@@ -140,8 +140,9 @@ type CloudflareRefreshResult = 'refreshed' | 'skipped-newer-token' | 'reauth-req
 let refreshPromise: Promise<CloudflareRefreshResult> | null = null;
 
 /**
- * Cloudflare rotates the refresh token on every call, so two tabs refreshing at once each spend a token
- * the other still needs. Web Locks serialize the read-refresh-persist across the origin's tabs.
+ * In our testing, Cloudflare answers renewals of one refresh token sent close together with the same pair, but a
+ * later renewal with the previous refresh token issues a new pair and kills the current one. Web Locks serialize
+ * the read-refresh-persist across tabs, so the pair persisted last is the live one.
  */
 function withCrossTabRefreshLock(callback: () => Promise<CloudflareRefreshResult>): Promise<CloudflareRefreshResult> {
     if (!navigator.locks) {
