@@ -1,4 +1,5 @@
 import {setInboxTab} from '@libs/actions/User';
+import getLinkedReportKeys from '@libs/getLinkedReportKeys';
 import getReportAttributesUpdates from '@libs/getReportAttributesUpdates';
 import Log from '@libs/Log';
 import SidebarUtils from '@libs/SidebarUtils';
@@ -107,6 +108,8 @@ function SidebarOrderedReportsContextProvider({
     const transactionViolationsUpdates = useCollectionDelta(transactionViolations);
     const [reportNameValuePairs] = useOnyx(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS);
     const reportNameValuePairsUpdates = useCollectionDelta(reportNameValuePairs);
+    const [reportActions] = useOnyx(ONYXKEYS.COLLECTION.REPORT_ACTIONS);
+    const reportActionsUpdates = useCollectionDelta(reportActions);
     const [reportsDrafts] = useOnyx(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
     const reportsDraftsUpdates = useCollectionDelta(reportsDrafts);
     const {isBetaEnabled} = usePermissions();
@@ -135,6 +138,8 @@ function SidebarOrderedReportsContextProvider({
     const prevPriorityMode = usePrevious(priorityMode);
     const prevIsOffline = usePrevious(isOffline);
     const prevConciergeReportID = usePrevious(conciergeReportID);
+    const prevCurrentUserLogin = usePrevious(currentUserLogin);
+    const prevAccountID = usePrevious(accountID);
 
     /**
      * Find the reports that need to be updated in the LHN
@@ -142,7 +147,14 @@ function SidebarOrderedReportsContextProvider({
     const getUpdatedReports = useCallback(() => {
         const reportsToUpdate = new Set<string>();
 
-        if (isDefaultRoomsBetaEnabled !== prevIsDefaultRoomsBetaEnabled || priorityMode !== prevPriorityMode || isOffline !== prevIsOffline || conciergeReportID !== prevConciergeReportID) {
+        if (
+            isDefaultRoomsBetaEnabled !== prevIsDefaultRoomsBetaEnabled ||
+            priorityMode !== prevPriorityMode ||
+            isOffline !== prevIsOffline ||
+            conciergeReportID !== prevConciergeReportID ||
+            currentUserLogin !== prevCurrentUserLogin ||
+            accountID !== prevAccountID
+        ) {
             for (const key of Object.keys(chatReports ?? {})) {
                 reportsToUpdate.add(key);
             }
@@ -154,6 +166,11 @@ function SidebarOrderedReportsContextProvider({
         }
         if (reportNameValuePairsUpdates) {
             for (const key of Object.keys(reportNameValuePairsUpdates ?? {}).map((reportKey) => reportKey.replace(ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS, ONYXKEYS.COLLECTION.REPORT))) {
+                reportsToUpdate.add(key);
+            }
+        }
+        if (reportActionsUpdates) {
+            for (const key of Object.keys(reportActionsUpdates).map((actionsKey) => actionsKey.replace(ONYXKEYS.COLLECTION.REPORT_ACTIONS, ONYXKEYS.COLLECTION.REPORT))) {
                 reportsToUpdate.add(key);
             }
         }
@@ -204,6 +221,7 @@ function SidebarOrderedReportsContextProvider({
     }, [
         reportUpdates,
         reportNameValuePairsUpdates,
+        reportActionsUpdates,
         reportAttributesUpdates,
         transactionsUpdates,
         transactionViolationsUpdates,
@@ -219,31 +237,37 @@ function SidebarOrderedReportsContextProvider({
         prevIsOffline,
         conciergeReportID,
         prevConciergeReportID,
+        currentUserLogin,
+        prevCurrentUserLogin,
+        accountID,
+        prevAccountID,
         prevDerivedCurrentReportID,
         derivedCurrentReportID,
     ]);
 
     const reportsToDisplayInLHN = useMemo(() => {
-        const updatedReports = getUpdatedReports();
+        let updatedReports = getUpdatedReports();
         const hasCachedReports = Object.keys(currentReportsToDisplay).length > 0;
-
-        // When a dependency changes but no report-specific keys were updated, getUpdatedReports() returns [].
-        // Rather than falling through to a full scan of all reports, recheck only the already-displayed reports.
-        let effectiveUpdatedReports = updatedReports.length === 0 && hasCachedReports ? Object.keys(currentReportsToDisplay) : updatedReports;
 
         // When guide personal details hydrate after the reports collection, guideAccountIDs changes but
         // getUpdatedReports() returns no report keys. Re-evaluate all reports so domain rooms previously
         // filtered out can appear in the LHN.
         if (hasCachedReports && prevGuideAccountIDs !== undefined && guideAccountIDs !== prevGuideAccountIDs) {
-            effectiveUpdatedReports = Object.keys(chatReports ?? {});
+            updatedReports = Object.keys(chatReports ?? {});
         }
-        const shouldDoIncrementalUpdate = effectiveUpdatedReports.length > 0 && hasCachedReports;
+
+        // No updated keys means nothing the LHN reads has changed, as on the render after the provider's own state update.
+        if (hasCachedReports && updatedReports.length === 0) {
+            return currentReportsToDisplay;
+        }
+
         let reportsToDisplay: ReportsToDisplayInLHN = {};
-        if (shouldDoIncrementalUpdate) {
+        if (hasCachedReports) {
             reportsToDisplay = SidebarUtils.updateReportsToDisplayInLHN({
                 displayedReports: currentReportsToDisplay,
                 reports: chatReports,
-                updatedReportsKeys: effectiveUpdatedReports,
+                // A report's LHN state also reads its parent, its chat and its parent message, so the linked displayed reports are rechecked with it.
+                updatedReportsKeys: [...updatedReports, ...getLinkedReportKeys(updatedReports, chatReports, currentReportsToDisplay)],
                 currentReportId: derivedCurrentReportID,
                 isInFocusMode: priorityMode === CONST.PRIORITY_MODE.GSD,
                 isDefaultRoomsBetaEnabled,

@@ -1,5 +1,6 @@
 import {act, renderHook} from '@testing-library/react-native';
 
+import {CurrentUserPersonalDetailsContext} from '@components/CurrentUserPersonalDetailsProvider';
 import OnyxListItemProvider from '@components/OnyxListItemProvider';
 
 import {CurrentReportIDContextProvider} from '@hooks/useCurrentReportID';
@@ -10,6 +11,7 @@ import SidebarUtils from '@libs/SidebarUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report, ReportAttributesDerivedValue} from '@src/types/onyx';
+import type {CurrentUserPersonalDetails} from '@src/types/onyx/PersonalDetails';
 
 import type {OnyxMultiSetInput} from 'react-native-onyx';
 
@@ -541,5 +543,129 @@ describe('useSidebarOrderedReports', () => {
         // Then the incremental LHN update should recheck report 2 only
         const callForReport2 = mockSidebarUtils.updateReportsToDisplayInLHN.mock.calls.find((call) => call[0]?.updatedReportsKeys.includes(`${ONYXKEYS.COLLECTION.REPORT}2`));
         expect(callForReport2?.[0]?.updatedReportsKeys).toEqual([`${ONYXKEYS.COLLECTION.REPORT}2`]);
+    });
+
+    describe('incremental updates', () => {
+        const reportKey = (reportID: string) => `${ONYXKEYS.COLLECTION.REPORT}${reportID}` as const;
+        const createReport = (reportID: string, report: Partial<Report> = {}): Report => ({
+            reportID,
+            reportName: `Report ${reportID}`,
+            lastVisibleActionCreated: '2024-01-01 10:00:00',
+            type: CONST.REPORT.TYPE.CHAT,
+            ...report,
+        });
+
+        async function renderWithDisplayedReports(reports: Report[], wrapper = TestWrapper) {
+            const collection: Record<ReturnType<typeof reportKey>, Report> = {};
+            for (const report of reports) {
+                collection[reportKey(report.reportID)] = report;
+            }
+            await act(async () => {
+                await Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT, collection);
+            });
+            mockSidebarUtils.getReportsToDisplayInLHN.mockReturnValue(collection);
+            // A real update returns a new set whenever a rechecked entry changes, which makes the provider render again.
+            mockSidebarUtils.updateReportsToDisplayInLHN.mockImplementation(({displayedReports}) => ({...displayedReports}));
+
+            const result = renderHook(() => useSidebarOrderedReports(), {wrapper});
+            await waitForBatchedUpdatesWithAct();
+            mockSidebarUtils.updateReportsToDisplayInLHN.mockClear();
+            return result;
+        }
+
+        it('should recheck only the written report after a write, not every displayed report', async () => {
+            // Given two displayed chats
+            await renderWithDisplayedReports([createReport('1'), createReport('2')]);
+
+            // When a new message arrives in chat 1
+            await act(async () => {
+                await Onyx.merge(reportKey('1'), {lastMessageText: 'Hello', lastVisibleActionCreated: '2024-01-02 10:00:00'});
+            });
+            await waitForBatchedUpdatesWithAct();
+
+            // Then only chat 1 is rechecked, also on the render that the provider's own state update causes
+            expect(mockSidebarUtils.updateReportsToDisplayInLHN).toHaveBeenCalledTimes(1);
+            expect(mockSidebarUtils.updateReportsToDisplayInLHN).toHaveBeenCalledWith(expect.objectContaining({updatedReportsKeys: [reportKey('1')]}));
+        });
+
+        it('should recheck the displayed threads and money requests of a written report', async () => {
+            // Given a displayed chat with a thread and an expense report in it, and an unrelated chat
+            await renderWithDisplayedReports([createReport('1'), createReport('2', {parentReportID: '1'}), createReport('3', {chatReportID: '1'}), createReport('4')]);
+
+            // When the chat is written, which can change whether its thread and its expense report belong in the LHN
+            await act(async () => {
+                await Onyx.merge(reportKey('1'), {lastMessageText: 'Hello'});
+            });
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the thread and the expense report are rechecked with it, and the unrelated chat is not
+            const [[{updatedReportsKeys}]] = mockSidebarUtils.updateReportsToDisplayInLHN.mock.calls;
+            expect([...updatedReportsKeys].sort()).toEqual([reportKey('1'), reportKey('2'), reportKey('3')]);
+        });
+
+        it('should recheck the parent and the chat of a written report', async () => {
+            // Given a displayed expense report, its parent chat and its workspace chat
+            await renderWithDisplayedReports([createReport('1'), createReport('2'), createReport('3', {parentReportID: '1', chatReportID: '2'})]);
+
+            // When the expense report is written, which the LHN state of its parent can depend on
+            await act(async () => {
+                await Onyx.merge(reportKey('3'), {lastMessageText: 'Hello'});
+            });
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the parent and the chat are rechecked with it
+            const [[{updatedReportsKeys}]] = mockSidebarUtils.updateReportsToDisplayInLHN.mock.calls;
+            expect([...updatedReportsKeys].sort()).toEqual([reportKey('1'), reportKey('2'), reportKey('3')]);
+        });
+
+        it('should recheck a chat and its displayed threads when only its report actions change', async () => {
+            // Given a displayed chat with a thread on one of its messages, and an unrelated chat
+            const parentReportActionID = '100';
+            await renderWithDisplayedReports([createReport('1'), createReport('2', {parentReportID: '1', parentReportActionID}), createReport('3')]);
+
+            // When the thread's parent message is deleted, which writes the chat's actions but not the chat or the thread
+            await act(async () => {
+                await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}1`, {
+                    [parentReportActionID]: {
+                        reportActionID: parentReportActionID,
+                        actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT,
+                        created: '2024-01-01 10:00:00.000',
+                        message: [{type: 'COMMENT', html: '', text: '', isDeletedParentAction: true}],
+                    },
+                });
+            });
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the chat and the thread are rechecked, because the LHN rules read the thread's parent message
+            const [[{updatedReportsKeys}]] = mockSidebarUtils.updateReportsToDisplayInLHN.mock.calls;
+            expect([...updatedReportsKeys].sort()).toEqual([reportKey('1'), reportKey('2')]);
+        });
+
+        it('should recheck every report when the current user changes', async () => {
+            // Given a displayed chat and a hidden one, rendered for a signed-in user
+            let currentUserPersonalDetails: CurrentUserPersonalDetails = {accountID: 12345, login: 'test@example.com'};
+            function WrapperWithCurrentUser({children}: {children: React.ReactNode}) {
+                return (
+                    <CurrentUserPersonalDetailsContext.Provider value={currentUserPersonalDetails}>
+                        <TestWrapper>{children}</TestWrapper>
+                    </CurrentUserPersonalDetailsContext.Provider>
+                );
+            }
+            const hiddenReport = createReport('2');
+            await act(async () => {
+                await Onyx.set(reportKey(hiddenReport.reportID), hiddenReport);
+            });
+            const {rerender} = await renderWithDisplayedReports([createReport('1')], WrapperWithCurrentUser);
+
+            // When the user's login changes, which the LHN rules read for every report
+            currentUserPersonalDetails = {accountID: 12345, login: 'new@example.com'};
+            rerender({});
+            await waitForBatchedUpdatesWithAct();
+
+            // Then every report is rechecked, including the hidden one
+            expect(mockSidebarUtils.updateReportsToDisplayInLHN).toHaveBeenCalledWith(
+                expect.objectContaining({updatedReportsKeys: expect.arrayContaining([reportKey('1'), reportKey(hiddenReport.reportID)])}),
+            );
+        });
     });
 });
