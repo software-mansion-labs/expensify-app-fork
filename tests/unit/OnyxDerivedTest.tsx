@@ -908,6 +908,93 @@ describe('OnyxDerived', () => {
             expect(incrementalCompute?.sortedActions[chatReportID]).toHaveLength(2);
             expect(incrementalCompute?.transactionThreadIDs).not.toHaveProperty(chatReportID);
         });
+
+        it('recombines a one-transaction report when only its transaction thread gets a new action', async () => {
+            // Given an expense report whose only expense has a transaction thread, so its sorted actions include the thread's
+            const chatReportID = '10';
+            const expenseReportID = '20';
+            const threadReportID = '40';
+            const iouAction = getFakeReportAction(100, {
+                actionName: CONST.REPORT.ACTIONS.TYPE.IOU,
+                childReportID: threadReportID,
+                reportID: expenseReportID,
+                originalMessage: {IOUTransactionID: 'txn1', type: CONST.IOU.REPORT_ACTION_TYPE.CREATE, amount: 100, currency: 'USD'},
+            } as Partial<ReportAction>);
+            await Onyx.multiSet({
+                [`${ONYXKEYS.COLLECTION.REPORT}${chatReportID}` as const]: createMockReport({reportID: chatReportID, type: CONST.REPORT.TYPE.CHAT}),
+                [`${ONYXKEYS.COLLECTION.REPORT}${expenseReportID}` as const]: createMockReport({reportID: expenseReportID, type: CONST.REPORT.TYPE.EXPENSE, chatReportID}),
+                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${expenseReportID}` as const]: {'100': iouAction},
+                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${threadReportID}` as const]: {'200': getFakeReportAction(200, {actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT})},
+            });
+            await waitForBatchedUpdates();
+
+            // When the thread gets a new action in a write that changes no report
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${threadReportID}`, {'201': getFakeReportAction(201, {actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT})});
+            await waitForBatchedUpdates();
+
+            // Then the expense report's sorted actions include it, as they combine the thread's actions
+            const derived = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
+            expect(derived?.transactionThreadIDs[expenseReportID]).toBe(threadReportID);
+            expect(derived?.sortedActions[expenseReportID]?.map((action) => action.reportActionID)).toContain('201');
+        });
+
+        it('finds a send money flow once the chat report of its IOU report arrives', async () => {
+            // Given an IOU report with a single pay action, whose chat report is not loaded yet
+            const chatReportID = '10';
+            const iouReportID = '20';
+            const threadReportID = '40';
+            const payAction = getFakeReportAction(100, {
+                actionName: CONST.REPORT.ACTIONS.TYPE.IOU,
+                childReportID: threadReportID,
+                reportID: iouReportID,
+                originalMessage: {IOUTransactionID: 'txn1', type: CONST.IOU.REPORT_ACTION_TYPE.PAY, amount: 100, currency: 'USD'},
+            } as Partial<ReportAction>);
+            await Onyx.multiSet({
+                [`${ONYXKEYS.COLLECTION.REPORT}${iouReportID}` as const]: createMockReport({reportID: iouReportID, type: CONST.REPORT.TYPE.IOU, chatReportID}),
+                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${iouReportID}` as const]: {'100': payAction},
+            });
+            await waitForBatchedUpdates();
+            const before = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
+
+            // When the DM it was sent in arrives, in a write that changes only that chat
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${chatReportID}`, createMockReport({reportID: chatReportID, type: CONST.REPORT.TYPE.CHAT}));
+            await waitForBatchedUpdates();
+
+            // Then the IOU report resolves the pay action's thread, as a send money flow is detected from the chat
+            const after = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
+            expect(before?.transactionThreadIDs).not.toHaveProperty(iouReportID);
+            expect(after?.transactionThreadIDs[iouReportID]).toBe(threadReportID);
+        });
+
+        it('keeps the sorted actions of a report a write did not touch as the same array', async () => {
+            // Given two chats with actions
+            const firstChatID = '10';
+            const secondChatID = '11';
+            await Onyx.multiSet({
+                [`${ONYXKEYS.COLLECTION.REPORT}${firstChatID}` as const]: createMockReport({reportID: firstChatID}),
+                [`${ONYXKEYS.COLLECTION.REPORT}${secondChatID}` as const]: createMockReport({reportID: secondChatID}),
+                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${firstChatID}` as const]: {'1': getFakeReportAction(1, {actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT})},
+                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${secondChatID}` as const]: {'2': getFakeReportAction(2, {actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT})},
+            });
+            await waitForBatchedUpdates();
+            const before = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
+
+            // When the first chat and its actions change, as with an incoming message
+            await Onyx.update([
+                {onyxMethod: Onyx.METHOD.MERGE, key: `${ONYXKEYS.COLLECTION.REPORT}${firstChatID}`, value: {lastMessageText: 'new'}},
+                {
+                    onyxMethod: Onyx.METHOD.MERGE,
+                    key: `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${firstChatID}`,
+                    value: {'3': getFakeReportAction(3, {actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT})},
+                },
+            ]);
+            await waitForBatchedUpdates();
+
+            // Then only the first chat's sorted actions are rebuilt
+            const after = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
+            expect(after?.sortedActions[firstChatID]).toHaveLength(2);
+            expect(after?.sortedActions[secondChatID]).toBe(before?.sortedActions[secondChatID]);
+        });
     });
 
     describe('nonPersonalAndWorkspaceCardList', () => {

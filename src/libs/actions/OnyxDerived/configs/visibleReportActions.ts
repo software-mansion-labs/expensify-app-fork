@@ -2,6 +2,7 @@ import {isActionableWhisperRequiringWritePermission, isActionOfType, isConcierge
 import {isSupportTicket} from '@libs/ReportUtils';
 
 import createOnyxDerivedValueConfig from '@userActions/OnyxDerived/createOnyxDerivedValueConfig';
+import {getMemberIDs} from '@userActions/OnyxDerived/utils';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -45,9 +46,7 @@ function computeReportVisibility(reportActions: ReportActions, currentUserAccoun
 
 export default createOnyxDerivedValueConfig({
     key: ONYXKEYS.DERIVED.VISIBLE_REPORT_ACTIONS,
-    // Note: REPORT dependency is needed both to trigger recompute when reports change
-    // (for UNREPORTED_TRANSACTION/MOVED_TRANSACTION visibility) AND to provide the current
-    // report collection to the visibility check, avoiding stale data from global connections.
+    // REPORT dependency is needed for the support ticket check, which reads only the report the actions belong to.
     // SESSION dependency is needed for whisper targeting when user changes.
     dependencies: [ONYXKEYS.COLLECTION.REPORT_ACTIONS, ONYXKEYS.SESSION, ONYXKEYS.COLLECTION.REPORT],
     // Every change copies the map and rebuilds the changed report's visibility from scratch.
@@ -58,22 +57,25 @@ export default createOnyxDerivedValueConfig({
         }
 
         const currentUserAccountID = session?.accountID;
-        const reportActionsUpdates = sourceValues?.[ONYXKEYS.COLLECTION.REPORT_ACTIONS];
 
-        // Recompute only the reports whose actions changed when we have a usable delta. Otherwise
+        // Recompute only the reports whose actions or report changed when we have a usable delta. Otherwise
         // recompute everything: on first load, when there's no delta, or on a SESSION change (the
         // user changed, which affects whisper targeting for every report). SESSION is checked via
         // triggeredKeys, not sourceValues, so a session cleared to `undefined` still forces the full recompute.
-        const isIncremental = !!reportActionsUpdates && !triggeredKeys?.has(ONYXKEYS.SESSION) && !triggeredKeys?.has(ONYXKEYS.COLLECTION.REPORT) && !!currentValue;
+        const isIncremental = !!sourceValues && !triggeredKeys?.has(ONYXKEYS.SESSION) && !!currentValue;
 
         const result: VisibleReportActionsDerivedValue = isIncremental ? {...currentValue} : {};
-        const reportActionsKeysToProcess = isIncremental ? Object.keys(reportActionsUpdates) : Object.keys(allReportActions);
+        const reportIDsToProcess = isIncremental
+            ? new Set([
+                  ...getMemberIDs(ONYXKEYS.COLLECTION.REPORT_ACTIONS, sourceValues[ONYXKEYS.COLLECTION.REPORT_ACTIONS]),
+                  ...getMemberIDs(ONYXKEYS.COLLECTION.REPORT, sourceValues[ONYXKEYS.COLLECTION.REPORT]),
+              ])
+            : getMemberIDs(ONYXKEYS.COLLECTION.REPORT_ACTIONS, allReportActions);
 
-        for (const reportActionsKey of reportActionsKeysToProcess) {
-            const reportID = reportActionsKey.replace(ONYXKEYS.COLLECTION.REPORT_ACTIONS, '');
-            const reportActions = allReportActions[reportActionsKey];
+        for (const reportID of reportIDsToProcess) {
+            const reportActions = allReportActions[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`];
 
-            // The member was removed entirely — drop the report from the result.
+            // The report has no actions (removed entirely, or only its report changed), so it is dropped from the result.
             if (!reportActions) {
                 delete result[reportID];
                 continue;

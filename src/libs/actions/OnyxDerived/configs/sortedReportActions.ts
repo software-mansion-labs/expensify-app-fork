@@ -2,6 +2,7 @@ import {getIsOffline} from '@libs/NetworkState';
 import {getCombinedReportActions, getOneTransactionThreadReportID, getSortedReportActions, withDEWRoutedActionsArray} from '@libs/ReportActionsUtils';
 
 import createOnyxDerivedValueConfig from '@userActions/OnyxDerived/createOnyxDerivedValueConfig';
+import {getMemberIDs} from '@userActions/OnyxDerived/utils';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -40,6 +41,35 @@ function computeForReport(
     };
 }
 
+/**
+ * Get the reports whose entry a flush can change: the reports whose actions or report changed, the reports that combine
+ * a changed report's actions as their transaction thread, and the reports of a changed chat, which can be a send money flow.
+ */
+function getReportIDsToRecompute(
+    reportActionsUpdates: OnyxCollection<ReportActions>,
+    reportUpdates: OnyxCollection<Report>,
+    allReports: OnyxCollection<Report>,
+    transactionThreadIDs: SortedReportActionsDerivedValue['transactionThreadIDs'],
+): Set<string> {
+    const reportIDsWithChangedActions = new Set(getMemberIDs(ONYXKEYS.COLLECTION.REPORT_ACTIONS, reportActionsUpdates));
+    const changedReportIDs = new Set(getMemberIDs(ONYXKEYS.COLLECTION.REPORT, reportUpdates));
+    const reportIDs = new Set([...reportIDsWithChangedActions, ...changedReportIDs]);
+
+    for (const [reportID, transactionThreadReportID] of Object.entries(transactionThreadIDs)) {
+        if (transactionThreadReportID && reportIDsWithChangedActions.has(transactionThreadReportID)) {
+            reportIDs.add(reportID);
+        }
+    }
+    if (changedReportIDs.size > 0) {
+        for (const report of Object.values(allReports ?? {})) {
+            if (report?.reportID && report.chatReportID && changedReportIDs.has(report.chatReportID)) {
+                reportIDs.add(report.reportID);
+            }
+        }
+    }
+    return reportIDs;
+}
+
 export default createOnyxDerivedValueConfig({
     key: ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS,
     dependencies: [ONYXKEYS.COLLECTION.REPORT_ACTIONS, ONYXKEYS.COLLECTION.REPORT, ONYXKEYS.NETWORK],
@@ -53,27 +83,26 @@ export default createOnyxDerivedValueConfig({
         // Read the in-memory offline state directly (NETWORK is a dependency so recompute still fires when it changes).
         const isOffline = getIsOffline();
 
-        const reportActionsUpdates = sourceValues?.[ONYXKEYS.COLLECTION.REPORT_ACTIONS];
-
-        // The incremental branch only knows how to react to report-action changes; REPORT/NETWORK changes are
-        // handled by the full recompute below. Coalescing can batch REPORT_ACTIONS with REPORT/NETWORK in a
-        // single flush, so only go incremental when report actions are the sole trigger — otherwise a batched
-        // REPORT change (e.g. chatReportID -> transactionThreadReportID) would be silently dropped.
-        const reportActionsIsOnlyTrigger = triggeredKeys?.size === 1;
-
-        // Incremental update: only recompute reports whose actions changed
-        if (reportActionsUpdates && currentValue && reportActionsIsOnlyTrigger) {
+        // Incremental update: only recompute the reports a report or report action change can affect. A NETWORK
+        // change flips isOffline for every report, so it takes the full recompute below. NETWORK is checked via
+        // triggeredKeys, as coalescing can batch it with the other changes in a single flush.
+        if (sourceValues && currentValue && !triggeredKeys?.has(ONYXKEYS.NETWORK)) {
             const sortedActions = {...currentValue.sortedActions};
             const lastActions = {...currentValue.lastActions};
             const transactionThreadIDs = {...currentValue.transactionThreadIDs};
+            const reportIDs = getReportIDsToRecompute(
+                sourceValues[ONYXKEYS.COLLECTION.REPORT_ACTIONS],
+                sourceValues[ONYXKEYS.COLLECTION.REPORT],
+                allReports,
+                currentValue.transactionThreadIDs,
+            );
 
-            for (const reportActionsKey of Object.keys(reportActionsUpdates)) {
-                const reportID = reportActionsKey.replace(ONYXKEYS.COLLECTION.REPORT_ACTIONS, '');
+            for (const reportID of reportIDs) {
                 if (!reportID) {
                     continue;
                 }
 
-                const actions = allReportActions[reportActionsKey];
+                const actions = allReportActions[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`];
                 if (!actions) {
                     delete sortedActions[reportID];
                     delete lastActions[reportID];
@@ -98,7 +127,7 @@ export default createOnyxDerivedValueConfig({
             return {sortedActions, lastActions, transactionThreadIDs};
         }
 
-        // Full recompute on first load or when reports change
+        // Full recompute on first load or when the network state changes
         const sortedActions: SortedReportActionsDerivedValue['sortedActions'] = {};
         const lastActions: SortedReportActionsDerivedValue['lastActions'] = {};
         const transactionThreadIDs: SortedReportActionsDerivedValue['transactionThreadIDs'] = {};

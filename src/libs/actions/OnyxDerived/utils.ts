@@ -1,6 +1,6 @@
-import type {OnyxDerivedKey, OnyxKey} from '@src/ONYXKEYS';
+import type {OnyxCollectionKey, OnyxDerivedKey, OnyxKey} from '@src/ONYXKEYS';
 
-import type {OnyxInput} from 'react-native-onyx';
+import type {OnyxCollection, OnyxInput} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
@@ -14,6 +14,11 @@ import Onyx from 'react-native-onyx';
 const hasKeyTriggeredCompute = (key: OnyxKey, triggeredKeys: Set<OnyxKey> | undefined): boolean => triggeredKeys?.has(key) ?? false;
 
 /**
+ * Get the IDs of a collection's members, e.g. the reportIDs of a REPORT or REPORT_ACTIONS delta.
+ */
+const getMemberIDs = (collectionKey: OnyxCollectionKey, collection: OnyxCollection<unknown>): string[] => Object.keys(collection ?? {}).map((key) => key.replace(collectionKey, ''));
+
+/**
  * Set a derived value in Onyx
  * As a performance optimization, it skips the cache check, since derived values are recomputed only when a dependency changes,
  * and the null removal for the configs that opt out of it with `skipNullRemoval`
@@ -24,4 +29,4 @@ const setDerivedValue = (key: OnyxDerivedKey, value: OnyxInput<OnyxDerivedKey>, 
         skipNullRemoval,
     });
 
-export {hasKeyTriggeredCompute, setDerivedValue};
+export {getMemberIDs, hasKeyTriggeredCompute, setDerivedValue};
