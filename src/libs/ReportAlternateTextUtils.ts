@@ -275,6 +275,31 @@ const deprecatedCachedOneTransactionThreadReportIDs: Record<string, string | und
 /** @deprecated Use sortedReportActionsData from ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS instead. Will be removed once all flows are migrated. */
 let deprecatedAllReportActions: OnyxCollection<ReportActions>;
 
+/** The inputs a report's deprecated cache entries were computed from, so a write recomputes only the reports whose inputs changed. */
+type SortedReportActionsInputs = {
+    reportActions: OnyxEntry<ReportActions>;
+    transactionThreadReportActions: OnyxEntry<ReportActions>;
+    report: OnyxEntry<Report>;
+    chatReport: OnyxEntry<Report>;
+    isOffline: boolean;
+};
+const sortedReportActionsInputs: Record<string, SortedReportActionsInputs> = {};
+
+function getTransactionThreadReportActions(allReportActions: OnyxCollection<ReportActions>, transactionThreadReportID: string | undefined): OnyxEntry<ReportActions> {
+    return transactionThreadReportID ? allReportActions?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}`] : undefined;
+}
+
+function areSortedReportActionsInputsUnchanged(previousInputs: SortedReportActionsInputs | undefined, inputs: SortedReportActionsInputs): boolean {
+    return (
+        !!previousInputs &&
+        previousInputs.reportActions === inputs.reportActions &&
+        previousInputs.transactionThreadReportActions === inputs.transactionThreadReportActions &&
+        previousInputs.report === inputs.report &&
+        previousInputs.chatReport === inputs.chatReport &&
+        previousInputs.isOffline === inputs.isOffline
+    );
+}
+
 // connectWithoutView is justified: this is module-level, non-render preview computation shared by LHN and Search;
 // the caches were moved verbatim from OptionsListUtils. Migration to the derived value is tracked in issue #66381.
 Onyx.connectWithoutView({
@@ -285,6 +310,7 @@ Onyx.connectWithoutView({
         }
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         deprecatedAllReportActions = actions ?? {};
+        const isOffline = getIsOffline();
 
         // Iterate over the report actions to build the sorted report actions objects
         // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -294,22 +320,37 @@ Onyx.connectWithoutView({
                 continue;
             }
 
+            const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
+            const chatReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`];
+            const inputs: SortedReportActionsInputs = {
+                reportActions: reportActions[1],
+                // eslint-disable-next-line @typescript-eslint/no-deprecated
+                transactionThreadReportActions: getTransactionThreadReportActions(actions, deprecatedCachedOneTransactionThreadReportIDs[reportID]),
+                report,
+                chatReport,
+                isOffline,
+            };
+            // The entries depend only on these inputs, so a report whose inputs did not change keeps its entries.
+            if (areSortedReportActionsInputsUnchanged(sortedReportActionsInputs[reportID], inputs)) {
+                continue;
+            }
+
             const reportActionsArray = Object.values(reportActions[1] ?? {});
             let sortedReportActions = getSortedReportActions(withDEWRoutedActionsArray(reportActionsArray), true);
             // eslint-disable-next-line @typescript-eslint/no-deprecated
             deprecatedAllSortedReportActions[reportID] = sortedReportActions;
-            const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-            const chatReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`];
 
             // If the report is a one-transaction report, we need to return the combined reportActions so that the LHN can display modifications
             // to the transaction thread or the report itself.
             // Cache the result for O(1) lookup in renderItem.
-            const transactionThreadReportID = getOneTransactionThreadReportID(report, chatReport, actions[reportActions[0]], getIsOffline());
+            const transactionThreadReportID = getOneTransactionThreadReportID(report, chatReport, reportActions[1], isOffline);
             // eslint-disable-next-line @typescript-eslint/no-deprecated
             deprecatedCachedOneTransactionThreadReportIDs[reportID] = transactionThreadReportID;
+            const transactionThreadReportActions = getTransactionThreadReportActions(actions, transactionThreadReportID);
+            sortedReportActionsInputs[reportID] = {...inputs, transactionThreadReportActions};
 
             if (transactionThreadReportID) {
-                const transactionThreadReportActionsArray = Object.values(actions[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}`] ?? {});
+                const transactionThreadReportActionsArray = Object.values(transactionThreadReportActions ?? {});
                 const isSelfDMReport = report?.chatType === CONST.REPORT.CHAT_TYPE.SELF_DM;
                 sortedReportActions = getCombinedReportActions(sortedReportActions, transactionThreadReportID, transactionThreadReportActionsArray, isSelfDMReport);
             }

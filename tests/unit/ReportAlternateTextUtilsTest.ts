@@ -38,6 +38,7 @@ import {
     getLastMessageTextForReport,
     getReportAlternateText,
     getWelcomeMessage,
+    resolveLastActionContext,
     shouldShowLastActorDisplayName,
 } from '@libs/ReportAlternateTextUtils';
 import {formatReportLastMessageText, getMovedActionMessage, getMovedTransactionMessage, getReportPreviewReportActionMessage, parseMovedTransactionReportIDs} from '@libs/ReportUtils';
@@ -2609,6 +2610,33 @@ describe('ReportAlternateTextUtils', () => {
                 });
                 expect(lastMessage).toBe(getApprovalLimitUpdateMessage(translateLocal, action, convertToDisplayString));
             });
+        });
+    });
+
+    describe('resolveLastActionContext', () => {
+        it('resolves the one-transaction thread of a report that arrives after its actions, on the next write to any report actions', async () => {
+            // Given the actions of an expense report with one expense, and a newer comment in that expense's thread
+            const expenseReportID = '200';
+            const transactionThreadReportID = '300';
+            const iouAction = makeAction(CONST.REPORT.ACTIONS.TYPE.IOU, {
+                reportActionID: '201',
+                created: '2024-01-01 00:00:01.000',
+                childReportID: transactionThreadReportID,
+                originalMessage: {type: CONST.IOU.REPORT_ACTION_TYPE.CREATE, IOUTransactionID: 'transaction1', IOUReportID: expenseReportID, amount: 100, currency: CONST.CURRENCY.USD},
+            });
+            const threadComment = makeAction(CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT, {reportActionID: '301', created: '2024-01-01 00:00:02.000'});
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${expenseReportID}`, {[iouAction.reportActionID]: iouAction});
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}`, {[threadComment.reportActionID]: threadComment});
+
+            // When the expense report arrives, and then an unrelated report gets a new action
+            const expenseReport = makeReport({reportID: expenseReportID, type: CONST.REPORT.TYPE.EXPENSE, chatType: undefined});
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${expenseReportID}`, expenseReport);
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}400`, {401: makeAction(CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT, {reportActionID: '401'})});
+            await waitForBatchedUpdates();
+
+            // Then the report's changed inputs recompute its entry, so the newer thread comment is its last action
+            const {lastAction} = resolveLastActionContext(expenseReport, false, undefined);
+            expect(lastAction?.reportActionID).toBe(threadComment.reportActionID);
         });
     });
 
