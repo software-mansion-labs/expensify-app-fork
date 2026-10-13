@@ -77,6 +77,23 @@ describe('useReportIDToNameMap', () => {
         expect(result.current['1']).toBe('New Name');
     });
 
+    it('keeps the same map when a report update changes no name', async () => {
+        // Given a mounted map of two reports
+        await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}1`, createReport('1', {reportName: 'First'}));
+        await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}2`, createReport('2', {reportName: 'Second'}));
+        const {result} = await renderReportIDToNameMap();
+        const firstResult = result.current;
+
+        // When a new message updates a report but not its name
+        await act(async () => {
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}1`, {lastMessageText: 'Hello'});
+            await waitForBatchedUpdates();
+        });
+
+        // Then the consumers get the same object, so nothing that depends on it re-renders
+        expect(result.current).toBe(firstResult);
+    });
+
     it('keeps a stable reference across re-renders when reports do not change', async () => {
         await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}1`, createReport('1', {reportName: 'Stable'}));
         const {result, rerender} = await renderReportIDToNameMap();

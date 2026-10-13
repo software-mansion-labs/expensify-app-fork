@@ -49,16 +49,15 @@ const animatedWideRHPWidth = new Animated.Value(wideRHPWidth);
 const WideRHPStateContext = createContext<WideRHPStateContextType>(defaultWideRHPStateContextValue);
 const WideRHPActionsContext = createContext<WideRHPActionsContextType>(defaultWideRHPActionsContextValue);
 
-const expenseReportSelector = (reports: OnyxCollection<Report>) => {
-    return Object.fromEntries(
-        Object.entries(reports ?? {}).map(([key, report]) => [
-            key,
-            {
-                reportID: report?.reportID,
-                type: report?.type,
-            },
-        ]),
-    );
+/** Selects the IDs of the reports the 'wide' hint skips: invoices and tasks. */
+const reportIDsExcludedFromWideHintSelector = (reports: OnyxCollection<Report>): Record<string, true> => {
+    const reportIDs: Record<string, true> = {};
+    for (const report of Object.values(reports ?? {})) {
+        if (report?.reportID && (report.type === CONST.REPORT.TYPE.INVOICE || report.type === CONST.REPORT.TYPE.TASK)) {
+            reportIDs[report.reportID] = true;
+        }
+    }
+    return reportIDs;
 };
 
 // Function to add a Wide/Super Wide RHP route key to the array including wide/super wide RHP route keys
@@ -110,8 +109,8 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
     // A reportID maps to at most one hint, making "wide vs super-wide" structurally mutually exclusive.
     const [reportRHPWidthHints, setReportRHPWidthHints] = useState<Map<string, RHPWidthHint>>(() => new Map());
 
-    const [allReports] = useOnyx(ONYXKEYS.COLLECTION.REPORT, {
-        selector: expenseReportSelector,
+    const [reportIDsExcludedFromWideHint] = useOnyx(ONYXKEYS.COLLECTION.REPORT, {
+        selector: reportIDsExcludedFromWideHintSelector,
     });
 
     const isWideRHPClosingRef = useRef(false);
@@ -223,11 +222,8 @@ function WideRHPContextProvider({children}: React.PropsWithChildren) {
         if (!reportID) {
             return;
         }
-        if (width === 'wide') {
-            const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-            if (report?.type === CONST.REPORT.TYPE.INVOICE || report?.type === CONST.REPORT.TYPE.TASK) {
-                return;
-            }
+        if (width === 'wide' && reportIDsExcludedFromWideHint?.[reportID]) {
+            return;
         }
         setReportRHPWidthHints((prev) => {
             if (prev.get(reportID) === width) {

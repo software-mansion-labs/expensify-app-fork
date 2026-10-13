@@ -14,7 +14,6 @@ import {
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OutstandingReportsByPolicyIDDerivedValue, PersonalDetailsList, Report, ReportActions, ReportNameValuePairs, Transaction} from '@src/types/onyx';
-import mapOnyxCollectionItems from '@src/utils/mapOnyxCollectionItems';
 
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import type {TupleToUnion, ValueOf} from 'type-fest';
@@ -367,18 +366,24 @@ function isDraftReportSelector(draft: OnyxEntry<Report>): boolean {
     return !!draft;
 }
 
-function reportHierarchySelector(report: OnyxEntry<Report>): OnyxEntry<ReportHierarchyInfo> {
-    return (
-        report && {
-            parentReportID: report.parentReportID,
-            parentReportActionID: report.parentReportActionID,
+/**
+ * Creates a selector returning the parent hierarchy links of a report and of each of its ancestors, the chain
+ * `clearAllRelatedReportActionErrors` walks up from that report.
+ */
+const reportAncestorsHierarchySelector =
+    (reportID: string | undefined) =>
+    (reports: OnyxCollection<Report>): OnyxCollection<ReportHierarchyInfo> => {
+        const result: Record<string, ReportHierarchyInfo> = {};
+        let report = reportID ? reports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`] : undefined;
+        while (report?.reportID && !result[`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`]) {
+            result[`${ONYXKEYS.COLLECTION.REPORT}${report.reportID}`] = {
+                parentReportID: report.parentReportID,
+                parentReportActionID: report.parentReportActionID,
+            };
+            report = report.parentReportID ? reports?.[`${ONYXKEYS.COLLECTION.REPORT}${report.parentReportID}`] : undefined;
         }
-    );
-}
-
-function reportsParentHierarchySelector(reports: OnyxCollection<Report>): OnyxCollection<ReportHierarchyInfo> {
-    return mapOnyxCollectionItems(reports, reportHierarchySelector);
-}
+        return result;
+    };
 /**
  * Creates a selector returning only the reports for the given IDs, so a consumer that knows the exact
  * reports it needs doesn't re-render when any other report in the account changes.
@@ -412,7 +417,7 @@ export {
     openExpenseReportIDsSelector,
     getStableReportSelector,
     isDraftReportSelector,
-    reportsParentHierarchySelector,
+    reportAncestorsHierarchySelector,
     reportsByIDsSelector,
 };
 

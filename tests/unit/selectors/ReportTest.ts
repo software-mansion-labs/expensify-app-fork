@@ -1,7 +1,8 @@
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import type {Report} from '@src/types/onyx';
 
-import {reportAvatarFieldsSelector, reportAvatarKindSelector, reportPolicyFieldsSelector} from '@selectors/Report';
+import {reportAncestorsHierarchySelector, reportAvatarFieldsSelector, reportAvatarKindSelector, reportPolicyFieldsSelector} from '@selectors/Report';
 
 const REPORT_ID = 'report123';
 const PARENT_REPORT_ID = 'parentReport123';
@@ -102,5 +103,56 @@ describe('reportPolicyFieldsSelector', () => {
 
     it('should return undefined when the report is not in Onyx', () => {
         expect(reportPolicyFieldsSelector(undefined)).toBeUndefined();
+    });
+});
+
+describe('reportAncestorsHierarchySelector', () => {
+    const reportKey = (reportID: string) => `${ONYXKEYS.COLLECTION.REPORT}${reportID}`;
+
+    it('should return the hierarchy links of the report and its ancestors only', () => {
+        // Given a thread in a chat that is itself a thread, and an unrelated report
+        const reports = {
+            [reportKey('thread')]: createReport({reportID: 'thread', parentReportID: 'chat', parentReportActionID: 'action1', lastMessageText: 'Hello'}),
+            [reportKey('chat')]: createReport({reportID: 'chat', parentReportID: 'workspace', parentReportActionID: 'action2'}),
+            [reportKey('workspace')]: createReport({reportID: 'workspace'}),
+            [reportKey('other')]: createReport({reportID: 'other', parentReportID: 'workspace', parentReportActionID: 'action3'}),
+        };
+
+        // When the chain of the thread is selected
+        const hierarchy = reportAncestorsHierarchySelector('thread')(reports);
+
+        // Then it holds only the links clearAllRelatedReportActionErrors walks up from the thread
+        expect(hierarchy).toEqual({
+            [reportKey('thread')]: {parentReportID: 'chat', parentReportActionID: 'action1'},
+            [reportKey('chat')]: {parentReportID: 'workspace', parentReportActionID: 'action2'},
+            [reportKey('workspace')]: {parentReportID: undefined, parentReportActionID: undefined},
+        });
+    });
+
+    it('should stop when the parent links form a cycle', () => {
+        // Given two reports that name each other as the parent
+        const reports = {
+            [reportKey('a')]: createReport({reportID: 'a', parentReportID: 'b', parentReportActionID: 'action1'}),
+            [reportKey('b')]: createReport({reportID: 'b', parentReportID: 'a', parentReportActionID: 'action2'}),
+        };
+
+        // When the chain of one of them is selected
+        const hierarchy = reportAncestorsHierarchySelector('a')(reports);
+
+        // Then each report appears once instead of the walk looping forever
+        expect(Object.keys(hierarchy ?? {})).toEqual([reportKey('a'), reportKey('b')]);
+    });
+
+    it('should return an empty collection when the report is not loaded', () => {
+        // Given reports that do not include the requested one
+        const reports = {[reportKey('chat')]: createReport({reportID: 'chat'})};
+
+        // When the chain of a missing report, or of no report, is selected
+        const missing = reportAncestorsHierarchySelector('missing')(reports);
+        const noReportID = reportAncestorsHierarchySelector(undefined)(reports);
+
+        // Then there are no links to walk
+        expect(missing).toEqual({});
+        expect(noReportID).toEqual({});
     });
 });
