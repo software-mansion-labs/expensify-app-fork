@@ -1,0 +1,30 @@
+diff --git a/node_modules/react-native-onyx/dist/OnyxUtils.js b/node_modules/react-native-onyx/dist/OnyxUtils.js
+index 1b11a07..57086b7 100644
+--- a/node_modules/react-native-onyx/dist/OnyxUtils.js
++++ b/node_modules/react-native-onyx/dist/OnyxUtils.js
+@@ -1196,7 +1196,7 @@ function setWithRetry({ key, value, options }, retryAttempt) {
+         OnyxUtils.logKeyRemoved(OnyxUtils.METHOD.SET, key);
+         return Promise.resolve();
+     }
+-    const valueWithoutNestedNullValues = utils_1.default.removeNestedNullValues(value);
++    const valueWithoutNestedNullValues = (options === null || options === void 0 ? void 0 : options.skipNullRemoval) ? value : utils_1.default.removeNestedNullValues(value);
+     const hasChanged = (options === null || options === void 0 ? void 0 : options.skipCacheCheck) ? true : OnyxCache_1.default.hasValueChanged(key, valueWithoutNestedNullValues);
+     OnyxUtils.logKeyChanged(OnyxUtils.METHOD.SET, key, value, hasChanged);
+     // This approach prioritizes fast UI changes without waiting for data to be stored in device storage.
+diff --git a/node_modules/react-native-onyx/dist/types.d.ts b/node_modules/react-native-onyx/dist/types.d.ts
+index cb91605..a3fe089 100644
+--- a/node_modules/react-native-onyx/dist/types.d.ts
++++ b/node_modules/react-native-onyx/dist/types.d.ts
+@@ -289,6 +289,12 @@ type OnyxUpdate<TKey extends OnyxKey> = {
+ type SetOptions = {
+     /** Skip the deep equality check against the cached value. Improves performance for large objects. */
+     skipCacheCheck?: boolean;
++    /**
++     * Store the value as is, without removing its nested null and undefined values. Removing them walks the whole value
++     * and copies every object that holds one, so it is the main cost of setting a large value. Only for values that
++     * hold no nested nulls the caller relies on being removed, and that are never mutated after being set.
++     */
++    skipNullRemoval?: boolean;
+ };
+ type SetParams<TKey extends OnyxKey> = {
+     key: TKey;

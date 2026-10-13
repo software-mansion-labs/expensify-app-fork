@@ -15,13 +15,13 @@ const hasKeyTriggeredCompute = (key: OnyxKey, triggeredKeys: Set<OnyxKey> | unde
 
 /**
  * Set a derived value in Onyx
- * As a performance optimization, it skips the cache check and null removal
- * For derived values, we fully control their lifecycle and recompute them when any dependency changes - so we don’t need a deep comparison
- * Also, null may be a legitimate result of the computation, so pruning it is unnecessary
+ * As a performance optimization, it skips the cache check, since derived values are recomputed only when a dependency changes,
+ * and the null removal for the configs that opt out of it with `skipNullRemoval`
  */
-const setDerivedValue = (key: OnyxDerivedKey, value: OnyxInput<OnyxDerivedKey>) =>
+const setDerivedValue = (key: OnyxDerivedKey, value: OnyxInput<OnyxDerivedKey>, skipNullRemoval = false) =>
     Onyx.set(key, value, {
         skipCacheCheck: true,
+        skipNullRemoval,
     });
 
 export {hasKeyTriggeredCompute, setDerivedValue};

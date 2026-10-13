@@ -210,6 +210,24 @@ describe('OnyxDerived', () => {
             });
         });
 
+        it('keeps the entry of a report a write did not touch as the same object', async () => {
+            // Given two reports whose attributes are computed
+            const otherReport: Report = {...mockReport, reportID: 'test_2', reportName: 'Other Report'};
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${mockReport.reportID}`, mockReport);
+            await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${otherReport.reportID}`, otherReport);
+            await waitForBatchedUpdates();
+            const attributesBefore = await OnyxUtils.get(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
+
+            // When a write changes only the second report
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${otherReport.reportID}`, {reportName: 'Renamed Report'});
+            await waitForBatchedUpdates();
+            const attributesAfter = await OnyxUtils.get(ONYXKEYS.DERIVED.REPORT_ATTRIBUTES);
+
+            // Then the first entry is stored as the same object, since Onyx no longer copies entries with undefined fields
+            expect(attributesAfter?.reports[otherReport.reportID]?.reportName).toBe('Renamed Report');
+            expect(attributesAfter?.reports[mockReport.reportID]).toBe(attributesBefore?.reports[mockReport.reportID]);
+        });
+
         it('should clear the report attributes when the report is cleared', async () => {
             await Onyx.set(`${ONYXKEYS.COLLECTION.REPORT}${mockReport.reportID}`, mockReport);
             await waitForBatchedUpdates();
@@ -867,6 +885,28 @@ describe('OnyxDerived', () => {
             // The batched REPORT change must be applied: the expense report's transaction thread now resolves.
             derived = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
             expect(derived?.transactionThreadIDs?.[expenseReportID]).toBe(threadReportID);
+        });
+
+        it('leaves reports without a transaction thread out of transactionThreadIDs', async () => {
+            // Given a chat report with actions, which has no transaction thread
+            const chatReportID = '10';
+            await Onyx.multiSet({
+                [`${ONYXKEYS.COLLECTION.REPORT}${chatReportID}` as const]: createMockReport({reportID: chatReportID, type: CONST.REPORT.TYPE.CHAT}),
+                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${chatReportID}` as const]: {'1': getFakeReportAction(1, {actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT})},
+            });
+            await waitForBatchedUpdates();
+            const fullCompute = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
+
+            // When a new action recomputes the report incrementally
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${chatReportID}`, {'2': getFakeReportAction(2, {actionName: CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT})});
+            await waitForBatchedUpdates();
+            const incrementalCompute = await OnyxUtils.get(ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS);
+
+            // Then neither compute stores a key for the report, as Onyx stored this value while it still removed undefined values
+            expect(fullCompute?.sortedActions).toHaveProperty(chatReportID);
+            expect(fullCompute?.transactionThreadIDs).not.toHaveProperty(chatReportID);
+            expect(incrementalCompute?.sortedActions[chatReportID]).toHaveLength(2);
+            expect(incrementalCompute?.transactionThreadIDs).not.toHaveProperty(chatReportID);
         });
     });
 

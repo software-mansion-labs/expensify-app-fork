@@ -50,6 +50,8 @@ export default createOnyxDerivedValueConfig({
     // report collection to the visibility check, avoiding stale data from global connections.
     // SESSION dependency is needed for whisper targeting when user changes.
     dependencies: [ONYXKEYS.COLLECTION.REPORT_ACTIONS, ONYXKEYS.SESSION, ONYXKEYS.COLLECTION.REPORT],
+    // Every change copies the map and rebuilds the changed report's visibility from scratch.
+    skipNullRemoval: true,
     compute: ([allReportActions, session, allReports], {sourceValues, currentValue, triggeredKeys}): VisibleReportActionsDerivedValue => {
         if (!allReportActions) {
             return {};

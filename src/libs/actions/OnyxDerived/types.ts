@@ -46,6 +46,13 @@ type OnyxDerivedValueConfig<Key extends ValueOf<typeof ONYXKEYS.DERIVED>, Deps e
      * compute starts from scratch instead of diffing rehydrated data against pre-clear state.
      */
     onReset?: () => void;
+
+    /**
+     * Stores the computed value as is instead of letting Onyx walk it and copy every object that holds a null or
+     * undefined field. Only for computes that return new objects for every change and never mutate a value they
+     * returned before, since subscribers then hold the very objects the compute returned.
+     */
+    skipNullRemoval?: boolean;
 };
 
 export type {OnyxDerivedValueConfig, DerivedValueContext};

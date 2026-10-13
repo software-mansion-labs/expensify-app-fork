@@ -43,6 +43,8 @@ function computeForReport(
 export default createOnyxDerivedValueConfig({
     key: ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS,
     dependencies: [ONYXKEYS.COLLECTION.REPORT_ACTIONS, ONYXKEYS.COLLECTION.REPORT, ONYXKEYS.NETWORK],
+    // Every change copies the three maps and replaces the changed report's entries.
+    skipNullRemoval: true,
     compute: ([allReportActions, allReports], {sourceValues, currentValue, triggeredKeys}): SortedReportActionsDerivedValue => {
         if (!allReportActions) {
             return EMPTY_VALUE;
@@ -81,7 +83,11 @@ export default createOnyxDerivedValueConfig({
 
                 const result = computeForReport(reportID, actions, allReportActions, allReports, isOffline);
                 sortedActions[reportID] = result.sortedReportActions;
-                transactionThreadIDs[reportID] = result.transactionThreadReportID;
+                if (result.transactionThreadReportID) {
+                    transactionThreadIDs[reportID] = result.transactionThreadReportID;
+                } else {
+                    delete transactionThreadIDs[reportID];
+                }
                 if (result.lastAction) {
                     lastActions[reportID] = result.lastAction;
                 } else {
@@ -110,7 +116,9 @@ export default createOnyxDerivedValueConfig({
 
             const result = computeForReport(reportID, actions, allReportActions, allReports, isOffline);
             sortedActions[reportID] = result.sortedReportActions;
-            transactionThreadIDs[reportID] = result.transactionThreadReportID;
+            if (result.transactionThreadReportID) {
+                transactionThreadIDs[reportID] = result.transactionThreadReportID;
+            }
             if (result.lastAction) {
                 lastActions[reportID] = result.lastAction;
             } else {

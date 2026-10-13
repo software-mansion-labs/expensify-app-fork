@@ -240,6 +240,8 @@ export default createOnyxDerivedValueConfig({
         ONYXKEYS.CARD_LIST,
         ONYXKEYS.NETWORK,
     ],
+    // Every rebuilt entry is a new object and the error propagation clones the entry it changes.
+    skipNullRemoval: true,
     compute: (
         [
             reports,
