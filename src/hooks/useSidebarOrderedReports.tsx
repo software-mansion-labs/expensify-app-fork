@@ -1,6 +1,9 @@
 import {setInboxTab} from '@libs/actions/User';
 import getLinkedReportKeys from '@libs/getLinkedReportKeys';
 import getReportAttributesUpdates from '@libs/getReportAttributesUpdates';
+import getInboxTabSummary from '@libs/LHNOrderIndex/getInboxTabSummary';
+import getReportIDsForInboxTab from '@libs/LHNOrderIndex/getReportIDsForInboxTab';
+import LHNOrderIndex from '@libs/LHNOrderIndex/LHNOrderIndex';
 import Log from '@libs/Log';
 import SidebarUtils from '@libs/SidebarUtils';
 import type {BrickRoad} from '@libs/WorkspacesSettingsUtils';
@@ -23,7 +26,6 @@ import useOnyx from './useOnyx';
 import usePermissions from './usePermissions';
 import usePrevious from './usePrevious';
 import useReportAttributes from './useReportAttributes';
-import useResponsiveLayout from './useResponsiveLayout';
 
 type SidebarOrderedReportsContextProviderProps = {
     children: React.ReactNode;
@@ -80,8 +82,8 @@ const SidebarOrderedReportsActionsContext = createContext<SidebarOrderedReportsA
     getReportIDsForTab: () => [],
 });
 
-// This file does not compile with React Compiler (render-time ref cache below keeps referential
-// stability), so the manual useMemo/useCallback in this provider are load-bearing and must stay.
+// This file does not compile with React Compiler (the reportsToDisplayInLHN memo below leaves out dependencies on
+// purpose), so the manual useMemo/useCallback in this provider are load-bearing and must stay.
 function SidebarOrderedReportsContextProvider({
     children,
     /**
@@ -123,7 +125,6 @@ function SidebarOrderedReportsContextProvider({
     const prevReportAttributes = usePrevious(reportAttributes);
     const reportAttributesUpdates = useMemo(() => getReportAttributesUpdates(reportAttributes, prevReportAttributes), [reportAttributes, prevReportAttributes]);
     const [currentReportsToDisplay, setCurrentReportsToDisplay] = useState<ReportsToDisplayInLHN>({});
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
     const {isOffline} = useNetwork();
     const {accountID, login: currentUserLogin} = useCurrentUserPersonalDetails();
     const {currentReportID: currentReportIDValue} = useCurrentReportIDState();
@@ -324,39 +325,25 @@ function SidebarOrderedReportsContextProvider({
         prevGuideAccountIDs,
     ]);
 
-    // Derive a stable boolean map indicating which reports have drafts.
-    const hasDraftByReportIDRef = useRef<Record<string, boolean>>({});
-    const hasDraftByReportID = useMemo(() => {
-        const result: Record<string, boolean> = {};
-        if (reportsDrafts) {
-            for (const [key, value] of Object.entries(reportsDrafts)) {
-                if (value) {
-                    result[key.replace(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT, '')] = true;
-                }
-            }
-        }
-        const prev = hasDraftByReportIDRef.current;
-        const prevKeys = Object.keys(prev);
-        const newKeys = Object.keys(result);
-        if (prevKeys.length === newKeys.length && newKeys.every((k) => k in prev)) {
-            return prev;
-        }
-        hasDraftByReportIDRef.current = result;
-        return result;
-    }, [reportsDrafts]);
-
     useEffect(() => {
         setCurrentReportsToDisplay(reportsToDisplayInLHN);
     }, [reportsToDisplayInLHN]);
 
-    const getOrderedReportIDs = useCallback(
-        () => SidebarUtils.sortReportsToDisplayInLHN(reportsToDisplayInLHN, priorityMode, localeCompare, hasDraftByReportID, reportNameValuePairs, reportAttributes),
-        // Rule disabled intentionally - reports should be sorted only when the reportsToDisplayInLHN changes
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [reportsToDisplayInLHN, localeCompare, hasDraftByReportID, reportAttributes],
+    const [lhnOrderIndex] = useState(() => new LHNOrderIndex());
+    const isInDefaultMode = priorityMode !== CONST.PRIORITY_MODE.GSD;
+    const lhnOrder = useMemo(
+        () =>
+            lhnOrderIndex.update({
+                reportsToDisplay: reportsToDisplayInLHN,
+                reportAttributes,
+                reportNameValuePairs,
+                draftComments: reportsDrafts,
+                isInDefaultMode,
+                localeCompare,
+            }),
+        [lhnOrderIndex, reportsToDisplayInLHN, reportAttributes, reportNameValuePairs, reportsDrafts, isInDefaultMode, localeCompare],
     );
-
-    const orderedReportIDs = useMemo(() => getOrderedReportIDs(), [getOrderedReportIDs]);
+    const orderedReportIDs = lhnOrder.reportIDs;
 
     // When a report is opened from the To-do/Unread tab (see setStickyReportID), we remember it so it
     // stays visible after viewing it removes it from the tab (e.g. it gets read). It's only set on a
@@ -367,7 +354,7 @@ function SidebarOrderedReportsContextProvider({
     const stickyReportID = stickyReport?.reportID;
     const stickyReportTab = stickyReport?.tab;
     const filteredReportIDs = useMemo(() => {
-        const baseFilteredReportIDs = SidebarUtils.filterReportsForInboxTab(orderedReportIDs, reportsToDisplayInLHN, activeTab);
+        const baseFilteredReportIDs = getReportIDsForInboxTab(lhnOrder, activeTab);
         if (activeTab === CONST.INBOX_TAB.ALL || !stickyReportID || stickyReportTab !== activeTab || baseFilteredReportIDs.includes(stickyReportID)) {
             return baseFilteredReportIDs;
         }
@@ -378,21 +365,17 @@ function SidebarOrderedReportsContextProvider({
         }
         const baseSet = new Set(baseFilteredReportIDs);
         return orderedReportIDs.filter((reportID) => baseSet.has(reportID) || reportID === stickyReportID);
-    }, [orderedReportIDs, reportsToDisplayInLHN, activeTab, stickyReportTab, stickyReportID]);
+    }, [lhnOrder, orderedReportIDs, activeTab, stickyReportTab, stickyReportID]);
 
     // Derived from the full "All" set (not the currently filtered view).
-    const {counts: inboxTabCounts, hasStaleUnreadReport} = useMemo(() => SidebarUtils.getInboxTabSummary(orderedReportIDs, reportsToDisplayInLHN), [orderedReportIDs, reportsToDisplayInLHN]);
+    const {counts: inboxTabCounts, hasStaleUnreadReport} = useMemo(() => getInboxTabSummary(lhnOrder), [lhnOrder]);
 
-    // Held in a ref so getReportIDsForTab stays referentially stable (keeping the actions context stable) and only
-    // filters when a bulk tab action actually asks for a tab's reports, rather than on every LHN update.
-    const inboxTabSourcesRef = useRef({orderedReportIDs, reportsToDisplayInLHN});
+    // Held in a ref so getReportIDsForTab stays referentially stable, keeping the actions context stable.
+    const lhnOrderRef = useRef(lhnOrder);
     useEffect(() => {
-        inboxTabSourcesRef.current = {orderedReportIDs, reportsToDisplayInLHN};
-    }, [orderedReportIDs, reportsToDisplayInLHN]);
-    const getReportIDsForTab = useCallback(
-        (tab: ValueOf<typeof CONST.INBOX_TAB>) => SidebarUtils.filterReportsForInboxTab(inboxTabSourcesRef.current.orderedReportIDs, inboxTabSourcesRef.current.reportsToDisplayInLHN, tab),
-        [],
-    );
+        lhnOrderRef.current = lhnOrder;
+    }, [lhnOrder]);
+    const getReportIDsForTab = useCallback((tab: ValueOf<typeof CONST.INBOX_TAB>) => getReportIDsForInboxTab(lhnOrderRef.current, tab), []);
 
     // Get the actual reports based on the filtered IDs
     const getOrderedReports = useCallback(
@@ -432,42 +415,8 @@ function SidebarOrderedReportsContextProvider({
         [activeTab],
     );
 
-    const stateValue: SidebarOrderedReportsStateContextValue = useMemo(() => {
-        // We need to make sure the current report is in the list of reports, but we do not want
-        // to have to re-generate the list every time the currentReportID changes. To do that
-        // we first generate the list as if there was no current report, then we check if
-        // the current report is missing from the list, which should very rarely happen. In this
-        // case we re-generate the list a 2nd time with the current report included.
-
-        // We also execute the following logic if `shouldUseNarrowLayout` is false because this is
-        // requirement for web. Consider a case, where we have report with expenses and we click on
-        // any expense, a new LHN item is added in the list and is visible on web. But on mobile, we
-        // just navigate to the screen with expense details, so there seems no point to execute this logic on mobile.
-        // Only the "All" tab force-regenerates to surface the current report. On the To-do/Unread tabs the
-        // sticky-aware filteredReportIDs already keeps the opened report visible, and re-filtering here
-        // (without the sticky report) would briefly empty the list while opening it.
-        if (
-            activeTab === CONST.INBOX_TAB.ALL &&
-            (!shouldUseNarrowLayout || filteredReportIDs.length === 0) &&
-            derivedCurrentReportID &&
-            derivedCurrentReportID !== '-1' &&
-            filteredReportIDs.indexOf(derivedCurrentReportID) === -1
-        ) {
-            const updatedReportIDs = getOrderedReportIDs();
-            const updatedFilteredIDs = SidebarUtils.filterReportsForInboxTab(updatedReportIDs, reportsToDisplayInLHN, activeTab);
-            const updatedReports = getOrderedReports(updatedFilteredIDs);
-            return {
-                filteredReports: updatedReports,
-                orderedReportIDs: updatedReportIDs,
-                currentReportID: derivedCurrentReportID,
-                chatTabBrickRoad: getChatTabBrickRoad(updatedReportIDs, reportAttributes),
-                activeTab,
-                inboxTabCounts,
-                hasStaleUnreadReport,
-            };
-        }
-
-        return {
+    const stateValue: SidebarOrderedReportsStateContextValue = useMemo(
+        () => ({
             filteredReports,
             orderedReportIDs,
             currentReportID: derivedCurrentReportID,
@@ -475,21 +424,9 @@ function SidebarOrderedReportsContextProvider({
             activeTab,
             inboxTabCounts,
             hasStaleUnreadReport,
-        };
-    }, [
-        getOrderedReportIDs,
-        orderedReportIDs,
-        filteredReportIDs,
-        derivedCurrentReportID,
-        shouldUseNarrowLayout,
-        getOrderedReports,
-        filteredReports,
-        reportAttributes,
-        activeTab,
-        inboxTabCounts,
-        hasStaleUnreadReport,
-        reportsToDisplayInLHN,
-    ]);
+        }),
+        [filteredReports, orderedReportIDs, derivedCurrentReportID, reportAttributes, activeTab, inboxTabCounts, hasStaleUnreadReport],
+    );
 
     const actionsValue: SidebarOrderedReportsActionsContextValue = useMemo(
         () => ({clearLHNCache, setActiveTab, setStickyReportID, getReportIDsForTab}),

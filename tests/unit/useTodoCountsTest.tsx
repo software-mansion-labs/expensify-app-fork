@@ -2,6 +2,7 @@ import {act, renderHook} from '@testing-library/react-native';
 
 import useTodoCounts from '@hooks/useTodoCounts';
 
+import LHNOrderIndex from '@libs/LHNOrderIndex/LHNOrderIndex';
 import {requiresAttentionFromCurrentUser} from '@libs/ReportUtils';
 import SidebarUtils from '@libs/SidebarUtils';
 
@@ -16,6 +17,7 @@ import type {OnyxCollection} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 
 import createMock from '../utils/createMock';
+import {localeCompare} from '../utils/TestHelper';
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
 
 const CURRENT_USER_ACCOUNT_ID = 1;
@@ -701,9 +703,9 @@ describe('useTodoCounts', () => {
                 guideAccountIDs: [],
                 conciergeReportID: undefined,
             });
-            const reportIDs = Object.keys(reportsToDisplay).map((key) => key.replace(ONYXKEYS.COLLECTION.REPORT, ''));
+            const order = new LHNOrderIndex().update({reportsToDisplay, reportAttributes, reportNameValuePairs: {}, draftComments: {}, isInDefaultMode: true, localeCompare});
 
-            return SidebarUtils.filterReportsForInboxTab(reportIDs, reportsToDisplay, CONST.INBOX_TAB.TODO);
+            return order.todoReportIDs;
         };
 
         beforeEach(async () => {

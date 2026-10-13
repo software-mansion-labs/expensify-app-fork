@@ -22,11 +22,8 @@ import waitForBatchedUpdatesWithAct from '../utils/waitForBatchedUpdatesWithAct'
 
 // Mock dependencies
 jest.mock('@libs/SidebarUtils', () => ({
-    sortReportsToDisplayInLHN: jest.fn(),
     getReportsToDisplayInLHN: jest.fn(),
     updateReportsToDisplayInLHN: jest.fn(),
-    filterReportsForInboxTab: jest.fn((reportIDs: string[]) => reportIDs),
-    getInboxTabSummary: jest.fn(() => ({counts: {}, hasStaleUnreadReport: false})),
 }));
 jest.mock('@libs/Navigation/Navigation', () => ({
     getActiveRouteWithoutParams: jest.fn(() => ''),
@@ -36,6 +33,7 @@ jest.mock('@libs/Navigation/Navigation', () => ({
 jest.mock('@libs/ReportUtils', () => ({
     parseReportRouteParams: jest.fn(() => ({reportID: undefined})),
     getReportIDFromLink: jest.fn(() => ''),
+    isArchivedNonExpenseReport: jest.fn(() => false),
 }));
 
 const mockSidebarUtils = jest.mocked(SidebarUtils);
@@ -84,7 +82,6 @@ describe('useSidebarOrderedReports', () => {
         // Default mock implementations
         mockSidebarUtils.getReportsToDisplayInLHN.mockImplementation(() => ({}));
         mockSidebarUtils.updateReportsToDisplayInLHN.mockImplementation(({displayedReports}) => displayedReports);
-        mockSidebarUtils.sortReportsToDisplayInLHN.mockReturnValue([]);
 
         await waitForBatchedUpdatesWithAct();
     });
@@ -143,7 +140,7 @@ describe('useSidebarOrderedReports', () => {
         currentReportIDForTestsValue = '1';
 
         // When the hook is rendered
-        const {rerender} = renderHook(() => useSidebarOrderedReports(), {
+        const {result, rerender} = renderHook(() => useSidebarOrderedReports(), {
             wrapper: TestWrapper,
         });
 
@@ -157,8 +154,7 @@ describe('useSidebarOrderedReports', () => {
         expect(Object.keys(transactionViolations ?? {})).toHaveLength(0);
         expect(Object.keys(draftComments ?? {})).toHaveLength(0);
 
-        // Then the mock calls are cleared
-        mockSidebarUtils.sortReportsToDisplayInLHN.mockClear();
+        const {orderedReportIDs} = result.current;
 
         // When the reports are updated
         const newReportsWithSameContent = createMockReports(reportsContent);
@@ -168,8 +164,8 @@ describe('useSidebarOrderedReports', () => {
 
         await waitForBatchedUpdatesWithAct();
 
-        // Then sortReportsToDisplayInLHN should not be called again since deep comparison shows no change
-        expect(mockSidebarUtils.sortReportsToDisplayInLHN).not.toHaveBeenCalled();
+        // Then the order keeps its identity, because the displayed reports did not change
+        expect(result.current.orderedReportIDs).toBe(orderedReportIDs);
     });
 
     it('should trigger re-render when reports content actually changes', async () => {
@@ -200,14 +196,11 @@ describe('useSidebarOrderedReports', () => {
         mockSidebarUtils.getReportsToDisplayInLHN.mockReturnValue(initialReports);
 
         // When the hook is rendered
-        const {rerender} = renderHook(() => useSidebarOrderedReports(), {
+        const {result, rerender} = renderHook(() => useSidebarOrderedReports(), {
             wrapper: TestWrapper,
         });
 
         await waitForBatchedUpdatesWithAct();
-
-        // Then the mock calls are cleared
-        mockSidebarUtils.sortReportsToDisplayInLHN.mockClear();
 
         // When the mocks are updated to reflect the new content
         // getReportsToDisplayInLHN covers the full-scan path; updateReportsToDisplayInLHN covers
@@ -224,15 +217,8 @@ describe('useSidebarOrderedReports', () => {
 
         await waitForBatchedUpdatesWithAct();
 
-        // Then sortReportsToDisplayInLHN should be called with the updated reports
-        expect(mockSidebarUtils.sortReportsToDisplayInLHN).toHaveBeenCalledWith(
-            updatedReports,
-            expect.any(String), // priorityMode
-            expect.any(Function), // localeCompare
-            expect.any(Object), // reportsDrafts
-            expect.any(Object), // reportNameValuePairs
-            expect.anything(), // reportAttributes
-        );
+        // Then the order holds the updated reports, by name in the focus mode
+        expect(result.current.orderedReportIDs).toEqual(['1', '2', '3']);
     });
 
     it('should handle empty reports correctly with deep comparison', async () => {
@@ -240,14 +226,12 @@ describe('useSidebarOrderedReports', () => {
         mockSidebarUtils.getReportsToDisplayInLHN.mockReturnValue({});
 
         // When the hook is rendered
-        const {rerender} = renderHook(() => useSidebarOrderedReports(), {
+        const {result, rerender} = renderHook(() => useSidebarOrderedReports(), {
             wrapper: TestWrapper,
         });
 
         await waitForBatchedUpdatesWithAct();
-
-        // Then the mock calls are cleared
-        mockSidebarUtils.sortReportsToDisplayInLHN.mockClear();
+        const {orderedReportIDs} = result.current;
 
         // When the mock is updated
         mockSidebarUtils.getReportsToDisplayInLHN.mockReturnValue({});
@@ -256,8 +240,9 @@ describe('useSidebarOrderedReports', () => {
 
         await waitForBatchedUpdatesWithAct();
 
-        // Then sortReportsToDisplayInLHN should not be called again since reports are empty
-        expect(mockSidebarUtils.sortReportsToDisplayInLHN).not.toHaveBeenCalled();
+        // Then the empty order keeps its identity
+        expect(result.current.orderedReportIDs).toEqual([]);
+        expect(result.current.orderedReportIDs).toBe(orderedReportIDs);
     });
 
     it('should maintain referential stability across multiple renders with same content', async () => {
@@ -269,14 +254,14 @@ describe('useSidebarOrderedReports', () => {
         // When the initial reports are set
         const initialReports = createMockReports(reportsContent);
         mockSidebarUtils.getReportsToDisplayInLHN.mockReturnValue(initialReports);
-        mockSidebarUtils.sortReportsToDisplayInLHN.mockReturnValue(['1']);
         currentReportIDForTestsValue = '1';
 
-        const {rerender} = renderHook(() => useSidebarOrderedReports(), {
+        const {result, rerender} = renderHook(() => useSidebarOrderedReports(), {
             wrapper: TestWrapper,
         });
 
         await waitForBatchedUpdatesWithAct();
+        const {orderedReportIDs} = result.current;
 
         // When the mock is updated
         const newReportsWithSameContent = createMockReports(reportsContent);
@@ -294,29 +279,30 @@ describe('useSidebarOrderedReports', () => {
         await waitForBatchedUpdatesWithAct();
         currentReportIDForTestsValue = '3';
 
-        // Then sortReportsToDisplayInLHN should be called only once (initial render)
-        expect(mockSidebarUtils.sortReportsToDisplayInLHN).toHaveBeenCalledTimes(1);
+        // Then the order built on the initial render is kept
+        expect(result.current.orderedReportIDs).toEqual(['1']);
+        expect(result.current.orderedReportIDs).toBe(orderedReportIDs);
     });
 
     it('should handle priority mode changes correctly with deep comparison', async () => {
         // Given the initial reports are set
         const reports = createMockReports({
             report1: {reportName: 'Chat A'},
-            report2: {reportName: 'Chat B'},
+            report2: {reportName: 'Chat B', lastVisibleActionCreated: '2024-01-02 10:00:00'},
         });
 
         mockSidebarUtils.getReportsToDisplayInLHN.mockReturnValue(reports);
         currentReportIDForTestsValue = '1';
 
         // When the hook is rendered
-        const {rerender} = renderHook(() => useSidebarOrderedReports(), {
+        const {result, rerender} = renderHook(() => useSidebarOrderedReports(), {
             wrapper: TestWrapper,
         });
 
         await waitForBatchedUpdatesWithAct();
 
-        // Then the mock calls are cleared
-        mockSidebarUtils.sortReportsToDisplayInLHN.mockClear();
+        // Then the most recent report comes first
+        expect(result.current.orderedReportIDs).toEqual(['2', '1']);
         currentReportIDForTestsValue = '2';
 
         // When the priority mode is changed
@@ -330,8 +316,8 @@ describe('useSidebarOrderedReports', () => {
 
         await waitForBatchedUpdatesWithAct();
 
-        // Then sortReportsToDisplayInLHN should be called when priority mode changes
-        expect(mockSidebarUtils.sortReportsToDisplayInLHN).toHaveBeenCalled();
+        // Then the same reports are ordered by name, although the displayed set did not change
+        expect(result.current.orderedReportIDs).toEqual(['1', '2']);
     });
 
     it('should recompute all reports when guide accountIDs hydrate and guide emails become available', async () => {

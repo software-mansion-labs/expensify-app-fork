@@ -30,12 +30,9 @@ import type {Locale as DateFnsLocale} from 'date-fns';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 
-import {startOfDay, subMonths} from 'date-fns';
-
 import type {OptionData} from './ReportUtils';
 
 import {isAnonymousUser} from './actions/Session';
-import DateUtils from './DateUtils';
 import Log from './Log';
 import {shouldUseFullTitleForOption} from './OptionsListUtils';
 import {getPersonalDetailsForAccountIDs} from './PersonalDetailsUtils';
@@ -58,7 +55,6 @@ import {
     getViolatingReportIDForRBRInLHN,
     hasExpensifyGuidesEmails,
     hasReportErrorsOtherThanFailedReceipt,
-    isArchivedNonExpenseReport,
     isArchivedReport,
     isChatRoom,
     isChatThread,
@@ -84,58 +80,11 @@ import {
     shouldReportShowSubscript,
 } from './ReportUtils';
 
-function compareStringDates(a: string, b: string): 0 | 1 | -1 {
-    if (a < b) {
-        return -1;
-    }
-    if (a > b) {
-        return 1;
-    }
-    return 0;
-}
-
-const NUMERIC_PAD_WIDTH = 15;
-const DIGIT_SEQUENCE = /\d+/g;
-
-/**
- * Persists across renders so sort keys are computed at most once per unique display name.
- */
-const sortKeyCache = new Map<string, string>();
-
 /**
  * Reports already reported by the `[ChatReportLHN]` diagnostic log, so a stuck row is logged once per session
  * instead of on every LHN recompute.
  */
 const loggedChatReportIDs = new Set<string>();
-
-/**
- * Builds a normalized sort key for fast string comparison using plain < / > operators.
- * Lowercases the name and zero-pads numeric segments ("Report 2" → "report 000000000000002")
- * so that numeric ordering is preserved without Intl.Collator.
- *
- * Results are cached at module level so each unique name pays the cost only once.
- */
-function buildSortKey(displayName: string): string {
-    const cached = sortKeyCache.get(displayName);
-    if (cached !== undefined) {
-        return cached;
-    }
-
-    const key = displayName.toLowerCase().replaceAll(DIGIT_SEQUENCE, (match) => match.padStart(NUMERIC_PAD_WIDTH, '0'));
-    sortKeyCache.set(displayName, key);
-    return key;
-}
-
-/**
- * A mini report object that contains only the necessary information to sort reports.
- * This is used to avoid copying the entire report object and only the necessary information.
- */
-type MiniReport = {
-    reportID?: string;
-    displayName: string;
-    sortKey: string;
-    lastVisibleActionCreated?: string;
-};
 
 type ShouldDisplayReportInLHNParams = {
     report: Report;
@@ -487,206 +436,6 @@ function updateReportsToDisplayInLHN({
     lastReportsToDisplayInLHN = displayedReportsCopy ?? displayedReports;
     return lastReportsToDisplayInLHN;
 }
-/**
- * Categorizes reports into their respective LHN groups
- */
-function categorizeReportsForLHN(
-    reportsToDisplay: ReportsToDisplayInLHN,
-    reportsDrafts: Record<string, boolean> | undefined,
-    reportAttributes: ReportAttributesDerivedValue['reports'] | undefined,
-    reportNameValuePairs?: OnyxCollection<ReportNameValuePairs>,
-) {
-    sortKeyCache.clear();
-
-    const pinnedAndGBRReports: MiniReport[] = [];
-    const errorReports: MiniReport[] = [];
-    const draftReports: MiniReport[] = [];
-    const nonArchivedReports: MiniReport[] = [];
-    const archivedReports: MiniReport[] = [];
-
-    for (const report of Object.values(reportsToDisplay)) {
-        if (!report) {
-            continue;
-        }
-
-        const reportID = report.reportID;
-        const displayName = getReportName(report, reportAttributes?.[report.reportID]?.reportName);
-        const miniReport: MiniReport = {
-            reportID,
-            displayName,
-            sortKey: buildSortKey(displayName),
-            lastVisibleActionCreated: report.lastVisibleActionCreated,
-        };
-
-        const isPinned = !!report.isPinned;
-        const requiresAttention = !!report?.requiresAttention;
-
-        if (isPinned || requiresAttention) {
-            pinnedAndGBRReports.push(miniReport);
-            continue;
-        }
-
-        const reportNameValuePairsKey = `${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${reportID}`;
-        const rNVPs = reportNameValuePairs?.[reportNameValuePairsKey];
-        const isArchived = isArchivedNonExpenseReport(report, !!rNVPs?.private_isArchived);
-        const hasErrors = !!report.hasErrorsOtherThanFailedReceipt && !isArchived;
-
-        if (hasErrors) {
-            errorReports.push(miniReport);
-        } else if (reportsDrafts?.[reportID]) {
-            draftReports.push(miniReport);
-        } else if (isArchived) {
-            archivedReports.push(miniReport);
-        } else {
-            nonArchivedReports.push(miniReport);
-        }
-    }
-
-    return {
-        pinnedAndGBRReports,
-        errorReports,
-        draftReports,
-        nonArchivedReports,
-        archivedReports,
-    };
-}
-
-/**
- * Sorts categorized reports and returns new sorted arrays (pure function).
- * This function does not mutate the input and returns new arrays for better testability.
- */
-function sortCategorizedReports(
-    categories: {
-        pinnedAndGBRReports: MiniReport[];
-        errorReports: MiniReport[];
-        draftReports: MiniReport[];
-        nonArchivedReports: MiniReport[];
-        archivedReports: MiniReport[];
-    },
-    isInDefaultMode: boolean,
-    localeCompare: LocaleContextProps['localeCompare'],
-): {
-    pinnedAndGBRReports: MiniReport[];
-    errorReports: MiniReport[];
-    draftReports: MiniReport[];
-    nonArchivedReports: MiniReport[];
-    archivedReports: MiniReport[];
-} {
-    const {pinnedAndGBRReports, errorReports, draftReports, nonArchivedReports, archivedReports} = categories;
-
-    const compareDisplayNames = (a: MiniReport, b: MiniReport) => {
-        if (a.sortKey < b.sortKey) {
-            return -1;
-        }
-        if (a.sortKey > b.sortKey) {
-            return 1;
-        }
-        if (!a.displayName || !b.displayName) {
-            return 0;
-        }
-        // Sort keys tied — fall back to Collator for locale-correct ordering
-        return localeCompare(a.displayName, b.displayName);
-    };
-
-    const compareDatesDesc = (a: MiniReport, b: MiniReport) =>
-        a?.lastVisibleActionCreated && b?.lastVisibleActionCreated ? compareStringDates(b.lastVisibleActionCreated, a.lastVisibleActionCreated) : 0;
-
-    const compareNonArchivedDefault = (a: MiniReport, b: MiniReport) => {
-        const compareDates = compareDatesDesc(a, b);
-        return compareDates !== 0 ? compareDates : compareDisplayNames(a, b);
-    };
-
-    const sortIfNeeded = <T>(arr: T[], compareFn: (a: T, b: T) => number): T[] => (arr.length < 2 ? arr : arr.sort(compareFn));
-
-    // Sort each group of reports accordingly
-    const sortedPinnedAndGBRReports = sortIfNeeded(pinnedAndGBRReports, compareDisplayNames);
-    const sortedErrorReports = sortIfNeeded(errorReports, compareDisplayNames);
-    const sortedDraftReports = sortIfNeeded(draftReports, compareDisplayNames);
-
-    let sortedNonArchivedReports: MiniReport[];
-    let sortedArchivedReports: MiniReport[];
-
-    if (isInDefaultMode) {
-        sortedNonArchivedReports = sortIfNeeded(nonArchivedReports, compareNonArchivedDefault);
-        sortedArchivedReports = sortIfNeeded(archivedReports, compareDatesDesc);
-    } else {
-        sortedNonArchivedReports = sortIfNeeded(nonArchivedReports, compareDisplayNames);
-        sortedArchivedReports = sortIfNeeded(archivedReports, compareDisplayNames);
-    }
-
-    return {
-        pinnedAndGBRReports: sortedPinnedAndGBRReports,
-        errorReports: sortedErrorReports,
-        draftReports: sortedDraftReports,
-        nonArchivedReports: sortedNonArchivedReports,
-        archivedReports: sortedArchivedReports,
-    };
-}
-
-/**
- * Combines sorted report categories and extracts report IDs
- */
-function combineReportCategories(
-    pinnedAndGBRReports: MiniReport[],
-    errorReports: MiniReport[],
-    draftReports: MiniReport[],
-    nonArchivedReports: MiniReport[],
-    archivedReports: MiniReport[],
-): string[] {
-    const result: string[] = [];
-    const groups = [pinnedAndGBRReports, errorReports, draftReports, nonArchivedReports, archivedReports];
-    for (const group of groups) {
-        for (const report of group) {
-            if (report?.reportID) {
-                result.push(report.reportID);
-            }
-        }
-    }
-    return result;
-}
-
-/**
- * @returns An array of reportIDs sorted in the proper order
- */
-function sortReportsToDisplayInLHN(
-    reportsToDisplay: ReportsToDisplayInLHN,
-    priorityMode: OnyxEntry<PriorityMode>,
-    localeCompare: LocaleContextProps['localeCompare'],
-    reportsDrafts: Record<string, boolean> | undefined,
-    reportNameValuePairs: OnyxCollection<ReportNameValuePairs> | undefined,
-    reportAttributes: ReportAttributesDerivedValue['reports'] | undefined,
-): string[] {
-    const isInFocusMode = priorityMode === CONST.PRIORITY_MODE.GSD;
-    const isInDefaultMode = !isInFocusMode;
-    // The LHN is split into five distinct groups, and each group is sorted a little differently. The groups will ALWAYS be in this order:
-    // 1. Pinned/GBR - Always sorted by reportDisplayName
-    // 2. Error reports - Always sorted by reportDisplayName
-    // 3. Drafts - Always sorted by reportDisplayName
-    // 4. Non-archived reports and settled IOUs
-    //      - Sorted by lastVisibleActionCreated in default (most recent) view mode
-    //      - Sorted by reportDisplayName in GSD (focus) view mode
-    // 5. Archived reports
-    //      - Sorted by lastVisibleActionCreated in default (most recent) view mode
-    //      - Sorted by reportDisplayName in GSD (focus) view mode
-
-    // Step 1: Categorize reports
-    const categories = categorizeReportsForLHN(reportsToDisplay, reportsDrafts, reportAttributes, reportNameValuePairs);
-
-    // Step 2: Sort each category
-    const sortedCategories = sortCategorizedReports(categories, isInDefaultMode, localeCompare);
-
-    // Step 3: Combine and extract IDs
-    const result = combineReportCategories(
-        sortedCategories.pinnedAndGBRReports,
-        sortedCategories.errorReports,
-        sortedCategories.draftReports,
-        sortedCategories.nonArchivedReports,
-        sortedCategories.archivedReports,
-    );
-
-    return result;
-}
-
 type ReasonAndReportActionThatHasRedBrickRoad = {
     reason: ValueOf<typeof CONST.RBR_REASONS>;
     reportAction?: OnyxEntry<ReportAction>;
@@ -1052,92 +801,13 @@ function getIsUnreadReportForInboxTab(report: Report, isReportArchived: boolean,
     );
 }
 
-/** Whether a report belongs in the "To-do" Inbox tab: it has an outstanding GBR (requiresAttention) or RBR (errors). */
-function getIsTodoReportForInboxTab(report: ReportsToDisplayInLHN[string]): boolean {
-    return !!report.requiresAttention || !!report.hasErrorsOtherThanFailedReceipt;
-}
-
-/**
- * Filters the already-ordered LHN report IDs down to the ones that belong to the active Inbox tab.
- * The "All" tab returns everything (and still honors Most Recent / Focus mode upstream); the other
- * tabs narrow that same set to reports requiring action (To-do) or with unread messages (Unread).
- */
-function filterReportsForInboxTab(reportIDs: string[], reportsToDisplay: ReportsToDisplayInLHN, activeTab: ValueOf<typeof CONST.INBOX_TAB>): string[] {
-    if (activeTab === CONST.INBOX_TAB.ALL) {
-        return reportIDs;
-    }
-
-    return reportIDs.filter((reportID) => {
-        const report = reportsToDisplay[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-        if (!report) {
-            return false;
-        }
-
-        switch (activeTab) {
-            case CONST.INBOX_TAB.TODO:
-                return getIsTodoReportForInboxTab(report);
-            case CONST.INBOX_TAB.UNREAD:
-                return !!report.isUnreadReport;
-            default:
-                return true;
-        }
-    });
-}
-
-/**
- * Summarizes the ordered reports for the Inbox tab row: how many fall into the To-do and Unread tabs (for the count
- * badge shown on each), and whether any unread report's newest message is older than CONST.INBOX_TAB_STALE_UNREAD_MONTHS.
- */
-function getInboxTabSummary(
-    reportIDs: string[],
-    reportsToDisplay: ReportsToDisplayInLHN,
-): {counts: Record<typeof CONST.INBOX_TAB.TODO | typeof CONST.INBOX_TAB.UNREAD, number>; hasStaleUnreadReport: boolean} {
-    const staleUnreadTime = DateUtils.getDBTime(subMonths(startOfDay(new Date()), CONST.INBOX_TAB_STALE_UNREAD_MONTHS).valueOf());
-    let todoCount = 0;
-    let unreadCount = 0;
-    let hasStaleUnreadReport = false;
-
-    for (const reportID of reportIDs) {
-        const report = reportsToDisplay[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-        if (!report) {
-            continue;
-        }
-        if (getIsTodoReportForInboxTab(report)) {
-            todoCount++;
-        }
-        if (report.isUnreadReport) {
-            unreadCount++;
-            hasStaleUnreadReport = hasStaleUnreadReport || (report.lastVisibleActionCreated ?? '') < staleUnreadTime;
-        }
-    }
-
-    return {
-        counts: {
-            [CONST.INBOX_TAB.TODO]: todoCount,
-            [CONST.INBOX_TAB.UNREAD]: unreadCount,
-        },
-        hasStaleUnreadReport,
-    };
-}
-
 export {getLHNUnreadState};
-
-// Exported for unit testing only. Do not use directly in production code.
-export {
-    categorizeReportsForLHN as _categorizeReportsForLHN,
-    sortCategorizedReports as _sortCategorizedReports,
-    combineReportCategories as _combineReportCategories,
-    buildSortKey as _buildSortKey,
-};
 
 export default {
     getOptionData,
-    sortReportsToDisplayInLHN,
     getWelcomeMessage,
     getReasonAndReportActionThatHasRedBrickRoad,
     getReportsToDisplayInLHN,
     updateReportsToDisplayInLHN,
     shouldDisplayReportInLHN,
-    filterReportsForInboxTab,
-    getInboxTabSummary,
 };
