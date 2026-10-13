@@ -272,31 +272,37 @@ const deprecatedLastReportActions: ReportActions = {};
 const deprecatedAllSortedReportActions: Record<string, ReportAction[]> = {};
 /** @deprecated Use sortedReportActionsData from ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS instead. Will be removed once all flows are migrated. */
 const deprecatedCachedOneTransactionThreadReportIDs: Record<string, string | undefined> = {};
-/** @deprecated Use sortedReportActionsData from ONYXKEYS.DERIVED.RAM_ONLY_SORTED_REPORT_ACTIONS instead. Will be removed once all flows are migrated. */
-let deprecatedAllReportActions: OnyxCollection<ReportActions>;
 
-/** The inputs a report's deprecated cache entries were computed from, so a write recomputes only the reports whose inputs changed. */
+/**
+ * The inputs a report's deprecated cache entries were computed from, with the Onyx keys they were read at, so a write
+ * checks an unchanged report without building any key.
+ */
 type SortedReportActionsInputs = {
     reportActions: OnyxEntry<ReportActions>;
-    transactionThreadReportActions: OnyxEntry<ReportActions>;
+    reportKey: string;
     report: OnyxEntry<Report>;
+    chatReportKey: string;
     chatReport: OnyxEntry<Report>;
+    transactionThreadReportActionsKey: string | undefined;
+    transactionThreadReportActions: OnyxEntry<ReportActions>;
     isOffline: boolean;
 };
+/** Keyed by the report actions key, so a write recomputes only the reports whose inputs changed. */
 const sortedReportActionsInputs: Record<string, SortedReportActionsInputs> = {};
 
-function getTransactionThreadReportActions(allReportActions: OnyxCollection<ReportActions>, transactionThreadReportID: string | undefined): OnyxEntry<ReportActions> {
-    return transactionThreadReportID ? allReportActions?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}`] : undefined;
-}
-
-function areSortedReportActionsInputsUnchanged(previousInputs: SortedReportActionsInputs | undefined, inputs: SortedReportActionsInputs): boolean {
+function areSortedReportActionsInputsUnchanged(
+    inputs: SortedReportActionsInputs | undefined,
+    allReportActions: OnyxCollection<ReportActions>,
+    reportActionsKey: string,
+    isOffline: boolean,
+): boolean {
     return (
-        !!previousInputs &&
-        previousInputs.reportActions === inputs.reportActions &&
-        previousInputs.transactionThreadReportActions === inputs.transactionThreadReportActions &&
-        previousInputs.report === inputs.report &&
-        previousInputs.chatReport === inputs.chatReport &&
-        previousInputs.isOffline === inputs.isOffline
+        !!inputs &&
+        inputs.reportActions === allReportActions?.[reportActionsKey] &&
+        inputs.isOffline === isOffline &&
+        inputs.report === allReports?.[inputs.reportKey] &&
+        inputs.chatReport === allReports?.[inputs.chatReportKey] &&
+        inputs.transactionThreadReportActions === (inputs.transactionThreadReportActionsKey ? allReportActions?.[inputs.transactionThreadReportActionsKey] : undefined)
     );
 }
 
@@ -308,34 +314,27 @@ Onyx.connectWithoutView({
         if (!actions) {
             return;
         }
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        deprecatedAllReportActions = actions ?? {};
         const isOffline = getIsOffline();
 
         // Iterate over the report actions to build the sorted report actions objects
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        for (const reportActions of Object.entries(deprecatedAllReportActions)) {
-            const reportID = reportActions[0].split('_').at(1);
+        for (const reportActionsKey of Object.keys(actions)) {
+            // The entries depend only on these inputs, so a report whose inputs did not change keeps its entries.
+            if (areSortedReportActionsInputsUnchanged(sortedReportActionsInputs[reportActionsKey], actions, reportActionsKey, isOffline)) {
+                continue;
+            }
+
+            const reportID = reportActionsKey.split('_').at(1);
             if (!reportID) {
                 continue;
             }
 
-            const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`];
-            const chatReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`];
-            const inputs: SortedReportActionsInputs = {
-                reportActions: reportActions[1],
-                // eslint-disable-next-line @typescript-eslint/no-deprecated
-                transactionThreadReportActions: getTransactionThreadReportActions(actions, deprecatedCachedOneTransactionThreadReportIDs[reportID]),
-                report,
-                chatReport,
-                isOffline,
-            };
-            // The entries depend only on these inputs, so a report whose inputs did not change keeps its entries.
-            if (areSortedReportActionsInputsUnchanged(sortedReportActionsInputs[reportID], inputs)) {
-                continue;
-            }
+            const reportActions = actions[reportActionsKey];
+            const reportKey = `${ONYXKEYS.COLLECTION.REPORT}${reportID}`;
+            const report = allReports?.[reportKey];
+            const chatReportKey = `${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`;
+            const chatReport = allReports?.[chatReportKey];
 
-            const reportActionsArray = Object.values(reportActions[1] ?? {});
+            const reportActionsArray = Object.values(reportActions ?? {});
             let sortedReportActions = getSortedReportActions(withDEWRoutedActionsArray(reportActionsArray), true);
             // eslint-disable-next-line @typescript-eslint/no-deprecated
             deprecatedAllSortedReportActions[reportID] = sortedReportActions;
@@ -343,11 +342,21 @@ Onyx.connectWithoutView({
             // If the report is a one-transaction report, we need to return the combined reportActions so that the LHN can display modifications
             // to the transaction thread or the report itself.
             // Cache the result for O(1) lookup in renderItem.
-            const transactionThreadReportID = getOneTransactionThreadReportID(report, chatReport, reportActions[1], isOffline);
+            const transactionThreadReportID = getOneTransactionThreadReportID(report, chatReport, reportActions, isOffline);
             // eslint-disable-next-line @typescript-eslint/no-deprecated
             deprecatedCachedOneTransactionThreadReportIDs[reportID] = transactionThreadReportID;
-            const transactionThreadReportActions = getTransactionThreadReportActions(actions, transactionThreadReportID);
-            sortedReportActionsInputs[reportID] = {...inputs, transactionThreadReportActions};
+            const transactionThreadReportActionsKey = transactionThreadReportID ? `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transactionThreadReportID}` : undefined;
+            const transactionThreadReportActions = transactionThreadReportActionsKey ? actions[transactionThreadReportActionsKey] : undefined;
+            sortedReportActionsInputs[reportActionsKey] = {
+                reportActions,
+                reportKey,
+                report,
+                chatReportKey,
+                chatReport,
+                transactionThreadReportActionsKey,
+                transactionThreadReportActions,
+                isOffline,
+            };
 
             if (transactionThreadReportID) {
                 const transactionThreadReportActionsArray = Object.values(transactionThreadReportActions ?? {});
