@@ -284,6 +284,39 @@ function getLHNUnreadState(reportID: string): LHNUnreadState {
     return readLHNUnreadState(reportID);
 }
 
+type LHNEntry = ReportsToDisplayInLHN[string];
+
+type LHNEntryFlags = Pick<LHNEntry, 'requiresAttention' | 'hasErrorsOtherThanFailedReceipt' | 'isUnreadReport'>;
+
+/** The report each flagged LHN entry was copied from, so a rebuild can tell whether the copy is still current. */
+const flaggedLHNEntrySources = new WeakMap<LHNEntry, Report>();
+
+/**
+ * Returns the LHN entry for a displayed report: the report itself when it has no flags, or a copy carrying the flags.
+ * The existing entry is returned as is when it still matches, so an unchanged report keeps its identity across rebuilds.
+ */
+function getLHNEntry(report: Report, flags: LHNEntryFlags, existingEntry: LHNEntry | undefined): LHNEntry {
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    const hasFlags = flags.requiresAttention || flags.hasErrorsOtherThanFailedReceipt || flags.isUnreadReport;
+    if (!hasFlags) {
+        return report;
+    }
+
+    if (
+        existingEntry &&
+        flaggedLHNEntrySources.get(existingEntry) === report &&
+        existingEntry.requiresAttention === flags.requiresAttention &&
+        existingEntry.hasErrorsOtherThanFailedReceipt === flags.hasErrorsOtherThanFailedReceipt &&
+        existingEntry.isUnreadReport === flags.isUnreadReport
+    ) {
+        return existingEntry;
+    }
+
+    const entry = {...report, ...flags};
+    flaggedLHNEntrySources.set(entry, report);
+    return entry;
+}
+
 function getReportsToDisplayInLHN({
     currentReportId,
     reports,
@@ -350,8 +383,7 @@ function getReportsToDisplayInLHN({
         if (shouldDisplay) {
             const requiresAttention = reportAttributes?.[report?.reportID]?.requiresAttention ?? false;
             const isUnreadReport = getIsUnreadReportForInboxTab(report, isReportArchived, reportAttributes?.[report?.reportID]?.isEmpty);
-            reportsToDisplay[reportID] =
-                requiresAttention || hasErrorsOtherThanFailedReceipt || isUnreadReport ? {...report, requiresAttention, hasErrorsOtherThanFailedReceipt, isUnreadReport} : report;
+            reportsToDisplay[reportID] = getLHNEntry(report, {requiresAttention, hasErrorsOtherThanFailedReceipt, isUnreadReport}, undefined);
         }
     }
 
@@ -442,21 +474,10 @@ function updateReportsToDisplayInLHN({
         if (shouldDisplay) {
             const requiresAttention = reportAttributes?.[report?.reportID]?.requiresAttention ?? false;
             const isUnreadReport = getIsUnreadReportForInboxTab(report, isReportArchived, reportAttributes?.[report?.reportID]?.isEmpty);
-            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-            const hasFlags = requiresAttention || hasErrorsOtherThanFailedReceipt || isUnreadReport;
             const existingEntry = displayedReports[reportID];
-
-            if (hasFlags) {
-                if (
-                    existingEntry !== report ||
-                    existingEntry?.requiresAttention !== requiresAttention ||
-                    existingEntry?.hasErrorsOtherThanFailedReceipt !== hasErrorsOtherThanFailedReceipt ||
-                    existingEntry?.isUnreadReport !== isUnreadReport
-                ) {
-                    getMutableCopy()[reportID] = {...report, requiresAttention, hasErrorsOtherThanFailedReceipt, isUnreadReport};
-                }
-            } else if (existingEntry !== report) {
-                getMutableCopy()[reportID] = report;
+            const entry = getLHNEntry(report, {requiresAttention, hasErrorsOtherThanFailedReceipt, isUnreadReport}, existingEntry);
+            if (entry !== existingEntry) {
+                getMutableCopy()[reportID] = entry;
             }
         } else if (reportID in displayedReports) {
             delete getMutableCopy()[reportID];

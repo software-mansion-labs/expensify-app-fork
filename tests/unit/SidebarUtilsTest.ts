@@ -26,7 +26,7 @@ import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Policy, Report, ReportAction, ReportActions, Transaction, TransactionViolation} from '@src/types/onyx';
-import type {ReportAttributes} from '@src/types/onyx/DerivedValues';
+import type {ReportAttributes, ReportAttributesDerivedValue} from '@src/types/onyx/DerivedValues';
 import type {ReportCollectionDataSet} from '@src/types/onyx/Report';
 import type {TransactionViolationsCollectionDataSet} from '@src/types/onyx/TransactionViolation';
 
@@ -4559,6 +4559,93 @@ describe('SidebarUtils', () => {
 
                 expect(result).not.toBe(displayedReports);
                 expect(result['0']).toBeUndefined();
+            });
+
+            describe('flagged entries', () => {
+                const reportKey = `${ONYXKEYS.COLLECTION.REPORT}1`;
+                const createAttributes = (requiresAttention: boolean): ReportAttributesDerivedValue['reports'] => ({
+                    '1': {reportName: 'Report 1', isEmpty: false, brickRoadStatus: undefined, requiresAttention, reportErrors: {}},
+                });
+                const buildDisplayedReports = (report: Report, reportAttributes: ReportAttributesDerivedValue['reports']) =>
+                    SidebarUtils.getReportsToDisplayInLHN({
+                        currentReportId: '1',
+                        reports: {[reportKey]: report},
+                        isDefaultRoomsBetaEnabled: false,
+                        priorityMode: CONST.PRIORITY_MODE.DEFAULT,
+                        draftComments: {},
+                        transactionViolations: {},
+                        transactions: {},
+                        isOffline: false,
+                        currentUserLogin: CURRENT_USER_LOGIN,
+                        currentUserAccountID: CURRENT_USER_ACCOUNT_ID,
+                        reportNameValuePairs: {},
+                        reportAttributes,
+                        guideAccountIDs: [],
+                        conciergeReportID: undefined,
+                    });
+                const recheckReport = (displayedReports: ReportsToDisplayInLHN, report: Report, reportAttributes: ReportAttributesDerivedValue['reports']) =>
+                    SidebarUtils.updateReportsToDisplayInLHN({
+                        displayedReports,
+                        reports: {[reportKey]: report},
+                        updatedReportsKeys: [reportKey],
+                        currentReportId: '1',
+                        isInFocusMode: false,
+                        isDefaultRoomsBetaEnabled: false,
+                        transactions: {},
+                        transactionViolations: {},
+                        reportNameValuePairs: {},
+                        reportAttributes,
+                        draftComments: {},
+                        isOffline: false,
+                        currentUserLogin: CURRENT_USER_LOGIN,
+                        currentUserAccountID: CURRENT_USER_ACCOUNT_ID,
+                        guideAccountIDs: [],
+                        conciergeReportID: undefined,
+                    });
+
+                it('should keep a flagged entry when neither its report nor its flags change', () => {
+                    // Given a report that needs attention, so the LHN stores it as a copy carrying the flag
+                    const report: Report = {...createRandomReport(1, undefined), reportID: '1', type: CONST.REPORT.TYPE.CHAT};
+                    const reportAttributes = createAttributes(true);
+                    const displayedReports = buildDisplayedReports(report, reportAttributes);
+                    expect(displayedReports[reportKey]).toEqual(expect.objectContaining({requiresAttention: true}));
+
+                    // When the unchanged report is rechecked twice, like the full recheck that follows every write
+                    const firstRecheck = recheckReport(displayedReports, report, reportAttributes);
+                    const secondRecheck = recheckReport(firstRecheck, report, reportAttributes);
+
+                    // Then the copy is reused, so the set keeps its identity and nothing downstream re-sorts
+                    expect(firstRecheck).toBe(displayedReports);
+                    expect(secondRecheck).toBe(displayedReports);
+                });
+
+                it('should replace a flagged entry when its report changes', () => {
+                    // Given a displayed report that needs attention
+                    const report: Report = {...createRandomReport(1, undefined), reportID: '1', type: CONST.REPORT.TYPE.CHAT};
+                    const reportAttributes = createAttributes(true);
+                    const displayedReports = buildDisplayedReports(report, reportAttributes);
+
+                    // When a new version of the report arrives with the same flags
+                    const updatedReport: Report = {...report, reportName: 'Renamed'};
+                    const result = recheckReport(displayedReports, updatedReport, reportAttributes);
+
+                    // Then the entry is rebuilt from the new report and keeps the flag
+                    expect(result).not.toBe(displayedReports);
+                    expect(result[reportKey]).toEqual(expect.objectContaining({reportName: 'Renamed', requiresAttention: true}));
+                });
+
+                it('should replace a flagged entry when its flags change', () => {
+                    // Given a displayed report that needs attention
+                    const report: Report = {...createRandomReport(1, undefined), reportID: '1', type: CONST.REPORT.TYPE.CHAT};
+                    const displayedReports = buildDisplayedReports(report, createAttributes(true));
+
+                    // When the same report no longer needs attention
+                    const result = recheckReport(displayedReports, report, createAttributes(false));
+
+                    // Then the stored entry is no longer the flagged copy
+                    expect(result).not.toBe(displayedReports);
+                    expect(result[reportKey]?.requiresAttention).not.toBe(true);
+                });
             });
         });
 
