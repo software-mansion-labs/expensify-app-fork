@@ -28,6 +28,11 @@ function getPerformanceStartTimeForLog(startTime: StartSpanOptions['startTime'])
     return performanceTimestamp - (Date.now() - epochStartTime);
 }
 
+/** Converts a `performance.now()` timestamp into the Unix seconds Sentry expects, through the same clock offset as the start time. */
+function performanceTimeToSentrySeconds(performanceTimestamp: number): number {
+    return (Date.now() - (performance.now() - performanceTimestamp)) / 1000;
+}
+
 function startSpan(spanId: string, options: StartSpanOptions) {
     if ((AppState.currentState ?? CONST.APP_STATE.ACTIVE) !== CONST.APP_STATE.ACTIVE && !isBenchmarkSpanEnabled(options.name)) {
         return;
@@ -50,14 +55,15 @@ function startSpan(spanId: string, options: StartSpanOptions) {
     return span;
 }
 
-function endSpan(spanId: string) {
+/** Ends the span now, or at `endTime` (a `performance.now()` timestamp) when the end was observed earlier than it is reported. */
+function endSpan(spanId: string, endTime?: number) {
     const entry = activeSpans.get(spanId);
 
     if (!entry) {
         return;
     }
     const {span, spanName, startTimeForLog} = entry;
-    const performanceTimestamp = performance.now();
+    const performanceTimestamp = endTime ?? performance.now();
     const durationMs = Math.round(performanceTimestamp - startTimeForLog);
     const attributes = Sentry.spanToJSON(span).data ?? {};
     console.debug(`[Sentry][${spanId}] Ending span (${durationMs}ms)`, {spanId, durationMs, timestamp: Date.now(), attributes});
@@ -67,7 +73,7 @@ function endSpan(spanId: string) {
     span.setStatus({code: SPAN_STATUS_OK});
 
     span.setAttribute(CONST.TELEMETRY.ATTRIBUTE_FINISHED_MANUALLY, true);
-    span.end();
+    span.end(endTime === undefined ? undefined : performanceTimeToSentrySeconds(endTime));
     activeSpans.delete(spanId);
 }
 
@@ -147,10 +153,23 @@ function getUniqueSpanByPrefix(prefix: string) {
     return uniqueSpan;
 }
 
-function endSpanWithAttributes(spanId: string, attributes: Record<string, SpanAttributeValue | undefined>) {
+function endSpanWithAttributes(spanId: string, attributes: Record<string, SpanAttributeValue | undefined>, endTime?: number) {
     const span = getSpan(spanId);
     span?.setAttributes(attributes);
-    endSpan(spanId);
+    endSpan(spanId, endTime);
 }
 
-export {startSpan, endSpan, endSpanWithAttributes, getSpan, getSpanByPrefix, getUniqueSpanByPrefix, getSpanID, cancelSpan, cancelSpanByInstance, cancelAllSpans, cancelSpansByPrefix};
+export {
+    startSpan,
+    endSpan,
+    performanceTimeToSentrySeconds,
+    endSpanWithAttributes,
+    getSpan,
+    getSpanByPrefix,
+    getUniqueSpanByPrefix,
+    getSpanID,
+    cancelSpan,
+    cancelSpanByInstance,
+    cancelAllSpans,
+    cancelSpansByPrefix,
+};

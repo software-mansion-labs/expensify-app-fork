@@ -50,6 +50,8 @@ import {
     shouldShowMarkAsDone,
 } from '@libs/ReportUtils';
 import markOpenReportEnd from '@libs/telemetry/markOpenReportEnd';
+import {markOpenReportListCommitted, markOpenReportListEffect, markOpenReportListLaidOut} from '@libs/telemetry/openReportSpanVariants';
+import OpenReportListProbe from '@libs/telemetry/openReportSpanVariants/OpenReportListProbe';
 
 import type {ReportsSplitNavigatorParamList} from '@navigation/types';
 
@@ -68,7 +70,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 
 import {useRoute} from '@react-navigation/native';
 import {isTrackIntentUserSelector} from '@selectors/Onboarding';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 
 import CollapsedSystemMessages from './CollapsedSystemMessages';
 import FloatingMessageCounter from './FloatingMessageCounter';
@@ -151,6 +153,14 @@ function ReportActionsListContent({reportID, conciergeChat, onLayout}: ReportAct
     const sessionStartTime = useConciergeSessionStartTime();
 
     const didLayout = useRef(false);
+
+    useLayoutEffect(() => {
+        markOpenReportListCommitted(reportID);
+    }, [reportID]);
+
+    useEffect(() => {
+        markOpenReportListEffect(reportID);
+    }, [reportID]);
 
     useEffect(() => {
         didLayout.current = false;
@@ -560,6 +570,7 @@ function ReportActionsListContent({reportID, conciergeChat, onLayout}: ReportAct
         didLayout.current = true;
 
         markOpenReportEnd(reportID, report, {warm: true});
+        markOpenReportListLaidOut(reportID);
     };
 
     // The guard only mounts this content when the report is loaded, so this is effectively unreachable.
@@ -592,6 +603,7 @@ function ReportActionsListContent({reportID, conciergeChat, onLayout}: ReportAct
                 report={report}
                 isReportArchived={isReportArchived}
             >
+                <OpenReportListProbe reportID={reportID} />
                 <InvertedFlashList
                     accessibilityLabel={translate('sidebarScreen.listOfChatMessages')}
                     ref={listRef}

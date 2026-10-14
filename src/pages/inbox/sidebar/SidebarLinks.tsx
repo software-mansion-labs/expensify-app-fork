@@ -12,6 +12,7 @@ import {setSidebarLoaded} from '@libs/actions/App';
 import Navigation from '@libs/Navigation/Navigation';
 import type {OptionData} from '@libs/ReportUtils';
 import {cancelSpan} from '@libs/telemetry/activeSpans';
+import {cancelOpenReportSpanVariants} from '@libs/telemetry/openReportSpanVariants';
 
 import * as ReportActionContextMenu from '@pages/inbox/report/ContextMenu/ReportActionContextMenu';
 
@@ -70,6 +71,7 @@ function SidebarLinks({insets, optionListItems, hasReportData, priorityMode = CO
 
         if (shouldBlockReportNavigation) {
             cancelSpan(`${CONST.TELEMETRY.SPAN_OPEN_REPORT}_${option.reportID}`);
+            cancelOpenReportSpanVariants(option.reportID);
             return;
         }
         // Keep this report visible in the active To-do/Unread tab even after opening it marks it read.

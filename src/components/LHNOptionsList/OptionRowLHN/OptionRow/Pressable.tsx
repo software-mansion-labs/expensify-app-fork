@@ -16,6 +16,8 @@ import DomUtils from '@libs/DomUtils';
 import ReportActionComposeFocusManager from '@libs/ReportActionComposeFocusManager';
 import type {OptionData} from '@libs/ReportUtils';
 import {startSpan} from '@libs/telemetry/activeSpans';
+import {startOpenReportSpanVariants} from '@libs/telemetry/openReportSpanVariants';
+import OpenReportHighlightProbe from '@libs/telemetry/openReportSpanVariants/OpenReportHighlightProbe';
 
 import {showContextMenu} from '@pages/inbox/report/ContextMenu/ReportActionContextMenu';
 
@@ -100,6 +102,7 @@ function Pressable({optionItem, isOptionFocused, onSelectRow, onLayout, onHoverI
             name: 'OptionRowLHN',
             op: CONST.TELEMETRY.SPAN_OPEN_REPORT,
         });
+        startOpenReportSpanVariants(reportID, event, !shouldUseNarrowLayout);
 
         event?.preventDefault();
         // Enable Composer to focus on clicking the same chat after opening the context menu.
@@ -177,6 +180,12 @@ function Pressable({optionItem, isOptionFocused, onSelectRow, onLayout, onHoverI
                     sentryLabel={CONST.SENTRY_LABEL.LHN.OPTION_ROW}
                 >
                     {children}
+                    {isOptionFocused && (
+                        <OpenReportHighlightProbe
+                            key={reportID}
+                            reportID={reportID}
+                        />
+                    )}
                 </PressableWithSecondaryInteraction>
             )}
         </Hoverable>
