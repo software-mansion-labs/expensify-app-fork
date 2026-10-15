@@ -94,6 +94,12 @@ type ValidateCodePresentationPhase =
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_VALIDATE_CODE
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE;
 
+/** Flow state reported with an exit attempt while an approve or deny is in flight. See `logCancelAttemptDuringReview`. */
+type CancelAttemptState =
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_RESULT
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.DENYING
+    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.CANCELLING;
+
 /** Modal lifecycle state the view layer reads: the machine's three top-level states. */
 type MfaModalState =
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.CLOSED
@@ -223,6 +229,7 @@ type CancelScenarioOutput = MFAError;
 export type {
     AuthorizeInput,
     AuthorizeOutput,
+    CancelAttemptState,
     CancelScenarioInput,
     CancelScenarioOutput,
     CreateCredentialInput,

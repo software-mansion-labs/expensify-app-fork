@@ -16,7 +16,7 @@ import SCREENS from '@src/SCREENS';
 import {CONST as COMMON_CONST} from 'expensify-common';
 import {and, assign, not, setup, stateIn} from 'xstate';
 
-import type {CancelScenarioInput, ExecuteScenarioActionOutput, MfaContext, MfaEvent} from './types';
+import type {CancelAttemptState, CancelScenarioInput, ExecuteScenarioActionOutput, MfaContext, MfaEvent} from './types';
 
 import createActors from './mfaActors';
 
@@ -38,13 +38,10 @@ const CANCEL_CONFIRM_VISIBLE_TARGET = `#${MFA_STATE.CANCEL_CONFIRM_VISIBLE}` as 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
 const SOFT_PROMPT_ACCEPTED_ACTIONS = ['approveSoftPrompt', 'persistSoftPromptAcceptance'] as const;
 
-/** States where an approve or deny from this flow can be in flight, as reported by `logCancelAttemptDuringReview`. */
-type ReviewInFlightState = typeof MFA_STATE.AWAITING_RESULT | typeof MFA_STATE.DENYING | typeof MFA_STATE.CANCELLING;
-
 // Counts an exit attempt while the request runs. Targetless, so the `cancelConfirm` region still handles the
 // same REQUEST_CANCEL. It also makes `snapshot.can({type: 'REQUEST_CANCEL'})` true here even where the dialog
 // won't open, so whether a cancel is possible has to come from `isCancelable`, not from `snapshot.can`.
-function countCancelAttempt(state: ReviewInFlightState) {
+function countCancelAttempt(state: CancelAttemptState) {
     return {guard: 'hasOnCancel', actions: ['countCancelAttemptDuringReview', {type: 'logCancelAttemptDuringReview', params: {state}}]} as const;
 }
 
@@ -169,7 +166,7 @@ const MFAMachine = setup({
         resetCancelAttemptsDuringReview: assign({cancelAttemptsDuringReview: 0}),
         countCancelAttemptDuringReview: assign({cancelAttemptsDuringReview: ({context}) => context.cancelAttemptsDuringReview + 1}),
         // One event per attempt; the count of `attempt: 1` events is the number of waits with at least one attempt.
-        logCancelAttemptDuringReview: ({context}, {state}: {state: ReviewInFlightState}) => {
+        logCancelAttemptDuringReview: ({context}, {state}: {state: CancelAttemptState}) => {
             const data = {scenario: context.scenarioName, state, attempt: context.cancelAttemptsDuringReview};
             addMFABreadcrumb('Cancel requested while a transaction review is in flight', data);
             Log.info('[MFA] Cancel requested while a transaction review is in flight', false, {mfa: data});
