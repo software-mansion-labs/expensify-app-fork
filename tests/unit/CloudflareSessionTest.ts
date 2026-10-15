@@ -168,7 +168,7 @@ describe('refreshCloudflareSession', () => {
         expect(oAuthClient.refreshTokens).not.toHaveBeenCalled();
     });
 
-    it.each(['invalid_grant', 'invalid_response'])('keeps the session and resolves reauth-required on the terminal %s', async (code) => {
+    it.each(['invalid_grant', 'invalid_response'])('forgets the session in this tab but keeps the stored one on the terminal %s', async (code) => {
         // Given a stored session whose refresh the server rejects with a terminal OAuth error (each
         // parametrized code means this refresh token can never succeed again)
         await seedSession(SESSION_A);
@@ -177,9 +177,26 @@ describe('refreshCloudflareSession', () => {
         // When the refresh runs, Then it resolves reauth-required rather than rejecting: only a fresh
         // authorize round trip can recover, so callers must be told to re-auth, not tempted to retry
         await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('reauth-required');
-        // Then the session is deliberately not cleared: the store is shared across tabs and recovery is by
+        // Then this tab stops treating the dead session as a session, so the next sign-in or app load starts that
+        // round trip instead of every request refreshing the spent token and failing before it is sent
+        expect(SessionActions.getCloudflareSession()).toBeNull();
+        // Then the stored session is deliberately not cleared: the store is shared across tabs and recovery is by
         // replacement. A deletion here could destroy a working rotation another tab persisted moments earlier
-        expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
+        const OnyxUtils = require<{default: {get: (key: string) => Promise<unknown>}}>('react-native-onyx/dist/OnyxUtils').default;
+        await expect(OnyxUtils.get(ONYXKEYS.CLOUDFLARE_SESSION)).resolves.toEqual(SESSION_A);
+    });
+
+    it('does not spend the rejected refresh token again on the next refresh', async () => {
+        // Given a session whose refresh token the server already rejected as spent
+        await seedSession(SESSION_A);
+        jest.mocked(oAuthClient.refreshTokens).mockRejectedValue(new oAuthClient.OAuthError('invalid_grant'));
+        await SessionActions.refreshCloudflareSession(SESSION_A.accessToken);
+
+        // When the next request asks for a refresh with the same access token
+        // Then it resolves reauth-required without another network call: the token can never succeed again, and
+        // re-sending it on every request is what turned one expired login into a request that fails forever
+        await expect(SessionActions.refreshCloudflareSession(SESSION_A.accessToken)).resolves.toBe('reauth-required');
+        expect(oAuthClient.refreshTokens).toHaveBeenCalledTimes(1);
     });
 
     it('rethrows transient failures and keeps the session', async () => {
@@ -583,7 +600,7 @@ describe('exchangeCodeForCloudflareSession', () => {
         await Promise.allSettled([completion]);
 
         // Then neither outcome survives the clear. A late session would silently undo it, and a late failure
-        // would make the next probe report that failure instead of redirecting
+        // would make the gate refuse to redirect
         expect(SessionActions.getCloudflareSession()).toBeNull();
         expect(SessionActions.getCloudflareCodeExchangeError()).toBeUndefined();
     });
@@ -627,8 +644,8 @@ describe('exchangeCodeForCloudflareSession', () => {
         // When the session is reset
         await reset();
 
-        // Then the failure is gone with the session.
-        // While a failure is recorded, the probe reports it instead of redirecting unasked
+        // Then the failure is gone with the session. The gate refuses to redirect while it is set, so a stale one
+        // would block the fresh round trip the reset exists to allow
         expect(SessionActions.getCloudflareCodeExchangeError()).toBeUndefined();
     });
 });
@@ -652,6 +669,30 @@ describe('builds without QA auth configured', () => {
         // Then hydration still resolves even though no subscription will ever fire, so no caller can hang on it
         await expect(sessionActions.waitForCloudflareSessionHydration()).resolves.toBeUndefined();
         connectSpy.mockRestore();
+    });
+});
+
+describe('markCloudflareSessionRejected', () => {
+    it('clears the session when the rejected token is still the current one', async () => {
+        // Given a stored session whose access token a freshly refreshed request was still rejected with
+        await seedSession(SESSION_A);
+
+        // When the network layer reports that token as rejected
+        await SessionActions.markCloudflareSessionRejected(SESSION_A.accessToken);
+
+        // Then the dead session is gone, because refresh demonstrably cannot recover it
+        expect(SessionActions.getCloudflareSession()).toBeNull();
+    });
+
+    it('is a no-op when a newer token has already replaced the rejected one', async () => {
+        // Given another tab rotated the session after this caller saw its 401
+        await seedSession(SESSION_B);
+
+        // When the caller reports the token it saw, which is now stale news
+        await SessionActions.markCloudflareSessionRejected(SESSION_A.accessToken);
+
+        // Then the working rotation survives
+        expect(SessionActions.getCloudflareSession()).toEqual(SESSION_B);
     });
 });
 

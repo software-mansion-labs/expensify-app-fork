@@ -29,8 +29,23 @@ type ActiveServerState = {
 // To avoid rebuilding native apps, native apps use production config for both staging and prod
 // We use the async environment check because it works on all platforms
 let envName: ValueOf<typeof CONST.ENVIRONMENT> = CONST.ENVIRONMENT.PRODUCTION;
+let hasResolvedEnvironment = false;
 let storedServer: Server | undefined;
 let hasReadStoredServer = false;
+
+/**
+ * The resolved server is only real once getEnvironment() has resolved AND the first Onyx callback below has
+ * run. A one-shot decision must await this or it reads 'production' on every build, QA included.
+ */
+const {promise: activeServerHydrationPromise, resolve: resolveActiveServerHydration} = Promise.withResolvers<void>();
+
+function hydrateActiveServer() {
+    if (!hasResolvedEnvironment || !hasReadStoredServer) {
+        return;
+    }
+
+    resolveActiveServerHydration();
+}
 
 // Stored verbatim, so the preference and the environment can arrive in either order. Onyx calls back even for
 // an empty key, so the flag means the preference has been read, not that one was set. Since it isn't connected
@@ -40,11 +55,14 @@ Onyx.connectWithoutView({
     callback: (value) => {
         storedServer = value;
         hasReadStoredServer = true;
+        hydrateActiveServer();
     },
 });
 
 getEnvironment().then((value) => {
     envName = value;
+    hasResolvedEnvironment = true;
+    hydrateActiveServer();
 });
 
 /**
@@ -90,9 +108,9 @@ function getCurrentActiveServerState(): ActiveServerState {
  * Get the currently used API endpoint, unless forceProduction is set to true
  * (Non-production environments allow for dynamically switching the API)
  */
-function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request<TKey>, 'shouldUseSecure' | 'shouldSkipWebProxy' | 'command'>>, forceProduction = false): string {
+function getApiRoot<TKey extends OnyxKey = never>(request?: Partial<Pick<Request<TKey>, 'shouldUseSecure' | 'shouldSkipWebProxy' | 'command' | 'server'>>, forceProduction = false): string {
     const shouldUseSecure = request?.shouldUseSecure ?? false;
-    const server = forceProduction ? CONST.SERVER.PRODUCTION : getCurrentActiveServerState().activeServer;
+    const server = forceProduction ? CONST.SERVER.PRODUCTION : (request?.server ?? getCurrentActiveServerState().activeServer);
 
     if (server === CONST.SERVER.QA) {
         // No web-proxy branch: Cloudflare Access answers the preflight and matches the bearer against the
@@ -136,5 +154,9 @@ function getActiveServer(): Server {
     return getCurrentActiveServerState().activeServer;
 }
 
+function waitForActiveServerHydration(): Promise<void> {
+    return activeServerHydrationPromise;
+}
+
 export type {ActiveServerState, Server};
-export {getActiveServer, getApiRoot, getCommandURL, isQAServerActive, resolveActiveServer};
+export {getActiveServer, getApiRoot, getCommandURL, isQAServerActive, resolveActiveServer, waitForActiveServerHydration};

@@ -24,6 +24,7 @@ import type {
 } from '@libs/API/parameters';
 import type LockAccountParams from '@libs/API/parameters/LockAccountParams';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import {getActiveServer} from '@libs/ApiUtils';
 import DateUtils from '@libs/DateUtils';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import type Platform from '@libs/getPlatform/types';
@@ -70,7 +71,7 @@ import applyOnyxUpdatesReliably from './applyOnyxUpdatesReliably';
 import {getDeviceInfoWithID} from './Device';
 import {openOldDotLink} from './Link';
 import {showReportActionNotification} from './Report';
-import {isAnonymousUser, resendValidateCode as sessionResendValidateCode} from './Session';
+import {isAnonymousUser, resendValidateCode as sessionResendValidateCode, signOutAndRedirectToSignIn} from './Session';
 import redirectToSignIn from './SignInRedirect';
 
 function getExpensifyLoginKey(contactMethod: string) {
@@ -86,7 +87,7 @@ Onyx.connectWithoutView({
     },
 });
 
-// This value is used in the handler for a RECONNECT_APP Pusher event (anonymous users), so it's not possible to use useOnyx().
+// This value is used in the handler for a RECONNECT_APP Pusher event, so it's not possible to use useOnyx().
 let lastUpdateIDAppliedToClient: OnyxEntry<number>;
 Onyx.connectWithoutView({
     key: ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT,
@@ -541,7 +542,8 @@ function addNewContactMethod(contactMethod: string, validateCode = '') {
             value: {
                 [loginKey]: {
                     errorFields: {
-                        addedLogin: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.addContactMethod'),
+                        // Key 0 so a server-sent error always sorts newer than this fallback, even with device clock skew
+                        addedLogin: ErrorUtils.getMicroSecondOnyxErrorWithTranslationKey('contacts.genericFailureMessages.addContactMethod', 0),
                     },
                 },
             },
@@ -877,6 +879,26 @@ function subscribeToUserEvents(
 
     PusherUtils.onPrivateUserChannelResubscribe(currentUserAccountID.toString());
 
+    // Temporary labels bypass the reliable update stream, but wait for the current API response so an older snapshot cannot overwrite them.
+    // Keep events in arrival order even when they wait on different queued requests.
+    let processingStatusEventsPromise = Promise.resolve();
+    PusherUtils.subscribeToPrivateUserChannelEvent(Pusher.TYPE.AGENT_ZERO_PROCESSING_STATUS, currentUserAccountID.toString(), (pushJSON) => {
+        processingStatusEventsPromise = processingStatusEventsPromise
+            .then(() => SequentialQueue.getCurrentRequest())
+            .then(() => {
+                if (sessionAccountID !== currentUserAccountID || !ActiveClientManager.isClientTheLeader()) {
+                    return;
+                }
+
+                return Onyx.update(pushJSON.updates);
+            })
+            .catch((error: unknown) => {
+                Log.alert('[subscribeToUserEvents] Applying Agent Zero processing status failed', {
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            });
+    });
+
     // Handles the mega multipleEvents from Pusher which contains an array of single events.
     // Each single event is passed to PusherUtils in order to trigger the callbacks for that event
     PusherUtils.subscribeToPrivateUserChannelEvent(Pusher.TYPE.MULTIPLE_EVENTS, currentUserAccountID.toString(), (pushJSON) => {
@@ -942,14 +964,12 @@ function subscribeToUserEvents(
     // We have an event to reconnect the App. It is triggered when we detect that the user passed updateID
     // is not in the DB
     PusherUtils.subscribeToMultiEvent(Pusher.TYPE.MULTIPLE_EVENT_TYPE.RECONNECT_APP, () => {
-        // Anonymous public-room sessions already have report actions from OpenReport. A full ReconnectApp
-        // uses setCollection and clears them, which flashes the loading skeleton until GetNewerActions
-        // refills. Pass lastUpdateID so reconnect stays incremental for anonymous users (#97847).
-        if (isAnonymousUser()) {
-            reconnectApp(lastUpdateIDAppliedToClient);
-        } else {
-            reconnectApp();
-        }
+        // This event is broadcast on the account-wide channel, so every signed-in device receives it, not only
+        // the one whose updateID is missing. A full ReconnectApp uses setCollection and clears report actions the
+        // device already holds (#97847, #100791). Pass lastUpdateID so the server can reply incrementally. It
+        // still returns full data when it can't serve that range, and we fall back to a full reconnect when the
+        // client has no lastUpdateID yet.
+        reconnectApp(lastUpdateIDAppliedToClient);
         return Promise.resolve();
     });
 }
@@ -1008,10 +1028,23 @@ function updateChatPriorityMode(mode: ValueOf<typeof CONST.PRIORITY_MODE>, autom
     }
 }
 
+/**
+ * QA and the other environments hold entirely separate databases, so the same email is a different account
+ * on each, and any move into or out of QA has to sign the user out.
+ */
 function setActiveServer(server: ValueOf<typeof CONST.SERVER>) {
+    const previousServer = getActiveServer();
+
     if (CONFIG.IS_HYBRID_APP) {
         HybridAppModule.shouldUseStaging(server === CONST.SERVER.STAGING);
     }
+
+    if (previousServer !== server && (previousServer === CONST.SERVER.QA || server === CONST.SERVER.QA)) {
+        // Pinned to the server being left: routing resolves the server when the request is sent, by which
+        // time the Onyx.set below has made it the new one.
+        signOutAndRedirectToSignIn(undefined, undefined, undefined, undefined, undefined, previousServer);
+    }
+
     Onyx.set(ONYXKEYS.ACTIVE_SERVER, server);
 }
 

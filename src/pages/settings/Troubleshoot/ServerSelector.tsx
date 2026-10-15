@@ -2,17 +2,21 @@
  * Lets a tester point the app at a different API server, and disables the choice on builds where the environment pins one.
  */
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import {ModalActions} from '@components/Modal/Global/ModalContext';
 import SelectionList from '@components/SelectionList';
 import SingleSelectListItem from '@components/SelectionList/ListItem/SingleSelectListItem';
 import type {ListItem} from '@components/SelectionList/ListItem/types';
 import Text from '@components/Text';
 
 import useActiveServer from '@hooks/useActiveServer';
+import useConfirmModal from '@hooks/useConfirmModal';
+import useIsAuthenticated from '@hooks/useIsAuthenticated';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {Server} from '@libs/ApiUtils';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
+import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 
 import {setActiveServer} from '@userActions/User';
@@ -32,6 +36,8 @@ type ServerSelectorProps = {
 function ServerSelector({shouldAddBottomSafeAreaPadding = false, backToRoute}: ServerSelectorProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
+    const {showConfirmModal} = useConfirmModal();
+    const isAuthenticated = useIsAuthenticated();
     const {activeServer, isPinnedByEnvironment, isStagingIgnored, isQASelectable} = useActiveServer();
 
     // The resolved server arrives a tick after mount, so it cannot seed this state
@@ -53,7 +59,24 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false, backToRoute}: S
 
     const goBack = () => Navigation.goBack(backToRoute, {compareParams: false});
 
-    const saveAndGoBack = () => {
+    const confirmAndApplyServerChange = async () => {
+        // QA is a separate database, so the same email is a different account there and setActiveServer ends
+        // the session on either crossing.
+        const shouldConfirmSignOut = isAuthenticated && selectedServer !== activeServer && (selectedServer === CONST.SERVER.QA || activeServer === CONST.SERVER.QA);
+
+        if (shouldConfirmSignOut) {
+            const result = await showConfirmModal({
+                title: translate('common.areYouSure'),
+                prompt: translate('initialSettingsPage.troubleshoot.confirmServerChangeDescription'),
+                confirmText: translate('initialSettingsPage.signOut'),
+                cancelText: translate('common.cancel'),
+                shouldShowCancelButton: true,
+            });
+            if (result.action !== ModalActions.CONFIRM) {
+                setPickedServer(undefined);
+                return;
+            }
+        }
         setActiveServer(selectedServer);
         goBack();
     };
@@ -61,7 +84,11 @@ function ServerSelector({shouldAddBottomSafeAreaPadding = false, backToRoute}: S
     const confirmButtonOptions = {
         showButton: !isPinnedByEnvironment,
         text: translate('common.save'),
-        onConfirm: saveAndGoBack,
+        onConfirm: () => {
+            confirmAndApplyServerChange().catch((error: unknown) => {
+                Log.warn('Failed to change the active server', {error});
+            });
+        },
         isDisabled: selectedServer === activeServer,
     };
 

@@ -17,6 +17,7 @@ import type {AnyRequest, OnyxData, PaginatedRequest, PaginationConfig, RequestCo
 import type Response from '@src/types/onyx/Response';
 
 import type {OnyxKey} from 'react-native-onyx';
+import type {ValueOf} from 'type-fest';
 
 import type {ApiRequestCommandParameters, ApiRequestType, CommandOfType, ReadCommand, SideEffectRequestCommand, WriteCommand} from './types';
 import type {WriteReadyBarrier, WriteWhenReadyOptions} from './writeWhenReady';
@@ -155,9 +156,10 @@ function makeRequestWithSideEffects<TCommand extends SideEffectRequestCommand, T
     command: TCommand,
     apiCommandParameters: ApiRequestCommandParameters[TCommand],
     onyxData: OnyxData<TKey> = {},
+    server?: ValueOf<typeof CONST.SERVER>,
 ): Promise<void | Response<TKey>> {
     Log.info('[API] Called API makeRequestWithSideEffects', false, buildLogParams(command, apiCommandParameters ?? {}));
-    const request = prepareRequest(command, CONST.API_REQUEST_TYPE.MAKE_REQUEST_WITH_SIDE_EFFECTS, apiCommandParameters, onyxData);
+    const request = prepareRequest(command, CONST.API_REQUEST_TYPE.MAKE_REQUEST_WITH_SIDE_EFFECTS, apiCommandParameters, onyxData, undefined, server);
 
     // Return a promise containing the response from HTTPS
     return processRequest(request, CONST.API_REQUEST_TYPE.MAKE_REQUEST_WITH_SIDE_EFFECTS);
@@ -186,8 +188,8 @@ function read<TCommand extends ReadCommand, TKey extends OnyxKey>(command: TComm
 
     // Apply optimistic updates of read requests immediately
     const request = prepareRequest(command, CONST.API_REQUEST_TYPE.READ, apiCommandParameters, onyxData);
-    // Sign in with supportAuthToken command shouldn't be blocked by write commands
-    if (command === READ_COMMANDS.SIGN_IN_WITH_SUPPORT_AUTH_TOKEN) {
+    // Sign in with shortLivedAuthToken command shouldn't be blocked by write commands
+    if (command === READ_COMMANDS.SIGN_IN_WITH_SHORT_LIVED_AUTH_TOKEN || command === READ_COMMANDS.SIGN_IN_WITH_SUPPORT_AUTH_TOKEN) {
         processRequest(request, CONST.API_REQUEST_TYPE.READ);
         return;
     }
