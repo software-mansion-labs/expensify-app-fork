@@ -4,6 +4,7 @@ import {ReanimatedPlugin} from '@callstack/repack-plugin-reanimated';
 import {RsdoctorRspackPlugin} from '@rsdoctor/rspack-plugin';
 import {DefinePlugin, SwcJsMinimizerRspackPlugin} from '@rspack/core';
 import dotenv from 'dotenv';
+import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -31,6 +32,10 @@ const expoPublicDefines = Object.fromEntries(
 );
 
 const babelPackagesRegex = new RegExp(`node_modules/(${BABEL_PACKAGES.join('|')})/`);
+// Local `file:` packages (modules/) resolve to their real path, which the node_modules regex never matches.
+const linkedBabelPackagePaths = BABEL_PACKAGES.map((name) => path.resolve(projectRoot, 'node_modules', name))
+    .filter((packagePath) => fs.lstatSync(packagePath, {throwIfNoEntry: false})?.isSymbolicLink())
+    .map((packagePath) => fs.realpathSync(packagePath));
 
 /**
  * Rspack configuration enhanced with Re.Pack defaults for React Native.
@@ -121,7 +126,7 @@ export default Repack.defineRspackConfig((env) => {
                 },
                 {
                     test: /\.[cm]?[jt]sx?$/,
-                    include: [babelPackagesRegex],
+                    include: [babelPackagesRegex, ...linkedBabelPackagePaths],
                     type: 'javascript/auto',
                     use: {
                         loader: '@callstack/repack/babel-swc-loader',
@@ -141,7 +146,7 @@ export default Repack.defineRspackConfig((env) => {
                 // bundles. Worklet-containing libs still get the plugin via worklets-loader's sniff.
                 {
                     test: /\.[cm]?[jt]sx?$/,
-                    exclude: [path.resolve(projectRoot, 'src'), babelPackagesRegex],
+                    exclude: [path.resolve(projectRoot, 'src'), babelPackagesRegex, ...linkedBabelPackagePaths],
                     type: 'javascript/auto',
                     use: [
                         {loader: path.resolve(__dirname, './cjs-inline-requires-loader.mjs'), parallel: true, options: {sourcemap: false, hermesLowering: true}},

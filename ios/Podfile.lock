@@ -75,6 +75,28 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - expensify-react-native-paint-observer (0.0.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - ExpensifyNitroUtils (0.0.1):
     - hermes-engine
     - NitroModules
@@ -3441,6 +3463,7 @@ DEPENDENCIES:
   - "callstack-repack (from `../node_modules/@callstack/repack`)"
   - EXConstants (from `../node_modules/expo-constants/ios`)
   - "expensify-react-native-background-task (from `../node_modules/@expensify/react-native-background-task`)"
+  - "expensify-react-native-paint-observer (from `../node_modules/@expensify/react-native-paint-observer`)"
   - "ExpensifyNitroUtils (from `../node_modules/@expensify/nitro-utils`)"
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
@@ -3644,6 +3667,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-constants/ios"
   expensify-react-native-background-task:
     :path: "../node_modules/@expensify/react-native-background-task"
+  expensify-react-native-paint-observer:
+    :path: "../node_modules/@expensify/react-native-paint-observer"
   ExpensifyNitroUtils:
     :path: "../node_modules/@expensify/nitro-utils"
   Expo:
@@ -3951,6 +3976,7 @@ SPEC CHECKSUMS:
   callstack-repack: 2c8ad8507fd93905f0956af245ca29cf2d040016
   EXConstants: fa5647482320b7bde855057f8b86580456d4b9f0
   expensify-react-native-background-task: 36103a7c2d62b3f5682a6e2773186d08e46338c5
+  expensify-react-native-paint-observer: 8c818bffc9203471172874e52f91b10536211825
   ExpensifyNitroUtils: d627f58d9dd38c2dd4833f59b2c078cf61ad0171
   Expo: ce613ebd8e7f9dcd68bae3ec53038db24d3a6ec4
   ExpoAsset: 98143758ff37e14c9ff2a4e7673097db00473011

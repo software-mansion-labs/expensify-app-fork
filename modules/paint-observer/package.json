@@ -1,0 +1,22 @@
+{
+  "name": "@expensify/react-native-paint-observer",
+  "version": "0.0.0",
+  "description": "Native marker that reports when the mount that inserted it reaches the screen",
+  "main": "src/index",
+  "codegenConfig": {
+    "name": "PaintObserverSpec",
+    "type": "components",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.expensify.paintobserver"
+    },
+    "ios": {
+      "componentProvider": {
+        "PaintMarker": "PaintMarkerComponentView"
+      }
+    }
+  },
+  "author": " <> ()",
+  "license": "UNLICENSED",
+  "homepage": "#readme"
+}

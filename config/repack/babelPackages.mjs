@@ -24,6 +24,7 @@ const BABEL_PACKAGES = [
     'shallowequal',
     // codegenNativeComponent in shipped JS:
     '@expensify/react-native-live-markdown',
+    '@expensify/react-native-paint-observer',
     // codegenNativeCommands in shipped JS (caught by the CI guard, not by a boot failure).
     '@fullstory/react-native',
     '@rnmapbox/maps',
