@@ -1,12 +1,13 @@
 /**
- * Owns the Cloudflare Access OAuth session for the QA server: Onyx-backed cache, the same-tab redirect
- * flow, and the single-flight refresh. Web-only until native claims Universal/App Links.
+ * Owns the Cloudflare Access OAuth session for the QA server: Onyx-backed cache, the sign-in round trip, and
+ * the single-flight refresh.
  */
+import runAuthorizeRoundTrip from '@libs/CloudflareAccess/authorizeRoundTrip';
 import {isQAAuthConfigured} from '@libs/CloudflareAccess/Config';
 import {generatePKCEPair, generateState} from '@libs/CloudflareAccess/generatePKCE';
 import {buildAuthorizeURL, exchangeCode, OAuthError, refreshTokens} from '@libs/CloudflareAccess/OAuthClient';
 import type {AuthorizationCodeExchange} from '@libs/CloudflareAccess/OAuthClient';
-import {clearPendingAuthFlows, savePendingAuthFlow} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
+import {clearPendingAuthFlows} from '@libs/CloudflareAccess/PendingAuthFlowStorage';
 import Log from '@libs/Log';
 import {registerSessionCleanupCallback} from '@libs/SessionCleanup';
 
@@ -75,32 +76,54 @@ function cacheAndPersistSession(session: CloudflareSession, source: 'exchanged' 
     });
 }
 
-const CF_SIGN_IN_ABANDONED = 'Cloudflare sign-in was abandoned';
+/** Native resolves this; web only if Back restores the page, because the page leaves for Cloudflare */
+type CloudflareSignInResult = 'session-established' | 'cancelled' | 'failed';
 
-let redirectPromise: Promise<never> | null = null;
+let signInPromise: Promise<CloudflareSignInResult> | null = null;
 
-async function startCloudflareSignInRoundTrip(returnURL: string): Promise<never> {
+async function runSignIn(returnURL?: string): Promise<CloudflareSignInResult> {
     const generation = sessionGeneration;
     const pkce = await generatePKCEPair();
     const state = generateState();
-    // Resolved before the flow record is stored, so a failed discovery leaves nothing behind
+
+    // Resolved before the round trip stores the flow record, so a failed discovery leaves nothing behind
     const authorizeURL = await buildAuthorizeURL({state, codeChallenge: pkce.codeChallenge});
+
     if (generation !== sessionGeneration) {
         throw new Error('Cloudflare auth flow was cancelled');
     }
-    // Must be stored before the navigation. Module memory does not survive the unload
-    savePendingAuthFlow({state, codeVerifier: pkce.codeVerifier, returnURL, createdAt: Date.now()});
-    window.location.assign(authorizeURL);
-    return new Promise<never>((_resolve, reject) => {
-        window.addEventListener('pageshow', () => reject(new Error(CF_SIGN_IN_ABANDONED)), {once: true});
-    });
+
+    const result = await runAuthorizeRoundTrip({authorizeURL, state, codeVerifier: pkce.codeVerifier, returnURL});
+
+    if (result.outcome === 'cancelled') {
+        return 'cancelled';
+    }
+
+    if (result.outcome === 'failed') {
+        Log.warn('[CloudflareSession] Authorize round trip did not complete', {errorMessage: result.errorMessage});
+        return 'failed';
+    }
+
+    // Native only. Not exchangeCodeForCloudflareSession: its recorded failure blocks the gate until a reload, which native never does
+    const session = await exchangeCode(result.exchange);
+    if (generation !== sessionGeneration) {
+        return 'failed';
+    }
+
+    await cacheAndPersistSession(session, 'exchanged');
+    return 'session-established';
 }
 
-function redirectToCloudflareSignIn(returnURL: string = window.location.href): Promise<never> {
-    redirectPromise ??= startCloudflareSignInRoundTrip(returnURL).finally(() => {
-        redirectPromise = null;
+/**
+ * Single-flight: a second caller joins the round trip already running rather than opening a second browser
+ * session, or, on web, overwriting the flow the first one parked. Cleared once it settles, so on web a Back
+ * that restores the page lets the next caller start a fresh round trip.
+ */
+function startCloudflareSignIn(returnURL?: string): Promise<CloudflareSignInResult> {
+    signInPromise ??= runSignIn(returnURL).finally(() => {
+        signInPromise = null;
     });
-    return redirectPromise;
+    return signInPromise;
 }
 
 let codeExchangePromise: Promise<void> | null = null;
@@ -218,8 +241,7 @@ function markCloudflareSessionRejected(rejectedAccessToken: string): Promise<voi
 }
 
 export {
-    CF_SIGN_IN_ABANDONED,
-    redirectToCloudflareSignIn,
+    startCloudflareSignIn,
     clearCloudflareSession,
     exchangeCodeForCloudflareSession,
     getCloudflareCodeExchangeError,
@@ -230,4 +252,4 @@ export {
     refreshCloudflareSession,
     waitForCloudflareSessionHydration,
 };
-export type {CloudflareRefreshResult};
+export type {CloudflareRefreshResult, CloudflareSignInResult};
