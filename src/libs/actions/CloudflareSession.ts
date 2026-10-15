@@ -104,8 +104,14 @@ async function runSignIn(returnURL?: string): Promise<CloudflareSignInResult> {
         return 'failed';
     }
 
-    await exchangeCodeForCloudflareSession(result.exchange);
-    return getCloudflareSession() ? 'session-established' : 'failed';
+    // Native only. Not exchangeCodeForCloudflareSession: its recorded failure blocks the gate until a reload, which native never does
+    const session = await exchangeCode(result.exchange);
+    if (generation !== sessionGeneration) {
+        return 'failed';
+    }
+
+    await cacheAndPersistSession(session, 'exchanged');
+    return 'session-established';
 }
 
 /**

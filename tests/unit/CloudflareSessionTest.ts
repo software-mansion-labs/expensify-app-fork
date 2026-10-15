@@ -653,6 +653,52 @@ describe('exchangeCodeForCloudflareSession', () => {
     });
 });
 
+describe('startCloudflareSignIn with an in-process round trip', () => {
+    beforeEach(() => {
+        // Given the native round trip, which hands the callback back in-process instead of reloading the page
+        jest.resetModules();
+        jest.doMock('@libs/CloudflareAccess/authorizeRoundTrip', () => ({
+            __esModule: true,
+            default: () => Promise.resolve({outcome: 'exchange', exchange: {code: 'auth-code-1', codeVerifier: PAIR_1.codeVerifier}}),
+        }));
+        Onyx = require<{default: typeof OnyxDefault}>('react-native-onyx').default;
+        ONYXKEYS = require<typeof OnyxKeysModule>('@src/ONYXKEYS').default;
+        Onyx.init({keys: ONYXKEYS});
+        oAuthClient = require<typeof OAuthClientModule>('@libs/CloudflareAccess/OAuthClient');
+        pkce = require<typeof PKCEModule>('@libs/CloudflareAccess/generatePKCE');
+        jest.mocked(pkce.generatePKCEPair).mockResolvedValue(PAIR_1);
+        jest.mocked(pkce.generateState).mockReturnValue(OAUTH_STATE);
+        SessionActions = require<typeof SessionActionsModule>('@userActions/CloudflareSession');
+    });
+
+    afterEach(() => {
+        jest.dontMock('@libs/CloudflareAccess/authorizeRoundTrip');
+    });
+
+    it('establishes a session from the code the round trip returns', async () => {
+        await seedSession(null);
+        jest.mocked(oAuthClient.exchangeCode).mockResolvedValue(SESSION_A);
+
+        // When the sign-in runs to completion
+        // Then it reports a session, which is cached for the requests waiting on it
+        await expect(SessionActions.startCloudflareSignIn()).resolves.toBe('session-established');
+        expect(SessionActions.getCloudflareSession()).toEqual(SESSION_A);
+    });
+
+    it('records no exchange failure, so the next sign-in is not blocked', async () => {
+        // Given an exchange the server rejects
+        await seedSession(null);
+        jest.mocked(oAuthClient.exchangeCode).mockRejectedValue(new oAuthClient.OAuthError('invalid_grant'));
+
+        // When the sign-in fails on it
+        await expect(SessionActions.startCloudflareSignIn()).rejects.toMatchObject({code: 'invalid_grant'});
+
+        // Then nothing is recorded: the gate refuses to authenticate while a failure is set, and an app that
+        // never reloads would keep it until sign-out, sending every later request out without a bearer
+        expect(SessionActions.getCloudflareCodeExchangeError()).toBeUndefined();
+    });
+});
+
 describe('builds without QA auth configured', () => {
     it('subscribes to nothing and still resolves hydration, so no caller can hang', async () => {
         // Given a build where QA auth is not configured
