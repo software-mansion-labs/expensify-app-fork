@@ -34,35 +34,37 @@ describe('cancelScenario actor', () => {
             const deniedError = createMFAErrorFromApiResponse(200, REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, undefined);
             const onCancel = jest.fn().mockResolvedValue(deniedError);
 
-            const snapshot = await runCancelScenarioActor({onCancel, payload: PAYLOAD});
+            const snapshot = await runCancelScenarioActor({onCancel, payload: PAYLOAD, isScenarioActionSent: true});
 
             expect(onCancel).toHaveBeenCalledTimes(1);
-            expect(onCancel).toHaveBeenCalledWith(PAYLOAD);
+            expect(onCancel).toHaveBeenCalledWith(PAYLOAD, {isScenarioActionSent: true});
             expect(snapshot.output).toBe(deniedError);
         });
 
         it('leaves the legacy warning breadcrumb with the returned error', async () => {
             const deniedError = createMFAErrorFromApiResponse(200, REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, undefined);
 
-            await runCancelScenarioActor({onCancel: jest.fn().mockResolvedValue(deniedError), payload: PAYLOAD});
+            await runCancelScenarioActor({onCancel: jest.fn().mockResolvedValue(deniedError), payload: PAYLOAD, isScenarioActionSent: false});
 
             expect(addMFABreadcrumbMock).toHaveBeenCalledWith('Flow cancelled with onCancel', deniedError, 'warning');
         });
 
         it('rejects when onCancel throws, so the machine routes it as an unhandled exception', async () => {
-            await expect(runCancelScenarioActor({onCancel: jest.fn().mockRejectedValue(new Error('Deny exploded')), payload: PAYLOAD})).rejects.toThrow('Deny exploded');
+            await expect(runCancelScenarioActor({onCancel: jest.fn().mockRejectedValue(new Error('Deny exploded')), payload: PAYLOAD, isScenarioActionSent: false})).rejects.toThrow(
+                'Deny exploded',
+            );
         });
     });
 
     describe('without a scenario onCancel', () => {
         it('returns the CANCELED error', async () => {
-            const snapshot = await runCancelScenarioActor({onCancel: undefined, payload: undefined});
+            const snapshot = await runCancelScenarioActor({onCancel: undefined, payload: undefined, isScenarioActionSent: false});
 
             expect(snapshot.output).toEqual(createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'User cancelled the MFA flow'));
         });
 
         it('leaves the legacy warning breadcrumb with the CANCELED reason', async () => {
-            await runCancelScenarioActor({onCancel: undefined, payload: undefined});
+            await runCancelScenarioActor({onCancel: undefined, payload: undefined, isScenarioActionSent: false});
 
             expect(addMFABreadcrumbMock).toHaveBeenCalledWith('Flow cancelled', {reason: REASON.LOCAL_ERRORS.CANCELED}, 'warning');
         });

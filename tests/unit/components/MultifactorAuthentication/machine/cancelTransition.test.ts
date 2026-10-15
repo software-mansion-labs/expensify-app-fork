@@ -22,8 +22,10 @@ import type {
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
 
+import Log from '@libs/Log';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/shared/types';
 
 import CONST from '@src/CONST';
 
@@ -180,7 +182,6 @@ describe('MFA cancel', () => {
             const result = actor.getSnapshot();
             expect(matchesState(openAt(READY_TO_SIGN, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
             expect(result.children).not.toHaveProperty('authorize');
-            expect(snapshotToState(result).isScenarioActionInFlight).toBe(false);
 
             actor.stop();
         });
@@ -262,7 +263,7 @@ describe('MFA cancel', () => {
             actor.send({type: 'CONFIRM_CANCEL'});
 
             // BIOMETRICS_TEST defines no `onCancel`, so the actor falls back to the default cancel error.
-            expect(receivedInput).toEqual({onCancel: undefined, payload: undefined});
+            expect(receivedInput).toEqual({onCancel: undefined, payload: undefined, isScenarioActionSent: false});
 
             actor.stop();
         });
@@ -284,6 +285,7 @@ describe('MFA cancel', () => {
 
             expect(receivedInput?.onCancel).toBe(scenario.onCancel);
             expect(receivedInput?.payload).toEqual(payload);
+            expect(receivedInput?.isScenarioActionSent).toBe(false);
 
             actor.stop();
         });
@@ -688,57 +690,328 @@ describe('MFA cancel', () => {
     });
 
     describe('while the scenario action is in flight', () => {
-        it('reports the request in flight only while the scenario action runs', () => {
-            expect(snapshotToState(mfaMachine.resolveState({value: openAt(SIGNING_CHALLENGE), context: createFlowContext()})).isScenarioActionInFlight).toBe(false);
-            expect(snapshotToState(mfaMachine.resolveState({value: openAt(EXECUTING_SCENARIO_ACTION), context: createFlowContext()})).isScenarioActionInFlight).toBe(true);
-        });
+        const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
+        const AUTHORIZE_TRANSACTION = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION;
+        const AWAITING_RESULT = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.AWAITING_RESULT}}};
+        const DENYING = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.DENYING}}};
+        const APPROVED: ExecuteScenarioActionOutput = {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE};
+        const DENIED = createMFAErrorFromApiResponse(200, REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, undefined);
+        const NETWORK_ERROR = createMFAErrorFromApiResponse(0, REASON.LOCAL_ERRORS.UNHANDLED_API_RESPONSE, undefined);
 
-        it('opens the dialog but ignores CONFIRM_CANCEL, so no cancel races the request already sent', async () => {
-            let cancelRuns = 0;
+        function failedApprove(reason: MultifactorAuthenticationReason): ExecuteScenarioActionOutput {
+            return {success: false, error: createMFAErrorFromApiResponse(400, reason, undefined)};
+        }
+
+        function createDeferred<T>() {
+            let resolve: (value: T) => void = () => {};
+            let reject: (error: unknown) => void = () => {};
+            const promise = new Promise<T>((onResolve, onReject) => {
+                resolve = onResolve;
+                reject = onReject;
+            });
+            return {promise, resolve, reject};
+        }
+
+        /**
+         * Runs the flow live into the scenario action and opens the dialog, so the scenario action and the cancel
+         * can settle in any order. A restored snapshot wouldn't start the scenario action actor.
+         */
+        async function startScenarioActionWithDialog({withOnCancel, contextOverrides = {}}: {withOnCancel: boolean; contextOverrides?: Partial<MfaContext>}) {
+            const scenarioAction = createDeferred<ExecuteScenarioActionOutput>();
+            const cancel = createDeferred<CancelScenarioOutput>();
+            const cancelInputs: CancelScenarioInput[] = [];
+            let finalizeRuns = 0;
             const machine = mfaMachine.provide({
                 actors: {
                     authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(() =>
                         Promise.resolve({success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
                     ),
-                    executeScenarioAction: fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(() => new Promise(() => {})),
-                    cancelScenario: fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => {
-                        cancelRuns += 1;
+                    executeScenarioAction: fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(() => scenarioAction.promise),
+                    cancelScenario: fromPromise<CancelScenarioOutput, CancelScenarioInput>(({input}) => {
+                        cancelInputs.push(input);
+                        return cancel.promise;
+                    }),
+                    finalizeOutcome: fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(() => {
+                        finalizeRuns += 1;
                         return new Promise(() => {});
                     }),
                 },
             });
-            const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context: createFlowContext()})});
+            const scenarioOverrides = withOnCancel ? {scenarioName: AUTHORIZE_TRANSACTION, scenario: getScenarioConfig(AUTHORIZE_TRANSACTION), payload: {transactionID: 'txn-race'}} : {};
+            const context = createFlowContext({...scenarioOverrides, ...contextOverrides});
+            const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context})});
             actor.start();
             actor.send({type: 'SOFT_PROMPT_APPROVED'});
             await waitForBatchedUpdates();
-            expect(actor.getSnapshot().children).toHaveProperty('executeScenarioAction');
-
             actor.send({type: 'REQUEST_CANCEL'});
-            actor.send({type: 'CONFIRM_CANCEL'});
+            return {actor, scenarioAction, cancel, cancelInputs, getFinalizeRuns: () => finalizeRuns};
+        }
 
-            const result = actor.getSnapshot();
-            expect(matchesState(openAt(EXECUTING_SCENARIO_ACTION, MFA_STATE.CANCEL_CONFIRM_VISIBLE), result.value)).toBe(true);
-            expect(result.children).toHaveProperty('executeScenarioAction');
-            expect(snapshotToState(result).isScenarioActionInFlight).toBe(true);
-            expect(cancelRuns).toBe(0);
+        /** Confirms the cancel while the approve is in flight, so the deny races it. */
+        async function startDenying() {
+            const flow = await startScenarioActionWithDialog({withOnCancel: true});
+            flow.actor.send({type: 'CONFIRM_CANCEL'});
+            return flow;
+        }
+
+        async function settle<T>(deferred: ReturnType<typeof createDeferred<T>>, value: T) {
+            deferred.resolve(value);
+            await waitForBatchedUpdates();
+        }
+
+        let logInfoSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            logInfoSpy = jest.spyOn(Log, 'info').mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            logInfoSpy.mockRestore();
+        });
+
+        function getLogData(message: string) {
+            return logInfoSpy.mock.calls.filter(([logMessage]) => logMessage === message).map(([, , parameters]) => parameters as unknown);
+        }
+
+        it('opens the dialog while the request is in flight', async () => {
+            const {actor} = await startScenarioActionWithDialog({withOnCancel: true});
+
+            expect(matchesState(openAt(AWAITING_RESULT, MFA_STATE.CANCEL_CONFIRM_VISIBLE), actor.getSnapshot().value)).toBe(true);
 
             actor.stop();
         });
 
-        it('shows the request result once it settles, hides the dialog and never runs the cancel', () => {
-            const actor = createActorAtState(openAt(EXECUTING_SCENARIO_ACTION, MFA_STATE.CANCEL_CONFIRM_VISIBLE));
+        describe('with a scenario onCancel', () => {
+            it('sends the deny on confirm, hides the dialog and keeps the request running', async () => {
+                const {actor, cancelInputs} = await startDenying();
 
-            actor.start();
-            actor.send({type: 'CONFIRM_CANCEL'});
-            sendExecuteScenarioActionDone(actor, {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE});
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(DENYING), result.value)).toBe(true);
+                expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
+                expect(result.children).toHaveProperty('executeScenarioAction');
+                expect(result.children).toHaveProperty('cancelScenario');
+                expect(cancelInputs).toHaveLength(1);
+                expect(cancelInputs.at(0)?.isScenarioActionSent).toBe(true);
 
-            const result = actor.getSnapshot();
-            expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
-            expect(result.context.scenarioResponse).toBe(MFA_TEST_SCENARIO_RESPONSE);
-            expect(result.context.error).toBeUndefined();
-            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
+                actor.stop();
+            });
 
-            actor.stop();
+            it('ignores REQUEST_CANCEL while denying, so the dialog stays hidden', async () => {
+                const {actor} = await startDenying();
+
+                actor.send({type: 'REQUEST_CANCEL'});
+
+                expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
+
+                actor.stop();
+            });
+
+            it('ends with the approve when it succeeds while the deny never returns', async () => {
+                const {actor, scenarioAction} = await startDenying();
+
+                await settle(scenarioAction, APPROVED);
+
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+                expect(result.context.error).toBeUndefined();
+                expect(result.context.scenarioResponse).toBe(MFA_TEST_SCENARIO_RESPONSE);
+
+                actor.stop();
+            });
+
+            it('keeps the approved outcome when the deny returns afterwards', async () => {
+                const {actor, scenarioAction, cancel, getFinalizeRuns} = await startDenying();
+
+                await settle(scenarioAction, APPROVED);
+                await settle(cancel, createMFAErrorFromApiResponse(400, REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED, undefined));
+
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+                expect(result.context.error).toBeUndefined();
+                expect(getFinalizeRuns()).toBe(1);
+
+                actor.stop();
+            });
+
+            it('ends with an already-approved approve without waiting for the deny', async () => {
+                const {actor, scenarioAction, cancel, getFinalizeRuns} = await startDenying();
+                const alreadyApproved = failedApprove(REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED);
+
+                await settle(scenarioAction, alreadyApproved);
+
+                expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.error?.reason).toBe(REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED);
+
+                await settle(cancel, NETWORK_ERROR);
+
+                expect(actor.getSnapshot().context.error?.reason).toBe(REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED);
+                expect(getFinalizeRuns()).toBe(1);
+
+                actor.stop();
+            });
+
+            it.each([
+                ['an already-denied approve', failedApprove(REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED)],
+                ['REGISTRATION_REQUIRED', failedApprove(REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED)],
+                ['a network error', {success: false, error: NETWORK_ERROR} as const],
+            ])('ignores %s and lets the deny decide', async (_, approveResult) => {
+                const {actor, scenarioAction, cancel} = await startDenying();
+
+                await settle(scenarioAction, approveResult);
+
+                expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.error).toBeUndefined();
+
+                await settle(cancel, DENIED);
+
+                expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.error).toEqual(DENIED);
+
+                actor.stop();
+            });
+
+            it('ignores a rejected approve actor and lets the deny decide', async () => {
+                const {actor, scenarioAction, cancel} = await startDenying();
+
+                scenarioAction.reject(new Error('Approve exploded'));
+                await waitForBatchedUpdates();
+
+                expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
+
+                await settle(cancel, DENIED);
+
+                expect(actor.getSnapshot().context.error).toEqual(DENIED);
+
+                actor.stop();
+            });
+
+            it('ends with the deny when it returns first and drops a later approve', async () => {
+                const {actor, scenarioAction, cancel, getFinalizeRuns} = await startDenying();
+
+                await settle(cancel, DENIED);
+                await settle(scenarioAction, APPROVED);
+
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+                expect(result.context.error).toEqual(DENIED);
+                expect(result.context.scenarioResponse).toBeUndefined();
+                expect(getFinalizeRuns()).toBe(1);
+
+                actor.stop();
+            });
+
+            // A known trade-off: no success was shown yet, so the deny's error ends the flow instead of waiting on the approve.
+            it('ends with the deny network error when it returns before the approve', async () => {
+                const {actor, scenarioAction, cancel} = await startDenying();
+
+                await settle(cancel, NETWORK_ERROR);
+                await settle(scenarioAction, APPROVED);
+
+                expect(actor.getSnapshot().context.error).toEqual(NETWORK_ERROR);
+                expect(actor.getSnapshot().context.scenarioResponse).toBeUndefined();
+
+                actor.stop();
+            });
+        });
+
+        describe('without a scenario onCancel', () => {
+            it('moves to cancelling and stops the request on confirm', async () => {
+                const {actor, cancelInputs} = await startScenarioActionWithDialog({withOnCancel: false});
+
+                actor.send({type: 'CONFIRM_CANCEL'});
+
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(MFA_STATE.CANCELLING), result.value)).toBe(true);
+                expect(result.children).not.toHaveProperty('executeScenarioAction');
+                expect(cancelInputs.at(0)?.isScenarioActionSent).toBe(false);
+
+                actor.stop();
+            });
+
+            it.each([
+                ['success', APPROVED],
+                ['failure', failedApprove(REASON.CLIENT_ERRORS.UNRECOGNIZED)],
+            ])('keeps the cancel outcome when the request settles afterwards with a %s', async (_, scenarioResult) => {
+                const {actor, scenarioAction, cancel, getFinalizeRuns} = await startScenarioActionWithDialog({withOnCancel: false});
+
+                actor.send({type: 'CONFIRM_CANCEL'});
+                await settle(cancel, MFA_TEST_CANCEL_ERROR);
+                await settle(scenarioAction, scenarioResult);
+
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+                expect(result.context.error).toBe(MFA_TEST_CANCEL_ERROR);
+                expect(result.context.scenarioResponse).toBeUndefined();
+                expect(getFinalizeRuns()).toBe(1);
+
+                actor.stop();
+            });
+        });
+
+        describe('instrumentation', () => {
+            const CANCEL_ATTEMPT_LOG = '[MFA] Cancel requested while a transaction review is in flight';
+            const PENDING_CANCEL_RESOLVED_LOG = '[MFA] Pending cancel resolved';
+
+            it('numbers every exit attempt from entering the scenario action, including ignored ones while denying', async () => {
+                const {actor} = await startScenarioActionWithDialog({withOnCancel: true, contextOverrides: {cancelAttemptsDuringReview: 7}});
+
+                actor.send({type: 'DISMISS_CANCEL'});
+                actor.send({type: 'REQUEST_CANCEL'});
+                actor.send({type: 'CONFIRM_CANCEL'});
+                actor.send({type: 'REQUEST_CANCEL'});
+
+                expect(getLogData(CANCEL_ATTEMPT_LOG)).toEqual([
+                    {mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.AWAITING_RESULT, attempt: 1}},
+                    {mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.AWAITING_RESULT, attempt: 2}},
+                    {mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.DENYING, attempt: 3}},
+                ]);
+
+                actor.stop();
+            });
+
+            it('restarts the count on entering cancelling', () => {
+                const scenario = getScenarioConfig(AUTHORIZE_TRANSACTION);
+                const actor = createActorAtState(openAt(AUTHORIZING, MFA_STATE.CANCEL_CONFIRM_VISIBLE), {scenarioName: AUTHORIZE_TRANSACTION, scenario, cancelAttemptsDuringReview: 4});
+
+                actor.start();
+                actor.send({type: 'CONFIRM_CANCEL'});
+                actor.send({type: 'REQUEST_CANCEL'});
+
+                expect(getLogData(CANCEL_ATTEMPT_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.CANCELLING, attempt: 1}}]);
+
+                actor.stop();
+            });
+
+            it('logs nothing for a scenario without onCancel', async () => {
+                const {actor} = await startScenarioActionWithDialog({withOnCancel: false});
+
+                actor.send({type: 'CONFIRM_CANCEL'});
+                actor.send({type: 'REQUEST_CANCEL'});
+
+                expect(getLogData(CANCEL_ATTEMPT_LOG)).toEqual([]);
+
+                actor.stop();
+            });
+
+            it('reports the approve as resolving the pending cancel', async () => {
+                const {actor, scenarioAction} = await startDenying();
+
+                await settle(scenarioAction, APPROVED);
+
+                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, resolvedBy: 'approve', reason: undefined}}]);
+
+                actor.stop();
+            });
+
+            it('reports the deny as resolving the pending cancel', async () => {
+                const {actor, cancel} = await startDenying();
+
+                await settle(cancel, DENIED);
+
+                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, resolvedBy: 'deny', reason: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED}}]);
+
+                actor.stop();
+            });
         });
     });
 });

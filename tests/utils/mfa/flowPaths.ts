@@ -12,6 +12,7 @@ import {matchesState} from 'xstate';
 import {getShortestPaths, TestModel} from 'xstate/graph';
 
 import createInitEvent, {
+    createInitEventWithOnCancel,
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_AUTHORIZATION_ORDINARY_ERROR,
     MFA_TEST_CANCEL_ERROR,
@@ -261,10 +262,23 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.FAILURE}`,
     },
-    // A scenario action already sent can't be taken back, so confirming is held off while it runs. It
-    // finishes behind the open dialog, and reaching the outcome hides the question.
+    // The scenario action finishes behind the open dialog, and reaching the outcome hides the question.
     {
-        description: 'the auto-hide journey ignores a confirm during the scenario action and drops the cancel confirmation once the flow reaches the outcome',
+        description: 'the auto-hide journey drops the cancel confirmation once the flow reaches the outcome',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            {type: 'REQUEST_CANCEL'},
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.CANCEL_CONFIRM}.${MFA_STATE.CANCEL_CONFIRM_HIDDEN}`,
+    },
+    // Without `onCancel`, a confirm during the scenario action drops its result, so a late response can't
+    // replace the cancel outcome.
+    {
+        description: 'the confirm journey during the scenario action drops the late result and lands on the cancel outcome',
         events: [
             createInitEvent(),
             createActorDoneEvent('validateDevice', {success: true}),
@@ -273,8 +287,10 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             {type: 'REQUEST_CANCEL'},
             {type: 'CONFIRM_CANCEL'},
             createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
+            createActorDoneEvent('cancelScenario', MFA_TEST_CANCEL_ERROR),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.CANCEL_CONFIRM}.${MFA_STATE.CANCEL_CONFIRM_HIDDEN}`,
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.FAILURE}`,
     },
     {
         description: 'the outcome back journey closes the modal without asking',
@@ -447,6 +463,19 @@ function getMfaShortestPaths() {
     return getShortestPaths(mfaMachineWithLifecycleEvents, {events: getTraversalEvents});
 }
 
+/**
+ * Returns the shortest paths from an INIT whose scenario defines `onCancel`. Only such a scenario reaches
+ * `denying`, so machine reachability walks both; the UI walk stays on the default scenario.
+ */
+function getMfaShortestPathsWithOnCancel() {
+    const initEvent = createInitEventWithOnCancel();
+    return getShortestPaths(mfaMachineWithLifecycleEvents, {
+        events: (snapshot) => getTraversalEvents(snapshot).map((event) => (event.type === 'INIT' ? initEvent : event)),
+        // Every REQUEST_CANCEL during the review bumps the attempt counter, so keying states on it would never end the walk.
+        serializeState: ({value, context}) => JSON.stringify({value, context: {...context, cancelAttemptsDuringReview: undefined}}),
+    });
+}
+
 /** Returns each driving journey together with the paths the test model builds from its event sequence. */
 function getDrivingJourneyPaths() {
     return DRIVING_JOURNEYS.map((journey) => ({...journey, paths: mfaTestModel.getPathsFromEvents(journey.events)}));
@@ -467,4 +496,13 @@ function getWalkedPaths() {
 }
 
 export default getWalkedPaths;
-export {actorDoneEventType, actorErrorEventType, createActorDoneEvent, getDrivingJourneyPaths, getMfaShortestPaths, isAutoDrivenEvent, mfaMachineWithLifecycleEvents};
+export {
+    actorDoneEventType,
+    actorErrorEventType,
+    createActorDoneEvent,
+    getDrivingJourneyPaths,
+    getMfaShortestPaths,
+    getMfaShortestPathsWithOnCancel,
+    isAutoDrivenEvent,
+    mfaMachineWithLifecycleEvents,
+};

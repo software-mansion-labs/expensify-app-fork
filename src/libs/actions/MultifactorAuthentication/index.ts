@@ -354,7 +354,23 @@ async function isTransactionStillPending3DSReview(transactionID: string) {
     return !!response?.transactionsPending3DSReview?.[transactionID];
 }
 
+/**
+ * Logs how long an approve or deny took. Wall-clock time includes time spent in the background, which is how long the
+ * user actually waited, and the log doesn't depend on the UI, so requests the user gave up on still count.
+ * `completedAt` orders the approve and deny of one transaction, since Sentry receives logs in batches.
+ */
+function logTransactionReviewCompleted(
+    command: string,
+    transactionID: string,
+    startedAt: number,
+    {httpStatusCode, reason}: {httpStatusCode: number; reason: MultifactorAuthenticationReason | undefined},
+) {
+    const completedAt = Date.now();
+    Log.info('[MFA] Transaction review request completed', false, {mfa: {command, transactionID, durationMs: completedAt - startedAt, completedAt, httpStatusCode, reason}});
+}
+
 async function authorizeTransaction({transactionID, signedChallenge, authenticationMethod}: MultifactorAuthenticationScenarioParameters['AUTHORIZE-TRANSACTION']) {
+    const startedAt = Date.now();
     try {
         const response = await makeRequestWithSideEffects(
             SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION,
@@ -374,14 +390,19 @@ async function authorizeTransaction({transactionID, signedChallenge, authenticat
 
         const {jsonCode, message} = response ?? {};
 
-        return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, message);
+        const result = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, message);
+        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, transactionID, startedAt, result);
+        return result;
     } catch (error) {
         Log.hmmm('[MFA] Failed to authorize transaction', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, undefined);
+        const result = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, undefined);
+        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, transactionID, startedAt, result);
+        return result;
     }
 }
 
 async function denyTransaction({transactionID}: DenyTransactionParams) {
+    const startedAt = Date.now();
     try {
         const response = await makeRequestWithSideEffects(
             SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION,
@@ -401,10 +422,14 @@ async function denyTransaction({transactionID}: DenyTransactionParams) {
 
         const {jsonCode, message} = response ?? {};
 
-        return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, message);
+        const result = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, message);
+        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION, transactionID, startedAt, result);
+        return result;
     } catch (error) {
         Log.hmmm('[MFA] Failed to deny transaction', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, undefined);
+        const result = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, undefined);
+        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION, transactionID, startedAt, result);
+        return result;
     }
 }
 

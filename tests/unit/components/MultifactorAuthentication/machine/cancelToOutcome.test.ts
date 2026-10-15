@@ -80,7 +80,7 @@ describe('MFA cancel through to the outcome', () => {
 
         const actor = await confirmCancelOnSoftPrompt(scenario, payload);
 
-        expect(onCancel).toHaveBeenCalledWith(payload);
+        expect(onCancel).toHaveBeenCalledWith(payload, {isScenarioActionSent: false});
         expect(actor.getSnapshot().context.error).toBe(deniedError);
         expect(callback).toHaveBeenCalledWith(false, {httpStatusCode: undefined, message: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, body: undefined}, payload);
         await waitFor(actor, () => trackMFAFlowOutcomeMock.mock.calls.length > 0);

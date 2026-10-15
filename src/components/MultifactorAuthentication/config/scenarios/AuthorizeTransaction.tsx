@@ -127,15 +127,21 @@ export default {
      * Unlike `callback` which fire-and-forgets the deny (because the outcome screen will be shown regardless),
      * onCancel awaits denyTransaction so the returned reason determines which outcome screen is displayed.
      */
-    onCancel: async (payload) => {
+    onCancel: async (payload, {isScenarioActionSent}) => {
         if (!isAuthorizeTransactionPayload(payload)) {
             return createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, undefined);
         }
         const {httpStatusCode, reason, message} = await denyTransaction({transactionID: payload.transactionID});
+        // The server confirmed the transaction was approved before this deny. The approve from this flow was already
+        // sent, so the transaction most likely went through on it, but the server doesn't say which approve won.
+        if (isScenarioActionSent && reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_DENY_ATTEMPTED) {
+            return createMFAErrorFromApiResponse(httpStatusCode, CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED, message);
+        }
         return createMFAErrorFromApiResponse(httpStatusCode, reason ?? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, message);
     },
     failureScreens: {
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED]: <DeniedTransactionSuccessScreen />,
+        [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED]: <ApprovedTransactionSuccessScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.TRANSACTION_EXPIRED]: <OutOfTimeFailureScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED]: <ApprovedTransactionSuccessScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_DENIED_DENY_ATTEMPTED]: <DeniedTransactionSuccessScreen />,

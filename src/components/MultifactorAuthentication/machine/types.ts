@@ -78,6 +78,9 @@ type MfaContext = {
 
     /** Whether this flow completed a fresh credential registration (`creatingCredential` succeeded) before authorizing. */
     isRegistrationComplete: boolean;
+
+    /** Exit attempts while the current approve or deny is in flight. Reset on entering `executingScenarioAction` and `cancelling`. */
+    cancelAttemptsDuringReview: number;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */
@@ -205,12 +208,13 @@ type FinalizeOutcomeOutput = {
 };
 
 /**
- * Input the machine passes to the cancel actor: the scenario's optional cancel logic and its payload.
- * Named `payload` for the inspector masking, same as `FinalizeOutcomeInput`.
+ * Input the machine passes to the cancel actor: the scenario's optional cancel logic, its payload, and
+ * whether the scenario action already went out. Named `payload` for the inspector masking, same as `FinalizeOutcomeInput`.
  */
 type CancelScenarioInput = {
     onCancel: MultifactorAuthenticationScenarioConfig['onCancel'];
     payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined;
+    isScenarioActionSent: boolean;
 };
 
 /** The cancel actor's result: the error the cancelled flow fails with, which picks the outcome screen. */
