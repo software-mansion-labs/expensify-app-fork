@@ -1,4 +1,4 @@
-import {getListFields, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {getListFields, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
 import type {PageConfig} from '@hooks/useSubPage/types';

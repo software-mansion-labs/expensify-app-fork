@@ -1,4 +1,4 @@
-import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import splitListItemAnswers from '@components/DynamicForm/flow/listItemEditor/splitListItemAnswers';
 
 import type {DynamicFormListField} from '@src/types/onyx';

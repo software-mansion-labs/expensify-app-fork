@@ -1,5 +1,5 @@
 import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
-import {getListFields, getListItems, getRemovedListItemSensitiveKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {getListFields, getListItems, getRemovedListItemSensitiveKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import {getInputDefinition, isInputElement} from '@components/DynamicForm/content/elements/registry';
 import getContentAnswers from '@components/DynamicForm/content/getContentAnswers';
 import type {DynamicFormValues} from '@components/DynamicForm/types';

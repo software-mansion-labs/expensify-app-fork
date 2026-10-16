@@ -1,8 +1,7 @@
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import CountryPicker from '@components/CountryPicker';
 import CurrencyPicker from '@components/CurrencyPicker';
-import getFieldLabel from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldLabel';
-import {getFieldChoices} from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldOptions';
+import {getFieldLabel, getFieldChoices} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
 import InputWrapper from '@components/Form/InputWrapper';
 import PushRowWithModal from '@components/PushRowWithModal';
 import type {Choice} from '@components/RadioButtons';

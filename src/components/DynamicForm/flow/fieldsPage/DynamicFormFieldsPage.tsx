@@ -1,6 +1,5 @@
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
 import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
-import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
 import getContentErrors from '@components/DynamicForm/content/getContentErrors';
 import getPageTitle from '@components/DynamicForm/flow/pages/getPageTitle';
 import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
@@ -18,7 +17,7 @@ import React from 'react';
 
 /** A sensitive list lives in memory, which the editor page and a removal update, so the form's own copy of it may be stale */
 function getMemoryListAnswers(page: DynamicFormFlowPage, values: DynamicFormValues): DynamicFormValues {
-    const memoryLists = getContentFields(page.content).filter((field) => field.type === 'list' && isSensitiveField(field));
+    const memoryLists = getContentFields(page.content).filter((field) => field.type === 'list' && !!field.sensitive);
     return Object.fromEntries(memoryLists.map((field) => [field.key, values[field.key]]));
 }
 

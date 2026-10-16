@@ -1,8 +1,5 @@
-import getFieldLabel from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldLabel';
-import hasSensitiveAnswer from '@components/DynamicForm/content/elements/ExpensifyInput/model/hasSensitiveAnswer';
-import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
-import {getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import {getListItemAddTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
+import {getFieldLabel, hasSensitiveAnswer} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
+import {getListItems, getListItemAddTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import {getLocalizedText} from '@components/DynamicForm/shared';
 import InputWrapper from '@components/Form/InputWrapper';
 
@@ -17,7 +14,7 @@ import ListFieldAdapter from './adapters/ListFieldAdapter';
 const renderList: DynamicFieldRenderer<'list'> = (field, {translate, values, onOpenListItemEditor, onListItemsChange, renderFields}, inputProps) => {
     const itemLabel = getLocalizedText(translate, field.itemLabelKey, field.itemLabel);
     // A sensitive list is not drafted, so inside the flow its entries come from memory, which the editor page and a removal both update
-    const isMemoryList = !!onOpenListItemEditor && isSensitiveField(field);
+    const isMemoryList = !!onOpenListItemEditor && !!field.sensitive;
     return {
         isMenuRow: true,
         labelAbove: 'heading',
@@ -33,7 +30,7 @@ const renderList: DynamicFieldRenderer<'list'> = (field, {translate, values, onO
                 label={getFieldLabel(field, translate)}
                 itemLabel={itemLabel}
                 itemFields={field.itemFields}
-                isSensitive={isSensitiveField(field)}
+                isSensitive={!!field.sensitive}
                 maxItems={field.maxItems}
                 addTitle={getListItemAddTitle(field, translate)}
                 addDescription={getLocalizedText(translate, field.addItemDescriptionKey, field.addItemDescription)}

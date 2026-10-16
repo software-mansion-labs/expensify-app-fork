@@ -1,5 +1,4 @@
-import getAddressInputKeys, {getAddressCountry, isStateAsked} from '@components/DynamicForm/content/elements/ExpensifyInput/model/getAddressInputKeys';
-import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
+import {getAddressInputKeys, getAddressCountry, isStateAsked} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
 
 import AddressFormFields from '@pages/ReimbursementAccount/AddressFormFields';
 
@@ -14,7 +13,7 @@ const renderAddress: DynamicFieldRenderer<'address'> = (field, {values}, {should
     // The street arrives as the field's answer. The other parts of a sensitive address are not drafted either, so they start from memory too.
     const getSensitivePart = (key: string) => {
         const part = values[key];
-        return isSensitiveField(field) && typeof part === 'string' ? part : undefined;
+        return !!field.sensitive && typeof part === 'string' ? part : undefined;
     };
     return {
         isMenuRow: false,

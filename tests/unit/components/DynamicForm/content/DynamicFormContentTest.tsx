@@ -7,7 +7,7 @@ import CountryPicker from '@components/CountryPicker';
 import CurrencyPicker from '@components/CurrencyPicker';
 import DatePicker from '@components/DatePicker';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
-import getAddressInputKeys from '@components/DynamicForm/content/elements/ExpensifyInput/model/getAddressInputKeys';
+import {getAddressInputKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
 import CurrencyInlineListAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/CurrencyInlineListAdapter';
 import FileUploadAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/FileUploadAdapter';
 import InlineSelectionListAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/InlineSelectionListAdapter';

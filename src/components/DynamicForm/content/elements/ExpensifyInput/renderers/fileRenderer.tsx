@@ -1,4 +1,4 @@
-import getFieldLabel from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldLabel';
+import {getFieldLabel} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
 import InputWrapper from '@components/Form/InputWrapper';
 
 import CONST from '@src/CONST';

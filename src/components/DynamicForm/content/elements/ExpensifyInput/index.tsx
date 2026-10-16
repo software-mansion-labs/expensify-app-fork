@@ -1,25 +1,38 @@
 import DynamicFormInputRow from '@components/DynamicForm/content/elements/DynamicFormInputRow';
 import {getRefreshHandlers} from '@components/DynamicForm/content/elements/inputBehavior';
 import {getLocalizedText} from '@components/DynamicForm/shared';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
+import type {LocalizedTranslate} from '@components/LocaleContextProvider';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
-import type {DynamicFormFieldType} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormFieldType} from '@src/types/onyx';
 
 import React from 'react';
 
 import type {ExpensifyInputProps} from './types';
 
-import getFieldLabel from './model/getFieldLabel';
-import isSensitiveField from './model/isSensitiveField';
-import ReadonlyFieldRow from './ReadonlyFieldRow';
-import renderDynamicField from './renderDynamicField';
+import {formatDynamicFieldValue, getFieldLabel} from './field';
+import {getListItemFallbackTitle, getListItems, summarizeListItem} from './list';
+import renderDynamicField from './renderers';
 
 /** Typed answers change on every keystroke, so they ask for new requirements when the user leaves the input instead */
 const TYPED_FIELD_TYPES = new Set<DynamicFormFieldType>(['text', 'number', 'amount', 'percent']);
+
+/** A list's answer is its entries, which formatDynamicFieldValue cannot name, so they are listed by their titles */
+function formatReadonlyValue(field: DynamicFormField, values: DynamicFormValues, translate: LocalizedTranslate): string {
+    if (field.type !== 'list') {
+        return formatDynamicFieldValue(field, values, translate);
+    }
+    const fallbackTitle = getListItemFallbackTitle(field, translate);
+    return getListItems(values[field.key])
+        .map((item) => summarizeListItem(item, field.itemFields, translate, fallbackTitle).title)
+        .join(', ');
+}
 
 /** A field in the App's own format: the rich input its type names, or its answer when the field is readonly */
 function ExpensifyInput({
@@ -40,10 +53,12 @@ function ExpensifyInput({
 
     if (field.readonly) {
         return (
-            <ReadonlyFieldRow
-                field={field}
-                values={values}
-            />
+            <DynamicFormInputRow isMenuRow>
+                <MenuItemField
+                    name={getFieldLabel(field, translate)}
+                    value={formatReadonlyValue(field, values, translate)}
+                />
+            </DynamicFormInputRow>
         );
     }
 
@@ -52,7 +67,7 @@ function ExpensifyInput({
         {values, translate, styles, currency, maxFileSize, isLoneField, onOpenListItemEditor, onListItemsChange, isSensitive, renderFields},
         {
             inputID: field.key,
-            shouldSaveDraft: !isSensitive && !isSensitiveField(field),
+            shouldSaveDraft: !isSensitive && !field.sensitive,
             forwardedFSClass: CONST.FULLSTORY.CLASS.MASK,
             ...getRefreshHandlers({inputID: field.key, shouldRefresh: !!field.refreshOnChange, isTyped: TYPED_FIELD_TYPES.has(field.type), values, onRefreshRequirements}),
         },

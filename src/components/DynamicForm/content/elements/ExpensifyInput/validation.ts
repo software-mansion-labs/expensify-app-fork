@@ -1,19 +1,56 @@
-import isSupportedField from '@components/DynamicForm/content/elements/ExpensifyInput/isSupportedField';
-import getFieldOptions from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldOptions';
-import getVisibleFields from '@components/DynamicForm/content/elements/ExpensifyInput/model/getVisibleFields';
-import {getListItems, getListItemSensitiveAnswers} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import summarizeListItem, {getListItemFallbackTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
-import type {DynamicFormFieldOfType} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
 import {getFormatErrors} from '@components/DynamicForm/content/elements/inputBehavior';
 import {isAnswered, toFormErrors} from '@components/DynamicForm/shared';
 import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import {isValidDate, isValidLegalName, isValidPastDate, isValidPhoneInternational, meetsMaximumAgeRequirement, meetsMinimumAgeRequirement} from '@libs/ValidationUtils';
+import {
+    getCountryZipRegexDetails,
+    isValidDate,
+    isValidLegalName,
+    isValidPastDate,
+    isValidPhoneInternational,
+    isValidZipCodeForCountry,
+    meetsMaximumAgeRequirement,
+    meetsMinimumAgeRequirement,
+} from '@libs/ValidationUtils';
 
-import type {DynamicFormChoiceField, DynamicFormField, DynamicFormFieldType, DynamicFormListField, DynamicFormSchemaField} from '@src/types/onyx';
+import type {DynamicFormAddressField, DynamicFormChoiceField, DynamicFormField, DynamicFormFieldType, DynamicFormListField, DynamicFormSchemaField} from '@src/types/onyx';
 
-import getAddressPartErrors, {isAddressRequired} from './getAddressPartErrors';
+import type {DynamicFormFieldOfType} from './types';
+
+import {getAddressCountry, getAddressInputKeys, getFieldOptions, isStateAsked, isSupportedField} from './field';
+import {getListItemFallbackTitle, getListItems, getListItemSensitiveAnswers, getVisibleFields, summarizeListItem} from './list';
+
+/** An optional address the user has started filling in is checked like a required one, so it is never submitted in part */
+function isAddressRequired(field: DynamicFormAddressField, values: DynamicFormValues): boolean {
+    const {street, city, state, zipCode, country} = getAddressInputKeys(field.key);
+    return field.required || [street, city, state, zipCode, country].some((partKey) => isAnswered(values[partKey]));
+}
+
+/** Each address part has its own input, so its errors go under its own draft key. The street is the field's own answer, which the required check covers. */
+function getAddressPartErrors(field: DynamicFormAddressField, values: DynamicFormValues, translate: LocalizedTranslate): DynamicFormError[] {
+    const addressKeys = getAddressInputKeys(field.key);
+    const country = getAddressCountry(field.key, values);
+    // A country whose zip format accepts an empty zip does not require one
+    const isZipAsked = !country || !isValidZipCodeForCountry('', country);
+    const errors: DynamicFormError[] = [];
+    if (isAddressRequired(field, values)) {
+        const requiredPartKeys = [addressKeys.city, addressKeys.country, ...(isZipAsked ? [addressKeys.zipCode] : []), ...(isStateAsked(country) ? [addressKeys.state] : [])];
+        for (const partKey of requiredPartKeys) {
+            if (!isAnswered(values[partKey])) {
+                errors.push([partKey, translate('common.error.fieldRequired')]);
+            }
+        }
+    }
+    const zipCode = values[addressKeys.zipCode];
+    if (field.rule !== 'zipCode' || typeof zipCode !== 'string' || zipCode.trim() === '') {
+        return errors;
+    }
+    if (!isValidZipCodeForCountry(zipCode, country)) {
+        errors.push([addressKeys.zipCode, translate('privatePersonalDetails.error.incorrectZipFormat', getCountryZipRegexDetails(country)?.samples)]);
+    }
+    return errors;
+}
 
 /** Checks a field the user has answered. Unanswered fields only get the required check. */
 type FieldValidator<TType extends DynamicFormFieldType> = (field: DynamicFormFieldOfType<TType>, values: DynamicFormValues, translate: LocalizedTranslate) => string[];

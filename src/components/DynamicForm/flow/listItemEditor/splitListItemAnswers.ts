@@ -1,5 +1,4 @@
-import getSubmittedAnswers from '@components/DynamicForm/content/elements/ExpensifyInput/getSubmittedAnswers';
-import {getListItemSensitiveAnswerKeys, getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {getSubmittedAnswers, getListItemSensitiveAnswerKeys, getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
 import type {DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';

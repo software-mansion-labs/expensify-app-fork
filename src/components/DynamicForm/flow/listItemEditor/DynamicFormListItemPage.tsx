@@ -1,10 +1,15 @@
 import ActivityIndicator from '@components/ActivityIndicator';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
-import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
-import {findListField, getListItems, getListItemSensitiveAnswers} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import summarizeListItem, {getListItemAddTitle, getListItemFallbackTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
+import {
+    findListField,
+    getListItems,
+    getListItemSensitiveAnswers,
+    summarizeListItem,
+    getListItemAddTitle,
+    getListItemFallbackTitle,
+} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import toContentElements from '@components/DynamicForm/content/elements/ExpensifyInput/toContentElements';
-import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation/getDynamicFieldErrors';
+import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
 import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import {toDynamicFormValues} from '@components/DynamicForm/shared';
@@ -30,7 +35,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
     const editorPage = parseListItemPageName(currentPageName);
     const listField = editorPage && findListField(allFields, editorPage.listKey);
     const item = listField && getListItems(values[listField.key]).find((candidate) => candidate.id === editorPage?.itemID);
-    const isSensitiveList = !!listField && isSensitiveField(listField);
+    const isSensitiveList = !!listField?.sensitive;
     const isDraftFilled = useListItemEditorDraft(currentPageName, item, isSensitiveList);
 
     if (!listField) {

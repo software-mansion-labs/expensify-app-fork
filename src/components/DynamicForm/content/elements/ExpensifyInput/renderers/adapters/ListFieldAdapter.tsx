@@ -1,5 +1,4 @@
-import {getListItemSensitiveAnswerKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import summarizeListItem from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
+import {getListItemSensitiveAnswerKeys, summarizeListItem} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import type {DynamicFormRenderFields} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import ListField from '@components/ListField';

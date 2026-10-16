@@ -1,5 +1,5 @@
 import type {DynamicFormRenderFields} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
-import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation/getDynamicFieldErrors';
+import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
 import {toDynamicFormValues} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';

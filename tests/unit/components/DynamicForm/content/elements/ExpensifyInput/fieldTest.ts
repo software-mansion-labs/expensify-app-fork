@@ -1,4 +1,4 @@
-import maskSensitiveValue from '@components/DynamicForm/content/elements/ExpensifyInput/model/maskSensitiveValue';
+import {maskSensitiveValue} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
 
 describe('maskSensitiveValue', () => {
     it('shows an SSN as •••-••-1234', () => {

@@ -1,6 +1,6 @@
-import getAddressInputKeys from '@components/DynamicForm/content/elements/ExpensifyInput/model/getAddressInputKeys';
-import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation/getDynamicFieldErrors';
+import {getAddressInputKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
+import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
+import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
 
 import Log from '@libs/Log';
 import {getCountryZipRegexDetails} from '@libs/ValidationUtils';
@@ -11,7 +11,7 @@ import type {DynamicFormField, DynamicFormSchemaField} from '@src/types/onyx';
 
 import {format, subYears} from 'date-fns';
 
-import {translateLocal} from '../../../../../../../utils/TestHelper';
+import {translateLocal} from '../../../../../../utils/TestHelper';
 
 describe('getDynamicFieldErrors', () => {
     const warnSpy = jest.spyOn(Log, 'warn').mockImplementation(() => {});

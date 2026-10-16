@@ -1,4 +1,4 @@
-import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
 import splitPageAnswers from '@components/DynamicForm/flow/splitPageAnswers';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';

@@ -1,4 +1,3 @@
-import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
 import type {DynamicFormFieldOfType} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
 import {isListItem} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
@@ -7,7 +6,21 @@ import type {FormValue} from '@components/Form/types';
 import type {DynamicFormFieldType, DynamicFormListItem} from '@src/types/onyx';
 import type {FileObject} from '@src/types/utils/Attachment';
 
-import type {DynamicFieldAnswerMap} from './types';
+import type {DynamicFieldAnswerMap, DynamicFieldContext, DynamicFieldInput, DynamicFieldInputProps, DynamicFieldRenderer, DynamicFieldRendererMap} from './types';
+
+import renderAddress from './addressRenderer';
+import CHOICE_RENDERERS from './choiceRenderers';
+import renderFile from './fileRenderer';
+import renderList from './listRenderer';
+import TEXT_RENDERERS from './textRenderers';
+
+const RENDERERS: DynamicFieldRendererMap = {
+    ...TEXT_RENDERERS,
+    ...CHOICE_RENDERERS,
+    address: renderAddress,
+    file: renderFile,
+    list: renderList,
+};
 
 type AnswerGuards = {[TType in DynamicFormFieldType]: (answer: FormValue) => answer is DynamicFieldAnswerMap[TType]};
 
@@ -57,7 +70,13 @@ function getSensitiveDefaultValue<TType extends DynamicFormFieldType>(
 ): DynamicFieldAnswerMap[TType] | undefined {
     const answer = values[field.key];
     const isAnswer: AnswerGuards[TType] = ANSWER_GUARDS[field.type];
-    return (isInSensitiveForm || isSensitiveField(field)) && answer !== undefined && isAnswer(answer) ? answer : undefined;
+    return (isInSensitiveForm || field.sensitive) && answer !== undefined && isAnswer(answer) ? answer : undefined;
 }
 
-export default getSensitiveDefaultValue;
+/** The input for one field, and how the renderer lays it out */
+function renderDynamicField<TType extends DynamicFormFieldType>(field: DynamicFormFieldOfType<TType>, context: DynamicFieldContext, inputProps: DynamicFieldInputProps): DynamicFieldInput {
+    const render: DynamicFieldRenderer<TType> = RENDERERS[field.type];
+    return render(field, context, {...inputProps, defaultValue: getSensitiveDefaultValue(field, context.values, context.isSensitive)});
+}
+
+export default renderDynamicField;

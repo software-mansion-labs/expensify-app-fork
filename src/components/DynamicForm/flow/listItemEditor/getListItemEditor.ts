@@ -1,5 +1,5 @@
 import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
-import {findListField, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {findListField, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import type {FlowPages} from '@components/DynamicForm/flow/getFlowPages';
 import type {DynamicFormFlowActions, DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 import type {DynamicFormInputOptions, DynamicFormValues} from '@components/DynamicForm/types';
