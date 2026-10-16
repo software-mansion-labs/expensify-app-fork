@@ -1,5 +1,5 @@
-import getConfirmationItems from '@components/DynamicForm/flow/confirmationPage/getConfirmationItems';
-import {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
+import {getAllFields} from '@components/DynamicForm/flow/pages';
+import {getConfirmationItems} from '@components/DynamicForm/flow/subPages/DynamicFormConfirmationPage';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
 import {translateLocal} from '../../../../../utils/TestHelper';

@@ -1,8 +1,7 @@
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
 import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
 import getContentErrors from '@components/DynamicForm/content/getContentErrors';
-import getPageTitle from '@components/DynamicForm/flow/pages/getPageTitle';
-import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
+import {getPageTitle} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormFlowPage, DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import {getLocalizedText, toDynamicFormValues} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
@@ -14,6 +13,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
 
 import React from 'react';
+
+import DynamicFormPageHeader from './DynamicFormPageHeader';
 
 /** A sensitive list lives in memory, which the editor page and a removal update, so the form's own copy of it may be stale */
 function getMemoryListAnswers(page: DynamicFormFlowPage, values: DynamicFormValues): DynamicFormValues {

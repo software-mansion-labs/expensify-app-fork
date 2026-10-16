@@ -1,8 +1,7 @@
 import DynamicFormFlow from '@components/DynamicForm';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
 import getContentErrors from '@components/DynamicForm/content/getContentErrors';
-import getPages, {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
-import getPageTitle from '@components/DynamicForm/flow/pages/getPageTitle';
+import {getPages, getAllFields, getPageTitle} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormLayout} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
 import Text from '@components/Text';

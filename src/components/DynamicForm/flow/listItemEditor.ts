@@ -1,8 +1,8 @@
 import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
 import {findListField, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
-import type {FlowPages} from '@components/DynamicForm/flow/getFlowPages';
-import type {DynamicFormFlowActions, DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 import type {DynamicFormInputOptions, DynamicFormValues} from '@components/DynamicForm/types';
+
+import type {PageConfig} from '@hooks/useSubPage/types';
 
 import CONST from '@src/CONST';
 import type {OnyxFormKey} from '@src/ONYXKEYS';
@@ -10,26 +10,44 @@ import type {DynamicFormField} from '@src/types/onyx';
 
 import {Str} from 'expensify-common';
 
-import {getListItemPageName} from './listItemPageName';
-import saveListItemAnswers, {saveSensitiveListItems} from './saveListItemAnswers';
+import type {DynamicFormFlowActions, DynamicFormFlowPage, DynamicFormSubPageProps} from './types';
 
-type ListItemEditorOptions = Pick<FlowPages, 'subPages'> &
-    Pick<DynamicFormInputOptions, 'onRefreshRequirements'> & {
-        formID: OnyxFormKey;
-        pages: DynamicFormFlowPage[];
-        allFields: DynamicFormField[];
-        values: DynamicFormValues;
-        isEditing: boolean;
-        currentPageName: string | undefined;
-        moveTo: (pageIndex: number, turnOnEditMode?: boolean) => void;
+import {saveListItemAnswers, saveSensitiveListItems} from './answerStorage';
 
-        /** Goes back to a page without stacking a second copy of it */
-        returnTo: (pageName: string) => void;
-    };
+const PAGE_NAME_SEPARATOR = '~';
+const NEW_ITEM_ID = 'new';
+
+type ListItemEditorOptions = Pick<DynamicFormInputOptions, 'onRefreshRequirements'> & {
+    formID: OnyxFormKey;
+    pages: DynamicFormFlowPage[];
+    allFields: DynamicFormField[];
+    values: DynamicFormValues;
+    subPages: Array<PageConfig<DynamicFormSubPageProps>>;
+    isEditing: boolean;
+    currentPageName: string | undefined;
+    moveTo: (pageIndex: number, turnOnEditMode?: boolean) => void;
+
+    /** Goes back to a page without stacking a second copy of it */
+    returnTo: (pageName: string) => void;
+};
 
 type ListItemEditor = Pick<DynamicFormFlowActions, 'onOpenListItemEditor' | 'onListItemSave' | 'onListItemsChange'> & {
     closeListItemEditor: (listKey: string) => void;
 };
+
+/** Route segment of a list entry's editor page, or of the page that adds one */
+function getListItemPageName(listKey: string, itemID = NEW_ITEM_ID): string {
+    return `${listKey}${PAGE_NAME_SEPARATOR}${itemID}`;
+}
+
+/** The list key and entry ID an editor page name points at, or undefined for any other page */
+function parseListItemPageName(pageName: string | undefined): {listKey: string; itemID: string | undefined} | undefined {
+    if (!pageName?.includes(PAGE_NAME_SEPARATOR)) {
+        return undefined;
+    }
+    const [listKey = '', itemID] = pageName.split(PAGE_NAME_SEPARATOR);
+    return {listKey, itemID: itemID === NEW_ITEM_ID ? undefined : itemID};
+}
 
 /** The page that holds a list, which its entry editors return to and whose step they highlight */
 function findListPage(pages: DynamicFormFlowPage[], listKey: string): DynamicFormFlowPage | undefined {
@@ -83,5 +101,4 @@ function getListItemEditor({formID, pages, allFields, values, subPages, isEditin
     return {closeListItemEditor, onOpenListItemEditor, onListItemSave, onListItemsChange};
 }
 
-export default getListItemEditor;
-export {findListPage};
+export {findListPage, getListItemEditor, getListItemPageName, parseListItemPageName};

@@ -7,7 +7,7 @@ import {useEffect} from 'react';
 import type {FlowPages} from './getFlowPages';
 import type {DynamicFormSubPageProps} from './types';
 
-import {parseListItemPageName} from './listItemEditor/listItemPageName';
+import {parseListItemPageName} from './listItemEditor';
 
 type PageState = Pick<FlowPages, 'subPages' | 'skipPages'> & {
     currentPageName: string | undefined;

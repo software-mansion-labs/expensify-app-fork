@@ -10,7 +10,7 @@ import {
 } from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import toContentElements from '@components/DynamicForm/content/elements/ExpensifyInput/toContentElements';
 import {getItemFieldErrors} from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
-import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
+import {parseListItemPageName} from '@components/DynamicForm/flow/listItemEditor';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import {toDynamicFormValues} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
@@ -19,14 +19,42 @@ import FormProvider from '@components/Form/FormProvider';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import {clearListItemEdit, startListItemEdit} from '@userActions/DynamicForm';
+
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {DynamicFormListItem} from '@src/types/onyx';
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {View} from 'react-native';
 
-import {parseListItemPageName} from './listItemPageName';
-import useListItemEditorDraft from './useListItemEditorDraft';
+import DynamicFormPageHeader from './DynamicFormPageHeader';
+
+/**
+ * The editor form is shared by every entry, so it is filled with this entry's answers before its inputs mount, and emptied once the editor closes.
+ * The entries of a sensitive list are never drafted, so its editor starts empty and its inputs take the entry's answers from memory.
+ * Returns whether this page's answers are in.
+ */
+function useListItemEditorDraft(pageName: string | undefined, item: DynamicFormListItem | undefined, isSensitiveList: boolean): boolean {
+    const [filledPageName, setFilledPageName] = useState<string>();
+
+    useEffect(() => {
+        let isCancelled = false;
+        startListItemEdit(isSensitiveList ? {} : (item ?? {})).then(() => {
+            if (isCancelled) {
+                return;
+            }
+            setFilledPageName(pageName);
+        });
+        return () => {
+            isCancelled = true;
+        };
+    }, [pageName, item, isSensitiveList]);
+
+    useEffect(() => clearListItemEdit, []);
+
+    return filledPageName === pageName;
+}
 
 /** The editor of one list entry, or of a new one: the entry's fields and a Save button */
 function DynamicFormListItemPage({currentPageName, allFields, values, currency, maxFileSize, onRefreshRequirements, onListItemSave}: DynamicFormSubPageProps) {

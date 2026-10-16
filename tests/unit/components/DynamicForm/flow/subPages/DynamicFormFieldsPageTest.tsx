@@ -1,6 +1,6 @@
 import {render} from '@testing-library/react-native';
 
-import DynamicFormFieldsPage from '@components/DynamicForm/flow/fieldsPage/DynamicFormFieldsPage';
+import DynamicFormFieldsPage from '@components/DynamicForm/flow/subPages/DynamicFormFieldsPage';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 import FormProvider from '@components/Form/FormProvider';
 

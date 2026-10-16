@@ -1,5 +1,5 @@
 import getFlowPages from '@components/DynamicForm/flow/getFlowPages';
-import {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
+import {getAllFields} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
 import CONST from '@src/CONST';

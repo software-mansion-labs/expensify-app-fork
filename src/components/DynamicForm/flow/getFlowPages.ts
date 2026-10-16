@@ -10,11 +10,11 @@ import type {DynamicFormField} from '@src/types/onyx';
 
 import type {DynamicFormFlowPage, DynamicFormSubPageProps} from './types';
 
-import DynamicFormConfirmationPage from './confirmationPage/DynamicFormConfirmationPage';
-import DynamicFormFieldsPage from './fieldsPage/DynamicFormFieldsPage';
-import DynamicFormListItemPage from './listItemEditor/DynamicFormListItemPage';
-import {getListItemPageName} from './listItemEditor/listItemPageName';
-import isPageShown from './pages/isPageShown';
+import {getListItemPageName} from './listItemEditor';
+import {isPageShown} from './pages';
+import DynamicFormConfirmationPage from './subPages/DynamicFormConfirmationPage';
+import DynamicFormFieldsPage from './subPages/DynamicFormFieldsPage';
+import DynamicFormListItemPage from './subPages/DynamicFormListItemPage';
 
 type FlowPages = {
     /** Every sub-page useSubPage routes to: the form's pages, the confirmation page, then the list entry editors */
