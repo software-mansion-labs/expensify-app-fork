@@ -343,7 +343,7 @@ type DynamicFormPage = DynamicFormHeading & {
 };
 
 /** What a multi-page form is built from: pages as the server groups them, or a flat list of elements the App paginates */
-type DynamicFormSchema = {pages: DynamicFormPage[]} | {elements: DynamicFormSchemaElement[]};
+type DynamicFormSchema = {pages: DynamicFormPage[]} | {fields: DynamicFormSchemaElement[]};
 
 /** Answers to sensitive fields, keyed by form ID, then by field key. Kept in memory only, never in a draft. */
 type DynamicFormSensitiveAnswers = Partial<Record<OnyxFormKey, Partial<Record<string, FormValue>>>>;

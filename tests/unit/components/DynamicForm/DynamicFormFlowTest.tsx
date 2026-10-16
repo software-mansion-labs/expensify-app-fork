@@ -225,7 +225,7 @@ describe('DynamicFormFlow', () => {
     it('paginates a flat list of fields', async () => {
         // Given a schema of fields with no pages, one of them an address that needs a page of its own
         const flowSchema: DynamicFormSchema = {
-            elements: [
+            fields: [
                 {elementType: 'ExpensifyInput', key: 'firstName', type: 'text', required: true},
                 {elementType: 'ExpensifyInput', key: 'lastName', type: 'text', required: true},
                 {elementType: 'ExpensifyInput', key: 'home', type: 'address', required: true},
@@ -269,7 +269,7 @@ describe('DynamicFormFlow', () => {
     it('keys the steps of pages with no title by their page keys', async () => {
         // Given pages built from a flat list, which carry no title, where two pages ask several questions and so have no headline either
         const flowSchema: DynamicFormSchema = {
-            elements: [
+            fields: [
                 {elementType: 'ExpensifyInput', key: 'home', type: 'address', required: true, label: 'Home address'},
                 {elementType: 'ExpensifyInput', key: 'firstName', type: 'text', required: true, label: 'First name'},
                 {elementType: 'ExpensifyInput', key: 'lastName', type: 'text', required: true, label: 'Last name'},

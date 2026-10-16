@@ -52,7 +52,7 @@ function withRouteKeys(pages: DynamicFormFlowPage[]): DynamicFormFlowPage[] {
 
 /** The pages of a schema, as the server grouped them or as the App paginates a flat list. Their content is parsed here, once for the whole flow. */
 function getPages(schema: DynamicFormSchema): DynamicFormFlowPage[] {
-    const pages = 'pages' in schema ? parsePages(schema.pages) : paginateContent(parseContent(schema.elements)).map((content) => ({key: '', content}));
+    const pages = 'pages' in schema ? parsePages(schema.pages) : paginateContent(parseContent(schema.fields)).map((content) => ({key: '', content}));
     return withRouteKeys(pages);
 }
 

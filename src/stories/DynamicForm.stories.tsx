@@ -40,7 +40,7 @@ function toElement(item: DynamicFormSchemaField | DynamicFormSchemaElement): Dyn
 /** Each run of elements sharing a group becomes one page titled by it, as the server sends pages. A flat schema drops the groups and lets the form build untitled pages. */
 function toSchema(fields: GroupedField[], isFlat = false): DynamicFormSchema {
     if (isFlat) {
-        return {elements: fields.map(({group, ...field}) => toElement(field))};
+        return {fields: fields.map(({group, ...field}) => toElement(field))};
     }
     const pages: DynamicFormPage[] = [];
     for (const {group, ...field} of fields) {

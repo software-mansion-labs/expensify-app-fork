@@ -26,7 +26,7 @@ describe('getPages', () => {
         const unknown = {elementType: 'ExpensifyInput', key: 'x', type: 'hologram', required: true};
 
         // When its pages are built
-        const pages = getPages({elements: [unknown, text('a')]});
+        const pages = getPages({fields: [unknown, text('a')]});
 
         // Then the unknown field is parsed out before paginating, so it does not produce an empty page
         expect(keysOf(pages)).toEqual([['a']]);
@@ -37,7 +37,7 @@ describe('getPages', () => {
         const elements: DynamicFormSchemaElement[] = [text('a'), input({key: 'address', type: 'address', required: true})];
 
         // When its pages are built
-        const pages = getPages({elements});
+        const pages = getPages({fields: elements});
 
         // Then the pages get stable keys
         expect(pages.map((page) => page.key)).toEqual(['page-1', 'page-2']);
