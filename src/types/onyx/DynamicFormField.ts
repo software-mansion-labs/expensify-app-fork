@@ -14,9 +14,9 @@ type DynamicFormCondition = {
     equals: string[];
 };
 
-/** A title between fields in a page's content. It has no `type`, which is what tells it apart from a field. */
+/** A title between fields in a page's content, sent as a Heading element */
 type DynamicFormHeading = {
-    /** Can match a field's key, since headings and fields are told apart by `type` */
+    /** Can match a field's key, since headings and fields are told apart by `elementType` */
     key: string;
 
     /** The schema author's wording, shown when there is no titleKey */
@@ -105,6 +105,9 @@ type DynamicFormTextField = DynamicFormFieldBase & {
 
     /** A named check on top of the others: `legalName` for a person's legal name, `phone` for an international phone number */
     rule?: 'legalName' | 'phone';
+
+    /** Display mask such as `**-**-**`, where each `*` stands for one typed character. Accepted but not applied yet. */
+    displayFormat?: string;
 };
 
 /** Text that must parse as a finite number, typed on the numeric keyboard */
@@ -248,17 +251,99 @@ type DynamicFormListItem = {
 /** A field as the schema sends it, which can be of a type this App version does not know */
 type DynamicFormSchemaField = DynamicFormField | (DynamicFormFieldBase & {type: string});
 
-/** A heading or a field of a page */
-type DynamicFormContentItem = DynamicFormHeading | DynamicFormSchemaField;
+/** One allowed value of a Wise field */
+type DynamicFormWiseValue = {
+    /** Value submitted to the server */
+    key: string;
+
+    /** Label shown to the user */
+    name: string;
+};
+
+/** One entry of `fields[].group[]` in Wise's account requirements, kept as Wise sends it so the server can pass it through unchanged */
+type DynamicFormWiseField = {
+    /** Key the answer is submitted under, and the field's draft key */
+    key: string;
+
+    /** Label shown to the user */
+    name: string;
+
+    /** How the answer is picked */
+    type: 'text' | 'select' | 'radio' | 'date';
+
+    /** The form cannot move on until the field is answered */
+    required: boolean;
+
+    /** Changing the answer changes the requirements, so the screen fetches them again. Wise has no other way to show or hide fields. */
+    refreshRequirementsOnChange?: boolean;
+
+    /** Sample value, shown as a hint and in the format error */
+    example?: string | null;
+
+    /** Fewest characters the answer can have */
+    minLength?: number | null;
+
+    /** Most characters the answer can have */
+    maxLength?: number | null;
+
+    /** Pattern the answer must match */
+    validationRegexp?: string | null;
+
+    /** The options of a select or radio field */
+    valuesAllowed?: DynamicFormWiseValue[] | null;
+
+    /** Wise's display mask, such as `**-**-**`. Accepted but not applied yet. */
+    displayFormat?: string | null;
+};
+
+/** A field in Wise's format, drawn by plain inputs that behave exactly as Wise describes them */
+type DynamicFormHTMLInputElement = DynamicFormWiseField & {elementType: 'HTMLInput'};
+
+/** A field in the App's own format, drawn by the App's rich inputs such as an address, a file upload or a list */
+type DynamicFormExpensifyInputElement = DynamicFormField & {elementType: 'ExpensifyInput'};
+
+/** A title between the inputs of a page */
+type DynamicFormHeadingElement = DynamicFormHeading & {elementType: 'Heading'};
+
+/** A notice the user should read before answering, such as a warning about fees */
+type DynamicFormBannerElement = {
+    elementType: 'Banner';
+
+    /** Unique within the page */
+    key: string;
+
+    /** Text of the notice */
+    text: string;
+};
+
+/** Supporting text between the inputs of a page */
+type DynamicFormDescriptionElement = {
+    elementType: 'Description';
+
+    /** Unique within the page */
+    key: string;
+
+    /** The text */
+    text: string;
+};
+
+/** One element of a page. `elementType` picks the component that draws it, and every element type has its own data format. */
+type DynamicFormElement = DynamicFormHTMLInputElement | DynamicFormExpensifyInputElement | DynamicFormHeadingElement | DynamicFormBannerElement | DynamicFormDescriptionElement;
+
+/** An element that holds an answer */
+type DynamicFormInputElement = DynamicFormHTMLInputElement | DynamicFormExpensifyInputElement;
+
+/** An element as the schema sends it, which can be of an element type or a field type this App version does not know */
+type DynamicFormSchemaElement = DynamicFormElement | {elementType: string; key?: string};
 
 /** A page of a multi-page form. It is a heading with its own content, so it can carry a title, a description and a `showWhen`. */
 type DynamicFormPage = DynamicFormHeading & {
-    /** The headings and fields shown on this page */
-    content: DynamicFormContentItem[];
+    /** The elements shown on this page */
+    content: DynamicFormSchemaElement[];
 };
 
-/** What a multi-page form is built from: pages as the server groups them, or a flat list of fields the App paginates */
-type DynamicFormSchema = {pages: DynamicFormPage[]} | {fields: DynamicFormSchemaField[]};
+/** What a multi-page form is built from: pages as the server groups them, or a flat list of elements the App paginates */
+type DynamicFormSchema = {pages: DynamicFormPage[]} | {elements: DynamicFormSchemaElement[]};
 
 /** Answers to sensitive fields, keyed by form ID, then by field key. Kept in memory only, never in a draft. */
 type DynamicFormSensitiveAnswers = Partial<Record<OnyxFormKey, Partial<Record<string, FormValue>>>>;
@@ -268,20 +353,29 @@ type DynamicFormFieldType = DynamicFormField['type'];
 
 export type {
     DynamicFormAddressField,
+    DynamicFormBannerElement,
     DynamicFormChoiceField,
-    DynamicFormContentItem,
+    DynamicFormCondition,
     DynamicFormCountryField,
+    DynamicFormDescriptionElement,
+    DynamicFormElement,
+    DynamicFormExpensifyInputElement,
     DynamicFormField,
     DynamicFormFieldOption,
     DynamicFormFieldType,
     DynamicFormHeading,
+    DynamicFormHeadingElement,
+    DynamicFormHTMLInputElement,
+    DynamicFormInputElement,
     DynamicFormListField,
     DynamicFormListItem,
     DynamicFormMultiChoiceField,
     DynamicFormNumberField,
     DynamicFormPage,
     DynamicFormSchema,
+    DynamicFormSchemaElement,
     DynamicFormSchemaField,
     DynamicFormSensitiveAnswers,
     DynamicFormTextField,
+    DynamicFormWiseField,
 };

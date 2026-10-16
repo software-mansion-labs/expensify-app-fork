@@ -1,9 +1,8 @@
 import DynamicFormFlow from '@components/DynamicForm';
-import DynamicFormFields from '@components/DynamicForm/components/DynamicFormFields';
+import {getContentErrors} from '@components/DynamicForm/content/content';
+import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
+import {getPages, getPageTitle} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormLayout} from '@components/DynamicForm/types';
-import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
-import getPageTitle from '@components/DynamicForm/utils/getPageTitle';
-import {getAllFields, getPages} from '@components/DynamicForm/utils/paginate';
 import FormProvider from '@components/Form/FormProvider';
 import Text from '@components/Text';
 
@@ -15,7 +14,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import styles from '@src/styles';
 import {defaultTheme} from '@src/styles/theme';
-import type {DynamicFormListItem, DynamicFormPage, DynamicFormSchema, DynamicFormSchemaField} from '@src/types/onyx';
+import type {DynamicFormListItem, DynamicFormPage, DynamicFormSchema, DynamicFormSchemaElement, DynamicFormSchemaField} from '@src/types/onyx';
 
 import type {Meta, StoryFn} from 'storybook-react-rsbuild';
 
@@ -31,22 +30,26 @@ const STORYBOOK_FORM_ID = ONYXKEYS.FORMS.INTERNATIONAL_BANK_ACCOUNT_FORM;
 
 const FLOW_ROUTE_PREFIX = 'settings/wallet/add-bank-account';
 
-/** A fixture field with the title of the page it is asked on */
-type GroupedField = DynamicFormSchemaField & {group: string};
+/** A fixture element with the title of the page it is on. A bare field is an App-format field, so the fixtures stay short. */
+type GroupedField = (DynamicFormSchemaField | DynamicFormSchemaElement) & {group: string};
 
-/** Each run of fields sharing a group becomes one page titled by it, as the server sends pages. A flat schema drops the groups and lets the form build untitled pages. */
+function toElement(item: DynamicFormSchemaField | DynamicFormSchemaElement): DynamicFormSchemaElement {
+    return 'elementType' in item ? item : {...item, elementType: 'ExpensifyInput'};
+}
+
+/** Each run of elements sharing a group becomes one page titled by it, as the server sends pages. A flat schema drops the groups and lets the form build untitled pages. */
 function toSchema(fields: GroupedField[], isFlat = false): DynamicFormSchema {
     if (isFlat) {
-        return {fields: fields.map(({group, ...field}) => field)};
+        return {elements: fields.map(({group, ...field}) => toElement(field))};
     }
     const pages: DynamicFormPage[] = [];
     for (const {group, ...field} of fields) {
         const lastPage = pages.at(-1);
         if (lastPage?.title === group) {
-            lastPage.content.push(field);
+            lastPage.content.push(toElement(field));
             continue;
         }
-        pages.push({key: group, title: group, content: [field]});
+        pages.push({key: group, title: group, content: [toElement(field)]});
     }
     return {pages};
 }
@@ -288,6 +291,75 @@ const owners: GroupedField = {
     ],
 };
 
+/** Wise's account requirements passed through as HTML inputs, with banners, descriptions and an App-format address on the same pages */
+const wiseRecipient: GroupedField[] = [
+    {elementType: 'Description', key: 'intro', text: 'Enter the details of the UK bank account you want to pay.', group: 'Recipient details'},
+    {
+        elementType: 'HTMLInput',
+        key: 'legalType',
+        name: 'Recipient type',
+        type: 'radio',
+        required: true,
+        refreshRequirementsOnChange: true,
+        valuesAllowed: [
+            {key: 'PRIVATE', name: 'Person'},
+            {key: 'BUSINESS', name: 'Business'},
+        ],
+        group: 'Recipient details',
+    },
+    {elementType: 'HTMLInput', key: 'accountHolderName', name: 'Full name of the account holder', type: 'text', required: true, minLength: 2, maxLength: 255, group: 'Recipient details'},
+    {
+        elementType: 'HTMLInput',
+        key: 'sortCode',
+        name: 'UK sort code',
+        type: 'text',
+        required: true,
+        example: '040075',
+        minLength: 6,
+        maxLength: 8,
+        validationRegexp: '^[0-9]{2}-?[0-9]{2}-?[0-9]{2}$',
+        displayFormat: '**-**-**',
+        group: 'Recipient details',
+    },
+    {
+        elementType: 'HTMLInput',
+        key: 'accountNumber',
+        name: 'Account number',
+        type: 'text',
+        required: true,
+        example: '37778842',
+        minLength: 8,
+        maxLength: 8,
+        validationRegexp: '^[0-9]{8}$',
+        group: 'Recipient details',
+    },
+    {elementType: 'Banner', key: 'nameCheck', text: 'The bank checks that the name matches the account before it pays.', group: 'Recipient details'},
+    {
+        elementType: 'HTMLInput',
+        key: 'accountType',
+        name: 'Account type',
+        type: 'select',
+        required: true,
+        valuesAllowed: [
+            {key: 'CHECKING', name: 'Checking'},
+            {key: 'SAVINGS', name: 'Savings'},
+        ],
+        group: 'Recipient details',
+    },
+    {
+        elementType: 'HTMLInput',
+        key: 'email',
+        name: 'E-mail',
+        type: 'text',
+        required: false,
+        example: 'example@example.ex',
+        validationRegexp: '^[^\\s]+@[^\\s]+\\.[^\\s]{2,}$',
+        group: 'Recipient details',
+    },
+    {elementType: 'HTMLInput', key: 'dateOfBirth', name: 'Date of birth', type: 'date', required: true, group: 'Recipient address'},
+    {key: 'address', label: 'Address', group: 'Recipient address', type: 'address', required: true},
+];
+
 /** Every case Storybook shows, each usable in the Flow, the Playground and as its own sidebar entry */
 const PRESETS = {
     originalBankAccount: {
@@ -353,8 +425,16 @@ const PRESETS = {
         fields: accountDetails.filter((field) => field.key === 'annualVolume' || field.key === 'accountNumber'),
         draftValues: {annualVolume: '25000'},
     },
+    wiseRecipient: {
+        fields: wiseRecipient,
+        draftValues: {legalType: 'PRIVATE'},
+    },
     unknownType: {
-        fields: [{key: 'signature', label: 'Signature', group: 'Sign', type: 'signature', required: true}, ...accountDetails.slice(0, 1).map((field) => ({...field, group: 'Sign'}))],
+        fields: [
+            {key: 'signature', label: 'Signature', group: 'Sign', type: 'signature', required: true},
+            {elementType: 'Carousel', key: 'carousel', group: 'Sign'},
+            ...accountDetails.slice(0, 1).map((field) => ({...field, group: 'Sign'})),
+        ],
         draftValues: {},
     },
 } satisfies Record<string, Preset>;
@@ -387,9 +467,8 @@ function SinglePage({fields, draftValues, isFlat}: Preset) {
     const {translate} = useLocalize();
     const isDraftReady = useSeededDraft(draftValues);
     // List entries are edited on flow pages, so this screen leaves lists out
-    const pageFields = fields.filter((field) => field.type !== 'list');
+    const pageFields = fields.filter((field) => !('type' in field) || field.type !== 'list');
     const pages = getPages(toSchema(pageFields, isFlat));
-    const allFields = getAllFields(pages);
 
     if (!isDraftReady) {
         return <View />;
@@ -399,19 +478,18 @@ function SinglePage({fields, draftValues, isFlat}: Preset) {
         <FormProvider
             formID={STORYBOOK_FORM_ID}
             submitButtonText="Submit"
-            validate={(values) => getDynamicFieldErrors(allFields, values, translate)}
+            validate={(values) => Object.fromEntries(pages.flatMap((page) => Object.entries(getContentErrors(page.content, values, translate))))}
             onSubmit={(values) => alert(JSON.stringify(values, null, 4))}
             style={defaultStyles.ph5}
         >
             {({inputValues}) =>
                 pages.map((page) => {
-                    const title = getPageTitle(page, inputValues, translate, allFields);
+                    const title = getPageTitle(page, inputValues, translate);
                     return (
                         <View key={page.key}>
                             {!!title && <Text style={[defaultStyles.textHeadlineLineHeightXXL, defaultStyles.mt5, defaultStyles.mb3]}>{title}</Text>}
-                            <DynamicFormFields
+                            <DynamicFormContent
                                 content={page.content}
-                                allFields={allFields}
                                 values={inputValues}
                             />
                         </View>
@@ -573,6 +651,7 @@ const YesNoQuestion = presetFlowStory('yesNoQuestion');
 const LoneCountry = presetFlowStory('loneCountry');
 const LoneCurrency = presetFlowStory('loneCurrency');
 const AmountWithCurrency = presetFlowStory('amountWithCurrency');
+const WiseRecipient = presetFlowStory('wiseRecipient');
 const UnknownType = presetFlowStory('unknownType');
 
 export default story;
@@ -589,5 +668,6 @@ export {
     LoneCountry,
     LoneCurrency,
     AmountWithCurrency,
+    WiseRecipient,
     UnknownType,
 };

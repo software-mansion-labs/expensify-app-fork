@@ -1,8 +1,9 @@
 import {render} from '@testing-library/react-native';
 
 import DynamicFormFlow from '@components/DynamicForm';
-import type {DynamicFormLayout, DynamicFormSubPageProps} from '@components/DynamicForm/types';
-import {getListItems, getListItemSensitiveKey} from '@components/DynamicForm/utils/listItems';
+import {getListItems, getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
+import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
+import type {DynamicFormLayout} from '@components/DynamicForm/types';
 import type {FormValue} from '@components/Form/types';
 
 import useSubPage from '@hooks/useSubPage';
@@ -60,19 +61,19 @@ const personalDetails: DynamicFormPage = {
     key: 'personal-details',
     title: 'Personal details',
     content: [
-        {key: 'firstName', type: 'text', required: true},
-        {key: 'ssn', type: 'text', required: true, sensitive: true},
+        {elementType: 'ExpensifyInput', key: 'firstName', type: 'text', required: true},
+        {elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true},
     ],
 };
 const recipient: DynamicFormPage = {
     key: 'recipient',
     title: 'Recipient',
-    content: [{key: 'legalType', type: 'radio', required: true, values: [{key: 'PRIVATE'}, {key: 'BUSINESS'}]}],
+    content: [{elementType: 'ExpensifyInput', key: 'legalType', type: 'radio', required: true, values: [{key: 'PRIVATE'}, {key: 'BUSINESS'}]}],
 };
 const company: DynamicFormPage = {
     key: 'company',
     title: 'Company',
-    content: [{key: 'companyNumber', type: 'text', required: true, showWhen: {key: 'legalType', equals: ['BUSINESS']}}],
+    content: [{elementType: 'ExpensifyInput', key: 'companyNumber', type: 'text', required: true, showWhen: {key: 'legalType', equals: ['BUSINESS']}}],
 };
 
 const schema: DynamicFormSchema = {pages: [personalDetails, recipient, company]};
@@ -224,10 +225,10 @@ describe('DynamicFormFlow', () => {
     it('paginates a flat list of fields', async () => {
         // Given a schema of fields with no pages, one of them an address that needs a page of its own
         const flowSchema: DynamicFormSchema = {
-            fields: [
-                {key: 'firstName', type: 'text', required: true},
-                {key: 'lastName', type: 'text', required: true},
-                {key: 'home', type: 'address', required: true},
+            elements: [
+                {elementType: 'ExpensifyInput', key: 'firstName', type: 'text', required: true},
+                {elementType: 'ExpensifyInput', key: 'lastName', type: 'text', required: true},
+                {elementType: 'ExpensifyInput', key: 'home', type: 'address', required: true},
             ],
         };
 
@@ -268,13 +269,13 @@ describe('DynamicFormFlow', () => {
     it('keys the steps of pages with no title by their page keys', async () => {
         // Given pages built from a flat list, which carry no title, where two pages ask several questions and so have no headline either
         const flowSchema: DynamicFormSchema = {
-            fields: [
-                {key: 'home', type: 'address', required: true, label: 'Home address'},
-                {key: 'firstName', type: 'text', required: true, label: 'First name'},
-                {key: 'lastName', type: 'text', required: true, label: 'Last name'},
-                {key: 'work', type: 'address', required: true, label: 'Work address'},
-                {key: 'company', type: 'text', required: true, label: 'Company'},
-                {key: 'role', type: 'text', required: true, label: 'Role'},
+            elements: [
+                {elementType: 'ExpensifyInput', key: 'home', type: 'address', required: true, label: 'Home address'},
+                {elementType: 'ExpensifyInput', key: 'firstName', type: 'text', required: true, label: 'First name'},
+                {elementType: 'ExpensifyInput', key: 'lastName', type: 'text', required: true, label: 'Last name'},
+                {elementType: 'ExpensifyInput', key: 'work', type: 'address', required: true, label: 'Work address'},
+                {elementType: 'ExpensifyInput', key: 'company', type: 'text', required: true, label: 'Company'},
+                {elementType: 'ExpensifyInput', key: 'role', type: 'text', required: true, label: 'Role'},
             ],
         };
 
@@ -327,7 +328,12 @@ describe('DynamicFormFlow', () => {
 
     it('skips a page whose own showWhen does not match, and resume passes over it', async () => {
         // Given a page shown only for business recipients, holding a field the draft never answered
-        const businessPage: DynamicFormPage = {key: 'business', title: 'Business', showWhen: {key: 'legalType', equals: ['BUSINESS']}, content: [{key: 'ein', type: 'text', required: true}]};
+        const businessPage: DynamicFormPage = {
+            key: 'business',
+            title: 'Business',
+            showWhen: {key: 'legalType', equals: ['BUSINESS']},
+            content: [{elementType: 'ExpensifyInput', key: 'ein', type: 'text', required: true}],
+        };
         const flowSchema: DynamicFormSchema = {pages: [{...personalDetails, content: personalDetails.content.slice(0, 1)}, recipient, businessPage]};
 
         // When the flow renders for a private recipient with a confirmation page
@@ -381,7 +387,7 @@ describe('DynamicFormFlow', () => {
         // Then only this page's name is drafted, the SSN goes to memory only, and the screen never sees the SSN, since a page save would queue it
         expect(saveDraftAnswers).toHaveBeenCalledWith(FORM_ID, {firstName: 'Jane'});
         expect(saveSensitiveAnswers).toHaveBeenCalledWith(FORM_ID, {ssn: '123456789'});
-        expect(onPageSubmit).toHaveBeenCalledWith(page, {firstName: 'Jane'});
+        expect(onPageSubmit).toHaveBeenCalledWith({...page, content: page.content.elements}, {firstName: 'Jane'});
     });
 
     it('submits the visible answers, sensitive ones included, from the confirmation page', async () => {
@@ -393,6 +399,51 @@ describe('DynamicFormFlow', () => {
 
         // Then the answers include the SSN from memory and leave out the hidden company number
         expect(onSubmit).toHaveBeenCalledWith({firstName: 'Jane', legalType: 'PRIVATE', ssn: '123456789'});
+    });
+
+    describe('with Wise inputs', () => {
+        const wiseSchema: DynamicFormSchema = {
+            pages: [
+                {
+                    key: 'bank',
+                    title: 'Bank',
+                    content: [
+                        {elementType: 'Description', key: 'intro', text: 'Enter the UK bank details.'},
+                        {elementType: 'HTMLInput', key: 'sortCode', name: 'UK sort code', type: 'text', required: true, validationRegexp: '^[0-9]{6}$'},
+                    ],
+                },
+                {
+                    key: 'holder',
+                    title: 'Holder',
+                    content: [{elementType: 'HTMLInput', key: 'accountHolderName', name: 'Account holder', type: 'text', required: true, minLength: 2}],
+                },
+            ],
+        };
+
+        it('resumes on the first page whose Wise input breaks its rules', async () => {
+            // Given a draft whose sort code has letters, while the next page is answered
+            // When the flow renders with a confirmation page
+            const {subPageOptions} = await renderFlow({flowSchema: wiseSchema, draft: {sortCode: '04AB75', accountHolderName: 'Jane'}, hasConfirmation: true, currentPageName: 'bank'});
+
+            // Then the user lands on the sort code page, since Wise would reject the answer
+            expect(subPageOptions.startFrom).toBe(0);
+        });
+
+        it('submits the Wise answers from the confirmation page', async () => {
+            // Given a complete draft of Wise answers
+            const {subPageOptions, onSubmit} = await renderFlow({
+                flowSchema: wiseSchema,
+                draft: {sortCode: '040075', accountHolderName: 'Jane'},
+                hasConfirmation: true,
+                currentPageName: 'bank',
+            });
+
+            // When the user confirms
+            subPageOptions.onFinished();
+
+            // Then the answers keep Wise's keys, so the backend can pass them on as they are
+            expect(onSubmit).toHaveBeenCalledWith({sortCode: '040075', accountHolderName: 'Jane'});
+        });
     });
 
     it('drops sensitive answers once they are submitted', async () => {
@@ -496,6 +547,7 @@ describe('DynamicFormFlow', () => {
                     title: 'Directors',
                     content: [
                         {
+                            elementType: 'ExpensifyInput',
                             key: 'directors',
                             type: 'list',
                             required: true,
@@ -589,13 +641,20 @@ describe('DynamicFormFlow', () => {
             pageProps.onPageSubmit(page, {directors: [jane]});
 
             // Then a screen saving page by page gets the director, while the SSN stays in memory, out of the request queue
-            expect(onPageSubmit).toHaveBeenCalledWith(page, {directors: [jane]});
+            expect(onPageSubmit).toHaveBeenCalledWith({...page, content: page.content.elements}, {directors: [jane]});
         });
 
         it('keeps a sensitive list in memory instead of the draft', async () => {
             // Given the editor of a new director, in a list marked sensitive as a whole
             const sensitiveSchema: DynamicFormSchema = {
-                pages: [{key: 'directors', content: [{key: 'directors', type: 'list', required: true, sensitive: true, itemFields: [{key: 'firstName', type: 'text', required: true}]}]}],
+                pages: [
+                    {
+                        key: 'directors',
+                        content: [
+                            {elementType: 'ExpensifyInput', key: 'directors', type: 'list', required: true, sensitive: true, itemFields: [{key: 'firstName', type: 'text', required: true}]},
+                        ],
+                    },
+                ],
             };
             const {pageProps} = await renderFlow({flowSchema: sensitiveSchema, currentPageName: 'directors~new'});
             jest.mocked(saveDraftAnswers).mockClear();
@@ -612,7 +671,19 @@ describe('DynamicFormFlow', () => {
             // Given the editor of a new director, in a list whose entries decide which questions come next
             const refreshingSchema: DynamicFormSchema = {
                 pages: [
-                    {key: 'directors', content: [{key: 'directors', type: 'list', required: true, refreshOnChange: true, itemFields: [{key: 'firstName', type: 'text', required: true}]}]},
+                    {
+                        key: 'directors',
+                        content: [
+                            {
+                                elementType: 'ExpensifyInput',
+                                key: 'directors',
+                                type: 'list',
+                                required: true,
+                                refreshOnChange: true,
+                                itemFields: [{key: 'firstName', type: 'text', required: true}],
+                            },
+                        ],
+                    },
                 ],
             };
             const onRefreshRequirements = jest.fn<void, [string, FormValue]>();
@@ -631,7 +702,14 @@ describe('DynamicFormFlow', () => {
         it('gives a readonly list no entry editors', async () => {
             // Given a readonly list with one entry
             const readonlySchema: DynamicFormSchema = {
-                pages: [{key: 'directors', content: [{key: 'directors', type: 'list', required: true, readonly: true, itemFields: [{key: 'firstName', type: 'text', required: true}]}]}],
+                pages: [
+                    {
+                        key: 'directors',
+                        content: [
+                            {elementType: 'ExpensifyInput', key: 'directors', type: 'list', required: true, readonly: true, itemFields: [{key: 'firstName', type: 'text', required: true}]},
+                        ],
+                    },
+                ],
             };
 
             // When the flow renders

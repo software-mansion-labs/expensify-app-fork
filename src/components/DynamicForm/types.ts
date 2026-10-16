@@ -3,20 +3,39 @@ import type {FormValue} from '@components/Form/types';
 import type {SubPageProps, UseSubPageProps} from '@hooks/useSubPage/types';
 
 import type {OnyxFormKey} from '@src/ONYXKEYS';
-import type {DynamicFormField, DynamicFormFieldType, DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
-
-import type {DynamicFormFieldsProps} from './components/DynamicFormFields';
+import type {DynamicFormListItem, DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
 
 /** Current answers keyed by draft key. Address parts sit under `<fieldKey>.<part>`. */
 type DynamicFormValues = Partial<Record<string, FormValue>>;
 
-/** The variant of one type. An intersection rather than Extract, since one variant can cover several types, such as select and radio. */
-type DynamicFormFieldOfType<TType extends DynamicFormFieldType> = DynamicFormField & {type: TType};
+/** One error FormProvider shows under an input: the input's draft key and the message */
+type DynamicFormError = [inputID: string, message: string];
 
 /** `auto` shows a step indicator at three or more pages, `stepper` always, `pages` never */
 type DynamicFormLayout = 'auto' | 'pages' | 'stepper';
 
-type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSize' | 'onRefreshRequirements'> & {
+/** What the screen tells every input of the form */
+type DynamicFormInputOptions = {
+    /** Currency of amount fields that let the user pick none */
+    currency?: string;
+
+    /** Largest size of one file, in bytes, for file fields that set none. No limit when not set. */
+    maxFileSize?: number;
+
+    /** Called when the user changes a field marked `refreshOnChange`, with the draft key that changed, so the screen can fetch the schema again */
+    onRefreshRequirements?: (inputID: string, value: FormValue) => void;
+};
+
+/** How a list reaches the flow, which edits its entries on pages of their own and keeps a sensitive list in memory */
+type DynamicFormListActions = {
+    /** Opens the editor page of a list entry, or of a new one without `itemID`. DynamicFormFlow passes it. Without it, list entries are edited in a modal. */
+    onOpenListItemEditor?: (listKey: string, itemID?: string) => void;
+
+    /** Called with a list's entries after the user removes one, so the flow can keep a sensitive list in memory up to date */
+    onListItemsChange?: (listKey: string, items: DynamicFormListItem[]) => void;
+};
+
+type DynamicFormFlowProps = DynamicFormInputOptions & {
     /** The pages as the server groups them, or a flat list of fields the App paginates. Fields of a type this App version does not know are left out. */
     schema: DynamicFormSchema;
 
@@ -60,28 +79,4 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
     hasConfirmation?: boolean;
 };
 
-/** Props of every page in the flow: useSubPage's routing props plus the form's data */
-type DynamicFormSubPageProps = SubPageProps &
-    Pick<DynamicFormFlowProps, 'formID' | 'currency' | 'maxFileSize' | 'onRefreshRequirements' | 'confirmationTitle' | 'isSubmitting' | 'submitError'> & {
-        pages: DynamicFormPage[];
-
-        /** Every supported field of the form, which is where a `showWhen` finds its controller */
-        allFields: DynamicFormField[];
-
-        /** Draft answers merged with the sensitive answers kept in memory */
-        values: DynamicFormValues;
-
-        onPageSubmit: (page: DynamicFormPage, pageValues: DynamicFormValues) => void;
-
-        onOpenListItemEditor: NonNullable<DynamicFormFieldsProps['onOpenListItemEditor']>;
-
-        onListItemsChange: NonNullable<DynamicFormFieldsProps['onListItemsChange']>;
-
-        /** The last page submits the form, since no confirmation page follows */
-        isLastPage: boolean;
-
-        /** Saves a list entry from its editor page. Without `itemID` it adds a new entry. */
-        onListItemSave: (listKey: string, itemID: string | undefined, answers: DynamicFormValues) => void;
-    };
-
-export type {DynamicFormFieldOfType, DynamicFormFlowProps, DynamicFormLayout, DynamicFormSubPageProps, DynamicFormValues};
+export type {DynamicFormError, DynamicFormFlowProps, DynamicFormInputOptions, DynamicFormLayout, DynamicFormListActions, DynamicFormValues};
