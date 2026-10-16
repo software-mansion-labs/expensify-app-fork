@@ -1,6 +1,6 @@
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
-import getContentFields from '@components/DynamicForm/utils/getContentFields';
-import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
+import {getContentFields} from '@components/DynamicForm/utils/elements';
+import getContentErrors from '@components/DynamicForm/utils/getContentErrors';
 import getLocalizedText from '@components/DynamicForm/utils/getLocalizedText';
 import getPageTitle from '@components/DynamicForm/utils/getPageTitle';
 import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
@@ -51,7 +51,7 @@ function DynamicFormFieldsPage({
         <FormProvider
             formID={formID}
             submitButtonText={translate(isEditing || isLastPage ? 'common.confirm' : 'common.next')}
-            validate={(inputValues) => getDynamicFieldErrors(getContentFields(page.content), withInputValues(inputValues), translate, allFields)}
+            validate={(inputValues) => getContentErrors(page.content, withInputValues(inputValues), translate, allFields)}
             onSubmit={(inputValues) => {
                 const pageValues = toDynamicFormValues(inputValues);
                 onPageSubmit(page, pageValues);

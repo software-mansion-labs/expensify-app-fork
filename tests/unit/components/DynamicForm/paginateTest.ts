@@ -1,19 +1,24 @@
+import {toExpensifyInputElements} from '@components/DynamicForm/utils/elements';
 import getPageTitle, {getPageSectionName, isPageShown} from '@components/DynamicForm/utils/getPageTitle';
 import paginate, {getAllFields, getPages} from '@components/DynamicForm/utils/paginate';
 
-import type {DynamicFormField, DynamicFormPage, DynamicFormSchemaField, DynamicFormTextField} from '@src/types/onyx';
+import type {DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormPage, DynamicFormSchemaElement, DynamicFormTextField} from '@src/types/onyx';
 
 import {translateLocal} from '../../../utils/TestHelper';
 
-function text(key: string, extra: Partial<DynamicFormTextField> = {}): DynamicFormTextField {
-    return {key, type: 'text', required: true, label: key, ...extra};
+function text(key: string, extra: Partial<DynamicFormTextField> = {}): DynamicFormTextField & DynamicFormExpensifyInputElement {
+    return {elementType: 'ExpensifyInput', key, type: 'text', required: true, label: key, ...extra};
+}
+
+function input(field: DynamicFormField): DynamicFormExpensifyInputElement {
+    return {...field, elementType: 'ExpensifyInput'};
 }
 
 function options(count: number) {
     return Array.from({length: count}, (_, index) => ({key: `o${index}`, label: `o${index}`}));
 }
 
-function keysOf(pages: DynamicFormPage[]): string[][] {
+function keysOf(pages: DynamicFormPage[]): Array<Array<string | undefined>> {
     return pages.map((page) => page.content.map((item) => item.key));
 }
 
@@ -29,7 +34,7 @@ describe('paginate', () => {
         ];
 
         // When the fields are paginated
-        const pages = paginate(fields);
+        const pages = paginate(toExpensifyInputElements(fields));
 
         // Then none of them shares a page, since each needs the whole screen
         expect(keysOf(pages)).toEqual([['address'], ['file'], ['multi'], ['countries'], ['dependent']]);
@@ -37,8 +42,8 @@ describe('paginate', () => {
 
     it('keeps a small select with the other short questions but moves a large one out', () => {
         // Given a small select and a select with more options than the threshold
-        const small: DynamicFormField = {key: 'small', type: 'select', required: true, values: options(3)};
-        const large: DynamicFormField = {key: 'large', type: 'select', required: true, values: options(11)};
+        const small = input({key: 'small', type: 'select', required: true, values: options(3)});
+        const large = input({key: 'large', type: 'select', required: true, values: options(11)});
 
         // When they are paginated between two text fields
         const pages = paginate([text('a'), small, large, text('b')]);
@@ -71,7 +76,7 @@ describe('paginate', () => {
 
     it('keeps the fields an own-page controller reveals with it', () => {
         // Given an own-page select that reveals a text field
-        const select: DynamicFormField = {key: 'dep', type: 'select', required: true, dependsOn: {key: 'x', valuesBy: {}}};
+        const select = input({key: 'dep', type: 'select', required: true, dependsOn: {key: 'x', valuesBy: {}}});
 
         // When paginated with a field after the revealed one
         const pages = paginate([select, text('why', {showWhen: {key: 'dep', equals: ['y']}}), text('z')]);
@@ -82,7 +87,7 @@ describe('paginate', () => {
 
     it('leaves out fields of an unknown type', () => {
         // Given a field of a type this App version does not know
-        const unknown = {key: 'x', type: 'hologram', required: true};
+        const unknown = {elementType: 'ExpensifyInput', key: 'x', type: 'hologram', required: true};
 
         // When paginated
         const pages = paginate([unknown, text('a')]);
@@ -90,15 +95,45 @@ describe('paginate', () => {
         // Then it does not produce an empty page
         expect(keysOf(pages)).toEqual([['a']]);
     });
+
+    it('puts banners and descriptions on the page of the input after them', () => {
+        // Given a description before a text field and a banner before an own-page address
+        const intro: DynamicFormSchemaElement = {elementType: 'Description', key: 'intro', text: 'Who are you paying?'};
+        const warning: DynamicFormSchemaElement = {elementType: 'Banner', key: 'warning', text: 'Use a home address.'};
+
+        // When they are paginated
+        const pages = paginate([intro, text('a'), warning, input({key: 'address', type: 'address', required: true})]);
+
+        // Then each display element sits above the input it introduces, even when that input needs its own page
+        expect(keysOf(pages)).toEqual([
+            ['intro', 'a'],
+            ['warning', 'address'],
+        ]);
+    });
+
+    it('counts HTML inputs as questions and keeps a trailing banner on the last page', () => {
+        // Given five Wise inputs followed by a banner
+        const wise: DynamicFormSchemaElement[] = ['a', 'b', 'c', 'd', 'e'].map((key) => ({elementType: 'HTMLInput', key, name: key, type: 'text', required: true}));
+        const note: DynamicFormSchemaElement = {elementType: 'Banner', key: 'note', text: 'Checked by the bank.'};
+
+        // When they are paginated
+        const pages = paginate([...wise, note]);
+
+        // Then they split like App fields and the banner does not get a page of its own
+        expect(keysOf(pages)).toEqual([
+            ['a', 'b', 'c', 'd'],
+            ['e', 'note'],
+        ]);
+    });
 });
 
 describe('getPages', () => {
-    it('names pages built from fields page-N', () => {
+    it('names pages built from elements page-N', () => {
         // Given a flat schema
-        const fields: DynamicFormSchemaField[] = [text('a'), {key: 'address', type: 'address', required: true}];
+        const elements: DynamicFormSchemaElement[] = [text('a'), input({key: 'address', type: 'address', required: true})];
 
         // When its pages are built
-        const pages = getPages({fields});
+        const pages = getPages({elements});
 
         // Then the pages get stable keys
         expect(pages.map((page) => page.key)).toEqual(['page-1', 'page-2']);

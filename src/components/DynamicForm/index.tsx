@@ -11,7 +11,7 @@ import {clearSensitiveAnswers, forgetSensitiveAnswers, saveDraftAnswers, saveSen
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {DynamicFormListField, DynamicFormListItem, DynamicFormPage} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormListField, DynamicFormListItem, DynamicFormPage} from '@src/types/onyx';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 
 import {Str} from 'expensify-common';
@@ -23,14 +23,14 @@ import DynamicFormConfirmationPage from './components/DynamicFormConfirmationPag
 import DynamicFormFieldsPage from './components/DynamicFormFieldsPage';
 import DynamicFormListItemPage from './components/DynamicFormListItemPage';
 import DynamicFormShell from './components/DynamicFormShell';
+import {getContentFields, getContentInputs} from './utils/elements';
 import getAnswerKeys from './utils/getAnswerKeys';
-import getContentFields from './utils/getContentFields';
-import getDynamicFieldErrors from './utils/getDynamicFieldErrors';
+import getContentAnswers from './utils/getContentAnswers';
+import getContentErrors from './utils/getContentErrors';
 import {isPageShown} from './utils/getPageTitle';
 import getSubmittedAnswers from './utils/getSubmittedAnswers';
 import hasSensitiveAnswer from './utils/hasSensitiveAnswer';
 import isSensitiveField from './utils/isSensitiveField';
-import isSupportedField from './utils/isSupportedField';
 import {getListItemPageName, getListItems, getListItemSensitiveKey, getRemovedListItemSensitiveKeys, parseListItemPageName} from './utils/listItems';
 import {getAllFields, getPages} from './utils/paginate';
 import toDynamicFormValues from './utils/toDynamicFormValues';
@@ -92,13 +92,13 @@ function DynamicFormFlow({
 
     /** Pages the answers hide are never asked, so they cannot be the first gap */
     const getFirstIncompletePageIndex = (answers: DynamicFormValues) =>
-        pages.findIndex((page) => isPageShown(page, answers, allFields) && Object.keys(getDynamicFieldErrors(getContentFields(page.content), answers, translate, allFields)).length > 0);
+        pages.findIndex((page) => isPageShown(page, answers, allFields) && Object.keys(getContentErrors(page.content, answers, translate, allFields)).length > 0);
 
     // A visit opened without a page in the URL drops the sensitive answers of earlier visits, so it starts from what the draft holds
     let startFrom = firstShownPageIndex;
     if (isDraftLoading) {
         startFrom = -1;
-    } else if (allFields.some((field) => hasDraftAnswer(draftValues[field.key]))) {
+    } else if (pages.some((page) => getContentInputs(page.content).some((input) => hasDraftAnswer(draftValues[input.key])))) {
         const firstIncompleteIndex = getFirstIncompletePageIndex(draftValues);
         startFrom = firstIncompleteIndex === -1 ? lastShownPageIndex : firstIncompleteIndex;
     }
@@ -130,9 +130,9 @@ function DynamicFormFlow({
             returnTo(incompletePage.key);
             return;
         }
-        // Fields of a page the answers skip are not submitted
-        const shownFields = getAllFields(pages.filter((page) => isPageShown(page, answers, allFields)));
-        const submittedAnswers = getSubmittedAnswers(shownFields, answers, allFields);
+        // Inputs of a page the answers skip are not submitted
+        const shownContent = pages.filter((page) => isPageShown(page, answers, allFields)).flatMap((page) => page.content);
+        const submittedAnswers = getContentAnswers(shownContent, answers, allFields);
         if (isSubmitting === undefined) {
             clearSensitiveAnswers(formID);
         }
@@ -181,8 +181,8 @@ function DynamicFormFlow({
     /** Typed answers are drafted as FormProvider cleaned them and inputs left untouched are drafted with their defaults, so the draft matches what the page validated. Sensitive answers go to memory only, and only the draft ones reach the screen. Lists are drafted as they change, so the screen gets their drafted entries, which hold no sensitive answers. */
     const handlePageSubmit = (page: DynamicFormPage, pageValues: DynamicFormValues) => {
         const currentValues = {...values, ...pageValues};
-        const pageFields = getContentFields(page.content).filter(isSupportedField);
-        const answers = getSubmittedAnswers(pageFields, currentValues, allFields);
+        const pageFields: DynamicFormField[] = getContentFields(page.content);
+        const answers = getContentAnswers(page.content, currentValues, allFields);
         const sensitiveKeys = new Set(pageFields.filter((field) => isSensitiveField(field)).flatMap((field) => getAnswerKeys(field)));
         const listKeys = new Set(listFields.map((field) => field.key));
         const draftAnswers: DynamicFormValues = {};

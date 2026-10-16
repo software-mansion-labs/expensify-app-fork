@@ -10,12 +10,12 @@ const pages: DynamicFormPage[] = [
         key: 'identity',
         title: 'Identity',
         content: [
-            {key: 'name', type: 'text', required: true, label: 'Name'},
-            {key: 'ssn', type: 'text', required: true, label: 'SSN', sensitive: true},
-            {key: 'country', type: 'text', required: false, label: 'Country', readonly: true},
+            {elementType: 'ExpensifyInput', key: 'name', type: 'text', required: true, label: 'Name'},
+            {elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, label: 'SSN', sensitive: true},
+            {elementType: 'ExpensifyInput', key: 'country', type: 'text', required: false, label: 'Country', readonly: true},
         ],
     },
-    {key: 'business', title: 'Business', showWhen: {key: 'type', equals: ['BUSINESS']}, content: [{key: 'ein', type: 'text', required: true, label: 'EIN'}]},
+    {key: 'business', title: 'Business', showWhen: {key: 'type', equals: ['BUSINESS']}, content: [{elementType: 'ExpensifyInput', key: 'ein', type: 'text', required: true, label: 'EIN'}]},
 ];
 
 describe('getConfirmationItems', () => {
@@ -64,8 +64,8 @@ describe('getConfirmationItems', () => {
             {
                 key: 'page-1',
                 content: [
-                    {key: 'accountNumber', type: 'text', required: true, label: 'Account number'},
-                    {key: 'currency', type: 'currency', required: true, label: 'Settlement currency'},
+                    {elementType: 'ExpensifyInput', key: 'accountNumber', type: 'text', required: true, label: 'Account number'},
+                    {elementType: 'ExpensifyInput', key: 'currency', type: 'currency', required: true, label: 'Settlement currency'},
                 ],
             },
         ];
@@ -85,6 +85,7 @@ describe('getConfirmationItems', () => {
                 key: 'directors',
                 content: [
                     {
+                        elementType: 'ExpensifyInput',
                         key: 'directors',
                         type: 'list',
                         required: true,
@@ -113,7 +114,9 @@ describe('getConfirmationItems', () => {
         const directorsPages: DynamicFormPage[] = [
             {
                 key: 'directors',
-                content: [{key: 'directors', label: 'Directors', type: 'list', required: false, itemFields: [{key: 'firstName', type: 'text', required: true}]}],
+                content: [
+                    {elementType: 'ExpensifyInput', key: 'directors', label: 'Directors', type: 'list', required: false, itemFields: [{key: 'firstName', type: 'text', required: true}]},
+                ],
             },
         ];
         const onEditPage = jest.fn();
@@ -127,5 +130,42 @@ describe('getConfirmationItems', () => {
         expect(row).toMatchObject({description: 'Directors', title: ''});
         expect(onEditPage).toHaveBeenCalledWith(0);
         expect(onEditListItem).not.toHaveBeenCalled();
+    });
+
+    it('shows a Wise input as a row with its name and the name of the chosen value', () => {
+        // Given a page mixing a Wise select, a Wise text input and a description
+        const wisePages: DynamicFormPage[] = [
+            {
+                key: 'recipient',
+                title: 'Recipient',
+                content: [
+                    {elementType: 'Description', key: 'intro', text: 'Who are you paying?'},
+                    {
+                        elementType: 'HTMLInput',
+                        key: 'legalType',
+                        name: 'Recipient type',
+                        type: 'select',
+                        required: true,
+                        valuesAllowed: [
+                            {key: 'PRIVATE', name: 'Person'},
+                            {key: 'BUSINESS', name: 'Business'},
+                        ],
+                    },
+                    {elementType: 'HTMLInput', key: 'sortCode', name: 'UK sort code', type: 'text', required: true},
+                ],
+            },
+        ];
+        const onEditPage = jest.fn();
+
+        // When the confirmation sections are built and the first row is tapped
+        const [group] = getConfirmationItems(wisePages, getAllFields(wisePages), {legalType: 'BUSINESS', sortCode: '040075'}, translateLocal, onEditPage, jest.fn());
+        group.rows.at(0)?.onPress();
+
+        // Then only the inputs have rows, the select shows the value's name instead of its key, and a row opens its page
+        expect(group.rows).toMatchObject([
+            {id: 'legalType', description: 'Recipient type', title: 'Business'},
+            {id: 'sortCode', description: 'UK sort code', title: '040075'},
+        ]);
+        expect(onEditPage).toHaveBeenCalledWith(0);
     });
 });

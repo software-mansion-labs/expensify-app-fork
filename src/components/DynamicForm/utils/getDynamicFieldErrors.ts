@@ -20,7 +20,6 @@ import type {
     DynamicFormField,
     DynamicFormFieldType,
     DynamicFormListField,
-    DynamicFormNumberField,
     DynamicFormSchemaField,
     DynamicFormTextField,
 } from '@src/types/onyx';
@@ -73,8 +72,11 @@ function matchesRegex(value: string, pattern: string, fieldKey: string): boolean
     }
 }
 
-/** The format checks text and number fields share */
-function getFormatErrors(field: DynamicFormTextField | DynamicFormNumberField, value: string, translate: LocalizedTranslate): string[] {
+/** What a typed answer is checked against, by text and number fields and by HTML inputs */
+type FormatRules = Pick<DynamicFormTextField, 'key' | 'regex' | 'minLength' | 'maxLength' | 'example'>;
+
+/** The format checks every typed answer shares */
+function getFormatErrors(field: FormatRules, value: string, translate: LocalizedTranslate): string[] {
     const messages: string[] = [];
     if (field.regex && !matchesRegex(value, field.regex, field.key)) {
         messages.push(translate('dynamicForm.error.invalidFormat', {example: field.example}));
@@ -246,3 +248,4 @@ function getDynamicFieldErrors(fields: DynamicFormSchemaField[], values: Dynamic
 }
 
 export default getDynamicFieldErrors;
+export {getFormatErrors, isAnswered};

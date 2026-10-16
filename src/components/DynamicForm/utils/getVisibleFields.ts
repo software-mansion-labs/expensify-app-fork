@@ -1,11 +1,9 @@
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
-import type {DynamicFormContentItem, DynamicFormField, DynamicFormHeading} from '@src/types/onyx';
+import type {DynamicFormElement, DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormHeading, DynamicFormSchemaElement} from '@src/types/onyx';
 
-import getContentFields from './getContentFields';
+import {getContentElements, getContentFields, isInputElement} from './elements';
 import isHeading from './isHeading';
-import isSupportedField from './isSupportedField';
-import logSchemaProblem from './logSchemaProblem';
 
 type DynamicFormVisibleItem = DynamicFormHeading | DynamicFormField;
 
@@ -41,49 +39,50 @@ function getVisibleFields(fields: DynamicFormField[], values: DynamicFormValues,
     return fields.filter((field) => isFieldVisible(field, values, allFields));
 }
 
-/** Fields of a type this App version does not know and headings with no text are left out, so they neither render nor block submission */
-function isSupportedItem(item: DynamicFormContentItem): item is DynamicFormVisibleItem {
-    if (!isHeading(item)) {
-        return isSupportedField(item);
+/** HTML inputs, banners and descriptions have no `showWhen`, since Wise shows or hides fields only by sending new requirements */
+function isElementVisible(element: DynamicFormElement, values: DynamicFormValues, allFields: DynamicFormField[]): boolean {
+    switch (element.elementType) {
+        case 'Heading':
+        case 'ExpensifyInput':
+            return isFieldVisible(element, values, allFields);
+        default:
+            return true;
     }
-    if ([item.title, item.titleKey, item.description, item.descriptionKey].some((text) => !!text)) {
-        return true;
-    }
-    logSchemaProblem('Heading without text', {key: item.key});
-    return false;
 }
 
 /**
- * The headings and fields the user sees right now. A heading with no visible field before the next shown heading is left out, so a hidden or unknown field never leaves an orphan title.
+ * The elements the user sees right now. A heading with no visible input before the next heading is left out, so a hidden or unknown field never leaves an orphan title.
  * `allFields` is the whole form when `content` is one page of it, since a controlling field can sit on another page.
  */
-function getVisibleContent(content: DynamicFormContentItem[], values: DynamicFormValues, allFields?: DynamicFormField[]): DynamicFormVisibleItem[] {
-    const supportedContent = content.filter(isSupportedItem);
-    const controllers = allFields ?? getContentFields(supportedContent);
-    const visibleContent: DynamicFormVisibleItem[] = [];
-    let pendingHeading: DynamicFormHeading | undefined;
-    for (const item of supportedContent) {
-        if (!isFieldVisible(item, values, controllers)) {
-            continue;
-        }
-        if (isHeading(item)) {
-            pendingHeading = item;
-            continue;
-        }
-        if (pendingHeading) {
-            visibleContent.push(pendingHeading);
+function getVisibleContent(content: DynamicFormSchemaElement[], values: DynamicFormValues, allFields?: DynamicFormField[]): DynamicFormElement[] {
+    const elements = getContentElements(content);
+    const controllers = allFields ?? getContentFields(elements);
+    const shownElements = elements.filter((element) => isElementVisible(element, values, controllers));
+    const orphanHeadings = new Set<DynamicFormElement>();
+    let pendingHeading: DynamicFormElement | undefined;
+    for (const element of shownElements) {
+        if (element.elementType === 'Heading') {
+            if (pendingHeading) {
+                orphanHeadings.add(pendingHeading);
+            }
+            pendingHeading = element;
+        } else if (isInputElement(element)) {
             pendingHeading = undefined;
         }
-        visibleContent.push(item);
     }
-    return visibleContent;
+    if (pendingHeading) {
+        orphanHeadings.add(pendingHeading);
+    }
+    return shownElements.filter((element) => !orphanHeadings.has(element));
 }
 
-/** The page's only question, if it has one. Fields it reveals, such as an "Other" description, do not count, so the layout stays put when they appear. */
-function getLoneField(visibleFields: DynamicFormField[]): DynamicFormField | undefined {
-    const visibleKeys = new Set(visibleFields.map((field) => field.key));
-    const questions = visibleFields.filter((field) => !field.showWhen || !visibleKeys.has(field.showWhen.key));
-    return questions.length === 1 ? questions.at(0) : undefined;
+/** The page's only question, if it is an App-format field. Fields it reveals, such as an "Other" description, do not count, so the layout stays put when they appear. */
+function getLoneField(visibleContent: DynamicFormElement[]): DynamicFormExpensifyInputElement | undefined {
+    const inputs = visibleContent.filter(isInputElement);
+    const visibleKeys = new Set(inputs.map((input) => input.key));
+    const questions = inputs.filter((input) => input.elementType === 'HTMLInput' || !input.showWhen || !visibleKeys.has(input.showWhen.key));
+    const question = questions.at(0);
+    return questions.length === 1 && question?.elementType === 'ExpensifyInput' ? question : undefined;
 }
 
 export default getVisibleFields;

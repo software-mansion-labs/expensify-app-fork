@@ -24,7 +24,7 @@ import TextInput from '@components/TextInput';
 import ValuePicker from '@components/ValuePicker';
 
 import CONST from '@src/CONST';
-import type {DynamicFormContentItem, DynamicFormField, DynamicFormFieldType, DynamicFormHeading, DynamicFormSchemaField} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormFieldType, DynamicFormHeading, DynamicFormHTMLInputElement, DynamicFormSchemaElement, DynamicFormSchemaField} from '@src/types/onyx';
 
 import type {ComponentType} from 'react';
 
@@ -93,11 +93,23 @@ type RenderFieldsOptions = {
     isLoneFieldInHeadline?: boolean;
 };
 
-function renderFields(content: DynamicFormContentItem[], values: DynamicFormValues = {}, {currency, maxFileSize, onRefreshRequirements, isLoneFieldInHeadline}: RenderFieldsOptions = {}) {
+/** Bare fields and headings are tagged as the server tags them, so the App-format fixtures stay short */
+function toElement(item: DynamicFormSchemaField | DynamicFormHeading | DynamicFormSchemaElement): DynamicFormSchemaElement {
+    if ('elementType' in item) {
+        return item;
+    }
+    return 'type' in item ? {...item, elementType: 'ExpensifyInput'} : {...item, elementType: 'Heading'};
+}
+
+function renderFields(
+    content: Array<DynamicFormSchemaField | DynamicFormHeading | DynamicFormSchemaElement>,
+    values: DynamicFormValues = {},
+    {currency, maxFileSize, onRefreshRequirements, isLoneFieldInHeadline}: RenderFieldsOptions = {},
+) {
     mockInputWrapper.mockClear();
     render(
         <DynamicFormFields
-            content={content}
+            content={content.map(toElement)}
             values={values}
             currency={currency}
             maxFileSize={maxFileSize}
@@ -792,5 +804,100 @@ describe('DynamicFormFields', () => {
         // Then the screen fetches the requirements once with the typed answer, and typing alone fetches nothing
         expect(onRefreshRequirements).toHaveBeenCalledWith('bankCode', '0261');
         expect(rendered.get('bankCode')?.onValueChange).toBeUndefined();
+    });
+});
+
+describe('DynamicFormFields with Wise elements', () => {
+    const accountType: DynamicFormHTMLInputElement = {
+        elementType: 'HTMLInput',
+        key: 'accountType',
+        name: 'Account type',
+        type: 'select',
+        required: true,
+        refreshRequirementsOnChange: true,
+        valuesAllowed: [
+            {key: 'CHECKING', name: 'Checking'},
+            {key: 'SAVINGS', name: 'Savings'},
+        ],
+    };
+
+    it.each([
+        ['text', TextInput],
+        ['select', ValuePicker],
+        ['radio', RadioButtons],
+        ['date', DatePicker],
+    ] as const)('draws a Wise %s input with its masked input component', (type, ExpectedInput) => {
+        // Given a Wise input of the type
+        const element: DynamicFormHTMLInputElement = {elementType: 'HTMLInput', key: 'answer', name: 'Answer', type, required: true, valuesAllowed: accountType.valuesAllowed};
+
+        // When it renders
+        const rendered = renderFields([element]);
+
+        // Then it uses the matching input, saves a draft and is hidden from session recordings
+        expect(rendered.get('answer')).toMatchObject({InputComponent: ExpectedInput, shouldSaveDraft: true, forwardedFSClass: CONST.FULLSTORY.CLASS.MASK});
+    });
+
+    it('offers the allowed values of a Wise select by their names', () => {
+        // Given a Wise select
+        // When it renders
+        const rendered = renderFields([accountType]);
+
+        // Then the user picks among the names while the answer keeps Wise's keys
+        expect(rendered.get('accountType')?.items).toEqual([
+            {value: 'CHECKING', label: 'Checking'},
+            {value: 'SAVINGS', label: 'Savings'},
+        ]);
+    });
+
+    it('shows the example of a Wise text input as its hint', () => {
+        // Given a Wise text input with an example
+        const sortCode: DynamicFormHTMLInputElement = {elementType: 'HTMLInput', key: 'sortCode', name: 'UK sort code', type: 'text', required: true, example: '040075'};
+
+        // When it renders
+        const rendered = renderFields([sortCode]);
+
+        // Then the example is the hint
+        expect(rendered.get('sortCode')?.hint).toBe('dynamicForm.exampleHint:040075');
+    });
+
+    it('asks to refetch the requirements when a refreshing Wise select changes', () => {
+        // Given a Wise select that changes the requirements
+        const onRefreshRequirements = jest.fn();
+        const rendered = renderFields([accountType], {}, {onRefreshRequirements});
+
+        // When the user picks a value
+        rendered.get('accountType')?.onValueChange?.('SAVINGS', 'accountType');
+
+        // Then the screen is told which answer changed
+        expect(onRefreshRequirements).toHaveBeenCalledWith('accountType', 'SAVINGS');
+    });
+
+    it('asks to refetch the requirements when the user leaves a refreshing Wise text input', () => {
+        // Given a Wise text input that changes the requirements, with a typed answer
+        const onRefreshRequirements = jest.fn();
+        const bankCode: DynamicFormHTMLInputElement = {elementType: 'HTMLInput', key: 'bankCode', name: 'Bank code', type: 'text', required: true, refreshRequirementsOnChange: true};
+        const rendered = renderFields([bankCode], {bankCode: '0261'}, {onRefreshRequirements});
+
+        // When the user leaves the input
+        rendered.get('bankCode')?.onBlur?.();
+
+        // Then the requirements are fetched once with the typed answer
+        expect(onRefreshRequirements).toHaveBeenCalledWith('bankCode', '0261');
+    });
+
+    it('draws banners and descriptions and skips an element type it does not know', () => {
+        // Given a description, a banner and an element from a newer App
+        const content: DynamicFormSchemaElement[] = [
+            {elementType: 'Description', key: 'intro', text: 'Who are you paying?'},
+            {elementType: 'Banner', key: 'warning', text: 'Check the name.'},
+            {elementType: 'Carousel', key: 'carousel'},
+        ];
+
+        // When they render
+        renderFields(content);
+
+        // Then the texts are shown and the unknown element draws nothing
+        expect(screen.getByText('Who are you paying?')).toBeOnTheScreen();
+        expect(screen.getByText('Check the name.')).toBeOnTheScreen();
     });
 });

@@ -12,7 +12,7 @@ jest.mock('@components/Form/FormProvider', () => jest.fn(() => null));
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
 jest.mock('@hooks/useThemeStyles', () => jest.fn(() => new Proxy({}, {get: () => ({})})));
 
-const page: DynamicFormPage = {key: 'identity', title: 'Identity', content: [{key: 'ssn', type: 'text', required: true, sensitive: true}]};
+const page: DynamicFormPage = {key: 'identity', title: 'Identity', content: [{elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true}]};
 
 function renderPage(isLastPage: boolean) {
     render(

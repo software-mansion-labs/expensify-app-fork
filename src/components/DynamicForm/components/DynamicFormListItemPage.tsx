@@ -1,5 +1,6 @@
 import ActivityIndicator from '@components/ActivityIndicator';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
+import {toExpensifyInputElements} from '@components/DynamicForm/utils/elements';
 import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
 import getLocalizedText from '@components/DynamicForm/utils/getLocalizedText';
 import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
@@ -89,7 +90,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
                         {title}
                     </Text>
                     <DynamicFormFields
-                        content={listField.itemFields}
+                        content={toExpensifyInputElements(listField.itemFields)}
                         values={withInputValues(inputValues)}
                         isSensitive={isSensitiveList}
                         currency={currency}

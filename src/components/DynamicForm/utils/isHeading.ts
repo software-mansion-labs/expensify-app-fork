@@ -1,6 +1,7 @@
-import type {DynamicFormContentItem, DynamicFormHeading} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormHeading} from '@src/types/onyx';
 
-function isHeading(item: DynamicFormContentItem): item is DynamicFormHeading {
+/** A page and a Heading element have no `type`, which tells them apart from a field when a `showWhen` chain is followed */
+function isHeading(item: DynamicFormHeading | DynamicFormField): item is DynamicFormHeading {
     return !('type' in item);
 }
 

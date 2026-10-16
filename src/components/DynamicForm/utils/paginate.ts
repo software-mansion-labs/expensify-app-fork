@@ -1,8 +1,7 @@
 import CONST from '@src/CONST';
-import type {DynamicFormField, DynamicFormPage, DynamicFormSchema, DynamicFormSchemaField} from '@src/types/onyx';
+import type {DynamicFormElement, DynamicFormField, DynamicFormInputElement, DynamicFormPage, DynamicFormSchema, DynamicFormSchemaElement} from '@src/types/onyx';
 
-import getContentFields from './getContentFields';
-import isSupportedField from './isSupportedField';
+import {getContentElements, getContentFields, isInputElement} from './elements';
 
 const OWN_PAGE_TYPES = new Set<DynamicFormField['type']>(['address', 'file', 'multiselect', 'countryMultiselect', 'list']);
 
@@ -24,41 +23,49 @@ function toSlug(key: string): string {
 }
 
 /**
- * Groups a flat list of fields into pages. Fields that need room (addresses, files, multi-selects, lists, dependent or large selects) get a page of their own,
- * and the rest share a page up to `MAX_FIELDS_PER_PAGE` in a row. A field with `showWhen` joins the page of its controller and does not count toward that limit.
- * The pages have no title and no key, `getPages` names them.
+ * Groups a flat list of elements into pages. Fields that need room (addresses, files, multi-selects, lists, dependent or large selects) get a page of their own,
+ * and the other inputs share a page up to `MAX_FIELDS_PER_PAGE` in a row. A field with `showWhen` joins the page of its controller and does not count toward that limit.
+ * Headings, banners and descriptions join the page of the input after them. The pages have no title and no key, `getPages` names them.
  */
-function paginate(fields: DynamicFormSchemaField[]): DynamicFormPage[] {
+function paginate(elements: DynamicFormSchemaElement[]): DynamicFormPage[] {
     const pages: DynamicFormPage[] = [];
     const pageOfKey = new Map<string, DynamicFormPage>();
     let sharedPage: DynamicFormPage | undefined;
     let sharedQuestionCount = 0;
+    let pendingElements: DynamicFormElement[] = [];
 
-    for (const field of fields.filter(isSupportedField)) {
-        const controllerPage = field.showWhen ? pageOfKey.get(field.showWhen.key) : undefined;
+    const getPageFor = (input: DynamicFormInputElement): DynamicFormPage => {
+        const isField = input.elementType === 'ExpensifyInput';
+        const controllerPage = isField && input.showWhen ? pageOfKey.get(input.showWhen.key) : undefined;
         if (controllerPage) {
-            controllerPage.content.push(field);
-            pageOfKey.set(field.key, controllerPage);
-            continue;
+            return controllerPage;
         }
-
-        if (needsOwnPage(field)) {
-            const ownPage: DynamicFormPage = {key: '', content: [field]};
+        if (isField && needsOwnPage(input)) {
+            const ownPage: DynamicFormPage = {key: '', content: []};
             pages.push(ownPage);
-            pageOfKey.set(field.key, ownPage);
             sharedPage = undefined;
-            continue;
+            return ownPage;
         }
-
         if (!sharedPage || sharedQuestionCount >= CONST.DYNAMIC_FORM.MAX_FIELDS_PER_PAGE) {
             sharedPage = {key: '', content: []};
             sharedQuestionCount = 0;
             pages.push(sharedPage);
         }
-        sharedPage.content.push(field);
         sharedQuestionCount++;
-        pageOfKey.set(field.key, sharedPage);
+        return sharedPage;
+    };
+
+    for (const element of getContentElements(elements)) {
+        if (!isInputElement(element)) {
+            pendingElements.push(element);
+            continue;
+        }
+        const page = getPageFor(element);
+        page.content.push(...pendingElements, element);
+        pendingElements = [];
+        pageOfKey.set(element.key, page);
     }
+    pages.at(-1)?.content.push(...pendingElements);
     return pages;
 }
 
@@ -78,12 +85,12 @@ function withRouteKeys(pages: DynamicFormPage[]): DynamicFormPage[] {
 
 /** The pages of a schema, as the server grouped them or as `paginate` builds them */
 function getPages(schema: DynamicFormSchema): DynamicFormPage[] {
-    return withRouteKeys('pages' in schema ? schema.pages : paginate(schema.fields));
+    return withRouteKeys('pages' in schema ? schema.pages : paginate(schema.elements));
 }
 
-/** Every field of every page, which is where a `showWhen` finds its controller */
+/** Every App-format field of every page, which is where a `showWhen` finds its controller */
 function getAllFields(pages: DynamicFormPage[]): DynamicFormField[] {
-    return pages.flatMap((page) => getContentFields(page.content).filter(isSupportedField));
+    return pages.flatMap((page) => getContentFields(page.content));
 }
 
 export default paginate;

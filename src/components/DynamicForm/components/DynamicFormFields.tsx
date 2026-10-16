@@ -1,20 +1,17 @@
+import DynamicFormElement from '@components/DynamicForm/elements/DynamicFormElement';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
-import getContentFields from '@components/DynamicForm/utils/getContentFields';
+import {toExpensifyInputElements} from '@components/DynamicForm/utils/elements';
 import {getLoneField, getVisibleContent} from '@components/DynamicForm/utils/getVisibleFields';
-import isHeading from '@components/DynamicForm/utils/isHeading';
 import type {FormValue} from '@components/Form/types';
 
 import CONST from '@src/CONST';
-import type {DynamicFormContentItem, DynamicFormField, DynamicFormListItem} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormListItem, DynamicFormSchemaElement} from '@src/types/onyx';
 
 import React from 'react';
 
-import DynamicFormFieldRow from './DynamicFormFieldRow';
-import DynamicFormHeadingRow from './DynamicFormHeadingRow';
-
 type DynamicFormFieldsProps = {
-    /** Headings and fields to render, in order. Fields of a type this App version does not know are left out. */
-    content: DynamicFormContentItem[];
+    /** Elements to render, in order. Elements of a type this App version does not know are left out. */
+    content: DynamicFormSchemaElement[];
 
     /** Current answers, from FormProvider's render-prop `inputValues`, so showWhen and dependsOn follow the user's typing */
     values: DynamicFormValues;
@@ -44,7 +41,7 @@ type DynamicFormFieldsProps = {
     isSensitive?: boolean;
 };
 
-/** The inputs of a schema-driven form. Render it inside a FormProvider and validate the fields of the same content with getDynamicFieldErrors. */
+/** The elements of a schema-driven form. Render it inside a FormProvider and validate the same content with getContentErrors. */
 function DynamicFormFields({
     content,
     values,
@@ -58,10 +55,10 @@ function DynamicFormFields({
     isSensitive = false,
 }: DynamicFormFieldsProps) {
     const visibleContent = getVisibleContent(content, values, allFields);
-    const loneField = getLoneField(getContentFields(visibleContent));
+    const loneField = getLoneField(visibleContent);
     const renderFields = (itemFields: DynamicFormField[], itemValues: DynamicFormValues, isItemSensitive: boolean) => (
         <DynamicFormFields
-            content={itemFields}
+            content={toExpensifyInputElements(itemFields)}
             values={itemValues}
             isSensitive={isItemSensitive}
             currency={currency}
@@ -70,30 +67,23 @@ function DynamicFormFields({
         />
     );
 
-    return visibleContent.map((item, index) =>
-        isHeading(item) ? (
-            <DynamicFormHeadingRow
-                key={`heading-${item.key}`}
-                heading={item}
-                isFirst={index === 0}
-            />
-        ) : (
-            <DynamicFormFieldRow
-                key={item.key}
-                field={item}
-                values={values}
-                currency={currency}
-                maxFileSize={maxFileSize}
-                isLoneField={item === loneField}
-                shouldHideLabel={isLoneFieldInHeadline && item === loneField}
-                onRefreshRequirements={onRefreshRequirements}
-                onOpenListItemEditor={onOpenListItemEditor}
-                onListItemsChange={onListItemsChange}
-                isSensitive={isSensitive}
-                renderFields={renderFields}
-            />
-        ),
-    );
+    return visibleContent.map((element, index) => (
+        <DynamicFormElement
+            key={`${element.elementType}-${element.key}`}
+            element={element}
+            isFirst={index === 0}
+            values={values}
+            currency={currency}
+            maxFileSize={maxFileSize}
+            isLoneField={element === loneField}
+            shouldHideLabel={isLoneFieldInHeadline && element === loneField}
+            onRefreshRequirements={onRefreshRequirements}
+            onOpenListItemEditor={onOpenListItemEditor}
+            onListItemsChange={onListItemsChange}
+            isSensitive={isSensitive}
+            renderFields={renderFields}
+        />
+    ));
 }
 
 export default DynamicFormFields;

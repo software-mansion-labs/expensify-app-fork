@@ -117,3 +117,4 @@ function DynamicFormFieldRow({
 }
 
 export default DynamicFormFieldRow;
+export type {DynamicFormFieldRowProps};
