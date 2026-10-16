@@ -89,3 +89,21 @@ describe('htmlInputDefinition.getErrors', () => {
         expect(errors).toEqual([['dateOfBirth', translateLocal('common.error.dateInvalid')]]);
     });
 });
+
+describe('htmlInputDefinition sensitivity', () => {
+    const handlers = {onEdit: jest.fn(), onEditListItem: jest.fn()};
+
+    it('keeps an answer out of the draft and masks it unless the schema opts out', () => {
+        // Given a sort code that does not set `sensitive`, and a recipient type that sets it to false
+        const recipientType: DynamicFormHTMLInputElement = {...legalType, sensitive: false};
+        const values = {sortCode: '040075', legalType: 'PRIVATE'};
+
+        // When their memory keys and confirmation rows are read
+        const sensitiveKeys = [sortCode, recipientType].flatMap((input) => htmlInputDefinition.getSensitiveKeys(input));
+        const rows = [sortCode, recipientType].flatMap((input) => htmlInputDefinition.getConfirmationRows(input, values, translateLocal, handlers));
+
+        // Then only the sort code stays in memory and is masked, since Wise asks for bank details and a field has to opt out to be drafted
+        expect(sensitiveKeys).toEqual(['sortCode']);
+        expect(rows.map((row) => row.title)).toEqual(['•••075', 'Person']);
+    });
+});

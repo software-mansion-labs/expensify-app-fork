@@ -12,6 +12,7 @@ const page: DynamicFormFlowPage = {
         {elementType: 'ExpensifyInput', key: 'name', type: 'text', required: true},
         {elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true},
         {elementType: 'HTMLInput', key: 'sortCode', name: 'Sort code', type: 'text', required: true},
+        {elementType: 'HTMLInput', key: 'accountHolderName', name: 'Account holder', type: 'text', required: true, sensitive: false},
         {elementType: 'ExpensifyInput', key: 'owners', type: 'list', required: false, itemFields: [{key: 'taxID', type: 'text', required: true, sensitive: true}]},
     ]),
 };
@@ -20,14 +21,14 @@ describe('splitPageAnswers', () => {
     it('drafts plain answers, keeps sensitive ones in memory and passes list entries to the screen only', () => {
         // Given a page answered in full
         const owners = [{id: 'a1'}];
-        const values = {name: 'Ada', ssn: '123451234', sortCode: '040075', owners};
+        const values = {name: 'Ada', ssn: '123451234', sortCode: '040075', accountHolderName: 'Ada Lovelace', owners};
 
         // When the user leaves it with Next
         const {draftAnswers, sensitiveAnswers, listAnswers} = splitPageAnswers(page, values);
 
-        // Then the SSN never reaches the draft, and the list, which is drafted as it changes, goes to the screen
-        expect(draftAnswers).toEqual({name: 'Ada', sortCode: '040075'});
-        expect(sensitiveAnswers).toEqual({ssn: '123451234'});
+        // Then the SSN and the Wise sort code, which is sensitive unless it opts out, never reach the draft, and the list, which is drafted as it changes, goes to the screen
+        expect(draftAnswers).toEqual({name: 'Ada', accountHolderName: 'Ada Lovelace'});
+        expect(sensitiveAnswers).toEqual({ssn: '123451234', sortCode: '040075'});
         expect(listAnswers).toEqual({owners});
     });
 

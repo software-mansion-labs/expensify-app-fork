@@ -158,6 +158,7 @@ describe('getConfirmationItems', () => {
                             name: 'Recipient type',
                             type: 'select',
                             required: true,
+                            sensitive: false,
                             valuesAllowed: [
                                 {key: 'PRIVATE', name: 'Person'},
                                 {key: 'BUSINESS', name: 'Business'},
@@ -174,10 +175,10 @@ describe('getConfirmationItems', () => {
         const [group] = getConfirmationItems(wisePages, {legalType: 'BUSINESS', sortCode: '040075'}, translateLocal, onEditPage, jest.fn());
         group.rows.at(0)?.onPress();
 
-        // Then only the inputs have rows, the select shows the value's name instead of its key, and a row opens its page
+        // Then only the inputs have rows, the select shows the value's name instead of its key, the sort code is masked since it is sensitive by default, and a row opens its page
         expect(group.rows).toMatchObject([
             {id: 'legalType', description: 'Recipient type', title: 'Business'},
-            {id: 'sortCode', description: 'UK sort code', title: '040075'},
+            {id: 'sortCode', description: 'UK sort code', title: '•••075'},
         ]);
         expect(onEditPage).toHaveBeenCalledWith(0);
     });

@@ -1,3 +1,4 @@
+import {maskSensitiveValue} from '@components/DynamicForm/content/elements/inputBehavior';
 import type {ConfirmationRowHandlers, InputElementDefinition} from '@components/DynamicForm/content/elements/types';
 import {getLocalizedText} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
@@ -11,7 +12,7 @@ import type {DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormList
 
 import noop from 'lodash/noop';
 
-import {formatDynamicFieldValue, getAnswerKeys, getFieldLabel, isSupportedFieldType, maskSensitiveValue, parseItemFields} from './field';
+import {formatDynamicFieldValue, getAnswerKeys, getFieldLabel, isSupportedFieldType, parseItemFields} from './field';
 import {getFieldAnswers, getListItemFallbackTitle, getListItems, summarizeListItem} from './list';
 import {getFieldErrors} from './validation';
 

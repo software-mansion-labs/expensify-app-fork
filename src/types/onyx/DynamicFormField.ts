@@ -297,7 +297,12 @@ type DynamicFormWiseField = {
 };
 
 /** A field in Wise's format, drawn by plain inputs that behave exactly as Wise describes them */
-type DynamicFormHTMLInputElement = DynamicFormWiseField & {elementType: 'HTMLInput'};
+type DynamicFormHTMLInputElement = DynamicFormWiseField & {
+    elementType: 'HTMLInput';
+
+    /** Never written to the form draft. On unless the schema sets it to false, since Wise asks for bank details. */
+    sensitive?: boolean;
+};
 
 /** A field in the App's own format, drawn by the App's rich inputs such as an address, a file upload or a list */
 type DynamicFormExpensifyInputElement = DynamicFormField & {elementType: 'ExpensifyInput'};

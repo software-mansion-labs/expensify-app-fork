@@ -834,8 +834,21 @@ describe('DynamicFormContent with Wise elements', () => {
         // When it renders
         const rendered = renderFields([element]);
 
-        // Then it uses the matching input, saves a draft and is hidden from session recordings
-        expect(rendered.get('answer')).toMatchObject({InputComponent: ExpectedInput, shouldSaveDraft: true, forwardedFSClass: CONST.FULLSTORY.CLASS.MASK});
+        // Then it uses the matching input, keeps its answer out of the draft since it is sensitive by default, and is hidden from session recordings
+        expect(rendered.get('answer')).toMatchObject({InputComponent: ExpectedInput, shouldSaveDraft: false, forwardedFSClass: CONST.FULLSTORY.CLASS.MASK});
+    });
+
+    it('starts a sensitive Wise input from memory and drafts one that opts out', () => {
+        // Given a sort code that is sensitive by default and an account holder name that opts out, both answered earlier
+        const sortCode: DynamicFormHTMLInputElement = {elementType: 'HTMLInput', key: 'sortCode', name: 'UK sort code', type: 'text', required: true};
+        const accountHolderName: DynamicFormHTMLInputElement = {elementType: 'HTMLInput', key: 'accountHolderName', name: 'Account holder', type: 'text', required: true, sensitive: false};
+
+        // When they render
+        const rendered = renderFields([sortCode, accountHolderName], {sortCode: '040075', accountHolderName: 'Ada'});
+
+        // Then the sort code is refilled from memory, since it has no draft, while the name is drafted and refilled by the form itself
+        expect(rendered.get('sortCode')).toMatchObject({shouldSaveDraft: false, defaultValue: '040075'});
+        expect(rendered.get('accountHolderName')).toMatchObject({shouldSaveDraft: true, defaultValue: undefined});
     });
 
     it('offers the allowed values of a Wise select by their names', () => {

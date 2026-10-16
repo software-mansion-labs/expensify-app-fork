@@ -3,10 +3,14 @@ import type {DynamicFormInputOptions, DynamicFormValues} from '@components/Dynam
 import type {InputComponentBaseProps} from '@components/Form/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
+import {isValidSSNFullNine} from '@libs/ValidationUtils';
+
 import type {DynamicFormTextField} from '@src/types/onyx';
 
 /** What a typed answer is checked against, by text and number fields and by HTML inputs */
 type FormatRules = Pick<DynamicFormTextField, 'key' | 'regex' | 'minLength' | 'maxLength' | 'example'>;
+
+const MASK_VISIBLE_CHARACTERS = 4;
 
 /** A regex the schema got wrong accepts every answer, so a broken schema never blocks the user */
 function matchesRegex(value: string, pattern: string, fieldKey: string): boolean {
@@ -68,5 +72,12 @@ function getRefreshHandlers({inputID, shouldRefresh, isTyped, values, onRefreshR
     };
 }
 
-export {getFormatErrors, getRefreshHandlers};
+/** All but the last four characters hidden, as in •••-••-6789, so the user can tell which number they entered. A short value shows at most half of itself. */
+function maskSensitiveValue(value: string): string {
+    const visibleCharacters = Math.min(MASK_VISIBLE_CHARACTERS, Math.floor(value.length / 2));
+    const masked = '•'.repeat(value.length - visibleCharacters) + value.slice(value.length - visibleCharacters);
+    return isValidSSNFullNine(value) ? `${masked.slice(0, 3)}-${masked.slice(3, 5)}-${masked.slice(5)}` : masked;
+}
+
+export {getFormatErrors, getRefreshHandlers, maskSensitiveValue};
 export type {FormatRules, RefreshHandlers};

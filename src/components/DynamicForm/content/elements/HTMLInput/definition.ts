@@ -1,4 +1,4 @@
-import {getFormatErrors} from '@components/DynamicForm/content/elements/inputBehavior';
+import {getFormatErrors, maskSensitiveValue} from '@components/DynamicForm/content/elements/inputBehavior';
 import type {InputElementDefinition} from '@components/DynamicForm/content/elements/types';
 import {isAnswered} from '@components/DynamicForm/shared';
 import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
@@ -25,6 +25,11 @@ function isHTMLInputElement(element: DynamicFormSchemaElement): element is Dynam
         'name' in element &&
         typeof element.name === 'string'
     );
+}
+
+/** Answers are kept in memory only unless the schema sets `sensitive` to false */
+function isSensitiveHTMLInput(input: DynamicFormHTMLInputElement): boolean {
+    return input.sensitive ?? true;
 }
 
 function findAllowedValue(input: DynamicFormHTMLInputElement, answer: string) {
@@ -92,19 +97,25 @@ function getHTMLInputErrors(input: DynamicFormHTMLInputElement, values: DynamicF
     return getAnswerErrors(input, typeof answer === 'string' ? answer : '', translate).map((message): DynamicFormError => [input.key, message]);
 }
 
-/** A Wise field, which Wise checks again when the answers arrive, so none of its answers is held back from the draft */
+/** The answer as the confirmation page shows it, masked when it is sensitive */
+function getConfirmationTitle(input: DynamicFormHTMLInputElement, values: DynamicFormValues): string {
+    const title = formatHTMLInputValue(input, values);
+    return isSensitiveHTMLInput(input) && title !== '' ? maskSensitiveValue(title) : title;
+}
+
+/** A Wise field, which Wise checks again when the answers arrive */
 const htmlInputDefinition: InputElementDefinition<'HTMLInput'> = {
     parse: (element) => (isHTMLInputElement(element) ? element : undefined),
     getCondition: () => undefined,
     getErrors: getHTMLInputErrors,
     getAnswers: (input, values) => (values[input.key] === undefined ? {} : {[input.key]: values[input.key]}),
-    getSensitiveKeys: () => [],
+    getSensitiveKeys: (input) => (isSensitiveHTMLInput(input) ? [input.key] : []),
     getConfirmationRows: (input, values, translate, {onEdit}) => [
-        {id: input.key, description: input.name, title: formatHTMLInputValue(input, values), shouldShowRightIcon: true, onPress: onEdit},
+        {id: input.key, description: input.name, title: getConfirmationTitle(input, values), shouldShowRightIcon: true, onPress: onEdit},
     ],
     needsOwnPage: () => false,
     getHeadline: () => undefined,
 };
 
 export default htmlInputDefinition;
-export {getHTMLInputChoices};
+export {getHTMLInputChoices, isSensitiveHTMLInput};

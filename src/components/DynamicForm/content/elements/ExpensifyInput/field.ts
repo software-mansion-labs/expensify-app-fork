@@ -3,8 +3,6 @@ import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import type {Choice} from '@components/RadioButtons';
 
-import {isValidSSNFullNine} from '@libs/ValidationUtils';
-
 import type AddressFormFields from '@pages/ReimbursementAccount/AddressFormFields';
 
 import CONST from '@src/CONST';
@@ -42,8 +40,6 @@ const SUPPORTED_FIELD_TYPES: Record<DynamicFormFieldType, true> = {
     percent: true,
     list: true,
 };
-
-const MASK_VISIBLE_CHARACTERS = 4;
 
 function isCountryCode(code: string): code is Country {
     return code in CONST.ALL_COUNTRIES;
@@ -215,13 +211,6 @@ function formatDynamicFieldValue(field: DynamicFormField, values: DynamicFormVal
     }
 }
 
-/** All but the last four characters hidden, as in •••-••-6789, so the user can tell which number they entered. A short value shows at most half of itself. */
-function maskSensitiveValue(value: string): string {
-    const visibleCharacters = Math.min(MASK_VISIBLE_CHARACTERS, Math.floor(value.length / 2));
-    const masked = '•'.repeat(value.length - visibleCharacters) + value.slice(value.length - visibleCharacters);
-    return isValidSSNFullNine(value) ? `${masked.slice(0, 3)}-${masked.slice(3, 5)}-${masked.slice(5)}` : masked;
-}
-
 export {
     formatDynamicFieldValue,
     getAddressCountry,
@@ -234,5 +223,4 @@ export {
     isStateAsked,
     isSupportedFieldType,
     parseItemFields,
-    maskSensitiveValue,
 };

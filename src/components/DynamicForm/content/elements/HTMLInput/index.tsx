@@ -21,7 +21,7 @@ import type {DynamicFormHTMLInputElement} from '@src/types/onyx';
 
 import React from 'react';
 
-import {getHTMLInputChoices} from './definition';
+import {getHTMLInputChoices, isSensitiveHTMLInput} from './definition';
 
 type HTMLInputProps = Pick<DynamicFormInputOptions, 'onRefreshRequirements'> & {
     element: DynamicFormHTMLInputElement;
@@ -31,15 +31,24 @@ type HTMLInputProps = Pick<DynamicFormInputOptions, 'onRefreshRequirements'> & {
 };
 
 /** Props every HTML input passes to its InputWrapper */
-type HTMLInputWrapperProps = Required<Pick<InputComponentBaseProps, 'inputID' | 'shouldSaveDraft'>> & Required<ForwardedFSClassProps> & RefreshHandlers;
+type HTMLInputWrapperProps = Required<Pick<InputComponentBaseProps, 'inputID' | 'shouldSaveDraft'>> &
+    Required<ForwardedFSClassProps> &
+    RefreshHandlers & {
+        /** Every Wise answer is a string, which each of the inputs takes */
+        defaultValue?: string;
+    };
 
 /** A field in Wise's format, drawn by the plain input its `type` names. Each one behaves exactly as Wise describes it, refreshing the requirements as its only side effect. */
 function HTMLInput({element, values, onRefreshRequirements}: HTMLInputProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
+    const isSensitive = isSensitiveHTMLInput(element);
+    const answer = values[element.key];
     const inputProps: HTMLInputWrapperProps = {
         inputID: element.key,
-        shouldSaveDraft: true,
+        shouldSaveDraft: !isSensitive,
+        // A sensitive answer is not drafted, so a page the user comes back to is refilled from the answer kept in memory
+        defaultValue: isSensitive && typeof answer === 'string' ? answer : undefined,
         forwardedFSClass: CONST.FULLSTORY.CLASS.MASK,
         ...getRefreshHandlers({inputID: element.key, shouldRefresh: !!element.refreshRequirementsOnChange, isTyped: element.type === 'text', values, onRefreshRequirements}),
     };

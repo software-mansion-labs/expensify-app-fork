@@ -291,7 +291,7 @@ const owners: GroupedField = {
     ],
 };
 
-/** Wise's account requirements passed through as HTML inputs, with banners, descriptions and an App-format address on the same pages */
+/** Wise's account requirements passed through as HTML inputs, with banners, descriptions and an App-format address on the same pages. The bank details and date of birth stay sensitive by default, the rest opt out. */
 const wiseRecipient: GroupedField[] = [
     {elementType: 'Description', key: 'intro', text: 'Enter the details of the UK bank account you want to pay.', group: 'Recipient details'},
     {
@@ -301,13 +301,24 @@ const wiseRecipient: GroupedField[] = [
         type: 'radio',
         required: true,
         refreshRequirementsOnChange: true,
+        sensitive: false,
         valuesAllowed: [
             {key: 'PRIVATE', name: 'Person'},
             {key: 'BUSINESS', name: 'Business'},
         ],
         group: 'Recipient details',
     },
-    {elementType: 'HTMLInput', key: 'accountHolderName', name: 'Full name of the account holder', type: 'text', required: true, minLength: 2, maxLength: 255, group: 'Recipient details'},
+    {
+        elementType: 'HTMLInput',
+        key: 'accountHolderName',
+        name: 'Full name of the account holder',
+        type: 'text',
+        required: true,
+        minLength: 2,
+        maxLength: 255,
+        sensitive: false,
+        group: 'Recipient details',
+    },
     {
         elementType: 'HTMLInput',
         key: 'sortCode',
@@ -340,6 +351,7 @@ const wiseRecipient: GroupedField[] = [
         name: 'Account type',
         type: 'select',
         required: true,
+        sensitive: false,
         valuesAllowed: [
             {key: 'CHECKING', name: 'Checking'},
             {key: 'SAVINGS', name: 'Savings'},
@@ -352,6 +364,7 @@ const wiseRecipient: GroupedField[] = [
         name: 'E-mail',
         type: 'text',
         required: false,
+        sensitive: false,
         example: 'example@example.ex',
         validationRegexp: '^[^\\s]+@[^\\s]+\\.[^\\s]{2,}$',
         group: 'Recipient details',
