@@ -15,6 +15,7 @@ import type {
 } from '@components/MultifactorAuthentication/config/types';
 
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/shared/types';
 
 import variables from '@styles/variables';
 
@@ -139,6 +140,11 @@ export default {
         }
         return createMFAErrorFromApiResponse(httpStatusCode, reason ?? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, message);
     },
+    /**
+     * `ALREADY_DENIED_APPROVE_ATTEMPTED` is deliberately absent: it maps to "already reviewed",
+     * while the pending deny can still show "denied".
+     */
+    outcomeConfirmingFailures: new Set<MultifactorAuthenticationReason>([CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED]),
     failureScreens: {
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED]: <DeniedTransactionSuccessScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED]: <ApprovedTransactionSuccessScreen />,

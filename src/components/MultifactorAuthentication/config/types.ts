@@ -113,6 +113,12 @@ type MultifactorAuthenticationScenarioBase<T extends Record<string, unknown> = E
      * `isScenarioActionSent` tells whether the scenario action already went out, so its request races this cancel.
      */
     onCancel?: (payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined, context: {isScenarioActionSent: boolean}) => Promise<MFAError>;
+
+    /**
+     * Scenario action failures that still confirm the outcome the user asked for, so they end the wait
+     * after a confirmed cancel the same way a success does. Only read when `onCancel` is set.
+     */
+    outcomeConfirmingFailures?: ReadonlySet<MultifactorAuthenticationReason>;
 };
 
 /**

@@ -204,13 +204,6 @@ const CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION = new Set<ReasonValue>([
 /** Failures the recovery slice will route to re-registration rather than retrying authorization. */
 const RECOVERABLE_CREDENTIAL_FAILURES = new Set<ReasonValue>([...CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION, REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED]);
 
-/**
- * Scenario action failures that still confirm the outcome the user asked for, so they end the wait after a
- * confirmed cancel. `ALREADY_DENIED_APPROVE_ATTEMPTED` is deliberately absent: it maps to "already reviewed",
- * while the pending deny can still show "denied".
- */
-const SCENARIO_OUTCOME_CONFIRMING_FAILURES = new Set<ReasonValue>([REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED]);
-
 /** Known errors that should rarely happen and may indicate a bug or unexpected state. Logged at 'error' level. Any reason not in either set is treated as UNCLASSIFIED (e.g. missing reason). */
 const ANOMALOUS_FAILURES = new Set<ReasonValue>([
     REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED,
@@ -323,7 +316,6 @@ const SHARED_VALUES = {
     ANOMALOUS_FAILURES,
     CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION,
     RECOVERABLE_CREDENTIAL_FAILURES,
-    SCENARIO_OUTCOME_CONFIRMING_FAILURES,
 
     /**
      * Specifically meaningful values for `multifactorAuthenticationPublicKeyIDs` in the `account` Onyx key.

@@ -1,4 +1,5 @@
 import {deviceVerificationType} from '@components/MultifactorAuthentication/biometrics/operations';
+import type {MultifactorAuthenticationScenarioConfig} from '@components/MultifactorAuthentication/config/types';
 import {navigate as mfaNavigate, resetMfaNavigation} from '@components/MultifactorAuthentication/mfaNavigation';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
@@ -55,6 +56,16 @@ function getOnCancel(context: MfaContext): CancelScenarioInput['onCancel'] {
     return context.scenario && 'onCancel' in context.scenario ? context.scenario.onCancel : undefined;
 }
 
+/**
+ * The scenario's failure reasons that still mean the user got what they asked for (e.g. "already approved").
+ * When the user confirms a cancel while the scenario action is in flight, such a failure ends the flow the same
+ * way a success does; any other failure waits for `onCancel` to decide the outcome. Optional on the scenario
+ * config, so scenarios without it only end the wait on a success.
+ */
+function getOutcomeConfirmingFailures(context: MfaContext): MultifactorAuthenticationScenarioConfig['outcomeConfirmingFailures'] {
+    return context.scenario && 'outcomeConfirmingFailures' in context.scenario ? context.scenario.outcomeConfirmingFailures : undefined;
+}
+
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
 
@@ -106,8 +117,7 @@ const MFAMachine = setup({
         isCancelable: and([not(stateIn(OUTCOME_TARGET)), not(stateIn(CANCELLING_TARGET)), not(stateIn(DENYING_TARGET))]),
         hasOnCancel: ({context}) => !!getOnCancel(context),
         // A success, or a failure that still confirms what the user asked for (e.g. already approved).
-        confirmsScenarioOutcome: (_, {result}: {result: ExecuteScenarioActionOutput}) =>
-            result.success || CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO_OUTCOME_CONFIRMING_FAILURES.has(result.error.reason),
+        confirmsScenarioOutcome: ({context}, {result}: {result: ExecuteScenarioActionOutput}) => result.success || !!getOutcomeConfirmingFailures(context)?.has(result.error.reason),
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
