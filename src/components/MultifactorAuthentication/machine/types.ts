@@ -81,6 +81,9 @@ type MfaContext = {
 
     /** Exit attempts while the scenario action or its `onCancel` request is in flight. Reset on entering `executingScenarioAction` and `cancelling`. */
     cancelAttemptsDuringRequest: number;
+
+    /** Whether this flow already re-registered after a recoverable credential failure. A second such failure ends the flow instead. */
+    hasAttemptedRecovery: boolean;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */
