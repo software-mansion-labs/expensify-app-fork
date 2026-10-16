@@ -2,6 +2,7 @@ import {deviceVerificationType} from '@components/MultifactorAuthentication/biom
 import {navigate as mfaNavigate, resetMfaNavigation} from '@components/MultifactorAuthentication/mfaNavigation';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
+import Log from '@libs/Log';
 import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {createMFAErrorFromApiResponse, createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
@@ -68,9 +69,26 @@ function getFailureParams({event}: {event: {output: MFAResult}}): {error: MFAErr
     return {error: event.output.success ? undefined : event.output.error};
 }
 
-// One guard and one action list shared by every step that can recover, so they can't drift apart.
+/** The steps whose failure a fresh key registration can fix. */
+type RecoverableStep =
+    | typeof MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE
+    | typeof MFA_STATE.REGISTERING_KEY
+    | typeof MFA_STATE.SIGNING_CHALLENGE
+    | typeof MFA_STATE.EXECUTING_SCENARIO_ACTION;
+
+// One guard and one action builder shared by every step that can recover, so they can't drift apart.
 const RECOVERY_GUARD = {type: 'canRecover', params: getFailureParams} as const;
-const RECOVERY_ACTIONS = [{type: 'markServerCredentialsStale', params: getFailureParams}, 'prepareRecovery', 'requestValidateCode'] as const;
+function getRecoveryActions(step: RecoverableStep) {
+    return [
+        {type: 'logRecoveryStarted', params: (args: {event: {output: MFAResult}}) => ({...getFailureParams(args), step})},
+        {type: 'markServerCredentialsStale', params: getFailureParams},
+        'prepareRecovery',
+        'requestValidateCode',
+    ] as const;
+}
+
+// How many times one flow may go back to re-registration after a recoverable credential failure.
+const MAX_RECOVERY_ATTEMPTS = 1;
 
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
@@ -96,7 +114,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     isCancelConfirmed: false,
     cancelError: undefined,
     scenarioActionResult: undefined,
-    hasAttemptedRecovery: false,
+    recoveryAttempts: 0,
 };
 
 /**
@@ -127,9 +145,9 @@ const MFAMachine = setup({
         hasOnCancel: ({context}) => !!getOnCancel(context),
         // A successful scenario action decides on its own; anything else waits for both results.
         canResolveDenying: ({context: {scenarioActionResult, cancelError}}) => !!scenarioActionResult?.success || (scenarioActionResult !== undefined && cancelError !== undefined),
-        // A failure that a fresh key registration can fix restarts registration once per flow; a second one ends the flow.
+        // A failure that a fresh key registration can fix restarts registration until the flow runs out of attempts.
         canRecover: ({context}, {error}: {error: MFAError | undefined}) =>
-            !!error && CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES.has(error.reason) && !context.hasAttemptedRecovery,
+            !!error && CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES.has(error.reason) && context.recoveryAttempts < MAX_RECOVERY_ATTEMPTS,
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -186,9 +204,13 @@ const MFAMachine = setup({
         resetContext: assign(() => ({...DEFAULT_CONTEXT})),
         markCancelConfirmed: assign({isCancelConfirmed: true}),
         applyDenyingOutcome: assign(({context}) => getDenyingOutcome(context)),
-        // The server no longer knows the key, so the Onyx copy of its key list is stale. Clearing it keeps
-        // the old key out of the next registration. A broken local key needs nothing here: the
-        // authorize actor already deleted it.
+        // One line per recovery, so recoveries can be counted; the outcome carries `recoveryAttempts` to tell how they ended.
+        logRecoveryStarted: ({context}, {error, step}: {error: MFAError | undefined; step: RecoverableStep}) => {
+            Log.info('[MFA] Recovery started', false, {mfa: {scenario: context.scenarioName, reason: error?.reason, step}});
+        },
+        // The server no longer knows the key, so the Onyx copy of its key list is stale. On web, registration
+        // excludes the local passkeys that list still contains, so a stale entry would make the authenticator
+        // refuse the new passkey. A broken local key needs nothing here: the authorize actor already deleted it.
         markServerCredentialsStale: (_, {error}: {error: MFAError | undefined}) => {
             if (error?.reason !== CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED) {
                 return;
@@ -202,10 +224,9 @@ const MFAMachine = setup({
         prepareRecovery: assign({
             registrationChallenge: undefined,
             authenticationMethod: undefined,
-            error: undefined,
             isRegistrationComplete: false,
             softPromptApproved: false,
-            hasAttemptedRecovery: true,
+            recoveryAttempts: ({context}) => context.recoveryAttempts + 1,
         }),
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
@@ -359,7 +380,7 @@ const MFAMachine = setup({
                                                     getMFAFailureError(event.output).reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.INVALID_VALIDATE_CODE,
                                                 target: `${MFA_STATE.AWAITING_VALIDATE_CODE}.${MFA_STATE.INVALID_CODE}`,
                                             },
-                                            {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: RECOVERY_ACTIONS},
+                                            {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: getRecoveryActions(MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE)},
                                             {target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
                                         ],
                                         onError: {
@@ -444,7 +465,7 @@ const MFAMachine = setup({
                                                     return {keyInfo: context.registrationKeyInfo};
                                                 },
                                                 onDone: [
-                                                    {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: RECOVERY_ACTIONS},
+                                                    {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: getRecoveryActions(MFA_STATE.REGISTERING_KEY)},
                                                     {
                                                         guard: ({event}) => !event.output.success,
                                                         target: OUTCOME_TARGET,
@@ -488,7 +509,7 @@ const MFAMachine = setup({
                                                     return {accountID: context.accountID};
                                                 },
                                                 onDone: [
-                                                    {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: RECOVERY_ACTIONS},
+                                                    {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: getRecoveryActions(MFA_STATE.SIGNING_CHALLENGE)},
                                                     {
                                                         guard: ({event}) => !event.output.success,
                                                         target: OUTCOME_TARGET,
@@ -536,7 +557,7 @@ const MFAMachine = setup({
                                                 onDone: [
                                                     // A confirmed cancel holds the result until `denying` decides with both.
                                                     {guard: stateIn(DENYING_TARGET), actions: assign({scenarioActionResult: ({event}) => event.output})},
-                                                    {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: RECOVERY_ACTIONS},
+                                                    {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: getRecoveryActions(MFA_STATE.EXECUTING_SCENARIO_ACTION)},
                                                     {
                                                         guard: ({event}) => !event.output.success,
                                                         target: OUTCOME_TARGET,
@@ -630,6 +651,7 @@ const MFAMachine = setup({
                                                 isRegistrationComplete: context.isRegistrationComplete,
                                                 softPromptApproved: context.softPromptApproved,
                                                 registrationStateAtStart: context.registrationStateAtStart,
+                                                recoveryAttempts: context.recoveryAttempts,
                                             };
                                         },
                                         onDone: [

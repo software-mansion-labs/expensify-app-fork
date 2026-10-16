@@ -92,8 +92,8 @@ type MfaContext = {
     /** The scenario action's result while `denying`, held until `denying` decides the outcome. */
     scenarioActionResult: ExecuteScenarioActionOutput | undefined;
 
-    /** Whether this flow already re-registered after a recoverable credential failure. A second such failure ends the flow instead. */
-    hasAttemptedRecovery: boolean;
+    /** How many times this flow went back to re-registration after a recoverable credential failure. Once it reaches the limit, such a failure ends the flow instead. */
+    recoveryAttempts: number;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */
@@ -208,6 +208,7 @@ type FinalizeOutcomeInput = {
     isRegistrationComplete: boolean;
     softPromptApproved: boolean;
     registrationStateAtStart: MFARegistrationStateSnapshot | undefined;
+    recoveryAttempts: number;
 };
 
 /**

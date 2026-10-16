@@ -83,7 +83,7 @@ describe('MFA outcome finalization', () => {
                     receivedInput = input;
                     return new Promise(() => {});
                 }),
-                {softPromptApproved: true, isRegistrationComplete: true},
+                {softPromptApproved: true, isRegistrationComplete: true, recoveryAttempts: 1},
             );
 
             sendAuthorizationSuccess(actor);
@@ -101,6 +101,7 @@ describe('MFA outcome finalization', () => {
                 isRegistrationComplete: true,
                 softPromptApproved: true,
                 registrationStateAtStart: MFA_TEST_REGISTRATION_STATE_AT_START,
+                recoveryAttempts: 1,
             });
 
             actor.stop();
@@ -114,11 +115,12 @@ describe('MFA outcome finalization', () => {
                     receivedInput = input;
                     return new Promise(() => {});
                 }),
+                {recoveryAttempts: 1},
             );
 
             actor.send(createActorDoneEvent('authorize', {success: false, error: failureError}));
 
-            expect(receivedInput).toMatchObject({error: failureError, scenarioResponse: undefined, authenticationMethod: undefined});
+            expect(receivedInput).toMatchObject({error: failureError, scenarioResponse: undefined, authenticationMethod: undefined, recoveryAttempts: 1});
 
             actor.stop();
         });
