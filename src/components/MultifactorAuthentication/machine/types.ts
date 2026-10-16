@@ -79,8 +79,8 @@ type MfaContext = {
     /** Whether this flow completed a fresh credential registration (`creatingCredential` succeeded) before authorizing. */
     isRegistrationComplete: boolean;
 
-    /** Exit attempts while the current approve or deny is in flight. Reset on entering `executingScenarioAction` and `cancelling`. */
-    cancelAttemptsDuringReview: number;
+    /** Exit attempts while the scenario action or its `onCancel` request is in flight. Reset on entering `executingScenarioAction` and `cancelling`. */
+    cancelAttemptsDuringRequest: number;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */
@@ -94,7 +94,7 @@ type ValidateCodePresentationPhase =
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_VALIDATE_CODE
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE;
 
-/** Flow state reported with an exit attempt while an approve or deny is in flight. See `logCancelAttemptDuringReview`. */
+/** Flow state reported with an exit attempt while the scenario action or its `onCancel` request is in flight. See `logCancelAttemptDuringRequest`. */
 type CancelAttemptState =
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_RESULT
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.DENYING

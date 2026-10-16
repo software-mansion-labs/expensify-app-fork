@@ -949,11 +949,11 @@ describe('MFA cancel', () => {
         });
 
         describe('instrumentation', () => {
-            const CANCEL_ATTEMPT_LOG = '[MFA] Cancel requested while a transaction review is in flight';
+            const CANCEL_ATTEMPT_LOG = '[MFA] Cancel requested while a scenario request is in flight';
             const PENDING_CANCEL_RESOLVED_LOG = '[MFA] Pending cancel resolved';
 
             it('numbers every exit attempt from entering the scenario action, including ignored ones while denying', async () => {
-                const {actor} = await startScenarioActionWithDialog({withOnCancel: true, contextOverrides: {cancelAttemptsDuringReview: 7}});
+                const {actor} = await startScenarioActionWithDialog({withOnCancel: true, contextOverrides: {cancelAttemptsDuringRequest: 7}});
 
                 actor.send({type: 'DISMISS_CANCEL'});
                 actor.send({type: 'REQUEST_CANCEL'});
@@ -971,7 +971,7 @@ describe('MFA cancel', () => {
 
             it('restarts the count on entering cancelling', () => {
                 const scenario = getScenarioConfig(AUTHORIZE_TRANSACTION);
-                const actor = createActorAtState(openAt(AUTHORIZING, MFA_STATE.CANCEL_CONFIRM_VISIBLE), {scenarioName: AUTHORIZE_TRANSACTION, scenario, cancelAttemptsDuringReview: 4});
+                const actor = createActorAtState(openAt(AUTHORIZING, MFA_STATE.CANCEL_CONFIRM_VISIBLE), {scenarioName: AUTHORIZE_TRANSACTION, scenario, cancelAttemptsDuringRequest: 4});
 
                 actor.start();
                 actor.send({type: 'CONFIRM_CANCEL'});
@@ -998,7 +998,7 @@ describe('MFA cancel', () => {
 
                 await settle(scenarioAction, APPROVED);
 
-                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, resolvedBy: 'approve', reason: undefined}}]);
+                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, resolvedBy: 'scenarioAction', reason: undefined}}]);
 
                 actor.stop();
             });
@@ -1008,7 +1008,7 @@ describe('MFA cancel', () => {
 
                 await settle(cancel, DENIED);
 
-                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, resolvedBy: 'deny', reason: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED}}]);
+                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, resolvedBy: 'onCancel', reason: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED}}]);
 
                 actor.stop();
             });

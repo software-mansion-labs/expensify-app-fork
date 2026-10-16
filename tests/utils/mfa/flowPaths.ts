@@ -471,8 +471,8 @@ function getMfaShortestPathsWithOnCancel() {
     const initEvent = createInitEventWithOnCancel();
     return getShortestPaths(mfaMachineWithLifecycleEvents, {
         events: (snapshot) => getTraversalEvents(snapshot).map((event) => (event.type === 'INIT' ? initEvent : event)),
-        // Every REQUEST_CANCEL during the review bumps the attempt counter, so keying states on it would never end the walk.
-        serializeState: ({value, context}) => JSON.stringify({value, context: {...context, cancelAttemptsDuringReview: undefined}}),
+        // Every REQUEST_CANCEL during the request bumps the attempt counter, so keying states on it would never end the walk.
+        serializeState: ({value, context}) => JSON.stringify({value, context: {...context, cancelAttemptsDuringRequest: undefined}}),
     });
 }
 
