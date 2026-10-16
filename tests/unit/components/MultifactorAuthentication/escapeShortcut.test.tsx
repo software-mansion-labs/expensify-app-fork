@@ -118,74 +118,94 @@ describe('the MFA Escape shortcut', () => {
     });
 
     it('opens the cancel confirmation on the transparent initial screen', async () => {
+        // Given an MFA flow on its transparent initial screen, which has no UI of its own to cancel from
         await startFlow();
 
+        // When the user presses Escape
         pressEscape();
 
+        // Then the cancel confirmation opens and Escape stops there, so the app handler does not dismiss the modal underneath
         expect(isCancelConfirmVisible()).toBe(true);
         expect(fallThroughHandler).not.toHaveBeenCalled();
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });
 
     it('opens the cancel confirmation on the validate-code screen while its input has focus', async () => {
+        // Given an MFA flow on the validate-code screen, where the code input usually has focus
         await startFlow();
         await settle(() => validateDeviceControl.resolve({success: true}));
         await settle(() => loadRegistrationStateControl.resolve(NO_CREDENTIALS));
         expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_INPUT)).toBeOnTheScreen();
 
+        // When the user presses Escape while typing in that input
         pressEscape(document.createElement('input'));
 
+        // Then the cancel confirmation still opens, because a focused input must not swallow the user's way out
         expect(isCancelConfirmVisible()).toBe(true);
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });
 
     it('opens the cancel confirmation on the prompt screen', async () => {
+        // Given an MFA flow on the biometrics prompt screen
         await startFlow();
         await settle(() => validateDeviceControl.resolve({success: true}));
         await settle(() => loadRegistrationStateControl.resolve({...NO_CREDENTIALS, hasLocalCredentials: true}));
         expect(screen.getByTestId(TEST_ID.PROMPT_CONFIRM_BUTTON)).toBeOnTheScreen();
 
+        // When the user presses Escape
         pressEscape();
 
+        // Then the cancel confirmation opens instead of the modal closing, so the flow is never abandoned by accident
         expect(isCancelConfirmVisible()).toBe(true);
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });
 
     it('closes the modal on an outcome screen and then lets Escape through while it closes', async () => {
+        // Given an MFA flow that has reached an outcome screen, where there is nothing left to cancel
         await startFlow();
         await settle(() => validateDeviceControl.reject());
         await settle(() => finalizeOutcomeControl.resolve({callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN}));
         expect(screen.getByTestId(TEST_ID.OUTCOME_SCREEN)).toBeOnTheScreen();
 
+        // When the user presses Escape
         pressEscape();
         await waitForBatchedUpdatesWithAct();
 
+        // Then the modal closes without asking for confirmation, because the flow is already over
         expect(isCancelConfirmVisible()).toBe(false);
         expect(fallThroughHandler).not.toHaveBeenCalled();
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
 
+        // When the user presses Escape again while the modal is still animating closed
         pressEscape();
 
+        // Then Escape passes through, because a closing modal must not keep capturing the keyboard
         expect(fallThroughHandler).toHaveBeenCalledTimes(1);
 
+        // When the close animation finishes
         act(() => pendingModalClose.run());
         await waitForBatchedUpdatesWithAct();
+        // Then the modal is gone, so the closing state really ends with the modal unmounted
         expect(screen.queryByTestId(TEST_ID.MODAL_BACKDROP)).not.toBeOnTheScreen();
     });
 
     it('lets Escape through to the confirmation modal while it is visible', async () => {
+        // Given an MFA flow with the cancel confirmation already open
         await startFlow();
         pressEscape();
         await waitForBatchedUpdatesWithAct();
 
+        // When the user presses Escape again
         pressEscape();
 
+        // Then the MFA shortcut steps aside, so the confirmation modal's own Escape handling can dismiss it
         // The modal shell is mocked here, so the dismissal itself is pinned against the real modal in
         // `escapeConfirmModalDismissal.test.tsx`.
         expect(fallThroughHandler).toHaveBeenCalledTimes(1);
     });
 
     it('still handles Escape after the app handler re-subscribes on top of it', async () => {
+        // Given an MFA flow where the app's Escape handler has re-subscribed above the MFA shortcut
         await startFlow();
         pressEscape();
         await waitForBatchedUpdatesWithAct();
@@ -202,8 +222,10 @@ describe('the MFA Escape shortcut', () => {
         });
         await waitForBatchedUpdatesWithAct();
 
+        // When the user presses Escape
         pressEscape();
 
+        // Then the cancel confirmation still opens, because the app handler defers to the MFA modal regardless of stack order
         expect(isCancelConfirmVisible()).toBe(true);
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });

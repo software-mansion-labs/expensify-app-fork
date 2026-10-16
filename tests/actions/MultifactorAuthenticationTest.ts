@@ -85,20 +85,26 @@ describe('actions/MultifactorAuthentication', () => {
             ['approve', approve, SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, {jsonCode: 200}, undefined],
             ['deny', () => denyTransaction({transactionID: TRANSACTION_ID}), SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION, {jsonCode: 200}, REASON.FLOW_OUTCOMES.TRANSACTION_DENIED],
         ])('logs how long the %s took once it responds', async (_, sendReview, command, response, reason) => {
+            // Given a review request that takes 250ms to succeed, so the logged duration is predictable
             jest.spyOn(Date, 'now').mockReturnValueOnce(1000).mockReturnValueOnce(1250);
             mockMakeRequestWithSideEffects.mockResolvedValue(response);
 
+            // When the user approves or denies the transaction
             await sendReview();
 
+            // Then one log carries the duration and completion time, so slow 3DS reviews can be measured in Sentry
             expect(getReviewLogs()).toEqual([{mfa: {command, transactionID: TRANSACTION_ID, durationMs: 250, completedAt: 1250, httpStatusCode: 200, reason}}]);
         });
 
         it('logs the failed request too', async () => {
+            // Given the deny request fails with a network error after 3 seconds
             jest.spyOn(Date, 'now').mockReturnValueOnce(1000).mockReturnValueOnce(4000);
             mockMakeRequestWithSideEffects.mockRejectedValue(new Error('Network down'));
 
+            // When the user denies the transaction
             await denyTransaction({transactionID: TRANSACTION_ID});
 
+            // Then the failure is still logged with its duration, because failed reviews are the ones most worth investigating
             expect(getReviewLogs()).toEqual([
                 {
                     mfa: {
@@ -114,6 +120,7 @@ describe('actions/MultifactorAuthentication', () => {
         });
 
         it('logs the approve when it responds after the deny', async () => {
+            // Given an approve request whose response is held back while a deny for the same transaction succeeds
             let respondToApprove: (response: {jsonCode: number}) => void = () => {};
             mockMakeRequestWithSideEffects
                 .mockImplementationOnce(
@@ -124,11 +131,13 @@ describe('actions/MultifactorAuthentication', () => {
                 )
                 .mockResolvedValueOnce({jsonCode: 200});
 
+            // When the user cancels mid-approve, so the deny responds first and the approve arrives late
             const approveRequest = approve();
             await denyTransaction({transactionID: TRANSACTION_ID});
             respondToApprove({jsonCode: 200});
             await approveRequest;
 
+            // Then both are logged in the order they completed, so the approve/deny race can be reconstructed from the logs
             expect(getReviewLogs()).toEqual([
                 {mfa: expect.objectContaining({command: SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION})},
                 {mfa: expect.objectContaining({command: SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION})},

@@ -118,11 +118,14 @@ describe('MFA outcome finalization', () => {
 
     describe('routing on the actor result', () => {
         it('moves to closing on SKIP_OUTCOME_SCREEN and leaves no cancel-confirmation dialog behind', () => {
+            // Given the cancel-confirmation dialog is up while the outcome is being finalized
             const actor = createActorAtState({[MFA_STATE.OPEN]: {...FINALIZING_OUTCOME_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}}, {scenarioResponse: MFA_TEST_SCENARIO_RESPONSE});
 
             actor.start();
+            // When the scenario callback asks to skip the outcome screen
             sendFinalizeOutcomeDone(actor, {callbackResponse: CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN});
 
+            // Then the modal closes with no dialog left behind, because there is nothing left to cancel
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
             expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
@@ -133,11 +136,14 @@ describe('MFA outcome finalization', () => {
         });
 
         it('shows the outcome screen on SHOW_OUTCOME_SCREEN and hides a cancel-confirmation dialog that was up', () => {
+            // Given the cancel-confirmation dialog is up while the outcome is being finalized
             const actor = createActorAtState({[MFA_STATE.OPEN]: {...FINALIZING_OUTCOME_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}});
 
             actor.start();
+            // When the scenario callback asks to show the outcome screen
             sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
+            // Then the outcome screen shows without the dialog, because the flow has already ended
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}}})).toBe(true);
             expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
@@ -175,6 +181,7 @@ describe('MFA outcome finalization', () => {
 
     describe('closing while the actor is in flight', () => {
         it('moves to closing on CLOSE_MODAL and ignores the late actor result', async () => {
+            // Given a scenario callback that is still running when the flow reaches finalization
             let resolveFinalize: ((output: FinalizeOutcomeOutput) => void) | undefined;
             const {actor} = startFlowEnteringFinalization(
                 fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(
@@ -185,19 +192,25 @@ describe('MFA outcome finalization', () => {
                 ),
             );
 
+            // When the ceremony and scenario action succeed
             sendAuthorizationSuccess(actor);
+            // Then the flow is waiting on the callback
             expect(actor.getSnapshot().matches(FINALIZING_OUTCOME_STATE)).toBe(true);
             expect(resolveFinalize).toBeDefined();
 
+            // When the user closes the modal before the callback answers
             actor.send({type: 'CLOSE_MODAL'});
 
+            // Then the modal closes right away rather than waiting on the callback
             expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
 
+            // When the callback answers late
             // The callback promise cannot be cancelled and may still navigate on its own; its answer,
             // however, must not push an outcome screen over a modal the user already closed.
             resolveFinalize?.(MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
             await waitForBatchedUpdates();
 
+            // Then the modal keeps closing, so the late answer cannot reopen a screen the user dismissed
             expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
 
             actor.stop();

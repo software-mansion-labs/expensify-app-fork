@@ -83,38 +83,49 @@ describe('useSyncMfaModalNavigatorWithHistory', () => {
 
     describe('Android back', () => {
         it('requests a cancel and consumes the press', async () => {
+            // Given the MFA modal is open on Android
             getPlatformMock.mockReturnValue(CONST.PLATFORM.ANDROID);
             const requestCancel = jest.fn();
             await renderOpenHook(requestCancel);
 
+            // When the user presses the hardware back button
+            // Then the press is consumed and a cancel is requested, so back asks to confirm instead of leaving the flow
             expect(hardwareBackHandler?.()).toBe(true);
             expect(requestCancel).toHaveBeenCalledTimes(1);
         });
 
         it('is not subscribed off Android', async () => {
+            // Given the platform is web
+            // When the MFA modal opens
             await renderOpenHook(jest.fn());
 
+            // Then no hardware back listener is added, because react-native-web logs an error for it and iOS has no hardware back
             expect(addBackListenerSpy).not.toHaveBeenCalled();
         });
     });
 
     describe('browser back', () => {
         it('re-pins the marker and requests a cancel when the marker leaves the history', async () => {
+            // Given the MFA modal is open with its marker in the root history
             const requestCancel = jest.fn();
             await renderOpenHook(requestCancel);
 
+            // When the browser back button pops the marker
             setRootHistory(['SomeScreen']);
             await waitForBatchedUpdates();
 
+            // Then a cancel is requested and the marker is restored, so the URL stays put while the user confirms
             expect(requestCancel).toHaveBeenCalledTimes(1);
             expect(markerToggles()).toEqual([{isVisible: true}]);
         });
 
         it('ignores a programmatic goBack that strips and re-attaches the marker', async () => {
+            // Given the MFA modal is open with its marker in the root history
             const requestCancel = jest.fn();
             await renderOpenHook(requestCancel);
             let reattach: (() => void) | undefined;
 
+            // When an in-app goBack strips the marker for its pop and then re-attaches it
             popAndRealignMfaMarker(
                 () => setRootHistory(['SomeScreen']),
                 (callback) => {
@@ -124,6 +135,7 @@ describe('useSyncMfaModalNavigatorWithHistory', () => {
             reattach?.();
             await waitForBatchedUpdates();
 
+            // Then no cancel is requested, because the user navigated inside the flow rather than pressing back
             expect(requestCancel).not.toHaveBeenCalled();
             // The bracket's own strip and re-attach; the hook adds no re-pin of its own.
             expect(markerToggles()).toEqual([{isVisible: false}, {isVisible: true}]);
@@ -132,6 +144,7 @@ describe('useSyncMfaModalNavigatorWithHistory', () => {
 
     describe('closing', () => {
         it('removes the marker and cancels a pending re-attach', async () => {
+            // Given the MFA modal is open and a goBack has stripped the marker with its re-attach still pending
             const hook = await renderOpenHook(jest.fn());
             let reattach: (() => void) | undefined;
             popAndRealignMfaMarker(
@@ -143,23 +156,28 @@ describe('useSyncMfaModalNavigatorWithHistory', () => {
             expect(isMfaMarkerStripInProgress()).toBe(true);
             mockDispatch.mockClear();
 
+            // When the modal starts closing before the pending re-attach runs
             hook.rerender({modalState: MFA_STATE.CLOSING});
             await waitForBatchedUpdates();
             reattach?.();
             await waitForBatchedUpdates();
 
+            // Then the marker is only removed, because a late re-attach would leave a dead MFA entry in the browser history
             expect(isMfaMarkerStripInProgress()).toBe(false);
             expect(markerToggles()).toEqual([{isVisible: false}]);
         });
 
         it('releases the Android back and history subscriptions', async () => {
+            // Given the MFA modal is open on Android
             getPlatformMock.mockReturnValue(CONST.PLATFORM.ANDROID);
             const requestCancel = jest.fn();
             const hook = await renderOpenHook(requestCancel);
 
+            // When the modal starts closing and the history then changes
             hook.rerender({modalState: MFA_STATE.CLOSING});
             setRootHistory(['SomeScreen']);
 
+            // Then both listeners are gone and no cancel is requested, so back works normally again once the modal is closing
             expect(removeBackSubscription).toHaveBeenCalledTimes(1);
             expect(mockStateListeners.size).toBe(0);
             expect(requestCancel).not.toHaveBeenCalled();

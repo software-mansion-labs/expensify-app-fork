@@ -57,12 +57,15 @@ describe('MFA cancel through to the outcome', () => {
     });
 
     it('fails the flow with CANCELED and reports it to the callback and telemetry when the scenario has no onCancel', async () => {
+        // Given a scenario without onCancel whose callback wants the outcome screen
         const callback = jest.fn().mockResolvedValue(CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN);
         const scenario = {...getScenarioConfig(CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.BIOMETRICS_TEST), callback};
         const canceledError = createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'User cancelled the MFA flow');
 
+        // When the user confirms the cancel on the soft prompt
         const actor = await confirmCancelOnSoftPrompt(scenario);
 
+        // Then the cancel runs through the normal failure outcome, so the callback and telemetry learn the flow was cancelled
         expect(actor.getSnapshot().context.error).toEqual(canceledError);
         expect(callback).toHaveBeenCalledWith(false, {httpStatusCode: undefined, message: REASON.LOCAL_ERRORS.CANCELED, body: undefined}, undefined);
         await waitFor(actor, () => trackMFAFlowOutcomeMock.mock.calls.length > 0);
@@ -72,14 +75,17 @@ describe('MFA cancel through to the outcome', () => {
     });
 
     it("fails the flow with the scenario onCancel's error and hands it the payload", async () => {
+        // Given a scenario whose onCancel denies the transaction and needs the payload to know which one
         const deniedError = createMFAErrorFromApiResponse(200, REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, undefined);
         const onCancel = jest.fn().mockResolvedValue(deniedError);
         const callback = jest.fn().mockResolvedValue(CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN);
         const scenario = {...getScenarioConfig(CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.BIOMETRICS_TEST), callback, onCancel};
         const payload = {transactionID: 'txn-cancel'};
 
+        // When the user confirms the cancel before any scenario action was sent
         const actor = await confirmCancelOnSoftPrompt(scenario, payload);
 
+        // Then the deny error, not a generic cancel, reaches the callback and telemetry, so callers learn the transaction was denied
         expect(onCancel).toHaveBeenCalledWith(payload, {isScenarioActionSent: false});
         expect(actor.getSnapshot().context.error).toBe(deniedError);
         expect(callback).toHaveBeenCalledWith(false, {httpStatusCode: undefined, message: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, body: undefined}, payload);

@@ -53,6 +53,7 @@ function pressEscape() {
 describe('EscapeHandler', () => {
     beforeEach(async () => {
         jest.clearAllMocks();
+        // Given the app's Escape handler is mounted over a modal with no MFA marker in the history
         mockRootState = {routes: [{name: 'SomeModal'}], history: []};
         render(<EscapeHandler />);
         await waitForBatchedUpdatesWithAct();
@@ -63,20 +64,26 @@ describe('EscapeHandler', () => {
     });
 
     it('dismisses the modal when the MFA modal is not open', () => {
+        // When the user presses Escape
         pressEscape();
 
+        // Then the modal is dismissed, because the MFA guard must not change Escape anywhere outside the MFA flow
         expect(Navigation.dismissModal).toHaveBeenCalledTimes(1);
     });
 
     it('ignores Escape while the MFA marker is in the root history', () => {
+        // Given the MFA modal is open, which its marker in the root history signals
         mockRootState = {routes: [{name: 'SomeModal'}], history: ['SomeModal', MFA_MARKER]};
 
+        // When the user presses Escape
         pressEscape();
 
+        // Then nothing is dismissed, because the MFA modal handles Escape itself by asking the user to confirm the cancel
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });
 
     it('ignores Escape while a goBack strips the MFA marker and has not re-attached it yet', () => {
+        // Given the MFA modal is open and a goBack has stripped its marker but not re-attached it yet
         mockRootState = {routes: [{name: 'SomeModal'}], history: ['SomeModal', MFA_MARKER]};
         popAndRealignMfaMarker(
             () => {
@@ -85,8 +92,10 @@ describe('EscapeHandler', () => {
             () => {},
         );
 
+        // When the user presses Escape in that window
         pressEscape();
 
+        // Then nothing is dismissed, because the MFA modal is still open even though its marker is briefly missing
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });
 });

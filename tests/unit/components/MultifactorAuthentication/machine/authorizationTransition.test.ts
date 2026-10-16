@@ -45,6 +45,7 @@ const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_ST
 describe('MFA authorization', () => {
     describe('authorize actor outcome', () => {
         it('forwards the account from INIT to the authorize actor and keeps the start-of-flow registration snapshot', async () => {
+            // Given a transaction scenario whose authorize actor records its input and never settles
             const accountID = 67890;
             const transactionID = 'transaction-from-machine-context';
             const scenarioName = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION;
@@ -65,6 +66,7 @@ describe('MFA authorization', () => {
             });
             const actor = createActor(machine);
 
+            // When the flow is initialised and reaches authorization
             actor.start();
             actor.send({
                 type: 'INIT',
@@ -77,6 +79,7 @@ describe('MFA authorization', () => {
             });
             await waitFor(actor, (snapshot) => snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}}));
 
+            // Then the ceremony only gets the account, because the scenario runner now belongs to the separate scenario action step
             expect(receivedInput).toEqual({accountID});
             expect(actor.getSnapshot().context.registrationStateAtStart).toEqual(MFA_TEST_REGISTRATION_STATE_AT_START);
 
@@ -84,11 +87,14 @@ describe('MFA authorization', () => {
         });
 
         it('moves to the scenario action with the signed challenge and authentication method once the ceremony succeeds', () => {
+            // Given the flow is signing the authorization challenge
             const actor = createActorAtState(SIGNING_CHALLENGE);
 
             actor.start();
+            // When the platform ceremony signs the challenge
             sendAuthorizeDone(actor, {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
 
+            // Then the flow moves on to the backend action holding what it needs to send, since a signature alone authorizes nothing
             const result = actor.getSnapshot();
             expect(result.matches(EXECUTING_SCENARIO_ACTION)).toBe(true);
             expect(result.context.signedChallenge).toBe(MFA_TEST_SIGNED_CHALLENGE);
@@ -203,6 +209,7 @@ describe('MFA authorization', () => {
     });
     describe('scenario action outcome', () => {
         it('hands the pre-bound scenario runner, the signed challenge and the authentication method to the scenario action', async () => {
+            // Given a flow whose ceremony succeeds and whose scenario action records its input
             const context = createFlowContext();
             let receivedInput: ExecuteScenarioActionInput | undefined;
             const machine = mfaMachine.provide({
@@ -222,22 +229,27 @@ describe('MFA authorization', () => {
             });
             const actor = createActor(machine, {snapshot});
 
+            // When the user approves the soft prompt and the flow reaches the scenario action
             actor.start();
             actor.send({type: 'SOFT_PROMPT_APPROVED'});
             await waitFor(actor, (current) => current.matches(EXECUTING_SCENARIO_ACTION));
 
+            // Then the action gets the scenario's runner plus the ceremony's signature and method, which the backend needs to accept it
             expect(receivedInput).toEqual({runScenarioAction: context.runScenarioAction, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
 
             actor.stop();
         });
 
         it('reaches the success outcome, stores the scenario response and drops the signed challenge', () => {
+            // Given the scenario action is in flight with a signed challenge stored
             const actor = createActorAtState(EXECUTING_SCENARIO_ACTION, {signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
 
             actor.start();
+            // When the backend accepts the action and the outcome is finalized
             sendExecuteScenarioActionDone(actor, {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE});
             sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
+            // Then the flow succeeds with the response for the outcome screen, and the used signature is cleared since it is single-use
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}}})).toBe(true);
             expect(result.context.authenticationMethod).toBe(MFA_TEST_AUTH_METHOD);
@@ -248,12 +260,15 @@ describe('MFA authorization', () => {
         });
 
         it('reaches the failure outcome carrying the exact scenario action error', () => {
+            // Given the scenario action is in flight with a signed challenge stored
             const actor = createActorAtState(EXECUTING_SCENARIO_ACTION, {signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
 
             actor.start();
+            // When the backend rejects the action and the outcome is finalized
             sendExecuteScenarioActionDone(actor, {success: false, error: MFA_TEST_SCENARIO_ACTION_ERROR});
             sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
+            // Then the flow fails with the backend's exact error, so the outcome screen shows the real reason
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
             expect(result.context.error).toBe(MFA_TEST_SCENARIO_ACTION_ERROR);
@@ -263,6 +278,7 @@ describe('MFA authorization', () => {
         });
 
         it('reaches the failure outcome with an unhandled-exception error when the scenario action rejects', async () => {
+            // Given a flow whose scenario action throws instead of returning a result
             const machine = mfaMachine.provide({
                 actors: {
                     authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(() =>
@@ -278,10 +294,12 @@ describe('MFA authorization', () => {
             });
             const actor = createActor(machine, {snapshot});
 
+            // When the user approves the soft prompt and the flow reaches the scenario action
             actor.start();
             actor.send({type: 'SOFT_PROMPT_APPROVED'});
             await waitForBatchedUpdates();
 
+            // Then the flow fails with an unhandled-exception error, so a crashing action still ends on a failure screen instead of hanging
             const result = actor.getSnapshot();
             expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
             expect(result.context.error?.reason).toBe(REASON.LOCAL_ERRORS.UNHANDLED_EXCEPTION);

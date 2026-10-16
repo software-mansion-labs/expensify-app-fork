@@ -25,6 +25,7 @@ function releaseEscape() {
 // the press that opens the cancel confirmation must not close it, and the next press must.
 describe('Escape against the real cancel-confirmation modal', () => {
     it('keeps the modal up on the opening release and dismisses it on the next press', () => {
+        // Given the cancel confirmation was just opened by an Escape held long enough to repeat its keydown
         const onBackButtonPress = jest.fn();
 
         // The MFA shortcut's keydown arms the suppression, held long enough to repeat, and opens the modal.
@@ -41,11 +42,15 @@ describe('Escape against the real cancel-confirmation modal', () => {
             </ReanimatedModal>,
         );
 
+        // When the user releases the Escape that opened it
         releaseEscape();
+        // Then the modal stays up, because closing it on the same press would make the confirmation impossible to see
         expect(onBackButtonPress).not.toHaveBeenCalled();
 
         // While the modal is up the MFA shortcut is inactive, so the next press arms nothing.
+        // When the user presses Escape again
         releaseEscape();
+        // Then the modal is dismissed, because the suppression must swallow only the opening release and not block Escape for good
         expect(onBackButtonPress).toHaveBeenCalledTimes(1);
     });
 });
