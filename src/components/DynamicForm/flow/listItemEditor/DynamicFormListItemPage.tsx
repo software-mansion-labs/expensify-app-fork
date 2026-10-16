@@ -1,13 +1,14 @@
 import ActivityIndicator from '@components/ActivityIndicator';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
 import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
-import {findListField, getListItems, getListItemSensitiveAnswers, parseListItemPageName} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {findListField, getListItems, getListItemSensitiveAnswers} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import summarizeListItem, {getListItemAddTitle, getListItemFallbackTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
+import toContentElements from '@components/DynamicForm/content/elements/ExpensifyInput/toContentElements';
 import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation/getDynamicFieldErrors';
-import {toExpensifyInputElements} from '@components/DynamicForm/content/parseContent';
 import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
+import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import toDynamicFormValues from '@components/DynamicForm/shared/toDynamicFormValues';
-import type {DynamicFormSubPageProps, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
 
 import useLocalize from '@hooks/useLocalize';
@@ -19,6 +20,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React from 'react';
 import {View} from 'react-native';
 
+import {parseListItemPageName} from './listItemPageName';
 import useListItemEditorDraft from './useListItemEditorDraft';
 
 /** The editor of one list entry, or of a new one: the entry's fields and a Save button */
@@ -64,7 +66,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
                 <>
                     <DynamicFormPageHeader title={title} />
                     <DynamicFormContent
-                        content={toExpensifyInputElements(listField.itemFields)}
+                        content={toContentElements(listField.itemFields)}
                         values={withInputValues(inputValues)}
                         isSensitive={isSensitiveList}
                         currency={currency}

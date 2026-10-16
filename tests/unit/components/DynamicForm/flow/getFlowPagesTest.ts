@@ -1,10 +1,10 @@
 import getFlowPages from '@components/DynamicForm/flow/getFlowPages';
-import {getAllFields} from '@components/DynamicForm/flow/pages/paginate';
+import {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
+import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
 import CONST from '@src/CONST';
-import type {DynamicFormPage} from '@src/types/onyx';
 
-const pages: DynamicFormPage[] = [
+const pages: DynamicFormFlowPage[] = [
     {key: 'type', content: [{elementType: 'ExpensifyInput', key: 'type', type: 'radio', required: true, values: [{key: 'PRIVATE'}, {key: 'BUSINESS'}]}]},
     {key: 'business', showWhen: {key: 'type', equals: ['BUSINESS']}, content: [{elementType: 'ExpensifyInput', key: 'ein', type: 'text', required: true}]},
     {
@@ -42,7 +42,7 @@ describe('getFlowPages', () => {
 
     it('gives a readonly list no editor pages', () => {
         // Given a readonly list with an entry
-        const readonlyPages: DynamicFormPage[] = [
+        const readonlyPages: DynamicFormFlowPage[] = [
             {
                 key: 'owners',
                 content: [{elementType: 'ExpensifyInput', key: 'owners', type: 'list', required: false, readonly: true, itemFields: [{key: 'name', type: 'text', required: true}]}],

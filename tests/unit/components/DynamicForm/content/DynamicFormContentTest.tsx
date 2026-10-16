@@ -14,6 +14,7 @@ import InlineSelectionListAdapter from '@components/DynamicForm/content/elements
 import ListFieldAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/ListFieldAdapter';
 import TabsAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/TabsAdapter';
 import YesNoAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/YesNoAdapter';
+import parseContent from '@components/DynamicForm/content/parseContent';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {FormValue} from '@components/Form/types';
 import MenuItemField from '@components/MenuItem/presets/MenuItemField';
@@ -109,7 +110,7 @@ function renderFields(
     mockInputWrapper.mockClear();
     render(
         <DynamicFormContent
-            content={content.map(toElement)}
+            content={parseContent(content.map(toElement))}
             values={values}
             currency={currency}
             maxFileSize={maxFileSize}

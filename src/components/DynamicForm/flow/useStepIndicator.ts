@@ -1,17 +1,17 @@
 import type {DynamicFormLayout} from '@components/DynamicForm/types';
 
 import CONST from '@src/CONST';
-import type {DynamicFormPage} from '@src/types/onyx';
 
 import {useState} from 'react';
 
 import type {FlowPages} from './getFlowPages';
+import type {DynamicFormFlowPage} from './types';
 
 type StepIndicatorOptions = Pick<FlowPages, 'shownPages' | 'hasConfirmationPage'> & {
     layout: DynamicFormLayout;
 
     /** The page whose step is highlighted. Without one, the last step is. */
-    stepPage: DynamicFormPage | undefined;
+    stepPage: DynamicFormFlowPage | undefined;
 
     isDraftLoading: boolean;
 };

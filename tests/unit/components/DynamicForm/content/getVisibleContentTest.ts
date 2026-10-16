@@ -29,17 +29,6 @@ describe('getVisibleContent', () => {
         expect(visibleContent).toEqual([contact, email]);
     });
 
-    it('drops a heading with no text', () => {
-        // Given a heading with neither a title nor a description, which would draw an empty gap
-        const empty: DynamicFormHeadingElement = {elementType: 'Heading', key: 'empty'};
-
-        // When the content is checked
-        const visibleContent = getVisibleContent([empty, email], {});
-
-        // Then only the field is left
-        expect(visibleContent).toEqual([email]);
-    });
-
     it('hides a field whose controlling field on another page is hidden', () => {
         // Given a page with a field controlled by companyName, which sits on another page and is shown only for business recipients
         const companyName: DynamicFormExpensifyInputElement = {
@@ -93,16 +82,5 @@ describe('getVisibleContent', () => {
 
         // Then the heading titles the input, since an HTML input is a question too
         expect(visibleContent).toEqual([bank, sortCode]);
-    });
-
-    it('leaves out an element type this App version does not know', () => {
-        // Given an element of an unknown type before a field
-        const carousel = {elementType: 'Carousel', key: 'carousel'};
-
-        // When the content is checked
-        const visibleContent = getVisibleContent([carousel, email], {});
-
-        // Then only the field is left, so an older App ignores newer elements
-        expect(visibleContent).toEqual([email]);
     });
 });

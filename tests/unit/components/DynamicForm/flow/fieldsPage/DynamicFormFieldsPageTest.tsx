@@ -1,10 +1,10 @@
 import {render} from '@testing-library/react-native';
 
 import DynamicFormFieldsPage from '@components/DynamicForm/flow/fieldsPage/DynamicFormFieldsPage';
+import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 import FormProvider from '@components/Form/FormProvider';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {DynamicFormPage} from '@src/types/onyx';
 
 import React from 'react';
 
@@ -12,7 +12,7 @@ jest.mock('@components/Form/FormProvider', () => jest.fn(() => null));
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
 jest.mock('@hooks/useThemeStyles', () => jest.fn(() => new Proxy({}, {get: () => ({})})));
 
-const page: DynamicFormPage = {key: 'identity', title: 'Identity', content: [{elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true}]};
+const page: DynamicFormFlowPage = {key: 'identity', title: 'Identity', content: [{elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true}]};
 
 function renderPage(isLastPage: boolean) {
     render(

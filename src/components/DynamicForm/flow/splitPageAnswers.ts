@@ -1,11 +1,12 @@
-import getAnswerKeys from '@components/DynamicForm/content/elements/ExpensifyInput/model/getAnswerKeys';
-import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
+import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
 import {getListFields, getListItems, getRemovedListItemSensitiveKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {getInputDefinition, isInputElement} from '@components/DynamicForm/content/elements/registry';
 import getContentAnswers from '@components/DynamicForm/content/getContentAnswers';
-import {getContentFields} from '@components/DynamicForm/content/parseContent';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
-import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';
+import type {DynamicFormField} from '@src/types/onyx';
+
+import type {DynamicFormFlowPage} from './types';
 
 type PageAnswers = {
     /** Answers the form draft keeps */
@@ -22,10 +23,9 @@ type PageAnswers = {
 };
 
 /** Sorts the answers of a page the user leaves with Next by where they are kept. `values` holds the page's answers merged into the form's. */
-function splitPageAnswers(page: DynamicFormPage, values: DynamicFormValues, allFields: DynamicFormField[]): PageAnswers {
-    const pageFields = getContentFields(page.content);
-    const pageListFields = getListFields(pageFields);
-    const sensitiveKeys = new Set(pageFields.filter(isSensitiveField).flatMap(getAnswerKeys));
+function splitPageAnswers(page: DynamicFormFlowPage, values: DynamicFormValues, allFields: DynamicFormField[]): PageAnswers {
+    const pageListFields = getListFields(getContentFields(page.content));
+    const sensitiveKeys = new Set(page.content.filter(isInputElement).flatMap((input) => getInputDefinition(input).getSensitiveKeys(input)));
     const listKeys = new Set(pageListFields.map((field) => field.key));
     const pageAnswers: PageAnswers = {
         draftAnswers: {},

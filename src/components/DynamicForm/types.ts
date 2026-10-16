@@ -3,15 +3,10 @@ import type {FormValue} from '@components/Form/types';
 import type {SubPageProps, UseSubPageProps} from '@hooks/useSubPage/types';
 
 import type {OnyxFormKey} from '@src/ONYXKEYS';
-import type {DynamicFormField, DynamicFormFieldType, DynamicFormListItem, DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
-
-import type {ReactNode} from 'react';
+import type {DynamicFormListItem, DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
 
 /** Current answers keyed by draft key. Address parts sit under `<fieldKey>.<part>`. */
 type DynamicFormValues = Partial<Record<string, FormValue>>;
-
-/** The variant of one type. An intersection rather than Extract, since one variant can cover several types, such as select and radio. */
-type DynamicFormFieldOfType<TType extends DynamicFormFieldType> = DynamicFormField & {type: TType};
 
 /** One error FormProvider shows under an input: the input's draft key and the message */
 type DynamicFormError = [inputID: string, message: string];
@@ -39,9 +34,6 @@ type DynamicFormListActions = {
     /** Called with a list's entries after the user removes one, so the flow can keep a sensitive list in memory up to date */
     onListItemsChange?: (listKey: string, items: DynamicFormListItem[]) => void;
 };
-
-/** Draws the fields of a list entry inside the modal editor used outside DynamicFormFlow. `isSensitive` keeps every answer out of the draft. */
-type DynamicFormRenderFields = (fields: DynamicFormField[], values: DynamicFormValues, isSensitive: boolean) => ReactNode;
 
 type DynamicFormFlowProps = DynamicFormInputOptions & {
     /** The pages as the server groups them, or a flat list of fields the App paginates. Fields of a type this App version does not know are left out. */
@@ -87,42 +79,4 @@ type DynamicFormFlowProps = DynamicFormInputOptions & {
     hasConfirmation?: boolean;
 };
 
-/** The form as every page of the flow reads it */
-type DynamicFormFlowData = Pick<DynamicFormFlowProps, 'formID' | 'confirmationTitle' | 'isSubmitting' | 'submitError'> & {
-    pages: DynamicFormPage[];
-
-    /** Every supported field of the form, which is where a `showWhen` finds its controller */
-    allFields: DynamicFormField[];
-
-    /** Draft answers merged with the sensitive answers kept in memory */
-    values: DynamicFormValues;
-
-    /** The last page submits the form, since no confirmation page follows */
-    isLastPage: boolean;
-};
-
-/** What the pages of the flow hand back to it */
-type DynamicFormFlowActions = Required<DynamicFormListActions> & {
-    /** Saves the answers of a page the user leaves with Next */
-    onPageSubmit: (page: DynamicFormPage, pageValues: DynamicFormValues) => void;
-
-    /** Saves a list entry from its editor page. Without `itemID` it adds a new entry. */
-    onListItemSave: (listKey: string, itemID: string | undefined, answers: DynamicFormValues) => void;
-};
-
-/** Props of every page in the flow: useSubPage's routing props, the form's data, the screen's input options and the flow's actions */
-type DynamicFormSubPageProps = SubPageProps & DynamicFormFlowData & DynamicFormInputOptions & DynamicFormFlowActions;
-
-export type {
-    DynamicFormError,
-    DynamicFormFieldOfType,
-    DynamicFormFlowActions,
-    DynamicFormFlowData,
-    DynamicFormFlowProps,
-    DynamicFormInputOptions,
-    DynamicFormLayout,
-    DynamicFormListActions,
-    DynamicFormRenderFields,
-    DynamicFormSubPageProps,
-    DynamicFormValues,
-};
+export type {DynamicFormError, DynamicFormFlowProps, DynamicFormInputOptions, DynamicFormLayout, DynamicFormListActions, DynamicFormValues};

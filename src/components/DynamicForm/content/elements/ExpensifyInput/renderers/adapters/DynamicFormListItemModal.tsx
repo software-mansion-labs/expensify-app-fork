@@ -1,6 +1,7 @@
+import type {DynamicFormRenderFields} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
 import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation/getDynamicFieldErrors';
 import toDynamicFormValues from '@components/DynamicForm/shared/toDynamicFormValues';
-import type {DynamicFormRenderFields, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
 import HeaderWithBackButtonAndTitle from '@components/Header/composed/HeaderWithBackButtonAndTitle';
 import Modal from '@components/Modal';

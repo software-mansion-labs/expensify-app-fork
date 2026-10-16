@@ -1,6 +1,7 @@
 import {getListItemSensitiveAnswerKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import summarizeListItem from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
-import type {DynamicFormRenderFields, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormRenderFields} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
 import ListField from '@components/ListField';
 import {ModalActions} from '@components/Modal/Global/ModalContext';
 import Text from '@components/Text';

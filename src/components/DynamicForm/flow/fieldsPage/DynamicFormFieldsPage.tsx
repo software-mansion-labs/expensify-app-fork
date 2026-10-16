@@ -1,24 +1,24 @@
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
+import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
 import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
 import getContentErrors from '@components/DynamicForm/content/getContentErrors';
-import {getContentFields} from '@components/DynamicForm/content/parseContent';
 import getPageTitle from '@components/DynamicForm/flow/pages/getPageTitle';
 import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
+import type {DynamicFormFlowPage, DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
 import toDynamicFormValues from '@components/DynamicForm/shared/toDynamicFormValues';
-import type {DynamicFormSubPageProps, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
 
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
-import type {DynamicFormPage} from '@src/types/onyx';
 
 import React from 'react';
 
 /** A sensitive list lives in memory, which the editor page and a removal update, so the form's own copy of it may be stale */
-function getMemoryListAnswers(page: DynamicFormPage, values: DynamicFormValues): DynamicFormValues {
+function getMemoryListAnswers(page: DynamicFormFlowPage, values: DynamicFormValues): DynamicFormValues {
     const memoryLists = getContentFields(page.content).filter((field) => field.type === 'list' && isSensitiveField(field));
     return Object.fromEntries(memoryLists.map((field) => [field.key, values[field.key]]));
 }

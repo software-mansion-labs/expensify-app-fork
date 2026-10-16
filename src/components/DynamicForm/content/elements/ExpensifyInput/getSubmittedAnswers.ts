@@ -1,9 +1,9 @@
-import getVisibleFields from '@components/DynamicForm/shared/getVisibleFields';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
 import type {DynamicFormField} from '@src/types/onyx';
 
 import getAnswerKeys from './model/getAnswerKeys';
+import getVisibleFields from './model/getVisibleFields';
 import {getListItems, getListItemSensitiveAnswers} from './model/listItems';
 
 /** The answers one field holds: its own and those of its parts. List entries get their sensitive answers back from memory. */

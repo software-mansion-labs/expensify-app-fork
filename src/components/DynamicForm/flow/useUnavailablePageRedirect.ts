@@ -1,6 +1,3 @@
-import {parseListItemPageName} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
-
 import type {UseSubPageProps} from '@hooks/useSubPage/types';
 
 import Navigation from '@libs/Navigation/Navigation';
@@ -8,6 +5,9 @@ import Navigation from '@libs/Navigation/Navigation';
 import {useEffect} from 'react';
 
 import type {FlowPages} from './getFlowPages';
+import type {DynamicFormSubPageProps} from './types';
+
+import {parseListItemPageName} from './listItemEditor/listItemPageName';
 
 type PageState = Pick<FlowPages, 'subPages' | 'skipPages'> & {
     currentPageName: string | undefined;

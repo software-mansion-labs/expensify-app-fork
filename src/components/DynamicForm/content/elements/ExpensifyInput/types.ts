@@ -1,6 +1,14 @@
-import type {DynamicFormInputOptions, DynamicFormListActions, DynamicFormRenderFields, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormInputOptions, DynamicFormListActions, DynamicFormValues} from '@components/DynamicForm/types';
 
-import type {DynamicFormExpensifyInputElement} from '@src/types/onyx';
+import type {DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormFieldType} from '@src/types/onyx';
+
+import type {ReactNode} from 'react';
+
+/** The variant of one type. An intersection rather than Extract, since one variant can cover several types, such as select and radio. */
+type DynamicFormFieldOfType<TType extends DynamicFormFieldType> = DynamicFormField & {type: TType};
+
+/** Draws the fields of a list entry inside the modal editor used outside DynamicFormFlow. `isSensitive` keeps every answer out of the draft. */
+type DynamicFormRenderFields = (fields: DynamicFormField[], values: DynamicFormValues, isSensitive: boolean) => ReactNode;
 
 type ExpensifyInputProps = Omit<DynamicFormInputOptions, 'currency'> &
     Required<Pick<DynamicFormInputOptions, 'currency'>> &
@@ -22,5 +30,4 @@ type ExpensifyInputProps = Omit<DynamicFormInputOptions, 'currency'> &
         renderFields: DynamicFormRenderFields;
     };
 
-// eslint-disable-next-line import/prefer-default-export
-export type {ExpensifyInputProps};
+export type {DynamicFormFieldOfType, DynamicFormRenderFields, ExpensifyInputProps};

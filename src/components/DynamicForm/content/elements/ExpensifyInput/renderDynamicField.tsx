@@ -1,8 +1,7 @@
-import type {DynamicFormFieldOfType} from '@components/DynamicForm/types';
-
 import type {DynamicFormFieldType} from '@src/types/onyx';
 
 import type {DynamicFieldContext, DynamicFieldInput, DynamicFieldInputProps, DynamicFieldRenderer, DynamicFieldRendererMap} from './renderers/types';
+import type {DynamicFormFieldOfType} from './types';
 
 import renderAddress from './renderers/addressRenderer';
 import CHOICE_RENDERERS from './renderers/choiceRenderers';

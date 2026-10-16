@@ -1,19 +1,21 @@
-import type {DynamicFormInputOptions, DynamicFormListActions, DynamicFormRenderFields, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormInputOptions, DynamicFormListActions, DynamicFormValues} from '@components/DynamicForm/types';
 
 import CONST from '@src/CONST';
-import type {DynamicFormField, DynamicFormSchemaElement} from '@src/types/onyx';
+import type {DynamicFormElement as DynamicFormElementType, DynamicFormField} from '@src/types/onyx';
 
 import React from 'react';
 
+import type {DynamicFormRenderFields} from './elements/ExpensifyInput/types';
+
 import DynamicFormElement from './elements/DynamicFormElement';
-import getLoneField from './getLoneField';
+import toContentElements from './elements/ExpensifyInput/toContentElements';
+import getLoneInput from './getLoneInput';
 import getVisibleContent from './getVisibleContent';
-import {toExpensifyInputElements} from './parseContent';
 
 type DynamicFormContentProps = DynamicFormInputOptions &
     DynamicFormListActions & {
-        /** Elements to render, in order. Elements of a type this App version does not know are left out. */
-        content: DynamicFormSchemaElement[];
+        /** Elements to render, in order, as parseContent returns them */
+        content: DynamicFormElementType[];
 
         /** Current answers, from FormProvider's render-prop `inputValues`, so showWhen and dependsOn follow the user's typing */
         values: DynamicFormValues;
@@ -28,7 +30,7 @@ type DynamicFormContentProps = DynamicFormInputOptions &
         isSensitive?: boolean;
     };
 
-/** The elements of a schema-driven form. Render it inside a FormProvider and validate the same content with getContentErrors. */
+/** The elements of a schema-driven form. Render it inside a FormProvider, and validate the same parsed content with getContentErrors. */
 function DynamicFormContent({
     content,
     values,
@@ -42,10 +44,10 @@ function DynamicFormContent({
     isSensitive = false,
 }: DynamicFormContentProps) {
     const visibleContent = getVisibleContent(content, values, allFields);
-    const loneField = getLoneField(visibleContent);
+    const loneInput = getLoneInput(visibleContent);
     const renderFields: DynamicFormRenderFields = (itemFields, itemValues, isItemSensitive) => (
         <DynamicFormContent
-            content={toExpensifyInputElements(itemFields)}
+            content={toContentElements(itemFields)}
             values={itemValues}
             isSensitive={isItemSensitive}
             currency={currency}
@@ -62,8 +64,8 @@ function DynamicFormContent({
             values={values}
             currency={currency}
             maxFileSize={maxFileSize}
-            isLoneField={element === loneField}
-            shouldHideLabel={isLoneFieldInHeadline && element === loneField}
+            isLoneField={element === loneInput}
+            shouldHideLabel={isLoneFieldInHeadline && element === loneInput}
             onRefreshRequirements={onRefreshRequirements}
             onOpenListItemEditor={onOpenListItemEditor}
             onListItemsChange={onListItemsChange}

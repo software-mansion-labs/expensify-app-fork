@@ -1,6 +1,6 @@
 import DynamicFormInputRow from '@components/DynamicForm/content/elements/shared/DynamicFormInputRow';
 import getRefreshHandlers from '@components/DynamicForm/content/elements/shared/getRefreshHandlers';
-import getLocalizedText, {getFieldLabel} from '@components/DynamicForm/shared/getLocalizedText';
+import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
@@ -13,6 +13,7 @@ import React from 'react';
 
 import type {ExpensifyInputProps} from './types';
 
+import getFieldLabel from './model/getFieldLabel';
 import isSensitiveField from './model/isSensitiveField';
 import ReadonlyFieldRow from './ReadonlyFieldRow';
 import renderDynamicField from './renderDynamicField';

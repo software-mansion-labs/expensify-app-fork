@@ -1,13 +1,13 @@
 import getStartPageIndex from '@components/DynamicForm/flow/getStartPageIndex';
-import {getAllFields} from '@components/DynamicForm/flow/pages/paginate';
+import {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
+import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
 import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
-import type {DynamicFormPage} from '@src/types/onyx';
 
 import {translateLocal} from '../../../../utils/TestHelper';
 
-const pages: DynamicFormPage[] = [
+const pages: DynamicFormFlowPage[] = [
     {key: 'name', content: [{elementType: 'ExpensifyInput', key: 'name', type: 'text', required: true}]},
     {key: 'consent', content: [{elementType: 'ExpensifyInput', key: 'consent', type: 'boolean', required: false}]},
     {key: 'city', content: [{elementType: 'HTMLInput', key: 'city', name: 'City', type: 'text', required: true}]},

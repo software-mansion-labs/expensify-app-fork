@@ -1,19 +1,22 @@
-import {findListField, getListItemPageName, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import {getContentFields} from '@components/DynamicForm/content/parseContent';
+import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
+import {findListField, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import type {FlowPages} from '@components/DynamicForm/flow/getFlowPages';
-import {saveListItemAnswers, saveSensitiveListItems} from '@components/DynamicForm/flow/saveAnswers';
-import type {DynamicFormFlowActions, DynamicFormInputOptions, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormFlowActions, DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
+import type {DynamicFormInputOptions, DynamicFormValues} from '@components/DynamicForm/types';
 
 import CONST from '@src/CONST';
 import type {OnyxFormKey} from '@src/ONYXKEYS';
-import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';
+import type {DynamicFormField} from '@src/types/onyx';
 
 import {Str} from 'expensify-common';
+
+import {getListItemPageName} from './listItemPageName';
+import saveListItemAnswers, {saveSensitiveListItems} from './saveListItemAnswers';
 
 type ListItemEditorOptions = Pick<FlowPages, 'subPages'> &
     Pick<DynamicFormInputOptions, 'onRefreshRequirements'> & {
         formID: OnyxFormKey;
-        pages: DynamicFormPage[];
+        pages: DynamicFormFlowPage[];
         allFields: DynamicFormField[];
         values: DynamicFormValues;
         isEditing: boolean;
@@ -29,7 +32,7 @@ type ListItemEditor = Pick<DynamicFormFlowActions, 'onOpenListItemEditor' | 'onL
 };
 
 /** The page that holds a list, which its entry editors return to and whose step they highlight */
-function findListPage(pages: DynamicFormPage[], listKey: string): DynamicFormPage | undefined {
+function findListPage(pages: DynamicFormFlowPage[], listKey: string): DynamicFormFlowPage | undefined {
     return pages.find((page) => !!findListField(getContentFields(page.content), listKey));
 }
 

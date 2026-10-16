@@ -1,4 +1,4 @@
-import {getFieldLabel} from '@components/DynamicForm/shared/getLocalizedText';
+import getFieldLabel from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldLabel';
 import InputWrapper from '@components/Form/InputWrapper';
 
 import CONST from '@src/CONST';

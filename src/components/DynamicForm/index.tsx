@@ -10,23 +10,23 @@ import {clearSensitiveAnswers} from '@userActions/DynamicForm';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {DynamicFormPage} from '@src/types/onyx';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 
 import React from 'react';
 
-import type {DynamicFormFlowProps, DynamicFormSubPageProps, DynamicFormValues} from './types';
+import type {DynamicFormFlowPage, DynamicFormSubPageProps} from './flow/types';
+import type {DynamicFormFlowProps, DynamicFormValues} from './types';
 
-import {parseListItemPageName} from './content/elements/ExpensifyInput/model/listItems';
 import getContentAnswers from './content/getContentAnswers';
 import DynamicFormShell from './flow/DynamicFormShell';
 import getFirstIncompletePageIndex from './flow/getFirstIncompletePageIndex';
 import getFlowPages from './flow/getFlowPages';
 import getStartPageIndex from './flow/getStartPageIndex';
 import getListItemEditor, {findListPage} from './flow/listItemEditor/getListItemEditor';
+import {parseListItemPageName} from './flow/listItemEditor/listItemPageName';
+import getPages, {getAllFields} from './flow/pages/getPages';
 import isPageShown from './flow/pages/isPageShown';
-import {getAllFields, getPages} from './flow/pages/paginate';
-import {savePageAnswers} from './flow/saveAnswers';
+import savePageAnswers from './flow/savePageAnswers';
 import useSensitiveAnswersCleanup from './flow/useSensitiveAnswersCleanup';
 import useStepIndicator from './flow/useStepIndicator';
 import useUnavailablePageRedirect from './flow/useUnavailablePageRedirect';
@@ -117,7 +117,7 @@ function DynamicFormFlow({
         onRefreshRequirements,
     });
 
-    const handlePageSubmit = (page: DynamicFormPage, pageValues: DynamicFormValues) => {
+    const handlePageSubmit = (page: DynamicFormFlowPage, pageValues: DynamicFormValues) => {
         const screenAnswers = savePageAnswers(formID, page, {...values, ...pageValues}, allFields);
         onPageSubmit?.(page, screenAnswers);
     };

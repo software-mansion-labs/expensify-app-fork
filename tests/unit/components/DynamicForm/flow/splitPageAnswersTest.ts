@@ -1,10 +1,9 @@
 import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import {getAllFields} from '@components/DynamicForm/flow/pages/paginate';
+import {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
 import splitPageAnswers from '@components/DynamicForm/flow/splitPageAnswers';
+import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
-import type {DynamicFormPage} from '@src/types/onyx';
-
-const page: DynamicFormPage = {
+const page: DynamicFormFlowPage = {
     key: 'details',
     content: [
         {elementType: 'Description', key: 'intro', text: 'Tell us about you.'},

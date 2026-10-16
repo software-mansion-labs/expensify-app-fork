@@ -1,7 +1,8 @@
 import AmountForm from '@components/AmountForm';
 import CurrencyPicker from '@components/CurrencyPicker';
 import DatePicker from '@components/DatePicker';
-import getLocalizedText, {getFieldLabel} from '@components/DynamicForm/shared/getLocalizedText';
+import getFieldLabel from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldLabel';
+import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
 import InputWrapper from '@components/Form/InputWrapper';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import PercentageForm from '@components/PercentageForm';

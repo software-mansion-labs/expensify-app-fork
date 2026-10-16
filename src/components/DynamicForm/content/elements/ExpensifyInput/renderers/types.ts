@@ -1,5 +1,4 @@
-import type {ExpensifyInputProps} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
-import type {DynamicFormFieldOfType} from '@components/DynamicForm/types';
+import type {DynamicFormFieldOfType, ExpensifyInputProps} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
 import type {FormValue, InputComponentBaseProps} from '@components/Form/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 

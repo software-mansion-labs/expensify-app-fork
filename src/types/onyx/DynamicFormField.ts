@@ -355,6 +355,7 @@ export type {
     DynamicFormAddressField,
     DynamicFormBannerElement,
     DynamicFormChoiceField,
+    DynamicFormCondition,
     DynamicFormCountryField,
     DynamicFormDescriptionElement,
     DynamicFormElement,

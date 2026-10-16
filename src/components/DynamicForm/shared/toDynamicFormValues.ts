@@ -1,6 +1,7 @@
-import {isListItem} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {FormValue} from '@components/Form/types';
+
+import isListItem from './isListItem';
 
 function isFormValue(value: unknown): value is FormValue {
     if (typeof value === 'string' || typeof value === 'boolean' || value instanceof Date) {

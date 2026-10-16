@@ -1,4 +1,4 @@
-import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
+import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import useLocalize from '@hooks/useLocalize';

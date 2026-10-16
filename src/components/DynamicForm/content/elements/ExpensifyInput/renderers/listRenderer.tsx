@@ -1,8 +1,9 @@
+import getFieldLabel from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldLabel';
 import hasSensitiveAnswer from '@components/DynamicForm/content/elements/ExpensifyInput/model/hasSensitiveAnswer';
 import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
 import {getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import {getListItemAddTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
-import getLocalizedText, {getFieldLabel} from '@components/DynamicForm/shared/getLocalizedText';
+import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
 import InputWrapper from '@components/Form/InputWrapper';
 
 import type {DynamicFormListItem} from '@src/types/onyx';

@@ -1,10 +1,11 @@
-import getLocalizedText, {getFieldLabel} from '@components/DynamicForm/shared/getLocalizedText';
-import getVisibleFields from '@components/DynamicForm/shared/getVisibleFields';
+import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {DynamicFormField, DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';
 
 import formatDynamicFieldValue from './formatDynamicFieldValue';
+import getFieldLabel from './getFieldLabel';
+import getVisibleFields from './getVisibleFields';
 import isSensitiveField from './isSensitiveField';
 
 const DESCRIPTION_ANSWER_LIMIT = 2;

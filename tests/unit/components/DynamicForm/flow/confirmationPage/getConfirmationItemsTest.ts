@@ -1,11 +1,10 @@
 import getConfirmationItems from '@components/DynamicForm/flow/confirmationPage/getConfirmationItems';
-import {getAllFields} from '@components/DynamicForm/flow/pages/paginate';
-
-import type {DynamicFormPage} from '@src/types/onyx';
+import {getAllFields} from '@components/DynamicForm/flow/pages/getPages';
+import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
 import {translateLocal} from '../../../../../utils/TestHelper';
 
-const pages: DynamicFormPage[] = [
+const pages: DynamicFormFlowPage[] = [
     {
         key: 'identity',
         title: 'Identity',
@@ -60,7 +59,7 @@ describe('getConfirmationItems', () => {
 
     it('leaves the section of an untitled page with several questions unnamed', () => {
         // Given a page the form built from a flat list, so it has no title, asking an account number and a currency
-        const untitledPages: DynamicFormPage[] = [
+        const untitledPages: DynamicFormFlowPage[] = [
             {
                 key: 'page-1',
                 content: [
@@ -80,7 +79,7 @@ describe('getConfirmationItems', () => {
 
     it('shows each list entry as its own row that opens the entry', () => {
         // Given a page with a list of directors holding one entry
-        const directorsPages: DynamicFormPage[] = [
+        const directorsPages: DynamicFormFlowPage[] = [
             {
                 key: 'directors',
                 content: [
@@ -111,7 +110,7 @@ describe('getConfirmationItems', () => {
 
     it('shows an empty list as a row that opens its page', () => {
         // Given a page with an optional list of directors that holds no entry
-        const directorsPages: DynamicFormPage[] = [
+        const directorsPages: DynamicFormFlowPage[] = [
             {
                 key: 'directors',
                 content: [
@@ -134,7 +133,7 @@ describe('getConfirmationItems', () => {
 
     it('shows a Wise input as a row with its name and the name of the chosen value', () => {
         // Given a page mixing a Wise select, a Wise text input and a description
-        const wisePages: DynamicFormPage[] = [
+        const wisePages: DynamicFormFlowPage[] = [
             {
                 key: 'recipient',
                 title: 'Recipient',

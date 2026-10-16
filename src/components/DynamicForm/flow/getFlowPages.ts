@@ -1,16 +1,19 @@
-import {getListFields, getListItemPageName, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
-import type {DynamicFormSubPageProps, DynamicFormValues} from '@components/DynamicForm/types';
+import {getListFields, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
 
 import type {PageConfig} from '@hooks/useSubPage/types';
 
 import {findLastPageIndex} from '@libs/SubPageUtils';
 
 import CONST from '@src/CONST';
-import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';
+import type {DynamicFormField} from '@src/types/onyx';
+
+import type {DynamicFormFlowPage, DynamicFormSubPageProps} from './types';
 
 import DynamicFormConfirmationPage from './confirmationPage/DynamicFormConfirmationPage';
 import DynamicFormFieldsPage from './fieldsPage/DynamicFormFieldsPage';
 import DynamicFormListItemPage from './listItemEditor/DynamicFormListItemPage';
+import {getListItemPageName} from './listItemEditor/listItemPageName';
 import isPageShown from './pages/isPageShown';
 
 type FlowPages = {
@@ -21,7 +24,7 @@ type FlowPages = {
     skipPages: string[];
 
     /** The form's pages the answers show */
-    shownPages: DynamicFormPage[];
+    shownPages: DynamicFormFlowPage[];
 
     hasConfirmationPage: boolean;
 
@@ -38,7 +41,7 @@ function getListItemPageNames(allFields: DynamicFormField[], values: DynamicForm
 }
 
 /** The sub-pages of the flow and which of them Next and Back step over. A form without pages gets the confirmation page, since useSubPage needs at least one page. */
-function getFlowPages(pages: DynamicFormPage[], allFields: DynamicFormField[], values: DynamicFormValues, hasConfirmation: boolean): FlowPages {
+function getFlowPages(pages: DynamicFormFlowPage[], allFields: DynamicFormField[], values: DynamicFormValues, hasConfirmation: boolean): FlowPages {
     const shownPages = pages.filter((page) => isPageShown(page, values, allFields));
     const hasConfirmationPage = pages.length === 0 || hasConfirmation;
     const listItemPageNames = getListItemPageNames(allFields, values);

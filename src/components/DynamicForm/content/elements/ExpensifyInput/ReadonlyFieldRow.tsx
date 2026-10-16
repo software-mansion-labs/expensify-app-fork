@@ -1,5 +1,4 @@
 import DynamicFormInputRow from '@components/DynamicForm/content/elements/shared/DynamicFormInputRow';
-import {getFieldLabel} from '@components/DynamicForm/shared/getLocalizedText';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import MenuItemField from '@components/MenuItem/presets/MenuItemField';
@@ -11,6 +10,7 @@ import type {DynamicFormField} from '@src/types/onyx';
 import React from 'react';
 
 import formatDynamicFieldValue from './model/formatDynamicFieldValue';
+import getFieldLabel from './model/getFieldLabel';
 import {getListItems} from './model/listItems';
 import summarizeListItem, {getListItemFallbackTitle} from './model/summarizeListItem';
 

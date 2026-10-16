@@ -1,12 +1,13 @@
 import isSupportedField from '@components/DynamicForm/content/elements/ExpensifyInput/isSupportedField';
 import getFieldOptions from '@components/DynamicForm/content/elements/ExpensifyInput/model/getFieldOptions';
+import getVisibleFields from '@components/DynamicForm/content/elements/ExpensifyInput/model/getVisibleFields';
 import {getListItems, getListItemSensitiveAnswers} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import summarizeListItem, {getListItemFallbackTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
+import type {DynamicFormFieldOfType} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
 import getFormatErrors from '@components/DynamicForm/content/elements/shared/getFormatErrors';
-import getVisibleFields from '@components/DynamicForm/shared/getVisibleFields';
 import isAnswered from '@components/DynamicForm/shared/isAnswered';
 import toFormErrors from '@components/DynamicForm/shared/toFormErrors';
-import type {DynamicFormError, DynamicFormFieldOfType, DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import {isValidDate, isValidLegalName, isValidPastDate, isValidPhoneInternational, meetsMaximumAgeRequirement, meetsMinimumAgeRequirement} from '@libs/ValidationUtils';
