@@ -1,5 +1,5 @@
+import {parseListItemPageName} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
-import {parseListItemPageName} from '@components/DynamicForm/utils/listItems';
 
 import type {UseSubPageProps} from '@hooks/useSubPage/types';
 

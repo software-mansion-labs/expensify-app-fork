@@ -1,13 +1,13 @@
+import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
+import {getListItems, getRemovedListItemSensitiveKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
-import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
-import {getListItems, getRemovedListItemSensitiveKeys} from '@components/DynamicForm/utils/listItems';
 
 import {forgetSensitiveAnswers, saveDraftAnswers, saveSensitiveAnswers} from '@userActions/DynamicForm';
 
 import type {OnyxFormKey} from '@src/ONYXKEYS';
 import type {DynamicFormField, DynamicFormListField, DynamicFormListItem, DynamicFormPage} from '@src/types/onyx';
 
-import splitListItemAnswers from './splitListItemAnswers';
+import splitListItemAnswers from './listItemEditor/splitListItemAnswers';
 import splitPageAnswers from './splitPageAnswers';
 
 function saveSensitiveAnswersIfAny(formID: OnyxFormKey, answers: DynamicFormValues) {

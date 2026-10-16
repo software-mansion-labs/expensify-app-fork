@@ -1,9 +1,9 @@
+import getAnswerKeys from '@components/DynamicForm/content/elements/ExpensifyInput/model/getAnswerKeys';
+import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
+import {getListFields, getListItems, getRemovedListItemSensitiveKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import getContentAnswers from '@components/DynamicForm/content/getContentAnswers';
+import {getContentFields} from '@components/DynamicForm/content/parseContent';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
-import {getContentFields} from '@components/DynamicForm/utils/elements';
-import getAnswerKeys from '@components/DynamicForm/utils/getAnswerKeys';
-import getContentAnswers from '@components/DynamicForm/utils/getContentAnswers';
-import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
-import {getListFields, getListItems, getRemovedListItemSensitiveKeys} from '@components/DynamicForm/utils/listItems';
 
 import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';
 

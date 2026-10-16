@@ -1,6 +1,6 @@
+import {getContentInputs} from '@components/DynamicForm/content/parseContent';
+import isAnswered from '@components/DynamicForm/shared/isAnswered';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
-import {getContentInputs} from '@components/DynamicForm/utils/elements';
-import isAnswered from '@components/DynamicForm/utils/isAnswered';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';

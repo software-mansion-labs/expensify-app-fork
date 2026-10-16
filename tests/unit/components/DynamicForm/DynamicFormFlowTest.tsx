@@ -1,8 +1,8 @@
 import {render} from '@testing-library/react-native';
 
 import DynamicFormFlow from '@components/DynamicForm';
+import {getListItems, getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import type {DynamicFormLayout, DynamicFormSubPageProps} from '@components/DynamicForm/types';
-import {getListItems, getListItemSensitiveKey} from '@components/DynamicForm/utils/listItems';
 import type {FormValue} from '@components/Form/types';
 
 import useSubPage from '@hooks/useSubPage';

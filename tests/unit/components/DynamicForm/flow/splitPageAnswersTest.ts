@@ -1,6 +1,6 @@
+import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
+import {getAllFields} from '@components/DynamicForm/flow/pages/paginate';
 import splitPageAnswers from '@components/DynamicForm/flow/splitPageAnswers';
-import {getListItemSensitiveKey} from '@components/DynamicForm/utils/listItems';
-import {getAllFields} from '@components/DynamicForm/utils/paginate';
 
 import type {DynamicFormPage} from '@src/types/onyx';
 

@@ -1,9 +1,5 @@
-import DynamicFormConfirmationPage from '@components/DynamicForm/pages/DynamicFormConfirmationPage';
-import DynamicFormFieldsPage from '@components/DynamicForm/pages/DynamicFormFieldsPage';
-import DynamicFormListItemPage from '@components/DynamicForm/pages/DynamicFormListItemPage';
+import {getListFields, getListItemPageName, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import type {DynamicFormSubPageProps, DynamicFormValues} from '@components/DynamicForm/types';
-import isPageShown from '@components/DynamicForm/utils/isPageShown';
-import {getListFields, getListItemPageName, getListItems} from '@components/DynamicForm/utils/listItems';
 
 import type {PageConfig} from '@hooks/useSubPage/types';
 
@@ -11,6 +7,11 @@ import {findLastPageIndex} from '@libs/SubPageUtils';
 
 import CONST from '@src/CONST';
 import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';
+
+import DynamicFormConfirmationPage from './confirmationPage/DynamicFormConfirmationPage';
+import DynamicFormFieldsPage from './fieldsPage/DynamicFormFieldsPage';
+import DynamicFormListItemPage from './listItemEditor/DynamicFormListItemPage';
+import isPageShown from './pages/isPageShown';
 
 type FlowPages = {
     /** Every sub-page useSubPage routes to: the form's pages, the confirmation page, then the list entry editors */

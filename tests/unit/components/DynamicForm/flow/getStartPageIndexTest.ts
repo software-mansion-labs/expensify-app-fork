@@ -1,5 +1,5 @@
 import getStartPageIndex from '@components/DynamicForm/flow/getStartPageIndex';
-import {getAllFields} from '@components/DynamicForm/utils/paginate';
+import {getAllFields} from '@components/DynamicForm/flow/pages/paginate';
 
 import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';

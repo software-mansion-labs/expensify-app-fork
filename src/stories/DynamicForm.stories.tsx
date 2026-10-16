@@ -1,9 +1,9 @@
 import DynamicFormFlow from '@components/DynamicForm';
-import DynamicFormFields from '@components/DynamicForm/components/DynamicFormFields';
+import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
+import getContentErrors from '@components/DynamicForm/content/getContentErrors';
+import getPageTitle from '@components/DynamicForm/flow/pages/getPageTitle';
+import {getAllFields, getPages} from '@components/DynamicForm/flow/pages/paginate';
 import type {DynamicFormLayout} from '@components/DynamicForm/types';
-import getContentErrors from '@components/DynamicForm/utils/getContentErrors';
-import getPageTitle from '@components/DynamicForm/utils/getPageTitle';
-import {getAllFields, getPages} from '@components/DynamicForm/utils/paginate';
 import FormProvider from '@components/Form/FormProvider';
 import Text from '@components/Text';
 
@@ -491,7 +491,7 @@ function SinglePage({fields, draftValues, isFlat}: Preset) {
                     return (
                         <View key={page.key}>
                             {!!title && <Text style={[defaultStyles.textHeadlineLineHeightXXL, defaultStyles.mt5, defaultStyles.mb3]}>{title}</Text>}
-                            <DynamicFormFields
+                            <DynamicFormContent
                                 content={page.content}
                                 allFields={allFields}
                                 values={inputValues}

@@ -1,5 +1,5 @@
 import getFlowPages from '@components/DynamicForm/flow/getFlowPages';
-import {getAllFields} from '@components/DynamicForm/utils/paginate';
+import {getAllFields} from '@components/DynamicForm/flow/pages/paginate';
 
 import CONST from '@src/CONST';
 import type {DynamicFormPage} from '@src/types/onyx';

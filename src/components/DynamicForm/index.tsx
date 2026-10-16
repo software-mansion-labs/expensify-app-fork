@@ -17,20 +17,20 @@ import React from 'react';
 
 import type {DynamicFormFlowProps, DynamicFormSubPageProps, DynamicFormValues} from './types';
 
-import DynamicFormShell from './components/DynamicFormShell';
+import {parseListItemPageName} from './content/elements/ExpensifyInput/model/listItems';
+import getContentAnswers from './content/getContentAnswers';
+import DynamicFormShell from './flow/DynamicFormShell';
 import getFirstIncompletePageIndex from './flow/getFirstIncompletePageIndex';
 import getFlowPages from './flow/getFlowPages';
-import getListItemEditor, {findListPage} from './flow/getListItemEditor';
 import getStartPageIndex from './flow/getStartPageIndex';
+import getListItemEditor, {findListPage} from './flow/listItemEditor/getListItemEditor';
+import isPageShown from './flow/pages/isPageShown';
+import {getAllFields, getPages} from './flow/pages/paginate';
 import {savePageAnswers} from './flow/saveAnswers';
 import useSensitiveAnswersCleanup from './flow/useSensitiveAnswersCleanup';
 import useStepIndicator from './flow/useStepIndicator';
 import useUnavailablePageRedirect from './flow/useUnavailablePageRedirect';
-import getContentAnswers from './utils/getContentAnswers';
-import isPageShown from './utils/isPageShown';
-import {parseListItemPageName} from './utils/listItems';
-import {getAllFields, getPages} from './utils/paginate';
-import toDynamicFormValues from './utils/toDynamicFormValues';
+import toDynamicFormValues from './shared/toDynamicFormValues';
 
 /** A whole dynamic form: one page per schema page, skipping pages with nothing to ask, then a confirmation page */
 function DynamicFormFlow({
