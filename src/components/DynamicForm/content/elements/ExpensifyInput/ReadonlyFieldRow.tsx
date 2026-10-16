@@ -1,4 +1,4 @@
-import DynamicFormInputRow from '@components/DynamicForm/content/elements/shared/DynamicFormInputRow';
+import DynamicFormInputRow from '@components/DynamicForm/content/elements/DynamicFormInputRow';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import MenuItemField from '@components/MenuItem/presets/MenuItemField';

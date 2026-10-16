@@ -1,14 +1,33 @@
-import {getLocalizedText} from '@components/DynamicForm/shared';
+import {getLocalizedText, hasText} from '@components/DynamicForm/shared';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
-import type {DynamicFormHeadingElement} from '@src/types/onyx';
+import type {DynamicFormHeadingElement, DynamicFormSchemaElement} from '@src/types/onyx';
 
 import React from 'react';
 import {View} from 'react-native';
+
+import type {StaticElementDefinition} from './types';
+
+/** A heading with neither a title nor a description has nothing to draw */
+function isHeadingElement(element: DynamicFormSchemaElement): element is DynamicFormHeadingElement {
+    return (
+        element.elementType === 'Heading' &&
+        (('title' in element && hasText(element.title)) ||
+            ('titleKey' in element && hasText(element.titleKey)) ||
+            ('description' in element && hasText(element.description)) ||
+            ('descriptionKey' in element && hasText(element.descriptionKey)))
+    );
+}
+
+const headingDefinition: StaticElementDefinition<'Heading'> = {
+    parse: (element) => (isHeadingElement(element) ? element : undefined),
+    getCondition: (heading) => heading.showWhen,
+    introducesInputs: true,
+};
 
 type HeadingProps = {
     element: DynamicFormHeadingElement;
@@ -40,3 +59,4 @@ function Heading({element, isFirst}: HeadingProps) {
 }
 
 export default Heading;
+export {headingDefinition};

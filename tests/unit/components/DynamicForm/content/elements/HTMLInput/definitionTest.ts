@@ -1,4 +1,4 @@
-import getHTMLInputErrors from '@components/DynamicForm/content/elements/HTMLInput/getHTMLInputErrors';
+import htmlInputDefinition from '@components/DynamicForm/content/elements/HTMLInput/definition';
 
 import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
@@ -30,7 +30,7 @@ const legalType: DynamicFormHTMLInputElement = {
     ],
 };
 
-describe('getHTMLInputErrors', () => {
+describe('htmlInputDefinition.getErrors', () => {
     beforeAll(() => {
         IntlStore.load(CONST.LOCALES.DEFAULT);
     });
@@ -39,7 +39,7 @@ describe('getHTMLInputErrors', () => {
         // Given a sort code with a regex and lengths, and a radio with allowed values
         // When both are answered within the rules
         const values = {sortCode: '04-00-75', legalType: 'BUSINESS'};
-        const errors = [sortCode, legalType].flatMap((input) => getHTMLInputErrors(input, values, translateLocal));
+        const errors = [sortCode, legalType].flatMap((input) => htmlInputDefinition.getErrors(input, values, translateLocal));
 
         // Then there are no errors
         expect(errors).toEqual([]);
@@ -51,7 +51,7 @@ describe('getHTMLInputErrors', () => {
 
         // When they are checked
         const values = {sortCode: '', email: ''};
-        const errors = [sortCode, email].flatMap((input) => getHTMLInputErrors(input, values, translateLocal));
+        const errors = [sortCode, email].flatMap((input) => htmlInputDefinition.getErrors(input, values, translateLocal));
 
         // Then only the required one is flagged, since the regex applies to an answer only
         expect(errors).toEqual([['sortCode', translateLocal('common.error.fieldRequired')]]);
@@ -60,7 +60,7 @@ describe('getHTMLInputErrors', () => {
     it('flags a typed answer that breaks the regex and the minimum length, showing the example', () => {
         // Given a sort code
         // When it is answered with too few letters
-        const errors = getHTMLInputErrors(sortCode, {sortCode: 'AB'}, translateLocal);
+        const errors = htmlInputDefinition.getErrors(sortCode, {sortCode: 'AB'}, translateLocal);
 
         // Then both rules are reported, like Wise reports them, with the example to follow
         expect(errors).toEqual([
@@ -72,7 +72,7 @@ describe('getHTMLInputErrors', () => {
     it('flags a choice that is not among the allowed values', () => {
         // Given a radio and a draft holding a value Wise no longer allows
         // When it is checked
-        const errors = getHTMLInputErrors(legalType, {legalType: 'TRUST'}, translateLocal);
+        const errors = htmlInputDefinition.getErrors(legalType, {legalType: 'TRUST'}, translateLocal);
 
         // Then the stale choice must be picked again
         expect(errors).toEqual([['legalType', translateLocal('dynamicForm.error.invalidOption')]]);
@@ -83,7 +83,7 @@ describe('getHTMLInputErrors', () => {
         const dateOfBirth: DynamicFormHTMLInputElement = {elementType: 'HTMLInput', key: 'dateOfBirth', name: 'Date of birth', type: 'date', required: true};
 
         // When it is answered with text that is not a date
-        const errors = getHTMLInputErrors(dateOfBirth, {dateOfBirth: 'yesterday'}, translateLocal);
+        const errors = htmlInputDefinition.getErrors(dateOfBirth, {dateOfBirth: 'yesterday'}, translateLocal);
 
         // Then the date is flagged
         expect(errors).toEqual([['dateOfBirth', translateLocal('common.error.dateInvalid')]]);

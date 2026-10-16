@@ -2,10 +2,10 @@ import type {DynamicFormElement, DynamicFormInputElement, DynamicFormSchemaEleme
 
 import type {DynamicFormElementType, ElementDefinition, ElementOfType, InputElementDefinition, InputElementType, StaticElementDefinition, StaticElementType} from './types';
 
-import bannerDefinition from './Banner/definition';
-import descriptionDefinition from './Description/definition';
+import {bannerDefinition} from './Banner';
+import {descriptionDefinition} from './Description';
 import expensifyInputDefinition from './ExpensifyInput/definition';
-import headingDefinition from './Heading/definition';
+import {headingDefinition} from './Heading';
 import htmlInputDefinition from './HTMLInput/definition';
 
 const INPUT_DEFINITIONS: {[TType in InputElementType]: InputElementDefinition<TType>} = {
