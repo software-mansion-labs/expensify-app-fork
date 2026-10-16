@@ -82,7 +82,7 @@ const TEXT_RENDERERS: Pick<DynamicFieldRendererMap, 'text' | 'number' | 'date' |
                     {...inputProps}
                     label={getFieldLabel(field, translate)}
                     placeholder={translate('common.dateFormat')}
-                    // A date of birth can only be picked within the ages getDynamicFieldErrors accepts
+                    // A date of birth can only be picked within the ages validation accepts
                     minDate={isDateOfBirth ? subYears(new Date(), CONST.DATE_BIRTH.MAX_AGE) : undefined}
                     maxDate={isDateOfBirth ? subYears(new Date(), CONST.DATE_BIRTH.MIN_AGE_FOR_PAYMENT) : undefined}
                 />

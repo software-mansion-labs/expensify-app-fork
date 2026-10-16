@@ -1,5 +1,5 @@
 import type {DynamicFormRenderFields} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
-import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
+import {getItemFieldErrors} from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
 import {toDynamicFormValues} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
@@ -76,7 +76,7 @@ function DynamicFormListItemModal({isVisible, title, itemFields, keptAnswers, is
                     <FormProvider
                         formID={ONYXKEYS.FORMS.DYNAMIC_FORM_LIST_ITEM_FORM}
                         submitButtonText={translate('common.save')}
-                        validate={(inputValues) => getDynamicFieldErrors(itemFields, withInputValues(inputValues), translate)}
+                        validate={(inputValues) => getItemFieldErrors(itemFields, withInputValues(inputValues), translate)}
                         onSubmit={(inputValues) => onSave(withInputValues(inputValues))}
                         style={[styles.mh5, styles.flexGrow1]}
                         submitButtonStyles={styles.mb0}

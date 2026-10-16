@@ -14,11 +14,11 @@ import {
     meetsMinimumAgeRequirement,
 } from '@libs/ValidationUtils';
 
-import type {DynamicFormAddressField, DynamicFormChoiceField, DynamicFormField, DynamicFormFieldType, DynamicFormListField, DynamicFormSchemaField} from '@src/types/onyx';
+import type {DynamicFormAddressField, DynamicFormChoiceField, DynamicFormField, DynamicFormFieldType, DynamicFormListField} from '@src/types/onyx';
 
 import type {DynamicFormFieldOfType} from './types';
 
-import {getAddressCountry, getAddressInputKeys, getFieldOptions, isStateAsked, isSupportedField} from './field';
+import {getAddressCountry, getAddressInputKeys, getFieldOptions, isStateAsked} from './field';
 import {getListItemFallbackTitle, getListItems, getListItemSensitiveAnswers, getVisibleFields, summarizeListItem} from './list';
 
 /** An optional address the user has started filling in is checked like a required one, so it is never submitted in part */
@@ -89,7 +89,7 @@ function getListErrors(field: DynamicFormListField, values: DynamicFormValues, t
     }
     const fallbackTitle = getListItemFallbackTitle(field, translate);
     for (const item of items) {
-        const error = Object.values(getDynamicFieldErrors(field.itemFields, {...item, ...getListItemSensitiveAnswers(field, item.id, values)}, translate)).at(0);
+        const error = Object.values(getItemFieldErrors(field.itemFields, {...item, ...getListItemSensitiveAnswers(field, item.id, values)}, translate)).at(0);
         if (error) {
             messages.push(translate('dynamicForm.error.itemError', {item: summarizeListItem(item, field.itemFields, translate, fallbackTitle).title, error}));
             break;
@@ -171,14 +171,9 @@ function getFieldErrors(field: DynamicFormField, values: DynamicFormValues, tran
     return [...partErrors, ...validateAnswer(field, values, translate).map((message): DynamicFormError => [field.key, message])];
 }
 
-/**
- * Errors for the fields the user can see, keyed by draft key, in the shape FormProvider's `validate` returns.
- * Pass the whole form as `allFields` when a `showWhen` can name a field on another page.
- */
-function getDynamicFieldErrors(fields: DynamicFormSchemaField[], values: DynamicFormValues, translate: LocalizedTranslate, allFields?: DynamicFormField[]): Record<string, string> {
-    const visibleFields = getVisibleFields(fields.filter(isSupportedField), values, allFields);
-    return toFormErrors(visibleFields.flatMap((field) => getFieldErrors(field, values, translate)));
+/** Errors of a list entry's fields the user can see, keyed by draft key, in the shape FormProvider's `validate` returns. Entry fields only name each other in a `showWhen`. */
+function getItemFieldErrors(itemFields: DynamicFormField[], values: DynamicFormValues, translate: LocalizedTranslate): Record<string, string> {
+    return toFormErrors(getVisibleFields(itemFields, values).flatMap((field) => getFieldErrors(field, values, translate)));
 }
 
-export default getDynamicFieldErrors;
-export {getFieldErrors};
+export {getFieldErrors, getItemFieldErrors};

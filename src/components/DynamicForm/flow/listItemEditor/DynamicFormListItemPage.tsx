@@ -9,7 +9,7 @@ import {
     getListItemFallbackTitle,
 } from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import toContentElements from '@components/DynamicForm/content/elements/ExpensifyInput/toContentElements';
-import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
+import {getItemFieldErrors} from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
 import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import {toDynamicFormValues} from '@components/DynamicForm/shared';
@@ -60,7 +60,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
             formID={ONYXKEYS.FORMS.DYNAMIC_FORM_LIST_ITEM_FORM}
             forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
             submitButtonText={translate('common.save')}
-            validate={(inputValues) => getDynamicFieldErrors(listField.itemFields, withInputValues(inputValues), translate)}
+            validate={(inputValues) => getItemFieldErrors(listField.itemFields, withInputValues(inputValues), translate)}
             onSubmit={(inputValues) => onListItemSave(listField.key, item?.id, withInputValues(inputValues))}
             style={[styles.mh5, styles.flexGrow1]}
             submitButtonStyles={styles.mb0}

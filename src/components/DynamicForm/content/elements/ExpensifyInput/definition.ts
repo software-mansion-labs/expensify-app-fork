@@ -11,7 +11,7 @@ import type {DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormList
 
 import noop from 'lodash/noop';
 
-import {formatDynamicFieldValue, getAnswerKeys, getFieldLabel, isSupportedFieldType, maskSensitiveValue} from './field';
+import {formatDynamicFieldValue, getAnswerKeys, getFieldLabel, isSupportedFieldType, maskSensitiveValue, parseItemFields} from './field';
 import {getFieldAnswers, getListItemFallbackTitle, getListItems, summarizeListItem} from './list';
 import {getFieldErrors} from './validation';
 
@@ -77,7 +77,12 @@ function getConfirmationRows(field: DynamicFormField, values: DynamicFormValues,
 
 /** A field in the App's own format */
 const expensifyInputDefinition: InputElementDefinition<'ExpensifyInput'> = {
-    parse: (element) => (isExpensifyInputElement(element) ? element : undefined),
+    parse: (element) => {
+        if (!isExpensifyInputElement(element)) {
+            return undefined;
+        }
+        return element.type === 'list' ? {...element, itemFields: parseItemFields(element.itemFields)} : element;
+    },
     getCondition: (field) => field.showWhen,
     getErrors: getFieldErrors,
     getAnswers: getFieldAnswers,

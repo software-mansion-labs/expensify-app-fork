@@ -1,19 +1,19 @@
 import {getAddressInputKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
 import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
-import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
+import {getItemFieldErrors} from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
 
 import Log from '@libs/Log';
 import {getCountryZipRegexDetails} from '@libs/ValidationUtils';
 
 import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
-import type {DynamicFormField, DynamicFormSchemaField} from '@src/types/onyx';
+import type {DynamicFormField} from '@src/types/onyx';
 
 import {format, subYears} from 'date-fns';
 
 import {translateLocal} from '../../../../../../utils/TestHelper';
 
-describe('getDynamicFieldErrors', () => {
+describe('getItemFieldErrors', () => {
     const warnSpy = jest.spyOn(Log, 'warn').mockImplementation(() => {});
 
     beforeAll(() => {
@@ -29,7 +29,7 @@ describe('getDynamicFieldErrors', () => {
         const accountNumber: DynamicFormField = {key: 'accountNumber', type: 'text', required: true, regex: '^\\d{8}$', minLength: 8, maxLength: 8};
 
         // When it is answered with eight digits
-        const errors = getDynamicFieldErrors([accountNumber], {accountNumber: '12345678'}, translateLocal);
+        const errors = getItemFieldErrors([accountNumber], {accountNumber: '12345678'}, translateLocal);
 
         // Then there are no errors
         expect(errors).toEqual({});
@@ -41,7 +41,7 @@ describe('getDynamicFieldErrors', () => {
         const yearsInBusiness: DynamicFormField = {key: 'yearsInBusiness', type: 'number', required: false};
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([accountNumber, yearsInBusiness], {accountNumber: ' ', yearsInBusiness: ''}, translateLocal);
+        const errors = getItemFieldErrors([accountNumber, yearsInBusiness], {accountNumber: ' ', yearsInBusiness: ''}, translateLocal);
 
         // Then only the required field is flagged, and its regex does not run on the blank answer
         expect(errors).toEqual({accountNumber: translateLocal('common.error.fieldRequired')});
@@ -53,7 +53,7 @@ describe('getDynamicFieldErrors', () => {
         const companyName: DynamicFormField = {key: 'companyName', type: 'text', required: false};
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([acceptTerms, companyName], {acceptTerms: false}, translateLocal);
+        const errors = getItemFieldErrors([acceptTerms, companyName], {acceptTerms: false}, translateLocal);
 
         // Then it is flagged as required, because consent must be given
         expect(errors).toEqual({acceptTerms: translateLocal('common.error.fieldRequired')});
@@ -64,7 +64,7 @@ describe('getDynamicFieldErrors', () => {
         const accountNumber: DynamicFormField = {key: 'accountNumber', type: 'text', required: true, regex: '^\\d{8}$', minLength: 8, example: '12345678'};
 
         // When it is answered with an answer that breaks both
-        const errors = getDynamicFieldErrors([accountNumber], {accountNumber: '12ab'}, translateLocal);
+        const errors = getItemFieldErrors([accountNumber], {accountNumber: '12ab'}, translateLocal);
 
         // Then both messages are shown, so the user can fix the answer in one go
         expect(errors.accountNumber).toBe(`${translateLocal('dynamicForm.error.invalidFormat', {example: '12345678'})}\n${translateLocal('dynamicForm.error.tooShort', {minLength: 8})}`);
@@ -80,7 +80,7 @@ describe('getDynamicFieldErrors', () => {
         };
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([legalName], {legalName: 'Jane; Doe'}, translateLocal);
+        const errors = getItemFieldErrors([legalName], {legalName: 'Jane; Doe'}, translateLocal);
 
         // Then the name is rejected
         expect(errors).toEqual({
@@ -93,7 +93,7 @@ describe('getDynamicFieldErrors', () => {
         const yearsInBusiness: DynamicFormField = {key: 'yearsInBusiness', type: 'number', required: false};
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([yearsInBusiness], {yearsInBusiness: 'ten'}, translateLocal);
+        const errors = getItemFieldErrors([yearsInBusiness], {yearsInBusiness: 'ten'}, translateLocal);
 
         // Then the answer is flagged as the wrong format
         expect(errors).toEqual({
@@ -113,7 +113,7 @@ describe('getDynamicFieldErrors', () => {
         };
 
         // When savings stays picked after the recipient switches to business
-        const errors = getDynamicFieldErrors([accountType], {legalType: 'BUSINESS', accountType: 'SAVINGS'}, translateLocal);
+        const errors = getItemFieldErrors([accountType], {legalType: 'BUSINESS', accountType: 'SAVINGS'}, translateLocal);
 
         // Then the stale choice is flagged
         expect(errors).toEqual({accountType: translateLocal('dynamicForm.error.invalidOption')});
@@ -125,7 +125,7 @@ describe('getDynamicFieldErrors', () => {
         const tenYearsAgo = format(subYears(new Date(), 10), CONST.DATE.FNS_FORMAT_STRING);
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([dateOfBirth], {dateOfBirth: tenYearsAgo}, translateLocal);
+        const errors = getItemFieldErrors([dateOfBirth], {dateOfBirth: tenYearsAgo}, translateLocal);
 
         // Then the minimum age error is shown
         expect(errors).toEqual({
@@ -140,7 +140,7 @@ describe('getDynamicFieldErrors', () => {
         const values = {homeAddress: '1 High Street', [addressKeys.city]: 'London', [addressKeys.country]: 'GB', [addressKeys.zipCode]: '   '};
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([homeAddress], values, translateLocal);
+        const errors = getItemFieldErrors([homeAddress], values, translateLocal);
 
         // Then the zip input gets the required error alone, since a format error on an empty zip would only add noise
         expect(errors).toEqual({[addressKeys.zipCode]: translateLocal('common.error.fieldRequired')});
@@ -158,7 +158,7 @@ describe('getDynamicFieldErrors', () => {
         };
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([homeAddress], values, translateLocal);
+        const errors = getItemFieldErrors([homeAddress], values, translateLocal);
 
         // Then the zip code input is flagged with the UK format
         expect(errors).toEqual({
@@ -182,39 +182,10 @@ describe('getDynamicFieldErrors', () => {
         };
 
         // When the form is validated for a private recipient
-        const errors = getDynamicFieldErrors([hidden, readonly], {legalType: 'PRIVATE'}, translateLocal);
+        const errors = getItemFieldErrors([hidden, readonly], {legalType: 'PRIVATE'}, translateLocal);
 
         // Then neither blocks submission, because the user cannot answer them
         expect(errors).toEqual({});
-    });
-
-    it('drops a field of an unknown type instead of blocking submission', () => {
-        // Given a required field whose type this App version does not know, as a newer server could send
-        const signature: DynamicFormSchemaField = {key: 'signature', type: 'signature', required: true};
-
-        // When the form is validated twice
-        getDynamicFieldErrors([signature], {}, translateLocal);
-        const errors = getDynamicFieldErrors([signature], {}, translateLocal);
-
-        // Then it has no error, and the unknown type is logged once rather than on every validation
-        expect(errors).toEqual({});
-        expect(warnSpy).toHaveBeenCalledTimes(1);
-        expect(warnSpy).toHaveBeenCalledWith('[DynamicForm] Unknown field type', {
-            type: 'signature',
-            key: 'signature',
-        });
-    });
-
-    it('drops a field without a key instead of storing its answer under an empty draft key', () => {
-        // Given a required address whose key is empty, as a broken server schema could send
-        const homeAddress: DynamicFormSchemaField = {key: '', type: 'address', required: true};
-
-        // When the form is validated
-        const errors = getDynamicFieldErrors([homeAddress], {}, translateLocal);
-
-        // Then it has no error, and the missing key is logged so the schema can be fixed
-        expect(errors).toEqual({});
-        expect(warnSpy).toHaveBeenCalledWith('[DynamicForm] Field without a key', {type: 'address'});
     });
 
     it('accepts any answer when the schema regex is broken', () => {
@@ -227,7 +198,7 @@ describe('getDynamicFieldErrors', () => {
         };
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([broken], {reference: 'anything'}, translateLocal);
+        const errors = getItemFieldErrors([broken], {reference: 'anything'}, translateLocal);
 
         // Then the user is not blocked by a schema mistake, and the mistake is logged
         expect(errors).toEqual({});
@@ -242,7 +213,7 @@ describe('getDynamicFieldErrors', () => {
         const ownership: DynamicFormField = {key: 'ownership', type: 'percent', required: true};
 
         // When it is 0, 1, 100, 101 and a word
-        const errorsByAnswer = ['0', '1', '100', '101', 'abc'].map((answer) => getDynamicFieldErrors([ownership], {ownership: answer}, translateLocal));
+        const errorsByAnswer = ['0', '1', '100', '101', 'abc'].map((answer) => getItemFieldErrors([ownership], {ownership: answer}, translateLocal));
 
         // Then only 1 and 100 pass, since an owner with no share, more than the whole company or no number at all is a typo
         const outOfRange = {ownership: translateLocal('dynamicForm.error.outOfRange', {min: 1, max: 100})};
@@ -259,9 +230,9 @@ describe('getDynamicFieldErrors', () => {
         };
 
         // When it is left empty, when it keeps a retail choice after the business type changed to services, and when it holds only a services choice
-        const emptyErrors = getDynamicFieldErrors([industries], {businessType: 'RETAIL', industries: []}, translateLocal);
-        const staleErrors = getDynamicFieldErrors([industries], {businessType: 'SERVICES', industries: ['CLOTHING', 'CONSULTING']}, translateLocal);
-        const validErrors = getDynamicFieldErrors([industries], {businessType: 'SERVICES', industries: ['CONSULTING']}, translateLocal);
+        const emptyErrors = getItemFieldErrors([industries], {businessType: 'RETAIL', industries: []}, translateLocal);
+        const staleErrors = getItemFieldErrors([industries], {businessType: 'SERVICES', industries: ['CLOTHING', 'CONSULTING']}, translateLocal);
+        const validErrors = getItemFieldErrors([industries], {businessType: 'SERVICES', industries: ['CONSULTING']}, translateLocal);
 
         // Then an empty list is required, a stale choice asks the user to pick from the available options, and a valid list passes
         expect(emptyErrors).toEqual({industries: translateLocal('common.error.fieldRequired')});
@@ -274,7 +245,7 @@ describe('getDynamicFieldErrors', () => {
         const industries: DynamicFormField = {key: 'industries', type: 'multiselect', required: true, values: [{key: 'RETAIL'}]};
 
         // When it is validated
-        const errors = getDynamicFieldErrors([industries], {industries: [false]}, translateLocal);
+        const errors = getItemFieldErrors([industries], {industries: [false]}, translateLocal);
 
         // Then the user is asked to pick from the options, rather than the list being sent with the stray entry
         expect(errors).toEqual({industries: translateLocal('dynamicForm.error.invalidOption')});
@@ -286,7 +257,7 @@ describe('getDynamicFieldErrors', () => {
         const addressKeys = getAddressInputKeys(homeAddress.key);
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([homeAddress], {homeAddress: '1 High Street'}, translateLocal);
+        const errors = getItemFieldErrors([homeAddress], {homeAddress: '1 High Street'}, translateLocal);
 
         // Then city, state, zip and country are each flagged, so every empty input shows its own error
         const required = translateLocal('common.error.fieldRequired');
@@ -299,10 +270,10 @@ describe('getDynamicFieldErrors', () => {
         const addressKeys = getAddressInputKeys(homeAddress.key);
 
         // When it is validated untouched, with only the street filled in, with only the city filled in, and with only a country picked
-        const untouchedErrors = getDynamicFieldErrors([homeAddress], {}, translateLocal);
-        const streetOnlyErrors = getDynamicFieldErrors([homeAddress], {homeAddress: '1 High Street'}, translateLocal);
-        const cityOnlyErrors = getDynamicFieldErrors([homeAddress], {[addressKeys.city]: 'London'}, translateLocal);
-        const countryOnlyErrors = getDynamicFieldErrors([homeAddress], {[addressKeys.country]: CONST.COUNTRY.GB}, translateLocal);
+        const untouchedErrors = getItemFieldErrors([homeAddress], {}, translateLocal);
+        const streetOnlyErrors = getItemFieldErrors([homeAddress], {homeAddress: '1 High Street'}, translateLocal);
+        const cityOnlyErrors = getItemFieldErrors([homeAddress], {[addressKeys.city]: 'London'}, translateLocal);
+        const countryOnlyErrors = getItemFieldErrors([homeAddress], {[addressKeys.country]: CONST.COUNTRY.GB}, translateLocal);
 
         // Then skipping it is fine, but a started address flags every missing part, the street included, so it is never submitted in part
         const required = translateLocal('common.error.fieldRequired');
@@ -317,7 +288,7 @@ describe('getDynamicFieldErrors', () => {
         const homeAddress: DynamicFormField = {key: 'homeAddress', type: 'address', required: true};
         const addressKeys = getAddressInputKeys(homeAddress.key);
         const getErrorsIn = (country: string) =>
-            getDynamicFieldErrors([homeAddress], {homeAddress: '1 High Street', [addressKeys.city]: 'City', [addressKeys.country]: country}, translateLocal);
+            getItemFieldErrors([homeAddress], {homeAddress: '1 High Street', [addressKeys.city]: 'City', [addressKeys.country]: country}, translateLocal);
 
         // When each is validated without a zip
         const errorsByCountry = ['HK', 'AE', 'GB'].map(getErrorsIn);
@@ -333,7 +304,7 @@ describe('getDynamicFieldErrors', () => {
         const values = {homeAddress: '1 High Street', [addressKeys.city]: 'London', [addressKeys.zipCode]: 'SW1A 1AA', [addressKeys.country]: 'GB'};
 
         // When the form is validated
-        const errors = getDynamicFieldErrors([homeAddress], values, translateLocal);
+        const errors = getItemFieldErrors([homeAddress], values, translateLocal);
 
         // Then nothing is flagged, since the picker only lists US states and Canadian provinces
         expect(errors).toEqual({});
@@ -344,9 +315,9 @@ describe('getDynamicFieldErrors', () => {
         const phone: DynamicFormField = {key: 'phone', type: 'text', required: true, rule: 'phone'};
 
         // When it is answered with a US number, a UK number and an incomplete number
-        const usErrors = getDynamicFieldErrors([phone], {phone: '+1 415 555 0132'}, translateLocal);
-        const ukErrors = getDynamicFieldErrors([phone], {phone: '+44 20 7946 0958'}, translateLocal);
-        const incompleteErrors = getDynamicFieldErrors([phone], {phone: '+1 415'}, translateLocal);
+        const usErrors = getItemFieldErrors([phone], {phone: '+1 415 555 0132'}, translateLocal);
+        const ukErrors = getItemFieldErrors([phone], {phone: '+44 20 7946 0958'}, translateLocal);
+        const incompleteErrors = getItemFieldErrors([phone], {phone: '+1 415'}, translateLocal);
 
         // Then only the incomplete number is flagged
         expect(usErrors).toEqual({});
@@ -361,10 +332,10 @@ describe('getDynamicFieldErrors', () => {
         const fullName: DynamicFormField = {key: 'fullName', type: 'text', required: false};
 
         // When the question is answered No, alone and among other fields, or not at all, and the checkbox is left empty
-        const loneNoErrors = getDynamicFieldErrors([ownsQuarter], {ownsQuarter: false}, translateLocal);
-        const sharedNoErrors = getDynamicFieldErrors([ownsQuarter, fullName], {ownsQuarter: false}, translateLocal);
-        const unansweredErrors = getDynamicFieldErrors([ownsQuarter, fullName], {ownsQuarter: ''}, translateLocal);
-        const consentErrors = getDynamicFieldErrors([acceptTerms, fullName], {acceptTerms: false}, translateLocal);
+        const loneNoErrors = getItemFieldErrors([ownsQuarter], {ownsQuarter: false}, translateLocal);
+        const sharedNoErrors = getItemFieldErrors([ownsQuarter, fullName], {ownsQuarter: false}, translateLocal);
+        const unansweredErrors = getItemFieldErrors([ownsQuarter, fullName], {ownsQuarter: ''}, translateLocal);
+        const consentErrors = getItemFieldErrors([acceptTerms, fullName], {acceptTerms: false}, translateLocal);
 
         // Then No answers the question however the page is grouped, while an unanswered question and an empty checkbox are flagged
         expect(loneNoErrors).toEqual({});
@@ -388,8 +359,8 @@ describe('getDynamicFieldErrors', () => {
         };
 
         // When it holds no entry, and when it holds one entry without a first name
-        const emptyErrors = getDynamicFieldErrors([directors], {directors: []}, translateLocal);
-        const shortErrors = getDynamicFieldErrors([directors], {directors: [{id: 'jane', firstName: ''}]}, translateLocal);
+        const emptyErrors = getItemFieldErrors([directors], {directors: []}, translateLocal);
+        const shortErrors = getItemFieldErrors([directors], {directors: [{id: 'jane', firstName: ''}]}, translateLocal);
 
         // Then the empty list is required, and the short list shows both the size and the entry's first problem, its missing name, under the item noun since the entry has no name to show
         const missingNameError = translateLocal('dynamicForm.error.itemError', {item: 'director', error: translateLocal('common.error.fieldRequired')});
@@ -411,8 +382,8 @@ describe('getDynamicFieldErrors', () => {
         const draftValues = {directors: [{id: 'jane', firstName: 'Jane'}]};
 
         // When the SSN is in memory, and when the memory was lost, as after the app restarts
-        const keptErrors = getDynamicFieldErrors([directors], {...draftValues, [getListItemSensitiveKey('directors', 'jane', 'ssn')]: '123456789'}, translateLocal);
-        const lostErrors = getDynamicFieldErrors([directors], draftValues, translateLocal);
+        const keptErrors = getItemFieldErrors([directors], {...draftValues, [getListItemSensitiveKey('directors', 'jane', 'ssn')]: '123456789'}, translateLocal);
+        const lostErrors = getItemFieldErrors([directors], draftValues, translateLocal);
 
         // Then the list passes while the SSN is kept, and asks for it once it is lost, naming Jane so the user knows which entry to open, so a director is never submitted without one
         expect(keptErrors).toEqual({});

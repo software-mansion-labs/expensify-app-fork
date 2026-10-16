@@ -71,6 +71,14 @@ function isSupportedField(field: DynamicFormSchemaField): field is DynamicFormFi
     return isSupportedFieldType(field.type, field.key);
 }
 
+/** The fields of a list's entries as this App version can draw them, at any depth, so an entry never holds a field the renderers or validators do not know */
+function parseItemFields(itemFields: DynamicFormSchemaField[] | undefined): DynamicFormField[] {
+    if (!Array.isArray(itemFields)) {
+        return [];
+    }
+    return itemFields.filter(isSupportedField).map((field) => (field.type === 'list' ? {...field, itemFields: parseItemFields(field.itemFields)} : field));
+}
+
 function getFieldLabel(field: DynamicFormField, translate: LocalizedTranslate): string {
     return getLocalizedText(translate, field.labelKey, field.label) ?? field.key;
 }
@@ -224,7 +232,7 @@ export {
     getFieldOptions,
     hasSensitiveAnswer,
     isStateAsked,
-    isSupportedField,
     isSupportedFieldType,
+    parseItemFields,
     maskSensitiveValue,
 };
