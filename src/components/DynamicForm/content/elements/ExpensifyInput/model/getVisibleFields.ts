@@ -1,4 +1,4 @@
-import isShown from '@components/DynamicForm/shared/isShown';
+import {isShown} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
 import type {DynamicFormField} from '@src/types/onyx';

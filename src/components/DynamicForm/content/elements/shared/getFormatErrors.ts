@@ -1,4 +1,4 @@
-import logSchemaProblem from '@components/DynamicForm/shared/logSchemaProblem';
+import {logSchemaProblem} from '@components/DynamicForm/shared';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {DynamicFormTextField} from '@src/types/onyx';

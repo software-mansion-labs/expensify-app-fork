@@ -1,4 +1,4 @@
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
+import {getLocalizedText} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import type {Choice} from '@components/RadioButtons';

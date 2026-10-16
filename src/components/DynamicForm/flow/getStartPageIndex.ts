@@ -1,5 +1,5 @@
 import {isInputElement} from '@components/DynamicForm/content/elements/registry';
-import isAnswered from '@components/DynamicForm/shared/isAnswered';
+import {isAnswered} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 

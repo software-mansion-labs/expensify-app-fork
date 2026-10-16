@@ -1,5 +1,5 @@
 import type {InputElementDefinition} from '@components/DynamicForm/content/elements/types';
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
+import {getLocalizedText} from '@components/DynamicForm/shared';
 
 import type {DynamicFormExpensifyInputElement, DynamicFormSchemaElement} from '@src/types/onyx';
 

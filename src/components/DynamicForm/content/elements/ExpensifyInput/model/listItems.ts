@@ -1,4 +1,4 @@
-import isListItem from '@components/DynamicForm/shared/isListItem';
+import {isListItem} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
 import type {DynamicFormField, DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';

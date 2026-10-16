@@ -1,5 +1,5 @@
 import getFormatErrors from '@components/DynamicForm/content/elements/shared/getFormatErrors';
-import isAnswered from '@components/DynamicForm/shared/isAnswered';
+import {isAnswered} from '@components/DynamicForm/shared';
 import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 

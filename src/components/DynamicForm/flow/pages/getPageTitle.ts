@@ -3,7 +3,7 @@ import type {InputHeadline} from '@components/DynamicForm/content/elements/types
 import getLoneInput from '@components/DynamicForm/content/getLoneInput';
 import getVisibleContent from '@components/DynamicForm/content/getVisibleContent';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
+import {getLocalizedText} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 

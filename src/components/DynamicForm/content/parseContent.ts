@@ -1,4 +1,4 @@
-import logSchemaProblem from '@components/DynamicForm/shared/logSchemaProblem';
+import {logSchemaProblem} from '@components/DynamicForm/shared';
 
 import type {DynamicFormElement, DynamicFormSchemaElement} from '@src/types/onyx';
 

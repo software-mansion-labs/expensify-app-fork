@@ -5,8 +5,7 @@ import {getListItems, getListItemSensitiveAnswers} from '@components/DynamicForm
 import summarizeListItem, {getListItemFallbackTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
 import type {DynamicFormFieldOfType} from '@components/DynamicForm/content/elements/ExpensifyInput/types';
 import getFormatErrors from '@components/DynamicForm/content/elements/shared/getFormatErrors';
-import isAnswered from '@components/DynamicForm/shared/isAnswered';
-import toFormErrors from '@components/DynamicForm/shared/toFormErrors';
+import {isAnswered, toFormErrors} from '@components/DynamicForm/shared';
 import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 

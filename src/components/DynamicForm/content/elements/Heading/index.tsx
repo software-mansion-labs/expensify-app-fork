@@ -1,4 +1,4 @@
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
+import {getLocalizedText} from '@components/DynamicForm/shared';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';

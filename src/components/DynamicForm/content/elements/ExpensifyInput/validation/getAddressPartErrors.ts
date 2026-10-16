@@ -1,5 +1,5 @@
 import getAddressInputKeys, {getAddressCountry, isStateAsked} from '@components/DynamicForm/content/elements/ExpensifyInput/model/getAddressInputKeys';
-import isAnswered from '@components/DynamicForm/shared/isAnswered';
+import {isAnswered} from '@components/DynamicForm/shared';
 import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 

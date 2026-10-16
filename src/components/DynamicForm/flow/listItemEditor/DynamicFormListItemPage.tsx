@@ -7,7 +7,7 @@ import toContentElements from '@components/DynamicForm/content/elements/Expensif
 import getDynamicFieldErrors from '@components/DynamicForm/content/elements/ExpensifyInput/validation/getDynamicFieldErrors';
 import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
-import toDynamicFormValues from '@components/DynamicForm/shared/toDynamicFormValues';
+import {toDynamicFormValues} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
 

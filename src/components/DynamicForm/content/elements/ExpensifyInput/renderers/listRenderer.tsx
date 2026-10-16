@@ -3,7 +3,7 @@ import hasSensitiveAnswer from '@components/DynamicForm/content/elements/Expensi
 import isSensitiveField from '@components/DynamicForm/content/elements/ExpensifyInput/model/isSensitiveField';
 import {getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/model/listItems';
 import {getListItemAddTitle} from '@components/DynamicForm/content/elements/ExpensifyInput/model/summarizeListItem';
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
+import {getLocalizedText} from '@components/DynamicForm/shared';
 import InputWrapper from '@components/Form/InputWrapper';
 
 import type {DynamicFormListItem} from '@src/types/onyx';

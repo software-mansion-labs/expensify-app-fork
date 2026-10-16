@@ -1,6 +1,6 @@
 import DynamicFormInputRow from '@components/DynamicForm/content/elements/shared/DynamicFormInputRow';
 import getRefreshHandlers from '@components/DynamicForm/content/elements/shared/getRefreshHandlers';
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
+import {getLocalizedText} from '@components/DynamicForm/shared';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';

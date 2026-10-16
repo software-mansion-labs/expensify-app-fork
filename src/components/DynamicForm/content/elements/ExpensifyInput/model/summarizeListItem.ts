@@ -1,4 +1,4 @@
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
+import {getLocalizedText} from '@components/DynamicForm/shared';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {DynamicFormField, DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';

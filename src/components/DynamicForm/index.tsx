@@ -30,7 +30,7 @@ import savePageAnswers from './flow/savePageAnswers';
 import useSensitiveAnswersCleanup from './flow/useSensitiveAnswersCleanup';
 import useStepIndicator from './flow/useStepIndicator';
 import useUnavailablePageRedirect from './flow/useUnavailablePageRedirect';
-import toDynamicFormValues from './shared/toDynamicFormValues';
+import {toDynamicFormValues} from './shared';
 
 /** A whole dynamic form: one page per schema page, skipping pages with nothing to ask, then a confirmation page */
 function DynamicFormFlow({

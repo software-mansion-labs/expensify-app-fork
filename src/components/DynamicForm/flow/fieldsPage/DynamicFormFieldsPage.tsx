@@ -5,8 +5,7 @@ import getContentErrors from '@components/DynamicForm/content/getContentErrors';
 import getPageTitle from '@components/DynamicForm/flow/pages/getPageTitle';
 import DynamicFormPageHeader from '@components/DynamicForm/flow/shared/DynamicFormPageHeader';
 import type {DynamicFormFlowPage, DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
-import getLocalizedText from '@components/DynamicForm/shared/getLocalizedText';
-import toDynamicFormValues from '@components/DynamicForm/shared/toDynamicFormValues';
+import {getLocalizedText, toDynamicFormValues} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
 

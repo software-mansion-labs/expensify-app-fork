@@ -1,5 +1,5 @@
-import hasText from '@components/DynamicForm/content/elements/shared/hasText';
 import type {StaticElementDefinition} from '@components/DynamicForm/content/elements/types';
+import {hasText} from '@components/DynamicForm/shared';
 
 import type {DynamicFormHeadingElement, DynamicFormSchemaElement} from '@src/types/onyx';
 
