@@ -1,11 +1,11 @@
 import CONST from '@src/CONST';
 import type {DynamicFormElement, DynamicFormField, DynamicFormInputElement, DynamicFormPage, DynamicFormSchema, DynamicFormSchemaElement} from '@src/types/onyx';
 
-import {getContentElements, getContentFields, isInputElement} from './elements';
+import {getContentElements, getContentFields, getInputCondition, isInputElement} from './elements';
 
 const OWN_PAGE_TYPES = new Set<DynamicFormField['type']>(['address', 'file', 'multiselect', 'countryMultiselect', 'list']);
 
-function needsOwnPage(field: DynamicFormField): boolean {
+function fieldNeedsOwnPage(field: DynamicFormField): boolean {
     if (OWN_PAGE_TYPES.has(field.type)) {
         return true;
     }
@@ -13,6 +13,20 @@ function needsOwnPage(field: DynamicFormField): boolean {
         return false;
     }
     return !!field.dependsOn || (field.values?.length ?? 0) > CONST.DYNAMIC_FORM.LARGE_SELECT_MIN_OPTIONS;
+}
+
+/** Wise's plain inputs always share a page */
+function needsOwnPage(input: DynamicFormInputElement): boolean {
+    switch (input.elementType) {
+        case 'HTMLInput':
+            return false;
+        case 'ExpensifyInput':
+            return fieldNeedsOwnPage(input);
+        default: {
+            const exhaustiveCheck: never = input;
+            return exhaustiveCheck;
+        }
+    }
 }
 
 function toSlug(key: string): string {
@@ -35,12 +49,12 @@ function paginate(elements: DynamicFormSchemaElement[]): DynamicFormPage[] {
     let pendingElements: DynamicFormElement[] = [];
 
     const getPageFor = (input: DynamicFormInputElement): DynamicFormPage => {
-        const isField = input.elementType === 'ExpensifyInput';
-        const controllerPage = isField && input.showWhen ? pageOfKey.get(input.showWhen.key) : undefined;
+        const condition = getInputCondition(input);
+        const controllerPage = condition ? pageOfKey.get(condition.key) : undefined;
         if (controllerPage) {
             return controllerPage;
         }
-        if (isField && needsOwnPage(input)) {
+        if (needsOwnPage(input)) {
             const ownPage: DynamicFormPage = {key: '', content: []};
             pages.push(ownPage);
             sharedPage = undefined;

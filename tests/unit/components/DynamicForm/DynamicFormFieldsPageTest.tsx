@@ -1,6 +1,6 @@
 import {render} from '@testing-library/react-native';
 
-import DynamicFormFieldsPage from '@components/DynamicForm/components/DynamicFormFieldsPage';
+import DynamicFormFieldsPage from '@components/DynamicForm/pages/DynamicFormFieldsPage';
 import FormProvider from '@components/Form/FormProvider';
 
 import ONYXKEYS from '@src/ONYXKEYS';

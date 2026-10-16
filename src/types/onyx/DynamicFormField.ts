@@ -105,6 +105,9 @@ type DynamicFormTextField = DynamicFormFieldBase & {
 
     /** A named check on top of the others: `legalName` for a person's legal name, `phone` for an international phone number */
     rule?: 'legalName' | 'phone';
+
+    /** Display mask such as `**-**-**`, where each `*` stands for one typed character. Accepted but not applied yet. */
+    displayFormat?: string;
 };
 
 /** Text that must parse as a finite number, typed on the numeric keyboard */

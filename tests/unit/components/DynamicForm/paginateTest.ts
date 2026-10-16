@@ -1,5 +1,6 @@
 import {toExpensifyInputElements} from '@components/DynamicForm/utils/elements';
-import getPageTitle, {getPageSectionName, isPageShown} from '@components/DynamicForm/utils/getPageTitle';
+import getPageTitle, {getPageSectionName} from '@components/DynamicForm/utils/getPageTitle';
+import isPageShown from '@components/DynamicForm/utils/isPageShown';
 import paginate, {getAllFields, getPages} from '@components/DynamicForm/utils/paginate';
 
 import type {DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormPage, DynamicFormSchemaElement, DynamicFormTextField} from '@src/types/onyx';

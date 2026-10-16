@@ -1,9 +1,14 @@
-import type {DynamicFormElement, DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormHTMLInputElement, DynamicFormInputElement, DynamicFormSchemaElement} from '@src/types/onyx';
+import type {DynamicFormElement, DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormInputElement, DynamicFormSchemaElement, DynamicFormWiseField} from '@src/types/onyx';
 
 import {isSupportedFieldType} from './isSupportedField';
 import logSchemaProblem from './logSchemaProblem';
 
-const HTML_INPUT_TYPES = new Set<string>(['text', 'select', 'radio', 'date']);
+const HTML_INPUT_TYPES: Record<DynamicFormWiseField['type'], true> = {
+    text: true,
+    select: true,
+    radio: true,
+    date: true,
+};
 
 function hasText(text: unknown): boolean {
     return typeof text === 'string' && text !== '';
@@ -13,7 +18,7 @@ function hasText(text: unknown): boolean {
 function isKnownElement(element: DynamicFormSchemaElement): boolean {
     switch (element.elementType) {
         case 'HTMLInput':
-            return 'type' in element && typeof element.type === 'string' && HTML_INPUT_TYPES.has(element.type) && 'name' in element && typeof element.name === 'string';
+            return 'type' in element && typeof element.type === 'string' && Object.hasOwn(HTML_INPUT_TYPES, element.type) && 'name' in element && typeof element.name === 'string';
         case 'ExpensifyInput':
             return 'type' in element && typeof element.type === 'string' && isSupportedFieldType(element.type, element.key);
         case 'Heading':
@@ -61,8 +66,18 @@ function getContentFields(content: DynamicFormSchemaElement[]): DynamicFormExpen
     return getContentElements(content).filter((element): element is DynamicFormExpensifyInputElement => element.elementType === 'ExpensifyInput');
 }
 
-function getContentHTMLInputs(content: DynamicFormSchemaElement[]): DynamicFormHTMLInputElement[] {
-    return getContentElements(content).filter((element): element is DynamicFormHTMLInputElement => element.elementType === 'HTMLInput');
+/** The condition that shows an input. Wise shows or hides fields only by sending new requirements, so an HTML input has none. */
+function getInputCondition(input: DynamicFormInputElement): DynamicFormField['showWhen'] {
+    switch (input.elementType) {
+        case 'HTMLInput':
+            return undefined;
+        case 'ExpensifyInput':
+            return input.showWhen;
+        default: {
+            const exhaustiveCheck: never = input;
+            return exhaustiveCheck;
+        }
+    }
 }
 
 /** The fields of a list entry are App-format fields, so they become content once tagged */
@@ -70,4 +85,4 @@ function toExpensifyInputElements(fields: DynamicFormField[]): DynamicFormExpens
     return fields.map((field) => ({...field, elementType: 'ExpensifyInput'}));
 }
 
-export {getContentElements, getContentFields, getContentHTMLInputs, getContentInputs, isInputElement, isSupportedElement, toExpensifyInputElements};
+export {getContentElements, getContentFields, getContentInputs, getInputCondition, isInputElement, isSupportedElement, toExpensifyInputElements};

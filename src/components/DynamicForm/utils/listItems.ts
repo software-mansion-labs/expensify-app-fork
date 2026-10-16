@@ -1,6 +1,6 @@
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
-import type {DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';
 
 import getAnswerKeys from './getAnswerKeys';
 import hasSensitiveAnswer from './hasSensitiveAnswer';
@@ -27,6 +27,23 @@ function getListItemSensitiveKey(listKey: string, itemID: string, fieldKey: stri
     return [listKey, itemID, fieldKey].join(PAGE_NAME_SEPARATOR);
 }
 
+function isListField(field: DynamicFormField): field is DynamicFormListField {
+    return field.type === 'list';
+}
+
+function getListFields(fields: DynamicFormField[]): DynamicFormListField[] {
+    return fields.filter(isListField);
+}
+
+function findListField(fields: DynamicFormField[], listKey: string): DynamicFormListField | undefined {
+    return getListFields(fields).find((field) => field.key === listKey);
+}
+
+/** The keys of an entry's answers that stay out of the draft, given the fields of the list's entries */
+function getListItemSensitiveAnswerKeys(itemFields: DynamicFormField[]): string[] {
+    return itemFields.filter(hasSensitiveAnswer).flatMap(getAnswerKeys);
+}
+
 function isListItem(value: unknown): value is DynamicFormListItem {
     return typeof value === 'object' && value !== null && 'id' in value && typeof value.id === 'string';
 }
@@ -43,21 +60,29 @@ function getListItems(value: unknown): DynamicFormListItem[] {
 /** An entry's sensitive answers, keyed by field key, from the answers kept in memory */
 function getListItemSensitiveAnswers(field: DynamicFormListField, itemID: string, values: DynamicFormValues): DynamicFormValues {
     return Object.fromEntries(
-        field.itemFields
-            .filter(hasSensitiveAnswer)
-            .flatMap(getAnswerKeys)
-            .flatMap((answerKey) => {
-                const answer = values[getListItemSensitiveKey(field.key, itemID, answerKey)];
-                return answer === undefined ? [] : [[answerKey, answer]];
-            }),
+        getListItemSensitiveAnswerKeys(field.itemFields).flatMap((answerKey) => {
+            const answer = values[getListItemSensitiveKey(field.key, itemID, answerKey)];
+            return answer === undefined ? [] : [[answerKey, answer]];
+        }),
     );
 }
 
 /** Memory keys of sensitive answers whose entry the user has removed from the list */
 function getRemovedListItemSensitiveKeys(field: DynamicFormListField, values: DynamicFormValues): string[] {
-    const sensitiveKeys = field.itemFields.filter(hasSensitiveAnswer).flatMap(getAnswerKeys);
+    const sensitiveKeys = getListItemSensitiveAnswerKeys(field.itemFields);
     const keptKeys = new Set(getListItems(values[field.key]).flatMap((item) => sensitiveKeys.map((answerKey) => getListItemSensitiveKey(field.key, item.id, answerKey))));
     return Object.keys(values).filter((key) => key.startsWith(`${field.key}${PAGE_NAME_SEPARATOR}`) && !keptKeys.has(key));
 }
 
-export {getListItemPageName, getListItemSensitiveAnswers, getListItemSensitiveKey, getListItems, getRemovedListItemSensitiveKeys, isListItem, parseListItemPageName};
+export {
+    findListField,
+    getListFields,
+    getListItemPageName,
+    getListItemSensitiveAnswerKeys,
+    getListItemSensitiveAnswers,
+    getListItemSensitiveKey,
+    getListItems,
+    getRemovedListItemSensitiveKeys,
+    isListItem,
+    parseListItemPageName,
+};

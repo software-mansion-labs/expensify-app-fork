@@ -1,0 +1,64 @@
+import DynamicFormConfirmationPage from '@components/DynamicForm/pages/DynamicFormConfirmationPage';
+import DynamicFormFieldsPage from '@components/DynamicForm/pages/DynamicFormFieldsPage';
+import DynamicFormListItemPage from '@components/DynamicForm/pages/DynamicFormListItemPage';
+import type {DynamicFormSubPageProps, DynamicFormValues} from '@components/DynamicForm/types';
+import isPageShown from '@components/DynamicForm/utils/isPageShown';
+import {getListFields, getListItemPageName, getListItems} from '@components/DynamicForm/utils/listItems';
+
+import type {PageConfig} from '@hooks/useSubPage/types';
+
+import {findLastPageIndex} from '@libs/SubPageUtils';
+
+import CONST from '@src/CONST';
+import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';
+
+type FlowPages = {
+    /** Every sub-page useSubPage routes to: the form's pages, the confirmation page, then the list entry editors */
+    subPages: Array<PageConfig<DynamicFormSubPageProps>>;
+
+    /** Sub-pages Next and Back step over */
+    skipPages: string[];
+
+    /** The form's pages the answers show */
+    shownPages: DynamicFormPage[];
+
+    hasConfirmationPage: boolean;
+
+    firstShownPageIndex: number;
+
+    lastShownPageIndex: number;
+};
+
+/** Entry editors come after the confirmation page and are skipped by Next and Back, so only an entry's Add, Edit or row opens them. A readonly list has no editors. */
+function getListItemPageNames(allFields: DynamicFormField[], values: DynamicFormValues): string[] {
+    return getListFields(allFields)
+        .filter((field) => !field.readonly)
+        .flatMap((field) => [getListItemPageName(field.key), ...getListItems(values[field.key]).map((item) => getListItemPageName(field.key, item.id))]);
+}
+
+/** The sub-pages of the flow and which of them Next and Back step over. A form without pages gets the confirmation page, since useSubPage needs at least one page. */
+function getFlowPages(pages: DynamicFormPage[], allFields: DynamicFormField[], values: DynamicFormValues, hasConfirmation: boolean): FlowPages {
+    const shownPages = pages.filter((page) => isPageShown(page, values, allFields));
+    const hasConfirmationPage = pages.length === 0 || hasConfirmation;
+    const listItemPageNames = getListItemPageNames(allFields, values);
+    const subPages: Array<PageConfig<DynamicFormSubPageProps>> = [
+        ...pages.map((page) => ({pageName: page.key, component: DynamicFormFieldsPage})),
+        ...(hasConfirmationPage ? [{pageName: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY, component: DynamicFormConfirmationPage}] : []),
+        ...listItemPageNames.map((pageName) => ({pageName, component: DynamicFormListItemPage})),
+    ];
+    // While nothing is shown no page is skipped, since useSubPage needs a page that is not skipped
+    const skippedPages = shownPages.length > 0 ? pages.filter((page) => !shownPages.includes(page)) : [];
+    const skipPages = [...skippedPages.map((page) => page.key), ...listItemPageNames];
+
+    return {
+        subPages,
+        skipPages,
+        shownPages,
+        hasConfirmationPage,
+        firstShownPageIndex: subPages.findIndex((page) => !skipPages.includes(page.pageName)),
+        lastShownPageIndex: findLastPageIndex(subPages, skipPages),
+    };
+}
+
+export default getFlowPages;
+export type {FlowPages};

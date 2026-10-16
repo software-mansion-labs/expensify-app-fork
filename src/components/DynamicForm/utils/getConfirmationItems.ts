@@ -5,15 +5,15 @@ import type {SummaryGroup, SummaryGroupRow} from '@components/SubStepForms/Confi
 
 import {getLetterAvatarURLForName} from '@libs/UserAvatarUtils';
 
-import type {DynamicFormField, DynamicFormListField, DynamicFormPage} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormInputElement, DynamicFormListField, DynamicFormPage} from '@src/types/onyx';
 
 import noop from 'lodash/noop';
 
-import {isInputElement} from './elements';
 import formatDynamicFieldValue from './formatDynamicFieldValue';
 import {getFieldLabel} from './getLocalizedText';
-import {getPageSectionName, isPageShown} from './getPageTitle';
-import {getVisibleContent} from './getVisibleFields';
+import {getPageSectionName} from './getPageTitle';
+import {getVisibleInputs} from './getVisibleContent';
+import isPageShown from './isPageShown';
 import isSensitiveField from './isSensitiveField';
 import {getListItems} from './listItems';
 import maskSensitiveValue from './maskSensitiveValue';
@@ -68,6 +68,26 @@ function getFieldRows(
     ];
 }
 
+/** The rows of one input, drawn by the rules of its element type */
+function getInputRows(
+    input: DynamicFormInputElement,
+    values: DynamicFormValues,
+    translate: LocalizedTranslate,
+    onEdit: () => void,
+    onEditListItem: (listKey: string, itemID: string) => void,
+): SummaryGroupRow[] {
+    switch (input.elementType) {
+        case 'HTMLInput':
+            return [{id: input.key, description: input.name, title: formatHTMLInputValue(input, values), shouldShowRightIcon: true, onPress: onEdit}];
+        case 'ExpensifyInput':
+            return getFieldRows(input, values, translate, onEdit, onEditListItem);
+        default: {
+            const exhaustiveCheck: never = input;
+            return exhaustiveCheck;
+        }
+    }
+}
+
 /** One section per shown page holding its visible answers, with each list entry as an avatar row and an empty list as a plain row. Tapping a row opens the page or entry to edit. Readonly rows open nothing. */
 function getConfirmationItems(
     pages: DynamicFormPage[],
@@ -81,22 +101,12 @@ function getConfirmationItems(
         if (!isPageShown(page, values, allFields)) {
             return [];
         }
-
         const handleEdit = () => onEditPage(pageIndex);
-        const inputs = getVisibleContent(page.content, values, allFields).filter(isInputElement);
-
         return [
             {
                 id: page.key,
                 name: getPageSectionName(page, values, translate, allFields),
-                rows: inputs.flatMap((input): SummaryGroupRow[] => {
-                    switch (input.elementType) {
-                        case 'HTMLInput':
-                            return [{id: input.key, description: input.name, title: formatHTMLInputValue(input, values), shouldShowRightIcon: true, onPress: handleEdit}];
-                        default:
-                            return getFieldRows(input, values, translate, handleEdit, onEditListItem);
-                    }
-                }),
+                rows: getVisibleInputs(page.content, values, allFields).flatMap((input) => getInputRows(input, values, translate, handleEdit, onEditListItem)),
             },
         ];
     });

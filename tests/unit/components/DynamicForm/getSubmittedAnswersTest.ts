@@ -1,5 +1,6 @@
 import getAddressInputKeys from '@components/DynamicForm/utils/getAddressInputKeys';
-import getSubmittedAnswers, {getAnswerKeys} from '@components/DynamicForm/utils/getSubmittedAnswers';
+import getAnswerKeys from '@components/DynamicForm/utils/getAnswerKeys';
+import getSubmittedAnswers from '@components/DynamicForm/utils/getSubmittedAnswers';
 import {getListItemSensitiveKey} from '@components/DynamicForm/utils/listItems';
 
 import type {DynamicFormField} from '@src/types/onyx';

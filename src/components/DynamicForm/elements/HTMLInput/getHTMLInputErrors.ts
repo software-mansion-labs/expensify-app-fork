@@ -1,21 +1,23 @@
-import type {DynamicFormValues} from '@components/DynamicForm/types';
-import {getFormatErrors, isAnswered} from '@components/DynamicForm/utils/getDynamicFieldErrors';
+import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
+import getFormatErrors from '@components/DynamicForm/utils/getFormatErrors';
+import isAnswered from '@components/DynamicForm/utils/isAnswered';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import {addErrorMessage} from '@libs/ErrorUtils';
 import {isValidDate} from '@libs/ValidationUtils';
 
 import type {DynamicFormHTMLInputElement} from '@src/types/onyx';
 
-/** Checks Wise describes for an answered field: its regex and lengths for typed answers, and an allowed value for a choice */
+import {isAllowedValue} from './getHTMLInputChoices';
+
+/** Checks Wise describes for an answered input: its regex and lengths for typed answers, and an allowed value for a choice */
 function getAnswerErrors(input: DynamicFormHTMLInputElement, answer: string, translate: LocalizedTranslate): string[] {
     switch (input.type) {
         case 'select':
         case 'radio':
-            return input.valuesAllowed?.some((value) => value.key === answer) ? [] : [translate('dynamicForm.error.invalidOption')];
+            return isAllowedValue(input, answer) ? [] : [translate('dynamicForm.error.invalidOption')];
         case 'date':
             return isValidDate(answer) ? [] : [translate('common.error.dateInvalid')];
-        default:
+        case 'text':
             return getFormatErrors(
                 {
                     key: input.key,
@@ -27,25 +29,20 @@ function getAnswerErrors(input: DynamicFormHTMLInputElement, answer: string, tra
                 answer,
                 translate,
             );
+        default: {
+            const exhaustiveCheck: never = input.type;
+            return exhaustiveCheck;
+        }
     }
 }
 
-/** Errors for HTML inputs, keyed by draft key, in the shape FormProvider's `validate` returns */
-function getHTMLInputErrors(inputs: DynamicFormHTMLInputElement[], values: DynamicFormValues, translate: LocalizedTranslate): Record<string, string> {
-    const errors: Record<string, string> = {};
-    for (const input of inputs) {
-        const answer = values[input.key];
-        if (!isAnswered(answer)) {
-            if (input.required) {
-                addErrorMessage(errors, input.key, translate('common.error.fieldRequired'));
-            }
-            continue;
-        }
-        for (const message of getAnswerErrors(input, typeof answer === 'string' ? answer : '', translate)) {
-            addErrorMessage(errors, input.key, message);
-        }
+/** The errors of one HTML input: required when unanswered, else the checks Wise describes */
+function getHTMLInputErrors(input: DynamicFormHTMLInputElement, values: DynamicFormValues, translate: LocalizedTranslate): DynamicFormError[] {
+    const answer = values[input.key];
+    if (!isAnswered(answer)) {
+        return input.required ? [[input.key, translate('common.error.fieldRequired')]] : [];
     }
-    return errors;
+    return getAnswerErrors(input, typeof answer === 'string' ? answer : '', translate).map((message): DynamicFormError => [input.key, message]);
 }
 
 export default getHTMLInputErrors;

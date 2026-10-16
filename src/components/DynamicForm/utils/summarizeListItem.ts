@@ -17,6 +17,12 @@ function getListItemFallbackTitle(field: DynamicFormListField, translate: Locali
     return getLocalizedText(translate, field.itemLabelKey, field.itemLabel) ?? getFieldLabel(field, translate);
 }
 
+/** Title of the row that adds an entry, and of the editor of a new one */
+function getListItemAddTitle(field: DynamicFormListField, translate: LocalizedTranslate): string {
+    const itemLabel = getLocalizedText(translate, field.itemLabelKey, field.itemLabel);
+    return itemLabel ? translate('dynamicForm.addItem', {item: itemLabel}) : translate('common.add');
+}
+
 /** The leading run of text answers names the row, as first and last name do. Up to two short remaining answers describe it. Hidden answers are left out, and an entry with no shown answer is named by `fallbackTitle`. */
 function summarizeListItem(item: DynamicFormListItem, itemFields: DynamicFormField[], translate: LocalizedTranslate, fallbackTitle: string): {title: string; description: string} {
     const shownFields = getVisibleFields(itemFields, item).filter((field) => !isSensitiveField(field) && formatDynamicFieldValue(field, item, translate) !== '');
@@ -42,4 +48,4 @@ function summarizeListItem(item: DynamicFormListItem, itemFields: DynamicFormFie
 }
 
 export default summarizeListItem;
-export {getListItemFallbackTitle};
+export {getListItemAddTitle, getListItemFallbackTitle};

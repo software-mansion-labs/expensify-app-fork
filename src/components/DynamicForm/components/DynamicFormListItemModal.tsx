@@ -1,4 +1,4 @@
-import type {DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormRenderFields, DynamicFormValues} from '@components/DynamicForm/types';
 import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
 import toDynamicFormValues from '@components/DynamicForm/utils/toDynamicFormValues';
 import FormProvider from '@components/Form/FormProvider';
@@ -16,8 +16,6 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DynamicFormField} from '@src/types/onyx';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
-
-import type {ReactNode} from 'react';
 
 import React from 'react';
 
@@ -38,7 +36,7 @@ type DynamicFormListItemModalProps = ForwardedFSClassProps & {
     isSensitive: boolean;
 
     /** Draws the entry's fields inside the modal's form */
-    renderFields: (fields: DynamicFormField[], values: DynamicFormValues, isSensitive: boolean) => ReactNode;
+    renderFields: DynamicFormRenderFields;
 
     /** Called with the entry's answers when the user saves */
     onSave: (answers: DynamicFormValues) => void;

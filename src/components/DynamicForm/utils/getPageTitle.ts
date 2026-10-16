@@ -3,9 +3,13 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {DynamicFormField, DynamicFormPage} from '@src/types/onyx';
 
-import {isInputElement} from './elements';
 import getLocalizedText, {getFieldLabel} from './getLocalizedText';
-import {getLoneField, getVisibleContent, isFieldVisible} from './getVisibleFields';
+import getLoneField from './getLoneField';
+import getVisibleContent from './getVisibleContent';
+
+function getPageLoneField(page: DynamicFormPage, values: DynamicFormValues, allFields?: DynamicFormField[]) {
+    return getLoneField(getVisibleContent(page.content, values, allFields));
+}
 
 /** The page's own title, else the schema's wording of its lone question. A label never names a section, since the label is already on the question's row. */
 function getPageSectionName(page: DynamicFormPage, values: DynamicFormValues, translate: LocalizedTranslate, allFields?: DynamicFormField[]): string {
@@ -13,7 +17,7 @@ function getPageSectionName(page: DynamicFormPage, values: DynamicFormValues, tr
     if (ownTitle) {
         return ownTitle;
     }
-    const loneField = getLoneField(getVisibleContent(page.content, values, allFields));
+    const loneField = getPageLoneField(page, values, allFields);
     return (loneField && getLocalizedText(translate, loneField.questionKey, loneField.question)) ?? '';
 }
 
@@ -23,17 +27,9 @@ function getPageTitle(page: DynamicFormPage, values: DynamicFormValues, translat
     if (sectionName) {
         return sectionName;
     }
-    const loneField = getLoneField(getVisibleContent(page.content, values, allFields));
+    const loneField = getPageLoneField(page, values, allFields);
     return loneField ? getFieldLabel(loneField, translate) : '';
 }
 
-/** A page is shown when its own `showWhen` matches and it has an input to show. A page that is not shown is skipped, and its fields are not asked or submitted. */
-function isPageShown(page: DynamicFormPage, values: DynamicFormValues, allFields: DynamicFormField[]): boolean {
-    if (!isFieldVisible(page, values, allFields)) {
-        return false;
-    }
-    return getVisibleContent(page.content, values, allFields).some(isInputElement);
-}
-
 export default getPageTitle;
-export {getPageSectionName, isPageShown};
+export {getPageSectionName};

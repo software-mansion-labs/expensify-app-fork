@@ -1,18 +1,30 @@
 import getHTMLInputErrors from '@components/DynamicForm/elements/HTMLInput/getHTMLInputErrors';
-import type {DynamicFormValues} from '@components/DynamicForm/types';
+import type {DynamicFormError, DynamicFormValues} from '@components/DynamicForm/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import type {DynamicFormField, DynamicFormSchemaElement} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormInputElement, DynamicFormSchemaElement} from '@src/types/onyx';
 
-import {getContentFields, getContentHTMLInputs} from './elements';
-import getDynamicFieldErrors from './getDynamicFieldErrors';
+import {getFieldErrors} from './getDynamicFieldErrors';
+import {getVisibleInputs} from './getVisibleContent';
+import toFormErrors from './toFormErrors';
 
-/** Errors for the inputs of a page's content, whatever their format. Pass the whole form as `allFields` when a `showWhen` can name a field on another page. */
+/** The errors of one input, checked by the rules of its element type */
+function getInputErrors(input: DynamicFormInputElement, values: DynamicFormValues, translate: LocalizedTranslate): DynamicFormError[] {
+    switch (input.elementType) {
+        case 'HTMLInput':
+            return getHTMLInputErrors(input, values, translate);
+        case 'ExpensifyInput':
+            return getFieldErrors(input, values, translate);
+        default: {
+            const exhaustiveCheck: never = input;
+            return exhaustiveCheck;
+        }
+    }
+}
+
+/** Errors for the inputs of a page's content the user can see, in the shape FormProvider's `validate` returns. Pass the whole form as `allFields` when a `showWhen` can name a field on another page. */
 function getContentErrors(content: DynamicFormSchemaElement[], values: DynamicFormValues, translate: LocalizedTranslate, allFields?: DynamicFormField[]): Record<string, string> {
-    return {
-        ...getDynamicFieldErrors(getContentFields(content), values, translate, allFields),
-        ...getHTMLInputErrors(getContentHTMLInputs(content), values, translate),
-    };
+    return toFormErrors(getVisibleInputs(content, values, allFields).flatMap((input) => getInputErrors(input, values, translate)));
 }
 
 export default getContentErrors;

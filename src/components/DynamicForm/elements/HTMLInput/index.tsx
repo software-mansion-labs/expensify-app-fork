@@ -1,25 +1,58 @@
+import getRefreshHandlers from '@components/DynamicForm/utils/getRefreshHandlers';
+
+import CONST from '@src/CONST';
+
 import React from 'react';
 
-import type HTMLInputProps from './types';
+import type {HTMLInputProps, HTMLInputWrapperProps} from './types';
 
 import HTMLDateInput from './inputs/HTMLDateInput';
 import HTMLRadioInput from './inputs/HTMLRadioInput';
 import HTMLSelectInput from './inputs/HTMLSelectInput';
 import HTMLTextInput from './inputs/HTMLTextInput';
 
-/** A field in Wise's format, drawn by the plain input its `type` names */
-function HTMLInput(props: HTMLInputProps) {
-    switch (props.element.type) {
+/** A field in Wise's format, drawn by the plain input its `type` names. Each one behaves exactly as Wise describes it, refreshing the requirements as its only side effect. */
+function HTMLInput({element, values, onRefreshRequirements}: HTMLInputProps) {
+    const inputProps: HTMLInputWrapperProps = {
+        inputID: element.key,
+        shouldSaveDraft: true,
+        forwardedFSClass: CONST.FULLSTORY.CLASS.MASK,
+        ...getRefreshHandlers({inputID: element.key, shouldRefresh: !!element.refreshRequirementsOnChange, isTyped: element.type === 'text', values, onRefreshRequirements}),
+    };
+
+    switch (element.type) {
         case 'text':
-            return <HTMLTextInput {...props} />;
+            return (
+                <HTMLTextInput
+                    element={element}
+                    inputProps={inputProps}
+                />
+            );
         case 'select':
-            return <HTMLSelectInput {...props} />;
+            return (
+                <HTMLSelectInput
+                    element={element}
+                    inputProps={inputProps}
+                />
+            );
         case 'radio':
-            return <HTMLRadioInput {...props} />;
+            return (
+                <HTMLRadioInput
+                    element={element}
+                    inputProps={inputProps}
+                />
+            );
         case 'date':
-            return <HTMLDateInput {...props} />;
-        default:
-            return null;
+            return (
+                <HTMLDateInput
+                    element={element}
+                    inputProps={inputProps}
+                />
+            );
+        default: {
+            const exhaustiveCheck: never = element.type;
+            return exhaustiveCheck;
+        }
     }
 }
 

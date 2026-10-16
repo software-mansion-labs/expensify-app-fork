@@ -1,35 +1,25 @@
 import DatePicker from '@components/DatePicker';
-import type HTMLInputProps from '@components/DynamicForm/elements/HTMLInput/types';
+import DynamicFormInputRow from '@components/DynamicForm/components/DynamicFormInputRow';
+import type {HTMLInputOfTypeProps} from '@components/DynamicForm/elements/HTMLInput/types';
 import InputWrapper from '@components/Form/InputWrapper';
 
 import useLocalize from '@hooks/useLocalize';
-import useThemeStyles from '@hooks/useThemeStyles';
-
-import CONST from '@src/CONST';
 
 import React from 'react';
-import {View} from 'react-native';
 
 /** A calendar date, stored as yyyy-MM-dd */
-function HTMLDateInput({element, onRefreshRequirements}: HTMLInputProps) {
+function HTMLDateInput({element, inputProps}: HTMLInputOfTypeProps) {
     const {translate} = useLocalize();
-    const styles = useThemeStyles();
 
     return (
-        <View
-            style={styles.pv2}
-            fsClass={CONST.FULLSTORY.CLASS.MASK}
-        >
+        <DynamicFormInputRow>
             <InputWrapper
                 InputComponent={DatePicker}
-                inputID={element.key}
-                shouldSaveDraft
-                forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
+                {...inputProps}
                 label={element.name}
                 placeholder={translate('common.dateFormat')}
-                onValueChange={element.refreshRequirementsOnChange ? (value, key) => onRefreshRequirements?.(key, value) : undefined}
             />
-        </View>
+        </DynamicFormInputRow>
     );
 }
 

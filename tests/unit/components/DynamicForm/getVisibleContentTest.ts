@@ -1,4 +1,4 @@
-import {getVisibleContent} from '@components/DynamicForm/utils/getVisibleFields';
+import getVisibleContent from '@components/DynamicForm/utils/getVisibleContent';
 
 import type {DynamicFormBannerElement, DynamicFormDescriptionElement, DynamicFormExpensifyInputElement, DynamicFormHeadingElement, DynamicFormHTMLInputElement} from '@src/types/onyx';
 
