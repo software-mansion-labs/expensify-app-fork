@@ -239,6 +239,7 @@ const CONST = {
         'otp',
         'secret',
         'keyInfo',
+        'registrationKeyInfo',
         'challenge',
         'signedChallenge',
         'registrationChallenge',
@@ -2193,6 +2194,7 @@ const CONST = {
             EXPENSE_JSON_CODE: 'expense_json_code',
             MFA_SCENARIO: 'mfa_scenario',
             MFA_ERROR_REASON: 'mfa_error_reason',
+            MFA_RECOVERY_ATTEMPTS: 'mfa_recovery_attempts',
             BUILD_TYPE: 'build_type',
         },
         EXPENSE_ERROR_TYPE: {

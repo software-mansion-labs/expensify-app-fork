@@ -24,14 +24,17 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         runScenarioAction: initEvent.runScenarioAction,
         validateCode: undefined,
         registrationChallenge: undefined,
+        registrationKeyInfo: undefined,
         softPromptApproved: false,
-        isCancelConfirmVisible: false,
         authenticationMethod: undefined,
+        signedChallenge: undefined,
         scenarioResponse: undefined,
         promptPresentationPhase: undefined,
         validateCodePresentationPhase: undefined,
         registrationStateAtStart: initEvent.registrationStateAtStart,
         isRegistrationComplete: false,
+        cancelAttemptsDuringRequest: 0,
+        recoveryAttempts: 0,
         ...overrides,
     };
 }
@@ -67,10 +70,24 @@ function sendCreateCredentialDone(actor: ReturnType<typeof createActorAtState>, 
 }
 
 /**
+ * Completes the invoked backend-registration actor by sending its done event carrying the given output.
+ */
+function sendRegisterCredentialDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'registerCredential'>) {
+    actor.send(createActorDoneEvent('registerCredential', output));
+}
+
+/**
  * Completes the invoked authorization actor by sending its done event carrying the given output.
  */
 function sendAuthorizeDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'authorize'>) {
     actor.send(createActorDoneEvent('authorize', output));
+}
+
+/**
+ * Completes the invoked scenario-action actor by sending its done event carrying the given output.
+ */
+function sendExecuteScenarioActionDone(actor: ReturnType<typeof createActorAtState>, output: MfaActorOutput<'executeScenarioAction'>) {
+    actor.send(createActorDoneEvent('executeScenarioAction', output));
 }
 
 /**
@@ -80,4 +97,14 @@ function sendFinalizeOutcomeDone(actor: ReturnType<typeof createActorAtState>, o
     actor.send(createActorDoneEvent('finalizeOutcome', output));
 }
 
-export {createActorAtState, createFlowContext, sendAuthorizeDone, sendCreateCredentialDone, sendFinalizeOutcomeDone, sendLoadRegistrationStateDone, sendRequestRegistrationChallengeDone};
+export {
+    createActorAtState,
+    createFlowContext,
+    sendAuthorizeDone,
+    sendCreateCredentialDone,
+    sendRegisterCredentialDone,
+    sendExecuteScenarioActionDone,
+    sendFinalizeOutcomeDone,
+    sendLoadRegistrationStateDone,
+    sendRequestRegistrationChallengeDone,
+};

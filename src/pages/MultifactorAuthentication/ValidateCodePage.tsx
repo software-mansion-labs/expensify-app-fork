@@ -4,7 +4,6 @@ import FormHelpMessage from '@components/FormHelpMessage';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useMultifactorAuthenticationInternal} from '@components/MultifactorAuthentication/Context/MultifactorAuthenticationInternalApiContext';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
-import useMFACancelOnEscape from '@components/MultifactorAuthentication/useMFACancelOnEscape';
 import MultifactorAuthenticationValidateCodeResendButton from '@components/MultifactorAuthentication/ValidateCodeResendButton';
 import type {MultifactorAuthenticationValidateCodeResendButtonHandle} from '@components/MultifactorAuthentication/ValidateCodeResendButton';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -36,7 +35,8 @@ type FormError = {
     inputCode?: TranslationPaths;
 };
 
-function MultifactorAuthenticationValidateCodePage() {
+/** The code input, resend button and submit. Holds the entered code and the resend countdown. */
+function ValidateCodeForm() {
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
     const styles = useThemeStyles();
@@ -51,8 +51,8 @@ function MultifactorAuthenticationValidateCodePage() {
     const [inputCode, setInputCode] = useState('');
     const [formError, setFormError] = useState<FormError>({});
     const [canShowError, setCanShowError] = useState<boolean>(false);
-    const {requestCancel, submitValidateCode, resendValidateCode, notifyValidateCodeChanged, state} = useMultifactorAuthenticationInternal();
-    const {showsInvalidCodeError, isCancelConfirmVisible, canResendValidateCode, isValidateCodeFormSubmitting} = state;
+    const {submitValidateCode, resendValidateCode, notifyValidateCodeChanged, state} = useMultifactorAuthenticationInternal();
+    const {showsInvalidCodeError, canResendValidateCode, isValidateCodeFormSubmitting} = state;
 
     // Refs
     const inputRef = useRef<ValidateCodeInputHandle>(null);
@@ -185,7 +185,56 @@ function MultifactorAuthenticationValidateCodePage() {
         submitValidateCode(inputCode);
     };
 
-    const interceptFocusTrapEscape = useMFACancelOnEscape();
+    return (
+        <>
+            <Text style={[styles.m5, styles.mt3, styles.textNormal]}>{translate('contacts.enterSecurityCode', contactMethod)}</Text>
+            <View style={[styles.mh5]}>
+                <ValidateCodeInput
+                    autoComplete="one-time-code"
+                    testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_INPUT}
+                    name="multifactorAuthenticationValidateCode"
+                    value={inputCode}
+                    onChangeText={onCodeInput}
+                    onFulfill={validateAndSubmitForm}
+                    errorText={canShowError && formError.inputCode ? translate(formError.inputCode) : ''}
+                    hasError={hasError}
+                    ref={inputRef}
+                    maxLength={CONST.VALIDATE_CODE_LENGTH}
+                />
+                <MultifactorAuthenticationValidateCodeResendButton
+                    ref={resendButtonRef}
+                    shouldDisableResendCode={shouldDisableResendCode}
+                    hasError={hasError}
+                    resendButtonText="validateCodeForm.securityCodeNotReceived"
+                    onResendValidationCode={resendValidationCode}
+                />
+            </View>
+            <View style={[styles.w100, styles.mtAuto]}>
+                {!!errorMessage && (
+                    <FormHelpMessage
+                        style={[styles.mh5]}
+                        message={errorMessage}
+                    />
+                )}
+                <Button
+                    success
+                    large
+                    testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON}
+                    style={[styles.w100, styles.ph5, styles.pb5, styles.mt4]}
+                    onPress={validateAndSubmitForm}
+                    text={translate('common.verify')}
+                    isLoading={isValidateCodeFormSubmitting}
+                    isDisabled={isOffline}
+                />
+            </View>
+        </>
+    );
+}
+
+function MultifactorAuthenticationValidateCodePage() {
+    const {translate} = useLocalize();
+    const {requestCancel, state} = useMultifactorAuthenticationInternal();
+    const {isCancelConfirmVisible, recoveryAttempts} = state;
 
     return (
         <ScreenWrapper
@@ -195,7 +244,8 @@ function MultifactorAuthenticationValidateCodePage() {
                 // the modal's clicks, and back on when it closes. See https://github.com/Expensify/App/issues/93193
                 active: isCancelConfirmVisible ? false : undefined,
                 focusTrapOptions: {
-                    escapeDeactivates: interceptFocusTrapEscape,
+                    // Escape is handled by the MFA modal's own shortcut.
+                    escapeDeactivates: () => false,
                 },
             }}
         >
@@ -205,46 +255,9 @@ function MultifactorAuthenticationValidateCodePage() {
                 shouldShowBackButton
             />
             <FullPageOfflineBlockingView>
-                <Text style={[styles.m5, styles.mt3, styles.textNormal]}>{translate('contacts.enterSecurityCode', contactMethod)}</Text>
-                <View style={[styles.mh5]}>
-                    <ValidateCodeInput
-                        autoComplete="one-time-code"
-                        testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_INPUT}
-                        name="multifactorAuthenticationValidateCode"
-                        value={inputCode}
-                        onChangeText={onCodeInput}
-                        onFulfill={validateAndSubmitForm}
-                        errorText={canShowError && formError.inputCode ? translate(formError.inputCode) : ''}
-                        hasError={hasError}
-                        ref={inputRef}
-                        maxLength={CONST.VALIDATE_CODE_LENGTH}
-                    />
-                    <MultifactorAuthenticationValidateCodeResendButton
-                        ref={resendButtonRef}
-                        shouldDisableResendCode={shouldDisableResendCode}
-                        hasError={hasError}
-                        resendButtonText="validateCodeForm.securityCodeNotReceived"
-                        onResendValidationCode={resendValidationCode}
-                    />
-                </View>
-                <View style={[styles.w100, styles.mtAuto]}>
-                    {!!errorMessage && (
-                        <FormHelpMessage
-                            style={[styles.mh5]}
-                            message={errorMessage}
-                        />
-                    )}
-                    <Button
-                        success
-                        large
-                        testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON}
-                        style={[styles.w100, styles.ph5, styles.pb5, styles.mt4]}
-                        onPress={validateAndSubmitForm}
-                        text={translate('common.verify')}
-                        isLoading={isValidateCodeFormSubmitting}
-                        isDisabled={isOffline}
-                    />
-                </View>
+                {/* Recovery can email a new code while this screen is still shown, so the form remounts
+                    to drop the old code, its errors and the resend countdown. */}
+                <ValidateCodeForm key={recoveryAttempts} />
             </FullPageOfflineBlockingView>
         </ScreenWrapper>
     );

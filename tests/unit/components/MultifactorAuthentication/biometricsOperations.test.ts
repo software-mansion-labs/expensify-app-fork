@@ -126,11 +126,22 @@ describe('biometrics operations (native)', () => {
             await expect(areLocalCredentialsKnownToServer(ACCOUNT_ID)).resolves.toBe(false);
         });
 
-        it('should return false when the keystore read throws', async () => {
+        it('should return false when the keystore read throws on both attempts', async () => {
             mockGetAllKeys.mockRejectedValue(new Error('Keystore unavailable'));
             await Onyx.merge(ONYXKEYS.ACCOUNT, {multifactorAuthenticationPublicKeyIDs: [LOCAL_CREDENTIAL_ID]});
 
             await expect(areLocalCredentialsKnownToServer(ACCOUNT_ID)).resolves.toBe(false);
+            expect(mockGetAllKeys).toHaveBeenCalledTimes(2);
+        });
+
+        it('should return true when the first keystore read throws and the retry finds the server-known key', async () => {
+            mockGetAllKeys
+                .mockRejectedValueOnce(Object.assign(new Error('Keystore unavailable'), {code: 'GET_ALL_KEYS_ERROR'}))
+                .mockResolvedValueOnce({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+            await Onyx.merge(ONYXKEYS.ACCOUNT, {multifactorAuthenticationPublicKeyIDs: [LOCAL_CREDENTIAL_ID]});
+
+            await expect(areLocalCredentialsKnownToServer(ACCOUNT_ID)).resolves.toBe(true);
+            expect(mockGetAllKeys).toHaveBeenCalledTimes(2);
         });
 
         // The library rejects instead of returning an empty key list when the alias does not exist, so
@@ -140,6 +151,8 @@ describe('biometrics operations (native)', () => {
             await Onyx.merge(ONYXKEYS.ACCOUNT, {multifactorAuthenticationPublicKeyIDs: [LOCAL_CREDENTIAL_ID]});
 
             await expect(areLocalCredentialsKnownToServer(ACCOUNT_ID)).resolves.toBe(false);
+            // A confirmed absence is not a failed read, so it is not retried.
+            expect(mockGetAllKeys).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -234,10 +247,11 @@ describe('biometrics operations (native)', () => {
             expect(mockDeleteKeys).not.toHaveBeenCalled();
         });
 
-        // An unreadable keystore may recover, so it must not take the same destructive path as a
-        // credential the device confirmed it does not have.
-        it('reports the decoded read error, which is not deletion-worthy, when the keystore cannot be read', async () => {
-            mockGetAllKeys.mockRejectedValue(Object.assign(new Error('Keystore unavailable'), {code: 'KEY_ACCESS_FAILED'}));
+        // A read that fails twice is no longer treated as transient. Whatever code the library rejected with
+        // (these are the ones it uses for getAllKeys: Android, then iOS), the operation reports KEY_ACCESS_FAILED
+        // with that code in the message, so the actor deletes the key and the machine recovers.
+        it.each(['GET_ALL_KEYS_ERROR', 'KEYCHAIN_QUERY_FAILED', 'UNKNOWN_ERROR'])('reports KEY_ACCESS_FAILED when the keystore read rejects with %s after the retry', async (code) => {
+            mockGetAllKeys.mockRejectedValue(Object.assign(new Error('Keystore unavailable'), {code}));
 
             const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
 
@@ -246,8 +260,22 @@ describe('biometrics operations (native)', () => {
                 throw new Error('Expected authorization to fail');
             }
             expect(result.error.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.KEY_ACCESS_FAILED);
-            expect(CONST.MULTIFACTOR_AUTHENTICATION.CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION.has(result.error.reason)).toBe(false);
+            expect(result.error.message).toBe(`${code}: Keystore unavailable`);
+            expect(mockGetAllKeys).toHaveBeenCalledTimes(2);
             expect(mockSignWithOptions).not.toHaveBeenCalled();
+            // Deletion is the actor's decision, so the operation must leave the keystore alone.
+            expect(mockDeleteKeys).not.toHaveBeenCalled();
+        });
+
+        it('signs when the first keystore read throws and the retry finds the key', async () => {
+            mockGetAllKeys
+                .mockRejectedValueOnce(Object.assign(new Error('Keystore unavailable'), {code: 'GET_ALL_KEYS_ERROR'}))
+                .mockResolvedValueOnce({keys: [{publicKey: LOCAL_PUBLIC_KEY_BASE64}]});
+
+            const result = await authorize({accountID: ACCOUNT_ID, challenge: AUTHENTICATION_CHALLENGE, signal: TEST_SIGNAL});
+
+            expect(result.success).toBe(true);
+            expect(mockSignWithOptions).toHaveBeenCalledTimes(1);
         });
 
         it('reports KEY_NOT_FOUND, which is deletion-worthy, when the keystore confirms the account has no key', async () => {

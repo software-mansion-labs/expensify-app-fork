@@ -23,6 +23,7 @@ const REASON = {
     },
     FLOW_OUTCOMES: {
         TRANSACTION_DENIED: 'Outcome: Transaction denied successfully',
+        TRANSACTION_APPROVED: 'Outcome: Transaction already approved when the deny arrived',
     },
     /** HTTP 4xx errors from the backend (not front-end errors despite the "Client" prefix). */
     CLIENT_ERRORS: {
@@ -187,20 +188,21 @@ const ROUTINE_FAILURES = new Set<ReasonValue>([
 ]);
 
 /** Non-error flow outcomes that are not MFA successes but represent valid, expected terminal states (e.g. user-initiated deny). Logged at 'info' level. */
-const ALTERNATIVE_OUTCOMES = new Set<ReasonValue>([REASON.FLOW_OUTCOMES.TRANSACTION_DENIED]);
+const ALTERNATIVE_OUTCOMES = new Set<ReasonValue>([REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED]);
 
 /**
  * Local credential failures that confirm the device credential is unusable, so it should be deleted
- * before recovery. Read failures such as `KEY_ACCESS_FAILED` are deliberately absent: an unreadable
- * keystore may recover, and deleting on one would force a re-registration the device did not need.
+ * before recovery. A keystore read is retried once inside the operation before it reports
+ * `KEY_ACCESS_FAILED`; one from signing is not retried and, as on main, also marks the key broken.
  */
 const CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION = new Set<ReasonValue>([
     REASON.LOCAL_ERRORS.HSM.KEY_NOT_FOUND,
     REASON.LOCAL_ERRORS.HSM.NO_MATCHING_LOCAL_CREDENTIAL,
+    REASON.LOCAL_ERRORS.HSM.KEY_ACCESS_FAILED,
     REASON.LOCAL_ERRORS.WEBAUTHN.NO_MATCHING_LOCAL_CREDENTIAL,
 ]);
 
-/** Failures the recovery slice will route to re-registration rather than retrying authorization. */
+/** Failures the machine routes to re-registration rather than to the failure outcome. */
 const RECOVERABLE_CREDENTIAL_FAILURES = new Set<ReasonValue>([...CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION, REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED]);
 
 /** Known errors that should rarely happen and may indicate a bug or unexpected state. Logged at 'error' level. Any reason not in either set is treated as UNCLASSIFIED (e.g. missing reason). */
@@ -236,6 +238,11 @@ const MFA_STATE = {
     CLOSED: 'closed',
     OPEN: 'open',
     CLOSING: 'closing',
+    FLOW: 'flow',
+    CANCEL_CONFIRM: 'cancelConfirm',
+    CANCEL_CONFIRM_HIDDEN: 'hidden',
+    CANCEL_CONFIRM_VISIBLE: 'visible',
+    CANCELLING: 'cancelling',
     PREPARING: 'preparing',
     VALIDATING_DEVICE: 'validatingDevice',
     DECIDING_REGISTRATION: 'decidingRegistration',
@@ -247,7 +254,15 @@ const MFA_STATE = {
     PROMPT: 'prompt',
     AWAITING_SOFT_PROMPT: 'awaitingSoftPrompt',
     CREATING_CREDENTIAL: 'creatingCredential',
+    READY_TO_CREATE: 'readyToCreate',
+    CREATING_KEY: 'creatingKey',
+    REGISTERING_KEY: 'registeringKey',
     AUTHORIZING: 'authorizing',
+    READY_TO_SIGN: 'readyToSign',
+    SIGNING_CHALLENGE: 'signingChallenge',
+    EXECUTING_SCENARIO_ACTION: 'executingScenarioAction',
+    AWAITING_RESULT: 'awaitingResult',
+    DENYING: 'denying',
     OUTCOME: 'outcome',
     FINALIZING_OUTCOME: 'finalizingOutcome',
     SUCCESS: 'success',
