@@ -387,7 +387,7 @@ describe('DynamicFormFlow', () => {
         // Then only this page's name is drafted, the SSN goes to memory only, and the screen never sees the SSN, since a page save would queue it
         expect(saveDraftAnswers).toHaveBeenCalledWith(FORM_ID, {firstName: 'Jane'});
         expect(saveSensitiveAnswers).toHaveBeenCalledWith(FORM_ID, {ssn: '123456789'});
-        expect(onPageSubmit).toHaveBeenCalledWith(page, {firstName: 'Jane'});
+        expect(onPageSubmit).toHaveBeenCalledWith({...page, content: page.content.elements}, {firstName: 'Jane'});
     });
 
     it('submits the visible answers, sensitive ones included, from the confirmation page', async () => {
@@ -641,7 +641,7 @@ describe('DynamicFormFlow', () => {
             pageProps.onPageSubmit(page, {directors: [jane]});
 
             // Then a screen saving page by page gets the director, while the SSN stays in memory, out of the request queue
-            expect(onPageSubmit).toHaveBeenCalledWith(page, {directors: [jane]});
+            expect(onPageSubmit).toHaveBeenCalledWith({...page, content: page.content.elements}, {directors: [jane]});
         });
 
         it('keeps a sensitive list in memory instead of the draft', async () => {

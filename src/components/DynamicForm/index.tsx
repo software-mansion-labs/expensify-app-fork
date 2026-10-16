@@ -17,12 +17,12 @@ import React from 'react';
 import type {DynamicFormFlowPage, DynamicFormSubPageProps} from './flow/types';
 import type {DynamicFormFlowProps, DynamicFormValues} from './types';
 
-import getContentAnswers from './content/getContentAnswers';
+import {getContentAnswers} from './content/content';
 import {savePageAnswers, useSensitiveAnswersCleanup} from './flow/answerStorage';
 import DynamicFormShell from './flow/DynamicFormShell';
 import getFlowPages from './flow/getFlowPages';
 import {findListPage, getListItemEditor, parseListItemPageName} from './flow/listItemEditor';
-import {getAllFields, getFirstIncompletePageIndex, getPages, getStartPageIndex, isPageShown} from './flow/pages';
+import {getFirstIncompletePageIndex, getPages, getStartPageIndex, isPageShown} from './flow/pages';
 import useStepIndicator from './flow/useStepIndicator';
 import useUnavailablePageRedirect from './flow/useUnavailablePageRedirect';
 import {toDynamicFormValues} from './shared';
@@ -55,9 +55,8 @@ function DynamicFormFlow({
     const values: DynamicFormValues = {...draftValues, ...sensitiveAnswersByForm?.[formID]};
 
     const pages = getPages(schema);
-    const allFields = getAllFields(pages);
-    const {subPages, skipPages, shownPages, hasConfirmationPage, firstShownPageIndex, lastShownPageIndex} = getFlowPages(pages, allFields, values, hasConfirmation);
-    const startFrom = getStartPageIndex({pages, allFields, draftValues, isDraftLoading, firstShownPageIndex, lastShownPageIndex, translate});
+    const {subPages, skipPages, shownPages, hasConfirmationPage, firstShownPageIndex, lastShownPageIndex} = getFlowPages(pages, values, hasConfirmation);
+    const startFrom = getStartPageIndex({pages, draftValues, isDraftLoading, firstShownPageIndex, lastShownPageIndex, translate});
 
     const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, resetToPage, isRedirecting} = useSubPage<DynamicFormSubPageProps>({
         pages: subPages,
@@ -80,15 +79,16 @@ function DynamicFormFlow({
     /** The confirmation page can be opened by URL before every page is answered, so an incomplete form goes back to its first gap instead. Without a confirmation page the last page's answers arrive here, before their draft is saved. */
     function submitIfComplete(lastPageValues?: unknown) {
         const answers = {...values, ...toDynamicFormValues(lastPageValues)};
-        const firstIncompleteIndex = getFirstIncompletePageIndex(pages, allFields, answers, translate);
+        const firstIncompleteIndex = getFirstIncompletePageIndex(pages, answers, translate);
         const incompletePage = firstIncompleteIndex === -1 ? undefined : pages.at(firstIncompleteIndex);
         if (incompletePage) {
             returnTo(incompletePage.key);
             return;
         }
         // Inputs of a page the answers skip are not submitted
-        const shownContent = pages.filter((page) => isPageShown(page, answers, allFields)).flatMap((page) => page.content);
-        const submittedAnswers = getContentAnswers(shownContent, answers, allFields);
+        const submittedAnswers: DynamicFormValues = Object.fromEntries(
+            pages.filter((page) => isPageShown(page, answers)).flatMap((page) => Object.entries(getContentAnswers(page.content, answers))),
+        );
         if (isSubmitting === undefined) {
             clearSensitiveAnswers(formID);
         }
@@ -102,7 +102,6 @@ function DynamicFormFlow({
     const {closeListItemEditor, onOpenListItemEditor, onListItemSave, onListItemsChange} = getListItemEditor({
         formID,
         pages,
-        allFields,
         values,
         subPages,
         isEditing,
@@ -113,8 +112,8 @@ function DynamicFormFlow({
     });
 
     const handlePageSubmit = (page: DynamicFormFlowPage, pageValues: DynamicFormValues) => {
-        const screenAnswers = savePageAnswers(formID, page, {...values, ...pageValues}, allFields);
-        onPageSubmit?.(page, screenAnswers);
+        const screenAnswers = savePageAnswers(formID, page, {...values, ...pageValues});
+        onPageSubmit?.({...page, content: page.content.elements}, screenAnswers);
     };
 
     const goBack = () => {
@@ -160,7 +159,6 @@ function DynamicFormFlow({
                     prevPage={prevPage}
                     formID={formID}
                     pages={pages}
-                    allFields={allFields}
                     values={values}
                     currency={currency}
                     maxFileSize={maxFileSize}

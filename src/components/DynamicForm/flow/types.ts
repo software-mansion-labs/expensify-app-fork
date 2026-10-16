@@ -1,20 +1,18 @@
+import type {ParsedContent} from '@components/DynamicForm/content/content';
 import type {DynamicFormFlowProps, DynamicFormInputOptions, DynamicFormListActions, DynamicFormValues} from '@components/DynamicForm/types';
 
 import type {SubPageProps} from '@hooks/useSubPage/types';
 
-import type {DynamicFormElement, DynamicFormField, DynamicFormPage} from '@src/types/onyx';
+import type {DynamicFormPage} from '@src/types/onyx';
 
-/** A page whose content is parsed once, so every part of the flow reads elements this App version can draw */
+/** A page whose content is parsed once, so every part of the flow reads elements this App version can draw, and whose conditions can name a field on any page */
 type DynamicFormFlowPage = Omit<DynamicFormPage, 'content'> & {
-    content: DynamicFormElement[];
+    content: ParsedContent;
 };
 
 /** The form as every page of the flow reads it */
 type DynamicFormFlowData = Pick<DynamicFormFlowProps, 'formID' | 'confirmationTitle' | 'isSubmitting' | 'submitError'> & {
     pages: DynamicFormFlowPage[];
-
-    /** Every supported field of the form, which is where a `showWhen` finds its controller */
-    allFields: DynamicFormField[];
 
     /** Draft answers merged with the sensitive answers kept in memory */
     values: DynamicFormValues;

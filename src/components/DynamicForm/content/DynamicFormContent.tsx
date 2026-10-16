@@ -1,27 +1,22 @@
 import type {DynamicFormInputOptions, DynamicFormListActions, DynamicFormValues} from '@components/DynamicForm/types';
 
 import CONST from '@src/CONST';
-import type {DynamicFormElement as DynamicFormElementType, DynamicFormField} from '@src/types/onyx';
 
 import React from 'react';
 
+import type {ParsedContent} from './content';
 import type {DynamicFormRenderFields} from './elements/ExpensifyInput/types';
 
+import {getListItemContent, getLoneInput, getVisibleContent} from './content';
 import DynamicFormElement from './elements/DynamicFormElement';
-import toContentElements from './elements/ExpensifyInput/toContentElements';
-import getLoneInput from './getLoneInput';
-import getVisibleContent from './getVisibleContent';
 
 type DynamicFormContentProps = DynamicFormInputOptions &
     DynamicFormListActions & {
-        /** Elements to render, in order, as parseContent returns them */
-        content: DynamicFormElementType[];
+        /** Content to render, as parseContent returns it */
+        content: ParsedContent;
 
         /** Current answers, from FormProvider's render-prop `inputValues`, so showWhen and dependsOn follow the user's typing */
         values: DynamicFormValues;
-
-        /** The whole form when `content` is one page of it, since a field's `showWhen` can name a controller on another page */
-        allFields?: DynamicFormField[];
 
         /** The page's headline comes from its lone question, so that question's label is not drawn again above its input. False when the page has its own title, since the label then still says what the inputs are for. */
         isLoneFieldInHeadline?: boolean;
@@ -34,7 +29,6 @@ type DynamicFormContentProps = DynamicFormInputOptions &
 function DynamicFormContent({
     content,
     values,
-    allFields,
     isLoneFieldInHeadline = false,
     currency = CONST.CURRENCY.USD,
     maxFileSize,
@@ -43,11 +37,11 @@ function DynamicFormContent({
     onListItemsChange,
     isSensitive = false,
 }: DynamicFormContentProps) {
-    const visibleContent = getVisibleContent(content, values, allFields);
-    const loneInput = getLoneInput(visibleContent);
+    const visibleContent = getVisibleContent(content, values);
+    const loneInput = getLoneInput(content, values);
     const renderFields: DynamicFormRenderFields = (itemFields, itemValues, isItemSensitive) => (
         <DynamicFormContent
-            content={toContentElements(itemFields)}
+            content={getListItemContent(itemFields)}
             values={itemValues}
             isSensitive={isItemSensitive}
             currency={currency}

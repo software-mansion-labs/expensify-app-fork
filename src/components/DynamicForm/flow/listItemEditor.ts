@@ -1,4 +1,4 @@
-import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
+import {getContentFields} from '@components/DynamicForm/content/content';
 import {findListField, getListItems} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import type {DynamicFormInputOptions, DynamicFormValues} from '@components/DynamicForm/types';
 
@@ -6,13 +6,13 @@ import type {PageConfig} from '@hooks/useSubPage/types';
 
 import CONST from '@src/CONST';
 import type {OnyxFormKey} from '@src/ONYXKEYS';
-import type {DynamicFormField} from '@src/types/onyx';
 
 import {Str} from 'expensify-common';
 
 import type {DynamicFormFlowActions, DynamicFormFlowPage, DynamicFormSubPageProps} from './types';
 
 import {saveListItemAnswers, saveSensitiveListItems} from './answerStorage';
+import {getAllFields} from './pages';
 
 const PAGE_NAME_SEPARATOR = '~';
 const NEW_ITEM_ID = 'new';
@@ -20,7 +20,6 @@ const NEW_ITEM_ID = 'new';
 type ListItemEditorOptions = Pick<DynamicFormInputOptions, 'onRefreshRequirements'> & {
     formID: OnyxFormKey;
     pages: DynamicFormFlowPage[];
-    allFields: DynamicFormField[];
     values: DynamicFormValues;
     subPages: Array<PageConfig<DynamicFormSubPageProps>>;
     isEditing: boolean;
@@ -55,7 +54,9 @@ function findListPage(pages: DynamicFormFlowPage[], listKey: string): DynamicFor
 }
 
 /** Opens, saves and closes the editor pages of list entries */
-function getListItemEditor({formID, pages, allFields, values, subPages, isEditing, currentPageName, moveTo, returnTo, onRefreshRequirements}: ListItemEditorOptions): ListItemEditor {
+function getListItemEditor({formID, pages, values, subPages, isEditing, currentPageName, moveTo, returnTo, onRefreshRequirements}: ListItemEditorOptions): ListItemEditor {
+    const allFields = getAllFields(pages);
+
     /** An entry opened from the confirmation page, or from a page edited from it, returns there */
     const closeListItemEditor = (listKey: string) => {
         const listPage = findListPage(pages, listKey);

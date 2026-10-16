@@ -1,5 +1,6 @@
 import {render} from '@testing-library/react-native';
 
+import {parseContent} from '@components/DynamicForm/content/content';
 import DynamicFormFieldsPage from '@components/DynamicForm/flow/subPages/DynamicFormFieldsPage';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 import FormProvider from '@components/Form/FormProvider';
@@ -12,7 +13,7 @@ jest.mock('@components/Form/FormProvider', () => jest.fn(() => null));
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
 jest.mock('@hooks/useThemeStyles', () => jest.fn(() => new Proxy({}, {get: () => ({})})));
 
-const page: DynamicFormFlowPage = {key: 'identity', title: 'Identity', content: [{elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true}]};
+const page: DynamicFormFlowPage = {key: 'identity', title: 'Identity', content: parseContent([{elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true}])};
 
 function renderPage(isLastPage: boolean) {
     render(
@@ -24,7 +25,6 @@ function renderPage(isLastPage: boolean) {
             onMove={jest.fn()}
             formID={ONYXKEYS.FORMS.INTERNATIONAL_BANK_ACCOUNT_FORM}
             pages={[page]}
-            allFields={[]}
             values={{}}
             onPageSubmit={jest.fn()}
             onOpenListItemEditor={jest.fn()}

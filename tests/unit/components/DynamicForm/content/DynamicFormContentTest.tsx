@@ -6,6 +6,7 @@ import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import CountryPicker from '@components/CountryPicker';
 import CurrencyPicker from '@components/CurrencyPicker';
 import DatePicker from '@components/DatePicker';
+import {parseContent} from '@components/DynamicForm/content/content';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
 import {getAddressInputKeys} from '@components/DynamicForm/content/elements/ExpensifyInput/field';
 import CurrencyInlineListAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/CurrencyInlineListAdapter';
@@ -14,7 +15,6 @@ import InlineSelectionListAdapter from '@components/DynamicForm/content/elements
 import ListFieldAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/ListFieldAdapter';
 import TabsAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/TabsAdapter';
 import YesNoAdapter from '@components/DynamicForm/content/elements/ExpensifyInput/renderers/adapters/YesNoAdapter';
-import parseContent from '@components/DynamicForm/content/parseContent';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import type {FormValue} from '@components/Form/types';
 import MenuItemField from '@components/MenuItem/presets/MenuItemField';

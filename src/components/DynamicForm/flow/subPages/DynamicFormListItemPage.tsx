@@ -1,4 +1,5 @@
 import ActivityIndicator from '@components/ActivityIndicator';
+import {getListItemContent} from '@components/DynamicForm/content/content';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
 import {
     findListField,
@@ -8,9 +9,9 @@ import {
     getListItemAddTitle,
     getListItemFallbackTitle,
 } from '@components/DynamicForm/content/elements/ExpensifyInput/list';
-import toContentElements from '@components/DynamicForm/content/elements/ExpensifyInput/toContentElements';
 import {getItemFieldErrors} from '@components/DynamicForm/content/elements/ExpensifyInput/validation';
 import {parseListItemPageName} from '@components/DynamicForm/flow/listItemEditor';
+import {getAllFields} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import {toDynamicFormValues} from '@components/DynamicForm/shared';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
@@ -57,11 +58,11 @@ function useListItemEditorDraft(pageName: string | undefined, item: DynamicFormL
 }
 
 /** The editor of one list entry, or of a new one: the entry's fields and a Save button */
-function DynamicFormListItemPage({currentPageName, allFields, values, currency, maxFileSize, onRefreshRequirements, onListItemSave}: DynamicFormSubPageProps) {
+function DynamicFormListItemPage({currentPageName, pages, values, currency, maxFileSize, onRefreshRequirements, onListItemSave}: DynamicFormSubPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const editorPage = parseListItemPageName(currentPageName);
-    const listField = editorPage && findListField(allFields, editorPage.listKey);
+    const listField = editorPage && findListField(getAllFields(pages), editorPage.listKey);
     const item = listField && getListItems(values[listField.key]).find((candidate) => candidate.id === editorPage?.itemID);
     const isSensitiveList = !!listField?.sensitive;
     const isDraftFilled = useListItemEditorDraft(currentPageName, item, isSensitiveList);
@@ -99,7 +100,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
                 <>
                     <DynamicFormPageHeader title={title} />
                     <DynamicFormContent
-                        content={toContentElements(listField.itemFields)}
+                        content={getListItemContent(listField.itemFields)}
                         values={withInputValues(inputValues)}
                         isSensitive={isSensitiveList}
                         currency={currency}

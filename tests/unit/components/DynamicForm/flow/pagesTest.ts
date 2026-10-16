@@ -1,18 +1,10 @@
-import toContentElements from '@components/DynamicForm/content/elements/ExpensifyInput/toContentElements';
-import {getPages, getAllFields, getPageTitle, getPageSectionName, isPageShown, paginate, getStartPageIndex} from '@components/DynamicForm/flow/pages';
+import {parseContent} from '@components/DynamicForm/content/content';
+import {getPages, getPageTitle, getPageSectionName, isPageShown, getStartPageIndex} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
 import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
-import type {
-    DynamicFormElement,
-    DynamicFormExpensifyInputElement,
-    DynamicFormField,
-    DynamicFormHTMLInputElement,
-    DynamicFormPage,
-    DynamicFormSchemaElement,
-    DynamicFormTextField,
-} from '@src/types/onyx';
+import type {DynamicFormExpensifyInputElement, DynamicFormField, DynamicFormPage, DynamicFormSchemaElement, DynamicFormTextField} from '@src/types/onyx';
 
 import {translateLocal} from '../../../../utils/TestHelper';
 
@@ -24,107 +16,9 @@ function input(field: DynamicFormField): DynamicFormExpensifyInputElement {
     return {...field, elementType: 'ExpensifyInput'};
 }
 
-function options(count: number) {
-    return Array.from({length: count}, (_, index) => ({key: `o${index}`, label: `o${index}`}));
-}
-
 function keysOf(pages: DynamicFormFlowPage[]): Array<Array<string | undefined>> {
-    return pages.map((page) => page.content.map((item) => item.key));
+    return pages.map((page) => page.content.elements.map((item) => item.key));
 }
-
-describe('paginate', () => {
-    it('puts each own-page type on a page of its own', () => {
-        // Given one field of every type that needs room
-        const fields: DynamicFormField[] = [
-            {key: 'address', type: 'address', required: true},
-            {key: 'file', type: 'file', required: true},
-            {key: 'multi', type: 'multiselect', required: true, values: options(2)},
-            {key: 'countries', type: 'countryMultiselect', required: true},
-            {key: 'dependent', type: 'select', required: true, dependsOn: {key: 'country', valuesBy: {}}},
-        ];
-
-        // When the fields are paginated
-        const pages = paginate(toContentElements(fields));
-
-        // Then none of them shares a page, since each needs the whole screen
-        expect(keysOf(pages)).toEqual([['address'], ['file'], ['multi'], ['countries'], ['dependent']]);
-    });
-
-    it('keeps a small select with the other short questions but moves a large one out', () => {
-        // Given a small select and a select with more options than the threshold
-        const small = input({key: 'small', type: 'select', required: true, values: options(3)});
-        const large = input({key: 'large', type: 'select', required: true, values: options(11)});
-
-        // When they are paginated between two text fields
-        const pages = paginate([text('a'), small, large, text('b')]);
-
-        // Then the large select, which opens a searchable list, is alone and breaks the run
-        expect(keysOf(pages)).toEqual([['a', 'small'], ['large'], ['b']]);
-    });
-
-    it('starts a new page after four questions in a row', () => {
-        // Given five short questions
-        const fields = [text('a'), text('b'), text('c'), text('d'), text('e')];
-
-        // When they are split into pages
-        const pages = paginate(fields);
-
-        // Then the fifth does not fit the shared page
-        expect(keysOf(pages)).toEqual([['a', 'b', 'c', 'd'], ['e']]);
-    });
-
-    it('keeps a field revealed by its controller on the controller page without counting it', () => {
-        // Given four questions where the second reveals a fifth field
-        const revealed = text('other', {showWhen: {key: 'b', equals: ['x']}});
-
-        // When they are paginated
-        const pages = paginate([text('a'), text('b'), revealed, text('c'), text('d')]);
-
-        // Then all of them stay on one page, since the revealed field is not a question of its own
-        expect(keysOf(pages)).toEqual([['a', 'b', 'other', 'c', 'd']]);
-    });
-
-    it('keeps the fields an own-page controller reveals with it', () => {
-        // Given an own-page select that reveals a text field
-        const select = input({key: 'dep', type: 'select', required: true, dependsOn: {key: 'x', valuesBy: {}}});
-
-        // When paginated with a field after the revealed one
-        const pages = paginate([select, text('why', {showWhen: {key: 'dep', equals: ['y']}}), text('z')]);
-
-        // Then the revealed field follows its controller and the next question starts a new page
-        expect(keysOf(pages)).toEqual([['dep', 'why'], ['z']]);
-    });
-
-    it('puts banners and descriptions on the page of the input after them', () => {
-        // Given a description before a text field and a banner before an own-page address
-        const intro: DynamicFormElement = {elementType: 'Description', key: 'intro', text: 'Who are you paying?'};
-        const warning: DynamicFormElement = {elementType: 'Banner', key: 'warning', text: 'Use a home address.'};
-
-        // When they are paginated
-        const pages = paginate([intro, text('a'), warning, input({key: 'address', type: 'address', required: true})]);
-
-        // Then each display element sits above the input it introduces, even when that input needs its own page
-        expect(keysOf(pages)).toEqual([
-            ['intro', 'a'],
-            ['warning', 'address'],
-        ]);
-    });
-
-    it('counts HTML inputs as questions and keeps a trailing banner on the last page', () => {
-        // Given five Wise inputs followed by a banner
-        const wise = ['a', 'b', 'c', 'd', 'e'].map((key): DynamicFormHTMLInputElement => ({elementType: 'HTMLInput', key, name: key, type: 'text', required: true}));
-        const note: DynamicFormElement = {elementType: 'Banner', key: 'note', text: 'Checked by the bank.'};
-
-        // When they are paginated
-        const pages = paginate([...wise, note]);
-
-        // Then they split like App fields and the banner does not get a page of its own
-        expect(keysOf(pages)).toEqual([
-            ['a', 'b', 'c', 'd'],
-            ['e', 'note'],
-        ]);
-    });
-});
 
 describe('getPages', () => {
     it('leaves out fields of an unknown type', () => {
@@ -170,7 +64,7 @@ describe('getPages', () => {
 describe('getPageTitle', () => {
     it('prefers the page title, translated when it has a key', () => {
         // Given a page with a titleKey
-        const page: DynamicFormFlowPage = {key: 'p', titleKey: 'common.next', content: [text('a')]};
+        const page: DynamicFormFlowPage = {key: 'p', titleKey: 'common.next', content: parseContent([text('a')])};
 
         // When its title is read
         const title = getPageTitle(page, {}, translateLocal);
@@ -181,7 +75,7 @@ describe('getPageTitle', () => {
 
     it('falls back to the label of the lone question, ignoring a field it reveals', () => {
         // Given an untitled page with one question and a field it reveals
-        const page: DynamicFormFlowPage = {key: 'p', content: [text('a', {label: 'Alpha'}), text('b', {label: 'Beta', showWhen: {key: 'a', equals: ['x']}})]};
+        const page: DynamicFormFlowPage = {key: 'p', content: parseContent([text('a', {label: 'Alpha'}), text('b', {label: 'Beta', showWhen: {key: 'a', equals: ['x']}})])};
 
         // When the revealed field shows
         const title = getPageTitle(page, {a: 'x'}, translateLocal);
@@ -192,7 +86,7 @@ describe('getPageTitle', () => {
 
     it("prefers the lone question's wording over its label", () => {
         // Given an untitled page whose only question has its wording as a question
-        const page: DynamicFormFlowPage = {key: 'p', content: [text('a', {label: 'Account number', question: "What's your account number?"})]};
+        const page: DynamicFormFlowPage = {key: 'p', content: parseContent([text('a', {label: 'Account number', question: "What's your account number?"})])};
 
         // When its title is read
         const title = getPageTitle(page, {}, translateLocal);
@@ -203,7 +97,10 @@ describe('getPageTitle', () => {
 
     it('has no title when there are several questions', () => {
         // Given an untitled page with several visible questions
-        const page: DynamicFormFlowPage = {key: 'p', content: [text('a', {label: 'Alpha', showWhen: {key: 'z', equals: ['1']}}), text('b', {label: 'Beta'}), text('c', {label: 'Gamma'})]};
+        const page: DynamicFormFlowPage = {
+            key: 'p',
+            content: parseContent([text('a', {label: 'Alpha', showWhen: {key: 'z', equals: ['1']}}), text('b', {label: 'Beta'}), text('c', {label: 'Gamma'})]),
+        };
 
         // When its title is read
         const title = getPageTitle(page, {}, translateLocal);
@@ -216,7 +113,7 @@ describe('getPageTitle', () => {
 describe('getPageSectionName', () => {
     it('uses the page title', () => {
         // Given a titled page
-        const page: DynamicFormFlowPage = {key: 'p', title: 'Bank details', content: [text('a', {label: 'Alpha'})]};
+        const page: DynamicFormFlowPage = {key: 'p', title: 'Bank details', content: parseContent([text('a', {label: 'Alpha'})])};
 
         // When its section name is read
         const name = getPageSectionName(page, {}, translateLocal);
@@ -227,7 +124,7 @@ describe('getPageSectionName', () => {
 
     it("uses the lone question's wording on an untitled page", () => {
         // Given an untitled page whose only question has its wording
-        const page: DynamicFormFlowPage = {key: 'p', content: [text('a', {label: 'Account number', question: "What's your account number?"})]};
+        const page: DynamicFormFlowPage = {key: 'p', content: parseContent([text('a', {label: 'Account number', question: "What's your account number?"})])};
 
         // When its section name is read
         const name = getPageSectionName(page, {}, translateLocal);
@@ -238,8 +135,8 @@ describe('getPageSectionName', () => {
 
     it('never uses a label', () => {
         // Given untitled pages with one question and with several, none with its wording
-        const lonePage: DynamicFormFlowPage = {key: 'p', content: [text('a', {label: 'Account number'})]};
-        const sharedPage: DynamicFormFlowPage = {key: 'q', content: [text('a', {label: 'Account number'}), text('b', {label: 'Settlement currency'})]};
+        const lonePage: DynamicFormFlowPage = {key: 'p', content: parseContent([text('a', {label: 'Account number'})])};
+        const sharedPage: DynamicFormFlowPage = {key: 'q', content: parseContent([text('a', {label: 'Account number'}), text('b', {label: 'Settlement currency'})])};
 
         // When their section names are read
         const names = [getPageSectionName(lonePage, {}, translateLocal), getPageSectionName(sharedPage, {}, translateLocal)];
@@ -252,37 +149,42 @@ describe('getPageSectionName', () => {
 describe('isPageShown', () => {
     it('hides a page whose own showWhen does not match, using a field of another page', () => {
         // Given a page shown only for business, controlled from another page
-        const type = text('type');
-        const page: DynamicFormFlowPage = {key: 'biz', showWhen: {key: 'type', equals: ['BUSINESS']}, content: [text('ein')]};
-        const allFields = getAllFields([{key: 'first', content: [type]}, page]);
+        const pages = getPages({
+            pages: [
+                {key: 'first', content: [text('type')]},
+                {key: 'biz', showWhen: {key: 'type', equals: ['BUSINESS']}, content: [text('ein')]},
+            ],
+        });
 
         // When the user answers private, and then business
-        const isShownForPrivate = isPageShown(page, {type: 'PRIVATE'}, allFields);
-        const isShownForBusiness = isPageShown(page, {type: 'BUSINESS'}, allFields);
+        const shownForPrivate = pages.filter((page) => isPageShown(page, {type: 'PRIVATE'})).map((page) => page.key);
+        const shownForBusiness = pages.filter((page) => isPageShown(page, {type: 'BUSINESS'})).map((page) => page.key);
 
-        // Then it follows the answer
-        expect(isShownForPrivate).toBe(false);
-        expect(isShownForBusiness).toBe(true);
+        // Then the business page follows the answer
+        expect(shownForPrivate).toEqual(['first']);
+        expect(shownForBusiness).toEqual(['first', 'biz']);
     });
 
     it('hides a page with no visible field', () => {
         // Given a page whose only field is hidden
-        const page: DynamicFormFlowPage = {key: 'p', content: [text('a', {showWhen: {key: 'z', equals: ['1']}})]};
+        const page: DynamicFormFlowPage = {key: 'p', content: parseContent([text('a', {showWhen: {key: 'z', equals: ['1']}})])};
 
         // When the flow checks whether to show it
-        const isShown = isPageShown(page, {}, getAllFields([page]));
+        const isShown = isPageShown(page, {});
 
         // Then the page is skipped
         expect(isShown).toBe(false);
     });
 });
 
-const startPages: DynamicFormFlowPage[] = [
-    {key: 'name', content: [{elementType: 'ExpensifyInput', key: 'name', type: 'text', required: true}]},
-    {key: 'consent', content: [{elementType: 'ExpensifyInput', key: 'consent', type: 'boolean', required: false}]},
-    {key: 'city', content: [{elementType: 'HTMLInput', key: 'city', name: 'City', type: 'text', required: true}]},
-];
-const startOptions = {pages: startPages, allFields: getAllFields(startPages), isDraftLoading: false, firstShownPageIndex: 0, lastShownPageIndex: 3, translate: translateLocal};
+const startPages = getPages({
+    pages: [
+        {key: 'name', content: [{elementType: 'ExpensifyInput', key: 'name', type: 'text', required: true}]},
+        {key: 'consent', content: [{elementType: 'ExpensifyInput', key: 'consent', type: 'boolean', required: false}]},
+        {key: 'city', content: [{elementType: 'HTMLInput', key: 'city', name: 'City', type: 'text', required: true}]},
+    ],
+});
+const startOptions = {pages: startPages, isDraftLoading: false, firstShownPageIndex: 0, lastShownPageIndex: 3, translate: translateLocal};
 
 describe('getStartPageIndex', () => {
     beforeAll(() => {
@@ -319,7 +221,7 @@ describe('getStartPageIndex', () => {
     it('counts a No as progress', () => {
         // Given a form that opens with an optional checkbox, and a draft whose only answer is that checkbox left clear
         const consentFirstPages = startPages.slice(1);
-        const consentFirstStartOptions = {...startOptions, pages: consentFirstPages, allFields: getAllFields(consentFirstPages)};
+        const consentFirstStartOptions = {...startOptions, pages: consentFirstPages};
 
         // When the flow picks where the visit starts
         const startFrom = getStartPageIndex({...consentFirstStartOptions, draftValues: {consent: false}});

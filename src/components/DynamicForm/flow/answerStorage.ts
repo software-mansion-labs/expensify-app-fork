@@ -1,4 +1,4 @@
-import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
+import {getContentAnswers, getContentFields, getContentSensitiveKeys} from '@components/DynamicForm/content/content';
 import {
     getListFields,
     getListItems,
@@ -7,14 +7,12 @@ import {
     getRemovedListItemSensitiveKeys,
     getSubmittedAnswers,
 } from '@components/DynamicForm/content/elements/ExpensifyInput/list';
-import {getInputDefinition, isInputElement} from '@components/DynamicForm/content/elements/registry';
-import getContentAnswers from '@components/DynamicForm/content/getContentAnswers';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 
 import {clearSensitiveAnswers, forgetSensitiveAnswers, saveDraftAnswers, saveSensitiveAnswers} from '@userActions/DynamicForm';
 
 import type {OnyxFormKey} from '@src/ONYXKEYS';
-import type {DynamicFormField, DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';
+import type {DynamicFormListField, DynamicFormListItem} from '@src/types/onyx';
 
 import {useEffect, useRef} from 'react';
 
@@ -68,9 +66,9 @@ function forgetSensitiveAnswersIfAny(formID: OnyxFormKey, keys: string[]) {
 }
 
 /** Sorts the answers of a page the user leaves with Next by where they are kept. `values` holds the page's answers merged into the form's. */
-function splitPageAnswers(page: DynamicFormFlowPage, values: DynamicFormValues, allFields: DynamicFormField[]): PageAnswers {
+function splitPageAnswers(page: DynamicFormFlowPage, values: DynamicFormValues): PageAnswers {
     const pageListFields = getListFields(getContentFields(page.content));
-    const sensitiveKeys = new Set(page.content.filter(isInputElement).flatMap((input) => getInputDefinition(input).getSensitiveKeys(input)));
+    const sensitiveKeys = new Set(getContentSensitiveKeys(page.content));
     const listKeys = new Set(pageListFields.map((field) => field.key));
     const pageAnswers: PageAnswers = {
         draftAnswers: {},
@@ -79,7 +77,7 @@ function splitPageAnswers(page: DynamicFormFlowPage, values: DynamicFormValues, 
         removedSensitiveKeys: pageListFields.flatMap((field) => getRemovedListItemSensitiveKeys(field, values)),
     };
 
-    for (const [key, answer] of Object.entries(getContentAnswers(page.content, values, allFields))) {
+    for (const [key, answer] of Object.entries(getContentAnswers(page.content, values))) {
         if (sensitiveKeys.has(key)) {
             pageAnswers.sensitiveAnswers[key] = answer;
         } else if (listKeys.has(key)) {
@@ -96,8 +94,8 @@ function splitPageAnswers(page: DynamicFormFlowPage, values: DynamicFormValues, 
  * are drafted with their defaults, so the draft matches what the page validated. Sensitive answers go to memory only. Lists are drafted as they change, so the screen gets their entries,
  * which hold no sensitive answers.
  */
-function savePageAnswers(formID: OnyxFormKey, page: DynamicFormFlowPage, values: DynamicFormValues, allFields: DynamicFormField[]): DynamicFormValues {
-    const {draftAnswers, listAnswers, sensitiveAnswers, removedSensitiveKeys} = splitPageAnswers(page, values, allFields);
+function savePageAnswers(formID: OnyxFormKey, page: DynamicFormFlowPage, values: DynamicFormValues): DynamicFormValues {
+    const {draftAnswers, listAnswers, sensitiveAnswers, removedSensitiveKeys} = splitPageAnswers(page, values);
     saveDraftAnswers(formID, draftAnswers);
     saveSensitiveAnswersIfAny(formID, sensitiveAnswers);
     forgetSensitiveAnswersIfAny(formID, removedSensitiveKeys);

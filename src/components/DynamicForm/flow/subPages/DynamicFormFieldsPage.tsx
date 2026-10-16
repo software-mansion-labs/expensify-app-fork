@@ -1,6 +1,5 @@
+import {getContentErrors, getContentFields} from '@components/DynamicForm/content/content';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
-import getContentFields from '@components/DynamicForm/content/elements/ExpensifyInput/getContentFields';
-import getContentErrors from '@components/DynamicForm/content/getContentErrors';
 import {getPageTitle} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormFlowPage, DynamicFormSubPageProps} from '@components/DynamicForm/flow/types';
 import {getLocalizedText, toDynamicFormValues} from '@components/DynamicForm/shared';
@@ -30,7 +29,6 @@ function DynamicFormFieldsPage({
     onNext,
     formID,
     pages,
-    allFields,
     values,
     currency,
     maxFileSize,
@@ -53,7 +51,7 @@ function DynamicFormFieldsPage({
         <FormProvider
             formID={formID}
             submitButtonText={translate(isEditing || isLastPage ? 'common.confirm' : 'common.next')}
-            validate={(inputValues) => getContentErrors(page.content, withInputValues(inputValues), translate, allFields)}
+            validate={(inputValues) => getContentErrors(page.content, withInputValues(inputValues), translate)}
             onSubmit={(inputValues) => {
                 const pageValues = toDynamicFormValues(inputValues);
                 onPageSubmit(page, pageValues);
@@ -70,12 +68,11 @@ function DynamicFormFieldsPage({
                 return (
                     <>
                         <DynamicFormPageHeader
-                            title={getPageTitle(page, currentValues, translate, allFields)}
+                            title={getPageTitle(page, currentValues, translate)}
                             description={getLocalizedText(translate, page.descriptionKey, page.description)}
                         />
                         <DynamicFormContent
                             content={page.content}
-                            allFields={allFields}
                             isLoneFieldInHeadline={!hasOwnTitle}
                             values={currentValues}
                             currency={currency}

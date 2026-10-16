@@ -1,7 +1,7 @@
 import DynamicFormFlow from '@components/DynamicForm';
+import {getContentErrors} from '@components/DynamicForm/content/content';
 import DynamicFormContent from '@components/DynamicForm/content/DynamicFormContent';
-import getContentErrors from '@components/DynamicForm/content/getContentErrors';
-import {getPages, getAllFields, getPageTitle} from '@components/DynamicForm/flow/pages';
+import {getPages, getPageTitle} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormLayout} from '@components/DynamicForm/types';
 import FormProvider from '@components/Form/FormProvider';
 import Text from '@components/Text';
@@ -469,8 +469,6 @@ function SinglePage({fields, draftValues, isFlat}: Preset) {
     // List entries are edited on flow pages, so this screen leaves lists out
     const pageFields = fields.filter((field) => !('type' in field) || field.type !== 'list');
     const pages = getPages(toSchema(pageFields, isFlat));
-    const allFields = getAllFields(pages);
-    const allContent = pages.flatMap((page) => page.content);
 
     if (!isDraftReady) {
         return <View />;
@@ -480,19 +478,18 @@ function SinglePage({fields, draftValues, isFlat}: Preset) {
         <FormProvider
             formID={STORYBOOK_FORM_ID}
             submitButtonText="Submit"
-            validate={(values) => getContentErrors(allContent, values, translate, allFields)}
+            validate={(values) => Object.fromEntries(pages.flatMap((page) => Object.entries(getContentErrors(page.content, values, translate))))}
             onSubmit={(values) => alert(JSON.stringify(values, null, 4))}
             style={defaultStyles.ph5}
         >
             {({inputValues}) =>
                 pages.map((page) => {
-                    const title = getPageTitle(page, inputValues, translate, allFields);
+                    const title = getPageTitle(page, inputValues, translate);
                     return (
                         <View key={page.key}>
                             {!!title && <Text style={[defaultStyles.textHeadlineLineHeightXXL, defaultStyles.mt5, defaultStyles.mb3]}>{title}</Text>}
                             <DynamicFormContent
                                 content={page.content}
-                                allFields={allFields}
                                 values={inputValues}
                             />
                         </View>

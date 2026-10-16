@@ -1,21 +1,20 @@
+import {parseContent} from '@components/DynamicForm/content/content';
 import {getListItemSensitiveKey} from '@components/DynamicForm/content/elements/ExpensifyInput/list';
 import {splitPageAnswers, splitListItemAnswers} from '@components/DynamicForm/flow/answerStorage';
-import {getAllFields} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormFlowPage} from '@components/DynamicForm/flow/types';
 
 import type {DynamicFormListField} from '@src/types/onyx';
 
 const page: DynamicFormFlowPage = {
     key: 'details',
-    content: [
+    content: parseContent([
         {elementType: 'Description', key: 'intro', text: 'Tell us about you.'},
         {elementType: 'ExpensifyInput', key: 'name', type: 'text', required: true},
         {elementType: 'ExpensifyInput', key: 'ssn', type: 'text', required: true, sensitive: true},
         {elementType: 'HTMLInput', key: 'sortCode', name: 'Sort code', type: 'text', required: true},
         {elementType: 'ExpensifyInput', key: 'owners', type: 'list', required: false, itemFields: [{key: 'taxID', type: 'text', required: true, sensitive: true}]},
-    ],
+    ]),
 };
-const allFields = getAllFields([page]);
 
 describe('splitPageAnswers', () => {
     it('drafts plain answers, keeps sensitive ones in memory and passes list entries to the screen only', () => {
@@ -24,7 +23,7 @@ describe('splitPageAnswers', () => {
         const values = {name: 'Ada', ssn: '123451234', sortCode: '040075', owners};
 
         // When the user leaves it with Next
-        const {draftAnswers, sensitiveAnswers, listAnswers} = splitPageAnswers(page, values, allFields);
+        const {draftAnswers, sensitiveAnswers, listAnswers} = splitPageAnswers(page, values);
 
         // Then the SSN never reaches the draft, and the list, which is drafted as it changes, goes to the screen
         expect(draftAnswers).toEqual({name: 'Ada', sortCode: '040075'});
@@ -39,7 +38,7 @@ describe('splitPageAnswers', () => {
         const values = {name: 'Ada', ssn: '123451234', sortCode: '040075', owners: [{id: 'a1'}], [keptKey]: '1', [removedKey]: '2'};
 
         // When the user leaves the page with Next
-        const {removedSensitiveKeys} = splitPageAnswers(page, values, allFields);
+        const {removedSensitiveKeys} = splitPageAnswers(page, values);
 
         // Then only the removed entry's tax ID is forgotten
         expect(removedSensitiveKeys).toEqual([removedKey]);
