@@ -15,13 +15,16 @@ import {createActor, waitFor} from 'xstate';
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
 const mockCreateCredential = jest.fn();
+const mockDeleteLocalCredentials = jest.fn();
 
 // The actors' own decisions (what reaches the ceremony and the backend, and what they return) are
-// what this suite pins, so the platform ceremony and the backend call are mocked here.
+// what this suite pins, so the platform operations and the backend call are mocked here.
 jest.mock('@components/MultifactorAuthentication/biometrics/operations', () => ({
     ...jest.requireActual<typeof BiometricsOperations>('@components/MultifactorAuthentication/biometrics/operations'),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     createCredential: (...args: unknown[]) => mockCreateCredential(...args),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    deleteLocalCredentials: (...args: unknown[]) => mockDeleteLocalCredentials(...args),
 }));
 
 jest.mock('@userActions/MultifactorAuthentication/processing', () => ({
@@ -110,9 +113,9 @@ describe('credential actors', () => {
             const snapshot = await runRegisterCredentialActor();
 
             // Then the backend reason is passed on unchanged, so the outcome screen can explain the failure
-            // No rollback: the actor's contract is to surface the backend result as-is, with no key
-            // deletion and no local-credential clearing attempted on this path.
             expect(snapshot.output).toEqual({success: false, error: backendError});
+            // And the key the platform already created is kept, since the actor never rolls back
+            expect(mockDeleteLocalCredentials).not.toHaveBeenCalled();
         });
     });
 });

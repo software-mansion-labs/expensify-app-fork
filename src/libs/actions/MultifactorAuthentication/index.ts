@@ -371,6 +371,7 @@ function logTransactionReviewCompleted(
 
 async function authorizeTransaction({transactionID, signedChallenge, authenticationMethod}: MultifactorAuthenticationScenarioParameters['AUTHORIZE-TRANSACTION']) {
     const startedAt = Date.now();
+    let result: ReturnType<typeof parseHttpResponse>;
     try {
         const response = await makeRequestWithSideEffects(
             SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION,
@@ -390,19 +391,18 @@ async function authorizeTransaction({transactionID, signedChallenge, authenticat
 
         const {jsonCode, message} = response ?? {};
 
-        const result = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, message);
-        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, transactionID, startedAt, result);
-        return result;
+        result = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to authorize transaction', {error});
-        const result = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, undefined);
-        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, transactionID, startedAt, result);
-        return result;
+        result = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, undefined);
     }
+    logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, transactionID, startedAt, result);
+    return result;
 }
 
 async function denyTransaction({transactionID}: DenyTransactionParams) {
     const startedAt = Date.now();
+    let result: ReturnType<typeof parseHttpResponse>;
     try {
         const response = await makeRequestWithSideEffects(
             SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION,
@@ -422,15 +422,13 @@ async function denyTransaction({transactionID}: DenyTransactionParams) {
 
         const {jsonCode, message} = response ?? {};
 
-        const result = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, message);
-        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION, transactionID, startedAt, result);
-        return result;
+        result = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to deny transaction', {error});
-        const result = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, undefined);
-        logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION, transactionID, startedAt, result);
-        return result;
+        result = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, undefined);
     }
+    logTransactionReviewCompleted(SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION, transactionID, startedAt, result);
+    return result;
 }
 
 /** Attempt to deny the transaction without handling errors or waiting for a response. We use this to clean up after something unexpected happened trying to authorize or deny a challenge */
