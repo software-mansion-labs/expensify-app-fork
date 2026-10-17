@@ -130,7 +130,8 @@ function getUnreadReportsForUnreadIndicator(reports: OnyxCollection<Report>, cur
     });
 }
 
-const memoizedGetUnreadReportsForUnreadIndicator = memoize(getUnreadReportsForUnreadIndicator, {maxArgs: 3});
+// Each report write brings a new collection that older entries almost never match again, so keep only the last call.
+const memoizedGetUnreadReportsForUnreadIndicator = memoize(getUnreadReportsForUnreadIndicator, {maxArgs: 3, maxSize: 1, equality: 'shallow'});
 
 /**
  * Debouncing is used here to limit the frequency of updates to the unread indicator.
