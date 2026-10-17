@@ -1,0 +1,17 @@
+steps:
+  - launch: com.expensify.chat.dev
+  - await: {visible: {text: 'Phone or email'}, timeout: 45000}
+  - type: {into: {text: 'Phone or email'}, text: 'test', submit: false}
+  - tap: {text: Continue}
+  - await: {visible: {text: 'The email entered is invalid. Please fix the format and try again.'}}
+  - tap: {text: 'test'}
+  - tool: keyboard
+    args: {key: backspace}
+  - tool: keyboard
+    args: {key: backspace}
+  - tool: keyboard
+    args: {key: backspace}
+  - tool: keyboard
+    args: {key: backspace}
+  - assert: {hidden: {text: 'Please enter an email or phone number'}}
+  - assert: {hidden: {text: 'The email entered is invalid. Please fix the format and try again.'}}
