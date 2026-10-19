@@ -924,6 +924,20 @@ describe('MFA cancel', () => {
                 actor.stop();
             });
 
+            it('sends the deny once on a double confirm', async () => {
+                // Given the deny is racing the approve
+                const {actor, cancelInputs} = await startDenying();
+
+                // When the confirm arrives again, e.g. from a double tap
+                actor.send({type: 'CONFIRM_CANCEL'});
+
+                // Then no second deny goes out, because the backend must get a single answer for the transaction
+                expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
+                expect(cancelInputs).toHaveLength(1);
+
+                actor.stop();
+            });
+
             it('ends with the approve when it succeeds while the deny never returns', async () => {
                 // Given the deny is racing the approve
                 const {actor, scenarioAction} = await startDenying();
