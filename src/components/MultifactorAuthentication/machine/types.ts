@@ -88,6 +88,12 @@ type MfaContext = {
      * the screen doesn't turn interactive again while it is still mounted and animating out.
      */
     isCancelConfirmed: boolean;
+
+    /** The `onCancel` result while `denying`. Held until the scenario action settles when it didn't settle the outcome. */
+    cancelError: MFAError | undefined;
+
+    /** The scenario action's failure that didn't end the flow while `denying`, so the cancel decides once it returns. */
+    scenarioActionError: MFAError | undefined;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */

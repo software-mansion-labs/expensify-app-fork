@@ -119,6 +119,14 @@ type MultifactorAuthenticationScenarioBase<T extends Record<string, unknown> = E
      * after a confirmed cancel the same way a success does. Only read when `onCancel` is set.
      */
     outcomeConfirmingFailures?: ReadonlySet<MultifactorAuthenticationReason>;
+
+    /**
+     * Reasons, from the scenario action or `onCancel`, that settle the outcome while they race after a confirmed
+     * cancel. An `onCancel` result with one ends the flow right away; any other waits for the scenario action.
+     * If both fail, a scenario action failure with one is shown over the `onCancel` error. When absent, every
+     * `onCancel` result settles the outcome. Only read when `onCancel` is set.
+     */
+    outcomeSettlingReasons?: ReadonlySet<MultifactorAuthenticationReason>;
 };
 
 /**

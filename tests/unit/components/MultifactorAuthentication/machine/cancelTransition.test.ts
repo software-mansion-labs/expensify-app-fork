@@ -1057,18 +1057,100 @@ describe('MFA cancel', () => {
                 actor.stop();
             });
 
-            // A known trade-off: no success was shown yet, so the deny's error ends the flow instead of waiting on the approve.
-            it('ends with the deny network error when it returns before the approve', async () => {
+            it('ends with the approve when the deny network error returns before it', async () => {
+                // Given the deny is racing the approve
+                const {actor, scenarioAction, cancel, getFinalizeRuns} = await startDenying();
+
+                // When the deny fails with a network error before the approve settles
+                await settle(cancel, NETWORK_ERROR);
+
+                // Then the flow keeps waiting, because a network error says nothing about the transaction and the approve may still go through
+                expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.error).toBeUndefined();
+
+                // When the approve succeeds afterwards
+                await settle(scenarioAction, APPROVED);
+
+                // Then the flow ends approved and is finalized once, so the user sees the payment that really went through
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+                expect(result.context.error).toBeUndefined();
+                expect(result.context.scenarioResponse).toBe(MFA_TEST_SCENARIO_RESPONSE);
+                expect(getFinalizeRuns()).toBe(1);
+
+                actor.stop();
+            });
+
+            it.each([
+                ['the deny fails first', 'cancel'],
+                ['the approve fails first', 'scenarioAction'],
+            ] as const)('ends with the deny network error when both fail without settling the outcome and %s', async (_, first) => {
+                // Given the deny is racing the approve
+                const {actor, scenarioAction, cancel, getFinalizeRuns} = await startDenying();
+                const failedScenarioAction = failedApprove(REASON.CLIENT_ERRORS.UNRECOGNIZED);
+
+                // When both fail in a way that doesn't settle the transaction, in the given order
+                if (first === 'cancel') {
+                    await settle(cancel, NETWORK_ERROR);
+                    await settle(scenarioAction, failedScenarioAction);
+                } else {
+                    await settle(scenarioAction, failedScenarioAction);
+                    await settle(cancel, NETWORK_ERROR);
+                }
+
+                // Then the deny's error ends the flow once, because the user confirmed the cancel and nothing else can settle the outcome
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+                expect(result.context.error).toEqual(NETWORK_ERROR);
+                expect(result.context.scenarioResponse).toBeUndefined();
+                expect(getFinalizeRuns()).toBe(1);
+
+                actor.stop();
+            });
+
+            it.each([
+                ['the deny fails first', 'cancel'],
+                ['the approve fails first', 'scenarioAction'],
+            ] as const)('ends with an already-denied approve over the deny network error when %s', async (_, first) => {
+                // Given the deny is racing the approve
+                const {actor, scenarioAction, cancel, getFinalizeRuns} = await startDenying();
+                const alreadyDenied = failedApprove(REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED);
+
+                // When the approve is rejected as already denied and the deny hits a network error, in the given order
+                if (first === 'cancel') {
+                    await settle(cancel, NETWORK_ERROR);
+                    await settle(scenarioAction, alreadyDenied);
+                } else {
+                    await settle(scenarioAction, alreadyDenied);
+                    await settle(cancel, NETWORK_ERROR);
+                }
+
+                // Then the approve's failure ends the flow once, because it tells us the transaction is denied while the network error says nothing
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+                expect(result.context.error?.reason).toBe(REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED);
+                expect(getFinalizeRuns()).toBe(1);
+
+                actor.stop();
+            });
+
+            it('waits for the approve when the deny actor rejects', async () => {
                 // Given the deny is racing the approve
                 const {actor, scenarioAction, cancel} = await startDenying();
 
-                // When the deny fails with a network error before the approve succeeds
-                await settle(cancel, NETWORK_ERROR);
-                await settle(scenarioAction, APPROVED);
+                // When the deny actor rejects unexpectedly
+                cancel.reject(new Error('Deny exploded'));
+                await waitForBatchedUpdates();
 
-                // Then the network error ends the flow, because the deny settled first and nothing had been shown to the user yet
-                expect(actor.getSnapshot().context.error).toEqual(NETWORK_ERROR);
-                expect(actor.getSnapshot().context.scenarioResponse).toBeUndefined();
+                // Then the flow keeps waiting, because a crashed deny says nothing about the transaction
+                expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
+
+                // When the approve also fails without settling the transaction
+                await settle(scenarioAction, failedApprove(REASON.CLIENT_ERRORS.UNRECOGNIZED));
+
+                // Then the crashed deny's error ends the flow
+                expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.error?.reason).toBe(REASON.LOCAL_ERRORS.UNHANDLED_EXCEPTION);
 
                 actor.stop();
             });

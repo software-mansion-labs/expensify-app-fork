@@ -107,9 +107,9 @@ const AlreadyReviewedFailureScreen = createScreenWithDefaults(
 
 /**
  * Reasons that mean the server has already approved or denied the transaction, so the callback's cleanup deny
- * could only be rejected. Typed as strings because the callback receives the reason in `callbackInput.message`.
+ * could only be rejected, and either request racing the other already settled the outcome.
  */
-const SETTLED_TRANSACTION_REASONS = new Set<string>([
+const SETTLED_TRANSACTION_REASONS: ReadonlySet<MultifactorAuthenticationReason> = new Set([
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED,
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED,
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED,
@@ -128,7 +128,9 @@ export default {
     // AuthorizeTransaction's callback navigates to the outcome screen, but if it knows the user is going to see an error outcome, we explicitly deny the transaction to make sure the user can't re-approve it on another device.
     // The deny is skipped when the server has already approved or denied the transaction, since it could only be rejected.
     callback: async (isSuccessful, callbackInput, payload) => {
-        const isTransactionSettled = !!callbackInput.message && SETTLED_TRANSACTION_REASONS.has(callbackInput.message);
+        // Widened because the callback receives the reason as a string in `callbackInput.message`.
+        const settledReasons: ReadonlySet<string> = SETTLED_TRANSACTION_REASONS;
+        const isTransactionSettled = !!callbackInput.message && settledReasons.has(callbackInput.message);
         // isAuthorizeTransactionPayload is a type guard - we know that payload here will always be an AuthorizeTransaction Payload, but the type guard lets Typescript guarantee it
         if (!isSuccessful && !isTransactionSettled && isAuthorizeTransactionPayload(payload)) {
             fireAndForgetDenyTransaction({transactionID: payload.transactionID});
@@ -161,6 +163,8 @@ export default {
      * while the pending deny can still show "denied".
      */
     outcomeConfirmingFailures: new Set<MultifactorAuthenticationReason>([CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED]),
+    /** Any other result (e.g. a network error) says nothing about the transaction, so the other request still decides. */
+    outcomeSettlingReasons: SETTLED_TRANSACTION_REASONS,
     failureScreens: {
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED]: <DeniedTransactionSuccessScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED]: <ApprovedTransactionSuccessScreen />,
