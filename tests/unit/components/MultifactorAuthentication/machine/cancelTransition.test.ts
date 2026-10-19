@@ -903,6 +903,7 @@ describe('MFA cancel', () => {
                 const result = actor.getSnapshot();
                 expect(matchesState(openAt(DENYING), result.value)).toBe(true);
                 expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
+                expect(result.context.isCancelConfirmed).toBe(true);
                 expect(result.children).toHaveProperty('executeScenarioAction');
                 expect(result.children).toHaveProperty('cancelScenario');
                 expect(cancelInputs).toHaveLength(1);

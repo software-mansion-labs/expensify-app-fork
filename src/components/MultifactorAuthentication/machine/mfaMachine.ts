@@ -88,6 +88,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     registrationStateAtStart: undefined,
     isRegistrationComplete: false,
     cancelAttemptsDuringRequest: 0,
+    isCancelConfirmed: false,
 };
 
 /**
@@ -173,6 +174,7 @@ const MFAMachine = setup({
         },
         resetContext: assign(() => ({...DEFAULT_CONTEXT})),
         addIgnoredScenarioFailureBreadcrumb: (_, {error}: {error: MFAError}) => addMFABreadcrumb('Scenario action failure ignored while the cancel decides', error, 'warning'),
+        markCancelConfirmed: assign({isCancelConfirmed: true}),
         resetCancelAttemptsDuringRequest: assign({cancelAttemptsDuringRequest: 0}),
         countCancelAttemptDuringRequest: assign({cancelAttemptsDuringRequest: ({context}) => context.cancelAttemptsDuringRequest + 1}),
         // One event per attempt; the count of `attempt: 1` events is the number of waits with at least one attempt.
@@ -464,6 +466,8 @@ const MFAMachine = setup({
                                                         target: OUTCOME_TARGET,
                                                         actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
                                                     },
+                                                    // The scenario action takes the method as input, so it is stored before the request
+                                                    // and outcome telemetry reports it even when the scenario action fails.
                                                     {
                                                         target: MFA_STATE.EXECUTING_SCENARIO_ACTION,
                                                         actions: assign(({event}) =>
@@ -558,6 +562,7 @@ const MFAMachine = setup({
                                                 // outcome ends the flow, and leaving stops both actors, so the outcome never changes.
                                                 [MFA_STATE.DENYING]: {
                                                     id: MFA_STATE.DENYING,
+                                                    entry: 'markCancelConfirmed',
                                                     on: {REQUEST_CANCEL: countCancelAttempt(MFA_STATE.DENYING)},
                                                     invoke: {
                                                         id: 'cancelScenario',
@@ -592,7 +597,7 @@ const MFAMachine = setup({
                         // telemetry and failure screen as for any other failure.
                         [MFA_STATE.CANCELLING]: {
                             id: MFA_STATE.CANCELLING,
-                            entry: 'resetCancelAttemptsDuringRequest',
+                            entry: ['markCancelConfirmed', 'resetCancelAttemptsDuringRequest'],
                             on: {REQUEST_CANCEL: countCancelAttempt(MFA_STATE.CANCELLING)},
                             invoke: {
                                 id: 'cancelScenario',

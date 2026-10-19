@@ -34,6 +34,7 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         registrationStateAtStart: initEvent.registrationStateAtStart,
         isRegistrationComplete: false,
         cancelAttemptsDuringRequest: 0,
+        isCancelConfirmed: false,
         ...overrides,
     };
 }

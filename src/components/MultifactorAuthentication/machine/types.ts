@@ -81,6 +81,13 @@ type MfaContext = {
 
     /** Exit attempts while the scenario action or its `onCancel` request is in flight. Reset on entering `executingScenarioAction` and `cancelling`. */
     cancelAttemptsDuringRequest: number;
+
+    /**
+     * Whether the user confirmed a cancel in this flow. The screen behind the dialog reads it to stay busy
+     * while the cancel settles. Like the presentation phases, it is kept until the modal fully closes, so
+     * the screen doesn't turn interactive again while it is still mounted and animating out.
+     */
+    isCancelConfirmed: boolean;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */

@@ -134,8 +134,37 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
         actor.stop();
     });
 
+    it('keeps the screen behind the dialog marked busy from a confirmed cancel while the modal closes', () => {
+        const actor = createActorAtState({
+            [MFA_STATE.OPEN]: {
+                [MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}},
+                [MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE,
+            },
+        });
+
+        actor.start();
+        actor.send({type: 'CONFIRM_CANCEL'});
+
+        // The dialog hides as soon as the cancel starts, so the screen itself has to show it is busy
+        expect(actor.getSnapshot().matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: MFA_STATE.CANCELLING}})).toBe(true);
+        expect(snapshotToState(actor.getSnapshot()).isCancelConfirmVisible).toBe(false);
+        expect(snapshotToState(actor.getSnapshot()).isCancelConfirmed).toBe(true);
+
+        actor.send({type: 'CLOSE_MODAL'});
+
+        const result = actor.getSnapshot();
+        expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
+        expect(snapshotToState(result).isCancelConfirmed).toBe(true);
+
+        actor.stop();
+    });
+
     it('clears both frozen presentations once the modal fully closes', () => {
-        const actor = createActorAtState(MFA_STATE.CLOSING, {promptPresentationPhase: MFA_STATE.AUTHORIZING, validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE});
+        const actor = createActorAtState(MFA_STATE.CLOSING, {
+            promptPresentationPhase: MFA_STATE.AUTHORIZING,
+            validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE,
+            isCancelConfirmed: true,
+        });
 
         actor.start();
         actor.send({type: 'MODAL_CLOSED'});
@@ -144,6 +173,7 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
         expect(result.matches(MFA_STATE.CLOSED)).toBe(true);
         expect(result.context.promptPresentationPhase).toBeUndefined();
         expect(result.context.validateCodePresentationPhase).toBeUndefined();
+        expect(result.context.isCancelConfirmed).toBe(false);
 
         actor.stop();
     });
