@@ -1,16 +1,24 @@
 import type {MfaMachineEvent} from '@components/MultifactorAuthentication/machine/machineEvents';
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
 import snapshotToState from '@components/MultifactorAuthentication/machine/snapshotToState';
-import type {ExecuteScenarioActionInput, ExecuteScenarioActionOutput, FinalizeOutcomeInput, FinalizeOutcomeOutput, MfaContext} from '@components/MultifactorAuthentication/machine/types';
+import type {
+    ExecuteScenarioActionInput,
+    ExecuteScenarioActionOutput,
+    FinalizeOutcomeInput,
+    FinalizeOutcomeOutput,
+    MfaContext,
+    ValidateDeviceInput,
+} from '@components/MultifactorAuthentication/machine/types';
 
 import {createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import CONST from '@src/CONST';
 
 import type {ActorLogic, InputFrom, SnapshotFrom} from 'xstate';
 
 import {createActorAtState, createFlowContext, sendFinalizeOutcomeDone} from 'tests/utils/mfa/flowActors';
-import {
+import createInitEvent, {
     MFA_TEST_ACCOUNT_ID,
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
@@ -224,6 +232,28 @@ describe('MFA outcome finalization', () => {
 
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
+
+            actor.stop();
+        });
+
+        it('starts the next flow with the cancel-confirmation dialog hidden after the previous one closed with it up', () => {
+            // Given a flow with the cancel-confirmation dialog open, whose next flow's device check never settles
+            const validateDevice = fromPromise<MFAResult, ValidateDeviceInput>(() => new Promise(() => {}));
+            const machine = mfaMachine.provide({actors: {validateDevice}});
+            const actor = createActor(machine, {snapshot: machine.resolveState({value: AUTHORIZING_STATE, context: createFlowContext()})});
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+            expect(snapshotToState(actor.getSnapshot()).isCancelConfirmVisible).toBe(true);
+
+            // When the modal closes and a new flow starts
+            actor.send({type: 'CLOSE_MODAL'});
+            actor.send({type: 'MODAL_CLOSED'});
+            actor.send(createInitEvent());
+
+            // Then the new flow opens without the dialog, so a cancel the user started in the old flow never carries over
+            const result = actor.getSnapshot();
+            expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PREPARING]: MFA_STATE.VALIDATING_DEVICE}}})).toBe(true);
             expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
 
             actor.stop();
