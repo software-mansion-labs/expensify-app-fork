@@ -32,7 +32,7 @@ const OUTCOME_FAILURE = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOM
  * jump straight into an invoking state and have the invoke fire, since XState only invokes an actor on
  * a live transition into a state, so the actor starts one hop earlier and the approval drives it in.
  */
-function approveSoftPromptWith(actors: Parameters<typeof mfaMachine.provide>[0]['actors'], contextOverrides = {}) {
+function approveSoftPromptWith(actors: Parameters<typeof mfaMachine.provide>[0]['actors'], contextOverrides: Parameters<typeof createFlowContext>[0] = {}) {
     const machine = mfaMachine.provide({actors});
     const snapshot = machine.resolveState({
         value: AWAITING_SOFT_PROMPT,
