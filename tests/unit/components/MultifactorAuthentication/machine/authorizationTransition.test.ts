@@ -44,14 +44,15 @@ const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_ST
 
 describe('MFA authorization', () => {
     describe('authorize actor outcome', () => {
-        it('forwards the account from INIT to the authorize actor and keeps the start-of-flow registration snapshot', async () => {
-            // Given a transaction scenario whose authorize actor records its input and never settles
+        it('forwards the account from INIT to the authorize actor and the INIT runner to the scenario action, and keeps the start-of-flow registration snapshot', async () => {
+            // Given a transaction scenario whose ceremony succeeds and whose scenario action records its input and never settles
             const accountID = 67890;
             const transactionID = 'transaction-from-machine-context';
             const scenarioName = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION;
             const scenario = getScenarioConfig(scenarioName);
             const runScenarioAction = createScenarioActionRunner(scenarioName, scenario.action, {transactionID});
-            let receivedInput: AuthorizeInput | undefined;
+            let receivedAuthorizeInput: AuthorizeInput | undefined;
+            let receivedScenarioActionInput: ExecuteScenarioActionInput | undefined;
             const machine = mfaMachine.provide({
                 actors: {
                     validateDevice: fromPromise<MFAResult, ValidateDeviceInput>(() => Promise.resolve({success: true})),
@@ -59,14 +60,18 @@ describe('MFA authorization', () => {
                         Promise.resolve({hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
                     ),
                     authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(({input}) => {
-                        receivedInput = input;
-                        return new Promise<AuthorizeOutput>(() => {});
+                        receivedAuthorizeInput = input;
+                        return Promise.resolve({success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
+                    }),
+                    executeScenarioAction: fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(({input}) => {
+                        receivedScenarioActionInput = input;
+                        return new Promise<ExecuteScenarioActionOutput>(() => {});
                     }),
                 },
             });
             const actor = createActor(machine);
 
-            // When the flow is initialised and reaches authorization
+            // When the flow is initialised and the ceremony completes
             actor.start();
             actor.send({
                 type: 'INIT',
@@ -77,10 +82,11 @@ describe('MFA authorization', () => {
                 runScenarioAction,
                 registrationStateAtStart: MFA_TEST_REGISTRATION_STATE_AT_START,
             });
-            await waitFor(actor, (snapshot) => snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING}}}));
+            await waitFor(actor, (snapshot) => snapshot.matches(EXECUTING_SCENARIO_ACTION));
 
-            // Then the ceremony only gets the account, because the scenario runner now belongs to the separate scenario action step
-            expect(receivedInput).toEqual({accountID});
+            // Then the ceremony only gets the account, and the scenario action gets the exact runner passed to INIT
+            expect(receivedAuthorizeInput).toEqual({accountID});
+            expect(receivedScenarioActionInput?.runScenarioAction).toBe(runScenarioAction);
             expect(actor.getSnapshot().context.registrationStateAtStart).toEqual(MFA_TEST_REGISTRATION_STATE_AT_START);
 
             actor.stop();
