@@ -4,7 +4,6 @@ import FormHelpMessage from '@components/FormHelpMessage';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useMultifactorAuthenticationInternal} from '@components/MultifactorAuthentication/Context/MultifactorAuthenticationInternalApiContext';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
-import useMFACancelOnEscape from '@components/MultifactorAuthentication/useMFACancelOnEscape';
 import MultifactorAuthenticationValidateCodeResendButton from '@components/MultifactorAuthentication/ValidateCodeResendButton';
 import type {MultifactorAuthenticationValidateCodeResendButtonHandle} from '@components/MultifactorAuthentication/ValidateCodeResendButton';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -52,7 +51,7 @@ function MultifactorAuthenticationValidateCodePage() {
     const [formError, setFormError] = useState<FormError>({});
     const [canShowError, setCanShowError] = useState<boolean>(false);
     const {requestCancel, submitValidateCode, resendValidateCode, notifyValidateCodeChanged, state} = useMultifactorAuthenticationInternal();
-    const {showsInvalidCodeError, isCancelConfirmVisible, canResendValidateCode, isValidateCodeFormSubmitting} = state;
+    const {showsInvalidCodeError, isCancelConfirmVisible, isCancelConfirmed, canResendValidateCode, isValidateCodeFormSubmitting} = state;
 
     // Refs
     const inputRef = useRef<ValidateCodeInputHandle>(null);
@@ -61,6 +60,7 @@ function MultifactorAuthenticationValidateCodePage() {
 
     // Derived state
     const hasAccountError = !!account && !isEmptyObject(account?.errors);
+    const isFormBusy = isValidateCodeFormSubmitting || isCancelConfirmed;
     const shouldDisableResendCode = isOffline || !canResendValidateCode;
     const validateCodeActionError = getLatestErrorField(validateActionCode, 'actionVerified');
     const hasValidateCodeActionError = !isEmptyObject(validateCodeActionError);
@@ -152,7 +152,7 @@ function MultifactorAuthenticationValidateCodePage() {
      */
     const validateAndSubmitForm = () => {
         // Check if already loading
-        if (isValidateCodeFormSubmitting) {
+        if (isFormBusy) {
             return;
         }
 
@@ -185,8 +185,6 @@ function MultifactorAuthenticationValidateCodePage() {
         submitValidateCode(inputCode);
     };
 
-    const interceptFocusTrapEscape = useMFACancelOnEscape();
-
     return (
         <ScreenWrapper
             testID={MultifactorAuthenticationValidateCodePage.displayName}
@@ -195,7 +193,8 @@ function MultifactorAuthenticationValidateCodePage() {
                 // the modal's clicks, and back on when it closes. See https://github.com/Expensify/App/issues/93193
                 active: isCancelConfirmVisible ? false : undefined,
                 focusTrapOptions: {
-                    escapeDeactivates: interceptFocusTrapEscape,
+                    // Escape is handled by the MFA modal's own shortcut.
+                    escapeDeactivates: () => false,
                 },
             }}
         >
@@ -241,7 +240,7 @@ function MultifactorAuthenticationValidateCodePage() {
                         style={[styles.w100, styles.ph5, styles.pb5, styles.mt4]}
                         onPress={validateAndSubmitForm}
                         text={translate('common.verify')}
-                        isLoading={isValidateCodeFormSubmitting}
+                        isLoading={isFormBusy}
                         isDisabled={isOffline}
                     />
                 </View>
