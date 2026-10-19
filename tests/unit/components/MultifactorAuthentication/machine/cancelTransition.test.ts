@@ -868,7 +868,7 @@ describe('MFA cancel', () => {
             await waitForBatchedUpdates();
         }
 
-        let logInfoSpy: jest.SpyInstance;
+        let logInfoSpy: jest.SpyInstance<void, Parameters<typeof Log.info>>;
 
         beforeEach(() => {
             logInfoSpy = jest.spyOn(Log, 'info').mockImplementation(() => {});
@@ -879,7 +879,7 @@ describe('MFA cancel', () => {
         });
 
         function getLogData(message: string) {
-            return logInfoSpy.mock.calls.filter(([logMessage]) => logMessage === message).map(([, , parameters]) => parameters as unknown);
+            return logInfoSpy.mock.calls.filter(([logMessage]) => logMessage === message).map(([, , parameters]) => parameters);
         }
 
         it('opens the dialog while the request is in flight', async () => {
