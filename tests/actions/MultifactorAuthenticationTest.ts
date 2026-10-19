@@ -58,7 +58,7 @@ describe('actions/MultifactorAuthentication', () => {
         const TRANSACTION_ID = 'txn-timing';
         const REVIEW_LOG = '[MFA] Transaction review request completed';
         const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
-        let logInfoSpy: jest.SpyInstance;
+        let logInfoSpy: jest.SpyInstance<void, Parameters<typeof Log.info>>;
 
         function approve() {
             return authorizeTransaction({
@@ -69,7 +69,7 @@ describe('actions/MultifactorAuthentication', () => {
         }
 
         function getReviewLogs() {
-            return logInfoSpy.mock.calls.filter(([message]) => message === REVIEW_LOG).map(([, , parameters]) => parameters as unknown);
+            return logInfoSpy.mock.calls.filter(([message]) => message === REVIEW_LOG).map(([, , parameters]) => parameters);
         }
 
         beforeEach(() => {
