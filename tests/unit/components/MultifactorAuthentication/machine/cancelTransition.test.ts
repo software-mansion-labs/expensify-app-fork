@@ -966,9 +966,15 @@ describe('MFA cancel', () => {
                         undefined,
                     ],
                     ['an approve success over a deny network error', APPROVED, NETWORK_ERROR, undefined],
-                    ['the deny over an already-denied approve', failedApprove(REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED), DENIED, DENIED],
-                    ['the deny over an approve network error', {success: false, error: NETWORK_ERROR} as const, DENIED, DENIED],
-                    ['the deny network error when both fail', failedApprove(REASON.CLIENT_ERRORS.UNRECOGNIZED), NETWORK_ERROR, NETWORK_ERROR],
+                    ['a successful deny over an already-denied approve', failedApprove(REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED), DENIED, DENIED],
+                    ['a successful deny over an approve network error', {success: false, error: NETWORK_ERROR} as const, DENIED, DENIED],
+                    [
+                        'an already-denied approve over a deny network error',
+                        failedApprove(REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED),
+                        NETWORK_ERROR,
+                        createMFAErrorFromApiResponse(400, REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED, undefined),
+                    ],
+                    ['a network error when neither request gets a response', {success: false, error: NETWORK_ERROR} as const, NETWORK_ERROR, NETWORK_ERROR],
                 ])('ends with %s', async (_, approveResult, denyResult, expectedError) => {
                     // Given the deny is racing the approve
                     const {actor, scenarioAction, cancel, getFinalizeRuns} = await startDenying();
@@ -1009,7 +1015,7 @@ describe('MFA cancel', () => {
                 actor.stop();
             });
 
-            it('ends with an unhandled-exception error when the deny actor rejects and the approve fails', async () => {
+            it('treats a rejected deny actor as a failed deny, so a failed approve decides', async () => {
                 // Given the deny is racing the approve
                 const {actor, scenarioAction, cancel} = await startDenying();
 
@@ -1018,9 +1024,9 @@ describe('MFA cancel', () => {
                 await waitForBatchedUpdates();
                 await settle(scenarioAction, failedApprove(REASON.CLIENT_ERRORS.UNRECOGNIZED));
 
-                // Then the crashed deny's error ends the flow
+                // Then the approve's failure ends the flow, because a failed approve comes before a failed deny
                 expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
-                expect(actor.getSnapshot().context.error?.reason).toBe(REASON.LOCAL_ERRORS.UNHANDLED_EXCEPTION);
+                expect(actor.getSnapshot().context.error?.reason).toBe(REASON.CLIENT_ERRORS.UNRECOGNIZED);
 
                 actor.stop();
             });

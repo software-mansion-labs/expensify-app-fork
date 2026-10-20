@@ -3,6 +3,7 @@ import {navigate as mfaNavigate, resetMfaNavigation} from '@components/Multifact
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
 import Log from '@libs/Log';
+import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import {createMFAErrorFromApiResponse, createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import Navigation from '@libs/Navigation/Navigation';
 
@@ -50,16 +51,18 @@ function getOnCancel(context: MfaContext): CancelScenarioInput['onCancel'] {
 }
 
 /**
- * The outcome of a confirmed cancel that raced the scenario action. A successful scenario action stands,
- * because the deny can't undo what the server already did. Otherwise the deny's result decides. Without a
- * deny result (the wait timed out) the scenario action's failure decides, and without either the flow
- * fails as if the request got no response.
+ * The outcome of a confirmed cancel that raced the scenario action, taken from the first result present in
+ * this order: a successful scenario action, a successful cancel, a failed scenario action, a failed cancel.
+ * A result is missing when the wait timed out, and with neither the flow fails as if the request got no response.
  */
 function getDenyingOutcome({scenarioActionResult, cancelError}: MfaContext): Partial<Pick<MfaContext, 'error' | 'scenarioResponse'>> {
     if (scenarioActionResult?.success) {
         return {scenarioResponse: scenarioActionResult.scenarioResponse};
     }
-    return {error: cancelError ?? scenarioActionResult?.error ?? createMFAErrorFromApiResponse(undefined, undefined, 'MFA cancel timed out')};
+    if (cancelError && isHttpSuccess(cancelError.httpStatusCode)) {
+        return {error: cancelError};
+    }
+    return {error: scenarioActionResult?.error ?? cancelError ?? createMFAErrorFromApiResponse(undefined, undefined, 'MFA cancel timed out')};
 }
 
 // Ends `denying` with the outcome decided from both requests.
