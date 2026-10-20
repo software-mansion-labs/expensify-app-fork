@@ -1,11 +1,9 @@
 import {deviceVerificationType} from '@components/MultifactorAuthentication/biometrics/operations';
-import type {MultifactorAuthenticationScenarioConfig} from '@components/MultifactorAuthentication/config/types';
 import {navigate as mfaNavigate, resetMfaNavigation} from '@components/MultifactorAuthentication/mfaNavigation';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
 import Log from '@libs/Log';
-import type {MFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import {createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createMFAErrorFromApiResponse, createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import Navigation from '@libs/Navigation/Navigation';
 
 import {markHasAcceptedSoftPrompt} from '@userActions/MultifactorAuthentication';
@@ -17,13 +15,11 @@ import SCREENS from '@src/SCREENS';
 import {CONST as COMMON_CONST} from 'expensify-common';
 import {and, assign, not, setup, stateIn} from 'xstate';
 
-import type {CancelAttemptState, CancelScenarioInput, ExecuteScenarioActionOutput, MfaContext, MfaEvent} from './types';
+import type {CancelAttemptState, CancelScenarioInput, MfaContext, MfaEvent} from './types';
 
 import createActors from './mfaActors';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
-
-type PendingCancelResolver = 'scenarioAction' | 'onCancel';
 
 // Absolute targets for the screen branches. The device check runs under `preparing`, so reaching a
 // sibling branch needs an id target rather than a relative one.
@@ -48,62 +44,26 @@ function countCancelAttempt(state: CancelAttemptState) {
     return {guard: 'hasOnCancel', actions: ['countCancelAttemptDuringRequest', {type: 'logCancelAttemptDuringRequest', params: {state}}]} as const;
 }
 
-/** Hands the scenario action's result to `confirmsScenarioOutcome`. */
-function getScenarioActionResultParams({event}: {event: {output: ExecuteScenarioActionOutput}}): {result: ExecuteScenarioActionOutput} {
-    return {result: event.output};
-}
-
-/** Hands the `onCancel` result to `cancelDecidesOutcome`. */
-function getCancelResultParams({event}: {event: {output: MFAError}}): {error: MFAError} {
-    return {error: event.output};
-}
-
 /** `onCancel` is optional, so only the scenarios that define it carry the key. */
 function getOnCancel(context: MfaContext): CancelScenarioInput['onCancel'] {
     return context.scenario && 'onCancel' in context.scenario ? context.scenario.onCancel : undefined;
 }
 
 /**
- * The scenario's failure reasons that still mean the user got what they asked for (e.g. "already approved").
- * When the user confirms a cancel while the scenario action is in flight, such a failure ends the flow the same
- * way a success does; any other failure waits for `onCancel` to decide the outcome. Optional on the scenario
- * config, so scenarios without it only end the wait on a success.
+ * The outcome of a confirmed cancel that raced the scenario action. A successful scenario action stands,
+ * because the deny can't undo what the server already did. Otherwise the deny's result decides. Without a
+ * deny result (the wait timed out) the scenario action's failure decides, and without either the flow
+ * fails as if the request got no response.
  */
-function getOutcomeConfirmingFailures(context: MfaContext): MultifactorAuthenticationScenarioConfig['outcomeConfirmingFailures'] {
-    return context.scenario && 'outcomeConfirmingFailures' in context.scenario ? context.scenario.outcomeConfirmingFailures : undefined;
-}
-
-/**
- * The scenario's reasons, from either racing request, that settle the outcome (e.g. denied, already approved).
- * Optional on the scenario config, so scenarios without it let every `onCancel` result end the flow.
- */
-function getOutcomeSettlingReasons(context: MfaContext): MultifactorAuthenticationScenarioConfig['outcomeSettlingReasons'] {
-    return context.scenario && 'outcomeSettlingReasons' in context.scenario ? context.scenario.outcomeSettlingReasons : undefined;
-}
-
-/**
- * The error that ends `denying` once the cancel decides: the cancel's own, unless only the scenario action's
- * failure settles the outcome (e.g. "already denied" while the deny itself hit a network error).
- */
-function getDenyingResult(context: MfaContext): {error: MFAError; resolvedBy: PendingCancelResolver} | undefined {
-    const {cancelError, scenarioActionError} = context;
-    if (!cancelError) {
-        return undefined;
+function getDenyingOutcome({scenarioActionResult, cancelError}: MfaContext): Partial<Pick<MfaContext, 'error' | 'scenarioResponse'>> {
+    if (scenarioActionResult?.success) {
+        return {scenarioResponse: scenarioActionResult.scenarioResponse};
     }
-    const reasons = getOutcomeSettlingReasons(context);
-    const doesCancelSettle = reasons?.has(cancelError.reason) ?? true;
-    if (!doesCancelSettle && scenarioActionError && reasons?.has(scenarioActionError.reason)) {
-        return {error: scenarioActionError, resolvedBy: 'scenarioAction'};
-    }
-    return {error: cancelError, resolvedBy: 'onCancel'};
+    return {error: cancelError ?? scenarioActionResult?.error ?? createMFAErrorFromApiResponse(undefined, undefined, 'MFA cancel timed out')};
 }
 
-function logPendingCancelResolved(scenario: MfaContext['scenarioName'], resolvedBy: PendingCancelResolver, reason: string | undefined) {
-    Log.info('[MFA] Pending cancel resolved', false, {mfa: {scenario, resolvedBy, reason}});
-}
-
-// Ends `denying` with the error the cancel decided on.
-const RESOLVE_DENYING_ACTIONS = ['applyDenyingResult', 'logDenyingResult'] as const;
+// Ends `denying` with the outcome decided from both requests.
+const RESOLVE_DENYING_ACTIONS = ['applyDenyingOutcome', 'logPendingCancelResolved'] as const;
 
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
@@ -129,7 +89,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     cancelAttemptsDuringRequest: 0,
     isCancelConfirmed: false,
     cancelError: undefined,
-    scenarioActionError: undefined,
+    scenarioActionResult: undefined,
 };
 
 /**
@@ -154,17 +114,11 @@ const MFAMachine = setup({
         hasError: ({context}) => context.error !== undefined,
         hasRegistrationChallenge: ({context}) => context.registrationChallenge !== undefined,
         // Once the flow reaches the outcome there is nothing left to cancel, so back closes the modal
-        // instead; while the cancel itself runs (`cancelling`, or `denying` racing the scenario action),
+        // instead; while the cancel itself runs (`cancelling`, or `denying` next to the scenario action),
         // there is nothing left to ask.
         isCancelable: and([not(stateIn(OUTCOME_TARGET)), not(stateIn(CANCELLING_TARGET)), not(stateIn(DENYING_TARGET))]),
         hasOnCancel: ({context}) => !!getOnCancel(context),
-        // A success, or a failure that still confirms what the user asked for (e.g. already approved).
-        confirmsScenarioOutcome: ({context}, {result}: {result: ExecuteScenarioActionOutput}) => result.success || !!getOutcomeConfirmingFailures(context)?.has(result.error.reason),
-        // An `onCancel` result that settles the outcome (e.g. denied), or any result once the scenario action
-        // settled without ending the flow, since nothing else is left to decide it.
-        cancelDecidesOutcome: ({context}, {error}: {error: MFAError}) => context.scenarioActionError !== undefined || (getOutcomeSettlingReasons(context)?.has(error.reason) ?? true),
-        hasCancelError: ({context}) => context.cancelError !== undefined,
-        hasScenarioActionError: ({context}) => context.scenarioActionError !== undefined,
+        hasBothDenyingResults: ({context}) => context.scenarioActionResult !== undefined && context.cancelError !== undefined,
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -219,13 +173,8 @@ const MFAMachine = setup({
             markHasAcceptedSoftPrompt(context.accountID);
         },
         resetContext: assign(() => ({...DEFAULT_CONTEXT})),
-        addIgnoredScenarioFailureBreadcrumb: (_, {error}: {error: MFAError}) => addMFABreadcrumb('Scenario action failure ignored while the cancel decides', error, 'warning'),
         markCancelConfirmed: assign({isCancelConfirmed: true}),
-        applyDenyingResult: assign({error: ({context}) => getDenyingResult(context)?.error}),
-        logDenyingResult: ({context}) => {
-            const result = getDenyingResult(context);
-            logPendingCancelResolved(context.scenarioName, result?.resolvedBy ?? 'onCancel', result?.error.reason);
-        },
+        applyDenyingOutcome: assign(({context}) => getDenyingOutcome(context)),
         resetCancelAttemptsDuringRequest: assign({cancelAttemptsDuringRequest: 0}),
         countCancelAttemptDuringRequest: assign({cancelAttemptsDuringRequest: ({context}) => context.cancelAttemptsDuringRequest + 1}),
         // One event per attempt; the count of `attempt: 1` events is the number of waits with at least one attempt.
@@ -234,8 +183,13 @@ const MFAMachine = setup({
             addMFABreadcrumb('Cancel requested while a scenario request is in flight', data);
             Log.info('[MFA] Cancel requested while a scenario request is in flight', false, {mfa: data});
         },
-        logPendingCancelResolved: ({context}, {resolvedBy, reason}: {resolvedBy: PendingCancelResolver; reason: string | undefined}) =>
-            logPendingCancelResolved(context.scenarioName, resolvedBy, reason),
+        // A missing result means the wait timed out before that request returned.
+        logPendingCancelResolved: ({context: {scenarioName, scenarioActionResult, cancelError}}) => {
+            const scenarioActionReason = scenarioActionResult?.success ? scenarioActionResult.scenarioResponse.reason : scenarioActionResult?.error.reason;
+            Log.info('[MFA] Pending cancel resolved', false, {
+                mfa: {scenario: scenarioName, scenarioActionSucceeded: scenarioActionResult?.success, scenarioActionReason, cancelReason: cancelError?.reason},
+            });
+        },
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
         // behind for the next flow.
@@ -245,6 +199,8 @@ const MFAMachine = setup({
         // How long `closing` waits for MODAL_CLOSED before re-entering `closed` on its own; longer
         // than any close animation can take.
         closeFallback: CONST.MAX_TRANSITION_START_WAIT_MS + CONST.MAX_TRANSITION_DURATION_MS + CONST.ANIMATED_TRANSITION,
+        // How long `denying` waits for both requests before deciding with what has come back.
+        denyingTimeout: 60 * 1000,
     },
 }).createMachine({
     id: 'mfa',
@@ -539,8 +495,8 @@ const MFAMachine = setup({
                                             initial: MFA_STATE.AWAITING_RESULT,
                                             on: {
                                                 // The request is already out, so a confirmed cancel sends the deny and waits for
-                                                // whichever settles the flow first. Without `onCancel` the flow-level handler
-                                                // moves to `cancelling` and the result is dropped.
+                                                // both results. Without `onCancel` the flow-level handler moves to `cancelling` and
+                                                // the result is dropped.
                                                 CONFIRM_CANCEL: {guard: and([stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), 'hasOnCancel']), target: `.${MFA_STATE.DENYING}`},
                                             },
                                             // Invoked here rather than in a substate, so moving to `denying` keeps the request running.
@@ -558,36 +514,8 @@ const MFAMachine = setup({
                                                     };
                                                 },
                                                 onDone: [
-                                                    {
-                                                        guard: and([stateIn(DENYING_TARGET), {type: 'confirmsScenarioOutcome', params: getScenarioActionResultParams}]),
-                                                        target: OUTCOME_TARGET,
-                                                        actions: [
-                                                            assign(({event}) =>
-                                                                event.output.success ? {scenarioResponse: event.output.scenarioResponse} : {error: getMFAFailureError(event.output)},
-                                                            ),
-                                                            {
-                                                                type: 'logPendingCancelResolved',
-                                                                params: ({event}) => ({
-                                                                    resolvedBy: 'scenarioAction',
-                                                                    reason: event.output.success ? event.output.scenarioResponse.reason : event.output.error.reason,
-                                                                }),
-                                                            },
-                                                        ],
-                                                    },
-                                                    // The deny already failed without settling the outcome, so with both failed the cancel decides now.
-                                                    {
-                                                        guard: and([stateIn(DENYING_TARGET), 'hasCancelError']),
-                                                        target: OUTCOME_TARGET,
-                                                        actions: [assign({scenarioActionError: ({event}) => getMFAFailureError(event.output)}), ...RESOLVE_DENYING_ACTIONS],
-                                                    },
-                                                    // The user confirmed the cancel, so the deny decides; any other failed request can't end the flow.
-                                                    {
-                                                        guard: stateIn(DENYING_TARGET),
-                                                        actions: [
-                                                            {type: 'addIgnoredScenarioFailureBreadcrumb', params: ({event}) => ({error: getMFAFailureError(event.output)})},
-                                                            assign({scenarioActionError: ({event}) => getMFAFailureError(event.output)}),
-                                                        ],
-                                                    },
+                                                    // A confirmed cancel holds the result until `denying` decides with both.
+                                                    {guard: stateIn(DENYING_TARGET), actions: assign({scenarioActionResult: ({event}) => event.output})},
                                                     {
                                                         guard: ({event}) => !event.output.success,
                                                         target: OUTCOME_TARGET,
@@ -600,22 +528,10 @@ const MFAMachine = setup({
                                                 ],
                                                 onError: [
                                                     {
-                                                        guard: and([stateIn(DENYING_TARGET), 'hasCancelError']),
-                                                        target: OUTCOME_TARGET,
-                                                        actions: [
-                                                            assign({scenarioActionError: ({event}) => createUnhandledExceptionMFAError('Scenario action', event.error)}),
-                                                            ...RESOLVE_DENYING_ACTIONS,
-                                                        ],
-                                                    },
-                                                    {
                                                         guard: stateIn(DENYING_TARGET),
-                                                        actions: [
-                                                            {
-                                                                type: 'addIgnoredScenarioFailureBreadcrumb',
-                                                                params: ({event}) => ({error: createUnhandledExceptionMFAError('Scenario action', event.error)}),
-                                                            },
-                                                            assign({scenarioActionError: ({event}) => createUnhandledExceptionMFAError('Scenario action', event.error)}),
-                                                        ],
+                                                        actions: assign({
+                                                            scenarioActionResult: ({event}) => ({success: false, error: createUnhandledExceptionMFAError('Scenario action', event.error)}),
+                                                        }),
                                                     },
                                                     {
                                                         target: OUTCOME_TARGET,
@@ -627,40 +543,22 @@ const MFAMachine = setup({
                                                 [MFA_STATE.AWAITING_RESULT]: {
                                                     on: {REQUEST_CANCEL: countCancelAttempt(MFA_STATE.AWAITING_RESULT)},
                                                 },
-                                                // The deny races the request already sent. The server handles them in order, so the one
-                                                // arriving second fails with "already ...". The first response that settles the
-                                                // outcome ends the flow, and leaving stops both actors, so the outcome never changes.
-                                                // A deny that fails without settling it (e.g. a network error) waits for the request.
-                                                // If that fails too, a failure that still settles the outcome (e.g. "already denied")
-                                                // is shown over the deny's error.
+                                                // The deny goes out while the request already sent is still running. The server handles
+                                                // them in order, so the one arriving second fails with "already ...". The outcome is
+                                                // decided once both are back, or with what came back when the wait times out, and
+                                                // leaving stops both actors, so a late result never changes it.
                                                 [MFA_STATE.DENYING]: {
                                                     id: MFA_STATE.DENYING,
                                                     entry: 'markCancelConfirmed',
                                                     on: {REQUEST_CANCEL: countCancelAttempt(MFA_STATE.DENYING)},
+                                                    always: {guard: 'hasBothDenyingResults', target: OUTCOME_TARGET, actions: RESOLVE_DENYING_ACTIONS},
+                                                    after: {denyingTimeout: {target: OUTCOME_TARGET, actions: RESOLVE_DENYING_ACTIONS}},
                                                     invoke: {
                                                         id: 'cancelScenario',
                                                         src: 'cancelScenario',
                                                         input: ({context}) => ({onCancel: getOnCancel(context), payload: context.payload, isScenarioActionSent: true}),
-                                                        onDone: [
-                                                            {
-                                                                guard: {type: 'cancelDecidesOutcome', params: getCancelResultParams},
-                                                                target: OUTCOME_TARGET,
-                                                                actions: [assign({cancelError: ({event}) => event.output}), ...RESOLVE_DENYING_ACTIONS],
-                                                            },
-                                                            {actions: assign({cancelError: ({event}) => event.output})},
-                                                        ],
-                                                        // A crashed cancel says nothing about the transaction, so it settles nothing either.
-                                                        onError: [
-                                                            {
-                                                                guard: 'hasScenarioActionError',
-                                                                target: OUTCOME_TARGET,
-                                                                actions: [
-                                                                    assign({cancelError: ({event}) => createUnhandledExceptionMFAError('Cancel', event.error)}),
-                                                                    ...RESOLVE_DENYING_ACTIONS,
-                                                                ],
-                                                            },
-                                                            {actions: assign({cancelError: ({event}) => createUnhandledExceptionMFAError('Cancel', event.error)})},
-                                                        ],
+                                                        onDone: {actions: assign({cancelError: ({event}) => event.output})},
+                                                        onError: {actions: assign({cancelError: ({event}) => createUnhandledExceptionMFAError('Cancel', event.error)})},
                                                     },
                                                 },
                                             },

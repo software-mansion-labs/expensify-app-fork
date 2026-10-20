@@ -89,11 +89,11 @@ type MfaContext = {
      */
     isCancelConfirmed: boolean;
 
-    /** The `onCancel` result while `denying`. Held until the scenario action settles when it didn't settle the outcome. */
+    /** The `onCancel` result while `denying`, held until the scenario action's result is back too. */
     cancelError: MFAError | undefined;
 
-    /** The scenario action's failure that didn't end the flow while `denying`, so the cancel decides once it returns. */
-    scenarioActionError: MFAError | undefined;
+    /** The scenario action's result while `denying`, held until the `onCancel` result is back too. */
+    scenarioActionResult: ExecuteScenarioActionOutput | undefined;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */

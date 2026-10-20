@@ -105,10 +105,7 @@ const AlreadyReviewedFailureScreen = createScreenWithDefaults(
     'AlreadyReviewedFailureScreen',
 );
 
-/**
- * Reasons that mean the server has already approved or denied the transaction, so the callback's cleanup deny
- * could only be rejected, and either request racing the other already settled the outcome.
- */
+/** Reasons that mean the server has already approved or denied the transaction, so the callback's cleanup deny could only be rejected. */
 const SETTLED_TRANSACTION_REASONS: ReadonlySet<MultifactorAuthenticationReason> = new Set([
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED,
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED,
@@ -158,13 +155,6 @@ export default {
         }
         return createMFAErrorFromApiResponse(httpStatusCode, reason ?? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, message);
     },
-    /**
-     * `ALREADY_DENIED_APPROVE_ATTEMPTED` is deliberately absent: it maps to "already reviewed",
-     * while the pending deny can still show "denied".
-     */
-    outcomeConfirmingFailures: new Set<MultifactorAuthenticationReason>([CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED]),
-    /** Any other result (e.g. a network error) says nothing about the transaction, so the other request still decides. */
-    outcomeSettlingReasons: SETTLED_TRANSACTION_REASONS,
     failureScreens: {
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED]: <DeniedTransactionSuccessScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED]: <ApprovedTransactionSuccessScreen />,
